@@ -1,0 +1,51 @@
+// Shared.xcconfig — Gus build settings (source of truth for the target).
+// Per-SDK divergence is expressed with [sdk=...] conditional assignments.
+
+// MARK: - Identity & versioning
+
+PRODUCT_NAME = Gus
+PRODUCT_BUNDLE_IDENTIFIER = dev.ericslutz.gus
+MARKETING_VERSION = 1.0
+CURRENT_PROJECT_VERSION = 1
+
+// MARK: - Swift
+
+// Swift 5 language mode for the first milestone: all modern APIs (@Observable,
+// NavigationStack, glass) are availability-gated, not language-mode-gated, so we
+// keep them while avoiding strict-concurrency churn against the Jellyfin SDK.
+SWIFT_VERSION = 5
+SWIFT_STRICT_CONCURRENCY = minimal
+SWIFT_EMIT_LOC_STRINGS = YES
+ENABLE_PREVIEWS = YES
+
+// MARK: - Info.plist (provided, not generated)
+
+GENERATE_INFOPLIST_FILE = NO
+
+// MARK: - Asset catalog
+
+ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor
+// No bundled app icon yet (placeholder artwork is a follow-up); leaving the icon
+// name empty keeps actool from requiring per-platform icon sets across all five SDKs.
+ASSETCATALOG_COMPILER_APPICON_NAME =
+
+// MARK: - Devices / platforms
+
+// 1 = iPhone, 2 = iPad, 3 = Apple TV, 7 = Apple Vision. macOS ignores this.
+TARGETED_DEVICE_FAMILY = 1,2,3,7
+SUPPORTS_MACCATALYST = NO
+SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO
+
+// MARK: - Code signing
+//
+// Local-only milestone builds: ad-hoc sign so simulator + native macOS builds
+// succeed without a provisioning profile or Developer team.
+CODE_SIGN_STYLE = Manual
+CODE_SIGN_IDENTITY = -
+DEVELOPMENT_TEAM =
+CODE_SIGNING_REQUIRED = NO
+CODE_SIGNING_ALLOWED = YES
+
+// Sandbox + outbound network only on macOS (network.client/app-sandbox are
+// macOS-sandbox entitlements; iOS/tvOS/visionOS don't need an entitlements file).
+CODE_SIGN_ENTITLEMENTS[sdk=macosx*] = Config/Gus.entitlements

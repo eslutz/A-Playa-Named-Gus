@@ -1,0 +1,55 @@
+name: Gus
+
+# ---------------------------------------------------------------------------
+# Gus — an Apple-first, multiplatform Jellyfin client.
+# Single SwiftUI app target with five Supported Destinations
+# (iOS, iPadOS via iOS, tvOS, visionOS, macOS). This file is the source of
+# truth; `xcodegen generate` (re)builds Gus.xcodeproj from it.
+# ---------------------------------------------------------------------------
+
+options:
+  bundleIdPrefix: dev.ericslutz
+  deploymentTarget:
+    iOS: "18.0"
+    tvOS: "18.0"
+    visionOS: "2.0"
+    macOS: "15.0"
+  createIntermediateGroups: true
+  groupSortPosition: top
+  generateEmptyDirectories: true
+
+configs:
+  Debug: debug
+  Release: release
+
+# Build settings live in Config/Shared.xcconfig (the build-settings home).
+configFiles:
+  Debug: Config/Shared.xcconfig
+  Release: Config/Shared.xcconfig
+
+packages:
+  JellyfinSDK:
+    url: https://github.com/jellyfin/jellyfin-sdk-swift
+    from: "2.1.0"
+
+targets:
+  Gus:
+    type: application
+    # Modern Xcode "Supported Destinations" — one target, five platforms.
+    supportedDestinations: [iOS, tvOS, visionOS, macOS]
+    sources:
+      - path: Sources
+      - path: Resources
+        # Info.plist is referenced via INFOPLIST_FILE, not copied as a resource.
+        excludes:
+          - "Info.plist"
+    dependencies:
+      - package: JellyfinSDK
+        product: JellyfinAPI
+    # The only target-specific settings; everything else is in the xcconfig.
+    settings:
+      base:
+        INFOPLIST_FILE: Resources/Info.plist
+        # Override XcodeGen's auto-injected "AppIcon" — no bundled icon yet, which
+        # keeps actool from demanding per-platform icon sets across all five SDKs.
+        ASSETCATALOG_COMPILER_APPICON_NAME: ""
