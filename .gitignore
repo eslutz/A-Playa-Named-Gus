@@ -1,0 +1,21 @@
+# Generated Xcode project — project.yml is the source of truth.
+Gus.xcodeproj/
+
+# Xcode / build
+build/
+build-*/
+DerivedData/
+*.xcuserstate
+xcuserdata/
+*.xcscmblueprint
+*.xccheckout
+
+# SwiftPM
+.swiftpm/
+.build/
+
+# macOS
+.DS_Store
+
+# Bootstrap / tooling
+*.moved-aside
