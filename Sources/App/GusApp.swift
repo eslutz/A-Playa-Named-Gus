@@ -7,6 +7,7 @@ import SwiftUI
 @main
 struct GusApp: App {
     @State private var appModel = AppModel()
+    @State private var playbackRefresh = PlaybackRefreshStore()
 
     #if os(visionOS)
         @State private var cinema = CinemaModel()
@@ -21,6 +22,7 @@ struct GusApp: App {
         WindowGroup {
             RootView()
                 .environment(appModel)
+                .environment(playbackRefresh)
             #if os(visionOS)
                 .environment(cinema)
             #endif

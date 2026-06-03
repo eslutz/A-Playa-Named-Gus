@@ -7,6 +7,7 @@ import SwiftUI
 /// the environment `SessionStore` in `.task` (environment isn't available at `init`).
 struct HomeView: View {
     @Environment(SessionStore.self) private var session
+    @Environment(PlaybackRefreshStore.self) private var playbackRefresh
     @State private var store: HomeStore?
 
     var body: some View {
@@ -24,6 +25,10 @@ struct HomeView: View {
                 self.store = store
                 await store.load()
             }
+        }
+        .task(id: playbackRefresh.revision) {
+            guard playbackRefresh.revision > 0, let store else { return }
+            await store.load()
         }
     }
 

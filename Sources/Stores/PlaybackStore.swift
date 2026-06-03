@@ -23,12 +23,17 @@ final class PlaybackStore {
 
     let item: BaseItemDto
     private let session: SessionStore
+    private let playbackRefresh: PlaybackRefreshStore
     private let nowPlaying = NowPlayingController()
     private let logger = Logger(category: .playback)
+    private var reportContext: PlaybackReportContext?
+    private var progressObserver: Any?
+    private var didReportStopped = false
 
-    init(item: BaseItemDto, session: SessionStore) {
+    init(item: BaseItemDto, session: SessionStore, playbackRefresh: PlaybackRefreshStore) {
         self.item = item
         self.session = session
+        self.playbackRefresh = playbackRefresh
     }
 
     func prepare() async {
@@ -51,9 +56,26 @@ final class PlaybackStore {
             #endif
             player.automaticallyWaitsToMinimizeStalling = true
             self.player = player
+            let context = PlaybackReportContext(
+                itemID: itemID,
+                mediaSourceID: resolution.mediaSourceID,
+                playSessionID: resolution.playSessionID,
+                playMethod: resolution.isTranscoding ? .transcode : .directStream
+            )
+            reportContext = context
+
+            if let resumeTicks = PlaybackTime.resumePositionTicks(for: item) {
+                await player.seek(
+                    to: CMTime(seconds: PlaybackTime.seconds(fromTicks: resumeTicks), preferredTimescale: 600),
+                    toleranceBefore: .zero,
+                    toleranceAfter: .zero
+                )
+            }
 
             nowPlaying.start(player: player, item: item)
+            addProgressObserver(player: player)
             state = .ready
+            reportPlaybackStart(context: context, player: player)
             player.play()
         } catch {
             let gusError = GusError(from: error)
@@ -64,11 +86,90 @@ final class PlaybackStore {
     }
 
     func teardown() {
+        let finalTicks = currentPositionTicks()
+        let context = reportContext
+        removeProgressObserver()
         player?.pause()
         nowPlaying.stop()
         player = nil
+        reportContext = nil
         state = .idle
         deactivateAudioSession()
+
+        if let context, !didReportStopped {
+            didReportStopped = true
+            reportPlaybackStopped(context: context, positionTicks: finalTicks)
+        }
+    }
+
+    private func addProgressObserver(player: AVPlayer) {
+        let interval = CMTime(seconds: 10, preferredTimescale: 1)
+        progressObserver = player.addPeriodicTimeObserver(forInterval: interval, queue: .main) { [weak self, weak player] time in
+            MainActor.assumeIsolated {
+                guard let self, let player else { return }
+                self.reportPlaybackProgress(
+                    positionTicks: PlaybackTime.ticks(fromSeconds: time.seconds),
+                    isPaused: player.rate == 0
+                )
+            }
+        }
+    }
+
+    private func removeProgressObserver() {
+        if let progressObserver {
+            player?.removeTimeObserver(progressObserver)
+        }
+        progressObserver = nil
+    }
+
+    private func currentPositionTicks() -> Int {
+        guard let player else { return 0 }
+        return PlaybackTime.ticks(fromSeconds: player.currentTime().seconds)
+    }
+
+    private func reportPlaybackStart(context: PlaybackReportContext, player: AVPlayer) {
+        sendReport("start") { [self] in
+            try await self.session.client.send(
+                Paths.reportPlaybackStart(
+                    context.stateInfo(
+                        positionTicks: PlaybackTime.ticks(fromSeconds: player.currentTime().seconds),
+                        isPaused: false
+                    )
+                )
+            )
+        }
+    }
+
+    private func reportPlaybackProgress(positionTicks: Int, isPaused: Bool) {
+        guard let reportContext else { return }
+        sendReport("progress") { [self] in
+            try await self.session.client.send(
+                Paths.reportPlaybackProgress(
+                    reportContext.stateInfo(positionTicks: positionTicks, isPaused: isPaused)
+                )
+            )
+        }
+    }
+
+    private func reportPlaybackStopped(context: PlaybackReportContext, positionTicks: Int) {
+        sendReport("stopped") { [self] in
+            try await self.session.client.send(Paths.reportPlaybackStopped(context.stopInfo(positionTicks: positionTicks)))
+            await MainActor.run {
+                self.playbackRefresh.markPlaybackProgressChanged()
+            }
+        }
+    }
+
+    private func sendReport(_ kind: String, operation: @escaping () async throws -> Void) {
+        Task {
+            do {
+                try await operation()
+            } catch {
+                let gusError = GusError(from: error)
+                guard !gusError.isCancellation else { return }
+                logger.error("Playback \(kind, privacy: .public) report failed: \(gusError.localizedDescription, privacy: .public)")
+            }
+        }
     }
 
     // MARK: - Audio session (no-op on macOS, which has no AVAudioSession)

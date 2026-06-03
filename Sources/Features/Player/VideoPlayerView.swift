@@ -9,6 +9,7 @@ import SwiftUI
 /// tears it down on dismiss.
 struct VideoPlayerView: View {
     @Environment(SessionStore.self) private var session
+    @Environment(PlaybackRefreshStore.self) private var playbackRefresh
     @Environment(\.dismiss) private var dismiss
     let item: BaseItemDto
 
@@ -51,7 +52,7 @@ struct VideoPlayerView: View {
         #endif
         .task {
             if store == nil {
-                let store = PlaybackStore(item: item, session: session)
+                let store = PlaybackStore(item: item, session: session, playbackRefresh: playbackRefresh)
                 self.store = store
                 await store.prepare()
             }
