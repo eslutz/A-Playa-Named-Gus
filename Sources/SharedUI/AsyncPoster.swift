@@ -6,6 +6,7 @@ import SwiftUI
 /// placeholder/failure states so it feels first-party everywhere.
 struct AsyncPoster: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
 
     let url: URL?
     var contentMode: ContentMode = .fill
@@ -34,7 +35,10 @@ struct AsyncPoster: View {
 
     private var placeholder: some View {
         Rectangle()
-            .fill(.regularMaterial)
+            // When Reduce Transparency is on, Materials are semi-transparent and violate the
+            // preference. Fall back to an opaque tonal fill so the placeholder is clearly
+            // distinct without relying on the blurred background.
+            .fill(reduceTransparency ? AnyShapeStyle(Color.secondary.opacity(0.2)) : AnyShapeStyle(.regularMaterial))
             .overlay {
                 Image(systemName: placeholderSymbol)
                     .font(.largeTitle)

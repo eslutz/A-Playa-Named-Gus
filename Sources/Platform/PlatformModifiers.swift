@@ -17,11 +17,17 @@ extension Scene {
 /// The handful of cross-platform UI tweaks. Keeping them in one place means feature views
 /// stay free of `#if os(...)` noise and read like ordinary SwiftUI.
 extension View {
-    /// Pointer/Optic-ID hover lift on platforms that support it; no-op elsewhere.
+    /// Platform-appropriate hover/focus affordance for poster cards.
+    ///
+    /// - iOS / visionOS: `.lift` (card lift with shadow) per HIG guidance for tappable
+    ///   content tiles — the system applies focus scale/parallax automatically on tvOS,
+    ///   so no explicit effect is needed there.
+    /// - tvOS / macOS: no-op (system card-scale is applied by the focus engine on tvOS;
+    ///   cursor change is sufficient on macOS).
     @ViewBuilder
     func posterHoverEffect() -> some View {
         #if os(iOS) || os(visionOS)
-            hoverEffect(.highlight)
+            hoverEffect(.lift)
         #else
             self
         #endif

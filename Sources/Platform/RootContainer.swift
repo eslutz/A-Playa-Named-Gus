@@ -84,6 +84,22 @@ private enum SidebarItem: Hashable {
     case home
     case settings
     case library(String)
+
+    /// String key used with `SceneStorage` to restore sidebar selection across launches.
+    var sceneKey: String {
+        switch self {
+        case .home: return "home"
+        case .settings: return "settings"
+        case let .library(id): return "library:\(id)"
+        }
+    }
+
+    init?(sceneKey key: String) {
+        if key == "home" { self = .home }
+        else if key == "settings" { self = .settings }
+        else if key.hasPrefix("library:") { self = .library(String(key.dropFirst("library:".count))) }
+        else { return nil }
+    }
 }
 
 /// Split-view root (iPad, macOS, visionOS).
@@ -92,6 +108,8 @@ private struct SplitRootView: View {
     @Environment(SessionStore.self) private var session
     @State private var home: HomeStore?
     @State private var selection: SidebarItem? = .home
+    /// Persists the active sidebar row across app launches via SwiftUI scene restoration.
+    @SceneStorage("gus.sidebar.selection") private var storedSelectionKey: String = "home"
 
     var body: some View {
         NavigationSplitView {
@@ -162,6 +180,17 @@ private struct SplitRootView: View {
                 selection = .home
             case .settings:
                 selection = .settings
+            }
+        }
+        .onAppear {
+            // Restore sidebar selection from the previous session on launch.
+            if let restored = SidebarItem(sceneKey: storedSelectionKey) {
+                selection = restored
+            }
+        }
+        .onChange(of: selection) { _, newItem in
+            if let newItem {
+                storedSelectionKey = newItem.sceneKey
             }
         }
         .task {

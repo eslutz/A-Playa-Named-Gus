@@ -112,11 +112,16 @@ struct ItemDetailView: View {
                 Text(community).foregroundStyle(Color.gusRatingStar)
             }
             if let critic = item.criticRatingText {
-                Text("Critic \(critic)")
+                // Explicit String(localized:comment:) preserves the translator comment and
+                // avoids the implicit LocalizedStringKey coupling of Text interpolation.
+                Text(String(localized: "Critic \(critic)", comment: "Critic score label, e.g. 'Critic 74%'"))
             }
         }
         .font(.subheadline)
         .foregroundStyle(.secondary)
+        // Combine year, runtime, rating, and score into a single VoiceOver element so the
+        // row reads as one sentence rather than four separate focus stops.
+        .accessibilityElement(children: .combine)
     }
 }
 
@@ -160,6 +165,7 @@ private struct SeriesEpisodesView: View {
         VStack(alignment: .leading, spacing: 16) {
             Text("Episodes")
                 .font(.title2.bold())
+                .accessibilityAddTraits(.isHeader)
 
             LoadingStateView(
                 state: store.seasonsState,
@@ -237,5 +243,20 @@ private struct EpisodeRow: View {
         }
         .padding(.vertical, 8)
         .contentShape(Rectangle())
+        // Collapse the locator/title/runtime columns into one VoiceOver element.
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(episodeAccessibilityLabel)
+    }
+
+    private var episodeAccessibilityLabel: String {
+        var parts: [String] = []
+        if let locator = episode.episodeLocator {
+            parts.append(locator)
+        }
+        parts.append(episode.displayTitle)
+        if let runtime = episode.runtimeText {
+            parts.append(runtime)
+        }
+        return parts.joined(separator: ", ")
     }
 }

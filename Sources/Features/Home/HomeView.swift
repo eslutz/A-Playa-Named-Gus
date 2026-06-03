@@ -63,6 +63,7 @@ private struct ContinueWatchingRail: View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Continue Watching")
                 .font(.title2.bold())
+                .accessibilityAddTraits(.isHeader)
 
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(alignment: .top, spacing: 16) {
@@ -103,6 +104,7 @@ private struct LibrariesGrid: View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Libraries")
                 .font(.title2.bold())
+                .accessibilityAddTraits(.isHeader)
 
             LazyVGrid(columns: PosterGrid.columns, alignment: .leading, spacing: 24) {
                 ForEach(libraries, id: \.id) { library in
