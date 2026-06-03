@@ -33,6 +33,10 @@
       "comment" : "Item detail people metadata section title",
       "extractionState" : "manual"
     },
+    "Close Player" : {
+      "comment" : "Playback close button accessibility label",
+      "extractionState" : "manual"
+    },
     "Check that your Jellyfin server and this device are on the same network." : {
       "comment" : "Local server discovery empty-state guidance",
       "extractionState" : "manual"
@@ -69,6 +73,10 @@
       "comment" : "Connect screen local server discovery section title",
       "extractionState" : "manual"
     },
+    "Navigate" : {
+      "comment" : "Menu title for navigation commands",
+      "extractionState" : "manual"
+    },
     "No Episodes" : {
       "comment" : "Series detail empty-state title when a season has no episodes",
       "extractionState" : "manual"
@@ -87,6 +95,10 @@
     },
     "OK" : {
       "comment" : "Alert confirmation button title",
+      "extractionState" : "manual"
+    },
+    "Open Gus" : {
+      "comment" : "Top Shelf action that opens the app home screen",
       "extractionState" : "manual"
     },
     "Quick Connect" : {
@@ -123,6 +135,10 @@
     },
     "Starting Quick Connect" : {
       "comment" : "Quick Connect startup progress status",
+      "extractionState" : "manual"
+    },
+    "Starts playback for this item." : {
+      "comment" : "Play button accessibility hint",
       "extractionState" : "manual"
     },
     "Studios" : {
