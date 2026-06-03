@@ -1,0 +1,245 @@
+# Gus — Roadmap to App Store
+
+This is the source-of-truth plan for taking Gus from its first end-to-end slice to a
+shippable, App Store–ready, multiplatform app. It is organized into **milestones**; each
+milestone is a coherent unit of work broken into **features** with explicit acceptance
+criteria.
+
+**How to use this doc:** work milestones top-to-bottom (later ones assume earlier ones).
+Keep it current — when a feature lands or scope changes, check the box and adjust here in
+the same change. See `../CLAUDE.md` for the architecture and the native-first mandate that
+constrain *how* each item is built.
+
+## Conventions for this roadmap
+
+- `[ ]` not started · `[~]` in progress · `[x]` done.
+- Every feature names an **Acceptance** bar. A feature isn't done until it builds green on
+  all five destinations and meets that bar.
+- **Native-first** is assumed on every item: reach for the Apple/system API first; a
+  bespoke or third-party approach must be justified in the change that introduces it.
+
+## Global Definition of Done (applies to every milestone)
+
+- Builds green on iOS, iPadOS, tvOS, visionOS, macOS (`xcodegen generate` first).
+- No platform-only API leaks across targets; `#if os(...)` confined to `Platform/`.
+- New/changed user-facing strings are in the String Catalog.
+- New screens have loading / empty / error states (`LoadingStateView` +
+  `ContentUnavailableView`).
+- Accessibility: VoiceOver labels on interactive elements, Dynamic Type respected,
+  contrast ≥ WCAG AA for custom colors.
+- `Documentation/ROADMAP.md` and `CLAUDE.md` updated to match reality.
+
+---
+
+## M0 — Foundation slice ✅ (complete)
+
+The breadth-first vertical slice on all five platforms: connect → sign in → browse →
+detail → play → settings, plus the visionOS Gus Cinema immersive space. Project generated
+from `project.yml` (XcodeGen), `jellyfin-sdk-swift` as the only runtime dependency,
+Observation-based stores, pure-AVKit playback, Keychain token storage. All five
+destinations build; iOS launches and renders the Connect screen.
+
+---
+
+## M1 — Brand & Identity
+
+**Goal:** Gus looks like a finished product at first glance — real icon, considered launch
+and accent, consistent semantic theming.
+
+- [ ] **App icon (all platforms).** Earthy dark-green background `#2E3A24` with a muted
+  yellow pineapple silhouette `#C7A23C` (a muted sibling of `AccentColor` pineapple gold
+  `#F4B740`). Produce `AppIcon.appiconset` (iOS + macOS idioms), `AppIcon.brandassets`
+  (tvOS App Icon + Top Shelf), and `AppIcon.solidimagestack` (visionOS layered), all named
+  `AppIcon`; remove the `ASSETCATALOG_COMPILER_APPICON_NAME: ""` override in `project.yml`.
+  *Acceptance:* actool produces no missing-icon errors on any SDK; icon renders on each
+  Home screen / launcher.
+- [ ] **Launch experience.** Confirm `UILaunchScreen` presents cleanly; consider a minimal
+  branded launch on platforms that support it. *Acceptance:* no flash of unstyled content;
+  consistent first frame.
+- [ ] **Accent & semantic theme pass.** Centralize the Gus palette (accent + cinema
+  palette) as semantic color assets with light/dark variants; audit views for hardcoded
+  colors. *Acceptance:* light/dark both legible; no raw `Color(red:…)` in feature views.
+- [ ] **String Catalog baseline.** Move all current literal UI strings into
+  `Localizable.xcstrings` with comments. *Acceptance:* `SWIFT_EMIT_LOC_STRINGS` shows no
+  un-catalogued user-facing strings in changed files.
+
+---
+
+## M2 — Engineering Quality & CI
+
+**Goal:** the codebase is safe to grow — consistent errors, formatting, tests, and
+automated build verification. (Covers priority: *polish & testing*.)
+
+- [ ] **Error & cancellation model.** Introduce a small typed error surface and adopt
+  structured-concurrency cancellation (cancel in-flight loads on view disappearance / new
+  query). *Acceptance:* navigating away mid-load cancels the request; errors render via
+  `ContentUnavailableView`, never a silent failure.
+- [ ] **Logging consistency.** One `OSLog` category convention across stores/services; no
+  `print`. *Acceptance:* logs are filterable by subsystem/category in Console.
+- [ ] **Formatting & linting.** Add SwiftFormat (and/or SwiftLint) config as a build-time
+  dev tool with a documented `make`/script entry. *Acceptance:* `format` script is
+  idempotent; CI fails on violations.
+- [ ] **Unit test target.** Add `GusTests` covering pure logic: URL normalization,
+  `SessionCredential.account`, `StreamURLBuilder` profile/URL selection,
+  `BaseItemDto+Display` formatting, `ServerStore` round-trip. *Acceptance:*
+  `xcodebuild test` passes; meaningful assertions (not smoke-only).
+- [ ] **UI smoke test (optional).** One XCUITest: launch → Connect screen renders.
+  *Acceptance:* runs in CI on the iOS simulator.
+- [ ] **CI pipeline.** GitHub Actions (macOS runner): `xcodegen generate` → resolve →
+  build all five destinations → run tests → lint. *Acceptance:* green check required on
+  every PR; matrix covers all platforms.
+- [ ] **Update `project.yml` for the test target & schemes.** *Acceptance:* generated
+  project includes test target; `-scheme Gus` test action works.
+
+---
+
+## M3 — Core Feature Completeness
+
+**Goal:** the app does what users expect of a Jellyfin client. (Covers priority:
+*deferred features*.)
+
+- [ ] **Search.** Global search (`Paths.getItems` with `searchTerm`) surfaced per platform
+  (`.searchable`, tvOS search tab). *Acceptance:* debounced, cancellable, paginated
+  results with a no-results state.
+- [ ] **Series → seasons → episodes.** Detail hierarchy for shows (`getItems` by
+  parent/`getSeasons`/`getEpisodes`) with season picker and episode list. *Acceptance:*
+  can navigate Series → Season → Episode → Play.
+- [ ] **Richer item metadata.** People (cast/crew), genres, studios, community/critic
+  ratings, taglines on the detail screen. *Acceptance:* fields render when present, degrade
+  gracefully when absent.
+- [ ] **Playback progress reporting.** `Paths.reportPlaybackStart/Progress/Stopped` so
+  resume + Continue Watching stay accurate; resume from saved position. *Acceptance:*
+  server reflects progress; "Continue Watching" updates after playback.
+- [ ] **Multi-user / multi-server switching.** Account switcher in Settings; store and pick
+  among known `StoredUser`s/servers (tokens already keyed by `serverID:userID`).
+  *Acceptance:* switch without re-entering credentials; sign out one without affecting
+  others.
+- [ ] **Quick Connect.** `getQuickConnectEnabled` → `signIn(quickConnectSecret:)`.
+  *Acceptance:* code-based sign-in works where the server enables it; hidden when disabled.
+- [ ] **Bonjour discovery (optional).** `JellyfinClient.discover()` behind the
+  `NSLocalNetworkUsageDescription` permission, with manual entry still primary.
+  *Acceptance:* discovered servers are selectable; permission prompt only when used.
+
+---
+
+## M4 — Playback Depth
+
+**Goal:** playback is competitive and system-integrated.
+
+- [ ] **Audio & subtitle track selection.** Expose `MediaStream`s; let the user switch
+  audio/subtitle tracks (request appropriate stream indices / transcode). *Acceptance:*
+  track changes apply; selection persists within a session.
+- [ ] **Picture in Picture.** Enable PiP where supported (iOS/iPadOS/macOS) and verify the
+  background-audio + `UIBackgroundModes` path. *Acceptance:* PiP starts on backgrounding;
+  audio continues.
+- [ ] **AirPlay & external displays.** Verify AVKit AirPlay routing. *Acceptance:* route
+  picker works; playback hands off cleanly.
+- [ ] **Now Playing artwork & metadata polish.** Load poster into `MPMediaItemArtwork`
+  (platform image), accurate duration/elapsed/rate. *Acceptance:* lock screen / Control
+  Center / Apple TV Remote show artwork + correct scrubbing.
+- [ ] **Chapters & next-up.** Chapter markers if present; auto-play next episode / up-next
+  prompt. *Acceptance:* chapter skip works; next episode offered at credits.
+- [ ] **visionOS Cinema integration.** Sync the immersive Cinema with the active player
+  (state, dismissal). *Acceptance:* entering/leaving Cinema never interrupts windowed
+  audio; graceful fallback if the space can't open.
+
+---
+
+## M5 — Platform Polish & Accessibility (HIG pass)
+
+**Goal:** each platform feels first-party; the app is fully accessible and localized.
+
+- [ ] **tvOS.** Focus engine polish (poster focus scaling, sensible focus order), Top Shelf
+  content, large-canvas layout. *Acceptance:* navigable entirely by remote; focus never
+  trapped/lost.
+- [ ] **visionOS.** Ornaments/toolbars, `.glassBackgroundEffect()` on panels, hover
+  effects, real look-to-scroll, depth-aware layout. *Acceptance:* matches HIG immersive
+  guidance; comfortable at default scale.
+- [ ] **macOS.** Menu-bar commands (`Commands`), keyboard shortcuts, window sizing/restore,
+  toolbar. *Acceptance:* core actions have menu items + shortcuts; window state restores.
+- [ ] **iPad.** Pointer/keyboard support, multitasking/Stage Manager sizing,
+  split-view tuning. *Acceptance:* usable with keyboard/trackpad; adapts to all size
+  classes.
+- [ ] **Accessibility audit.** VoiceOver across every screen, Dynamic Type to the largest
+  sizes, contrast, Reduce Motion/Transparency. *Acceptance:* a representative VoiceOver
+  pass completes each core flow; no clipping at AX5.
+- [ ] **Localization pass.** Finalize the base catalog; verify pseudolocalization &
+  layout. *Acceptance:* no hardcoded strings; UI survives pseudoloc.
+
+---
+
+## M6 — Performance & Resilience
+
+**Goal:** smooth with large libraries and flaky networks.
+
+- [ ] **Library pagination / lazy loading.** Page `getItems` with infinite scroll and
+  prefetch. *Acceptance:* a 5k-item library scrolls smoothly; memory stays bounded.
+- [ ] **Image pipeline tuning.** Right-size `URLCache`, request appropriately sized images,
+  cancel offscreen loads. *Acceptance:* no redundant full-size fetches; scroll stays
+  jank-free.
+- [ ] **Network resilience.** Timeouts, retry/backoff where sensible, offline-tolerant
+  empty states, reachability messaging. *Acceptance:* server-down and slow-network paths
+  degrade gracefully, never hang.
+- [ ] **(Optional, may defer post-launch) Offline downloads.** Evaluate scope; likely a
+  post-1.0 feature. *Acceptance:* explicit go/no-go recorded here.
+
+---
+
+## M7 — App Store Readiness
+
+**Goal:** everything Apple requires to accept and review the app.
+
+- [ ] **Privacy manifest & nutrition labels.** Add `PrivacyInfo.xcprivacy` (declare any
+  required-reason APIs and data use) and complete App Privacy answers (data not collected
+  by Gus itself; connects to a user-provided server). *Acceptance:* validates; labels match
+  behavior.
+- [ ] **Signing & capabilities.** Real Team/bundle id, automatic signing, per-platform
+  capability review (background audio, sandbox on macOS, Optic ID string). *Acceptance:*
+  Release archives sign for each platform.
+- [ ] **App Store Connect record.** Create the app, set categories, age rating, support &
+  marketing URLs, description, keywords. *Acceptance:* record complete and consistent
+  across platforms.
+- [ ] **Screenshots & previews.** Required sizes for iPhone/iPad/Apple TV/Vision Pro/Mac
+  (scripted via `simctl` where possible). *Acceptance:* all required slots filled.
+- [ ] **Review-guidelines compliance audit.** Walk the
+  [App Review Guidelines](https://developer.apple.com/app-store/review/guidelines/):
+  third-party-server clients, ATS justification (`NSAllowsArbitraryLoads` for self-hosted
+  HTTP), no private API, export-compliance (`ITSAppUsesNonExemptEncryption=false`).
+  *Acceptance:* documented self-audit with no open red flags.
+- [ ] **TestFlight beta.** Upload, internal/external testing, gather crash/feedback.
+  *Acceptance:* a clean build runs from TestFlight on each platform.
+
+---
+
+## M8 — Submission & Launch
+
+**Goal:** ship 1.0 and be ready to respond.
+
+- [ ] **Release regression matrix.** Full pass of every core flow on every platform on the
+  Release build. *Acceptance:* checklist signed off.
+- [ ] **Archive & upload** each platform; attach metadata; submit for review. *Acceptance:*
+  "Waiting for Review" on all.
+- [ ] **Review response.** Address any rejections; resubmit. *Acceptance:* "Ready for
+  Sale."
+- [ ] **Post-launch.** Monitor crash/feedback; triage into a 1.0.x / next-version backlog.
+  *Acceptance:* monitoring in place; backlog seeded.
+
+---
+
+## Cross-cutting: documentation (continuous)
+
+Treat documentation as part of every milestone, not a phase:
+
+- [ ] Keep this roadmap and `CLAUDE.md` accurate as scope evolves.
+- [ ] Record significant technical decisions as short ADRs in `Documentation/adr/`
+  (e.g., "AVKit-only playback", "Observation over ObservableObject", "XcodeGen as project
+  source of truth"), so the *why* survives.
+- [ ] Keep `README.md` aligned with the current build/verify story.
+
+## Priority mapping (from the kickoff)
+
+- **App icon** → M1.
+- **Polish & testing** → M2 (engineering quality/CI), continued in M5 (accessibility/HIG)
+  and M6 (performance).
+- **Deferred features** (search, multi-user, fuller metadata, progress reporting, Quick
+  Connect, Bonjour) → M3, with playback-side depth in M4.
