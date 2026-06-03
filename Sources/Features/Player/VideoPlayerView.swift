@@ -81,8 +81,16 @@ struct VideoPlayerView: View {
         #endif
         #if os(visionOS)
         .overlay(alignment: .topTrailing) {
-            if store?.isSpatialPlaybackActive == true {
-                SpatialPlaybackBadge()
+            if let store {
+                VStack(alignment: .trailing, spacing: 8) {
+                    if store.isSpatialPlaybackActive {
+                        SpatialPlaybackBadge()
+                    }
+
+                    if let notice = store.stereoFallbackNotice {
+                        StereoFallbackNotice(text: notice)
+                    }
+                }
             }
         }
         #endif
@@ -91,11 +99,14 @@ struct VideoPlayerView: View {
                 let store = PlaybackStore(item: item, session: session, playbackRefresh: playbackRefresh, downloads: downloads)
                 self.store = store
                 await store.prepare()
-                #if os(visionOS)
-                    await presentFramePackedCinemaIfNeeded(store)
-                #endif
             }
         }
+        #if os(visionOS)
+        .task(id: store?.stereoPresentation) {
+            guard let store else { return }
+            await syncFramePackedCinemaIfNeeded(store)
+        }
+        #endif
         .onDisappear {
             #if os(visionOS)
                 closeFramePackedCinemaIfNeeded()
@@ -108,15 +119,19 @@ struct VideoPlayerView: View {
 #if os(visionOS)
     private extension VideoPlayerView {
         @MainActor
-        func presentFramePackedCinemaIfNeeded(_ store: PlaybackStore) async {
+        func syncFramePackedCinemaIfNeeded(_ store: PlaybackStore) async {
             guard
-                !openedFramePackedCinema,
                 let layout = store.stereoPresentation.framePackedLayout,
                 let player = store.player
-            else { return }
+            else {
+                closeFramePackedCinemaIfNeeded()
+                return
+            }
 
-            openedFramePackedCinema = true
             cinema.present(player: player, title: item.displayTitle, stereoLayout: layout)
+
+            guard !openedFramePackedCinema else { return }
+            openedFramePackedCinema = true
 
             guard !cinema.isOpen else { return }
 
@@ -163,6 +178,22 @@ struct VideoPlayerView: View {
                 .accessibilityLabel("Spatial")
         }
     }
+
+    private struct StereoFallbackNotice: View {
+        let text: String
+
+        var body: some View {
+            Label(text, systemImage: "info.circle")
+                .font(.callout.weight(.semibold))
+                .labelStyle(.titleAndIcon)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .background(.ultraThinMaterial, in: Capsule())
+                .foregroundStyle(.white)
+                .padding(.horizontal)
+                .accessibilityLabel(text)
+        }
+    }
 #endif
 
 private struct PlaybackControlsOverlay: View {
@@ -170,6 +201,10 @@ private struct PlaybackControlsOverlay: View {
 
     var body: some View {
         HStack(spacing: 14) {
+            #if os(visionOS)
+                ViewingModeMenu(store: store)
+            #endif
+
             if !store.audioOptions.isEmpty {
                 Menu {
                     ForEach(store.audioOptions) { option in
@@ -233,6 +268,30 @@ private struct PlaybackControlsOverlay: View {
         .background(.ultraThinMaterial)
     }
 }
+
+#if os(visionOS)
+    private struct ViewingModeMenu: View {
+        let store: PlaybackStore
+
+        var body: some View {
+            Menu {
+                viewingModeButton(.automatic, title: "Auto", systemImage: "wand.and.stars")
+                viewingModeButton(.twoD, title: "2D", systemImage: "rectangle")
+                viewingModeButton(.spatial, title: "Spatial", systemImage: "view.3d")
+            } label: {
+                Label("Viewing Mode", systemImage: "view.3d")
+            }
+        }
+
+        private func viewingModeButton(_ mode: Stereo3DViewingMode, title: LocalizedStringKey, systemImage: String) -> some View {
+            Button {
+                Task { await store.selectViewingMode(mode) }
+            } label: {
+                Label(title, systemImage: store.viewingMode == mode ? "checkmark" : systemImage)
+            }
+        }
+    }
+#endif
 
 /// Platform-divergent player surface.
 private struct PlayerSurface: View {

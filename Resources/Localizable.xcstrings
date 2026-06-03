@@ -5,6 +5,18 @@
       "comment" : "Settings section title",
       "extractionState" : "manual"
     },
+    "2D" : {
+      "comment" : "visionOS playback viewing mode option for monoscopic video",
+      "extractionState" : "manual"
+    },
+    "3D not supported for this format - playing in 2D" : {
+      "comment" : "Playback notice for unsupported stereoscopic video formats such as MVC",
+      "extractionState" : "manual"
+    },
+    "3D unavailable - playing in 2D" : {
+      "comment" : "Playback notice when 3D direct play is unavailable and playback falls back to 2D",
+      "extractionState" : "manual"
+    },
     "Account" : {
       "comment" : "Settings section title",
       "extractionState" : "manual"
@@ -27,6 +39,10 @@
     },
     "Approve this code in Jellyfin on another device." : {
       "comment" : "Quick Connect instructions shown with a polling code",
+      "extractionState" : "manual"
+    },
+    "Auto" : {
+      "comment" : "visionOS playback viewing mode option for automatic 3D detection",
       "extractionState" : "manual"
     },
     "Cancel" : {
@@ -447,6 +463,10 @@
     },
     "Version" : {
       "comment" : "App version label",
+      "extractionState" : "manual"
+    },
+    "Viewing Mode" : {
+      "comment" : "visionOS playback menu for choosing Auto, 2D, or Spatial video presentation",
       "extractionState" : "manual"
     },
     "Watch %@ in Gus Cinema" : {

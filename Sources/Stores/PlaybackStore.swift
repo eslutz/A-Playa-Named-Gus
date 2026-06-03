@@ -23,6 +23,8 @@ final class PlaybackStore {
     private(set) var nextUpItem: BaseItemDto?
     private(set) var isNextUpPromptVisible = false
     private(set) var stereoPresentation: Stereo3DPresentation = .native2D
+    private(set) var stereoFallbackNotice: String?
+    private(set) var viewingMode: Stereo3DViewingMode = .automatic
 
     private(set) var item: BaseItemDto
     private let session: SessionStore
@@ -70,8 +72,11 @@ final class PlaybackStore {
         stereoPresentation.usesImmersiveFramePackedRenderer
     }
 
-    func fallbackToWindowed2D() {
+    func fallbackToWindowed2D(notice: String? = nil) {
         stereoPresentation = .native2D
+        if let notice {
+            stereoFallbackNotice = notice
+        }
     }
 
     func prepare() async {
@@ -101,6 +106,12 @@ final class PlaybackStore {
         )
     }
 
+    func selectViewingMode(_ mode: Stereo3DViewingMode) async {
+        guard viewingMode != mode else { return }
+        viewingMode = mode
+        await rebuildCurrentItemPreservingPosition()
+    }
+
     func playNextUp() async {
         guard let nextUpItem else { return }
         teardown(reportStopped: true)
@@ -118,6 +129,7 @@ final class PlaybackStore {
 
     private func loadPlayback(startTimeTicks: Int?, replacingCurrentItem: Bool) async {
         state = .loading
+        stereoFallbackNotice = nil
         configureAudioSession()
 
         guard let itemID = item.id else {
@@ -134,7 +146,7 @@ final class PlaybackStore {
                 playbackURL = resolvePlaybackURL(local: localURL, remote: localURL)
                 stereoPresentation = .native2D
             } else {
-                let requestedPresentation = Media3DDetector.presentation(for: item)
+                let requestedPresentation = Media3DDetector.presentation(for: item, viewingMode: viewingMode)
                 let remoteResolution = try await NetworkRetryPolicy.idempotent.run {
                     try await self.session.streamBuilder.resolvePlayback(
                         for: itemID,
@@ -145,7 +157,14 @@ final class PlaybackStore {
                 }
                 resolution = remoteResolution
                 playbackURL = resolvePlaybackURL(local: nil, remote: remoteResolution.url)
-                stereoPresentation = remoteResolution.stereoFallbackReason == nil ? requestedPresentation : .native2D
+                stereoPresentation = effectiveStereoPresentation(
+                    requested: requestedPresentation,
+                    resolution: remoteResolution
+                )
+                stereoFallbackNotice = fallbackNotice(
+                    requested: requestedPresentation,
+                    resolution: remoteResolution
+                )
             }
             logger.info("Playing \(self.item.name ?? "item", privacy: .public) (local: \(localURL != nil, privacy: .public), transcoding: \(resolution?.isTranscoding == true, privacy: .public))")
 
@@ -208,6 +227,8 @@ final class PlaybackStore {
         player = nil
         reportContext = nil
         state = .idle
+        stereoPresentation = .native2D
+        stereoFallbackNotice = nil
         deactivateAudioSession()
 
         if reportStopped, let context, !didReportStopped {
@@ -285,6 +306,38 @@ final class PlaybackStore {
                 logger.error("Playback \(kind, privacy: .public) report failed: \(gusError.localizedDescription, privacy: .public)")
             }
         }
+    }
+
+    private func effectiveStereoPresentation(
+        requested: Stereo3DPresentation,
+        resolution: StreamURLBuilder.Resolution?
+    ) -> Stereo3DPresentation {
+        guard resolution?.stereoFallbackReason == nil else { return .native2D }
+        if case .unsupported3D = requested {
+            return .native2D
+        }
+        return requested
+    }
+
+    private func fallbackNotice(
+        requested: Stereo3DPresentation,
+        resolution: StreamURLBuilder.Resolution?
+    ) -> String? {
+        if case .unsupported3D = requested {
+            return String(
+                localized: "3D not supported for this format - playing in 2D",
+                comment: "Playback notice for unsupported stereoscopic video formats such as MVC"
+            )
+        }
+
+        if resolution?.stereoFallbackReason != nil {
+            return String(
+                localized: "3D unavailable - playing in 2D",
+                comment: "Playback notice when 3D direct play is unavailable and playback falls back to 2D"
+            )
+        }
+
+        return nil
     }
 
     private func loadNextUpIfNeeded() async {

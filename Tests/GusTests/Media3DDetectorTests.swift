@@ -91,4 +91,16 @@ struct Media3DDetectorTests {
 
         #expect(Stereo3DScreenMetrics.samplingPlan(for: .mvHEVC) == nil)
     }
+
+    @Test("viewing mode override can force 2D or native spatial on visionOS")
+    func viewingModeOverrideForces2DOrSpatial() {
+        let framePackedItem = BaseItemDto(video3DFormat: .halfSideBySide)
+        let ordinaryHEVC = BaseItemDto(mediaStreams: [
+            MediaStream(codec: "hevc", title: "Vacation", type: .video),
+        ])
+
+        #expect(Media3DDetector.presentation(for: framePackedItem, on: .visionOS, viewingMode: .twoD) == .native2D)
+        #expect(Media3DDetector.presentation(for: ordinaryHEVC, on: .visionOS, viewingMode: .spatial) == .nativeSpatial)
+        #expect(Media3DDetector.presentation(for: ordinaryHEVC, on: .other, viewingMode: .spatial) == .native2D)
+    }
 }

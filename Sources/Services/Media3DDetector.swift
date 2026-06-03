@@ -53,6 +53,12 @@ enum Stereo3DPresentation: Equatable {
     }
 }
 
+enum Stereo3DViewingMode: Equatable, CaseIterable {
+    case automatic
+    case twoD
+    case spatial
+}
+
 enum Media3DDetector {
     enum PlaybackPlatform: Equatable {
         case visionOS
@@ -81,11 +87,21 @@ enum Media3DDetector {
 
     static func presentation(
         for item: BaseItemDto,
-        on platform: PlaybackPlatform = currentPlatform
+        on platform: PlaybackPlatform = currentPlatform,
+        viewingMode: Stereo3DViewingMode = .automatic
     ) -> Stereo3DPresentation {
         guard platform == .visionOS else { return .native2D }
 
         let layout = layout(for: item)
+        switch viewingMode {
+        case .automatic:
+            break
+        case .twoD:
+            return .native2D
+        case .spatial:
+            return layout == .multiviewCoding ? .unsupported3D(layout) : .nativeSpatial
+        }
+
         switch layout {
         case .mvHEVC:
             return .nativeSpatial
