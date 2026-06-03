@@ -46,13 +46,17 @@ destinations build; iOS launches and renders the Connect screen.
 **Goal:** Gus looks like a finished product at first glance — real icon, considered launch
 and accent, consistent semantic theming.
 
-- [ ] **App icon (all platforms).** Earthy dark-green background `#2E3A24` with a muted
-  yellow pineapple silhouette `#C7A23C` (a muted sibling of `AccentColor` pineapple gold
-  `#F4B740`). Produce `AppIcon.appiconset` (iOS + macOS idioms), `AppIcon.brandassets`
-  (tvOS App Icon + Top Shelf), and `AppIcon.solidimagestack` (visionOS layered), all named
-  `AppIcon`; remove the `ASSETCATALOG_COMPILER_APPICON_NAME: ""` override in `project.yml`.
+- [x] **App icon (all platforms).** Muted Psych-green background `#3F5A25` with a muted
+  yellow pineapple `#C7A23C` (a muted sibling of `AccentColor` pineapple gold `#F4B740`) —
+  egg-shaped body with a diamond crosshatch lattice and a tight, mostly upright spiky crown.
+  Produce
+  `AppIcon.appiconset` (iOS + macOS idioms), `AppIcon.brandassets` (tvOS App Icon + Top
+  Shelf), and `AppIcon.solidimagestack` (visionOS layered), all named `AppIcon`; remove the
+  `ASSETCATALOG_COMPILER_APPICON_NAME: ""` override in `project.yml`.
   *Acceptance:* actool produces no missing-icon errors on any SDK; icon renders on each
-  Home screen / launcher.
+  Home screen / launcher. *(Done: a placeholder pineapple generated with Core Graphics; all
+  five destinations build green and actool bakes `AppIcon` per platform. The artwork is a
+  clean placeholder — final brand polish can refine it later.)*
 - [ ] **Launch experience.** Confirm `UILaunchScreen` presents cleanly; consider a minimal
   branded launch on platforms that support it. *Acceptance:* no flash of unstyled content;
   consistent first frame.
