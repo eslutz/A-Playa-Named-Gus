@@ -7,6 +7,7 @@ struct LoadingStateView<Content: View>: View {
     var isEmpty: Bool = false
     var emptyTitle: String = "Nothing Here Yet"
     var emptySymbol: String = "tray"
+    var retryAction: (() -> Void)?
     @ViewBuilder var content: () -> Content
 
     var body: some View {
@@ -20,6 +21,10 @@ struct LoadingStateView<Content: View>: View {
                 Label("Something Went Wrong", systemImage: "exclamationmark.triangle")
             } description: {
                 Text(message)
+            } actions: {
+                if let retryAction {
+                    Button("Try Again", action: retryAction)
+                }
             }
         case .loaded:
             if isEmpty {

@@ -10,6 +10,8 @@ import Foundation
 /// `HTTPURLResponse`; the generic network/unknown paths cover thrown SDK errors.
 enum GusError: LocalizedError, Equatable {
     case network(String)
+    case offline
+    case timeout
     case unauthorized
     case server(String)
     case notFound
@@ -20,6 +22,10 @@ enum GusError: LocalizedError, Equatable {
         switch self {
         case let .network(detail):
             return String(localized: "Couldn't reach the server. \(detail)", comment: "Network error with detail")
+        case .offline:
+            return String(localized: "The server appears to be offline. Check your connection and try again.", comment: "Offline network error")
+        case .timeout:
+            return String(localized: "The server took too long to respond. Try again in a moment.", comment: "Timeout network error")
         case .unauthorized:
             return String(localized: "Your session has expired. Please sign in again.", comment: "401 / unauthorized error")
         case let .server(message):
@@ -43,7 +49,18 @@ enum GusError: LocalizedError, Equatable {
         if error is CancellationError {
             self = .cancelled
         } else if let urlError = error as? URLError {
-            self = urlError.code == .cancelled ? .cancelled : .network(urlError.localizedDescription)
+            switch urlError.code {
+            case .cancelled:
+                self = .cancelled
+            case .timedOut:
+                self = .timeout
+            case .notConnectedToInternet, .networkConnectionLost, .cannotConnectToHost, .cannotFindHost, .dnsLookupFailed:
+                self = .offline
+            default:
+                self = .network(urlError.localizedDescription)
+            }
+        } else if let gusError = error as? GusError {
+            self = gusError
         } else {
             self = .unknown(error.localizedDescription)
         }

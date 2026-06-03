@@ -52,7 +52,9 @@ final class ItemDetailStore {
 
         do {
             if let id = item.id {
-                let response = try await session.client.send(Paths.getItem(itemID: id, userID: session.user.id))
+                let response = try await NetworkRetryPolicy.idempotent.run {
+                    try await session.client.send(Paths.getItem(itemID: id, userID: session.user.id))
+                }
                 item = response.value
             }
 
@@ -97,7 +99,9 @@ final class SeriesDetailStore {
 
         do {
             let parameters = SeriesRequest.seasonsParameters(userID: session.user.id)
-            let response = try await session.client.send(Paths.getSeasons(seriesID: seriesID, parameters: parameters))
+            let response = try await NetworkRetryPolicy.idempotent.run {
+                try await session.client.send(Paths.getSeasons(seriesID: seriesID, parameters: parameters))
+            }
             seasons = response.value.items ?? []
             selectedSeasonID = SeriesRequest.initialSeasonID(from: seasons)
             seasonsState = .loaded
@@ -126,7 +130,9 @@ final class SeriesDetailStore {
 
         do {
             let parameters = SeriesRequest.episodesParameters(userID: session.user.id, seasonID: seasonID)
-            let response = try await session.client.send(Paths.getEpisodes(seriesID: seriesID, parameters: parameters))
+            let response = try await NetworkRetryPolicy.idempotent.run {
+                try await session.client.send(Paths.getEpisodes(seriesID: seriesID, parameters: parameters))
+            }
             episodes = response.value.items ?? []
             episodesState = .loaded
         } catch {

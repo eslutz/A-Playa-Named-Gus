@@ -39,7 +39,9 @@ final class HomeStore {
 
     private func loadLibraries() async throws -> [BaseItemDto] {
         let parameters = Paths.GetUserViewsParameters(userID: session.user.id)
-        let response = try await session.client.send(Paths.getUserViews(parameters: parameters))
+        let response = try await NetworkRetryPolicy.idempotent.run {
+            try await session.client.send(Paths.getUserViews(parameters: parameters))
+        }
         return response.value.items ?? []
     }
 
@@ -52,7 +54,9 @@ final class HomeStore {
             includeItemTypes: [.movie, .episode],
             enableImages: true
         )
-        let response = try await session.client.send(Paths.getResumeItems(parameters: parameters))
+        let response = try await NetworkRetryPolicy.idempotent.run {
+            try await session.client.send(Paths.getResumeItems(parameters: parameters))
+        }
         return response.value.items ?? []
     }
 }
