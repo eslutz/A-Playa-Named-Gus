@@ -8,8 +8,30 @@ struct ItemDetailView: View {
     let item: BaseItemDto
 
     @State private var playerItem: ItemRef?
+    @State private var store: ItemDetailStore?
 
     var body: some View {
+        Group {
+            if let store {
+                LoadingStateView(state: store.state) {
+                    detailContent(for: store.item, seriesStore: store.seriesStore)
+                }
+            } else {
+                ProgressView()
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
+        }
+        .task {
+            if store == nil {
+                let store = ItemDetailStore(item: item, session: session)
+                self.store = store
+                await store.load()
+            }
+        }
+        .playerPresentation(item: $playerItem)
+    }
+
+    private func detailContent(for item: BaseItemDto, seriesStore: SeriesDetailStore?) -> some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
                 AsyncPoster(
@@ -24,7 +46,7 @@ struct ItemDetailView: View {
                 Text(item.displayTitle)
                     .font(.largeTitle.bold())
 
-                metadataRow
+                metadataRow(for: item)
 
                 HStack(spacing: 16) {
                     Button {
@@ -47,16 +69,21 @@ struct ItemDetailView: View {
                         .foregroundStyle(.secondary)
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }
+
+                RichMetadataView(item: item)
+
+                if let seriesStore {
+                    SeriesEpisodesView(store: seriesStore)
+                }
             }
             .padding()
             .frame(maxWidth: 900, alignment: .leading)
             .frame(maxWidth: .infinity)
         }
         .lookToScroll()
-        .playerPresentation(item: $playerItem)
     }
 
-    private var metadataRow: some View {
+    private func metadataRow(for item: BaseItemDto) -> some View {
         HStack(spacing: 12) {
             if let year = item.yearText {
                 Label(year, systemImage: "calendar").labelStyle(.titleOnly)
@@ -73,8 +100,130 @@ struct ItemDetailView: View {
             if let community = item.communityRatingText {
                 Text(community).foregroundStyle(Color.gusRatingStar)
             }
+            if let critic = item.criticRatingText {
+                Text("Critic \(critic)")
+            }
         }
         .font(.subheadline)
         .foregroundStyle(.secondary)
+    }
+}
+
+private struct RichMetadataView: View {
+    let item: BaseItemDto
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            if let tagline = item.primaryTagline {
+                Text(tagline)
+                    .font(.title3)
+                    .foregroundStyle(.secondary)
+            }
+
+            if let genreText = item.genreText {
+                LabeledContent("Genres", value: genreText)
+            }
+
+            if let studioText = item.studioText {
+                LabeledContent("Studios", value: studioText)
+            }
+
+            if !item.peopleText.isEmpty {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Cast & Crew")
+                        .font(.headline)
+                    ForEach(item.peopleText, id: \.self) { person in
+                        Text(person)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
+        }
+    }
+}
+
+private struct SeriesEpisodesView: View {
+    let store: SeriesDetailStore
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("Episodes")
+                .font(.title2.bold())
+
+            LoadingStateView(
+                state: store.seasonsState,
+                isEmpty: store.seasons.isEmpty,
+                emptyTitle: "No Seasons",
+                emptySymbol: "rectangle.stack"
+            ) {
+                Picker("Season", selection: seasonSelection) {
+                    ForEach(store.seasons, id: \.id) { season in
+                        Text(season.displayTitle)
+                            .tag(season.id ?? "")
+                    }
+                }
+                .pickerStyle(.menu)
+
+                LoadingStateView(
+                    state: store.episodesState,
+                    isEmpty: store.episodes.isEmpty,
+                    emptyTitle: "No Episodes",
+                    emptySymbol: "play.rectangle"
+                ) {
+                    LazyVStack(alignment: .leading, spacing: 12) {
+                        ForEach(store.episodes, id: \.id) { episode in
+                            NavigationLink(value: ItemRef(item: episode)) {
+                                EpisodeRow(episode: episode)
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private var seasonSelection: Binding<String> {
+        Binding {
+            store.selectedSeasonID ?? ""
+        } set: { id in
+            Task {
+                await store.selectSeason(id: id)
+            }
+        }
+    }
+}
+
+private struct EpisodeRow: View {
+    let episode: BaseItemDto
+
+    var body: some View {
+        HStack(alignment: .firstTextBaseline, spacing: 12) {
+            Text(episode.episodeLocator ?? episode.displayTitle)
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .frame(width: 64, alignment: .leading)
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(episode.displayTitle)
+                    .font(.headline)
+                if let overview = episode.overview, !overview.isEmpty {
+                    Text(overview)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(2)
+                }
+            }
+
+            Spacer()
+
+            if let runtime = episode.runtimeText {
+                Text(runtime)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .padding(.vertical, 8)
+        .contentShape(Rectangle())
     }
 }

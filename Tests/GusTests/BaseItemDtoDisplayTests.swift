@@ -40,4 +40,35 @@ struct BaseItemDtoDisplayTests {
 
         #expect(item.playbackProgress == 0.375)
     }
+
+    @Test("formats richer optional metadata only when fields are present")
+    func formatsRicherMetadata() {
+        let item = BaseItemDto(
+            criticRating: 83,
+            genres: ["Comedy", "Mystery"],
+            people: [
+                BaseItemPerson(name: "James Roday Rodriguez", role: "Shawn Spencer"),
+                BaseItemPerson(name: "Dule Hill"),
+            ],
+            studios: [NameIDPair(name: "USA Network")],
+            taglines: ["Fake psychic. Real detective."]
+        )
+
+        #expect(item.criticRatingText == "83%")
+        #expect(item.genreText == "Comedy, Mystery")
+        #expect(item.studioText == "USA Network")
+        #expect(item.primaryTagline == "Fake psychic. Real detective.")
+        #expect(item.peopleText == ["James Roday Rodriguez as Shawn Spencer", "Dule Hill"])
+    }
+
+    @Test("omits empty richer metadata")
+    func omitsEmptyRicherMetadata() {
+        let item = BaseItemDto(genres: [], people: [], studios: [], taglines: [])
+
+        #expect(item.criticRatingText == nil)
+        #expect(item.genreText == nil)
+        #expect(item.studioText == nil)
+        #expect(item.primaryTagline == nil)
+        #expect(item.peopleText.isEmpty)
+    }
 }

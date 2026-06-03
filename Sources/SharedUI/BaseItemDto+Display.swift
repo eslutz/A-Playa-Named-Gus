@@ -36,9 +36,51 @@ extension BaseItemDto {
         return String(format: "★ %.1f", rating)
     }
 
+    var criticRatingText: String? {
+        guard let rating = criticRating else { return nil }
+        return "\(Int(rating.rounded()))%"
+    }
+
+    var genreText: String? {
+        joinedNonEmpty(genres)
+    }
+
+    var studioText: String? {
+        joinedNonEmpty(studios?.compactMap(\.name))
+    }
+
+    var primaryTagline: String? {
+        taglines?.first { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+    }
+
+    var peopleText: [String] {
+        (people ?? [])
+            .prefix(8)
+            .compactMap { person in
+                guard let name = person.name?.trimmingCharacters(in: .whitespacesAndNewlines),
+                      !name.isEmpty
+                else { return nil }
+
+                if let role = person.role?.trimmingCharacters(in: .whitespacesAndNewlines),
+                   !role.isEmpty
+                {
+                    return "\(name) as \(role)"
+                }
+                return name
+            }
+    }
+
     /// Fractional playback progress (0...1) from resume data, if any.
     var playbackProgress: Double? {
         guard let percentage = userData?.playedPercentage else { return nil }
         return percentage / 100.0
+    }
+
+    private func joinedNonEmpty(_ values: [String]?) -> String? {
+        let cleaned = (values ?? [])
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+        guard !cleaned.isEmpty else { return nil }
+        return cleaned.joined(separator: ", ")
     }
 }

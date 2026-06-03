@@ -11,6 +11,7 @@ extension Logger {
         case home = "Home"
         case library = "Library"
         case search = "Search"
+        case item = "Item"
         case playback = "Playback"
         case stream = "Stream"
         case keychain = "Keychain"
