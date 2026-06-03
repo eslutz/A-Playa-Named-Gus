@@ -30,7 +30,6 @@ final class DownloadSessionCoordinator: NSObject, DownloadSessionCoordinating, U
     static let backgroundIdentifier = "dev.ericslutz.gus.downloads"
 
     weak var eventHandler: DownloadSessionCoordinatorEventHandler?
-    var backgroundCompletionHandler: (() -> Void)?
 
     private let logger = Logger(category: .downloads)
     private let lock = NSLock()
@@ -41,7 +40,12 @@ final class DownloadSessionCoordinator: NSObject, DownloadSessionCoordinating, U
 
     private lazy var session: URLSession = {
         let configuration = URLSessionConfiguration.background(withIdentifier: Self.backgroundIdentifier)
-        configuration.sessionSendsLaunchEvents = true
+        // We intentionally keep a pure SwiftUI lifecycle (no AppDelegate), so we do not
+        // service `handleEventsForBackgroundURLSession` background relaunches. Transfers
+        // still complete in the system daemon while suspended/terminated; completed events
+        // are replayed via `reconnectActiveTasks()` on the next launch. Disabling launch
+        // events avoids the system spinning the app up only to find no handler.
+        configuration.sessionSendsLaunchEvents = false
         configuration.isDiscretionary = false
         configuration.waitsForConnectivity = true
         configuration.timeoutIntervalForRequest = 30
@@ -152,14 +156,6 @@ final class DownloadSessionCoordinator: NSObject, DownloadSessionCoordinating, U
         Task { @MainActor [weak self] in
             guard let self else { return }
             eventHandler?.downloadSessionCoordinator(self, didFailWith: error, resumeData: resumeData, recordID: recordID)
-        }
-    }
-
-    func urlSessionDidFinishEvents(forBackgroundURLSession session: URLSession) {
-        let completionHandler = backgroundCompletionHandler
-        backgroundCompletionHandler = nil
-        DispatchQueue.main.async {
-            completionHandler?()
         }
     }
 

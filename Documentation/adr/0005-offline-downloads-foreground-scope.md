@@ -38,10 +38,18 @@ Gus downloads are:
 - Per server/user: records and files are stored under an Application Support folder scoped
   by server ID and user ID, excluded from device backup.
 
-The SwiftUI app adds a minimal `@UIApplicationDelegateAdaptor` on iOS/visionOS solely for
-`application(_:handleEventsForBackgroundURLSession:completionHandler:)`. This is the
-system callback required to finish processing background URLSession events; it is not a
-general UIKit lifecycle takeover.
+To preserve the project's pure SwiftUI lifecycle (no AppDelegate), the app does **not**
+implement `application(_:handleEventsForBackgroundURLSession:completionHandler:)` — that
+callback has no SwiftUI-lifecycle equivalent and would require a `UIApplicationDelegate`.
+It is only an optimization for servicing background relaunches, not a correctness
+requirement: transfers complete in the system URLSession daemon while the app is suspended
+or terminated, and `DownloadSessionCoordinator.reconnectActiveTasks()` (called when
+`OfflineDownloadStore` is constructed at launch) recreates the background session with the
+stable identifier so the system replays completion events. `sessionSendsLaunchEvents` is
+set to `false` accordingly, so the system does not relaunch the app for events it cannot
+acknowledge. The trade-off — completed-while-terminated downloads reconcile on the next
+app launch rather than during a background relaunch — is negligible for a media client and
+keeps the architecture genuinely AppDelegate-free.
 
 ## Rationale
 

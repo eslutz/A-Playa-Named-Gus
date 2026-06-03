@@ -6,10 +6,6 @@ import SwiftUI
 /// injected via `@Environment`; on visionOS an `ImmersiveSpace` hosts the "Gus Cinema".
 @main
 struct GusApp: App {
-    #if os(iOS) || os(visionOS)
-        @UIApplicationDelegateAdaptor(GusAppDelegate.self) private var appDelegate
-    #endif
-
     @State private var appModel = AppModel()
     @State private var appNavigation = AppNavigationModel()
     @State private var playbackRefresh = PlaybackRefreshStore()
