@@ -309,7 +309,9 @@ Treat documentation as part of every milestone, not a phase:
 - [x] Record significant technical decisions as short ADRs in `Documentation/adr/`
   (e.g., "AVKit-only playback", "Observation over ObservableObject", "XcodeGen as project
   source of truth"), so the *why* survives.
-- [ ] Keep `README.md` aligned with the current build/verify story.
+- [x] Keep `README.md` aligned with the current build/verify story. *(Done: README covers
+  the current connect→browse/search→detail→play→settings/downloads flow, offline downloads
+  scope, the five-destination build, and the unit/UI test action.)*
 
 ---
 
