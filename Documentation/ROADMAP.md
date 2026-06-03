@@ -325,10 +325,15 @@ milestone only after the launch scope is stable.
   quick resume queue, server/session status, and lightweight download/playback controls
   where watchOS APIs allow. *Acceptance:* a watchOS product brief defines the minimum useful
   feature set, platform constraints, and whether it ships as a companion-only target.
-- [ ] **visionOS 3D video playback.** Add support for stereoscopic/spatial video playback
+- [~] **visionOS 3D video playback.** Add support for stereoscopic/spatial video playback
   on Vision Pro where Jellyfin item metadata and media formats can identify suitable 3D
   sources. *Acceptance:* supported 3D formats are documented, playback chooses the correct
   AVKit/visionOS presentation path, and unsupported formats fall back gracefully.
+  *(Planned: see `Documentation/visionos-3d-playback-plan.md`. Two tiers: MV-HEVC spatial
+  via native AVKit direct play; frame-packed SBS/TAB via RealityKit shader in the Cinema
+  ImmersiveSpace. MVC and non-visionOS platforms degrade to 2D. Key pre-implementation
+  unknown: MV-HEVC auto-detection from Jellyfin metadata — validate on a real spatial file
+  before committing to Feature 1.)*
 - [ ] **Expanded immersive environments.** Enhance Gus Cinema with additional native
   RealityKit environments or scene variants that remain comfortable, performant, and
   playback-focused. *Acceptance:* users can choose from multiple immersive environments,
