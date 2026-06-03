@@ -57,15 +57,19 @@ and accent, consistent semantic theming.
   Home screen / launcher. *(Done: a placeholder pineapple generated with Core Graphics; all
   five destinations build green and actool bakes `AppIcon` per platform. The artwork is a
   clean placeholder — final brand polish can refine it later.)*
-- [ ] **Launch experience.** Confirm `UILaunchScreen` presents cleanly; consider a minimal
+- [x] **Launch experience.** Confirm `UILaunchScreen` presents cleanly; consider a minimal
   branded launch on platforms that support it. *Acceptance:* no flash of unstyled content;
-  consistent first frame.
-- [ ] **Accent & semantic theme pass.** Centralize the Gus palette (accent + cinema
+  consistent first frame. *(Done: iOS/iPadOS use a color-only `UILaunchScreen` backed by
+  the `LaunchBackground` asset.)*
+- [x] **Accent & semantic theme pass.** Centralize the Gus palette (accent + cinema
   palette) as semantic color assets with light/dark variants; audit views for hardcoded
   colors. *Acceptance:* light/dark both legible; no raw `Color(red:…)` in feature views.
-- [ ] **String Catalog baseline.** Move all current literal UI strings into
+  *(Done: cinema colors live in asset catalog colorsets; windowed UI uses semantic color
+  tokens where custom color is needed.)*
+- [x] **String Catalog baseline.** Move all current literal UI strings into
   `Localizable.xcstrings` with comments. *Acceptance:* `SWIFT_EMIT_LOC_STRINGS` shows no
-  un-catalogued user-facing strings in changed files.
+  un-catalogued user-facing strings in changed files. *(Done: the base catalog is seeded
+  with current UI and user-facing error strings.)*
 
 ---
 
@@ -74,26 +78,34 @@ and accent, consistent semantic theming.
 **Goal:** the codebase is safe to grow — consistent errors, formatting, tests, and
 automated build verification. (Covers priority: *polish & testing*.)
 
-- [ ] **Error & cancellation model.** Introduce a small typed error surface and adopt
+- [x] **Error & cancellation model.** Introduce a small typed error surface and adopt
   structured-concurrency cancellation (cancel in-flight loads on view disappearance / new
   query). *Acceptance:* navigating away mid-load cancels the request; errors render via
-  `ContentUnavailableView`, never a silent failure.
-- [ ] **Logging consistency.** One `OSLog` category convention across stores/services; no
-  `print`. *Acceptance:* logs are filterable by subsystem/category in Console.
-- [ ] **Formatting & linting.** Add SwiftFormat (and/or SwiftLint) config as a build-time
+  `ContentUnavailableView`, never a silent failure. *(Done: `GusError` maps common error
+  cases and stores/views ignore cancellation instead of surfacing stale failures.)*
+- [x] **Logging consistency.** One `OSLog` category convention across stores/services; no
+  `print`. *Acceptance:* logs are filterable by subsystem/category in Console. *(Done:
+  `Logger(category:)` centralizes the subsystem and categories.)*
+- [x] **Formatting & linting.** Add SwiftFormat (and/or SwiftLint) config as a build-time
   dev tool with a documented `make`/script entry. *Acceptance:* `format` script is
-  idempotent; CI fails on violations.
-- [ ] **Unit test target.** Add `GusTests` covering pure logic: URL normalization,
+  idempotent; CI fails on violations. *(Done: `.swiftformat`, `Scripts/format.sh`, and CI
+  lint are present.)*
+- [x] **Unit test target.** Add `GusTests` covering pure logic: URL normalization,
   `SessionCredential.account`, `StreamURLBuilder` profile/URL selection,
   `BaseItemDto+Display` formatting, `ServerStore` round-trip. *Acceptance:*
-  `xcodebuild test` passes; meaningful assertions (not smoke-only).
-- [ ] **UI smoke test (optional).** One XCUITest: launch → Connect screen renders.
-  *Acceptance:* runs in CI on the iOS simulator.
-- [ ] **CI pipeline.** GitHub Actions (macOS runner): `xcodegen generate` → resolve →
+  `xcodebuild test` passes; meaningful assertions (not smoke-only). *(Done: Swift Testing
+  unit coverage is wired into the `Gus` scheme.)*
+- [x] **UI smoke test (optional).** One XCUITest: launch → Connect screen renders.
+  *Acceptance:* runs in CI on the iOS simulator. *(Done: `GusLaunchUITests` verifies the
+  Connect screen renders.)*
+- [x] **CI pipeline.** GitHub Actions (macOS runner): `xcodegen generate` → resolve →
   build all five destinations → run tests → lint. *Acceptance:* green check required on
-  every PR; matrix covers all platforms.
-- [ ] **Update `project.yml` for the test target & schemes.** *Acceptance:* generated
-  project includes test target; `-scheme Gus` test action works.
+  every PR; matrix covers all platforms. *(Done: CI requires iOS/macOS build, iOS tests,
+  and SwiftFormat lint; tvOS/visionOS simulator builds are best-effort on hosted runners
+  because simulator availability varies.)*
+- [x] **Update `project.yml` for the test target & schemes.** *Acceptance:* generated
+  project includes test target; `-scheme Gus` test action works. *(Done: `GusTests` and
+  `GusUITests` are generated and included in the scheme test action.)*
 
 ---
 
@@ -235,7 +247,7 @@ automated build verification. (Covers priority: *polish & testing*.)
 Treat documentation as part of every milestone, not a phase:
 
 - [ ] Keep this roadmap and `CLAUDE.md` accurate as scope evolves.
-- [ ] Record significant technical decisions as short ADRs in `Documentation/adr/`
+- [x] Record significant technical decisions as short ADRs in `Documentation/adr/`
   (e.g., "AVKit-only playback", "Observation over ObservableObject", "XcodeGen as project
   source of truth"), so the *why* survives.
 - [ ] Keep `README.md` aligned with the current build/verify story.

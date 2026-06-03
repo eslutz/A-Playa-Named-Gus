@@ -1,0 +1,68 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-test-lint:
+    name: Build, Test, Lint
+    runs-on: macos-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Select latest installed Xcode
+        run: |
+          set -euo pipefail
+          latest_xcode="$(find /Applications -maxdepth 1 -name 'Xcode*.app' -print | sort | tail -1)"
+          if [ -z "$latest_xcode" ]; then
+            echo "No Xcode installation found under /Applications"
+            exit 1
+          fi
+          sudo xcode-select -s "$latest_xcode/Contents/Developer"
+          xcodebuild -version
+
+      - name: Install build tools
+        run: brew install xcodegen swiftformat
+
+      - name: Generate Xcode project
+        run: xcodegen generate
+
+      - name: Resolve packages
+        run: xcodebuild -resolvePackageDependencies -project Gus.xcodeproj -scheme Gus
+
+      - name: SwiftFormat lint
+        run: swiftformat Sources Tests --lint
+
+      - name: Pick iOS simulator
+        id: ios-sim
+        run: |
+          set -euo pipefail
+          sim_name="$(xcrun simctl list devices available | awk -F '[()]' '/iPhone/ { gsub(/^[ \t]+|[ \t]+$/, "", $1); print $1; exit }')"
+          if [ -z "$sim_name" ]; then
+            echo "No available iPhone simulator found"
+            exit 1
+          fi
+          echo "destination=platform=iOS Simulator,name=$sim_name" >> "$GITHUB_OUTPUT"
+
+      - name: Build iOS
+        run: xcodebuild -project Gus.xcodeproj -scheme Gus -destination '${{ steps.ios-sim.outputs.destination }}' build
+
+      - name: Build macOS
+        run: xcodebuild -project Gus.xcodeproj -scheme Gus -destination 'platform=macOS' build
+
+      - name: Test iOS
+        run: xcodebuild test -project Gus.xcodeproj -scheme Gus -destination '${{ steps.ios-sim.outputs.destination }}'
+
+      - name: Build tvOS best effort
+        continue-on-error: true
+        run: xcodebuild -project Gus.xcodeproj -scheme Gus -destination 'generic/platform=tvOS Simulator' build
+
+      - name: Build visionOS best effort
+        continue-on-error: true
+        run: xcodebuild -project Gus.xcodeproj -scheme Gus -destination 'generic/platform=visionOS Simulator' build
