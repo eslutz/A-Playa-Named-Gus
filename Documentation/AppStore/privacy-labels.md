@@ -1,42 +1,62 @@
-# App Privacy Labels Draft
+# App Privacy Labels
 
-Default position: Gus itself does not collect data for the developer and does not track
-users. The app communicates with user-provided Jellyfin servers, and the server operator's
-own privacy practices are outside Gus.
+Gus does not collect data for the developer and does not track users. The app communicates
+with user-provided Jellyfin servers; the server operator's own privacy practices are outside
+the scope of this document.
 
-Apple's App Store Connect privacy flow requires answers to be accurate and updated if data
-practices change.
+Apple's App Store Connect privacy flow requires these answers to be accurate and updated if
+data practices change. The declarations below mirror `Resources/PrivacyInfo.xcprivacy`
+exactly — update both together.
 
 ## Tracking
 
-- Tracking: No.
-- Third-party advertising or data broker sharing: No.
-- Analytics SDKs: None.
+- **Tracking:** No.
+- **Third-party advertising or data broker sharing:** No.
+- **Analytics SDKs:** None.
 
-## Data Linked To User
+## Data Collected by Developer
 
-Proposed answer for Gus developer-side collection: none.
+**Data linked to user:** None.
+**Data not linked to user:** None.
 
-Rationale: Jellyfin usernames, server URLs, tokens, media metadata, playback progress, and
-downloaded media remain on device or are sent to the user-selected Jellyfin server, not to
-the Gus developer.
+Jellyfin usernames, server URLs, tokens, media metadata, playback progress, and downloaded
+media remain on-device or are sent to the user-selected Jellyfin server. Nothing is routed
+through a Gus developer backend.
 
-## Data Not Linked To User
+## Privacy Manifest (PrivacyInfo.xcprivacy)
 
-Proposed answer for Gus developer-side collection: none.
+`Resources/PrivacyInfo.xcprivacy` is bundled with the app. Declarations:
 
-## Device Permissions / Explanations
+| Field | Value |
+|---|---|
+| NSPrivacyTracking | false |
+| NSPrivacyTrackingDomains | (empty) |
+| NSPrivacyCollectedDataTypes | (empty) |
 
-- Local Network: user-initiated Jellyfin discovery.
-- Background audio: media playback continuation and system playback controls.
-- Face ID / Optic ID string: protects Jellyfin sign-in security surfaces where the platform
-  requests the usage description.
+### Required-reason APIs declared
 
-## Submission TODO
+| Category | Reason | Call site |
+|---|---|---|
+| NSPrivacyAccessedAPICategoryDiskSpace | 85F4.1 | `OfflineDownloadStore.ensureDiskBudget` checks `volumeAvailableCapacityForImportantUsage` before starting a download |
+| NSPrivacyAccessedAPICategoryUserDefaults | CA92.1 | `AppModel` (last-signed-in user ID), `DeviceIdentity` (stable device UUID), `@SceneStorage` (sidebar selection) — app-own keys only |
 
-- Confirm no Apple diagnostic/crash reporting choice changes the developer-side privacy
+### Required-reason APIs not declared (not used)
+
+File timestamp APIs, System boot time APIs, Active keyboard APIs — none are called in Gus
+source code.
+
+## Device Permissions / Usage Descriptions
+
+| Key | Reason |
+|---|---|
+| NSLocalNetworkUsageDescription | User-initiated Jellyfin server discovery (Bonjour). Manual URL entry remains primary. |
+| NSFaceIDUsageDescription | Protects Jellyfin sign-in surfaces on platforms that prompt for a usage description. |
+| UIBackgroundModes: audio | Media playback continuation, Now Playing, and system transport controls via AVKit. |
+
+## Remaining Submission Steps
+
+- Confirm no Apple diagnostic/crash-reporting opt-in changes the developer-side privacy
   statement.
-- Add the privacy policy URL for iOS, iPadOS, macOS, and visionOS.
+- Add the privacy policy URL for iOS, iPadOS, macOS, and visionOS in App Store Connect.
 - Add tvOS privacy policy text in the Apple TV Privacy Policy field.
-- Add `PrivacyInfo.xcprivacy` if required-reason API declarations are needed for the final
-  binary.
+- Complete App Privacy answers in App Store Connect, using this document as the source.

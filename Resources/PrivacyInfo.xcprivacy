@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- Gus does not track users or collect data for the developer. -->
+	<key>NSPrivacyTracking</key>
+	<false/>
+
+	<!-- No cross-app or cross-site tracking domains. -->
+	<key>NSPrivacyTrackingDomains</key>
+	<array/>
+
+	<!--
+		Gus collects no data on behalf of the developer. Jellyfin credentials,
+		server URLs, tokens, media metadata, playback progress, and downloaded
+		files remain on-device or are sent to the user-selected Jellyfin server.
+	-->
+	<key>NSPrivacyCollectedDataTypes</key>
+	<array/>
+
+	<!--
+		Required-reason API declarations.
+
+		Audited against Sources/ — only two categories apply:
+
+		1. Disk space (NSPrivacyAccessedAPICategoryDiskSpace)
+		   volumeAvailableCapacityForImportantUsage is called in
+		   OfflineDownloadStore.ensureDiskBudget to refuse a download when free
+		   space falls below 1 GB. Reason 85F4.1: display to the user the amount
+		   of storage their app is using, and a request to manage that storage.
+
+		2. User defaults (NSPrivacyAccessedAPICategoryUserDefaults)
+		   UserDefaults.standard is written by:
+		     - AppModel: persists the last-signed-in user ID.
+		     - DeviceIdentity: persists a stable per-install device UUID.
+		   @SceneStorage (backed by UserDefaults) persists the sidebar selection.
+		   All keys are app-own — not shared via an App Group.
+		   Reason CA92.1: access info from the same app that wrote it.
+
+		Not declared (not used in Gus):
+		   File timestamp, System boot time, Active keyboard APIs.
+	-->
+	<key>NSPrivacyAccessedAPITypes</key>
+	<array>
+		<dict>
+			<key>NSPrivacyAccessedAPIType</key>
+			<string>NSPrivacyAccessedAPICategoryDiskSpace</string>
+			<key>NSPrivacyAccessedAPITypeReasons</key>
+			<array>
+				<string>85F4.1</string>
+			</array>
+		</dict>
+		<dict>
+			<key>NSPrivacyAccessedAPIType</key>
+			<string>NSPrivacyAccessedAPICategoryUserDefaults</string>
+			<key>NSPrivacyAccessedAPITypeReasons</key>
+			<array>
+				<string>CA92.1</string>
+			</array>
+		</dict>
+	</array>
+</dict>
+</plist>
