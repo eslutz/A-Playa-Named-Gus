@@ -53,6 +53,10 @@
       "comment" : "Local server discovery error-state title",
       "extractionState" : "manual"
     },
+    "Empty Library" : {
+      "comment" : "Empty-state title when a library contains no items",
+      "extractionState" : "manual"
+    },
     "Episodes" : {
       "comment" : "Series detail episodes section title",
       "extractionState" : "manual"

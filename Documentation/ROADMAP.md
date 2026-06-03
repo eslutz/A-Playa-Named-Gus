@@ -7,7 +7,7 @@ criteria.
 
 **How to use this doc:** work milestones top-to-bottom (later ones assume earlier ones).
 Keep it current — when a feature lands or scope changes, check the box and adjust here in
-the same change. See `../CLAUDE.md` for the architecture and the native-first mandate that
+the same change. See `../AGENTS.md` or `../CLAUDE.md` for the architecture and the native-first mandate that
 constrain *how* each item is built.
 
 ## Conventions for this roadmap
@@ -27,7 +27,7 @@ constrain *how* each item is built.
   `ContentUnavailableView`).
 - Accessibility: VoiceOver labels on interactive elements, Dynamic Type respected,
   contrast ≥ WCAG AA for custom colors.
-- `Documentation/ROADMAP.md` and `CLAUDE.md` updated to match reality.
+- `Documentation/ROADMAP.md`, `AGENTS.md`, and `CLAUDE.md` updated to match reality.
 
 ---
 
@@ -187,11 +187,13 @@ automated build verification. (Covers priority: *polish & testing*.)
   effects, real look-to-scroll, depth-aware layout. *Acceptance:* matches HIG immersive
   guidance; comfortable at default scale. *(Done: signed-in panels use glass, split-view
   toolbar actions expose fixed destinations, Cinema control moves to a bottom ornament,
-  and look-to-scroll is enabled when available.)*
+  and look-to-scroll is enabled when available. Z-offset depth layout is deferred — the
+  current flat layout reads cleanly at the default visionOS scale.)*
 - [x] **macOS.** Menu-bar commands (`Commands`), keyboard shortcuts, window sizing/restore,
   toolbar. *Acceptance:* core actions have menu items + shortcuts; window state restores.
-  *(Done: app-level Commands route home/search/settings and sign out, fixed window sizing
-  is set, and split-view toolbar actions mirror the command destinations.)*
+  *(Done: app-level Commands route home/search/settings and sign out, window sizing is set
+  via `defaultSize`/`windowResizability`, `SceneStorage` restores the sidebar selection
+  across launches, and split-view toolbar actions mirror the command destinations.)*
 - [x] **iPad.** Pointer/keyboard support, multitasking/Stage Manager sizing,
   split-view tuning. *Acceptance:* usable with keyboard/trackpad; adapts to all size
   classes. *(Done: hover affordances remain system-native, keyboard route shortcuts are
@@ -199,14 +201,15 @@ automated build verification. (Covers priority: *polish & testing*.)
 - [x] **Accessibility audit.** VoiceOver across every screen, Dynamic Type to the largest
   sizes, contrast, Reduce Motion/Transparency. *Acceptance:* a representative VoiceOver
   pass completes each core flow; no clipping at AX5. *(Done: poster cards expose combined
-  accessibility labels, playback controls gain labels/hints, motion/transparency settings
-  are respected, and the iOS launch UI test covers the largest accessibility content
-  size.)*
+  accessibility labels, playback controls have labels/hints, section headers are marked
+  `.isHeader` for VoiceOver rotor navigation, episode rows emit combined locator/title/
+  runtime labels, the metadata row is combined into one focus stop, and Reduce
+  Transparency replaces the Material placeholder with an opaque tonal fill.)*
 - [x] **Localization pass.** Finalize the base catalog; verify pseudolocalization &
-  layout. *Acceptance:* no hardcoded strings; UI survives pseudoloc. *(Done: new command,
-  Top Shelf, and accessibility strings are in `Localizable.xcstrings`; the catalog builds
-  successfully across the platform matrix, and the Connect launch smoke covers
-  pseudolocalization at the largest accessibility size.)*
+  layout. *Acceptance:* no hardcoded strings; UI survives pseudoloc. *(Done: all user-
+  facing strings are in `Localizable.xcstrings` with comments; the critic rating uses
+  explicit `String(localized:comment:)` with a translator comment; the catalog builds
+  successfully across the platform matrix.)*
 
 ---
 
