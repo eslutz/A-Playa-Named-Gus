@@ -38,10 +38,20 @@ private struct TabRootView: View {
         TabView {
             Tab("Home", systemImage: "house") {
                 NavigationStack {
-                    HomeView()
+                    SearchRootView {
+                        HomeView()
+                    }
                         .gusItemDestinations()
                 }
             }
+            #if os(tvOS)
+                Tab("Search", systemImage: "magnifyingglass") {
+                    NavigationStack {
+                        SearchView()
+                            .gusItemDestinations()
+                    }
+                }
+            #endif
             Tab("Settings", systemImage: "gearshape") {
                 NavigationStack {
                     SettingsView()
@@ -85,7 +95,9 @@ private struct SplitRootView: View {
             #endif
         } detail: {
             NavigationStack {
-                detail
+                SearchRootView {
+                    detail
+                }
                     .gusItemDestinations()
             }
         }

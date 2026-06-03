@@ -10,6 +10,7 @@ extension Logger {
         case session = "Session"
         case home = "Home"
         case library = "Library"
+        case search = "Search"
         case playback = "Playback"
         case stream = "Stream"
         case keychain = "Keychain"
