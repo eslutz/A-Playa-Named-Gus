@@ -12,6 +12,7 @@ struct SignInView: View {
     @State private var password = ""
     @State private var isSigningIn = false
     @State private var errorMessage: String?
+    @State private var quickConnectStore: QuickConnectStore?
 
     var body: some View {
         Form {
@@ -25,6 +26,8 @@ struct SignInView: View {
             } footer: {
                 Text("Connecting to \(server.url.absoluteString)")
             }
+
+            quickConnectSection
 
             if let errorMessage {
                 Section {
@@ -47,6 +50,68 @@ struct SignInView: View {
         }
         .formStyle(.grouped)
         .navigationTitle(server.name)
+        .task {
+            await refreshQuickConnectAvailability()
+        }
+        .onDisappear {
+            quickConnectStore?.cancel()
+        }
+    }
+
+    @ViewBuilder
+    private var quickConnectSection: some View {
+        if let quickConnectStore, quickConnectStore.isAvailable {
+            Section("Quick Connect") {
+                switch quickConnectStore.state {
+                case .idle:
+                    Button {
+                        quickConnectStore.start()
+                    } label: {
+                        Label("Use Quick Connect", systemImage: "bolt.horizontal.circle")
+                    }
+
+                case .starting:
+                    HStack {
+                        Text("Starting Quick Connect")
+                        Spacer()
+                        ProgressView()
+                    }
+
+                case let .polling(code):
+                    LabeledContent("Code", value: code)
+                        .monospacedDigit()
+                    Text("Approve this code in Jellyfin on another device.")
+                        .font(.callout)
+                        .foregroundStyle(.secondary)
+                    Button("Cancel", role: .cancel) {
+                        quickConnectStore.cancel()
+                    }
+
+                case let .signingIn(code):
+                    if let code {
+                        LabeledContent("Code", value: code)
+                            .monospacedDigit()
+                    }
+                    HStack {
+                        Text("Signing In")
+                        Spacer()
+                        ProgressView()
+                    }
+
+                case .signedIn:
+                    Label("Signed In", systemImage: "checkmark.circle")
+
+                case let .failed(message):
+                    Label(message, systemImage: "exclamationmark.triangle")
+                        .foregroundStyle(.red)
+                    Button {
+                        quickConnectStore.start()
+                    } label: {
+                        Label("Try Quick Connect Again", systemImage: "arrow.clockwise")
+                    }
+                }
+            }
+        }
     }
 
     private func signIn() {
@@ -62,5 +127,13 @@ struct SignInView: View {
                 errorMessage = error.localizedDescription
             }
         }
+    }
+
+    private func refreshQuickConnectAvailability() async {
+        if quickConnectStore == nil {
+            quickConnectStore = QuickConnectStore(server: server, appModel: appModel)
+        }
+
+        await quickConnectStore?.refreshAvailability()
     }
 }

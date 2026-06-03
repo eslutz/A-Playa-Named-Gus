@@ -169,26 +169,28 @@ final class AppModel {
             throw ConnectError.authenticationFailed
         }
 
-        guard let token = result.accessToken,
-              let userDto = result.user,
-              let userID = userDto.id
-        else { throw ConnectError.authenticationFailed }
+        try completeSignIn(to: server, client: client, result: result, fallbackName: username)
+    }
 
-        let user = StoredUser(
-            id: userID,
-            name: userDto.name ?? username,
-            serverID: server.id,
-            primaryImageTag: userDto.primaryImageTag
+    func signIn(to server: ServerConnection, quickConnectSecret: String) async throws {
+        let client = JellyfinClientFactory.makeClient(url: server.url)
+
+        let result: AuthenticationResult
+        do {
+            result = try await client.signIn(quickConnectSecret: quickConnectSecret)
+        } catch {
+            let gusError = GusError(from: error)
+            guard !gusError.isCancellation else { throw error }
+            logger.error("Quick Connect sign in failed: \(gusError.localizedDescription, privacy: .public)")
+            throw ConnectError.authenticationFailed
+        }
+
+        try completeSignIn(
+            to: server,
+            client: client,
+            result: result,
+            fallbackName: String(localized: "Jellyfin User", comment: "Fallback display name for a signed-in Jellyfin user")
         )
-
-        tokenStore.setToken(token, for: SessionCredential(user: user))
-        upsert(server: server)
-        upsert(user: user)
-        lastSignedInUserID = userID
-
-        // `signIn` already set the access token on this client's configuration.
-        currentSession = SessionStore(client: client, user: user, server: server)
-        logger.info("Signed in user \(user.name, privacy: .public)")
     }
 
     // MARK: - Sign out
@@ -231,6 +233,34 @@ final class AppModel {
             users.append(user)
         }
         serverStore.saveUsers(users)
+    }
+
+    private func completeSignIn(
+        to server: ServerConnection,
+        client: JellyfinClient,
+        result: AuthenticationResult,
+        fallbackName: String
+    ) throws {
+        guard let token = result.accessToken,
+              let userDto = result.user,
+              let userID = userDto.id
+        else { throw ConnectError.authenticationFailed }
+
+        let user = StoredUser(
+            id: userID,
+            name: userDto.name ?? fallbackName,
+            serverID: server.id,
+            primaryImageTag: userDto.primaryImageTag
+        )
+
+        tokenStore.setToken(token, for: SessionCredential(user: user))
+        upsert(server: server)
+        upsert(user: user)
+        lastSignedInUserID = userID
+
+        // SDK sign-in methods already set the access token on this client's configuration.
+        currentSession = SessionStore(client: client, user: user, server: server)
+        logger.info("Signed in user \(user.name, privacy: .public)")
     }
 
     // MARK: - URL helpers

@@ -13,6 +13,7 @@ extension Logger {
         case search = "Search"
         case item = "Item"
         case playback = "Playback"
+        case quickConnect = "QuickConnect"
         case stream = "Stream"
         case keychain = "Keychain"
         case serverStore = "ServerStore"
