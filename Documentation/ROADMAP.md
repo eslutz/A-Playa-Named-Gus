@@ -310,3 +310,24 @@ Treat documentation as part of every milestone, not a phase:
   (e.g., "AVKit-only playback", "Observation over ObservableObject", "XcodeGen as project
   source of truth"), so the *why* survives.
 - [ ] Keep `README.md` aligned with the current build/verify story.
+
+---
+
+## Future Features
+
+These are intentionally outside the 1.0 App Store path above. Promote them into a
+milestone only after the launch scope is stable.
+
+- [ ] **watchOS companion app.** Explore a focused watchOS experience instead of a full
+  video client. Candidate scope: remote control for active playback, Now Playing glance,
+  quick resume queue, server/session status, and lightweight download/playback controls
+  where watchOS APIs allow. *Acceptance:* a watchOS product brief defines the minimum useful
+  feature set, platform constraints, and whether it ships as a companion-only target.
+- [ ] **visionOS 3D video playback.** Add support for stereoscopic/spatial video playback
+  on Vision Pro where Jellyfin item metadata and media formats can identify suitable 3D
+  sources. *Acceptance:* supported 3D formats are documented, playback chooses the correct
+  AVKit/visionOS presentation path, and unsupported formats fall back gracefully.
+- [ ] **Expanded immersive environments.** Enhance Gus Cinema with additional native
+  RealityKit environments or scene variants that remain comfortable, performant, and
+  playback-focused. *Acceptance:* users can choose from multiple immersive environments,
+  environment changes do not interrupt playback, and the default remains simple and stable.
