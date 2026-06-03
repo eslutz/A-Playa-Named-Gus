@@ -178,22 +178,35 @@ automated build verification. (Covers priority: *polish & testing*.)
 
 **Goal:** each platform feels first-party; the app is fully accessible and localized.
 
-- [ ] **tvOS.** Focus engine polish (poster focus scaling, sensible focus order), Top Shelf
+- [x] **tvOS.** Focus engine polish (poster focus scaling, sensible focus order), Top Shelf
   content, large-canvas layout. *Acceptance:* navigable entirely by remote; focus never
-  trapped/lost.
-- [ ] **visionOS.** Ornaments/toolbars, `.glassBackgroundEffect()` on panels, hover
+  trapped/lost. *(Done: poster navigation preserves native focus styling, related rails
+  and grids are grouped for focus, and a static `GusTopShelf` extension opens home,
+  search, and settings via `gus://` routes.)*
+- [x] **visionOS.** Ornaments/toolbars, `.glassBackgroundEffect()` on panels, hover
   effects, real look-to-scroll, depth-aware layout. *Acceptance:* matches HIG immersive
-  guidance; comfortable at default scale.
-- [ ] **macOS.** Menu-bar commands (`Commands`), keyboard shortcuts, window sizing/restore,
+  guidance; comfortable at default scale. *(Done: signed-in panels use glass, split-view
+  toolbar actions expose fixed destinations, Cinema control moves to a bottom ornament,
+  and look-to-scroll is enabled when available.)*
+- [x] **macOS.** Menu-bar commands (`Commands`), keyboard shortcuts, window sizing/restore,
   toolbar. *Acceptance:* core actions have menu items + shortcuts; window state restores.
-- [ ] **iPad.** Pointer/keyboard support, multitasking/Stage Manager sizing,
+  *(Done: app-level Commands route home/search/settings and sign out, fixed window sizing
+  is set, and split-view toolbar actions mirror the command destinations.)*
+- [x] **iPad.** Pointer/keyboard support, multitasking/Stage Manager sizing,
   split-view tuning. *Acceptance:* usable with keyboard/trackpad; adapts to all size
-  classes.
-- [ ] **Accessibility audit.** VoiceOver across every screen, Dynamic Type to the largest
+  classes. *(Done: hover affordances remain system-native, keyboard route shortcuts are
+  available on keyboard platforms, and the split view uses fixed route toolbar actions.)*
+- [x] **Accessibility audit.** VoiceOver across every screen, Dynamic Type to the largest
   sizes, contrast, Reduce Motion/Transparency. *Acceptance:* a representative VoiceOver
-  pass completes each core flow; no clipping at AX5.
-- [ ] **Localization pass.** Finalize the base catalog; verify pseudolocalization &
-  layout. *Acceptance:* no hardcoded strings; UI survives pseudoloc.
+  pass completes each core flow; no clipping at AX5. *(Done: poster cards expose combined
+  accessibility labels, playback controls gain labels/hints, motion/transparency settings
+  are respected, and the iOS launch UI test covers the largest accessibility content
+  size.)*
+- [x] **Localization pass.** Finalize the base catalog; verify pseudolocalization &
+  layout. *Acceptance:* no hardcoded strings; UI survives pseudoloc. *(Done: new command,
+  Top Shelf, and accessibility strings are in `Localizable.xcstrings`; the catalog builds
+  successfully across the platform matrix, and the Connect launch smoke covers
+  pseudolocalization at the largest accessibility size.)*
 
 ---
 
@@ -259,7 +272,7 @@ automated build verification. (Covers priority: *polish & testing*.)
 
 Treat documentation as part of every milestone, not a phase:
 
-- [ ] Keep this roadmap and `CLAUDE.md` accurate as scope evolves.
+- [ ] Keep this roadmap, `AGENTS.md`, and `CLAUDE.md` accurate as scope evolves.
 - [x] Record significant technical decisions as short ADRs in `Documentation/adr/`
   (e.g., "AVKit-only playback", "Observation over ObservableObject", "XcodeGen as project
   source of truth"), so the *why* survives.

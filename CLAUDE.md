@@ -99,6 +99,7 @@ Features/   One folder per screen area (Connect, Home, Item, Player, Settings)
 SharedUI/   Reusable views (AsyncPoster, PosterCard, LoadingStateView) + display helpers
 Platform/   ALL #if os(...) divergence lives here (RootContainer, modifiers, nav)
 Immersive/  visionOS-only RealityKit "Gus Cinema"
+TopShelf/   tvOS Top Shelf extension entry point
 ```
 
 **State & dependency injection.** State objects are **Observation-framework**
@@ -127,6 +128,10 @@ via `ServerStore` (Codable JSON in Application Support). On launch, `AppModel`
 `TabView` (compact iPhone, tvOS) vs `NavigationSplitView` (iPad, macOS, visionOS). Item
 and library navigation destinations are registered **once** at each `NavigationStack`
 root via `.gusItemDestinations()`; feature views push typed `LibraryRef`/`ItemRef` values.
+Fixed app destinations use `AppRoute` + `AppNavigationModel` for `gus://home`,
+`gus://search`, and `gus://settings`, which are shared by URL opens, menu commands, and
+the tvOS Top Shelf extension. `RootContainer` maps those fixed routes onto tabs or split
+selection, while search focus requests stay in the search feature views.
 Keep platform `#if` branches in `Platform/` (or small guarded modifiers) rather than
 scattering them through feature views.
 
