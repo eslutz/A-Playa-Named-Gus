@@ -3,6 +3,10 @@ Gus.xcodeproj/
 build/
 build-*/
 
+# Local signing override — create Config/Local.xcconfig to set your Apple Developer
+# Team ID without committing it. See Documentation/AppStore/signing-capabilities.md.
+Config/Local.xcconfig
+
 # Created by https://www.toptal.com/developers/gitignore/api/macos,visualstudiocode,swift
 # Edit at https://www.toptal.com/developers/gitignore?templates=macos,visualstudiocode,swift
 

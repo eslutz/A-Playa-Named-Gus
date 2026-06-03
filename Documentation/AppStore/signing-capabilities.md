@@ -1,27 +1,52 @@
 # Signing and Capabilities
 
-Status: not complete. Current local builds use development/ad-hoc signing only.
-
 ## Current State
 
-- Bundle ID: `dev.ericslutz.gus`.
-- Local simulator builds sign to run locally.
-- No App Store team, distribution certificate, provisioning profile, or archive validation
-  has been completed in this branch.
+Simulator and local macOS builds use ad-hoc signing (`CODE_SIGN_IDENTITY = -`,
+`CODE_SIGNING_REQUIRED = NO`) so they work without an Apple Developer Program account.
+The bundle ID `dev.ericslutz.gus` is set in `Config/Shared.xcconfig`. Entitlements and
+capability declarations are complete; only the Team ID and distribution credentials are
+account-blocked.
 
-## Required Before Submission
+## Capabilities — Confirmed Ready
 
-- Select the final Apple Developer Program team.
-- Confirm bundle ID availability and ownership.
-- Enable automatic signing or commit explicit App Store signing configuration.
-- Archive and validate release builds for iOS/iPadOS, tvOS, visionOS, and macOS.
+| Capability | Platform | Declared in | Status |
+|---|---|---|---|
+| Background audio | iOS / iPadOS / tvOS / visionOS | `UIBackgroundModes: [audio]` in `Info.plist` | ✓ |
+| Outbound network | macOS | `com.apple.security.network.client` in `Config/Gus.entitlements` | ✓ |
+| App Sandbox | macOS | `com.apple.security.app-sandbox` in `Config/Gus.entitlements` | ✓ |
+| Local network usage | iOS / iPadOS / visionOS | `NSLocalNetworkUsageDescription` in `Info.plist` | ✓ |
+| Keychain | All | Keychain Services via `SecItem*` — no capability entry required | ✓ |
+| No-exempt encryption | All | `ITSAppUsesNonExemptEncryption = false` in `Info.plist` | ✓ |
+| Offline downloads | iOS / iPadOS / macOS / visionOS | Application Support storage — no extra capability required | ✓ |
 
-## Capability Review
+**Removed:** `NSFaceIDUsageDescription` was present but `LocalAuthentication` is never
+called in Gus source code. A false usage description is an App Review red flag; the key
+has been removed.
 
-- Background audio: required for playback/PiP behavior.
-- Local network: required for optional Jellyfin discovery.
-- Keychain: required for Jellyfin access tokens.
-- App Sandbox on macOS: review entitlements before archive.
-- Optic ID / Face ID usage string: present; confirm it matches actual platform behavior.
-- Offline downloads: no extra capability expected for foreground Application Support
-  storage.
+**Not needed:** `NSBonjourServices` — Jellyfin discovery uses UDP broadcast on port 7359
+via swift-nio sockets, not Bonjour/mDNS. `NSLocalNetworkUsageDescription` (already
+present) is sufficient for the iOS 14+ local-network prompt.
+
+## Setting Your Team ID (Local Override)
+
+`DEVELOPMENT_TEAM` is intentionally blank in `Config/Shared.xcconfig` so the repo stays
+account-agnostic. To build for a device or archive for the App Store:
+
+1. Create `Config/Local.xcconfig` (git-ignored):
+   ```
+   DEVELOPMENT_TEAM = XXXXXXXXXX
+   CODE_SIGN_STYLE = Automatic
+   ```
+2. In `Config/Shared.xcconfig`, the existing `#include?` pattern can be added to pick it
+   up, or set the team directly in Xcode's Signing & Capabilities tab for a local session.
+
+## Remaining Submission Steps (Account-Blocked)
+
+- Select the Apple Developer Program team and confirm bundle ID ownership.
+- Switch `CODE_SIGN_STYLE` to `Automatic` with the real `DEVELOPMENT_TEAM`.
+- Review per-platform capabilities in Xcode Signing & Capabilities for any
+  provisioning-profile additions (e.g. Push Notifications if added later).
+- Archive and validate Release builds for iOS/iPadOS, tvOS, visionOS, and macOS.
+- Confirm macOS App Sandbox entitlements pass the archive-validation step (no unexpected
+  file/network access).
