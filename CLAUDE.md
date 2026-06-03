@@ -144,6 +144,16 @@ SwiftUI `VideoPlayer`. `NowPlayingController` feeds `MPNowPlayingInfoCenter` /
 `MPRemoteCommandCenter`. The audio session is configured only where it exists
 (`#if os(iOS) || os(tvOS) || os(visionOS)` — there is no `AVAudioSession` on macOS).
 
+**visionOS 3D / spatial playback.** Stereo playback is visionOS-only and requires direct
+play. `Media3DDetector` maps Jellyfin SBS/TAB/MVC metadata plus conservative MV-HEVC
+stream hints into a `Stereo3DPresentation`; non-visionOS platforms always resolve to 2D.
+`StreamURLBuilder` disables transcoding for stereo attempts because HLS transcoding
+flattens stereo, then falls back to 2D with a notice when direct play is unavailable.
+MV-HEVC uses the normal AVKit `VideoPlayer` path with a Spatial badge. SBS/TAB uses the
+Gus Cinema `ImmersiveSpace` and a RealityKit `Stereo3DScreen` fed by the same `AVPlayer`.
+MVC is unsupported and plays in 2D with a notice. The visionOS player menu offers Auto,
+2D, and Spatial; Spatial is the manual override for unflagged MV-HEVC files.
+
 **Downloads are background-capable and non-tvOS.** `OfflineDownloadStore` resolves a
 download source, persists status/progress metadata, and hands transfer work to
 `DownloadSessionCoordinator`, a native `URLSessionConfiguration.background` download
@@ -170,7 +180,7 @@ column, not a custom/third-party equivalent:
 | Downloads | Background `URLSessionDownloadTask`, `FileManager`, `Codable`, backup-exclusion resource values |
 | Logging | `OSLog` `Logger` (no Pulse) |
 | Localized strings | String Catalog (`Localizable.xcstrings`) |
-| Immersive (visionOS) | RealityKit + `ImmersiveSpace` |
+| Immersive / 3D (visionOS) | RealityKit + `ImmersiveSpace` for Cinema/SBS/TAB; AVKit direct play for MV-HEVC |
 
 ## Conventions & standards
 
