@@ -22,6 +22,7 @@ final class PlaybackStore {
     private(set) var player: AVPlayer?
     private(set) var nextUpItem: BaseItemDto?
     private(set) var isNextUpPromptVisible = false
+    private(set) var stereoPresentation: Stereo3DPresentation = .native2D
 
     private(set) var item: BaseItemDto
     private let session: SessionStore
@@ -59,6 +60,10 @@ final class PlaybackStore {
 
     var selectedSubtitleStreamIndex: Int? {
         streamSelection.subtitleStreamIndex
+    }
+
+    var isSpatialPlaybackActive: Bool {
+        stereoPresentation.showsSpatialBadge
     }
 
     func prepare() async {
@@ -119,18 +124,20 @@ final class PlaybackStore {
             if let localURL {
                 resolution = nil
                 playbackURL = resolvePlaybackURL(local: localURL, remote: localURL)
+                stereoPresentation = .native2D
             } else {
-                let stereoLayout = Media3DDetector.layout(for: item)
+                let requestedPresentation = Media3DDetector.presentation(for: item)
                 let remoteResolution = try await NetworkRetryPolicy.idempotent.run {
                     try await self.session.streamBuilder.resolvePlayback(
                         for: itemID,
                         streamSelection: self.streamSelection,
                         startTimeTicks: startTimeTicks,
-                        stereoLayout: stereoLayout
+                        stereoLayout: requestedPresentation.resolutionStereoLayout
                     )
                 }
                 resolution = remoteResolution
                 playbackURL = resolvePlaybackURL(local: nil, remote: remoteResolution.url)
+                stereoPresentation = remoteResolution.stereoFallbackReason == nil ? requestedPresentation : .native2D
             }
             logger.info("Playing \(self.item.name ?? "item", privacy: .public) (local: \(localURL != nil, privacy: .public), transcoding: \(resolution?.isTranscoding == true, privacy: .public))")
 

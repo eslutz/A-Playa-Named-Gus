@@ -56,4 +56,12 @@ struct Media3DDetectorTests {
 
         #expect(Media3DDetector.presentation(for: item, on: .other) == .native2D)
     }
+
+    @Test("shows the Spatial badge only for native MV-HEVC playback")
+    func spatialBadgeVisibilityFollowsNativeSpatialPresentation() {
+        #expect(Stereo3DPresentation.nativeSpatial.showsSpatialBadge)
+        #expect(!Stereo3DPresentation.native2D.showsSpatialBadge)
+        #expect(!Stereo3DPresentation.immersiveFramePacked(.sideBySide(half: true)).showsSpatialBadge)
+        #expect(!Stereo3DPresentation.unsupported3D(.multiviewCoding).showsSpatialBadge)
+    }
 }

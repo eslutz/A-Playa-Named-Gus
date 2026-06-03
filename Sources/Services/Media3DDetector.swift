@@ -23,6 +23,21 @@ enum Stereo3DPresentation: Equatable {
     case nativeSpatial
     case immersiveFramePacked(Stereo3DLayout)
     case unsupported3D(Stereo3DLayout)
+
+    var resolutionStereoLayout: Stereo3DLayout {
+        switch self {
+        case .nativeSpatial:
+            .mvHEVC
+        case let .immersiveFramePacked(layout):
+            layout
+        case .native2D, .unsupported3D:
+            .none
+        }
+    }
+
+    var showsSpatialBadge: Bool {
+        self == .nativeSpatial
+    }
 }
 
 enum Media3DDetector {

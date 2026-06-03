@@ -389,6 +389,10 @@
       "comment" : "Downloads view soft cap label",
       "extractionState" : "manual"
     },
+    "Spatial" : {
+      "comment" : "visionOS player badge for native spatial video playback",
+      "extractionState" : "manual"
+    },
     "Storage Used" : {
       "comment" : "Downloads view storage usage label",
       "extractionState" : "manual"

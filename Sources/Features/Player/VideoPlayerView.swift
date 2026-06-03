@@ -55,6 +55,13 @@ struct VideoPlayerView: View {
             .accessibilityLabel("Close Player")
         }
         #endif
+        #if os(visionOS)
+        .overlay(alignment: .topTrailing) {
+            if store?.isSpatialPlaybackActive == true {
+                SpatialPlaybackBadge()
+            }
+        }
+        #endif
         .task {
             if store == nil {
                 let store = PlaybackStore(item: item, session: session, playbackRefresh: playbackRefresh, downloads: downloads)
@@ -67,6 +74,22 @@ struct VideoPlayerView: View {
         }
     }
 }
+
+#if os(visionOS)
+    private struct SpatialPlaybackBadge: View {
+        var body: some View {
+            Label("Spatial", systemImage: "view.3d")
+                .font(.callout.weight(.semibold))
+                .labelStyle(.titleAndIcon)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .background(.ultraThinMaterial, in: Capsule())
+                .foregroundStyle(.white)
+                .padding()
+                .accessibilityLabel("Spatial")
+        }
+    }
+#endif
 
 private struct PlaybackControlsOverlay: View {
     let store: PlaybackStore
