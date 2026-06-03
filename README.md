@@ -10,6 +10,10 @@ playback (server-side transcoding via Jellyfin).
 The mature [Swiftfin](https://github.com/eslutz/Swiftfin) app is **reference only**: Gus
 mirrors its SDK *patterns*, never its code.
 
+For contributors and AI agents: [`CLAUDE.md`](CLAUDE.md) is the working context (mandate,
+architecture, conventions, Apple API/HIG references); [`Documentation/ROADMAP.md`](Documentation/ROADMAP.md)
+is the milestone plan to App Store submission.
+
 ## Status — first milestone
 
 A breadth-first end-to-end slice on all five platforms:
