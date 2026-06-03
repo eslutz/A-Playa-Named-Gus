@@ -235,11 +235,3 @@ Treat documentation as part of every milestone, not a phase:
   (e.g., "AVKit-only playback", "Observation over ObservableObject", "XcodeGen as project
   source of truth"), so the *why* survives.
 - [ ] Keep `README.md` aligned with the current build/verify story.
-
-## Priority mapping (from the kickoff)
-
-- **App icon** → M1.
-- **Polish & testing** → M2 (engineering quality/CI), continued in M5 (accessibility/HIG)
-  and M6 (performance).
-- **Deferred features** (search, multi-user, fuller metadata, progress reporting, Quick
-  Connect, Bonjour) → M3, with playback-side depth in M4.
