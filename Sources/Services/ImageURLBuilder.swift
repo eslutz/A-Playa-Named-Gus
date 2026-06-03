@@ -7,7 +7,6 @@ import JellyfinAPI
 /// `maxWidth` (server-side resize) rather than multiplying by `UIScreen.main.scale`,
 /// which doesn't exist on macOS.
 struct ImageURLBuilder {
-
     let client: JellyfinClient
 
     /// Primary (poster) image for an item, falling back to the series' primary image

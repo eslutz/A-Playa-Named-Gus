@@ -5,7 +5,6 @@ import SwiftUI
 ///
 /// Pattern reference: Swiftfin's library/`getItems` paging (single page for the milestone).
 struct LibraryGridView: View {
-
     @Environment(SessionStore.self) private var session
     let library: BaseItemDto
     @State private var store: LibraryStore?
@@ -28,7 +27,6 @@ struct LibraryGridView: View {
         }
     }
 
-    @ViewBuilder
     private func content(_ store: LibraryStore) -> some View {
         LoadingStateView(
             state: store.state,

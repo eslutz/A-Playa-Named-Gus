@@ -2,7 +2,6 @@ import SwiftUI
 
 /// Account, known servers, sign-out, and version info.
 struct SettingsView: View {
-
     @Environment(AppModel.self) private var appModel
     @Environment(SessionStore.self) private var session
 

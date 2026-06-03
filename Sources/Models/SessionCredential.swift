@@ -6,12 +6,13 @@ import Foundation
 /// `serverID:userID` account string, which `KeychainStore` uses as the
 /// `kSecAttrAccount` for a `kSecClassGenericPassword` item.
 struct SessionCredential: Codable, Hashable {
-
     let serverID: String
     let userID: String
 
     /// Keychain account string: `"<serverID>:<userID>"`.
-    var account: String { "\(serverID):\(userID)" }
+    var account: String {
+        "\(serverID):\(userID)"
+    }
 
     init(serverID: String, userID: String) {
         self.serverID = serverID
@@ -19,7 +20,7 @@ struct SessionCredential: Codable, Hashable {
     }
 
     init(user: StoredUser) {
-        self.serverID = user.serverID
-        self.userID = user.id
+        serverID = user.serverID
+        userID = user.id
     }
 }

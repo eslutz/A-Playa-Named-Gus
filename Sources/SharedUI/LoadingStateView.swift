@@ -3,7 +3,6 @@ import SwiftUI
 /// Renders a `LoadState`: a spinner while loading, a `ContentUnavailableView` on
 /// failure/empty, and the provided content once loaded.
 struct LoadingStateView<Content: View>: View {
-
     let state: LoadState
     var isEmpty: Bool = false
     var emptyTitle: String = "Nothing Here Yet"

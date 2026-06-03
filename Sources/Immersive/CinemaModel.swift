@@ -1,54 +1,55 @@
 #if os(visionOS)
-import JellyfinAPI
-import SwiftUI
+    import JellyfinAPI
+    import SwiftUI
 
-/// Tracks whether the "Gus Cinema" immersive space is open.
-///
-/// Ported from PR #2's `CinemaModel`, re-expressed on the **Observation** framework
-/// (`@Observable` + `@Environment`) instead of `ObservableObject`/`@Published`/`Factory`.
-@MainActor
-@Observable
-final class CinemaModel {
-    private(set) var isOpen = false
-    func setOpen(_ open: Bool) { isOpen = open }
-}
+    /// Tracks whether the "Gus Cinema" immersive space is open.
+    ///
+    /// Ported from PR #2's `CinemaModel`, re-expressed on the **Observation** framework
+    /// (`@Observable` + `@Environment`) instead of `ObservableObject`/`@Published`/`Factory`.
+    @MainActor
+    @Observable
+    final class CinemaModel {
+        private(set) var isOpen = false
+        func setOpen(_ open: Bool) {
+            isOpen = open
+        }
+    }
 
-/// Opt-in toggle that opens/closes the immersive cinema. The windowed AVKit player keeps
-/// playing across the transition; if `openImmersiveSpace` fails we fall back to the window.
-struct CinemaToggleButton: View {
+    /// Opt-in toggle that opens/closes the immersive cinema. The windowed AVKit player keeps
+    /// playing across the transition; if `openImmersiveSpace` fails we fall back to the window.
+    struct CinemaToggleButton: View {
+        @Environment(CinemaModel.self) private var cinema
+        @Environment(\.openImmersiveSpace) private var openImmersiveSpace
+        @Environment(\.dismissImmersiveSpace) private var dismissImmersiveSpace
 
-    @Environment(CinemaModel.self) private var cinema
-    @Environment(\.openImmersiveSpace) private var openImmersiveSpace
-    @Environment(\.dismissImmersiveSpace) private var dismissImmersiveSpace
+        let item: BaseItemDto
 
-    let item: BaseItemDto
-
-    var body: some View {
-        Button {
-            Task {
-                if cinema.isOpen {
-                    await dismissImmersiveSpace()
-                    cinema.setOpen(false)
-                } else {
-                    switch await openImmersiveSpace(id: GusCinema.spaceID) {
-                    case .opened:
-                        cinema.setOpen(true)
-                    case .error, .userCancelled:
-                        cinema.setOpen(false) // graceful windowed fallback
-                    @unknown default:
+        var body: some View {
+            Button {
+                Task {
+                    if cinema.isOpen {
+                        await dismissImmersiveSpace()
                         cinema.setOpen(false)
+                    } else {
+                        switch await openImmersiveSpace(id: GusCinema.spaceID) {
+                        case .opened:
+                            cinema.setOpen(true)
+                        case .error, .userCancelled:
+                            cinema.setOpen(false) // graceful windowed fallback
+                        @unknown default:
+                            cinema.setOpen(false)
+                        }
                     }
                 }
+            } label: {
+                Label(
+                    cinema.isOpen ? "Leave Cinema" : "Gus Cinema",
+                    systemImage: cinema.isOpen ? "xmark.circle" : "movieclapper"
+                )
             }
-        } label: {
-            Label(
-                cinema.isOpen ? "Leave Cinema" : "Gus Cinema",
-                systemImage: cinema.isOpen ? "xmark.circle" : "movieclapper"
-            )
+            .buttonStyle(.bordered)
+            .controlSize(.large)
+            .accessibilityLabel(cinema.isOpen ? "Leave Gus Cinema" : "Watch \(item.displayTitle) in Gus Cinema")
         }
-        .buttonStyle(.bordered)
-        .controlSize(.large)
-        .accessibilityLabel(cinema.isOpen ? "Leave Gus Cinema" : "Watch \(item.displayTitle) in Gus Cinema")
     }
-}
 #endif

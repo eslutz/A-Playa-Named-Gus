@@ -7,12 +7,11 @@ import JellyfinAPI
 /// Pattern reference: Swiftfin's `UserSession` / `ConnectToServerViewModel` construct a
 /// `JellyfinClient.Configuration` the same way; Gus centralizes it here.
 enum JellyfinClientFactory {
-
     /// Shared cache, sized generously for poster/backdrop images served with cache headers.
     /// `AsyncImage` requests flow through the same `URLSession`, so they hit this cache.
     static let urlCache: URLCache = URLCache(
-        memoryCapacity: 64 * 1024 * 1024,   // 64 MB
-        diskCapacity: 512 * 1024 * 1024,    // 512 MB
+        memoryCapacity: 64 * 1024 * 1024, // 64 MB
+        diskCapacity: 512 * 1024 * 1024, // 512 MB
         directory: FileManager.default
             .urls(for: .cachesDirectory, in: .userDomainMask).first?
             .appendingPathComponent("GusImageCache", isDirectory: true)

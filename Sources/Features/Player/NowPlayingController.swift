@@ -9,7 +9,6 @@ import MediaPlayer
 /// an `AVPlayer` periodic time observer. `MediaPlayer` is available on all five platforms.
 @MainActor
 final class NowPlayingController {
-
     private weak var player: AVPlayer?
     private var timeObserver: Any?
 

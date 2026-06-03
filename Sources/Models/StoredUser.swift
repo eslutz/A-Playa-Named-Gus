@@ -3,7 +3,6 @@ import Foundation
 /// A signed-in user, persisted **without** the access token (the token lives in the
 /// Keychain, keyed by `SessionCredential.account`).
 struct StoredUser: Codable, Identifiable, Hashable {
-
     /// User id (`UserDto.id`).
     let id: String
 

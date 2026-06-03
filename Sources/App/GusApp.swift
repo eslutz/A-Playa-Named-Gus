@@ -6,11 +6,10 @@ import SwiftUI
 /// injected via `@Environment`; on visionOS an `ImmersiveSpace` hosts the "Gus Cinema".
 @main
 struct GusApp: App {
-
     @State private var appModel = AppModel()
 
     #if os(visionOS)
-    @State private var cinema = CinemaModel()
+        @State private var cinema = CinemaModel()
     #endif
 
     init() {
@@ -22,18 +21,18 @@ struct GusApp: App {
         WindowGroup {
             RootView()
                 .environment(appModel)
-                #if os(visionOS)
+            #if os(visionOS)
                 .environment(cinema)
-                #endif
+            #endif
                 .task { appModel.restoreLastSession() }
         }
 
         #if os(visionOS)
-        ImmersiveSpace(id: GusCinema.spaceID) {
-            GusCinema()
-                .environment(cinema)
-        }
-        .immersionStyle(selection: .constant(.progressive), in: .progressive)
+            ImmersiveSpace(id: GusCinema.spaceID) {
+                GusCinema()
+                    .environment(cinema)
+            }
+            .immersionStyle(selection: .constant(.progressive), in: .progressive)
         #endif
     }
 }

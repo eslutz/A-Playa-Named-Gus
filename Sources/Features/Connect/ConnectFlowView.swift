@@ -5,7 +5,6 @@ import SwiftUI
 /// Replaces Swiftfin's Stinsen coordinator for this flow with a plain `NavigationStack`
 /// + `navigationDestination`.
 struct ConnectFlowView: View {
-
     @State private var path: [ServerConnection] = []
 
     var body: some View {

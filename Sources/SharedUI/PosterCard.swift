@@ -6,7 +6,6 @@ import SwiftUI
 /// Uses only system styling — rounded rectangle clip, Material placeholder, Dynamic Type
 /// captions, and a platform-appropriate hover/focus effect — so it feels native on each OS.
 struct PosterCard: View {
-
     let title: String
     var subtitle: String?
     let imageURL: URL?
@@ -38,7 +37,6 @@ struct PosterCard: View {
 }
 
 extension PosterCard {
-
     /// Convenience initializer from a `BaseItemDto`, choosing a sensible title/subtitle.
     init(item: BaseItemDto, imageURL: URL?, aspectRatio: CGFloat = 2.0 / 3.0) {
         let title: String

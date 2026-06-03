@@ -5,7 +5,6 @@ import SwiftUI
 /// Replaces Swiftfin's Nuke usage. Uses system Materials + an SF Symbol for the
 /// placeholder/failure states so it feels first-party everywhere.
 struct AsyncPoster: View {
-
     let url: URL?
     var contentMode: ContentMode = .fill
     var placeholderSymbol: String = "photo"

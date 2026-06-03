@@ -7,14 +7,14 @@ extension View {
     @ViewBuilder
     func playerPresentation(item: Binding<ItemRef?>) -> some View {
         #if os(macOS)
-        sheet(item: item) { ref in
-            VideoPlayerView(item: ref.item)
-                .frame(minWidth: 640, minHeight: 360)
-        }
+            sheet(item: item) { ref in
+                VideoPlayerView(item: ref.item)
+                    .frame(minWidth: 640, minHeight: 360)
+            }
         #else
-        fullScreenCover(item: item) { ref in
-            VideoPlayerView(item: ref.item)
-        }
+            fullScreenCover(item: item) { ref in
+                VideoPlayerView(item: ref.item)
+            }
         #endif
     }
 }

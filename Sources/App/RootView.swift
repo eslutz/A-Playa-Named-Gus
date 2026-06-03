@@ -5,7 +5,6 @@ import SwiftUI
 ///
 /// Replaces Swiftfin's root coordinator: a plain `if let` on `AppModel.currentSession`.
 struct RootView: View {
-
     @Environment(AppModel.self) private var appModel
 
     var body: some View {

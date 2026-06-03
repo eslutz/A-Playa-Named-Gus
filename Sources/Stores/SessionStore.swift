@@ -10,7 +10,6 @@ import Observation
 @MainActor
 @Observable
 final class SessionStore {
-
     let client: JellyfinClient
     let user: StoredUser
     let server: ServerConnection
@@ -21,7 +20,11 @@ final class SessionStore {
         self.server = server
     }
 
-    var imageBuilder: ImageURLBuilder { ImageURLBuilder(client: client) }
+    var imageBuilder: ImageURLBuilder {
+        ImageURLBuilder(client: client)
+    }
 
-    var streamBuilder: StreamURLBuilder { StreamURLBuilder(client: client, userID: user.id) }
+    var streamBuilder: StreamURLBuilder {
+        StreamURLBuilder(client: client, userID: user.id)
+    }
 }

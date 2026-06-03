@@ -7,5 +7,7 @@ enum LoadState: Equatable {
     case loaded
     case failed(String)
 
-    var isLoading: Bool { self == .loading }
+    var isLoading: Bool {
+        self == .loading
+    }
 }

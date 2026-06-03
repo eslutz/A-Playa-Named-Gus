@@ -8,7 +8,6 @@ import SwiftUI
 /// tvOS, which has no SwiftUI `VideoPlayer`. The `PlaybackStore` owns the `AVPlayer` and
 /// tears it down on dismiss.
 struct VideoPlayerView: View {
-
     @Environment(SessionStore.self) private var session
     @Environment(\.dismiss) private var dismiss
     let item: BaseItemDto
@@ -69,29 +68,29 @@ private struct PlayerSurface: View {
 
     var body: some View {
         #if os(tvOS)
-        TVPlayerSurface(player: player)
+            TVPlayerSurface(player: player)
         #else
-        VideoPlayer(player: player)
+            VideoPlayer(player: player)
         #endif
     }
 }
 
 #if os(tvOS)
-/// tvOS-native `AVPlayerViewController`, which provides the full focus-engine transport.
-private struct TVPlayerSurface: UIViewControllerRepresentable {
-    let player: AVPlayer
+    /// tvOS-native `AVPlayerViewController`, which provides the full focus-engine transport.
+    private struct TVPlayerSurface: UIViewControllerRepresentable {
+        let player: AVPlayer
 
-    func makeUIViewController(context: Context) -> AVPlayerViewController {
-        let controller = AVPlayerViewController()
-        controller.player = player
-        controller.allowsPictureInPicturePlayback = false
-        return controller
-    }
-
-    func updateUIViewController(_ controller: AVPlayerViewController, context: Context) {
-        if controller.player !== player {
+        func makeUIViewController(context: Context) -> AVPlayerViewController {
+            let controller = AVPlayerViewController()
             controller.player = player
+            controller.allowsPictureInPicturePlayback = false
+            return controller
+        }
+
+        func updateUIViewController(_ controller: AVPlayerViewController, context: Context) {
+            if controller.player !== player {
+                controller.player = player
+            }
         }
     }
-}
 #endif

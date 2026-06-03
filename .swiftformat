@@ -1,0 +1,10 @@
+--swiftversion 5.0
+--indent 4
+--wraparguments before-first
+--wrapparameters before-first
+--wrapcollections before-first
+--closingparen balanced
+--commas always
+--stripunusedargs closure-only
+--disable redundantSelf,redundantType
+--exclude Gus.xcodeproj
