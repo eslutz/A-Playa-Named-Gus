@@ -11,9 +11,11 @@ import MediaPlayer
 final class NowPlayingController {
     private weak var player: AVPlayer?
     private var timeObserver: Any?
+    private var artworkTask: Task<Void, Never>?
 
-    func start(player: AVPlayer, item: BaseItemDto) {
+    func start(player: AVPlayer, item: BaseItemDto, artworkURL: URL?) {
         self.player = player
+        artworkTask?.cancel()
 
         var info: [String: Any] = [:]
         info[MPMediaItemPropertyTitle] = item.displayTitle
@@ -26,6 +28,7 @@ final class NowPlayingController {
         info[MPNowPlayingInfoPropertyElapsedPlaybackTime] = 0.0
         info[MPNowPlayingInfoPropertyPlaybackRate] = 1.0
         MPNowPlayingInfoCenter.default().nowPlayingInfo = info
+        loadArtwork(from: artworkURL)
 
         configureRemoteCommands(for: player)
 
@@ -38,6 +41,8 @@ final class NowPlayingController {
     }
 
     func stop() {
+        artworkTask?.cancel()
+        artworkTask = nil
         if let timeObserver {
             player?.removeTimeObserver(timeObserver)
         }
@@ -59,6 +64,23 @@ final class NowPlayingController {
         info[MPNowPlayingInfoPropertyElapsedPlaybackTime] = seconds
         info[MPNowPlayingInfoPropertyPlaybackRate] = rate
         MPNowPlayingInfoCenter.default().nowPlayingInfo = info
+    }
+
+    private func loadArtwork(from url: URL?) {
+        guard let url else { return }
+        artworkTask = Task {
+            do {
+                let (data, _) = try await URLSession.shared.data(from: url)
+                guard !Task.isCancelled, let artwork = NowPlayingArtworkFactory.artwork(from: data) else { return }
+                await MainActor.run {
+                    var info = MPNowPlayingInfoCenter.default().nowPlayingInfo ?? [:]
+                    info[MPMediaItemPropertyArtwork] = artwork
+                    MPNowPlayingInfoCenter.default().nowPlayingInfo = info
+                }
+            } catch {
+                // Artwork is polish; playback and transport controls should continue.
+            }
+        }
     }
 
     private func configureRemoteCommands(for player: AVPlayer) {

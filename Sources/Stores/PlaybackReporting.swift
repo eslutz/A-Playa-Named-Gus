@@ -2,6 +2,73 @@ import Foundation
 import JellyfinAPI
 import Observation
 
+struct PlaybackStreamSelection: Equatable {
+    static let none = PlaybackStreamSelection(audioStreamIndex: nil, subtitleStreamIndex: nil)
+
+    var audioStreamIndex: Int?
+    var subtitleStreamIndex: Int?
+}
+
+struct PlaybackStreamOption: Identifiable, Equatable {
+    let id: Int
+    let title: String
+    let isDefault: Bool
+}
+
+enum PlaybackStreamCatalog {
+    static func audioOptions(for item: BaseItemDto) -> [PlaybackStreamOption] {
+        streamOptions(for: item, type: .audio)
+    }
+
+    static func subtitleOptions(for item: BaseItemDto) -> [PlaybackStreamOption] {
+        streamOptions(for: item, type: .subtitle)
+    }
+
+    private static func streamOptions(for item: BaseItemDto, type: MediaStreamType) -> [PlaybackStreamOption] {
+        (item.mediaStreams ?? [])
+            .filter { $0.type == type }
+            .compactMap { stream in
+                guard let index = stream.index else { return nil }
+                return PlaybackStreamOption(
+                    id: index,
+                    title: stream.displayTitle ?? stream.title ?? stream.language ?? "\(type.rawValue) \(index)",
+                    isDefault: stream.isDefault == true
+                )
+            }
+    }
+}
+
+struct PlaybackChapter: Identifiable, Equatable {
+    let id: Int
+    let title: String
+    let startPositionTicks: Int
+
+    var seconds: Double {
+        PlaybackTime.seconds(fromTicks: startPositionTicks)
+    }
+
+    static func seekTargets(for item: BaseItemDto) -> [PlaybackChapter] {
+        (item.chapters ?? [])
+            .compactMap { chapter -> (ChapterInfo, Int)? in
+                guard let ticks = chapter.startPositionTicks else { return nil }
+                return (chapter, ticks)
+            }
+            .sorted { $0.1 < $1.1 }
+            .enumerated()
+            .map { offset, value in
+                PlaybackChapter(
+                    id: offset,
+                    title: value.0.name?.isEmpty == false ? value.0.name! : String(localized: "Chapter \(offset + 1)", comment: "Fallback chapter title"),
+                    startPositionTicks: value.1
+                )
+            }
+    }
+}
+
+func resolvePlaybackURL(local: URL?, remote: URL) -> URL {
+    local ?? remote
+}
+
 enum PlaybackTime {
     static let ticksPerSecond = 10_000_000
 
@@ -26,9 +93,11 @@ struct PlaybackReportContext {
     let mediaSourceID: String?
     let playSessionID: String?
     let playMethod: PlayMethod
+    let streamSelection: PlaybackStreamSelection
 
     func stateInfo(positionTicks: Int, isPaused: Bool) -> PlaybackStateInfo {
         PlaybackStateInfo(
+            audioStreamIndex: streamSelection.audioStreamIndex,
             canSeek: true,
             isMuted: false,
             isPaused: isPaused,
@@ -36,7 +105,8 @@ struct PlaybackReportContext {
             mediaSourceID: mediaSourceID,
             playMethod: playMethod,
             playSessionID: playSessionID,
-            positionTicks: positionTicks
+            positionTicks: positionTicks,
+            subtitleStreamIndex: streamSelection.subtitleStreamIndex
         )
     }
 

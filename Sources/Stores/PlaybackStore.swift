@@ -20,24 +20,90 @@ final class PlaybackStore {
 
     private(set) var state: State = .idle
     private(set) var player: AVPlayer?
+    private(set) var nextUpItem: BaseItemDto?
+    private(set) var isNextUpPromptVisible = false
 
-    let item: BaseItemDto
+    private(set) var item: BaseItemDto
     private let session: SessionStore
     private let playbackRefresh: PlaybackRefreshStore
+    private let downloads: OfflineDownloadStore?
     private let nowPlaying = NowPlayingController()
     private let logger = Logger(category: .playback)
     private var reportContext: PlaybackReportContext?
     private var progressObserver: Any?
     private var didReportStopped = false
+    private var streamSelection = PlaybackStreamSelection.none
 
-    init(item: BaseItemDto, session: SessionStore, playbackRefresh: PlaybackRefreshStore) {
+    init(item: BaseItemDto, session: SessionStore, playbackRefresh: PlaybackRefreshStore, downloads: OfflineDownloadStore? = nil) {
         self.item = item
         self.session = session
         self.playbackRefresh = playbackRefresh
+        self.downloads = downloads
+    }
+
+    var audioOptions: [PlaybackStreamOption] {
+        PlaybackStreamCatalog.audioOptions(for: item)
+    }
+
+    var subtitleOptions: [PlaybackStreamOption] {
+        PlaybackStreamCatalog.subtitleOptions(for: item)
+    }
+
+    var chapterTargets: [PlaybackChapter] {
+        PlaybackChapter.seekTargets(for: item)
+    }
+
+    var selectedAudioStreamIndex: Int? {
+        streamSelection.audioStreamIndex
+    }
+
+    var selectedSubtitleStreamIndex: Int? {
+        streamSelection.subtitleStreamIndex
     }
 
     func prepare() async {
         guard player == nil else { return }
+        didReportStopped = false
+        await loadPlayback(startTimeTicks: PlaybackTime.resumePositionTicks(for: item), replacingCurrentItem: false)
+    }
+
+    func selectAudioStream(index: Int?) async {
+        guard streamSelection.audioStreamIndex != index else { return }
+        streamSelection.audioStreamIndex = index
+        await rebuildCurrentItemPreservingPosition()
+    }
+
+    func selectSubtitleStream(index: Int?) async {
+        guard streamSelection.subtitleStreamIndex != index else { return }
+        streamSelection.subtitleStreamIndex = index
+        await rebuildCurrentItemPreservingPosition()
+    }
+
+    func seek(to chapter: PlaybackChapter) async {
+        guard let player else { return }
+        await player.seek(
+            to: CMTime(seconds: chapter.seconds, preferredTimescale: 600),
+            toleranceBefore: .zero,
+            toleranceAfter: .zero
+        )
+    }
+
+    func playNextUp() async {
+        guard let nextUpItem else { return }
+        teardown(reportStopped: true)
+        item = nextUpItem
+        self.nextUpItem = nil
+        isNextUpPromptVisible = false
+        streamSelection = .none
+        await prepare()
+    }
+
+    private func rebuildCurrentItemPreservingPosition() async {
+        let ticks = currentPositionTicks()
+        await loadPlayback(startTimeTicks: ticks, replacingCurrentItem: true)
+    }
+
+    private func loadPlayback(startTimeTicks: Int?, replacingCurrentItem: Bool) async {
         state = .loading
         configureAudioSession()
 
@@ -47,10 +113,33 @@ final class PlaybackStore {
         }
 
         do {
-            let resolution = try await session.streamBuilder.resolvePlayback(for: itemID)
-            logger.info("Playing \(self.item.name ?? "item", privacy: .public) (transcoding: \(resolution.isTranscoding, privacy: .public))")
+            let localURL = downloads?.localFileURL(for: item, serverID: session.server.id, userID: session.user.id)
+            let resolution: StreamURLBuilder.Resolution?
+            let playbackURL: URL
+            if let localURL {
+                resolution = nil
+                playbackURL = resolvePlaybackURL(local: localURL, remote: localURL)
+            } else {
+                let remoteResolution = try await NetworkRetryPolicy.idempotent.run {
+                    try await self.session.streamBuilder.resolvePlayback(
+                        for: itemID,
+                        streamSelection: self.streamSelection,
+                        startTimeTicks: startTimeTicks
+                    )
+                }
+                resolution = remoteResolution
+                playbackURL = resolvePlaybackURL(local: nil, remote: remoteResolution.url)
+            }
+            logger.info("Playing \(self.item.name ?? "item", privacy: .public) (local: \(localURL != nil, privacy: .public), transcoding: \(resolution?.isTranscoding == true, privacy: .public))")
 
-            let player = AVPlayer(url: resolution.url)
+            let playerItem = AVPlayerItem(url: playbackURL)
+            let player: AVPlayer
+            if let existing = self.player, replacingCurrentItem {
+                existing.replaceCurrentItem(with: playerItem)
+                player = existing
+            } else {
+                player = AVPlayer(playerItem: playerItem)
+            }
             #if !os(visionOS)
                 player.allowsExternalPlayback = true // AirPlay; not available on visionOS
             #endif
@@ -58,13 +147,14 @@ final class PlaybackStore {
             self.player = player
             let context = PlaybackReportContext(
                 itemID: itemID,
-                mediaSourceID: resolution.mediaSourceID,
-                playSessionID: resolution.playSessionID,
-                playMethod: resolution.isTranscoding ? .transcode : .directStream
+                mediaSourceID: resolution?.mediaSourceID,
+                playSessionID: resolution?.playSessionID,
+                playMethod: localURL != nil ? .directPlay : (resolution?.isTranscoding == true ? .transcode : .directStream),
+                streamSelection: streamSelection
             )
             reportContext = context
 
-            if let resumeTicks = PlaybackTime.resumePositionTicks(for: item) {
+            if let resumeTicks = startTimeTicks {
                 await player.seek(
                     to: CMTime(seconds: PlaybackTime.seconds(fromTicks: resumeTicks), preferredTimescale: 600),
                     toleranceBefore: .zero,
@@ -72,11 +162,14 @@ final class PlaybackStore {
                 )
             }
 
-            nowPlaying.start(player: player, item: item)
-            addProgressObserver(player: player)
+            nowPlaying.start(player: player, item: item, artworkURL: session.imageBuilder.primaryImageURL(for: item, context: .nowPlayingArtwork))
+            if progressObserver == nil {
+                addProgressObserver(player: player)
+            }
             state = .ready
             reportPlaybackStart(context: context, player: player)
             player.play()
+            await loadNextUpIfNeeded()
         } catch {
             let gusError = GusError(from: error)
             guard !gusError.isCancellation else { return } // dismissed before playback resolved
@@ -86,6 +179,10 @@ final class PlaybackStore {
     }
 
     func teardown() {
+        teardown(reportStopped: true)
+    }
+
+    private func teardown(reportStopped: Bool) {
         let finalTicks = currentPositionTicks()
         let context = reportContext
         removeProgressObserver()
@@ -96,7 +193,7 @@ final class PlaybackStore {
         state = .idle
         deactivateAudioSession()
 
-        if let context, !didReportStopped {
+        if reportStopped, let context, !didReportStopped {
             didReportStopped = true
             reportPlaybackStopped(context: context, positionTicks: finalTicks)
         }
@@ -111,6 +208,7 @@ final class PlaybackStore {
                     positionTicks: PlaybackTime.ticks(fromSeconds: time.seconds),
                     isPaused: player.rate == 0
                 )
+                self.updateNextUpPrompt(time: time.seconds, player: player)
             }
         }
     }
@@ -169,6 +267,38 @@ final class PlaybackStore {
                 guard !gusError.isCancellation else { return }
                 logger.error("Playback \(kind, privacy: .public) report failed: \(gusError.localizedDescription, privacy: .public)")
             }
+        }
+    }
+
+    private func loadNextUpIfNeeded() async {
+        guard nextUpItem == nil, item.type == .episode, let seriesID = item.seriesID else { return }
+        do {
+            let fields = SearchRequest.metadataFields + [.canDownload, .mediaStreams, .chapters]
+            let parameters = Paths.GetNextUpParameters(
+                userID: session.user.id,
+                limit: 1,
+                fields: fields,
+                seriesID: seriesID,
+                enableImages: true,
+                enableUserData: true
+            )
+            let response = try await NetworkRetryPolicy.idempotent.run {
+                try await self.session.client.send(Paths.getNextUp(parameters: parameters))
+            }
+            nextUpItem = response.value.items?.first { $0.id != item.id }
+        } catch {
+            let gusError = GusError(from: error)
+            guard !gusError.isCancellation else { return }
+            logger.error("Next-up load failed: \(gusError.localizedDescription, privacy: .public)")
+        }
+    }
+
+    private func updateNextUpPrompt(time: Double, player: AVPlayer) {
+        guard nextUpItem != nil, !isNextUpPromptVisible, time.isFinite else { return }
+        let duration = player.currentItem?.duration.seconds ?? PlaybackTime.seconds(fromTicks: item.runTimeTicks ?? 0)
+        guard duration.isFinite, duration > 0 else { return }
+        if duration - time <= 60 || time / duration >= 0.92 {
+            isNextUpPromptVisible = true
         }
     }
 

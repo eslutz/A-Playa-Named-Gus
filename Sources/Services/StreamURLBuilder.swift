@@ -35,19 +35,27 @@ struct StreamURLBuilder {
 
     private let logger = Logger(category: .stream)
 
-    func resolvePlayback(for itemID: String, maxStreamingBitrate: Int = 120_000_000) async throws -> Resolution {
-        let body = PlaybackInfoDto(
-            deviceProfile: Self.avPlayerProfile(maxStreamingBitrate: maxStreamingBitrate),
-            enableDirectPlay: true,
-            enableDirectStream: true,
-            enableTranscoding: true,
+    func resolvePlayback(
+        for itemID: String,
+        maxStreamingBitrate: Int = 120_000_000,
+        streamSelection: PlaybackStreamSelection = .none,
+        startTimeTicks: Int? = nil
+    ) async throws -> Resolution {
+        let body = Self.playbackInfoBody(
+            userID: userID,
             maxStreamingBitrate: maxStreamingBitrate,
-            userID: userID
+            streamSelection: streamSelection,
+            startTimeTicks: startTimeTicks
         )
 
         let request = Paths.getPostedPlaybackInfo(
             itemID: itemID,
-            parameters: .init(userID: userID, maxStreamingBitrate: maxStreamingBitrate),
+            parameters: Self.playbackInfoParameters(
+                userID: userID,
+                maxStreamingBitrate: maxStreamingBitrate,
+                streamSelection: streamSelection,
+                startTimeTicks: startTimeTicks
+            ),
             body
         )
 
@@ -76,7 +84,9 @@ struct StreamURLBuilder {
             tag: source.eTag,
             playSessionID: playSessionID,
             mediaSourceID: source.id,
-            deviceID: DeviceIdentity.deviceID
+            deviceID: DeviceIdentity.deviceID,
+            subtitleStreamIndex: streamSelection.subtitleStreamIndex,
+            audioStreamIndex: streamSelection.audioStreamIndex
         )
         let streamRequest = Paths.getVideoStream(itemID: itemID, parameters: streamParameters)
 
@@ -127,6 +137,40 @@ struct StreamURLBuilder {
             maxStreamingBitrate: maxStreamingBitrate,
             name: DeviceIdentity.clientName,
             transcodingProfiles: transcoding
+        )
+    }
+
+    static func playbackInfoBody(
+        userID: String,
+        maxStreamingBitrate: Int,
+        streamSelection: PlaybackStreamSelection,
+        startTimeTicks: Int?
+    ) -> PlaybackInfoDto {
+        PlaybackInfoDto(
+            audioStreamIndex: streamSelection.audioStreamIndex,
+            deviceProfile: avPlayerProfile(maxStreamingBitrate: maxStreamingBitrate),
+            enableDirectPlay: true,
+            enableDirectStream: true,
+            enableTranscoding: true,
+            maxStreamingBitrate: maxStreamingBitrate,
+            startTimeTicks: startTimeTicks,
+            subtitleStreamIndex: streamSelection.subtitleStreamIndex,
+            userID: userID
+        )
+    }
+
+    static func playbackInfoParameters(
+        userID: String,
+        maxStreamingBitrate: Int,
+        streamSelection: PlaybackStreamSelection,
+        startTimeTicks: Int?
+    ) -> Paths.GetPostedPlaybackInfoParameters {
+        Paths.GetPostedPlaybackInfoParameters(
+            userID: userID,
+            maxStreamingBitrate: maxStreamingBitrate,
+            startTimeTicks: startTimeTicks,
+            audioStreamIndex: streamSelection.audioStreamIndex,
+            subtitleStreamIndex: streamSelection.subtitleStreamIndex
         )
     }
 }
