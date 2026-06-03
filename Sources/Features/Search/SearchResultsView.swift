@@ -21,7 +21,7 @@ struct SearchResultsView: View {
                                 imageURL: session.imageBuilder.primaryImageURL(for: item)
                             )
                         }
-                        .buttonStyle(.plain)
+                        .posterNavigationStyle()
                         .task {
                             await store.loadMoreIfNeeded(currentItem: item)
                         }
@@ -40,9 +40,12 @@ struct SearchResultsView: View {
 }
 
 struct SearchRootView<Content: View>: View {
+    @Environment(AppNavigationModel.self) private var navigation
     @Environment(SessionStore.self) private var session
     @State private var store: SearchStore?
     @State private var searchText = ""
+    @State private var isSearchPresented = false
+    @FocusState private var isSearchFocused: Bool
 
     @ViewBuilder var content: () -> Content
 
@@ -59,27 +62,22 @@ struct SearchRootView<Content: View>: View {
                 content()
             }
         }
-        .searchable(text: $searchText, prompt: Text("Search Jellyfin"))
+        .gusSearchable(
+            text: $searchText,
+            isPresented: $isSearchPresented,
+            isFocused: $isSearchFocused,
+            prompt: Text("Search Jellyfin")
+        )
         .task {
             if store == nil {
                 store = SearchStore(session: session)
             }
         }
-        .task(id: searchText) {
-            guard let store else { return }
-            guard isSearching else {
-                store.reset()
-                return
-            }
-
-            do {
-                try await Task.sleep(for: .milliseconds(300))
-                guard !Task.isCancelled else { return }
-                await store.search(searchText)
-            } catch is CancellationError {
-            } catch {
-                await store.search(searchText)
-            }
+        .searchDebounce(text: $searchText, store: $store)
+        .onChange(of: navigation.searchFocusRequest) { _, request in
+            guard request > 0 else { return }
+            isSearchPresented = true
+            isSearchFocused = true
         }
     }
 
@@ -89,9 +87,12 @@ struct SearchRootView<Content: View>: View {
 }
 
 struct SearchView: View {
+    @Environment(AppNavigationModel.self) private var navigation
     @Environment(SessionStore.self) private var session
     @State private var store: SearchStore?
     @State private var searchText = ""
+    @State private var isSearchPresented = false
+    @FocusState private var isSearchFocused: Bool
 
     var body: some View {
         Group {
@@ -107,15 +108,38 @@ struct SearchView: View {
             }
         }
         .navigationTitle("Search")
-        .searchable(text: $searchText, prompt: Text("Search Jellyfin"))
+        .gusSearchable(
+            text: $searchText,
+            isPresented: $isSearchPresented,
+            isFocused: $isSearchFocused,
+            prompt: Text("Search Jellyfin")
+        )
         .task {
             if store == nil {
                 store = SearchStore(session: session)
             }
         }
-        .task(id: searchText) {
-            guard let store else { return }
-            let trimmed = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+        .searchDebounce(text: $searchText, store: $store)
+        .onChange(of: navigation.searchFocusRequest) { _, request in
+            guard request > 0 else { return }
+            isSearchPresented = true
+            isSearchFocused = true
+        }
+    }
+}
+
+// MARK: - Shared debounce modifier
+
+private extension View {
+    /// Debounces a `.searchable` text field by 300 ms and drives a `SearchStore`.
+    ///
+    /// Centralised here so `SearchRootView` and `SearchView` share one implementation:
+    /// consistent debounce delay, consistent trimming, and no duplicated `catch` branches.
+    func searchDebounce(text: Binding<String>, store: Binding<SearchStore?>) -> some View {
+        task(id: text.wrappedValue) {
+            let trimmed = text.wrappedValue.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard let store = store.wrappedValue else { return }
+
             guard !trimmed.isEmpty else {
                 store.reset()
                 return
@@ -123,12 +147,12 @@ struct SearchView: View {
 
             do {
                 try await Task.sleep(for: .milliseconds(300))
-                guard !Task.isCancelled else { return }
-                await store.search(trimmed)
-            } catch is CancellationError {
             } catch {
-                await store.search(trimmed)
+                return // cancelled by a new keystroke; nothing to do
             }
+
+            guard !Task.isCancelled else { return }
+            await store.search(trimmed)
         }
     }
 }

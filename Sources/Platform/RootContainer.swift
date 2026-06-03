@@ -34,30 +34,49 @@ struct RootContainer: View {
 
 /// Tab-based root (compact iPhone, tvOS).
 private struct TabRootView: View {
+    @Environment(AppNavigationModel.self) private var navigation
+    @State private var selection: AppRoute = .home
+
     var body: some View {
-        TabView {
-            Tab("Home", systemImage: "house") {
+        TabView(selection: $selection) {
+            Tab("Home", systemImage: "house", value: AppRoute.home) {
                 NavigationStack {
                     SearchRootView {
                         HomeView()
                     }
-                        .gusItemDestinations()
+                    .gusItemDestinations()
                 }
             }
             #if os(tvOS)
-                Tab("Search", systemImage: "magnifyingglass") {
+                Tab("Search", systemImage: "magnifyingglass", value: AppRoute.search) {
                     NavigationStack {
                         SearchView()
                             .gusItemDestinations()
                     }
                 }
             #endif
-            Tab("Settings", systemImage: "gearshape") {
+            Tab("Settings", systemImage: "gearshape", value: AppRoute.settings) {
                 NavigationStack {
                     SettingsView()
                 }
             }
         }
+        .onChange(of: selection) { _, route in
+            if navigation.route != route {
+                navigation.open(route)
+            }
+        }
+        .onChange(of: navigation.route) { _, route in
+            selection = tabSelection(for: route)
+        }
+    }
+
+    private func tabSelection(for route: AppRoute) -> AppRoute {
+        #if os(tvOS)
+            return route
+        #else
+            return route == .search ? .home : route
+        #endif
     }
 }
 
@@ -69,6 +88,7 @@ private enum SidebarItem: Hashable {
 
 /// Split-view root (iPad, macOS, visionOS).
 private struct SplitRootView: View {
+    @Environment(AppNavigationModel.self) private var navigation
     @Environment(SessionStore.self) private var session
     @State private var home: HomeStore?
     @State private var selection: SidebarItem? = .home
@@ -98,10 +118,52 @@ private struct SplitRootView: View {
                 SearchRootView {
                     detail
                 }
-                    .gusItemDestinations()
+                .gusItemDestinations()
             }
         }
         .navigationSplitViewStyle(.balanced)
+        .toolbar {
+            ToolbarItemGroup {
+                Button {
+                    navigation.open(.home)
+                } label: {
+                    Label("Home", systemImage: "house")
+                }
+
+                Button {
+                    navigation.open(.search)
+                } label: {
+                    Label("Search", systemImage: "magnifyingglass")
+                }
+
+                Button {
+                    navigation.open(.settings)
+                } label: {
+                    Label("Settings", systemImage: "gearshape")
+                }
+            }
+        }
+        #if os(visionOS)
+        .glassBackground()
+        #endif
+        .onChange(of: selection) { _, item in
+            switch item {
+            case .home:
+                navigation.open(.home)
+            case .settings:
+                navigation.open(.settings)
+            case .library, .none:
+                break
+            }
+        }
+        .onChange(of: navigation.route) { _, route in
+            switch route {
+            case .home, .search:
+                selection = .home
+            case .settings:
+                selection = .settings
+            }
+        }
         .task {
             if home == nil {
                 let store = HomeStore(session: session)

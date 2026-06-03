@@ -7,6 +7,7 @@ import SwiftUI
 @main
 struct GusApp: App {
     @State private var appModel = AppModel()
+    @State private var appNavigation = AppNavigationModel()
     @State private var playbackRefresh = PlaybackRefreshStore()
 
     #if os(visionOS)
@@ -22,12 +23,23 @@ struct GusApp: App {
         WindowGroup {
             RootView()
                 .environment(appModel)
+                .environment(appNavigation)
                 .environment(playbackRefresh)
             #if os(visionOS)
                 .environment(cinema)
             #endif
                 .task { appModel.restoreLastSession() }
+                .onOpenURL { url in
+                    appNavigation.open(url: url)
+                }
         }
+        #if os(macOS)
+        .defaultSize(width: 1100, height: 760)
+        .windowResizability(.contentMinSize)
+        #elseif os(visionOS)
+        .defaultSize(width: 1200, height: 820)
+        #endif
+        .gusCommands(appModel: appModel, navigation: appNavigation)
 
         #if os(visionOS)
             ImmersiveSpace(id: GusCinema.spaceID) {

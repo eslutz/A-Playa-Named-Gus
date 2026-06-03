@@ -1,5 +1,19 @@
 import SwiftUI
 
+extension Scene {
+    /// Menu-bar commands where SwiftUI exposes them; no-op on tvOS.
+    @SceneBuilder
+    func gusCommands(appModel: AppModel, navigation: AppNavigationModel) -> some Scene {
+        #if os(tvOS)
+            self
+        #else
+            commands {
+                GusCommands(appModel: appModel, navigation: navigation)
+            }
+        #endif
+    }
+}
+
 /// The handful of cross-platform UI tweaks. Keeping them in one place means feature views
 /// stay free of `#if os(...)` noise and read like ordinary SwiftUI.
 extension View {
@@ -10,6 +24,63 @@ extension View {
             hoverEffect(.highlight)
         #else
             self
+        #endif
+    }
+
+    /// Preserve native focus styling on tvOS while keeping poster links visually plain on
+    /// pointer/touch platforms.
+    @ViewBuilder
+    func posterNavigationStyle() -> some View {
+        #if os(tvOS)
+            self
+        #else
+            buttonStyle(.plain)
+        #endif
+    }
+
+    /// Groups related focusable controls on tvOS; no-op elsewhere.
+    @ViewBuilder
+    func tvFocusSection() -> some View {
+        #if os(tvOS)
+            focusSection()
+        #else
+            self
+        #endif
+    }
+
+    /// Keyboard shortcuts are unavailable on tvOS; keep feature views platform-neutral.
+    @ViewBuilder
+    func gusKeyboardShortcut(_ key: KeyEquivalent, modifiers: EventModifiers = .command) -> some View {
+        #if os(tvOS)
+            self
+        #else
+            keyboardShortcut(key, modifiers: modifiers)
+        #endif
+    }
+
+    /// Default action shortcut on keyboard platforms; no-op on tvOS.
+    @ViewBuilder
+    func gusDefaultActionShortcut() -> some View {
+        #if os(tvOS)
+            self
+        #else
+            keyboardShortcut(.defaultAction)
+        #endif
+    }
+
+    /// Native searchable UI, avoiding presentation/focus overloads that tvOS doesn't expose.
+    @ViewBuilder
+    func gusSearchable(
+        text: Binding<String>,
+        isPresented: Binding<Bool>,
+        isFocused: FocusState<Bool>.Binding,
+        prompt: Text
+    ) -> some View {
+        #if os(tvOS)
+            searchable(text: text, prompt: prompt)
+        #else
+            searchable(text: text, isPresented: isPresented, prompt: prompt)
+                .searchFocused(isFocused)
         #endif
     }
 
@@ -54,6 +125,8 @@ enum PosterGrid {
     static var spacing: CGFloat {
         #if os(tvOS)
             return 40
+        #elseif os(visionOS)
+            return 28
         #else
             return 16
         #endif
