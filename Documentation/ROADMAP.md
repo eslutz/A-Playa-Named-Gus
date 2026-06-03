@@ -155,22 +155,34 @@ automated build verification. (Covers priority: *polish & testing*.)
 
 **Goal:** playback is competitive and system-integrated.
 
-- [ ] **Audio & subtitle track selection.** Expose `MediaStream`s; let the user switch
+- [x] **Audio & subtitle track selection.** Expose `MediaStream`s; let the user switch
   audio/subtitle tracks (request appropriate stream indices / transcode). *Acceptance:*
-  track changes apply; selection persists within a session.
-- [ ] **Picture in Picture.** Enable PiP where supported (iOS/iPadOS/macOS) and verify the
+  track changes apply; selection persists within a session. *(Done: playback exposes
+  audio/subtitle menus, posts selected stream indices, rebuilds the player item, and
+  preserves position.)*
+- [~] **Picture in Picture.** Enable PiP where supported (iOS/iPadOS/macOS) and verify the
   background-audio + `UIBackgroundModes` path. *Acceptance:* PiP starts on backgrounding;
-  audio continues.
-- [ ] **AirPlay & external displays.** Verify AVKit AirPlay routing. *Acceptance:* route
-  picker works; playback hands off cleanly.
-- [ ] **Now Playing artwork & metadata polish.** Load poster into `MPMediaItemArtwork`
+  audio continues. *(Implementation note: background audio is configured and AVKit surfaces
+  build across iOS/iPadOS/macOS; device PiP/background verification is still pending in the
+  manual verification.)*
+- [~] **AirPlay & external displays.** Verify AVKit AirPlay routing. *Acceptance:* route
+  picker works; playback hands off cleanly. *(Implementation note: system
+  `AVRoutePickerView` is wired for supported platforms and external playback is enabled
+  where available; route handoff verification is pending manual verification.)*
+- [~] **Now Playing artwork & metadata polish.** Load poster into `MPMediaItemArtwork`
   (platform image), accurate duration/elapsed/rate. *Acceptance:* lock screen / Control
-  Center / Apple TV Remote show artwork + correct scrubbing.
-- [ ] **Chapters & next-up.** Chapter markers if present; auto-play next episode / up-next
-  prompt. *Acceptance:* chapter skip works; next episode offered at credits.
-- [ ] **visionOS Cinema integration.** Sync the immersive Cinema with the active player
+  Center / Apple TV Remote show artwork + correct scrubbing. *(Implementation note:
+  artwork loading and platform artwork conversion are in place; lock-screen/remote visual
+  verification is pending manual verification.)*
+- [x] **Chapters & next-up.** Chapter markers if present; auto-play next episode / up-next
+  prompt. *Acceptance:* chapter skip works; next episode offered at credits. *(Done:
+  chapter targets render as seek actions and episode playback loads Jellyfin next-up with a
+  near-credits prompt.)*
+- [~] **visionOS Cinema integration.** Sync the immersive Cinema with the active player
   (state, dismissal). *Acceptance:* entering/leaving Cinema never interrupts windowed
-  audio; graceful fallback if the space can't open.
+  audio; graceful fallback if the space can't open. *(Implementation note: Cinema open
+  state and fallback paths are wired; simulator/device verification is pending manual
+  verification.)*
 
 ---
 
@@ -217,22 +229,40 @@ automated build verification. (Covers priority: *polish & testing*.)
 
 **Goal:** smooth with large libraries and flaky networks.
 
-- [ ] **Library pagination / lazy loading.** Page `getItems` with infinite scroll and
-  prefetch. *Acceptance:* a 5k-item library scrolls smoothly; memory stays bounded.
-- [ ] **Image pipeline tuning.** Right-size `URLCache`, request appropriately sized images,
+- [x] **Library pagination / lazy loading.** Page `getItems` with infinite scroll and
+  prefetch. *Acceptance:* a 5k-item library scrolls smoothly; memory stays bounded. *(Done:
+  `LibraryStore` uses shared `Paging`, page size 60, total-record counts, and prefetches
+  within the final 12 items; `LibraryGridView` shows a bottom loading indicator.)*
+- [x] **Image pipeline tuning.** Right-size `URLCache`, request appropriately sized images,
   cancel offscreen loads. *Acceptance:* no redundant full-size fetches; scroll stays
-  jank-free.
-- [ ] **Network resilience.** Timeouts, retry/backoff where sensible, offline-tolerant
+  jank-free. *(Done: `ImageURLBuilder.ImageContext` centralizes a fixed width set for grid,
+  rail, backdrop, and Now Playing artwork; the documented 64 MB memory / 512 MB disk
+  `URLCache` budget remains unchanged.)*
+- [x] **Network resilience.** Timeouts, retry/backoff where sensible, offline-tolerant
   empty states, reachability messaging. *Acceptance:* server-down and slow-network paths
-  degrade gracefully, never hang.
-- [ ] **(Optional, may defer post-launch) Offline downloads.** Evaluate scope; likely a
-  post-1.0 feature. *Acceptance:* explicit go/no-go recorded here.
+  degrade gracefully, never hang. *(Done: `JellyfinClientFactory` sets request/resource
+  timeouts while keeping `waitsForConnectivity`; `NetworkRetryPolicy` adds opt-in retries
+  only for idempotent foreground loads; `GusError` surfaces clearer timeout/offline
+  messages; `LoadingStateView` supports an optional Try Again action.)*
+- [x] **Offline downloads.** Background downloads on iOS/iPadOS, macOS, and visionOS;
+  tvOS excluded. *Acceptance:* local playback, pause/resume/delete, disk-budget surfacing,
+  and an explicit go/no-go recorded. *(Done: `DownloadSourceResolver` keeps
+  AVPlayer-native originals and sends incompatible media through Jellyfin's progressive
+  MP4 transcode endpoint; `DownloadSessionCoordinator` uses a native background
+  `URLSessionDownloadTask`; `OfflineDownloadStore` persists status/progress/resume data,
+  stores per-server/user media in Application Support, excludes media from backup,
+  enforces a 20 GB soft cap plus low-space guard, and prefers local playback URLs. ADR
+  0005 records the enhanced background/transcode scope and tvOS exclusion.)*
 
 ---
 
 ## M7 — App Store Readiness
 
 **Goal:** everything Apple requires to accept and review the app.
+
+Readiness documents now live under `Documentation/AppStore/`, but M7 remains unchecked
+until privacy manifest/signing/App Store Connect/TestFlight/submission work is actually
+done.
 
 - [ ] **Privacy manifest & nutrition labels.** Add `PrivacyInfo.xcprivacy` (declare any
   required-reason APIs and data use) and complete App Privacy answers (data not collected

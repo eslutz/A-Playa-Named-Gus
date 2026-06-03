@@ -144,6 +144,16 @@ SwiftUI `VideoPlayer`. `NowPlayingController` feeds `MPNowPlayingInfoCenter` /
 `MPRemoteCommandCenter`. The audio session is configured only where it exists
 (`#if os(iOS) || os(tvOS) || os(visionOS)` — there is no `AVAudioSession` on macOS).
 
+**Downloads are background-capable and non-tvOS.** `OfflineDownloadStore` resolves a
+download source, persists status/progress metadata, and hands transfer work to
+`DownloadSessionCoordinator`, a native `URLSessionConfiguration.background` download
+session. AVPlayer-native originals use `Paths.getDownload(itemID:)`; incompatible
+sources use Jellyfin server-side progressive MP4 transcoding through
+`Paths.getVideoStreamByContainer`. Files still land in Application Support under a
+per-server/user folder and are excluded from backup. Pause/resume/delete are supported;
+resume data can expire server-side, so stale resumes may restart. Keep feature views free
+of platform `#if`s by routing availability through `Platform/DownloadsAvailability.swift`.
+
 **Apple-first technology mapping** — when you need one of these, reach for the right
 column, not a custom/third-party equivalent:
 
@@ -157,6 +167,7 @@ column, not a custom/third-party equivalent:
 | Persistence | `Codable` + `FileManager`; `UserDefaults`/`@AppStorage` for prefs |
 | Theming | `AccentColor`, semantic colors, system Materials, SF Symbols, Dynamic Type, `ContentUnavailableView` |
 | Now Playing | MediaPlayer (`MPNowPlayingInfoCenter`, `MPRemoteCommandCenter`) |
+| Downloads | Background `URLSessionDownloadTask`, `FileManager`, `Codable`, backup-exclusion resource values |
 | Logging | `OSLog` `Logger` (no Pulse) |
 | Localized strings | String Catalog (`Localizable.xcstrings`) |
 | Immersive (visionOS) | RealityKit + `ImmersiveSpace` |
@@ -186,8 +197,10 @@ column, not a custom/third-party equivalent:
   idioms.
 - **Definition of done for a change:** builds green on all five destinations
   (`xcodegen generate` first), no new platform-only API leaks, user-facing strings
-  localized, new screens have empty/error states, and any deviation from the native-first
-  mandate is justified in the commit.
+  localized, new screens have empty/error states, `jq empty Resources/Localizable.xcstrings`
+  passes, and any deviation from the native-first mandate is justified in the commit. For
+  playback features, record which checks are automated and which require manual/device
+  verification.
 
 ## Reference documentation
 

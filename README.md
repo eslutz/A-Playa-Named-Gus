@@ -14,13 +14,14 @@ For contributors and AI agents: [`CLAUDE.md`](CLAUDE.md) is the working context 
 architecture, conventions, Apple API/HIG references); [`Documentation/ROADMAP.md`](Documentation/ROADMAP.md)
 is the milestone plan to App Store submission.
 
-## Status — first milestone
+## Status
 
-A breadth-first end-to-end slice on all five platforms:
-**connect → sign in → browse → detail → play → settings**, plus the visionOS
-**Gus Cinema** immersive space.
+Current branch implements the core app plus performance/resilience work:
+**connect → sign in → browse/search → detail → play → settings/downloads**, plus the
+visionOS **Gus Cinema** immersive space.
 
 All five destinations build green (Xcode 26.5 / Swift 6.3 toolchain, Swift 5 language mode).
+The full iOS unit/UI test action covers pure logic and launch smoke tests.
 
 ## Architecture (Apple-first)
 
@@ -37,6 +38,12 @@ All five destinations build green (Xcode 26.5 / Swift 6.3 toolchain, Swift 5 lan
 | Logging | `OSLog` |
 | Strings | String Catalog (`Localizable.xcstrings`) |
 | Dependency | **Only** `jellyfin-sdk-swift` (`from: 2.1.0`) — everything else is Apple frameworks |
+
+Offline downloads are available on iOS, iPadOS, macOS, and visionOS; tvOS is intentionally
+excluded. Downloads use native background `URLSessionDownloadTask`s, store media in
+Application Support per server/user, exclude files from backup, and surface progress,
+pause/resume/delete, size, and disk-budget state in Settings. AVPlayer-native sources keep
+the original file; incompatible sources use Jellyfin's progressive MP4 transcode endpoint.
 
 `Sources/` is grouped into `App`, `Models`, `Services`, `Stores` (`@Observable`),
 `Features` (Connect/Home/Item/Player/Settings), `SharedUI`, `Platform` (the `#if os(...)`
@@ -69,19 +76,18 @@ xcodebuild -showdestinations -project Gus.xcodeproj -scheme Gus
 xcodebuild -project Gus.xcodeproj -scheme Gus -destination 'platform=iOS Simulator,name=iPhone 17' build
 xcodebuild -project Gus.xcodeproj -scheme Gus -destination 'platform=iOS Simulator,name=iPad Pro 11-inch (M5)' build
 xcodebuild -project Gus.xcodeproj -scheme Gus -destination 'platform=tvOS Simulator,name=Apple TV 4K (3rd generation)' build
-xcodebuild -project Gus.xcodeproj -scheme Gus -destination 'platform=visionOS Simulator,name=Apple Vision Pro' build
 xcodebuild -project Gus.xcodeproj -scheme Gus -destination 'platform=macOS' build
+# visionOS has multiple "Apple Vision Pro" destinations on this machine; use the id from -showdestinations.
+xcodebuild -project Gus.xcodeproj -scheme Gus -destination 'platform=visionOS Simulator,id=<UUID>' build
+xcodebuild test -project Gus.xcodeproj -scheme Gus -destination 'platform=iOS Simulator,name=iPhone 17'
 ```
 
 Then smoke-test against a real/demo Jellyfin server: connect → sign in → home → detail →
-**play**, and on visionOS enter **Gus Cinema** during playback.
+**play**, test AirPlay/PiP/Now Playing where device support exists, verify downloads on
+non-tvOS platforms, and on visionOS enter **Gus Cinema** during playback.
 
-## Deferred (later rounds)
+## App Store Readiness
 
-- **App icons** — `ASSETCATALOG_COMPILER_APPICON_NAME` is intentionally unset so a single
-  multiplatform asset catalog doesn't require per-platform icon sets
-  (`appiconset` / tvOS `brandassets` / visionOS `solidimagestack`) before real artwork
-  exists. The `AccentColor` (pineapple gold) is wired up and drives the app tint.
-- Search, multi-user switching, fuller metadata/people/seasons UI, offline/downloads,
-  playback-progress reporting, Bonjour discovery UI, blurhash placeholders, music
-  libraries, localization beyond the base String Catalog.
+Draft M7 readiness documents live in [`Documentation/AppStore`](Documentation/AppStore).
+They are preparation only; privacy manifest, signing, screenshots, TestFlight, and
+submission remain future M7 implementation work.
