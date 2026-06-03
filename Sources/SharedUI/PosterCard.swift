@@ -33,6 +33,16 @@ struct PosterCard: View {
             }
         }
         .contentShape(Rectangle())
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(accessibilityLabel)
+    }
+
+    private var accessibilityLabel: Text {
+        if let subtitle {
+            Text("\(title), \(subtitle)")
+        } else {
+            Text(title)
+        }
     }
 }
 

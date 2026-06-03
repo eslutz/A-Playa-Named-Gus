@@ -74,10 +74,11 @@ private struct ContinueWatchingRail: View {
                             )
                             .frame(width: railItemWidth)
                         }
-                        .buttonStyle(.plain)
+                        .posterNavigationStyle()
                     }
                 }
                 .padding(.vertical, 4)
+                .tvFocusSection()
             }
         }
     }
@@ -113,9 +114,10 @@ private struct LibrariesGrid: View {
                             placeholderSymbol: library.librarySymbol
                         )
                     }
-                    .buttonStyle(.plain)
+                    .posterNavigationStyle()
                 }
             }
+            .tvFocusSection()
         }
     }
 }

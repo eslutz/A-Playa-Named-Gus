@@ -48,6 +48,7 @@ struct VideoPlayerView: View {
             .buttonStyle(.plain)
             .tint(.white)
             .padding(8)
+            .accessibilityLabel("Close Player")
         }
         #endif
         .task {

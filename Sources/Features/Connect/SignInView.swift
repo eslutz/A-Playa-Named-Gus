@@ -49,6 +49,7 @@ struct SignInView: View {
             }
         }
         .formStyle(.grouped)
+        .glassBackground()
         .navigationTitle(server.name)
         .task {
             await refreshQuickConnectAvailability()

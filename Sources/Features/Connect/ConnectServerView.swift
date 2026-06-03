@@ -42,6 +42,7 @@ struct ConnectServerView: View {
                     }
                 }
                 .disabled(urlText.trimmingCharacters(in: .whitespaces).isEmpty || isConnecting)
+                .accessibilityIdentifier("ConnectServerView.connectButton")
             }
 
             Section("Local Servers") {
@@ -90,6 +91,7 @@ struct ConnectServerView: View {
             }
         }
         .formStyle(.grouped)
+        .glassBackground()
         .navigationTitle("Connect to Jellyfin")
         .onDisappear {
             discoveryStore.cancel()

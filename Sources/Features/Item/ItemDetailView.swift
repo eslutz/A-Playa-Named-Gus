@@ -21,14 +21,27 @@ struct ItemDetailView: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
-        .task {
-            if store == nil {
-                let store = ItemDetailStore(item: item, session: session)
-                self.store = store
-                await store.load()
+        .navigationTitle(store?.item.displayTitle ?? item.displayTitle)
+        #if os(iOS)
+            .navigationBarTitleDisplayMode(.inline)
+        #endif
+            .task {
+                if store == nil {
+                    let store = ItemDetailStore(item: item, session: session)
+                    self.store = store
+                    await store.load()
+                }
             }
-        }
-        .playerPresentation(item: $playerItem)
+        #if os(visionOS)
+            .toolbar {
+                if let item = store?.item {
+                    ToolbarItem(placement: .bottomOrnament) {
+                        CinemaToggleButton(item: item)
+                    }
+                }
+            }
+        #endif
+            .playerPresentation(item: $playerItem)
     }
 
     private func detailContent(for item: BaseItemDto, seriesStore: SeriesDetailStore?) -> some View {
@@ -57,10 +70,8 @@ struct ItemDetailView: View {
                     }
                     .buttonStyle(.borderedProminent)
                     .controlSize(.large)
-
-                    #if os(visionOS)
-                        CinemaToggleButton(item: item)
-                    #endif
+                    .gusDefaultActionShortcut()
+                    .accessibilityHint("Starts playback for this item.")
                 }
 
                 if let overview = item.overview, !overview.isEmpty {
@@ -175,9 +186,10 @@ private struct SeriesEpisodesView: View {
                             NavigationLink(value: ItemRef(item: episode)) {
                                 EpisodeRow(episode: episode)
                             }
-                            .buttonStyle(.plain)
+                            .posterNavigationStyle()
                         }
                     }
+                    .tvFocusSection()
                 }
             }
         }

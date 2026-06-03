@@ -7,4 +7,31 @@ final class GusLaunchUITests: XCTestCase {
 
         XCTAssertTrue(app.staticTexts["Connect to Jellyfin"].waitForExistence(timeout: 5))
     }
+
+    func testConnectScreenRendersAtLargestAccessibilityContentSize() {
+        let app = XCUIApplication()
+        app.launchArguments += [
+            "-UIPreferredContentSizeCategoryName",
+            "UICTContentSizeCategoryAccessibilityExtraExtraExtraLarge",
+        ]
+        app.launch()
+
+        XCTAssertTrue(app.staticTexts["Connect to Jellyfin"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["Connect"].exists)
+    }
+
+    func testConnectScreenRendersWithPseudolocalizationAtLargestAccessibilityContentSize() {
+        let app = XCUIApplication()
+        app.launchArguments += [
+            "-AppleLanguages",
+            "(en-XA)",
+            "-AppleLocale",
+            "en_XA",
+            "-UIPreferredContentSizeCategoryName",
+            "UICTContentSizeCategoryAccessibilityExtraExtraExtraLarge",
+        ]
+        app.launch()
+
+        XCTAssertTrue(app.buttons["ConnectServerView.connectButton"].waitForExistence(timeout: 5))
+    }
 }

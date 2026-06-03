@@ -35,6 +35,7 @@ struct SettingsView: View {
                 Button("Sign Out", role: .destructive) {
                     appModel.signOut()
                 }
+                .gusKeyboardShortcut("q", modifiers: [.command, .shift])
             }
 
             Section("About") {
@@ -44,6 +45,7 @@ struct SettingsView: View {
             }
         }
         .formStyle(.grouped)
+        .glassBackground()
         .navigationTitle("Settings")
         .sheet(item: $reauthenticationServer) { server in
             NavigationStack {

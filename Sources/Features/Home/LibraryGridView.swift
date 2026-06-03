@@ -43,10 +43,11 @@ struct LibraryGridView: View {
                                 imageURL: session.imageBuilder.primaryImageURL(for: item)
                             )
                         }
-                        .buttonStyle(.plain)
+                        .posterNavigationStyle()
                     }
                 }
                 .padding()
+                .tvFocusSection()
             }
             .lookToScroll()
             .refreshable { await store.load() }
