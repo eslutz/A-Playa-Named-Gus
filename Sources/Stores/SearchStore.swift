@@ -3,7 +3,7 @@ import JellyfinAPI
 import Observation
 import OSLog
 
-struct SearchRequest {
+enum SearchRequest {
     static let metadataFields: [ItemFields] = [
         .primaryImageAspectRatio,
         .overview,
@@ -37,10 +37,6 @@ struct SearchPaging {
     let limit: Int
     private(set) var nextStartIndex = 0
     private(set) var canLoadMore = false
-
-    init(limit: Int) {
-        self.limit = limit
-    }
 
     mutating func reset() {
         nextStartIndex = 0

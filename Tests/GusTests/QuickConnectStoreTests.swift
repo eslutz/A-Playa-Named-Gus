@@ -8,7 +8,7 @@ struct QuickConnectStoreTests {
     @Test("decodes the enabled endpoint as a JSON boolean")
     func decodesEnabledEndpoint() throws {
         #expect(try QuickConnectAvailability.isEnabled(Data("true".utf8)))
-        #expect(!(try QuickConnectAvailability.isEnabled(Data("false".utf8))))
+        #expect(try !(QuickConnectAvailability.isEnabled(Data("false".utf8))))
     }
 
     @Test("marks disabled servers unavailable")

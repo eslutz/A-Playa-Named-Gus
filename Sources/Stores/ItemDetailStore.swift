@@ -3,7 +3,7 @@ import JellyfinAPI
 import Observation
 import OSLog
 
-struct SeriesRequest {
+enum SeriesRequest {
     static func seasonsParameters(userID: String) -> Paths.GetSeasonsParameters {
         Paths.GetSeasonsParameters(
             userID: userID,
