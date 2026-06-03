@@ -8,7 +8,6 @@ import OSLog
 /// `DeviceProfile` toward **HLS transcoding** so `AVPlayer` is handed an `.m3u8` it can
 /// always play, while still allowing direct play of AVKit-native containers (mp4/mov/m4v).
 struct StreamURLBuilder {
-
     struct Resolution {
         let url: URL
         let playSessionID: String?
@@ -23,8 +22,10 @@ struct StreamURLBuilder {
 
         var errorDescription: String? {
             switch self {
-            case .noMediaSource: return "The server returned no playable media source."
-            case .noURL: return "Could not build a playable URL for this item."
+            case .noMediaSource:
+                return String(localized: "The server returned no playable media source.", comment: "Playback error: no media source")
+            case .noURL:
+                return String(localized: "Could not build a playable URL for this item.", comment: "Playback error: URL build failed")
             }
         }
     }
@@ -32,7 +33,7 @@ struct StreamURLBuilder {
     let client: JellyfinClient
     let userID: String
 
-    private let logger = Logger(subsystem: "dev.ericslutz.gus", category: "Stream")
+    private let logger = Logger(category: .stream)
 
     func resolvePlayback(for itemID: String, maxStreamingBitrate: Int = 120_000_000) async throws -> Resolution {
         let body = PlaybackInfoDto(

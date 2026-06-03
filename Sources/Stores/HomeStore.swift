@@ -10,13 +10,12 @@ import OSLog
 @MainActor
 @Observable
 final class HomeStore {
-
     private(set) var state: LoadState = .idle
     private(set) var libraries: [BaseItemDto] = []
     private(set) var resumeItems: [BaseItemDto] = []
 
     private let session: SessionStore
-    private let logger = Logger(subsystem: "dev.ericslutz.gus", category: "Home")
+    private let logger = Logger(category: .home)
 
     init(session: SessionStore) {
         self.session = session
@@ -31,8 +30,10 @@ final class HomeStore {
             resumeItems = try await resume
             state = .loaded
         } catch {
-            logger.error("Home load failed: \(error.localizedDescription, privacy: .public)")
-            state = .failed(error.localizedDescription)
+            let gusError = GusError(from: error)
+            guard !gusError.isCancellation else { return } // navigated away mid-load
+            logger.error("Home load failed: \(gusError.localizedDescription, privacy: .public)")
+            state = .failed(gusError.localizedDescription)
         }
     }
 

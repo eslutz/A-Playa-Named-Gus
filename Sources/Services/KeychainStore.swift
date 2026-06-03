@@ -9,9 +9,8 @@ import Security
 /// (`"<serverID>:<userID>"`), accessible after first unlock. No keychain access group is
 /// used (keeps signing simple across platforms).
 struct KeychainStore {
-
     private let service = "dev.ericslutz.gus.tokens"
-    private let logger = Logger(subsystem: "dev.ericslutz.gus", category: "Keychain")
+    private let logger = Logger(category: .keychain)
 
     static let shared = KeychainStore()
 
@@ -72,7 +71,7 @@ struct KeychainStore {
 
     func deleteToken(account: String) {
         let status = SecItemDelete(baseQuery(account: account) as CFDictionary)
-        if status != errSecSuccess && status != errSecItemNotFound {
+        if status != errSecSuccess, status != errSecItemNotFound {
             logger.error("Keychain delete failed: \(status, privacy: .public)")
         }
     }

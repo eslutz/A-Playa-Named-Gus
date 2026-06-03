@@ -6,13 +6,21 @@ import OSLog
 /// Replaces Swiftfin's CoreStore/Defaults stack with plain JSON files in Application
 /// Support. Access tokens are *not* stored here — see `KeychainStore`.
 struct ServerStore {
-
-    private let logger = Logger(subsystem: "dev.ericslutz.gus", category: "ServerStore")
+    private let logger = Logger(category: .serverStore)
     private let directory: URL
 
     static let shared = ServerStore()
 
     init() {
+        self.init(directory: Self.defaultDirectory())
+    }
+
+    init(directory: URL) {
+        self.directory = directory
+        try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+    }
+
+    private static func defaultDirectory() -> URL {
         let base = (try? FileManager.default.url(
             for: .applicationSupportDirectory,
             in: .userDomainMask,
@@ -20,22 +28,36 @@ struct ServerStore {
             create: true
         )) ?? FileManager.default.temporaryDirectory
 
-        directory = base.appendingPathComponent("Gus", isDirectory: true)
-        try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        return base.appendingPathComponent("Gus", isDirectory: true)
     }
 
-    private var serversURL: URL { directory.appendingPathComponent("servers.json") }
-    private var usersURL: URL { directory.appendingPathComponent("users.json") }
+    private var serversURL: URL {
+        directory.appendingPathComponent("servers.json")
+    }
+
+    private var usersURL: URL {
+        directory.appendingPathComponent("users.json")
+    }
 
     // MARK: - Servers
 
-    func loadServers() -> [ServerConnection] { load([ServerConnection].self, from: serversURL) ?? [] }
-    func saveServers(_ servers: [ServerConnection]) { save(servers, to: serversURL) }
+    func loadServers() -> [ServerConnection] {
+        load([ServerConnection].self, from: serversURL) ?? []
+    }
+
+    func saveServers(_ servers: [ServerConnection]) {
+        save(servers, to: serversURL)
+    }
 
     // MARK: - Users
 
-    func loadUsers() -> [StoredUser] { load([StoredUser].self, from: usersURL) ?? [] }
-    func saveUsers(_ users: [StoredUser]) { save(users, to: usersURL) }
+    func loadUsers() -> [StoredUser] {
+        load([StoredUser].self, from: usersURL) ?? []
+    }
+
+    func saveUsers(_ users: [StoredUser]) {
+        save(users, to: usersURL)
+    }
 
     // MARK: - Private
 

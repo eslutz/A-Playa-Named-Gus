@@ -9,20 +9,21 @@ import OSLog
 @MainActor
 @Observable
 final class LibraryStore {
-
     private(set) var state: LoadState = .idle
     private(set) var items: [BaseItemDto] = []
 
     let library: BaseItemDto
     private let session: SessionStore
-    private let logger = Logger(subsystem: "dev.ericslutz.gus", category: "Library")
+    private let logger = Logger(category: .library)
 
     init(library: BaseItemDto, session: SessionStore) {
         self.library = library
         self.session = session
     }
 
-    var title: String { library.name ?? "Library" }
+    var title: String {
+        library.name ?? "Library"
+    }
 
     func load() async {
         guard state != .loading else { return }
@@ -44,8 +45,10 @@ final class LibraryStore {
             items = response.value.items ?? []
             state = .loaded
         } catch {
-            logger.error("Library load failed: \(error.localizedDescription, privacy: .public)")
-            state = .failed(error.localizedDescription)
+            let gusError = GusError(from: error)
+            guard !gusError.isCancellation else { return } // navigated away mid-load
+            logger.error("Library load failed: \(gusError.localizedDescription, privacy: .public)")
+            state = .failed(gusError.localizedDescription)
         }
     }
 }

@@ -11,7 +11,6 @@ import OSLog
 @MainActor
 @Observable
 final class PlaybackStore {
-
     enum State: Equatable {
         case idle
         case loading
@@ -25,7 +24,7 @@ final class PlaybackStore {
     let item: BaseItemDto
     private let session: SessionStore
     private let nowPlaying = NowPlayingController()
-    private let logger = Logger(subsystem: "dev.ericslutz.gus", category: "Playback")
+    private let logger = Logger(category: .playback)
 
     init(item: BaseItemDto, session: SessionStore) {
         self.item = item
@@ -38,7 +37,7 @@ final class PlaybackStore {
         configureAudioSession()
 
         guard let itemID = item.id else {
-            state = .failed("This item can't be played.")
+            state = .failed(String(localized: "This item can't be played.", comment: "Playback error: item has no playable identifier"))
             return
         }
 
@@ -48,7 +47,7 @@ final class PlaybackStore {
 
             let player = AVPlayer(url: resolution.url)
             #if !os(visionOS)
-            player.allowsExternalPlayback = true // AirPlay; not available on visionOS
+                player.allowsExternalPlayback = true // AirPlay; not available on visionOS
             #endif
             player.automaticallyWaitsToMinimizeStalling = true
             self.player = player
@@ -57,8 +56,10 @@ final class PlaybackStore {
             state = .ready
             player.play()
         } catch {
-            logger.error("Playback prepare failed: \(error.localizedDescription, privacy: .public)")
-            state = .failed(error.localizedDescription)
+            let gusError = GusError(from: error)
+            guard !gusError.isCancellation else { return } // dismissed before playback resolved
+            logger.error("Playback prepare failed: \(gusError.localizedDescription, privacy: .public)")
+            state = .failed(gusError.localizedDescription)
         }
     }
 
@@ -74,15 +75,15 @@ final class PlaybackStore {
 
     private func configureAudioSession() {
         #if os(iOS) || os(tvOS) || os(visionOS)
-        let session = AVAudioSession.sharedInstance()
-        try? session.setCategory(.playback, mode: .moviePlayback)
-        try? session.setActive(true)
+            let session = AVAudioSession.sharedInstance()
+            try? session.setCategory(.playback, mode: .moviePlayback)
+            try? session.setActive(true)
         #endif
     }
 
     private func deactivateAudioSession() {
         #if os(iOS) || os(tvOS) || os(visionOS)
-        try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+            try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
         #endif
     }
 }

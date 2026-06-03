@@ -5,7 +5,6 @@ import SwiftUI
 /// Pattern reference: Swiftfin's `ConnectToServerViewModel`. Bonjour discovery is a later
 /// round; manual entry ships first.
 struct ConnectServerView: View {
-
     @Environment(AppModel.self) private var appModel
     let onConnected: (ServerConnection) -> Void
 
@@ -58,6 +57,7 @@ struct ConnectServerView: View {
                 let server = try await appModel.connect(to: urlText)
                 onConnected(server)
             } catch {
+                guard !GusError(from: error).isCancellation else { return }
                 errorMessage = error.localizedDescription
             }
         }

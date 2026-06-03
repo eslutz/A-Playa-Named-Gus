@@ -5,7 +5,6 @@ import SwiftUI
 /// Pattern reference: Swiftfin's `UserSignInViewModel` (`client.signIn(username:password:)`).
 /// On success, `AppModel.currentSession` is set and `RootView` swaps to the signed-in tree.
 struct SignInView: View {
-
     @Environment(AppModel.self) private var appModel
     let server: ServerConnection
 
@@ -59,6 +58,7 @@ struct SignInView: View {
             do {
                 try await appModel.signIn(to: server, username: username, password: password)
             } catch {
+                guard !GusError(from: error).isCancellation else { return }
                 errorMessage = error.localizedDescription
             }
         }

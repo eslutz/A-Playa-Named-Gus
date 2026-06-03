@@ -11,7 +11,6 @@ import OSLog
 @MainActor
 @Observable
 final class AppModel {
-
     enum ConnectError: LocalizedError {
         case invalidURL
         case unreachable(String)
@@ -20,11 +19,11 @@ final class AppModel {
         var errorDescription: String? {
             switch self {
             case .invalidURL:
-                return "Enter a valid server address."
+                return String(localized: "Enter a valid server address.", comment: "Connect error: malformed URL")
             case let .unreachable(detail):
-                return "Couldn't reach that server. \(detail)"
+                return String(localized: "Couldn't reach that server. \(detail)", comment: "Connect error: server unreachable, with detail")
             case .authenticationFailed:
-                return "Sign in failed. Check your username and password."
+                return String(localized: "Sign in failed. Check your username and password.", comment: "Sign-in error: bad credentials")
             }
         }
     }
@@ -33,7 +32,7 @@ final class AppModel {
 
     private let serverStore = ServerStore.shared
     private let keychain = KeychainStore.shared
-    private let logger = Logger(subsystem: "dev.ericslutz.gus", category: "AppModel")
+    private let logger = Logger(category: .appModel)
 
     private(set) var servers: [ServerConnection] = []
     private(set) var users: [StoredUser] = []
@@ -83,8 +82,10 @@ final class AppModel {
                 fallback: url
             )
         } catch {
-            logger.error("Connect failed: \(error.localizedDescription, privacy: .public)")
-            throw ConnectError.unreachable(error.localizedDescription)
+            let gusError = GusError(from: error)
+            guard !gusError.isCancellation else { throw error }
+            logger.error("Connect failed: \(gusError.localizedDescription, privacy: .public)")
+            throw ConnectError.unreachable(gusError.localizedDescription)
         }
 
         let server = ServerConnection(
@@ -105,7 +106,9 @@ final class AppModel {
         do {
             result = try await client.signIn(username: username, password: password)
         } catch {
-            logger.error("Sign in failed: \(error.localizedDescription, privacy: .public)")
+            let gusError = GusError(from: error)
+            guard !gusError.isCancellation else { throw error }
+            logger.error("Sign in failed: \(gusError.localizedDescription, privacy: .public)")
             throw ConnectError.authenticationFailed
         }
 
@@ -166,19 +169,21 @@ final class AppModel {
 
     // MARK: - URL helpers
 
-    static func normalizeURL(_ raw: String) throws -> URL {
+    nonisolated static func normalizeURL(_ raw: String) throws -> URL {
         var string = raw.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !string.isEmpty else { throw ConnectError.invalidURL }
 
         if !string.contains("://") { string = "http://" + string }
-        while string.hasSuffix("/") { string.removeLast() }
+        while string.hasSuffix("/") {
+            string.removeLast()
+        }
 
         guard let url = URL(string: string), url.host != nil else { throw ConnectError.invalidURL }
         return url
     }
 
     /// Recovers the server base URL if the public-info request was redirected.
-    private static func followRedirect(responseURL: URL?, fallback: URL) -> URL {
+    private nonisolated static func followRedirect(responseURL: URL?, fallback: URL) -> URL {
         guard let responseURL else { return fallback }
         let absolute = responseURL.absoluteString
         if let range = absolute.range(of: "/System/Info/Public", options: [.caseInsensitive]) {
