@@ -120,11 +120,13 @@ final class PlaybackStore {
                 resolution = nil
                 playbackURL = resolvePlaybackURL(local: localURL, remote: localURL)
             } else {
+                let stereoLayout = Media3DDetector.layout(for: item)
                 let remoteResolution = try await NetworkRetryPolicy.idempotent.run {
                     try await self.session.streamBuilder.resolvePlayback(
                         for: itemID,
                         streamSelection: self.streamSelection,
-                        startTimeTicks: startTimeTicks
+                        startTimeTicks: startTimeTicks,
+                        stereoLayout: stereoLayout
                     )
                 }
                 resolution = remoteResolution

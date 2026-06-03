@@ -8,12 +8,29 @@ import OSLog
 /// `DeviceProfile` toward **HLS transcoding** so `AVPlayer` is handed an `.m3u8` it can
 /// always play, while still allowing direct play of AVKit-native containers (mp4/mov/m4v).
 struct StreamURLBuilder {
+    enum StereoFallbackReason: Equatable {
+        case directPlayUnavailable(Stereo3DLayout)
+    }
+
     struct Resolution {
         let url: URL
         let playSessionID: String?
         let mediaSourceID: String?
         /// True when the server returned a transcoding (HLS) URL rather than a direct file.
         let isTranscoding: Bool
+        let stereoLayout: Stereo3DLayout
+        let stereoFallbackReason: StereoFallbackReason?
+
+        func fallingBackTo2D(from layout: Stereo3DLayout) -> Resolution {
+            Resolution(
+                url: url,
+                playSessionID: playSessionID,
+                mediaSourceID: mediaSourceID,
+                isTranscoding: isTranscoding,
+                stereoLayout: .none,
+                stereoFallbackReason: .directPlayUnavailable(layout)
+            )
+        }
     }
 
     enum StreamError: LocalizedError {
@@ -39,13 +56,15 @@ struct StreamURLBuilder {
         for itemID: String,
         maxStreamingBitrate: Int = 120_000_000,
         streamSelection: PlaybackStreamSelection = .none,
-        startTimeTicks: Int? = nil
+        startTimeTicks: Int? = nil,
+        stereoLayout: Stereo3DLayout = .none
     ) async throws -> Resolution {
         let body = Self.playbackInfoBody(
             userID: userID,
             maxStreamingBitrate: maxStreamingBitrate,
             streamSelection: streamSelection,
-            startTimeTicks: startTimeTicks
+            startTimeTicks: startTimeTicks,
+            stereoLayout: stereoLayout
         )
 
         let request = Paths.getPostedPlaybackInfo(
@@ -62,19 +81,42 @@ struct StreamURLBuilder {
         let response = try await client.send(request).value
 
         guard let source = response.mediaSources?.first else {
+            if stereoLayout.requiresDirectPlay {
+                return try await resolvePlayback(
+                    for: itemID,
+                    maxStreamingBitrate: maxStreamingBitrate,
+                    streamSelection: streamSelection,
+                    startTimeTicks: startTimeTicks,
+                    stereoLayout: .none
+                )
+                .fallingBackTo2D(from: stereoLayout)
+            }
             throw StreamError.noMediaSource
         }
 
         let playSessionID = response.playSessionID
 
-        // Prefer a server-built transcoding URL (HLS) when present.
-        if let transcodingURL = source.transcodingURL, let url = client.url(path: transcodingURL) {
+        if stereoLayout.requiresDirectPlay, source.isSupportsDirectPlay == false {
+            return try await resolvePlayback(
+                for: itemID,
+                maxStreamingBitrate: maxStreamingBitrate,
+                streamSelection: streamSelection,
+                startTimeTicks: startTimeTicks,
+                stereoLayout: .none
+            )
+            .fallingBackTo2D(from: stereoLayout)
+        }
+
+        // Prefer a server-built transcoding URL (HLS) when present for ordinary 2D playback.
+        if !stereoLayout.requiresDirectPlay, let transcodingURL = source.transcodingURL, let url = client.url(path: transcodingURL) {
             logger.debug("Resolved HLS transcoding URL for item \(itemID, privacy: .public)")
             return Resolution(
                 url: url,
                 playSessionID: playSessionID,
                 mediaSourceID: source.id,
-                isTranscoding: true
+                isTranscoding: true,
+                stereoLayout: .none,
+                stereoFallbackReason: nil
             )
         }
 
@@ -99,7 +141,9 @@ struct StreamURLBuilder {
             url: url,
             playSessionID: playSessionID,
             mediaSourceID: source.id,
-            isTranscoding: false
+            isTranscoding: false,
+            stereoLayout: stereoLayout,
+            stereoFallbackReason: nil
         )
     }
 
@@ -140,18 +184,28 @@ struct StreamURLBuilder {
         )
     }
 
+    static func directPlayOnlyProfile(maxStreamingBitrate: Int) -> DeviceProfile {
+        var profile = avPlayerProfile(maxStreamingBitrate: maxStreamingBitrate)
+        profile.transcodingProfiles = []
+        return profile
+    }
+
     static func playbackInfoBody(
         userID: String,
         maxStreamingBitrate: Int,
         streamSelection: PlaybackStreamSelection,
-        startTimeTicks: Int?
+        startTimeTicks: Int?,
+        stereoLayout: Stereo3DLayout = .none
     ) -> PlaybackInfoDto {
-        PlaybackInfoDto(
+        let requiresDirectPlay = stereoLayout.requiresDirectPlay
+        return PlaybackInfoDto(
             audioStreamIndex: streamSelection.audioStreamIndex,
-            deviceProfile: avPlayerProfile(maxStreamingBitrate: maxStreamingBitrate),
+            deviceProfile: requiresDirectPlay
+                ? directPlayOnlyProfile(maxStreamingBitrate: maxStreamingBitrate)
+                : avPlayerProfile(maxStreamingBitrate: maxStreamingBitrate),
             enableDirectPlay: true,
             enableDirectStream: true,
-            enableTranscoding: true,
+            enableTranscoding: !requiresDirectPlay,
             maxStreamingBitrate: maxStreamingBitrate,
             startTimeTicks: startTimeTicks,
             subtitleStreamIndex: streamSelection.subtitleStreamIndex,
