@@ -3,7 +3,7 @@ import SwiftUI
 
 /// Grid of the items inside a single library.
 ///
-/// Pattern reference: Swiftfin's library/`getItems` paging (single page for the milestone).
+/// Pattern reference: Swiftfin's library/`getItems` paging.
 struct LibraryGridView: View {
     @Environment(SessionStore.self) private var session
     let library: BaseItemDto
@@ -40,10 +40,20 @@ struct LibraryGridView: View {
                         NavigationLink(value: ItemRef(item: item)) {
                             PosterCard(
                                 item: item,
-                                imageURL: session.imageBuilder.primaryImageURL(for: item)
+                                imageURL: session.imageBuilder.primaryImageURL(for: item, context: .posterGrid)
                             )
                         }
                         .posterNavigationStyle()
+                        .task {
+                            await store.loadMoreIfNeeded(currentItem: item)
+                        }
+                    }
+
+                    if store.isLoadingNextPage {
+                        ProgressView()
+                            .gridCellColumns(PosterGrid.columns.count)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical)
                     }
                 }
                 .padding()
