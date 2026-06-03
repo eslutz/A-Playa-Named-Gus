@@ -36,9 +36,9 @@
 	<key>NSFaceIDUsageDescription</key>
 	<string>Gus uses Optic ID to keep your Jellyfin sign-in secure.</string>
 
-	<!-- Declared now for the eventual Bonjour discovery flow; manual entry ships first. -->
+	<!-- User-initiated Jellyfin server discovery on the local network. -->
 	<key>NSLocalNetworkUsageDescription</key>
-	<string>Gus can discover Jellyfin servers on your local network.</string>
+	<string>Gus can find Jellyfin servers on your local network when you choose Find Local Servers.</string>
 
 	<!-- iOS/tvOS background audio + Picture in Picture. Ignored on macOS. -->
 	<key>UIBackgroundModes</key>

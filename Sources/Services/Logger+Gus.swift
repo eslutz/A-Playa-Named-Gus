@@ -7,6 +7,7 @@ extension Logger {
     /// Logging categories, defined in one place so Console/`log` filtering is consistent.
     enum Category: String {
         case appModel = "AppModel"
+        case discovery = "Discovery"
         case session = "Session"
         case home = "Home"
         case library = "Library"
