@@ -26,9 +26,9 @@ struct SearchStoreTests {
 
     @Test("resets paging when the query changes")
     func resetsPagingForNewQuery() {
-        var paging = SearchPaging(limit: 50)
+        var paging = Paging(pageSize: 50, prefetchThreshold: 1)
 
-        paging.replaceResults(count: 50, totalRecordCount: 125)
+        paging.replaceResults(receivedCount: 50, totalRecordCount: 125)
         #expect(paging.nextStartIndex == 50)
         #expect(paging.canLoadMore)
 
@@ -39,9 +39,9 @@ struct SearchStoreTests {
 
     @Test("stops paging when the server returns fewer items than requested")
     func stopsPagingOnShortPage() {
-        var paging = SearchPaging(limit: 50)
+        var paging = Paging(pageSize: 50, prefetchThreshold: 1)
 
-        paging.replaceResults(count: 12, totalRecordCount: nil)
+        paging.replaceResults(receivedCount: 12, totalRecordCount: nil)
 
         #expect(paging.nextStartIndex == 12)
         #expect(!paging.canLoadMore)

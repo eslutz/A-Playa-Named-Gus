@@ -33,42 +33,6 @@ enum SearchRequest {
     }
 }
 
-struct SearchPaging {
-    let limit: Int
-    private(set) var nextStartIndex = 0
-    private(set) var canLoadMore = false
-
-    mutating func reset() {
-        nextStartIndex = 0
-        canLoadMore = false
-    }
-
-    mutating func replaceResults(count: Int, totalRecordCount: Int?) {
-        nextStartIndex = count
-        canLoadMore = hasMoreResults(loadedCount: count, receivedCount: count, totalRecordCount: totalRecordCount)
-    }
-
-    mutating func appendResults(count: Int, totalRecordCount: Int?) {
-        nextStartIndex += count
-        canLoadMore = hasMoreResults(
-            loadedCount: nextStartIndex,
-            receivedCount: count,
-            totalRecordCount: totalRecordCount
-        )
-    }
-
-    private func hasMoreResults(
-        loadedCount: Int,
-        receivedCount: Int,
-        totalRecordCount: Int?
-    ) -> Bool {
-        if let totalRecordCount {
-            return loadedCount < totalRecordCount
-        }
-        return receivedCount >= limit
-    }
-}
-
 /// Global Jellyfin item search with cancellable, paginated loads.
 @MainActor
 @Observable
@@ -80,11 +44,11 @@ final class SearchStore {
 
     private let session: SessionStore
     private let logger = Logger(category: .search)
-    private var paging: SearchPaging
+    private var paging: Paging
 
     init(session: SessionStore, limit: Int = 50) {
         self.session = session
-        self.paging = SearchPaging(limit: limit)
+        self.paging = Paging(pageSize: limit, prefetchThreshold: 1)
     }
 
     var canLoadMore: Bool {
@@ -116,7 +80,9 @@ final class SearchStore {
 
     func loadMoreIfNeeded(currentItem item: BaseItemDto) async {
         guard canLoadMore, !isLoadingNextPage, state == .loaded else { return }
-        guard item.id == results.last?.id else { return }
+        guard let index = results.firstIndex(where: { $0.id == item.id }),
+              paging.shouldLoadMore(currentIndex: index, loadedCount: results.count)
+        else { return }
 
         isLoadingNextPage = true
         await loadPage(startIndex: paging.nextStartIndex, replaceResults: false)
@@ -129,17 +95,19 @@ final class SearchStore {
                 userID: session.user.id,
                 query: query,
                 startIndex: startIndex,
-                limit: paging.limit
+                limit: paging.pageSize
             )
-            let response = try await session.client.send(Paths.getItems(parameters: parameters))
+            let response = try await NetworkRetryPolicy.idempotent.run {
+                try await session.client.send(Paths.getItems(parameters: parameters))
+            }
             let items = response.value.items ?? []
 
             if shouldReplaceResults {
                 results = items
-                paging.replaceResults(count: items.count, totalRecordCount: response.value.totalRecordCount)
+                paging.replaceResults(receivedCount: items.count, totalRecordCount: response.value.totalRecordCount)
             } else {
                 results.append(contentsOf: items)
-                paging.appendResults(count: items.count, totalRecordCount: response.value.totalRecordCount)
+                paging.appendResults(receivedCount: items.count, totalRecordCount: response.value.totalRecordCount)
             }
 
             state = .loaded
