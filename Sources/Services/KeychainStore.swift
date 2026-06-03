@@ -2,6 +2,12 @@ import Foundation
 import OSLog
 import Security
 
+protocol TokenStore {
+    func token(for credential: SessionCredential) -> String?
+    func setToken(_ token: String, for credential: SessionCredential)
+    func deleteToken(for credential: SessionCredential)
+}
+
 /// Thin wrapper over the Security framework for storing Jellyfin access tokens.
 ///
 /// Replaces Swiftfin's KeychainSwift dependency with direct `SecItem*` calls. Tokens are
@@ -86,3 +92,5 @@ struct KeychainStore {
         ]
     }
 }
+
+extension KeychainStore: TokenStore {}

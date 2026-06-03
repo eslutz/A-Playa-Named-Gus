@@ -28,10 +28,25 @@ final class AppModel {
         }
     }
 
+    enum SessionSwitchError: LocalizedError {
+        case missingServer
+        case missingToken
+
+        var errorDescription: String? {
+            switch self {
+            case .missingServer:
+                return String(localized: "That server is no longer available.", comment: "Stored-user switch error: missing server")
+            case .missingToken:
+                return String(localized: "Sign in again to use that account.", comment: "Stored-user switch error: missing saved token")
+            }
+        }
+    }
+
     private static let lastUserDefaultsKey = "dev.ericslutz.gus.lastSignedInUserID"
 
-    private let serverStore = ServerStore.shared
-    private let keychain = KeychainStore.shared
+    private let serverStore: ServerStore
+    private let tokenStore: TokenStore
+    private let userDefaults: UserDefaults
     private let logger = Logger(category: .appModel)
 
     private(set) var servers: [ServerConnection] = []
@@ -39,13 +54,26 @@ final class AppModel {
     var currentSession: SessionStore?
 
     var lastSignedInUserID: String? {
-        didSet { UserDefaults.standard.set(lastSignedInUserID, forKey: Self.lastUserDefaultsKey) }
+        didSet {
+            if let lastSignedInUserID {
+                userDefaults.set(lastSignedInUserID, forKey: Self.lastUserDefaultsKey)
+            } else {
+                userDefaults.removeObject(forKey: Self.lastUserDefaultsKey)
+            }
+        }
     }
 
-    init() {
+    init(
+        serverStore: ServerStore = .shared,
+        tokenStore: TokenStore = KeychainStore.shared,
+        userDefaults: UserDefaults = .standard
+    ) {
+        self.serverStore = serverStore
+        self.tokenStore = tokenStore
+        self.userDefaults = userDefaults
         servers = serverStore.loadServers()
         users = serverStore.loadUsers()
-        lastSignedInUserID = UserDefaults.standard.string(forKey: Self.lastUserDefaultsKey)
+        lastSignedInUserID = userDefaults.string(forKey: Self.lastUserDefaultsKey)
     }
 
     // MARK: - Launch restore
@@ -54,14 +82,43 @@ final class AppModel {
     func restoreLastSession() {
         guard currentSession == nil,
               let userID = lastSignedInUserID,
-              let user = users.first(where: { $0.id == userID }),
-              let server = servers.first(where: { $0.id == user.serverID }),
-              let token = keychain.token(for: SessionCredential(user: user))
+              let user = users.first(where: { $0.id == userID })
         else { return }
+
+        do {
+            try restoreSavedSession(for: user)
+        } catch {
+            logger.error("Last-session restore failed: \(error.localizedDescription, privacy: .public)")
+        }
+    }
+
+    /// Restores a saved user's session when its server and Keychain token are present.
+    func restoreSavedSession(for user: StoredUser) throws {
+        guard let server = server(for: user) else { throw SessionSwitchError.missingServer }
+        guard let token = tokenStore.token(for: SessionCredential(user: user)) else {
+            throw SessionSwitchError.missingToken
+        }
 
         let client = JellyfinClientFactory.makeClient(url: server.url, accessToken: token)
         currentSession = SessionStore(client: client, user: user, server: server)
+        lastSignedInUserID = user.id
         logger.info("Restored session for user \(user.name, privacy: .public)")
+    }
+
+    func switchToStoredUser(_ user: StoredUser) throws {
+        try restoreSavedSession(for: user)
+    }
+
+    func hasStoredToken(for user: StoredUser) -> Bool {
+        tokenStore.token(for: SessionCredential(user: user)) != nil
+    }
+
+    func server(for user: StoredUser) -> ServerConnection? {
+        servers.first { $0.id == user.serverID }
+    }
+
+    func users(on server: ServerConnection) -> [StoredUser] {
+        users.filter { $0.serverID == server.id }
     }
 
     // MARK: - Connect
@@ -124,7 +181,7 @@ final class AppModel {
             primaryImageTag: userDto.primaryImageTag
         )
 
-        keychain.setToken(token, for: SessionCredential(user: user))
+        tokenStore.setToken(token, for: SessionCredential(user: user))
         upsert(server: server)
         upsert(user: user)
         lastSignedInUserID = userID
@@ -137,12 +194,21 @@ final class AppModel {
     // MARK: - Sign out
 
     func signOut() {
-        if let session = currentSession {
-            let credential = SessionCredential(user: session.user)
-            let client = session.client
-            Task { try? await client.signOut() } // best-effort server-side revoke
-            keychain.deleteToken(for: credential)
+        signOutCurrentUser()
+    }
+
+    func signOutCurrentUser() {
+        guard let session = currentSession else {
+            lastSignedInUserID = nil
+            return
         }
+
+        let credential = SessionCredential(user: session.user)
+        let client = session.client
+        Task { try? await client.signOut() } // best-effort server-side revoke
+        tokenStore.deleteToken(for: credential)
+        users.removeAll { $0.id == session.user.id && $0.serverID == session.user.serverID }
+        serverStore.saveUsers(users)
         lastSignedInUserID = nil
         currentSession = nil
     }
