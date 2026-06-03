@@ -12,20 +12,44 @@ struct VideoPlayerView: View {
     @Environment(PlaybackRefreshStore.self) private var playbackRefresh
     @Environment(OfflineDownloadStore.self) private var downloads
     @Environment(\.dismiss) private var dismiss
+    #if os(visionOS)
+        @Environment(CinemaModel.self) private var cinema
+        @Environment(\.openImmersiveSpace) private var openImmersiveSpace
+        @Environment(\.dismissImmersiveSpace) private var dismissImmersiveSpace
+    #endif
     let item: BaseItemDto
 
     @State private var store: PlaybackStore?
+    #if os(visionOS)
+        @State private var openedFramePackedCinema = false
+    #endif
 
     var body: some View {
         ZStack {
             Color.black.ignoresSafeArea()
 
             if let store, let player = store.player {
-                PlayerSurface(player: player)
-                    .ignoresSafeArea()
-                    .safeAreaInset(edge: .bottom) {
-                        PlaybackControlsOverlay(store: store)
+                #if os(visionOS)
+                    if store.isFramePackedImmersivePlaybackActive {
+                        Color.black
+                            .ignoresSafeArea()
+                            .safeAreaInset(edge: .bottom) {
+                                PlaybackControlsOverlay(store: store)
+                            }
+                    } else {
+                        PlayerSurface(player: player)
+                            .ignoresSafeArea()
+                            .safeAreaInset(edge: .bottom) {
+                                PlaybackControlsOverlay(store: store)
+                            }
                     }
+                #else
+                    PlayerSurface(player: player)
+                        .ignoresSafeArea()
+                        .safeAreaInset(edge: .bottom) {
+                            PlaybackControlsOverlay(store: store)
+                        }
+                #endif
             } else if case let .failed(message)? = store?.state {
                 ContentUnavailableView {
                     Label("Can't Play This", systemImage: "exclamationmark.triangle")
@@ -67,15 +91,65 @@ struct VideoPlayerView: View {
                 let store = PlaybackStore(item: item, session: session, playbackRefresh: playbackRefresh, downloads: downloads)
                 self.store = store
                 await store.prepare()
+                #if os(visionOS)
+                    await presentFramePackedCinemaIfNeeded(store)
+                #endif
             }
         }
         .onDisappear {
+            #if os(visionOS)
+                closeFramePackedCinemaIfNeeded()
+            #endif
             store?.teardown()
         }
     }
 }
 
 #if os(visionOS)
+    private extension VideoPlayerView {
+        @MainActor
+        func presentFramePackedCinemaIfNeeded(_ store: PlaybackStore) async {
+            guard
+                !openedFramePackedCinema,
+                let layout = store.stereoPresentation.framePackedLayout,
+                let player = store.player
+            else { return }
+
+            openedFramePackedCinema = true
+            cinema.present(player: player, title: item.displayTitle, stereoLayout: layout)
+
+            guard !cinema.isOpen else { return }
+
+            switch await openImmersiveSpace(id: GusCinema.spaceID) {
+            case .opened:
+                cinema.setOpen(true)
+            case .error, .userCancelled:
+                cinema.clearPlaybackPresentation()
+                cinema.setOpen(false)
+                openedFramePackedCinema = false
+                store.fallbackToWindowed2D()
+            @unknown default:
+                cinema.clearPlaybackPresentation()
+                cinema.setOpen(false)
+                openedFramePackedCinema = false
+                store.fallbackToWindowed2D()
+            }
+        }
+
+        @MainActor
+        func closeFramePackedCinemaIfNeeded() {
+            guard openedFramePackedCinema else { return }
+            openedFramePackedCinema = false
+            cinema.clearPlaybackPresentation()
+            Task {
+                await dismissImmersiveSpace()
+                await MainActor.run {
+                    cinema.setOpen(false)
+                }
+            }
+        }
+    }
+
     private struct SpatialPlaybackBadge: View {
         var body: some View {
             Label("Spatial", systemImage: "view.3d")

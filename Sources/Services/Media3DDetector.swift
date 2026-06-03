@@ -38,6 +38,19 @@ enum Stereo3DPresentation: Equatable {
     var showsSpatialBadge: Bool {
         self == .nativeSpatial
     }
+
+    var framePackedLayout: Stereo3DLayout? {
+        switch self {
+        case let .immersiveFramePacked(layout):
+            layout
+        case .native2D, .nativeSpatial, .unsupported3D:
+            nil
+        }
+    }
+
+    var usesImmersiveFramePackedRenderer: Bool {
+        framePackedLayout != nil
+    }
 }
 
 enum Media3DDetector {

@@ -13,9 +13,14 @@
     struct GusCinema: View {
         static let spaceID = "gus-cinema"
 
+        @Environment(CinemaModel.self) private var cinema
+
         var body: some View {
             RealityView { content in
                 content.add(Self.makeRoom())
+                Self.updateStereoScreen(in: &content, playback: cinema.playbackPresentation)
+            } update: { content in
+                Self.updateStereoScreen(in: &content, playback: cinema.playbackPresentation)
             }
         }
 
@@ -45,6 +50,25 @@
             ))
 
             return room
+        }
+
+        private static func updateStereoScreen(in content: inout RealityViewContent, playback: CinemaPlaybackPresentation?) {
+            guard
+                let playback,
+                playback.isFramePackedStereo,
+                let layout = playback.stereoLayout
+            else {
+                content.entities
+                    .filter { $0.name == Stereo3DScreen.rootName }
+                    .forEach { content.remove($0) }
+                return
+            }
+
+            guard content.entities.first(where: { $0.name == Stereo3DScreen.rootName }) == nil else {
+                return
+            }
+
+            content.add(Stereo3DScreen.entity(player: playback.player, layout: layout, title: playback.title))
         }
 
         private static func makeLight(color: UIColor, intensity: Float, position: SIMD3<Float>) -> Entity {

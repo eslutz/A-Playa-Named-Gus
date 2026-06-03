@@ -66,6 +66,14 @@ final class PlaybackStore {
         stereoPresentation.showsSpatialBadge
     }
 
+    var isFramePackedImmersivePlaybackActive: Bool {
+        stereoPresentation.usesImmersiveFramePackedRenderer
+    }
+
+    func fallbackToWindowed2D() {
+        stereoPresentation = .native2D
+    }
+
     func prepare() async {
         guard player == nil else { return }
         didReportStopped = false

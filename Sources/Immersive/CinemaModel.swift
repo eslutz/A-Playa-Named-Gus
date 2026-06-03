@@ -1,6 +1,17 @@
 #if os(visionOS)
+    import AVFoundation
     import JellyfinAPI
     import SwiftUI
+
+    struct CinemaPlaybackPresentation {
+        let player: AVPlayer
+        let title: String
+        let stereoLayout: Stereo3DLayout?
+
+        var isFramePackedStereo: Bool {
+            stereoLayout.flatMap(Stereo3DScreenMetrics.samplingPlan(for:)) != nil
+        }
+    }
 
     /// Tracks whether the "Gus Cinema" immersive space is open.
     ///
@@ -10,8 +21,22 @@
     @Observable
     final class CinemaModel {
         private(set) var isOpen = false
+        private(set) var playbackPresentation: CinemaPlaybackPresentation?
+
         func setOpen(_ open: Bool) {
             isOpen = open
+        }
+
+        func present(player: AVPlayer, title: String, stereoLayout: Stereo3DLayout?) {
+            playbackPresentation = CinemaPlaybackPresentation(
+                player: player,
+                title: title,
+                stereoLayout: stereoLayout
+            )
+        }
+
+        func clearPlaybackPresentation() {
+            playbackPresentation = nil
         }
     }
 
@@ -30,6 +55,7 @@
                     if cinema.isOpen {
                         await dismissImmersiveSpace()
                         cinema.setOpen(false)
+                        cinema.clearPlaybackPresentation()
                     } else {
                         switch await openImmersiveSpace(id: GusCinema.spaceID) {
                         case .opened:

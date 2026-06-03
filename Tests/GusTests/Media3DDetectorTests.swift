@@ -64,4 +64,31 @@ struct Media3DDetectorTests {
         #expect(!Stereo3DPresentation.immersiveFramePacked(.sideBySide(half: true)).showsSpatialBadge)
         #expect(!Stereo3DPresentation.unsupported3D(.multiviewCoding).showsSpatialBadge)
     }
+
+    @Test("exposes immersive renderer metadata for frame-packed layouts")
+    func framePackedPresentationExposesImmersiveRendererMetadata() {
+        let layout = Stereo3DLayout.sideBySide(half: true)
+        let presentation = Stereo3DPresentation.immersiveFramePacked(layout)
+
+        #expect(presentation.usesImmersiveFramePackedRenderer)
+        #expect(presentation.framePackedLayout == layout)
+        #expect(!Stereo3DPresentation.nativeSpatial.usesImmersiveFramePackedRenderer)
+        #expect(Stereo3DPresentation.nativeSpatial.framePackedLayout == nil)
+    }
+
+    @Test("builds per-eye sampling regions for side-by-side and top-and-bottom layouts")
+    func buildsFramePackedSamplingRegions() {
+        let sideBySide = Stereo3DScreenMetrics.samplingPlan(for: .sideBySide(half: true))
+        let topAndBottom = Stereo3DScreenMetrics.samplingPlan(for: .topAndBottom(half: true))
+
+        #expect(sideBySide?.leftEye == Stereo3DEyeRegion(uMin: 0, uMax: 0.5, vMin: 0, vMax: 1))
+        #expect(sideBySide?.rightEye == Stereo3DEyeRegion(uMin: 0.5, uMax: 1, vMin: 0, vMax: 1))
+        #expect(sideBySide?.aspectCorrection == .init(x: 2, y: 1))
+
+        #expect(topAndBottom?.leftEye == Stereo3DEyeRegion(uMin: 0, uMax: 1, vMin: 0, vMax: 0.5))
+        #expect(topAndBottom?.rightEye == Stereo3DEyeRegion(uMin: 0, uMax: 1, vMin: 0.5, vMax: 1))
+        #expect(topAndBottom?.aspectCorrection == .init(x: 1, y: 2))
+
+        #expect(Stereo3DScreenMetrics.samplingPlan(for: .mvHEVC) == nil)
+    }
 }
