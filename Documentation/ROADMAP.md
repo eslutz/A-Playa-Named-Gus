@@ -114,27 +114,40 @@ automated build verification. (Covers priority: *polish & testing*.)
 **Goal:** the app does what users expect of a Jellyfin client. (Covers priority:
 *deferred features*.)
 
-- [ ] **Search.** Global search (`Paths.getItems` with `searchTerm`) surfaced per platform
+- [x] **Search.** Global search (`Paths.getItems` with `searchTerm`) surfaced per platform
   (`.searchable`, tvOS search tab). *Acceptance:* debounced, cancellable, paginated
-  results with a no-results state.
-- [ ] **Series → seasons → episodes.** Detail hierarchy for shows (`getItems` by
+  results with a no-results state. *(Done: `SearchStore` drives debounced, cancellable,
+  paginated `getItems` search; iOS/iPadOS/macOS/visionOS use `.searchable`, and tvOS has a
+  Search tab.)*
+- [x] **Series → seasons → episodes.** Detail hierarchy for shows (`getItems` by
   parent/`getSeasons`/`getEpisodes`) with season picker and episode list. *Acceptance:*
-  can navigate Series → Season → Episode → Play.
-- [ ] **Richer item metadata.** People (cast/crew), genres, studios, community/critic
+  can navigate Series → Season → Episode → Play. *(Done: series details load seasons and
+  selected-season episodes with independent states; the native season picker and episode
+  rows navigate to episode detail/playback.)*
+- [x] **Richer item metadata.** People (cast/crew), genres, studios, community/critic
   ratings, taglines on the detail screen. *Acceptance:* fields render when present, degrade
-  gracefully when absent.
-- [ ] **Playback progress reporting.** `Paths.reportPlaybackStart/Progress/Stopped` so
+  gracefully when absent. *(Done: item details fetch full metadata and render optional
+  taglines, genres, studios, critic/community ratings, and cast/crew only when present.)*
+- [x] **Playback progress reporting.** `Paths.reportPlaybackStart/Progress/Stopped` so
   resume + Continue Watching stay accurate; resume from saved position. *Acceptance:*
-  server reflects progress; "Continue Watching" updates after playback.
-- [ ] **Multi-user / multi-server switching.** Account switcher in Settings; store and pick
+  server reflects progress; "Continue Watching" updates after playback. *(Done: playback
+  seeks to saved ticks, reports start/progress/stop, and increments an app-level refresh
+  marker after successful stop reporting.)*
+- [x] **Multi-user / multi-server switching.** Account switcher in Settings; store and pick
   among known `StoredUser`s/servers (tokens already keyed by `serverID:userID`).
   *Acceptance:* switch without re-entering credentials; sign out one without affecting
-  others.
-- [ ] **Quick Connect.** `getQuickConnectEnabled` → `signIn(quickConnectSecret:)`.
+  others. *(Done: Settings groups stored users by server, switches when a token exists,
+  offers sign-in-again for missing tokens, and current-user sign-out removes only that
+  user's token/record.)*
+- [x] **Quick Connect.** `getQuickConnectEnabled` → `signIn(quickConnectSecret:)`.
   *Acceptance:* code-based sign-in works where the server enables it; hidden when disabled.
-- [ ] **Bonjour discovery (optional).** `JellyfinClient.discover()` behind the
+  *(Done: Quick Connect checks availability after server selection, displays the polling
+  code, cancels on disappearance, and signs in through the shared persistence path.)*
+- [x] **Bonjour discovery (optional).** `JellyfinClient.discover()` behind the
   `NSLocalNetworkUsageDescription` permission, with manual entry still primary.
   *Acceptance:* discovered servers are selectable; permission prompt only when used.
+  *(Done: a user-initiated Find Local Servers action discovers and deduplicates local
+  servers, handles empty/error states, and fills the manual URL field when selected.)*
 
 ---
 

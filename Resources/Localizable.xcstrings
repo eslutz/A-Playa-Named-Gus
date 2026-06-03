@@ -13,6 +13,138 @@
       "comment" : "Server address label",
       "extractionState" : "manual"
     },
+    "Account Switch Failed" : {
+      "comment" : "Settings alert title for failed account switching",
+      "extractionState" : "manual"
+    },
+    "Active" : {
+      "comment" : "Settings stored-account status for the current account",
+      "extractionState" : "manual"
+    },
+    "Approve this code in Jellyfin on another device." : {
+      "comment" : "Quick Connect instructions shown with a polling code",
+      "extractionState" : "manual"
+    },
+    "Cancel" : {
+      "comment" : "Cancel button title",
+      "extractionState" : "manual"
+    },
+    "Cast & Crew" : {
+      "comment" : "Item detail people metadata section title",
+      "extractionState" : "manual"
+    },
+    "Check that your Jellyfin server and this device are on the same network." : {
+      "comment" : "Local server discovery empty-state guidance",
+      "extractionState" : "manual"
+    },
+    "Code" : {
+      "comment" : "Quick Connect polling code label",
+      "extractionState" : "manual"
+    },
+    "Critic %@" : {
+      "comment" : "Critic rating label; argument is the percentage text",
+      "extractionState" : "manual"
+    },
+    "Discovery Failed" : {
+      "comment" : "Local server discovery error-state title",
+      "extractionState" : "manual"
+    },
+    "Episodes" : {
+      "comment" : "Series detail episodes section title",
+      "extractionState" : "manual"
+    },
+    "Find Local Servers" : {
+      "comment" : "Connect screen local server discovery action",
+      "extractionState" : "manual"
+    },
+    "Genres" : {
+      "comment" : "Item detail genre metadata label",
+      "extractionState" : "manual"
+    },
+    "Jellyfin User" : {
+      "comment" : "Fallback display name for a signed-in Jellyfin user",
+      "extractionState" : "manual"
+    },
+    "Local Servers" : {
+      "comment" : "Connect screen local server discovery section title",
+      "extractionState" : "manual"
+    },
+    "No Episodes" : {
+      "comment" : "Series detail empty-state title when a season has no episodes",
+      "extractionState" : "manual"
+    },
+    "No Results" : {
+      "comment" : "Search empty-state title",
+      "extractionState" : "manual"
+    },
+    "No Seasons" : {
+      "comment" : "Series detail empty-state title when a show has no seasons",
+      "extractionState" : "manual"
+    },
+    "No Servers Found" : {
+      "comment" : "Local server discovery empty-state title",
+      "extractionState" : "manual"
+    },
+    "OK" : {
+      "comment" : "Alert confirmation button title",
+      "extractionState" : "manual"
+    },
+    "Quick Connect" : {
+      "comment" : "Quick Connect section title",
+      "extractionState" : "manual"
+    },
+    "Search" : {
+      "comment" : "Search navigation title and tab label",
+      "extractionState" : "manual"
+    },
+    "Search Jellyfin" : {
+      "comment" : "Search prompt and empty-state title",
+      "extractionState" : "manual"
+    },
+    "Season" : {
+      "comment" : "Series detail season picker label",
+      "extractionState" : "manual"
+    },
+    "Sign In Again" : {
+      "comment" : "Settings action for stored users without a saved token",
+      "extractionState" : "manual"
+    },
+    "Sign in again to use that account." : {
+      "comment" : "Stored-user switch error: missing saved token",
+      "extractionState" : "manual"
+    },
+    "Signed In" : {
+      "comment" : "Quick Connect signed-in success status",
+      "extractionState" : "manual"
+    },
+    "Signing In" : {
+      "comment" : "Quick Connect sign-in progress status",
+      "extractionState" : "manual"
+    },
+    "Starting Quick Connect" : {
+      "comment" : "Quick Connect startup progress status",
+      "extractionState" : "manual"
+    },
+    "Studios" : {
+      "comment" : "Item detail studio metadata label",
+      "extractionState" : "manual"
+    },
+    "Switch" : {
+      "comment" : "Settings action to switch to another stored account",
+      "extractionState" : "manual"
+    },
+    "That server is no longer available." : {
+      "comment" : "Stored-user switch error: missing server",
+      "extractionState" : "manual"
+    },
+    "Try Quick Connect Again" : {
+      "comment" : "Quick Connect retry action",
+      "extractionState" : "manual"
+    },
+    "Use Quick Connect" : {
+      "comment" : "Quick Connect start action",
+      "extractionState" : "manual"
+    },
     "Can't Play This" : {
       "comment" : "Playback error title",
       "extractionState" : "manual"
