@@ -71,7 +71,7 @@ private struct ContinueWatchingRail: View {
                         NavigationLink(value: ItemRef(item: item)) {
                             PosterCard(
                                 item: item,
-                                imageURL: session.imageBuilder.primaryImageURL(for: item)
+                                imageURL: session.imageBuilder.primaryImageURL(for: item, context: .posterRail)
                             )
                             .frame(width: railItemWidth)
                         }
@@ -111,7 +111,7 @@ private struct LibrariesGrid: View {
                     NavigationLink(value: LibraryRef(item: library)) {
                         PosterCard(
                             title: library.name ?? "Library",
-                            imageURL: session.imageBuilder.primaryImageURL(for: library),
+                            imageURL: session.imageBuilder.primaryImageURL(for: library, context: .posterGrid),
                             aspectRatio: 16.0 / 9.0,
                             placeholderSymbol: library.librarySymbol
                         )

@@ -18,7 +18,7 @@ struct SearchResultsView: View {
                         NavigationLink(value: ItemRef(item: item)) {
                             PosterCard(
                                 item: item,
-                                imageURL: session.imageBuilder.primaryImageURL(for: item)
+                                imageURL: session.imageBuilder.primaryImageURL(for: item, context: .posterGrid)
                             )
                         }
                         .posterNavigationStyle()
