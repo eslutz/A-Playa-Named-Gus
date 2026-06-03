@@ -5,6 +5,7 @@ import SwiftUI
 /// **Cinema** toggle in a toolbar ornament opens the immersive space.
 struct ItemDetailView: View {
     @Environment(SessionStore.self) private var session
+    @Environment(OfflineDownloadStore.self) private var downloads
     let item: BaseItemDto
 
     @State private var playerItem: ItemRef?
@@ -42,13 +43,14 @@ struct ItemDetailView: View {
             }
         #endif
             .playerPresentation(item: $playerItem)
+            .downloadErrorAlert(downloads)
     }
 
     private func detailContent(for item: BaseItemDto, seriesStore: SeriesDetailStore?) -> some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
                 AsyncPoster(
-                    url: session.imageBuilder.backdropImageURL(for: item),
+                    url: session.imageBuilder.backdropImageURL(for: item, context: .backdrop),
                     contentMode: .fill,
                     placeholderSymbol: "film"
                 )
@@ -72,6 +74,10 @@ struct ItemDetailView: View {
                     .controlSize(.large)
                     .gusDefaultActionShortcut()
                     .accessibilityHint("Starts playback for this item.")
+
+                    if DownloadsAvailability.isSupported {
+                        DownloadButton(item: item)
+                    }
                 }
 
                 if let overview = item.overview, !overview.isEmpty {
@@ -92,6 +98,9 @@ struct ItemDetailView: View {
             .frame(maxWidth: .infinity)
         }
         .lookToScroll()
+        .task {
+            downloads.load(serverID: session.server.id, userID: session.user.id)
+        }
     }
 
     private func metadataRow(for item: BaseItemDto) -> some View {
@@ -122,6 +131,79 @@ struct ItemDetailView: View {
         // Combine year, runtime, rating, and score into a single VoiceOver element so the
         // row reads as one sentence rather than four separate focus stops.
         .accessibilityElement(children: .combine)
+    }
+}
+
+private extension View {
+    func downloadErrorAlert(_ downloads: OfflineDownloadStore) -> some View {
+        alert(
+            "Download Failed",
+            isPresented: Binding(
+                get: { downloads.errorMessage != nil },
+                set: { isPresented in
+                    if !isPresented {
+                        downloads.clearError()
+                    }
+                }
+            )
+        ) {
+            Button("OK", role: .cancel) {
+                downloads.clearError()
+            }
+        } message: {
+            Text(downloads.errorMessage ?? "")
+        }
+    }
+}
+
+private struct DownloadButton: View {
+    @Environment(SessionStore.self) private var session
+    @Environment(OfflineDownloadStore.self) private var downloads
+
+    let item: BaseItemDto
+
+    var body: some View {
+        if let record = downloads.record(for: item, serverID: session.server.id, userID: session.user.id) {
+            switch record.status {
+            case .complete where downloads.localFileURL(for: item, serverID: session.server.id, userID: session.user.id) != nil:
+                Label("Downloaded", systemImage: "checkmark.circle.fill")
+                    .foregroundStyle(.secondary)
+                    .accessibilityHint("Downloaded on \(record.downloadedAt.formatted(date: .abbreviated, time: .shortened))")
+            case .queued:
+                Label("Queued", systemImage: "clock")
+                    .foregroundStyle(.secondary)
+            case .downloading:
+                Label(record.requiresTranscodingForDownload && record.progress == 0 ? "Transcoding for download..." : "Downloading", systemImage: "arrow.down.circle")
+                    .foregroundStyle(.secondary)
+            case .paused:
+                Button {
+                    Task { await downloads.resume(itemID: item.id ?? "", session: session) }
+                } label: {
+                    Label("Resume", systemImage: "play.fill")
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.large)
+            case .failed, .complete:
+                downloadAction(itemID: item.id)
+            }
+        } else if OfflineDownloadEligibility.canDownload(item), let itemID = item.id {
+            downloadAction(itemID: itemID)
+        }
+    }
+
+    private func downloadAction(itemID: String?) -> some View {
+        Button {
+            Task { await downloads.download(item, session: session) }
+        } label: {
+            if let itemID, downloads.activeItemIDs.contains(itemID) {
+                Label("Downloading", systemImage: "arrow.down.circle")
+            } else {
+                Label("Download", systemImage: "arrow.down.circle")
+            }
+        }
+        .disabled(itemID.map { downloads.activeItemIDs.contains($0) } ?? true)
+        .buttonStyle(.bordered)
+        .controlSize(.large)
     }
 }
 

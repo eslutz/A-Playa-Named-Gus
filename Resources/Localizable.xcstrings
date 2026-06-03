@@ -21,6 +21,10 @@
       "comment" : "Settings stored-account status for the current account",
       "extractionState" : "manual"
     },
+    "Active Downloads" : {
+      "comment" : "Downloads view active and paused download count label",
+      "extractionState" : "manual"
+    },
     "Approve this code in Jellyfin on another device." : {
       "comment" : "Quick Connect instructions shown with a polling code",
       "extractionState" : "manual"
@@ -65,6 +69,10 @@
       "comment" : "Connect screen local server discovery action",
       "extractionState" : "manual"
     },
+    "Failed" : {
+      "comment" : "Downloads view failed downloads section title",
+      "extractionState" : "manual"
+    },
     "Genres" : {
       "comment" : "Item detail genre metadata label",
       "extractionState" : "manual"
@@ -107,6 +115,18 @@
     },
     "Quick Connect" : {
       "comment" : "Quick Connect section title",
+      "extractionState" : "manual"
+    },
+    "Queued" : {
+      "comment" : "Download queued status label",
+      "extractionState" : "manual"
+    },
+    "Resume" : {
+      "comment" : "Resume download button title",
+      "extractionState" : "manual"
+    },
+    "Resuming..." : {
+      "comment" : "Download resume in-progress button state",
       "extractionState" : "manual"
     },
     "Search" : {
@@ -205,6 +225,50 @@
       "comment" : "Device name label",
       "extractionState" : "manual"
     },
+    "Delete" : {
+      "comment" : "Delete button title",
+      "extractionState" : "manual"
+    },
+    "Download" : {
+      "comment" : "Item detail download button title",
+      "extractionState" : "manual"
+    },
+    "Download Failed" : {
+      "comment" : "Download failure alert title and failed download status label",
+      "extractionState" : "manual"
+    },
+    "Downloaded" : {
+      "comment" : "Item detail downloaded status label",
+      "extractionState" : "manual"
+    },
+    "Downloaded Media" : {
+      "comment" : "Downloads view completed downloads section title",
+      "extractionState" : "manual"
+    },
+    "Downloaded items from this server and user will appear here." : {
+      "comment" : "Downloads empty-state description",
+      "extractionState" : "manual"
+    },
+    "Downloaded on %@" : {
+      "comment" : "Downloaded status accessibility hint; argument is the downloaded date",
+      "extractionState" : "manual"
+    },
+    "Downloading" : {
+      "comment" : "Download in-progress status label",
+      "extractionState" : "manual"
+    },
+    "Downloads" : {
+      "comment" : "Settings downloads navigation title",
+      "extractionState" : "manual"
+    },
+    "Downloads are using the 20 GB soft cap. Delete a download before adding more." : {
+      "comment" : "Downloads soft cap error",
+      "extractionState" : "manual"
+    },
+    "Downloads use background transfers from your Jellyfin server, are stored in Application Support, and are excluded from device backup." : {
+      "comment" : "Downloads storage and backup footer",
+      "extractionState" : "manual"
+    },
     "Enter a valid server address." : {
       "comment" : "Connect error: malformed URL",
       "extractionState" : "manual"
@@ -223,6 +287,10 @@
     },
     "Home" : {
       "comment" : "Home navigation label",
+      "extractionState" : "manual"
+    },
+    "In Progress" : {
+      "comment" : "Downloads view active downloads section title",
       "extractionState" : "manual"
     },
     "Known Servers" : {
@@ -249,12 +317,36 @@
       "comment" : "Empty state title when no libraries are available",
       "extractionState" : "manual"
     },
+    "No Downloads" : {
+      "comment" : "Downloads empty-state title",
+      "extractionState" : "manual"
+    },
     "Nothing Here Yet" : {
       "comment" : "Default empty state title",
       "extractionState" : "manual"
     },
+    "Not enough free space to start another download." : {
+      "comment" : "Low disk space download error",
+      "extractionState" : "manual"
+    },
+    "Not enough resume data — restarting download." : {
+      "comment" : "Download resume fallback message",
+      "extractionState" : "manual"
+    },
     "Password" : {
       "comment" : "Password field placeholder",
+      "extractionState" : "manual"
+    },
+    "Pause" : {
+      "comment" : "Pause download button title",
+      "extractionState" : "manual"
+    },
+    "Paused" : {
+      "comment" : "Paused download status label and section title",
+      "extractionState" : "manual"
+    },
+    "Pausing..." : {
+      "comment" : "Download pause in-progress button state",
       "extractionState" : "manual"
     },
     "Play" : {
@@ -293,6 +385,14 @@
       "comment" : "Generic loading failure title",
       "extractionState" : "manual"
     },
+    "Soft Cap" : {
+      "comment" : "Downloads view soft cap label",
+      "extractionState" : "manual"
+    },
+    "Storage Used" : {
+      "comment" : "Downloads view storage usage label",
+      "extractionState" : "manual"
+    },
     "That content couldn't be found." : {
       "comment" : "404 / not found error",
       "extractionState" : "manual"
@@ -301,12 +401,32 @@
       "comment" : "Cancelled request",
       "extractionState" : "manual"
     },
+    "The server returned a media source that cannot be downloaded." : {
+      "comment" : "Download source resolver missing media source id",
+      "extractionState" : "manual"
+    },
+    "The server returned no downloadable media source." : {
+      "comment" : "Download source resolver no media source",
+      "extractionState" : "manual"
+    },
     "The server returned no playable media source." : {
       "comment" : "Playback error: no media source",
       "extractionState" : "manual"
     },
+    "This item cannot be downloaded because it is missing a media id." : {
+      "comment" : "Download source resolver missing item id",
+      "extractionState" : "manual"
+    },
     "This item can't be played." : {
       "comment" : "Playback error: item has no playable identifier",
+      "extractionState" : "manual"
+    },
+    "This item is not available for download." : {
+      "comment" : "Download unavailable message",
+      "extractionState" : "manual"
+    },
+    "Transcoding for download..." : {
+      "comment" : "Download status while server prepares a transcoded file",
       "extractionState" : "manual"
     },
     "Untitled" : {

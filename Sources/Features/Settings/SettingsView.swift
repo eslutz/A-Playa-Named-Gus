@@ -4,6 +4,7 @@ import SwiftUI
 struct SettingsView: View {
     @Environment(AppModel.self) private var appModel
     @Environment(SessionStore.self) private var session
+    @Environment(OfflineDownloadStore.self) private var downloads
 
     @State private var reauthenticationServer: ServerConnection?
     @State private var switchErrorMessage: String?
@@ -31,6 +32,12 @@ struct SettingsView: View {
                 }
             }
 
+            if DownloadsAvailability.isSupported {
+                DownloadsSettingsSection(
+                    byteCount: downloads.totalByteCount(serverID: session.server.id, userID: session.user.id)
+                )
+            }
+
             Section {
                 Button("Sign Out", role: .destructive) {
                     appModel.signOut()
@@ -47,6 +54,9 @@ struct SettingsView: View {
         .formStyle(.grouped)
         .glassBackground()
         .navigationTitle("Settings")
+        .task {
+            downloads.load(serverID: session.server.id, userID: session.user.id)
+        }
         .sheet(item: $reauthenticationServer) { server in
             NavigationStack {
                 SignInView(server: server)
@@ -116,6 +126,28 @@ struct SettingsView: View {
             try appModel.switchToStoredUser(user)
         } catch {
             switchErrorMessage = error.localizedDescription
+        }
+    }
+}
+
+private struct DownloadsSettingsSection: View {
+    let byteCount: Int64
+
+    private var formattedByteCount: String {
+        ByteCountFormatter.string(fromByteCount: byteCount, countStyle: .file)
+    }
+
+    var body: some View {
+        Section {
+            NavigationLink {
+                DownloadsView()
+            } label: {
+                LabeledContent("Downloaded Media", value: formattedByteCount)
+            }
+        } header: {
+            Text("Downloads")
+        } footer: {
+            Text("Downloads are available on iOS, iPadOS, macOS, and visionOS. tvOS is excluded because its app storage is system-purgeable.")
         }
     }
 }

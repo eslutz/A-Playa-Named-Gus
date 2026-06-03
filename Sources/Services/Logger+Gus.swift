@@ -14,6 +14,7 @@ extension Logger {
         case search = "Search"
         case item = "Item"
         case playback = "Playback"
+        case downloads = "Downloads"
         case quickConnect = "QuickConnect"
         case stream = "Stream"
         case keychain = "Keychain"
