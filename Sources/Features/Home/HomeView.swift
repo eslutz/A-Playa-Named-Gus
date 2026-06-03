@@ -6,7 +6,6 @@ import SwiftUI
 /// Pattern reference: Swiftfin's `HomeViewModel`-backed home. The store is created from
 /// the environment `SessionStore` in `.task` (environment isn't available at `init`).
 struct HomeView: View {
-
     @Environment(SessionStore.self) private var session
     @State private var store: HomeStore?
 
@@ -18,7 +17,7 @@ struct HomeView: View {
                 ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
-        .navigationTitle("Gus")
+        .navigationTitle(Text("Gus", comment: "App name"))
         .task {
             if store == nil {
                 let store = HomeStore(session: session)
@@ -28,7 +27,6 @@ struct HomeView: View {
         }
     }
 
-    @ViewBuilder
     private func content(_ store: HomeStore) -> some View {
         LoadingStateView(
             state: store.state,
@@ -53,7 +51,6 @@ struct HomeView: View {
 
 /// Horizontal rail of in-progress items.
 private struct ContinueWatchingRail: View {
-
     @Environment(SessionStore.self) private var session
     let items: [BaseItemDto]
 
@@ -82,18 +79,17 @@ private struct ContinueWatchingRail: View {
 
     private var railItemWidth: CGFloat {
         #if os(tvOS)
-        return 240
+            return 240
         #elseif os(macOS) || os(visionOS)
-        return 180
+            return 180
         #else
-        return 130
+            return 130
         #endif
     }
 }
 
 /// Grid of library poster cards.
 private struct LibrariesGrid: View {
-
     @Environment(SessionStore.self) private var session
     let libraries: [BaseItemDto]
 

@@ -4,7 +4,6 @@ import SwiftUI
 /// Item detail: backdrop, metadata, overview, and a **Play** button. On visionOS, a
 /// **Cinema** toggle in a toolbar ornament opens the immersive space.
 struct ItemDetailView: View {
-
     @Environment(SessionStore.self) private var session
     let item: BaseItemDto
 
@@ -38,7 +37,7 @@ struct ItemDetailView: View {
                     .controlSize(.large)
 
                     #if os(visionOS)
-                    CinemaToggleButton(item: item)
+                        CinemaToggleButton(item: item)
                     #endif
                 }
 
@@ -72,7 +71,7 @@ struct ItemDetailView: View {
                     .overlay(RoundedRectangle(cornerRadius: 4).stroke(.secondary))
             }
             if let community = item.communityRatingText {
-                Text(community).foregroundStyle(.yellow)
+                Text(community).foregroundStyle(Color.gusRatingStar)
             }
         }
         .font(.subheadline)

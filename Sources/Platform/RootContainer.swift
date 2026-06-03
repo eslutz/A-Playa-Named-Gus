@@ -8,28 +8,28 @@ import SwiftUI
 struct RootContainer: View {
     var body: some View {
         #if os(tvOS)
-        TabRootView()
+            TabRootView()
         #elseif os(macOS) || os(visionOS)
-        SplitRootView()
+            SplitRootView()
         #else
-        AdaptiveRootView()
+            AdaptiveRootView()
         #endif
     }
 }
 
 #if os(iOS)
-/// iOS/iPadOS: compact width → tabs; regular width → split view.
-private struct AdaptiveRootView: View {
-    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    /// iOS/iPadOS: compact width → tabs; regular width → split view.
+    private struct AdaptiveRootView: View {
+        @Environment(\.horizontalSizeClass) private var horizontalSizeClass
 
-    var body: some View {
-        if horizontalSizeClass == .compact {
-            TabRootView()
-        } else {
-            SplitRootView()
+        var body: some View {
+            if horizontalSizeClass == .compact {
+                TabRootView()
+            } else {
+                SplitRootView()
+            }
         }
     }
-}
 #endif
 
 /// Tab-based root (compact iPhone, tvOS).
@@ -59,7 +59,6 @@ private enum SidebarItem: Hashable {
 
 /// Split-view root (iPad, macOS, visionOS).
 private struct SplitRootView: View {
-
     @Environment(SessionStore.self) private var session
     @State private var home: HomeStore?
     @State private var selection: SidebarItem? = .home
@@ -80,9 +79,9 @@ private struct SplitRootView: View {
 
                 Label("Settings", systemImage: "gearshape").tag(SidebarItem.settings)
             }
-            .navigationTitle("Gus")
+            .navigationTitle(Text("Gus", comment: "App name"))
             #if os(macOS)
-            .navigationSplitViewColumnWidth(min: 200, ideal: 240)
+                .navigationSplitViewColumnWidth(min: 200, ideal: 240)
             #endif
         } detail: {
             NavigationStack {

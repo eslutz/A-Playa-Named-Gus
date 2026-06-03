@@ -1,7 +1,191 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
-
+    "About" : {
+      "comment" : "Settings section title",
+      "extractionState" : "manual"
+    },
+    "Account" : {
+      "comment" : "Settings section title",
+      "extractionState" : "manual"
+    },
+    "Address" : {
+      "comment" : "Server address label",
+      "extractionState" : "manual"
+    },
+    "Can't Play This" : {
+      "comment" : "Playback error title",
+      "extractionState" : "manual"
+    },
+    "Client" : {
+      "comment" : "App client name label",
+      "extractionState" : "manual"
+    },
+    "Connect" : {
+      "comment" : "Connect button title",
+      "extractionState" : "manual"
+    },
+    "Connect to Jellyfin" : {
+      "comment" : "Connect screen navigation title",
+      "extractionState" : "manual"
+    },
+    "Connecting to %@" : {
+      "comment" : "Sign-in footer; argument is the server URL",
+      "extractionState" : "manual"
+    },
+    "Continue Watching" : {
+      "comment" : "Home rail title for in-progress media",
+      "extractionState" : "manual"
+    },
+    "Could not build a playable URL for this item." : {
+      "comment" : "Playback error: URL build failed",
+      "extractionState" : "manual"
+    },
+    "Couldn't reach that server. %@" : {
+      "comment" : "Connect error: server unreachable, with detail",
+      "extractionState" : "manual"
+    },
+    "Couldn't reach the server. %@" : {
+      "comment" : "Network error with detail",
+      "extractionState" : "manual"
+    },
+    "Device" : {
+      "comment" : "Device name label",
+      "extractionState" : "manual"
+    },
+    "Enter a valid server address." : {
+      "comment" : "Connect error: malformed URL",
+      "extractionState" : "manual"
+    },
+    "Enter your Jellyfin server's address, including the port (default 8096)." : {
+      "comment" : "Connect screen server address help text",
+      "extractionState" : "manual"
+    },
+    "Gus" : {
+      "comment" : "App name",
+      "extractionState" : "manual"
+    },
+    "Gus Cinema" : {
+      "comment" : "visionOS immersive cinema button title",
+      "extractionState" : "manual"
+    },
+    "Home" : {
+      "comment" : "Home navigation label",
+      "extractionState" : "manual"
+    },
+    "Known Servers" : {
+      "comment" : "Settings section title",
+      "extractionState" : "manual"
+    },
+    "Leave Cinema" : {
+      "comment" : "visionOS immersive cinema close button title",
+      "extractionState" : "manual"
+    },
+    "Leave Gus Cinema" : {
+      "comment" : "visionOS immersive cinema close accessibility label",
+      "extractionState" : "manual"
+    },
+    "Libraries" : {
+      "comment" : "Libraries section title",
+      "extractionState" : "manual"
+    },
+    "Library" : {
+      "comment" : "Fallback library title",
+      "extractionState" : "manual"
+    },
+    "No Libraries" : {
+      "comment" : "Empty state title when no libraries are available",
+      "extractionState" : "manual"
+    },
+    "Nothing Here Yet" : {
+      "comment" : "Default empty state title",
+      "extractionState" : "manual"
+    },
+    "Password" : {
+      "comment" : "Password field placeholder",
+      "extractionState" : "manual"
+    },
+    "Play" : {
+      "comment" : "Playback button title",
+      "extractionState" : "manual"
+    },
+    "Select a Library" : {
+      "comment" : "Split-view placeholder title",
+      "extractionState" : "manual"
+    },
+    "Server" : {
+      "comment" : "Server name label",
+      "extractionState" : "manual"
+    },
+    "Server Address" : {
+      "comment" : "Connect screen section title",
+      "extractionState" : "manual"
+    },
+    "Settings" : {
+      "comment" : "Settings navigation label",
+      "extractionState" : "manual"
+    },
+    "Sign In" : {
+      "comment" : "Sign-in screen title and button title",
+      "extractionState" : "manual"
+    },
+    "Sign Out" : {
+      "comment" : "Destructive sign-out button title",
+      "extractionState" : "manual"
+    },
+    "Sign in failed. Check your username and password." : {
+      "comment" : "Sign-in error: bad credentials",
+      "extractionState" : "manual"
+    },
+    "Something Went Wrong" : {
+      "comment" : "Generic loading failure title",
+      "extractionState" : "manual"
+    },
+    "That content couldn't be found." : {
+      "comment" : "404 / not found error",
+      "extractionState" : "manual"
+    },
+    "The request was cancelled." : {
+      "comment" : "Cancelled request",
+      "extractionState" : "manual"
+    },
+    "The server returned no playable media source." : {
+      "comment" : "Playback error: no media source",
+      "extractionState" : "manual"
+    },
+    "This item can't be played." : {
+      "comment" : "Playback error: item has no playable identifier",
+      "extractionState" : "manual"
+    },
+    "Untitled" : {
+      "comment" : "Fallback item title",
+      "extractionState" : "manual"
+    },
+    "User" : {
+      "comment" : "User name label",
+      "extractionState" : "manual"
+    },
+    "Username" : {
+      "comment" : "Username field placeholder",
+      "extractionState" : "manual"
+    },
+    "Version" : {
+      "comment" : "App version label",
+      "extractionState" : "manual"
+    },
+    "Watch %@ in Gus Cinema" : {
+      "comment" : "visionOS immersive cinema open accessibility label; argument is the item title",
+      "extractionState" : "manual"
+    },
+    "Your session has expired. Please sign in again." : {
+      "comment" : "401 / unauthorized error",
+      "extractionState" : "manual"
+    },
+    "http:\/\/192.168.1.50:8096" : {
+      "comment" : "Example Jellyfin server address placeholder",
+      "extractionState" : "manual",
+      "shouldTranslate" : false
+    }
   },
   "version" : "1.0"
 }

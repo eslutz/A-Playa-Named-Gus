@@ -4,8 +4,9 @@ import JellyfinAPI
 /// Lightweight display helpers for `BaseItemDto`, mirroring (a small slice of) Swiftfin's
 /// `BaseItemDto` extensions but using only Foundation formatting.
 extension BaseItemDto {
-
-    var displayTitle: String { name ?? "Untitled" }
+    var displayTitle: String {
+        name ?? String(localized: "Untitled", comment: "Fallback item title")
+    }
 
     /// e.g. `S1·E3` for episodes when both numbers are present.
     var episodeLocator: String? {
@@ -16,7 +17,9 @@ extension BaseItemDto {
         return "E\(episode)"
     }
 
-    var yearText: String? { productionYear.map(String.init) }
+    var yearText: String? {
+        productionYear.map(String.init)
+    }
 
     /// Human runtime, e.g. `1h 47m`, derived from `runTimeTicks` (100 ns units).
     var runtimeText: String? {
