@@ -56,7 +56,8 @@
             guard
                 let playback,
                 playback.isFramePackedStereo,
-                let layout = playback.stereoLayout
+                let layout = playback.stereoLayout,
+                let renderer = playback.stereoRenderer
             else {
                 content.entities
                     .filter { $0.name == Stereo3DScreen.rootName }
@@ -68,7 +69,11 @@
                 return
             }
 
-            content.add(Stereo3DScreen.entity(player: playback.player, layout: layout, title: playback.title))
+            content.add(Stereo3DScreen.entity(
+                videoRenderer: renderer.videoRenderer,
+                layout: layout,
+                title: playback.title
+            ))
         }
 
         private static func makeLight(color: UIColor, intensity: Float, position: SIMD3<Float>) -> Entity {

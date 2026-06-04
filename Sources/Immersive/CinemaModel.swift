@@ -7,9 +7,12 @@
         let player: AVPlayer
         let title: String
         let stereoLayout: Stereo3DLayout?
+        /// Non-nil when the layout is frame-packed (SBS/TAB); drives the stereo screen entity.
+        let stereoRenderer: StereoFrameRenderer?
 
+        /// True when a `StereoFrameRenderer` is present and the layout is a supported frame-packed format.
         var isFramePackedStereo: Bool {
-            stereoLayout.flatMap(Stereo3DScreenMetrics.samplingPlan(for:)) != nil
+            stereoRenderer != nil && stereoLayout.flatMap(Stereo3DScreenMetrics.samplingPlan(for:)) != nil
         }
     }
 
@@ -27,11 +30,12 @@
             isOpen = open
         }
 
-        func present(player: AVPlayer, title: String, stereoLayout: Stereo3DLayout?) {
+        func present(player: AVPlayer, title: String, stereoLayout: Stereo3DLayout?, stereoRenderer: StereoFrameRenderer? = nil) {
             playbackPresentation = CinemaPlaybackPresentation(
                 player: player,
                 title: title,
-                stereoLayout: stereoLayout
+                stereoLayout: stereoLayout,
+                stereoRenderer: stereoRenderer
             )
         }
 

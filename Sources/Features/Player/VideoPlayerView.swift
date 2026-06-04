@@ -22,6 +22,7 @@ struct VideoPlayerView: View {
     @State private var store: PlaybackStore?
     #if os(visionOS)
         @State private var openedFramePackedCinema = false
+        @State private var stereoRenderer: StereoFrameRenderer?
     #endif
 
     var body: some View {
@@ -128,7 +129,9 @@ struct VideoPlayerView: View {
                 return
             }
 
-            cinema.present(player: player, title: item.displayTitle, stereoLayout: layout)
+            let renderer = StereoFrameRenderer(player: player, layout: layout)
+            stereoRenderer = renderer
+            cinema.present(player: player, title: item.displayTitle, stereoLayout: layout, stereoRenderer: renderer)
 
             guard !openedFramePackedCinema else { return }
             openedFramePackedCinema = true
@@ -155,6 +158,8 @@ struct VideoPlayerView: View {
         func closeFramePackedCinemaIfNeeded() {
             guard openedFramePackedCinema else { return }
             openedFramePackedCinema = false
+            stereoRenderer?.invalidate()
+            stereoRenderer = nil
             cinema.clearPlaybackPresentation()
             Task {
                 await dismissImmersiveSpace()

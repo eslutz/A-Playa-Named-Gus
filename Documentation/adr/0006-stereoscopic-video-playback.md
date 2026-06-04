@@ -21,9 +21,15 @@ Gus supports visionOS stereoscopic playback in two tiers:
 - MV-HEVC spatial video uses the existing AVKit path. `Media3DDetector` detects it
   conservatively from HEVC multiview/spatial stream hints, and the visionOS player offers
   a manual Spatial viewing mode for files Jellyfin does not flag.
-- Jellyfin SBS/TAB frame-packed formats use the Gus Cinema `ImmersiveSpace`. The same
-  `AVPlayer` feeds a RealityKit `VideoMaterial` screen, and `Stereo3DScreenMetrics`
-  records the left/right sampling regions and squeeze correction for each layout.
+- Jellyfin SBS/TAB frame-packed formats use the Gus Cinema `ImmersiveSpace`. A
+  `StereoFrameRenderer` taps `AVPlayerItemVideoOutput` on the same `AVPlayer` (which still
+  drives audio, transport, and Now Playing), splits each packed frame into left/right-eye
+  `CVPixelBuffer`s, and feeds them as `CMTaggedBufferGroup`-backed `CMSampleBuffer`s (tagged
+  with `CMTag.stereoView(.leftEye/.rightEye)`) to an `AVSampleBufferVideoRenderer`. A
+  `VideoMaterial(videoRenderer:)` with `preferredViewingMode = .stereo` on the RealityKit
+  screen plane then routes each tagged eye buffer to the correct eye, producing true stereo
+  separation. `Stereo3DScreenMetrics` documents the UV sampling regions and aspect-correction
+  factors for each layout.
 - MVC remains unsupported and falls back to 2D with a user-visible notice.
 
 Every stereo-capable path requests direct play. `StreamURLBuilder` disables transcoding
