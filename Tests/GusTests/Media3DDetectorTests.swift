@@ -30,6 +30,24 @@ struct Media3DDetectorTests {
         #expect(Media3DDetector.layout(for: ordinaryHEVC) == .none)
     }
 
+    @Test("does not infer MV-HEVC from descriptive stream titles or comments")
+    func ignoresDescriptiveSpatialLabels() {
+        let item = BaseItemDto(mediaStreams: [
+            MediaStream(
+                codec: "hevc",
+                codecTag: "hvc1",
+                comment: "Spatial Video",
+                displayTitle: "Spatial Video",
+                profile: "Main 10",
+                title: "Spatial Video",
+                type: .video
+            ),
+        ])
+
+        #expect(Media3DDetector.layout(for: item) == .none)
+        #expect(Media3DDetector.presentation(for: item, on: .visionOS) == .native2D)
+    }
+
     @Test("chooses the visionOS presentation for each stereo layout", arguments: [
         (Video3DFormat.halfSideBySide, Stereo3DPresentation.immersiveFramePacked(.sideBySide(half: true))),
         (.fullTopAndBottom, .immersiveFramePacked(.topAndBottom(half: false))),
@@ -44,7 +62,7 @@ struct Media3DDetectorTests {
     @Test("uses native spatial presentation for MV-HEVC on visionOS")
     func usesNativeSpatialPresentationForMVHEVC() {
         let item = BaseItemDto(mediaStreams: [
-            MediaStream(codec: "hevc", title: "Apple Spatial Video", type: .video),
+            MediaStream(codec: "hevc", profile: "Main 10 multiview", type: .video),
         ])
 
         #expect(Media3DDetector.presentation(for: item, on: .visionOS) == .nativeSpatial)

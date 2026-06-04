@@ -135,7 +135,7 @@ enum Media3DDetector {
     private static func looksLikeMVHEVC(_ item: BaseItemDto) -> Bool {
         mediaStreams(for: item).contains { stream in
             guard stream.type == .video, isHEVC(stream.codec) else { return false }
-            return stream.hintFields.contains { field in
+            return stream.mvHEVCHintFields.contains { field in
                 let normalized = field.lowercased()
                 return normalized.contains("mv-hevc")
                     || normalized.contains("mvhevc")
@@ -161,14 +161,10 @@ enum Media3DDetector {
 }
 
 private extension MediaStream {
-    var hintFields: [String] {
+    var mvHEVCHintFields: [String] {
         [
             codecTag,
             profile,
-            title,
-            displayTitle,
-            comment,
-            videoDoViTitle,
         ].compactMap { $0 }
     }
 }
