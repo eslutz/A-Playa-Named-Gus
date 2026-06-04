@@ -67,4 +67,14 @@ struct ImageURLBuilder {
         )
         return client.url(with: request)
     }
+
+    func userImageURL(for user: UserDto) -> URL? {
+        guard let userID = user.id else { return nil }
+        let parameters = Paths.GetUserImageParameters(
+            userID: userID,
+            tag: user.primaryImageTag,
+            format: .jpg
+        )
+        return client.url(with: Paths.getUserImage(parameters: parameters))
+    }
 }

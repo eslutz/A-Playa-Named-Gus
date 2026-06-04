@@ -1,3 +1,4 @@
+import Foundation
 import SwiftUI
 
 /// Username/password sign-in against a connected server.
@@ -13,49 +14,84 @@ struct SignInView: View {
     @State private var isSigningIn = false
     @State private var errorMessage: String?
     @State private var quickConnectStore: QuickConnectStore?
+    @State private var signInStore: SignInStore?
 
     var body: some View {
         Form {
-            Section {
-                TextField("Username", text: $username)
-                    .urlFieldStyle()
-                SecureField("Password", text: $password)
-                    .onSubmit(signIn)
-            } header: {
-                Text("Sign In")
-            } footer: {
-                Text("Connecting to \(server.url.absoluteString)")
-            }
-
+            publicProfilesSection
+            credentialsSection
             quickConnectSection
-
-            if let errorMessage {
-                Section {
-                    Label(errorMessage, systemImage: "exclamationmark.triangle")
-                        .foregroundStyle(.red)
-                        .font(.callout)
-                }
-            }
-
-            Section {
-                Button(action: signIn) {
-                    HStack {
-                        Text("Sign In")
-                        Spacer()
-                        if isSigningIn { ProgressView() }
-                    }
-                }
-                .disabled(username.isEmpty || isSigningIn)
-            }
+            signInErrorSection
+            signInActionSection
         }
         .formStyle(.grouped)
-        .glassBackground()
+        .tint(.accentColor)
+        .frame(maxWidth: 760)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .navigationTitle(server.name)
         .task {
+            await loadPublicSignInData()
             await refreshQuickConnectAvailability()
         }
         .onDisappear {
             quickConnectStore?.cancel()
+        }
+    }
+
+    @ViewBuilder
+    private var publicProfilesSection: some View {
+        if let signInStore {
+            switch signInStore.state {
+            case .loaded where !signInStore.publicUsers.isEmpty:
+                Section("Public Profiles") {
+                    ForEach(signInStore.publicUsers) { profile in
+                        Button {
+                            username = profile.user.name ?? profile.displayName
+                            password = ""
+                        } label: {
+                            PublicUserProfileRow(
+                                profile: profile,
+                                imageURL: signInStore.imageBuilder.userImageURL(for: profile.user)
+                            )
+                        }
+                        .buttonStyle(.plain)
+                        .visionHoverEffect(cornerRadius: 14)
+                    }
+                }
+
+            case .loading:
+                Section("Public Profiles") {
+                    HStack {
+                        Text("Loading Profiles")
+                        Spacer()
+                        ProgressView()
+                    }
+                }
+
+            default:
+                EmptyView()
+            }
+
+            if let disclaimer = signInStore.loginDisclaimer {
+                Section("Server Notice") {
+                    Text(disclaimer)
+                        .font(.callout)
+                        .foregroundStyle(.secondary)
+                }
+            }
+        }
+    }
+
+    private var credentialsSection: some View {
+        Section {
+            TextField("Username", text: $username)
+                .autocorrectionDisabled()
+            SecureField("Password", text: $password)
+                .onSubmit(signIn)
+        } header: {
+            Text("Sign In")
+        } footer: {
+            Text("Connecting to \(server.url.absoluteString)")
         }
     }
 
@@ -115,6 +151,30 @@ struct SignInView: View {
         }
     }
 
+    @ViewBuilder
+    private var signInErrorSection: some View {
+        if let errorMessage {
+            Section {
+                Label(errorMessage, systemImage: "exclamationmark.triangle")
+                    .foregroundStyle(.red)
+                    .font(.callout)
+            }
+        }
+    }
+
+    private var signInActionSection: some View {
+        Section {
+            Button(action: signIn) {
+                HStack {
+                    Text("Sign In")
+                    Spacer()
+                    if isSigningIn { ProgressView() }
+                }
+            }
+            .disabled(username.isEmpty || isSigningIn)
+        }
+    }
+
     private func signIn() {
         guard !isSigningIn else { return }
         errorMessage = nil
@@ -136,5 +196,47 @@ struct SignInView: View {
         }
 
         await quickConnectStore?.refreshAvailability()
+    }
+
+    private func loadPublicSignInData() async {
+        if signInStore == nil {
+            signInStore = SignInStore(server: server)
+        }
+
+        await signInStore?.load()
+    }
+}
+
+private struct PublicUserProfileRow: View {
+    let profile: PublicUserProfile
+    let imageURL: URL?
+
+    var body: some View {
+        HStack(spacing: 12) {
+            AsyncPoster(
+                url: imageURL,
+                contentMode: .fill,
+                placeholderSymbol: "person.crop.circle"
+            )
+            .frame(width: 44, height: 44)
+            .clipShape(Circle())
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(profile.displayName)
+                    .font(.headline)
+                if profile.user.hasPassword == false {
+                    Text("No password required")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+
+            Spacer()
+        }
+        .foregroundStyle(.primary)
+        .padding(.vertical, 8)
+        .padding(.horizontal, 10)
+        .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .contentShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
     }
 }

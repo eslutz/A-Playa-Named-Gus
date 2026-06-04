@@ -5,6 +5,10 @@ import SwiftUI
 /// "Gus Cinema" also reads (via `UIColor(named:)`). These tokens surface the windowed-UI
 /// colors semantically so feature views don't reach for ad-hoc system colors.
 extension Color {
-    /// Pineapple-gold used for rating indicators — a sibling of the app `AccentColor`.
+    static let jellyfinPurple = Color(red: 0.675, green: 0.361, blue: 0.765)
+    static let jellyfinBlue = Color(red: 0.0, green: 0.643, blue: 0.863)
+    static let jellyfinNavy = Color(red: 0.0, green: 0.043, blue: 0.145)
+
+    /// Ratings use the app accent so score highlights follow the Jellyfin palette.
     static let gusRatingStar = Color.accentColor
 }

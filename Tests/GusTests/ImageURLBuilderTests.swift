@@ -21,4 +21,17 @@ struct ImageURLBuilderTests {
         #expect(try #require(builder.primaryImageURL(for: item, context: .posterRail)).absoluteString.contains("maxWidth=260"))
         #expect(try #require(builder.backdropImageURL(for: backdrop, context: .backdrop)).absoluteString.contains("maxWidth=1280"))
     }
+
+    @Test("builds public user avatar URLs")
+    func buildsPublicUserAvatarURLs() throws {
+        let client = try JellyfinClientFactory.makeClient(url: #require(URL(string: "https://jellyfin.example.com")))
+        let builder = ImageURLBuilder(client: client)
+        let user = UserDto(id: "user-1", name: "Ava", primaryImageTag: "avatar-tag")
+
+        let url = try #require(builder.userImageURL(for: user))
+
+        #expect(url.absoluteString.contains("/UserImage"))
+        #expect(url.absoluteString.contains("userId=user-1"))
+        #expect(url.absoluteString.contains("tag=avatar-tag"))
+    }
 }

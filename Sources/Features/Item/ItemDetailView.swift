@@ -49,58 +49,97 @@ struct ItemDetailView: View {
     private func detailContent(for item: BaseItemDto, seriesStore: SeriesDetailStore?) -> some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
-                AsyncPoster(
-                    url: session.imageBuilder.backdropImageURL(for: item, context: .backdrop),
-                    contentMode: .fill,
-                    placeholderSymbol: "film"
-                )
-                .aspectRatio(16.0 / 9.0, contentMode: .fit)
-                .frame(maxWidth: .infinity)
-                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-
-                Text(item.displayTitle)
-                    .font(.largeTitle.bold())
-
-                metadataRow(for: item)
-
-                HStack(spacing: 16) {
-                    Button {
-                        playerItem = ItemRef(item: item)
-                    } label: {
-                        Label("Play", systemImage: "play.fill")
-                            .frame(maxWidth: 220)
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .controlSize(.large)
-                    .gusDefaultActionShortcut()
-                    .accessibilityHint("Starts playback for this item.")
-
-                    if DownloadsAvailability.isSupported {
-                        DownloadButton(item: item)
-                    }
-                }
-
-                if let overview = item.overview, !overview.isEmpty {
-                    Text(overview)
-                        .font(.body)
-                        .foregroundStyle(.secondary)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                }
-
-                RichMetadataView(item: item)
+                hero(for: item)
 
                 if let seriesStore {
                     SeriesEpisodesView(store: seriesStore)
                 }
             }
             .padding()
-            .frame(maxWidth: 900, alignment: .leading)
+            .frame(maxWidth: 1120, alignment: .leading)
             .frame(maxWidth: .infinity)
         }
         .lookToScroll()
         .task {
             downloads.load(serverID: session.server.id, userID: session.user.id)
         }
+    }
+
+    private func hero(for item: BaseItemDto) -> some View {
+        ViewThatFits(in: .horizontal) {
+            HStack(alignment: .top, spacing: 28) {
+                poster(for: item)
+                    .frame(width: detailPosterWidth)
+
+                itemSummary(for: item)
+                    .frame(maxWidth: 720, alignment: .leading)
+            }
+
+            VStack(alignment: .leading, spacing: 20) {
+                poster(for: item)
+                    .frame(maxWidth: 260)
+                itemSummary(for: item)
+            }
+        }
+    }
+
+    private func poster(for item: BaseItemDto) -> some View {
+        AsyncPoster(
+            url: session.imageBuilder.primaryImageURL(for: item, context: .posterGrid),
+            contentMode: .fill,
+            placeholderSymbol: item.type == .episode ? "play.rectangle" : "film"
+        )
+        .aspectRatio(item.primaryImageAspectRatio ?? 2.0 / 3.0, contentMode: .fit)
+        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .shadow(radius: 14, y: 8)
+    }
+
+    private func itemSummary(for item: BaseItemDto) -> some View {
+        VStack(alignment: .leading, spacing: 18) {
+            Text(item.displayTitle)
+                .font(.largeTitle.bold())
+                .fixedSize(horizontal: false, vertical: true)
+
+            metadataRow(for: item)
+
+            HStack(spacing: 16) {
+                Button {
+                    playerItem = ItemRef(item: item)
+                } label: {
+                    Label("Play", systemImage: "play.fill")
+                        .frame(maxWidth: 220)
+                }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.large)
+                .gusDefaultActionShortcut()
+                .accessibilityHint("Starts playback for this item.")
+
+                if DownloadsAvailability.isSupported {
+                    DownloadButton(item: item)
+                }
+            }
+
+            if let overview = item.overview, !overview.isEmpty {
+                Text(overview)
+                    .font(.body)
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+
+            RichMetadataView(item: item)
+        }
+    }
+
+    private var detailPosterWidth: CGFloat {
+        #if os(tvOS)
+            return 300
+        #elseif os(visionOS)
+            return 260
+        #elseif os(macOS)
+            return 240
+        #else
+            return 180
+        #endif
     }
 
     private func metadataRow(for item: BaseItemDto) -> some View {
@@ -295,16 +334,24 @@ private struct SeriesEpisodesView: View {
 }
 
 private struct EpisodeRow: View {
+    @Environment(SessionStore.self) private var session
     let episode: BaseItemDto
 
     var body: some View {
-        HStack(alignment: .firstTextBaseline, spacing: 12) {
-            Text(episode.episodeLocator ?? episode.displayTitle)
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-                .frame(width: 64, alignment: .leading)
+        HStack(alignment: .top, spacing: 14) {
+            AsyncPoster(
+                url: session.imageBuilder.backdropImageURL(for: episode, maxWidth: 360),
+                contentMode: .fill,
+                placeholderSymbol: "play.rectangle"
+            )
+            .frame(width: 148, height: 84)
+            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
 
             VStack(alignment: .leading, spacing: 4) {
+                Text(episode.episodeLocator ?? episode.displayTitle)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+
                 Text(episode.displayTitle)
                     .font(.headline)
                 if let overview = episode.overview, !overview.isEmpty {
@@ -321,10 +368,12 @@ private struct EpisodeRow: View {
                 Text(runtime)
                     .font(.caption)
                     .foregroundStyle(.secondary)
+                    .padding(.top, 2)
             }
         }
-        .padding(.vertical, 8)
-        .contentShape(Rectangle())
+        .padding(10)
+        .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .contentShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
         // Collapse the locator/title/runtime columns into one VoiceOver element.
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(episodeAccessibilityLabel)

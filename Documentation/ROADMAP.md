@@ -46,22 +46,23 @@ destinations build; iOS launches and renders the Connect screen.
 **Goal:** Gus looks like a finished product at first glance — real icon, considered launch
 and accent, consistent semantic theming.
 
-- [x] **App icon (all platforms).** Muted Psych-green background `#3F5A25` with a muted
-  yellow pineapple `#C7A23C` (a muted sibling of `AccentColor` pineapple gold `#F4B740`) —
-  egg-shaped body with a diamond crosshatch lattice and a tight, mostly upright spiky crown.
-  Produce
+- [x] **App icon (all platforms).** Jellyfin navy background `#000B25` with a
+  purple-to-blue pineapple (`#AC5CC3` → `#00A4DC`) — egg-shaped body with a diamond
+  crosshatch lattice and a tight, mostly upright spiky crown. Produce
   `AppIcon.appiconset` (iOS + macOS idioms), `AppIcon.brandassets` (tvOS App Icon + Top
   Shelf), and `AppIcon.solidimagestack` (visionOS layered), all named `AppIcon`; remove the
   `ASSETCATALOG_COMPILER_APPICON_NAME: ""` override in `project.yml`.
   *Acceptance:* actool produces no missing-icon errors on any SDK; icon renders on each
-  Home screen / launcher. *(Done: a placeholder pineapple generated with Core Graphics; all
-  five destinations build green and actool bakes `AppIcon` per platform. The artwork is a
-  clean placeholder — final brand polish can refine it later.)*
+  Home screen / launcher. *(Done: a placeholder pineapple generated with
+  `Scripts/generate-app-icon.swift`; all five destinations build green and actool bakes
+  `AppIcon` per platform. The artwork is a clean placeholder — final brand polish can
+  refine it later.)*
 - [x] **Launch experience.** Confirm `UILaunchScreen` presents cleanly; consider a minimal
   branded launch on platforms that support it. *Acceptance:* no flash of unstyled content;
   consistent first frame. *(Done: iOS/iPadOS use a color-only `UILaunchScreen` backed by
   the `LaunchBackground` asset.)*
-- [x] **Accent & semantic theme pass.** Centralize the Gus palette (accent + cinema
+- [x] **Accent & semantic theme pass.** Centralize the Jellyfin-aligned Gus palette
+  (accent + cinema
   palette) as semantic color assets with light/dark variants; audit views for hardcoded
   colors. *Acceptance:* light/dark both legible; no raw `Color(red:…)` in feature views.
   *(Done: cinema colors live in asset catalog colorsets; windowed UI uses semantic color
