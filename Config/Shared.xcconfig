@@ -47,3 +47,9 @@ CODE_SIGNING_ALLOWED = YES
 // Sandbox + outbound network only on macOS (network.client/app-sandbox are
 // macOS-sandbox entitlements; iOS/tvOS/visionOS don't need an entitlements file).
 CODE_SIGN_ENTITLEMENTS[sdk=macosx*] = Config/Gus.entitlements
+
+// MARK: - Local overrides
+//
+// Keep this last so account-specific signing settings can opt into automatic
+// signing without committing a Developer Team ID to the repo.
+#include? "Local.xcconfig"
