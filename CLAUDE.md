@@ -150,7 +150,11 @@ stream hints into a `Stereo3DPresentation`; non-visionOS platforms always resolv
 `StreamURLBuilder` disables transcoding for stereo attempts because HLS transcoding
 flattens stereo, then falls back to 2D with a notice when direct play is unavailable.
 MV-HEVC uses the normal AVKit `VideoPlayer` path with a Spatial badge. SBS/TAB uses the
-Gus Cinema `ImmersiveSpace` and a RealityKit `Stereo3DScreen` fed by the same `AVPlayer`.
+Gus Cinema `ImmersiveSpace`: a `StereoFrameRenderer` taps `AVPlayerItemVideoOutput` from
+the same `AVPlayer`, splits each packed frame into per-eye `CVPixelBuffer`s, tags them
+via `CMTaggedBufferGroup`/`CMTag.stereoView`, and feeds them to `AVSampleBufferVideoRenderer`;
+`VideoMaterial(videoRenderer:)` with `preferredViewingMode = .stereo` on the `Stereo3DScreen`
+plane provides true left/right eye separation.
 MVC is unsupported and plays in 2D with a notice. The visionOS player menu offers Auto,
 2D, and Spatial; Spatial is the manual override for unflagged MV-HEVC files.
 

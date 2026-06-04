@@ -6,8 +6,18 @@
     enum Stereo3DScreen {
         static let rootName = "GusStereo3DScreen"
 
+        /// Builds the Cinema screen entity for frame-packed SBS/TAB playback.
+        ///
+        /// The `videoRenderer` must be supplied by a `StereoFrameRenderer`, which feeds it
+        /// per-eye `CMTaggedBufferGroup` stereo sample buffers. Because the renderer carries
+        /// properly tagged left/right-eye pixel buffers, `VideoMaterial.preferredViewingMode = .stereo`
+        /// routes each eye's frame to the corresponding eye — giving true 3D separation on the plane.
         @MainActor
-        static func entity(player: AVPlayer, layout: Stereo3DLayout, title: String) -> Entity {
+        static func entity(
+            videoRenderer: AVSampleBufferVideoRenderer,
+            layout: Stereo3DLayout,
+            title: String
+        ) -> Entity {
             let root = Entity()
             root.name = rootName
 
@@ -23,32 +33,30 @@
 
             let screen = ModelEntity(
                 mesh: .generatePlane(width: size.x, height: size.y, cornerRadius: 0.06),
-                materials: [videoMaterial(player: player)]
+                materials: [stereoMaterial(videoRenderer: videoRenderer)]
             )
             screen.name = title
             screen.position = SIMD3<Float>(0, 1.6, -3)
-            screen.components.set(videoPlayerComponent(player: player))
+            screen.components.set(stereoPlayerComponent(videoRenderer: videoRenderer))
             root.addChild(screen)
 
             return root
         }
 
         @MainActor
-        private static func videoMaterial(player: AVPlayer) -> RealityKit.Material {
-            var material = VideoMaterial(avPlayer: player)
+        private static func stereoMaterial(videoRenderer: AVSampleBufferVideoRenderer) -> RealityKit.Material {
+            var material = VideoMaterial(videoRenderer: videoRenderer)
+            // .stereo separates the per-eye CMTaggedBufferGroup frames supplied by StereoFrameRenderer.
             material.controller.preferredViewingMode = .stereo
             material.faceCulling = .none
             return material
         }
 
         @MainActor
-        private static func videoPlayerComponent(player: AVPlayer) -> VideoPlayerComponent {
-            var component = VideoPlayerComponent(avPlayer: player)
+        private static func stereoPlayerComponent(videoRenderer: AVSampleBufferVideoRenderer) -> VideoPlayerComponent {
+            var component = VideoPlayerComponent(videoRenderer: videoRenderer)
             component.desiredViewingMode = .stereo
             component.desiredImmersiveViewingMode = .portal
-            if #available(visionOS 26.0, *) {
-                component.desiredSpatialVideoMode = .screen
-            }
             return component
         }
     }
