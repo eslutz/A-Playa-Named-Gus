@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Questions and support
+    url: https://github.com/eslutz/Gus/discussions
+    about: Ask usage questions, get help, or discuss early ideas.
+  - name: Documentation
+    url: https://github.com/eslutz/Gus/wiki
+    about: Read project and user documentation in the wiki.

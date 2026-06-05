@@ -1,0 +1,50 @@
+name: Bug report
+description: Report a reproducible problem in Gus.
+title: "[Bug]: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a bug. Include enough detail for someone else to reproduce it.
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: What happened, and what did you expect instead?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open ...
+        2. Select ...
+        3. Observe ...
+    validations:
+      required: true
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Platform
+      options:
+        - iOS
+        - iPadOS
+        - tvOS
+        - visionOS
+        - macOS
+        - Multiple platforms
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Gus version or commit
+      description: App version, TestFlight build, or commit SHA.
+  - type: textarea
+    id: details
+    attributes:
+      label: Additional details
+      description: Logs, screenshots, server version, media type, or other context.

@@ -1,0 +1,40 @@
+name: Feature request
+description: Suggest a focused improvement for Gus.
+title: "[Feature]: "
+labels:
+  - feature
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use Discussions for broad ideas. Use this form when the request is actionable.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What user need or workflow gap should this solve?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposal
+      description: What should Gus do?
+    validations:
+      required: true
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Platform
+      options:
+        - iOS
+        - iPadOS
+        - tvOS
+        - visionOS
+        - macOS
+        - Multiple platforms
+  - type: textarea
+    id: native
+    attributes:
+      label: Native API fit
+      description: Note any Apple/system API that seems relevant.

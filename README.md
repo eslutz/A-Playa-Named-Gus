@@ -1,93 +1,32 @@
 # Gus
 
-An **Apple-first, multiplatform Jellyfin client** — one app that aims to feel first-party
-on **iOS, iPadOS, tvOS, visionOS, and macOS** by preferring Apple/system frameworks over
-custom code. Built with SwiftUI, the **Observation** framework, and **pure AVKit**
-playback (server-side transcoding via Jellyfin).
+Gus is an Apple-first, multiplatform Jellyfin client for iOS, iPadOS, tvOS,
+visionOS, and macOS. It is built with SwiftUI, Observation, AVKit, and the
+Jellyfin Swift SDK, with a project rule of preferring Apple/system frameworks
+over custom or third-party runtime code.
 
-> Named for *Psych* — "A Playa Named Gus." Bundle id `dev.ericslutz.gus`.
+The repository is private while early development continues. The public
+documentation home is the GitHub wiki; this README stays intentionally short.
 
-The mature [Swiftfin](https://github.com/eslutz/Swiftfin) app is **reference only**: Gus
-mirrors its SDK *patterns*, never its code.
-
-For contributors and AI agents: [`CLAUDE.md`](CLAUDE.md) is the working context (mandate,
-architecture, conventions, Apple API/HIG references); [`Documentation/ROADMAP.md`](Documentation/ROADMAP.md)
-is the milestone plan to App Store submission.
-
-## Status
-
-Current branch implements the core app plus performance/resilience work:
-**connect → sign in → browse/search → detail → play → settings/downloads**, plus the
-visionOS **Gus Cinema** immersive space.
-
-All five destinations build green (Xcode 26.5 / Swift 6.3 toolchain, Swift 5 language mode).
-The full iOS unit/UI test action covers pure logic and launch smoke tests.
-
-## Architecture (Apple-first)
-
-| Concern | Gus uses |
-|---|---|
-| Navigation | `NavigationStack` / `TabView` (iPhone, tvOS); `NavigationSplitView` (iPad, macOS, visionOS) |
-| State / DI | **Observation** `@Observable` + `@Environment`, injected at the `App` root |
-| Playback | **AVKit** — `VideoPlayer` (iOS/macOS/visionOS), `AVPlayerViewController` (tvOS); server transcode via `transcodingURL` |
-| Images | `AsyncImage` + a tuned shared `URLCache` |
-| Tokens | **Security** framework (`SecItem*`) — `KeychainStore` |
-| Persistence | `Codable` + `FileManager` (`ServerStore`) + `UserDefaults` for prefs |
-| Theming | `AccentColor`, semantic colors, system **Materials**, **SF Symbols**, Dynamic Type, `ContentUnavailableView` |
-| Now Playing | **MediaPlayer** — `MPNowPlayingInfoCenter`, `MPRemoteCommandCenter` |
-| Logging | `OSLog` |
-| Strings | String Catalog (`Localizable.xcstrings`) |
-| Dependency | **Only** `jellyfin-sdk-swift` (`from: 2.1.0`) — everything else is Apple frameworks |
-
-Offline downloads are available on iOS, iPadOS, macOS, and visionOS; tvOS is intentionally
-excluded. Downloads use native background `URLSessionDownloadTask`s, store media in
-Application Support per server/user, exclude files from backup, and surface progress,
-pause/resume/delete, size, and disk-budget state in Settings. AVPlayer-native sources keep
-the original file; incompatible sources use Jellyfin's progressive MP4 transcode endpoint.
-
-`Sources/` is grouped into `App`, `Models`, `Services`, `Stores` (`@Observable`),
-`Features` (Connect/Home/Item/Player/Settings), `SharedUI`, `Platform` (the `#if os(...)`
-divergence), and `Immersive` (visionOS Gus Cinema).
-
-## Project generation
-
-The Xcode project is generated from a committed [`project.yml`](project.yml) via
-[XcodeGen](https://github.com/yonaskolb/XcodeGen) — a build-time dev tool, **not** a
-shipped dependency. `project.yml` is the source of truth; `Gus.xcodeproj` is git-ignored.
+## Quick Start
 
 ```sh
-brew install xcodegen      # one-time
-xcodegen generate          # regenerate Gus.xcodeproj from project.yml
-```
-
-One multiplatform `Gus` target with five Supported Destinations. Deployment floors:
-iOS/iPadOS 18, tvOS 18, visionOS 2.0, macOS 15.
-
-## Build & verify
-
-```sh
+brew install xcodegen
 xcodegen generate
 xcodebuild -resolvePackageDependencies -project Gus.xcodeproj -scheme Gus
-
-# discover the simulators installed on this machine
 xcodebuild -showdestinations -project Gus.xcodeproj -scheme Gus
-
-# build each destination (names below match a stock Xcode 26.5 install)
-xcodebuild -project Gus.xcodeproj -scheme Gus -destination 'platform=iOS Simulator,name=iPhone 17' build
-xcodebuild -project Gus.xcodeproj -scheme Gus -destination 'platform=iOS Simulator,name=iPad Pro 11-inch (M5)' build
-xcodebuild -project Gus.xcodeproj -scheme Gus -destination 'platform=tvOS Simulator,name=Apple TV 4K (3rd generation)' build
-xcodebuild -project Gus.xcodeproj -scheme Gus -destination 'platform=macOS' build
-# visionOS has multiple "Apple Vision Pro" destinations on this machine; use the id from -showdestinations.
-xcodebuild -project Gus.xcodeproj -scheme Gus -destination 'platform=visionOS Simulator,id=<UUID>' build
-xcodebuild test -project Gus.xcodeproj -scheme Gus -destination 'platform=iOS Simulator,name=iPhone 17'
 ```
 
-Then smoke-test against a real/demo Jellyfin server: connect → sign in → home → detail →
-**play**, test AirPlay/PiP/Now Playing where device support exists, verify downloads on
-non-tvOS platforms, and on visionOS enter **Gus Cinema** during playback.
+`project.yml` is the source of truth for the generated Xcode project.
+Regenerate `Gus.xcodeproj` after adding, renaming, or deleting source and
+resource files.
 
-## App Store Readiness
+## Contributing
 
-Draft M7 readiness documents live in [`Documentation/AppStore`](Documentation/AppStore).
-They are preparation only; privacy manifest, signing, screenshots, TestFlight, and
-submission remain future M7 implementation work.
+Use the issue forms for bugs and feature requests. Use Discussions for
+questions, support, and design/development conversations that are not yet
+actionable issues.
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the contribution checklist and
+[AGENTS.md](AGENTS.md) for the project architecture, conventions, and native API
+mandate.
