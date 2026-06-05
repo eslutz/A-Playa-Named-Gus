@@ -22,7 +22,7 @@ struct LibraryGridView: View {
             if let store {
                 ToolbarItem {
                     LibraryFilterMenu(store: store)
-                        .disabled(store.state.isLoading)
+                        .disabled(store.isLoading)
                 }
             }
         }

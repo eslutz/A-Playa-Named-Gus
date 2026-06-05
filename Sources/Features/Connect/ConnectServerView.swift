@@ -3,7 +3,7 @@ import SwiftUI
 /// Manual server-address entry → `Paths.getPublicSystemInfo`.
 ///
 /// Pattern reference: Swiftfin's `ConnectToServerViewModel`. Manual entry stays primary,
-/// with local-network discovery started automatically on entry.
+/// with local-network discovery available after explicit user action.
 struct ConnectServerView: View {
     @Environment(AppModel.self) private var appModel
     let onConnected: (ServerConnection) -> Void
@@ -25,9 +25,6 @@ struct ConnectServerView: View {
         .frame(maxWidth: 720)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .navigationTitle("Connect to Jellyfin")
-        .task {
-            discoveryStore.start()
-        }
         .onDisappear {
             discoveryStore.cancel()
         }
@@ -99,6 +96,12 @@ struct ConnectServerView: View {
             }
 
             switch discoveryStore.state {
+            case .idle:
+                ContentUnavailableView(
+                    "Find Local Servers",
+                    systemImage: "network",
+                    description: Text("Use Refresh to search for Jellyfin servers on this network.")
+                )
             case .empty:
                 ContentUnavailableView(
                     "No Servers Found",

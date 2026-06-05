@@ -595,6 +595,10 @@
       "comment" : "Quick Connect start action",
       "extractionState" : "manual"
     },
+    "Use Refresh to search for Jellyfin servers on this network." : {
+      "comment" : "Connect screen local server discovery idle help text",
+      "extractionState" : "manual"
+    },
     "User" : {
       "comment" : "User name label",
       "extractionState" : "manual"

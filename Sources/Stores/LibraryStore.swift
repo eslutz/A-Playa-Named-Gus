@@ -158,6 +158,7 @@ final class LibraryStore {
     private let session: SessionStore
     private let logger = Logger(category: .library)
     private var paging = Paging(pageSize: LibraryRequest.pageSize, prefetchThreshold: 12)
+    private var loadGeneration = 0
 
     init(library: BaseItemDto, session: SessionStore) {
         self.library = library
@@ -168,13 +169,21 @@ final class LibraryStore {
         library.name ?? "Library"
     }
 
+    var isLoading: Bool {
+        state.isLoading || isLoadingNextPage
+    }
+
     func load() async {
         guard state != .loading else { return }
+        loadGeneration += 1
+        let generation = loadGeneration
+        isLoadingNextPage = false
         state = .loading
         paging.reset()
         do {
-            try await loadPage(startIndex: 0, replaceResults: true)
+            try await loadPage(startIndex: 0, replaceResults: true, generation: generation)
         } catch {
+            guard generation == loadGeneration else { return }
             handle(error)
         }
     }
@@ -195,17 +204,23 @@ final class LibraryStore {
               paging.shouldLoadMore(currentIndex: index, loadedCount: items.count)
         else { return }
 
+        let generation = loadGeneration
         isLoadingNextPage = true
-        defer { isLoadingNextPage = false }
+        defer {
+            if generation == loadGeneration {
+                isLoadingNextPage = false
+            }
+        }
 
         do {
-            try await loadPage(startIndex: paging.nextStartIndex, replaceResults: false)
+            try await loadPage(startIndex: paging.nextStartIndex, replaceResults: false, generation: generation)
         } catch {
+            guard generation == loadGeneration else { return }
             handle(error)
         }
     }
 
-    private func loadPage(startIndex: Int, replaceResults: Bool) async throws {
+    private func loadPage(startIndex: Int, replaceResults: Bool, generation: Int) async throws {
         let parameters = LibraryRequest.parameters(
             userID: session.user.id,
             parentID: library.id,
@@ -216,6 +231,8 @@ final class LibraryStore {
         let response = try await NetworkRetryPolicy.idempotent.run {
             try await session.client.send(Paths.getItems(parameters: parameters))
         }
+        guard generation == loadGeneration else { return }
+
         let page = response.value.items ?? []
         if replaceResults {
             items = page
