@@ -4,12 +4,15 @@ import SwiftUI
 /// Signed-in root, with all platform divergence in one place.
 ///
 /// - iPhone (compact) & tvOS → `TabView` (focus engine on tvOS).
-/// - iPad / macOS / visionOS → `NavigationSplitView` (sidebar = libraries).
+/// - iPad / macOS → `NavigationSplitView` (sidebar = libraries).
+/// - visionOS → `.sidebarAdaptable` `TabView` for the native floating sidebar style.
 struct RootContainer: View {
     var body: some View {
         #if os(tvOS)
             TabRootView()
-        #elseif os(macOS) || os(visionOS)
+        #elseif os(visionOS)
+            VisionSidebarRootView()
+        #elseif os(macOS)
             SplitRootView()
         #else
             AdaptiveRootView()
@@ -82,6 +85,7 @@ private struct TabRootView: View {
 
 private enum SidebarItem: Hashable {
     case home
+    case search
     case settings
     case library(String)
 
@@ -89,6 +93,7 @@ private enum SidebarItem: Hashable {
     var sceneKey: String {
         switch self {
         case .home: return "home"
+        case .search: return "search"
         case .settings: return "settings"
         case let .library(id): return "library:\(id)"
         }
@@ -96,13 +101,102 @@ private enum SidebarItem: Hashable {
 
     init?(sceneKey key: String) {
         if key == "home" { self = .home }
+        else if key == "search" { self = .search }
         else if key == "settings" { self = .settings }
         else if key.hasPrefix("library:") { self = .library(String(key.dropFirst("library:".count))) }
         else { return nil }
     }
 }
 
-/// Split-view root (iPad, macOS, visionOS).
+#if os(visionOS)
+    /// visionOS-native root using the system sidebar tab presentation.
+    private struct VisionSidebarRootView: View {
+        @Environment(AppNavigationModel.self) private var navigation
+        @Environment(SessionStore.self) private var session
+        @State private var home: HomeStore?
+        @State private var selection: SidebarItem = .home
+        @SceneStorage("gus.vision.sidebar.selection") private var storedSelectionKey: String = "home"
+
+        var body: some View {
+            TabView(selection: $selection) {
+                Tab("Home", systemImage: "house", value: SidebarItem.home) {
+                    NavigationStack {
+                        SearchRootView {
+                            HomeView()
+                        }
+                        .gusItemDestinations()
+                    }
+                }
+
+                Tab("Search", systemImage: "magnifyingglass", value: SidebarItem.search) {
+                    NavigationStack {
+                        SearchView()
+                            .gusItemDestinations()
+                    }
+                }
+
+                if let home {
+                    TabSection("Libraries") {
+                        ForEach(home.libraries, id: \.sidebarID) { library in
+                            Tab(library.name ?? "Library", systemImage: library.librarySymbol, value: SidebarItem.library(library.sidebarID)) {
+                                NavigationStack {
+                                    SearchRootView {
+                                        LibraryGridView(library: library)
+                                    }
+                                    .gusItemDestinations()
+                                }
+                            }
+                        }
+                    }
+                }
+
+                Tab("Settings", systemImage: "gearshape", value: SidebarItem.settings) {
+                    NavigationStack {
+                        SettingsView()
+                    }
+                }
+            }
+            .tabViewStyle(.sidebarAdaptable)
+            .onAppear {
+                if let restored = SidebarItem(sceneKey: storedSelectionKey) {
+                    selection = restored
+                }
+            }
+            .onChange(of: selection) { _, item in
+                storedSelectionKey = item.sceneKey
+                switch item {
+                case .home:
+                    navigation.open(.home)
+                case .search:
+                    navigation.open(.search)
+                case .settings:
+                    navigation.open(.settings)
+                case .library:
+                    break
+                }
+            }
+            .onChange(of: navigation.route) { _, route in
+                switch route {
+                case .home:
+                    selection = .home
+                case .search:
+                    selection = .search
+                case .settings:
+                    selection = .settings
+                }
+            }
+            .task {
+                if home == nil {
+                    let store = HomeStore(session: session)
+                    home = store
+                    await store.load()
+                }
+            }
+        }
+    }
+#endif
+
+/// Split-view root (iPad, macOS).
 private struct SplitRootView: View {
     @Environment(AppNavigationModel.self) private var navigation
     @Environment(SessionStore.self) private var session
@@ -118,9 +212,9 @@ private struct SplitRootView: View {
 
                 Section("Libraries") {
                     if let home {
-                        ForEach(home.libraries, id: \.id) { library in
+                        ForEach(home.libraries, id: \.sidebarID) { library in
                             Label(library.name ?? "Library", systemImage: library.librarySymbol)
-                                .tag(SidebarItem.library(library.id ?? ""))
+                                .tag(SidebarItem.library(library.sidebarID))
                         }
                     }
                 }
@@ -168,6 +262,8 @@ private struct SplitRootView: View {
             switch item {
             case .home:
                 navigation.open(.home)
+            case .search:
+                navigation.open(.search)
             case .settings:
                 navigation.open(.settings)
             case .library, .none:
@@ -207,8 +303,10 @@ private struct SplitRootView: View {
         switch selection {
         case .settings:
             SettingsView()
+        case .search:
+            SearchView()
         case let .library(id):
-            if let library = home?.libraries.first(where: { $0.id == id }) {
+            if let library = home?.libraries.first(where: { $0.sidebarID == id }) {
                 LibraryGridView(library: library)
             } else {
                 ContentUnavailableView("Select a Library", systemImage: "rectangle.stack")
@@ -216,5 +314,11 @@ private struct SplitRootView: View {
         case .home, .none:
             HomeView()
         }
+    }
+}
+
+private extension BaseItemDto {
+    var sidebarID: String {
+        id ?? name ?? collectionType?.rawValue ?? "library"
     }
 }

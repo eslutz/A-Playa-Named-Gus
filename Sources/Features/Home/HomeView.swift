@@ -18,7 +18,7 @@ struct HomeView: View {
                 ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
-        .navigationTitle(Text("Gus", comment: "App name"))
+        .navigationTitle("Home")
         .task {
             if store == nil {
                 let store = HomeStore(session: session)
@@ -35,14 +35,20 @@ struct HomeView: View {
     private func content(_ store: HomeStore) -> some View {
         LoadingStateView(
             state: store.state,
-            isEmpty: store.libraries.isEmpty && store.resumeItems.isEmpty,
+            isEmpty: store.libraries.isEmpty && store.resumeItems.isEmpty && store.nextUpItems.isEmpty && store.latestSections.isEmpty,
             emptyTitle: "No Libraries",
             emptySymbol: "rectangle.stack"
         ) {
             ScrollView {
                 VStack(alignment: .leading, spacing: 32) {
                     if !store.resumeItems.isEmpty {
-                        ContinueWatchingRail(items: store.resumeItems)
+                        MediaRail(title: "Continue Watching", items: store.resumeItems)
+                    }
+                    if !store.nextUpItems.isEmpty {
+                        MediaRail(title: "Next Up", items: store.nextUpItems)
+                    }
+                    ForEach(store.latestSections) { section in
+                        MediaRail(title: section.title, items: section.items)
                     }
                     LibrariesGrid(libraries: store.libraries)
                 }
@@ -54,14 +60,15 @@ struct HomeView: View {
     }
 }
 
-/// Horizontal rail of in-progress items.
-private struct ContinueWatchingRail: View {
+/// Horizontal rail of media items.
+private struct MediaRail: View {
     @Environment(SessionStore.self) private var session
+    let title: String
     let items: [BaseItemDto]
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Continue Watching")
+            Text(title)
                 .font(.title2.bold())
                 .accessibilityAddTraits(.isHeader)
 

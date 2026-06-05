@@ -8,8 +8,7 @@
     ///
     /// Ported from PR #2's `JellyfinCinemaImmersiveView` (same structure: an inward-facing
     /// sphere backdrop with a soft vertical gradient, plus key/fill point lights), re-themed
-    /// with a Psych / radio-DJ-lounge palette. The same accent (`pineapple gold`) feeds the
-    /// app's `AccentColor`, so the windowed UI and the cinema share a palette.
+    /// with the Jellyfin navy, purple, and blue palette used by the windowed UI.
     struct GusCinema: View {
         static let spaceID = "gus-cinema"
 
@@ -92,7 +91,7 @@
             return UnlitMaterial(color: GusCinemaPalette.backdropNightUI)
         }
 
-        /// 8×512 vertical gradient (night → plum → night) used as the backdrop texture.
+        /// 8×512 vertical gradient (navy → black → navy) used as the backdrop texture.
         private static func gradientTexture() -> TextureResource? {
             let width = 8
             let height = 512
@@ -131,7 +130,7 @@
         }
     }
 
-    /// Gus / Psych cinema palette: warm pineapple-gold + radio-neon magenta over deep indigo.
+    /// Gus cinema palette: Jellyfin purple and blue over deep navy.
     ///
     /// Colors are defined once in the asset catalog (the `Cinema*` colorsets) so the windowed UI
     /// and this RealityKit room share a single source of truth; the literal fallbacks keep the
@@ -141,14 +140,14 @@
             UIColor(named: name) ?? fallback
         }
 
-        /// backdrop night — deep indigo-black #120E22
-        static let backdropNightUI = color("CinemaBackdropNight", fallback: UIColor(red: 0.071, green: 0.055, blue: 0.133, alpha: 1))
-        /// backdrop mid — plum #2A1B3D
-        static let backdropMidUI = color("CinemaBackdropMid", fallback: UIColor(red: 0.165, green: 0.106, blue: 0.239, alpha: 1))
-        /// key light — pineapple gold #F4B740
-        static let keyLightUI = color("CinemaKeyLight", fallback: UIColor(red: 0.957, green: 0.718, blue: 0.251, alpha: 1))
-        /// fill light — radio-neon magenta #E0529C
-        static let fillLightUI = color("CinemaFillLight", fallback: UIColor(red: 0.878, green: 0.322, blue: 0.612, alpha: 1))
+        /// backdrop night — Jellyfin navy #000B25
+        static let backdropNightUI = color("CinemaBackdropNight", fallback: UIColor(red: 0.0, green: 0.043, blue: 0.145, alpha: 1))
+        /// backdrop mid — near black #101010
+        static let backdropMidUI = color("CinemaBackdropMid", fallback: UIColor(red: 0.063, green: 0.063, blue: 0.063, alpha: 1))
+        /// key light — Jellyfin purple #AC5CC3
+        static let keyLightUI = color("CinemaKeyLight", fallback: UIColor(red: 0.675, green: 0.361, blue: 0.765, alpha: 1))
+        /// fill light — Jellyfin blue #00A4DC
+        static let fillLightUI = color("CinemaFillLight", fallback: UIColor(red: 0.0, green: 0.643, blue: 0.863, alpha: 1))
 
         static var backdropNightCG: CGColor {
             backdropNightUI.cgColor

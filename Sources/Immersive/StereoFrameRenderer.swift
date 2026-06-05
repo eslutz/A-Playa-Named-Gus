@@ -171,7 +171,7 @@
             guard let dstBase = CVPixelBufferGetBaseAddress(dst) else { return nil }
 
             let dstStride = CVPixelBufferGetBytesPerRow(dst)
-            for row in 0..<height {
+            for row in 0 ..< height {
                 memcpy(
                     dstBase.advanced(by: row * dstStride),
                     srcBase.advanced(by: (y + row) * srcStride + x * bytesPerPixel),

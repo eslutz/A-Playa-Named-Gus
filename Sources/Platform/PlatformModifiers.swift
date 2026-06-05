@@ -26,8 +26,22 @@ extension View {
     ///   cursor change is sufficient on macOS).
     @ViewBuilder
     func posterHoverEffect() -> some View {
-        #if os(iOS) || os(visionOS)
+        #if os(visionOS)
             hoverEffect(.lift)
+                .visionHoverEffect(cornerRadius: 12)
+        #elseif os(iOS)
+            hoverEffect(.lift)
+        #else
+            self
+        #endif
+    }
+
+    /// Matches visionOS hover hit-testing to the visible rounded rectangle, avoiding the
+    /// oversized default focus plate on poster and form rows. No-op elsewhere.
+    @ViewBuilder
+    func visionHoverEffect(cornerRadius: CGFloat) -> some View {
+        #if os(visionOS)
+            buttonBorderShape(.roundedRectangle(radius: cornerRadius))
         #else
             self
         #endif
