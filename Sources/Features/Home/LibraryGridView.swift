@@ -41,7 +41,7 @@ struct LibraryGridView: View {
             emptySymbol: "rectangle.on.rectangle"
         ) {
             ScrollView {
-                LazyVGrid(columns: PosterGrid.columns, alignment: .leading, spacing: 24) {
+                LazyVGrid(columns: PosterGrid.columns, alignment: .leading, spacing: PosterGrid.spacing) {
                     ForEach(store.items, id: \.id) { item in
                         NavigationLink(value: ItemRef(item: item)) {
                             PosterCard(

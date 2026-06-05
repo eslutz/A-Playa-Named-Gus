@@ -97,7 +97,7 @@ private struct DetailHeroView<Accessory: View>: View {
 
             VStack(alignment: .leading, spacing: 16) {
                 Text(item.displayTitle)
-                    .font(.system(.largeTitle, design: .default, weight: .bold))
+                    .font(titleFont)
                     .lineLimit(3)
                     .fixedSize(horizontal: false, vertical: true)
 
@@ -127,8 +127,16 @@ private struct DetailHeroView<Accessory: View>: View {
             .foregroundStyle(.white)
             .padding(heroPadding)
         }
-        .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
-        .contentShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: heroCornerRadius, style: .continuous))
+        .contentShape(RoundedRectangle(cornerRadius: heroCornerRadius, style: .continuous))
+    }
+
+    private var titleFont: Font {
+        #if os(iOS)
+            return .title.bold()
+        #else
+            return .largeTitle.bold()
+        #endif
     }
 
     private var heroHeight: CGFloat {
@@ -151,27 +159,22 @@ private struct DetailHeroView<Accessory: View>: View {
         #endif
     }
 
+    private var heroCornerRadius: CGFloat {
+        #if os(iOS)
+            return 18
+        #else
+            return 28
+        #endif
+    }
+
     private func metadataRow(for item: BaseItemDto) -> some View {
-        HStack(spacing: 12) {
-            if let year = item.yearText {
-                Label(year, systemImage: "calendar").labelStyle(.titleOnly)
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: 12) {
+                metadataValues(for: item)
             }
-            if let runtime = item.runtimeText {
-                Text(runtime)
-            }
-            if let rating = item.officialRating {
-                Text(rating)
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 2)
-                    .overlay(RoundedRectangle(cornerRadius: 4).stroke(.secondary))
-            }
-            if let community = item.communityRatingText {
-                Text(community).foregroundStyle(Color.gusRatingStar)
-            }
-            if let critic = item.criticRatingText {
-                // Explicit String(localized:comment:) preserves the translator comment and
-                // avoids the implicit LocalizedStringKey coupling of Text interpolation.
-                Text(String(localized: "Critic \(critic)", comment: "Critic score label, e.g. 'Critic 74%'"))
+
+            VStack(alignment: .leading, spacing: 6) {
+                metadataValues(for: item)
             }
         }
         .font(.subheadline)
@@ -179,6 +182,30 @@ private struct DetailHeroView<Accessory: View>: View {
         // Combine year, runtime, rating, and score into a single VoiceOver element so the
         // row reads as one sentence rather than four separate focus stops.
         .accessibilityElement(children: .combine)
+    }
+
+    @ViewBuilder
+    private func metadataValues(for item: BaseItemDto) -> some View {
+        if let year = item.yearText {
+            Label(year, systemImage: "calendar").labelStyle(.titleOnly)
+        }
+        if let runtime = item.runtimeText {
+            Text(runtime)
+        }
+        if let rating = item.officialRating {
+            Text(rating)
+                .padding(.horizontal, 6)
+                .padding(.vertical, 2)
+                .overlay(RoundedRectangle(cornerRadius: 4).stroke(.secondary))
+        }
+        if let community = item.communityRatingText {
+            Text(community).foregroundStyle(Color.gusRatingStar)
+        }
+        if let critic = item.criticRatingText {
+            // Explicit String(localized:comment:) preserves the translator comment and
+            // avoids the implicit LocalizedStringKey coupling of Text interpolation.
+            Text(String(localized: "Critic \(critic)", comment: "Critic score label, e.g. 'Critic 74%'"))
+        }
     }
 }
 

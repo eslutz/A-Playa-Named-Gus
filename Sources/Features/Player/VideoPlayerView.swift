@@ -41,9 +41,6 @@ struct VideoPlayerView: View {
                 #else
                     PlayerSurface(player: player)
                         .ignoresSafeArea()
-                        .safeAreaInset(edge: .bottom) {
-                            PlaybackControlsOverlay(store: store)
-                        }
                 #endif
             } else if case let .failed(message)? = store?.state {
                 ContentUnavailableView {
@@ -72,6 +69,14 @@ struct VideoPlayerView: View {
             .tint(.white)
             .padding(8)
             .accessibilityLabel("Close Player")
+        }
+        #endif
+        #if !os(tvOS) && !os(visionOS)
+        .overlay(alignment: .topTrailing) {
+            if let store {
+                PlaybackOptionsOverlay(store: store)
+                    .padding()
+            }
         }
         #endif
         #if os(visionOS)
@@ -195,17 +200,29 @@ struct VideoPlayerView: View {
     }
 #endif
 
-private struct PlaybackControlsOverlay: View {
+private struct PlaybackOptionsOverlay: View {
     let store: PlaybackStore
 
     var body: some View {
-        HStack(spacing: 14) {
-            #if os(visionOS)
-                ViewingModeMenu(store: store)
-            #endif
+        HStack(spacing: 6) {
+            AirPlayRoutePicker()
 
+            PlaybackOptionsMenu(store: store)
+        }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 6)
+        .background(.ultraThinMaterial, in: Capsule())
+        .foregroundStyle(.white)
+    }
+}
+
+private struct PlaybackOptionsMenu: View {
+    let store: PlaybackStore
+
+    var body: some View {
+        Menu {
             if !store.audioOptions.isEmpty {
-                Menu {
+                Section("Audio") {
                     ForEach(store.audioOptions) { option in
                         Button {
                             Task { await store.selectAudioStream(index: option.id) }
@@ -213,19 +230,16 @@ private struct PlaybackControlsOverlay: View {
                             Label(option.title, systemImage: store.selectedAudioStreamIndex == option.id ? "checkmark" : "waveform")
                         }
                     }
-                } label: {
-                    Label("Audio", systemImage: "waveform")
                 }
             }
 
             if !store.subtitleOptions.isEmpty {
-                Menu {
+                Section("Subtitles") {
                     Button {
                         Task { await store.selectSubtitleStream(index: nil) }
                     } label: {
                         Label("Off", systemImage: store.selectedSubtitleStreamIndex == nil ? "checkmark" : "captions.bubble")
                     }
-
                     ForEach(store.subtitleOptions) { option in
                         Button {
                             Task { await store.selectSubtitleStream(index: option.id) }
@@ -233,38 +247,35 @@ private struct PlaybackControlsOverlay: View {
                             Label(option.title, systemImage: store.selectedSubtitleStreamIndex == option.id ? "checkmark" : "captions.bubble")
                         }
                     }
-                } label: {
-                    Label("Subtitles", systemImage: "captions.bubble")
                 }
             }
 
             if !store.chapterTargets.isEmpty {
-                Menu {
+                Section("Chapters") {
                     ForEach(store.chapterTargets) { chapter in
                         Button(chapter.title) {
                             Task { await store.seek(to: chapter) }
                         }
                     }
-                } label: {
-                    Label("Chapters", systemImage: "list.bullet.rectangle")
                 }
             }
-
-            AirPlayRoutePicker()
 
             if let next = store.nextUpItem, store.isNextUpPromptVisible {
-                Button {
-                    Task { await store.playNextUp() }
-                } label: {
-                    Label("Play Next: \(next.displayTitle)", systemImage: "forward.end.fill")
+                Section {
+                    Button {
+                        Task { await store.playNextUp() }
+                    } label: {
+                        Label("Play Next: \(next.displayTitle)", systemImage: "forward.end.fill")
+                    }
                 }
-                .buttonStyle(.borderedProminent)
             }
+        } label: {
+            Image(systemName: "ellipsis.circle.fill")
+                .font(.title2)
+                .symbolRenderingMode(.hierarchical)
         }
-        .labelStyle(.titleAndIcon)
-        .padding(.horizontal)
-        .padding(.vertical, 10)
-        .background(.ultraThinMaterial)
+        .buttonStyle(.plain)
+        .accessibilityLabel("Playback Options")
     }
 }
 

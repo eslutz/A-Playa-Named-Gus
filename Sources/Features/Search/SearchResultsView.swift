@@ -13,7 +13,7 @@ struct SearchResultsView: View {
             emptySymbol: "magnifyingglass"
         ) {
             ScrollView {
-                LazyVGrid(columns: PosterGrid.columns, alignment: .leading, spacing: 24) {
+                LazyVGrid(columns: PosterGrid.columns, alignment: .leading, spacing: PosterGrid.spacing) {
                     ForEach(store.results, id: \.id) { item in
                         NavigationLink(value: ItemRef(item: item)) {
                             PosterCard(

@@ -108,17 +108,39 @@ private enum MediaRailStyle: Equatable {
     case backdrop
 
     var itemWidth: CGFloat {
-        #if os(tvOS)
-            return self == .backdrop ? 420 : 240
-        #elseif os(macOS) || os(visionOS)
-            return self == .backdrop ? 320 : 180
-        #else
-            return self == .backdrop ? 240 : 130
-        #endif
+        MediaRailMetrics.itemWidth(for: kind)
     }
 
     var spacing: CGFloat {
+        MediaRailMetrics.spacing(for: kind)
+    }
+
+    private var kind: MediaRailKind {
         switch self {
+        case .poster: return .poster
+        case .backdrop: return .backdrop
+        }
+    }
+}
+
+enum MediaRailKind: Equatable {
+    case poster
+    case backdrop
+}
+
+enum MediaRailMetrics {
+    static func itemWidth(for kind: MediaRailKind) -> CGFloat {
+        #if os(tvOS)
+            return kind == .backdrop ? 420 : 240
+        #elseif os(macOS) || os(visionOS)
+            return kind == .backdrop ? 320 : 180
+        #else
+            return kind == .backdrop ? 300 : 150
+        #endif
+    }
+
+    static func spacing(for kind: MediaRailKind) -> CGFloat {
+        switch kind {
         case .poster: return 16
         case .backdrop: return 22
         }
@@ -186,7 +208,7 @@ private struct LibrariesGrid: View {
                 .font(.title2.bold())
                 .accessibilityAddTraits(.isHeader)
 
-            LazyVGrid(columns: PosterGrid.columns, alignment: .leading, spacing: 24) {
+            LazyVGrid(columns: PosterGrid.columns, alignment: .leading, spacing: PosterGrid.spacing) {
                 ForEach(libraries, id: \.id) { library in
                     NavigationLink(value: LibraryRef(item: library)) {
                         PosterCard(

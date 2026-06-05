@@ -133,12 +133,32 @@ enum PosterGrid {
     static var columns: [GridItem] {
         #if os(tvOS)
             return Array(repeating: GridItem(.flexible(), spacing: 40), count: 6)
-        #elseif os(macOS)
-            return [GridItem(.adaptive(minimum: 160, maximum: 220), spacing: 20)]
-        #elseif os(visionOS)
-            return [GridItem(.adaptive(minimum: 180, maximum: 240), spacing: 28)]
         #else
-            return [GridItem(.adaptive(minimum: 110, maximum: 180), spacing: 16)]
+            return [GridItem(.adaptive(minimum: minimumItemWidth, maximum: maximumItemWidth), spacing: spacing)]
+        #endif
+    }
+
+    static var minimumItemWidth: CGFloat {
+        #if os(tvOS)
+            return 220
+        #elseif os(macOS)
+            return 160
+        #elseif os(visionOS)
+            return 180
+        #else
+            return 140
+        #endif
+    }
+
+    static var maximumItemWidth: CGFloat {
+        #if os(tvOS)
+            return 260
+        #elseif os(macOS)
+            return 220
+        #elseif os(visionOS)
+            return 240
+        #else
+            return 220
         #endif
     }
 
@@ -147,8 +167,10 @@ enum PosterGrid {
             return 40
         #elseif os(visionOS)
             return 28
+        #elseif os(iOS)
+            return 18
         #else
-            return 16
+            return 20
         #endif
     }
 }

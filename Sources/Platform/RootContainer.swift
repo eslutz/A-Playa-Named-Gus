@@ -188,13 +188,15 @@ private struct SplitRootView: View {
             List(selection: $selection) {
                 Label("Home", systemImage: "house").tag(SidebarItem.home)
 
-                Section("Libraries") {
+                Section {
                     if let home {
                         ForEach(home.libraries, id: \.sidebarID) { library in
                             Label(library.name ?? "Library", systemImage: library.librarySymbol)
                                 .tag(SidebarItem.library(library.sidebarID))
                         }
                     }
+                } header: {
+                    Label("Libraries", systemImage: "rectangle.stack")
                 }
 
                 Label("Settings", systemImage: "gearshape").tag(SidebarItem.settings)
@@ -213,23 +215,11 @@ private struct SplitRootView: View {
         }
         .navigationSplitViewStyle(.balanced)
         .toolbar {
-            ToolbarItemGroup {
-                Button {
-                    navigation.open(.home)
-                } label: {
-                    Label("Home", systemImage: "house")
-                }
-
+            ToolbarItem {
                 Button {
                     navigation.open(.search)
                 } label: {
                     Label("Search", systemImage: "magnifyingglass")
-                }
-
-                Button {
-                    navigation.open(.settings)
-                } label: {
-                    Label("Settings", systemImage: "gearshape")
                 }
             }
         }
