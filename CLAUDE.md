@@ -290,3 +290,9 @@ branch and re-expressed on `@Observable` with the Jellyfin palette.
 The full milestone plan to App Store submission lives in `Documentation/ROADMAP.md`.
 Keep it current: when scope changes or a milestone completes, update the roadmap as part
 of the same change so the plan stays the source of truth.
+
+Repository docs stay intentionally compact. `README.md` is a short overview and quick
+start, and `CONTRIBUTING.md` only points to the GitHub wiki's Contributing page.
+Long-form contributor and user-facing documentation belongs in the source-controlled wiki
+repo at `/Users/ericslutz/Developer/Code/A Playa Named Gus/Gus.wiki`; make wiki changes
+there locally, and keep repo docs as links or brief summaries.

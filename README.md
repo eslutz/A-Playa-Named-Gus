@@ -6,7 +6,8 @@ Jellyfin Swift SDK, with a project rule of preferring Apple/system frameworks
 over custom or third-party runtime code.
 
 The repository is private while early development continues. The public
-documentation home is the GitHub wiki; this README stays intentionally short.
+documentation home is the [GitHub wiki](https://github.com/eslutz/Gus/wiki);
+this README stays intentionally short.
 
 ## Quick Start
 
@@ -23,10 +24,11 @@ resource files.
 
 ## Contributing
 
-Use the issue forms for bugs and feature requests. Use Discussions for
-questions, support, and design/development conversations that are not yet
-actionable issues.
+Use the [issues page](https://github.com/eslutz/Gus/issues) for bugs and
+feature requests. Use
+[Discussions](https://github.com/eslutz/Gus/discussions) for questions,
+support, and design/development conversations that are not yet actionable
+issues.
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for the contribution checklist and
-[AGENTS.md](AGENTS.md) for the project architecture, conventions, and native API
-mandate.
+See the [Contributing wiki page](https://github.com/eslutz/Gus/wiki/Contributing)
+for contribution details.
