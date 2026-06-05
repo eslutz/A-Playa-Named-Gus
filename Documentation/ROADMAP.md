@@ -264,11 +264,42 @@ automated build verification. (Covers priority: *polish & testing*.)
 
 ---
 
-## M7 — App Store Readiness
+## M7 — Media Server Provider Architecture
+
+**Goal:** isolate Jellyfin-specific API and DTO assumptions behind a provider boundary
+before the 1.0 release path, so Gus can stay Jellyfin-only at launch while preserving a
+clean route to future backends such as Emby.
+
+- [ ] **Provider boundary.** Introduce a media-server provider abstraction such as
+  `MediaServerProvider`, with Jellyfin as the only production implementation for 1.0.
+  *Acceptance:* feature stores depend on provider/domain contracts for core operations
+  rather than directly on Jellyfin SDK call shapes; no non-Jellyfin runtime dependency is
+  added.
+- [ ] **Gus-native domain models.** Move feature views and stores away from Jellyfin SDK
+  DTOs for libraries, media items, people, images, playback sources, playback sessions,
+  remote commands, progress events, and server capabilities. *Acceptance:* UI code renders
+  Gus-native models, with Jellyfin DTO mapping isolated inside the Jellyfin provider.
+- [ ] **Provider-scoped persistence.** Persist accounts, tokens, server IDs, user IDs,
+  playback preferences, and cached metadata with an explicit provider identity.
+  *Acceptance:* existing Jellyfin users migrate without reauthentication, token lookup
+  remains Keychain-backed, and future providers can coexist without account/key collisions.
+- [ ] **Capability-driven feature availability.** Add a capability model so UI can show,
+  hide, or degrade features based on backend and server configuration. *Acceptance:*
+  feature code does not spread `if Jellyfin` / `if Emby` checks; provider-specific behavior
+  stays behind the provider implementation or capability mapping.
+- [ ] **Regression coverage and ADR.** Capture the provider architecture decision and add
+  focused tests for Jellyfin mapping, persistence migration, playback source selection, and
+  capability handling. *Acceptance:* current Jellyfin connect, browse, search, detail,
+  playback, progress, downloads, and settings flows behave unchanged across all supported
+  platforms.
+
+---
+
+## M8 — App Store Readiness
 
 **Goal:** everything Apple requires to accept and review the app.
 
-Readiness documents now live under `Documentation/AppStore/`, but M7 remains unchecked
+Readiness documents now live under `Documentation/AppStore/`, but M8 remains unchecked
 until privacy manifest/signing/App Store Connect/TestFlight/submission work is actually
 done.
 
@@ -294,7 +325,7 @@ done.
 
 ---
 
-## M8 — Submission & Launch
+## M9 — Submission & Launch
 
 **Goal:** ship 1.0 and be ready to respond.
 
@@ -328,12 +359,115 @@ Treat documentation as part of every milestone, not a phase:
 These are intentionally outside the 1.0 App Store path above. Promote them into a
 milestone only after the launch scope is stable.
 
-- [ ] **watchOS companion app.** Explore a focused watchOS experience instead of a full
-  video client. Candidate scope: remote control for active playback, Now Playing glance,
-  quick resume queue, server/session status, and lightweight download/playback controls
-  where watchOS APIs allow. *Acceptance:* a watchOS product brief defines the minimum useful
-  feature set, platform constraints, and whether it ships as a companion-only target.
+- [ ] **watchOS companion app.** Build a focused watchOS experience that extends Gus
+ beyond the five launch platforms without trying to make the watch the primary video
+ client. Candidate scope includes server/session status, Now Playing glance, remote
+ playback control for any active Jellyfin client, client/device selection, quick resume,
+ lightweight library browsing, direct audio playback, offline audio downloads, and novelty
+ direct video playback on the watch. Offline downloads are limited to audio-first content
+ on watchOS; direct video playback is treated as an advanced/secondary feature and should
+ not be promoted as a primary use case. *Acceptance:* a watchOS product brief defines the
+ minimum useful feature set, platform constraints, Jellyfin API requirements, battery/
+ storage/network tradeoffs, and whether it ships as a companion-only target or a
+ standalone-capable watchOS app.
+
 - [ ] **Expanded immersive environments.** Enhance Gus Cinema with additional native
-  RealityKit environments or scene variants that remain comfortable, performant, and
-  playback-focused. *Acceptance:* users can choose from multiple immersive environments,
-  environment changes do not interrupt playback, and the default remains simple and stable.
+ RealityKit environments or scene variants that remain comfortable, performant, and
+ playback-focused. *Acceptance:* users can choose from multiple immersive environments,
+ environment changes do not interrupt playback, and the default remains simple and stable.
+
+- [ ] **SyncPlay.** Add Jellyfin SyncPlay support for shared playback sessions. Candidate
+ scope includes creating/joining/leaving groups, selecting a host/client, synchronized
+ play/pause/seek, participant visibility, and graceful handling of drift or unsupported
+ clients. *Acceptance:* users can create or join a SyncPlay group and maintain synchronized
+ playback across supported Jellyfin clients.
+
+- [ ] **Music library support.** Add first-class Jellyfin music browsing and playback:
+ artists, albums, songs, playlists, genres, shuffle/repeat, queue management, background
+ audio, Now Playing metadata, AirPlay routing, and offline audio downloads where supported.
+ *Acceptance:* users can browse and play music independently of movie/show workflows, with
+ accurate progress/state, native audio controls, and platform-appropriate background
+ behavior.
+
+- [ ] **Live TV & DVR support.** Add Jellyfin Live TV and DVR functionality including
+ channel guide, live channel playback, recording library, scheduled recordings, and
+ recording management. *Acceptance:* users can browse the guide, start live playback, view
+ recordings, and manage scheduled recordings with clear unsupported-state handling when
+ the server has no tuner/DVR configured.
+
+- [ ] **Books and audiobooks.** Add support for Jellyfin book libraries, with special focus
+ on audiobooks as an audio-first playback experience. Candidate scope includes book
+ browsing, audiobook playback, playback speed, chapter navigation, bookmarks, resume
+ progress, and offline audiobook downloads. *Acceptance:* audiobook progress syncs
+ reliably with Jellyfin and the UX is distinct from video playback.
+
+- [ ] **Photos.** Add Jellyfin photo library browsing with albums, timelines, full-screen
+ viewing, slideshows, favorites, and casting/photo playback to larger clients. *Acceptance:*
+ users can browse photo libraries comfortably across platforms and start a slideshow on a
+ selected playback device.
+
+### Emby Support
+
+- [ ] **Emby provider investigation.** Investigate adding Emby as the first non-Jellyfin
+ backend after the M7 provider architecture is complete. Emby is the preferred first
+ additional backend because its personal-media-server model, REST API surface, media item
+ concepts, playback model, session model, and remote-control capabilities are closer to
+ Jellyfin than Plex.
+
+ Candidate scope:
+ - Manual Emby server connection by URL.
+ - Emby user authentication using server-local credentials.
+ - Secure storage of Emby access tokens by provider, server ID, and user ID.
+ - Optional Emby Connect support after manual multi-server support is working.
+ - Library browsing for movies, shows, seasons, episodes, music, photos, books, and
+   audiobooks where available.
+ - Global search.
+ - Detail screens using Gus-native media models rather than Emby DTOs directly.
+ - Direct play and transcoded playback URL generation.
+ - Audio/subtitle stream selection.
+ - Playback start/progress/stopped reporting.
+ - Resume and Continue Watching support.
+ - Image loading.
+ - Active session discovery.
+ - Remote playback control through Emby sessions.
+ - Client/device selection.
+ - Play, pause, stop, seek, next/previous, volume, mute, audio stream, and subtitle stream
+   commands where supported by the target Emby client.
+ - Capability detection for Emby-specific availability and entitlement differences.
+
+ Provider architecture dependency:
+ - Build on the M7 provider boundary instead of introducing another abstraction.
+ - Implement Emby as a separate provider behind the same Gus-native domain models,
+   persistence model, playback contracts, and capability model.
+ - Keep Emby-specific behavior behind the Emby provider and capability mapping.
+
+ Emby-specific considerations:
+ - Emby supports both direct server authentication and optional Emby Connect flows.
+ - Emby Connect should be treated as an enhancement, not the primary connection path.
+ - Emby remote control is session-based and should map cleanly to the planned watchOS and
+   cross-device playback-control model.
+ - Emby media types overlap heavily with Jellyfin, including audio, video, movies,
+   episodes, series, music albums/artists, books, and photos.
+ - Emby Downloads & Sync, DVR, hardware-accelerated transcoding, and some app/client
+   capabilities may depend on Emby Premiere.
+ - The app should represent Premiere-gated functionality as capability/entitlement state
+   rather than assuming all Emby servers support every feature.
+ - SyncPlay should remain Jellyfin-specific unless an equivalent Emby-supported shared
+   playback model is identified.
+ - Branding, naming, App Store metadata, and support copy must make it clear which backend
+   a user is connecting to and avoid implying that Emby support is official unless that is
+   explicitly approved.
+
+ Prototype sequence:
+ 1. Implement an internal Emby prototype for connect, authenticate, libraries, search,
+    movie/show detail, playback, and progress reporting.
+ 2. Add Emby remote-control/session support.
+ 3. Add media-type-specific Emby coverage for music, books/audiobooks, photos, and Live
+    TV/DVR.
+ 4. Evaluate whether Emby support should ship as a full app mode, an experimental backend,
+    or a separate build/configuration.
+
+ *Acceptance:* a technical brief defines the Emby auth/token model, minimum supported Emby
+ feature set, Premiere-gated capability handling, testing requirements, App Store naming/
+ branding constraints, and the first Emby prototype milestone. No user-facing Emby work
+ starts until M7 is complete.
