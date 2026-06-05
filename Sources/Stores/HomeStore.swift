@@ -9,6 +9,36 @@ struct HomeLatestSection: Identifiable {
     let items: [BaseItemDto]
 }
 
+enum LatestMediaRequest {
+    static func parameters(userID: String, library: BaseItemDto, limit: Int = 12) -> Paths.GetLatestMediaParameters {
+        Paths.GetLatestMediaParameters(
+            userID: userID,
+            parentID: library.id,
+            fields: [.primaryImageAspectRatio],
+            enableImages: true,
+            enableUserData: true,
+            limit: limit,
+            isGroupItems: library.collectionType == .tvshows
+        )
+    }
+}
+
+enum LatestMediaDisplayMapper {
+    static func displayItems(from items: [BaseItemDto], libraryCollectionType: CollectionType?) -> [BaseItemDto] {
+        guard libraryCollectionType == .tvshows else {
+            return items
+        }
+
+        var seenSeriesIDs: Set<String> = []
+        return items.compactMap { item in
+            let displayItem = item.latestTVDisplayItem
+            guard let id = displayItem.id else { return displayItem }
+            guard seenSeriesIDs.insert(id).inserted else { return nil }
+            return displayItem
+        }
+    }
+}
+
 /// Loads the signed-in user's library views and "Continue Watching" items.
 ///
 /// Pattern reference: Swiftfin's `HomeViewModel` (`Paths.getUserViews` +
@@ -93,19 +123,11 @@ final class HomeStore {
 
         for library in libraries.prefix(6) {
             guard let parentID = library.id else { continue }
-            let parameters = Paths.GetLatestMediaParameters(
-                userID: session.user.id,
-                parentID: parentID,
-                fields: [.primaryImageAspectRatio],
-                enableImages: true,
-                enableUserData: true,
-                limit: 12,
-                isGroupItems: false
-            )
+            let parameters = LatestMediaRequest.parameters(userID: session.user.id, library: library)
             let response = try await NetworkRetryPolicy.idempotent.run {
                 try await session.client.send(Paths.getLatestMedia(parameters: parameters))
             }
-            let items = response.value
+            let items = LatestMediaDisplayMapper.displayItems(from: response.value, libraryCollectionType: library.collectionType)
             if !items.isEmpty {
                 sections.append(
                     HomeLatestSection(

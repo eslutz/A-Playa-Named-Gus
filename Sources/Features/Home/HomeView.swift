@@ -45,7 +45,7 @@ struct HomeView: View {
                         MediaRail(title: "Continue Watching", items: store.resumeItems)
                     }
                     if !store.nextUpItems.isEmpty {
-                        MediaRail(title: "Next Up", items: store.nextUpItems)
+                        MediaRail(title: "Next Up", items: store.nextUpItems, style: .backdrop)
                     }
                     ForEach(store.latestSections) { section in
                         MediaRail(title: section.title, items: section.items)
@@ -65,6 +65,7 @@ private struct MediaRail: View {
     @Environment(SessionStore.self) private var session
     let title: String
     let items: [BaseItemDto]
+    var style: MediaRailStyle = .poster
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -73,14 +74,23 @@ private struct MediaRail: View {
                 .accessibilityAddTraits(.isHeader)
 
             ScrollView(.horizontal, showsIndicators: false) {
-                HStack(alignment: .top, spacing: 16) {
+                LazyHStack(alignment: .top, spacing: style.spacing) {
                     ForEach(items, id: \.id) { item in
                         NavigationLink(value: ItemRef(item: item)) {
-                            PosterCard(
-                                item: item,
-                                imageURL: session.imageBuilder.primaryImageURL(for: item, context: .posterRail)
-                            )
-                            .frame(width: railItemWidth)
+                            switch style {
+                            case .poster:
+                                PosterCard(
+                                    item: item,
+                                    imageURL: session.imageBuilder.primaryImageURL(for: item, context: .posterRail)
+                                )
+                                .frame(width: style.itemWidth)
+                            case .backdrop:
+                                BackdropCard(
+                                    item: item,
+                                    imageURL: session.imageBuilder.backdropImageURL(for: item, maxWidth: 560)
+                                )
+                                .frame(width: style.itemWidth)
+                            }
                         }
                         .posterNavigationStyle()
                     }
@@ -88,17 +98,80 @@ private struct MediaRail: View {
                 .padding(.vertical, 4)
                 .tvFocusSection()
             }
+            .lookToScroll(.horizontal)
         }
     }
+}
 
-    private var railItemWidth: CGFloat {
+private enum MediaRailStyle: Equatable {
+    case poster
+    case backdrop
+
+    var itemWidth: CGFloat {
         #if os(tvOS)
-            return 240
+            return self == .backdrop ? 420 : 240
         #elseif os(macOS) || os(visionOS)
-            return 180
+            return self == .backdrop ? 320 : 180
         #else
-            return 130
+            return self == .backdrop ? 240 : 130
         #endif
+    }
+
+    var spacing: CGFloat {
+        switch self {
+        case .poster: return 16
+        case .backdrop: return 22
+        }
+    }
+}
+
+private struct BackdropCard: View {
+    let item: BaseItemDto
+    let imageURL: URL?
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            AsyncPoster(url: imageURL, contentMode: .fill, placeholderSymbol: "play.rectangle")
+                .aspectRatio(16.0 / 9.0, contentMode: .fit)
+                .frame(maxWidth: .infinity)
+                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .posterHoverEffect()
+
+            VStack(alignment: .leading, spacing: 1) {
+                Text(title)
+                    .font(.subheadline.weight(.medium))
+                    .lineLimit(1)
+
+                if let subtitle {
+                    Text(subtitle)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                }
+            }
+        }
+        .contentShape(Rectangle())
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(accessibilityLabel)
+    }
+
+    private var title: String {
+        item.seriesName ?? item.displayTitle
+    }
+
+    private var subtitle: String? {
+        if item.type == .episode {
+            return item.episodeLocator ?? item.name
+        }
+        return item.runtimeText ?? item.productionYear.map(String.init)
+    }
+
+    private var accessibilityLabel: Text {
+        if let subtitle {
+            Text("\(title), \(subtitle)")
+        } else {
+            Text(title)
+        }
     }
 }
 

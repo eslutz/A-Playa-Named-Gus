@@ -51,8 +51,7 @@ struct SettingsView: View {
                 LabeledContent("Device", value: DeviceIdentity.deviceName)
             }
         }
-        .formStyle(.grouped)
-        .glassBackground()
+        .settingsFormStyle()
         .navigationTitle("Settings")
         .task {
             downloads.load(serverID: session.server.id, userID: session.user.id)
@@ -127,6 +126,17 @@ struct SettingsView: View {
         } catch {
             switchErrorMessage = error.localizedDescription
         }
+    }
+}
+
+private extension View {
+    @ViewBuilder
+    func settingsFormStyle() -> some View {
+        #if os(visionOS)
+            formStyle(.automatic)
+        #else
+            formStyle(.grouped)
+        #endif
     }
 }
 

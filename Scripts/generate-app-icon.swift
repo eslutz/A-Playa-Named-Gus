@@ -133,30 +133,56 @@ private func drawBody(in context: CGContext, rect: CGRect) {
 
 private func drawCrown(in context: CGContext, rect: CGRect) {
     let center = CGPoint(x: rect.midX, y: rect.minY + rect.height * 0.75)
-    let baseWidth = rect.width * 0.28
-    let tipHeight = rect.height * 0.28
+    let baseWidth = rect.width * 0.22
+    let leafSpread = rect.width * 0.48
+    let tipHeight = rect.height * 0.3
     let leafCount = 7
 
     for index in 0..<leafCount {
         let progress = CGFloat(index) / CGFloat(leafCount - 1)
-        let angle = (-0.62 + progress * 1.24)
+        let angle = -1.0 + progress * 2.0
         let baseX = center.x - baseWidth / 2 + progress * baseWidth
         let base = CGPoint(x: baseX, y: center.y)
         let tip = CGPoint(
-            x: center.x + sin(angle) * rect.width * 0.18,
-            y: center.y + tipHeight * (0.68 + 0.32 * cos(angle))
+            x: center.x + sin(angle) * leafSpread * 0.5,
+            y: center.y + tipHeight * (0.58 + 0.42 * cos(angle))
         )
+        let leafHalfWidth = rect.width * (index == leafCount / 2 ? 0.045 : 0.038)
 
         let path = CGMutablePath()
-        path.move(to: CGPoint(x: base.x - rect.width * 0.04, y: base.y - rect.height * 0.025))
-        path.addLine(to: tip)
-        path.addLine(to: CGPoint(x: base.x + rect.width * 0.04, y: base.y - rect.height * 0.025))
+        path.move(to: CGPoint(x: base.x - leafHalfWidth, y: base.y - rect.height * 0.018))
+        path.addQuadCurve(
+            to: tip,
+            control: CGPoint(
+                x: center.x + sin(angle) * leafSpread * 0.18,
+                y: base.y + tipHeight * 0.44
+            )
+        )
+        path.addQuadCurve(
+            to: CGPoint(x: base.x + leafHalfWidth, y: base.y - rect.height * 0.018),
+            control: CGPoint(
+                x: tip.x - sin(angle) * rect.width * 0.055,
+                y: tip.y - tipHeight * 0.18
+            )
+        )
         path.closeSubpath()
 
         context.addPath(path)
         context.setFillColor(index.isMultiple(of: 2) ? blue : purple)
         context.fillPath()
     }
+
+    let rootInset = rect.width * 0.018
+    let basePath = CGMutablePath()
+    basePath.move(to: CGPoint(x: center.x - baseWidth * 0.24, y: center.y - rect.height * 0.02))
+    basePath.addLine(to: CGPoint(x: center.x + baseWidth * 0.24, y: center.y - rect.height * 0.02))
+    basePath.addLine(to: CGPoint(x: center.x + baseWidth * 0.16 - rootInset, y: center.y + rect.height * 0.055))
+    basePath.addLine(to: CGPoint(x: center.x - baseWidth * 0.16 + rootInset, y: center.y + rect.height * 0.055))
+    basePath.closeSubpath()
+
+    context.addPath(basePath)
+    context.setFillColor(purple)
+    context.fillPath()
 }
 
 private func writePNG(context: CGContext, to url: URL) throws {

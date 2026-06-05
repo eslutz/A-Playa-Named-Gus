@@ -2,14 +2,14 @@ import XCTest
 
 final class GusLaunchUITests: XCTestCase {
     func testConnectScreenRendersOnLaunch() {
-        let app = XCUIApplication()
+        let app = makeApp()
         app.launch()
 
         XCTAssertTrue(app.staticTexts["Connect to Jellyfin"].waitForExistence(timeout: 5))
     }
 
     func testConnectScreenRendersAtLargestAccessibilityContentSize() {
-        let app = XCUIApplication()
+        let app = makeApp()
         app.launchArguments += [
             "-UIPreferredContentSizeCategoryName",
             "UICTContentSizeCategoryAccessibilityExtraExtraExtraLarge",
@@ -21,7 +21,7 @@ final class GusLaunchUITests: XCTestCase {
     }
 
     func testConnectScreenRendersWithPseudolocalizationAtLargestAccessibilityContentSize() {
-        let app = XCUIApplication()
+        let app = makeApp()
         app.launchArguments += [
             "-AppleLanguages",
             "(en-XA)",
@@ -33,5 +33,11 @@ final class GusLaunchUITests: XCTestCase {
         app.launch()
 
         XCTAssertTrue(app.buttons["ConnectServerView.connectButton"].waitForExistence(timeout: 5))
+    }
+
+    private func makeApp() -> XCUIApplication {
+        let app = XCUIApplication()
+        app.launchArguments += ["--gus-skip-session-restore"]
+        return app
     }
 }

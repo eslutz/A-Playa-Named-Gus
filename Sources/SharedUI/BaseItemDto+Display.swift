@@ -76,6 +76,32 @@ extension BaseItemDto {
         return percentage / 100.0
     }
 
+    var latestTVDisplayItem: BaseItemDto {
+        guard type == .episode,
+              let seriesID,
+              let seriesName,
+              !seriesName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        else {
+            return self
+        }
+
+        var imageTags: [String: String]?
+        if let seriesPrimaryImageTag {
+            imageTags = [ImageType.primary.rawValue: seriesPrimaryImageTag]
+        }
+
+        return BaseItemDto(
+            id: seriesID,
+            imageTags: imageTags,
+            name: seriesName,
+            primaryImageAspectRatio: 2.0 / 3.0,
+            productionYear: productionYear,
+            seriesPrimaryImageTag: seriesPrimaryImageTag,
+            type: .series,
+            userData: userData
+        )
+    }
+
     private func joinedNonEmpty(_ values: [String]?) -> String? {
         let cleaned = (values ?? [])
             .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }

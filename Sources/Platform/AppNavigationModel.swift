@@ -9,11 +9,12 @@ final class AppNavigationModel {
     private(set) var searchFocusRequest = 0
 
     func open(_ route: AppRoute) {
-        self.route = route
-
         if route == .search {
             searchFocusRequest += 1
+            return
         }
+
+        self.route = route
     }
 
     func open(url: URL) {

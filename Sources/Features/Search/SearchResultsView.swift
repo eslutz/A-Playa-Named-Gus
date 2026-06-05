@@ -86,55 +86,13 @@ struct SearchRootView<Content: View>: View {
     }
 }
 
-struct SearchView: View {
-    @Environment(AppNavigationModel.self) private var navigation
-    @Environment(SessionStore.self) private var session
-    @State private var store: SearchStore?
-    @State private var searchText = ""
-    @State private var isSearchPresented = false
-    @FocusState private var isSearchFocused: Bool
-
-    var body: some View {
-        Group {
-            if let store {
-                if searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                    ContentUnavailableView("Search Jellyfin", systemImage: "magnifyingglass")
-                } else {
-                    SearchResultsView(store: store)
-                }
-            } else {
-                ProgressView()
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-            }
-        }
-        .navigationTitle("Search")
-        .gusSearchable(
-            text: $searchText,
-            isPresented: $isSearchPresented,
-            isFocused: $isSearchFocused,
-            prompt: Text("Search Jellyfin")
-        )
-        .task {
-            if store == nil {
-                store = SearchStore(session: session)
-            }
-        }
-        .searchDebounce(text: $searchText, store: $store)
-        .onChange(of: navigation.searchFocusRequest) { _, request in
-            guard request > 0 else { return }
-            isSearchPresented = true
-            isSearchFocused = true
-        }
-    }
-}
-
 // MARK: - Shared debounce modifier
 
 private extension View {
     /// Debounces a `.searchable` text field by 300 ms and drives a `SearchStore`.
     ///
-    /// Centralised here so `SearchRootView` and `SearchView` share one implementation:
-    /// consistent debounce delay, consistent trimming, and no duplicated `catch` branches.
+    /// Centralised here so every platform root gets consistent debounce delay,
+    /// consistent trimming, and no duplicated `catch` branches.
     func searchDebounce(text: Binding<String>, store: Binding<SearchStore?>) -> some View {
         task(id: text.wrappedValue) {
             let trimmed = text.wrappedValue.trimmingCharacters(in: .whitespacesAndNewlines)

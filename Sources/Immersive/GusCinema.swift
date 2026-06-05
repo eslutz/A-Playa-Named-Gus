@@ -16,34 +16,50 @@
 
         var body: some View {
             RealityView { content in
-                content.add(Self.makeRoom())
+                Self.updateRoom(in: &content, environment: cinema.selectedEnvironment)
                 Self.updateStereoScreen(in: &content, playback: cinema.playbackPresentation)
             } update: { content in
+                Self.updateRoom(in: &content, environment: cinema.selectedEnvironment)
                 Self.updateStereoScreen(in: &content, playback: cinema.playbackPresentation)
             }
         }
 
         // MARK: - Scene
 
+        private static let roomNamePrefix = "GusCinemaRoom"
+
+        private static func updateRoom(in content: inout RealityViewContent, environment: CinemaEnvironment) {
+            let roomName = "\(roomNamePrefix)-\(environment.rawValue)"
+            guard content.entities.first(where: { $0.name == roomName }) == nil else {
+                return
+            }
+
+            content.entities
+                .filter { $0.name.hasPrefix(roomNamePrefix) }
+                .forEach { content.remove($0) }
+            content.add(makeRoom(environment: environment))
+        }
+
         /// Inward-facing sphere backdrop + two soft point lights (mirrors PR #2's `makeRoom`).
-        private static func makeRoom() -> Entity {
+        private static func makeRoom(environment: CinemaEnvironment) -> Entity {
             let room = Entity()
+            room.name = "\(roomNamePrefix)-\(environment.rawValue)"
 
             let backdrop = ModelEntity(
                 mesh: .generateSphere(radius: 12),
-                materials: [backdropMaterial()]
+                materials: [backdropMaterial(environment: environment)]
             )
             // Invert along X so we view the sphere from the inside.
             backdrop.scale = SIMD3<Float>(-1, 1, 1)
             room.addChild(backdrop)
 
             room.addChild(makeLight(
-                color: GusCinemaPalette.keyLightUI,
+                color: GusCinemaPalette.keyLightUI(for: environment),
                 intensity: 1200,
                 position: SIMD3<Float>(0, 2.5, -5)
             ))
             room.addChild(makeLight(
-                color: GusCinemaPalette.fillLightUI,
+                color: GusCinemaPalette.fillLightUI(for: environment),
                 intensity: 600,
                 position: SIMD3<Float>(-3, 1, -4)
             ))
@@ -82,17 +98,17 @@
             return entity
         }
 
-        private static func backdropMaterial() -> RealityKit.Material {
-            if let texture = gradientTexture() {
+        private static func backdropMaterial(environment: CinemaEnvironment) -> RealityKit.Material {
+            if let texture = gradientTexture(environment: environment) {
                 var material = UnlitMaterial()
                 material.color = .init(tint: .white, texture: .init(texture))
                 return material
             }
-            return UnlitMaterial(color: GusCinemaPalette.backdropNightUI)
+            return UnlitMaterial(color: GusCinemaPalette.backdropNightUI(for: environment))
         }
 
         /// 8×512 vertical gradient (navy → black → navy) used as the backdrop texture.
-        private static func gradientTexture() -> TextureResource? {
+        private static func gradientTexture(environment: CinemaEnvironment) -> TextureResource? {
             let width = 8
             let height = 512
             let colorSpace = CGColorSpaceCreateDeviceRGB()
@@ -107,11 +123,7 @@
                 bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
             ) else { return nil }
 
-            let colors = [
-                GusCinemaPalette.backdropNightCG,
-                GusCinemaPalette.backdropMidCG,
-                GusCinemaPalette.backdropNightCG,
-            ] as CFArray
+            let colors = GusCinemaPalette.backdropCGColors(for: environment) as CFArray
             let locations: [CGFloat] = [0.0, 0.5, 1.0]
 
             guard let gradient = CGGradient(colorsSpace: colorSpace, colors: colors, locations: locations) else {
@@ -140,21 +152,72 @@
             UIColor(named: name) ?? fallback
         }
 
-        /// backdrop night — Jellyfin navy #000B25
-        static let backdropNightUI = color("CinemaBackdropNight", fallback: UIColor(red: 0.0, green: 0.043, blue: 0.145, alpha: 1))
-        /// backdrop mid — near black #101010
-        static let backdropMidUI = color("CinemaBackdropMid", fallback: UIColor(red: 0.063, green: 0.063, blue: 0.063, alpha: 1))
-        /// key light — Jellyfin purple #AC5CC3
-        static let keyLightUI = color("CinemaKeyLight", fallback: UIColor(red: 0.675, green: 0.361, blue: 0.765, alpha: 1))
-        /// fill light — Jellyfin blue #00A4DC
-        static let fillLightUI = color("CinemaFillLight", fallback: UIColor(red: 0.0, green: 0.643, blue: 0.863, alpha: 1))
-
-        static var backdropNightCG: CGColor {
-            backdropNightUI.cgColor
+        static func backdropNightUI(for environment: CinemaEnvironment) -> UIColor {
+            switch environment {
+            case .gusCinema:
+                return color("CinemaBackdropNight", fallback: UIColor(red: 0.0, green: 0.043, blue: 0.145, alpha: 1))
+            case .midnight:
+                return UIColor(red: 0.01, green: 0.012, blue: 0.025, alpha: 1)
+            case .ocean:
+                return UIColor(red: 0.0, green: 0.08, blue: 0.12, alpha: 1)
+            case .pineapple:
+                return UIColor(red: 0.08, green: 0.045, blue: 0.0, alpha: 1)
+            }
         }
 
-        static var backdropMidCG: CGColor {
-            backdropMidUI.cgColor
+        static func backdropCGColors(for environment: CinemaEnvironment) -> [CGColor] {
+            switch environment {
+            case .gusCinema:
+                return [
+                    backdropNightUI(for: environment).cgColor,
+                    color("CinemaBackdropMid", fallback: UIColor(red: 0.063, green: 0.063, blue: 0.063, alpha: 1)).cgColor,
+                    backdropNightUI(for: environment).cgColor,
+                ]
+            case .midnight:
+                return [
+                    UIColor(red: 0.01, green: 0.012, blue: 0.025, alpha: 1).cgColor,
+                    UIColor(red: 0.025, green: 0.035, blue: 0.08, alpha: 1).cgColor,
+                    UIColor.black.cgColor,
+                ]
+            case .ocean:
+                return [
+                    UIColor(red: 0.0, green: 0.08, blue: 0.12, alpha: 1).cgColor,
+                    UIColor(red: 0.0, green: 0.22, blue: 0.28, alpha: 1).cgColor,
+                    UIColor(red: 0.0, green: 0.04, blue: 0.08, alpha: 1).cgColor,
+                ]
+            case .pineapple:
+                return [
+                    UIColor(red: 0.08, green: 0.045, blue: 0.0, alpha: 1).cgColor,
+                    UIColor(red: 0.34, green: 0.17, blue: 0.04, alpha: 1).cgColor,
+                    UIColor(red: 0.04, green: 0.02, blue: 0.0, alpha: 1).cgColor,
+                ]
+            }
+        }
+
+        static func keyLightUI(for environment: CinemaEnvironment) -> UIColor {
+            switch environment {
+            case .gusCinema:
+                return color("CinemaKeyLight", fallback: UIColor(red: 0.675, green: 0.361, blue: 0.765, alpha: 1))
+            case .midnight:
+                return UIColor(red: 0.58, green: 0.68, blue: 1.0, alpha: 1)
+            case .ocean:
+                return UIColor(red: 0.0, green: 0.76, blue: 0.84, alpha: 1)
+            case .pineapple:
+                return UIColor(red: 1.0, green: 0.62, blue: 0.14, alpha: 1)
+            }
+        }
+
+        static func fillLightUI(for environment: CinemaEnvironment) -> UIColor {
+            switch environment {
+            case .gusCinema:
+                return color("CinemaFillLight", fallback: UIColor(red: 0.0, green: 0.643, blue: 0.863, alpha: 1))
+            case .midnight:
+                return UIColor(red: 0.36, green: 0.28, blue: 0.76, alpha: 1)
+            case .ocean:
+                return UIColor(red: 0.16, green: 0.9, blue: 0.58, alpha: 1)
+            case .pineapple:
+                return UIColor(red: 0.68, green: 0.36, blue: 0.76, alpha: 1)
+            }
         }
     }
 #endif

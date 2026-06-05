@@ -1,8 +1,7 @@
 import JellyfinAPI
 import SwiftUI
 
-/// Item detail: backdrop, metadata, overview, and a **Play** button. On visionOS, a
-/// **Cinema** toggle in a toolbar ornament opens the immersive space.
+/// Item detail: Apple TV-style backdrop hero, metadata, and native action controls.
 struct ItemDetailView: View {
     @Environment(SessionStore.self) private var session
     @Environment(OfflineDownloadStore.self) private var downloads
@@ -33,30 +32,23 @@ struct ItemDetailView: View {
                     await store.load()
                 }
             }
-        #if os(visionOS)
-            .toolbar {
-                if let item = store?.item {
-                    ToolbarItem(placement: .bottomOrnament) {
-                        CinemaToggleButton(item: item)
-                    }
-                }
-            }
-        #endif
             .playerPresentation(item: $playerItem)
             .downloadErrorAlert(downloads)
     }
 
     private func detailContent(for item: BaseItemDto, seriesStore: SeriesDetailStore?) -> some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
+            VStack(alignment: .leading, spacing: 32) {
                 hero(for: item)
 
                 if let seriesStore {
                     SeriesEpisodesView(store: seriesStore)
                 }
+
+                RichMetadataView(item: item)
             }
             .padding()
-            .frame(maxWidth: 1120, alignment: .leading)
+            .frame(maxWidth: 1280, alignment: .leading)
             .frame(maxWidth: .infinity)
         }
         .lookToScroll()
@@ -66,79 +58,96 @@ struct ItemDetailView: View {
     }
 
     private func hero(for item: BaseItemDto) -> some View {
-        ViewThatFits(in: .horizontal) {
-            HStack(alignment: .top, spacing: 28) {
-                poster(for: item)
-                    .frame(width: detailPosterWidth)
-
-                itemSummary(for: item)
-                    .frame(maxWidth: 720, alignment: .leading)
+        DetailHeroView(
+            item: item,
+            backdropURL: session.imageBuilder.backdropImageURL(for: item, context: .backdrop),
+            play: {
+                playerItem = ItemRef(item: item)
             }
-
-            VStack(alignment: .leading, spacing: 20) {
-                poster(for: item)
-                    .frame(maxWidth: 260)
-                itemSummary(for: item)
+        ) {
+            if DownloadsAvailability.isSupported {
+                DownloadButton(item: item)
             }
         }
     }
+}
 
-    private func poster(for item: BaseItemDto) -> some View {
-        AsyncPoster(
-            url: session.imageBuilder.primaryImageURL(for: item, context: .posterGrid),
-            contentMode: .fill,
-            placeholderSymbol: item.type == .episode ? "play.rectangle" : "film"
-        )
-        .aspectRatio(item.primaryImageAspectRatio ?? 2.0 / 3.0, contentMode: .fit)
-        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-        .shadow(radius: 14, y: 8)
-    }
+private struct DetailHeroView<Accessory: View>: View {
+    let item: BaseItemDto
+    let backdropURL: URL?
+    let play: () -> Void
+    @ViewBuilder let accessory: Accessory
 
-    private func itemSummary(for item: BaseItemDto) -> some View {
-        VStack(alignment: .leading, spacing: 18) {
-            Text(item.displayTitle)
-                .font(.largeTitle.bold())
-                .fixedSize(horizontal: false, vertical: true)
+    var body: some View {
+        ZStack(alignment: .bottomLeading) {
+            AsyncPoster(url: backdropURL, contentMode: .fill, placeholderSymbol: item.type == .series ? "tv" : "film")
+                .frame(maxWidth: .infinity)
+                .frame(height: heroHeight)
+                .clipped()
 
-            metadataRow(for: item)
+            LinearGradient(
+                colors: [
+                    .black.opacity(0.82),
+                    .black.opacity(0.42),
+                    .black.opacity(0.08),
+                ],
+                startPoint: .bottomLeading,
+                endPoint: .topTrailing
+            )
 
-            HStack(spacing: 16) {
-                Button {
-                    playerItem = ItemRef(item: item)
-                } label: {
-                    Label("Play", systemImage: "play.fill")
-                        .frame(maxWidth: 220)
+            VStack(alignment: .leading, spacing: 16) {
+                Text(item.displayTitle)
+                    .font(.system(.largeTitle, design: .default, weight: .bold))
+                    .lineLimit(3)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                metadataRow(for: item)
+
+                if let overview = item.overview, !overview.isEmpty {
+                    Text(overview)
+                        .font(.body)
+                        .lineLimit(4)
+                        .foregroundStyle(.secondary)
+                        .frame(maxWidth: 640, alignment: .leading)
                 }
-                .buttonStyle(.borderedProminent)
-                .controlSize(.large)
-                .gusDefaultActionShortcut()
-                .accessibilityHint("Starts playback for this item.")
 
-                if DownloadsAvailability.isSupported {
-                    DownloadButton(item: item)
+                HStack(spacing: 12) {
+                    Button(action: play) {
+                        Label("Play", systemImage: "play.fill")
+                            .frame(minWidth: 140)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .controlSize(.large)
+                    .gusDefaultActionShortcut()
+                    .accessibilityHint("Starts playback for this item.")
+
+                    accessory
                 }
             }
-
-            if let overview = item.overview, !overview.isEmpty {
-                Text(overview)
-                    .font(.body)
-                    .foregroundStyle(.secondary)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-            }
-
-            RichMetadataView(item: item)
+            .foregroundStyle(.white)
+            .padding(heroPadding)
         }
+        .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
+        .contentShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
     }
 
-    private var detailPosterWidth: CGFloat {
+    private var heroHeight: CGFloat {
         #if os(tvOS)
-            return 300
+            return 620
         #elseif os(visionOS)
-            return 260
+            return 520
         #elseif os(macOS)
-            return 240
+            return 440
         #else
-            return 180
+            return 380
+        #endif
+    }
+
+    private var heroPadding: CGFloat {
+        #if os(tvOS) || os(visionOS)
+            return 40
+        #else
+            return 28
         #endif
     }
 
@@ -250,32 +259,47 @@ private struct RichMetadataView: View {
     let item: BaseItemDto
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            if let tagline = item.primaryTagline {
-                Text(tagline)
-                    .font(.title3)
-                    .foregroundStyle(.secondary)
-            }
+        VStack(alignment: .leading, spacing: 18) {
+            if item.hasAboutMetadata {
+                Text("About")
+                    .font(.title2.bold())
+                    .accessibilityAddTraits(.isHeader)
 
-            if let genreText = item.genreText {
-                LabeledContent("Genres", value: genreText)
-            }
+                LazyVGrid(columns: infoColumns, alignment: .leading, spacing: 16) {
+                    if let tagline = item.primaryTagline {
+                        MetadataPanel(title: "Tagline") {
+                            Text(tagline)
+                        }
+                    }
 
-            if let studioText = item.studioText {
-                LabeledContent("Studios", value: studioText)
-            }
+                    if let genreText = item.genreText {
+                        MetadataPanel(title: "Genres") {
+                            Text(genreText)
+                        }
+                    }
 
-            if !item.peopleText.isEmpty {
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("Cast & Crew")
-                        .font(.headline)
-                    ForEach(item.peopleText, id: \.self) { person in
-                        Text(person)
-                            .foregroundStyle(.secondary)
+                    if let studioText = item.studioText {
+                        MetadataPanel(title: "Studios") {
+                            Text(studioText)
+                        }
+                    }
+
+                    if let rating = item.officialRating {
+                        MetadataPanel(title: "Rating") {
+                            Text(rating)
+                        }
                     }
                 }
             }
+
+            if !item.peopleText.isEmpty {
+                CastRail(people: item.people ?? [])
+            }
         }
+    }
+
+    private var infoColumns: [GridItem] {
+        [GridItem(.adaptive(minimum: 220), spacing: 16)]
     }
 }
 
@@ -294,13 +318,7 @@ private struct SeriesEpisodesView: View {
                 emptyTitle: "No Seasons",
                 emptySymbol: "rectangle.stack"
             ) {
-                Picker("Season", selection: seasonSelection) {
-                    ForEach(store.seasons, id: \.id) { season in
-                        Text(season.displayTitle)
-                            .tag(season.id ?? "")
-                    }
-                }
-                .pickerStyle(.menu)
+                SeasonPicker(store: store)
 
                 LoadingStateView(
                     state: store.episodesState,
@@ -308,44 +326,74 @@ private struct SeriesEpisodesView: View {
                     emptyTitle: "No Episodes",
                     emptySymbol: "play.rectangle"
                 ) {
-                    LazyVStack(alignment: .leading, spacing: 12) {
-                        ForEach(store.episodes, id: \.id) { episode in
-                            NavigationLink(value: ItemRef(item: episode)) {
-                                EpisodeRow(episode: episode)
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        LazyHStack(alignment: .top, spacing: 18) {
+                            ForEach(store.episodes, id: \.id) { episode in
+                                NavigationLink(value: ItemRef(item: episode)) {
+                                    EpisodeCard(episode: episode)
+                                        .frame(width: episodeCardWidth)
+                                }
+                                .posterNavigationStyle()
                             }
-                            .posterNavigationStyle()
                         }
+                        .padding(.vertical, 4)
+                        .tvFocusSection()
                     }
-                    .tvFocusSection()
+                    .lookToScroll(.horizontal)
                 }
             }
         }
     }
 
-    private var seasonSelection: Binding<String> {
-        Binding {
-            store.selectedSeasonID ?? ""
-        } set: { id in
-            Task {
-                await store.selectSeason(id: id)
-            }
-        }
+    private var episodeCardWidth: CGFloat {
+        #if os(tvOS)
+            return 360
+        #elseif os(visionOS)
+            return 300
+        #else
+            return 240
+        #endif
     }
 }
 
-private struct EpisodeRow: View {
+private struct SeasonPicker: View {
+    let store: SeriesDetailStore
+
+    var body: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 10) {
+                ForEach(store.seasons, id: \.id) { season in
+                    Button {
+                        guard let id = season.id else { return }
+                        Task { await store.selectSeason(id: id) }
+                    } label: {
+                        Text(season.displayTitle)
+                    }
+                    .buttonStyle(.bordered)
+                    .controlSize(.regular)
+                    .tint(season.id == store.selectedSeasonID ? .accentColor : nil)
+                }
+            }
+            .padding(.vertical, 2)
+        }
+        .lookToScroll(.horizontal)
+    }
+}
+
+private struct EpisodeCard: View {
     @Environment(SessionStore.self) private var session
     let episode: BaseItemDto
 
     var body: some View {
-        HStack(alignment: .top, spacing: 14) {
+        VStack(alignment: .leading, spacing: 8) {
             AsyncPoster(
                 url: session.imageBuilder.backdropImageURL(for: episode, maxWidth: 360),
                 contentMode: .fill,
                 placeholderSymbol: "play.rectangle"
             )
-            .frame(width: 148, height: 84)
-            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+            .aspectRatio(16.0 / 9.0, contentMode: .fit)
+            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .posterHoverEffect()
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(episode.episodeLocator ?? episode.displayTitle)
@@ -361,19 +409,8 @@ private struct EpisodeRow: View {
                         .lineLimit(2)
                 }
             }
-
-            Spacer()
-
-            if let runtime = episode.runtimeText {
-                Text(runtime)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .padding(.top, 2)
-            }
         }
-        .padding(10)
-        .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-        .contentShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .contentShape(Rectangle())
         // Collapse the locator/title/runtime columns into one VoiceOver element.
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(episodeAccessibilityLabel)
@@ -389,5 +426,101 @@ private struct EpisodeRow: View {
             parts.append(runtime)
         }
         return parts.joined(separator: ", ")
+    }
+}
+
+private struct MetadataPanel<Content: View>: View {
+    let title: LocalizedStringKey
+    @ViewBuilder let content: Content
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(title)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.secondary)
+            content
+                .font(.callout)
+                .foregroundStyle(.primary)
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+    }
+}
+
+private struct CastRail: View {
+    let people: [BaseItemPerson]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Cast & Crew")
+                .font(.title2.bold())
+                .accessibilityAddTraits(.isHeader)
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                LazyHStack(alignment: .top, spacing: 18) {
+                    ForEach(displayPeople, id: \.self) { person in
+                        VStack(spacing: 8) {
+                            Circle()
+                                .fill(.thinMaterial)
+                                .frame(width: 84, height: 84)
+                                .overlay {
+                                    Text(person.initials)
+                                        .font(.title3.weight(.semibold))
+                                        .foregroundStyle(.secondary)
+                                }
+
+                            Text(person.name)
+                                .font(.caption.weight(.medium))
+                                .lineLimit(1)
+                            if let role = person.role {
+                                Text(role)
+                                    .font(.caption2)
+                                    .foregroundStyle(.secondary)
+                                    .lineLimit(1)
+                            }
+                        }
+                        .frame(width: 120)
+                    }
+                }
+                .padding(.vertical, 4)
+            }
+            .lookToScroll(.horizontal)
+        }
+    }
+
+    private var displayPeople: [CastDisplayPerson] {
+        people.prefix(12).compactMap(CastDisplayPerson.init)
+    }
+}
+
+private struct CastDisplayPerson: Hashable {
+    let name: String
+    let role: String?
+
+    init?(_ person: BaseItemPerson) {
+        guard let name = person.name?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !name.isEmpty
+        else { return nil }
+        self.name = name
+        self.role = person.role?.trimmingCharacters(in: .whitespacesAndNewlines).nilIfEmpty
+    }
+
+    var initials: String {
+        let parts = name.split(separator: " ")
+        let letters = parts.prefix(2).compactMap(\.first)
+        return letters.isEmpty ? "?" : String(letters).uppercased()
+    }
+}
+
+private extension BaseItemDto {
+    var hasAboutMetadata: Bool {
+        primaryTagline != nil || genreText != nil || studioText != nil || officialRating != nil
+    }
+}
+
+private extension String {
+    var nilIfEmpty: String? {
+        isEmpty ? nil : self
     }
 }

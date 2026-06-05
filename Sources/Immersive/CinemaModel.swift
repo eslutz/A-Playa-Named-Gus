@@ -3,6 +3,35 @@
     import JellyfinAPI
     import SwiftUI
 
+    enum CinemaEnvironment: String, CaseIterable, Identifiable {
+        case gusCinema
+        case midnight
+        case ocean
+        case pineapple
+
+        var id: String {
+            rawValue
+        }
+
+        var title: LocalizedStringKey {
+            switch self {
+            case .gusCinema: return "Gus Cinema"
+            case .midnight: return "Midnight"
+            case .ocean: return "Ocean"
+            case .pineapple: return "Pineapple"
+            }
+        }
+
+        var systemImage: String {
+            switch self {
+            case .gusCinema: return "movieclapper"
+            case .midnight: return "moon.stars"
+            case .ocean: return "water.waves"
+            case .pineapple: return "sparkles"
+            }
+        }
+    }
+
     struct CinemaPlaybackPresentation {
         let player: AVPlayer
         let title: String
@@ -25,9 +54,14 @@
     final class CinemaModel {
         private(set) var isOpen = false
         private(set) var playbackPresentation: CinemaPlaybackPresentation?
+        var selectedEnvironment: CinemaEnvironment = .gusCinema
 
         func setOpen(_ open: Bool) {
             isOpen = open
+        }
+
+        func selectEnvironment(_ environment: CinemaEnvironment) {
+            selectedEnvironment = environment
         }
 
         func present(player: AVPlayer, title: String, stereoLayout: Stereo3DLayout?, stereoRenderer: StereoFrameRenderer? = nil) {
@@ -44,42 +78,112 @@
         }
     }
 
-    /// Opt-in toggle that opens/closes the immersive cinema. The windowed AVKit player keeps
-    /// playing across the transition; if `openImmersiveSpace` fails we fall back to the window.
-    struct CinemaToggleButton: View {
+    struct VisionEnvironmentOrnament: View {
         @Environment(CinemaModel.self) private var cinema
         @Environment(\.openImmersiveSpace) private var openImmersiveSpace
         @Environment(\.dismissImmersiveSpace) private var dismissImmersiveSpace
-
-        let item: BaseItemDto
+        @State private var isPickerPresented = false
 
         var body: some View {
             Button {
-                Task {
-                    if cinema.isOpen {
-                        await dismissImmersiveSpace()
-                        cinema.setOpen(false)
-                        cinema.clearPlaybackPresentation()
-                    } else {
-                        switch await openImmersiveSpace(id: GusCinema.spaceID) {
-                        case .opened:
-                            cinema.setOpen(true)
-                        case .error, .userCancelled:
-                            cinema.setOpen(false) // graceful windowed fallback
-                        @unknown default:
-                            cinema.setOpen(false)
-                        }
-                    }
-                }
+                isPickerPresented = true
             } label: {
-                Label(
-                    cinema.isOpen ? "Leave Cinema" : "Gus Cinema",
-                    systemImage: cinema.isOpen ? "xmark.circle" : "movieclapper"
-                )
+                Label("Environment", systemImage: cinema.selectedEnvironment.systemImage)
+                    .labelStyle(.iconOnly)
             }
             .buttonStyle(.bordered)
             .controlSize(.large)
-            .accessibilityLabel(cinema.isOpen ? "Leave Gus Cinema" : "Watch \(item.displayTitle) in Gus Cinema")
+            .accessibilityLabel("Environment")
+            .popover(isPresented: $isPickerPresented, attachmentAnchor: .rect(.bounds), arrowEdge: .leading) {
+                EnvironmentPicker(
+                    selectedEnvironment: cinema.selectedEnvironment,
+                    isOpen: cinema.isOpen,
+                    select: { environment in
+                        Task { await select(environment) }
+                    },
+                    close: {
+                        Task { await closeEnvironment() }
+                    }
+                )
+            }
+        }
+
+        @MainActor
+        private func select(_ environment: CinemaEnvironment) async {
+            cinema.selectEnvironment(environment)
+
+            guard !cinema.isOpen else {
+                isPickerPresented = false
+                return
+            }
+
+            switch await openImmersiveSpace(id: GusCinema.spaceID) {
+            case .opened:
+                cinema.setOpen(true)
+                isPickerPresented = false
+            case .error, .userCancelled:
+                cinema.setOpen(false)
+            @unknown default:
+                cinema.setOpen(false)
+            }
+        }
+
+        @MainActor
+        private func closeEnvironment() async {
+            await dismissImmersiveSpace()
+            cinema.setOpen(false)
+            cinema.clearPlaybackPresentation()
+            isPickerPresented = false
         }
     }
+
+    private struct EnvironmentPicker: View {
+        let selectedEnvironment: CinemaEnvironment
+        let isOpen: Bool
+        let select: (CinemaEnvironment) -> Void
+        let close: () -> Void
+
+        var body: some View {
+            VStack(alignment: .leading, spacing: 18) {
+                Text("Select an Environment")
+                    .font(.title3.weight(.semibold))
+
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 120), spacing: 14)], alignment: .leading, spacing: 14) {
+                    ForEach(CinemaEnvironment.allCases) { environment in
+                        Button {
+                            select(environment)
+                        } label: {
+                            VStack(spacing: 10) {
+                                Image(systemName: environment.systemImage)
+                                    .font(.title2)
+                                    .frame(width: 58, height: 58)
+                                    .background(.thinMaterial, in: Circle())
+
+                                Text(environment.title)
+                                    .font(.caption.weight(.medium))
+                                    .lineLimit(1)
+                            }
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 12)
+                        }
+                        .buttonStyle(.bordered)
+                        .controlSize(.large)
+                        .tint(environment == selectedEnvironment ? .accentColor : nil)
+                    }
+                }
+
+                if isOpen {
+                    Button(role: .cancel) {
+                        close()
+                    } label: {
+                        Label("Close Environment", systemImage: "xmark.circle")
+                    }
+                    .buttonStyle(.bordered)
+                }
+            }
+            .padding(24)
+            .frame(width: 520)
+        }
+    }
+
 #endif

@@ -14,15 +14,16 @@ struct AppNavigationModelTests {
         #expect(model.route == .settings)
     }
 
-    @Test("opening search increments the search focus token")
+    @Test("opening search increments the search focus token without changing route")
     func openingSearchRequestsSearchFocus() {
         let model = AppNavigationModel()
 
+        model.open(.settings)
         model.open(.search)
         let firstRequest = model.searchFocusRequest
         model.open(.search)
 
-        #expect(model.route == .search)
+        #expect(model.route == .settings)
         #expect(firstRequest == 1)
         #expect(model.searchFocusRequest == 2)
     }

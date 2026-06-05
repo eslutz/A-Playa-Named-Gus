@@ -50,14 +50,6 @@ private struct TabRootView: View {
                     .gusItemDestinations()
                 }
             }
-            #if os(tvOS)
-                Tab("Search", systemImage: "magnifyingglass", value: AppRoute.search) {
-                    NavigationStack {
-                        SearchView()
-                            .gusItemDestinations()
-                    }
-                }
-            #endif
             Tab("Settings", systemImage: "gearshape", value: AppRoute.settings) {
                 NavigationStack {
                     SettingsView()
@@ -70,22 +62,13 @@ private struct TabRootView: View {
             }
         }
         .onChange(of: navigation.route) { _, route in
-            selection = tabSelection(for: route)
+            selection = route
         }
-    }
-
-    private func tabSelection(for route: AppRoute) -> AppRoute {
-        #if os(tvOS)
-            return route
-        #else
-            return route == .search ? .home : route
-        #endif
     }
 }
 
 private enum SidebarItem: Hashable {
     case home
-    case search
     case settings
     case library(String)
 
@@ -93,7 +76,6 @@ private enum SidebarItem: Hashable {
     var sceneKey: String {
         switch self {
         case .home: return "home"
-        case .search: return "search"
         case .settings: return "settings"
         case let .library(id): return "library:\(id)"
         }
@@ -101,7 +83,6 @@ private enum SidebarItem: Hashable {
 
     init?(sceneKey key: String) {
         if key == "home" { self = .home }
-        else if key == "search" { self = .search }
         else if key == "settings" { self = .settings }
         else if key.hasPrefix("library:") { self = .library(String(key.dropFirst("library:".count))) }
         else { return nil }
@@ -128,15 +109,8 @@ private enum SidebarItem: Hashable {
                     }
                 }
 
-                Tab("Search", systemImage: "magnifyingglass", value: SidebarItem.search) {
-                    NavigationStack {
-                        SearchView()
-                            .gusItemDestinations()
-                    }
-                }
-
                 if let home {
-                    TabSection("Libraries") {
+                    TabSection {
                         ForEach(home.libraries, id: \.sidebarID) { library in
                             Tab(library.name ?? "Library", systemImage: library.librarySymbol, value: SidebarItem.library(library.sidebarID)) {
                                 NavigationStack {
@@ -147,6 +121,8 @@ private enum SidebarItem: Hashable {
                                 }
                             }
                         }
+                    } header: {
+                        Label("Libraries", systemImage: "rectangle.stack")
                     }
                 }
 
@@ -157,6 +133,10 @@ private enum SidebarItem: Hashable {
                 }
             }
             .tabViewStyle(.sidebarAdaptable)
+            .ornament(attachmentAnchor: .scene(.leading), contentAlignment: .bottom) {
+                VisionEnvironmentOrnament()
+                    .padding(.leading, 18)
+            }
             .onAppear {
                 if let restored = SidebarItem(sceneKey: storedSelectionKey) {
                     selection = restored
@@ -167,8 +147,6 @@ private enum SidebarItem: Hashable {
                 switch item {
                 case .home:
                     navigation.open(.home)
-                case .search:
-                    navigation.open(.search)
                 case .settings:
                     navigation.open(.settings)
                 case .library:
@@ -179,10 +157,10 @@ private enum SidebarItem: Hashable {
                 switch route {
                 case .home:
                     selection = .home
-                case .search:
-                    selection = .search
                 case .settings:
                     selection = .settings
+                case .search:
+                    break
                 }
             }
             .task {
@@ -262,8 +240,6 @@ private struct SplitRootView: View {
             switch item {
             case .home:
                 navigation.open(.home)
-            case .search:
-                navigation.open(.search)
             case .settings:
                 navigation.open(.settings)
             case .library, .none:
@@ -272,10 +248,12 @@ private struct SplitRootView: View {
         }
         .onChange(of: navigation.route) { _, route in
             switch route {
-            case .home, .search:
+            case .home:
                 selection = .home
             case .settings:
                 selection = .settings
+            case .search:
+                break
             }
         }
         .onAppear {
@@ -303,8 +281,6 @@ private struct SplitRootView: View {
         switch selection {
         case .settings:
             SettingsView()
-        case .search:
-            SearchView()
         case let .library(id):
             if let library = home?.libraries.first(where: { $0.sidebarID == id }) {
                 LibraryGridView(library: library)

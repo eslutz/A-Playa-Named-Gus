@@ -34,15 +34,9 @@ struct VideoPlayerView: View {
                     if store.isFramePackedImmersivePlaybackActive {
                         Color.black
                             .ignoresSafeArea()
-                            .safeAreaInset(edge: .bottom) {
-                                PlaybackControlsOverlay(store: store)
-                            }
                     } else {
                         PlayerSurface(player: player)
                             .ignoresSafeArea()
-                            .safeAreaInset(edge: .bottom) {
-                                PlaybackControlsOverlay(store: store)
-                            }
                     }
                 #else
                     PlayerSurface(player: player)

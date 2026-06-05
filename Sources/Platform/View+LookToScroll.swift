@@ -7,10 +7,10 @@ import SwiftUI
 /// passthrough on every platform so feature code can call it unconditionally.
 extension View {
     @ViewBuilder
-    func lookToScroll() -> some View {
+    func lookToScroll(_ axes: Axis.Set = .vertical) -> some View {
         #if os(visionOS)
             if #available(visionOS 26.0, *) {
-                scrollInputBehavior(.enabled, for: .look)
+                scrollInputBehavior(.enabled, for: .look(axes: axes))
             } else {
                 self
             }
