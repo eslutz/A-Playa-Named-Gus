@@ -132,56 +132,36 @@ private func drawBody(in context: CGContext, rect: CGRect) {
 }
 
 private func drawCrown(in context: CGContext, rect: CGRect) {
-    let center = CGPoint(x: rect.midX, y: rect.minY + rect.height * 0.75)
-    let baseWidth = rect.width * 0.22
+    let center = CGPoint(x: rect.midX, y: rect.minY + rect.height * 0.753)
+    let baseY = center.y - rect.height * 0.018
+    let baseRootX: CGFloat = 0.09
     let leafSpread = rect.width * 0.48
     let tipHeight = rect.height * 0.3
-    let leafCount = 7
+    let outerTipX = sin(1.0) * leafSpread * 0.5 / rect.width
+    let innerTipX = sin(0.5) * leafSpread * 0.5 / rect.width
 
-    for index in 0..<leafCount {
-        let progress = CGFloat(index) / CGFloat(leafCount - 1)
-        let angle = -1.0 + progress * 2.0
-        let baseX = center.x - baseWidth / 2 + progress * baseWidth
-        let base = CGPoint(x: baseX, y: center.y)
-        let tip = CGPoint(
-            x: center.x + sin(angle) * leafSpread * 0.5,
-            y: center.y + tipHeight * (0.58 + 0.42 * cos(angle))
-        )
-        let leafHalfWidth = rect.width * (index == leafCount / 2 ? 0.045 : 0.038)
-
-        let path = CGMutablePath()
-        path.move(to: CGPoint(x: base.x - leafHalfWidth, y: base.y - rect.height * 0.018))
-        path.addQuadCurve(
-            to: tip,
-            control: CGPoint(
-                x: center.x + sin(angle) * leafSpread * 0.18,
-                y: base.y + tipHeight * 0.44
-            )
-        )
-        path.addQuadCurve(
-            to: CGPoint(x: base.x + leafHalfWidth, y: base.y - rect.height * 0.018),
-            control: CGPoint(
-                x: tip.x - sin(angle) * rect.width * 0.055,
-                y: tip.y - tipHeight * 0.18
-            )
-        )
-        path.closeSubpath()
-
-        context.addPath(path)
-        context.setFillColor(index.isMultiple(of: 2) ? blue : purple)
-        context.fillPath()
+    func p(_ x: CGFloat, _ y: CGFloat) -> CGPoint {
+        CGPoint(x: center.x + rect.width * x, y: baseY + tipHeight * y)
     }
 
-    let rootInset = rect.width * 0.018
-    let basePath = CGMutablePath()
-    basePath.move(to: CGPoint(x: center.x - baseWidth * 0.24, y: center.y - rect.height * 0.02))
-    basePath.addLine(to: CGPoint(x: center.x + baseWidth * 0.24, y: center.y - rect.height * 0.02))
-    basePath.addLine(to: CGPoint(x: center.x + baseWidth * 0.16 - rootInset, y: center.y + rect.height * 0.055))
-    basePath.addLine(to: CGPoint(x: center.x - baseWidth * 0.16 + rootInset, y: center.y + rect.height * 0.055))
-    basePath.closeSubpath()
+    let path = CGMutablePath()
+    path.move(to: p(-baseRootX, 0.0))
+    path.addQuadCurve(to: p(-outerTipX, 0.82), control: p(-0.17, 0.48))
+    path.addQuadCurve(to: p(-0.105, 0.15), control: p(-0.14, 0.5))
+    path.addLine(to: p(-innerTipX, 0.92))
+    path.addLine(to: p(-0.04, 0.18))
+    path.addLine(to: p(0.0, 1.0))
+    path.addLine(to: p(0.04, 0.18))
+    path.addLine(to: p(innerTipX, 0.92))
+    path.addQuadCurve(to: p(0.105, 0.15), control: p(0.14, 0.5))
+    path.addQuadCurve(to: p(outerTipX, 0.82), control: p(0.14, 0.5))
+    path.addQuadCurve(to: p(baseRootX, 0.0), control: p(0.17, 0.48))
+    path.addLine(to: p(baseRootX, -0.006))
+    path.addLine(to: p(-baseRootX, -0.006))
+    path.closeSubpath()
 
-    context.addPath(basePath)
-    context.setFillColor(purple)
+    context.addPath(path)
+    context.setFillColor(blue)
     context.fillPath()
 }
 
