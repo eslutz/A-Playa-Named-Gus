@@ -117,12 +117,12 @@
             }
             guard let formatDesc = cachedFormatDescription else { return }
 
-            guard let sampleBuffer = try? CMSampleBuffer(
+            let sampleBuffer = CMSampleBuffer(
                 taggedBuffers: taggedBuffers,
                 presentationTimeStamp: pts,
                 duration: .invalid,
                 formatDescription: formatDesc
-            ) else { return }
+            )
 
             videoRenderer.enqueue(sampleBuffer)
         }

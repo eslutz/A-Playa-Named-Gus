@@ -8,6 +8,7 @@ name: Gus
 # ---------------------------------------------------------------------------
 
 options:
+  xcodeVersion: "26.5"
   bundleIdPrefix: dev.ericslutz
   deploymentTarget:
     iOS: "18.0"

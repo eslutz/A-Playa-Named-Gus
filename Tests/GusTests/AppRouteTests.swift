@@ -14,7 +14,7 @@ struct AppRouteTests {
     @Test("round trips through URL values")
     func roundTripsThroughURLValues() throws {
         for route in AppRoute.allCases {
-            #expect(try AppRoute(url: route.url) == route)
+            #expect(AppRoute(url: route.url) == route)
         }
     }
 

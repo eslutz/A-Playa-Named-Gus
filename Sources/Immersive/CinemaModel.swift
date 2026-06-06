@@ -1,3 +1,22 @@
+import CoreGraphics
+
+enum EnvironmentPickerMetrics {
+    static let maximumColumns = 5
+    static let itemWidth: CGFloat = 120
+    static let itemSpacing: CGFloat = 14
+    static let horizontalPadding: CGFloat = 48
+
+    static func columns(forEnvironmentCount count: Int) -> Int {
+        max(1, min(maximumColumns, count))
+    }
+
+    static func width(forEnvironmentCount count: Int) -> CGFloat {
+        let columnCount = CGFloat(columns(forEnvironmentCount: count))
+        let spacing = max(0, columnCount - 1) * itemSpacing
+        return horizontalPadding + columnCount * itemWidth + spacing
+    }
+}
+
 #if os(visionOS)
     import AVFoundation
     import JellyfinAPI
