@@ -5,6 +5,9 @@ import OSLog
 ///
 /// Replaces Swiftfin's CoreStore/Defaults stack with plain JSON files in Application
 /// Support. Access tokens are *not* stored here — see `KeychainStore`.
+///
+/// The default directory is user-domain storage: separate macOS login accounts and tvOS
+/// current-user profiles each get their own known-server and known-user lists.
 struct ServerStore {
     private let logger = Logger(category: .serverStore)
     private let directory: URL
@@ -15,20 +18,17 @@ struct ServerStore {
         self.init(directory: Self.defaultDirectory())
     }
 
+    init(applicationSupportDirectory: URL) {
+        self.init(directory: AppStorageLocation.appDirectory(applicationSupportDirectory: applicationSupportDirectory))
+    }
+
     init(directory: URL) {
         self.directory = directory
         try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
     }
 
     private static func defaultDirectory() -> URL {
-        let base = (try? FileManager.default.url(
-            for: .applicationSupportDirectory,
-            in: .userDomainMask,
-            appropriateFor: nil,
-            create: true
-        )) ?? FileManager.default.temporaryDirectory
-
-        return base.appendingPathComponent("Gus", isDirectory: true)
+        AppStorageLocation.appDirectory()
     }
 
     private var serversURL: URL {

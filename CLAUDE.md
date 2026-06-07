@@ -2,11 +2,11 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## What Gus is
+## What A Playa Named Gus Is
 
-Gus is an **Apple-first, multiplatform SwiftUI Jellyfin client** — one app that aims to
-feel first-party on **iOS, iPadOS, tvOS, visionOS, and macOS**. Bundle id
-`dev.ericslutz.gus`; named for *Psych* ("A Playa Named Gus").
+A Playa Named Gus is an **Apple-first, multiplatform SwiftUI Jellyfin client** — one app
+that aims to feel first-party on **iOS, iPadOS, tvOS, visionOS, and macOS**. Bundle id
+`dev.ericslutz.gus`; named for *Psych*.
 
 ### The core mandate: native APIs over custom code
 
@@ -24,18 +24,18 @@ using the system's adaptive components and **never overriding their look**.
 
 ## Commands
 
-The Xcode project is **generated** from `project.yml` by XcodeGen; `Gus.xcodeproj` is
-git-ignored. `project.yml` is the source of truth.
+The Xcode project is **generated** from `project.yml` by XcodeGen;
+`A Playa Named Gus.xcodeproj` is git-ignored. `project.yml` is the source of truth.
 
 ```sh
 brew install xcodegen          # one-time
-xcodegen generate              # regenerate Gus.xcodeproj — REQUIRED after adding/removing any file
-xcodebuild -resolvePackageDependencies -project Gus.xcodeproj -scheme Gus
+xcodegen generate              # regenerate A Playa Named Gus.xcodeproj — REQUIRED after adding/removing any file
+xcodebuild -resolvePackageDependencies -project 'A Playa Named Gus.xcodeproj' -scheme 'A Playa Named Gus'
 Scripts/format.sh              # format Sources + Tests with SwiftFormat
 swiftformat Sources Tests --lint
 
 # list the simulators actually installed on this machine before building
-xcodebuild -showdestinations -project Gus.xcodeproj -scheme Gus
+xcodebuild -showdestinations -project 'A Playa Named Gus.xcodeproj' -scheme 'A Playa Named Gus'
 ```
 
 **Always run `xcodegen generate` after adding, renaming, or deleting a source/resource
@@ -46,21 +46,21 @@ Build each destination (names below match a stock Xcode 26.5 install — verify 
 `-showdestinations`, as simulator names drift between Xcode versions):
 
 ```sh
-xcodebuild -project Gus.xcodeproj -scheme Gus -destination 'platform=iOS Simulator,name=iPhone 17' build
-xcodebuild -project Gus.xcodeproj -scheme Gus -destination 'platform=iOS Simulator,name=iPad Pro 11-inch (M5)' build
-xcodebuild -project Gus.xcodeproj -scheme Gus -destination 'platform=tvOS Simulator,name=Apple TV 4K (3rd generation)' build
-xcodebuild -project Gus.xcodeproj -scheme Gus -destination 'platform=macOS' build
+xcodebuild -project 'A Playa Named Gus.xcodeproj' -scheme 'A Playa Named Gus' -destination 'platform=iOS Simulator,name=iPhone 17' build
+xcodebuild -project 'A Playa Named Gus.xcodeproj' -scheme 'A Playa Named Gus' -destination 'platform=iOS Simulator,name=iPad Pro 11-inch (M5)' build
+xcodebuild -project 'A Playa Named Gus.xcodeproj' -scheme 'A Playa Named Gus' -destination 'platform=tvOS Simulator,name=Apple TV 4K (3rd generation)' build
+xcodebuild -project 'A Playa Named Gus.xcodeproj' -scheme 'A Playa Named Gus' -destination 'platform=macOS' build
 # visionOS: target by simulator id — TWO "Apple Vision Pro" sims exist (1.2 and 26.5),
 # so targeting by name is ambiguous/errors. Get the id from -showdestinations.
-xcodebuild -project Gus.xcodeproj -scheme Gus -destination 'platform=visionOS Simulator,id=<UUID>' build
+xcodebuild -project 'A Playa Named Gus.xcodeproj' -scheme 'A Playa Named Gus' -destination 'platform=visionOS Simulator,id=<UUID>' build
 ```
 
 Launch + smoke-test on a simulator:
 
 ```sh
 xcrun simctl boot 'iPhone 17'; open -a Simulator
-xcodebuild -project Gus.xcodeproj -scheme Gus -destination 'platform=iOS Simulator,name=iPhone 17' -derivedDataPath build build
-xcrun simctl install booted "$(find build/Build/Products/Debug-iphonesimulator -name 'Gus.app' | head -1)"
+xcodebuild -project 'A Playa Named Gus.xcodeproj' -scheme 'A Playa Named Gus' -destination 'platform=iOS Simulator,name=iPhone 17' -derivedDataPath build build
+xcrun simctl install booted "$(find build/Build/Products/Debug-iphonesimulator -name 'A Playa Named Gus.app' | head -1)"
 xcrun simctl launch booted dev.ericslutz.gus
 xcrun simctl io booted screenshot /tmp/gus.png
 ```
@@ -72,13 +72,13 @@ xcrun simctl io booted screenshot /tmp/gus.png
 Run the full iOS unit/UI test action with:
 
 ```sh
-xcodebuild test -project Gus.xcodeproj -scheme Gus -destination 'platform=iOS Simulator,name=iPhone 17'
+xcodebuild test -project 'A Playa Named Gus.xcodeproj' -scheme 'A Playa Named Gus' -destination 'platform=iOS Simulator,name=iPhone 17'
 ```
 
 Run a single Swift Testing test with:
 
 ```sh
-xcodebuild test -project Gus.xcodeproj -scheme Gus -destination 'platform=iOS Simulator,name=iPhone 17' -only-testing:GusTests/<Suite>/<test>
+xcodebuild test -project 'A Playa Named Gus.xcodeproj' -scheme 'A Playa Named Gus' -destination 'platform=iOS Simulator,name=iPhone 17' -only-testing:GusTests/<Suite>/<test>
 ```
 
 `GusTests` covers pure logic with Swift Testing. `GusUITests` is intentionally a narrow
@@ -258,7 +258,7 @@ Consult these when implementing — they encode the requirements above.
 
 ## App icon design
 
-The icon uses the Jellyfin palette while keeping Gus's pineapple cue: a deep navy
+The icon uses the Jellyfin palette while keeping the app's pineapple cue: a deep navy
 background with a purple-to-blue pineapple body, a classic diamond crosshatch lattice,
 and a tight upright spiky crown. Current values:
 
@@ -281,7 +281,7 @@ third-party image tooling). See the roadmap's Brand milestone.
 The mature [Swiftfin](https://github.com/eslutz/Swiftfin) app (and its visionOS PRs #1/#2)
 is **reference only** — mirror its *patterns* and SDK call shapes, **never copy its code**.
 Swiftfin is built on VLCKit, a custom coordinator/router, Factory DI, Combine, and ~30
-dependencies; Gus deliberately re-expresses those patterns on the Apple-first stack above.
+dependencies; A Playa Named Gus deliberately re-expresses those patterns on the Apple-first stack above.
 The "Gus Cinema" immersive space is ported in structure from PR #2's `visionos-native`
 branch and re-expressed on `@Observable` with the Jellyfin palette.
 

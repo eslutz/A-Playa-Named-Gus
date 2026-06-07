@@ -164,6 +164,7 @@ struct VideoPlayerView: View {
                 await dismissImmersiveSpace()
                 await MainActor.run {
                     cinema.setOpen(false)
+                    cinema.clearSelectedEnvironment()
                 }
             }
         }

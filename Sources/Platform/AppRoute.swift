@@ -4,6 +4,7 @@ import Foundation
 /// platform entry points such as tvOS Top Shelf.
 enum AppRoute: String, CaseIterable, Hashable, Identifiable {
     case home
+    case libraries
     case search
     case settings
 

@@ -2,7 +2,7 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<!-- Gus does not track users or collect data for the developer. -->
+	<!-- A Playa Named Gus does not track users or collect data for the developer. -->
 	<key>NSPrivacyTracking</key>
 	<false/>
 
@@ -11,7 +11,7 @@
 	<array/>
 
 	<!--
-		Gus collects no data on behalf of the developer. Jellyfin credentials,
+		A Playa Named Gus collects no data on behalf of the developer. Jellyfin credentials,
 		server URLs, tokens, media metadata, playback progress, and downloaded
 		files remain on-device or are sent to the user-selected Jellyfin server.
 	-->
@@ -37,7 +37,7 @@
 		   All keys are app-own — not shared via an App Group.
 		   Reason CA92.1: access info from the same app that wrote it.
 
-		Not declared (not used in Gus):
+		Not declared (not used in A Playa Named Gus):
 		   File timestamp, System boot time, Active keyboard APIs.
 	-->
 	<key>NSPrivacyAccessedAPITypes</key>

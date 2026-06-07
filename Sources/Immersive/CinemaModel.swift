@@ -24,8 +24,6 @@ enum EnvironmentPickerMetrics {
 
     enum CinemaEnvironment: String, CaseIterable, Identifiable {
         case gusCinema
-        case midnight
-        case ocean
         case pineapple
 
         var id: String {
@@ -35,8 +33,6 @@ enum EnvironmentPickerMetrics {
         var title: LocalizedStringKey {
             switch self {
             case .gusCinema: return "Gus Cinema"
-            case .midnight: return "Midnight"
-            case .ocean: return "Ocean"
             case .pineapple: return "Pineapple"
             }
         }
@@ -44,8 +40,6 @@ enum EnvironmentPickerMetrics {
         var systemImage: String {
             switch self {
             case .gusCinema: return "movieclapper"
-            case .midnight: return "moon.stars"
-            case .ocean: return "water.waves"
             case .pineapple: return "sparkles"
             }
         }
@@ -73,14 +67,22 @@ enum EnvironmentPickerMetrics {
     final class CinemaModel {
         private(set) var isOpen = false
         private(set) var playbackPresentation: CinemaPlaybackPresentation?
-        var selectedEnvironment: CinemaEnvironment = .gusCinema
+        private(set) var activeEnvironment: CinemaEnvironment?
+
+        var renderedEnvironment: CinemaEnvironment {
+            activeEnvironment ?? .gusCinema
+        }
 
         func setOpen(_ open: Bool) {
             isOpen = open
         }
 
         func selectEnvironment(_ environment: CinemaEnvironment) {
-            selectedEnvironment = environment
+            activeEnvironment = environment
+        }
+
+        func clearSelectedEnvironment() {
+            activeEnvironment = nil
         }
 
         func present(player: AVPlayer, title: String, stereoLayout: Stereo3DLayout?, stereoRenderer: StereoFrameRenderer? = nil) {
@@ -107,7 +109,7 @@ enum EnvironmentPickerMetrics {
             Button {
                 isPickerPresented = true
             } label: {
-                Label("Environment", systemImage: cinema.selectedEnvironment.systemImage)
+                Label("Environment", systemImage: CinemaEnvironment.gusCinema.systemImage)
                     .labelStyle(.iconOnly)
             }
             .buttonStyle(.bordered)
@@ -115,13 +117,10 @@ enum EnvironmentPickerMetrics {
             .accessibilityLabel("Environment")
             .popover(isPresented: $isPickerPresented, attachmentAnchor: .rect(.bounds), arrowEdge: .leading) {
                 EnvironmentPicker(
-                    selectedEnvironment: cinema.selectedEnvironment,
+                    selectedEnvironment: cinema.activeEnvironment,
                     isOpen: cinema.isOpen,
                     select: { environment in
                         Task { await select(environment) }
-                    },
-                    close: {
-                        Task { await closeEnvironment() }
                     }
                 )
             }
@@ -129,6 +128,11 @@ enum EnvironmentPickerMetrics {
 
         @MainActor
         private func select(_ environment: CinemaEnvironment) async {
+            if cinema.isOpen, cinema.activeEnvironment == environment {
+                await closeEnvironment()
+                return
+            }
+
             cinema.selectEnvironment(environment)
 
             guard !cinema.isOpen else {
@@ -142,8 +146,10 @@ enum EnvironmentPickerMetrics {
                 isPickerPresented = false
             case .error, .userCancelled:
                 cinema.setOpen(false)
+                cinema.clearSelectedEnvironment()
             @unknown default:
                 cinema.setOpen(false)
+                cinema.clearSelectedEnvironment()
             }
         }
 
@@ -151,24 +157,24 @@ enum EnvironmentPickerMetrics {
         private func closeEnvironment() async {
             await dismissImmersiveSpace()
             cinema.setOpen(false)
+            cinema.clearSelectedEnvironment()
             cinema.clearPlaybackPresentation()
             isPickerPresented = false
         }
     }
 
     private struct EnvironmentPicker: View {
-        let selectedEnvironment: CinemaEnvironment
+        let selectedEnvironment: CinemaEnvironment?
         let isOpen: Bool
         let select: (CinemaEnvironment) -> Void
-        let close: () -> Void
 
         var body: some View {
             VStack(alignment: .leading, spacing: 18) {
                 Text("Select an Environment")
                     .font(.title3.weight(.semibold))
 
-                LazyVGrid(columns: [GridItem(.adaptive(minimum: 120), spacing: 14)], alignment: .leading, spacing: 14) {
-                    ForEach(CinemaEnvironment.allCases) { environment in
+                LazyVGrid(columns: columns, alignment: .leading, spacing: 14) {
+                    ForEach(environments) { environment in
                         Button {
                             select(environment)
                         } label: {
@@ -182,26 +188,29 @@ enum EnvironmentPickerMetrics {
                                     .font(.caption.weight(.medium))
                                     .lineLimit(1)
                             }
-                            .frame(maxWidth: .infinity)
+                            .frame(width: EnvironmentPickerMetrics.itemWidth)
                             .padding(.vertical, 12)
                         }
                         .buttonStyle(.bordered)
                         .controlSize(.large)
                         .tint(environment == selectedEnvironment ? .accentColor : nil)
+                        .accessibilityHint(environment == selectedEnvironment && isOpen ? "Closes the current environment." : "Opens this environment.")
                     }
-                }
-
-                if isOpen {
-                    Button(role: .cancel) {
-                        close()
-                    } label: {
-                        Label("Close Environment", systemImage: "xmark.circle")
-                    }
-                    .buttonStyle(.bordered)
                 }
             }
             .padding(24)
-            .frame(width: 520)
+            .frame(width: EnvironmentPickerMetrics.width(forEnvironmentCount: environments.count))
+        }
+
+        private var environments: [CinemaEnvironment] {
+            CinemaEnvironment.allCases
+        }
+
+        private var columns: [GridItem] {
+            Array(
+                repeating: GridItem(.fixed(EnvironmentPickerMetrics.itemWidth), spacing: EnvironmentPickerMetrics.itemSpacing),
+                count: EnvironmentPickerMetrics.columns(forEnvironmentCount: environments.count)
+            )
         }
     }
 

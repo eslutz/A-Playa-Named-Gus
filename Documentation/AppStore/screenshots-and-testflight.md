@@ -38,7 +38,7 @@ The script targets these automatically:
 > **Note:** The script resolves UDIDs from the simulators installed on the current
 > machine. If Xcode is updated or simulators are re-created, update the UDIDs at
 > the top of `Scripts/screenshots.sh`. Confirm with:
-> `xcodebuild -showdestinations -project Gus.xcodeproj -scheme Gus`
+> `xcodebuild -showdestinations -project 'A Playa Named Gus.xcodeproj' -scheme 'A Playa Named Gus'`
 
 ## Required Scenes
 
@@ -68,9 +68,10 @@ Scripts/screenshots.sh mac    # prints step-by-step instructions
 
 Steps:
 1. Build and run the `Debug` or `Release` scheme on macOS in Xcode.
-2. Resize the Gus window to 1280×800 (hold Option and drag the resize handle for
-   exact sizing, or use a window-sizing utility).
-3. Press **Cmd+Shift+4 → Space → click the Gus window** to capture just the window.
+2. Resize the A Playa Named Gus window to 1280×800 (hold Option and drag the resize handle
+   for exact sizing, or use a window-sizing utility).
+3. Press **Cmd+Shift+4 → Space → click the A Playa Named Gus window** to capture just the
+   window.
 4. Repeat for each required scene.
 5. Move the resulting PNGs to `Screenshots/mac/` (git-ignored).
 

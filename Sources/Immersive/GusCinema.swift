@@ -16,10 +16,10 @@
 
         var body: some View {
             RealityView { content in
-                Self.updateRoom(in: &content, environment: cinema.selectedEnvironment)
+                Self.updateRoom(in: &content, environment: cinema.renderedEnvironment)
                 Self.updateStereoScreen(in: &content, playback: cinema.playbackPresentation)
             } update: { content in
-                Self.updateRoom(in: &content, environment: cinema.selectedEnvironment)
+                Self.updateRoom(in: &content, environment: cinema.renderedEnvironment)
                 Self.updateStereoScreen(in: &content, playback: cinema.playbackPresentation)
             }
         }
@@ -156,10 +156,6 @@
             switch environment {
             case .gusCinema:
                 return color("CinemaBackdropNight", fallback: UIColor(red: 0.0, green: 0.043, blue: 0.145, alpha: 1))
-            case .midnight:
-                return UIColor(red: 0.01, green: 0.012, blue: 0.025, alpha: 1)
-            case .ocean:
-                return UIColor(red: 0.0, green: 0.08, blue: 0.12, alpha: 1)
             case .pineapple:
                 return UIColor(red: 0.08, green: 0.045, blue: 0.0, alpha: 1)
             }
@@ -172,18 +168,6 @@
                     backdropNightUI(for: environment).cgColor,
                     color("CinemaBackdropMid", fallback: UIColor(red: 0.063, green: 0.063, blue: 0.063, alpha: 1)).cgColor,
                     backdropNightUI(for: environment).cgColor,
-                ]
-            case .midnight:
-                return [
-                    UIColor(red: 0.01, green: 0.012, blue: 0.025, alpha: 1).cgColor,
-                    UIColor(red: 0.025, green: 0.035, blue: 0.08, alpha: 1).cgColor,
-                    UIColor.black.cgColor,
-                ]
-            case .ocean:
-                return [
-                    UIColor(red: 0.0, green: 0.08, blue: 0.12, alpha: 1).cgColor,
-                    UIColor(red: 0.0, green: 0.22, blue: 0.28, alpha: 1).cgColor,
-                    UIColor(red: 0.0, green: 0.04, blue: 0.08, alpha: 1).cgColor,
                 ]
             case .pineapple:
                 return [
@@ -198,10 +182,6 @@
             switch environment {
             case .gusCinema:
                 return color("CinemaKeyLight", fallback: UIColor(red: 0.675, green: 0.361, blue: 0.765, alpha: 1))
-            case .midnight:
-                return UIColor(red: 0.58, green: 0.68, blue: 1.0, alpha: 1)
-            case .ocean:
-                return UIColor(red: 0.0, green: 0.76, blue: 0.84, alpha: 1)
             case .pineapple:
                 return UIColor(red: 1.0, green: 0.62, blue: 0.14, alpha: 1)
             }
@@ -211,10 +191,6 @@
             switch environment {
             case .gusCinema:
                 return color("CinemaFillLight", fallback: UIColor(red: 0.0, green: 0.643, blue: 0.863, alpha: 1))
-            case .midnight:
-                return UIColor(red: 0.36, green: 0.28, blue: 0.76, alpha: 1)
-            case .ocean:
-                return UIColor(red: 0.16, green: 0.9, blue: 0.58, alpha: 1)
             case .pineapple:
                 return UIColor(red: 0.68, green: 0.36, blue: 0.76, alpha: 1)
             }

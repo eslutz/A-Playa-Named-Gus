@@ -1,5 +1,6 @@
-# Gus-specific: generated project & platform-specific build artifacts
-Gus.xcodeproj/
+# A Playa Named Gus-specific: generated project & platform-specific build artifacts
+A Playa Named Gus.xcodeproj
+Gus.xcodeproj
 build/
 build-*/
 build-screenshots-*/

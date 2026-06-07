@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- tvOS only: run the app as the current Apple TV profile. The entitlement
+	     value permits using the user-independent keychain, but A Playa Named Gus deliberately
+	     keeps Jellyfin tokens in the current profile's normal Keychain scope. -->
+	<key>com.apple.developer.user-management</key>
+	<array>
+		<string>runs-as-current-user-with-user-independent-keychain</string>
+	</array>
+</dict>
+</plist>

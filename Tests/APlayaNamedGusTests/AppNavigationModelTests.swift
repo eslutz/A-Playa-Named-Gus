@@ -12,6 +12,10 @@ struct AppNavigationModelTests {
         model.open(.settings)
 
         #expect(model.route == .settings)
+
+        model.open(.libraries)
+
+        #expect(model.route == .libraries)
     }
 
     @Test("opening search increments the search focus token without changing route")

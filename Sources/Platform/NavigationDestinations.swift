@@ -1,7 +1,7 @@
 import SwiftUI
 
 extension View {
-    /// Registers Gus's item/library navigation destinations once, at the root of a
+    /// Registers A Playa Named Gus's item/library navigation destinations once, at the root of a
     /// `NavigationStack`. Feature views push `LibraryRef`/`ItemRef` values via
     /// `NavigationLink(value:)`; centralizing the destinations here avoids duplicate
     /// `navigationDestination` declarations on the same stack.

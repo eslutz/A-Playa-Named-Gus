@@ -8,6 +8,7 @@ import SwiftUI
 struct HomeView: View {
     @Environment(SessionStore.self) private var session
     @Environment(PlaybackRefreshStore.self) private var playbackRefresh
+    @Environment(UpNextStore.self) private var upNext
     @State private var store: HomeStore?
 
     var body: some View {
@@ -20,6 +21,7 @@ struct HomeView: View {
         }
         .navigationTitle("Home")
         .task {
+            upNext.load(serverID: session.server.id, userID: session.user.id)
             if store == nil {
                 let store = HomeStore(session: session)
                 self.store = store
@@ -33,26 +35,33 @@ struct HomeView: View {
     }
 
     private func content(_ store: HomeStore) -> some View {
-        LoadingStateView(
+        let nextUpItems = upNext.mergedItems(
+            remote: store.nextUpItems,
+            serverID: session.server.id,
+            userID: session.user.id
+        )
+
+        return LoadingStateView(
             state: store.state,
-            isEmpty: store.libraries.isEmpty && store.resumeItems.isEmpty && store.nextUpItems.isEmpty && store.latestSections.isEmpty,
-            emptyTitle: "No Libraries",
-            emptySymbol: "rectangle.stack"
+            isEmpty: store.resumeItems.isEmpty && nextUpItems.isEmpty && store.latestSections.isEmpty,
+            emptyTitle: "No Recent Media",
+            emptySymbol: "clock"
         ) {
             ScrollView {
                 VStack(alignment: .leading, spacing: 32) {
                     if !store.resumeItems.isEmpty {
                         MediaRail(title: "Continue Watching", items: store.resumeItems)
                     }
-                    if !store.nextUpItems.isEmpty {
-                        MediaRail(title: "Next Up", items: store.nextUpItems, style: .backdrop)
+                    if !nextUpItems.isEmpty {
+                        MediaRail(title: "Next Up", items: nextUpItems, style: .backdrop)
                     }
                     ForEach(store.latestSections) { section in
                         MediaRail(title: section.title, items: section.items)
                     }
-                    LibrariesGrid(libraries: store.libraries)
                 }
                 .padding()
+                .frame(maxWidth: PageContentMetrics.maxWidth, alignment: .leading)
+                .frame(maxWidth: .infinity)
             }
             .lookToScroll()
             .refreshable { await store.load() }
@@ -61,7 +70,7 @@ struct HomeView: View {
 }
 
 /// Horizontal rail of media items.
-private struct MediaRail: View {
+struct MediaRail: View {
     @Environment(SessionStore.self) private var session
     let title: String
     let items: [BaseItemDto]
@@ -103,7 +112,7 @@ private struct MediaRail: View {
     }
 }
 
-private enum MediaRailStyle: Equatable {
+enum MediaRailStyle: Equatable {
     case poster
     case backdrop
 
@@ -129,6 +138,13 @@ enum MediaRailKind: Equatable {
 }
 
 enum MediaRailMetrics {
+    static func aspectRatio(for kind: MediaRailKind) -> CGFloat {
+        switch kind {
+        case .poster: return 2.0 / 3.0
+        case .backdrop: return 16.0 / 9.0
+        }
+    }
+
     static func itemWidth(for kind: MediaRailKind) -> CGFloat {
         #if os(tvOS)
             return kind == .backdrop ? 420 : 240
@@ -153,11 +169,17 @@ private struct BackdropCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            AsyncPoster(url: imageURL, contentMode: .fill, placeholderSymbol: "play.rectangle")
-                .aspectRatio(16.0 / 9.0, contentMode: .fit)
-                .frame(maxWidth: .infinity)
-                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                .posterHoverEffect()
+            ZStack {
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .fill(.regularMaterial)
+
+                AsyncPoster(url: imageURL, contentMode: .fit, placeholderSymbol: "play.rectangle")
+                    .aspectRatio(contentMode: .fit)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
+            .aspectRatio(MediaRailMetrics.aspectRatio(for: .backdrop), contentMode: .fit)
+            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .posterHoverEffect()
 
             VStack(alignment: .leading, spacing: 1) {
                 Text(title)
@@ -197,6 +219,53 @@ private struct BackdropCard: View {
     }
 }
 
+/// Persistent Libraries destination used by tabs, sidebars, and menu routes.
+struct LibrariesLandingView: View {
+    @Environment(SessionStore.self) private var session
+    private let providedStore: HomeStore?
+    @State private var ownedStore: HomeStore?
+
+    init(store: HomeStore? = nil) {
+        self.providedStore = store
+    }
+
+    var body: some View {
+        Group {
+            if let store = providedStore ?? ownedStore {
+                content(store)
+            } else {
+                ProgressView()
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
+        }
+        .navigationTitle("Libraries")
+        .task {
+            guard providedStore == nil, ownedStore == nil else { return }
+            let store = HomeStore(session: session)
+            ownedStore = store
+            await store.load()
+        }
+    }
+
+    private func content(_ store: HomeStore) -> some View {
+        LoadingStateView(
+            state: store.state,
+            isEmpty: store.libraries.isEmpty,
+            emptyTitle: "No Libraries",
+            emptySymbol: "rectangle.stack"
+        ) {
+            ScrollView {
+                LibrariesGrid(libraries: store.libraries)
+                    .padding()
+                    .frame(maxWidth: PageContentMetrics.maxWidth, alignment: .leading)
+                    .frame(maxWidth: .infinity)
+            }
+            .lookToScroll()
+            .refreshable { await store.load() }
+        }
+    }
+}
+
 /// Grid of library poster cards.
 private struct LibrariesGrid: View {
     @Environment(SessionStore.self) private var session
@@ -204,10 +273,6 @@ private struct LibrariesGrid: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Libraries")
-                .font(.title2.bold())
-                .accessibilityAddTraits(.isHeader)
-
             LazyVGrid(columns: PosterGrid.columns, alignment: .leading, spacing: PosterGrid.spacing) {
                 ForEach(libraries, id: \.id) { library in
                     NavigationLink(value: LibraryRef(item: library)) {

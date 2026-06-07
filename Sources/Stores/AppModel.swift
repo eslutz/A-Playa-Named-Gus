@@ -42,7 +42,8 @@ final class AppModel {
         }
     }
 
-    private static let lastUserDefaultsKey = "dev.ericslutz.gus.lastSignedInUserID"
+    private static let lastSessionAccountDefaultsKey = "dev.ericslutz.gus.lastSignedInSessionAccount"
+    private static let legacyLastUserIDDefaultsKey = "dev.ericslutz.gus.lastSignedInUserID"
 
     private let serverStore: ServerStore
     private let tokenStore: TokenStore
@@ -53,14 +54,39 @@ final class AppModel {
     private(set) var users: [StoredUser] = []
     var currentSession: SessionStore?
 
-    var lastSignedInUserID: String? {
+    private(set) var lastSessionAccount: String? {
         didSet {
-            if let lastSignedInUserID {
-                userDefaults.set(lastSignedInUserID, forKey: Self.lastUserDefaultsKey)
-            } else {
-                userDefaults.removeObject(forKey: Self.lastUserDefaultsKey)
-            }
+            persistLastSessionAccount()
         }
+    }
+
+    private func persistLastSessionAccount() {
+        if let lastSessionAccount {
+            userDefaults.set(lastSessionAccount, forKey: Self.lastSessionAccountDefaultsKey)
+        } else {
+            userDefaults.removeObject(forKey: Self.lastSessionAccountDefaultsKey)
+        }
+        userDefaults.removeObject(forKey: Self.legacyLastUserIDDefaultsKey)
+    }
+
+    private static func loadLastSessionAccount(
+        from userDefaults: UserDefaults,
+        users: [StoredUser]
+    ) -> String? {
+        if let account = userDefaults.string(forKey: lastSessionAccountDefaultsKey) {
+            return account
+        }
+
+        guard let legacyUserID = userDefaults.string(forKey: legacyLastUserIDDefaultsKey) else {
+            return nil
+        }
+
+        let matches = users.filter { $0.id == legacyUserID }
+        guard matches.count == 1, let user = matches.first else {
+            return nil
+        }
+
+        return SessionCredential(user: user).account
     }
 
     init(
@@ -73,7 +99,8 @@ final class AppModel {
         self.userDefaults = userDefaults
         servers = serverStore.loadServers()
         users = serverStore.loadUsers()
-        lastSignedInUserID = userDefaults.string(forKey: Self.lastUserDefaultsKey)
+        lastSessionAccount = Self.loadLastSessionAccount(from: userDefaults, users: users)
+        persistLastSessionAccount()
     }
 
     // MARK: - Launch restore
@@ -81,8 +108,8 @@ final class AppModel {
     /// Silently restores the last session from the Keychain token + persisted stores.
     func restoreLastSession() {
         guard currentSession == nil,
-              let userID = lastSignedInUserID,
-              let user = users.first(where: { $0.id == userID })
+              let account = lastSessionAccount,
+              let user = users.first(where: { SessionCredential(user: $0).account == account })
         else { return }
 
         do {
@@ -101,7 +128,7 @@ final class AppModel {
 
         let client = JellyfinClientFactory.makeClient(url: server.url, accessToken: token)
         currentSession = SessionStore(client: client, user: user, server: server)
-        lastSignedInUserID = user.id
+        lastSessionAccount = SessionCredential(user: user).account
         logger.info("Restored session for user \(user.name, privacy: .public)")
     }
 
@@ -201,7 +228,7 @@ final class AppModel {
 
     func signOutCurrentUser() {
         guard let session = currentSession else {
-            lastSignedInUserID = nil
+            lastSessionAccount = nil
             return
         }
 
@@ -211,7 +238,7 @@ final class AppModel {
         tokenStore.deleteToken(for: credential)
         users.removeAll { $0.id == session.user.id && $0.serverID == session.user.serverID }
         serverStore.saveUsers(users)
-        lastSignedInUserID = nil
+        lastSessionAccount = nil
         currentSession = nil
     }
 
@@ -256,7 +283,7 @@ final class AppModel {
         tokenStore.setToken(token, for: SessionCredential(user: user))
         upsert(server: server)
         upsert(user: user)
-        lastSignedInUserID = userID
+        lastSessionAccount = SessionCredential(user: user).account
 
         // SDK sign-in methods already set the access token on this client's configuration.
         currentSession = SessionStore(client: client, user: user, server: server)

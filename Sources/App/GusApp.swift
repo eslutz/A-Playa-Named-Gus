@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Gus — an Apple-first, multiplatform Jellyfin client.
+/// A Playa Named Gus — an Apple-first, multiplatform Jellyfin client.
 ///
 /// Pure SwiftUI lifecycle (no AppDelegate). The root `AppModel` is created here and
 /// injected via `@Environment`; on visionOS an `ImmersiveSpace` hosts the "Gus Cinema".
@@ -10,6 +10,7 @@ struct GusApp: App {
     @State private var appNavigation = AppNavigationModel()
     @State private var playbackRefresh = PlaybackRefreshStore()
     @State private var offlineDownloads = OfflineDownloadStore()
+    @State private var upNext = UpNextStore()
     private let shouldRestoreLastSession: Bool
 
     #if os(visionOS)
@@ -29,6 +30,7 @@ struct GusApp: App {
                 .environment(appNavigation)
                 .environment(playbackRefresh)
                 .environment(offlineDownloads)
+                .environment(upNext)
             #if os(visionOS)
                 .environment(cinema)
             #endif

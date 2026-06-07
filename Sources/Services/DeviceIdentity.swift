@@ -3,7 +3,7 @@ import Foundation
 /// Multiplatform device identity used when constructing a `JellyfinClient.Configuration`.
 ///
 /// Swiftfin derives client/device strings from `UIDevice`/`UIScreen`, which only exist
-/// on iOS/tvOS. Gus is Apple-first across five platforms, so it uses a stored per-install
+/// on iOS/tvOS. A Playa Named Gus is Apple-first across five platforms, so it uses a stored per-install
 /// UUID plus a compile-time platform string — no `UIKit` — so the same code compiles on
 /// macOS and visionOS.
 enum DeviceIdentity {
@@ -29,9 +29,9 @@ enum DeviceIdentity {
         #endif
     }
 
-    /// Client name sent to the server, e.g. `Gus iOS`. Shown in the server's devices list.
+    /// Client name sent to the server, e.g. `A Playa Named Gus iOS`. Shown in the server's devices list.
     static var clientName: String {
-        "Gus \(platformName)"
+        "A Playa Named Gus \(platformName)"
     }
 
     /// Stable, per-install device identifier. Generated once and persisted in `UserDefaults`.

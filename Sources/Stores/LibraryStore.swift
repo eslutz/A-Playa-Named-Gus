@@ -60,7 +60,6 @@ enum LibraryStatusFilter: String, CaseIterable, Identifiable {
     case all
     case unplayed
     case played
-    case favorites
     case resumable
 
     var id: String {
@@ -75,8 +74,6 @@ enum LibraryStatusFilter: String, CaseIterable, Identifiable {
             return String(localized: "Unplayed", comment: "Library filter option")
         case .played:
             return String(localized: "Played", comment: "Library filter option")
-        case .favorites:
-            return String(localized: "Favorites", comment: "Library filter option")
         case .resumable:
             return String(localized: "In Progress", comment: "Library filter option")
         }
@@ -90,8 +87,6 @@ enum LibraryStatusFilter: String, CaseIterable, Identifiable {
             return [.isUnplayed]
         case .played:
             return [.isPlayed]
-        case .favorites:
-            return [.isFavorite]
         case .resumable:
             return [.isResumable]
         }

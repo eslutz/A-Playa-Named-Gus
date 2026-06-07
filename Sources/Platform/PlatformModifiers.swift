@@ -27,8 +27,7 @@ extension View {
     @ViewBuilder
     func posterHoverEffect() -> some View {
         #if os(visionOS)
-            hoverEffect(.lift)
-                .visionHoverEffect(cornerRadius: 12)
+            visionHoverEffect(RoundedRectangle(cornerRadius: 12, style: .continuous))
         #elseif os(iOS)
             hoverEffect(.lift)
         #else
@@ -42,6 +41,17 @@ extension View {
     func visionHoverEffect(cornerRadius: CGFloat) -> some View {
         #if os(visionOS)
             buttonBorderShape(.roundedRectangle(radius: cornerRadius))
+        #else
+            self
+        #endif
+    }
+
+    /// Content hover shape matching the Swiftfin visionOS PR behavior for poster-like tiles.
+    @ViewBuilder
+    func visionHoverEffect<S: InsettableShape>(_ shape: S) -> some View {
+        #if os(visionOS)
+            contentShape(.hoverEffect, shape)
+                .hoverEffect()
         #else
             self
         #endif

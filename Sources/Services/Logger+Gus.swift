@@ -1,7 +1,7 @@
 import OSLog
 
 extension Logger {
-    /// The single subsystem identifier for all Gus logging.
+    /// The single subsystem identifier for all A Playa Named Gus logging.
     static let subsystem = "dev.ericslutz.gus"
 
     /// Logging categories, defined in one place so Console/`log` filtering is consistent.
@@ -21,7 +21,7 @@ extension Logger {
         case serverStore = "ServerStore"
     }
 
-    /// Builds a `Logger` on the Gus subsystem for the given category.
+    /// Builds a `Logger` on the A Playa Named Gus subsystem for the given category.
     init(category: Category) {
         self.init(subsystem: Logger.subsystem, category: category.rawValue)
     }

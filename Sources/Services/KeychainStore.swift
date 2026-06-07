@@ -14,6 +14,9 @@ protocol TokenStore {
 /// stored as `kSecClassGenericPassword` items, accounted by `SessionCredential.account`
 /// (`"<serverID>:<userID>"`), accessible after first unlock. No keychain access group is
 /// used (keeps signing simple across platforms).
+///
+/// On tvOS, A Playa Named Gus relies on current-user Keychain scoping so Apple TV profiles keep separate
+/// Jellyfin tokens. Do not add `kSecUseUserIndependentKeychain` for these token items.
 struct KeychainStore {
     private let service = "dev.ericslutz.gus.tokens"
     private let logger = Logger(category: .keychain)

@@ -1,9 +1,10 @@
-// Shared.xcconfig — Gus build settings (source of truth for the target).
+// Shared.xcconfig — A Playa Named Gus build settings (source of truth for the target).
 // Per-SDK divergence is expressed with [sdk=...] conditional assignments.
 
 // MARK: - Identity & versioning
 
-PRODUCT_NAME = Gus
+PRODUCT_NAME = A Playa Named Gus
+PRODUCT_MODULE_NAME = Gus
 PRODUCT_BUNDLE_IDENTIFIER = dev.ericslutz.gus
 MARKETING_VERSION = 1.0
 CURRENT_PROJECT_VERSION = 1
@@ -45,8 +46,15 @@ CODE_SIGNING_REQUIRED = NO
 CODE_SIGNING_ALLOWED = YES
 
 // Sandbox + outbound network only on macOS (network.client/app-sandbox are
-// macOS-sandbox entitlements; iOS/tvOS/visionOS don't need an entitlements file).
+// macOS-sandbox entitlements). macOS app state remains per OS login account via
+// the user-domain sandbox container, UserDefaults, Application Support, and Keychain.
 CODE_SIGN_ENTITLEMENTS[sdk=macosx*] = Config/Gus.entitlements
+
+// tvOS runs A Playa Named Gus as the current Apple TV profile so each profile gets
+// separate app storage and Keychain items. The app intentionally does not use
+// kSecUseUserIndependentKeychain for Jellyfin access tokens.
+CODE_SIGN_ENTITLEMENTS[sdk=appletvos*] = Config/Gus-tvOS.entitlements
+CODE_SIGN_ENTITLEMENTS[sdk=appletvsimulator*] = Config/Gus-tvOS.entitlements
 
 // MARK: - Local overrides
 //

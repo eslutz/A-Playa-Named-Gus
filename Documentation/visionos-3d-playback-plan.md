@@ -33,9 +33,9 @@ can't play natively.
 
 ### Hard constraint — the direct-play requirement
 
-Gus's playback is deliberately **HLS-transcode-biased** so AVPlayer always gets a
-playable container. **Transcoding collapses stereo into 2D.** Any 3D playback requires
-a guaranteed **direct-play** path that bypasses the transcode bias. If the server
+A Playa Named Gus's playback is deliberately **HLS-transcode-biased** so AVPlayer always
+gets a playable container. **Transcoding collapses stereo into 2D.** Any 3D playback
+requires a guaranteed **direct-play** path that bypasses the transcode bias. If the server
 cannot direct-play the source, 3D is impossible and the app must fall back to 2D.
 
 ### Verdict

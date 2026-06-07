@@ -6,16 +6,16 @@ Accepted
 
 ## Context
 
-Gus is one multiplatform app target with generated project settings that need to remain
-reviewable in source control. A checked-in `.xcodeproj` would create noisy diffs, while a
-pure Swift Package or local-package hybrid would not model app targets, assets,
-entitlements, and supported destinations as clearly.
+A Playa Named Gus is one multiplatform app target with generated project settings that
+need to remain reviewable in source control. A checked-in `.xcodeproj` would create noisy
+diffs, while a pure Swift Package or local-package hybrid would not model app targets,
+assets, entitlements, and supported destinations as clearly.
 
 ## Decision
 
-`project.yml` is the source of truth and `Gus.xcodeproj` is generated with XcodeGen. After
-adding, removing, or renaming source/resource files, contributors run `xcodegen generate`
-before building or testing.
+`project.yml` is the source of truth and `A Playa Named Gus.xcodeproj` is generated with
+XcodeGen. After adding, removing, or renaming source/resource files, contributors run
+`xcodegen generate` before building or testing.
 
 ## Consequences
 

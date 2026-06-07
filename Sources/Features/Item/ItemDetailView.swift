@@ -1,10 +1,13 @@
 import JellyfinAPI
 import SwiftUI
 
-/// Item detail: Apple TV-style backdrop hero, metadata, and native action controls.
+/// Item detail surface re-expressed from the Swiftfin visionOS PR layout using A Playa Named Gus's
+/// native SwiftUI stack: cinematic header, inline actions, metadata rows, and about cards.
 struct ItemDetailView: View {
     @Environment(SessionStore.self) private var session
     @Environment(OfflineDownloadStore.self) private var downloads
+    @Environment(PlaybackRefreshStore.self) private var playbackRefresh
+    @Environment(UpNextStore.self) private var upNext
     let item: BaseItemDto
 
     @State private var playerItem: ItemRef?
@@ -14,7 +17,7 @@ struct ItemDetailView: View {
         Group {
             if let store {
                 LoadingStateView(state: store.state) {
-                    detailContent(for: store.item, seriesStore: store.seriesStore)
+                    detailContent(for: store)
                 }
             } else {
                 ProgressView()
@@ -25,57 +28,91 @@ struct ItemDetailView: View {
         #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
         #endif
-            .task {
-                if store == nil {
-                    let store = ItemDetailStore(item: item, session: session)
-                    self.store = store
-                    await store.load()
-                }
+        #if os(iOS) || os(visionOS)
+        .toolbarBackground(.hidden, for: .navigationBar)
+        #endif
+        .task {
+            if store == nil {
+                let store = ItemDetailStore(item: item, session: session)
+                self.store = store
+                await store.load()
             }
-            .playerPresentation(item: $playerItem)
-            .downloadErrorAlert(downloads)
+        }
+        .playerPresentation(item: $playerItem)
+        .downloadErrorAlert(downloads)
     }
 
-    private func detailContent(for item: BaseItemDto, seriesStore: SeriesDetailStore?) -> some View {
+    private func detailContent(for store: ItemDetailStore) -> some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 32) {
-                hero(for: item)
-
-                if let seriesStore {
-                    SeriesEpisodesView(store: seriesStore)
+            VStack(alignment: .leading, spacing: 0) {
+                CinematicDetailHero(
+                    item: store.item,
+                    backdropURL: session.imageBuilder.backdropImageURL(for: store.item, context: .backdrop),
+                    play: {
+                        playerItem = ItemRef(item: store.item)
+                    },
+                    isInUpNext: upNext.contains(store.item, serverID: session.server.id, userID: session.user.id),
+                    toggleUpNext: {
+                        upNext.toggle(store.item, serverID: session.server.id, userID: session.user.id)
+                        playbackRefresh.markPlaybackProgressChanged()
+                    }
+                ) {
+                    if DownloadsAvailability.isSupported {
+                        DownloadButton(item: store.item, iconOnly: true)
+                    }
                 }
 
-                RichMetadataView(item: item)
+                VStack(alignment: .leading, spacing: 30) {
+                    if let seriesStore = store.seriesStore {
+                        SeriesEpisodesView(store: seriesStore)
+                    }
+
+                    DetailMetadataRows(item: store.item)
+
+                    if let people = store.item.people, !people.isEmpty {
+                        CastRail(people: people)
+                    }
+
+                    if !store.specialFeatures.isEmpty {
+                        MediaRail(title: "Special Features", items: store.specialFeatures, style: .backdrop)
+                    }
+
+                    if !store.similarItems.isEmpty {
+                        MediaRail(title: "Recommended", items: store.similarItems)
+                    }
+
+                    AboutCardsView(
+                        item: store.item,
+                        posterURL: session.imageBuilder.primaryImageURL(for: store.item, context: .posterRail)
+                    )
+                }
+                .padding(sectionPadding)
             }
-            .padding()
-            .frame(maxWidth: 1280, alignment: .leading)
+            .frame(maxWidth: PageContentMetrics.maxWidth, alignment: .leading)
             .frame(maxWidth: .infinity)
         }
         .lookToScroll()
         .task {
             downloads.load(serverID: session.server.id, userID: session.user.id)
+            upNext.load(serverID: session.server.id, userID: session.user.id)
         }
     }
 
-    private func hero(for item: BaseItemDto) -> some View {
-        DetailHeroView(
-            item: item,
-            backdropURL: session.imageBuilder.backdropImageURL(for: item, context: .backdrop),
-            play: {
-                playerItem = ItemRef(item: item)
-            }
-        ) {
-            if DownloadsAvailability.isSupported {
-                DownloadButton(item: item)
-            }
-        }
+    private var sectionPadding: EdgeInsets {
+        #if os(visionOS) || os(tvOS)
+            return EdgeInsets(top: 30, leading: 36, bottom: 40, trailing: 36)
+        #else
+            return EdgeInsets(top: 24, leading: 20, bottom: 32, trailing: 20)
+        #endif
     }
 }
 
-private struct DetailHeroView<Accessory: View>: View {
+private struct CinematicDetailHero<Accessory: View>: View {
     let item: BaseItemDto
     let backdropURL: URL?
     let play: () -> Void
+    let isInUpNext: Bool
+    let toggleUpNext: () -> Void
     @ViewBuilder let accessory: Accessory
 
     var body: some View {
@@ -88,54 +125,118 @@ private struct DetailHeroView<Accessory: View>: View {
             LinearGradient(
                 colors: [
                     .black.opacity(0.82),
-                    .black.opacity(0.42),
-                    .black.opacity(0.08),
+                    .black.opacity(0.54),
+                    .black.opacity(0.18),
+                    .clear,
                 ],
-                startPoint: .bottomLeading,
-                endPoint: .topTrailing
+                startPoint: .bottom,
+                endPoint: .top
             )
 
-            VStack(alignment: .leading, spacing: 16) {
-                Text(item.displayTitle)
-                    .font(titleFont)
-                    .lineLimit(3)
-                    .fixedSize(horizontal: false, vertical: true)
+            LinearGradient(
+                colors: [.black.opacity(0.72), .clear],
+                startPoint: .leading,
+                endPoint: .trailing
+            )
 
-                metadataRow(for: item)
-
-                if let overview = item.overview, !overview.isEmpty {
-                    Text(overview)
-                        .font(.body)
-                        .lineLimit(4)
-                        .foregroundStyle(.secondary)
-                        .frame(maxWidth: 640, alignment: .leading)
-                }
-
-                HStack(spacing: 12) {
-                    Button(action: play) {
-                        Label("Play", systemImage: "play.fill")
-                            .frame(minWidth: 140)
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .controlSize(.large)
-                    .gusDefaultActionShortcut()
-                    .accessibilityHint("Starts playback for this item.")
-
-                    accessory
-                }
+            ViewThatFits(in: .horizontal) {
+                wideOverlay
+                compactOverlay
             }
             .foregroundStyle(.white)
             .padding(heroPadding)
         }
-        .clipShape(RoundedRectangle(cornerRadius: heroCornerRadius, style: .continuous))
-        .contentShape(RoundedRectangle(cornerRadius: heroCornerRadius, style: .continuous))
+        .background(Color.black.opacity(0.22))
+        .ignoresSafeArea(edges: .top)
+        .accessibilityElement(children: .contain)
+    }
+
+    private var wideOverlay: some View {
+        HStack(alignment: .bottom, spacing: 28) {
+            titleBlock
+                .frame(maxWidth: 760, alignment: .leading)
+
+            Spacer(minLength: 24)
+
+            actionStack
+                .frame(width: actionWidth, alignment: .trailing)
+        }
+    }
+
+    private var compactOverlay: some View {
+        VStack(alignment: .leading, spacing: 18) {
+            titleBlock
+            actionStack
+                .frame(maxWidth: 320, alignment: .leading)
+        }
+    }
+
+    private var titleBlock: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text(item.displayTitle)
+                .font(titleFont)
+                .fontWeight(.bold)
+                .lineLimit(3)
+                .fixedSize(horizontal: false, vertical: true)
+
+            HeroMetadataRow(item: item)
+
+            if let overview = item.overview?.trimmedNilIfEmpty {
+                Text(overview)
+                    .font(.body)
+                    .foregroundStyle(.white.opacity(0.82))
+                    .lineLimit(4)
+            }
+        }
+    }
+
+    private var actionStack: some View {
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: 10) {
+                playButton
+                upNextButton
+                accessory
+            }
+
+            VStack(alignment: .trailing, spacing: 10) {
+                playButton
+                HStack(spacing: 10) {
+                    upNextButton
+                    accessory
+                }
+            }
+        }
+    }
+
+    private var playButton: some View {
+        Button(action: play) {
+            Label("Play", systemImage: "play.fill")
+                .frame(maxWidth: .infinity)
+        }
+        .buttonStyle(.borderedProminent)
+        .controlSize(.large)
+        .tint(.accentColor)
+        .gusDefaultActionShortcut()
+        .visionHoverEffect(cornerRadius: 10)
+    }
+
+    private var upNextButton: some View {
+        ItemUserActionButton(
+            title: isInUpNext ? "Remove from Up Next" : "Add to Up Next",
+            systemImage: isInUpNext ? "checkmark" : "plus",
+            action: toggleUpNext
+        )
     }
 
     private var titleFont: Font {
-        #if os(iOS)
-            return .title.bold()
-        #else
+        #if os(tvOS)
+            return .system(size: 72, weight: .bold)
+        #elseif os(visionOS)
+            return .system(size: 54, weight: .bold)
+        #elseif os(macOS)
             return .largeTitle.bold()
+        #else
+            return .title.bold()
         #endif
     }
 
@@ -143,11 +244,11 @@ private struct DetailHeroView<Accessory: View>: View {
         #if os(tvOS)
             return 620
         #elseif os(visionOS)
-            return 520
+            return 560
         #elseif os(macOS)
-            return 440
+            return 480
         #else
-            return 380
+            return 420
         #endif
     }
 
@@ -155,39 +256,44 @@ private struct DetailHeroView<Accessory: View>: View {
         #if os(tvOS) || os(visionOS)
             return 40
         #else
-            return 28
+            return 24
         #endif
     }
 
-    private var heroCornerRadius: CGFloat {
-        #if os(iOS)
-            return 18
+    private var actionWidth: CGFloat {
+        #if os(tvOS) || os(visionOS)
+            return 220
         #else
-            return 28
+            return 180
         #endif
     }
+}
 
-    private func metadataRow(for item: BaseItemDto) -> some View {
+private struct HeroMetadataRow: View {
+    let item: BaseItemDto
+
+    var body: some View {
         ViewThatFits(in: .horizontal) {
-            HStack(spacing: 12) {
-                metadataValues(for: item)
+            HStack(spacing: 10) {
+                tokens
             }
 
             VStack(alignment: .leading, spacing: 6) {
-                metadataValues(for: item)
+                tokens
             }
         }
-        .font(.subheadline)
-        .foregroundStyle(.secondary)
-        // Combine year, runtime, rating, and score into a single VoiceOver element so the
-        // row reads as one sentence rather than four separate focus stops.
+        .font(.subheadline.weight(.medium))
+        .foregroundStyle(.white.opacity(0.72))
         .accessibilityElement(children: .combine)
     }
 
     @ViewBuilder
-    private func metadataValues(for item: BaseItemDto) -> some View {
+    private var tokens: some View {
+        if let locator = item.type == .episode ? item.episodeLocator : nil {
+            Text(locator)
+        }
         if let year = item.yearText {
-            Label(year, systemImage: "calendar").labelStyle(.titleOnly)
+            Text(year)
         }
         if let runtime = item.runtimeText {
             Text(runtime)
@@ -196,16 +302,32 @@ private struct DetailHeroView<Accessory: View>: View {
             Text(rating)
                 .padding(.horizontal, 6)
                 .padding(.vertical, 2)
-                .overlay(RoundedRectangle(cornerRadius: 4).stroke(.secondary))
+                .overlay(RoundedRectangle(cornerRadius: 4).stroke(.white.opacity(0.5)))
         }
         if let community = item.communityRatingText {
-            Text(community).foregroundStyle(Color.gusRatingStar)
+            Text(community)
+                .foregroundStyle(Color.gusRatingStar)
         }
         if let critic = item.criticRatingText {
-            // Explicit String(localized:comment:) preserves the translator comment and
-            // avoids the implicit LocalizedStringKey coupling of Text interpolation.
             Text(String(localized: "Critic \(critic)", comment: "Critic score label, e.g. 'Critic 74%'"))
         }
+    }
+}
+
+private struct ItemUserActionButton: View {
+    let title: LocalizedStringKey
+    let systemImage: String
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Label(title, systemImage: systemImage)
+                .labelStyle(.iconOnly)
+                .frame(width: 44, height: 36)
+        }
+        .buttonStyle(.bordered)
+        .visionHoverEffect(cornerRadius: 10)
+        .accessibilityLabel(title)
     }
 }
 
@@ -236,28 +358,30 @@ private struct DownloadButton: View {
     @Environment(OfflineDownloadStore.self) private var downloads
 
     let item: BaseItemDto
+    var iconOnly = false
 
     var body: some View {
         if let record = downloads.record(for: item, serverID: session.server.id, userID: session.user.id) {
             switch record.status {
             case .complete where downloads.localFileURL(for: item, serverID: session.server.id, userID: session.user.id) != nil:
-                Label("Downloaded", systemImage: "checkmark.circle.fill")
+                statusLabel("Downloaded", systemImage: "checkmark.circle.fill")
                     .foregroundStyle(.secondary)
                     .accessibilityHint("Downloaded on \(record.downloadedAt.formatted(date: .abbreviated, time: .shortened))")
             case .queued:
-                Label("Queued", systemImage: "clock")
+                statusLabel("Queued", systemImage: "clock")
                     .foregroundStyle(.secondary)
             case .downloading:
-                Label(record.requiresTranscodingForDownload && record.progress == 0 ? "Transcoding for download..." : "Downloading", systemImage: "arrow.down.circle")
+                statusLabel(record.requiresTranscodingForDownload && record.progress == 0 ? "Transcoding for download..." : "Downloading", systemImage: "arrow.down.circle")
                     .foregroundStyle(.secondary)
             case .paused:
                 Button {
                     Task { await downloads.resume(itemID: item.id ?? "", session: session) }
                 } label: {
-                    Label("Resume", systemImage: "play.fill")
+                    buttonLabel("Resume", systemImage: "play.fill")
                 }
                 .buttonStyle(.bordered)
                 .controlSize(.large)
+                .visionHoverEffect(cornerRadius: 10)
             case .failed, .complete:
                 downloadAction(itemID: item.id)
             }
@@ -271,62 +395,80 @@ private struct DownloadButton: View {
             Task { await downloads.download(item, session: session) }
         } label: {
             if let itemID, downloads.activeItemIDs.contains(itemID) {
-                Label("Downloading", systemImage: "arrow.down.circle")
+                buttonLabel("Downloading", systemImage: "arrow.down.circle")
             } else {
-                Label("Download", systemImage: "arrow.down.circle")
+                buttonLabel("Download", systemImage: "arrow.down.circle")
             }
         }
         .disabled(itemID.map { downloads.activeItemIDs.contains($0) } ?? true)
         .buttonStyle(.bordered)
         .controlSize(.large)
+        .visionHoverEffect(cornerRadius: 10)
     }
-}
 
-private struct RichMetadataView: View {
-    let item: BaseItemDto
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 18) {
-            if item.hasAboutMetadata {
-                Text("About")
-                    .font(.title2.bold())
-                    .accessibilityAddTraits(.isHeader)
-
-                LazyVGrid(columns: infoColumns, alignment: .leading, spacing: 16) {
-                    if let tagline = item.primaryTagline {
-                        MetadataPanel(title: "Tagline") {
-                            Text(tagline)
-                        }
-                    }
-
-                    if let genreText = item.genreText {
-                        MetadataPanel(title: "Genres") {
-                            Text(genreText)
-                        }
-                    }
-
-                    if let studioText = item.studioText {
-                        MetadataPanel(title: "Studios") {
-                            Text(studioText)
-                        }
-                    }
-
-                    if let rating = item.officialRating {
-                        MetadataPanel(title: "Rating") {
-                            Text(rating)
-                        }
-                    }
-                }
-            }
-
-            if !item.peopleText.isEmpty {
-                CastRail(people: item.people ?? [])
-            }
+    @ViewBuilder
+    private func statusLabel(_ title: LocalizedStringKey, systemImage: String) -> some View {
+        if iconOnly {
+            Label(title, systemImage: systemImage)
+                .labelStyle(.iconOnly)
+                .frame(width: 44, height: 36)
+        } else {
+            Label(title, systemImage: systemImage)
         }
     }
 
-    private var infoColumns: [GridItem] {
-        [GridItem(.adaptive(minimum: 220), spacing: 16)]
+    @ViewBuilder
+    private func buttonLabel(_ title: LocalizedStringKey, systemImage: String) -> some View {
+        if iconOnly {
+            Label(title, systemImage: systemImage)
+                .labelStyle(.iconOnly)
+                .frame(width: 44, height: 36)
+        } else {
+            Label(title, systemImage: systemImage)
+        }
+    }
+}
+
+private struct DetailMetadataRows: View {
+    let item: BaseItemDto
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            if let genres = item.genres?.nonEmptyStrings, !genres.isEmpty {
+                MetadataPillRow(title: "Genres", values: genres)
+            }
+
+            if let studios = item.studios?.compactMap(\.name).nonEmptyStrings, !studios.isEmpty {
+                MetadataPillRow(title: "Studios", values: studios)
+            }
+        }
+    }
+}
+
+private struct MetadataPillRow: View {
+    let title: LocalizedStringKey
+    let values: [String]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text(title)
+                .font(.headline)
+                .accessibilityAddTraits(.isHeader)
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 10) {
+                    ForEach(values, id: \.self) { value in
+                        Text(value)
+                            .font(.subheadline.weight(.medium))
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 7)
+                            .background(.thinMaterial, in: Capsule())
+                    }
+                }
+                .padding(.vertical, 2)
+            }
+            .lookToScroll(.horizontal)
+        }
     }
 }
 
@@ -335,9 +477,13 @@ private struct SeriesEpisodesView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text("Episodes")
-                .font(.title2.bold())
-                .accessibilityAddTraits(.isHeader)
+            HStack {
+                Text("Episodes")
+                    .font(.title2.bold())
+                    .accessibilityAddTraits(.isHeader)
+                Spacer()
+                SeasonPicker(store: store)
+            }
 
             LoadingStateView(
                 state: store.seasonsState,
@@ -345,8 +491,6 @@ private struct SeriesEpisodesView: View {
                 emptyTitle: "No Seasons",
                 emptySymbol: "rectangle.stack"
             ) {
-                SeasonPicker(store: store)
-
                 LoadingStateView(
                     state: store.episodesState,
                     isEmpty: store.episodes.isEmpty,
@@ -376,9 +520,9 @@ private struct SeriesEpisodesView: View {
         #if os(tvOS)
             return 360
         #elseif os(visionOS)
-            return 300
+            return 320
         #else
-            return 240
+            return 260
         #endif
     }
 }
@@ -387,23 +531,33 @@ private struct SeasonPicker: View {
     let store: SeriesDetailStore
 
     var body: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 10) {
+        Menu {
+            Picker("Season", selection: selectedSeason) {
                 ForEach(store.seasons, id: \.id) { season in
-                    Button {
-                        guard let id = season.id else { return }
-                        Task { await store.selectSeason(id: id) }
-                    } label: {
-                        Text(season.displayTitle)
-                    }
-                    .buttonStyle(.bordered)
-                    .controlSize(.regular)
-                    .tint(season.id == store.selectedSeasonID ? .accentColor : nil)
+                    Text(season.displayTitle)
+                        .tag(season.id ?? "")
                 }
             }
-            .padding(.vertical, 2)
+        } label: {
+            Label(selectedSeasonTitle, systemImage: "chevron.up.chevron.down")
         }
-        .lookToScroll(.horizontal)
+        .disabled(store.seasons.isEmpty)
+    }
+
+    private var selectedSeason: Binding<String> {
+        Binding {
+            store.selectedSeasonID ?? ""
+        } set: { id in
+            guard !id.isEmpty else { return }
+            Task { await store.selectSeason(id: id) }
+        }
+    }
+
+    private var selectedSeasonTitle: LocalizedStringKey {
+        guard let selected = store.seasons.first(where: { $0.id == store.selectedSeasonID }) else {
+            return "Season"
+        }
+        return LocalizedStringKey(selected.displayTitle)
     }
 }
 
@@ -413,11 +567,17 @@ private struct EpisodeCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            AsyncPoster(
-                url: session.imageBuilder.backdropImageURL(for: episode, maxWidth: 360),
-                contentMode: .fill,
-                placeholderSymbol: "play.rectangle"
-            )
+            ZStack {
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .fill(.regularMaterial)
+
+                AsyncPoster(
+                    url: session.imageBuilder.backdropImageURL(for: episode, maxWidth: 420),
+                    contentMode: .fit,
+                    placeholderSymbol: "play.rectangle"
+                )
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
             .aspectRatio(16.0 / 9.0, contentMode: .fit)
             .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
             .posterHoverEffect()
@@ -429,7 +589,8 @@ private struct EpisodeCard: View {
 
                 Text(episode.displayTitle)
                     .font(.headline)
-                if let overview = episode.overview, !overview.isEmpty {
+                    .lineLimit(2)
+                if let overview = episode.overview?.trimmedNilIfEmpty {
                     Text(overview)
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
@@ -438,7 +599,6 @@ private struct EpisodeCard: View {
             }
         }
         .contentShape(Rectangle())
-        // Collapse the locator/title/runtime columns into one VoiceOver element.
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(episodeAccessibilityLabel)
     }
@@ -456,46 +616,38 @@ private struct EpisodeCard: View {
     }
 }
 
-private struct MetadataPanel<Content: View>: View {
-    let title: LocalizedStringKey
-    @ViewBuilder let content: Content
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(title)
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(.secondary)
-            content
-                .font(.callout)
-                .foregroundStyle(.primary)
-        }
-        .padding(16)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-    }
-}
-
 private struct CastRail: View {
+    @Environment(SessionStore.self) private var session
     let people: [BaseItemPerson]
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Cast & Crew")
-                .font(.title2.bold())
-                .accessibilityAddTraits(.isHeader)
+            HStack {
+                Text("Cast & Crew")
+                    .font(.title2.bold())
+                    .accessibilityAddTraits(.isHeader)
+                Spacer()
+            }
 
             ScrollView(.horizontal, showsIndicators: false) {
-                LazyHStack(alignment: .top, spacing: 18) {
+                LazyHStack(alignment: .top, spacing: 16) {
                     ForEach(displayPeople, id: \.self) { person in
-                        VStack(spacing: 8) {
-                            Circle()
-                                .fill(.thinMaterial)
-                                .frame(width: 84, height: 84)
-                                .overlay {
-                                    Text(person.initials)
-                                        .font(.title3.weight(.semibold))
+                        VStack(alignment: .leading, spacing: 7) {
+                            ZStack {
+                                Rectangle()
+                                    .fill(.thinMaterial)
+
+                                if let imageURL = session.imageBuilder.personImageURL(for: person.source, maxWidth: 240) {
+                                    AsyncPoster(url: imageURL, contentMode: .fill, placeholderSymbol: "person")
+                                } else {
+                                    Image(systemName: "person.fill")
+                                        .font(.title2)
                                         .foregroundStyle(.secondary)
                                 }
+                            }
+                            .frame(width: 120, height: 150)
+                            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                            .posterHoverEffect()
 
                             Text(person.name)
                                 .font(.caption.weight(.medium))
@@ -507,7 +659,8 @@ private struct CastRail: View {
                                     .lineLimit(1)
                             }
                         }
-                        .frame(width: 120)
+                        .frame(width: 120, alignment: .leading)
+                        .accessibilityElement(children: .combine)
                     }
                 }
                 .padding(.vertical, 4)
@@ -517,11 +670,94 @@ private struct CastRail: View {
     }
 
     private var displayPeople: [CastDisplayPerson] {
-        people.prefix(12).compactMap(CastDisplayPerson.init)
+        people.prefix(16).compactMap(CastDisplayPerson.init)
+    }
+}
+
+private struct AboutCardsView: View {
+    let item: BaseItemDto
+    let posterURL: URL?
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("About")
+                .font(.title2.bold())
+                .accessibilityAddTraits(.isHeader)
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                LazyHStack(alignment: .top, spacing: 16) {
+                    posterSummaryCard
+
+                    if let overview = item.overview?.trimmedNilIfEmpty {
+                        DetailInfoCard(title: LocalizedStringKey(item.displayTitle)) {
+                            Text(overview)
+                                .lineLimit(5)
+                        }
+                    }
+
+                    DetailInfoCard(title: "Media") {
+                        VStack(alignment: .leading, spacing: 8) {
+                            if let runtime = item.runtimeText {
+                                Text(runtime)
+                            }
+                            if let rating = item.officialRating {
+                                Text(rating)
+                            }
+                            if let container = item.container?.trimmedNilIfEmpty {
+                                Text(container.uppercased())
+                            }
+                        }
+                    }
+                }
+                .padding(.vertical, 4)
+            }
+            .lookToScroll(.horizontal)
+        }
+    }
+
+    private var posterSummaryCard: some View {
+        DetailInfoCard(title: LocalizedStringKey(item.displayTitle)) {
+            HStack(alignment: .top, spacing: 12) {
+                AsyncPoster(url: posterURL, contentMode: .fill, placeholderSymbol: item.type == .series ? "tv" : "film")
+                    .frame(width: 74, height: 110)
+                    .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+
+                VStack(alignment: .leading, spacing: 6) {
+                    if let tagline = item.primaryTagline {
+                        Text(tagline)
+                            .lineLimit(3)
+                    }
+                    if let year = item.yearText {
+                        Text(year)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
+        }
+    }
+}
+
+private struct DetailInfoCard<Content: View>: View {
+    let title: LocalizedStringKey
+    @ViewBuilder let content: Content
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text(title)
+                .font(.headline)
+                .lineLimit(2)
+            content
+                .font(.callout)
+                .foregroundStyle(.primary)
+        }
+        .padding(16)
+        .frame(width: AboutCardMetrics.cardWidth, height: AboutCardMetrics.cardHeight, alignment: .topLeading)
+        .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 }
 
 private struct CastDisplayPerson: Hashable {
+    let source: BaseItemPerson
     let name: String
     let role: String?
 
@@ -529,25 +765,23 @@ private struct CastDisplayPerson: Hashable {
         guard let name = person.name?.trimmingCharacters(in: .whitespacesAndNewlines),
               !name.isEmpty
         else { return nil }
+        self.source = person
         self.name = name
-        self.role = person.role?.trimmingCharacters(in: .whitespacesAndNewlines).nilIfEmpty
-    }
-
-    var initials: String {
-        let parts = name.split(separator: " ")
-        let letters = parts.prefix(2).compactMap(\.first)
-        return letters.isEmpty ? "?" : String(letters).uppercased()
+        self.role = person.role?.trimmedNilIfEmpty
     }
 }
 
-private extension BaseItemDto {
-    var hasAboutMetadata: Bool {
-        primaryTagline != nil || genreText != nil || studioText != nil || officialRating != nil
+private extension Array where Element == String {
+    var nonEmptyStrings: [String]? {
+        let cleaned = map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+        return cleaned.isEmpty ? nil : cleaned
     }
 }
 
 private extension String {
-    var nilIfEmpty: String? {
-        isEmpty ? nil : self
+    var trimmedNilIfEmpty: String? {
+        let trimmed = trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? nil : trimmed
     }
 }

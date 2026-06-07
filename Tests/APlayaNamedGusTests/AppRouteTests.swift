@@ -7,12 +7,13 @@ struct AppRouteTests {
     @Test("parses supported gus URLs")
     func parsesSupportedURLs() throws {
         #expect(try AppRoute(url: #require(URL(string: "gus://home"))) == .home)
+        #expect(try AppRoute(url: #require(URL(string: "gus://libraries"))) == .libraries)
         #expect(try AppRoute(url: #require(URL(string: "gus://search"))) == .search)
         #expect(try AppRoute(url: #require(URL(string: "gus://settings"))) == .settings)
     }
 
     @Test("round trips through URL values")
-    func roundTripsThroughURLValues() throws {
+    func roundTripsThroughURLValues() {
         for route in AppRoute.allCases {
             #expect(AppRoute(url: route.url) == route)
         }

@@ -5,17 +5,20 @@ import Testing
 @MainActor
 @Suite("App model session switching")
 struct AppModelSessionTests {
+    private static let lastSessionAccountKey = "dev.ericslutz.gus.lastSignedInSessionAccount"
+    private static let legacyLastUserIDKey = "dev.ericslutz.gus.lastSignedInUserID"
+
     @Test("switching stored users preserves all saved tokens")
     func switchingStoredUsersPreservesTokens() throws {
         let fixture = try Fixture()
 
         try fixture.appModel.switchToStoredUser(fixture.userA)
         #expect(fixture.appModel.currentSession?.user == fixture.userA)
-        #expect(fixture.appModel.lastSignedInUserID == fixture.userA.id)
+        #expect(fixture.appModel.lastSessionAccount == SessionCredential(user: fixture.userA).account)
 
         try fixture.appModel.switchToStoredUser(fixture.userB)
         #expect(fixture.appModel.currentSession?.user == fixture.userB)
-        #expect(fixture.appModel.lastSignedInUserID == fixture.userB.id)
+        #expect(fixture.appModel.lastSessionAccount == SessionCredential(user: fixture.userB).account)
         #expect(fixture.tokens.token(for: SessionCredential(user: fixture.userA)) == "token-a")
         #expect(fixture.tokens.token(for: SessionCredential(user: fixture.userB)) == "token-b")
     }
@@ -28,7 +31,7 @@ struct AppModelSessionTests {
         fixture.appModel.signOut()
 
         #expect(fixture.appModel.currentSession == nil)
-        #expect(fixture.appModel.lastSignedInUserID == nil)
+        #expect(fixture.appModel.lastSessionAccount == nil)
         #expect(fixture.appModel.servers == [fixture.serverA, fixture.serverB])
         #expect(fixture.appModel.users == [fixture.userB])
         #expect(fixture.store.loadUsers() == [fixture.userB])
@@ -46,6 +49,55 @@ struct AppModelSessionTests {
             try fixture.appModel.switchToStoredUser(fixture.userB)
         }
         #expect(fixture.appModel.currentSession == nil)
+    }
+
+    @Test("last session restore uses the server-qualified session account")
+    func restoreUsesServerQualifiedSessionAccount() throws {
+        let fixture = try Fixture()
+        let duplicateIDUser = StoredUser(id: fixture.userA.id, name: "Burton", serverID: fixture.serverB.id)
+        fixture.store.saveUsers([fixture.userA, duplicateIDUser])
+        fixture.tokens.setToken("token-duplicate", for: SessionCredential(user: duplicateIDUser))
+        fixture.userDefaults.set(
+            SessionCredential(user: duplicateIDUser).account,
+            forKey: Self.lastSessionAccountKey
+        )
+
+        let appModel = AppModel(serverStore: fixture.store, tokenStore: fixture.tokens, userDefaults: fixture.userDefaults)
+        appModel.restoreLastSession()
+
+        #expect(appModel.currentSession?.user == duplicateIDUser)
+        #expect(appModel.lastSessionAccount == SessionCredential(user: duplicateIDUser).account)
+    }
+
+    @Test("legacy bare user id migrates only when it uniquely identifies a stored user")
+    func legacyBareUserIDMigratesWhenUnique() throws {
+        let fixture = try Fixture()
+        fixture.userDefaults.set(fixture.userA.id, forKey: Self.legacyLastUserIDKey)
+
+        let appModel = AppModel(serverStore: fixture.store, tokenStore: fixture.tokens, userDefaults: fixture.userDefaults)
+        appModel.restoreLastSession()
+
+        #expect(appModel.currentSession?.user == fixture.userA)
+        #expect(appModel.lastSessionAccount == SessionCredential(user: fixture.userA).account)
+        #expect(fixture.userDefaults.string(forKey: Self.lastSessionAccountKey) == SessionCredential(user: fixture.userA).account)
+        #expect(fixture.userDefaults.string(forKey: Self.legacyLastUserIDKey) == nil)
+    }
+
+    @Test("legacy bare user id is discarded when multiple stored users match")
+    func duplicateLegacyBareUserIDDoesNotRestoreWrongAccount() throws {
+        let fixture = try Fixture()
+        let duplicateIDUser = StoredUser(id: fixture.userA.id, name: "Burton", serverID: fixture.serverB.id)
+        fixture.store.saveUsers([fixture.userA, duplicateIDUser])
+        fixture.tokens.setToken("token-duplicate", for: SessionCredential(user: duplicateIDUser))
+        fixture.userDefaults.set(fixture.userA.id, forKey: Self.legacyLastUserIDKey)
+
+        let appModel = AppModel(serverStore: fixture.store, tokenStore: fixture.tokens, userDefaults: fixture.userDefaults)
+        appModel.restoreLastSession()
+
+        #expect(appModel.currentSession == nil)
+        #expect(appModel.lastSessionAccount == nil)
+        #expect(fixture.userDefaults.string(forKey: Self.lastSessionAccountKey) == nil)
+        #expect(fixture.userDefaults.string(forKey: Self.legacyLastUserIDKey) == nil)
     }
 }
 

@@ -187,6 +187,10 @@ struct OfflineDownloadFileStore {
         try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
     }
 
+    init(applicationSupportDirectory: URL) {
+        self.init(directory: Self.defaultDirectory(applicationSupportDirectory: applicationSupportDirectory))
+    }
+
     func records(serverID: String, userID: String) -> [OfflineDownloadRecord] {
         loadRecords().filter { $0.serverID == serverID && $0.userID == userID }
     }
@@ -304,14 +308,11 @@ struct OfflineDownloadFileStore {
         "\(serverID):\(userID):\(itemID)"
     }
 
-    private static func defaultDirectory() -> URL {
-        let base = (try? FileManager.default.url(
-            for: .applicationSupportDirectory,
-            in: .userDomainMask,
-            appropriateFor: nil,
-            create: true
-        )) ?? FileManager.default.temporaryDirectory
-        return base.appendingPathComponent("Gus/Downloads", isDirectory: true)
+    private static func defaultDirectory(
+        applicationSupportDirectory: URL = AppStorageLocation.applicationSupportDirectory()
+    ) -> URL {
+        AppStorageLocation.appDirectory(applicationSupportDirectory: applicationSupportDirectory)
+            .appendingPathComponent("Downloads", isDirectory: true)
     }
 
     private var recordsURL: URL {

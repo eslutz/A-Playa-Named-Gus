@@ -10,7 +10,8 @@ Update it whenever a relevant capability, data practice, or feature changes.
 
 ## Privacy
 
-Gus has no developer-operated analytics, tracking, advertising, or backend service.
+A Playa Named Gus has no developer-operated analytics, tracking, advertising, or backend
+service.
 `Resources/PrivacyInfo.xcprivacy` declares the two required-reason APIs actually used
 (Disk Space / `85F4.1` and UserDefaults / `CA92.1`) with `NSPrivacyTracking = false`
 and empty `NSPrivacyCollectedDataTypes`. See `Documentation/AppStore/privacy-labels.md`
@@ -24,19 +25,19 @@ Security framework (`SecItem*`). No credentials are transmitted to a developer b
 ## ATS / Self-Hosted HTTP
 
 `NSAllowsArbitraryLoads = true` is set in `Info.plist`. Justification for App Review:
-Gus is a client for user-provided Jellyfin media servers. Many self-hosted Jellyfin
-deployments run plain HTTP on a private LAN and cannot be required to obtain a public
-TLS certificate. Gus cannot know at build time which servers users will connect to.
-This is the standard justification for third-party-server client apps per the
+A Playa Named Gus is a client for user-provided Jellyfin media servers. Many self-hosted
+Jellyfin deployments run plain HTTP on a private LAN and cannot be required to obtain a
+public TLS certificate. A Playa Named Gus cannot know at build time which servers users
+will connect to. This is the standard justification for third-party-server client apps per the
 [ATS exception guidelines](https://developer.apple.com/documentation/security/preventing-insecure-network-connections).
 
 ---
 
 ## Encryption / Export Compliance
 
-`ITSAppUsesNonExemptEncryption = false` in `Info.plist`. Gus uses Apple networking
-and Security framework APIs for ordinary transport (TLS via URLSession) and Keychain
-token storage. No custom cryptographic algorithms are implemented.
+`ITSAppUsesNonExemptEncryption = false` in `Info.plist`. A Playa Named Gus uses Apple
+networking and Security framework APIs for ordinary transport (TLS via URLSession) and
+Keychain token storage. No custom cryptographic algorithms are implemented.
 
 ---
 
@@ -83,9 +84,9 @@ ADR 0005 records the full design rationale.
 
 ## Media Content
 
-Gus does not provide, host, or curate media. Users supply and authenticate to their
-own Jellyfin servers. Content availability depends on that server and the user's
-library. Gus does not generate, modify, or re-distribute media files.
+A Playa Named Gus does not provide, host, or curate media. Users supply and authenticate to
+their own Jellyfin servers. Content availability depends on that server and the user's
+library. A Playa Named Gus does not generate, modify, or re-distribute media files.
 
 ---
 

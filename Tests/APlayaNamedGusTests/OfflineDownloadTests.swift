@@ -165,6 +165,35 @@ struct OfflineDownloadTests {
         #expect(store.totalByteCount(serverID: "server-1", userID: "user-1") == 0)
     }
 
+    @Test("default application support location migrates legacy download records")
+    func defaultLocationMigratesLegacyDownloadRecords() throws {
+        let baseDirectory = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+        let legacyDirectory = baseDirectory
+            .appendingPathComponent("Gus", isDirectory: true)
+            .appendingPathComponent("Downloads", isDirectory: true)
+        let migratedDirectory = baseDirectory
+            .appendingPathComponent("A Playa Named Gus", isDirectory: true)
+            .appendingPathComponent("Downloads", isDirectory: true)
+        let legacyStore = OfflineDownloadFileStore(directory: legacyDirectory)
+        let source = legacyDirectory.appendingPathComponent("source.mp4")
+        try FileManager.default.createDirectory(at: legacyDirectory, withIntermediateDirectories: true)
+        try Data("video".utf8).write(to: source)
+        let record = try legacyStore.persistDownloadedFile(
+            source,
+            item: BaseItemDto(id: "item-1", name: "Office Space"),
+            serverID: "server-1",
+            userID: "user-1",
+            downloadedAt: Date(timeIntervalSince1970: 100)
+        )
+
+        let store = OfflineDownloadFileStore(applicationSupportDirectory: baseDirectory)
+
+        #expect(store.record(forItemID: "item-1", serverID: "server-1", userID: "user-1")?.id == record.id)
+        #expect(FileManager.default.fileExists(atPath: migratedDirectory.path))
+        #expect(!FileManager.default.fileExists(atPath: legacyDirectory.path))
+    }
+
     @MainActor
     @Test("pause stores resume data and resume clears it")
     func storePauseResumeRoundTrip() async {

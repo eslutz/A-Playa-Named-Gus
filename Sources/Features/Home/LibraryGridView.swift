@@ -63,6 +63,8 @@ struct LibraryGridView: View {
                     }
                 }
                 .padding()
+                .frame(maxWidth: PageContentMetrics.maxWidth, alignment: .leading)
+                .frame(maxWidth: .infinity)
                 .tvFocusSection()
             }
             .lookToScroll()

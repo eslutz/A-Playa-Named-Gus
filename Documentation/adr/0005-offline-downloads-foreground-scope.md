@@ -6,12 +6,12 @@ Accepted
 
 ## Context
 
-Gus playback is intentionally AVKit-only. Network playback asks Jellyfin for posted
-playback info with a device profile biased toward HLS transcoding so `AVPlayer` receives a
-playable stream. The first offline download cut downloaded only original files with
-`JellyfinClient.download(for:)` and hid the action for sources outside Gus's direct-play
-profile. That kept scope small, but it left common Jellyfin libraries with MKV, HDR, or
-non-AAC audio unable to download at all.
+A Playa Named Gus playback is intentionally AVKit-only. Network playback asks Jellyfin for
+posted playback info with a device profile biased toward HLS transcoding so `AVPlayer`
+receives a playable stream. The first offline download cut downloaded only original files
+with `JellyfinClient.download(for:)` and hid the action for sources outside the app's
+direct-play profile. That kept scope small, but it left common Jellyfin libraries with
+MKV, HDR, or non-AAC audio unable to download at all.
 
 Long-running foreground downloads were also fragile. Large files can outlive an active app
 session, and users expect a native download to survive suspension and expose pause, resume,
@@ -23,7 +23,7 @@ On-Demand Resources design.
 
 ## Decision
 
-Gus downloads are:
+A Playa Named Gus downloads are:
 
 - Background-capable: transfers use a stable native background `URLSession` identifier
   (`dev.ericslutz.gus.downloads`) owned by `DownloadSessionCoordinator`.
@@ -68,7 +68,7 @@ goal is reliable offline video playback, not archival fidelity.
 - Downloads survive normal app suspension on platforms that support background URLSession
   downloads.
 - Pause uses `cancel(byProducingResumeData:)`. Jellyfin or the OS may invalidate resume
-  data; when resume data is missing or stale, Gus intentionally falls back to a full
+  data; when resume data is missing or stale, A Playa Named Gus intentionally falls back to a full
   re-download and surfaces that to the user.
 - Incompatible originals are downloaded as server-transcoded MP4 files rather than hidden
   behind a "not available" state.

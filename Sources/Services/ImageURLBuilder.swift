@@ -68,6 +68,11 @@ struct ImageURLBuilder {
         return client.url(with: request)
     }
 
+    func personImageURL(for person: BaseItemPerson, maxWidth: Int = 240) -> URL? {
+        guard let personID = person.id else { return nil }
+        return imageURL(itemID: personID, type: .primary, tag: person.primaryImageTag, maxWidth: maxWidth)
+    }
+
     func userImageURL(for user: UserDto) -> URL? {
         guard let userID = user.id else { return nil }
         let parameters = Paths.GetUserImageParameters(

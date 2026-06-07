@@ -15,18 +15,29 @@ account-blocked.
 | Background audio | iOS / iPadOS / tvOS / visionOS | `UIBackgroundModes: [audio]` in `Info.plist` | ✓ |
 | Outbound network | macOS | `com.apple.security.network.client` in `Config/Gus.entitlements` | ✓ |
 | App Sandbox | macOS | `com.apple.security.app-sandbox` in `Config/Gus.entitlements` | ✓ |
+| User Management | tvOS | `com.apple.developer.user-management` in `Config/Gus-tvOS.entitlements` | ✓ |
 | Local network usage | iOS / iPadOS / visionOS | `NSLocalNetworkUsageDescription` in `Info.plist` | ✓ |
 | Keychain | All | Keychain Services via `SecItem*` — no capability entry required | ✓ |
 | No-exempt encryption | All | `ITSAppUsesNonExemptEncryption = false` in `Info.plist` | ✓ |
 | Offline downloads | iOS / iPadOS / macOS / visionOS | Application Support storage — no extra capability required | ✓ |
 
 **Removed:** `NSFaceIDUsageDescription` was present but `LocalAuthentication` is never
-called in Gus source code. A false usage description is an App Review red flag; the key
-has been removed.
+called in A Playa Named Gus source code. A false usage description is an App Review red
+flag; the key has been removed.
 
 **Not needed:** `NSBonjourServices` — Jellyfin discovery uses UDP broadcast on port 7359
 via swift-nio sockets, not Bonjour/mDNS. `NSLocalNetworkUsageDescription` (already
 present) is sufficient for the iOS 14+ local-network prompt.
+
+**tvOS profile isolation:** A Playa Named Gus declares User Management with
+`runs-as-current-user-with-user-independent-keychain`, but does not store Jellyfin tokens
+with `kSecUseUserIndependentKeychain`. This keeps each Apple TV profile's saved Jellyfin
+session separate.
+
+**macOS account isolation:** A Playa Named Gus uses the macOS sandbox, user-domain
+Application Support, `UserDefaults`, and the login user's Keychain. Separate macOS login
+accounts therefore get separate app server lists, session restore state, and Jellyfin
+tokens without an extra capability.
 
 ## Setting Your Team ID (Local Override)
 

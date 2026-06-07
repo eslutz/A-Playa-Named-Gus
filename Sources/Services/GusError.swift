@@ -1,6 +1,6 @@
 import Foundation
 
-/// A small, typed error surface for Gus. Lower-level errors (cancellation, URL/network
+/// A small, typed error surface for A Playa Named Gus. Lower-level errors (cancellation, URL/network
 /// failures, and anything the Jellyfin SDK throws) are mapped into user-presentable
 /// messages via `init(from:)`.
 ///

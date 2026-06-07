@@ -1,8 +1,8 @@
 # App Privacy Labels
 
-Gus does not collect data for the developer and does not track users. The app communicates
-with user-provided Jellyfin servers; the server operator's own privacy practices are outside
-the scope of this document.
+A Playa Named Gus does not collect data for the developer and does not track users. The app
+communicates with user-provided Jellyfin servers; the server operator's own privacy
+practices are outside the scope of this document.
 
 Apple's App Store Connect privacy flow requires these answers to be accurate and updated if
 data practices change. The declarations below mirror `Resources/PrivacyInfo.xcprivacy`
@@ -21,7 +21,7 @@ exactly — update both together.
 
 Jellyfin usernames, server URLs, tokens, media metadata, playback progress, and downloaded
 media remain on-device or are sent to the user-selected Jellyfin server. Nothing is routed
-through a Gus developer backend.
+through an A Playa Named Gus developer backend.
 
 ## Privacy Manifest (PrivacyInfo.xcprivacy)
 
@@ -42,8 +42,8 @@ through a Gus developer backend.
 
 ### Required-reason APIs not declared (not used)
 
-File timestamp APIs, System boot time APIs, Active keyboard APIs — none are called in Gus
-source code.
+File timestamp APIs, System boot time APIs, Active keyboard APIs — none are called in A
+Playa Named Gus source code.
 
 ## Device Permissions / Usage Descriptions
 

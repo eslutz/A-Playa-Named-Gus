@@ -13,7 +13,7 @@
 	<key>CFBundleName</key>
 	<string>$(PRODUCT_NAME)</string>
 	<key>CFBundleDisplayName</key>
-	<string>Gus</string>
+	<string>A Playa Named Gus</string>
 	<key>CFBundlePackageType</key>
 	<string>$(PRODUCT_BUNDLE_PACKAGE_TYPE)</string>
 	<key>CFBundleShortVersionString</key>
@@ -34,13 +34,20 @@
 
 	<!-- User-initiated Jellyfin server discovery on the local network. -->
 	<key>NSLocalNetworkUsageDescription</key>
-	<string>Gus can find Jellyfin servers on your local network when you choose Find Local Servers.</string>
+	<string>A Playa Named Gus can find Jellyfin servers on your local network when you choose Find Local Servers.</string>
 
 	<!-- iOS/tvOS background audio + Picture in Picture. Ignored on macOS. -->
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>audio</string>
 	</array>
+
+	<!-- Required for visionOS ImmersiveSpace presentation alongside the main window. -->
+	<key>UIApplicationSceneManifest</key>
+	<dict>
+		<key>UIApplicationSupportsMultipleScenes</key>
+		<true/>
+	</dict>
 
 	<key>UILaunchScreen</key>
 	<dict>

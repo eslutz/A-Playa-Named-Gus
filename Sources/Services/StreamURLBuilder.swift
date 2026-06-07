@@ -4,7 +4,7 @@ import OSLog
 
 /// Resolves a playable URL for an item using pure AVKit + Jellyfin server transcoding.
 ///
-/// Pattern reference: Swiftfin's `MediaPlayerItem+Build.streamURL`. Gus biases the
+/// Pattern reference: Swiftfin's `MediaPlayerItem+Build.streamURL`. A Playa Named Gus biases the
 /// `DeviceProfile` toward **HLS transcoding** so `AVPlayer` is handed an `.m3u8` it can
 /// always play, while still allowing direct play of AVKit-native containers (mp4/mov/m4v).
 struct StreamURLBuilder {

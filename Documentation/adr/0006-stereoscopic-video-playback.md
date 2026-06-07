@@ -7,16 +7,17 @@ Accepted
 ## Context
 
 Jellyfin exposes frame-packed 3D through `BaseItemDto.video3DFormat`, but Apple
-spatial video (MV-HEVC) is usually surfaced as ordinary HEVC. Gus also biases normal
-network playback toward HLS transcoding so `AVPlayer` receives a broadly playable stream.
-That bias cannot be used for 3D: server-side transcoding flattens stereo into 2D.
+spatial video (MV-HEVC) is usually surfaced as ordinary HEVC. A Playa Named Gus also
+biases normal network playback toward HLS transcoding so `AVPlayer` receives a broadly
+playable stream. That bias cannot be used for 3D: server-side transcoding flattens stereo
+into 2D.
 
 Apple platforms do not provide a decoder for Blu-ray MVC. Non-visionOS platforms do not
 have a stereo presentation surface for this app, so their correct behavior is 2D playback.
 
 ## Decision
 
-Gus supports visionOS stereoscopic playback in two tiers:
+A Playa Named Gus supports visionOS stereoscopic playback in two tiers:
 
 - MV-HEVC spatial video uses the existing AVKit path. `Media3DDetector` detects it
   conservatively from HEVC multiview/spatial stream hints, and the visionOS player offers

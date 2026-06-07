@@ -20,8 +20,9 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
-SCHEME="Gus"
-PROJECT="$REPO_ROOT/Gus.xcodeproj"
+APP_NAME="A Playa Named Gus"
+SCHEME="$APP_NAME"
+PROJECT="$REPO_ROOT/$APP_NAME.xcodeproj"
 OUT="$REPO_ROOT/Screenshots"
 BUNDLE_ID="dev.ericslutz.gus"
 SETTLE_SECONDS=4   # seconds to wait after launch before capturing
@@ -57,7 +58,7 @@ list_destinations() {
   echo "  Mac     → manual (see mac instructions below)"
   echo ""
   echo "Verify UDIDs on this machine with:"
-  echo "  xcodebuild -showdestinations -project Gus.xcodeproj -scheme Gus"
+  echo "  xcodebuild -showdestinations -project '$APP_NAME.xcodeproj' -scheme '$SCHEME'"
 }
 
 build_app() {
@@ -77,7 +78,7 @@ build_app() {
 find_app() {
   local derived_data="$1" suffix="$2"
   find "$derived_data/Build/Products" -maxdepth 3 \
-    -name "Gus.app" -path "*$suffix*" | head -1
+    -name "$APP_NAME.app" -path "*$suffix*" | head -1
 }
 
 boot_sim() {
@@ -127,8 +128,8 @@ App Store Connect requires at least one macOS screenshot at 1280×800, 1440×900
 
 Steps:
   1. Build and run the Release scheme on macOS in Xcode.
-  2. Resize the Gus window to 1280×800 (or drag to a Retina display for 2x).
-  3. Use Cmd+Shift+4 → Space → click the Gus window to capture just the window.
+  2. Resize the A Playa Named Gus window to 1280×800 (or drag to a Retina display for 2x).
+  3. Use Cmd+Shift+4 → Space → click the A Playa Named Gus window to capture just the window.
   4. Repeat for each required scene (Connect, Home, Item Detail, Player, Downloads).
   5. Save results to Screenshots/mac/.
 
@@ -142,7 +143,7 @@ capture_iphone() {
   build_app "iOS Simulator" "$IPHONE_UDID" "$dd"
   local app
   app=$(find_app "$dd" "iphonesimulator")
-  [[ -z "$app" ]] && { warn "Could not locate Gus.app for iPhone"; return 1; }
+  [[ -z "$app" ]] && { warn "Could not locate $APP_NAME.app for iPhone"; return 1; }
   boot_sim "$IPHONE_UDID" "$IPHONE_NAME"
   terminate_app "$IPHONE_UDID"
   install_and_launch "$IPHONE_UDID" "$app"
@@ -156,7 +157,7 @@ capture_ipad() {
   build_app "iOS Simulator" "$IPAD_UDID" "$dd"
   local app
   app=$(find_app "$dd" "iphonesimulator")
-  [[ -z "$app" ]] && { warn "Could not locate Gus.app for iPad"; return 1; }
+  [[ -z "$app" ]] && { warn "Could not locate $APP_NAME.app for iPad"; return 1; }
   boot_sim "$IPAD_UDID" "$IPAD_NAME"
   terminate_app "$IPAD_UDID"
   install_and_launch "$IPAD_UDID" "$app"
@@ -170,7 +171,7 @@ capture_tv() {
   build_app "tvOS Simulator" "$TV_UDID" "$dd"
   local app
   app=$(find_app "$dd" "appletvsimulator")
-  [[ -z "$app" ]] && { warn "Could not locate Gus.app for Apple TV"; return 1; }
+  [[ -z "$app" ]] && { warn "Could not locate $APP_NAME.app for Apple TV"; return 1; }
   boot_sim "$TV_UDID" "$TV_NAME"
   terminate_app "$TV_UDID"
   install_and_launch "$TV_UDID" "$app"
@@ -184,7 +185,7 @@ capture_vision() {
   build_app "visionOS Simulator" "$VISION_UDID" "$dd"
   local app
   app=$(find_app "$dd" "xrsimulator")
-  [[ -z "$app" ]] && { warn "Could not locate Gus.app for Vision Pro"; return 1; }
+  [[ -z "$app" ]] && { warn "Could not locate $APP_NAME.app for Vision Pro"; return 1; }
   boot_sim "$VISION_UDID" "$VISION_NAME"
   terminate_app "$VISION_UDID"
   install_and_launch "$VISION_UDID" "$app"

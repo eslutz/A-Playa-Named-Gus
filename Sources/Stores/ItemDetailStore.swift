@@ -37,6 +37,8 @@ final class ItemDetailStore {
     private(set) var state: LoadState = .idle
     private(set) var item: BaseItemDto
     private(set) var seriesStore: SeriesDetailStore?
+    private(set) var similarItems: [BaseItemDto] = []
+    private(set) var specialFeatures: [BaseItemDto] = []
 
     private let session: SessionStore
     private let logger = Logger(category: .item)
@@ -59,6 +61,7 @@ final class ItemDetailStore {
             }
 
             state = .loaded
+            await loadRelatedContent(for: item)
 
             if item.type == .series {
                 let store = SeriesDetailStore(series: item, session: session)
@@ -70,6 +73,49 @@ final class ItemDetailStore {
             guard !gusError.isCancellation else { return }
             logger.error("Item detail load failed: \(gusError.localizedDescription, privacy: .public)")
             state = .failed(gusError.localizedDescription)
+        }
+    }
+
+    private func loadRelatedContent(for item: BaseItemDto) async {
+        async let similar = loadSimilarItems(for: item)
+        async let special = loadSpecialFeatures(for: item)
+
+        similarItems = await similar
+        specialFeatures = await special
+    }
+
+    private func loadSimilarItems(for item: BaseItemDto) async -> [BaseItemDto] {
+        guard let itemID = item.id else { return [] }
+        do {
+            let parameters = Paths.GetSimilarItemsParameters(
+                userID: session.user.id,
+                limit: 12,
+                fields: SearchRequest.metadataFields
+            )
+            let response = try await NetworkRetryPolicy.idempotent.run {
+                try await session.client.send(Paths.getSimilarItems(itemID: itemID, parameters: parameters))
+            }
+            return response.value.items ?? []
+        } catch {
+            let gusError = GusError(from: error)
+            guard !gusError.isCancellation else { return [] }
+            logger.debug("Similar items load failed: \(gusError.localizedDescription, privacy: .public)")
+            return []
+        }
+    }
+
+    private func loadSpecialFeatures(for item: BaseItemDto) async -> [BaseItemDto] {
+        guard let itemID = item.id else { return [] }
+        do {
+            let response = try await NetworkRetryPolicy.idempotent.run {
+                try await session.client.send(Paths.getSpecialFeatures(itemID: itemID, userID: session.user.id))
+            }
+            return response.value
+        } catch {
+            let gusError = GusError(from: error)
+            guard !gusError.isCancellation else { return [] }
+            logger.debug("Special features load failed: \(gusError.localizedDescription, privacy: .public)")
+            return []
         }
     }
 }

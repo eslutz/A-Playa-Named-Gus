@@ -45,19 +45,24 @@ struct LibraryStoreTests {
         #expect(parameters.filters == [.isUnplayed])
     }
 
-    @Test("builds favorites and random filter parameters")
-    func buildsFavoritesAndRandomFilterParameters() {
+    @Test("builds resumable and random filter parameters")
+    func buildsResumableAndRandomFilterParameters() {
         let parameters = LibraryRequest.parameters(
             userID: "user-1",
             parentID: "library-1",
             startIndex: 0,
             limit: 60,
-            filter: LibraryFilterState(sort: .random, status: .favorites)
+            filter: LibraryFilterState(sort: .random, status: .resumable)
         )
 
         #expect(parameters.sortOrder == nil)
         #expect(parameters.sortBy == [.random])
-        #expect(parameters.filters == [.isFavorite])
+        #expect(parameters.filters == [.isResumable])
+    }
+
+    @Test("status filters do not include favorites")
+    func statusFiltersDoNotIncludeFavorites() {
+        #expect(LibraryStatusFilter.allCases.map(\.rawValue).contains("favorites") == false)
     }
 
     @MainActor

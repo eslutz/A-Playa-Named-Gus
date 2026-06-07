@@ -50,6 +50,14 @@ private struct TabRootView: View {
                     .gusItemDestinations()
                 }
             }
+            Tab("Libraries", systemImage: "rectangle.stack", value: AppRoute.libraries) {
+                NavigationStack {
+                    SearchRootView {
+                        LibrariesLandingView()
+                    }
+                    .gusItemDestinations()
+                }
+            }
             Tab("Settings", systemImage: "gearshape", value: AppRoute.settings) {
                 NavigationStack {
                     SettingsView()
@@ -69,22 +77,23 @@ private struct TabRootView: View {
 
 private enum SidebarItem: Hashable {
     case home
+    case libraries
     case settings
-    case library(String)
 
     /// String key used with `SceneStorage` to restore sidebar selection across launches.
     var sceneKey: String {
         switch self {
         case .home: return "home"
+        case .libraries: return "libraries"
         case .settings: return "settings"
-        case let .library(id): return "library:\(id)"
         }
     }
 
     init?(sceneKey key: String) {
         if key == "home" { self = .home }
+        else if key == "libraries" { self = .libraries }
         else if key == "settings" { self = .settings }
-        else if key.hasPrefix("library:") { self = .library(String(key.dropFirst("library:".count))) }
+        else if key.hasPrefix("library:") { self = .libraries }
         else { return nil }
     }
 }
@@ -109,20 +118,12 @@ private enum SidebarItem: Hashable {
                     }
                 }
 
-                if let home {
-                    TabSection {
-                        ForEach(home.libraries, id: \.sidebarID) { library in
-                            Tab(library.name ?? "Library", systemImage: library.librarySymbol, value: SidebarItem.library(library.sidebarID)) {
-                                NavigationStack {
-                                    SearchRootView {
-                                        LibraryGridView(library: library)
-                                    }
-                                    .gusItemDestinations()
-                                }
-                            }
+                Tab("Libraries", systemImage: "rectangle.stack", value: SidebarItem.libraries) {
+                    NavigationStack {
+                        SearchRootView {
+                            LibrariesLandingView(store: home)
                         }
-                    } header: {
-                        Label("Libraries", systemImage: "rectangle.stack")
+                        .gusItemDestinations()
                     }
                 }
 
@@ -135,7 +136,7 @@ private enum SidebarItem: Hashable {
             .tabViewStyle(.sidebarAdaptable)
             .ornament(attachmentAnchor: .scene(.leading), contentAlignment: .bottom) {
                 VisionEnvironmentOrnament()
-                    .padding(.leading, 18)
+                    .padding(.top, 84)
             }
             .onAppear {
                 if let restored = SidebarItem(sceneKey: storedSelectionKey) {
@@ -147,16 +148,18 @@ private enum SidebarItem: Hashable {
                 switch item {
                 case .home:
                     navigation.open(.home)
+                case .libraries:
+                    navigation.open(.libraries)
                 case .settings:
                     navigation.open(.settings)
-                case .library:
-                    break
                 }
             }
             .onChange(of: navigation.route) { _, route in
                 switch route {
                 case .home:
                     selection = .home
+                case .libraries:
+                    selection = .libraries
                 case .settings:
                     selection = .settings
                 case .search:
@@ -187,21 +190,10 @@ private struct SplitRootView: View {
         NavigationSplitView {
             List(selection: $selection) {
                 Label("Home", systemImage: "house").tag(SidebarItem.home)
-
-                Section {
-                    if let home {
-                        ForEach(home.libraries, id: \.sidebarID) { library in
-                            Label(library.name ?? "Library", systemImage: library.librarySymbol)
-                                .tag(SidebarItem.library(library.sidebarID))
-                        }
-                    }
-                } header: {
-                    Label("Libraries", systemImage: "rectangle.stack")
-                }
-
+                Label("Libraries", systemImage: "rectangle.stack").tag(SidebarItem.libraries)
                 Label("Settings", systemImage: "gearshape").tag(SidebarItem.settings)
             }
-            .navigationTitle(Text("Gus", comment: "App name"))
+            .navigationTitle(Text("A Playa Named Gus", comment: "App name"))
             #if os(macOS)
                 .navigationSplitViewColumnWidth(min: 200, ideal: 240)
             #endif
@@ -230,9 +222,11 @@ private struct SplitRootView: View {
             switch item {
             case .home:
                 navigation.open(.home)
+            case .libraries:
+                navigation.open(.libraries)
             case .settings:
                 navigation.open(.settings)
-            case .library, .none:
+            case .none:
                 break
             }
         }
@@ -240,6 +234,8 @@ private struct SplitRootView: View {
             switch route {
             case .home:
                 selection = .home
+            case .libraries:
+                selection = .libraries
             case .settings:
                 selection = .settings
             case .search:
@@ -271,20 +267,10 @@ private struct SplitRootView: View {
         switch selection {
         case .settings:
             SettingsView()
-        case let .library(id):
-            if let library = home?.libraries.first(where: { $0.sidebarID == id }) {
-                LibraryGridView(library: library)
-            } else {
-                ContentUnavailableView("Select a Library", systemImage: "rectangle.stack")
-            }
+        case .libraries:
+            LibrariesLandingView(store: home)
         case .home, .none:
             HomeView()
         }
-    }
-}
-
-private extension BaseItemDto {
-    var sidebarID: String {
-        id ?? name ?? collectionType?.rawValue ?? "library"
     }
 }

@@ -6,13 +6,14 @@ Accepted
 
 ## Context
 
-Gus needs video playback across iOS, iPadOS, tvOS, visionOS, and macOS while preserving the
-project mandate to prefer Apple frameworks over custom or third-party runtime code.
-Swiftfin uses VLCKit, but Gus is intentionally not copying that stack.
+A Playa Named Gus needs video playback across iOS, iPadOS, tvOS, visionOS, and macOS while
+preserving the project mandate to prefer Apple frameworks over custom or third-party
+runtime code. Swiftfin uses VLCKit, but A Playa Named Gus is intentionally not copying
+that stack.
 
 ## Decision
 
-Gus uses AVKit playback surfaces (`VideoPlayer` where SwiftUI provides it and
+A Playa Named Gus uses AVKit playback surfaces (`VideoPlayer` where SwiftUI provides it and
 `AVPlayerViewController` on tvOS) with `StreamURLBuilder` asking Jellyfin for AVPlayer-
 friendly HLS transcoding when direct playback is not suitable.
 

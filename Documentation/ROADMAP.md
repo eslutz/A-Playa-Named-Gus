@@ -1,9 +1,9 @@
-# Gus — Roadmap to App Store
+# A Playa Named Gus — Roadmap to App Store
 
-This is the source-of-truth plan for taking Gus from its first end-to-end slice to a
-shippable, App Store–ready, multiplatform app. It is organized into **milestones**; each
-milestone is a coherent unit of work broken into **features** with explicit acceptance
-criteria.
+This is the source-of-truth plan for taking A Playa Named Gus from its first end-to-end
+slice to a shippable, App Store-ready, multiplatform app. It is organized into
+**milestones**; each milestone is a coherent unit of work broken into **features** with
+explicit acceptance criteria.
 
 **How to use this doc:** work milestones top-to-bottom (later ones assume earlier ones).
 Keep it current — when a feature lands or scope changes, check the box and adjust here in
@@ -43,8 +43,8 @@ destinations build; iOS launches and renders the Connect screen.
 
 ## M1 — Brand & Identity
 
-**Goal:** Gus looks like a finished product at first glance — real icon, considered launch
-and accent, consistent semantic theming.
+**Goal:** A Playa Named Gus looks like a finished product at first glance — real icon,
+considered launch and accent, consistent semantic theming.
 
 - [x] **App icon (all platforms).** Jellyfin navy background `#000B25` with a
   purple-to-blue pineapple (`#AC5CC3` → `#00A4DC`) — egg-shaped body with a diamond
@@ -61,7 +61,7 @@ and accent, consistent semantic theming.
   branded launch on platforms that support it. *Acceptance:* no flash of unstyled content;
   consistent first frame. *(Done: iOS/iPadOS use a color-only `UILaunchScreen` backed by
   the `LaunchBackground` asset.)*
-- [x] **Accent & semantic theme pass.** Centralize the Jellyfin-aligned Gus palette
+- [x] **Accent & semantic theme pass.** Centralize the Jellyfin-aligned app palette
   (accent + cinema
   palette) as semantic color assets with light/dark variants; audit views for hardcoded
   colors. *Acceptance:* light/dark both legible; no raw `Color(red:…)` in feature views.
@@ -95,7 +95,7 @@ automated build verification. (Covers priority: *polish & testing*.)
   `SessionCredential.account`, `StreamURLBuilder` profile/URL selection,
   `BaseItemDto+Display` formatting, `ServerStore` round-trip. *Acceptance:*
   `xcodebuild test` passes; meaningful assertions (not smoke-only). *(Done: Swift Testing
-  unit coverage is wired into the `Gus` scheme.)*
+  unit coverage is wired into the `A Playa Named Gus` scheme.)*
 - [x] **UI smoke test (optional).** One XCUITest: launch → Connect screen renders.
   *Acceptance:* runs in CI on the iOS simulator. *(Done: `GusLaunchUITests` verifies the
   Connect screen renders.)*
@@ -105,8 +105,8 @@ automated build verification. (Covers priority: *polish & testing*.)
   and SwiftFormat lint; tvOS/visionOS simulator builds are best-effort on hosted runners
   because simulator availability varies.)*
 - [x] **Update `project.yml` for the test target & schemes.** *Acceptance:* generated
-  project includes test target; `-scheme Gus` test action works. *(Done: `GusTests` and
-  `GusUITests` are generated and included in the scheme test action.)*
+  project includes test target; `-scheme 'A Playa Named Gus'` test action works. *(Done:
+  `GusTests` and `GusUITests` are generated and included in the scheme test action.)*
 
 ---
 
@@ -138,8 +138,8 @@ automated build verification. (Covers priority: *polish & testing*.)
   among known `StoredUser`s/servers (tokens already keyed by `serverID:userID`).
   *Acceptance:* switch without re-entering credentials; sign out one without affecting
   others. *(Done: Settings groups stored users by server, switches when a token exists,
-  offers sign-in-again for missing tokens, and current-user sign-out removes only that
-  user's token/record.)*
+  offers sign-in-again for missing tokens, current-user sign-out removes only that user's
+  token/record, and launch restore uses the server-qualified `serverID:userID` key.)*
 - [x] **Quick Connect.** `getQuickConnectEnabled` → `signIn(quickConnectSecret:)`.
   *Acceptance:* code-based sign-in works where the server enables it; hidden when disabled.
   *(Done: Quick Connect checks availability after server selection, displays the polling
@@ -203,7 +203,8 @@ automated build verification. (Covers priority: *polish & testing*.)
   content, large-canvas layout. *Acceptance:* navigable entirely by remote; focus never
   trapped/lost. *(Done: poster navigation preserves native focus styling, related rails
   and grids are grouped for focus, and a static `GusTopShelf` extension opens home,
-  search, and settings via `gus://` routes.)*
+  search, and settings via `gus://` routes. The app target declares tvOS User Management so
+  each Apple TV profile gets separate app storage and Keychain-scoped Jellyfin tokens.)*
 - [x] **visionOS.** Ornaments/toolbars, `.glassBackgroundEffect()` on panels, hover
   effects, real look-to-scroll, depth-aware layout. *Acceptance:* matches HIG immersive
   guidance; comfortable at default scale. *(Done: signed-in panels use glass, split-view
@@ -214,7 +215,8 @@ automated build verification. (Covers priority: *polish & testing*.)
   toolbar. *Acceptance:* core actions have menu items + shortcuts; window state restores.
   *(Done: app-level Commands route home/search/settings and sign out, window sizing is set
   via `defaultSize`/`windowResizability`, `SceneStorage` restores the sidebar selection
-  across launches, and split-view toolbar actions mirror the command destinations.)*
+  across launches, split-view toolbar actions mirror the command destinations, and user-domain
+  storage/Keychain keep separate macOS login accounts isolated.)*
 - [x] **iPad.** Pointer/keyboard support, multitasking/Stage Manager sizing,
   split-view tuning. *Acceptance:* usable with keyboard/trackpad; adapts to all size
   classes. *(Done: hover affordances remain system-native, keyboard route shortcuts are
@@ -268,8 +270,8 @@ automated build verification. (Covers priority: *polish & testing*.)
 ## M7 — Media Server Provider Architecture
 
 **Goal:** isolate Jellyfin-specific API and DTO assumptions behind a provider boundary
-before the 1.0 release path, so Gus can stay Jellyfin-only at launch while preserving a
-clean route to future backends such as Emby.
+before the 1.0 release path, so A Playa Named Gus can stay Jellyfin-only at launch while
+preserving a clean route to future backends such as Emby.
 
 - [ ] **Provider boundary.** Introduce a media-server provider abstraction such as
   `MediaServerProvider`, with Jellyfin as the only production implementation for 1.0.
@@ -306,11 +308,11 @@ done.
 
 - [ ] **Privacy manifest & nutrition labels.** Add `PrivacyInfo.xcprivacy` (declare any
   required-reason APIs and data use) and complete App Privacy answers (data not collected
-  by Gus itself; connects to a user-provided server). *Acceptance:* validates; labels match
-  behavior.
+  by A Playa Named Gus itself; connects to a user-provided server). *Acceptance:* validates;
+  labels match behavior.
 - [ ] **Signing & capabilities.** Real Team/bundle id, automatic signing, per-platform
-  capability review (background audio, sandbox on macOS, Optic ID string). *Acceptance:*
-  Release archives sign for each platform.
+  capability review (background audio, tvOS User Management, sandbox on macOS, Optic ID
+  string). *Acceptance:* Release archives sign for each platform.
 - [ ] **App Store Connect record.** Create the app, set categories, age rating, support &
   marketing URLs, description, keywords. *Acceptance:* record complete and consistent
   across platforms.
@@ -360,8 +362,8 @@ Treat documentation as part of every milestone, not a phase:
 These are intentionally outside the 1.0 App Store path above. Promote them into a
 milestone only after the launch scope is stable.
 
-- [ ] **watchOS companion app.** Build a focused watchOS experience that extends Gus
- beyond the five launch platforms without trying to make the watch the primary video
+- [ ] **watchOS companion app.** Build a focused watchOS experience that extends A Playa
+ Named Gus beyond the five launch platforms without trying to make the watch the primary video
  client. Candidate scope includes server/session status, Now Playing glance, remote
  playback control for any active Jellyfin client, client/device selection, quick resume,
  lightweight library browsing, direct audio playback, offline audio downloads, and novelty

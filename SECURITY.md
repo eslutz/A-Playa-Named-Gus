@@ -2,7 +2,7 @@
 
 ## Supported Versions
 
-Gus is pre-release software. Security fixes are made on `main`; no tagged stable
+A Playa Named Gus is pre-release software. Security fixes are made on `main`; no tagged stable
 release line is currently supported.
 
 ## Reporting a Vulnerability
@@ -17,7 +17,7 @@ until a private channel is established.
 When reporting, include:
 
 - The affected platform or platforms.
-- The affected Gus version, commit, or branch.
+- The affected A Playa Named Gus version, commit, or branch.
 - Reproduction steps and expected impact.
 - Any logs, screenshots, or proof-of-concept material that can be shared
   privately.
@@ -28,5 +28,5 @@ own or are authorized to assess. Vulnerabilities in Jellyfin Server or
 when they affect those components.
 
 The maintainer aims to acknowledge vulnerability reports within 7 days, then
-coordinate validation, fixes, and disclosure timing with the reporter. Gus does
+coordinate validation, fixes, and disclosure timing with the reporter. A Playa Named Gus does
 not currently run a bug bounty program.
