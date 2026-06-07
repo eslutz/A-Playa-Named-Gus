@@ -34,7 +34,7 @@ jobs:
         run: xcodegen generate
 
       - name: Resolve packages
-        run: xcodebuild -resolvePackageDependencies -project Gus.xcodeproj -scheme Gus
+        run: xcodebuild -resolvePackageDependencies -project 'A Playa Named Gus.xcodeproj' -scheme 'A Playa Named Gus'
 
       - name: SwiftFormat lint
         run: swiftformat Sources Tests --lint
@@ -51,18 +51,18 @@ jobs:
           echo "destination=platform=iOS Simulator,name=$sim_name" >> "$GITHUB_OUTPUT"
 
       - name: Build iOS
-        run: xcodebuild -project Gus.xcodeproj -scheme Gus -destination '${{ steps.ios-sim.outputs.destination }}' build
+        run: xcodebuild -project 'A Playa Named Gus.xcodeproj' -scheme 'A Playa Named Gus' -destination '${{ steps.ios-sim.outputs.destination }}' build
 
       - name: Build macOS
-        run: xcodebuild -project Gus.xcodeproj -scheme Gus -destination 'platform=macOS' build
+        run: xcodebuild -project 'A Playa Named Gus.xcodeproj' -scheme 'A Playa Named Gus' -destination 'platform=macOS' build
 
       - name: Test iOS
-        run: xcodebuild test -project Gus.xcodeproj -scheme Gus -destination '${{ steps.ios-sim.outputs.destination }}'
+        run: xcodebuild test -project 'A Playa Named Gus.xcodeproj' -scheme 'A Playa Named Gus' -destination '${{ steps.ios-sim.outputs.destination }}'
 
       - name: Build tvOS best effort
         continue-on-error: true
-        run: xcodebuild -project Gus.xcodeproj -scheme Gus -destination 'generic/platform=tvOS Simulator' build
+        run: xcodebuild -project 'A Playa Named Gus.xcodeproj' -scheme 'A Playa Named Gus' -destination 'generic/platform=tvOS Simulator' build
 
       - name: Build visionOS best effort
         continue-on-error: true
-        run: xcodebuild -project Gus.xcodeproj -scheme Gus -destination 'generic/platform=visionOS Simulator' build
+        run: xcodebuild -project 'A Playa Named Gus.xcodeproj' -scheme 'A Playa Named Gus' -destination 'generic/platform=visionOS Simulator' build
