@@ -40,7 +40,9 @@ jobs:
       matrix:
         include:
           - name: iOS
-            destination: generic/platform=iOS Simulator
+            destination: platform=iOS Simulator,name=iPhone 17
+          - name: iPadOS
+            destination: platform=iOS Simulator,name=iPad Pro 11-inch (M5)
           - name: macOS
             destination: platform=macOS
           - name: tvOS
@@ -75,10 +77,29 @@ jobs:
       - name: Build ${{ matrix.name }}
         run: xcodebuild -project 'A Playa Named Gus.xcodeproj' -scheme 'A Playa Named Gus' -destination '${{ matrix.destination }}' build
 
-  test-ios:
-    name: Test iOS
+  test:
+    name: Test ${{ matrix.name }}
     runs-on: macos-26
-    timeout-minutes: 45
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: iPhone
+            scheme: Gus iOS Unit Tests
+            destination: platform=iOS Simulator,name=iPhone 17
+          - name: iPad
+            scheme: Gus iOS Unit Tests
+            destination: platform=iOS Simulator,name=iPad Pro 11-inch (M5)
+          - name: tvOS
+            scheme: Gus tvOS Unit Tests
+            destination: platform=tvOS Simulator,name=Apple TV 4K (3rd generation)
+          - name: visionOS
+            scheme: Gus visionOS Unit Tests
+            destination: ""
+          - name: macOS
+            scheme: Gus macOS Unit Tests
+            destination: platform=macOS
 
     steps:
       - name: Checkout
@@ -102,50 +123,28 @@ jobs:
         run: xcodegen generate
 
       - name: Resolve packages
-        run: xcodebuild -resolvePackageDependencies -project 'A Playa Named Gus.xcodeproj' -scheme 'A Playa Named Gus'
+        run: xcodebuild -resolvePackageDependencies -project 'A Playa Named Gus.xcodeproj' -scheme '${{ matrix.scheme }}'
 
-      - name: Pick iOS simulator
-        id: ios-sim
+      - name: Pick visionOS simulator
+        id: vision-sim
+        if: matrix.name == 'visionOS'
         run: |
           set -euo pipefail
-          sim_name="$(xcrun simctl list devices available | awk -F '[()]' '/iPhone/ { gsub(/^[ \t]+|[ \t]+$/, "", $1); print $1; exit }')"
-          if [ -z "$sim_name" ]; then
-            echo "No available iPhone simulator found"
+          sim_id="$(
+            xcrun simctl list devices available |
+              awk -F '[()]' '/Apple Vision Pro/ { id=$2 } END { print id }'
+          )"
+          if [ -z "$sim_id" ]; then
+            echo "No available Apple Vision Pro simulator found"
             exit 1
           fi
-          echo "destination=platform=iOS Simulator,name=$sim_name" >> "$GITHUB_OUTPUT"
+          echo "destination=platform=visionOS Simulator,id=$sim_id" >> "$GITHUB_OUTPUT"
 
-      - name: Test iOS
-        run: xcodebuild test -project 'A Playa Named Gus.xcodeproj' -scheme 'A Playa Named Gus' -destination '${{ steps.ios-sim.outputs.destination }}'
-
-  test-macos:
-    name: Test macOS Unit
-    runs-on: macos-26
-    timeout-minutes: 45
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v6
-
-      - name: Select Xcode 26.5
+      - name: Test ${{ matrix.name }}
         run: |
           set -euo pipefail
-          if [ ! -d "$XCODE_APP" ]; then
-            echo "Required Xcode not found at $XCODE_APP"
-            ls -1 /Applications | grep '^Xcode' || true
-            exit 1
+          destination='${{ matrix.destination }}'
+          if [ '${{ matrix.name }}' = 'visionOS' ]; then
+            destination='${{ steps.vision-sim.outputs.destination }}'
           fi
-          sudo xcode-select -s "$XCODE_APP/Contents/Developer"
-          xcodebuild -version
-
-      - name: Install build tools
-        run: command -v xcodegen >/dev/null || brew install xcodegen
-
-      - name: Generate Xcode project
-        run: xcodegen generate
-
-      - name: Resolve packages
-        run: xcodebuild -resolvePackageDependencies -project 'A Playa Named Gus.xcodeproj' -scheme 'Gus Unit Tests'
-
-      - name: Test macOS unit tests
-        run: xcodebuild test -project 'A Playa Named Gus.xcodeproj' -scheme 'Gus Unit Tests' -destination 'platform=macOS'
+          xcodebuild test -project 'A Playa Named Gus.xcodeproj' -scheme '${{ matrix.scheme }}' -destination "$destination"

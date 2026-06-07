@@ -95,18 +95,21 @@ automated build verification. (Covers priority: *polish & testing*.)
   `SessionCredential.account`, `StreamURLBuilder` profile/URL selection,
   `BaseItemDto+Display` formatting, `ServerStore` round-trip. *Acceptance:*
   `xcodebuild test` passes; meaningful assertions (not smoke-only). *(Done: Swift Testing
-  unit coverage is wired into the `A Playa Named Gus` scheme.)*
+  unit coverage is wired into native iOS, tvOS, visionOS, and macOS test bundles, with
+  iPhone and iPad covered through the iOS scheme.)*
 - [x] **UI smoke test (optional).** One XCUITest: launch → Connect screen renders.
-  *Acceptance:* runs in CI on the iOS simulator. *(Done: `GusLaunchUITests` verifies the
-  Connect screen renders.)*
+  *Acceptance:* available for local/manual launch validation. *(Done: `GusLaunchUITests`
+  verifies the Connect screen renders through native iOS, tvOS, visionOS, and macOS UI
+  test bundles; CI keeps these UI smoke tests out of the required PR pipeline.)*
 - [x] **CI pipeline.** GitHub Actions (macOS runner): `xcodegen generate` → resolve →
   build all five destinations → run tests → lint. *Acceptance:* green check required on
   every PR; matrix covers all platforms. *(Done: CI runs on macOS 26 with Xcode
-  26.5, and requires SwiftFormat/string-catalog lint, an iOS/macOS/tvOS/visionOS
-  build matrix, iOS tests, and macOS unit tests.)*
+  26.5, and requires SwiftFormat/string-catalog lint, an iPhone/iPad/macOS/tvOS/visionOS
+  build matrix, plus native unit tests on each platform.)*
 - [x] **Update `project.yml` for the test target & schemes.** *Acceptance:* generated
   project includes test target; `-scheme 'A Playa Named Gus'` test action works. *(Done:
-  `GusTests` and `GusUITests` are generated and included in the scheme test action.)*
+  platform-native unit/UI test targets, CI unit schemes, and local UI-inclusive platform
+  schemes are generated from `project.yml`.)*
 
 ---
 
