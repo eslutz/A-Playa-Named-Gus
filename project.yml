@@ -47,6 +47,7 @@ targets:
         excludes:
           - "Info.plist"
     dependencies:
+      - sdk: AppIntents.framework
       - package: JellyfinSDK
         product: JellyfinAPI
       - target: GusTopShelf
@@ -69,6 +70,8 @@ targets:
         excludes:
           - "Info.plist"
       - path: Resources/Localizable.xcstrings
+    dependencies:
+      - sdk: AppIntents.framework
     settings:
       base:
         INFOPLIST_FILE: Sources/TopShelf/Info.plist
