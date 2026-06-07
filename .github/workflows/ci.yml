@@ -6,10 +6,13 @@ on:
     branches:
       - main
 
+env:
+  XCODE_APP: /Applications/Xcode_26.5.app
+
 jobs:
   lint:
     name: Lint
-    runs-on: macos-latest
+    runs-on: macos-26
     timeout-minutes: 15
 
     steps:
@@ -17,7 +20,10 @@ jobs:
         uses: actions/checkout@v6
 
       - name: Install lint tools
-        run: brew install jq swiftformat
+        run: |
+          set -euo pipefail
+          command -v jq >/dev/null || brew install jq
+          command -v swiftformat >/dev/null || brew install swiftformat
 
       - name: SwiftFormat lint
         run: swiftformat Sources Tests --lint
@@ -27,7 +33,7 @@ jobs:
 
   build:
     name: Build ${{ matrix.name }}
-    runs-on: macos-latest
+    runs-on: macos-26
     timeout-minutes: 45
     strategy:
       fail-fast: false
@@ -46,19 +52,19 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
-      - name: Select latest installed Xcode
+      - name: Select Xcode 26.5
         run: |
           set -euo pipefail
-          latest_xcode="$(find /Applications -maxdepth 1 -name 'Xcode*.app' -print | sort | tail -1)"
-          if [ -z "$latest_xcode" ]; then
-            echo "No Xcode installation found under /Applications"
+          if [ ! -d "$XCODE_APP" ]; then
+            echo "Required Xcode not found at $XCODE_APP"
+            ls -1 /Applications | grep '^Xcode' || true
             exit 1
           fi
-          sudo xcode-select -s "$latest_xcode/Contents/Developer"
+          sudo xcode-select -s "$XCODE_APP/Contents/Developer"
           xcodebuild -version
 
       - name: Install build tools
-        run: brew install xcodegen
+        run: command -v xcodegen >/dev/null || brew install xcodegen
 
       - name: Generate Xcode project
         run: xcodegen generate
@@ -71,26 +77,26 @@ jobs:
 
   test-ios:
     name: Test iOS
-    runs-on: macos-latest
+    runs-on: macos-26
     timeout-minutes: 45
 
     steps:
       - name: Checkout
         uses: actions/checkout@v6
 
-      - name: Select latest installed Xcode
+      - name: Select Xcode 26.5
         run: |
           set -euo pipefail
-          latest_xcode="$(find /Applications -maxdepth 1 -name 'Xcode*.app' -print | sort | tail -1)"
-          if [ -z "$latest_xcode" ]; then
-            echo "No Xcode installation found under /Applications"
+          if [ ! -d "$XCODE_APP" ]; then
+            echo "Required Xcode not found at $XCODE_APP"
+            ls -1 /Applications | grep '^Xcode' || true
             exit 1
           fi
-          sudo xcode-select -s "$latest_xcode/Contents/Developer"
+          sudo xcode-select -s "$XCODE_APP/Contents/Developer"
           xcodebuild -version
 
       - name: Install build tools
-        run: brew install xcodegen
+        run: command -v xcodegen >/dev/null || brew install xcodegen
 
       - name: Generate Xcode project
         run: xcodegen generate
@@ -114,26 +120,26 @@ jobs:
 
   test-macos:
     name: Test macOS Unit
-    runs-on: macos-latest
+    runs-on: macos-26
     timeout-minutes: 45
 
     steps:
       - name: Checkout
         uses: actions/checkout@v6
 
-      - name: Select latest installed Xcode
+      - name: Select Xcode 26.5
         run: |
           set -euo pipefail
-          latest_xcode="$(find /Applications -maxdepth 1 -name 'Xcode*.app' -print | sort | tail -1)"
-          if [ -z "$latest_xcode" ]; then
-            echo "No Xcode installation found under /Applications"
+          if [ ! -d "$XCODE_APP" ]; then
+            echo "Required Xcode not found at $XCODE_APP"
+            ls -1 /Applications | grep '^Xcode' || true
             exit 1
           fi
-          sudo xcode-select -s "$latest_xcode/Contents/Developer"
+          sudo xcode-select -s "$XCODE_APP/Contents/Developer"
           xcodebuild -version
 
       - name: Install build tools
-        run: brew install xcodegen
+        run: command -v xcodegen >/dev/null || brew install xcodegen
 
       - name: Generate Xcode project
         run: xcodegen generate
