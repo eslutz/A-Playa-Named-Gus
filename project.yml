@@ -88,6 +88,7 @@ targets:
     sources:
       - path: Tests/APlayaNamedGusTests
     dependencies:
+      - sdk: AppIntents.framework
       - target: Gus
     settings:
       base:
@@ -108,6 +109,7 @@ targets:
     sources:
       - path: Tests/APlayaNamedGusUITests
     dependencies:
+      - sdk: AppIntents.framework
       - target: Gus
     settings:
       base:
