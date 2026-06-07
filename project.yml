@@ -93,6 +93,7 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: dev.ericslutz.gus.tests
         GENERATE_INFOPLIST_FILE: YES
         TEST_HOST: "$(BUILT_PRODUCTS_DIR)/A Playa Named Gus.app/A Playa Named Gus"
+        TEST_HOST[sdk=macosx*]: "$(BUILT_PRODUCTS_DIR)/A Playa Named Gus.app/Contents/MacOS/A Playa Named Gus"
         ASSETCATALOG_COMPILER_APPICON_NAME: ""
         CODE_SIGN_ENTITLEMENTS: ""
         CODE_SIGN_ENTITLEMENTS[sdk=macosx*]: ""
@@ -125,3 +126,12 @@ schemes:
       targets:
         - GusTests
         - GusUITests
+
+  Gus Unit Tests:
+    build:
+      targets:
+        Gus: all
+    test:
+      gatherCoverageData: true
+      targets:
+        - GusTests

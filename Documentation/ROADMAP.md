@@ -101,9 +101,8 @@ automated build verification. (Covers priority: *polish & testing*.)
   Connect screen renders.)*
 - [x] **CI pipeline.** GitHub Actions (macOS runner): `xcodegen generate` → resolve →
   build all five destinations → run tests → lint. *Acceptance:* green check required on
-  every PR; matrix covers all platforms. *(Done: CI requires iOS/macOS build, iOS tests,
-  and SwiftFormat lint; tvOS/visionOS simulator builds are best-effort on hosted runners
-  because simulator availability varies.)*
+  every PR; matrix covers all platforms. *(Done: CI requires SwiftFormat/string-catalog
+  lint, an iOS/macOS/tvOS/visionOS build matrix, iOS tests, and macOS unit tests.)*
 - [x] **Update `project.yml` for the test target & schemes.** *Acceptance:* generated
   project includes test target; `-scheme 'A Playa Named Gus'` test action works. *(Done:
   `GusTests` and `GusUITests` are generated and included in the scheme test action.)*

@@ -7,14 +7,44 @@ on:
       - main
 
 jobs:
-  build-test-lint:
-    name: Build, Test, Lint
+  lint:
+    name: Lint
     runs-on: macos-latest
-    timeout-minutes: 45
+    timeout-minutes: 15
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
+
+      - name: Install lint tools
+        run: brew install jq swiftformat
+
+      - name: SwiftFormat lint
+        run: swiftformat Sources Tests --lint
+
+      - name: Validate String Catalog
+        run: jq empty Resources/Localizable.xcstrings
+
+  build:
+    name: Build ${{ matrix.name }}
+    runs-on: macos-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: iOS
+            destination: generic/platform=iOS Simulator
+          - name: macOS
+            destination: platform=macOS
+          - name: tvOS
+            destination: generic/platform=tvOS Simulator
+          - name: visionOS
+            destination: generic/platform=visionOS Simulator
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
 
       - name: Select latest installed Xcode
         run: |
@@ -28,7 +58,7 @@ jobs:
           xcodebuild -version
 
       - name: Install build tools
-        run: brew install xcodegen swiftformat
+        run: brew install xcodegen
 
       - name: Generate Xcode project
         run: xcodegen generate
@@ -36,8 +66,37 @@ jobs:
       - name: Resolve packages
         run: xcodebuild -resolvePackageDependencies -project 'A Playa Named Gus.xcodeproj' -scheme 'A Playa Named Gus'
 
-      - name: SwiftFormat lint
-        run: swiftformat Sources Tests --lint
+      - name: Build ${{ matrix.name }}
+        run: xcodebuild -project 'A Playa Named Gus.xcodeproj' -scheme 'A Playa Named Gus' -destination '${{ matrix.destination }}' build
+
+  test-ios:
+    name: Test iOS
+    runs-on: macos-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Select latest installed Xcode
+        run: |
+          set -euo pipefail
+          latest_xcode="$(find /Applications -maxdepth 1 -name 'Xcode*.app' -print | sort | tail -1)"
+          if [ -z "$latest_xcode" ]; then
+            echo "No Xcode installation found under /Applications"
+            exit 1
+          fi
+          sudo xcode-select -s "$latest_xcode/Contents/Developer"
+          xcodebuild -version
+
+      - name: Install build tools
+        run: brew install xcodegen
+
+      - name: Generate Xcode project
+        run: xcodegen generate
+
+      - name: Resolve packages
+        run: xcodebuild -resolvePackageDependencies -project 'A Playa Named Gus.xcodeproj' -scheme 'A Playa Named Gus'
 
       - name: Pick iOS simulator
         id: ios-sim
@@ -50,19 +109,37 @@ jobs:
           fi
           echo "destination=platform=iOS Simulator,name=$sim_name" >> "$GITHUB_OUTPUT"
 
-      - name: Build iOS
-        run: xcodebuild -project 'A Playa Named Gus.xcodeproj' -scheme 'A Playa Named Gus' -destination '${{ steps.ios-sim.outputs.destination }}' build
-
-      - name: Build macOS
-        run: xcodebuild -project 'A Playa Named Gus.xcodeproj' -scheme 'A Playa Named Gus' -destination 'platform=macOS' build
-
       - name: Test iOS
         run: xcodebuild test -project 'A Playa Named Gus.xcodeproj' -scheme 'A Playa Named Gus' -destination '${{ steps.ios-sim.outputs.destination }}'
 
-      - name: Build tvOS best effort
-        continue-on-error: true
-        run: xcodebuild -project 'A Playa Named Gus.xcodeproj' -scheme 'A Playa Named Gus' -destination 'generic/platform=tvOS Simulator' build
+  test-macos:
+    name: Test macOS Unit
+    runs-on: macos-latest
+    timeout-minutes: 45
 
-      - name: Build visionOS best effort
-        continue-on-error: true
-        run: xcodebuild -project 'A Playa Named Gus.xcodeproj' -scheme 'A Playa Named Gus' -destination 'generic/platform=visionOS Simulator' build
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Select latest installed Xcode
+        run: |
+          set -euo pipefail
+          latest_xcode="$(find /Applications -maxdepth 1 -name 'Xcode*.app' -print | sort | tail -1)"
+          if [ -z "$latest_xcode" ]; then
+            echo "No Xcode installation found under /Applications"
+            exit 1
+          fi
+          sudo xcode-select -s "$latest_xcode/Contents/Developer"
+          xcodebuild -version
+
+      - name: Install build tools
+        run: brew install xcodegen
+
+      - name: Generate Xcode project
+        run: xcodegen generate
+
+      - name: Resolve packages
+        run: xcodebuild -resolvePackageDependencies -project 'A Playa Named Gus.xcodeproj' -scheme 'Gus Unit Tests'
+
+      - name: Test macOS unit tests
+        run: xcodebuild test -project 'A Playa Named Gus.xcodeproj' -scheme 'Gus Unit Tests' -destination 'platform=macOS'
