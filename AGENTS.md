@@ -69,20 +69,27 @@ xcrun simctl io booted screenshot /tmp/gus.png
 > (`Debug-iphonesimulator`, `Debug-appletvsimulator`, etc.) — a bare `find build` can
 > grab another platform's product (device families won't match and install fails).
 
-Run the full iOS unit/UI test action with:
+Run the CI-style platform unit test actions with:
 
 ```sh
-xcodebuild test -project 'A Playa Named Gus.xcodeproj' -scheme 'A Playa Named Gus' -destination 'platform=iOS Simulator,name=iPhone 17'
+xcodebuild test -project 'A Playa Named Gus.xcodeproj' -scheme 'Gus iOS Unit Tests' -destination 'platform=iOS Simulator,name=iPhone 17'
+xcodebuild test -project 'A Playa Named Gus.xcodeproj' -scheme 'Gus iOS Unit Tests' -destination 'platform=iOS Simulator,name=iPad Pro 11-inch (M5)'
+xcodebuild test -project 'A Playa Named Gus.xcodeproj' -scheme 'Gus tvOS Unit Tests' -destination 'platform=tvOS Simulator,name=Apple TV 4K (3rd generation)'
+xcodebuild test -project 'A Playa Named Gus.xcodeproj' -scheme 'Gus macOS Unit Tests' -destination 'platform=macOS'
+# visionOS: use the latest compatible Apple Vision Pro simulator id from -showdestinations.
+xcodebuild test -project 'A Playa Named Gus.xcodeproj' -scheme 'Gus visionOS Unit Tests' -destination 'platform=visionOS Simulator,id=<UUID>'
 ```
 
 Run a single Swift Testing test with:
 
 ```sh
-xcodebuild test -project 'A Playa Named Gus.xcodeproj' -scheme 'A Playa Named Gus' -destination 'platform=iOS Simulator,name=iPhone 17' -only-testing:GusTests/<Suite>/<test>
+xcodebuild test -project 'A Playa Named Gus.xcodeproj' -scheme 'Gus iOS Unit Tests' -destination 'platform=iOS Simulator,name=iPhone 17' -only-testing:GusTests/<Suite>/<test>
 ```
 
-`GusTests` covers pure logic with Swift Testing. `GusUITests` is intentionally a narrow
-iOS launch smoke test for the Connect screen.
+`GusTests`/`GusTVOSTests`/`GusVisionOSTests`/`GusMacOSTests` cover shared pure logic
+with Swift Testing and are the only test bundles run in CI. The matching UI test targets
+and `Gus iOS Tests`/`Gus tvOS Tests`/`Gus visionOS Tests`/`Gus macOS Tests` schemes
+intentionally stay as narrow local launch smoke tests for the Connect screen.
 
 ## Architecture (big picture)
 

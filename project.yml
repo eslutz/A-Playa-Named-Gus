@@ -84,7 +84,7 @@ targets:
   GusTests:
     type: bundle.unit-test
     platform: iOS
-    supportedDestinations: [iOS, macOS]
+    supportedDestinations: [iOS]
     sources:
       - path: Tests/APlayaNamedGusTests
     dependencies:
@@ -97,10 +97,62 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: dev.ericslutz.gus.tests
         GENERATE_INFOPLIST_FILE: YES
         TEST_HOST: "$(BUILT_PRODUCTS_DIR)/A Playa Named Gus.app/A Playa Named Gus"
-        TEST_HOST[sdk=macosx*]: "$(BUILT_PRODUCTS_DIR)/A Playa Named Gus.app/Contents/MacOS/A Playa Named Gus"
         ASSETCATALOG_COMPILER_APPICON_NAME: ""
         CODE_SIGN_ENTITLEMENTS: ""
-        CODE_SIGN_ENTITLEMENTS[sdk=macosx*]: ""
+
+  GusTVOSTests:
+    type: bundle.unit-test
+    platform: tvOS
+    sources:
+      - path: Tests/APlayaNamedGusTests
+    dependencies:
+      - sdk: AppIntents.framework
+      - target: Gus
+    settings:
+      base:
+        PRODUCT_NAME: GusTVOSTests
+        PRODUCT_MODULE_NAME: GusTVOSTests
+        PRODUCT_BUNDLE_IDENTIFIER: dev.ericslutz.gus.tvos-tests
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/A Playa Named Gus.app/A Playa Named Gus"
+        ASSETCATALOG_COMPILER_APPICON_NAME: ""
+        CODE_SIGN_ENTITLEMENTS: ""
+
+  GusVisionOSTests:
+    type: bundle.unit-test
+    platform: visionOS
+    sources:
+      - path: Tests/APlayaNamedGusTests
+    dependencies:
+      - sdk: AppIntents.framework
+      - target: Gus
+    settings:
+      base:
+        PRODUCT_NAME: GusVisionOSTests
+        PRODUCT_MODULE_NAME: GusVisionOSTests
+        PRODUCT_BUNDLE_IDENTIFIER: dev.ericslutz.gus.visionos-tests
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/A Playa Named Gus.app/A Playa Named Gus"
+        ASSETCATALOG_COMPILER_APPICON_NAME: ""
+        CODE_SIGN_ENTITLEMENTS: ""
+
+  GusMacOSTests:
+    type: bundle.unit-test
+    platform: macOS
+    sources:
+      - path: Tests/APlayaNamedGusTests
+    dependencies:
+      - sdk: AppIntents.framework
+      - target: Gus
+    settings:
+      base:
+        PRODUCT_NAME: GusMacOSTests
+        PRODUCT_MODULE_NAME: GusMacOSTests
+        PRODUCT_BUNDLE_IDENTIFIER: dev.ericslutz.gus.macos-tests
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/A Playa Named Gus.app/Contents/MacOS/A Playa Named Gus"
+        ASSETCATALOG_COMPILER_APPICON_NAME: ""
+        CODE_SIGN_ENTITLEMENTS: ""
 
   GusUITests:
     type: bundle.ui-testing
@@ -121,6 +173,57 @@ targets:
         CODE_SIGN_ENTITLEMENTS: ""
         CODE_SIGN_ENTITLEMENTS[sdk=macosx*]: ""
 
+  GusTVOSUITests:
+    type: bundle.ui-testing
+    platform: tvOS
+    sources:
+      - path: Tests/APlayaNamedGusUITests
+    dependencies:
+      - sdk: AppIntents.framework
+      - target: Gus
+    settings:
+      base:
+        PRODUCT_NAME: GusTVOSUITests
+        PRODUCT_MODULE_NAME: GusTVOSUITests
+        PRODUCT_BUNDLE_IDENTIFIER: dev.ericslutz.gus.tvos-uitests
+        GENERATE_INFOPLIST_FILE: YES
+        ASSETCATALOG_COMPILER_APPICON_NAME: ""
+        CODE_SIGN_ENTITLEMENTS: ""
+
+  GusVisionOSUITests:
+    type: bundle.ui-testing
+    platform: visionOS
+    sources:
+      - path: Tests/APlayaNamedGusUITests
+    dependencies:
+      - sdk: AppIntents.framework
+      - target: Gus
+    settings:
+      base:
+        PRODUCT_NAME: GusVisionOSUITests
+        PRODUCT_MODULE_NAME: GusVisionOSUITests
+        PRODUCT_BUNDLE_IDENTIFIER: dev.ericslutz.gus.visionos-uitests
+        GENERATE_INFOPLIST_FILE: YES
+        ASSETCATALOG_COMPILER_APPICON_NAME: ""
+        CODE_SIGN_ENTITLEMENTS: ""
+
+  GusMacOSUITests:
+    type: bundle.ui-testing
+    platform: macOS
+    sources:
+      - path: Tests/APlayaNamedGusUITests
+    dependencies:
+      - sdk: AppIntents.framework
+      - target: Gus
+    settings:
+      base:
+        PRODUCT_NAME: GusMacOSUITests
+        PRODUCT_MODULE_NAME: GusMacOSUITests
+        PRODUCT_BUNDLE_IDENTIFIER: dev.ericslutz.gus.macos-uitests
+        GENERATE_INFOPLIST_FILE: YES
+        ASSETCATALOG_COMPILER_APPICON_NAME: ""
+        CODE_SIGN_ENTITLEMENTS: ""
+
 schemes:
   A Playa Named Gus:
     build:
@@ -131,6 +234,82 @@ schemes:
       targets:
         - GusTests
         - GusUITests
+
+  Gus iOS Tests:
+    build:
+      targets:
+        Gus: all
+    test:
+      gatherCoverageData: true
+      targets:
+        - GusTests
+        - GusUITests
+
+  Gus iOS Unit Tests:
+    build:
+      targets:
+        Gus: all
+    test:
+      gatherCoverageData: true
+      targets:
+        - GusTests
+
+  Gus tvOS Tests:
+    build:
+      targets:
+        Gus: all
+    test:
+      gatherCoverageData: true
+      targets:
+        - GusTVOSTests
+        - GusTVOSUITests
+
+  Gus tvOS Unit Tests:
+    build:
+      targets:
+        Gus: all
+    test:
+      gatherCoverageData: true
+      targets:
+        - GusTVOSTests
+
+  Gus visionOS Tests:
+    build:
+      targets:
+        Gus: all
+    test:
+      gatherCoverageData: true
+      targets:
+        - GusVisionOSTests
+        - GusVisionOSUITests
+
+  Gus visionOS Unit Tests:
+    build:
+      targets:
+        Gus: all
+    test:
+      gatherCoverageData: true
+      targets:
+        - GusVisionOSTests
+
+  Gus macOS Tests:
+    build:
+      targets:
+        Gus: all
+    test:
+      gatherCoverageData: true
+      targets:
+        - GusMacOSTests
+        - GusMacOSUITests
+
+  Gus macOS Unit Tests:
+    build:
+      targets:
+        Gus: all
+    test:
+      gatherCoverageData: true
+      targets:
+        - GusMacOSTests
 
   Gus Unit Tests:
     build:
