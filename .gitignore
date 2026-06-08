@@ -12,6 +12,9 @@ Screenshots/
 # Team ID without committing it. See Documentation/AppStore/signing-capabilities.md.
 Config/Local.xcconfig
 
+# Local environment overrides and secrets for diagnostic scripts.
+.env.local
+
 # Created by https://www.toptal.com/developers/gitignore/api/macos,visualstudiocode,swift
 # Edit at https://www.toptal.com/developers/gitignore?templates=macos,visualstudiocode,swift
 

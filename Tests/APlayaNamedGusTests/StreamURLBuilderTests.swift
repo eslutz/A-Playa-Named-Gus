@@ -5,7 +5,7 @@ import Testing
 
 @Suite("AVPlayer device profile")
 struct StreamURLBuilderTests {
-    @Test("biases playback toward HLS transcoding while preserving direct-play containers")
+    @Test("biases playback toward HEVC HLS transcoding while preserving direct-play containers")
     func avPlayerProfileUsesHLSAndAVKitContainers() {
         let profile = StreamURLBuilder.avPlayerProfile(maxStreamingBitrate: 42_000_000)
         let directPlay = profile.directPlayProfiles?.first
@@ -16,11 +16,62 @@ struct StreamURLBuilderTests {
         #expect(directPlay?.container == "mp4,m4v,mov")
         #expect(directPlay?.videoCodec == "h264,hevc")
         #expect(transcoding?.protocol == .hls)
-        #expect(transcoding?.container == "ts")
+        #expect(transcoding?.container == "mp4")
         #expect(transcoding?.audioCodec == "aac")
-        #expect(transcoding?.videoCodec == "h264,hevc")
+        #expect(transcoding?.videoCodec == "hevc")
+        #expect(transcoding?.enableMpegtsM2TsMode == false)
         #expect(transcoding?.type == .video)
         #expect(transcoding?.context == .streaming)
+    }
+
+    @Test("direct-play profile keeps HEVC available for AVKit-native containers")
+    func avPlayerProfileAllowsDirectPlayHEVC() {
+        let profile = StreamURLBuilder.avPlayerProfile(maxStreamingBitrate: 42_000_000)
+        let directPlay = profile.directPlayProfiles?.first
+
+        #expect(directPlay?.container == "mp4,m4v,mov")
+        #expect(directPlay?.videoCodec?.split(separator: ",").contains("hevc") == true)
+    }
+
+    @Test("MPEG-TS HLS fallback remains H.264-only")
+    func avPlayerProfileKeepsTransportStreamFallbackH264Only() {
+        let profile = StreamURLBuilder.avPlayerProfile(maxStreamingBitrate: 42_000_000)
+        let transportStreamProfiles = profile.transcodingProfiles?.filter { profile in
+            profile.protocol == .hls && profile.container == "ts"
+        } ?? []
+
+        let transportStream = try? #require(transportStreamProfiles.first)
+        #expect(transportStreamProfiles.count == 1)
+        #expect(transportStream?.audioCodec == "aac")
+        #expect(transportStream?.videoCodec == "h264")
+        #expect(transportStream?.enableMpegtsM2TsMode == true)
+    }
+
+    @Test("HEVC fMP4 HLS profile is separate from the H.264 transport stream fallback")
+    func avPlayerProfileOffersHEVCFragmentedMP4BeforeH264TransportStream() throws {
+        let profile = StreamURLBuilder.avPlayerProfile(maxStreamingBitrate: 42_000_000)
+        let transcodingProfiles = try #require(profile.transcodingProfiles)
+
+        #expect(transcodingProfiles.count == 2)
+        guard transcodingProfiles.count == 2 else { return }
+
+        let hevc = transcodingProfiles[0]
+        #expect(hevc.protocol == .hls)
+        #expect(hevc.container == "mp4")
+        #expect(hevc.audioCodec == "aac")
+        #expect(hevc.videoCodec == "hevc")
+        #expect(hevc.enableMpegtsM2TsMode == false)
+        #expect(hevc.type == .video)
+        #expect(hevc.context == .streaming)
+
+        let h264 = transcodingProfiles[1]
+        #expect(h264.protocol == .hls)
+        #expect(h264.container == "ts")
+        #expect(h264.audioCodec == "aac")
+        #expect(h264.videoCodec == "h264")
+        #expect(h264.enableMpegtsM2TsMode == true)
+        #expect(h264.type == .video)
+        #expect(h264.context == .streaming)
     }
 
     @Test("direct-play body disables transcoding for stereo sources")
@@ -54,10 +105,37 @@ struct StreamURLBuilderTests {
         #expect(body.deviceProfile?.transcodingProfiles?.first?.protocol == .hls)
     }
 
+    @Test("transcoding URLs include the access token for AVPlayer requests")
+    func resolvePlaybackAddsAPIKeyToTranscodingURL() async throws {
+        let fixture = try makePlaybackInfoFixture(responses: [
+            PlaybackInfoResponse(
+                mediaSources: [
+                    MediaSourceInfo(
+                        id: "hls-source",
+                        transcodingURL: "/Videos/item-1/master.m3u8?MediaSourceId=hls-source"
+                    ),
+                ],
+                playSessionID: "session-hls"
+            ),
+        ])
+
+        let builder = try StreamURLBuilder(
+            client: fixture.client,
+            userID: "user-1"
+        )
+
+        let resolution = try await builder.resolvePlayback(for: "item-1")
+        let components = try #require(URLComponents(url: resolution.url, resolvingAgainstBaseURL: false))
+        let queryItems = components.queryItems ?? []
+
+        #expect(queryItems.contains(URLQueryItem(name: "MediaSourceId", value: "hls-source")))
+        #expect(queryItems.contains(URLQueryItem(name: "api_key", value: "token")))
+    }
+
     @Test("resolvePlayback retries in 2D when a stereo source cannot direct play")
     func resolvePlaybackFallsBackTo2DWhenStereoDirectPlayIsUnavailable() async throws {
         let stereoLayout = Stereo3DLayout.sideBySide(half: true)
-        PlaybackInfoURLProtocol.configure(responses: [
+        let fixture = try makePlaybackInfoFixture(responses: [
             PlaybackInfoResponse(
                 mediaSources: [
                     MediaSourceInfo(
@@ -81,7 +159,7 @@ struct StreamURLBuilderTests {
         ])
 
         let builder = try StreamURLBuilder(
-            client: makePlaybackInfoClient(),
+            client: fixture.client,
             userID: "user-1"
         )
 
@@ -90,9 +168,9 @@ struct StreamURLBuilderTests {
             maxStreamingBitrate: 42_000_000,
             stereoLayout: stereoLayout
         )
-        let requests = PlaybackInfoURLProtocol.recordedPlaybackInfoBodies
+        let requests = fixture.recordedPlaybackInfoBodies
 
-        #expect(resolution.url.absoluteString == "https://jellyfin.example.com/Videos/item-1/master.m3u8")
+        #expect(resolution.url.absoluteString == "https://jellyfin.example.com/Videos/item-1/master.m3u8?api_key=token")
         #expect(resolution.playSessionID == "session-2d")
         #expect(resolution.mediaSourceID == "fallback-source")
         #expect(resolution.isTranscoding)
@@ -104,10 +182,31 @@ struct StreamURLBuilderTests {
         #expect(requests.last?.deviceProfile?.transcodingProfiles?.first?.protocol == .hls)
     }
 
-    private func makePlaybackInfoClient() throws -> JellyfinClient {
+    private func makePlaybackInfoFixture(responses: [PlaybackInfoResponse]) throws -> PlaybackInfoClientFixture {
+        try PlaybackInfoClientFixture(responses: responses)
+    }
+}
+
+private final class PlaybackInfoClientFixture {
+    let client: JellyfinClient
+    private let stateID: String
+    private let state: PlaybackInfoURLProtocolState
+
+    var recordedPlaybackInfoBodies: [PlaybackInfoDto] {
+        state.recordedBodies
+    }
+
+    init(responses: [PlaybackInfoResponse]) throws {
+        state = PlaybackInfoURLProtocolState(responses: responses)
+        stateID = PlaybackInfoURLProtocol.register(state: state)
+
         let configuration = URLSessionConfiguration.ephemeral
         configuration.protocolClasses = [PlaybackInfoURLProtocol.self]
-        return try JellyfinClient(
+        configuration.httpAdditionalHeaders = [
+            PlaybackInfoURLProtocol.stateHeaderName: stateID,
+        ]
+
+        client = try JellyfinClient(
             configuration: .init(
                 url: #require(URL(string: "https://jellyfin.example.com")),
                 accessToken: "token",
@@ -119,17 +218,30 @@ struct StreamURLBuilderTests {
             sessionConfiguration: configuration
         )
     }
+
+    deinit {
+        PlaybackInfoURLProtocol.unregister(stateID: stateID)
+    }
 }
 
 private final class PlaybackInfoURLProtocol: URLProtocol {
-    private static let state = PlaybackInfoURLProtocolState()
+    static let stateHeaderName = "X-Gus-PlaybackInfo-State-ID"
 
-    static var recordedPlaybackInfoBodies: [PlaybackInfoDto] {
-        state.recordedBodies
+    private static let lock = NSLock()
+    private static var states: [String: PlaybackInfoURLProtocolState] = [:]
+
+    static func register(state: PlaybackInfoURLProtocolState) -> String {
+        let stateID = UUID().uuidString
+        lock.lock()
+        defer { lock.unlock() }
+        states[stateID] = state
+        return stateID
     }
 
-    static func configure(responses: [PlaybackInfoResponse]) {
-        state.configure(responses: responses)
+    static func unregister(stateID: String) {
+        lock.lock()
+        defer { lock.unlock() }
+        states[stateID] = nil
     }
 
     override class func canInit(with request: URLRequest) -> Bool {
@@ -142,7 +254,7 @@ private final class PlaybackInfoURLProtocol: URLProtocol {
 
     override func startLoading() {
         do {
-            let responseBody = try Self.state.response(for: request)
+            let responseBody = try Self.state(for: request).response(for: request)
             let data = try JSONEncoder().encode(responseBody)
             guard let url = request.url,
                   let response = HTTPURLResponse(
@@ -164,24 +276,35 @@ private final class PlaybackInfoURLProtocol: URLProtocol {
     }
 
     override func stopLoading() {}
+
+    private static func state(for request: URLRequest) throws -> PlaybackInfoURLProtocolState {
+        guard let stateID = request.value(forHTTPHeaderField: stateHeaderName) else {
+            throw URLError(.badServerResponse)
+        }
+
+        lock.lock()
+        defer { lock.unlock() }
+
+        guard let state = states[stateID] else {
+            throw URLError(.badServerResponse)
+        }
+        return state
+    }
 }
 
 private final class PlaybackInfoURLProtocolState {
     private let lock = NSLock()
-    private var responses: [PlaybackInfoResponse] = []
+    private var responses: [PlaybackInfoResponse]
     private var bodies: [PlaybackInfoDto] = []
+
+    init(responses: [PlaybackInfoResponse]) {
+        self.responses = responses
+    }
 
     var recordedBodies: [PlaybackInfoDto] {
         lock.lock()
         defer { lock.unlock() }
         return bodies
-    }
-
-    func configure(responses: [PlaybackInfoResponse]) {
-        lock.lock()
-        defer { lock.unlock() }
-        self.responses = responses
-        bodies = []
     }
 
     func response(for request: URLRequest) throws -> PlaybackInfoResponse {
