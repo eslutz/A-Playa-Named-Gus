@@ -14,9 +14,11 @@ enum AboutCardMetrics {
 }
 
 enum VisionEnvironmentControlPlacement: Equatable {
-    case tabViewSidebarTab
+    case leadingSceneOrnament
 }
 
 enum VisionSidebarLayout {
-    static let environmentControlPlacement: VisionEnvironmentControlPlacement = .tabViewSidebarTab
+    static let environmentControlPlacement: VisionEnvironmentControlPlacement = .leadingSceneOrnament
+    static let environmentControlSystemImage = "mountain.2"
+    static let environmentControlTopPadding: CGFloat = 84
 }
