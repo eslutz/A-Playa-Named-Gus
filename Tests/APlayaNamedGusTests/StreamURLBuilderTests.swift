@@ -77,6 +77,33 @@ struct StreamURLBuilderTests {
         #expect(body.deviceProfile?.transcodingProfiles?.first?.protocol == .hls)
     }
 
+    @Test("transcoding URLs include the access token for AVPlayer requests")
+    func resolvePlaybackAddsAPIKeyToTranscodingURL() async throws {
+        PlaybackInfoURLProtocol.configure(responses: [
+            PlaybackInfoResponse(
+                mediaSources: [
+                    MediaSourceInfo(
+                        id: "hls-source",
+                        transcodingURL: "/Videos/item-1/master.m3u8?MediaSourceId=hls-source"
+                    ),
+                ],
+                playSessionID: "session-hls"
+            ),
+        ])
+
+        let builder = try StreamURLBuilder(
+            client: makePlaybackInfoClient(),
+            userID: "user-1"
+        )
+
+        let resolution = try await builder.resolvePlayback(for: "item-1")
+        let components = try #require(URLComponents(url: resolution.url, resolvingAgainstBaseURL: false))
+        let queryItems = components.queryItems ?? []
+
+        #expect(queryItems.contains(URLQueryItem(name: "MediaSourceId", value: "hls-source")))
+        #expect(queryItems.contains(URLQueryItem(name: "api_key", value: "token")))
+    }
+
     @Test("resolvePlayback retries in 2D when a stereo source cannot direct play")
     func resolvePlaybackFallsBackTo2DWhenStereoDirectPlayIsUnavailable() async throws {
         let stereoLayout = Stereo3DLayout.sideBySide(half: true)
@@ -115,7 +142,7 @@ struct StreamURLBuilderTests {
         )
         let requests = PlaybackInfoURLProtocol.recordedPlaybackInfoBodies
 
-        #expect(resolution.url.absoluteString == "https://jellyfin.example.com/Videos/item-1/master.m3u8")
+        #expect(resolution.url.absoluteString == "https://jellyfin.example.com/Videos/item-1/master.m3u8?api_key=token")
         #expect(resolution.playSessionID == "session-2d")
         #expect(resolution.mediaSourceID == "fallback-source")
         #expect(resolution.isTranscoding)

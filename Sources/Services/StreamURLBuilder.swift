@@ -108,7 +108,7 @@ struct StreamURLBuilder {
         }
 
         // Prefer a server-built transcoding URL (HLS) when present for ordinary 2D playback.
-        if !stereoLayout.requiresDirectPlay, let transcodingURL = source.transcodingURL, let url = client.url(path: transcodingURL) {
+        if !stereoLayout.requiresDirectPlay, let transcodingURL = source.transcodingURL, let url = authenticatedPlaybackURL(path: transcodingURL) {
             logger.debug("Resolved HLS transcoding URL for item \(itemID, privacy: .public)")
             return Resolution(
                 url: url,
@@ -226,5 +226,25 @@ struct StreamURLBuilder {
             audioStreamIndex: streamSelection.audioStreamIndex,
             subtitleStreamIndex: streamSelection.subtitleStreamIndex
         )
+    }
+
+    private func authenticatedPlaybackURL(path: String) -> URL? {
+        guard let url = client.url(path: path) else { return nil }
+        return Self.appendingAPIKeyIfNeeded(to: url, accessToken: client.accessToken)
+    }
+
+    private static func appendingAPIKeyIfNeeded(to url: URL, accessToken: String?) -> URL {
+        guard let accessToken,
+              var components = URLComponents(url: url, resolvingAgainstBaseURL: false)
+        else {
+            return url
+        }
+
+        var queryItems = components.queryItems ?? []
+        guard !queryItems.contains(where: { $0.name == "api_key" }) else { return url }
+
+        queryItems.append(URLQueryItem(name: "api_key", value: accessToken))
+        components.queryItems = queryItems
+        return components.url ?? url
     }
 }
