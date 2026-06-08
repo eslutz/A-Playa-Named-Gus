@@ -37,8 +37,8 @@ struct UILayoutMetricsTests {
 
     @Test("vision environment control is centered on the sidebar axis below the menu")
     func visionEnvironmentControlIsCenteredBelowSidebarMenu() {
-        #expect(VisionSidebarLayout.environmentControlTopPadding == 124)
-        #expect(VisionSidebarLayout.environmentControlTrailingPadding == 128)
+        #expect(VisionSidebarLayout.environmentControlTopPadding == 116)
+        #expect(VisionSidebarLayout.environmentControlTrailingPadding == 120)
         #expect(VisionSidebarLayout.environmentControlDiameter == 48)
     }
 
