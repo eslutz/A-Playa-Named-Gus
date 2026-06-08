@@ -147,6 +147,7 @@ private enum SidebarItem: Hashable {
                 if VisionSidebarLayout.environmentControlPlacement == .leadingSceneOrnament {
                     VisionEnvironmentSidebarButton()
                         .padding(.top, VisionSidebarLayout.environmentControlTopPadding)
+                        .padding(.trailing, VisionSidebarLayout.environmentControlTrailingPadding)
                 }
             }
             .onAppear {

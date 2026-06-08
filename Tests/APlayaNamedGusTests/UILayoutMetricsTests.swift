@@ -35,6 +35,12 @@ struct UILayoutMetricsTests {
         #expect(VisionSidebarLayout.environmentControlPlacement == .leadingSceneOrnament)
     }
 
+    @Test("vision environment control is centered on the sidebar axis below the menu")
+    func visionEnvironmentControlIsCenteredBelowSidebarMenu() {
+        #expect(VisionSidebarLayout.environmentControlTopPadding == 140)
+        #expect(VisionSidebarLayout.environmentControlTrailingPadding == 112)
+    }
+
     @Test("page content uses shared max width")
     func pageContentUsesSharedMaxWidth() {
         #expect(PageContentMetrics.maxWidth >= 1200)

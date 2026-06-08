@@ -20,5 +20,6 @@ enum VisionEnvironmentControlPlacement: Equatable {
 enum VisionSidebarLayout {
     static let environmentControlPlacement: VisionEnvironmentControlPlacement = .leadingSceneOrnament
     static let environmentControlSystemImage = "mountain.2"
-    static let environmentControlTopPadding: CGFloat = 84
+    static let environmentControlTopPadding: CGFloat = 140
+    static let environmentControlTrailingPadding: CGFloat = 112
 }
