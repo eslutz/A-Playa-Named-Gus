@@ -111,8 +111,13 @@ enum EnvironmentPickerMetrics {
             } label: {
                 Label("Environment", systemImage: VisionSidebarLayout.environmentControlSystemImage)
                     .labelStyle(.iconOnly)
+                    .frame(
+                        width: VisionSidebarLayout.environmentControlDiameter,
+                        height: VisionSidebarLayout.environmentControlDiameter
+                    )
             }
             .buttonStyle(.bordered)
+            .buttonBorderShape(.circle)
             .controlSize(.large)
             .accessibilityLabel("Environment")
             .accessibilityIdentifier("visionEnvironmentSidebarButton")
