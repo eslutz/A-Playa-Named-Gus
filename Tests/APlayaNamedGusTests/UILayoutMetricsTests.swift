@@ -30,6 +30,11 @@ struct UILayoutMetricsTests {
         #expect(EnvironmentPickerMetrics.width(forEnvironmentCount: 6) == EnvironmentPickerMetrics.width(forEnvironmentCount: 5))
     }
 
+    @Test("vision environment control uses a tab sidebar item")
+    func visionEnvironmentControlUsesTabSidebarItem() {
+        #expect(VisionSidebarLayout.environmentControlPlacement == .tabViewSidebarTab)
+    }
+
     @Test("page content uses shared max width")
     func pageContentUsesSharedMaxWidth() {
         #expect(PageContentMetrics.maxWidth >= 1200)

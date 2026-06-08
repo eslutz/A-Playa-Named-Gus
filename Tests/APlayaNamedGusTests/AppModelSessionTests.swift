@@ -99,6 +99,21 @@ struct AppModelSessionTests {
         #expect(fixture.userDefaults.string(forKey: Self.lastSessionAccountKey) == nil)
         #expect(fixture.userDefaults.string(forKey: Self.legacyLastUserIDKey) == nil)
     }
+
+    @Test("debug preview session installs a signed-in session without persistence")
+    func debugPreviewSessionInstallsSignedInSession() throws {
+        #if DEBUG
+            let fixture = try Fixture()
+            let usersBeforePreview = fixture.store.loadUsers()
+
+            fixture.appModel.installDebugPreviewSession()
+
+            let session = try #require(fixture.appModel.currentSession)
+            #expect(session.user.name == "Preview User")
+            #expect(session.server.name == "Preview Jellyfin")
+            #expect(fixture.store.loadUsers() == usersBeforePreview)
+        #endif
+    }
 }
 
 private final class MemoryTokenStore: TokenStore {

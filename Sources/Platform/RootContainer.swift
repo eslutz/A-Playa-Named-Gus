@@ -79,6 +79,9 @@ private enum SidebarItem: Hashable {
     case home
     case libraries
     case settings
+    #if os(visionOS)
+        case environment
+    #endif
 
     /// String key used with `SceneStorage` to restore sidebar selection across launches.
     var sceneKey: String {
@@ -86,15 +89,31 @@ private enum SidebarItem: Hashable {
         case .home: return "home"
         case .libraries: return "libraries"
         case .settings: return "settings"
+        #if os(visionOS)
+            case .environment: return "environment"
+        #endif
         }
     }
 
     init?(sceneKey key: String) {
-        if key == "home" { self = .home }
-        else if key == "libraries" { self = .libraries }
-        else if key == "settings" { self = .settings }
-        else if key.hasPrefix("library:") { self = .libraries }
-        else { return nil }
+        switch key {
+        case "home":
+            self = .home
+        case "libraries":
+            self = .libraries
+        case "settings":
+            self = .settings
+        #if os(visionOS)
+            case "environment":
+                self = .environment
+        #endif
+        default:
+            if key.hasPrefix("library:") {
+                self = .libraries
+            } else {
+                return nil
+            }
+        }
     }
 }
 
@@ -132,12 +151,16 @@ private enum SidebarItem: Hashable {
                         SettingsView()
                     }
                 }
+
+                if VisionSidebarLayout.environmentControlPlacement == .tabViewSidebarTab {
+                    Tab("Environment", systemImage: CinemaEnvironment.gusCinema.systemImage, value: SidebarItem.environment) {
+                        NavigationStack {
+                            VisionEnvironmentView()
+                        }
+                    }
+                }
             }
             .tabViewStyle(.sidebarAdaptable)
-            .ornament(attachmentAnchor: .scene(.leading), contentAlignment: .bottom) {
-                VisionEnvironmentOrnament()
-                    .padding(.top, 84)
-            }
             .onAppear {
                 if let restored = SidebarItem(sceneKey: storedSelectionKey) {
                     selection = restored
@@ -152,6 +175,8 @@ private enum SidebarItem: Hashable {
                     navigation.open(.libraries)
                 case .settings:
                     navigation.open(.settings)
+                case .environment:
+                    break
                 }
             }
             .onChange(of: navigation.route) { _, route in
@@ -226,6 +251,10 @@ private struct SplitRootView: View {
                 navigation.open(.libraries)
             case .settings:
                 navigation.open(.settings)
+            #if os(visionOS)
+                case .environment:
+                    break
+            #endif
             case .none:
                 break
             }
@@ -269,6 +298,10 @@ private struct SplitRootView: View {
             SettingsView()
         case .libraries:
             LibrariesLandingView(store: home)
+        #if os(visionOS)
+            case .environment:
+                VisionEnvironmentView()
+        #endif
         case .home, .none:
             HomeView()
         }

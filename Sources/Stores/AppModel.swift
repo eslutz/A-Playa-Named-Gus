@@ -148,6 +148,33 @@ final class AppModel {
         users.filter { $0.serverID == server.id }
     }
 
+    #if DEBUG
+        /// Installs an in-memory signed-in session for simulator screenshots and UI tests.
+        /// This intentionally avoids `ServerStore`, `TokenStore`, and `UserDefaults` writes.
+        func installDebugPreviewSession() {
+            guard let serverURL = URL(string: "https://preview.jellyfin.invalid") else { return }
+
+            let server = ServerConnection(
+                id: "debug-preview-server",
+                name: "Preview Jellyfin",
+                url: serverURL
+            )
+            let user = StoredUser(
+                id: "debug-preview-user",
+                name: "Preview User",
+                serverID: server.id
+            )
+
+            servers = [server]
+            users = [user]
+            currentSession = SessionStore(
+                client: JellyfinClientFactory.makeClient(url: server.url, accessToken: "debug-preview-token"),
+                user: user,
+                server: server
+            )
+        }
+    #endif
+
     // MARK: - Connect
 
     /// Normalizes a URL, queries public system info, follows any redirect, and persists

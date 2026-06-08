@@ -99,31 +99,21 @@ enum EnvironmentPickerMetrics {
         }
     }
 
-    struct VisionEnvironmentOrnament: View {
+    struct VisionEnvironmentView: View {
         @Environment(CinemaModel.self) private var cinema
         @Environment(\.openImmersiveSpace) private var openImmersiveSpace
         @Environment(\.dismissImmersiveSpace) private var dismissImmersiveSpace
-        @State private var isPickerPresented = false
 
         var body: some View {
-            Button {
-                isPickerPresented = true
-            } label: {
-                Label("Environment", systemImage: CinemaEnvironment.gusCinema.systemImage)
-                    .labelStyle(.iconOnly)
-            }
-            .buttonStyle(.bordered)
-            .controlSize(.large)
-            .accessibilityLabel("Environment")
-            .popover(isPresented: $isPickerPresented, attachmentAnchor: .rect(.bounds), arrowEdge: .leading) {
-                EnvironmentPicker(
-                    selectedEnvironment: cinema.activeEnvironment,
-                    isOpen: cinema.isOpen,
-                    select: { environment in
-                        Task { await select(environment) }
-                    }
-                )
-            }
+            EnvironmentPicker(
+                selectedEnvironment: cinema.activeEnvironment,
+                isOpen: cinema.isOpen,
+                select: { environment in
+                    Task { await select(environment) }
+                }
+            )
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .navigationTitle("Environment")
         }
 
         @MainActor
@@ -136,14 +126,12 @@ enum EnvironmentPickerMetrics {
             cinema.selectEnvironment(environment)
 
             guard !cinema.isOpen else {
-                isPickerPresented = false
                 return
             }
 
             switch await openImmersiveSpace(id: GusCinema.spaceID) {
             case .opened:
                 cinema.setOpen(true)
-                isPickerPresented = false
             case .error, .userCancelled:
                 cinema.setOpen(false)
                 cinema.clearSelectedEnvironment()
@@ -159,7 +147,6 @@ enum EnvironmentPickerMetrics {
             cinema.setOpen(false)
             cinema.clearSelectedEnvironment()
             cinema.clearPlaybackPresentation()
-            isPickerPresented = false
         }
     }
 

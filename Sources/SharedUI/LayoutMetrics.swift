@@ -12,3 +12,11 @@ enum AboutCardMetrics {
         CGSize(width: cardWidth, height: cardHeight)
     }
 }
+
+enum VisionEnvironmentControlPlacement: Equatable {
+    case tabViewSidebarTab
+}
+
+enum VisionSidebarLayout {
+    static let environmentControlPlacement: VisionEnvironmentControlPlacement = .tabViewSidebarTab
+}
