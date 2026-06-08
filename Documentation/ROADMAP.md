@@ -407,6 +407,18 @@ milestone only after the launch scope is stable.
  progress, and offline audiobook downloads. *Acceptance:* audiobook progress syncs
  reliably with Jellyfin and the UX is distinct from video playback.
 
+- [ ] **CarPlay audio companion.** Add an iOS-only CarPlay experience after the music and
+ audiobook foundations are in place. Candidate scope includes a minimal Listen Now entry
+ point, music and audiobook browsing through native CarPlay templates, offline audio
+ playback, system Now Playing artwork/progress, play/pause/seek/next/previous transport
+ controls, and an "Open Gus on iPhone to sign in" fallback when no session is available.
+ This should use the CarPlay audio entitlement and system CarPlay templates rather than a
+ custom vehicle UI, and it should not expose movie/show browsing or promote in-car video
+ playback as a supported use case. *Acceptance:* a CarPlay product brief defines the
+ audio-only scope, entitlement/review requirements, iOS-only build settings, Siri/
+ `INPlayMediaIntent` needs, provider capability dependencies, offline behavior, and
+ simulator/vehicle verification matrix before implementation starts.
+
 - [ ] **Photos.** Add Jellyfin photo library browsing with albums, timelines, full-screen
  viewing, slideshows, favorites, and casting/photo playback to larger clients. *Acceptance:*
  users can browse photo libraries comfortably across platforms and start a slideshow on a
