@@ -111,14 +111,15 @@ enum EnvironmentPickerMetrics {
             } label: {
                 Label("Environment", systemImage: VisionSidebarLayout.environmentControlSystemImage)
                     .labelStyle(.iconOnly)
+                    .font(.body.weight(.semibold))
                     .frame(
                         width: VisionSidebarLayout.environmentControlDiameter,
                         height: VisionSidebarLayout.environmentControlDiameter
                     )
             }
-            .buttonStyle(.bordered)
-            .buttonBorderShape(.circle)
-            .controlSize(.large)
+            .buttonStyle(.plain)
+            .contentShape(Circle())
+            .glassBackgroundEffect(in: Circle())
             .accessibilityLabel("Environment")
             .accessibilityIdentifier("visionEnvironmentSidebarButton")
             .popover(isPresented: $isPickerPresented, attachmentAnchor: .rect(.bounds), arrowEdge: .leading) {
