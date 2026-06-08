@@ -30,6 +30,18 @@ struct UILayoutMetricsTests {
         #expect(EnvironmentPickerMetrics.width(forEnvironmentCount: 6) == EnvironmentPickerMetrics.width(forEnvironmentCount: 5))
     }
 
+    @Test("vision environment control uses a separated leading scene ornament")
+    func visionEnvironmentControlUsesSeparatedLeadingSceneOrnament() {
+        #expect(VisionSidebarLayout.environmentControlPlacement == .leadingSceneOrnament)
+    }
+
+    @Test("vision environment control is centered on the sidebar axis below the menu")
+    func visionEnvironmentControlIsCenteredBelowSidebarMenu() {
+        #expect(VisionSidebarLayout.environmentControlTopPadding == 116)
+        #expect(VisionSidebarLayout.environmentControlTrailingPadding == 116)
+        #expect(VisionSidebarLayout.environmentControlDiameter == 56)
+    }
+
     @Test("page content uses shared max width")
     func pageContentUsesSharedMaxWidth() {
         #expect(PageContentMetrics.maxWidth >= 1200)

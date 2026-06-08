@@ -12,6 +12,7 @@ struct GusApp: App {
     @State private var offlineDownloads = OfflineDownloadStore()
     @State private var upNext = UpNextStore()
     private let shouldRestoreLastSession: Bool
+    private let shouldInstallDebugPreviewSession: Bool
 
     #if os(visionOS)
         @State private var cinema = CinemaModel()
@@ -20,7 +21,13 @@ struct GusApp: App {
     init() {
         // Route `AsyncImage` (which uses `URLSession.shared`) through our tuned cache.
         URLCache.shared = JellyfinClientFactory.urlCache
-        shouldRestoreLastSession = !ProcessInfo.processInfo.arguments.contains("--gus-skip-session-restore")
+        let arguments = ProcessInfo.processInfo.arguments
+        shouldRestoreLastSession = !arguments.contains("--gus-skip-session-restore")
+        #if DEBUG
+            shouldInstallDebugPreviewSession = arguments.contains("--gus-debug-preview-session")
+        #else
+            shouldInstallDebugPreviewSession = false
+        #endif
     }
 
     var body: some Scene {
@@ -35,6 +42,12 @@ struct GusApp: App {
                 .environment(cinema)
             #endif
                 .task {
+                    #if DEBUG
+                        if shouldInstallDebugPreviewSession {
+                            appModel.installDebugPreviewSession()
+                            return
+                        }
+                    #endif
                     guard shouldRestoreLastSession else { return }
                     appModel.restoreLastSession()
                 }

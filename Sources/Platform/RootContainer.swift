@@ -90,11 +90,20 @@ private enum SidebarItem: Hashable {
     }
 
     init?(sceneKey key: String) {
-        if key == "home" { self = .home }
-        else if key == "libraries" { self = .libraries }
-        else if key == "settings" { self = .settings }
-        else if key.hasPrefix("library:") { self = .libraries }
-        else { return nil }
+        switch key {
+        case "home":
+            self = .home
+        case "libraries":
+            self = .libraries
+        case "settings":
+            self = .settings
+        default:
+            if key.hasPrefix("library:") {
+                self = .libraries
+            } else {
+                return nil
+            }
+        }
     }
 }
 
@@ -134,9 +143,12 @@ private enum SidebarItem: Hashable {
                 }
             }
             .tabViewStyle(.sidebarAdaptable)
-            .ornament(attachmentAnchor: .scene(.leading), contentAlignment: .bottom) {
-                VisionEnvironmentOrnament()
-                    .padding(.top, 84)
+            .ornament(attachmentAnchor: .scene(.leading), contentAlignment: .top) {
+                if VisionSidebarLayout.environmentControlPlacement == .leadingSceneOrnament {
+                    VisionEnvironmentSidebarButton()
+                        .padding(.top, VisionSidebarLayout.environmentControlTopPadding)
+                        .padding(.trailing, VisionSidebarLayout.environmentControlTrailingPadding)
+                }
             }
             .onAppear {
                 if let restored = SidebarItem(sceneKey: storedSelectionKey) {

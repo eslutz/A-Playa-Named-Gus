@@ -44,6 +44,10 @@ final class AppModel {
 
     private static let lastSessionAccountDefaultsKey = "dev.ericslutz.gus.lastSignedInSessionAccount"
     private static let legacyLastUserIDDefaultsKey = "dev.ericslutz.gus.lastSignedInUserID"
+    #if DEBUG
+        private static let debugPreviewServerID = "debug-preview-server"
+        private static let debugPreviewUserID = "debug-preview-user"
+    #endif
 
     private let serverStore: ServerStore
     private let tokenStore: TokenStore
@@ -148,6 +152,31 @@ final class AppModel {
         users.filter { $0.serverID == server.id }
     }
 
+    #if DEBUG
+        /// Installs an in-memory signed-in session for simulator screenshots and UI tests.
+        /// This intentionally avoids `ServerStore`, `TokenStore`, and `UserDefaults` writes.
+        func installDebugPreviewSession() {
+            guard let serverURL = URL(string: "https://preview.jellyfin.invalid") else { return }
+
+            let server = ServerConnection(
+                id: Self.debugPreviewServerID,
+                name: "Preview Jellyfin",
+                url: serverURL
+            )
+            let user = StoredUser(
+                id: Self.debugPreviewUserID,
+                name: "Preview User",
+                serverID: server.id
+            )
+
+            currentSession = SessionStore(
+                client: JellyfinClientFactory.makeClient(url: server.url, accessToken: "debug-preview-token"),
+                user: user,
+                server: server
+            )
+        }
+    #endif
+
     // MARK: - Connect
 
     /// Normalizes a URL, queries public system info, follows any redirect, and persists
@@ -232,6 +261,13 @@ final class AppModel {
             return
         }
 
+        #if DEBUG
+            guard !Self.isDebugPreviewSession(session) else {
+                currentSession = nil
+                return
+            }
+        #endif
+
         let credential = SessionCredential(user: session.user)
         let client = session.client
         Task { try? await client.signOut() } // best-effort server-side revoke
@@ -241,6 +277,12 @@ final class AppModel {
         lastSessionAccount = nil
         currentSession = nil
     }
+
+    #if DEBUG
+        private static func isDebugPreviewSession(_ session: SessionStore) -> Bool {
+            session.server.id == debugPreviewServerID && session.user.id == debugPreviewUserID
+        }
+    #endif
 
     // MARK: - Persistence helpers
 

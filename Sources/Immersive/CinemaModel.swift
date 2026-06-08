@@ -99,7 +99,7 @@ enum EnvironmentPickerMetrics {
         }
     }
 
-    struct VisionEnvironmentOrnament: View {
+    struct VisionEnvironmentSidebarButton: View {
         @Environment(CinemaModel.self) private var cinema
         @Environment(\.openImmersiveSpace) private var openImmersiveSpace
         @Environment(\.dismissImmersiveSpace) private var dismissImmersiveSpace
@@ -109,12 +109,19 @@ enum EnvironmentPickerMetrics {
             Button {
                 isPickerPresented = true
             } label: {
-                Label("Environment", systemImage: CinemaEnvironment.gusCinema.systemImage)
+                Label("Environment", systemImage: VisionSidebarLayout.environmentControlSystemImage)
                     .labelStyle(.iconOnly)
+                    .font(.body.weight(.semibold))
+                    .frame(
+                        width: VisionSidebarLayout.environmentControlDiameter,
+                        height: VisionSidebarLayout.environmentControlDiameter
+                    )
             }
-            .buttonStyle(.bordered)
-            .controlSize(.large)
+            .buttonStyle(.plain)
+            .contentShape(Circle())
+            .glassBackgroundEffect(in: Circle())
             .accessibilityLabel("Environment")
+            .accessibilityIdentifier("visionEnvironmentSidebarButton")
             .popover(isPresented: $isPickerPresented, attachmentAnchor: .rect(.bounds), arrowEdge: .leading) {
                 EnvironmentPicker(
                     selectedEnvironment: cinema.activeEnvironment,
