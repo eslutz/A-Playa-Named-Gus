@@ -171,7 +171,7 @@ struct StreamURLBuilder {
                 maxAudioChannels: "2",
                 minSegments: 2,
                 type: .video,
-                videoCodec: "h264,hevc"
+                videoCodec: "h264"
             ),
         ]
 

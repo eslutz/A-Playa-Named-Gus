@@ -18,9 +18,32 @@ struct StreamURLBuilderTests {
         #expect(transcoding?.protocol == .hls)
         #expect(transcoding?.container == "ts")
         #expect(transcoding?.audioCodec == "aac")
-        #expect(transcoding?.videoCodec == "h264,hevc")
+        #expect(transcoding?.videoCodec == "h264")
         #expect(transcoding?.type == .video)
         #expect(transcoding?.context == .streaming)
+    }
+
+    @Test("direct-play profile keeps HEVC available for AVKit-native containers")
+    func avPlayerProfileAllowsDirectPlayHEVC() {
+        let profile = StreamURLBuilder.avPlayerProfile(maxStreamingBitrate: 42_000_000)
+        let directPlay = profile.directPlayProfiles?.first
+
+        #expect(directPlay?.container == "mp4,m4v,mov")
+        #expect(directPlay?.videoCodec?.split(separator: ",").contains("hevc") == true)
+    }
+
+    @Test("MPEG-TS HLS fallback remains H.264-only")
+    func avPlayerProfileKeepsTransportStreamFallbackH264Only() {
+        let profile = StreamURLBuilder.avPlayerProfile(maxStreamingBitrate: 42_000_000)
+        let transportStreamProfiles = profile.transcodingProfiles?.filter { profile in
+            profile.protocol == .hls && profile.container == "ts"
+        } ?? []
+
+        let transportStream = try? #require(transportStreamProfiles.first)
+        #expect(transportStreamProfiles.count == 1)
+        #expect(transportStream?.audioCodec == "aac")
+        #expect(transportStream?.videoCodec == "h264")
+        #expect(transportStream?.enableMpegtsM2TsMode == true)
     }
 
     @Test("direct-play body disables transcoding for stereo sources")
