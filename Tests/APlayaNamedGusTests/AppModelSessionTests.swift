@@ -114,6 +114,27 @@ struct AppModelSessionTests {
             #expect(fixture.store.loadUsers() == usersBeforePreview)
         #endif
     }
+
+    @Test("debug preview sign out preserves persisted accounts")
+    func debugPreviewSignOutPreservesPersistedAccounts() throws {
+        #if DEBUG
+            let fixture = try Fixture()
+            try fixture.appModel.switchToStoredUser(fixture.userA)
+            let lastSessionBeforePreview = fixture.appModel.lastSessionAccount
+
+            fixture.appModel.installDebugPreviewSession()
+            fixture.appModel.signOut()
+
+            #expect(fixture.appModel.currentSession == nil)
+            #expect(fixture.appModel.lastSessionAccount == lastSessionBeforePreview)
+            #expect(fixture.appModel.servers == [fixture.serverA, fixture.serverB])
+            #expect(fixture.appModel.users == [fixture.userA, fixture.userB])
+            #expect(fixture.store.loadServers() == [fixture.serverA, fixture.serverB])
+            #expect(fixture.store.loadUsers() == [fixture.userA, fixture.userB])
+            #expect(fixture.tokens.token(for: SessionCredential(user: fixture.userA)) == "token-a")
+            #expect(fixture.tokens.token(for: SessionCredential(user: fixture.userB)) == "token-b")
+        #endif
+    }
 }
 
 private final class MemoryTokenStore: TokenStore {
