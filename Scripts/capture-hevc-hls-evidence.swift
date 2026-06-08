@@ -229,9 +229,7 @@ enum CaptureHEVCHLSEvidence {
             .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
             .filter { !$0.isEmpty && !$0.hasPrefix("#") }
         let firstSegment = mediaSegments.first.map { redact($0, config: config) } ?? "(missing)"
-        let lowercasedFirstSegment = firstSegment.lowercased()
-        let firstSegmentLooksFMP4 = lowercasedFirstSegment.hasSuffix(".m4s")
-            || lowercasedFirstSegment.hasSuffix(".mp4")
+        let firstSegmentLooksFMP4 = segmentPathLooksFMP4(firstSegment)
         let passed = ["mp4", "fmp4"].contains(transcodingContainer.lowercased())
             && transcodingSubProtocol.lowercased() == "hls"
             && hasHEVCCodec
@@ -277,10 +275,47 @@ enum CaptureHEVCHLSEvidence {
     }
 
     private static func redact(_ value: String, config: Config) -> String {
-        value
+        var redacted = value
             .replacingOccurrences(of: config.accessToken, with: "REDACTED")
-            .replacingOccurrences(of: config.userID, with: "REDACTED_USER_ID")
-            .replacingOccurrences(of: config.itemID, with: "REDACTED_ITEM_ID")
+
+        for userID in identifierVariants(config.userID) {
+            redacted = redacted.replacingOccurrences(of: userID, with: "REDACTED_USER_ID")
+        }
+
+        for itemID in identifierVariants(config.itemID) {
+            redacted = redacted.replacingOccurrences(of: itemID, with: "REDACTED_ITEM_ID")
+        }
+
+        redacted = redacted.replacingOccurrences(
+            of: #"(?i)\b(ApiKey|api_key|DeviceId|PlaySessionId|MediaSourceId|Tag)=[^&\s]+"#,
+            with: "$1=REDACTED",
+            options: .regularExpression
+        )
+
+        return redacted
+    }
+
+    private static func identifierVariants(_ value: String) -> [String] {
+        let compact = value.replacingOccurrences(of: "-", with: "")
+        guard compact.count == 32 else { return [value] }
+
+        let dashed = [
+            compact.prefix(8),
+            compact.dropFirst(8).prefix(4),
+            compact.dropFirst(12).prefix(4),
+            compact.dropFirst(16).prefix(4),
+            compact.dropFirst(20),
+        ]
+        .map(String.init)
+        .joined(separator: "-")
+
+        return Array(Set([value, compact, dashed]))
+    }
+
+    private static func segmentPathLooksFMP4(_ segment: String) -> Bool {
+        let path = URLComponents(string: segment)?.path ?? String(segment.split(separator: "?").first ?? "")
+        let lowercasedPath = path.lowercased()
+        return lowercasedPath.hasSuffix(".m4s") || lowercasedPath.hasSuffix(".mp4")
     }
 }
 
