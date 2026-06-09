@@ -31,6 +31,46 @@ jobs:
       - name: Validate String Catalog
         run: jq empty Resources/Localizable.xcstrings
 
+  docs:
+    name: Docs and Config
+    runs-on: macos-26
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Validate Markdown encoding
+        run: |
+          ruby <<'RUBY'
+          paths = Dir["Documentation/**/*.md"] + %w[README.md CONTRIBUTING.md]
+          paths.each do |path|
+            next unless File.file?(path)
+
+            data = File.binread(path)
+            text = data.dup.force_encoding("UTF-8")
+            abort("#{path}: not valid UTF-8") unless text.valid_encoding?
+            abort("#{path}: contains CRLF line endings") if data.include?("\r\n")
+          end
+          RUBY
+
+      - name: Validate plists and entitlements
+        run: |
+          plutil -lint \
+            Resources/Info.plist \
+            Resources/PrivacyInfo.xcprivacy \
+            Sources/TopShelf/Info.plist \
+            Config/Gus.entitlements \
+            Config/Gus-tvOS.entitlements
+
+      - name: Validate workflow YAML
+        run: |
+          ruby <<'RUBY'
+          require "yaml"
+          Dir[".github/workflows/*.yml"].each { |path| YAML.load_file(path) }
+          YAML.load_file("project.yml")
+          RUBY
+
   build:
     name: Build ${{ matrix.name }}
     runs-on: macos-26

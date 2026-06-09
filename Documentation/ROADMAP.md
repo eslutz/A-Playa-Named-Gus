@@ -316,10 +316,11 @@ preserving a clean route to future backends such as Emby.
 
 **Goal:** everything Apple requires to accept and review the app.
 
-Readiness documents and the app privacy manifest now live under `Documentation/AppStore/`
-and `Resources/PrivacyInfo.xcprivacy`, but M8 remains unchecked until App Store Connect
-privacy answers, signing, archive validation, TestFlight, and submission work are actually
-done.
+Readiness documents, the GitHub Actions/Xcode Cloud ownership split, and the app privacy
+manifest now live under `Documentation/AppStore/`, `ci_scripts/`, and
+`Resources/PrivacyInfo.xcprivacy`, but M8 remains unchecked until App Store Connect
+privacy answers, Xcode Cloud signing, archive validation, TestFlight, and submission work
+are actually done.
 
 - [ ] **Privacy manifest & nutrition labels.** Keep `Resources/PrivacyInfo.xcprivacy`
   aligned with actual required-reason API and data-use behavior, then complete App Privacy
@@ -328,9 +329,9 @@ done.
   match behavior. *(Started: `PrivacyInfo.xcprivacy` is bundled with no tracking, no
   collected data types, Disk Space `85F4.1`, and UserDefaults `CA92.1`; remaining work is
   App Store Connect privacy answers and policy fields.)*
-- [ ] **Signing & capabilities.** Real Team/bundle id, automatic signing, per-platform
+- [ ] **Signing & capabilities.** Real Team/bundle id, Xcode Cloud signing, per-platform
   capability review (background audio, tvOS User Management, sandbox on macOS, Optic ID
-  string). *Acceptance:* Release archives sign for each platform.
+  string). *Acceptance:* Xcode Cloud Release archives sign for each platform.
 - [ ] **App Store Connect record.** Create the app, set categories, age rating, support &
   marketing URLs, description, keywords. *Acceptance:* record complete and consistent
   across platforms.
@@ -341,7 +342,8 @@ done.
   third-party-server clients, ATS justification (`NSAllowsArbitraryLoads` for self-hosted
   HTTP), no private API, export-compliance (`ITSAppUsesNonExemptEncryption=false`).
   *Acceptance:* documented self-audit with no open red flags.
-- [ ] **TestFlight beta.** Upload, internal/external testing, gather crash/feedback.
+- [ ] **TestFlight beta.** Upload through Xcode Cloud, internal/external testing, gather
+  crash/feedback.
   *Acceptance:* a clean build runs from TestFlight on each platform.
 
 ---

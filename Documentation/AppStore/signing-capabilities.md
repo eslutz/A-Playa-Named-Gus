@@ -5,8 +5,11 @@
 Simulator and local macOS builds use ad-hoc signing (`CODE_SIGN_IDENTITY = -`,
 `CODE_SIGNING_REQUIRED = NO`) so they work without an Apple Developer Program account.
 The bundle ID `dev.ericslutz.gus` is set in `Config/Shared.xcconfig`. Entitlements and
-capability declarations are complete; only the Team ID and distribution credentials are
-account-blocked.
+capability declarations are complete.
+
+Local device builds use the git-ignored `Config/Local.xcconfig` override. Distributable
+build signing, provisioning, TestFlight upload, and App Store archives belong in Xcode
+Cloud, not GitHub Actions.
 
 ## Capabilities — Confirmed Ready
 
@@ -42,7 +45,7 @@ tokens without an extra capability.
 ## Setting Your Team ID (Local Override)
 
 `DEVELOPMENT_TEAM` is intentionally blank in `Config/Shared.xcconfig` so the repo stays
-account-agnostic. To build for a device or archive for the App Store:
+account-agnostic. To build locally for a device:
 
 1. Create `Config/Local.xcconfig` (git-ignored):
    ```
@@ -53,8 +56,8 @@ account-agnostic. To build for a device or archive for the App Store:
    CODE_SIGNING_ALLOWED = YES
    ```
 2. `Config/Shared.xcconfig` already includes `Config/Local.xcconfig` when present.
-3. For Release archives with manual profiles, set the profile specifier variables from
-   `Config/Local.xcconfig.example`:
+3. For local manual Release archive experiments only, set the profile specifier variables
+   from `Config/Local.xcconfig.example`:
    ```
    CODE_SIGN_STYLE = Manual
    CODE_SIGN_IDENTITY = Apple Distribution
@@ -65,28 +68,15 @@ account-agnostic. To build for a device or archive for the App Store:
    GUS_MACOS_PROVISIONING_PROFILE_SPECIFIER = <macOS app profile name>
    ```
 
-## CI Archive Workflow
+## CI Signing Ownership
 
-`.github/workflows/archive-release.yml` is a manual `workflow_dispatch` workflow that:
+GitHub Actions builds and tests unsigned simulator/macOS outputs to protect the codebase.
+It should not hold Apple Distribution certificates or provisioning profiles for Gus.
 
-- imports an Apple Distribution `.p12` certificate into a temporary keychain;
-- installs iOS, tvOS, tvOS Top Shelf, visionOS, and macOS provisioning profiles;
-- writes a temporary `Config/Local.xcconfig` with the Team ID and profile names;
-- runs `Scripts/archive-release.sh`; and
-- uploads the resulting `.xcarchive` bundles as workflow artifacts.
-
-Required GitHub Actions secrets:
-
-| Secret | Purpose |
-|---|---|
-| `APPLE_DEVELOPMENT_TEAM_ID` | 10-character Apple Developer Team ID |
-| `APPLE_DISTRIBUTION_CERTIFICATE_BASE64` | Base64-encoded Apple Distribution `.p12` |
-| `APPLE_DISTRIBUTION_CERTIFICATE_PASSWORD` | Password for the `.p12` |
-| `APPLE_PROVISIONING_PROFILE_IOS_BASE64` | Base64 iOS App Store provisioning profile |
-| `APPLE_PROVISIONING_PROFILE_TVOS_BASE64` | Base64 tvOS app provisioning profile |
-| `APPLE_PROVISIONING_PROFILE_TOPSHELF_TVOS_BASE64` | Base64 tvOS Top Shelf extension profile |
-| `APPLE_PROVISIONING_PROFILE_VISIONOS_BASE64` | Base64 visionOS App Store provisioning profile |
-| `APPLE_PROVISIONING_PROFILE_MACOS_BASE64` | Base64 macOS App Store provisioning profile |
+Xcode Cloud owns signed iOS, iPadOS, tvOS, visionOS, and macOS archives, provisioning,
+TestFlight builds, App Store release archives, notarized Mac app builds, UI/device
+matrix testing, and release-candidate validation. `ci_scripts/ci_post_clone.sh`
+regenerates `A Playa Named Gus.xcodeproj` from `project.yml` before Xcode Cloud builds.
 
 Local archive command:
 
@@ -96,10 +86,14 @@ Scripts/archive-release.sh ios tvos visionos macos
 
 ## Remaining Submission Steps (Account-Blocked)
 
-- Select the Apple Developer Program team and confirm bundle ID ownership.
-- Create App Store provisioning profiles for the app plus the tvOS Top Shelf extension.
-- Review per-platform capabilities in Xcode Signing & Capabilities for any
-  provisioning-profile additions (e.g. Push Notifications if added later).
-- Archive and validate Release builds for iOS/iPadOS, tvOS, visionOS, and macOS.
+- Confirm the Apple Developer Program team and bundle ID ownership in App Store Connect.
+- Create/configure the Xcode Cloud workflow for `dev.ericslutz.gus` and the tvOS Top
+  Shelf extension.
+- Let Xcode Cloud manage App Store provisioning profiles for the app plus the tvOS Top
+  Shelf extension.
+- Review per-platform capabilities in Xcode Signing & Capabilities and App Store Connect
+  for any provisioning-profile additions (e.g. Push Notifications if added later).
+- Archive and validate Release builds for iOS/iPadOS, tvOS, visionOS, and macOS in
+  Xcode Cloud.
 - Confirm macOS App Sandbox entitlements pass the archive-validation step (no unexpected
   file/network access).
