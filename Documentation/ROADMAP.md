@@ -335,6 +335,17 @@ validation, TestFlight, and submission work are actually done.
 - [ ] **App Store Connect record.** Create the app, set categories, age rating, support &
   marketing URLs, description, keywords. *Acceptance:* record complete and consistent
   across platforms.
+- [ ] **Copyright-safe demo media library.** Implement a demo library for App Store
+  screenshots, previews, review access, and TestFlight validation using only custom,
+  fictional content: generated or owned posters/backdrops, placeholder titles, sanitized
+  metadata, and representative movies, shows, music, downloads, and spatial-playback
+  examples where practical. The demo flow may use a dedicated demo Jellyfin server/account
+  or an app-contained demo provider, but it must stay separate from personal libraries and
+  must not rely on copyrighted movie/TV/music artwork or user-owned media. *Acceptance:*
+  the demo library can populate Home, library grids, search, item detail, playback, and
+  downloads for screenshot capture and reviewer/tester walkthroughs; demo credentials or
+  setup steps are documented; all screenshot/TestFlight media assets are confirmed
+  rights-cleared before upload.
 - [ ] **Screenshots & previews.** Required sizes for iPhone/iPad/Apple TV/Vision Pro/Mac
   (scripted via `simctl` where possible). *Acceptance:* all required slots filled.
 - [ ] **Review-guidelines compliance audit.** Walk the
@@ -417,6 +428,24 @@ milestone only after the launch scope is stable.
  recording management. *Acceptance:* users can browse the guide, start live playback, view
  recordings, and manage scheduled recordings with clear unsupported-state handling when
  the server has no tuner/DVR configured.
+
+- [ ] **Family safety controls and age assurance.** Add parent-friendly content controls
+ using Apple-provided safety APIs rather than a custom age-verification or child-profile
+ system. Candidate scope includes reading the device's effective movie and TV rating
+ restrictions through ManagedSettings media settings, mapping Jellyfin parental/official
+ ratings onto those thresholds, hiding or clearly gating media above the effective limit,
+ and explaining when content is unavailable because of a system family setting. Evaluate
+ Declared Age Range / `AgeRangeService` for privacy-preserving age-aware defaults,
+ age-gated preferences, active parental-control signals, and region-specific age assurance
+ obligations; do not store birthdates or exact ages. Evaluate PermissionKit/significant
+ update flows for future changes that require parent or guardian consent. Treat
+ FamilyControls, DeviceActivity, and additional ManagedSettings restrictions as
+ entitlement-gated follow-up work only if Gus needs Screen Time-style controls beyond
+ media-rating filtering. *Acceptance:* a family-safety product brief documents platform
+ availability, entitlement/review requirements, Jellyfin rating-field mapping, behavior for
+ unrated media, age-gate choices, privacy/data-retention rules, App Store Connect age
+ rating impacts, and a test matrix for child, teen, adult, declined-sharing, and missing
+ system-restriction scenarios before implementation starts.
 
 - [ ] **Books and audiobooks.** Add support for Jellyfin book libraries, with special focus
  on audiobooks as an audio-first playback experience. Candidate scope includes book

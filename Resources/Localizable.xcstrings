@@ -25,6 +25,10 @@
       "comment" : "Playback notice when 3D direct play is unavailable and playback falls back to 2D",
       "extractionState" : "manual"
     },
+    "A Playa Named Gus" : {
+      "comment" : "App name",
+      "extractionState" : "manual"
+    },
     "About" : {
       "comment" : "Settings section title",
       "extractionState" : "manual"
@@ -234,10 +238,6 @@
     },
     "Genres" : {
       "comment" : "Item detail genre metadata label",
-      "extractionState" : "manual"
-    },
-    "A Playa Named Gus" : {
-      "comment" : "App name",
       "extractionState" : "manual"
     },
     "Gus Cinema" : {
@@ -451,6 +451,9 @@
     "Search Jellyfin" : {
       "comment" : "Search prompt and empty-state title",
       "extractionState" : "manual"
+    },
+    "Search Library" : {
+
     },
     "Searching for Local Servers" : {
       "comment" : "Connect screen status while local server discovery is running",
