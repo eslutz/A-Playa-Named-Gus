@@ -7,40 +7,40 @@ import Testing
 struct OfflineDownloadTests {
     @Test("offers downloads for any server-downloadable item")
     func gatesDownloadsOnlyByServerFlag() {
-        let playable = BaseItemDto(
+        let playable = MediaItem(
             canDownload: true,
             mediaSources: [
-                MediaSourceInfo(
+                MediaSource(
                     container: "mp4",
                     mediaStreams: [
-                        MediaStream(codec: "h264", index: 0, type: .video),
-                        MediaStream(codec: "aac", index: 1, type: .audio),
+                        MediaStreamInfo(codec: "h264", index: 0, type: .video),
+                        MediaStreamInfo(codec: "aac", index: 1, type: .audio),
                     ],
                     videoType: .videoFile
                 ),
             ]
         )
-        let unplayableContainer = BaseItemDto(
+        let unplayableContainer = MediaItem(
             canDownload: true,
             mediaSources: [
-                MediaSourceInfo(
+                MediaSource(
                     container: "mkv",
                     mediaStreams: [
-                        MediaStream(codec: "h264", index: 0, type: .video),
-                        MediaStream(codec: "aac", index: 1, type: .audio),
+                        MediaStreamInfo(codec: "h264", index: 0, type: .video),
+                        MediaStreamInfo(codec: "aac", index: 1, type: .audio),
                     ],
                     videoType: .videoFile
                 ),
             ]
         )
-        let serverDenied = BaseItemDto(
+        let serverDenied = MediaItem(
             canDownload: false,
             mediaSources: [
-                MediaSourceInfo(
+                MediaSource(
                     container: "mp4",
                     mediaStreams: [
-                        MediaStream(codec: "h264", index: 0, type: .video),
-                        MediaStream(codec: "aac", index: 1, type: .audio),
+                        MediaStreamInfo(codec: "h264", index: 0, type: .video),
+                        MediaStreamInfo(codec: "aac", index: 1, type: .audio),
                     ],
                     videoType: .videoFile
                 ),
@@ -54,15 +54,15 @@ struct OfflineDownloadTests {
 
     @Test("download source resolver chooses original download for AVPlayer-native sources")
     func sourceResolverChoosesDirectDownloadForPlayableSource() throws {
-        let item = BaseItemDto(
+        let item = MediaItem(
             canDownload: true,
             id: "item-1",
             mediaSources: [
-                MediaSourceInfo(
+                MediaSource(
                     container: "mp4",
                     mediaStreams: [
-                        MediaStream(codec: "h264", index: 0, type: .video),
-                        MediaStream(codec: "aac", index: 1, type: .audio),
+                        MediaStreamInfo(codec: "h264", index: 0, type: .video),
+                        MediaStreamInfo(codec: "aac", index: 1, type: .audio),
                     ],
                     videoType: .videoFile
                 ),
@@ -78,16 +78,16 @@ struct OfflineDownloadTests {
 
     @Test("download source resolver builds MP4 transcode request for incompatible sources")
     func sourceResolverBuildsTranscodeRequestForIncompatibleSource() throws {
-        let item = BaseItemDto(
+        let item = MediaItem(
             canDownload: true,
             id: "item-1",
             mediaSources: [
-                MediaSourceInfo(
+                MediaSource(
                     container: "mkv",
                     id: "source-1",
                     mediaStreams: [
-                        MediaStream(codec: "hevc", index: 0, type: .video),
-                        MediaStream(codec: "flac", index: 1, type: .audio),
+                        MediaStreamInfo(codec: "hevc", index: 0, type: .video),
+                        MediaStreamInfo(codec: "flac", index: 1, type: .audio),
                     ],
                     videoType: .videoFile
                 ),
@@ -137,7 +137,7 @@ struct OfflineDownloadTests {
         let directory = FileManager.default.temporaryDirectory
             .appendingPathComponent(UUID().uuidString, isDirectory: true)
         let store = OfflineDownloadFileStore(directory: directory)
-        let item = BaseItemDto(id: "item-1", name: "Office Space")
+        let item = MediaItem(id: "item-1", name: "Office Space")
         let source = directory.appendingPathComponent("source.mp4")
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         try Data("video".utf8).write(to: source)
@@ -181,7 +181,7 @@ struct OfflineDownloadTests {
         try Data("video".utf8).write(to: source)
         let record = try legacyStore.persistDownloadedFile(
             source,
-            item: BaseItemDto(id: "item-1", name: "Office Space"),
+            item: MediaItem(id: "item-1", name: "Office Space"),
             serverID: "server-1",
             userID: "user-1",
             downloadedAt: Date(timeIntervalSince1970: 100)
@@ -203,7 +203,7 @@ struct OfflineDownloadTests {
         let coordinator = FakeDownloadSessionCoordinator()
         let store = OfflineDownloadStore(fileStore: fileStore, coordinator: coordinator)
         let record = fileStore.prepareDownloadRecord(
-            item: BaseItemDto(id: "item-1", name: "Office Space"),
+            item: MediaItem(id: "item-1", name: "Office Space"),
             serverID: "server-1",
             userID: "user-1",
             fileExtension: "mp4",
@@ -235,7 +235,7 @@ struct OfflineDownloadTests {
         let coordinator = FakeDownloadSessionCoordinator()
         let store = OfflineDownloadStore(fileStore: fileStore, coordinator: coordinator)
         let record = fileStore.prepareDownloadRecord(
-            item: BaseItemDto(id: "item-1", name: "Office Space"),
+            item: MediaItem(id: "item-1", name: "Office Space"),
             serverID: "server-1",
             userID: "user-1",
             fileExtension: "mp4",
@@ -249,6 +249,31 @@ struct OfflineDownloadTests {
 
         #expect(coordinator.cancelledRecordIDs == [record.id])
         #expect(fileStore.record(forItemID: "item-1", serverID: "server-1", userID: "user-1") == nil)
+    }
+
+    @MainActor
+    @Test("download store respects provider download capability")
+    func storeSkipsDownloadWhenProviderDisablesDownloads() async {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+        let fileStore = OfflineDownloadFileStore(directory: directory)
+        let coordinator = FakeDownloadSessionCoordinator()
+        let store = OfflineDownloadStore(fileStore: fileStore, coordinator: coordinator)
+        let provider = FakeMediaProviderSession(capabilities: ProviderCapabilities(supportsDownloads: false))
+        let session = SessionStore.makeTestSession(mediaProvider: provider)
+        let item = MediaItem(
+            canDownload: true,
+            id: "item-1",
+            mediaSources: [
+                MediaSource(container: "mp4", videoType: .videoFile),
+            ]
+        )
+
+        await store.download(item, session: session)
+
+        #expect(provider.downloadSourceCallCount == 0)
+        #expect(coordinator.startedRecordIDs.isEmpty)
+        #expect(store.records.isEmpty)
     }
 }
 
@@ -293,6 +318,10 @@ private final class FakeDownloadSessionCoordinator: DownloadSessionCoordinating 
 @MainActor
 private extension SessionStore {
     static var testSession: SessionStore {
+        makeTestSession()
+    }
+
+    static func makeTestSession(mediaProvider: (any MediaProviderSession)? = nil) -> SessionStore {
         SessionStore(
             client: JellyfinClient(
                 configuration: .init(
@@ -305,7 +334,111 @@ private extension SessionStore {
                 )
             ),
             user: StoredUser(id: "user-1", name: "User", serverID: "server-1"),
-            server: ServerConnection(id: "server-1", name: "Server", url: URL(string: "https://example.com")!)
+            server: ServerConnection(id: "server-1", name: "Server", url: URL(string: "https://example.com")!),
+            mediaProvider: mediaProvider
         )
     }
+}
+
+@MainActor
+private final class FakeMediaProviderSession: MediaProviderSession {
+    let providerKind: MediaProviderKind = .jellyfin
+    let capabilities: ProviderCapabilities
+    var downloadSourceCallCount = 0
+
+    init(capabilities: ProviderCapabilities) {
+        self.capabilities = capabilities
+    }
+
+    func userViews() async throws -> [MediaItem] {
+        []
+    }
+
+    func resumeItems(limit: Int) async throws -> [MediaItem] {
+        []
+    }
+
+    func nextUpItems(seriesID: String?, limit: Int) async throws -> [MediaItem] {
+        []
+    }
+
+    func latestMedia(in library: MediaItem, limit: Int) async throws -> [MediaItem] {
+        []
+    }
+
+    func items(query: MediaItemQuery) async throws -> MediaItemPage {
+        MediaItemPage(items: [], totalRecordCount: 0)
+    }
+
+    func item(id: String) async throws -> MediaItem {
+        MediaItem(id: id)
+    }
+
+    func similarItems(itemID: String, limit: Int) async throws -> [MediaItem] {
+        []
+    }
+
+    func specialFeatures(itemID: String) async throws -> [MediaItem] {
+        []
+    }
+
+    func seasons(seriesID: String) async throws -> [MediaItem] {
+        []
+    }
+
+    func episodes(seriesID: String, seasonID: String, limit: Int) async throws -> [MediaItem] {
+        []
+    }
+
+    func primaryImageURL(for item: MediaItem, context: ImageURLBuilder.ImageContext) -> URL? {
+        nil
+    }
+
+    func primaryImageURL(for item: MediaItem, maxWidth: Int) -> URL? {
+        nil
+    }
+
+    func backdropImageURL(for item: MediaItem, context: ImageURLBuilder.ImageContext) -> URL? {
+        nil
+    }
+
+    func backdropImageURL(for item: MediaItem, maxWidth: Int) -> URL? {
+        nil
+    }
+
+    func personImageURL(for person: MediaPerson, maxWidth: Int) -> URL? {
+        nil
+    }
+
+    func resolvePlayback(
+        for itemID: String,
+        maxStreamingBitrate: Int,
+        streamSelection: PlaybackStreamSelection,
+        startTimeTicks: Int?,
+        stereoLayout: Stereo3DLayout
+    ) async throws -> PlaybackSourceResolution {
+        PlaybackSourceResolution(
+            url: URL(string: "https://example.com/video.mp4")!,
+            playSessionID: nil,
+            mediaSourceID: nil,
+            playMethod: .directPlay,
+            stereoLayout: .none,
+            stereoFallbackReason: nil
+        )
+    }
+
+    func downloadSource(for item: MediaItem) async throws -> DownloadSourceResolution {
+        downloadSourceCallCount += 1
+        return DownloadSourceResolution(
+            url: URL(string: "https://example.com/download.mp4")!,
+            fileExtension: "mp4",
+            requiresTranscoding: false
+        )
+    }
+
+    func reportPlaybackStart(context: PlaybackReportContext, positionTicks: Int, isPaused: Bool) async throws {}
+
+    func reportPlaybackProgress(context: PlaybackReportContext, positionTicks: Int, isPaused: Bool) async throws {}
+
+    func reportPlaybackStopped(context: PlaybackReportContext, positionTicks: Int) async throws {}
 }

@@ -1,13 +1,12 @@
 import Foundation
-import JellyfinAPI
 
 // Typed navigation values so a `NavigationStack` can distinguish "open this library"
-// from "open this item" even though both wrap a `BaseItemDto`.
+// from "open this item" even though both wrap a `MediaItem`.
 //
-// Hashing/equality is by item id, so we don't require `BaseItemDto: Hashable`.
+// Hashing/equality is by item id.
 
 struct LibraryRef: Hashable, Identifiable {
-    let item: BaseItemDto
+    let item: MediaItem
     var id: String {
         item.id ?? UUID().uuidString
     }
@@ -22,7 +21,7 @@ struct LibraryRef: Hashable, Identifiable {
 }
 
 struct ItemRef: Hashable, Identifiable {
-    let item: BaseItemDto
+    let item: MediaItem
     var id: String {
         item.id ?? UUID().uuidString
     }

@@ -1,5 +1,4 @@
 import Foundation
-import JellyfinAPI
 import Observation
 import OSLog
 
@@ -29,29 +28,18 @@ enum LibrarySortOption: String, CaseIterable, Identifiable {
         }
     }
 
-    var sortBy: [ItemSortBy] {
+    var mediaSort: MediaItemSort {
         switch self {
         case .name:
-            return [.sortName]
+            return .name
         case .recentlyAdded:
-            return [.dateCreated]
+            return .recentlyAdded
         case .releaseDate:
-            return [.premiereDate]
+            return .releaseDate
         case .rating:
-            return [.communityRating]
+            return .rating
         case .random:
-            return [.random]
-        }
-    }
-
-    var sortOrder: [JellyfinAPI.SortOrder]? {
-        switch self {
-        case .name:
-            return [.ascending]
-        case .recentlyAdded, .releaseDate, .rating:
-            return [.descending]
-        case .random:
-            return nil
+            return .random
         }
     }
 }
@@ -79,16 +67,16 @@ enum LibraryStatusFilter: String, CaseIterable, Identifiable {
         }
     }
 
-    var filters: [ItemFilter]? {
+    var mediaStatusFilter: MediaItemStatusFilter {
         switch self {
         case .all:
-            return nil
+            return .all
         case .unplayed:
-            return [.isUnplayed]
+            return .unplayed
         case .played:
-            return [.isPlayed]
+            return .played
         case .resumable:
-            return [.isResumable]
+            return .resumable
         }
     }
 }
@@ -106,56 +94,41 @@ struct LibraryFilterState: Equatable {
 
 enum LibraryRequest {
     static let pageSize = 60
-    static let metadataFields: [ItemFields] = [
-        .primaryImageAspectRatio,
-        .overview,
-        .canDownload,
-        .mediaStreams,
-        .chapters,
-    ]
 
     static func parameters(
-        userID: String,
         parentID: String?,
         startIndex: Int,
         limit: Int,
         filter: LibraryFilterState = .default
-    ) -> Paths.GetItemsParameters {
-        Paths.GetItemsParameters(
-            userID: userID,
+    ) -> MediaItemQuery {
+        MediaItemQuery(
+            parentID: parentID,
             startIndex: startIndex,
             limit: limit,
-            isRecursive: false,
-            sortOrder: filter.sort.sortOrder,
-            parentID: parentID,
-            fields: metadataFields,
-            filters: filter.status.filters,
-            sortBy: filter.sort.sortBy,
-            enableUserData: true,
-            enableTotalRecordCount: true,
-            enableImages: true
+            sort: filter.sort.mediaSort,
+            statusFilter: filter.status.mediaStatusFilter
         )
     }
 }
 
-/// Loads the items inside a single library (a `BaseItemDto` of kind `collectionFolder`).
+/// Loads the items inside a single library.
 ///
 /// Pattern reference: Swiftfin paginated `Paths.getItems(parentID:)` queries.
 @MainActor
 @Observable
 final class LibraryStore {
     private(set) var state: LoadState = .idle
-    private(set) var items: [BaseItemDto] = []
+    private(set) var items: [MediaItem] = []
     private(set) var isLoadingNextPage = false
     private(set) var filter = LibraryFilterState.default
 
-    let library: BaseItemDto
+    let library: MediaItem
     private let session: SessionStore
     private let logger = Logger(category: .library)
     private var paging = Paging(pageSize: LibraryRequest.pageSize, prefetchThreshold: 12)
     private var loadGeneration = 0
 
-    init(library: BaseItemDto, session: SessionStore) {
+    init(library: MediaItem, session: SessionStore) {
         self.library = library
         self.session = session
     }
@@ -193,7 +166,7 @@ final class LibraryStore {
         await load()
     }
 
-    func loadMoreIfNeeded(currentItem item: BaseItemDto) async {
+    func loadMoreIfNeeded(currentItem item: MediaItem) async {
         guard canLoadMore, !isLoadingNextPage, state == .loaded else { return }
         guard let index = items.firstIndex(where: { $0.id == item.id }),
               paging.shouldLoadMore(currentIndex: index, loadedCount: items.count)
@@ -216,25 +189,21 @@ final class LibraryStore {
     }
 
     private func loadPage(startIndex: Int, replaceResults: Bool, generation: Int) async throws {
-        let parameters = LibraryRequest.parameters(
-            userID: session.user.id,
+        let query = LibraryRequest.parameters(
             parentID: library.id,
             startIndex: startIndex,
             limit: paging.pageSize,
             filter: filter
         )
-        let response = try await NetworkRetryPolicy.idempotent.run {
-            try await session.client.send(Paths.getItems(parameters: parameters))
-        }
+        let page = try await session.mediaProvider.items(query: query)
         guard generation == loadGeneration else { return }
 
-        let page = response.value.items ?? []
         if replaceResults {
-            items = page
-            paging.replaceResults(receivedCount: page.count, totalRecordCount: response.value.totalRecordCount)
+            items = page.items
+            paging.replaceResults(receivedCount: page.items.count, totalRecordCount: page.totalRecordCount)
         } else {
-            items.append(contentsOf: page)
-            paging.appendResults(receivedCount: page.count, totalRecordCount: response.value.totalRecordCount)
+            items.append(contentsOf: page.items)
+            paging.appendResults(receivedCount: page.items.count, totalRecordCount: page.totalRecordCount)
         }
         state = .loaded
     }

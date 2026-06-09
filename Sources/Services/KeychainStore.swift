@@ -4,16 +4,19 @@ import Security
 
 protocol TokenStore {
     func token(for credential: SessionCredential) -> String?
+    func token(account: String) -> String?
     func setToken(_ token: String, for credential: SessionCredential)
+    func setToken(_ token: String, account: String)
     func deleteToken(for credential: SessionCredential)
+    func deleteToken(account: String)
 }
 
 /// Thin wrapper over the Security framework for storing Jellyfin access tokens.
 ///
 /// Replaces Swiftfin's KeychainSwift dependency with direct `SecItem*` calls. Tokens are
-/// stored as `kSecClassGenericPassword` items, accounted by `SessionCredential.account`
-/// (`"<serverID>:<userID>"`), accessible after first unlock. No keychain access group is
-/// used (keeps signing simple across platforms).
+/// stored as `kSecClassGenericPassword` items, accounted by `SessionCredential.account`,
+/// accessible after first unlock. No keychain access group is used (keeps signing simple
+/// across platforms).
 ///
 /// On tvOS, A Playa Named Gus relies on current-user Keychain scoping so Apple TV profiles keep separate
 /// Jellyfin tokens. Do not add `kSecUseUserIndependentKeychain` for these token items.

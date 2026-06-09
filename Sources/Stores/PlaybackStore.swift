@@ -1,5 +1,4 @@
 import AVFoundation
-import JellyfinAPI
 import Observation
 import OSLog
 
@@ -20,13 +19,13 @@ final class PlaybackStore {
 
     private(set) var state: State = .idle
     private(set) var player: AVPlayer?
-    private(set) var nextUpItem: BaseItemDto?
+    private(set) var nextUpItem: MediaItem?
     private(set) var isNextUpPromptVisible = false
     private(set) var stereoPresentation: Stereo3DPresentation = .native2D
     private(set) var stereoFallbackNotice: String?
     private(set) var viewingMode: Stereo3DViewingMode = .automatic
 
-    private(set) var item: BaseItemDto
+    private(set) var item: MediaItem
     private let session: SessionStore
     private let playbackRefresh: PlaybackRefreshStore
     private let downloads: OfflineDownloadStore?
@@ -37,7 +36,7 @@ final class PlaybackStore {
     private var didReportStopped = false
     private var streamSelection = PlaybackStreamSelection.none
 
-    init(item: BaseItemDto, session: SessionStore, playbackRefresh: PlaybackRefreshStore, downloads: OfflineDownloadStore? = nil) {
+    init(item: MediaItem, session: SessionStore, playbackRefresh: PlaybackRefreshStore, downloads: OfflineDownloadStore? = nil) {
         self.item = item
         self.session = session
         self.playbackRefresh = playbackRefresh
@@ -139,7 +138,7 @@ final class PlaybackStore {
 
         do {
             let localURL = downloads?.localFileURL(for: item, serverID: session.server.id, userID: session.user.id)
-            let resolution: StreamURLBuilder.Resolution?
+            let resolution: PlaybackSourceResolution?
             let playbackURL: URL
             if let localURL {
                 resolution = nil
@@ -148,8 +147,9 @@ final class PlaybackStore {
             } else {
                 let requestedPresentation = Media3DDetector.presentation(for: item, viewingMode: viewingMode)
                 let remoteResolution = try await NetworkRetryPolicy.idempotent.run {
-                    try await self.session.streamBuilder.resolvePlayback(
+                    try await self.session.mediaProvider.resolvePlayback(
                         for: itemID,
+                        maxStreamingBitrate: 120_000_000,
                         streamSelection: self.streamSelection,
                         startTimeTicks: startTimeTicks,
                         stereoLayout: requestedPresentation.resolutionStereoLayout
@@ -185,7 +185,7 @@ final class PlaybackStore {
                 itemID: itemID,
                 mediaSourceID: resolution?.mediaSourceID,
                 playSessionID: resolution?.playSessionID,
-                playMethod: localURL != nil ? .directPlay : (resolution?.isTranscoding == true ? .transcode : .directStream),
+                playMethod: localURL != nil ? .directPlay : resolution?.playMethod ?? .directStream,
                 streamSelection: streamSelection
             )
             reportContext = context
@@ -198,7 +198,7 @@ final class PlaybackStore {
                 )
             }
 
-            nowPlaying.start(player: player, item: item, artworkURL: session.imageBuilder.primaryImageURL(for: item, context: .nowPlayingArtwork))
+            nowPlaying.start(player: player, item: item, artworkURL: session.mediaProvider.primaryImageURL(for: item, context: .nowPlayingArtwork))
             if progressObserver == nil {
                 addProgressObserver(player: player)
             }
@@ -265,13 +265,10 @@ final class PlaybackStore {
 
     private func reportPlaybackStart(context: PlaybackReportContext, player: AVPlayer) {
         sendReport("start") { [self] in
-            try await self.session.client.send(
-                Paths.reportPlaybackStart(
-                    context.stateInfo(
-                        positionTicks: PlaybackTime.ticks(fromSeconds: player.currentTime().seconds),
-                        isPaused: false
-                    )
-                )
+            try await self.session.mediaProvider.reportPlaybackStart(
+                context: context,
+                positionTicks: PlaybackTime.ticks(fromSeconds: player.currentTime().seconds),
+                isPaused: false
             )
         }
     }
@@ -279,17 +276,17 @@ final class PlaybackStore {
     private func reportPlaybackProgress(positionTicks: Int, isPaused: Bool) {
         guard let reportContext else { return }
         sendReport("progress") { [self] in
-            try await self.session.client.send(
-                Paths.reportPlaybackProgress(
-                    reportContext.stateInfo(positionTicks: positionTicks, isPaused: isPaused)
-                )
+            try await self.session.mediaProvider.reportPlaybackProgress(
+                context: reportContext,
+                positionTicks: positionTicks,
+                isPaused: isPaused
             )
         }
     }
 
     private func reportPlaybackStopped(context: PlaybackReportContext, positionTicks: Int) {
         sendReport("stopped") { [self] in
-            try await self.session.client.send(Paths.reportPlaybackStopped(context.stopInfo(positionTicks: positionTicks)))
+            try await self.session.mediaProvider.reportPlaybackStopped(context: context, positionTicks: positionTicks)
             await MainActor.run {
                 self.playbackRefresh.markPlaybackProgressChanged()
             }
@@ -310,7 +307,7 @@ final class PlaybackStore {
 
     private func effectiveStereoPresentation(
         requested: Stereo3DPresentation,
-        resolution: StreamURLBuilder.Resolution?
+        resolution: PlaybackSourceResolution?
     ) -> Stereo3DPresentation {
         guard resolution?.stereoFallbackReason == nil else { return .native2D }
         if case .unsupported3D = requested {
@@ -321,7 +318,7 @@ final class PlaybackStore {
 
     private func fallbackNotice(
         requested: Stereo3DPresentation,
-        resolution: StreamURLBuilder.Resolution?
+        resolution: PlaybackSourceResolution?
     ) -> String? {
         if case .unsupported3D = requested {
             return String(
@@ -343,19 +340,8 @@ final class PlaybackStore {
     private func loadNextUpIfNeeded() async {
         guard nextUpItem == nil, item.type == .episode, let seriesID = item.seriesID else { return }
         do {
-            let fields = SearchRequest.metadataFields + [.canDownload, .mediaStreams, .chapters]
-            let parameters = Paths.GetNextUpParameters(
-                userID: session.user.id,
-                limit: 1,
-                fields: fields,
-                seriesID: seriesID,
-                enableImages: true,
-                enableUserData: true
-            )
-            let response = try await NetworkRetryPolicy.idempotent.run {
-                try await self.session.client.send(Paths.getNextUp(parameters: parameters))
-            }
-            nextUpItem = response.value.items?.first { $0.id != item.id }
+            let items = try await session.mediaProvider.nextUpItems(seriesID: seriesID, limit: 1)
+            nextUpItem = items.first { $0.id != item.id }
         } catch {
             let gusError = GusError(from: error)
             guard !gusError.isCancellation else { return }

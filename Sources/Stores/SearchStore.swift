@@ -1,44 +1,13 @@
 import Foundation
-import JellyfinAPI
 import Observation
 import OSLog
-
-enum SearchRequest {
-    static let metadataFields: [ItemFields] = [
-        .primaryImageAspectRatio,
-        .overview,
-        .genres,
-        .people,
-        .studios,
-        .taglines,
-    ]
-
-    static func parameters(
-        userID: String,
-        query: String,
-        startIndex: Int,
-        limit: Int
-    ) -> Paths.GetItemsParameters {
-        Paths.GetItemsParameters(
-            userID: userID,
-            startIndex: startIndex,
-            limit: limit,
-            isRecursive: true,
-            searchTerm: query.trimmingCharacters(in: .whitespacesAndNewlines),
-            fields: metadataFields,
-            enableUserData: true,
-            enableTotalRecordCount: true,
-            enableImages: true
-        )
-    }
-}
 
 /// Global Jellyfin item search with cancellable, paginated loads.
 @MainActor
 @Observable
 final class SearchStore {
     private(set) var state: LoadState = .idle
-    private(set) var results: [BaseItemDto] = []
+    private(set) var results: [MediaItem] = []
     private(set) var query = ""
     private(set) var isLoadingNextPage = false
 
@@ -78,7 +47,7 @@ final class SearchStore {
         await loadPage(startIndex: 0, replaceResults: true)
     }
 
-    func loadMoreIfNeeded(currentItem item: BaseItemDto) async {
+    func loadMoreIfNeeded(currentItem item: MediaItem) async {
         guard canLoadMore, !isLoadingNextPage, state == .loaded else { return }
         guard let index = results.firstIndex(where: { $0.id == item.id }),
               paging.shouldLoadMore(currentIndex: index, loadedCount: results.count)
@@ -91,23 +60,21 @@ final class SearchStore {
 
     private func loadPage(startIndex: Int, replaceResults shouldReplaceResults: Bool) async {
         do {
-            let parameters = SearchRequest.parameters(
-                userID: session.user.id,
-                query: query,
+            let query = MediaItemQuery(
+                searchTerm: query,
                 startIndex: startIndex,
-                limit: paging.pageSize
+                limit: paging.pageSize,
+                isRecursive: true,
+                sort: nil
             )
-            let response = try await NetworkRetryPolicy.idempotent.run {
-                try await session.client.send(Paths.getItems(parameters: parameters))
-            }
-            let items = response.value.items ?? []
+            let page = try await session.mediaProvider.items(query: query)
 
             if shouldReplaceResults {
-                results = items
-                paging.replaceResults(receivedCount: items.count, totalRecordCount: response.value.totalRecordCount)
+                results = page.items
+                paging.replaceResults(receivedCount: page.items.count, totalRecordCount: page.totalRecordCount)
             } else {
-                results.append(contentsOf: items)
-                paging.appendResults(receivedCount: items.count, totalRecordCount: response.value.totalRecordCount)
+                results.append(contentsOf: page.items)
+                paging.appendResults(receivedCount: page.items.count, totalRecordCount: page.totalRecordCount)
             }
 
             state = .loaded

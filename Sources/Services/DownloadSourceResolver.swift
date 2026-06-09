@@ -37,7 +37,7 @@ struct DownloadSourceResolver {
     let client: JellyfinClient
     let userID: String
 
-    func resolve(for item: BaseItemDto) async throws -> Source {
+    func resolve(for item: MediaItem) async throws -> Source {
         if let original = try Self.originalSource(for: item) {
             return original
         }
@@ -51,7 +51,7 @@ struct DownloadSourceResolver {
         return Self.transcodedSource(itemID: itemID, mediaSourceID: mediaSourceID)
     }
 
-    static func localSource(for item: BaseItemDto) throws -> Source {
+    static func localSource(for item: MediaItem) throws -> Source {
         if let original = try originalSource(for: item) {
             return original
         }
@@ -59,7 +59,7 @@ struct DownloadSourceResolver {
         guard let itemID = item.id else { throw ResolverError.missingItemID }
         guard item.canDownload == true else { throw ResolverError.notDownloadable }
 
-        if let source = item.mediaSources?.first,
+        if let source = item.mediaSources.first,
            let mediaSourceID = source.id
         {
             return transcodedSource(itemID: itemID, mediaSourceID: mediaSourceID)
@@ -68,11 +68,11 @@ struct DownloadSourceResolver {
         throw ResolverError.noMediaSource
     }
 
-    private static func originalSource(for item: BaseItemDto) throws -> Source? {
+    private static func originalSource(for item: MediaItem) throws -> Source? {
         guard let itemID = item.id else { throw ResolverError.missingItemID }
         guard item.canDownload == true else { throw ResolverError.notDownloadable }
 
-        if let source = item.mediaSources?.first(where: OfflineDownloadEligibility.isAVPlayerPlayable) {
+        if let source = item.mediaSources.first(where: OfflineDownloadEligibility.isAVPlayerPlayable) {
             return Source(
                 kind: .original,
                 request: Paths.getDownload(itemID: itemID),
@@ -123,7 +123,7 @@ struct DownloadSourceResolver {
         )
     }
 
-    private static func fileExtension(for source: MediaSourceInfo) -> String? {
+    private static func fileExtension(for source: MediaSource) -> String? {
         source.container?
             .split(separator: ",")
             .map { $0.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() }

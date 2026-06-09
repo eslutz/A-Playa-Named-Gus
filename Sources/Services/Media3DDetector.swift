@@ -1,5 +1,3 @@
-import JellyfinAPI
-
 /// Stereoscopic layout as reported by Jellyfin or inferred from stream metadata.
 enum Stereo3DLayout: Equatable {
     case sideBySide(half: Bool)
@@ -73,12 +71,12 @@ enum Media3DDetector {
         #endif
     }
 
-    static func layout(for item: BaseItemDto) -> Stereo3DLayout {
+    static func layout(for item: MediaItem) -> Stereo3DLayout {
         if let format = item.video3DFormat {
             return layout(for: format)
         }
 
-        if let format = item.mediaSources?.compactMap(\.video3DFormat).first {
+        if let format = item.mediaSources.compactMap(\.video3DFormat).first {
             return layout(for: format)
         }
 
@@ -86,7 +84,7 @@ enum Media3DDetector {
     }
 
     static func presentation(
-        for item: BaseItemDto,
+        for item: MediaItem,
         on platform: PlaybackPlatform = currentPlatform,
         viewingMode: Stereo3DViewingMode = .automatic
     ) -> Stereo3DPresentation {
@@ -114,7 +112,7 @@ enum Media3DDetector {
         }
     }
 
-    private static func layout(for format: Video3DFormat) -> Stereo3DLayout {
+    private static func layout(for format: Media3DFormat) -> Stereo3DLayout {
         switch format {
         case .halfSideBySide:
             .sideBySide(half: true)
@@ -132,7 +130,7 @@ enum Media3DDetector {
     /// Jellyfin does not currently flag Apple spatial video. This is intentionally
     /// conservative: require HEVC plus an explicit multiview/spatial hint surfaced by
     /// server metadata, otherwise leave Feature 5's manual Spatial override to the user.
-    private static func looksLikeMVHEVC(_ item: BaseItemDto) -> Bool {
+    private static func looksLikeMVHEVC(_ item: MediaItem) -> Bool {
         mediaStreams(for: item).contains { stream in
             guard stream.type == .video, isHEVC(stream.codec) else { return false }
             return stream.mvHEVCHintFields.contains { field in
@@ -145,12 +143,8 @@ enum Media3DDetector {
         }
     }
 
-    private static func mediaStreams(for item: BaseItemDto) -> [MediaStream] {
-        var streams = item.mediaStreams ?? []
-        for source in item.mediaSources ?? [] {
-            streams.append(contentsOf: source.mediaStreams ?? [])
-        }
-        return streams
+    private static func mediaStreams(for item: MediaItem) -> [MediaStreamInfo] {
+        item.mediaSources.flatMap(\.mediaStreams)
     }
 
     private static func isHEVC(_ codec: String?) -> Bool {
@@ -160,7 +154,7 @@ enum Media3DDetector {
     }
 }
 
-private extension MediaStream {
+private extension MediaStreamInfo {
     var mvHEVCHintFields: [String] {
         [
             codecTag,

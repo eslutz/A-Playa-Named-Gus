@@ -1,5 +1,4 @@
 import Foundation
-import JellyfinAPI
 import Observation
 import OSLog
 
@@ -30,19 +29,19 @@ struct UpNextPersistence {
         self.init(directory: Self.defaultDirectory(applicationSupportDirectory: applicationSupportDirectory))
     }
 
-    func load(scope: UpNextScope) -> [BaseItemDto] {
+    func load(scope: UpNextScope) -> [MediaItem] {
         let url = fileURL(for: scope)
         guard let data = try? Data(contentsOf: url) else { return [] }
 
         do {
-            return try JSONDecoder().decode([BaseItemDto].self, from: data)
+            return try JSONDecoder().decode([MediaItem].self, from: data)
         } catch {
             logger.error("Failed to decode Up Next items: \(error.localizedDescription, privacy: .public)")
             return []
         }
     }
 
-    func save(_ items: [BaseItemDto], scope: UpNextScope) {
+    func save(_ items: [MediaItem], scope: UpNextScope) {
         do {
             try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
             let encoder = JSONEncoder()
@@ -71,7 +70,7 @@ struct UpNextPersistence {
 final class UpNextStore {
     private(set) var revision = 0
 
-    private var itemsByScope: [UpNextScope: [BaseItemDto]] = [:]
+    private var itemsByScope: [UpNextScope: [MediaItem]] = [:]
     private var loadedScopes: Set<UpNextScope> = []
     private let persistence: UpNextPersistence
 
@@ -88,16 +87,16 @@ final class UpNextStore {
         revision += 1
     }
 
-    func items(serverID: String, userID: String) -> [BaseItemDto] {
+    func items(serverID: String, userID: String) -> [MediaItem] {
         itemsByScope[UpNextScope(serverID: serverID, userID: userID)] ?? []
     }
 
-    func contains(_ item: BaseItemDto, serverID: String, userID: String) -> Bool {
+    func contains(_ item: MediaItem, serverID: String, userID: String) -> Bool {
         guard let itemID = item.id else { return false }
         return items(serverID: serverID, userID: userID).contains { $0.id == itemID }
     }
 
-    func toggle(_ item: BaseItemDto, serverID: String, userID: String) {
+    func toggle(_ item: MediaItem, serverID: String, userID: String) {
         guard let itemID = item.id else { return }
 
         let scope = UpNextScope(serverID: serverID, userID: userID)
@@ -115,7 +114,7 @@ final class UpNextStore {
         revision += 1
     }
 
-    func mergedItems(remote: [BaseItemDto], serverID: String, userID: String) -> [BaseItemDto] {
+    func mergedItems(remote: [MediaItem], serverID: String, userID: String) -> [MediaItem] {
         let manualItems = items(serverID: serverID, userID: userID)
         let manualIDs = Set(manualItems.compactMap(\.id))
         return manualItems + remote.filter { item in

@@ -1,4 +1,3 @@
-import JellyfinAPI
 import SwiftUI
 
 /// Signed-in root, with all platform divergence in one place.

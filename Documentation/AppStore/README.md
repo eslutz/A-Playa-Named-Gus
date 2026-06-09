@@ -1,8 +1,9 @@
 # App Store Readiness Packet
 
-Status: draft documentation only. These files prepare M7 decisions but do not complete M7.
-Privacy manifest, signing, App Store Connect setup, screenshots, upload, TestFlight, and
-submission are still implementation work.
+Status: readiness documentation, bundled privacy manifest, local signing support, and
+the GitHub Actions/Xcode Cloud ownership split. App Store Connect setup, screenshots,
+Xcode Cloud archive validation, upload, TestFlight, and submission are still
+implementation work.
 
 ## Index
 
@@ -10,6 +11,7 @@ submission are still implementation work.
 - `privacy-labels.md` - draft App Privacy answers.
 - `review-compliance-audit.md` - App Review self-audit, including downloaded media.
 - `signing-capabilities.md` - signing and capability gaps.
+- `ci-strategy.md` - GitHub Actions and Xcode Cloud ownership split.
 - `app-store-metadata.md` - draft product metadata.
 - `screenshots-and-testflight.md` - screenshot matrix and beta checklist.
 

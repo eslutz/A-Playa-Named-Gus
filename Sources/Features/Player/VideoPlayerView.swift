@@ -1,5 +1,4 @@
 import AVKit
-import JellyfinAPI
 import SwiftUI
 
 /// Pure-AVKit player surface.
@@ -17,7 +16,7 @@ struct VideoPlayerView: View {
         @Environment(\.openImmersiveSpace) private var openImmersiveSpace
         @Environment(\.dismissImmersiveSpace) private var dismissImmersiveSpace
     #endif
-    let item: BaseItemDto
+    let item: MediaItem
 
     @State private var store: PlaybackStore?
     #if os(visionOS)

@@ -19,7 +19,6 @@ enum EnvironmentPickerMetrics {
 
 #if os(visionOS)
     import AVFoundation
-    import JellyfinAPI
     import SwiftUI
 
     enum CinemaEnvironment: String, CaseIterable, Identifiable {

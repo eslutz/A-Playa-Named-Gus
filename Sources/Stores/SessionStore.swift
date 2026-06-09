@@ -6,18 +6,25 @@ import Observation
 /// duration of a session. Injected into the signed-in view tree via `@Environment`.
 ///
 /// Replaces Swiftfin's `UserSession` (Factory-injected). Feature stores take a
-/// `SessionStore` and call `session.client.send(...)`.
+/// `SessionStore` and call provider-neutral media operations through `mediaProvider`.
 @MainActor
 @Observable
 final class SessionStore {
     let client: JellyfinClient
+    let mediaProvider: any MediaProviderSession
     let user: StoredUser
     let server: ServerConnection
 
-    init(client: JellyfinClient, user: StoredUser, server: ServerConnection) {
+    init(
+        client: JellyfinClient,
+        user: StoredUser,
+        server: ServerConnection,
+        mediaProvider: (any MediaProviderSession)? = nil
+    ) {
         self.client = client
         self.user = user
         self.server = server
+        self.mediaProvider = mediaProvider ?? JellyfinMediaProviderSession(client: client, userID: user.id)
     }
 
     var imageBuilder: ImageURLBuilder {

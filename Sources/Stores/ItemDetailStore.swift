@@ -1,32 +1,9 @@
 import Foundation
-import JellyfinAPI
 import Observation
 import OSLog
 
 enum SeriesRequest {
-    static func seasonsParameters(userID: String) -> Paths.GetSeasonsParameters {
-        Paths.GetSeasonsParameters(
-            userID: userID,
-            fields: SearchRequest.metadataFields,
-            enableImages: true,
-            enableUserData: true
-        )
-    }
-
-    static func episodesParameters(userID: String, seasonID: String) -> Paths.GetEpisodesParameters {
-        Paths.GetEpisodesParameters(
-            userID: userID,
-            fields: SearchRequest.metadataFields,
-            seasonID: seasonID,
-            startIndex: 0,
-            limit: 300,
-            enableImages: true,
-            enableUserData: true,
-            sortBy: .indexNumber
-        )
-    }
-
-    static func initialSeasonID(from seasons: [BaseItemDto]) -> String? {
+    static func initialSeasonID(from seasons: [MediaItem]) -> String? {
         seasons.first { ($0.indexNumber ?? 0) > 0 }?.id ?? seasons.first?.id
     }
 }
@@ -35,15 +12,15 @@ enum SeriesRequest {
 @Observable
 final class ItemDetailStore {
     private(set) var state: LoadState = .idle
-    private(set) var item: BaseItemDto
+    private(set) var item: MediaItem
     private(set) var seriesStore: SeriesDetailStore?
-    private(set) var similarItems: [BaseItemDto] = []
-    private(set) var specialFeatures: [BaseItemDto] = []
+    private(set) var similarItems: [MediaItem] = []
+    private(set) var specialFeatures: [MediaItem] = []
 
     private let session: SessionStore
     private let logger = Logger(category: .item)
 
-    init(item: BaseItemDto, session: SessionStore) {
+    init(item: MediaItem, session: SessionStore) {
         self.item = item
         self.session = session
     }
@@ -54,10 +31,7 @@ final class ItemDetailStore {
 
         do {
             if let id = item.id {
-                let response = try await NetworkRetryPolicy.idempotent.run {
-                    try await session.client.send(Paths.getItem(itemID: id, userID: session.user.id))
-                }
-                item = response.value
+                item = try await session.mediaProvider.item(id: id)
             }
 
             state = .loaded
@@ -76,7 +50,7 @@ final class ItemDetailStore {
         }
     }
 
-    private func loadRelatedContent(for item: BaseItemDto) async {
+    private func loadRelatedContent(for item: MediaItem) async {
         async let similar = loadSimilarItems(for: item)
         async let special = loadSpecialFeatures(for: item)
 
@@ -84,18 +58,10 @@ final class ItemDetailStore {
         specialFeatures = await special
     }
 
-    private func loadSimilarItems(for item: BaseItemDto) async -> [BaseItemDto] {
+    private func loadSimilarItems(for item: MediaItem) async -> [MediaItem] {
         guard let itemID = item.id else { return [] }
         do {
-            let parameters = Paths.GetSimilarItemsParameters(
-                userID: session.user.id,
-                limit: 12,
-                fields: SearchRequest.metadataFields
-            )
-            let response = try await NetworkRetryPolicy.idempotent.run {
-                try await session.client.send(Paths.getSimilarItems(itemID: itemID, parameters: parameters))
-            }
-            return response.value.items ?? []
+            return try await session.mediaProvider.similarItems(itemID: itemID, limit: 12)
         } catch {
             let gusError = GusError(from: error)
             guard !gusError.isCancellation else { return [] }
@@ -104,13 +70,10 @@ final class ItemDetailStore {
         }
     }
 
-    private func loadSpecialFeatures(for item: BaseItemDto) async -> [BaseItemDto] {
+    private func loadSpecialFeatures(for item: MediaItem) async -> [MediaItem] {
         guard let itemID = item.id else { return [] }
         do {
-            let response = try await NetworkRetryPolicy.idempotent.run {
-                try await session.client.send(Paths.getSpecialFeatures(itemID: itemID, userID: session.user.id))
-            }
-            return response.value
+            return try await session.mediaProvider.specialFeatures(itemID: itemID)
         } catch {
             let gusError = GusError(from: error)
             guard !gusError.isCancellation else { return [] }
@@ -125,16 +88,16 @@ final class ItemDetailStore {
 final class SeriesDetailStore {
     private(set) var seasonsState: LoadState = .idle
     private(set) var episodesState: LoadState = .idle
-    private(set) var seasons: [BaseItemDto] = []
-    private(set) var episodes: [BaseItemDto] = []
+    private(set) var seasons: [MediaItem] = []
+    private(set) var episodes: [MediaItem] = []
     private(set) var selectedSeasonID: String?
 
-    let series: BaseItemDto
+    let series: MediaItem
 
     private let session: SessionStore
     private let logger = Logger(category: .item)
 
-    init(series: BaseItemDto, session: SessionStore) {
+    init(series: MediaItem, session: SessionStore) {
         self.series = series
         self.session = session
     }
@@ -144,11 +107,7 @@ final class SeriesDetailStore {
         seasonsState = .loading
 
         do {
-            let parameters = SeriesRequest.seasonsParameters(userID: session.user.id)
-            let response = try await NetworkRetryPolicy.idempotent.run {
-                try await session.client.send(Paths.getSeasons(seriesID: seriesID, parameters: parameters))
-            }
-            seasons = response.value.items ?? []
+            seasons = try await session.mediaProvider.seasons(seriesID: seriesID)
             selectedSeasonID = SeriesRequest.initialSeasonID(from: seasons)
             seasonsState = .loaded
 
@@ -175,11 +134,7 @@ final class SeriesDetailStore {
         episodes = []
 
         do {
-            let parameters = SeriesRequest.episodesParameters(userID: session.user.id, seasonID: seasonID)
-            let response = try await NetworkRetryPolicy.idempotent.run {
-                try await session.client.send(Paths.getEpisodes(seriesID: seriesID, parameters: parameters))
-            }
-            episodes = response.value.items ?? []
+            episodes = try await session.mediaProvider.episodes(seriesID: seriesID, seasonID: seasonID, limit: 300)
             episodesState = .loaded
         } catch {
             let gusError = GusError(from: error)

@@ -1,4 +1,3 @@
-import JellyfinAPI
 import SwiftUI
 
 /// The home screen: a "Continue Watching" rail above a grid of library posters.
@@ -73,7 +72,7 @@ struct HomeView: View {
 struct MediaRail: View {
     @Environment(SessionStore.self) private var session
     let title: String
-    let items: [BaseItemDto]
+    let items: [MediaItem]
     var style: MediaRailStyle = .poster
 
     var body: some View {
@@ -90,13 +89,13 @@ struct MediaRail: View {
                             case .poster:
                                 PosterCard(
                                     item: item,
-                                    imageURL: session.imageBuilder.primaryImageURL(for: item, context: .posterRail)
+                                    imageURL: session.mediaProvider.primaryImageURL(for: item, context: .posterRail)
                                 )
                                 .frame(width: style.itemWidth)
                             case .backdrop:
                                 BackdropCard(
                                     item: item,
-                                    imageURL: session.imageBuilder.backdropImageURL(for: item, maxWidth: 560)
+                                    imageURL: session.mediaProvider.backdropImageURL(for: item, maxWidth: 560)
                                 )
                                 .frame(width: style.itemWidth)
                             }
@@ -164,7 +163,7 @@ enum MediaRailMetrics {
 }
 
 private struct BackdropCard: View {
-    let item: BaseItemDto
+    let item: MediaItem
     let imageURL: URL?
 
     var body: some View {
@@ -269,7 +268,7 @@ struct LibrariesLandingView: View {
 /// Grid of library poster cards.
 private struct LibrariesGrid: View {
     @Environment(SessionStore.self) private var session
-    let libraries: [BaseItemDto]
+    let libraries: [MediaItem]
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -278,7 +277,7 @@ private struct LibrariesGrid: View {
                     NavigationLink(value: LibraryRef(item: library)) {
                         PosterCard(
                             title: library.name ?? "Library",
-                            imageURL: session.imageBuilder.primaryImageURL(for: library, context: .posterGrid),
+                            imageURL: session.mediaProvider.primaryImageURL(for: library, context: .posterGrid),
                             aspectRatio: 16.0 / 9.0,
                             placeholderSymbol: library.librarySymbol
                         )
@@ -291,7 +290,7 @@ private struct LibrariesGrid: View {
     }
 }
 
-extension BaseItemDto {
+extension MediaItem {
     /// SF Symbol representing a library's collection type.
     var librarySymbol: String {
         switch collectionType {

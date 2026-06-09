@@ -81,8 +81,12 @@ accepts for the 2560×1600 slot.
 ## TestFlight Checklist
 
 Before uploading to TestFlight:
-- [ ] Real Apple Developer Team set in `Config/Local.xcconfig`; signing validated.
-- [ ] Release archives build and pass Xcode validation for all platforms.
+- [ ] Local device signing works with the real Apple Developer Team in
+      `Config/Local.xcconfig`.
+- [ ] Xcode Cloud workflow exists and runs `ci_scripts/ci_post_clone.sh` to generate the
+      Xcode project and automatic-signing override for Team ID `QS3GC3CT43`.
+- [ ] Xcode Cloud signed archives build for iOS/iPadOS, tvOS, visionOS, and macOS.
+- [ ] Xcode Cloud validation passes for the archives intended for TestFlight upload.
 - [ ] `ITSAppUsesNonExemptEncryption = false` confirmed in `Info.plist`.
 - [ ] App Privacy answers complete in App Store Connect (source: `privacy-labels.md`).
 - [ ] Privacy policy URL added for iOS/iPadOS/macOS/visionOS.
@@ -101,4 +105,4 @@ Core flows to test on each shipped platform:
 - Sign out; switch accounts.
 - visionOS: enter and exit Gus Cinema during playback.
 
-Track crashes, sessions, and tester feedback in App Store Connect → TestFlight.
+Track crashes, sessions, and tester feedback in App Store Connect -> TestFlight.

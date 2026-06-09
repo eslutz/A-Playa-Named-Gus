@@ -104,5 +104,5 @@ used. The only runtime third-party dependency is `jellyfin-sdk-swift`.
 - Complete App Privacy answers in App Store Connect (source: `privacy-labels.md`).
 - Add privacy policy URL for iOS, iPadOS, macOS, and visionOS.
 - Add tvOS privacy policy text in the Apple TV Privacy Policy field.
-- Set real Team ID, switch to automatic signing, and validate Release archives.
+- Configure Xcode Cloud signing/provisioning and validate Release archives there.
 - Upload screenshots and submit to TestFlight before final submission.

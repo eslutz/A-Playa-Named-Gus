@@ -1,29 +1,28 @@
 @testable import Gus
-import JellyfinAPI
 import Testing
 
 @Suite("Media 3D detector")
 struct Media3DDetectorTests {
     @Test("maps Jellyfin Video3DFormat cases to stereo layouts", arguments: [
-        (Video3DFormat.halfSideBySide, Stereo3DLayout.sideBySide(half: true)),
+        (Media3DFormat.halfSideBySide, Stereo3DLayout.sideBySide(half: true)),
         (.fullSideBySide, .sideBySide(half: false)),
         (.halfTopAndBottom, .topAndBottom(half: true)),
         (.fullTopAndBottom, .topAndBottom(half: false)),
         (.mvc, .multiviewCoding),
     ])
-    func mapsVideo3DFormat(format: Video3DFormat, expectedLayout: Stereo3DLayout) {
-        let item = BaseItemDto(video3DFormat: format)
+    func mapsVideo3DFormat(format: Media3DFormat, expectedLayout: Stereo3DLayout) {
+        let item = MediaItem(video3DFormat: format)
 
         #expect(Media3DDetector.layout(for: item) == expectedLayout)
     }
 
     @Test("detects MV-HEVC only when HEVC streams expose a multiview hint")
     func detectsMVHEVCFromHevcMultiviewHints() {
-        let spatialItem = BaseItemDto(mediaStreams: [
-            MediaStream(codec: "hevc", codecTag: "hvc1", profile: "Main 10 multiview", type: .video),
+        let spatialItem = mediaItem(streams: [
+            MediaStreamInfo(codec: "hevc", codecTag: "hvc1", profile: "Main 10 multiview", type: .video),
         ])
-        let ordinaryHEVC = BaseItemDto(mediaStreams: [
-            MediaStream(codec: "hevc", codecTag: "hvc1", profile: "Main 10", type: .video),
+        let ordinaryHEVC = mediaItem(streams: [
+            MediaStreamInfo(codec: "hevc", codecTag: "hvc1", profile: "Main 10", type: .video),
         ])
 
         #expect(Media3DDetector.layout(for: spatialItem) == .mvHEVC)
@@ -32,11 +31,10 @@ struct Media3DDetectorTests {
 
     @Test("does not infer MV-HEVC from descriptive stream titles or comments")
     func ignoresDescriptiveSpatialLabels() {
-        let item = BaseItemDto(mediaStreams: [
-            MediaStream(
+        let item = mediaItem(streams: [
+            MediaStreamInfo(
                 codec: "hevc",
                 codecTag: "hvc1",
-                comment: "Spatial Video",
                 displayTitle: "Spatial Video",
                 profile: "Main 10",
                 title: "Spatial Video",
@@ -49,20 +47,20 @@ struct Media3DDetectorTests {
     }
 
     @Test("chooses the visionOS presentation for each stereo layout", arguments: [
-        (Video3DFormat.halfSideBySide, Stereo3DPresentation.immersiveFramePacked(.sideBySide(half: true))),
+        (Media3DFormat.halfSideBySide, Stereo3DPresentation.immersiveFramePacked(.sideBySide(half: true))),
         (.fullTopAndBottom, .immersiveFramePacked(.topAndBottom(half: false))),
         (.mvc, .unsupported3D(.multiviewCoding)),
     ])
-    func choosesVisionOSPresentation(format: Video3DFormat, expectedPresentation: Stereo3DPresentation) {
-        let item = BaseItemDto(video3DFormat: format)
+    func choosesVisionOSPresentation(format: Media3DFormat, expectedPresentation: Stereo3DPresentation) {
+        let item = MediaItem(video3DFormat: format)
 
         #expect(Media3DDetector.presentation(for: item, on: .visionOS) == expectedPresentation)
     }
 
     @Test("uses native spatial presentation for MV-HEVC on visionOS")
     func usesNativeSpatialPresentationForMVHEVC() {
-        let item = BaseItemDto(mediaStreams: [
-            MediaStream(codec: "hevc", profile: "Main 10 multiview", type: .video),
+        let item = mediaItem(streams: [
+            MediaStreamInfo(codec: "hevc", profile: "Main 10 multiview", type: .video),
         ])
 
         #expect(Media3DDetector.presentation(for: item, on: .visionOS) == .nativeSpatial)
@@ -70,7 +68,7 @@ struct Media3DDetectorTests {
 
     @Test("forces native 2D on non-visionOS platforms")
     func nonVisionOSAlwaysFallsBackTo2D() {
-        let item = BaseItemDto(video3DFormat: .halfSideBySide)
+        let item = MediaItem(video3DFormat: .halfSideBySide)
 
         #expect(Media3DDetector.presentation(for: item, on: .other) == .native2D)
     }
@@ -112,13 +110,17 @@ struct Media3DDetectorTests {
 
     @Test("viewing mode override can force 2D or native spatial on visionOS")
     func viewingModeOverrideForces2DOrSpatial() {
-        let framePackedItem = BaseItemDto(video3DFormat: .halfSideBySide)
-        let ordinaryHEVC = BaseItemDto(mediaStreams: [
-            MediaStream(codec: "hevc", title: "Vacation", type: .video),
+        let framePackedItem = MediaItem(video3DFormat: .halfSideBySide)
+        let ordinaryHEVC = mediaItem(streams: [
+            MediaStreamInfo(codec: "hevc", title: "Vacation", type: .video),
         ])
 
         #expect(Media3DDetector.presentation(for: framePackedItem, on: .visionOS, viewingMode: .twoD) == .native2D)
         #expect(Media3DDetector.presentation(for: ordinaryHEVC, on: .visionOS, viewingMode: .spatial) == .nativeSpatial)
         #expect(Media3DDetector.presentation(for: ordinaryHEVC, on: .other, viewingMode: .spatial) == .native2D)
+    }
+
+    private func mediaItem(streams: [MediaStreamInfo]) -> MediaItem {
+        MediaItem(mediaSources: [MediaSource(mediaStreams: streams)])
     }
 }

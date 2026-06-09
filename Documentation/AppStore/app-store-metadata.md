@@ -32,7 +32,7 @@ Jellyfin, media server, movies, TV, streaming, home server, offline, AVKit, Visi
 
 Likely 12+ or 17+, depending on App Store Connect questionnaire interpretation, because
 A Playa Named Gus can browse and play user-supplied media whose rating/content is outside
-the app's control. Confirm during M7.
+the app's control. Confirm during App Store Connect setup.
 
 ## Required URLs
 

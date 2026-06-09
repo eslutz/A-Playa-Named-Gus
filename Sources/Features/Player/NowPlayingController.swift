@@ -1,5 +1,4 @@
 import AVFoundation
-import JellyfinAPI
 import MediaPlayer
 
 /// Feeds the system Now Playing transport from an `AVPlayer`.
@@ -13,7 +12,7 @@ final class NowPlayingController {
     private var timeObserver: Any?
     private var artworkTask: Task<Void, Never>?
 
-    func start(player: AVPlayer, item: BaseItemDto, artworkURL: URL?) {
+    func start(player: AVPlayer, item: MediaItem, artworkURL: URL?) {
         self.player = player
         artworkTask?.cancel()
 

@@ -1,4 +1,3 @@
-import JellyfinAPI
 import SwiftUI
 
 struct SearchResultsView: View {
@@ -18,7 +17,7 @@ struct SearchResultsView: View {
                         NavigationLink(value: ItemRef(item: item)) {
                             PosterCard(
                                 item: item,
-                                imageURL: session.imageBuilder.primaryImageURL(for: item, context: .posterGrid)
+                                imageURL: session.mediaProvider.primaryImageURL(for: item, context: .posterGrid)
                             )
                         }
                         .posterNavigationStyle()
@@ -50,6 +49,35 @@ struct SearchRootView<Content: View>: View {
     @ViewBuilder var content: () -> Content
 
     var body: some View {
+        searchContent
+            .task {
+                guard session.mediaProvider.capabilities.supportsSearch, store == nil else { return }
+                store = SearchStore(session: session)
+            }
+            .onChange(of: navigation.searchFocusRequest) { _, request in
+                guard session.mediaProvider.capabilities.supportsSearch, request > 0 else { return }
+                isSearchPresented = true
+                isSearchFocused = true
+            }
+    }
+
+    @ViewBuilder
+    private var searchContent: some View {
+        if session.mediaProvider.capabilities.supportsSearch {
+            searchSurface
+                .gusSearchable(
+                    text: $searchText,
+                    isPresented: $isSearchPresented,
+                    isFocused: $isSearchFocused,
+                    prompt: Text("Search Library")
+                )
+                .searchDebounce(text: $searchText, store: $store)
+        } else {
+            content()
+        }
+    }
+
+    private var searchSurface: some View {
         Group {
             if isSearching {
                 if let store {
@@ -62,27 +90,11 @@ struct SearchRootView<Content: View>: View {
                 content()
             }
         }
-        .gusSearchable(
-            text: $searchText,
-            isPresented: $isSearchPresented,
-            isFocused: $isSearchFocused,
-            prompt: Text("Search Jellyfin")
-        )
-        .task {
-            if store == nil {
-                store = SearchStore(session: session)
-            }
-        }
-        .searchDebounce(text: $searchText, store: $store)
-        .onChange(of: navigation.searchFocusRequest) { _, request in
-            guard request > 0 else { return }
-            isSearchPresented = true
-            isSearchFocused = true
-        }
     }
 
     private var isSearching: Bool {
-        !searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        session.mediaProvider.capabilities.supportsSearch
+            && !searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 }
 

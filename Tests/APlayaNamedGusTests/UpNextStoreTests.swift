@@ -1,6 +1,5 @@
 import Foundation
 @testable import Gus
-import JellyfinAPI
 import Testing
 
 @MainActor
@@ -9,7 +8,7 @@ struct UpNextStoreTests {
     @Test("toggles items per server and user")
     func togglesItemsPerServerAndUser() {
         let store = UpNextStore(persistence: UpNextPersistence(directory: temporaryDirectory()))
-        let item = BaseItemDto(id: "movie-1", name: "Movie One", type: .movie)
+        let item = MediaItem(id: "movie-1", name: "Movie One", type: .movie)
 
         store.load(serverID: "server-1", userID: "user-1")
         #expect(store.contains(item, serverID: "server-1", userID: "user-1") == false)
@@ -25,9 +24,9 @@ struct UpNextStoreTests {
     @Test("merges manual items ahead of server next up without duplicates")
     func mergesManualItemsAheadOfServerNextUpWithoutDuplicates() {
         let store = UpNextStore(persistence: UpNextPersistence(directory: temporaryDirectory()))
-        let manual = BaseItemDto(id: "movie-1", name: "Manual", type: .movie)
-        let remoteDuplicate = BaseItemDto(id: "movie-1", name: "Remote Duplicate", type: .movie)
-        let remote = BaseItemDto(id: "episode-1", name: "Remote", type: .episode)
+        let manual = MediaItem(id: "movie-1", name: "Manual", type: .movie)
+        let remoteDuplicate = MediaItem(id: "movie-1", name: "Remote Duplicate", type: .movie)
+        let remote = MediaItem(id: "episode-1", name: "Remote", type: .episode)
 
         store.load(serverID: "server-1", userID: "user-1")
         store.toggle(manual, serverID: "server-1", userID: "user-1")
@@ -45,7 +44,7 @@ struct UpNextStoreTests {
             .appendingPathComponent("Gus", isDirectory: true)
             .appendingPathComponent("UpNext", isDirectory: true)
         let legacyPersistence = UpNextPersistence(directory: legacyDirectory)
-        let item = BaseItemDto(id: "movie-1", name: "Manual", type: .movie)
+        let item = MediaItem(id: "movie-1", name: "Manual", type: .movie)
         let scope = UpNextScope(serverID: "server-1", userID: "user-1")
         legacyPersistence.save([item], scope: scope)
 

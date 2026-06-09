@@ -49,8 +49,7 @@ Playa Named Gus source code.
 
 | Key | Reason |
 |---|---|
-| NSLocalNetworkUsageDescription | User-initiated Jellyfin server discovery (Bonjour). Manual URL entry remains primary. |
-| NSFaceIDUsageDescription | Protects Jellyfin sign-in surfaces on platforms that prompt for a usage description. |
+| NSLocalNetworkUsageDescription | User-initiated Jellyfin server discovery over local-network UDP broadcast. Manual URL entry remains primary. |
 | UIBackgroundModes: audio | Media playback continuation, Now Playing, and system transport controls via AVKit. |
 
 ## Remaining Submission Steps

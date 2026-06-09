@@ -3,12 +3,12 @@ import Testing
 
 @Suite("App Info.plist")
 struct AppInfoPlistTests {
-    @Test("app display name matches App Store listing")
-    func appDisplayNameMatchesAppStoreListing() throws {
+    @Test("app display name is short enough for SpringBoard")
+    func appDisplayNameIsShortEnoughForSpringBoard() throws {
         let plist = try sourceInfoPlist()
         let displayName = try #require(plist["CFBundleDisplayName"] as? String)
 
-        #expect(displayName == "A Playa Named Gus")
+        #expect(displayName == "Gus")
     }
 
     @Test("immersive spaces are allowed to open alongside the main window")

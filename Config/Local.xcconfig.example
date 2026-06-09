@@ -1,7 +1,7 @@
-// Copy to Config/Local.xcconfig and replace YOURTEAMID with your 10-character
-// Apple Developer Team ID. Keep the real Local.xcconfig file out of git.
+// Copy to Config/Local.xcconfig for local device builds. Keep the real
+// Local.xcconfig file out of git.
 
-DEVELOPMENT_TEAM = YOURTEAMID
+DEVELOPMENT_TEAM = QS3GC3CT43
 CODE_SIGN_STYLE = Automatic
 CODE_SIGN_IDENTITY = Apple Development
 CODE_SIGNING_REQUIRED = YES
