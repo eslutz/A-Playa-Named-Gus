@@ -354,8 +354,8 @@ validation, TestFlight, and submission work are actually done.
 
 - [ ] **Release regression matrix.** Full pass of every core flow on every platform on the
   Release build. *Acceptance:* checklist signed off.
-- [ ] **Archive & upload** each platform; attach metadata; submit for review. *Acceptance:*
-  "Waiting for Review" on all.
+- [ ] **Xcode Cloud archive & upload** each platform; attach metadata; submit for review.
+  *Acceptance:* "Waiting for Review" on all.
 - [ ] **Review response.** Address any rejections; resubmit. *Acceptance:* "Ready for
   Sale."
 - [ ] **Post-launch.** Monitor crash/feedback; triage into a 1.0.x / next-version backlog.

@@ -57,17 +57,6 @@ not a signing secret. To build locally for a device:
    CODE_SIGNING_ALLOWED = YES
    ```
 2. `Config/Shared.xcconfig` already includes `Config/Local.xcconfig` when present.
-3. For local manual Release archive experiments only, set the profile specifier variables
-   from `Config/Local.xcconfig.example`:
-   ```
-   CODE_SIGN_STYLE = Manual
-   CODE_SIGN_IDENTITY = Apple Distribution
-   GUS_IOS_PROVISIONING_PROFILE_SPECIFIER = <iOS app profile name>
-   GUS_TVOS_PROVISIONING_PROFILE_SPECIFIER = <tvOS app profile name>
-   GUS_TOPSHELF_TVOS_PROVISIONING_PROFILE_SPECIFIER = <tvOS Top Shelf profile name>
-   GUS_VISIONOS_PROVISIONING_PROFILE_SPECIFIER = <visionOS app profile name>
-   GUS_MACOS_PROVISIONING_PROFILE_SPECIFIER = <macOS app profile name>
-   ```
 
 ## CI Signing Ownership
 
@@ -80,12 +69,6 @@ matrix testing, and release-candidate validation. `ci_scripts/ci_post_clone.sh` 
 that Xcode Cloud is running under Team ID `QS3GC3CT43`, writes a temporary automatic
 signing `Config/Local.xcconfig`, and regenerates `A Playa Named Gus.xcodeproj` from
 `project.yml` before Xcode Cloud builds.
-
-Local archive command:
-
-```sh
-Scripts/archive-release.sh ios tvos visionos macos
-```
 
 ## Remaining Submission Steps (Account-Blocked)
 

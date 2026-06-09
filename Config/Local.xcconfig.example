@@ -6,12 +6,3 @@ CODE_SIGN_STYLE = Automatic
 CODE_SIGN_IDENTITY = Apple Development
 CODE_SIGNING_REQUIRED = YES
 CODE_SIGNING_ALLOWED = YES
-
-// Optional local Release/archive profile names. Leave blank for local automatic
-// signing. Xcode Cloud owns distributable signing/provisioning for TestFlight
-// and App Store builds.
-GUS_IOS_PROVISIONING_PROFILE_SPECIFIER =
-GUS_TVOS_PROVISIONING_PROFILE_SPECIFIER =
-GUS_TOPSHELF_TVOS_PROVISIONING_PROFILE_SPECIFIER =
-GUS_VISIONOS_PROVISIONING_PROFILE_SPECIFIER =
-GUS_MACOS_PROVISIONING_PROFILE_SPECIFIER =
