@@ -1,7 +1,7 @@
 # App Store Readiness Packet
 
-Status: draft documentation only. These files prepare M7 decisions but do not complete M7.
-Privacy manifest, signing, App Store Connect setup, screenshots, upload, TestFlight, and
+Status: readiness documentation, bundled privacy manifest, and local/CI signing support.
+App Store Connect setup, screenshots, archive validation, upload, TestFlight, and
 submission are still implementation work.
 
 ## Index

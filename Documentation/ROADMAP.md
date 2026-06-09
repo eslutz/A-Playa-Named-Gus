@@ -276,28 +276,39 @@ automated build verification. (Covers priority: *polish & testing*.)
 before the 1.0 release path, so A Playa Named Gus can stay Jellyfin-only at launch while
 preserving a clean route to future backends such as Emby.
 
-- [ ] **Provider boundary.** Introduce a media-server provider abstraction such as
+- [x] **Provider boundary.** Introduce a media-server provider abstraction such as
   `MediaServerProvider`, with Jellyfin as the only production implementation for 1.0.
   *Acceptance:* feature stores depend on provider/domain contracts for core operations
   rather than directly on Jellyfin SDK call shapes; no non-Jellyfin runtime dependency is
-  added.
-- [ ] **Gus-native domain models.** Move feature views and stores away from Jellyfin SDK
+  added. *(Done: `MediaProviderSession` is the signed-in media boundary, with
+  `JellyfinMediaProviderSession` as the only production adapter and no new runtime
+  dependency.)*
+- [x] **Gus-native domain models.** Move feature views and stores away from Jellyfin SDK
   DTOs for libraries, media items, people, images, playback sources, playback sessions,
   remote commands, progress events, and server capabilities. *Acceptance:* UI code renders
   Gus-native models, with Jellyfin DTO mapping isolated inside the Jellyfin provider.
-- [ ] **Provider-scoped persistence.** Persist accounts, tokens, server IDs, user IDs,
+  *(Done: `MediaItem`, media stream/source, image, playback, download, and reporting
+  contracts now drive feature views/stores; Jellyfin DTO mapping lives in
+  `Sources/Providers/Jellyfin`.)*
+- [x] **Provider-scoped persistence.** Persist accounts, tokens, server IDs, user IDs,
   playback preferences, and cached metadata with an explicit provider identity.
   *Acceptance:* existing Jellyfin users migrate without reauthentication, token lookup
   remains Keychain-backed, and future providers can coexist without account/key collisions.
-- [ ] **Capability-driven feature availability.** Add a capability model so UI can show,
+  *(Done: persisted server/user/session records carry `providerKind`, Keychain accounts
+  use `jellyfin:serverID:userID`, and restore migrates legacy Jellyfin token accounts.)*
+- [x] **Capability-driven feature availability.** Add a capability model so UI can show,
   hide, or degrade features based on backend and server configuration. *Acceptance:*
   feature code does not spread `if Jellyfin` / `if Emby` checks; provider-specific behavior
-  stays behind the provider implementation or capability mapping.
-- [ ] **Regression coverage and ADR.** Capture the provider architecture decision and add
+  stays behind the provider implementation or capability mapping. *(Done:
+  `ProviderCapabilities` gates search/download entry points while provider-specific
+  behavior stays behind the session adapter.)*
+- [x] **Regression coverage and ADR.** Capture the provider architecture decision and add
   focused tests for Jellyfin mapping, persistence migration, playback source selection, and
   capability handling. *Acceptance:* current Jellyfin connect, browse, search, detail,
   playback, progress, downloads, and settings flows behave unchanged across all supported
-  platforms.
+  platforms. *(Done: ADR 0008 records the boundary; focused tests cover Jellyfin mapping,
+  provider-scoped credentials, legacy token migration, playback reporting/domain
+  selection, download source selection, and capability-disabled downloads.)*
 
 ---
 
@@ -305,14 +316,18 @@ preserving a clean route to future backends such as Emby.
 
 **Goal:** everything Apple requires to accept and review the app.
 
-Readiness documents now live under `Documentation/AppStore/`, but M8 remains unchecked
-until privacy manifest/signing/App Store Connect/TestFlight/submission work is actually
+Readiness documents and the app privacy manifest now live under `Documentation/AppStore/`
+and `Resources/PrivacyInfo.xcprivacy`, but M8 remains unchecked until App Store Connect
+privacy answers, signing, archive validation, TestFlight, and submission work are actually
 done.
 
-- [ ] **Privacy manifest & nutrition labels.** Add `PrivacyInfo.xcprivacy` (declare any
-  required-reason APIs and data use) and complete App Privacy answers (data not collected
-  by A Playa Named Gus itself; connects to a user-provided server). *Acceptance:* validates;
-  labels match behavior.
+- [ ] **Privacy manifest & nutrition labels.** Keep `Resources/PrivacyInfo.xcprivacy`
+  aligned with actual required-reason API and data-use behavior, then complete App Privacy
+  answers in App Store Connect (data not collected by A Playa Named Gus itself; connects
+  to a user-provided server). *Acceptance:* manifest validates; App Store Connect labels
+  match behavior. *(Started: `PrivacyInfo.xcprivacy` is bundled with no tracking, no
+  collected data types, Disk Space `85F4.1`, and UserDefaults `CA92.1`; remaining work is
+  App Store Connect privacy answers and policy fields.)*
 - [ ] **Signing & capabilities.** Real Team/bundle id, automatic signing, per-platform
   capability review (background audio, tvOS User Management, sandbox on macOS, Optic ID
   string). *Acceptance:* Release archives sign for each platform.

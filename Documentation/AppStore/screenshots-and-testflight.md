@@ -82,7 +82,9 @@ accepts for the 2560×1600 slot.
 
 Before uploading to TestFlight:
 - [ ] Real Apple Developer Team set in `Config/Local.xcconfig`; signing validated.
-- [ ] Release archives build and pass Xcode validation for all platforms.
+- [ ] Release archives build with `Scripts/archive-release.sh ios tvos visionos macos`
+      or the manual `Archive Release` GitHub Actions workflow.
+- [ ] Xcode Organizer validation passes for the archives intended for upload.
 - [ ] `ITSAppUsesNonExemptEncryption = false` confirmed in `Info.plist`.
 - [ ] App Privacy answers complete in App Store Connect (source: `privacy-labels.md`).
 - [ ] Privacy policy URL added for iOS/iPadOS/macOS/visionOS.
