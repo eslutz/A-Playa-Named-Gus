@@ -257,7 +257,9 @@ final class JellyfinMediaProviderSession: MediaProviderSession {
         .chapters,
     ]
 
-    private func sortBy(for sort: MediaItemSort) -> [ItemSortBy] {
+    private func sortBy(for sort: MediaItemSort?) -> [ItemSortBy]? {
+        guard let sort else { return nil }
+
         switch sort {
         case .name:
             return [.sortName]
@@ -272,7 +274,9 @@ final class JellyfinMediaProviderSession: MediaProviderSession {
         }
     }
 
-    private func sortOrder(for sort: MediaItemSort) -> [JellyfinAPI.SortOrder]? {
+    private func sortOrder(for sort: MediaItemSort?) -> [JellyfinAPI.SortOrder]? {
+        guard let sort else { return nil }
+
         switch sort {
         case .name:
             return [.ascending]

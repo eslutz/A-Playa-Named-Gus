@@ -16,6 +16,7 @@ struct SearchStoreTests {
         #expect(query.startIndex == 25)
         #expect(query.limit == 50)
         #expect(query.isRecursive == true)
+        #expect(query.sort == nil)
     }
 
     @Test("resets paging when the query changes")

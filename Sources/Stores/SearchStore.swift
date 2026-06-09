@@ -64,7 +64,8 @@ final class SearchStore {
                 searchTerm: query,
                 startIndex: startIndex,
                 limit: paging.pageSize,
-                isRecursive: true
+                isRecursive: true,
+                sort: nil
             )
             let page = try await session.mediaProvider.items(query: query)
 

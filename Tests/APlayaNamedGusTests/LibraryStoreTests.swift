@@ -53,6 +53,51 @@ struct LibraryStoreTests {
     }
 
     @MainActor
+    @Test("provider item queries omit sort parameters when unsorted")
+    func providerItemQueriesOmitSortParametersWhenUnsorted() async throws {
+        LibraryItemsURLProtocol.configure(responses: [
+            .init(result: BaseItemDtoQueryResult(items: [], totalRecordCount: 0)),
+        ])
+
+        let session = try libraryTestSession()
+
+        _ = try await session.mediaProvider.items(query: MediaItemQuery(
+            searchTerm: "psych",
+            startIndex: 0,
+            limit: 20,
+            isRecursive: true,
+            sort: nil
+        ))
+
+        let request = try #require(LibraryItemsURLProtocol.recordedRequests.first)
+        #expect(request.searchTerm == "psych")
+        #expect(request.sortBy == nil)
+        #expect(request.sortOrder == nil)
+    }
+
+    @MainActor
+    @Test("provider item queries keep explicit name sort parameters")
+    func providerItemQueriesKeepExplicitNameSortParameters() async throws {
+        LibraryItemsURLProtocol.configure(responses: [
+            .init(result: BaseItemDtoQueryResult(items: [], totalRecordCount: 0)),
+        ])
+
+        let session = try libraryTestSession()
+
+        _ = try await session.mediaProvider.items(query: MediaItemQuery(
+            parentID: "library-1",
+            startIndex: 0,
+            limit: 20,
+            sort: .name
+        ))
+
+        let request = try #require(LibraryItemsURLProtocol.recordedRequests.first)
+        #expect(request.parentID == "library-1")
+        #expect(request.sortBy == "SortName")
+        #expect(request.sortOrder == "Ascending")
+    }
+
+    @MainActor
     @Test("ignores stale next page responses after filter changes")
     func ignoresStaleNextPageResponsesAfterFilterChanges() async throws {
         LibraryItemsURLProtocol.configure(responses: [
@@ -147,8 +192,12 @@ private struct StubbedLibraryItemsResponse {
 }
 
 private struct RecordedLibraryItemsRequest: Equatable {
+    var parentID: String?
+    var searchTerm: String?
     var startIndex: Int?
     var filters: String?
+    var sortBy: String?
+    var sortOrder: String?
 }
 
 private final class LibraryItemsURLProtocol: URLProtocol {
@@ -251,8 +300,16 @@ private final class LibraryItemsURLProtocolState {
     private static func recordedRequest(from request: URLRequest) -> RecordedLibraryItemsRequest {
         let queryItems = URLComponents(url: request.url!, resolvingAgainstBaseURL: false)?.queryItems ?? []
         return RecordedLibraryItemsRequest(
-            startIndex: queryItems.first(where: { $0.name == "startIndex" })?.value.flatMap(Int.init),
-            filters: queryItems.first(where: { $0.name == "filters" })?.value
+            parentID: queryValue("parentID", in: queryItems),
+            searchTerm: queryValue("searchTerm", in: queryItems),
+            startIndex: queryValue("startIndex", in: queryItems).flatMap(Int.init),
+            filters: queryValue("filters", in: queryItems),
+            sortBy: queryValue("sortBy", in: queryItems),
+            sortOrder: queryValue("sortOrder", in: queryItems)
         )
+    }
+
+    private static func queryValue(_ name: String, in queryItems: [URLQueryItem]) -> String? {
+        queryItems.first { $0.name.caseInsensitiveCompare(name) == .orderedSame }?.value
     }
 }

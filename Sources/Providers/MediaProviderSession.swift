@@ -11,7 +11,7 @@ struct MediaItemQuery {
     var startIndex: Int
     var limit: Int
     var isRecursive: Bool
-    var sort: MediaItemSort
+    var sort: MediaItemSort?
     var statusFilter: MediaItemStatusFilter
 
     init(
@@ -20,7 +20,7 @@ struct MediaItemQuery {
         startIndex: Int,
         limit: Int,
         isRecursive: Bool = false,
-        sort: MediaItemSort = .name,
+        sort: MediaItemSort? = nil,
         statusFilter: MediaItemStatusFilter = .all
     ) {
         self.parentID = parentID
