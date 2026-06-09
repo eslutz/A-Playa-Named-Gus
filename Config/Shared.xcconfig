@@ -37,11 +37,13 @@ SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO
 
 // MARK: - Code signing
 //
-// Local-only milestone builds: ad-hoc sign so simulator + native macOS builds
-// succeed without a provisioning profile or Developer team.
+// Default GitHub/local CI signing: ad-hoc sign so simulator + native macOS
+// builds succeed without provisioning profiles. The Team ID is not secret and
+// is committed so generated projects have the paid Apple Developer Program team
+// selected for Xcode Cloud and local device-signing setup.
 CODE_SIGN_STYLE = Manual
 CODE_SIGN_IDENTITY = -
-DEVELOPMENT_TEAM =
+DEVELOPMENT_TEAM = QS3GC3CT43
 CODE_SIGNING_REQUIRED = NO
 CODE_SIGNING_ALLOWED = YES
 
@@ -58,6 +60,6 @@ CODE_SIGN_ENTITLEMENTS[sdk=appletvsimulator*] = Config/Gus-tvOS.entitlements
 
 // MARK: - Local overrides
 //
-// Keep this last so account-specific signing settings can opt into automatic
-// signing without committing a Developer Team ID to the repo.
+// Keep this last so local and Xcode Cloud generated overrides can opt into
+// automatic signing without changing the source-controlled PR-build defaults.
 #include? "Local.xcconfig"

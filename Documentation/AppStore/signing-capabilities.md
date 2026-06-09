@@ -3,13 +3,14 @@
 ## Current State
 
 Simulator and local macOS builds use ad-hoc signing (`CODE_SIGN_IDENTITY = -`,
-`CODE_SIGNING_REQUIRED = NO`) so they work without an Apple Developer Program account.
-The bundle ID `dev.ericslutz.gus` is set in `Config/Shared.xcconfig`. Entitlements and
-capability declarations are complete.
+`CODE_SIGNING_REQUIRED = NO`) so GitHub PR builds work without provisioning profiles.
+The bundle ID `dev.ericslutz.gus` and paid Apple Developer Program Team ID
+`QS3GC3CT43` are set in `Config/Shared.xcconfig`. Entitlements and capability
+declarations are complete.
 
-Local device builds use the git-ignored `Config/Local.xcconfig` override. Distributable
-build signing, provisioning, TestFlight upload, and App Store archives belong in Xcode
-Cloud, not GitHub Actions.
+Local device builds use the git-ignored `Config/Local.xcconfig` override to switch to
+automatic signing. Distributable build signing, provisioning, TestFlight upload, and
+App Store archives belong in Xcode Cloud, not GitHub Actions.
 
 ## Capabilities — Confirmed Ready
 
@@ -44,12 +45,12 @@ tokens without an extra capability.
 
 ## Setting Your Team ID (Local Override)
 
-`DEVELOPMENT_TEAM` is intentionally blank in `Config/Shared.xcconfig` so the repo stays
-account-agnostic. To build locally for a device:
+`DEVELOPMENT_TEAM = QS3GC3CT43` is committed in `Config/Shared.xcconfig`; the Team ID is
+not a signing secret. To build locally for a device:
 
 1. Create `Config/Local.xcconfig` (git-ignored):
    ```
-   DEVELOPMENT_TEAM = XXXXXXXXXX
+   DEVELOPMENT_TEAM = QS3GC3CT43
    CODE_SIGN_STYLE = Automatic
    CODE_SIGN_IDENTITY = Apple Development
    CODE_SIGNING_REQUIRED = YES
@@ -75,8 +76,10 @@ It should not hold Apple Distribution certificates or provisioning profiles for 
 
 Xcode Cloud owns signed iOS, iPadOS, tvOS, visionOS, and macOS archives, provisioning,
 TestFlight builds, App Store release archives, notarized Mac app builds, UI/device
-matrix testing, and release-candidate validation. `ci_scripts/ci_post_clone.sh`
-regenerates `A Playa Named Gus.xcodeproj` from `project.yml` before Xcode Cloud builds.
+matrix testing, and release-candidate validation. `ci_scripts/ci_post_clone.sh` validates
+that Xcode Cloud is running under Team ID `QS3GC3CT43`, writes a temporary automatic
+signing `Config/Local.xcconfig`, and regenerates `A Playa Named Gus.xcodeproj` from
+`project.yml` before Xcode Cloud builds.
 
 Local archive command:
 
@@ -86,7 +89,6 @@ Scripts/archive-release.sh ios tvos visionos macos
 
 ## Remaining Submission Steps (Account-Blocked)
 
-- Confirm the Apple Developer Program team and bundle ID ownership in App Store Connect.
 - Create/configure the Xcode Cloud workflow for `dev.ericslutz.gus` and the tvOS Top
   Shelf extension.
 - Let Xcode Cloud manage App Store provisioning profiles for the app plus the tvOS Top

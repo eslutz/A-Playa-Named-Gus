@@ -316,11 +316,11 @@ preserving a clean route to future backends such as Emby.
 
 **Goal:** everything Apple requires to accept and review the app.
 
-Readiness documents, the GitHub Actions/Xcode Cloud ownership split, and the app privacy
-manifest now live under `Documentation/AppStore/`, `ci_scripts/`, and
-`Resources/PrivacyInfo.xcprivacy`, but M8 remains unchecked until App Store Connect
-privacy answers, Xcode Cloud signing, archive validation, TestFlight, and submission work
-are actually done.
+Readiness documents, the GitHub Actions/Xcode Cloud ownership split, committed paid
+Developer Team ID, and the app privacy manifest now live under `Documentation/AppStore/`,
+`Config/Shared.xcconfig`, `ci_scripts/`, and `Resources/PrivacyInfo.xcprivacy`, but M8
+remains unchecked until App Store Connect privacy answers, Xcode Cloud signing, archive
+validation, TestFlight, and submission work are actually done.
 
 - [ ] **Privacy manifest & nutrition labels.** Keep `Resources/PrivacyInfo.xcprivacy`
   aligned with actual required-reason API and data-use behavior, then complete App Privacy
