@@ -83,6 +83,21 @@ struct AppModelSessionTests {
         #expect(fixture.userDefaults.string(forKey: Self.legacyLastUserIDKey) == nil)
     }
 
+    @Test("legacy Jellyfin keychain account migrates to provider-qualified account")
+    func legacyJellyfinKeychainAccountMigrates() throws {
+        let fixture = try Fixture(seedTokenA: false)
+        let credential = SessionCredential(user: fixture.userA)
+        fixture.tokens.setToken("legacy-token-a", account: credential.legacyAccount)
+        fixture.userDefaults.set(credential.account, forKey: Self.lastSessionAccountKey)
+
+        let appModel = AppModel(serverStore: fixture.store, tokenStore: fixture.tokens, userDefaults: fixture.userDefaults)
+        appModel.restoreLastSession()
+
+        #expect(appModel.currentSession?.user == fixture.userA)
+        #expect(fixture.tokens.token(for: credential) == "legacy-token-a")
+        #expect(fixture.tokens.token(account: credential.legacyAccount) == nil)
+    }
+
     @Test("legacy bare user id is discarded when multiple stored users match")
     func duplicateLegacyBareUserIDDoesNotRestoreWrongAccount() throws {
         let fixture = try Fixture()
@@ -144,12 +159,24 @@ private final class MemoryTokenStore: TokenStore {
         tokens[credential.account]
     }
 
+    func token(account: String) -> String? {
+        tokens[account]
+    }
+
     func setToken(_ token: String, for credential: SessionCredential) {
         tokens[credential.account] = token
     }
 
+    func setToken(_ token: String, account: String) {
+        tokens[account] = token
+    }
+
     func deleteToken(for credential: SessionCredential) {
         tokens[credential.account] = nil
+    }
+
+    func deleteToken(account: String) {
+        tokens[account] = nil
     }
 }
 
@@ -165,7 +192,7 @@ private struct Fixture {
     let appModel: AppModel
 
     @MainActor
-    init(seedTokenB: Bool = true) throws {
+    init(seedTokenA: Bool = true, seedTokenB: Bool = true) throws {
         directory = FileManager.default.temporaryDirectory
             .appendingPathComponent(UUID().uuidString, isDirectory: true)
         store = ServerStore(directory: directory)
@@ -186,7 +213,9 @@ private struct Fixture {
 
         store.saveServers([serverA, serverB])
         store.saveUsers([userA, userB])
-        tokens.setToken("token-a", for: SessionCredential(user: userA))
+        if seedTokenA {
+            tokens.setToken("token-a", for: SessionCredential(user: userA))
+        }
         if seedTokenB {
             tokens.setToken("token-b", for: SessionCredential(user: userB))
         }

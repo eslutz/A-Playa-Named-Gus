@@ -1,4 +1,3 @@
-import JellyfinAPI
 import SwiftUI
 
 /// Grid of the items inside a single library.
@@ -6,7 +5,7 @@ import SwiftUI
 /// Pattern reference: Swiftfin's library/`getItems` paging.
 struct LibraryGridView: View {
     @Environment(SessionStore.self) private var session
-    let library: BaseItemDto
+    let library: MediaItem
     @State private var store: LibraryStore?
 
     var body: some View {
@@ -46,7 +45,7 @@ struct LibraryGridView: View {
                         NavigationLink(value: ItemRef(item: item)) {
                             PosterCard(
                                 item: item,
-                                imageURL: session.imageBuilder.primaryImageURL(for: item, context: .posterGrid)
+                                imageURL: session.mediaProvider.primaryImageURL(for: item, context: .posterGrid)
                             )
                         }
                         .posterNavigationStyle()
@@ -117,7 +116,7 @@ private struct LibraryFilterMenu: View {
     }
 }
 
-private extension BaseItemDto {
+private extension MediaItem {
     var storeIdentity: String {
         id ?? name ?? collectionType?.rawValue ?? "library"
     }

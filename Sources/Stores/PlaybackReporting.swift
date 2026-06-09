@@ -1,5 +1,4 @@
 import Foundation
-import JellyfinAPI
 import Observation
 
 struct PlaybackStreamSelection: Equatable {
@@ -16,22 +15,22 @@ struct PlaybackStreamOption: Identifiable, Equatable {
 }
 
 enum PlaybackStreamCatalog {
-    static func audioOptions(for item: BaseItemDto) -> [PlaybackStreamOption] {
+    static func audioOptions(for item: MediaItem) -> [PlaybackStreamOption] {
         streamOptions(for: item, type: .audio)
     }
 
-    static func subtitleOptions(for item: BaseItemDto) -> [PlaybackStreamOption] {
+    static func subtitleOptions(for item: MediaItem) -> [PlaybackStreamOption] {
         streamOptions(for: item, type: .subtitle)
     }
 
-    private static func streamOptions(for item: BaseItemDto, type: MediaStreamType) -> [PlaybackStreamOption] {
-        (item.mediaStreams ?? [])
+    private static func streamOptions(for item: MediaItem, type: MediaStreamKind) -> [PlaybackStreamOption] {
+        item.mediaSources.flatMap(\.mediaStreams)
             .filter { $0.type == type }
             .compactMap { stream in
                 guard let index = stream.index else { return nil }
                 return PlaybackStreamOption(
                     id: index,
-                    title: stream.displayTitle ?? stream.title ?? stream.language ?? "\(type.rawValue) \(index)",
+                    title: stream.displayTitle ?? stream.title ?? stream.language ?? "\(type.rawValue.capitalized) \(index)",
                     isDefault: stream.isDefault == true
                 )
             }
@@ -47,9 +46,9 @@ struct PlaybackChapter: Identifiable, Equatable {
         PlaybackTime.seconds(fromTicks: startPositionTicks)
     }
 
-    static func seekTargets(for item: BaseItemDto) -> [PlaybackChapter] {
-        (item.chapters ?? [])
-            .compactMap { chapter -> (ChapterInfo, Int)? in
+    static func seekTargets(for item: MediaItem) -> [PlaybackChapter] {
+        item.chapters
+            .compactMap { chapter -> (MediaChapterInfo, Int)? in
                 guard let ticks = chapter.startPositionTicks else { return nil }
                 return (chapter, ticks)
             }
@@ -82,42 +81,9 @@ enum PlaybackTime {
         return Double(ticks) / Double(ticksPerSecond)
     }
 
-    static func resumePositionTicks(for item: BaseItemDto) -> Int? {
+    static func resumePositionTicks(for item: MediaItem) -> Int? {
         guard let ticks = item.userData?.playbackPositionTicks, ticks > 0 else { return nil }
         return ticks
-    }
-}
-
-struct PlaybackReportContext {
-    let itemID: String
-    let mediaSourceID: String?
-    let playSessionID: String?
-    let playMethod: PlayMethod
-    let streamSelection: PlaybackStreamSelection
-
-    func stateInfo(positionTicks: Int, isPaused: Bool) -> PlaybackStateInfo {
-        PlaybackStateInfo(
-            audioStreamIndex: streamSelection.audioStreamIndex,
-            canSeek: true,
-            isMuted: false,
-            isPaused: isPaused,
-            itemID: itemID,
-            mediaSourceID: mediaSourceID,
-            playMethod: playMethod,
-            playSessionID: playSessionID,
-            positionTicks: positionTicks,
-            subtitleStreamIndex: streamSelection.subtitleStreamIndex
-        )
-    }
-
-    func stopInfo(positionTicks: Int) -> PlaybackStopInfo {
-        PlaybackStopInfo(
-            isFailed: false,
-            itemID: itemID,
-            mediaSourceID: mediaSourceID,
-            playSessionID: playSessionID,
-            positionTicks: positionTicks
-        )
     }
 }
 

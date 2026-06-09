@@ -32,7 +32,7 @@ struct SettingsView: View {
                 }
             }
 
-            if DownloadsAvailability.isSupported {
+            if DownloadsAvailability.isSupported, session.mediaProvider.capabilities.supportsDownloads {
                 DownloadsSettingsSection(
                     byteCount: downloads.totalByteCount(serverID: session.server.id, userID: session.user.id)
                 )

@@ -1,27 +1,21 @@
 @testable import Gus
-import JellyfinAPI
 import Testing
 
 @Suite("Search store helpers")
 struct SearchStoreTests {
-    @Test("builds recursive item search parameters with rich metadata fields")
-    func buildsSearchParameters() {
-        let parameters = SearchRequest.parameters(
-            userID: "user-1",
-            query: " psych ",
+    @Test("builds recursive provider search queries")
+    func buildsSearchQuery() {
+        let query = MediaItemQuery(
+            searchTerm: "psych",
             startIndex: 25,
-            limit: 50
+            limit: 50,
+            isRecursive: true
         )
 
-        #expect(parameters.userID == "user-1")
-        #expect(parameters.searchTerm == "psych")
-        #expect(parameters.startIndex == 25)
-        #expect(parameters.limit == 50)
-        #expect(parameters.isRecursive == true)
-        #expect(parameters.enableUserData == true)
-        #expect(parameters.enableImages == true)
-        #expect(parameters.enableTotalRecordCount == true)
-        #expect(parameters.fields == SearchRequest.metadataFields)
+        #expect(query.searchTerm == "psych")
+        #expect(query.startIndex == 25)
+        #expect(query.limit == 50)
+        #expect(query.isRecursive == true)
     }
 
     @Test("resets paging when the query changes")

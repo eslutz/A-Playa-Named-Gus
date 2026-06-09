@@ -1,4 +1,3 @@
-import JellyfinAPI
 import SwiftUI
 
 /// Item detail surface re-expressed from the Swiftfin visionOS PR layout using A Playa Named Gus's
@@ -8,7 +7,7 @@ struct ItemDetailView: View {
     @Environment(OfflineDownloadStore.self) private var downloads
     @Environment(PlaybackRefreshStore.self) private var playbackRefresh
     @Environment(UpNextStore.self) private var upNext
-    let item: BaseItemDto
+    let item: MediaItem
 
     @State private var playerItem: ItemRef?
     @State private var store: ItemDetailStore?
@@ -47,7 +46,7 @@ struct ItemDetailView: View {
             VStack(alignment: .leading, spacing: 0) {
                 CinematicDetailHero(
                     item: store.item,
-                    backdropURL: session.imageBuilder.backdropImageURL(for: store.item, context: .backdrop),
+                    backdropURL: session.mediaProvider.backdropImageURL(for: store.item, context: .backdrop),
                     play: {
                         playerItem = ItemRef(item: store.item)
                     },
@@ -57,7 +56,7 @@ struct ItemDetailView: View {
                         playbackRefresh.markPlaybackProgressChanged()
                     }
                 ) {
-                    if DownloadsAvailability.isSupported {
+                    if DownloadsAvailability.isSupported, session.mediaProvider.capabilities.supportsDownloads {
                         DownloadButton(item: store.item, iconOnly: true)
                     }
                 }
@@ -69,8 +68,8 @@ struct ItemDetailView: View {
 
                     DetailMetadataRows(item: store.item)
 
-                    if let people = store.item.people, !people.isEmpty {
-                        CastRail(people: people)
+                    if !store.item.people.isEmpty {
+                        CastRail(people: store.item.people)
                     }
 
                     if !store.specialFeatures.isEmpty {
@@ -83,7 +82,7 @@ struct ItemDetailView: View {
 
                     AboutCardsView(
                         item: store.item,
-                        posterURL: session.imageBuilder.primaryImageURL(for: store.item, context: .posterRail)
+                        posterURL: session.mediaProvider.primaryImageURL(for: store.item, context: .posterRail)
                     )
                 }
                 .padding(sectionPadding)
@@ -108,7 +107,7 @@ struct ItemDetailView: View {
 }
 
 private struct CinematicDetailHero<Accessory: View>: View {
-    let item: BaseItemDto
+    let item: MediaItem
     let backdropURL: URL?
     let play: () -> Void
     let isInUpNext: Bool
@@ -270,7 +269,7 @@ private struct CinematicDetailHero<Accessory: View>: View {
 }
 
 private struct HeroMetadataRow: View {
-    let item: BaseItemDto
+    let item: MediaItem
 
     var body: some View {
         ViewThatFits(in: .horizontal) {
@@ -357,7 +356,7 @@ private struct DownloadButton: View {
     @Environment(SessionStore.self) private var session
     @Environment(OfflineDownloadStore.self) private var downloads
 
-    let item: BaseItemDto
+    let item: MediaItem
     var iconOnly = false
 
     var body: some View {
@@ -385,7 +384,10 @@ private struct DownloadButton: View {
             case .failed, .complete:
                 downloadAction(itemID: item.id)
             }
-        } else if OfflineDownloadEligibility.canDownload(item), let itemID = item.id {
+        } else if session.mediaProvider.capabilities.supportsDownloads,
+                  OfflineDownloadEligibility.canDownload(item),
+                  let itemID = item.id
+        {
             downloadAction(itemID: itemID)
         }
     }
@@ -430,15 +432,15 @@ private struct DownloadButton: View {
 }
 
 private struct DetailMetadataRows: View {
-    let item: BaseItemDto
+    let item: MediaItem
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            if let genres = item.genres?.nonEmptyStrings, !genres.isEmpty {
+            if let genres = item.genres.nonEmptyStrings, !genres.isEmpty {
                 MetadataPillRow(title: "Genres", values: genres)
             }
 
-            if let studios = item.studios?.compactMap(\.name).nonEmptyStrings, !studios.isEmpty {
+            if let studios = item.studios.compactMap(\.name).nonEmptyStrings, !studios.isEmpty {
                 MetadataPillRow(title: "Studios", values: studios)
             }
         }
@@ -563,7 +565,7 @@ private struct SeasonPicker: View {
 
 private struct EpisodeCard: View {
     @Environment(SessionStore.self) private var session
-    let episode: BaseItemDto
+    let episode: MediaItem
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -572,7 +574,7 @@ private struct EpisodeCard: View {
                     .fill(.regularMaterial)
 
                 AsyncPoster(
-                    url: session.imageBuilder.backdropImageURL(for: episode, maxWidth: 420),
+                    url: session.mediaProvider.backdropImageURL(for: episode, maxWidth: 420),
                     contentMode: .fit,
                     placeholderSymbol: "play.rectangle"
                 )
@@ -618,7 +620,7 @@ private struct EpisodeCard: View {
 
 private struct CastRail: View {
     @Environment(SessionStore.self) private var session
-    let people: [BaseItemPerson]
+    let people: [MediaPerson]
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -637,7 +639,7 @@ private struct CastRail: View {
                                 Rectangle()
                                     .fill(.thinMaterial)
 
-                                if let imageURL = session.imageBuilder.personImageURL(for: person.source, maxWidth: 240) {
+                                if let imageURL = session.mediaProvider.personImageURL(for: person.source, maxWidth: 240) {
                                     AsyncPoster(url: imageURL, contentMode: .fill, placeholderSymbol: "person")
                                 } else {
                                     Image(systemName: "person.fill")
@@ -675,7 +677,7 @@ private struct CastRail: View {
 }
 
 private struct AboutCardsView: View {
-    let item: BaseItemDto
+    let item: MediaItem
     let posterURL: URL?
 
     var body: some View {
@@ -757,11 +759,11 @@ private struct DetailInfoCard<Content: View>: View {
 }
 
 private struct CastDisplayPerson: Hashable {
-    let source: BaseItemPerson
+    let source: MediaPerson
     let name: String
     let role: String?
 
-    init?(_ person: BaseItemPerson) {
+    init?(_ person: MediaPerson) {
         guard let name = person.name?.trimmingCharacters(in: .whitespacesAndNewlines),
               !name.isEmpty
         else { return nil }

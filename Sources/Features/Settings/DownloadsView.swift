@@ -1,4 +1,3 @@
-import JellyfinAPI
 import SwiftUI
 
 struct DownloadsView: View {

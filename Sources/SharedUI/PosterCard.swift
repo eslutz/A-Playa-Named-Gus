@@ -1,4 +1,3 @@
-import JellyfinAPI
 import SwiftUI
 
 /// A poster tile: artwork on top, title (and optional subtitle) beneath.
@@ -47,8 +46,8 @@ struct PosterCard: View {
 }
 
 extension PosterCard {
-    /// Convenience initializer from a `BaseItemDto`, choosing a sensible title/subtitle.
-    init(item: BaseItemDto, imageURL: URL?, aspectRatio: CGFloat = 2.0 / 3.0) {
+    /// Convenience initializer from a media item, choosing a sensible title/subtitle.
+    init(item: MediaItem, imageURL: URL?, aspectRatio: CGFloat = 2.0 / 3.0) {
         let title: String
         let subtitle: String?
 

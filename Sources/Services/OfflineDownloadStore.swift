@@ -1,6 +1,4 @@
 import Foundation
-import Get
-import JellyfinAPI
 import Observation
 import OSLog
 
@@ -75,7 +73,7 @@ enum DownloadStatus: Codable, Equatable {
 
 struct OfflineDownloadRecord: Codable, Equatable, Identifiable {
     let id: String
-    let item: BaseItemDto
+    let item: MediaItem
     let filePath: String
     let byteCount: Int64
     let serverID: String
@@ -100,7 +98,7 @@ struct OfflineDownloadRecord: Codable, Equatable, Identifiable {
 
     init(
         id: String,
-        item: BaseItemDto,
+        item: MediaItem,
         filePath: String,
         byteCount: Int64,
         serverID: String,
@@ -125,7 +123,7 @@ struct OfflineDownloadRecord: Codable, Equatable, Identifiable {
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         id = try container.decode(String.self, forKey: .id)
-        item = try container.decode(BaseItemDto.self, forKey: .item)
+        item = try container.decode(MediaItem.self, forKey: .item)
         filePath = try container.decode(String.self, forKey: .filePath)
         byteCount = try container.decode(Int64.self, forKey: .byteCount)
         serverID = try container.decode(String.self, forKey: .serverID)
@@ -141,7 +139,7 @@ struct OfflineDownloadRecord: Codable, Equatable, Identifiable {
     }
 
     var requiresTranscodingForDownload: Bool {
-        item.mediaSources?.contains(where: OfflineDownloadEligibility.isAVPlayerPlayable) != true
+        item.mediaSources.contains(where: OfflineDownloadEligibility.isAVPlayerPlayable) != true
     }
 }
 
@@ -150,18 +148,18 @@ enum OfflineDownloadEligibility {
     private static let playableVideoCodecs: Set<String> = ["h264", "hevc"]
     private static let playableAudioCodecs: Set<String> = ["aac", "mp3", "ac3", "eac3", "alac", "flac"]
 
-    static func canDownload(_ item: BaseItemDto) -> Bool {
+    static func canDownload(_ item: MediaItem) -> Bool {
         item.canDownload == true
     }
 
-    static func isAVPlayerPlayable(_ source: MediaSourceInfo) -> Bool {
+    static func isAVPlayerPlayable(_ source: MediaSource) -> Bool {
         guard source.videoType == nil || source.videoType == .videoFile else { return false }
         let containers = source.container?
             .split(separator: ",")
             .map { $0.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() } ?? []
         guard containers.contains(where: { playableContainers.contains($0) }) else { return false }
 
-        let streams = source.mediaStreams ?? []
+        let streams = source.mediaStreams
         let videoStreams = streams.filter { $0.type == .video }
         let audioStreams = streams.filter { $0.type == .audio }
         let videoPlayable = videoStreams.isEmpty || videoStreams.allSatisfy { codec in
@@ -212,7 +210,7 @@ struct OfflineDownloadFileStore {
 
     func persistDownloadedFile(
         _ sourceURL: URL,
-        item: BaseItemDto,
+        item: MediaItem,
         serverID: String,
         userID: String,
         fileExtension: String? = nil,
@@ -247,7 +245,7 @@ struct OfflineDownloadFileStore {
 
     @discardableResult
     func prepareDownloadRecord(
-        item: BaseItemDto,
+        item: MediaItem,
         serverID: String,
         userID: String,
         fileExtension: String,
@@ -396,12 +394,12 @@ final class OfflineDownloadStore: DownloadSessionCoordinatorEventHandler {
         })
     }
 
-    func record(for item: BaseItemDto, serverID: String, userID: String) -> OfflineDownloadRecord? {
+    func record(for item: MediaItem, serverID: String, userID: String) -> OfflineDownloadRecord? {
         guard let itemID = item.id else { return nil }
         return records.first { $0.item.id == itemID && $0.serverID == serverID && $0.userID == userID }
     }
 
-    func localFileURL(for item: BaseItemDto, serverID: String, userID: String) -> URL? {
+    func localFileURL(for item: MediaItem, serverID: String, userID: String) -> URL? {
         guard let record = record(for: item, serverID: serverID, userID: userID) else { return nil }
         return fileStore.localFileURL(for: record)
     }
@@ -414,8 +412,9 @@ final class OfflineDownloadStore: DownloadSessionCoordinatorEventHandler {
         errorMessage = nil
     }
 
-    func download(_ item: BaseItemDto, session: SessionStore) async {
+    func download(_ item: MediaItem, session: SessionStore) async {
         guard DownloadsAvailability.isSupported else { return }
+        guard session.mediaProvider.capabilities.supportsDownloads else { return }
         guard let itemID = item.id, OfflineDownloadEligibility.canDownload(item) else {
             errorMessage = String(localized: "This item is not available for download.", comment: "Download unavailable message")
             return
@@ -427,11 +426,7 @@ final class OfflineDownloadStore: DownloadSessionCoordinatorEventHandler {
             try ensureDiskBudget(serverID: session.server.id, userID: session.user.id)
             activeItemIDs.insert(itemID)
 
-            let resolver = DownloadSourceResolver(client: session.client, userID: session.user.id)
-            let source = try await resolver.resolve(for: item)
-            guard let url = session.client.url(with: source.request, queryAPIKey: true) else {
-                throw DownloadSourceResolver.ResolverError.noMediaSource
-            }
+            let source = try await session.mediaProvider.downloadSource(for: item)
 
             var record = fileStore.prepareDownloadRecord(
                 item: item,
@@ -448,7 +443,7 @@ final class OfflineDownloadStore: DownloadSessionCoordinatorEventHandler {
             record.resumeData = nil
             fileStore.update(record)
             reloadRecords(serverID: session.server.id, userID: session.user.id)
-            coordinator.startDownload(from: url, recordID: record.id)
+            coordinator.startDownload(from: source.url, recordID: record.id)
         } catch {
             activeItemIDs.remove(itemID)
             let gusError = GusError(from: error)

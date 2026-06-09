@@ -5,59 +5,46 @@ import Testing
 
 @Suite("Library store helpers")
 struct LibraryStoreTests {
-    @Test("builds paged library parameters with total counts download metadata and rich fields")
-    func buildsPagedLibraryParameters() {
-        let parameters = LibraryRequest.parameters(
-            userID: "user-1",
+    @Test("builds paged provider library queries")
+    func buildsPagedLibraryQuery() {
+        let query = LibraryRequest.parameters(
             parentID: "library-1",
             startIndex: 60,
             limit: 60
         )
 
-        #expect(parameters.userID == "user-1")
-        #expect(parameters.parentID == "library-1")
-        #expect(parameters.startIndex == 60)
-        #expect(parameters.limit == 60)
-        #expect(parameters.isRecursive == false)
-        #expect(parameters.sortOrder == [.ascending])
-        #expect(parameters.sortBy == [.sortName])
-        #expect(parameters.enableUserData == true)
-        #expect(parameters.enableImages == true)
-        #expect(parameters.enableTotalRecordCount == true)
-        #expect(parameters.fields == LibraryRequest.metadataFields)
-        #expect(parameters.fields?.contains(.canDownload) == true)
-        #expect(parameters.fields?.contains(.mediaStreams) == true)
-        #expect(parameters.fields?.contains(.chapters) == true)
+        #expect(query.parentID == "library-1")
+        #expect(query.startIndex == 60)
+        #expect(query.limit == 60)
+        #expect(query.isRecursive == false)
+        #expect(query.sort == .name)
+        #expect(query.statusFilter == .all)
     }
 
-    @Test("applies status filters and sort options to library parameters")
+    @Test("applies status filters and sort options to library queries")
     func appliesStatusFiltersAndSortOptions() {
-        let parameters = LibraryRequest.parameters(
-            userID: "user-1",
+        let query = LibraryRequest.parameters(
             parentID: "library-1",
             startIndex: 0,
             limit: 60,
             filter: LibraryFilterState(sort: .recentlyAdded, status: .unplayed)
         )
 
-        #expect(parameters.sortOrder == [.descending])
-        #expect(parameters.sortBy == [.dateCreated])
-        #expect(parameters.filters == [.isUnplayed])
+        #expect(query.sort == .recentlyAdded)
+        #expect(query.statusFilter == .unplayed)
     }
 
-    @Test("builds resumable and random filter parameters")
-    func buildsResumableAndRandomFilterParameters() {
-        let parameters = LibraryRequest.parameters(
-            userID: "user-1",
+    @Test("builds resumable and random filter queries")
+    func buildsResumableAndRandomFilterQueries() {
+        let query = LibraryRequest.parameters(
             parentID: "library-1",
             startIndex: 0,
             limit: 60,
             filter: LibraryFilterState(sort: .random, status: .resumable)
         )
 
-        #expect(parameters.sortOrder == nil)
-        #expect(parameters.sortBy == [.random])
-        #expect(parameters.filters == [.isResumable])
+        #expect(query.sort == .random)
+        #expect(query.statusFilter == .resumable)
     }
 
     @Test("status filters do not include favorites")
@@ -86,7 +73,7 @@ struct LibraryStoreTests {
             ),
             .init(
                 result: BaseItemDtoQueryResult(
-                    items: [libraryItem(id: "filtered-0")],
+                    items: [libraryDTO(id: "filtered-0")],
                     startIndex: 0,
                     totalRecordCount: 1
                 )
@@ -94,7 +81,7 @@ struct LibraryStoreTests {
         ])
 
         let store = try LibraryStore(
-            library: libraryItem(id: "library-1"),
+            library: mediaItem(id: "library-1"),
             session: libraryTestSession()
         )
 
@@ -120,11 +107,15 @@ struct LibraryStoreTests {
 }
 
 private func libraryItems(prefix: String, range: Range<Int>) -> [BaseItemDto] {
-    range.map { libraryItem(id: "\(prefix)-\($0)") }
+    range.map { libraryDTO(id: "\(prefix)-\($0)") }
 }
 
-private func libraryItem(id: String) -> BaseItemDto {
+private func libraryDTO(id: String) -> BaseItemDto {
     BaseItemDto(id: id, name: id, type: .movie)
+}
+
+private func mediaItem(id: String) -> MediaItem {
+    MediaItem(id: id, name: id, type: .movie)
 }
 
 @MainActor

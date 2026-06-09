@@ -126,7 +126,7 @@ final class AppModel {
     /// Restores a saved user's session when its server and Keychain token are present.
     func restoreSavedSession(for user: StoredUser) throws {
         guard let server = server(for: user) else { throw SessionSwitchError.missingServer }
-        guard let token = tokenStore.token(for: SessionCredential(user: user)) else {
+        guard let token = tokenMigratingLegacyAccountIfNeeded(for: user) else {
             throw SessionSwitchError.missingToken
         }
 
@@ -141,7 +141,7 @@ final class AppModel {
     }
 
     func hasStoredToken(for user: StoredUser) -> Bool {
-        tokenStore.token(for: SessionCredential(user: user)) != nil
+        tokenMigratingLegacyAccountIfNeeded(for: user) != nil
     }
 
     func server(for user: StoredUser) -> ServerConnection? {
@@ -272,6 +272,7 @@ final class AppModel {
         let client = session.client
         Task { try? await client.signOut() } // best-effort server-side revoke
         tokenStore.deleteToken(for: credential)
+        tokenStore.deleteToken(account: credential.legacyAccount)
         users.removeAll { $0.id == session.user.id && $0.serverID == session.user.serverID }
         serverStore.saveUsers(users)
         lastSessionAccount = nil
@@ -330,6 +331,23 @@ final class AppModel {
         // SDK sign-in methods already set the access token on this client's configuration.
         currentSession = SessionStore(client: client, user: user, server: server)
         logger.info("Signed in user \(user.name, privacy: .public)")
+    }
+
+    private func tokenMigratingLegacyAccountIfNeeded(for user: StoredUser) -> String? {
+        let credential = SessionCredential(user: user)
+        if let token = tokenStore.token(for: credential) {
+            return token
+        }
+
+        guard credential.providerKind == .jellyfin,
+              let legacyToken = tokenStore.token(account: credential.legacyAccount)
+        else {
+            return nil
+        }
+
+        tokenStore.setToken(legacyToken, for: credential)
+        tokenStore.deleteToken(account: credential.legacyAccount)
+        return legacyToken
     }
 
     // MARK: - URL helpers

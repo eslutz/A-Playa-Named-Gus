@@ -73,6 +73,44 @@ struct ImageURLBuilder {
         return imageURL(itemID: personID, type: .primary, tag: person.primaryImageTag, maxWidth: maxWidth)
     }
 
+    /// Primary (poster) image for a provider-neutral media item.
+    func primaryImageURL(for item: MediaItem, context: ImageContext) -> URL? {
+        primaryImageURL(for: item, maxWidth: context.maxWidth)
+    }
+
+    func primaryImageURL(for item: MediaItem, maxWidth: Int = 400) -> URL? {
+        if let id = item.id, let tag = item.imageTags[MediaImageKind.primary.rawValue] {
+            return imageURL(itemID: id, type: .primary, tag: tag, maxWidth: maxWidth)
+        }
+        if let seriesID = item.seriesID, let tag = item.seriesPrimaryImageTag {
+            return imageURL(itemID: seriesID, type: .primary, tag: tag, maxWidth: maxWidth)
+        }
+        if let id = item.id {
+            return imageURL(itemID: id, type: .primary, tag: nil, maxWidth: maxWidth)
+        }
+        return nil
+    }
+
+    /// Wide backdrop image for a provider-neutral media item, falling back to primary.
+    func backdropImageURL(for item: MediaItem, context: ImageContext) -> URL? {
+        backdropImageURL(for: item, maxWidth: context.maxWidth)
+    }
+
+    func backdropImageURL(for item: MediaItem, maxWidth: Int = 1280) -> URL? {
+        if let id = item.id, let tag = item.backdropImageTags.first {
+            return imageURL(itemID: id, type: .backdrop, tag: tag, maxWidth: maxWidth)
+        }
+        if let parentID = item.parentID, let tag = item.parentBackdropImageTags.first {
+            return imageURL(itemID: parentID, type: .backdrop, tag: tag, maxWidth: maxWidth)
+        }
+        return primaryImageURL(for: item, maxWidth: maxWidth)
+    }
+
+    func personImageURL(for person: MediaPerson, maxWidth: Int = 240) -> URL? {
+        guard let personID = person.id else { return nil }
+        return imageURL(itemID: personID, type: .primary, tag: person.primaryImageTag, maxWidth: maxWidth)
+    }
+
     func userImageURL(for user: UserDto) -> URL? {
         guard let userID = user.id else { return nil }
         let parameters = Paths.GetUserImageParameters(

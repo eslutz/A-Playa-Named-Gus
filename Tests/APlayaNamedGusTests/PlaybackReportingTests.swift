@@ -13,15 +13,15 @@ struct PlaybackReportingTests {
 
     @Test("uses saved playback position only when it is positive")
     func extractsResumeTicks() {
-        let resumable = BaseItemDto(userData: UserItemDataDto(playbackPositionTicks: 42))
-        let fresh = BaseItemDto(userData: UserItemDataDto(playbackPositionTicks: 0))
+        let resumable = MediaItem(userData: MediaUserData(playbackPositionTicks: 42))
+        let fresh = MediaItem(userData: MediaUserData(playbackPositionTicks: 0))
 
         #expect(PlaybackTime.resumePositionTicks(for: resumable) == 42)
         #expect(PlaybackTime.resumePositionTicks(for: fresh) == nil)
     }
 
-    @Test("builds playback state payloads from stream metadata")
-    func buildsStatePayload() {
+    @Test("keeps provider-neutral playback context values")
+    func keepsProviderNeutralContextValues() {
         let context = PlaybackReportContext(
             itemID: "item-1",
             mediaSourceID: "media-1",
@@ -30,36 +30,12 @@ struct PlaybackReportingTests {
             streamSelection: PlaybackStreamSelection(audioStreamIndex: 2, subtitleStreamIndex: 7)
         )
 
-        let payload = context.stateInfo(positionTicks: 123, isPaused: false)
-
-        #expect(payload.itemID == "item-1")
-        #expect(payload.mediaSourceID == "media-1")
-        #expect(payload.playSessionID == "play-1")
-        #expect(payload.playMethod == .transcode)
-        #expect(payload.positionTicks == 123)
-        #expect(payload.isPaused == false)
-        #expect(payload.canSeek == true)
-        #expect(payload.audioStreamIndex == 2)
-        #expect(payload.subtitleStreamIndex == 7)
-    }
-
-    @Test("builds playback stop payloads from stream metadata")
-    func buildsStopPayload() {
-        let context = PlaybackReportContext(
-            itemID: "item-1",
-            mediaSourceID: "media-1",
-            playSessionID: "play-1",
-            playMethod: .directStream,
-            streamSelection: .none
-        )
-
-        let payload = context.stopInfo(positionTicks: 456)
-
-        #expect(payload.itemID == "item-1")
-        #expect(payload.mediaSourceID == "media-1")
-        #expect(payload.playSessionID == "play-1")
-        #expect(payload.positionTicks == 456)
-        #expect(payload.isFailed == false)
+        #expect(context.itemID == "item-1")
+        #expect(context.mediaSourceID == "media-1")
+        #expect(context.playSessionID == "play-1")
+        #expect(context.playMethod == .transcode)
+        #expect(context.streamSelection.audioStreamIndex == 2)
+        #expect(context.streamSelection.subtitleStreamIndex == 7)
     }
 
     @Test("builds playback info requests with selected stream indices")
@@ -89,11 +65,11 @@ struct PlaybackReportingTests {
 
     @Test("maps chapters into ordered seek targets")
     func mapsChaptersIntoSeekTargets() {
-        let item = BaseItemDto(
+        let item = MediaItem(
             chapters: [
-                ChapterInfo(name: "Credits", startPositionTicks: 900_000_000),
-                ChapterInfo(name: "Cold Open", startPositionTicks: 0),
-                ChapterInfo(name: nil, startPositionTicks: 300_000_000),
+                MediaChapterInfo(name: "Credits", startPositionTicks: 900_000_000),
+                MediaChapterInfo(name: "Cold Open", startPositionTicks: 0),
+                MediaChapterInfo(name: nil, startPositionTicks: 300_000_000),
             ]
         )
 

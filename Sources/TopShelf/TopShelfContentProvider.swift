@@ -9,7 +9,7 @@ final class TopShelfContentProvider: TVTopShelfContentProvider {
     private func makeSection() -> TVTopShelfItemCollection<TVTopShelfSectionedItem> {
         let items = [
             makeItem(identifier: "home", title: String(localized: "Open A Playa Named Gus", comment: "Top Shelf action that opens the app home screen"), route: "home"),
-            makeItem(identifier: "search", title: String(localized: "Search Jellyfin", comment: "Search prompt and empty-state title"), route: "search"),
+            makeItem(identifier: "search", title: String(localized: "Search Library", comment: "Search prompt and empty-state title"), route: "search"),
             makeItem(identifier: "settings", title: String(localized: "Settings", comment: "Settings navigation label"), route: "settings"),
         ]
 
