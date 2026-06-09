@@ -48,14 +48,56 @@ account-agnostic. To build for a device or archive for the App Store:
    ```
    DEVELOPMENT_TEAM = XXXXXXXXXX
    CODE_SIGN_STYLE = Automatic
+   CODE_SIGN_IDENTITY = Apple Development
+   CODE_SIGNING_REQUIRED = YES
+   CODE_SIGNING_ALLOWED = YES
    ```
-2. In `Config/Shared.xcconfig`, the existing `#include?` pattern can be added to pick it
-   up, or set the team directly in Xcode's Signing & Capabilities tab for a local session.
+2. `Config/Shared.xcconfig` already includes `Config/Local.xcconfig` when present.
+3. For Release archives with manual profiles, set the profile specifier variables from
+   `Config/Local.xcconfig.example`:
+   ```
+   CODE_SIGN_STYLE = Manual
+   CODE_SIGN_IDENTITY = Apple Distribution
+   GUS_IOS_PROVISIONING_PROFILE_SPECIFIER = <iOS app profile name>
+   GUS_TVOS_PROVISIONING_PROFILE_SPECIFIER = <tvOS app profile name>
+   GUS_TOPSHELF_TVOS_PROVISIONING_PROFILE_SPECIFIER = <tvOS Top Shelf profile name>
+   GUS_VISIONOS_PROVISIONING_PROFILE_SPECIFIER = <visionOS app profile name>
+   GUS_MACOS_PROVISIONING_PROFILE_SPECIFIER = <macOS app profile name>
+   ```
+
+## CI Archive Workflow
+
+`.github/workflows/archive-release.yml` is a manual `workflow_dispatch` workflow that:
+
+- imports an Apple Distribution `.p12` certificate into a temporary keychain;
+- installs iOS, tvOS, tvOS Top Shelf, visionOS, and macOS provisioning profiles;
+- writes a temporary `Config/Local.xcconfig` with the Team ID and profile names;
+- runs `Scripts/archive-release.sh`; and
+- uploads the resulting `.xcarchive` bundles as workflow artifacts.
+
+Required GitHub Actions secrets:
+
+| Secret | Purpose |
+|---|---|
+| `APPLE_DEVELOPMENT_TEAM_ID` | 10-character Apple Developer Team ID |
+| `APPLE_DISTRIBUTION_CERTIFICATE_BASE64` | Base64-encoded Apple Distribution `.p12` |
+| `APPLE_DISTRIBUTION_CERTIFICATE_PASSWORD` | Password for the `.p12` |
+| `APPLE_PROVISIONING_PROFILE_IOS_BASE64` | Base64 iOS App Store provisioning profile |
+| `APPLE_PROVISIONING_PROFILE_TVOS_BASE64` | Base64 tvOS app provisioning profile |
+| `APPLE_PROVISIONING_PROFILE_TOPSHELF_TVOS_BASE64` | Base64 tvOS Top Shelf extension profile |
+| `APPLE_PROVISIONING_PROFILE_VISIONOS_BASE64` | Base64 visionOS App Store provisioning profile |
+| `APPLE_PROVISIONING_PROFILE_MACOS_BASE64` | Base64 macOS App Store provisioning profile |
+
+Local archive command:
+
+```sh
+Scripts/archive-release.sh ios tvos visionos macos
+```
 
 ## Remaining Submission Steps (Account-Blocked)
 
 - Select the Apple Developer Program team and confirm bundle ID ownership.
-- Switch `CODE_SIGN_STYLE` to `Automatic` with the real `DEVELOPMENT_TEAM`.
+- Create App Store provisioning profiles for the app plus the tvOS Top Shelf extension.
 - Review per-platform capabilities in Xcode Signing & Capabilities for any
   provisioning-profile additions (e.g. Push Notifications if added later).
 - Archive and validate Release builds for iOS/iPadOS, tvOS, visionOS, and macOS.
