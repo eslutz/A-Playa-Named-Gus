@@ -162,7 +162,6 @@ struct StreamURLBuilder {
         ]
 
         let transcoding = [
-            hevcFragmentedMP4HLSProfile(),
             h264TransportStreamHLSProfile(),
         ]
 
@@ -172,20 +171,6 @@ struct StreamURLBuilder {
             maxStreamingBitrate: maxStreamingBitrate,
             name: DeviceIdentity.clientName,
             transcodingProfiles: transcoding
-        )
-    }
-
-    private static func hevcFragmentedMP4HLSProfile() -> TranscodingProfile {
-        TranscodingProfile(
-            protocol: .hls,
-            audioCodec: "aac",
-            container: "mp4",
-            context: .streaming,
-            enableMpegtsM2TsMode: false,
-            maxAudioChannels: "2",
-            minSegments: 2,
-            type: .video,
-            videoCodec: "hevc"
         )
     }
 

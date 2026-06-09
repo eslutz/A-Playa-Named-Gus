@@ -5,7 +5,7 @@ import Testing
 
 @Suite("AVPlayer device profile")
 struct StreamURLBuilderTests {
-    @Test("biases playback toward HEVC HLS transcoding while preserving direct-play containers")
+    @Test("biases playback toward H.264 MPEG-TS HLS transcoding while preserving direct-play containers")
     func avPlayerProfileUsesHLSAndAVKitContainers() {
         let profile = StreamURLBuilder.avPlayerProfile(maxStreamingBitrate: 42_000_000)
         let directPlay = profile.directPlayProfiles?.first
@@ -16,10 +16,10 @@ struct StreamURLBuilderTests {
         #expect(directPlay?.container == "mp4,m4v,mov")
         #expect(directPlay?.videoCodec == "h264,hevc")
         #expect(transcoding?.protocol == .hls)
-        #expect(transcoding?.container == "mp4")
+        #expect(transcoding?.container == "ts")
         #expect(transcoding?.audioCodec == "aac")
-        #expect(transcoding?.videoCodec == "hevc")
-        #expect(transcoding?.enableMpegtsM2TsMode == false)
+        #expect(transcoding?.videoCodec == "h264")
+        #expect(transcoding?.enableMpegtsM2TsMode == true)
         #expect(transcoding?.type == .video)
         #expect(transcoding?.context == .streaming)
     }
@@ -47,24 +47,13 @@ struct StreamURLBuilderTests {
         #expect(transportStream?.enableMpegtsM2TsMode == true)
     }
 
-    @Test("HEVC fMP4 HLS profile is separate from the H.264 transport stream fallback")
-    func avPlayerProfileOffersHEVCFragmentedMP4BeforeH264TransportStream() throws {
+    @Test("ordinary HLS transcoding only advertises the proven H.264 transport stream profile")
+    func avPlayerProfileOnlyOffersH264TransportStreamTranscoding() throws {
         let profile = StreamURLBuilder.avPlayerProfile(maxStreamingBitrate: 42_000_000)
         let transcodingProfiles = try #require(profile.transcodingProfiles)
 
-        #expect(transcodingProfiles.count == 2)
-        guard transcodingProfiles.count == 2 else { return }
-
-        let hevc = transcodingProfiles[0]
-        #expect(hevc.protocol == .hls)
-        #expect(hevc.container == "mp4")
-        #expect(hevc.audioCodec == "aac")
-        #expect(hevc.videoCodec == "hevc")
-        #expect(hevc.enableMpegtsM2TsMode == false)
-        #expect(hevc.type == .video)
-        #expect(hevc.context == .streaming)
-
-        let h264 = transcodingProfiles[1]
+        #expect(transcodingProfiles.count == 1)
+        let h264 = try #require(transcodingProfiles.first)
         #expect(h264.protocol == .hls)
         #expect(h264.container == "ts")
         #expect(h264.audioCodec == "aac")
