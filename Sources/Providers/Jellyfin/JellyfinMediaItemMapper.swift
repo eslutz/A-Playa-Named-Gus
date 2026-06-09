@@ -16,7 +16,7 @@ enum JellyfinMediaItemMapper {
             id: item.id,
             imageTags: item.imageTags ?? [:],
             indexNumber: item.indexNumber,
-            mediaSources: (item.mediaSources ?? []).map(mediaSource),
+            mediaSources: mediaSources(from: item),
             name: item.name,
             officialRating: item.officialRating,
             overview: item.overview,
@@ -120,6 +120,21 @@ enum JellyfinMediaItemMapper {
             video3DFormat: media3DFormat(from: source.video3DFormat),
             videoType: mediaVideoType(from: source.videoType)
         )
+    }
+
+    private static func mediaSources(from item: BaseItemDto) -> [MediaSource] {
+        let sources = (item.mediaSources ?? []).map(mediaSource)
+        guard sources.isEmpty, let streams = item.mediaStreams, !streams.isEmpty else {
+            return sources
+        }
+
+        return [
+            MediaSource(
+                container: item.container,
+                mediaStreams: streams.map(mediaStream),
+                video3DFormat: media3DFormat(from: item.video3DFormat)
+            ),
+        ]
     }
 
     private static func mediaStream(from stream: JellyfinAPI.MediaStream) -> MediaStreamInfo {

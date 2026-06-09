@@ -106,4 +106,31 @@ struct ProviderArchitectureTests {
         #expect(mapped.chapters.first?.name == "Cold Open")
         #expect(mapped.people.first?.name == "Dule Hill")
     }
+
+    @Test("Jellyfin mapper preserves top-level media streams")
+    func jellyfinMapperPreservesTopLevelMediaStreams() throws {
+        let item = BaseItemDto(
+            id: "item-1",
+            mediaStreams: [
+                MediaStream(codec: "hevc", codecTag: "hvc1", displayTitle: "4K HEVC", index: 0, profile: "Main10", type: .video),
+                MediaStream(codec: "aac", displayTitle: "English", index: 1, isDefault: true, language: "eng", type: .audio),
+            ],
+            name: "Spatial Clip",
+            type: .movie
+        )
+
+        let mapped = JellyfinMediaItemMapper.mediaItem(from: item)
+        let source = try #require(mapped.mediaSources.first)
+
+        #expect(source.id == nil)
+        #expect(source.mediaStreams.count == 2)
+        #expect(source.mediaStreams.first?.codec == "hevc")
+        #expect(source.mediaStreams.first?.codecTag == "hvc1")
+        #expect(source.mediaStreams.first?.profile == "Main10")
+        #expect(source.mediaStreams.first?.type == .video)
+        #expect(source.mediaStreams.last?.index == 1)
+        #expect(source.mediaStreams.last?.isDefault == true)
+        #expect(source.mediaStreams.last?.language == "eng")
+        #expect(source.mediaStreams.last?.type == .audio)
+    }
 }
