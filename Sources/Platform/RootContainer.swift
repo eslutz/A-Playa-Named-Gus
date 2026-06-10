@@ -63,6 +63,13 @@ private struct TabRootView: View {
                 }
             }
         }
+        .onAppear {
+            // Adopt a route set before this view mounted (cold-launch deep links,
+            // Top Shelf actions, --gus-route); onChange alone would miss it.
+            if navigation.route != .search {
+                selection = navigation.route
+            }
+        }
         .onChange(of: selection) { _, route in
             if navigation.route != route {
                 navigation.open(route)
@@ -102,6 +109,20 @@ private enum SidebarItem: Hashable {
             } else {
                 return nil
             }
+        }
+    }
+
+    /// Maps a fixed app route onto a sidebar row; `.search` has no row.
+    init?(route: AppRoute) {
+        switch route {
+        case .home:
+            self = .home
+        case .libraries:
+            self = .libraries
+        case .settings:
+            self = .settings
+        case .search:
+            return nil
         }
     }
 }
@@ -150,7 +171,11 @@ private enum SidebarItem: Hashable {
                 }
             }
             .onAppear {
-                if let restored = SidebarItem(sceneKey: storedSelectionKey) {
+                // A route set before mount (cold-launch deep link, --gus-route) wins
+                // over the restored scene selection.
+                if navigation.route != .home, let routed = SidebarItem(route: navigation.route) {
+                    selection = routed
+                } else if let restored = SidebarItem(sceneKey: storedSelectionKey) {
                     selection = restored
                 }
             }
@@ -254,8 +279,11 @@ private struct SplitRootView: View {
             }
         }
         .onAppear {
-            // Restore sidebar selection from the previous session on launch.
-            if let restored = SidebarItem(sceneKey: storedSelectionKey) {
+            // A route set before mount (cold-launch deep link, --gus-route) wins over
+            // the sidebar selection restored from the previous session.
+            if navigation.route != .home, let routed = SidebarItem(route: navigation.route) {
+                selection = routed
+            } else if let restored = SidebarItem(sceneKey: storedSelectionKey) {
                 selection = restored
             }
         }

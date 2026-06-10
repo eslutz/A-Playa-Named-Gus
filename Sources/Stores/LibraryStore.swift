@@ -148,10 +148,17 @@ final class LibraryStore {
         isLoadingNextPage = false
         state = .loading
         paging.reset()
+        let diagnostics = DiagnosticsHub.shared
+        diagnostics.record(.libraryLoadStarted)
+        let loadInterval = diagnostics.beginInterval("LibraryLoad")
         do {
             try await loadPage(startIndex: 0, replaceResults: true, generation: generation)
+            diagnostics.endInterval("LibraryLoad", loadInterval)
+            diagnostics.record(.libraryLoadFinished(itemCount: items.count))
         } catch {
+            diagnostics.endInterval("LibraryLoad", loadInterval)
             guard generation == loadGeneration else { return }
+            diagnostics.record(.libraryLoadFailed)
             handle(error)
         }
     }
@@ -198,11 +205,12 @@ final class LibraryStore {
         let page = try await session.mediaProvider.items(query: query)
         guard generation == loadGeneration else { return }
 
+        let admitted = ContentRatingGate.filter(page.items)
         if replaceResults {
-            items = page.items
+            items = admitted
             paging.replaceResults(receivedCount: page.items.count, totalRecordCount: page.totalRecordCount)
         } else {
-            items.append(contentsOf: page.items)
+            items.append(contentsOf: admitted)
             paging.appendResults(receivedCount: page.items.count, totalRecordCount: page.totalRecordCount)
         }
         state = .loaded

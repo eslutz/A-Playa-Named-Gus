@@ -10,7 +10,15 @@ enum MediaItemType: String, Codable, Hashable {
     case trailer
     case video
     case audio
+    case musicArtist
+    case musicAlbum
+    case playlist
+    case book
+    case audioBook
     case photo
+    case liveChannel
+    case liveProgram
+    case recording
     case unknown
 }
 
@@ -55,6 +63,8 @@ enum MediaItemSort: String, Codable, Hashable {
     case releaseDate
     case rating
     case random
+    /// Disc then track order — for songs inside an album.
+    case trackOrder
 }
 
 enum MediaItemStatusFilter: String, Codable, Hashable {
@@ -197,6 +207,9 @@ struct MediaChapterInfo: Codable, Hashable {
 
 struct MediaItem: Codable, Hashable, Identifiable {
     var providerKind: MediaProviderKind
+    var album: String?
+    var albumArtist: String?
+    var artists: [String]
     var backdropImageTags: [String]
     var canDownload: Bool?
     var chapters: [MediaChapterInfo]
@@ -204,6 +217,8 @@ struct MediaItem: Codable, Hashable, Identifiable {
     var communityRating: Double?
     var container: String?
     var criticRating: Double?
+    /// Live TV: the program currently airing on this channel.
+    var currentProgramName: String?
     var genres: [String]
     var id: String?
     var imageTags: [String: String]
@@ -230,6 +245,9 @@ struct MediaItem: Codable, Hashable, Identifiable {
 
     private enum CodingKeys: String, CodingKey {
         case providerKind
+        case album
+        case albumArtist
+        case artists
         case backdropImageTags
         case canDownload
         case chapters
@@ -237,6 +255,7 @@ struct MediaItem: Codable, Hashable, Identifiable {
         case communityRating
         case container
         case criticRating
+        case currentProgramName
         case genres
         case id
         case imageTags
@@ -263,6 +282,9 @@ struct MediaItem: Codable, Hashable, Identifiable {
     }
 
     private enum LegacyCodingKeys: String, CodingKey {
+        case album = "Album"
+        case albumArtist = "AlbumArtist"
+        case artists = "Artists"
         case backdropImageTags = "BackdropImageTags"
         case canDownload = "CanDownload"
         case collectionType = "CollectionType"
@@ -293,6 +315,9 @@ struct MediaItem: Codable, Hashable, Identifiable {
 
     init(
         providerKind: MediaProviderKind = .jellyfin,
+        album: String? = nil,
+        albumArtist: String? = nil,
+        artists: [String] = [],
         backdropImageTags: [String] = [],
         canDownload: Bool? = nil,
         chapters: [MediaChapterInfo] = [],
@@ -300,6 +325,7 @@ struct MediaItem: Codable, Hashable, Identifiable {
         communityRating: Double? = nil,
         container: String? = nil,
         criticRating: Double? = nil,
+        currentProgramName: String? = nil,
         genres: [String] = [],
         id: String? = nil,
         imageTags: [String: String] = [:],
@@ -325,6 +351,9 @@ struct MediaItem: Codable, Hashable, Identifiable {
         video3DFormat: Media3DFormat? = nil
     ) {
         self.providerKind = providerKind
+        self.album = album
+        self.albumArtist = albumArtist
+        self.artists = artists
         self.backdropImageTags = backdropImageTags
         self.canDownload = canDownload
         self.chapters = chapters
@@ -332,6 +361,7 @@ struct MediaItem: Codable, Hashable, Identifiable {
         self.communityRating = communityRating
         self.container = container
         self.criticRating = criticRating
+        self.currentProgramName = currentProgramName
         self.genres = genres
         self.id = id
         self.imageTags = imageTags
@@ -362,6 +392,12 @@ struct MediaItem: Codable, Hashable, Identifiable {
         let legacyValues = try decoder.container(keyedBy: LegacyCodingKeys.self)
 
         providerKind = try values.decodeIfPresent(MediaProviderKind.self, forKey: .providerKind) ?? .jellyfin
+        album = try values.decodeIfPresent(String.self, forKey: .album)
+            ?? legacyValues.decodeIfPresent(String.self, forKey: .album)
+        albumArtist = try values.decodeIfPresent(String.self, forKey: .albumArtist)
+            ?? legacyValues.decodeIfPresent(String.self, forKey: .albumArtist)
+        artists = try values.decodeIfPresent([String].self, forKey: .artists)
+            ?? legacyValues.decodeIfPresent([String].self, forKey: .artists) ?? []
         backdropImageTags = try values.decodeIfPresent([String].self, forKey: .backdropImageTags)
             ?? legacyValues.decodeIfPresent([String].self, forKey: .backdropImageTags) ?? []
         canDownload = try values.decodeIfPresent(Bool.self, forKey: .canDownload)
@@ -375,6 +411,7 @@ struct MediaItem: Codable, Hashable, Identifiable {
             ?? legacyValues.decodeIfPresent(String.self, forKey: .container)
         criticRating = try values.decodeIfPresent(Double.self, forKey: .criticRating)
             ?? legacyValues.decodeIfPresent(Double.self, forKey: .criticRating)
+        currentProgramName = try values.decodeIfPresent(String.self, forKey: .currentProgramName)
         genres = try values.decodeIfPresent([String].self, forKey: .genres)
             ?? legacyValues.decodeIfPresent([String].self, forKey: .genres) ?? []
         id = try values.decodeIfPresent(String.self, forKey: .id)
@@ -432,7 +469,15 @@ struct MediaItem: Codable, Hashable, Identifiable {
         case "trailer": return .trailer
         case "video": return .video
         case "audio": return .audio
+        case "musicartist": return .musicArtist
+        case "musicalbum": return .musicAlbum
+        case "playlist": return .playlist
+        case "book": return .book
+        case "audiobook": return .audioBook
         case "photo": return .photo
+        case "tvchannel", "livetvchannel", "livechannel": return .liveChannel
+        case "tvprogram", "livetvprogram", "liveprogram": return .liveProgram
+        case "recording": return .recording
         default: return .unknown
         }
     }
@@ -461,18 +506,39 @@ struct ProviderCapabilities: Codable, Equatable {
     var supportsDownloads = true
     var supportsQuickConnect = true
     var supportsServerDiscovery = true
+    var supportsMusic = true
+    var supportsBooks = true
+    var supportsPhotos = true
+    /// Whether the server round-trips EPUB reading position (Jellyfin stores it on
+    /// `UserData.PlaybackPositionTicks`; see `JellyfinBookProgress`).
+    var supportsBookProgressSync = true
 
     init(
         supportsSearch: Bool = true,
         supportsPlaybackProgress: Bool = true,
         supportsDownloads: Bool = true,
         supportsQuickConnect: Bool = true,
-        supportsServerDiscovery: Bool = true
+        supportsServerDiscovery: Bool = true,
+        supportsMusic: Bool = true,
+        supportsBooks: Bool = true,
+        supportsPhotos: Bool = true,
+        supportsBookProgressSync: Bool = true
     ) {
         self.supportsSearch = supportsSearch
         self.supportsPlaybackProgress = supportsPlaybackProgress
         self.supportsDownloads = supportsDownloads
         self.supportsQuickConnect = supportsQuickConnect
         self.supportsServerDiscovery = supportsServerDiscovery
+        self.supportsMusic = supportsMusic
+        self.supportsBooks = supportsBooks
+        self.supportsPhotos = supportsPhotos
+        self.supportsBookProgressSync = supportsBookProgressSync
+    }
+}
+
+extension MediaItem {
+    /// Items that play through the audio player rather than the video player.
+    var isAudioPlayable: Bool {
+        type == .audio || type == .audioBook
     }
 }

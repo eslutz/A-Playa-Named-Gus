@@ -13,6 +13,8 @@ struct GusApp: App {
     @State private var upNext = UpNextStore()
     private let shouldRestoreLastSession: Bool
     private let shouldInstallDebugPreviewSession: Bool
+    private let shouldConnectToDemoServer: Bool
+    private let launchRoute: AppRoute?
 
     #if os(visionOS)
         @State private var cinema = CinemaModel()
@@ -21,12 +23,26 @@ struct GusApp: App {
     init() {
         // Route `AsyncImage` (which uses `URLSession.shared`) through our tuned cache.
         URLCache.shared = JellyfinClientFactory.urlCache
+        DiagnosticsHub.shared.record(.appLaunched)
+        DiagnosticsHub.shared.startMetricCollection()
         let arguments = ProcessInfo.processInfo.arguments
         shouldRestoreLastSession = !arguments.contains("--gus-skip-session-restore")
         #if DEBUG
             shouldInstallDebugPreviewSession = arguments.contains("--gus-debug-preview-session")
+            shouldConnectToDemoServer = arguments.contains("--gus-demo-server")
+            // "--gus-route search" opens a fixed destination after launch — used by
+            // Scripts/screenshots.sh to capture scenes without UI scripting.
+            if let flagIndex = arguments.firstIndex(of: "--gus-route"),
+               arguments.indices.contains(flagIndex + 1)
+            {
+                launchRoute = AppRoute(rawValue: arguments[flagIndex + 1])
+            } else {
+                launchRoute = nil
+            }
         #else
             shouldInstallDebugPreviewSession = false
+            shouldConnectToDemoServer = false
+            launchRoute = nil
         #endif
     }
 
@@ -45,6 +61,13 @@ struct GusApp: App {
                     #if DEBUG
                         if shouldInstallDebugPreviewSession {
                             appModel.installDebugPreviewSession()
+                            return
+                        }
+                        if shouldConnectToDemoServer {
+                            await appModel.connectToLocalDemoServer()
+                            if let launchRoute {
+                                appNavigation.open(url: launchRoute.url)
+                            }
                             return
                         }
                     #endif

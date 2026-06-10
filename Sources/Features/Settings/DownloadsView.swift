@@ -130,6 +130,7 @@ private struct DownloadProgressRow: View {
                     Label("Pause", systemImage: "pause.fill")
                 }
                 .buttonStyle(.borderless)
+                .accessibilityLabel("Pause \(record.item.displayTitle)")
 
                 Button(role: .destructive, action: delete) {
                     Image(systemName: "trash")
@@ -139,6 +140,7 @@ private struct DownloadProgressRow: View {
             }
 
             ProgressView(value: record.progress)
+                .accessibilityLabel("Download progress for \(record.item.displayTitle)")
         }
     }
 
@@ -172,6 +174,7 @@ private struct DownloadPausedRow: View {
             Button(action: resume) {
                 Label("Resume", systemImage: "play.fill")
             }
+            .accessibilityLabel("Resume \(record.item.displayTitle)")
             .buttonStyle(.borderless)
 
             Button(role: .destructive, action: delete) {

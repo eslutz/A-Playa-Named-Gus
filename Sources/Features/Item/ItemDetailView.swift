@@ -56,6 +56,9 @@ struct ItemDetailView: View {
                         playbackRefresh.markPlaybackProgressChanged()
                     }
                 ) {
+                    if store.item.type == .book {
+                        BookActionButtons(item: store.item)
+                    }
                     if DownloadsAvailability.isSupported, session.mediaProvider.capabilities.supportsDownloads {
                         DownloadButton(item: store.item, iconOnly: true)
                     }
@@ -207,16 +210,24 @@ private struct CinematicDetailHero<Accessory: View>: View {
         }
     }
 
+    /// Books (epub/text) have no AVKit playback surface; show metadata without Play.
+    private var isPlayableItem: Bool {
+        item.type != .book
+    }
+
+    @ViewBuilder
     private var playButton: some View {
-        Button(action: play) {
-            Label("Play", systemImage: "play.fill")
-                .frame(maxWidth: .infinity)
+        if isPlayableItem {
+            Button(action: play) {
+                Label("Play", systemImage: "play.fill")
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.borderedProminent)
+            .controlSize(.large)
+            .tint(.accentColor)
+            .gusDefaultActionShortcut()
+            .visionHoverEffect(cornerRadius: 10)
         }
-        .buttonStyle(.borderedProminent)
-        .controlSize(.large)
-        .tint(.accentColor)
-        .gusDefaultActionShortcut()
-        .visionHoverEffect(cornerRadius: 10)
     }
 
     private var upNextButton: some View {

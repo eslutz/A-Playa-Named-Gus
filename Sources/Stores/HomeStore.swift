@@ -51,8 +51,8 @@ final class HomeStore {
             async let resume = loadResume()
             async let nextUp = loadNextUp()
             libraries = try await views
-            resumeItems = try await resume
-            nextUpItems = try await nextUp
+            resumeItems = try await ContentRatingGate.filter(resume)
+            nextUpItems = try await ContentRatingGate.filter(nextUp)
             latestSections = try await loadLatestSections(for: libraries)
             state = .loaded
         } catch {
@@ -81,7 +81,9 @@ final class HomeStore {
         for library in libraries.prefix(6) {
             guard let parentID = library.id else { continue }
             let latestItems = try await session.mediaProvider.latestMedia(in: library, limit: 12)
-            let items = LatestMediaDisplayMapper.displayItems(from: latestItems, libraryCollectionType: library.collectionType)
+            let items = ContentRatingGate.filter(
+                LatestMediaDisplayMapper.displayItems(from: latestItems, libraryCollectionType: library.collectionType)
+            )
             if !items.isEmpty {
                 sections.append(
                     HomeLatestSection(

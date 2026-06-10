@@ -19,6 +19,7 @@ extension Logger {
         case stream = "Stream"
         case keychain = "Keychain"
         case serverStore = "ServerStore"
+        case diagnostics = "Diagnostics"
     }
 
     /// Builds a `Logger` on the A Playa Named Gus subsystem for the given category.

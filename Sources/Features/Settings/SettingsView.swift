@@ -8,6 +8,8 @@ struct SettingsView: View {
 
     @State private var reauthenticationServer: ServerConnection?
     @State private var switchErrorMessage: String?
+    @AppStorage(ContentRatingGate.limitDefaultsKey) private var contentLimitRawValue = ContentRatingGate.Limit.off.rawValue
+    @AppStorage(ContentRatingGate.hideUnratedDefaultsKey) private var hideUnratedContent = false
 
     var body: some View {
         Form {
@@ -36,6 +38,21 @@ struct SettingsView: View {
                 DownloadsSettingsSection(
                     byteCount: downloads.totalByteCount(serverID: session.server.id, userID: session.user.id)
                 )
+            }
+
+            Section {
+                Picker("Limit Content Ratings", selection: $contentLimitRawValue) {
+                    ForEach(ContentRatingGate.Limit.allCases) { limit in
+                        Text(limit.title).tag(limit.rawValue)
+                    }
+                }
+                if contentLimitRawValue != ContentRatingGate.Limit.off.rawValue {
+                    Toggle("Hide Unrated Media", isOn: $hideUnratedContent)
+                }
+            } header: {
+                Text("Content Restrictions")
+            } footer: {
+                Text("Hides movies and shows rated above the limit. Pair with Jellyfin user permissions and Apple Screen Time for enforced parental controls.")
             }
 
             Section {

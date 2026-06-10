@@ -80,14 +80,16 @@ final class JellyfinMediaProviderSession: MediaProviderSession {
             userID: userID,
             startIndex: query.startIndex,
             limit: query.limit,
-            isRecursive: query.isRecursive,
+            isRecursive: query.artistID != nil || query.includeTypes != nil ? true : query.isRecursive,
             searchTerm: query.searchTerm,
             sortOrder: sortOrder(for: query.sort),
             parentID: query.parentID,
             fields: Self.playbackMetadataFields,
+            includeItemTypes: includeItemKinds(for: query),
             filters: filters(for: query.statusFilter),
             sortBy: sortBy(for: query.sort),
             enableUserData: true,
+            artistIDs: query.artistID.map { [$0] },
             enableTotalRecordCount: true,
             enableImages: true
         )
@@ -200,6 +202,18 @@ final class JellyfinMediaProviderSession: MediaProviderSession {
         )
     }
 
+    func resolveAudioPlayback(for itemID: String) async throws -> PlaybackSourceResolution {
+        let url = try streamBuilder.universalAudioURL(for: itemID)
+        return PlaybackSourceResolution(
+            url: url,
+            playSessionID: nil,
+            mediaSourceID: nil,
+            playMethod: .directStream,
+            stereoLayout: .none,
+            stereoFallbackReason: nil
+        )
+    }
+
     func downloadSource(for item: MediaItem) async throws -> DownloadSourceResolution {
         let source = try await DownloadSourceResolver(client: client, userID: userID).resolve(for: item)
         guard let url = client.url(with: source.request, queryAPIKey: true) else {
@@ -210,6 +224,64 @@ final class JellyfinMediaProviderSession: MediaProviderSession {
             fileExtension: source.fileExtension,
             requiresTranscoding: source.kind == .transcoded
         )
+    }
+
+    // MARK: - Live TV
+
+    func liveTVIsEnabled() async -> Bool {
+        guard let info = try? await client.send(Paths.getLiveTvInfo).value else { return false }
+        guard info.isEnabled == true else { return false }
+        if let enabledUsers = info.enabledUsers, !enabledUsers.isEmpty {
+            return enabledUsers.contains(userID)
+        }
+        return true
+    }
+
+    func liveTVChannels(startIndex: Int, limit: Int) async throws -> MediaItemPage {
+        let parameters = Paths.GetLiveTvChannelsParameters(
+            userID: userID,
+            startIndex: startIndex,
+            limit: limit,
+            isAddCurrentProgram: true
+        )
+        let response = try await NetworkRetryPolicy.idempotent.run {
+            try await client.send(Paths.getLiveTvChannels(parameters: parameters))
+        }
+        return MediaItemPage(
+            items: JellyfinMediaItemMapper.mediaItems(from: response.value.items ?? []),
+            totalRecordCount: response.value.totalRecordCount
+        )
+    }
+
+    func liveTVRecordings(limit: Int) async throws -> [MediaItem] {
+        let parameters = Paths.GetRecordingsParameters(
+            userID: userID,
+            limit: limit,
+            fields: Self.playbackMetadataFields
+        )
+        let response = try await NetworkRetryPolicy.idempotent.run {
+            try await client.send(Paths.getRecordings(parameters: parameters))
+        }
+        return JellyfinMediaItemMapper.mediaItems(from: response.value.items ?? [])
+    }
+
+    func liveTVTimers() async throws -> [LiveTVTimer] {
+        let response = try await NetworkRetryPolicy.idempotent.run {
+            try await client.send(Paths.getTimers())
+        }
+        return (response.value.items ?? []).compactMap { timer in
+            guard let id = timer.id else { return nil }
+            return LiveTVTimer(
+                id: id,
+                name: timer.name ?? String(localized: "Recording", comment: "Fallback scheduled recording name"),
+                channelName: timer.channelName,
+                startDate: timer.startDate
+            )
+        }
+    }
+
+    func cancelLiveTVTimer(id: String) async throws {
+        try await client.send(Paths.cancelTimer(timerID: id))
     }
 
     func reportPlaybackStart(context: PlaybackReportContext, positionTicks: Int, isPaused: Bool) async throws {
@@ -242,6 +314,33 @@ final class JellyfinMediaProviderSession: MediaProviderSession {
         )
     }
 
+    // MARK: - Book reading progress
+
+    func reportBookProgress(itemID: String, fraction: Double) async throws {
+        try await client.send(
+            Paths.updateItemUserData(
+                itemID: itemID,
+                userID: userID,
+                UpdateUserItemDataDto(playbackPositionTicks: JellyfinBookProgress.ticks(forFraction: fraction))
+            )
+        )
+    }
+
+    func bookProgress(itemID: String) async throws -> Double? {
+        let data = try await NetworkRetryPolicy.idempotent.run {
+            try await client.send(Paths.getItemUserData(itemID: itemID, userID: userID))
+        }.value
+        // PlayedPercentage is the server-derived scalar (runtime-independent); fall back
+        // to the raw ticks if an older server omits it.
+        if let percentage = data.playedPercentage {
+            return percentage / 100
+        }
+        if let ticks = data.playbackPositionTicks, ticks > 0 {
+            return JellyfinBookProgress.fraction(forTicks: ticks)
+        }
+        return nil
+    }
+
     private static let metadataFields: [ItemFields] = [
         .primaryImageAspectRatio,
         .overview,
@@ -271,6 +370,8 @@ final class JellyfinMediaProviderSession: MediaProviderSession {
             return [.communityRating]
         case .random:
             return [.random]
+        case .trackOrder:
+            return [.parentIndexNumber, .indexNumber, .sortName]
         }
     }
 
@@ -278,12 +379,45 @@ final class JellyfinMediaProviderSession: MediaProviderSession {
         guard let sort else { return nil }
 
         switch sort {
-        case .name:
+        case .name, .trackOrder:
             return [.ascending]
         case .recentlyAdded, .releaseDate, .rating:
             return [.descending]
         case .random:
             return nil
+        }
+    }
+
+    private func includeItemKinds(for query: MediaItemQuery) -> [BaseItemKind]? {
+        if let includeTypes = query.includeTypes {
+            let kinds = includeTypes.compactMap(Self.baseItemKind(for:))
+            return kinds.isEmpty ? nil : kinds
+        }
+        // Artist queries return that artist's albums unless the caller asked otherwise.
+        return query.artistID != nil ? [.musicAlbum] : nil
+    }
+
+    private static func baseItemKind(for type: MediaItemType) -> BaseItemKind? {
+        switch type {
+        case .movie: return .movie
+        case .episode: return .episode
+        case .series: return .series
+        case .season: return .season
+        case .collectionFolder: return .collectionFolder
+        case .folder: return .folder
+        case .trailer: return .trailer
+        case .video: return .video
+        case .audio: return .audio
+        case .musicArtist: return .musicArtist
+        case .musicAlbum: return .musicAlbum
+        case .playlist: return .playlist
+        case .book: return .book
+        case .audioBook: return .audioBook
+        case .photo: return .photo
+        case .liveChannel: return .tvChannel
+        case .liveProgram: return .tvProgram
+        case .recording: return .recording
+        case .unknown: return nil
         }
     }
 

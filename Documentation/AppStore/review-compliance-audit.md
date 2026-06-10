@@ -20,6 +20,11 @@ for the full declaration table and the call-site audit that backs it.
 Jellyfin server credentials and tokens are stored in the Keychain via Apple's
 Security framework (`SecItem*`). No credentials are transmitted to a developer backend.
 
+Diagnostics are Apple-native only: MetricKit summaries and app lifecycle markers are
+normalized into aggregate, identifier-free records that stay on the device (see
+`Documentation/AppStore/diagnostics-reliability.md`). No third-party analytics SDK is
+present.
+
 ---
 
 ## ATS / Self-Hosted HTTP
@@ -94,8 +99,10 @@ library. A Playa Named Gus does not generate, modify, or re-distribute media fil
 
 The implementation uses public Apple frameworks exclusively: SwiftUI, AVKit,
 AVFoundation, MediaPlayer, Security, Foundation, FileManager, URLSession/URLCache,
-RealityKit, and String Catalogs. No private or undocumented APIs are intentionally
-used. The only runtime third-party dependency is `jellyfin-sdk-swift`.
+RealityKit, MetricKit, OSLog/os.signpost, and String Catalogs. No private or
+undocumented APIs are intentionally used. Runtime third-party dependencies are
+`jellyfin-sdk-swift` and, on iOS/iPadOS/visionOS only, the BSD-licensed Readium toolkit
+for in-app EPUB reading (local rendering over loopback; no analytics — ADR 0009).
 
 ---
 

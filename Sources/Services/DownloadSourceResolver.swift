@@ -45,6 +45,14 @@ struct DownloadSourceResolver {
         guard let itemID = item.id else { throw ResolverError.missingItemID }
         guard item.canDownload == true else { throw ResolverError.notDownloadable }
 
+        if item.type == .book {
+            return Self.bookOriginalSource(itemID: itemID, item: item)
+        }
+
+        if item.isAudioPlayable {
+            return Self.audioTranscodedSource(itemID: itemID, userID: userID)
+        }
+
         let response = try await client.send(playbackInfoRequest(itemID: itemID)).value
         guard let source = response.mediaSources?.first else { throw ResolverError.noMediaSource }
         guard let mediaSourceID = source.id else { throw ResolverError.missingMediaSourceID }
@@ -59,6 +67,14 @@ struct DownloadSourceResolver {
         guard let itemID = item.id else { throw ResolverError.missingItemID }
         guard item.canDownload == true else { throw ResolverError.notDownloadable }
 
+        if item.type == .book {
+            return bookOriginalSource(itemID: itemID, item: item)
+        }
+
+        if item.isAudioPlayable {
+            return audioTranscodedSource(itemID: itemID, userID: nil)
+        }
+
         if let source = item.mediaSources.first,
            let mediaSourceID = source.id
         {
@@ -66,6 +82,21 @@ struct DownloadSourceResolver {
         }
 
         throw ResolverError.noMediaSource
+    }
+
+    /// Books always download the original file — there is no server transcode for
+    /// epub/pdf, and the original is what Apple Books and the in-app reader consume.
+    static func bookOriginalSource(itemID: String, item: MediaItem) -> Source {
+        let knownBookExtensions: Set<String> = ["epub", "pdf", "azw3", "mobi", "cbz", "cbr"]
+        let containerExtension = item.mediaSources.first?.container?
+            .split(separator: ",")
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() }
+            .first { knownBookExtensions.contains($0) }
+        return Source(
+            kind: .original,
+            request: Paths.getDownload(itemID: itemID),
+            fileExtension: containerExtension ?? "epub"
+        )
     }
 
     private static func originalSource(for item: MediaItem) throws -> Source? {
@@ -81,6 +112,23 @@ struct DownloadSourceResolver {
         }
 
         return nil
+    }
+
+    /// Songs/audiobooks that aren't AVPlayer-native download as a progressive MP3
+    /// through the universal audio endpoint instead of the video transcode path.
+    static func audioTranscodedSource(itemID: String, userID: String?) -> Source {
+        let parameters = Paths.GetUniversalAudioStreamParameters(
+            container: Array(OfflineDownloadEligibility.playableAudioContainers),
+            deviceID: DeviceIdentity.deviceID,
+            userID: userID,
+            transcodingContainer: "mp3",
+            transcodingProtocol: .http
+        )
+        return Source(
+            kind: .transcoded,
+            request: Paths.getUniversalAudioStream(itemID: itemID, parameters: parameters),
+            fileExtension: "mp3"
+        )
     }
 
     static func transcodedSource(itemID: String, mediaSourceID: String) -> Source {
@@ -127,6 +175,6 @@ struct DownloadSourceResolver {
         source.container?
             .split(separator: ",")
             .map { $0.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() }
-            .first { ["mp4", "m4v", "mov"].contains($0) }
+            .first { ["mp4", "m4v", "mov"].contains($0) || OfflineDownloadEligibility.playableAudioContainers.contains($0) }
     }
 }

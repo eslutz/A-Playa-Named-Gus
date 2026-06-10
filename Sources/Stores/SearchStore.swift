@@ -44,7 +44,11 @@ final class SearchStore {
         results = []
         state = .loading
 
+        let diagnostics = DiagnosticsHub.shared
+        diagnostics.record(.searchRequested)
+        let searchInterval = diagnostics.beginInterval("Search")
         await loadPage(startIndex: 0, replaceResults: true)
+        diagnostics.endInterval("Search", searchInterval)
     }
 
     func loadMoreIfNeeded(currentItem item: MediaItem) async {
@@ -69,11 +73,12 @@ final class SearchStore {
             )
             let page = try await session.mediaProvider.items(query: query)
 
+            let admitted = ContentRatingGate.filter(page.items)
             if shouldReplaceResults {
-                results = page.items
+                results = admitted
                 paging.replaceResults(receivedCount: page.items.count, totalRecordCount: page.totalRecordCount)
             } else {
-                results.append(contentsOf: page.items)
+                results.append(contentsOf: admitted)
                 paging.appendResults(receivedCount: page.items.count, totalRecordCount: page.totalRecordCount)
             }
 

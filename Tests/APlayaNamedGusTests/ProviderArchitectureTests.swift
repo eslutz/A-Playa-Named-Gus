@@ -133,4 +133,18 @@ struct ProviderArchitectureTests {
         #expect(source.mediaStreams.last?.language == "eng")
         #expect(source.mediaStreams.last?.type == .audio)
     }
+
+    @Test("book reading fraction maps to Jellyfin position ticks and back")
+    func bookProgressFractionRoundTrips() {
+        #expect(JellyfinBookProgress.ticks(forFraction: 0) == 0)
+        #expect(JellyfinBookProgress.ticks(forFraction: 1) == 10_000_000)
+        #expect(JellyfinBookProgress.ticks(forFraction: 0.37) == 3_700_000)
+        // Clamps out-of-range fractions rather than over/under-reporting.
+        #expect(JellyfinBookProgress.ticks(forFraction: 1.5) == 10_000_000)
+        #expect(JellyfinBookProgress.ticks(forFraction: -0.2) == 0)
+
+        #expect(JellyfinBookProgress.fraction(forTicks: 0) == 0)
+        #expect(JellyfinBookProgress.fraction(forTicks: 6_000_000) == 0.6)
+        #expect(JellyfinBookProgress.fraction(forTicks: 10_000_000) == 1)
+    }
 }

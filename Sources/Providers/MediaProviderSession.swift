@@ -8,6 +8,10 @@ struct MediaItemPage {
 struct MediaItemQuery {
     var parentID: String?
     var searchTerm: String?
+    /// Restricts results to albums by this artist (provider-mapped, e.g. Jellyfin `artistIds`).
+    var artistID: String?
+    /// Restricts results to these item types (provider-mapped, e.g. Jellyfin `includeItemTypes`).
+    var includeTypes: [MediaItemType]?
     var startIndex: Int
     var limit: Int
     var isRecursive: Bool
@@ -17,6 +21,8 @@ struct MediaItemQuery {
     init(
         parentID: String? = nil,
         searchTerm: String? = nil,
+        artistID: String? = nil,
+        includeTypes: [MediaItemType]? = nil,
         startIndex: Int,
         limit: Int,
         isRecursive: Bool = false,
@@ -25,6 +31,8 @@ struct MediaItemQuery {
     ) {
         self.parentID = parentID
         self.searchTerm = searchTerm
+        self.artistID = artistID
+        self.includeTypes = includeTypes
         self.startIndex = startIndex
         self.limit = limit
         self.isRecursive = isRecursive
@@ -60,6 +68,14 @@ struct PlaybackReportContext {
     let streamSelection: PlaybackStreamSelection
 }
 
+/// A scheduled Live TV recording.
+struct LiveTVTimer: Identifiable, Equatable {
+    let id: String
+    let name: String
+    let channelName: String?
+    let startDate: Date?
+}
+
 @MainActor
 protocol MediaProviderSession: AnyObject {
     var providerKind: MediaProviderKind { get }
@@ -90,9 +106,30 @@ protocol MediaProviderSession: AnyObject {
         stereoLayout: Stereo3DLayout
     ) async throws -> PlaybackSourceResolution
 
+    /// Resolves a playable URL for a song or audiobook; the provider direct-plays
+    /// AVPlayer-native audio containers and transcodes the rest server-side.
+    func resolveAudioPlayback(for itemID: String) async throws -> PlaybackSourceResolution
+
     func downloadSource(for item: MediaItem) async throws -> DownloadSourceResolution
+
+    // MARK: Live TV (no-tuner servers report unavailable)
+
+    func liveTVIsEnabled() async -> Bool
+    func liveTVChannels(startIndex: Int, limit: Int) async throws -> MediaItemPage
+    func liveTVRecordings(limit: Int) async throws -> [MediaItem]
+    func liveTVTimers() async throws -> [LiveTVTimer]
+    func cancelLiveTVTimer(id: String) async throws
 
     func reportPlaybackStart(context: PlaybackReportContext, positionTicks: Int, isPaused: Bool) async throws
     func reportPlaybackProgress(context: PlaybackReportContext, positionTicks: Int, isPaused: Bool) async throws
     func reportPlaybackStopped(context: PlaybackReportContext, positionTicks: Int) async throws
+
+    // MARK: Book reading progress (gated by `capabilities.supportsBookProgressSync`)
+
+    /// Reports EPUB reading position as a 0...1 fraction through the book, so it surfaces
+    /// in "Continue" and syncs to other clients. Coarse by design — exact-page resume
+    /// stays local; the server holds only the percentage.
+    func reportBookProgress(itemID: String, fraction: Double) async throws
+    /// Returns the server-side reading fraction (0...1), or nil if none is stored.
+    func bookProgress(itemID: String) async throws -> Double?
 }

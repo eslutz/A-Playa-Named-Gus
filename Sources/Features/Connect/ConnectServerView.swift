@@ -19,6 +19,9 @@ struct ConnectServerView: View {
             connectErrorSection
             connectActionSection
             localServersSection
+            #if DEBUG
+                demoServerSection
+            #endif
         }
         .formStyle(.grouped)
         .tint(.accentColor)
@@ -120,6 +123,29 @@ struct ConnectServerView: View {
         }
     }
 
+    #if DEBUG
+        /// Development-only shortcut to the local demo Jellyfin container
+        /// (`Scripts/demo-server.sh start`); signs straight in to the demo account.
+        private var demoServerSection: some View {
+            Section {
+                Button {
+                    guard !isConnecting else { return }
+                    errorMessage = nil
+                    isConnecting = true
+                    Task {
+                        defer { isConnecting = false }
+                        await appModel.connectToLocalDemoServer()
+                    }
+                } label: {
+                    Label("Use Local Demo Server", systemImage: "shippingbox")
+                }
+                .disabled(isConnecting)
+            } footer: {
+                Text("Debug builds only. Start it with Scripts/demo-server.sh.")
+            }
+        }
+    #endif
+
     private func connect() {
         guard !isConnecting else { return }
         errorMessage = nil
@@ -146,6 +172,7 @@ private struct LocalServerRow: View {
                 .foregroundStyle(Color.accentColor)
                 .imageScale(.large)
                 .frame(width: 28)
+                .accessibilityHidden(true)
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(server.name)

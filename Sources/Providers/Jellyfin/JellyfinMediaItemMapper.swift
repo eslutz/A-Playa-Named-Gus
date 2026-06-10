@@ -5,6 +5,9 @@ enum JellyfinMediaItemMapper {
     static func mediaItem(from item: BaseItemDto) -> MediaItem {
         MediaItem(
             providerKind: .jellyfin,
+            album: item.album,
+            albumArtist: item.albumArtist,
+            artists: item.artists ?? [],
             backdropImageTags: item.backdropImageTags ?? [],
             canDownload: item.canDownload,
             chapters: (item.chapters ?? []).map(mediaChapter),
@@ -12,6 +15,7 @@ enum JellyfinMediaItemMapper {
             communityRating: item.communityRating.map { Double($0) },
             container: item.container,
             criticRating: item.criticRating.map { Double($0) },
+            currentProgramName: item.currentProgram?.name,
             genres: item.genres ?? [],
             id: item.id,
             imageTags: item.imageTags ?? [:],
@@ -63,8 +67,24 @@ enum JellyfinMediaItemMapper {
             return .video
         case .audio:
             return .audio
+        case .musicArtist:
+            return .musicArtist
+        case .musicAlbum:
+            return .musicAlbum
+        case .playlist:
+            return .playlist
+        case .book:
+            return .book
+        case .audioBook:
+            return .audioBook
         case .photo:
             return .photo
+        case .tvChannel, .liveTvChannel:
+            return .liveChannel
+        case .tvProgram, .liveTvProgram:
+            return .liveProgram
+        case .recording:
+            return .recording
         default:
             return .unknown
         }

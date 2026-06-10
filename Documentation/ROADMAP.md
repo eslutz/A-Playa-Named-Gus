@@ -46,31 +46,76 @@ destinations build; iOS launches and renders the Connect screen.
 **Goal:** A Playa Named Gus looks like a finished product at first glance — real icon,
 considered launch and accent, consistent semantic theming.
 
-- [x] **App icon (all platforms).** Jellyfin navy background `#000B25` with a
-  purple-to-blue pineapple (`#AC5CC3` → `#00A4DC`) — egg-shaped body with a diamond
-  crosshatch lattice and a tight, mostly upright spiky crown. Produce
+- [~] **App icon (all platforms).** Official Winter Chill palette: deep teal background
+  `#0B2E33`, icy pineapple body using `#B8E3E9` highlights into `#4F7C82` depth, and
+  `#93B1B5` for the diamond crosshatch lattice and muted crown detail. Produce
   `AppIcon.appiconset` (iOS + macOS idioms), `AppIcon.brandassets` (tvOS App Icon + Top
   Shelf), and `AppIcon.solidimagestack` (visionOS layered), all named `AppIcon`; remove the
   `ASSETCATALOG_COMPILER_APPICON_NAME: ""` override in `project.yml`.
   *Acceptance:* actool produces no missing-icon errors on any SDK; icon renders on each
-  Home screen / launcher. *(Done: a placeholder pineapple generated with
+  Home screen / launcher. *(Started: a placeholder pineapple generated with
   `Scripts/generate-app-icon.swift`; all five destinations build green and actool bakes
-  `AppIcon` per platform. The artwork is a clean placeholder — final brand polish can
-  refine it later.)*
+  `AppIcon` per platform. The artwork now needs a final Winter Chill regeneration pass
+  before brand sign-off.)*
 - [x] **Launch experience.** Confirm `UILaunchScreen` presents cleanly; consider a minimal
   branded launch on platforms that support it. *Acceptance:* no flash of unstyled content;
   consistent first frame. *(Done: iOS/iPadOS use a color-only `UILaunchScreen` backed by
   the `LaunchBackground` asset.)*
-- [x] **Accent & semantic theme pass.** Centralize the Jellyfin-aligned app palette
-  (accent + cinema
-  palette) as semantic color assets with light/dark variants; audit views for hardcoded
-  colors. *Acceptance:* light/dark both legible; no raw `Color(red:…)` in feature views.
-  *(Done: cinema colors live in asset catalog colorsets; windowed UI uses semantic color
-  tokens where custom color is needed.)*
+- [~] **Accent & semantic theme pass.** Centralize the official Winter Chill app palette
+  as semantic color assets with light/dark variants; audit views for hardcoded colors.
+  Color roles:
+
+  | Role | Light mode | Dark mode | Use |
+  |---|---:|---:|---|
+  | Brand light / launch wash | `#B8E3E9` | `#0B2E33` | Launch background, empty-state wash, app icon contrast field, and subtle branded surfaces while preserving system Materials for ordinary content. |
+  | Primary accent / `AccentColor` | `#4F7C82` | `#B8E3E9` | Interactive tint, selected tab/sidebar state, links, focus rings, primary action glyphs, and key cinema lighting. |
+  | Secondary accent | `#93B1B5` | `#4F7C82` | Secondary actions, muted glyphs, dividers, poster placeholders, badges, and cinema fill lighting. |
+  | Deep brand base | `#0B2E33` | `#0B2E33` | App icon background, dark launch variant, cinema backdrop/shadow, and high-contrast text or glyphs only when placed on light brand surfaces. |
+
+  Keep text, destructive, warning, success, selection-material, and disabled-state colors
+  on Apple semantic colors unless a future brand brief adds dedicated accessible status
+  colors; do not use palette colors as body text on low-contrast pairings. *Acceptance:*
+  light/dark both legible; no raw `Color(red:…)` in feature views; asset catalog colors,
+  generated app icon art, launch background, and cinema lighting all use Winter Chill.
+  *(Started: cinema colors live in asset catalog colorsets; windowed UI uses semantic color
+  tokens where custom color is needed. Existing palette assets predate the Winter Chill
+  decision and need a value refresh.)*
 - [x] **String Catalog baseline.** Move all current literal UI strings into
   `Localizable.xcstrings` with comments. *Acceptance:* `SWIFT_EMIT_LOC_STRINGS` shows no
   un-catalogued user-facing strings in changed files. *(Done: the base catalog is seeded
   with current UI and user-facing error strings.)*
+
+---
+
+## M1.5 — Winter Chill Theme Alignment
+
+**Goal:** migrate the app from the previous Jellyfin-inspired brand colors to the official
+Winter Chill palette everywhere it appears, and keep future UI work consistent with that
+theme.
+
+- [ ] **Palette asset refresh.** Update every brand color asset and generated-color input
+  to the M1 Winter Chill role table: `AccentColor`, launch background, cinema key/fill/
+  backdrop colors, app icon generator constants, and any other non-system brand tokens.
+  *Acceptance:* asset catalog values match the roadmap roles in light and dark mode; old
+  brand hex values are gone from source-controlled assets/scripts/docs except historical
+  ADR context; `xcodegen generate` and the platform builds still pass.
+- [ ] **Winter Chill app icon regeneration.** Regenerate the iOS/macOS app icon, tvOS
+  brand assets, Top Shelf images, and visionOS layered icon using the Winter Chill
+  pineapple treatment. *Acceptance:* actool produces no icon warnings on any destination,
+  the icon reads clearly in light/dark launchers, and the generated images no longer use
+  the old purple/blue palette.
+- [ ] **Theme consistency audit.** Sweep signed-out, signed-in, playback, downloads,
+  settings, search, music, photos, books, Live TV, CarPlay, Top Shelf, and visionOS Cinema
+  surfaces for stale brand colors or one-off styling. Preserve Apple semantic colors,
+  Materials, Dynamic Type, focus, and accessibility behavior; do not replace system status
+  colors with custom brand colors unless a future palette expansion adds accessible status
+  tokens. *Acceptance:* light mode, dark mode, Reduce Transparency, tvOS focus, and
+  visionOS glass all stay legible and visually aligned with Winter Chill.
+- [ ] **Brand documentation and screenshot alignment.** Update `AGENTS.md`, `CLAUDE.md`,
+  README/support copy where they mention brand colors, then recapture App Store/demo
+  screenshots after the palette lands. *Acceptance:* docs and screenshots describe/show
+  Winter Chill consistently, and no release-facing artifact still presents the old palette
+  as current.
 
 ---
 
@@ -166,9 +211,11 @@ automated build verification. (Covers priority: *polish & testing*.)
   preserves position.)*
 - [~] **Picture in Picture.** Enable PiP where supported (iOS/iPadOS/macOS) and verify the
   background-audio + `UIBackgroundModes` path. *Acceptance:* PiP starts on backgrounding;
-  audio continues. *(Implementation note: background audio is configured and AVKit surfaces
-  build across iOS/iPadOS/macOS; device PiP/background verification is still pending in the
-  manual verification.)*
+  audio continues. *(Implementation note: the iOS/iPadOS surface is now
+  `AVPlayerViewController` with `allowsPictureInPicturePlayback` and automatic PiP on
+  backgrounding, and macOS uses `AVPlayerView` with PiP enabled — SwiftUI `VideoPlayer`
+  exposed no PiP, which this replaces; device PiP/background verification is still
+  pending in the manual verification.)*
 - [~] **AirPlay & external displays.** Verify AVKit AirPlay routing. *Acceptance:* route
   picker works; playback hands off cleanly. *(Implementation note: system
   `AVRoutePickerView` is wired for supported platforms and external playback is enabled
@@ -176,8 +223,10 @@ automated build verification. (Covers priority: *polish & testing*.)
 - [~] **Now Playing artwork & metadata polish.** Load poster into `MPMediaItemArtwork`
   (platform image), accurate duration/elapsed/rate. *Acceptance:* lock screen / Control
   Center / Apple TV Remote show artwork + correct scrubbing. *(Implementation note:
-  artwork loading and platform artwork conversion are in place; lock-screen/remote visual
-  verification is pending manual verification.)*
+  artwork loading and platform artwork conversion are in place;
+  `changePlaybackPositionCommand` now powers the lock-screen/Control Center scrubber, and
+  Now Playing carries media type plus album/artist metadata for audio items;
+  lock-screen/remote visual verification is pending manual verification.)*
 - [x] **Chapters & next-up.** Chapter markers if present; auto-play next episode / up-next
   prompt. *Acceptance:* chapter skip works; next episode offered at credits. *(Done:
   chapter targets render as seek actions and episode playback loads Jellyfin next-up with a
@@ -329,9 +378,12 @@ validation, TestFlight, and submission work are actually done.
   match behavior. *(Started: `PrivacyInfo.xcprivacy` is bundled with no tracking, no
   collected data types, Disk Space `85F4.1`, and UserDefaults `CA92.1`; remaining work is
   App Store Connect privacy answers and policy fields.)*
-- [ ] **Signing & capabilities.** Real Team/bundle id, Xcode Cloud signing, per-platform
+- [~] **Signing & capabilities.** Real Team/bundle id, Xcode Cloud signing, per-platform
   capability review (background audio, tvOS User Management, sandbox on macOS, Optic ID
-  string). *Acceptance:* Xcode Cloud Release archives sign for each platform.
+  string). *Acceptance:* Xcode Cloud Release archives sign for each platform. *(Code side
+  complete per `Documentation/AppStore/signing-capabilities.md` — entitlements, capability
+  declarations, committed Team ID, and the Optic ID/Face ID no-usage-string rationale;
+  remaining work is the account-blocked Xcode Cloud workflow and archive validation.)*
 - [ ] **App Store Connect record.** Create the app, set categories, age rating, support &
   marketing URLs, privacy policy URL, description, keywords. *Acceptance:* record
   complete and consistent across platforms, using the published `gus.ericslutz.dev`
@@ -340,31 +392,44 @@ validation, TestFlight, and submission work are actually done.
   `gus.ericslutz.dev` — marketing, support, privacy policy, accessibility, and age
   suitability — per `Documentation/AppStore/review-support-pages.md`. *Acceptance:* all
   pages are live over HTTPS and App Store Connect URLs plus review notes reference them.
-- [ ] **Accessibility readiness and disclosure.** Native Apple accessibility initiative
+- [~] **Accessibility readiness and disclosure.** Native Apple accessibility initiative
   across all five platforms; scope, feature requirements, and validation matrix per
   `Documentation/AppStore/accessibility.md`. *Acceptance:*
   `https://gus.ericslutz.dev/accessibility` is published and linked from the
   website/support pages; App Store accessibility disclosures match implemented support;
   major user flows are usable with relevant Apple accessibility features; release testing
-  passes the matrix in `Documentation/AppStore/accessibility.md`.
-- [ ] **Diagnostics & reliability foundation.** Implement Apple-native diagnostics (crash
+  passes the matrix in `Documentation/AppStore/accessibility.md`. *(Code-side audit done:
+  VoiceOver labels and headers from M5, item-specific Voice Control names on repeated
+  download actions, decorative icons hidden, no color-only state, no custom animations so
+  Reduce Motion is respected by construction, caption/alternate-audio menus in the
+  player; remaining work is the manual device validation matrix and the published page.)*
+- [~] **Diagnostics & reliability foundation.** Implement Apple-native diagnostics (crash
   triage, MetricKit, performance baselines, review cadence) without third-party analytics;
   scope per `Documentation/AppStore/diagnostics-reliability.md`. *Acceptance:* that
   document's acceptance checklist is complete and privacy disclosures match implemented
-  behavior.
-- [ ] **Copyright-safe demo media library.** Implement a demo library for App Store
-  screenshots, previews, review access, and TestFlight validation using only custom,
-  fictional content: generated or owned posters/backdrops, placeholder titles, sanitized
-  metadata, and representative movies, shows, music, downloads, and spatial-playback
-  examples where practical. The demo flow may use a dedicated demo Jellyfin server/account
-  or an app-contained demo provider, but it must stay separate from personal libraries and
-  must not rely on copyrighted movie/TV/music artwork or user-owned media. *Acceptance:*
+  behavior. *(Started: `DiagnosticsHub` lifecycle markers/signposts, `MetricKitCollector`
+  with platform gaps documented, `DiagnosticSummaryStore`, XCTest + launch-script
+  baselines recorded; remaining items need TestFlight builds.)*
+- [~] **Copyright-safe demo media library.** Implement a demo library for App Store
+  screenshots, previews, review access, and TestFlight validation using only
+  rights-cleared content, kept separate from personal libraries. *Acceptance:*
   the demo library can populate Home, library grids, search, item detail, playback, and
   downloads for screenshot capture and reviewer/tester walkthroughs; demo credentials or
   setup steps are documented; all screenshot/TestFlight media assets are confirmed
-  rights-cleared before upload.
-- [ ] **Screenshots & previews.** Required sizes for iPhone/iPad/Apple TV/Vision Pro/Mac
+  rights-cleared before upload. *(Started: `Scripts/demo-server.sh` runs a local Jellyfin
+  container over the public-domain/CC0 `sample_media/` library with automated first-run
+  setup; `--gus-demo-server` launch argument and a Debug-only Connect button sign
+  straight in; Home population verified on the iPhone simulator; docs in
+  `Documentation/AppStore/demo-server.md`. Remaining: tap-through validation of
+  playback/downloads per platform and a hosted instance for App Review access; series/
+  spatial examples are not yet represented in the sample library.)*
+- [~] **Screenshots & previews.** Required sizes for iPhone/iPad/Apple TV/Vision Pro/Mac
   (scripted via `simctl` where possible). *Acceptance:* all required slots filled.
+  *(Started: `Scripts/screenshots.sh` resolves required-size simulators by name, drives
+  the demo server (`--gus-demo-server` + `--gus-route`), and captures Connect, Home,
+  Libraries, and Settings on iPhone/iPad/Apple TV/Vision Pro; macOS stays manual per the
+  script's instructions. Final marketing-quality capture and App Store Connect upload
+  remain.)*
 - [ ] **Review-guidelines compliance audit.** Walk the
   [App Review Guidelines](https://developer.apple.com/app-store/review/guidelines/):
   third-party-server clients, ATS justification (`NSAllowsArbitraryLoads` for self-hosted
@@ -420,31 +485,101 @@ milestone only after the launch scope is stable.
  not be promoted as a primary use case. *Acceptance:* a watchOS product brief defines the
  minimum useful feature set, platform constraints, Jellyfin API requirements, battery/
  storage/network tradeoffs, and whether it ships as a companion-only target or a
- standalone-capable watchOS app.
+ standalone-capable watchOS app. *(Acceptance met: `Documentation/watchos-brief.md`
+ defines the v1 companion scope, the standalone-capable recommendation, the verified
+ shared-code subset, API additions, battery/storage/network tradeoffs, and the build/CI
+ integration plan; implementation is its own follow-up milestone.)*
 
 - [ ] **Expanded immersive environments.** Enhance Gus Cinema with additional native
  RealityKit environments or scene variants that remain comfortable, performant, and
  playback-focused. *Acceptance:* users can choose from multiple immersive environments,
  environment changes do not interrupt playback, and the default remains simple and stable.
 
-- [ ] **SyncPlay.** Add Jellyfin SyncPlay support for shared playback sessions. Candidate
+- [~] **SyncPlay.** Add Jellyfin SyncPlay support for shared playback sessions. Candidate
  scope includes creating/joining/leaving groups, selecting a host/client, synchronized
  play/pause/seek, participant visibility, and graceful handling of drift or unsupported
  clients. *Acceptance:* users can create or join a SyncPlay group and maintain synchronized
- playback across supported Jellyfin clients.
+ playback across supported Jellyfin clients. *(Started: `SyncPlayStore` creates/joins/
+ leaves groups from the player options menu (Jellyfin-gated), `SyncPlaySocket` listens on
+ the server WebSocket and applies inbound play/pause/seek to the player, and local
+ pause/play observed from the transport forwards to the group with echo suppression;
+ precise When-scheduled application, ready/buffering reporting, and multi-client drift
+ validation remain.)*
 
-- [ ] **Music library support.** Add first-class Jellyfin music browsing and playback:
+- [ ] **Customizable main navigation.** Let users choose from Settings which sections are
+ visible in the primary app menu/tab/sidebar and in what order, while keeping Home fixed at
+ the start and Settings fixed at the end. Candidate reorderable/hideable items include
+ Movies, Shows, Music, Books, Libraries, and any future media-type entries exposed by the
+ active provider. *Acceptance:* users can hide and reorder all intermediate navigation
+ items with native edit controls, the preference persists per app user, unavailable
+ provider sections are handled gracefully, and each platform still preserves its native
+ tab, sidebar, or focus behavior.
+
+- [ ] **Apple Intelligence library assistant and generated artwork.** Integrate Apple's
+ Foundation Models, Core Spotlight LLM search, Private Cloud Compute, and Image Playground
+ APIs after the relevant WWDC26 / iOS 27-era SDKs are stable enough for App Store release.
+ Candidate scope:
+ - Natural-language library search and recommendations: users can ask broad or precise
+   questions such as "I feel like watching a sci-fi movie in space with aliens and lots of
+   guns or action" or "movies with Batman and the Joker in them," and Gus returns only
+   grounded matches from the user's own indexed libraries.
+ - Grounding/indexing: donate provider-neutral `MediaItem` metadata to Core Spotlight,
+   including title, media type, collection, genres, overview, taglines, people/cast,
+   character/role names when available, studios, production year, ratings, play state,
+   favorites, and server/provider IDs. Do not let model world knowledge fabricate matches
+   that are not present in the library.
+ - Model routing: prefer the on-device Foundation Models system model for private,
+   offline-capable search and lightweight recommendations; use Private Cloud Compute only
+   for requests that need larger context, stronger reasoning, multimodal input, or many
+   tool calls, with Apple Intelligence availability checks, user-facing fallback, and no
+   app-owned cloud/API key path.
+ - Query behavior: combine `SpotlightSearchTool` / Foundation Models tool calling with
+   existing provider search/filter APIs so conversational results can still open native
+   library, item detail, and playback flows; preserve deterministic filters for exact
+   constraints such as "must include both Batman and Joker."
+ - Evaluation: build an `Evaluations` dataset from demo-library and fixture metadata to
+   verify result coverage, exact-match constraints, hallucination resistance, family-safety
+   filtering, offline/on-device fallback, and Private Cloud Compute fallback behavior.
+ - Generated posters/covers: use the Image Playground API for user-initiated artwork
+   generation from media metadata and optional user prompts. The user must preview and
+   approve the result, select whether it becomes a poster/primary image or backdrop, and
+   explicitly choose to sync it back to the media server.
+ - Server sync: add provider-gated artwork upload/update support only where the server
+   account has permission; preserve the original artwork where possible, record a revert
+   path, respect metadata locking/provider policy, and handle unsupported providers by
+   keeping the generated artwork local.
+ - Platform/availability gate: Foundation Models search should target iOS, iPadOS, macOS,
+   and visionOS first; Image Playground-generated artwork should ship only on platforms
+   where Apple exposes the API and the current device supports Apple Intelligence. tvOS,
+   unsupported devices, unsupported regions/languages, daily Private Cloud Compute limits,
+   and disabled Apple Intelligence settings must fall back to the existing search and
+   artwork flows.
+ *Acceptance:* a product/technical brief cites the Apple API availability being targeted,
+ decides on-device vs Private Cloud Compute routing for each use case, defines privacy
+ copy and consent boundaries, proves Core Spotlight indexing coverage for the supported
+ media types, documents Jellyfin artwork upload/revert behavior, and ships an evaluation
+ matrix before implementation begins.
+
+- [~] **Music library support.** Add first-class Jellyfin music browsing and playback:
  artists, albums, songs, playlists, genres, shuffle/repeat, queue management, background
  audio, Now Playing metadata, AirPlay routing, and offline audio downloads where supported.
  *Acceptance:* users can browse and play music independently of movie/show workflows, with
  accurate progress/state, native audio controls, and platform-appropriate background
- behavior.
+ behavior. *(Started: music domain types and artist/album/track browse
+ (`ArtistAlbumsView`/`AlbumDetailView`), `AudioPlayerStore` queue engine with
+ shuffle/repeat and progress reporting, `AudioPlayerView` with transport/AirPlay,
+ universal-audio streaming + offline audio originals/transcodes; genre browse and
+ device validation against a live library remain.)*
 
-- [ ] **Live TV & DVR support.** Add Jellyfin Live TV and DVR functionality including
+- [~] **Live TV & DVR support.** Add Jellyfin Live TV and DVR functionality including
  channel guide, live channel playback, recording library, scheduled recordings, and
  recording management. *Acceptance:* users can browse the guide, start live playback, view
  recordings, and manage scheduled recordings with clear unsupported-state handling when
- the server has no tuner/DVR configured.
+ the server has no tuner/DVR configured. *(Started: `LiveTVView` serves channels with
+ now-airing info, recordings, and cancellable scheduled recordings behind a Live TV
+ availability probe, with a clear no-tuner state; channel playback rides the normal
+ playback pipeline. A full EPG grid and recording creation remain; validation needs a
+ tuner-equipped server.)*
 
 - [ ] **Family safety controls and age assurance.** Add parent-friendly content controls
  using Apple-provided safety APIs rather than a custom age-verification or child-profile
@@ -462,7 +597,11 @@ milestone only after the launch scope is stable.
  availability, entitlement/review requirements, Jellyfin rating-field mapping, behavior for
  unrated media, age-gate choices, privacy/data-retention rules, App Store Connect age
  rating impacts, and a test matrix for child, teen, adult, declined-sharing, and missing
- system-restriction scenarios before implementation starts.
+ system-restriction scenarios before implementation starts. *(Started:
+ `ContentRatingGate` maps US movie/TV ratings to tiers and filters Home, library, and
+ search results per a Settings "Content Restrictions" limit with an unrated-media policy,
+ designed to pair with Jellyfin permissions and Screen Time; reading device-effective
+ restrictions via ManagedSettings remains entitlement-gated follow-up per the brief.)*
 
 - [ ] **User-initiated diagnostic export.** Add a Settings diagnostics section after the
  Apple-native diagnostics foundation is stable. The export must be explicitly initiated by
@@ -485,11 +624,20 @@ milestone only after the launch scope is stable.
  advanced features materially improve Gus beyond the launch accessibility baseline without
  adding custom systems that duplicate Apple-provided accessibility behavior.
 
-- [ ] **Books and audiobooks.** Add support for Jellyfin book libraries, with special focus
+- [~] **Books and audiobooks.** Add support for Jellyfin book libraries, with special focus
  on audiobooks as an audio-first playback experience. Candidate scope includes book
  browsing, audiobook playback, playback speed, chapter navigation, bookmarks, resume
  progress, and offline audiobook downloads. *Acceptance:* audiobook progress syncs
- reliably with Jellyfin and the UX is distinct from video playback.
+ reliably with Jellyfin and the UX is distinct from video playback. *(Started: book/
+ audiobook domain types; audiobooks play through the audio player with speed control,
+ chapter menu, resume-from-server-position, and offline downloads. Reading: books
+ download as originals, every non-tvOS platform gets a share sheet whose primary job is
+ "Open in Books", and iOS/iPadOS get an in-app Readium reader with chapter navigation
+ (ADR 0009). Reading position resumes exactly on the same device and syncs a coarse
+ fraction to Jellyfin (`UserData.PlaybackPositionTicks`) for cross-device/Continue —
+ a spike confirmed Jellyfin 10.11 round-trips it, gated by `supportsBookProgressSync`.
+ tvOS browses details only by design; visionOS reading is blocked on an upstream Readium
+ xrOS compile fix (tracked in the ADR).)*
 
 - [ ] **CarPlay audio companion.** Add an iOS-only CarPlay experience after the music and
  audiobook foundations are in place. Candidate scope includes a minimal Listen Now entry
@@ -501,12 +649,19 @@ milestone only after the launch scope is stable.
  playback as a supported use case. *Acceptance:* a CarPlay product brief defines the
  audio-only scope, entitlement/review requirements, iOS-only build settings, Siri/
  `INPlayMediaIntent` needs, provider capability dependencies, offline behavior, and
- simulator/vehicle verification matrix before implementation starts.
+ simulator/vehicle verification matrix before implementation starts. *(Started:
+ `GusCarPlaySceneDelegate` + `CarPlayContentController` serve album/audiobook tabs and
+ Now Playing over the restored session via native templates; the carplay-audio
+ entitlement is documented but unwired pending Apple's grant
+ (`Documentation/AppStore/signing-capabilities.md`); Siri media intents and CarPlay
+ simulator/vehicle verification remain.)*
 
-- [ ] **Photos.** Add Jellyfin photo library browsing with albums, timelines, full-screen
+- [~] **Photos.** Add Jellyfin photo library browsing with albums, timelines, full-screen
  viewing, slideshows, favorites, and casting/photo playback to larger clients. *Acceptance:*
  users can browse photo libraries comfortably across platforms and start a slideshow on a
- selected playback device.
+ selected playback device. *(Started: photo grids browse through the shared library
+ pipeline and `PhotoViewerView` adds full-screen paging plus a Reduce Motion-aware
+ slideshow; favorites and casting to other playback devices remain.)*
 
 ### Emby Support
 

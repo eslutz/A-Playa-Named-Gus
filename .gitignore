@@ -15,6 +15,14 @@ Config/Local.xcconfig
 # Local environment overrides and secrets for diagnostic scripts.
 .env.local
 
+# Rights-cleared demo media served by the local demo Jellyfin container
+# (Scripts/demo-server.sh) — kept out of the repo; provenance lives in
+# sample_media/README.md, workflow in Documentation/AppStore/demo-server.md.
+sample_media/
+
+# Working task list — explicitly kept uncommitted.
+tasks.md
+
 # Created by https://www.toptal.com/developers/gitignore/api/macos,visualstudiocode,swift
 # Edit at https://www.toptal.com/developers/gitignore?templates=macos,visualstudiocode,swift
 

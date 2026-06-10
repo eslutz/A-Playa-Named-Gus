@@ -32,6 +32,16 @@ The developer of A Playa Named Gus does not receive analytics, crash logs, track
 identifiers, advertising identifiers, Jellyfin credentials, Jellyfin tokens, library
 metadata, playback history, downloaded media, or server URLs from the app.
 
+## Diagnostics
+
+A Playa Named Gus uses Apple's MetricKit to understand app health (such as crash counts,
+hang time, launch time, memory, and energy use). These summaries contain no personal
+information, no media titles, and no server addresses, and they stay on your device. If
+you have chosen to share analytics with app developers in your Apple device settings,
+Apple may make crash reports and aggregate metrics available to the developer through
+Apple's own tools; that sharing is controlled by Apple and your device settings, not by
+this app.
+
 ## Local Network
 
 If you choose Find Local Servers, A Playa Named Gus uses the local network to discover

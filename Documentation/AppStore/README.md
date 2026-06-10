@@ -19,6 +19,8 @@ implementation work.
   and diagnostics review plan.
 - `review-support-pages.md` - required hosted support, privacy, marketing, and age
   suitability pages for `gus.ericslutz.dev`.
+- `demo-server.md` - local demo Jellyfin container over the rights-cleared sample media.
+- `performance-baselines.md` - recorded performance baselines and re-measurement steps.
 - `screenshots-and-testflight.md` - screenshot matrix and beta checklist.
 
 ## Apple References

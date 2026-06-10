@@ -27,22 +27,38 @@ OUT="$REPO_ROOT/Screenshots"
 BUNDLE_ID="dev.ericslutz.gus"
 SETTLE_SECONDS=4   # seconds to wait after launch before capturing
 
-# ── Simulator UDIDs (App Store required device/size per platform) ─────────────
-# iPhone 6.9" (1320×2868 @3x) — required slot in App Store Connect.
-IPHONE_NAME="iPhone 17 Pro Max"
-IPHONE_UDID="34B03CAA-8205-4170-A0E1-AEA402DA2DEE"
+# ── Simulator devices (App Store required device/size per platform) ───────────
+# UDIDs are resolved at runtime by name, preferring the newest runtime — the same
+# device name often exists on multiple installed runtimes, and older runtimes can
+# sit below the app's deployment target.
+IPHONE_NAME="iPhone 17 Pro Max"               # iPhone 6.9" (1320×2868 @3x) slot
+IPAD_NAME="iPad Pro 13-inch (M5)"             # iPad 13" (2064×2752 @2x) slot
+TV_NAME="Apple TV 4K (3rd generation) (at 1080p)"  # Apple TV 1080p slot
+VISION_NAME="Apple Vision Pro"                # Vision Pro (2980×2980) slot
 
-# iPad 13" (2064×2752 @2x) — required slot.
-IPAD_NAME="iPad Pro 13-inch (M4)"
-IPAD_UDID="FE2199AD-8B3E-46D0-BCF8-6129EF5EF44D"
+resolve_udid() {
+  xcrun simctl list -j devices available | python3 -c '
+import json, sys
+name = sys.argv[1]
+data = json.load(sys.stdin)["devices"]
+def runtime_key(rt):
+    parts = rt.rsplit(".", 1)[-1].split("-")[1:]
+    return tuple(int(p) for p in parts if p.isdigit())
+best = None
+for rt, devs in data.items():
+    for d in devs:
+        if d.get("name") == name and d.get("isAvailable", False):
+            key = runtime_key(rt)
+            if best is None or key > best[0]:
+                best = (key, d["udid"])
+print(best[1] if best else "")
+' "$1"
+}
 
-# Apple TV 4K 1080p (1920×1080) — required slot.
-TV_NAME="Apple TV 4K (3rd generation) (at 1080p)"
-TV_UDID="F2B6DBDC-629C-4101-A473-5A6A9E77EE3F"
-
-# Apple Vision Pro (2980×2980) — required slot.
-VISION_NAME="Apple Vision Pro"
-VISION_UDID="1711D519-F8C9-42CA-A705-5F12E87D96F2"
+IPHONE_UDID="$(resolve_udid "$IPHONE_NAME")"
+IPAD_UDID="$(resolve_udid "$IPAD_NAME")"
+TV_UDID="$(resolve_udid "$TV_NAME")"
+VISION_UDID="$(resolve_udid "$VISION_NAME")"
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 log()  { echo "▶ $*"; }
@@ -83,26 +99,53 @@ find_app() {
 
 boot_sim() {
   local udid="$1" name="$2"
-  local state
-  state=$(xcrun simctl list devices 2>/dev/null | grep "$udid" | grep -o "(.*)" | tr -d "()")
-  if [[ "$state" != "Booted" ]]; then
+  if xcrun simctl list devices 2>/dev/null | grep "$udid" | grep -q "(Booted)"; then
+    ok "$name already booted"
+  else
     log "Booting $name …"
     xcrun simctl boot "$udid"
     # Give the SpringBoard a moment to become ready
     sleep 3
-  else
-    ok "$name already booted"
   fi
 }
 
 install_and_launch() {
   local udid="$1" app_path="$2"
+  shift 2
   log "Installing $(basename "$app_path") …"
   xcrun simctl install "$udid" "$app_path"
-  log "Launching $BUNDLE_ID …"
-  xcrun simctl launch "$udid" "$BUNDLE_ID" >/dev/null
+  log "Launching $BUNDLE_ID $* …"
+  xcrun simctl launch "$udid" "$BUNDLE_ID" "$@" >/dev/null
   log "Settling for ${SETTLE_SECONDS}s …"
   sleep "$SETTLE_SECONDS"
+}
+
+# Demo server (Scripts/demo-server.sh) lets us capture real signed-in scenes.
+demo_server_running() {
+  curl -fsS --max-time 2 "http://localhost:8096/System/Info/Public" >/dev/null 2>&1
+}
+
+# Captures Home / Search / Settings by relaunching with --gus-demo-server and a
+# --gus-route destination per scene (external gus:// opens show a confirm dialog).
+capture_signed_in_scenes() {
+  local udid="$1" outdir="$2" app_path="$3"
+
+  terminate_app "$udid"
+  install_and_launch "$udid" "$app_path" --gus-demo-server
+  sleep 6   # extra settle: demo sign-in + Home load over localhost
+  capture "$udid" "$outdir" "02-home"
+
+  terminate_app "$udid"
+  install_and_launch "$udid" "$app_path" --gus-demo-server --gus-route libraries
+  sleep 6
+  capture "$udid" "$outdir" "03-libraries"
+
+  terminate_app "$udid"
+  install_and_launch "$udid" "$app_path" --gus-demo-server --gus-route settings
+  sleep 6
+  capture "$udid" "$outdir" "04-settings"
+
+  terminate_app "$udid"
 }
 
 capture() {
@@ -146,9 +189,14 @@ capture_iphone() {
   [[ -z "$app" ]] && { warn "Could not locate $APP_NAME.app for iPhone"; return 1; }
   boot_sim "$IPHONE_UDID" "$IPHONE_NAME"
   terminate_app "$IPHONE_UDID"
-  install_and_launch "$IPHONE_UDID" "$app"
+  install_and_launch "$IPHONE_UDID" "$app" --gus-skip-session-restore
   capture "$IPHONE_UDID" "$OUT/iphone" "01-connect"
-  ok "iPhone: captured Connect screen (signed-in scenes require a live server)"
+  if demo_server_running; then
+    capture_signed_in_scenes "$IPHONE_UDID" "$OUT/iphone" "$app"
+    ok "iPhone: captured Connect + signed-in scenes"
+  else
+    ok "iPhone: captured Connect (start Scripts/demo-server.sh for signed-in scenes)"
+  fi
   terminate_app "$IPHONE_UDID"
 }
 
@@ -160,9 +208,14 @@ capture_ipad() {
   [[ -z "$app" ]] && { warn "Could not locate $APP_NAME.app for iPad"; return 1; }
   boot_sim "$IPAD_UDID" "$IPAD_NAME"
   terminate_app "$IPAD_UDID"
-  install_and_launch "$IPAD_UDID" "$app"
+  install_and_launch "$IPAD_UDID" "$app" --gus-skip-session-restore
   capture "$IPAD_UDID" "$OUT/ipad" "01-connect"
-  ok "iPad: captured Connect screen (signed-in scenes require a live server)"
+  if demo_server_running; then
+    capture_signed_in_scenes "$IPAD_UDID" "$OUT/ipad" "$app"
+    ok "iPad: captured Connect + signed-in scenes"
+  else
+    ok "iPad: captured Connect (start Scripts/demo-server.sh for signed-in scenes)"
+  fi
   terminate_app "$IPAD_UDID"
 }
 
@@ -174,9 +227,14 @@ capture_tv() {
   [[ -z "$app" ]] && { warn "Could not locate $APP_NAME.app for Apple TV"; return 1; }
   boot_sim "$TV_UDID" "$TV_NAME"
   terminate_app "$TV_UDID"
-  install_and_launch "$TV_UDID" "$app"
+  install_and_launch "$TV_UDID" "$app" --gus-skip-session-restore
   capture "$TV_UDID" "$OUT/tv" "01-connect"
-  ok "TV: captured Connect screen (signed-in scenes require a live server)"
+  if demo_server_running; then
+    capture_signed_in_scenes "$TV_UDID" "$OUT/tv" "$app"
+    ok "TV: captured Connect + signed-in scenes"
+  else
+    ok "TV: captured Connect (start Scripts/demo-server.sh for signed-in scenes)"
+  fi
   terminate_app "$TV_UDID"
 }
 
@@ -188,9 +246,14 @@ capture_vision() {
   [[ -z "$app" ]] && { warn "Could not locate $APP_NAME.app for Vision Pro"; return 1; }
   boot_sim "$VISION_UDID" "$VISION_NAME"
   terminate_app "$VISION_UDID"
-  install_and_launch "$VISION_UDID" "$app"
+  install_and_launch "$VISION_UDID" "$app" --gus-skip-session-restore
   capture "$VISION_UDID" "$OUT/vision" "01-connect"
-  ok "Vision Pro: captured Connect screen (signed-in scenes require a live server)"
+  if demo_server_running; then
+    capture_signed_in_scenes "$VISION_UDID" "$OUT/vision" "$app"
+    ok "Vision Pro: captured Connect + signed-in scenes"
+  else
+    ok "Vision Pro: captured Connect (start Scripts/demo-server.sh for signed-in scenes)"
+  fi
   terminate_app "$VISION_UDID"
 }
 
@@ -223,8 +286,8 @@ case "$TARGET" in
     capture_vision
     echo ""
     log "Done. Screenshots saved to Screenshots/"
-    log "Signed-in scenes (Home, Detail, Player, etc.) require a live Jellyfin"
-    log "server. See Documentation/AppStore/screenshots-and-testflight.md."
+    log "Signed-in scenes use the local demo server (Scripts/demo-server.sh start)."
+    log "See Documentation/AppStore/screenshots-and-testflight.md and demo-server.md."
     ;;
   *)
     echo "Usage: $0 [--list | iphone | ipad | tv | vision | mac | all]"

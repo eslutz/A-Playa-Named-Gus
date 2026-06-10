@@ -145,6 +145,8 @@ struct OfflineDownloadRecord: Codable, Equatable, Identifiable {
 
 enum OfflineDownloadEligibility {
     private static let playableContainers: Set<String> = ["mp4", "m4v", "mov"]
+    /// Audio-only originals AVPlayer plays natively (songs, audiobooks).
+    static let playableAudioContainers: Set<String> = ["mp3", "m4a", "m4b", "aac", "flac", "alac", "wav"]
     private static let playableVideoCodecs: Set<String> = ["h264", "hevc"]
     private static let playableAudioCodecs: Set<String> = ["aac", "mp3", "ac3", "eac3", "alac", "flac"]
 
@@ -157,6 +159,16 @@ enum OfflineDownloadEligibility {
         let containers = source.container?
             .split(separator: ",")
             .map { $0.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() } ?? []
+
+        // Audio-only sources (no video streams) qualify via the audio container list.
+        let isAudioOnly = !source.mediaStreams.contains { $0.type == .video }
+        if isAudioOnly, containers.contains(where: { playableAudioContainers.contains($0) }) {
+            return source.mediaStreams.filter { $0.type == .audio }.allSatisfy { stream in
+                guard let codec = stream.codec?.lowercased() else { return true }
+                return playableAudioCodecs.contains(codec) || playableAudioContainers.contains(codec)
+            }
+        }
+
         guard containers.contains(where: { playableContainers.contains($0) }) else { return false }
 
         let streams = source.mediaStreams
@@ -443,6 +455,7 @@ final class OfflineDownloadStore: DownloadSessionCoordinatorEventHandler {
             record.resumeData = nil
             fileStore.update(record)
             reloadRecords(serverID: session.server.id, userID: session.user.id)
+            DiagnosticsHub.shared.record(.downloadQueued)
             coordinator.startDownload(from: source.url, recordID: record.id)
         } catch {
             activeItemIDs.remove(itemID)
@@ -469,6 +482,7 @@ final class OfflineDownloadStore: DownloadSessionCoordinatorEventHandler {
                     paused.progress = record.progress
                     self.fileStore.update(paused)
                     self.reloadRecords(serverID: paused.serverID, userID: paused.userID)
+                    DiagnosticsHub.shared.record(.downloadPaused)
                     continuation.resume()
                 }
             }
@@ -545,6 +559,7 @@ final class OfflineDownloadStore: DownloadSessionCoordinatorEventHandler {
                 activeItemIDs.remove(itemID)
             }
             reloadRecords(serverID: record.serverID, userID: record.userID)
+            DiagnosticsHub.shared.record(.downloadCompleted)
         } catch {
             downloadSessionCoordinator(coordinator, didFailWith: error, resumeData: nil, recordID: recordID)
         }
@@ -566,6 +581,7 @@ final class OfflineDownloadStore: DownloadSessionCoordinatorEventHandler {
             activeItemIDs.remove(itemID)
         }
         reloadRecords(serverID: record.serverID, userID: record.userID)
+        DiagnosticsHub.shared.record(.downloadFailed)
         errorMessage = gusError.localizedDescription
     }
 

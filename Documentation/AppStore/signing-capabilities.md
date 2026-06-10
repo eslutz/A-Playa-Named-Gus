@@ -27,7 +27,11 @@ App Store archives belong in Xcode Cloud, not GitHub Actions.
 
 **Removed:** `NSFaceIDUsageDescription` was present but `LocalAuthentication` is never
 called in A Playa Named Gus source code. A false usage description is an App Review red
-flag; the key has been removed.
+flag; the key has been removed. The same reasoning covers visionOS Optic ID
+(`NSOpticIDUsageDescription`): Keychain items use plain
+`kSecAttrAccessibleAfterFirstUnlock` with no `kSecAccessControl` biometry, so no Optic ID
+prompt can occur and no usage string is required. Add the string only if
+biometry-protected Keychain access or `LocalAuthentication` is introduced.
 
 **Not needed:** `NSBonjourServices` — Jellyfin discovery uses UDP broadcast on port 7359
 via swift-nio sockets, not Bonjour/mDNS. `NSLocalNetworkUsageDescription` (already
@@ -42,6 +46,22 @@ session separate.
 Application Support, `UserDefaults`, and the login user's Keychain. Separate macOS login
 accounts therefore get separate app server lists, session restore state, and Jellyfin
 tokens without an extra capability.
+
+## CarPlay (Pending Apple Grant)
+
+The CarPlay audio companion (`Sources/CarPlay/`) is implemented and its template scene
+is declared in `Info.plist`, but `com.apple.developer.carplay-audio` requires an Apple
+entitlement grant (request via the CarPlay developer page). Until granted,
+`Config/Gus-CarPlay.entitlements` stays **unwired** so archives keep validating; the
+CarPlay scene never activates without the entitlement. Once granted, wire it in
+`Config/Shared.xcconfig`:
+
+```
+CODE_SIGN_ENTITLEMENTS[sdk=iphoneos*] = Config/Gus-CarPlay.entitlements
+CODE_SIGN_ENTITLEMENTS[sdk=iphonesimulator*] = Config/Gus-CarPlay.entitlements
+```
+
+Verify with the CarPlay simulator (Simulator app → I/O → External Displays → CarPlay).
 
 ## Setting Your Team ID (Local Override)
 

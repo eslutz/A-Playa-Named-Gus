@@ -20,10 +20,17 @@ final class NowPlayingController {
         info[MPMediaItemPropertyTitle] = item.displayTitle
         if let series = item.seriesName {
             info[MPMediaItemPropertyArtist] = series
+        } else if let artist = item.albumArtist ?? (item.artists.isEmpty ? nil : item.artists.joined(separator: ", ")) {
+            info[MPMediaItemPropertyArtist] = artist
+        }
+        if let album = item.album {
+            info[MPMediaItemPropertyAlbumTitle] = album
         }
         if let ticks = item.runTimeTicks, ticks > 0 {
             info[MPMediaItemPropertyPlaybackDuration] = Double(ticks) / 10_000_000
         }
+        let isAudioItem = item.type == .audio
+        info[MPNowPlayingInfoPropertyMediaType] = (isAudioItem ? MPNowPlayingInfoMediaType.audio : .video).rawValue
         info[MPNowPlayingInfoPropertyElapsedPlaybackTime] = 0.0
         info[MPNowPlayingInfoPropertyPlaybackRate] = 1.0
         MPNowPlayingInfoCenter.default().nowPlayingInfo = info
@@ -55,6 +62,7 @@ final class NowPlayingController {
         center.togglePlayPauseCommand.removeTarget(nil)
         center.skipForwardCommand.removeTarget(nil)
         center.skipBackwardCommand.removeTarget(nil)
+        center.changePlaybackPositionCommand.removeTarget(nil)
     }
 
     private func updateElapsed(_ seconds: Double, rate: Double) {
@@ -118,6 +126,18 @@ final class NowPlayingController {
             guard let event = event as? MPSkipIntervalCommandEvent else { return .commandFailed }
             let target = player.currentTime() - CMTime(seconds: event.interval, preferredTimescale: 1)
             player.seek(to: target)
+            return .success
+        }
+
+        // Lock screen / Control Center scrubber.
+        center.changePlaybackPositionCommand.removeTarget(nil)
+        center.changePlaybackPositionCommand.addTarget { event in
+            guard let event = event as? MPChangePlaybackPositionCommandEvent else { return .commandFailed }
+            player.seek(
+                to: CMTime(seconds: event.positionTime, preferredTimescale: 600),
+                toleranceBefore: .zero,
+                toleranceAfter: .zero
+            )
             return .success
         }
     }

@@ -130,8 +130,13 @@ final class PlaybackStore {
         state = .loading
         stereoFallbackNotice = nil
         configureAudioSession()
+        let diagnostics = DiagnosticsHub.shared
+        diagnostics.record(.playbackStartRequested)
+        let startupInterval = diagnostics.beginInterval("PlaybackStartup")
 
         guard let itemID = item.id else {
+            diagnostics.endInterval("PlaybackStartup", startupInterval)
+            diagnostics.record(.playbackFailed)
             state = .failed(String(localized: "This item can't be played.", comment: "Playback error: item has no playable identifier"))
             return
         }
@@ -203,12 +208,19 @@ final class PlaybackStore {
                 addProgressObserver(player: player)
             }
             state = .ready
+            diagnostics.endInterval("PlaybackStartup", startupInterval)
+            diagnostics.record(.playbackStarted(
+                usingTranscoding: resolution?.isTranscoding == true,
+                usingLocalFile: localURL != nil
+            ))
             reportPlaybackStart(context: context, player: player)
             player.play()
             await loadNextUpIfNeeded()
         } catch {
+            diagnostics.endInterval("PlaybackStartup", startupInterval)
             let gusError = GusError(from: error)
             guard !gusError.isCancellation else { return } // dismissed before playback resolved
+            diagnostics.record(.playbackFailed)
             logger.error("Playback prepare failed: \(gusError.localizedDescription, privacy: .public)")
             state = .failed(gusError.localizedDescription)
         }

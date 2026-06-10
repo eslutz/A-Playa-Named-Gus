@@ -21,6 +21,20 @@
 	<key>CFBundleVersion</key>
 	<string>$(CURRENT_PROJECT_VERSION)</string>
 
+	<!-- gus:// deep links: fixed app destinations used by the tvOS Top Shelf
+	     extension, menu commands, and screenshot automation (see AppRoute). -->
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>dev.ericslutz.gus</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>gus</string>
+			</array>
+		</dict>
+	</array>
+
 	<!-- Export-compliance: no non-exempt encryption. -->
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
@@ -42,11 +56,25 @@
 		<string>audio</string>
 	</array>
 
-	<!-- Required for visionOS ImmersiveSpace presentation alongside the main window. -->
+	<!-- Required for visionOS ImmersiveSpace presentation alongside the main window.
+	     The CarPlay template scene is declared here but only activates when the app
+	     carries the Apple-granted carplay-audio entitlement (Config/Gus-CarPlay.entitlements). -->
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
 		<true/>
+		<key>UISceneConfigurations</key>
+		<dict>
+			<key>CPTemplateApplicationSceneSessionRoleApplication</key>
+			<array>
+				<dict>
+					<key>UISceneConfigurationName</key>
+					<string>GusCarPlay</string>
+					<key>UISceneDelegateClassName</key>
+					<string>$(PRODUCT_MODULE_NAME).GusCarPlaySceneDelegate</string>
+				</dict>
+			</array>
+		</dict>
 	</dict>
 
 	<key>UILaunchScreen</key>

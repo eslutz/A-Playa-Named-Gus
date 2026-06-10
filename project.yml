@@ -32,6 +32,11 @@ packages:
   JellyfinSDK:
     url: https://github.com/jellyfin/jellyfin-sdk-swift
     from: "2.1.0"
+  # EPUB rendering for the in-app book reader. iOS/iPadOS/visionOS only — see
+  # Documentation/adr/0009-readium-epub-reader.md for the dependency-rule exception.
+  Readium:
+    url: https://github.com/readium/swift-toolkit
+    from: "3.9.0"
 
 targets:
   Gus:
@@ -50,6 +55,22 @@ targets:
       - sdk: AppIntents.framework
       - package: JellyfinSDK
         product: JellyfinAPI
+      # Readium links only into the destinations that have the in-app reader.
+      # visionOS is blocked upstream (ReadiumStreamer uses AVAsset.metadata, which is
+      # unavailable on xrOS) — add visionOS to these filters once readium/swift-toolkit
+      # compiles for it. tvOS/macOS stay details/share-sheet only by design.
+      - package: Readium
+        product: ReadiumShared
+        destinationFilters: [iOS]
+      - package: Readium
+        product: ReadiumStreamer
+        destinationFilters: [iOS]
+      - package: Readium
+        product: ReadiumNavigator
+        destinationFilters: [iOS]
+      - package: Readium
+        product: ReadiumAdapterGCDWebServer
+        destinationFilters: [iOS]
       - target: GusTopShelf
         destinationFilters: [tvOS]
         embed: true

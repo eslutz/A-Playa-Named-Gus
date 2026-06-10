@@ -7,10 +7,23 @@ extension View {
     /// `navigationDestination` declarations on the same stack.
     func gusItemDestinations() -> some View {
         navigationDestination(for: LibraryRef.self) { ref in
-            LibraryGridView(library: ref.item)
+            if ref.item.collectionType == .livetv {
+                LiveTVView()
+            } else {
+                LibraryGridView(library: ref.item)
+            }
         }
         .navigationDestination(for: ItemRef.self) { ref in
-            ItemDetailView(item: ref.item)
+            switch ref.item.type {
+            case .musicAlbum, .playlist:
+                AlbumDetailView(album: ref.item)
+            case .musicArtist:
+                ArtistAlbumsView(artist: ref.item)
+            case .photo:
+                PhotoViewerView(photo: ref.item)
+            default:
+                ItemDetailView(item: ref.item)
+            }
         }
     }
 }

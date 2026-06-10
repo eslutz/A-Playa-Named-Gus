@@ -217,7 +217,10 @@ private struct PlaybackOptionsOverlay: View {
 }
 
 private struct PlaybackOptionsMenu: View {
+    @Environment(SessionStore.self) private var session
     let store: PlaybackStore
+
+    @State private var syncPlay: SyncPlayStore?
 
     var body: some View {
         Menu {
@@ -269,6 +272,10 @@ private struct PlaybackOptionsMenu: View {
                     }
                 }
             }
+
+            if let syncPlay, syncPlay.isSupported {
+                syncPlaySection(syncPlay)
+            }
         } label: {
             Image(systemName: "ellipsis.circle.fill")
                 .font(.title2)
@@ -276,6 +283,41 @@ private struct PlaybackOptionsMenu: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel("Playback Options")
+        .task {
+            if syncPlay == nil {
+                let store = SyncPlayStore(session: session, player: store.player)
+                syncPlay = store
+                await store.loadGroups()
+            }
+        }
+        .onDisappear {
+            syncPlay?.stop()
+        }
+    }
+
+    private func syncPlaySection(_ syncPlay: SyncPlayStore) -> some View {
+        Section("SyncPlay") {
+            if syncPlay.isInGroup {
+                Button(role: .destructive) {
+                    Task { await syncPlay.leave() }
+                } label: {
+                    Label("Leave Watch Party", systemImage: "person.2.slash")
+                }
+            } else {
+                ForEach(syncPlay.groups) { group in
+                    Button {
+                        Task { await syncPlay.join(groupID: group.id) }
+                    } label: {
+                        Label("Join \(group.name) (\(group.participants.count))", systemImage: "person.2")
+                    }
+                }
+                Button {
+                    Task { await syncPlay.createGroup(named: String(localized: "Gus Watch Party", comment: "Default SyncPlay group name")) }
+                } label: {
+                    Label("Start Watch Party", systemImage: "person.2.badge.plus")
+                }
+            }
+        }
     }
 }
 
@@ -304,14 +346,20 @@ private struct PlaybackOptionsMenu: View {
 #endif
 
 /// Platform-divergent player surface.
+///
+/// SwiftUI `VideoPlayer` exposes no Picture in Picture, so iOS/iPadOS and macOS use the
+/// AVKit controller/view surfaces, which provide the PiP button and (on iOS) automatic
+/// PiP when the app is backgrounded. visionOS keeps `VideoPlayer` (no PiP there).
 private struct PlayerSurface: View {
     let player: AVPlayer
 
     var body: some View {
         #if os(tvOS)
             TVPlayerSurface(player: player)
-        #else
+        #elseif os(visionOS)
             VideoPlayer(player: player)
+        #else
+            PiPCapablePlayerSurface(player: player)
         #endif
     }
 }
@@ -331,6 +379,48 @@ private struct PlayerSurface: View {
         func updateUIViewController(_ controller: AVPlayerViewController, context: Context) {
             if controller.player !== player {
                 controller.player = player
+            }
+        }
+    }
+
+#elseif os(iOS)
+    /// iOS/iPadOS `AVPlayerViewController` surface with Picture in Picture enabled,
+    /// including automatic PiP on backgrounding (requires the `audio` background mode,
+    /// declared in Info.plist).
+    private struct PiPCapablePlayerSurface: UIViewControllerRepresentable {
+        let player: AVPlayer
+
+        func makeUIViewController(context: Context) -> AVPlayerViewController {
+            let controller = AVPlayerViewController()
+            controller.player = player
+            controller.allowsPictureInPicturePlayback = true
+            controller.canStartPictureInPictureAutomaticallyFromInline = true
+            return controller
+        }
+
+        func updateUIViewController(_ controller: AVPlayerViewController, context: Context) {
+            if controller.player !== player {
+                controller.player = player
+            }
+        }
+    }
+
+#elseif os(macOS)
+    /// macOS `AVPlayerView` surface with Picture in Picture enabled.
+    private struct PiPCapablePlayerSurface: NSViewRepresentable {
+        let player: AVPlayer
+
+        func makeNSView(context: Context) -> AVPlayerView {
+            let view = AVPlayerView()
+            view.player = player
+            view.allowsPictureInPicturePlayback = true
+            view.controlsStyle = .floating
+            return view
+        }
+
+        func updateNSView(_ view: AVPlayerView, context: Context) {
+            if view.player !== player {
+                view.player = player
             }
         }
     }

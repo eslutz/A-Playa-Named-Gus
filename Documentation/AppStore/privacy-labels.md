@@ -52,11 +52,21 @@ Playa Named Gus source code.
 | NSLocalNetworkUsageDescription | User-initiated Jellyfin server discovery over local-network UDP broadcast. Manual URL entry remains primary. |
 | UIBackgroundModes: audio | Media playback continuation, Now Playing, and system transport controls via AVKit. |
 
-## Remaining Submission Steps
+## Diagnostics
 
-- Revisit crash and diagnostics disclosures once the Diagnostics & Reliability initiative
-  adds Apple-native crash reporting and MetricKit handling, confirming whether any
-  developer-visible diagnostics change the privacy statement.
+The Diagnostics & Reliability implementation does not change the answers above:
+
+- MetricKit payloads are delivered on-device; `MetricKitCollector` normalizes them into
+  aggregate summaries stored only in the app's Application Support directory. Nothing is
+  transmitted to the developer.
+- `DiagnosticsHub` lifecycle markers carry only numeric/boolean values by construction
+  and stay in the unified log / in-memory buffer on the device.
+- Crash and metrics data in Xcode Organizer / App Store Connect comes from Apple's own
+  opt-in "Share With App Developers" mechanism, which Apple discloses to the user; the
+  app itself still collects nothing.
+- No new required-reason APIs were introduced; `PrivacyInfo.xcprivacy` is unchanged.
+
+## Remaining Submission Steps
 - Add the privacy policy URL for iOS, iPadOS, macOS, and visionOS in App Store Connect.
 - Add tvOS privacy policy text in the Apple TV Privacy Policy field.
 - Complete App Privacy answers in App Store Connect, using this document as the source.

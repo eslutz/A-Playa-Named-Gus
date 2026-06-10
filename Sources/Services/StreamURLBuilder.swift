@@ -232,6 +232,25 @@ struct StreamURLBuilder {
         )
     }
 
+    /// Builds an authenticated `/Audio/{id}/universal` URL. The endpoint direct-plays
+    /// AVPlayer-native audio containers and transparently transcodes everything else,
+    /// so `AVPlayer` always receives playable audio.
+    func universalAudioURL(for itemID: String) throws -> URL {
+        let parameters = Paths.GetUniversalAudioStreamParameters(
+            container: ["mp3", "aac", "m4a", "m4b", "flac", "alac", "wav"],
+            deviceID: DeviceIdentity.deviceID,
+            userID: userID,
+            maxStreamingBitrate: 12_000_000,
+            transcodingContainer: "mp3",
+            transcodingProtocol: .http
+        )
+        let request = Paths.getUniversalAudioStream(itemID: itemID, parameters: parameters)
+        guard let url = client.url(with: request, queryAPIKey: true) else {
+            throw StreamError.noURL
+        }
+        return url
+    }
+
     private func authenticatedPlaybackURL(path: String) -> URL? {
         guard let url = client.url(path: path) else { return nil }
         return Self.appendingAPIKeyIfNeeded(to: url, accessToken: client.accessToken)

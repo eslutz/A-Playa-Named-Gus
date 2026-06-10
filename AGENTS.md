@@ -16,9 +16,11 @@ writing anything bespoke (a control, a cache, a router, a theming system), look 
 system API that already does it and use that instead. The first-party *feel* comes from
 using the system's adaptive components and **never overriding their look**.
 
-- The **only** third-party *runtime* dependency is `jellyfin-sdk-swift` (`from: 2.1.0`).
-  Do not add others without an explicit decision. (XcodeGen is a build-time dev tool, not
-  a shipped dependency, and doesn't count against this rule.)
+- Third-party *runtime* dependencies are limited to `jellyfin-sdk-swift` (`from: 2.1.0`)
+  plus, on iOS/iPadOS only, the Readium toolkit for in-app EPUB reading (ADR 0009 — no
+  system API renders EPUB; tvOS/macOS don't link it by design, visionOS is blocked on an
+  upstream xrOS compile fix). Do not add others without an explicit ADR. (XcodeGen is a
+  build-time dev tool, not a shipped dependency, and doesn't count against this rule.)
 - When a feature could be built custom or with a system API, the system API wins unless
   it genuinely can't do the job — and that exception should be called out in the PR/commit.
 
@@ -100,14 +102,36 @@ lifecycle (`@main struct GusApp: App`), no AppDelegate. Source is layered under 
 App/        @main entry + RootView (signed-out vs signed-in switch)
 Models/     Codable value types (ServerConnection, StoredUser, SessionCredential)
 Services/   Stateless helpers: client factory, device identity, Keychain, persistence,
-            image/stream URL builders
-Stores/     @Observable state objects (the "view models")
-Features/   One folder per screen area (Connect, Home, Item, Player, Settings)
+            image/stream URL builders, diagnostics (DiagnosticsHub/MetricKitCollector),
+            content rating gate, SyncPlay socket
+Stores/     @Observable state objects (the "view models"), incl. AudioPlayerStore
+            (song/audiobook queue engine) and SyncPlayStore (Jellyfin-gated)
+Features/   One folder per screen area (Connect, Home, Item, Player, Settings, Music,
+            Photos, LiveTV)
 SharedUI/   Reusable views (AsyncPoster, PosterCard, LoadingStateView) + display helpers
 Platform/   ALL #if os(...) divergence lives here (RootContainer, modifiers, nav)
 Immersive/  visionOS-only RealityKit "Gus Cinema"
 TopShelf/   tvOS Top Shelf extension entry point
+CarPlay/    iOS-only CarPlay audio templates (inert until the carplay-audio entitlement
+            is granted — see Documentation/AppStore/signing-capabilities.md)
 ```
+
+**Audio vs video playback.** Video stays in `PlaybackStore` (pure AVKit surfaces; the
+iOS/iPadOS surface is `AVPlayerViewController` with PiP, macOS `AVPlayerView`, tvOS the
+focus-engine controller, visionOS SwiftUI `VideoPlayer`). Songs and audiobooks play
+through `AudioPlayerStore` + `AudioPlayerView` (queue, shuffle/repeat, playback speed,
+chapters) over the Jellyfin universal audio endpoint; `playerPresentation` routes by
+`MediaItem.isAudioPlayable`.
+
+**Diagnostics.** `DiagnosticsHub` records privacy-safe lifecycle markers (numeric/boolean
+payloads only) and OSSignposter intervals; `MetricKitCollector` normalizes MetricKit
+payloads into local `DiagnosticSummary` records (no tvOS MetricKit; macOS diagnostics
+only). No third-party analytics — see `Documentation/AppStore/diagnostics-reliability.md`.
+
+**Demo server.** `Scripts/demo-server.sh` runs a local Jellyfin container over the
+rights-cleared `sample_media/` folder (git-ignored). Debug builds sign straight in via
+the `--gus-demo-server` launch argument or the Connect screen's demo button —
+`Documentation/AppStore/demo-server.md`.
 
 **State & dependency injection.** State objects are **Observation-framework**
 `@Observable @MainActor` classes (not `ObservableObject`/Combine). They are injected via

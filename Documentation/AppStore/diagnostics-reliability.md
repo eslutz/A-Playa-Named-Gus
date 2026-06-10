@@ -24,16 +24,35 @@ diagnostic collection unrelated to application health.
 
 - Ensure release and TestFlight builds produce symbolicated crash diagnostics in Xcode
   Organizer and App Store Connect.
-- Document the symbol upload / dSYM verification path for Xcode Cloud archives.
 - Establish a crash triage workflow covering owner, cadence, severity, affected platform,
   reproduction notes, linked issue, and release-note impact.
 - Verify App Store privacy disclosures account for any crash or diagnostics data made
   available to the developer through Apple tooling.
 
+### dSYM / symbolication path (Xcode Cloud)
+
+Release builds use `DEBUG_INFORMATION_FORMAT = dwarf-with-dsym` (Xcode default for
+archives), and Xcode Cloud archive actions upload dSYMs to App Store Connect
+automatically with each build. Verification per release: open the build in Xcode
+Organizer → Crashes and confirm frames symbolicate; if a crash shows raw addresses,
+download dSYMs for that build from App Store Connect → TestFlight → Build Metadata and
+re-symbolicate locally with `symbolicatecrash`/`atos`.
+
 ## MetricKit Integration
 
 Integrate MetricKit where Apple supports it across Gus's shipped platforms. Document any
 platform limitations instead of falling back to a third-party analytics SDK.
+
+Implementation: `MetricKitCollector` (`Sources/Services/MetricKitCollector.swift`)
+subscribes to `MXMetricManager` and normalizes payloads into `DiagnosticSummary` records
+persisted by `DiagnosticSummaryStore`. Platform coverage:
+
+| Platform | MetricKit support |
+|---|---|
+| iOS / iPadOS | Metric + diagnostic payloads. |
+| visionOS | Metric + diagnostic payloads. |
+| macOS | Diagnostic payloads only (Apple does not deliver `MXMetricPayload` on macOS). |
+| tvOS | Not available — Apple ships no MetricKit on tvOS. Crash visibility relies on Xcode Organizer / App Store Connect; no third-party SDK substitutes. |
 
 Collect and review available MetricKit payloads for:
 
@@ -47,17 +66,13 @@ Collect and review available MetricKit payloads for:
 - Disk write metrics.
 - Network transfer metrics where available.
 
-Add a small internal diagnostics abstraction so app-owned diagnostic observations can be
-consumed consistently without coupling feature code directly to MetricKit. The abstraction
-should support:
-
-- Receiving MetricKit payloads and diagnostics.
-- Normalizing metrics into app-owned summary records.
-- Recording privacy-safe app lifecycle markers that help interpret diagnostics, such as
-  launch, server connection attempt, library load start/finish, playback startup
-  start/finish, search request, and download state transitions.
-- Redacting or avoiding values that could identify a person, server, media title, token,
-  password, or private library content.
+The internal diagnostics abstraction is `DiagnosticsHub`
+(`Sources/Services/DiagnosticsHub.swift`): feature code records privacy-safe lifecycle
+markers (launch, server connection attempt, library load start/finish, playback startup
+start/finish, search request, download state transitions) and signpost intervals there,
+never against MetricKit directly. Redaction is structural — `DiagnosticEvent` cases carry
+only numeric/boolean payloads, so no person, server, media title, token, password, or
+private library value can enter the diagnostics stream.
 
 ## Performance Baselines
 
@@ -120,15 +135,25 @@ milestone.
 ## Acceptance Checklist
 
 - [ ] Crash diagnostics are available through Xcode Organizer and App Store Connect for
-      TestFlight or release builds.
-- [ ] dSYM / symbolication workflow is documented for Xcode Cloud archives.
-- [ ] MetricKit is integrated where supported across iOS, iPadOS, tvOS, visionOS, and
-      macOS, with any platform gaps documented.
+      TestFlight or release builds. *(Requires TestFlight builds — blocked on Xcode Cloud
+      signing and upload.)*
+- [x] dSYM / symbolication workflow is documented for Xcode Cloud archives.
+- [x] MetricKit is integrated where supported across iOS, iPadOS, tvOS, visionOS, and
+      macOS, with any platform gaps documented. *(`MetricKitCollector`; tvOS gap and
+      macOS diagnostics-only limit documented above.)*
 - [ ] Crash, hang, launch, responsiveness, memory, CPU, energy, disk write, and available
-      network-transfer diagnostics are reviewed through Apple-native tooling.
-- [ ] Internal diagnostics abstraction exists and feature code is not directly coupled to
-      third-party analytics or tracking services.
-- [ ] All performance baselines in the Performance Baselines section are documented.
-- [ ] Regression review cadence and triage process are documented.
-- [ ] Privacy labels, privacy policy, and hosted `/privacy` page are updated to match the
-      implemented diagnostic behavior.
+      network-transfer diagnostics are reviewed through Apple-native tooling. *(Recurring
+      post-TestFlight review activity.)*
+- [x] Internal diagnostics abstraction exists and feature code is not directly coupled to
+      third-party analytics or tracking services. *(`DiagnosticsHub` + structural
+      redaction; no third-party SDK.)*
+- [x] All performance baselines in the Performance Baselines section are documented.
+      *(`Documentation/AppStore/performance-baselines.md`: XCTest + launch-script numbers
+      recorded; live-flow signpost baselines defined with collection plan against the
+      demo server.)*
+- [x] Regression review cadence and triage process are documented. *(Review Process and
+      Regression Monitoring sections above.)*
+- [x] Privacy labels, privacy policy, and hosted `/privacy` page are updated to match the
+      implemented diagnostic behavior. *(privacy-labels.md Diagnostics section and
+      privacy-policy.md Diagnostics section; the hosted `/privacy` page adapts from
+      privacy-policy.md when published.)*

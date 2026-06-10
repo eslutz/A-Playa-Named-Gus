@@ -427,6 +427,35 @@ private final class FakeMediaProviderSession: MediaProviderSession {
         )
     }
 
+    func resolveAudioPlayback(for itemID: String) async throws -> PlaybackSourceResolution {
+        PlaybackSourceResolution(
+            url: URL(string: "https://example.com/audio.mp3")!,
+            playSessionID: nil,
+            mediaSourceID: nil,
+            playMethod: .directStream,
+            stereoLayout: .none,
+            stereoFallbackReason: nil
+        )
+    }
+
+    func liveTVIsEnabled() async -> Bool {
+        false
+    }
+
+    func liveTVChannels(startIndex: Int, limit: Int) async throws -> MediaItemPage {
+        MediaItemPage(items: [], totalRecordCount: 0)
+    }
+
+    func liveTVRecordings(limit: Int) async throws -> [MediaItem] {
+        []
+    }
+
+    func liveTVTimers() async throws -> [LiveTVTimer] {
+        []
+    }
+
+    func cancelLiveTVTimer(id: String) async throws {}
+
     func downloadSource(for item: MediaItem) async throws -> DownloadSourceResolution {
         downloadSourceCallCount += 1
         return DownloadSourceResolution(
@@ -441,4 +470,15 @@ private final class FakeMediaProviderSession: MediaProviderSession {
     func reportPlaybackProgress(context: PlaybackReportContext, positionTicks: Int, isPaused: Bool) async throws {}
 
     func reportPlaybackStopped(context: PlaybackReportContext, positionTicks: Int) async throws {}
+
+    var reportedBookProgress: (itemID: String, fraction: Double)?
+    var storedBookProgress: Double?
+
+    func reportBookProgress(itemID: String, fraction: Double) async throws {
+        reportedBookProgress = (itemID, fraction)
+    }
+
+    func bookProgress(itemID: String) async throws -> Double? {
+        storedBookProgress
+    }
 }

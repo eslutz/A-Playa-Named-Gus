@@ -133,6 +133,7 @@ final class AppModel {
         let client = JellyfinClientFactory.makeClient(url: server.url, accessToken: token)
         currentSession = SessionStore(client: client, user: user, server: server)
         lastSessionAccount = SessionCredential(user: user).account
+        DiagnosticsHub.shared.record(.sessionRestored)
         logger.info("Restored session for user \(user.name, privacy: .public)")
     }
 
@@ -153,6 +154,18 @@ final class AppModel {
     }
 
     #if DEBUG
+        /// Connects and signs in to the local demo Jellyfin container started by
+        /// `Scripts/demo-server.sh` — a real signed-in session over the rights-cleared
+        /// demo library, used for screenshots and reviewer/tester walkthroughs.
+        func connectToLocalDemoServer() async {
+            do {
+                let server = try await connect(to: "http://localhost:8096")
+                try await signIn(to: server, username: "gus", password: "playa-demo")
+            } catch {
+                logger.error("Demo server connect failed: \(error.localizedDescription, privacy: .public)")
+            }
+        }
+
         /// Installs an in-memory signed-in session for simulator screenshots and UI tests.
         /// This intentionally avoids `ServerStore`, `TokenStore`, and `UserDefaults` writes.
         func installDebugPreviewSession() {
@@ -184,6 +197,9 @@ final class AppModel {
     func connect(to rawURL: String) async throws -> ServerConnection {
         let url = try Self.normalizeURL(rawURL)
         let client = JellyfinClientFactory.makeClient(url: url)
+        let diagnostics = DiagnosticsHub.shared
+        diagnostics.record(.serverConnectStarted)
+        let connectInterval = diagnostics.beginInterval("ServerConnect")
 
         let info: PublicSystemInfo
         let baseURL: URL
@@ -194,9 +210,13 @@ final class AppModel {
                 responseURL: (response.response as? HTTPURLResponse)?.url,
                 fallback: url
             )
+            diagnostics.endInterval("ServerConnect", connectInterval)
+            diagnostics.record(.serverConnectSucceeded)
         } catch {
+            diagnostics.endInterval("ServerConnect", connectInterval)
             let gusError = GusError(from: error)
             guard !gusError.isCancellation else { throw error }
+            diagnostics.record(.serverConnectFailed)
             logger.error("Connect failed: \(gusError.localizedDescription, privacy: .public)")
             throw ConnectError.unreachable(gusError.localizedDescription)
         }
