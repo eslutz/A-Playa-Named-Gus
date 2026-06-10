@@ -34,11 +34,11 @@ struct VideoPlayerView: View {
                         Color.black
                             .ignoresSafeArea()
                     } else {
-                        PlayerSurface(player: player)
+                        PlayerSurface(player: player, store: store)
                             .ignoresSafeArea()
                     }
                 #else
-                    PlayerSurface(player: player)
+                    PlayerSurface(player: player, store: store)
                         .ignoresSafeArea()
                 #endif
             } else if case let .failed(message)? = store?.state {
@@ -59,37 +59,34 @@ struct VideoPlayerView: View {
             Button {
                 dismiss()
             } label: {
-                Image(systemName: "xmark.circle.fill")
-                    .font(.title)
-                    .symbolRenderingMode(.hierarchical)
-                    .padding()
+                Image(systemName: "xmark")
+                    .font(.body.weight(.semibold))
+                    .padding(12)
             }
             .buttonStyle(.plain)
+            .gusGlassSurface(in: Circle())
             .tint(.white)
-            .padding(8)
+            .foregroundStyle(.white)
+            .padding()
             .accessibilityLabel("Close Player")
         }
         #endif
-        #if !os(tvOS) && !os(visionOS)
-        .overlay(alignment: .topTrailing) {
-            if let store {
-                PlaybackOptionsOverlay(store: store)
-                    .padding()
-            }
-        }
-        #endif
-        #if os(visionOS)
+        #if !os(tvOS)
         .overlay(alignment: .topTrailing) {
             if let store {
                 VStack(alignment: .trailing, spacing: 8) {
-                    if store.isSpatialPlaybackActive {
-                        SpatialPlaybackBadge()
-                    }
+                    PlaybackOptionsOverlay(store: store)
+                    #if os(visionOS)
+                        if store.isSpatialPlaybackActive {
+                            SpatialPlaybackBadge()
+                        }
 
-                    if let notice = store.stereoFallbackNotice {
-                        StereoFallbackNotice(text: notice)
-                    }
+                        if let notice = store.stereoFallbackNotice {
+                            StereoFallbackNotice(text: notice)
+                        }
+                    #endif
                 }
+                .padding()
             }
         }
         #endif
@@ -127,6 +124,7 @@ struct VideoPlayerView: View {
                 return
             }
 
+            stereoRenderer?.invalidate()
             let renderer = StereoFrameRenderer(player: player, layout: layout)
             stereoRenderer = renderer
             cinema.present(player: player, title: item.displayTitle, stereoLayout: layout, stereoRenderer: renderer)
@@ -176,7 +174,7 @@ struct VideoPlayerView: View {
                 .labelStyle(.titleAndIcon)
                 .padding(.horizontal, 12)
                 .padding(.vertical, 8)
-                .background(.ultraThinMaterial, in: Capsule())
+                .gusGlassCapsule()
                 .foregroundStyle(.white)
                 .padding()
                 .accessibilityLabel("Spatial")
@@ -192,7 +190,7 @@ struct VideoPlayerView: View {
                 .labelStyle(.titleAndIcon)
                 .padding(.horizontal, 12)
                 .padding(.vertical, 8)
-                .background(.ultraThinMaterial, in: Capsule())
+                .gusGlassCapsule()
                 .foregroundStyle(.white)
                 .padding(.horizontal)
                 .accessibilityLabel(text)
@@ -211,7 +209,7 @@ private struct PlaybackOptionsOverlay: View {
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 6)
-        .background(.ultraThinMaterial, in: Capsule())
+        .gusGlassCapsule()
         .foregroundStyle(.white)
     }
 }
@@ -273,6 +271,10 @@ private struct PlaybackOptionsMenu: View {
                 }
             }
 
+            #if os(visionOS)
+                ViewingModeMenu(store: store)
+            #endif
+
             if let syncPlay, syncPlay.isSupported {
                 syncPlaySection(syncPlay)
             }
@@ -285,10 +287,16 @@ private struct PlaybackOptionsMenu: View {
         .accessibilityLabel("Playback Options")
         .task {
             if syncPlay == nil {
-                let store = SyncPlayStore(session: session, player: store.player)
-                syncPlay = store
-                await store.loadGroups()
+                let syncPlayStore = SyncPlayStore(session: session)
+                syncPlay = syncPlayStore
+                await syncPlayStore.loadGroups()
             }
+            syncPlay?.attachPlayer(store.player)
+        }
+        // PlaybackStore rebuilds its AVPlayer across Play Next; re-attach so SyncPlay
+        // commands and observers always target the live player.
+        .task(id: store.player == nil) {
+            syncPlay?.attachPlayer(store.player)
         }
         .onDisappear {
             syncPlay?.stop()
@@ -352,10 +360,11 @@ private struct PlaybackOptionsMenu: View {
 /// PiP when the app is backgrounded. visionOS keeps `VideoPlayer` (no PiP there).
 private struct PlayerSurface: View {
     let player: AVPlayer
+    let store: PlaybackStore
 
     var body: some View {
         #if os(tvOS)
-            TVPlayerSurface(player: player)
+            TVPlayerSurface(player: player, store: store)
         #elseif os(visionOS)
             VideoPlayer(player: player)
         #else
@@ -365,14 +374,19 @@ private struct PlayerSurface: View {
 }
 
 #if os(tvOS)
-    /// tvOS-native `AVPlayerViewController`, which provides the full focus-engine transport.
+    /// tvOS-native `AVPlayerViewController`, which provides the full focus-engine
+    /// transport. Jellyfin stream selection (server-side audio/subtitle indexes) and
+    /// chapters ride the transport bar's custom menus — AVKit's own media-selection
+    /// menu only covers HLS alternates, which transcoded streams don't carry.
     private struct TVPlayerSurface: UIViewControllerRepresentable {
         let player: AVPlayer
+        let store: PlaybackStore
 
         func makeUIViewController(context: Context) -> AVPlayerViewController {
             let controller = AVPlayerViewController()
             controller.player = player
             controller.allowsPictureInPicturePlayback = false
+            controller.transportBarCustomMenuItems = transportMenuItems()
             return controller
         }
 
@@ -380,6 +394,68 @@ private struct PlayerSurface: View {
             if controller.player !== player {
                 controller.player = player
             }
+            controller.transportBarCustomMenuItems = transportMenuItems()
+        }
+
+        private func transportMenuItems() -> [UIMenuElement] {
+            let store = store
+            var menus: [UIMenuElement] = []
+
+            let audioOptions = store.audioOptions
+            if !audioOptions.isEmpty {
+                menus.append(UIMenu(
+                    title: String(localized: "Audio", comment: "Player audio track menu"),
+                    image: UIImage(systemName: "waveform"),
+                    options: .singleSelection,
+                    children: audioOptions.map { option in
+                        UIAction(
+                            title: option.title,
+                            state: store.selectedAudioStreamIndex == option.id ? .on : .off
+                        ) { _ in
+                            Task { await store.selectAudioStream(index: option.id) }
+                        }
+                    }
+                ))
+            }
+
+            let subtitleOptions = store.subtitleOptions
+            if !subtitleOptions.isEmpty {
+                let off = UIAction(
+                    title: String(localized: "Off", comment: "Subtitles off"),
+                    state: store.selectedSubtitleStreamIndex == nil ? .on : .off
+                ) { _ in
+                    Task { await store.selectSubtitleStream(index: nil) }
+                }
+                let options = subtitleOptions.map { option in
+                    UIAction(
+                        title: option.title,
+                        state: store.selectedSubtitleStreamIndex == option.id ? .on : .off
+                    ) { _ in
+                        Task { await store.selectSubtitleStream(index: option.id) }
+                    }
+                }
+                menus.append(UIMenu(
+                    title: String(localized: "Subtitles", comment: "Player subtitles menu"),
+                    image: UIImage(systemName: "captions.bubble"),
+                    options: .singleSelection,
+                    children: [off] + options
+                ))
+            }
+
+            let chapters = store.chapterTargets
+            if !chapters.isEmpty {
+                menus.append(UIMenu(
+                    title: String(localized: "Chapters", comment: "Player chapters menu"),
+                    image: UIImage(systemName: "list.bullet"),
+                    children: chapters.map { chapter in
+                        UIAction(title: chapter.title) { _ in
+                            Task { await store.seek(to: chapter) }
+                        }
+                    }
+                ))
+            }
+
+            return menus
         }
     }
 

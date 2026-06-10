@@ -27,6 +27,23 @@ struct LiveTVView: View {
             }
         }
         .playerPresentation(item: $playerItem)
+        .alert(
+            "Couldn't Cancel Recording",
+            isPresented: Binding(
+                get: { store?.actionErrorMessage != nil },
+                set: { isPresented in
+                    if !isPresented {
+                        store?.actionErrorMessage = nil
+                    }
+                }
+            )
+        ) {
+            Button("OK", role: .cancel) {
+                store?.actionErrorMessage = nil
+            }
+        } message: {
+            Text(store?.actionErrorMessage ?? "")
+        }
     }
 
     @ViewBuilder
@@ -42,7 +59,8 @@ struct LiveTVView: View {
                 state: store.state,
                 isEmpty: store.channels.isEmpty && store.recordings.isEmpty && store.timers.isEmpty,
                 emptyTitle: "No Live TV Content",
-                emptySymbol: "antenna.radiowaves.left.and.right"
+                emptySymbol: "antenna.radiowaves.left.and.right",
+                retryAction: { Task { await store.load() } }
             ) {
                 VStack(spacing: 0) {
                     Picker("Section", selection: $section) {
@@ -207,6 +225,9 @@ final class LiveTVStore {
     private(set) var channels: [MediaItem] = []
     private(set) var recordings: [MediaItem] = []
     private(set) var timers: [LiveTVTimer] = []
+    /// Row-level action failures (e.g. canceling a recording) — surfaced as an alert,
+    /// never by replacing the loaded screen.
+    var actionErrorMessage: String?
 
     private let session: SessionStore
 
@@ -247,7 +268,7 @@ final class LiveTVStore {
         } catch {
             let gusError = GusError(from: error)
             guard !gusError.isCancellation else { return }
-            state = .failed(gusError.localizedDescription)
+            actionErrorMessage = gusError.localizedDescription
         }
     }
 }

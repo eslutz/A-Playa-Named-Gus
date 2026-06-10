@@ -29,12 +29,17 @@ present.
 
 ## ATS / Self-Hosted HTTP
 
-`NSAllowsArbitraryLoads = true` is set in `Info.plist`. Justification for App Review:
-A Playa Named Gus is a client for user-provided Jellyfin media servers. Many self-hosted
-Jellyfin deployments run plain HTTP on a private LAN and cannot be required to obtain a
-public TLS certificate. A Playa Named Gus cannot know at build time which servers users
-will connect to. This is the standard justification for third-party-server client apps per the
-[ATS exception guidelines](https://developer.apple.com/documentation/security/preventing-insecure-network-connections).
+ATS is scoped, not disabled: `Info.plist` sets `NSAllowsArbitraryLoads = false` with
+`NSAllowsLocalNetworking = true`. Self-hosted Jellyfin servers on a private LAN (the
+common plain-HTTP case) work without a wildcard exemption, loopback is exempt by
+default, and **remote** servers must speak TLS. Connect tries `https://` first for
+schemeless addresses and falls back to `http://`, which ATS then only permits for
+local-network hosts. No App Review ATS justification is required for this configuration.
+
+Access tokens ride in stream/WebSocket URL query strings (`api_key`) because
+AVPlayer/HLS fetches cannot carry auth headers — the standard Jellyfin-client pattern.
+Those URLs are treated as sensitive: they are never logged (OSLog statements log item
+ids only).
 
 ---
 

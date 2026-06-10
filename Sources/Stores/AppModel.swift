@@ -11,6 +11,12 @@ import OSLog
 @MainActor
 @Observable
 final class AppModel {
+    /// The app-wide instance. SwiftUI injects it via `@Environment`; non-SwiftUI entry
+    /// points (the CarPlay scene) read the same instance so there is a single source of
+    /// truth for the active session — a second `AppModel` would diverge on sign-out and
+    /// account switches.
+    static let shared = AppModel()
+
     enum ConnectError: LocalizedError {
         case invalidURL
         case unreachable(String)
@@ -193,41 +199,49 @@ final class AppModel {
     // MARK: - Connect
 
     /// Normalizes a URL, queries public system info, follows any redirect, and persists
-    /// the resulting `ServerConnection`.
+    /// the resulting `ServerConnection`. Schemeless addresses try `https://` first and
+    /// fall back to `http://` (which ATS only permits for local-network hosts).
     func connect(to rawURL: String) async throws -> ServerConnection {
-        let url = try Self.normalizeURL(rawURL)
-        let client = JellyfinClientFactory.makeClient(url: url)
+        let candidates = try Self.candidateURLs(for: rawURL)
         let diagnostics = DiagnosticsHub.shared
         diagnostics.record(.serverConnectStarted)
         let connectInterval = diagnostics.beginInterval("ServerConnect")
 
-        let info: PublicSystemInfo
-        let baseURL: URL
-        do {
-            let response = try await client.send(Paths.getPublicSystemInfo)
-            info = response.value
-            baseURL = Self.followRedirect(
-                responseURL: (response.response as? HTTPURLResponse)?.url,
-                fallback: url
-            )
-            diagnostics.endInterval("ServerConnect", connectInterval)
-            diagnostics.record(.serverConnectSucceeded)
-        } catch {
-            diagnostics.endInterval("ServerConnect", connectInterval)
-            let gusError = GusError(from: error)
-            guard !gusError.isCancellation else { throw error }
-            diagnostics.record(.serverConnectFailed)
-            logger.error("Connect failed: \(gusError.localizedDescription, privacy: .public)")
-            throw ConnectError.unreachable(gusError.localizedDescription)
+        var lastError: GusError?
+        for url in candidates {
+            let client = JellyfinClientFactory.makeClient(url: url)
+            do {
+                let response = try await client.send(Paths.getPublicSystemInfo)
+                let baseURL = Self.followRedirect(
+                    responseURL: (response.response as? HTTPURLResponse)?.url,
+                    fallback: url
+                )
+                diagnostics.endInterval("ServerConnect", connectInterval)
+                diagnostics.record(.serverConnectSucceeded)
+
+                let info = response.value
+                let server = ServerConnection(
+                    id: info.id ?? baseURL.absoluteString,
+                    name: info.serverName ?? baseURL.host ?? "Jellyfin",
+                    url: baseURL
+                )
+                upsert(server: server)
+                return server
+            } catch {
+                let gusError = GusError(from: error)
+                guard !gusError.isCancellation else {
+                    diagnostics.endInterval("ServerConnect", connectInterval)
+                    throw error
+                }
+                lastError = gusError
+            }
         }
 
-        let server = ServerConnection(
-            id: info.id ?? baseURL.absoluteString,
-            name: info.serverName ?? baseURL.host ?? "Jellyfin",
-            url: baseURL
-        )
-        upsert(server: server)
-        return server
+        diagnostics.endInterval("ServerConnect", connectInterval)
+        diagnostics.record(.serverConnectFailed)
+        let detail = lastError?.localizedDescription ?? ""
+        logger.error("Connect failed: \(detail, privacy: .public)")
+        throw ConnectError.unreachable(detail)
     }
 
     // MARK: - Sign in
@@ -317,7 +331,9 @@ final class AppModel {
     }
 
     private func upsert(user: StoredUser) {
-        if let index = users.firstIndex(where: { $0.id == user.id }) {
+        // Match on (id, serverID) — the same Jellyfin user id can exist on two servers,
+        // and sign-out removes on the same compound key.
+        if let index = users.firstIndex(where: { $0.id == user.id && $0.serverID == user.serverID }) {
             users[index] = user
         } else {
             users.append(user)
@@ -383,6 +399,19 @@ final class AppModel {
 
         guard let url = URL(string: string), url.host != nil else { throw ConnectError.invalidURL }
         return url
+    }
+
+    /// Connection attempts for a user-entered address. An explicit scheme is honored
+    /// as-is; schemeless input is tried as `https://` then `http://`.
+    nonisolated static func candidateURLs(for raw: String) throws -> [URL] {
+        let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        let url = try normalizeURL(trimmed)
+        guard !trimmed.contains("://") else { return [url] }
+
+        var components = URLComponents(url: url, resolvingAgainstBaseURL: false)
+        components?.scheme = "https"
+        guard let httpsURL = components?.url else { return [url] }
+        return [httpsURL, url]
     }
 
     /// Recovers the server base URL if the public-info request was redirected.

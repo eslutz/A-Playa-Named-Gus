@@ -1,13 +1,13 @@
 import Foundation
+import Get
 
 /// A small, typed error surface for A Playa Named Gus. Lower-level errors (cancellation, URL/network
 /// failures, and anything the Jellyfin SDK throws) are mapped into user-presentable
 /// messages via `init(from:)`.
 ///
-/// Note: we deliberately do **not** import `Get` (the SDK's transport package) to pattern
-/// match its `APIError` — the native-first mandate keeps `jellyfin-sdk-swift` the only
-/// declared dependency. HTTP-status nuance (e.g. 401) is mapped where we hold an
-/// `HTTPURLResponse`; the generic network/unknown paths cover thrown SDK errors.
+/// `Get` is jellyfin-sdk-swift's own transport package (not an extra dependency); its
+/// `APIError` carries the HTTP status, which is how expired tokens (401) become a
+/// "sign in again" message instead of an opaque failure.
 enum GusError: LocalizedError, Equatable {
     case network(String)
     case offline
@@ -59,10 +59,34 @@ enum GusError: LocalizedError, Equatable {
             default:
                 self = .network(urlError.localizedDescription)
             }
+        } else if let apiError = error as? APIError {
+            switch apiError {
+            case let .unacceptableStatusCode(statusCode):
+                self = Self.fromHTTPStatusCode(statusCode)
+            }
         } else if let gusError = error as? GusError {
             self = gusError
         } else {
             self = .unknown(error.localizedDescription)
+        }
+    }
+
+    static func fromHTTPStatusCode(_ statusCode: Int) -> GusError {
+        switch statusCode {
+        case 401, 403:
+            return .unauthorized
+        case 404:
+            return .notFound
+        case 500...:
+            return .server(String(
+                localized: "The server reported an error (\(statusCode)). Try again in a moment.",
+                comment: "Generic 5xx server error with status code"
+            ))
+        default:
+            return .network(String(
+                localized: "The server rejected the request (\(statusCode)).",
+                comment: "Generic non-success HTTP status error"
+            ))
         }
     }
 }

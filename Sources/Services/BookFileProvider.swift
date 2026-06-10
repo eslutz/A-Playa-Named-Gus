@@ -17,6 +17,23 @@ struct BookFileProvider {
         self.downloads = downloads
     }
 
+    /// Returns the book's file only if it is already on device (offline download or a
+    /// previously cached copy) — never touches the network. Lets the UI offer Share
+    /// immediately without eagerly downloading the whole book.
+    func existingLocalFile(for item: MediaItem) -> URL? {
+        if let downloaded = downloads?.localFileURL(for: item, serverID: session.server.id, userID: session.user.id) {
+            return downloaded
+        }
+        guard let itemID = item.id,
+              let caches = try? FileManager.default.url(for: .cachesDirectory, in: .userDomainMask, appropriateFor: nil, create: false)
+        else { return nil }
+        let directory = caches
+            .appendingPathComponent("Books", isDirectory: true)
+            .appendingPathComponent(itemID, isDirectory: true)
+        let contents = try? FileManager.default.contentsOfDirectory(at: directory, includingPropertiesForKeys: nil)
+        return contents?.first
+    }
+
     /// Returns a local file URL for the book, fetching it if needed.
     func localFile(for item: MediaItem) async throws -> URL {
         if let downloaded = downloads?.localFileURL(for: item, serverID: session.server.id, userID: session.user.id) {
@@ -69,10 +86,17 @@ struct BookFileProvider {
 /// `Locator` JSON in Application Support. This is the precise, same-device resume layer;
 /// a coarse 0...1 fraction also syncs to Jellyfin for cross-device/Continue (see
 /// `JellyfinBookProgress`), and the reader restores from it when no local locator exists.
-struct BookProgressStore {
+///
+/// Saves arrive on every page turn, so positions are cached in memory and flushed to
+/// disk on a short debounce (and explicitly when the reader closes) instead of
+/// rewriting the file per turn.
+@MainActor
+final class BookProgressStore {
     static let shared = BookProgressStore()
 
     private let directory: URL
+    private var cache: [String: String]?
+    private var writeTask: Task<Void, Never>?
 
     init(directory: URL = AppStorageLocation.appDirectory()) {
         self.directory = directory
@@ -84,8 +108,17 @@ struct BookProgressStore {
     }
 
     private func loadAll() -> [String: String] {
-        guard let data = try? Data(contentsOf: fileURL) else { return [:] }
-        return (try? JSONDecoder().decode([String: String].self, from: data)) ?? [:]
+        if let cache {
+            return cache
+        }
+        let loaded: [String: String]
+        if let data = try? Data(contentsOf: fileURL) {
+            loaded = (try? JSONDecoder().decode([String: String].self, from: data)) ?? [:]
+        } else {
+            loaded = [:]
+        }
+        cache = loaded
+        return loaded
     }
 
     func locatorJSON(forItemID itemID: String) -> String? {
@@ -95,7 +128,28 @@ struct BookProgressStore {
     func save(locatorJSON: String, forItemID itemID: String) {
         var all = loadAll()
         all[itemID] = locatorJSON
-        guard let data = try? JSONEncoder().encode(all) else { return }
+        cache = all
+        scheduleWrite()
+    }
+
+    /// Writes any pending positions immediately — call when the reader closes.
+    func flush() {
+        writeTask?.cancel()
+        writeTask = nil
+        persist()
+    }
+
+    private func scheduleWrite() {
+        writeTask?.cancel()
+        writeTask = Task { [weak self] in
+            try? await Task.sleep(for: .seconds(1))
+            guard !Task.isCancelled else { return }
+            self?.persist()
+        }
+    }
+
+    private func persist() {
+        guard let cache, let data = try? JSONEncoder().encode(cache) else { return }
         try? data.write(to: fileURL, options: .atomic)
     }
 }

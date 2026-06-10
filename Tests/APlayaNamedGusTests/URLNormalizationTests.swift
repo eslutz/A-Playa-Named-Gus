@@ -24,4 +24,20 @@ struct URLNormalizationTests {
             try AppModel.normalizeURL("https://")
         }
     }
+
+    @Test("schemeless addresses try https before http")
+    func schemelessTriesHTTPSFirst() throws {
+        let candidates = try AppModel.candidateURLs(for: "jellyfin.example.com:8096")
+
+        #expect(candidates.map(\.absoluteString) == [
+            "https://jellyfin.example.com:8096",
+            "http://jellyfin.example.com:8096",
+        ])
+    }
+
+    @Test("an explicit scheme is honored as the only candidate")
+    func explicitSchemeIsSingleCandidate() throws {
+        #expect(try AppModel.candidateURLs(for: "http://192.168.1.50:8096").map(\.absoluteString) == ["http://192.168.1.50:8096"])
+        #expect(try AppModel.candidateURLs(for: "https://jellyfin.example.com").map(\.absoluteString) == ["https://jellyfin.example.com"])
+    }
 }

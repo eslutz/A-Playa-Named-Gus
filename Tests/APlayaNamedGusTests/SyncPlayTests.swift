@@ -30,7 +30,7 @@ struct SyncPlayTests {
         let unrelated = #"{"MessageType":"Sessions","Data":[]}"#
 
         #expect(SyncPlayMessageDecoder.event(from: Data(update.utf8)) == .groupUpdate(type: "UserJoined", groupID: "g1"))
-        #expect(SyncPlayMessageDecoder.event(from: Data(keepAlive.utf8)) == .forceKeepAlive)
+        #expect(SyncPlayMessageDecoder.event(from: Data(keepAlive.utf8)) == .forceKeepAlive(timeoutSeconds: 30))
         #expect(SyncPlayMessageDecoder.event(from: Data(unrelated.utf8)) == nil)
     }
 

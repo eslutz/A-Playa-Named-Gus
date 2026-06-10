@@ -39,10 +39,14 @@
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
 
-	<!-- Self-hosted Jellyfin servers are frequently plain HTTP on a LAN. -->
+	<!-- Self-hosted Jellyfin servers are frequently plain HTTP on a LAN, so local
+	     networking is exempt from ATS. Remote servers must use TLS; connect tries
+	     https first for schemeless addresses (see AppModel.connect). -->
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<key>NSAllowsArbitraryLoads</key>
+		<false/>
+		<key>NSAllowsLocalNetworking</key>
 		<true/>
 	</dict>
 

@@ -123,6 +123,12 @@ final class PlaybackStore {
 
     private func rebuildCurrentItemPreservingPosition() async {
         let ticks = currentPositionTicks()
+        // Close the server-side play session for the outgoing stream before the rebuild
+        // reports a fresh start, so stream switches don't leak stale sessions.
+        if let context = reportContext {
+            reportContext = nil
+            reportPlaybackStopped(context: context, positionTicks: ticks)
+        }
         await loadPlayback(startTimeTicks: ticks, replacingCurrentItem: true)
     }
 
@@ -147,7 +153,7 @@ final class PlaybackStore {
             let playbackURL: URL
             if let localURL {
                 resolution = nil
-                playbackURL = resolvePlaybackURL(local: localURL, remote: localURL)
+                playbackURL = localURL
                 stereoPresentation = .native2D
             } else {
                 let requestedPresentation = Media3DDetector.presentation(for: item, viewingMode: viewingMode)
@@ -161,7 +167,7 @@ final class PlaybackStore {
                     )
                 }
                 resolution = remoteResolution
-                playbackURL = resolvePlaybackURL(local: nil, remote: remoteResolution.url)
+                playbackURL = remoteResolution.url
                 stereoPresentation = effectiveStereoPresentation(
                     requested: requestedPresentation,
                     resolution: remoteResolution
