@@ -8,7 +8,14 @@
 #   Scripts/screenshots.sh ipad       # capture iPad only
 #   Scripts/screenshots.sh tv         # capture Apple TV only
 #   Scripts/screenshots.sh vision     # capture visionOS only
+#   Scripts/screenshots.sh watch      # capture watchOS companion only
 #   Scripts/screenshots.sh mac        # print macOS manual instructions and exit
+#
+# Each platform captures the Connect screen, then — if Scripts/demo-server.sh is
+# running — signed-in scenes (Home, Libraries, Settings) over the local demo Jellyfin
+# server. Home shows the Winter Chill theme + Liquid Glass; Settings shows the
+# Appearance, Navigation, and Content Restrictions controls. The watch captures its
+# Connect screen plus the signed-in Remote glance.
 #
 # Output lands in Screenshots/<platform>/ (git-ignored).
 # Run `xcodegen generate` before this script if the project is stale.
@@ -25,6 +32,9 @@ SCHEME="$APP_NAME"
 PROJECT="$REPO_ROOT/$APP_NAME.xcodeproj"
 OUT="$REPO_ROOT/Screenshots"
 BUNDLE_ID="dev.ericslutz.gus"
+# The watch companion is a separate scheme/target/bundle id.
+WATCH_SCHEME="Gus watchOS"
+WATCH_BUNDLE_ID="dev.ericslutz.gus.watchkitapp"
 SETTLE_SECONDS=4   # seconds to wait after launch before capturing
 
 # ── Simulator devices (App Store required device/size per platform) ───────────
@@ -35,6 +45,7 @@ IPHONE_NAME="iPhone 17 Pro Max"               # iPhone 6.9" (1320×2868 @3x) slo
 IPAD_NAME="iPad Pro 13-inch (M5)"             # iPad 13" (2064×2752 @2x) slot
 TV_NAME="Apple TV 4K (3rd generation) (at 1080p)"  # Apple TV 1080p slot
 VISION_NAME="Apple Vision Pro"                # Vision Pro (2980×2980) slot
+WATCH_NAME="Apple Watch Ultra 3 (49mm)"       # Apple Watch Ultra (410×502) slot
 
 resolve_udid() {
   xcrun simctl list -j devices available | python3 -c '
@@ -59,6 +70,7 @@ IPHONE_UDID="$(resolve_udid "$IPHONE_NAME")"
 IPAD_UDID="$(resolve_udid "$IPAD_NAME")"
 TV_UDID="$(resolve_udid "$TV_NAME")"
 VISION_UDID="$(resolve_udid "$VISION_NAME")"
+WATCH_UDID="$(resolve_udid "$WATCH_NAME")"
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 log()  { echo "▶ $*"; }
@@ -71,6 +83,7 @@ list_destinations() {
   echo "  iPad    → $IPAD_NAME   ($IPAD_UDID)"
   echo "  TV      → $TV_NAME ($TV_UDID)"
   echo "  Vision  → $VISION_NAME ($VISION_UDID)"
+  echo "  Watch   → $WATCH_NAME ($WATCH_UDID)"
   echo "  Mac     → manual (see mac instructions below)"
   echo ""
   echo "Verify UDIDs on this machine with:"
@@ -104,9 +117,11 @@ boot_sim() {
   else
     log "Booting $name …"
     xcrun simctl boot "$udid"
-    # Give the SpringBoard a moment to become ready
-    sleep 3
   fi
+  # Block until the device has fully finished booting. Launching into a half-booted
+  # SpringBoard can wedge `simctl launch` indefinitely, so this replaces a fixed sleep.
+  log "Waiting for $name to finish booting …"
+  xcrun simctl bootstatus "$udid" >/dev/null 2>&1 || true
 }
 
 install_and_launch() {
@@ -173,7 +188,8 @@ Steps:
   1. Build and run the Release scheme on macOS in Xcode.
   2. Resize the A Playa Named Gus window to 1280×800 (or drag to a Retina display for 2x).
   3. Use Cmd+Shift+4 → Space → click the A Playa Named Gus window to capture just the window.
-  4. Repeat for each required scene (Connect, Home, Item Detail, Player, Downloads).
+  4. Repeat for each required scene (Connect, Home, Item Detail, Player, Downloads, and
+     Settings → Appearance / Navigation / Content Restrictions).
   5. Save results to Screenshots/mac/.
 
 Tip: System Preferences → Displays → set resolution to 1280×800 for exact sizing.
@@ -257,6 +273,53 @@ capture_vision() {
   terminate_app "$VISION_UDID"
 }
 
+# The watch companion uses its own scheme/target/bundle id, has no AppRoute-based
+# --gus-route navigation, and is signed out on a fresh install (no paired phone to hand
+# off a credential), so it gets a self-contained capture path: Connect, then the
+# signed-in Remote glance via --gus-demo-server.
+capture_watch() {
+  if [[ -z "$WATCH_UDID" ]]; then
+    warn "No '$WATCH_NAME' watch simulator found — skipping watch screenshots"
+    return 0
+  fi
+  local dd="$REPO_ROOT/build-screenshots-watch"
+  log "Building watch companion ($WATCH_SCHEME) …"
+  xcodebuild \
+    -project "$PROJECT" \
+    -scheme "$WATCH_SCHEME" \
+    -destination "platform=watchOS Simulator,id=$WATCH_UDID" \
+    -derivedDataPath "$dd" \
+    -configuration Debug \
+    build \
+    SWIFT_TREAT_WARNINGS_AS_ERRORS=NO \
+    2>&1 | grep -E "error:|BUILD SUCCEEDED|BUILD FAILED" | tail -5
+  local app
+  app=$(find "$dd/Build/Products" -maxdepth 3 -name "GusWatch.app" -path "*watchsimulator*" | head -1)
+  [[ -z "$app" ]] && { warn "Could not locate GusWatch.app for Apple Watch"; return 1; }
+
+  boot_sim "$WATCH_UDID" "$WATCH_NAME"
+  xcrun simctl terminate "$WATCH_UDID" "$WATCH_BUNDLE_ID" 2>/dev/null || true
+  log "Installing $(basename "$app") …"
+  xcrun simctl install "$WATCH_UDID" "$app"
+  # Fresh install with no paired phone is signed out → Connect screen.
+  log "Launching $WATCH_BUNDLE_ID …"
+  xcrun simctl launch "$WATCH_UDID" "$WATCH_BUNDLE_ID" >/dev/null
+  sleep "$SETTLE_SECONDS"
+  capture "$WATCH_UDID" "$OUT/watch" "01-connect"
+
+  if demo_server_running; then
+    xcrun simctl terminate "$WATCH_UDID" "$WATCH_BUNDLE_ID" 2>/dev/null || true
+    log "Launching $WATCH_BUNDLE_ID --gus-demo-server …"
+    xcrun simctl launch "$WATCH_UDID" "$WATCH_BUNDLE_ID" --gus-demo-server >/dev/null
+    sleep 8   # demo sign-in over localhost + Sessions load
+    capture "$WATCH_UDID" "$OUT/watch" "02-remote"
+    ok "Watch: captured Connect + signed-in Remote"
+  else
+    ok "Watch: captured Connect (start Scripts/demo-server.sh for signed-in scenes)"
+  fi
+  xcrun simctl terminate "$WATCH_UDID" "$WATCH_BUNDLE_ID" 2>/dev/null || true
+}
+
 # ── Main ──────────────────────────────────────────────────────────────────────
 TARGET="${1:-all}"
 
@@ -273,6 +336,7 @@ case "$TARGET" in
   ipad)   capture_ipad ;;
   tv)     capture_tv ;;
   vision) capture_vision ;;
+  watch)  capture_watch ;;
   all)
     log "Capturing screenshots for all simulator platforms …"
     log "(macOS screenshots are manual — run: Scripts/screenshots.sh mac)"
@@ -285,12 +349,14 @@ case "$TARGET" in
     echo ""
     capture_vision
     echo ""
+    capture_watch
+    echo ""
     log "Done. Screenshots saved to Screenshots/"
     log "Signed-in scenes use the local demo server (Scripts/demo-server.sh start)."
     log "See Documentation/AppStore/screenshots-and-testflight.md and demo-server.md."
     ;;
   *)
-    echo "Usage: $0 [--list | iphone | ipad | tv | vision | mac | all]"
+    echo "Usage: $0 [--list | iphone | ipad | tv | vision | watch | mac | all]"
     exit 1
     ;;
 esac

@@ -9,10 +9,18 @@ import SwiftUI
 struct GusWatchApp: App {
     @State private var appModel = AppModel.shared
     @State private var offlineDownloads = OfflineDownloadStore()
+    private let shouldConnectToDemoServer: Bool
 
     init() {
         DiagnosticsHub.shared.record(.appLaunched)
         WatchCredentialReceiver.shared.activate()
+        #if DEBUG
+            // Mirrors the iOS app's --gus-demo-server flag so Scripts/screenshots.sh can
+            // capture signed-in watch scenes against the local demo Jellyfin server.
+            shouldConnectToDemoServer = ProcessInfo.processInfo.arguments.contains("--gus-demo-server")
+        #else
+            shouldConnectToDemoServer = false
+        #endif
     }
 
     var body: some Scene {
@@ -21,6 +29,12 @@ struct GusWatchApp: App {
                 .environment(appModel)
                 .environment(offlineDownloads)
                 .task {
+                    #if DEBUG
+                        if shouldConnectToDemoServer {
+                            await appModel.connectToLocalDemoServer()
+                            return
+                        }
+                    #endif
                     appModel.restoreLastSession()
                 }
         }
