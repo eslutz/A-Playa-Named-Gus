@@ -23,8 +23,11 @@ enum PlaybackStreamCatalog {
         streamOptions(for: item, type: .subtitle)
     }
 
+    /// Options come from the first media source only — playback resolves against the
+    /// server's default source, and stream indexes are per-source, so flattening every
+    /// source would surface duplicate/mismatched indexes for multi-version items.
     private static func streamOptions(for item: MediaItem, type: MediaStreamKind) -> [PlaybackStreamOption] {
-        item.mediaSources.flatMap(\.mediaStreams)
+        (item.mediaSources.first?.mediaStreams ?? [])
             .filter { $0.type == type }
             .compactMap { stream in
                 guard let index = stream.index else { return nil }
@@ -62,10 +65,6 @@ struct PlaybackChapter: Identifiable, Equatable {
                 )
             }
     }
-}
-
-func resolvePlaybackURL(local: URL?, remote: URL) -> URL {
-    local ?? remote
 }
 
 enum PlaybackTime {

@@ -17,7 +17,8 @@ struct AlbumDetailView: View {
             state: state,
             isEmpty: tracks.isEmpty,
             emptyTitle: "No Tracks",
-            emptySymbol: "music.note"
+            emptySymbol: "music.note",
+            retryAction: { Task { await loadTracks() } }
         ) {
             ScrollView {
                 VStack(alignment: .leading, spacing: 24) {
@@ -75,14 +76,14 @@ struct AlbumDetailView: View {
                     } label: {
                         Label("Play", systemImage: "play.fill")
                     }
-                    .buttonStyle(.borderedProminent)
+                    .gusProminentGlassButtonStyle()
 
                     Button {
                         play(startingAt: 0, shuffled: true)
                     } label: {
                         Label("Shuffle", systemImage: "shuffle")
                     }
-                    .buttonStyle(.bordered)
+                    .gusGlassButtonStyle()
                 }
                 .padding(.top, 8)
             }
@@ -189,7 +190,8 @@ struct ArtistAlbumsView: View {
             state: state,
             isEmpty: albums.isEmpty,
             emptyTitle: "No Albums",
-            emptySymbol: "music.note.list"
+            emptySymbol: "music.note.list",
+            retryAction: { Task { await loadAlbums() } }
         ) {
             ScrollView {
                 LazyVGrid(columns: PosterGrid.columns, alignment: .leading, spacing: PosterGrid.spacing) {

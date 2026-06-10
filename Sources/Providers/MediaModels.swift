@@ -500,38 +500,23 @@ struct MediaItem: Codable, Hashable, Identifiable {
     }
 }
 
+/// Feature gates a provider exposes to the UI. Only flags that gate real behavior
+/// belong here — speculative capabilities accumulate as unread dead weight, and the
+/// `true` defaults describe Jellyfin (a new provider must opt out explicitly).
 struct ProviderCapabilities: Codable, Equatable {
     var supportsSearch = true
-    var supportsPlaybackProgress = true
     var supportsDownloads = true
-    var supportsQuickConnect = true
-    var supportsServerDiscovery = true
-    var supportsMusic = true
-    var supportsBooks = true
-    var supportsPhotos = true
     /// Whether the server round-trips EPUB reading position (Jellyfin stores it on
     /// `UserData.PlaybackPositionTicks`; see `JellyfinBookProgress`).
     var supportsBookProgressSync = true
 
     init(
         supportsSearch: Bool = true,
-        supportsPlaybackProgress: Bool = true,
         supportsDownloads: Bool = true,
-        supportsQuickConnect: Bool = true,
-        supportsServerDiscovery: Bool = true,
-        supportsMusic: Bool = true,
-        supportsBooks: Bool = true,
-        supportsPhotos: Bool = true,
         supportsBookProgressSync: Bool = true
     ) {
         self.supportsSearch = supportsSearch
-        self.supportsPlaybackProgress = supportsPlaybackProgress
         self.supportsDownloads = supportsDownloads
-        self.supportsQuickConnect = supportsQuickConnect
-        self.supportsServerDiscovery = supportsServerDiscovery
-        self.supportsMusic = supportsMusic
-        self.supportsBooks = supportsBooks
-        self.supportsPhotos = supportsPhotos
         self.supportsBookProgressSync = supportsBookProgressSync
     }
 }

@@ -9,7 +9,8 @@ struct SearchResultsView: View {
             state: store.state,
             isEmpty: store.results.isEmpty,
             emptyTitle: "No Results",
-            emptySymbol: "magnifyingglass"
+            emptySymbol: "magnifyingglass",
+            retryAction: { Task { await store.search(store.query) } }
         ) {
             ScrollView {
                 LazyVGrid(columns: PosterGrid.columns, alignment: .leading, spacing: PosterGrid.spacing) {

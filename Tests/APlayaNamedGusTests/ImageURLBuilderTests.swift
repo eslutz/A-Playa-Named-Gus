@@ -9,8 +9,8 @@ struct ImageURLBuilderTests {
     func usesFixedImageContextWidths() throws {
         let client = try JellyfinClientFactory.makeClient(url: #require(URL(string: "https://jellyfin.example.com")))
         let builder = ImageURLBuilder(client: client)
-        let item = BaseItemDto(id: "item-1", imageTags: [ImageType.primary.rawValue: "tag-1"])
-        let backdrop = BaseItemDto(backdropImageTags: ["backdrop-tag"], id: "item-2")
+        let item = MediaItem(id: "item-1", imageTags: [MediaImageKind.primary.rawValue: "tag-1"])
+        let backdrop = MediaItem(backdropImageTags: ["backdrop-tag"], id: "item-2")
 
         #expect(ImageURLBuilder.ImageContext.posterGrid.maxWidth == 360)
         #expect(ImageURLBuilder.ImageContext.posterRail.maxWidth == 260)

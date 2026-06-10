@@ -97,22 +97,9 @@ final class ServerDiscoveryStore {
     }
 
     private static func makeDiscoveryStream(duration: Duration) -> AsyncThrowingStream<DiscoveredServer, Error> {
-        AsyncThrowingStream { continuation in
-            let task = Task {
-                do {
-                    for try await server in JellyfinClient.discover(duration: duration) {
-                        continuation.yield(DiscoveredServer(publicServer: server))
-                    }
-                    continuation.finish()
-                } catch is CancellationError {
-                    continuation.finish()
-                } catch {
-                    continuation.finish(throwing: error)
-                }
-            }
-
-            continuation.onTermination = { _ in
-                task.cancel()
+        AsyncStreamBridge.stream { continuation in
+            for try await server in JellyfinClient.discover(duration: duration) {
+                continuation.yield(DiscoveredServer(publicServer: server))
             }
         }
     }

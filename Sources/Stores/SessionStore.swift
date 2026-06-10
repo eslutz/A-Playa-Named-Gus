@@ -26,12 +26,4 @@ final class SessionStore {
         self.server = server
         self.mediaProvider = mediaProvider ?? JellyfinMediaProviderSession(client: client, userID: user.id)
     }
-
-    var imageBuilder: ImageURLBuilder {
-        ImageURLBuilder(client: client)
-    }
-
-    var streamBuilder: StreamURLBuilder {
-        StreamURLBuilder(client: client, userID: user.id)
-    }
 }

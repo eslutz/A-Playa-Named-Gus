@@ -120,8 +120,18 @@ final class QuickConnectStore {
                 }
             }
             pollingTask = nil
-            if state == .starting {
+            switch state {
+            case .starting:
                 state = .idle
+            case .polling:
+                // The server closed the stream without authenticating (code expired);
+                // surface that instead of leaving a dead code on screen.
+                state = .failed(String(
+                    localized: "The Quick Connect code expired. Try again.",
+                    comment: "Quick Connect stream ended without authentication"
+                ))
+            default:
+                break
             }
         } catch {
             pollingTask = nil
@@ -136,27 +146,14 @@ final class QuickConnectStore {
     }
 
     private static func makeEventStream(from client: JellyfinClient) -> AsyncThrowingStream<QuickConnectFlowEvent, Error> {
-        AsyncThrowingStream { continuation in
-            let task = Task {
-                do {
-                    for try await event in client.quickConnect.connect() {
-                        switch event {
-                        case let .polling(code):
-                            continuation.yield(.polling(code: code))
-                        case let .authenticated(secret):
-                            continuation.yield(.authenticated(secret: secret))
-                        }
-                    }
-                    continuation.finish()
-                } catch is CancellationError {
-                    continuation.finish()
-                } catch {
-                    continuation.finish(throwing: error)
+        AsyncStreamBridge.stream { continuation in
+            for try await event in client.quickConnect.connect() {
+                switch event {
+                case let .polling(code):
+                    continuation.yield(.polling(code: code))
+                case let .authenticated(secret):
+                    continuation.yield(.authenticated(secret: secret))
                 }
-            }
-
-            continuation.onTermination = { _ in
-                task.cancel()
             }
         }
     }

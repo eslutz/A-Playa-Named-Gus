@@ -247,25 +247,3 @@ private struct DownloadFailedRow: View {
         return String(localized: "Download Failed", comment: "Failed download status label")
     }
 }
-
-private extension View {
-    func downloadErrorAlert(_ downloads: OfflineDownloadStore) -> some View {
-        alert(
-            "Download Failed",
-            isPresented: Binding(
-                get: { downloads.errorMessage != nil },
-                set: { isPresented in
-                    if !isPresented {
-                        downloads.clearError()
-                    }
-                }
-            )
-        ) {
-            Button("OK", role: .cancel) {
-                downloads.clearError()
-            }
-        } message: {
-            Text(downloads.errorMessage ?? "")
-        }
-    }
-}

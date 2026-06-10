@@ -37,7 +37,8 @@ struct LibraryGridView: View {
             state: store.state,
             isEmpty: store.items.isEmpty,
             emptyTitle: "Empty Library",
-            emptySymbol: "rectangle.on.rectangle"
+            emptySymbol: "rectangle.on.rectangle",
+            retryAction: { Task { await store.load() } }
         ) {
             ScrollView {
                 LazyVGrid(columns: PosterGrid.columns, alignment: .leading, spacing: PosterGrid.spacing) {

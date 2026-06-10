@@ -79,13 +79,4 @@ struct PlaybackReportingTests {
         #expect(targets.map(\.startPositionTicks) == [0, 300_000_000, 900_000_000])
         #expect(targets[1].seconds == 30)
     }
-
-    @Test("prefers a local playback URL when available")
-    func resolvesLocalPlaybackURLBeforeRemote() throws {
-        let local = try #require(URL(string: "file:///tmp/gus-local.mp4"))
-        let remote = try #require(URL(string: "https://jellyfin.example.com/video.m3u8"))
-
-        #expect(resolvePlaybackURL(local: local, remote: remote) == local)
-        #expect(resolvePlaybackURL(local: nil, remote: remote) == remote)
-    }
 }

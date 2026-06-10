@@ -38,43 +38,26 @@ struct DownloadSourceResolver {
     let userID: String
 
     func resolve(for item: MediaItem) async throws -> Source {
-        if let original = try Self.originalSource(for: item) {
-            return original
+        if let source = try Self.metadataResolvedSource(for: item, userID: userID) {
+            return source
         }
 
+        // Video needing a server transcode: ask the server for the media source.
         guard let itemID = item.id else { throw ResolverError.missingItemID }
-        guard item.canDownload == true else { throw ResolverError.notDownloadable }
-
-        if item.type == .book {
-            return Self.bookOriginalSource(itemID: itemID, item: item)
-        }
-
-        if item.isAudioPlayable {
-            return Self.audioTranscodedSource(itemID: itemID, userID: userID)
-        }
-
         let response = try await client.send(playbackInfoRequest(itemID: itemID)).value
         guard let source = response.mediaSources?.first else { throw ResolverError.noMediaSource }
         guard let mediaSourceID = source.id else { throw ResolverError.missingMediaSourceID }
         return Self.transcodedSource(itemID: itemID, mediaSourceID: mediaSourceID)
     }
 
+    /// Synchronous resolution from item metadata only (no network round-trip); video
+    /// transcodes fall back to the item's own media-source list.
     static func localSource(for item: MediaItem) throws -> Source {
-        if let original = try originalSource(for: item) {
-            return original
+        if let source = try metadataResolvedSource(for: item, userID: nil) {
+            return source
         }
 
         guard let itemID = item.id else { throw ResolverError.missingItemID }
-        guard item.canDownload == true else { throw ResolverError.notDownloadable }
-
-        if item.type == .book {
-            return bookOriginalSource(itemID: itemID, item: item)
-        }
-
-        if item.isAudioPlayable {
-            return audioTranscodedSource(itemID: itemID, userID: nil)
-        }
-
         if let source = item.mediaSources.first,
            let mediaSourceID = source.id
         {
@@ -82,6 +65,31 @@ struct DownloadSourceResolver {
         }
 
         throw ResolverError.noMediaSource
+    }
+
+    /// The shared, metadata-only cases: AVPlayer-native originals, book originals, and
+    /// audio via the universal endpoint. Returns nil when a video transcode is needed.
+    private static func metadataResolvedSource(for item: MediaItem, userID: String?) throws -> Source? {
+        guard let itemID = item.id else { throw ResolverError.missingItemID }
+        guard item.canDownload == true else { throw ResolverError.notDownloadable }
+
+        if let source = item.mediaSources.first(where: OfflineDownloadEligibility.isAVPlayerPlayable) {
+            return Source(
+                kind: .original,
+                request: Paths.getDownload(itemID: itemID),
+                fileExtension: fileExtension(for: source) ?? "mp4"
+            )
+        }
+
+        if item.type == .book {
+            return bookOriginalSource(itemID: itemID, item: item)
+        }
+
+        if item.isAudioPlayable {
+            return audioTranscodedSource(itemID: itemID, userID: userID)
+        }
+
+        return nil
     }
 
     /// Books always download the original file — there is no server transcode for
@@ -97,21 +105,6 @@ struct DownloadSourceResolver {
             request: Paths.getDownload(itemID: itemID),
             fileExtension: containerExtension ?? "epub"
         )
-    }
-
-    private static func originalSource(for item: MediaItem) throws -> Source? {
-        guard let itemID = item.id else { throw ResolverError.missingItemID }
-        guard item.canDownload == true else { throw ResolverError.notDownloadable }
-
-        if let source = item.mediaSources.first(where: OfflineDownloadEligibility.isAVPlayerPlayable) {
-            return Source(
-                kind: .original,
-                request: Paths.getDownload(itemID: itemID),
-                fileExtension: fileExtension(for: source) ?? "mp4"
-            )
-        }
-
-        return nil
     }
 
     /// Songs/audiobooks that aren't AVPlayer-native download as a progressive MP3
