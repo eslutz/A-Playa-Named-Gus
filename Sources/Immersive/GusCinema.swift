@@ -7,8 +7,8 @@
     /// The "Gus Cinema" immersive space — a RealityKit media room.
     ///
     /// Ported from PR #2's `JellyfinCinemaImmersiveView` (same structure: an inward-facing
-    /// sphere backdrop with a soft vertical gradient, plus key/fill point lights), re-themed
-    /// with the Jellyfin navy, purple, and blue palette used by the windowed UI.
+    /// sphere backdrop with a soft vertical gradient, plus key/fill point lights), themed
+    /// with the Winter Chill palette used by the windowed UI.
     struct GusCinema: View {
         static let spaceID = "gus-cinema"
 
@@ -142,7 +142,7 @@
         }
     }
 
-    /// Gus cinema palette: Jellyfin purple and blue over deep navy.
+    /// Gus cinema palette: Winter Chill ice and teal over the deep brand base.
     ///
     /// Colors are defined once in the asset catalog (the `Cinema*` colorsets) so the windowed UI
     /// and this RealityKit room share a single source of truth; the literal fallbacks keep the
@@ -155,7 +155,8 @@
         static func backdropNightUI(for environment: CinemaEnvironment) -> UIColor {
             switch environment {
             case .gusCinema:
-                return color("CinemaBackdropNight", fallback: UIColor(red: 0.0, green: 0.043, blue: 0.145, alpha: 1))
+                // #0B2E33 — Winter Chill deep brand base.
+                return color("CinemaBackdropNight", fallback: UIColor(red: 0.043, green: 0.180, blue: 0.200, alpha: 1))
             case .pineapple:
                 return UIColor(red: 0.08, green: 0.045, blue: 0.0, alpha: 1)
             }
@@ -166,7 +167,8 @@
             case .gusCinema:
                 return [
                     backdropNightUI(for: environment).cgColor,
-                    color("CinemaBackdropMid", fallback: UIColor(red: 0.063, green: 0.063, blue: 0.063, alpha: 1)).cgColor,
+                    // #061A1E — near-black teal midpoint of the backdrop gradient.
+                    color("CinemaBackdropMid", fallback: UIColor(red: 0.024, green: 0.102, blue: 0.118, alpha: 1)).cgColor,
                     backdropNightUI(for: environment).cgColor,
                 ]
             case .pineapple:
@@ -181,7 +183,8 @@
         static func keyLightUI(for environment: CinemaEnvironment) -> UIColor {
             switch environment {
             case .gusCinema:
-                return color("CinemaKeyLight", fallback: UIColor(red: 0.675, green: 0.361, blue: 0.765, alpha: 1))
+                // #B8E3E9 — Winter Chill ice (primary accent, dark variant).
+                return color("CinemaKeyLight", fallback: UIColor(red: 0.722, green: 0.890, blue: 0.914, alpha: 1))
             case .pineapple:
                 return UIColor(red: 1.0, green: 0.62, blue: 0.14, alpha: 1)
             }
@@ -190,7 +193,8 @@
         static func fillLightUI(for environment: CinemaEnvironment) -> UIColor {
             switch environment {
             case .gusCinema:
-                return color("CinemaFillLight", fallback: UIColor(red: 0.0, green: 0.643, blue: 0.863, alpha: 1))
+                // #4F7C82 — Winter Chill teal (primary accent, light variant).
+                return color("CinemaFillLight", fallback: UIColor(red: 0.310, green: 0.486, blue: 0.510, alpha: 1))
             case .pineapple:
                 return UIColor(red: 0.68, green: 0.36, blue: 0.76, alpha: 1)
             }
