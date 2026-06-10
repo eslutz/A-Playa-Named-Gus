@@ -50,23 +50,70 @@ enum ContentRatingGate {
     static let limitDefaultsKey = "dev.ericslutz.gus.contentRatingLimit"
     static let hideUnratedDefaultsKey = "dev.ericslutz.gus.contentRatingHideUnrated"
 
-    /// Rating-string → rank table covering US movie (MPA), US TV, and common Jellyfin
-    /// parental-rating values. Rank 0 = all ages … 3 = mature, 4 = adults-only.
+    /// Rating-string → rank table covering US movie (MPA), US TV, and the common
+    /// international systems Jellyfin emits (BBFC, FSK, ACB, OFLC, Canadian).
+    /// Rank 0 = all ages … 3 = mature, 4 = adults-only.
+    ///
+    /// "Unrated"-style strings are deliberately absent: they mean "no rating", so they
+    /// follow the household's Hide Unrated toggle instead of a fixed rank.
     private static let ratingRanks: [String: Int] = [
         // US movie (MPA)
         "g": 0, "pg": 1, "pg-13": 2, "r": 3, "nc-17": 4,
         // US TV
         "tv-y": 0, "tv-y7": 0, "tv-g": 0, "tv-pg": 1, "tv-14": 2, "tv-ma": 3,
+        // UK (BBFC)
+        "u": 0, "12": 2, "12a": 2, "15": 2, "18": 3, "r18": 4,
+        // Germany (FSK)
+        "fsk 0": 0, "fsk-0": 0, "fsk 6": 1, "fsk-6": 1, "fsk 12": 2, "fsk-12": 2,
+        "fsk 16": 3, "fsk-16": 3, "fsk 18": 3, "fsk-18": 3,
+        // Australia (ACB) / New Zealand (OFLC)
+        "m": 2, "ma15+": 2, "r16": 3, "r18+": 3, "x18+": 4,
+        // Canada
+        "14a": 2, "18a": 3, "a": 4,
         // Common defaults Jellyfin emits
-        "approved": 1, "unrated": 4, "not rated": 4, "nr": 4, "x": 4, "xxx": 4,
+        "approved": 1, "x": 4, "xxx": 4,
     ]
 
-    /// Rank for an official rating string; `nil` when the rating is unknown/absent.
+    /// Strings that explicitly mean "no rating assigned" — treated the same as a
+    /// missing rating (admitted unless Hide Unrated is on), not as adults-only.
+    private static let unratedValues: Set<String> = ["unrated", "not rated", "nr", "n/a"]
+
+    /// Rank for an official rating string; `nil` when the rating is unknown, absent, or
+    /// an explicit "unrated" marker. Country prefixes ("US-PG", "DE-16", "GB-15") are
+    /// stripped, and bare/suffixed ages ("16", "16+") map by age bracket so unlisted
+    /// regional systems still gate sensibly.
     static func rank(for officialRating: String?) -> Int? {
         guard let officialRating else { return nil }
         let normalized = officialRating.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
-        guard !normalized.isEmpty else { return nil }
-        return ratingRanks[normalized]
+        guard !normalized.isEmpty, !unratedValues.contains(normalized) else { return nil }
+
+        if let rank = ratingRanks[normalized] {
+            return rank
+        }
+
+        // Country-prefixed forms, e.g. "de-16", "gb-15", "us-pg-13".
+        if let separator = normalized.firstIndex(where: { $0 == "-" || $0 == "/" || $0 == ":" }) {
+            let prefix = String(normalized[..<separator])
+            if prefix.count == 2, prefix.allSatisfy(\.isLetter) {
+                let remainder = String(normalized[normalized.index(after: separator)...])
+                if let rank = rank(for: remainder) {
+                    return rank
+                }
+            }
+        }
+
+        // Bare minimum-age ratings, e.g. "6", "16", "16+".
+        let digits = normalized.hasSuffix("+") ? String(normalized.dropLast()) : normalized
+        if let age = Int(digits), (0 ... 21).contains(age) {
+            switch age {
+            case 0 ... 6: return 0
+            case 7 ... 12: return 1
+            case 13 ... 15: return 2
+            default: return 3
+            }
+        }
+
+        return nil
     }
 
     /// Whether an item is admitted under the limit. Unknown/missing ratings are admitted

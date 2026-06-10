@@ -42,6 +42,39 @@ struct ContentRatingGateTests {
         #expect(!ContentRatingGate.admits(unrated, limit: .teen, hideUnrated: true))
     }
 
+    @Test("explicit unrated strings behave like a missing rating, not adults-only")
+    func explicitUnratedStrings() {
+        #expect(ContentRatingGate.rank(for: "Unrated") == nil)
+        #expect(ContentRatingGate.rank(for: "Not Rated") == nil)
+        #expect(ContentRatingGate.rank(for: "NR") == nil)
+
+        let unrated = MediaItem(id: "1", name: "Mystery", officialRating: "Unrated", type: .movie)
+        #expect(ContentRatingGate.admits(unrated, limit: .mature, hideUnrated: false))
+        #expect(!ContentRatingGate.admits(unrated, limit: .mature, hideUnrated: true))
+    }
+
+    @Test("international ratings map by system, country prefix, and age")
+    func internationalRatings() {
+        // UK (BBFC)
+        #expect(ContentRatingGate.rank(for: "U") == 0)
+        #expect(ContentRatingGate.rank(for: "12A") == 2)
+        #expect(ContentRatingGate.rank(for: "15") == 2)
+        #expect(ContentRatingGate.rank(for: "18") == 3)
+        // Germany (FSK)
+        #expect(ContentRatingGate.rank(for: "FSK-12") == 2)
+        #expect(ContentRatingGate.rank(for: "FSK 16") == 3)
+        // Australia
+        #expect(ContentRatingGate.rank(for: "MA15+") == 2)
+        #expect(ContentRatingGate.rank(for: "R18+") == 3)
+        // Country-prefixed forms Jellyfin emits
+        #expect(ContentRatingGate.rank(for: "DE-16") == 3)
+        #expect(ContentRatingGate.rank(for: "GB-12A") == 2)
+        #expect(ContentRatingGate.rank(for: "US-PG-13") == 2)
+        // Bare minimum-age fallbacks
+        #expect(ContentRatingGate.rank(for: "6") == 0)
+        #expect(ContentRatingGate.rank(for: "16+") == 3)
+    }
+
     @Test("containers and non-video kinds stay visible for navigation")
     func containersStayVisible() {
         let library = MediaItem(collectionType: .movies, id: "lib", name: "Movies", type: .collectionFolder)

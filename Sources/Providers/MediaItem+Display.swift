@@ -5,9 +5,11 @@ extension MediaItem {
         name ?? String(localized: "Untitled", comment: "Fallback item title")
     }
 
-    /// e.g. `S1·E3` for episodes when both numbers are present.
+    /// e.g. `S1·E3` for episodes; `nil` when no episode number exists (falling back to
+    /// the item name here would duplicate the title wherever the locator is shown
+    /// alongside it).
     var episodeLocator: String? {
-        guard let episode = indexNumber else { return name }
+        guard let episode = indexNumber else { return nil }
         if let season = parentIndexNumber {
             return "S\(season)·E\(episode)"
         }

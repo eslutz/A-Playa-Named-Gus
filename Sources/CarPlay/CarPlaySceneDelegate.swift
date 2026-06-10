@@ -34,11 +34,13 @@
         }
     }
 
-    /// Builds CarPlay templates from the restored session and drives audio playback
+    /// Builds CarPlay templates from the active session and drives audio playback
     /// through the same `AudioPlayerStore` used in the app.
     @MainActor
     final class CarPlayContentController {
-        private let appModel = AppModel()
+        // The shared instance — CarPlay must see the same session the app does, so
+        // sign-out and account switches propagate.
+        private let appModel = AppModel.shared
         private var audioPlayer: AudioPlayerStore?
         private weak var interfaceController: CPInterfaceController?
 
@@ -159,7 +161,8 @@
                 isRecursive: true,
                 sort: .name
             ))
-            return page?.items ?? []
+            // The household content-rating limit applies in the car too.
+            return ContentRatingGate.filter(page?.items ?? [])
         }
     }
 #endif

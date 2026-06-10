@@ -8,11 +8,18 @@ import MediaPlayer
 /// an `AVPlayer` periodic time observer. `MediaPlayer` is available on all five platforms.
 @MainActor
 final class NowPlayingController {
+    /// `MPNowPlayingInfoCenter`/`MPRemoteCommandCenter` are process-global, but the app
+    /// has one controller per player store (video + audio). Tracking the active owner
+    /// keeps a stopping controller from clearing transport state that another
+    /// controller (e.g. video sitting in PiP while audio starts) has since claimed.
+    private weak static var activeController: NowPlayingController?
+
     private weak var player: AVPlayer?
     private var timeObserver: Any?
     private var artworkTask: Task<Void, Never>?
 
     func start(player: AVPlayer, item: MediaItem, artworkURL: URL?) {
+        Self.activeController = self
         self.player = player
         artworkTask?.cancel()
 
@@ -54,6 +61,11 @@ final class NowPlayingController {
         }
         timeObserver = nil
         player = nil
+
+        // Only the active owner may clear the global transport — another controller
+        // may have taken over Now Playing since this one started.
+        guard Self.activeController === self else { return }
+        Self.activeController = nil
         MPNowPlayingInfoCenter.default().nowPlayingInfo = nil
 
         let center = MPRemoteCommandCenter.shared()
@@ -66,7 +78,7 @@ final class NowPlayingController {
     }
 
     private func updateElapsed(_ seconds: Double, rate: Double) {
-        guard seconds.isFinite else { return }
+        guard seconds.isFinite, Self.activeController === self else { return }
         var info = MPNowPlayingInfoCenter.default().nowPlayingInfo ?? [:]
         info[MPNowPlayingInfoPropertyElapsedPlaybackTime] = seconds
         info[MPNowPlayingInfoPropertyPlaybackRate] = rate
@@ -75,11 +87,12 @@ final class NowPlayingController {
 
     private func loadArtwork(from url: URL?) {
         guard let url else { return }
-        artworkTask = Task {
+        artworkTask = Task { [weak self] in
             do {
                 let (data, _) = try await URLSession.shared.data(from: url)
                 guard !Task.isCancelled, let artwork = NowPlayingArtworkFactory.artwork(from: data) else { return }
                 await MainActor.run {
+                    guard let self, Self.activeController === self else { return }
                     var info = MPNowPlayingInfoCenter.default().nowPlayingInfo ?? [:]
                     info[MPMediaItemPropertyArtwork] = artwork
                     MPNowPlayingInfoCenter.default().nowPlayingInfo = info
@@ -90,31 +103,36 @@ final class NowPlayingController {
         }
     }
 
+    /// Command targets capture the player weakly: the command center is process-global,
+    /// so a strong capture would keep a torn-down player alive until the next start().
     private func configureRemoteCommands(for player: AVPlayer) {
         let center = MPRemoteCommandCenter.shared()
 
         center.playCommand.removeTarget(nil)
-        center.playCommand.addTarget { _ in
+        center.playCommand.addTarget { [weak player] _ in
+            guard let player else { return .noActionableNowPlayingItem }
             player.play()
             return .success
         }
 
         center.pauseCommand.removeTarget(nil)
-        center.pauseCommand.addTarget { _ in
+        center.pauseCommand.addTarget { [weak player] _ in
+            guard let player else { return .noActionableNowPlayingItem }
             player.pause()
             return .success
         }
 
         center.togglePlayPauseCommand.removeTarget(nil)
-        center.togglePlayPauseCommand.addTarget { _ in
+        center.togglePlayPauseCommand.addTarget { [weak player] _ in
+            guard let player else { return .noActionableNowPlayingItem }
             if player.rate == 0 { player.play() } else { player.pause() }
             return .success
         }
 
         center.skipForwardCommand.preferredIntervals = [15]
         center.skipForwardCommand.removeTarget(nil)
-        center.skipForwardCommand.addTarget { event in
-            guard let event = event as? MPSkipIntervalCommandEvent else { return .commandFailed }
+        center.skipForwardCommand.addTarget { [weak player] event in
+            guard let player, let event = event as? MPSkipIntervalCommandEvent else { return .commandFailed }
             let target = player.currentTime() + CMTime(seconds: event.interval, preferredTimescale: 1)
             player.seek(to: target)
             return .success
@@ -122,8 +140,8 @@ final class NowPlayingController {
 
         center.skipBackwardCommand.preferredIntervals = [15]
         center.skipBackwardCommand.removeTarget(nil)
-        center.skipBackwardCommand.addTarget { event in
-            guard let event = event as? MPSkipIntervalCommandEvent else { return .commandFailed }
+        center.skipBackwardCommand.addTarget { [weak player] event in
+            guard let player, let event = event as? MPSkipIntervalCommandEvent else { return .commandFailed }
             let target = player.currentTime() - CMTime(seconds: event.interval, preferredTimescale: 1)
             player.seek(to: target)
             return .success
@@ -131,8 +149,8 @@ final class NowPlayingController {
 
         // Lock screen / Control Center scrubber.
         center.changePlaybackPositionCommand.removeTarget(nil)
-        center.changePlaybackPositionCommand.addTarget { event in
-            guard let event = event as? MPChangePlaybackPositionCommandEvent else { return .commandFailed }
+        center.changePlaybackPositionCommand.addTarget { [weak player] event in
+            guard let player, let event = event as? MPChangePlaybackPositionCommandEvent else { return .commandFailed }
             player.seek(
                 to: CMTime(seconds: event.positionTime, preferredTimescale: 600),
                 toleranceBefore: .zero,
