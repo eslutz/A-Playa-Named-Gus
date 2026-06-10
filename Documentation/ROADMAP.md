@@ -397,7 +397,11 @@ validation, TestFlight, and submission work are actually done.
   string). *Acceptance:* Xcode Cloud Release archives sign for each platform. *(Code side
   complete per `Documentation/AppStore/signing-capabilities.md` — entitlements, capability
   declarations, committed Team ID, and the Optic ID/Face ID no-usage-string rationale;
-  remaining work is the account-blocked Xcode Cloud workflow and archive validation.)*
+  remaining work is the account-blocked Xcode Cloud workflow and archive validation, plus
+  two pending entitlements whose request/wire/verify steps are tracked as checklists in
+  `signing-capabilities.md`: CarPlay audio (`com.apple.developer.carplay-audio`, manual
+  Apple grant) and Declared Age Range (`com.apple.developer.declared-age-range`, OS 26+).
+  Both are code-complete and self-disable until granted.)*
 - [ ] **App Store Connect record.** Create the app, set categories, age rating, support &
   marketing URLs, privacy policy URL, description, keywords. *Acceptance:* record
   complete and consistent across platforms, using the published `gus.ericslutz.dev`

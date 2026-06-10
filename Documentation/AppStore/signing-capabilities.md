@@ -52,17 +52,24 @@ tokens without an extra capability.
 
 The CarPlay audio companion (`Sources/CarPlay/`) is implemented and its template scene
 is declared in `Info.plist`, but `com.apple.developer.carplay-audio` requires an Apple
-entitlement grant (request via the CarPlay developer page). Until granted,
-`Config/Gus-CarPlay.entitlements` stays **unwired** so archives keep validating; the
-CarPlay scene never activates without the entitlement. Once granted, wire it in
-`Config/Shared.xcconfig`:
+entitlement grant. Until granted, `Config/Gus-CarPlay.entitlements` stays **unwired** so
+archives keep validating; the CarPlay scene never activates without the entitlement.
 
-```
-CODE_SIGN_ENTITLEMENTS[sdk=iphoneos*] = Config/Gus-CarPlay.entitlements
-CODE_SIGN_ENTITLEMENTS[sdk=iphonesimulator*] = Config/Gus-CarPlay.entitlements
-```
+Steps to enable (none are code work — the implementation is complete):
 
-Verify with the CarPlay simulator (Simulator app → I/O → External Displays → CarPlay).
+- [ ] **Request the entitlement from Apple** via the
+  [CarPlay developer request page](https://developer.apple.com/contact/carplay/),
+  describing the audio (music/audiobook) use case. This is a manual Apple review/grant
+  and is the long pole — it can take weeks.
+- [ ] Once granted, **add `com.apple.developer.carplay-audio` to the App ID /
+  provisioning profile** in the Developer portal.
+- [ ] **Wire the entitlements file** in `Config/Shared.xcconfig`:
+  ```
+  CODE_SIGN_ENTITLEMENTS[sdk=iphoneos*] = Config/Gus-CarPlay.entitlements
+  CODE_SIGN_ENTITLEMENTS[sdk=iphonesimulator*] = Config/Gus-CarPlay.entitlements
+  ```
+- [ ] **Verify** in the CarPlay simulator (Simulator app → I/O → External Displays →
+  CarPlay) and on real CarPlay hardware.
 
 ## Declared Age Range (Pending Entitlement)
 
@@ -70,10 +77,20 @@ The family-safety "Set from Age Range" action (`Sources/Features/Settings/
 AgeRangeDefaults.swift`, OS 26+ only) uses Apple's DeclaredAgeRange framework, which
 requires the `com.apple.developer.declared-age-range` entitlement at runtime. The code
 self-disables without it: the request throws and Settings shows a graceful status
-message while the manual rating picker keeps working. Request the entitlement together
-with App Store Connect setup, then add it to the iOS/macOS entitlements files and wire
-them per-SDK like CarPlay above. Scope and privacy rules:
+message while the manual rating picker keeps working. Scope and privacy rules:
 `Documentation/family-safety-brief.md`.
+
+Steps to enable (none are code work — the implementation is complete):
+
+- [ ] **Add the Declared Age Range capability** to the App ID in the Developer portal.
+  Unlike CarPlay this is self-serve (no manual Apple grant).
+- [ ] **Add `com.apple.developer.declared-age-range`** to the iOS and macOS entitlements
+  files (extend `Config/Gus.entitlements` for macOS; add an iOS entitlements file), and
+  wire them per-SDK in `Config/Shared.xcconfig` the same way as CarPlay above.
+- [ ] **Verify on an iOS 26 / macOS 26 device** that Settings → Content Restrictions →
+  "Set from Age Range" presents the system sheet and maps the result to a limit
+  (simulators may not surface the system sheet). visionOS/tvOS/watchOS do not expose the
+  framework — the button is correctly absent there.
 
 ## watchOS Companion
 
@@ -115,8 +132,12 @@ signing `Config/Local.xcconfig`, and regenerates `A Playa Named Gus.xcodeproj` f
 
 ## Remaining Submission Steps (Account-Blocked)
 
-- Create/configure the Xcode Cloud workflow for `dev.ericslutz.gus` and the tvOS Top
-  Shelf extension.
+- **CarPlay audio entitlement** — request, grant-wait, wire, and verify (see the CarPlay
+  section above).
+- **Declared Age Range entitlement** — add the capability, wire the entitlements, and
+  verify on an OS 26 device (see the Declared Age Range section above).
+- Create/configure the Xcode Cloud workflow for `dev.ericslutz.gus`, the tvOS Top
+  Shelf extension, and the `GusWatch` watch app.
 - Let Xcode Cloud manage App Store provisioning profiles for the app plus the tvOS Top
   Shelf extension.
 - Review per-platform capabilities in Xcode Signing & Capabilities and App Store Connect
