@@ -117,5 +117,7 @@ struct PhotoViewerView: View {
                 selectedID = siblings[next].id
             }
         }
+        // The slideshow changes content without user interaction; tell VoiceOver.
+        AccessibilityNotification.Announcement(siblings[next].displayTitle).post()
     }
 }

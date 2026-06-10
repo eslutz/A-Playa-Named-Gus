@@ -251,6 +251,10 @@ struct StreamURLBuilder {
         return url
     }
 
+    /// Threat model note: the access token rides in the URL query (`api_key`) because
+    /// AVPlayer/HLS fetches can't carry auth headers — the standard Jellyfin-client
+    /// pattern. Consequence: these URLs are sensitive (server/proxy logs see them), so
+    /// they must never be logged here; OSLog statements in this file log item ids only.
     private func authenticatedPlaybackURL(path: String) -> URL? {
         guard let url = client.url(path: path) else { return nil }
         return Self.appendingAPIKeyIfNeeded(to: url, accessToken: client.accessToken)

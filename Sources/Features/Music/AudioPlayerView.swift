@@ -72,6 +72,10 @@ struct AudioPlayerView: View {
                     }
                 }
                 .accessibilityLabel("Playback position")
+                .accessibilityValue(Text(
+                    "\(timeText(scrubTime)) of \(timeText(store.duration))",
+                    comment: "VoiceOver value for the playback scrubber, e.g. 1:30 of 4:05"
+                ))
             #endif
 
             HStack {

@@ -33,7 +33,23 @@ struct KeychainStore {
     }
 
     func token(account: String) -> String? {
-        var query = baseQuery(account: account)
+        if let token = readToken(query: baseQuery(account: account)) {
+            return token
+        }
+        #if os(macOS)
+            // Items written before the data-protection keychain adoption live in the
+            // file-based login keychain; migrate them on first read.
+            if let legacyToken = readToken(query: legacyLoginKeychainQuery(account: account)) {
+                setToken(legacyToken, account: account)
+                SecItemDelete(legacyLoginKeychainQuery(account: account) as CFDictionary)
+                return legacyToken
+            }
+        #endif
+        return nil
+    }
+
+    private func readToken(query baseQuery: [String: Any]) -> String? {
+        var query = baseQuery
         query[kSecReturnData as String] = true
         query[kSecMatchLimit as String] = kSecMatchLimitOne
 
@@ -86,17 +102,38 @@ struct KeychainStore {
         if status != errSecSuccess, status != errSecItemNotFound {
             logger.error("Keychain delete failed: \(status, privacy: .public)")
         }
+        #if os(macOS)
+            // Also clear any not-yet-migrated copy in the login keychain.
+            SecItemDelete(legacyLoginKeychainQuery(account: account) as CFDictionary)
+        #endif
     }
 
     // MARK: - Private
 
     private func baseQuery(account: String) -> [String: Any] {
-        [
+        var query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: service,
             kSecAttrAccount as String: account,
         ]
+        #if os(macOS)
+            // Modern data-protection keychain on macOS (same semantics as iOS) instead
+            // of the legacy file-based login keychain.
+            query[kSecUseDataProtectionKeychain as String] = true
+        #endif
+        return query
     }
+
+    #if os(macOS)
+        /// Query for items created before `kSecUseDataProtectionKeychain` was adopted.
+        private func legacyLoginKeychainQuery(account: String) -> [String: Any] {
+            [
+                kSecClass as String: kSecClassGenericPassword,
+                kSecAttrService as String: service,
+                kSecAttrAccount as String: account,
+            ]
+        }
+    #endif
 }
 
 extension KeychainStore: TokenStore {}

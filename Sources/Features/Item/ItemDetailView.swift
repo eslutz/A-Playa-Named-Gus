@@ -117,6 +117,10 @@ private struct CinematicDetailHero<Accessory: View>: View {
     let toggleUpNext: () -> Void
     @ViewBuilder let accessory: Accessory
 
+    /// Scales the hero with Dynamic Type (capped — the hero is artwork-led, and text
+    /// inside it wraps) so accessibility sizes don't clip the title block.
+    @ScaledMetric(relativeTo: .title) private var heroTypeScale: CGFloat = 1.0
+
     var body: some View {
         ZStack(alignment: .bottomLeading) {
             AsyncPoster(url: backdropURL, contentMode: .fill, placeholderSymbol: item.type == .series ? "tv" : "film")
@@ -222,7 +226,7 @@ private struct CinematicDetailHero<Accessory: View>: View {
                 Label("Play", systemImage: "play.fill")
                     .frame(maxWidth: .infinity)
             }
-            .buttonStyle(.borderedProminent)
+            .gusProminentGlassButtonStyle()
             .controlSize(.large)
             .tint(.accentColor)
             .gusDefaultActionShortcut()
@@ -238,11 +242,12 @@ private struct CinematicDetailHero<Accessory: View>: View {
         )
     }
 
+    /// Text styles (not fixed sizes) so the title participates in Dynamic Type.
     private var titleFont: Font {
         #if os(tvOS)
-            return .system(size: 72, weight: .bold)
+            return .largeTitle.bold()
         #elseif os(visionOS)
-            return .system(size: 54, weight: .bold)
+            return .extraLargeTitle.bold()
         #elseif os(macOS)
             return .largeTitle.bold()
         #else
@@ -251,6 +256,10 @@ private struct CinematicDetailHero<Accessory: View>: View {
     }
 
     private var heroHeight: CGFloat {
+        baseHeroHeight * min(max(heroTypeScale, 1.0), 1.5)
+    }
+
+    private var baseHeroHeight: CGFloat {
         #if os(tvOS)
             return 620
         #elseif os(visionOS)
@@ -335,31 +344,9 @@ private struct ItemUserActionButton: View {
                 .labelStyle(.iconOnly)
                 .frame(width: 44, height: 36)
         }
-        .buttonStyle(.bordered)
+        .gusGlassButtonStyle()
         .visionHoverEffect(cornerRadius: 10)
         .accessibilityLabel(title)
-    }
-}
-
-private extension View {
-    func downloadErrorAlert(_ downloads: OfflineDownloadStore) -> some View {
-        alert(
-            "Download Failed",
-            isPresented: Binding(
-                get: { downloads.errorMessage != nil },
-                set: { isPresented in
-                    if !isPresented {
-                        downloads.clearError()
-                    }
-                }
-            )
-        ) {
-            Button("OK", role: .cancel) {
-                downloads.clearError()
-            }
-        } message: {
-            Text(downloads.errorMessage ?? "")
-        }
     }
 }
 
@@ -374,22 +361,23 @@ private struct DownloadButton: View {
         if let record = downloads.record(for: item, serverID: session.server.id, userID: session.user.id) {
             switch record.status {
             case .complete where downloads.localFileURL(for: item, serverID: session.server.id, userID: session.user.id) != nil:
-                statusLabel("Downloaded", systemImage: "checkmark.circle.fill")
+                downloadLabel("Downloaded", systemImage: "checkmark.circle.fill")
                     .foregroundStyle(.secondary)
-                    .accessibilityHint("Downloaded on \(record.downloadedAt.formatted(date: .abbreviated, time: .shortened))")
+                    .accessibilityLabel("Downloaded")
+                    .accessibilityValue(record.downloadedAt.formatted(date: .abbreviated, time: .shortened))
             case .queued:
-                statusLabel("Queued", systemImage: "clock")
+                downloadLabel("Queued", systemImage: "clock")
                     .foregroundStyle(.secondary)
             case .downloading:
-                statusLabel(record.requiresTranscodingForDownload && record.progress == 0 ? "Transcoding for download..." : "Downloading", systemImage: "arrow.down.circle")
+                downloadLabel(record.requiresTranscodingForDownload && record.progress == 0 ? "Transcoding for download..." : "Downloading", systemImage: "arrow.down.circle")
                     .foregroundStyle(.secondary)
             case .paused:
                 Button {
                     Task { await downloads.resume(itemID: item.id ?? "", session: session) }
                 } label: {
-                    buttonLabel("Resume", systemImage: "play.fill")
+                    downloadLabel("Resume", systemImage: "play.fill")
                 }
-                .buttonStyle(.bordered)
+                .gusGlassButtonStyle()
                 .controlSize(.large)
                 .visionHoverEffect(cornerRadius: 10)
             case .failed, .complete:
@@ -408,30 +396,21 @@ private struct DownloadButton: View {
             Task { await downloads.download(item, session: session) }
         } label: {
             if let itemID, downloads.activeItemIDs.contains(itemID) {
-                buttonLabel("Downloading", systemImage: "arrow.down.circle")
+                downloadLabel("Downloading", systemImage: "arrow.down.circle")
             } else {
-                buttonLabel("Download", systemImage: "arrow.down.circle")
+                downloadLabel("Download", systemImage: "arrow.down.circle")
             }
         }
         .disabled(itemID.map { downloads.activeItemIDs.contains($0) } ?? true)
-        .buttonStyle(.bordered)
+        .gusGlassButtonStyle()
         .controlSize(.large)
         .visionHoverEffect(cornerRadius: 10)
     }
 
+    /// Compact icon form when used as a hero accessory; full label elsewhere. The title
+    /// stays attached for VoiceOver either way.
     @ViewBuilder
-    private func statusLabel(_ title: LocalizedStringKey, systemImage: String) -> some View {
-        if iconOnly {
-            Label(title, systemImage: systemImage)
-                .labelStyle(.iconOnly)
-                .frame(width: 44, height: 36)
-        } else {
-            Label(title, systemImage: systemImage)
-        }
-    }
-
-    @ViewBuilder
-    private func buttonLabel(_ title: LocalizedStringKey, systemImage: String) -> some View {
+    private func downloadLabel(_ title: LocalizedStringKey, systemImage: String) -> some View {
         if iconOnly {
             Label(title, systemImage: systemImage)
                 .labelStyle(.iconOnly)
