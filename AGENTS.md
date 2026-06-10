@@ -114,6 +114,20 @@ Immersive/  visionOS-only RealityKit "Gus Cinema"
 TopShelf/   tvOS Top Shelf extension entry point
 CarPlay/    iOS-only CarPlay audio templates (inert until the carplay-audio entitlement
             is granted — see Documentation/AppStore/signing-capabilities.md)
+Watch/      watchOS companion app UI (GusWatch target — remote control, quick resume,
+            lightweight browse, on-watch/offline audio; Documentation/watchos-brief.md)
+```
+
+**watchOS companion.** `GusWatch` is a second application target (platform watchOS,
+embedded into the iOS app's `Watch/` directory, standalone-capable via
+`WKRunsIndependentlyOfCompanionApp`). It compiles the verified shared subset — `Models/`,
+`Providers/`, `Services/`, and the non-video `Stores/` (no `PlaybackStore`/
+`SyncPlayStore`) — plus `Sources/Watch`. Remote control rides `RemoteSessionsStore` +
+`SessionsSocket` (Jellyfin `Sessions` API, gated like SyncPlay); credentials hand off
+from the iPhone via `WatchSessionRelay`/`WatchCredentialReceiver`. Build it with:
+
+```sh
+xcodebuild -project 'A Playa Named Gus.xcodeproj' -scheme 'Gus watchOS' -destination 'generic/platform=watchOS Simulator' build
 ```
 
 **Audio vs video playback.** Video stays in `PlaybackStore` (pure AVKit surfaces; the

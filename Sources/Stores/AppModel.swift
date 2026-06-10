@@ -140,7 +140,29 @@ final class AppModel {
         currentSession = SessionStore(client: client, user: user, server: server)
         lastSessionAccount = SessionCredential(user: user).account
         DiagnosticsHub.shared.record(.sessionRestored)
+        publishSessionToWatch(server: server, user: user, token: token)
         logger.info("Restored session for user \(user.name, privacy: .public)")
+    }
+
+    /// Hands the active session to a paired Apple Watch (iOS only; no-op elsewhere).
+    private func publishSessionToWatch(server: ServerConnection, user: StoredUser, token: String) {
+        #if os(iOS) && canImport(WatchConnectivity)
+            WatchSessionRelay.shared.publish(server: server, user: user, token: token)
+        #endif
+    }
+
+    /// Adopts a session handed off from a companion device (the watch side of the
+    /// WatchConnectivity relay): persists the credential and signs in if signed out.
+    func adoptHandedOffSession(server: ServerConnection, user: StoredUser, token: String) {
+        tokenStore.setToken(token, for: SessionCredential(user: user))
+        upsert(server: server)
+        upsert(user: user)
+        lastSessionAccount = SessionCredential(user: user).account
+
+        guard currentSession == nil else { return }
+        let client = JellyfinClientFactory.makeClient(url: server.url, accessToken: token)
+        currentSession = SessionStore(client: client, user: user, server: server)
+        logger.info("Adopted handed-off session for user \(user.name, privacy: .public)")
     }
 
     func switchToStoredUser(_ user: StoredUser) throws {
@@ -366,6 +388,7 @@ final class AppModel {
 
         // SDK sign-in methods already set the access token on this client's configuration.
         currentSession = SessionStore(client: client, user: user, server: server)
+        publishSessionToWatch(server: server, user: user, token: token)
         logger.info("Signed in user \(user.name, privacy: .public)")
     }
 

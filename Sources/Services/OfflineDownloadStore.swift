@@ -377,7 +377,10 @@ struct OfflineDownloadFileStore {
 @MainActor
 @Observable
 final class OfflineDownloadStore: DownloadSessionCoordinatorEventHandler {
-    static let softCapBytes: Int64 = 20 * 1024 * 1024 * 1024
+    static var softCapBytes: Int64 {
+        DownloadsAvailability.softCapBytes
+    }
+
     static let minimumFreeBytes: Int64 = 1 * 1024 * 1024 * 1024
 
     private(set) var records: [OfflineDownloadRecord] = []
@@ -601,8 +604,16 @@ final class OfflineDownloadStore: DownloadSessionCoordinatorEventHandler {
                 appropriateFor: nil,
                 create: true
             )) ?? FileManager.default.temporaryDirectory
-            let values = try supportURL.resourceValues(forKeys: [.volumeAvailableCapacityForImportantUsageKey])
-            if let available = values.volumeAvailableCapacityForImportantUsage, available < Self.minimumFreeBytes {
+            // watchOS has no "important usage" capacity query; plain volume capacity is
+            // the closest available signal there.
+            #if os(watchOS)
+                let values = try supportURL.resourceValues(forKeys: [.volumeAvailableCapacityKey])
+                let available = values.volumeAvailableCapacity.map(Int64.init)
+            #else
+                let values = try supportURL.resourceValues(forKeys: [.volumeAvailableCapacityForImportantUsageKey])
+                let available = values.volumeAvailableCapacityForImportantUsage
+            #endif
+            if let available, available < Self.minimumFreeBytes {
                 throw GusError.server(String(localized: "Not enough free space to start another download.", comment: "Low disk space download error"))
             }
         #endif

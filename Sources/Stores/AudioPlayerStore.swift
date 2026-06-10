@@ -381,14 +381,21 @@ final class AudioPlayerStore {
     // MARK: - Audio session
 
     private func configureAudioSession() {
-        #if os(iOS) || os(tvOS) || os(visionOS)
+        #if os(watchOS)
+            // watchOS long-form audio routes through the system route picker (AirPods,
+            // speaker); activation is asynchronous and may prompt the user. Playback
+            // starts once the route resolves.
+            let session = AVAudioSession.sharedInstance()
+            try? session.setCategory(.playback, mode: .default, policy: .longFormAudio)
+            session.activate(options: []) { _, _ in }
+        #elseif os(iOS) || os(tvOS) || os(visionOS)
             try? AVAudioSession.sharedInstance().setCategory(.playback, mode: .default)
             try? AVAudioSession.sharedInstance().setActive(true)
         #endif
     }
 
     private func deactivateAudioSession() {
-        #if os(iOS) || os(tvOS) || os(visionOS)
+        #if os(iOS) || os(tvOS) || os(visionOS) || os(watchOS)
             try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
         #endif
     }

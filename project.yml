@@ -15,6 +15,7 @@ options:
     tvOS: "18.0"
     visionOS: "2.0"
     macOS: "15.0"
+    watchOS: "11.0"
   createIntermediateGroups: true
   groupSortPosition: top
   generateEmptyDirectories: true
@@ -47,10 +48,13 @@ targets:
       - path: Sources
         excludes:
           - "TopShelf/**"
+          - "Watch/**"
       - path: Resources
-        # Info.plist is referenced via INFOPLIST_FILE, not copied as a resource.
+        # Info.plist is referenced via INFOPLIST_FILE, not copied as a resource;
+        # Resources/Watch belongs to the GusWatch target only.
         excludes:
           - "Info.plist"
+          - "Watch/**"
     dependencies:
       - sdk: AppIntents.framework
       - package: JellyfinSDK
@@ -77,10 +81,53 @@ targets:
         link: false
         copy:
           destination: plugins
+      # The watch companion ships inside the iOS app archive (no separate store
+      # record) while remaining standalone-capable — Documentation/watchos-brief.md.
+      - target: GusWatch
+        destinationFilters: [iOS]
+        embed: true
+        link: false
     # The only target-specific settings; everything else is in the xcconfig.
     settings:
       base:
         INFOPLIST_FILE: Resources/Info.plist
+
+  # watchOS companion app (Documentation/watchos-brief.md). Compiles the verified
+  # shared-code subset — Models, Providers, Services, and the non-video Stores — plus
+  # the watch-specific UI in Sources/Watch. Features/, Platform/, SharedUI/, Immersive/,
+  # TopShelf/, and CarPlay/ assume the five desktop/TV platforms and stay excluded
+  # (except the Now Playing + downloads-availability files, which are platform-neutral).
+  GusWatch:
+    type: application
+    platform: watchOS
+    sources:
+      - path: Sources/Watch
+      - path: Sources/Models
+      - path: Sources/Providers
+      - path: Sources/Services
+      - path: Sources/Stores
+        excludes:
+          - "PlaybackStore.swift"
+          - "SyncPlayStore.swift"
+      - path: Sources/Features/Player/NowPlayingController.swift
+      - path: Sources/Platform/NowPlayingArtworkFactory.swift
+      - path: Sources/Platform/DownloadsAvailability.swift
+      - path: Sources/SharedUI/LoadingStateView.swift
+      - path: Resources/Localizable.xcstrings
+      - path: Resources/Watch/Assets.xcassets
+    dependencies:
+      - package: JellyfinSDK
+        product: JellyfinAPI
+    settings:
+      base:
+        INFOPLIST_FILE: Resources/Watch/Info.plist
+        PRODUCT_NAME: GusWatch
+        PRODUCT_MODULE_NAME: GusWatch
+        PRODUCT_BUNDLE_IDENTIFIER: dev.ericslutz.gus.watchkitapp
+        TARGETED_DEVICE_FAMILY: 4
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+        CODE_SIGN_ENTITLEMENTS: ""
 
   GusTopShelf:
     type: tv-app-extension
@@ -250,6 +297,11 @@ schemes:
     build:
       targets:
         Gus: all
+
+  Gus watchOS:
+    build:
+      targets:
+        GusWatch: all
     test:
       gatherCoverageData: true
       targets:

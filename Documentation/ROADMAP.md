@@ -46,17 +46,17 @@ destinations build; iOS launches and renders the Connect screen.
 **Goal:** A Playa Named Gus looks like a finished product at first glance — real icon,
 considered launch and accent, consistent semantic theming.
 
-- [~] **App icon (all platforms).** Official Winter Chill palette: deep teal background
+- [x] **App icon (all platforms).** Official Winter Chill palette: deep teal background
   `#0B2E33`, icy pineapple body using `#B8E3E9` highlights into `#4F7C82` depth, and
   `#93B1B5` for the diamond crosshatch lattice and muted crown detail. Produce
   `AppIcon.appiconset` (iOS + macOS idioms), `AppIcon.brandassets` (tvOS App Icon + Top
   Shelf), and `AppIcon.solidimagestack` (visionOS layered), all named `AppIcon`; remove the
   `ASSETCATALOG_COMPILER_APPICON_NAME: ""` override in `project.yml`.
   *Acceptance:* actool produces no missing-icon errors on any SDK; icon renders on each
-  Home screen / launcher. *(Started: a placeholder pineapple generated with
-  `Scripts/generate-app-icon.swift`; all five destinations build green and actool bakes
-  `AppIcon` per platform. The artwork now needs a final Winter Chill regeneration pass
-  before brand sign-off.)*
+  Home screen / launcher. *(Done: `Scripts/generate-app-icon.swift` renders the Winter
+  Chill pineapple across every idiom — iOS universal with default/dark/tinted
+  appearances, macOS sizes, tvOS brand assets + Top Shelf, the visionOS layered stack,
+  and the watchOS icon in `Resources/Watch/Assets.xcassets`.)*
 - [x] **Launch experience.** Confirm `UILaunchScreen` presents cleanly; consider a minimal
   branded launch on platforms that support it. *Acceptance:* no flash of unstyled content;
   consistent first frame. *(Done: iOS/iPadOS use a color-only `UILaunchScreen` backed by
@@ -77,9 +77,10 @@ considered launch and accent, consistent semantic theming.
   colors; do not use palette colors as body text on low-contrast pairings. *Acceptance:*
   light/dark both legible; no raw `Color(red:…)` in feature views; asset catalog colors,
   generated app icon art, launch background, and cinema lighting all use Winter Chill.
-  *(Started: cinema colors live in asset catalog colorsets; windowed UI uses semantic color
-  tokens where custom color is needed. Existing palette assets predate the Winter Chill
-  decision and need a value refresh.)*
+  *(Done: `AccentColor` and `LaunchBackground` carry the Winter Chill light/dark role
+  values, the `Cinema*` colorsets use the always-dark immersive variants, and
+  `GusCinemaPalette` fallbacks match; no raw brand literals remain outside the asset
+  catalog/generator.)*
 - [x] **String Catalog baseline.** Move all current literal UI strings into
   `Localizable.xcstrings` with comments. *Acceptance:* `SWIFT_EMIT_LOC_STRINGS` shows no
   un-catalogued user-facing strings in changed files. *(Done: the base catalog is seeded
@@ -101,29 +102,34 @@ considered launch and accent, consistent semantic theming.
 Winter Chill palette everywhere it appears, and keep future UI work consistent with that
 theme.
 
-- [ ] **Palette asset refresh.** Update every brand color asset and generated-color input
+- [x] **Palette asset refresh.** Update every brand color asset and generated-color input
   to the M1 Winter Chill role table: `AccentColor`, launch background, cinema key/fill/
   backdrop colors, app icon generator constants, and any other non-system brand tokens.
   *Acceptance:* asset catalog values match the roadmap roles in light and dark mode; old
   brand hex values are gone from source-controlled assets/scripts/docs except historical
-  ADR context; `xcodegen generate` and the platform builds still pass.
-- [ ] **Winter Chill app icon regeneration.** Regenerate the iOS/macOS app icon, tvOS
+  ADR context; `xcodegen generate` and the platform builds still pass. *(Done — verified
+  by grep across Sources/Scripts/docs.)*
+- [x] **Winter Chill app icon regeneration.** Regenerate the iOS/macOS app icon, tvOS
   brand assets, Top Shelf images, and visionOS layered icon using the Winter Chill
   pineapple treatment. *Acceptance:* actool produces no icon warnings on any destination,
   the icon reads clearly in light/dark launchers, and the generated images no longer use
-  the old purple/blue palette.
-- [ ] **Theme consistency audit.** Sweep signed-out, signed-in, playback, downloads,
+  the old purple/blue palette. *(Done; iOS additionally ships dark and tinted appearance
+  variants.)*
+- [~] **Theme consistency audit.** Sweep signed-out, signed-in, playback, downloads,
   settings, search, music, photos, books, Live TV, CarPlay, Top Shelf, and visionOS Cinema
   surfaces for stale brand colors or one-off styling. Preserve Apple semantic colors,
   Materials, Dynamic Type, focus, and accessibility behavior; do not replace system status
   colors with custom brand colors unless a future palette expansion adds accessible status
   tokens. *Acceptance:* light mode, dark mode, Reduce Transparency, tvOS focus, and
-  visionOS glass all stay legible and visually aligned with Winter Chill.
-- [ ] **Brand documentation and screenshot alignment.** Update `AGENTS.md`, `CLAUDE.md`,
+  visionOS glass all stay legible and visually aligned with Winter Chill. *(Code-side
+  complete — all custom color flows through the refreshed semantic tokens; the
+  per-platform visual verification pass rides the release regression matrix.)*
+- [~] **Brand documentation and screenshot alignment.** Update `AGENTS.md`, `CLAUDE.md`,
   README/support copy where they mention brand colors, then recapture App Store/demo
   screenshots after the palette lands. *Acceptance:* docs and screenshots describe/show
   Winter Chill consistently, and no release-facing artifact still presents the old palette
-  as current.
+  as current. *(Docs updated — AGENTS.md palette table and cinema comments; screenshot
+  recapture remains once marketing capture runs.)*
 
 ---
 
@@ -438,12 +444,14 @@ validation, TestFlight, and submission work are actually done.
   Libraries, and Settings on iPhone/iPad/Apple TV/Vision Pro; macOS stays manual per the
   script's instructions. Final marketing-quality capture and App Store Connect upload
   remain.)*
-- [ ] **Review-guidelines compliance audit.** Walk the
+- [x] **Review-guidelines compliance audit.** Walk the
   [App Review Guidelines](https://developer.apple.com/app-store/review/guidelines/):
   third-party-server clients, scoped ATS (`NSAllowsLocalNetworking` for self-hosted LAN
   HTTP; TLS required remotely), no private API, export-compliance
   (`ITSAppUsesNonExemptEncryption=false`).
-  *Acceptance:* documented self-audit with no open red flags.
+  *Acceptance:* documented self-audit with no open red flags. *(Done:
+  `Documentation/AppStore/review-compliance-audit.md` walks guidelines 1–5, audits the
+  shipped configuration, and drafts the Notes for Review and age-rating answers.)*
 - [ ] **TestFlight beta.** Upload through Xcode Cloud, internal/external testing, gather
   crash/feedback.
   *Acceptance:* a clean build runs from TestFlight on each platform.
@@ -484,20 +492,20 @@ Treat documentation as part of every milestone, not a phase:
 These are intentionally outside the 1.0 App Store path above. Promote them into a
 milestone only after the launch scope is stable.
 
-- [ ] **watchOS companion app.** Build a focused watchOS experience that extends A Playa
+- [~] **watchOS companion app.** Build a focused watchOS experience that extends A Playa
  Named Gus beyond the five launch platforms without trying to make the watch the primary video
- client. Candidate scope includes server/session status, Now Playing glance, remote
- playback control for any active Jellyfin client, client/device selection, quick resume,
- lightweight library browsing, direct audio playback, offline audio downloads, and novelty
- direct video playback on the watch. Offline downloads are limited to audio-first content
- on watchOS; direct video playback is treated as an advanced/secondary feature and should
- not be promoted as a primary use case. *Acceptance:* a watchOS product brief defines the
- minimum useful feature set, platform constraints, Jellyfin API requirements, battery/
- storage/network tradeoffs, and whether it ships as a companion-only target or a
- standalone-capable watchOS app. *(Acceptance met: `Documentation/watchos-brief.md`
- defines the v1 companion scope, the standalone-capable recommendation, the verified
- shared-code subset, API additions, battery/storage/network tradeoffs, and the build/CI
- integration plan; implementation is its own follow-up milestone.)*
+ client. Scope, constraints, and tradeoffs: `Documentation/watchos-brief.md`.
+ *Acceptance:* the brief's verification matrix passes on watch hardware.
+ *(Implemented: the `GusWatch` target (standalone-capable companion, embedded in the iOS
+ archive) ships the full v1 brief — session status glance, Sessions-API remote control
+ with WebSocket live updates + polling fallback (`RemoteSessionsStore`/`SessionsSocket`),
+ quick resume to a chosen client, lightweight per-library browse, on-watch audio through
+ the shared `AudioPlayerStore` with long-form audio routing, offline audio downloads
+ under a 2 GB watch budget, constrained on-watch video via the native `VideoPlayer` with
+ remote-playback fallback, standalone Quick Connect sign-in, and WatchConnectivity
+ credential hand-off from the iPhone. CI builds the watch lane. Remaining: the brief's
+ on-device verification matrix — real-client remote control, route-picker audio, battery
+ soak, and WatchConnectivity hand-off on hardware.)*
 
 - [ ] **Expanded immersive environments.** Enhance Gus Cinema with additional native
  RealityKit environments or scene variants that remain comfortable, performant, and
@@ -515,14 +523,18 @@ milestone only after the launch scope is stable.
  precise When-scheduled application, ready/buffering reporting, and multi-client drift
  validation remain.)*
 
-- [ ] **Customizable main navigation.** Let users choose from Settings which sections are
+- [x] **Customizable main navigation.** Let users choose from Settings which sections are
  visible in the primary app menu/tab/sidebar and in what order, while keeping Home fixed at
- the start and Settings fixed at the end. Candidate reorderable/hideable items include
- Movies, Shows, Music, Books, Libraries, and any future media-type entries exposed by the
- active provider. *Acceptance:* users can hide and reorder all intermediate navigation
- items with native edit controls, the preference persists per app user, unavailable
- provider sections are handled gracefully, and each platform still preserves its native
- tab, sidebar, or focus behavior.
+ the start and Settings fixed at the end. *Acceptance:* users can hide and reorder all
+ intermediate navigation items with native edit controls, the preference persists per app
+ user, unavailable provider sections are handled gracefully, and each platform still
+ preserves its native tab, sidebar, or focus behavior. *(Done:
+ `NavigationPreferencesStore` persists per-account order/visibility for the Libraries
+ grid plus every server library; Settings → Navigation edits with toggles and move
+ controls that work on every platform including tvOS focus; all three roots (tabs,
+ visionOS sidebar, split view) render the customized sections dynamically; removed
+ server libraries drop gracefully and new ones append visible; `gus://` routes map onto
+ the customized layout with a Home fallback when Libraries is hidden.)*
 
 - [ ] **Apple Intelligence library assistant and generated artwork.** Integrate Apple's
  Foundation Models, Core Spotlight LLM search, Private Cloud Compute, and Image Playground
@@ -590,7 +602,7 @@ milestone only after the launch scope is stable.
  playback pipeline. A full EPG grid and recording creation remain; validation needs a
  tuner-equipped server.)*
 
-- [ ] **Family safety controls and age assurance.** Add parent-friendly content controls
+- [~] **Family safety controls and age assurance.** Add parent-friendly content controls
  using Apple-provided safety APIs rather than a custom age-verification or child-profile
  system. Candidate scope includes reading the device's effective movie and TV rating
  restrictions through ManagedSettings media settings, mapping Jellyfin parental/official
@@ -606,11 +618,15 @@ milestone only after the launch scope is stable.
  availability, entitlement/review requirements, Jellyfin rating-field mapping, behavior for
  unrated media, age-gate choices, privacy/data-retention rules, App Store Connect age
  rating impacts, and a test matrix for child, teen, adult, declined-sharing, and missing
- system-restriction scenarios before implementation starts. *(Started:
- `ContentRatingGate` maps US movie/TV ratings to tiers and filters Home, library, and
- search results per a Settings "Content Restrictions" limit with an unrated-media policy,
- designed to pair with Jellyfin permissions and Screen Time; reading device-effective
- restrictions via ManagedSettings remains entitlement-gated follow-up per the brief.)*
+ system-restriction scenarios before implementation starts. *(Implemented:
+ `Documentation/family-safety-brief.md` is the acceptance artifact; `ContentRatingGate`
+ covers US and international rating systems (BBFC/FSK/ACB/Canadian, country prefixes,
+ bare ages) and now gates item detail and playback with a clear explanation in addition
+ to filtering Home/library/search/similar/Up Next/Live TV recordings/CarPlay/watch
+ lists; Declared Age Range (iOS/macOS 26+) offers privacy-preserving age-aware defaults
+ from Settings, pending the `com.apple.developer.declared-age-range` entitlement grant;
+ ManagedSettings/FamilyControls device-restriction reading remains entitlement-gated
+ follow-up per the brief.)*
 
 - [ ] **User-initiated diagnostic export.** Add a Settings diagnostics section after the
  Apple-native diagnostics foundation is stable. The export must be explicitly initiated by

@@ -286,18 +286,3 @@ private struct LibrariesGrid: View {
         }
     }
 }
-
-extension MediaItem {
-    /// SF Symbol representing a library's collection type.
-    var librarySymbol: String {
-        switch collectionType {
-        case .movies: return "film"
-        case .tvshows: return "tv"
-        case .music: return "music.note"
-        case .books: return "book"
-        case .photos: return "photo"
-        case .livetv: return "antenna.radiowaves.left.and.right"
-        default: return "rectangle.stack"
-        }
-    }
-}

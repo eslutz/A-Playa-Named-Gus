@@ -89,6 +89,9 @@ jobs:
             destination: generic/platform=tvOS Simulator
           - name: visionOS
             destination: generic/platform=visionOS Simulator
+          - name: watchOS
+            scheme: Gus watchOS
+            destination: generic/platform=watchOS Simulator
 
     steps:
       - name: Checkout
@@ -115,7 +118,7 @@ jobs:
         run: xcodebuild -resolvePackageDependencies -project 'A Playa Named Gus.xcodeproj' -scheme 'A Playa Named Gus'
 
       - name: Build ${{ matrix.name }}
-        run: xcodebuild -project 'A Playa Named Gus.xcodeproj' -scheme 'A Playa Named Gus' -destination '${{ matrix.destination }}' build
+        run: xcodebuild -project 'A Playa Named Gus.xcodeproj' -scheme '${{ matrix.scheme || 'A Playa Named Gus' }}' -destination '${{ matrix.destination }}' build
 
   test:
     name: Test ${{ matrix.name }}
