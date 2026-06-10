@@ -34,11 +34,13 @@ struct HomeView: View {
     }
 
     private func content(_ store: HomeStore) -> some View {
-        let nextUpItems = upNext.mergedItems(
+        // Remote next-up arrives pre-filtered; locally pinned Up Next items need the
+        // same content-rating pass.
+        let nextUpItems = ContentRatingGate.filter(upNext.mergedItems(
             remote: store.nextUpItems,
             serverID: session.server.id,
             userID: session.user.id
-        )
+        ))
 
         return LoadingStateView(
             state: store.state,

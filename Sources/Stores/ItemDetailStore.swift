@@ -54,8 +54,8 @@ final class ItemDetailStore {
         async let similar = loadSimilarItems(for: item)
         async let special = loadSpecialFeatures(for: item)
 
-        similarItems = await similar
-        specialFeatures = await special
+        similarItems = await ContentRatingGate.filter(similar)
+        specialFeatures = await ContentRatingGate.filter(special)
     }
 
     private func loadSimilarItems(for item: MediaItem) async -> [MediaItem] {

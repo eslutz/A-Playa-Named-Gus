@@ -62,10 +62,15 @@ struct SettingsView: View {
                 if contentLimitRawValue != ContentRatingGate.Limit.off.rawValue {
                     Toggle("Hide Unrated Media", isOn: $hideUnratedContent)
                 }
+                #if canImport(DeclaredAgeRange) && (os(iOS) || os(macOS))
+                    if #available(iOS 26.0, macOS 26.0, *) {
+                        AgeRangeDefaultsButton()
+                    }
+                #endif
             } header: {
                 Text("Content Restrictions")
             } footer: {
-                Text("Hides movies and shows rated above the limit. Pair with Jellyfin user permissions and Apple Screen Time for enforced parental controls.")
+                Text("Hides and gates media rated above the limit. Pair with Jellyfin user permissions and Apple Screen Time for enforced parental controls.")
             }
 
             Section {

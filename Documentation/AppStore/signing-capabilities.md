@@ -61,6 +61,18 @@ CODE_SIGN_ENTITLEMENTS[sdk=iphoneos*] = Config/Gus-CarPlay.entitlements
 CODE_SIGN_ENTITLEMENTS[sdk=iphonesimulator*] = Config/Gus-CarPlay.entitlements
 ```
 
+## Declared Age Range (Pending Entitlement)
+
+The family-safety "Set from Age Range" action (`Sources/Features/Settings/
+AgeRangeDefaults.swift`, OS 26+ only) uses Apple's DeclaredAgeRange framework, which
+requires the `com.apple.developer.declared-age-range` entitlement at runtime. The code
+self-disables without it: the request throws and Settings shows a graceful status
+message while the manual rating picker keeps working. Request the entitlement together
+with App Store Connect setup, then add it to the iOS/macOS entitlements files and wire
+them per-SDK like CarPlay above. Scope and privacy rules:
+`Documentation/family-safety-brief.md`.
+
+
 Verify with the CarPlay simulator (Simulator app → I/O → External Displays → CarPlay).
 
 ## Setting Your Team ID (Local Override)

@@ -146,6 +146,15 @@ enum ContentRatingGate {
         return items.filter { admits($0, limit: limit, hideUnrated: hideUnrated) }
     }
 
+    /// Whether a single item is admitted under the stored preference. List filtering
+    /// hides restricted items; this is the second layer that gates detail and playback
+    /// for items reached another way (deep link, downloads, stale navigation).
+    static func admitsStored(_ item: MediaItem, userDefaults: UserDefaults = .standard) -> Bool {
+        let limit = storedLimit(userDefaults: userDefaults)
+        guard limit != .off else { return true }
+        return admits(item, limit: limit, hideUnrated: userDefaults.bool(forKey: hideUnratedDefaultsKey))
+    }
+
     static func storedLimit(userDefaults: UserDefaults = .standard) -> Limit {
         userDefaults.string(forKey: limitDefaultsKey).flatMap(Limit.init(rawValue:)) ?? .off
     }

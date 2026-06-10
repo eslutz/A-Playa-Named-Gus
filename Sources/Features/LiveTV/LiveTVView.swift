@@ -251,7 +251,7 @@ final class LiveTVStore {
             async let timersLoad = session.mediaProvider.liveTVTimers()
             let (channelPage, loadedRecordings, loadedTimers) = try await(channelsLoad, recordingsLoad, timersLoad)
             channels = channelPage.items
-            recordings = loadedRecordings
+            recordings = ContentRatingGate.filter(loadedRecordings)
             timers = loadedTimers
             state = .loaded
         } catch {

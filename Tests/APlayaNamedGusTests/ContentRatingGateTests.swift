@@ -84,6 +84,25 @@ struct ContentRatingGateTests {
         #expect(ContentRatingGate.admits(album, limit: .general, hideUnrated: true))
     }
 
+    @Test("admitsStored gates single items for detail and playback")
+    func admitsStoredGatesSingleItems() throws {
+        let defaults = try #require(UserDefaults(suiteName: "gus-rating-tests-\(UUID().uuidString)"))
+        let kidsMovie = MediaItem(id: "1", name: "Kids", officialRating: "G", type: .movie)
+        let matureMovie = MediaItem(id: "2", name: "Mature", officialRating: "R", type: .movie)
+        let unrated = MediaItem(id: "3", name: "Mystery", type: .movie)
+
+        // Off by default: everything is admitted.
+        #expect(ContentRatingGate.admitsStored(matureMovie, userDefaults: defaults))
+
+        defaults.set(ContentRatingGate.Limit.general.rawValue, forKey: ContentRatingGate.limitDefaultsKey)
+        #expect(ContentRatingGate.admitsStored(kidsMovie, userDefaults: defaults))
+        #expect(!ContentRatingGate.admitsStored(matureMovie, userDefaults: defaults))
+        #expect(ContentRatingGate.admitsStored(unrated, userDefaults: defaults))
+
+        defaults.set(true, forKey: ContentRatingGate.hideUnratedDefaultsKey)
+        #expect(!ContentRatingGate.admitsStored(unrated, userDefaults: defaults))
+    }
+
     @Test("filter respects the stored preference")
     func filterRespectsStoredPreference() throws {
         let defaults = try #require(UserDefaults(suiteName: "gus-rating-tests-\(UUID().uuidString)"))

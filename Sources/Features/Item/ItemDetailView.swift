@@ -11,10 +11,15 @@ struct ItemDetailView: View {
 
     @State private var playerItem: ItemRef?
     @State private var store: ItemDetailStore?
+    // Read via @AppStorage so a changed household limit re-gates already-pushed screens.
+    @AppStorage(ContentRatingGate.limitDefaultsKey) private var contentLimitRawValue = ContentRatingGate.Limit.off.rawValue
+    @AppStorage(ContentRatingGate.hideUnratedDefaultsKey) private var hideUnratedContent = false
 
     var body: some View {
         Group {
-            if let store {
+            if isRestricted {
+                RestrictedContentView()
+            } else if let store {
                 LoadingStateView(state: store.state) {
                     detailContent(for: store)
                 }
@@ -98,6 +103,14 @@ struct ItemDetailView: View {
             downloads.load(serverID: session.server.id, userID: session.user.id)
             upNext.load(serverID: session.server.id, userID: session.user.id)
         }
+    }
+
+    private var isRestricted: Bool {
+        guard let limit = ContentRatingGate.Limit(rawValue: contentLimitRawValue), limit != .off else {
+            return false
+        }
+        let current = store?.item ?? item
+        return !ContentRatingGate.admits(current, limit: limit, hideUnrated: hideUnratedContent)
     }
 
     private var sectionPadding: EdgeInsets {

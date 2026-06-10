@@ -27,6 +27,26 @@ private struct PresentedPlayer: View {
     let item: MediaItem
 
     var body: some View {
+        // Second-layer family-safety gate: list filtering hides restricted items, but
+        // playback can be reached via downloads, deep links, or stale navigation.
+        if !ContentRatingGate.admitsStored(item) {
+            NavigationStack {
+                RestrictedContentView()
+                    .toolbar {
+                        ToolbarItem(placement: .cancellationAction) {
+                            Button("Done") {
+                                dismiss()
+                            }
+                        }
+                    }
+            }
+        } else {
+            mediaSurface
+        }
+    }
+
+    @ViewBuilder
+    private var mediaSurface: some View {
         switch item.type {
         case .photo:
             NavigationStack {
