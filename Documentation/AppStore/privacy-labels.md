@@ -54,10 +54,9 @@ Playa Named Gus source code.
 
 ## Remaining Submission Steps
 
-- Confirm no Apple diagnostic/crash-reporting opt-in changes the developer-side privacy
-  statement.
-- Revisit crash and diagnostics disclosures after the Diagnostics & Reliability
-  initiative adds Apple-native crash reporting and MetricKit handling.
+- Revisit crash and diagnostics disclosures once the Diagnostics & Reliability initiative
+  adds Apple-native crash reporting and MetricKit handling, confirming whether any
+  developer-visible diagnostics change the privacy statement.
 - Add the privacy policy URL for iOS, iPadOS, macOS, and visionOS in App Store Connect.
 - Add tvOS privacy policy text in the Apple TV Privacy Policy field.
 - Complete App Privacy answers in App Store Connect, using this document as the source.

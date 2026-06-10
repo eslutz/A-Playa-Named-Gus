@@ -18,9 +18,8 @@ Apple TV with the accessibility features Apple exposes to the app.
 - Gus supports or plans to support VoiceOver, Voice Control, Larger Text, Dark Interface,
   Differentiate Without Color Alone, Sufficient Contrast, Reduced Motion, Captions, and
   Audio Descriptions where available.
-- Captions and audio descriptions are supported when available in the user’s Jellyfin media library.
-- Captions and audio descriptions depend on the media tracks available from the user's
-  Jellyfin server.
+- Captions and audio descriptions are supported when available as tracks in the user’s
+  Jellyfin media.
 - Users can report accessibility issues through `https://gus.ericslutz.dev/support`.
 
 The page should avoid claiming support that has not been verified on the relevant platform.

@@ -49,6 +49,5 @@ See `Documentation/AppStore/review-support-pages.md`.
 
 A Playa Named Gus requires a user-provided Jellyfin server. If Apple review needs test
 access, provide a temporary demo Jellyfin server URL plus credentials with known sample
-media. Reference the Age Suitability page when explaining that Gus does not host, curate,
-or distribute media and does not provide unrestricted web access, chat, messaging,
-advertising, gambling, contests, or loot boxes.
+media. Reference the Age Suitability page (`https://gus.ericslutz.dev/age-suitability`)
+for the age-rating scope explanation; content per `Documentation/AppStore/review-support-pages.md`.

@@ -336,44 +336,22 @@ validation, TestFlight, and submission work are actually done.
   marketing URLs, privacy policy URL, description, keywords. *Acceptance:* record
   complete and consistent across platforms, using the published `gus.ericslutz.dev`
   support, privacy, and marketing pages.
-- [ ] **Hosted review, support, and compliance pages.** Publish App Store readiness pages
-  at `gus.ericslutz.dev` before public release and App Review submission: `/` for the
-  marketing/landing page, `/support` for user support, `/privacy` for the privacy policy,
-  `/accessibility` for accessibility support, and `/age-suitability` for age-rating
-  context. The age suitability page must explain
-  that Gus is a Jellyfin client, does not host/curate/distribute media, does not provide
-  unrestricted web access, chat, messaging, advertising, gambling, contests, or loot
-  boxes, and that age appropriateness depends on the user's Jellyfin server content with
-  parent controls handled through Jellyfin permissions/library restrictions and Apple
-  Screen Time. *Acceptance:* all pages are live over HTTPS, linked where appropriate,
-  match `Documentation/AppStore/review-support-pages.md`, and the App Store Connect
-  Support URL, Privacy Policy URL, Marketing URL, and review notes reference the published
-  pages.
-- [ ] **Accessibility readiness and disclosure.** Establish a dedicated accessibility
-  initiative for iPhone, iPad, Mac, Apple Vision Pro, and Apple TV using native SwiftUI,
-  UIKit/AppKit, tvOS, visionOS, AVKit, and system accessibility APIs wherever possible.
-  Candidate scope includes VoiceOver, Voice Control, Dynamic Type/Larger Text, light/dark
-  appearance, Differentiate Without Color Alone, sufficient contrast, Reduce Motion,
-  captions, and audio description / alternate audio selection where Jellyfin media exposes
-  those tracks. Platform validation must cover iPhone/iPad touch targets and playback
-  controls, Mac keyboard navigation/menu/focus behavior, Apple TV Focus Engine and remote
-  navigation, and Apple Vision Pro gaze/gesture comfort and readable spatial UI.
-  *Acceptance:* `https://gus.ericslutz.dev/accessibility` is published and linked from the
+- [ ] **Hosted review, support, and compliance pages.** Publish the five pages at
+  `gus.ericslutz.dev` — marketing, support, privacy policy, accessibility, and age
+  suitability — per `Documentation/AppStore/review-support-pages.md`. *Acceptance:* all
+  pages are live over HTTPS and App Store Connect URLs plus review notes reference them.
+- [ ] **Accessibility readiness and disclosure.** Native Apple accessibility initiative
+  across all five platforms; scope, feature requirements, and validation matrix per
+  `Documentation/AppStore/accessibility.md`. *Acceptance:*
+  `https://gus.ericslutz.dev/accessibility` is published and linked from the
   website/support pages; App Store accessibility disclosures match implemented support;
   major user flows are usable with relevant Apple accessibility features; release testing
-  includes the matrix in `Documentation/AppStore/accessibility.md`.
-- [ ] **Diagnostics & reliability foundation.** Implement an Apple-native diagnostics
-  initiative before public release that improves stability, performance, and supportability
-  without adding third-party analytics or tracking. Candidate scope includes App Store
-  Connect/Xcode Organizer crash triage, MetricKit crash/hang/performance diagnostics where
-  supported, launch/server/library/playback/navigation/search performance baselines, a small
-  internal diagnostics abstraction for app-owned diagnostic events, and a recurring review
-  process for crashes, hangs, launch regressions, memory, energy, disk writes, network
-  transfers, and playback startup regressions. *Acceptance:* crash diagnostics are available
-  through Apple tooling; MetricKit is integrated across supported platforms or documented
-  where unavailable; performance baselines are recorded; the review process is documented;
-  App Store privacy answers and the hosted privacy policy accurately describe diagnostic
-  collection; `Documentation/AppStore/diagnostics-reliability.md` is complete.
+  passes the matrix in `Documentation/AppStore/accessibility.md`.
+- [ ] **Diagnostics & reliability foundation.** Implement Apple-native diagnostics (crash
+  triage, MetricKit, performance baselines, review cadence) without third-party analytics;
+  scope per `Documentation/AppStore/diagnostics-reliability.md`. *Acceptance:* that
+  document's acceptance checklist is complete and privacy disclosures match implemented
+  behavior.
 - [ ] **Copyright-safe demo media library.** Implement a demo library for App Store
   screenshots, previews, review access, and TestFlight validation using only custom,
   fictional content: generated or owned posters/backdrops, placeholder titles, sanitized

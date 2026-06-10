@@ -51,33 +51,13 @@ source of content access control for the current 1.0 scope.
 ## Privacy Policy Page
 
 `/privacy` must be adapted from `Documentation/AppStore/privacy-policy.md` and kept aligned
-with `Documentation/AppStore/privacy-labels.md` and `Resources/PrivacyInfo.xcprivacy`.
-It should cover:
-
-- No developer-operated analytics, advertising, tracking, or backend service.
-- Apple-native crash and diagnostics handling once the Diagnostics & Reliability
-  initiative is implemented.
-- User-selected Jellyfin server communication.
-- Credentials and tokens stored in Keychain.
-- Local/offline downloads, platform exclusions, and backup exclusion.
-- Local network discovery behavior.
-- Data handled by the user's Jellyfin server, which is outside Gus developer control.
-- Privacy contact information.
+with `Documentation/AppStore/privacy-labels.md` and `Resources/PrivacyInfo.xcprivacy`,
+including any diagnostic disclosure changes from the Diagnostics & Reliability initiative.
 
 ## Accessibility Page
 
-`/accessibility` must be adapted from `Documentation/AppStore/accessibility.md` and
-clearly state:
-
-- Gus is designed to support Apple platform accessibility features.
-- Supported platforms include iPhone, iPad, Mac, Apple Vision Pro, and Apple TV.
-- Gus supports or plans to support VoiceOver, Voice Control, Larger Text, Dark Interface,
-  Differentiate Without Color Alone, Sufficient Contrast, Reduced Motion, Captions, and
-  Audio Descriptions where available.
-- Captions and audio descriptions are supported when available in the user’s Jellyfin media library.
-- Captions and audio descriptions depend on the media tracks available from the user's
-  Jellyfin server.
-- Users can report accessibility issues through `/support`.
+`/accessibility` must be adapted from `Documentation/AppStore/accessibility.md`. Required
+statements are specified in that document’s "Public Accessibility Page" section.
 
 ## Marketing Page
 

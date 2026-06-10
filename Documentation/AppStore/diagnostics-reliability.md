@@ -91,17 +91,9 @@ Add reporting that makes regressions visible over time:
 
 ## Review Process
 
-After major releases, TestFlight builds, and App Store releases, review:
-
-- Crash frequency.
-- Hang frequency.
-- Launch performance.
-- Memory usage.
-- CPU usage.
-- Energy impact.
-- Disk writes.
-- Network transfer volume where available.
-- Playback startup and playback reliability regressions.
+After major releases, TestFlight builds, and App Store releases, review all metric
+categories in the MetricKit Integration section above, plus playback startup and
+playback reliability regressions.
 
 Prioritize fixes by:
 
@@ -117,10 +109,6 @@ milestone.
 
 ## Privacy Requirements
 
-- No third-party analytics SDK may be added for diagnostics without an explicit roadmap
-  decision.
-- No advertising identifiers, behavioral tracking data, or unrelated usage analytics may
-  be collected as part of this initiative.
 - MetricKit summaries and app-owned diagnostic markers must avoid Jellyfin tokens,
   passwords, exact server URLs, private media titles, usernames, and other sensitive data.
 - Privacy labels and privacy policy text must describe diagnostic collection accurately
@@ -140,8 +128,7 @@ milestone.
       network-transfer diagnostics are reviewed through Apple-native tooling.
 - [ ] Internal diagnostics abstraction exists and feature code is not directly coupled to
       third-party analytics or tracking services.
-- [ ] Initial launch, cold start, warm start, server connection, library loading, media
-      playback startup, navigation responsiveness, and search baselines are documented.
+- [ ] All performance baselines in the Performance Baselines section are documented.
 - [ ] Regression review cadence and triage process are documented.
 - [ ] Privacy labels, privacy policy, and hosted `/privacy` page are updated to match the
       implemented diagnostic behavior.

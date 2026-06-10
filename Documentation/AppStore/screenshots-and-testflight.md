@@ -107,17 +107,6 @@ Core flows to test on each shipped platform:
 - Sign out; switch accounts.
 - visionOS: enter and exit Gus Cinema during playback.
 
-Accessibility checks before release:
-- Test VoiceOver on iPhone and iPad.
-- Test VoiceOver and keyboard navigation on Mac.
-- Test Focus Engine behavior on Apple TV.
-- Test readable text and comfortable interaction on Apple Vision Pro.
-- Test Dynamic Type / Larger Text.
-- Test dark mode.
-- Test sufficient contrast in light and dark mode.
-- Test Reduced Motion behavior.
-- Test caption selection with media that exposes subtitle/caption tracks.
-- Test alternate audio / audio description track selection with media that exposes suitable
-  tracks.
+Run the accessibility Release Checklist in `accessibility.md` before release.
 
 Track crashes, sessions, and tester feedback in App Store Connect -> TestFlight.
