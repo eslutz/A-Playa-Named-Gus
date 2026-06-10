@@ -152,7 +152,7 @@ automated build verification. (Covers priority: *polish & testing*.)
   lint are present.)*
 - [x] **Unit test target.** Add `GusTests` covering pure logic: URL normalization,
   `SessionCredential.account`, `StreamURLBuilder` profile/URL selection,
-  `BaseItemDto+Display` formatting, `ServerStore` round-trip. *Acceptance:*
+  `MediaItem+Display` formatting, `ServerStore` round-trip. *Acceptance:*
   `xcodebuild test` passes; meaningful assertions (not smoke-only). *(Done: Swift Testing
   unit coverage is wired into native iOS, tvOS, visionOS, and macOS test bundles, with
   iPhone and iPad covered through the iOS scheme.)*
@@ -516,12 +516,13 @@ milestone only after the launch scope is stable.
  scope includes creating/joining/leaving groups, selecting a host/client, synchronized
  play/pause/seek, participant visibility, and graceful handling of drift or unsupported
  clients. *Acceptance:* users can create or join a SyncPlay group and maintain synchronized
- playback across supported Jellyfin clients. *(Started: `SyncPlayStore` creates/joins/
- leaves groups from the player options menu (Jellyfin-gated), `SyncPlaySocket` listens on
- the server WebSocket and applies inbound play/pause/seek to the player, and local
- pause/play observed from the transport forwards to the group with echo suppression;
- precise When-scheduled application, ready/buffering reporting, and multi-client drift
- validation remain.)*
+ playback across supported Jellyfin clients. *(Working: `SyncPlayStore` creates/joins/
+ leaves groups from the player options menu (Jellyfin-gated); `SyncPlaySocket` listens on
+ the server WebSocket, sends periodic KeepAlive, and applies inbound play/pause/seek to
+ the live player (re-attached across Play Next); local pause/play and seeks observed from
+ the transport forward to the group with a time-windowed echo guard. Precise
+ When-scheduled application, ready/buffering reporting, and multi-client drift validation
+ against real clients remain.)*
 
 - [x] **Customizable main navigation.** Let users choose from Settings which sections are
  visible in the primary app menu/tab/sidebar and in what order, while keeping Home fixed at

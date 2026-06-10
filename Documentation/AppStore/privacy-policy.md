@@ -1,6 +1,6 @@
 # Draft Privacy Policy
 
-Last updated: 2026-06-03
+Last updated: 2026-06-10
 
 A Playa Named Gus is a Jellyfin client. A Playa Named Gus connects to Jellyfin servers
 that you provide, stores the server connection details you choose to save, and uses your
@@ -41,6 +41,22 @@ you have chosen to share analytics with app developers in your Apple device sett
 Apple may make crash reports and aggregate metrics available to the developer through
 Apple's own tools; that sharing is controlled by Apple and your device settings, not by
 this app.
+
+## Apple Watch
+
+If you use the Apple Watch companion, A Playa Named Gus may transfer your active server
+connection and Jellyfin session token from your iPhone to your paired Apple Watch over
+Apple's encrypted device-to-device WatchConnectivity channel, so the watch is signed in
+without re-entering your credentials. This transfer stays between your own devices; it is
+not sent to the developer or any third party. The watch can also sign in on its own.
+
+## Content Restrictions and Age Range
+
+The content-rating limit you choose is stored on the device as an app preference. On
+supported systems you may optionally use Apple's Declared Age Range to set a starting
+limit: with your consent the system shares only an age *range* with the app, which uses it
+once to suggest a limit and then discards it. A Playa Named Gus does not store your
+birthdate, your exact age, or the shared age range.
 
 ## Local Network
 

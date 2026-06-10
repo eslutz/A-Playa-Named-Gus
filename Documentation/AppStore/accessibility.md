@@ -7,7 +7,8 @@ Public URL: `https://gus.ericslutz.dev/accessibility`
 A Playa Named Gus should support Apple platform accessibility features with native SwiftUI,
 UIKit/AppKit, tvOS, visionOS, AVKit, and system accessibility APIs wherever possible. The
 goal is for major flows to remain usable across iPhone, iPad, Mac, Apple Vision Pro, and
-Apple TV with the accessibility features Apple exposes to the app.
+Apple TV — plus the watchOS companion — with the accessibility features Apple exposes to
+the app.
 
 ## Public Accessibility Page
 
@@ -54,10 +55,12 @@ state that dependency plainly.
 
 ### Dark Interface
 
-- Support system light and dark appearance.
+- Support system light and dark appearance, plus the in-app override (Settings →
+  Appearance: System / Light / Dark, applied via `preferredColorScheme`).
 - Use semantic colors and materials; avoid hardcoded colors that reduce readability.
-- Verify custom brand colors, posters/backdrops, overlays, badges, and playback surfaces
-  in both appearances.
+- Verify the Winter Chill brand colors, posters/backdrops, overlays, badges, Liquid
+  Glass surfaces, and playback surfaces in both appearances and under all three
+  appearance-setting choices.
 
 ### Differentiate Without Color Alone
 
@@ -101,6 +104,7 @@ state that dependency plainly.
 | Mac | Keyboard navigation, focus behavior, menu commands, VoiceOver, scalable layouts, dark mode, contrast, captions, and alternate audio. |
 | Apple TV | Focus Engine behavior, remote navigation, clear focus indicators, VoiceOver, sufficient contrast, captions, and audio track selection. |
 | Apple Vision Pro | Gaze/gesture interaction, focus behavior, readable text, comfortable motion, VoiceOver where applicable, spatial UI accessibility, captions, and alternate audio. |
+| Apple Watch | VoiceOver on the remote/resume/browse/audio/downloads/settings pages, Digital Crown navigation, labeled icon-only transport controls, Dynamic Type, and dark-interface legibility. |
 
 ## Release Checklist
 
@@ -112,6 +116,7 @@ state that dependency plainly.
 - [ ] VoiceOver and keyboard navigation are tested on Mac.
 - [ ] Focus Engine behavior is tested on Apple TV.
 - [ ] Readable text and comfortable interaction are tested on Apple Vision Pro.
+- [ ] VoiceOver and Digital Crown navigation are tested on the Apple Watch companion.
 - [ ] Dynamic Type / Larger Text is tested on key screens.
 - [ ] Dark mode is tested on key screens.
 - [ ] Sufficient contrast is reviewed in light and dark mode.

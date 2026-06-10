@@ -5,8 +5,9 @@ This file provides guidance to Codex when working with code in this repository.
 ## What A Playa Named Gus Is
 
 A Playa Named Gus is an **Apple-first, multiplatform SwiftUI Jellyfin client** — one app
-that aims to feel first-party on **iOS, iPadOS, tvOS, visionOS, and macOS**. Bundle id
-`dev.ericslutz.gus`; named for *Psych*.
+that aims to feel first-party on **iOS, iPadOS, tvOS, visionOS, and macOS**, plus a
+**watchOS companion** (`GusWatch`, a focused remote/standalone client — not a primary
+video client). Bundle id `dev.ericslutz.gus`; named for *Psych*.
 
 ### The core mandate: native APIs over custom code
 
@@ -103,12 +104,14 @@ App/        @main entry + RootView (signed-out vs signed-in switch)
 Models/     Codable value types (ServerConnection, StoredUser, SessionCredential)
 Services/   Stateless helpers: client factory, device identity, Keychain, persistence,
             image/stream URL builders, diagnostics (DiagnosticsHub/MetricKitCollector),
-            content rating gate, SyncPlay socket
+            content rating gate, SyncPlay + Sessions sockets, WatchConnectivity relay
 Stores/     @Observable state objects (the "view models"), incl. AudioPlayerStore
-            (song/audiobook queue engine) and SyncPlayStore (Jellyfin-gated)
+            (song/audiobook queue engine), SyncPlayStore + RemoteSessionsStore
+            (Jellyfin-gated), and NavigationPreferencesStore (customizable nav)
 Features/   One folder per screen area (Connect, Home, Item, Player, Settings, Music,
-            Photos, LiveTV)
-SharedUI/   Reusable views (AsyncPoster, PosterCard, LoadingStateView) + display helpers
+            Photos, LiveTV, Books)
+SharedUI/   Reusable views (AsyncPoster, PosterCard, LoadingStateView, RestrictedContentView)
+            + display helpers, GlassStyle (Liquid Glass), AppearanceSetting
 Platform/   ALL #if os(...) divergence lives here (RootContainer, modifiers, nav)
 Immersive/  visionOS-only RealityKit "Gus Cinema"
 TopShelf/   tvOS Top Shelf extension entry point

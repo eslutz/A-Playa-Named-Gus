@@ -1,9 +1,10 @@
 # A Playa Named Gus
 
 A Playa Named Gus is an Apple-first, multiplatform Jellyfin client for iOS,
-iPadOS, tvOS, visionOS, and macOS. It is built with SwiftUI, Observation,
-AVKit, and the Jellyfin Swift SDK, with a project rule of preferring
-Apple/system frameworks over custom or third-party runtime code.
+iPadOS, tvOS, visionOS, and macOS, with a watchOS companion app. It is built
+with SwiftUI, Observation, AVKit, and the Jellyfin Swift SDK, with a project
+rule of preferring Apple/system frameworks over custom or third-party runtime
+code.
 
 The repository is private while early development continues. The public
 documentation home is the [GitHub wiki](https://github.com/eslutz/A-Playa-Named-Gus/wiki);

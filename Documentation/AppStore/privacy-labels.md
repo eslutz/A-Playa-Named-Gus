@@ -37,8 +37,11 @@ through an A Playa Named Gus developer backend.
 
 | Category | Reason | Call site |
 |---|---|---|
-| NSPrivacyAccessedAPICategoryDiskSpace | 85F4.1 | `OfflineDownloadStore.ensureDiskBudget` checks `volumeAvailableCapacityForImportantUsage` before starting a download |
-| NSPrivacyAccessedAPICategoryUserDefaults | CA92.1 | `AppModel` (last-signed-in user ID), `DeviceIdentity` (stable device UUID), `@SceneStorage` (sidebar selection) — app-own keys only |
+| NSPrivacyAccessedAPICategoryDiskSpace | 85F4.1 | `OfflineDownloadStore.ensureDiskBudget` checks available volume capacity (`volumeAvailableCapacityForImportantUsage`, or `volumeAvailableCapacity` on watchOS) before starting a download |
+| NSPrivacyAccessedAPICategoryUserDefaults | CA92.1 | `AppModel` (last-signed-in user ID), `DeviceIdentity` (stable device UUID), and `@AppStorage`/`@SceneStorage` preferences (sidebar selection, appearance, content limit, navigation order) — app-own keys only |
+
+`Resources/PrivacyInfo.xcprivacy` is bundled into the main app target **and** the
+`GusWatch` companion target, both of which exercise these required-reason APIs.
 
 ### Required-reason APIs not declared (not used)
 
@@ -64,7 +67,8 @@ The Diagnostics & Reliability implementation does not change the answers above:
 - Crash and metrics data in Xcode Organizer / App Store Connect comes from Apple's own
   opt-in "Share With App Developers" mechanism, which Apple discloses to the user; the
   app itself still collects nothing.
-- No new required-reason APIs were introduced; `PrivacyInfo.xcprivacy` is unchanged.
+- No new required-reason APIs were introduced; `PrivacyInfo.xcprivacy` content is
+  unchanged (it is now also bundled into the watch target, which uses the same APIs).
 
 ## Remaining Submission Steps
 - Add the privacy policy URL for iOS, iPadOS, macOS, and visionOS in App Store Connect.

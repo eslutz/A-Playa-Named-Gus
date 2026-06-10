@@ -23,7 +23,8 @@ App Store archives belong in Xcode Cloud, not GitHub Actions.
 | Local network usage | iOS / iPadOS / visionOS | `NSLocalNetworkUsageDescription` in `Info.plist` | ✓ |
 | Keychain | All | Keychain Services via `SecItem*` — no capability entry required | ✓ |
 | No-exempt encryption | All | `ITSAppUsesNonExemptEncryption = false` in `Info.plist` | ✓ |
-| Offline downloads | iOS / iPadOS / macOS / visionOS | Application Support storage — no extra capability required | ✓ |
+| Offline downloads | iOS / iPadOS / macOS / visionOS / watchOS (audio) | Application Support storage — no extra capability required | ✓ |
+| Watch companion | watchOS | `GusWatch` target embedded in the iOS archive — no extra capability required | ✓ |
 
 **Removed:** `NSFaceIDUsageDescription` was present but `LocalAuthentication` is never
 called in A Playa Named Gus source code. A false usage description is an App Review red
@@ -61,6 +62,8 @@ CODE_SIGN_ENTITLEMENTS[sdk=iphoneos*] = Config/Gus-CarPlay.entitlements
 CODE_SIGN_ENTITLEMENTS[sdk=iphonesimulator*] = Config/Gus-CarPlay.entitlements
 ```
 
+Verify with the CarPlay simulator (Simulator app → I/O → External Displays → CarPlay).
+
 ## Declared Age Range (Pending Entitlement)
 
 The family-safety "Set from Age Range" action (`Sources/Features/Settings/
@@ -72,8 +75,16 @@ with App Store Connect setup, then add it to the iOS/macOS entitlements files an
 them per-SDK like CarPlay above. Scope and privacy rules:
 `Documentation/family-safety-brief.md`.
 
+## watchOS Companion
 
-Verify with the CarPlay simulator (Simulator app → I/O → External Displays → CarPlay).
+The `GusWatch` target (bundle id `dev.ericslutz.gus.watchkitapp`) ships **inside the iOS
+app archive** — no separate App Store record — and is standalone-capable
+(`WKRunsIndependentlyOfCompanionApp`). It needs no extra entitlement today: it uses
+`URLSession`, the data-protection Keychain, and WatchConnectivity (no capability entry
+required). Long-form on-watch audio uses `AVAudioSession`'s `.longFormAudio` policy.
+Xcode Cloud signs/provisions it as part of the iOS app; confirm the watch app and its
+provisioning are included when the iOS archive is validated. Scope:
+`Documentation/watchos-brief.md`.
 
 ## Setting Your Team ID (Local Override)
 

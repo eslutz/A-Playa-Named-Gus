@@ -23,6 +23,9 @@ implementation work.
 - `performance-baselines.md` - recorded performance baselines and re-measurement steps.
 - `screenshots-and-testflight.md` - screenshot matrix and beta checklist.
 
+Feature briefs (acceptance artifacts) live one level up in `Documentation/`:
+`family-safety-brief.md`, `watchos-brief.md`, and `visionos-3d-playback-plan.md`.
+
 ## Apple References
 
 - Privacy manifest files: https://developer.apple.com/documentation/bundleresources/privacy-manifest-files

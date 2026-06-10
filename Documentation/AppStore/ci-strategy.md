@@ -9,7 +9,7 @@ Run on every pull request and every push to `main`:
 
 | Task | Owner |
 |---|---|
-| PR build checks | GitHub Actions |
+| PR build checks (iOS, iPadOS, tvOS, visionOS, macOS, watchOS) | GitHub Actions |
 | Unit tests | GitHub Actions |
 | SwiftFormat lint | GitHub Actions |
 | String catalog validation | GitHub Actions |
@@ -31,7 +31,7 @@ Use Xcode Cloud for Apple-distributable work:
 
 | Task | Owner |
 |---|---|
-| Signed iOS, iPadOS, tvOS, visionOS, and macOS builds | Xcode Cloud |
+| Signed iOS, iPadOS, tvOS, visionOS, and macOS builds (watch ships in the iOS archive) | Xcode Cloud |
 | Code signing and provisioning | Xcode Cloud |
 | Internal TestFlight builds | Xcode Cloud |
 | External beta TestFlight builds | Xcode Cloud |

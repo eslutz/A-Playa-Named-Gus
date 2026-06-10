@@ -115,6 +115,9 @@ targets:
       - path: Sources/SharedUI/LoadingStateView.swift
       - path: Resources/Localizable.xcstrings
       - path: Resources/Watch/Assets.xcassets
+      # The watch binary uses required-reason APIs (UserDefaults via DeviceIdentity,
+      # DiskSpace via downloads), so it carries the same privacy manifest as the app.
+      - path: Resources/PrivacyInfo.xcprivacy
     dependencies:
       - package: JellyfinSDK
         product: JellyfinAPI
