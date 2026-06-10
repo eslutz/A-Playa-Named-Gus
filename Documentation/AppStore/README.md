@@ -13,6 +13,12 @@ implementation work.
 - `signing-capabilities.md` - signing and capability gaps.
 - `ci-strategy.md` - GitHub Actions and Xcode Cloud ownership split.
 - `app-store-metadata.md` - draft product metadata.
+- `accessibility.md` - accessibility readiness, public accessibility page, and release
+  validation matrix.
+- `diagnostics-reliability.md` - Apple-native crash, MetricKit, performance baseline,
+  and diagnostics review plan.
+- `review-support-pages.md` - required hosted support, privacy, marketing, and age
+  suitability pages for `gus.ericslutz.dev`.
 - `screenshots-and-testflight.md` - screenshot matrix and beta checklist.
 
 ## Apple References

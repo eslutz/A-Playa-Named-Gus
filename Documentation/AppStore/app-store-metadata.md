@@ -36,12 +36,19 @@ the app's control. Confirm during App Store Connect setup.
 
 ## Required URLs
 
-- Support URL: required before submission.
-- Privacy Policy URL: required before submission.
-- Marketing URL: recommended.
+- Marketing URL: `https://gus.ericslutz.dev/`
+- Support URL: `https://gus.ericslutz.dev/support`
+- Privacy Policy URL: `https://gus.ericslutz.dev/privacy`
+- Accessibility URL: `https://gus.ericslutz.dev/accessibility`
+- Age Suitability / reviewer context: `https://gus.ericslutz.dev/age-suitability`
+
+All five pages must be live over HTTPS before public release and App Review submission.
+See `Documentation/AppStore/review-support-pages.md`.
 
 ## Review Notes Draft
 
 A Playa Named Gus requires a user-provided Jellyfin server. If Apple review needs test
 access, provide a temporary demo Jellyfin server URL plus credentials with known sample
-media.
+media. Reference the Age Suitability page when explaining that Gus does not host, curate,
+or distribute media and does not provide unrestricted web access, chat, messaging,
+advertising, gambling, contests, or loot boxes.

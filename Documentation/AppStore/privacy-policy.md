@@ -32,6 +32,10 @@ The developer of A Playa Named Gus does not receive analytics, crash logs, track
 identifiers, advertising identifiers, Jellyfin credentials, Jellyfin tokens, library
 metadata, playback history, downloaded media, or server URLs from the app.
 
+Future Apple-native diagnostics work may make crash reports or MetricKit diagnostics
+available to the developer through Apple's App Store Connect and Xcode Organizer tooling.
+The privacy policy must be updated before release if that behavior is enabled.
+
 ## Local Network
 
 If you choose Find Local Servers, A Playa Named Gus uses the local network to discover

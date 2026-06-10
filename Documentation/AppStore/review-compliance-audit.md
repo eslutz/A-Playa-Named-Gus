@@ -99,10 +99,21 @@ used. The only runtime third-party dependency is `jellyfin-sdk-swift`.
 
 ---
 
+## Accessibility
+
+A Playa Named Gus uses native Apple UI and media frameworks so accessibility support can
+flow through SwiftUI, AVKit, platform focus systems, Dynamic Type, semantic colors, and
+system media controls. Before App Review submission, verify the public accessibility page,
+App Store accessibility disclosures, and release checklist against
+`Documentation/AppStore/accessibility.md`.
+
+---
+
 ## Open Items (Account-Blocked — Not Review Blockers)
 
 - Complete App Privacy answers in App Store Connect (source: `privacy-labels.md`).
 - Add privacy policy URL for iOS, iPadOS, macOS, and visionOS.
 - Add tvOS privacy policy text in the Apple TV Privacy Policy field.
+- Publish and verify the public accessibility page and App Store accessibility disclosures.
 - Configure Xcode Cloud signing/provisioning and validate Release archives there.
 - Upload screenshots and submit to TestFlight before final submission.
