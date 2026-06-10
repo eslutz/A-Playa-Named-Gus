@@ -45,7 +45,7 @@ struct UpNextStoreTests {
             .appendingPathComponent("UpNext", isDirectory: true)
         let legacyPersistence = UpNextPersistence(directory: legacyDirectory)
         let item = MediaItem(id: "movie-1", name: "Manual", type: .movie)
-        let scope = UpNextScope(serverID: "server-1", userID: "user-1")
+        let scope = AccountScope(serverID: "server-1", userID: "user-1")
         legacyPersistence.save([item], scope: scope)
 
         let persistence = UpNextPersistence(applicationSupportDirectory: baseDirectory)

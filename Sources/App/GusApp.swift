@@ -11,6 +11,7 @@ struct GusApp: App {
     @State private var playbackRefresh = PlaybackRefreshStore()
     @State private var offlineDownloads = OfflineDownloadStore()
     @State private var upNext = UpNextStore()
+    @State private var navigationPreferences = NavigationPreferencesStore()
     @AppStorage(AppearanceSetting.defaultsKey) private var appearanceRawValue = AppearanceSetting.system.rawValue
     private let shouldRestoreLastSession: Bool
     private let shouldInstallDebugPreviewSession: Bool
@@ -59,6 +60,7 @@ struct GusApp: App {
                 .environment(playbackRefresh)
                 .environment(offlineDownloads)
                 .environment(upNext)
+                .environment(navigationPreferences)
             #if os(visionOS)
                 .environment(cinema)
             #endif

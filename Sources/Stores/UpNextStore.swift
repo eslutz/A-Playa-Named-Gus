@@ -2,20 +2,6 @@ import Foundation
 import Observation
 import OSLog
 
-struct UpNextScope: Hashable {
-    let serverID: String
-    let userID: String
-
-    var storageKey: String {
-        let rawValue = "\(serverID)__\(userID)"
-        let allowedCharacters = CharacterSet.alphanumerics.union(CharacterSet(charactersIn: "-_"))
-        return rawValue.unicodeScalars.map { scalar in
-            allowedCharacters.contains(scalar) ? String(scalar) : "_"
-        }
-        .joined()
-    }
-}
-
 struct UpNextPersistence {
     private let directory: URL
     private let logger = Logger(category: .home)
@@ -29,7 +15,7 @@ struct UpNextPersistence {
         self.init(directory: Self.defaultDirectory(applicationSupportDirectory: applicationSupportDirectory))
     }
 
-    func load(scope: UpNextScope) -> [MediaItem] {
+    func load(scope: AccountScope) -> [MediaItem] {
         let url = fileURL(for: scope)
         guard let data = try? Data(contentsOf: url) else { return [] }
 
@@ -41,7 +27,7 @@ struct UpNextPersistence {
         }
     }
 
-    func save(_ items: [MediaItem], scope: UpNextScope) {
+    func save(_ items: [MediaItem], scope: AccountScope) {
         do {
             try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
             let encoder = JSONEncoder()
@@ -60,7 +46,7 @@ struct UpNextPersistence {
             .appendingPathComponent("UpNext", isDirectory: true)
     }
 
-    private func fileURL(for scope: UpNextScope) -> URL {
+    private func fileURL(for scope: AccountScope) -> URL {
         directory.appendingPathComponent("\(scope.storageKey).json")
     }
 }
@@ -70,8 +56,8 @@ struct UpNextPersistence {
 final class UpNextStore {
     private(set) var revision = 0
 
-    private var itemsByScope: [UpNextScope: [MediaItem]] = [:]
-    private var loadedScopes: Set<UpNextScope> = []
+    private var itemsByScope: [AccountScope: [MediaItem]] = [:]
+    private var loadedScopes: Set<AccountScope> = []
     private let persistence: UpNextPersistence
 
     init(persistence: UpNextPersistence = UpNextPersistence()) {
@@ -79,7 +65,7 @@ final class UpNextStore {
     }
 
     func load(serverID: String, userID: String) {
-        let scope = UpNextScope(serverID: serverID, userID: userID)
+        let scope = AccountScope(serverID: serverID, userID: userID)
         guard !loadedScopes.contains(scope) else { return }
 
         itemsByScope[scope] = persistence.load(scope: scope)
@@ -88,7 +74,7 @@ final class UpNextStore {
     }
 
     func items(serverID: String, userID: String) -> [MediaItem] {
-        itemsByScope[UpNextScope(serverID: serverID, userID: userID)] ?? []
+        itemsByScope[AccountScope(serverID: serverID, userID: userID)] ?? []
     }
 
     func contains(_ item: MediaItem, serverID: String, userID: String) -> Bool {
@@ -99,7 +85,7 @@ final class UpNextStore {
     func toggle(_ item: MediaItem, serverID: String, userID: String) {
         guard let itemID = item.id else { return }
 
-        let scope = UpNextScope(serverID: serverID, userID: userID)
+        let scope = AccountScope(serverID: serverID, userID: userID)
         var scopedItems = itemsByScope[scope] ?? []
 
         if let index = scopedItems.firstIndex(where: { $0.id == itemID }) {

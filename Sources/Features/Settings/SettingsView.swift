@@ -47,10 +47,15 @@ struct SettingsView: View {
                         Text(appearance.title).tag(appearance.rawValue)
                     }
                 }
+                NavigationLink {
+                    NavigationSettingsView()
+                } label: {
+                    Label("Navigation", systemImage: "list.bullet.indent")
+                }
             } header: {
                 Text("Appearance")
             } footer: {
-                Text("System follows your device's light and dark setting.")
+                Text("System follows your device's light and dark setting. Navigation customizes which sections appear in the main menu.")
             }
 
             Section {
