@@ -10,6 +10,7 @@ struct SettingsView: View {
     @State private var switchErrorMessage: String?
     @AppStorage(ContentRatingGate.limitDefaultsKey) private var contentLimitRawValue = ContentRatingGate.Limit.off.rawValue
     @AppStorage(ContentRatingGate.hideUnratedDefaultsKey) private var hideUnratedContent = false
+    @AppStorage(AppearanceSetting.defaultsKey) private var appearanceRawValue = AppearanceSetting.system.rawValue
 
     var body: some View {
         Form {
@@ -38,6 +39,18 @@ struct SettingsView: View {
                 DownloadsSettingsSection(
                     byteCount: downloads.totalByteCount(serverID: session.server.id, userID: session.user.id)
                 )
+            }
+
+            Section {
+                Picker("Appearance", selection: $appearanceRawValue) {
+                    ForEach(AppearanceSetting.allCases) { appearance in
+                        Text(appearance.title).tag(appearance.rawValue)
+                    }
+                }
+            } header: {
+                Text("Appearance")
+            } footer: {
+                Text("System follows your device's light and dark setting.")
             }
 
             Section {

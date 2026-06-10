@@ -84,6 +84,14 @@ considered launch and accent, consistent semantic theming.
   `Localizable.xcstrings` with comments. *Acceptance:* `SWIFT_EMIT_LOC_STRINGS` shows no
   un-catalogued user-facing strings in changed files. *(Done: the base catalog is seeded
   with current UI and user-facing error strings.)*
+- [x] **Appearance setting + Liquid Glass adoption.** Settings → Appearance offers
+  System/Light/Dark, applied via `preferredColorScheme` at the window root on every
+  platform. Floating control surfaces (player overlays/badges, hero, book, and album
+  actions) adopt Liquid Glass on OS 26+ through availability-gated helpers
+  (`SharedUI/GlassStyle.swift`) with system-Material fallbacks at the current deployment
+  floors; visionOS keeps its native glass (`glassBackgroundEffect`, bordered buttons).
+  *Acceptance:* light/dark/system all render correctly; glass surfaces appear on OS 26
+  and degrade to Materials below it.
 
 ---
 
@@ -432,8 +440,9 @@ validation, TestFlight, and submission work are actually done.
   remain.)*
 - [ ] **Review-guidelines compliance audit.** Walk the
   [App Review Guidelines](https://developer.apple.com/app-store/review/guidelines/):
-  third-party-server clients, ATS justification (`NSAllowsArbitraryLoads` for self-hosted
-  HTTP), no private API, export-compliance (`ITSAppUsesNonExemptEncryption=false`).
+  third-party-server clients, scoped ATS (`NSAllowsLocalNetworking` for self-hosted LAN
+  HTTP; TLS required remotely), no private API, export-compliance
+  (`ITSAppUsesNonExemptEncryption=false`).
   *Acceptance:* documented self-audit with no open red flags.
 - [ ] **TestFlight beta.** Upload through Xcode Cloud, internal/external testing, gather
   crash/feedback.

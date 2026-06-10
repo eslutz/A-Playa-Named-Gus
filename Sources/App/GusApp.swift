@@ -6,11 +6,12 @@ import SwiftUI
 /// injected via `@Environment`; on visionOS an `ImmersiveSpace` hosts the "Gus Cinema".
 @main
 struct GusApp: App {
-    @State private var appModel = AppModel()
+    @State private var appModel = AppModel.shared
     @State private var appNavigation = AppNavigationModel()
     @State private var playbackRefresh = PlaybackRefreshStore()
     @State private var offlineDownloads = OfflineDownloadStore()
     @State private var upNext = UpNextStore()
+    @AppStorage(AppearanceSetting.defaultsKey) private var appearanceRawValue = AppearanceSetting.system.rawValue
     private let shouldRestoreLastSession: Bool
     private let shouldInstallDebugPreviewSession: Bool
     private let shouldConnectToDemoServer: Bool
@@ -46,6 +47,10 @@ struct GusApp: App {
         #endif
     }
 
+    private var appearance: AppearanceSetting {
+        AppearanceSetting(rawValue: appearanceRawValue) ?? .system
+    }
+
     var body: some Scene {
         WindowGroup {
             RootView()
@@ -77,6 +82,8 @@ struct GusApp: App {
                 .onOpenURL { url in
                     appNavigation.open(url: url)
                 }
+                // nil follows the system; light/dark force the scheme on every platform.
+                .preferredColorScheme(appearance.colorScheme)
         }
         #if os(macOS)
         .defaultSize(width: 1100, height: 760)
