@@ -193,6 +193,7 @@
 
         /// Flushes any pending position immediately — call when the reader closes.
         func flushProgress() {
+            progressStore.flush()
             reportTask?.cancel()
             Task { await sendReport() }
         }

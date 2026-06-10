@@ -2,13 +2,18 @@ import SwiftUI
 
 /// The home screen: a "Continue Watching" rail above a grid of library posters.
 ///
-/// Pattern reference: Swiftfin's `HomeViewModel`-backed home. The store is created from
-/// the environment `SessionStore` in `.task` (environment isn't available at `init`).
+/// The `HomeStore` is owned by the platform root container and shared with the
+/// Libraries destination, so home content is fetched once per session instead of
+/// once per consuming screen.
 struct HomeView: View {
     @Environment(SessionStore.self) private var session
     @Environment(PlaybackRefreshStore.self) private var playbackRefresh
     @Environment(UpNextStore.self) private var upNext
-    @State private var store: HomeStore?
+    let store: HomeStore?
+
+    init(store: HomeStore? = nil) {
+        self.store = store
+    }
 
     var body: some View {
         Group {
@@ -21,15 +26,10 @@ struct HomeView: View {
         .navigationTitle("Home")
         .task {
             upNext.load(serverID: session.server.id, userID: session.user.id)
-            if store == nil {
-                let store = HomeStore(session: session)
-                self.store = store
-                await store.load()
-            }
         }
         .task(id: playbackRefresh.revision) {
             guard playbackRefresh.revision > 0, let store else { return }
-            await store.load()
+            await store.refresh()
         }
     }
 
@@ -44,7 +44,8 @@ struct HomeView: View {
             state: store.state,
             isEmpty: store.resumeItems.isEmpty && nextUpItems.isEmpty && store.latestSections.isEmpty,
             emptyTitle: "No Recent Media",
-            emptySymbol: "clock"
+            emptySymbol: "clock",
+            retryAction: { Task { await store.load() } }
         ) {
             ScrollView {
                 VStack(alignment: .leading, spacing: 32) {
@@ -63,7 +64,7 @@ struct HomeView: View {
                 .frame(maxWidth: .infinity)
             }
             .lookToScroll()
-            .refreshable { await store.load() }
+            .refreshable { await store.refresh() }
         }
     }
 }
@@ -219,18 +220,17 @@ private struct BackdropCard: View {
 }
 
 /// Persistent Libraries destination used by tabs, sidebars, and menu routes.
+/// Shares the root container's `HomeStore` with `HomeView`.
 struct LibrariesLandingView: View {
-    @Environment(SessionStore.self) private var session
-    private let providedStore: HomeStore?
-    @State private var ownedStore: HomeStore?
+    let store: HomeStore?
 
     init(store: HomeStore? = nil) {
-        self.providedStore = store
+        self.store = store
     }
 
     var body: some View {
         Group {
-            if let store = providedStore ?? ownedStore {
+            if let store {
                 content(store)
             } else {
                 ProgressView()
@@ -238,12 +238,6 @@ struct LibrariesLandingView: View {
             }
         }
         .navigationTitle("Libraries")
-        .task {
-            guard providedStore == nil, ownedStore == nil else { return }
-            let store = HomeStore(session: session)
-            ownedStore = store
-            await store.load()
-        }
     }
 
     private func content(_ store: HomeStore) -> some View {
@@ -251,7 +245,8 @@ struct LibrariesLandingView: View {
             state: store.state,
             isEmpty: store.libraries.isEmpty,
             emptyTitle: "No Libraries",
-            emptySymbol: "rectangle.stack"
+            emptySymbol: "rectangle.stack",
+            retryAction: { Task { await store.load() } }
         ) {
             ScrollView {
                 LibrariesGrid(libraries: store.libraries)
@@ -260,7 +255,7 @@ struct LibrariesLandingView: View {
                     .frame(maxWidth: .infinity)
             }
             .lookToScroll()
-            .refreshable { await store.load() }
+            .refreshable { await store.refresh() }
         }
     }
 }

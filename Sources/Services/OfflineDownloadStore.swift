@@ -533,11 +533,12 @@ final class OfflineDownloadStore: DownloadSessionCoordinatorEventHandler {
         didUpdateProgress progress: Double,
         recordID: String
     ) {
-        guard var record = record(forRecordID: recordID) else { return }
-        record.status = .downloading(progress)
-        record.progress = progress
-        fileStore.update(record)
-        reloadRecords(serverID: record.serverID, userID: record.userID)
+        // Live progress stays in memory — these callbacks arrive many times per second
+        // and rewriting the records file per tick thrashes the disk. The record is
+        // persisted on queue, pause, completion, and failure.
+        guard let index = records.firstIndex(where: { $0.id == recordID }) else { return }
+        records[index].status = .downloading(progress)
+        records[index].progress = progress
     }
 
     func downloadSessionCoordinator(

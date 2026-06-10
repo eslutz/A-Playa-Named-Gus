@@ -37,6 +37,8 @@ struct RootContainer: View {
 /// Tab-based root (compact iPhone, tvOS).
 private struct TabRootView: View {
     @Environment(AppNavigationModel.self) private var navigation
+    @Environment(SessionStore.self) private var session
+    @State private var home: HomeStore?
     @State private var selection: AppRoute = .home
 
     var body: some View {
@@ -44,7 +46,7 @@ private struct TabRootView: View {
             Tab("Home", systemImage: "house", value: AppRoute.home) {
                 NavigationStack {
                     SearchRootView {
-                        HomeView()
+                        HomeView(store: home)
                     }
                     .gusItemDestinations()
                 }
@@ -52,7 +54,7 @@ private struct TabRootView: View {
             Tab("Libraries", systemImage: "rectangle.stack", value: AppRoute.libraries) {
                 NavigationStack {
                     SearchRootView {
-                        LibrariesLandingView()
+                        LibrariesLandingView(store: home)
                     }
                     .gusItemDestinations()
                 }
@@ -77,6 +79,13 @@ private struct TabRootView: View {
         }
         .onChange(of: navigation.route) { _, route in
             selection = route
+        }
+        .task {
+            if home == nil {
+                let store = HomeStore(session: session)
+                home = store
+                await store.load()
+            }
         }
     }
 }
@@ -141,7 +150,7 @@ private enum SidebarItem: Hashable {
                 Tab("Home", systemImage: "house", value: SidebarItem.home) {
                     NavigationStack {
                         SearchRootView {
-                            HomeView()
+                            HomeView(store: home)
                         }
                         .gusItemDestinations()
                     }
@@ -251,10 +260,9 @@ private struct SplitRootView: View {
                 }
             }
         }
-        #if os(visionOS)
-        .glassBackground()
-        #endif
         .onChange(of: selection) { _, item in
+            guard let item else { return }
+            storedSelectionKey = item.sceneKey
             switch item {
             case .home:
                 navigation.open(.home)
@@ -262,8 +270,6 @@ private struct SplitRootView: View {
                 navigation.open(.libraries)
             case .settings:
                 navigation.open(.settings)
-            case .none:
-                break
             }
         }
         .onChange(of: navigation.route) { _, route in
@@ -287,11 +293,6 @@ private struct SplitRootView: View {
                 selection = restored
             }
         }
-        .onChange(of: selection) { _, newItem in
-            if let newItem {
-                storedSelectionKey = newItem.sceneKey
-            }
-        }
         .task {
             if home == nil {
                 let store = HomeStore(session: session)
@@ -309,7 +310,7 @@ private struct SplitRootView: View {
         case .libraries:
             LibrariesLandingView(store: home)
         case .home, .none:
-            HomeView()
+            HomeView(store: home)
         }
     }
 }

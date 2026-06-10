@@ -34,8 +34,13 @@
         private var playerItemOutput: AVPlayerItemVideoOutput?
         private var displayLink: CADisplayLink?
         private var seekObserver: NSObjectProtocol?
+        private var currentItemObservation: NSKeyValueObservation?
         /// Cached format description reused across frames to avoid per-frame allocation.
         private var cachedFormatDescription: CMFormatDescription?
+        /// Pool for per-eye buffers — frames arrive at display rate, so allocating two
+        /// fresh `CVPixelBuffer`s per frame would churn; the pool recycles them.
+        private var bufferPool: CVPixelBufferPool?
+        private var bufferPoolSize: (width: Int, height: Int) = (0, 0)
 
         init(player: AVPlayer, layout: Stereo3DLayout) {
             self.player = player
@@ -43,6 +48,7 @@
             setupOutput()
             startDisplayLink()
             observeSeek()
+            observeCurrentItem()
         }
 
         /// Stop the display link, remove the video output, and release all resources.
@@ -58,6 +64,9 @@
                 NotificationCenter.default.removeObserver(observer)
                 seekObserver = nil
             }
+            currentItemObservation?.invalidate()
+            currentItemObservation = nil
+            bufferPool = nil
         }
 
         // MARK: - Setup
@@ -85,6 +94,27 @@
                 queue: .main
             ) { [weak self] _ in
                 MainActor.assumeIsolated { self?.handleSeek() }
+            }
+        }
+
+        /// Stream/quality switches replace the player's item; the video output must move
+        /// to the new item or the renderer silently stops receiving frames.
+        private func observeCurrentItem() {
+            currentItemObservation = player.observe(\.currentItem, options: [.old, .new]) { [weak self] _, change in
+                Task { @MainActor [weak self] in
+                    guard let self else { return }
+                    if let output = self.playerItemOutput, let oldItem = change.oldValue ?? nil {
+                        oldItem.remove(output)
+                    }
+                    self.setupOutput()
+                    self.videoRenderer.flush()
+                    self.cachedFormatDescription = nil
+
+                    if let observer = self.seekObserver {
+                        NotificationCenter.default.removeObserver(observer)
+                    }
+                    self.observeSeek()
+                }
             }
         }
 
@@ -149,9 +179,10 @@
             }
         }
 
-        /// Copies a rectangular region from `source` (BGRA, 4 bytes/pixel) into a new pixel buffer.
-        /// For half-SBS the resulting buffer is anamorphically squeezed; the stereo presentation
-        /// path stretches it to fill the screen plane, recovering the correct display aspect ratio.
+        /// Copies a rectangular region from `source` (BGRA, 4 bytes/pixel) into a pooled
+        /// pixel buffer. For half-SBS the resulting buffer is anamorphically squeezed; the
+        /// stereo presentation path stretches it to fill the screen plane, recovering the
+        /// correct display aspect ratio.
         private func crop(_ source: CVPixelBuffer, x: Int, y: Int, width: Int, height: Int) -> CVPixelBuffer? {
             CVPixelBufferLockBaseAddress(source, .readOnly)
             defer { CVPixelBufferUnlockBaseAddress(source, .readOnly) }
@@ -160,11 +191,7 @@
             let srcStride = CVPixelBufferGetBytesPerRow(source)
             let bytesPerPixel = 4 // kCVPixelFormatType_32BGRA
 
-            var dst: CVPixelBuffer?
-            guard CVPixelBufferCreate(
-                kCFAllocatorDefault, width, height,
-                kCVPixelFormatType_32BGRA, nil, &dst
-            ) == kCVReturnSuccess, let dst else { return nil }
+            guard let dst = dequeueBuffer(width: width, height: height) else { return nil }
 
             CVPixelBufferLockBaseAddress(dst, [])
             defer { CVPixelBufferUnlockBaseAddress(dst, []) }
@@ -179,6 +206,31 @@
                 )
             }
             return dst
+        }
+
+        /// Both eyes share one pool (same dimensions); the pool is rebuilt if the source
+        /// dimensions change mid-stream.
+        private func dequeueBuffer(width: Int, height: Int) -> CVPixelBuffer? {
+            if bufferPool == nil || bufferPoolSize != (width, height) {
+                let attributes: [String: Any] = [
+                    kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_32BGRA as NSNumber,
+                    kCVPixelBufferWidthKey as String: width as NSNumber,
+                    kCVPixelBufferHeightKey as String: height as NSNumber,
+                ]
+                var pool: CVPixelBufferPool?
+                guard CVPixelBufferPoolCreate(kCFAllocatorDefault, nil, attributes as CFDictionary, &pool) == kCVReturnSuccess else {
+                    return nil
+                }
+                bufferPool = pool
+                bufferPoolSize = (width, height)
+            }
+
+            guard let bufferPool else { return nil }
+            var buffer: CVPixelBuffer?
+            guard CVPixelBufferPoolCreatePixelBuffer(kCFAllocatorDefault, bufferPool, &buffer) == kCVReturnSuccess else {
+                return nil
+            }
+            return buffer
         }
     }
 #endif

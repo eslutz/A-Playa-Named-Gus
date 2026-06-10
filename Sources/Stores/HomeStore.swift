@@ -45,7 +45,20 @@ final class HomeStore {
     }
 
     func load() async {
-        state = .loading
+        await load(showsLoadingState: true)
+    }
+
+    /// Reloads content in place. Already-loaded screens keep their content visible
+    /// (no full-screen spinner flash) — used by pull-to-refresh and the post-playback
+    /// revision bump.
+    func refresh() async {
+        await load(showsLoadingState: state != .loaded)
+    }
+
+    private func load(showsLoadingState: Bool) async {
+        if showsLoadingState {
+            state = .loading
+        }
         do {
             async let views = loadLibraries()
             async let resume = loadResume()
@@ -75,29 +88,43 @@ final class HomeStore {
         try await session.mediaProvider.nextUpItems(seriesID: nil, limit: 20)
     }
 
+    /// Fetches "Recently Added" rails for the first few libraries in parallel,
+    /// preserving the library order in the returned sections.
     private func loadLatestSections(for libraries: [MediaItem]) async throws -> [HomeLatestSection] {
-        var sections: [HomeLatestSection] = []
+        let candidates = Array(libraries.prefix(6))
+        let provider = session.mediaProvider
 
-        for library in libraries.prefix(6) {
-            guard let parentID = library.id else { continue }
-            let latestItems = try await session.mediaProvider.latestMedia(in: library, limit: 12)
-            let items = ContentRatingGate.filter(
-                LatestMediaDisplayMapper.displayItems(from: latestItems, libraryCollectionType: library.collectionType)
-            )
-            if !items.isEmpty {
-                sections.append(
-                    HomeLatestSection(
+        let sectionsByIndex = try await withThrowingTaskGroup(
+            of: (Int, HomeLatestSection?).self
+        ) { group in
+            for (index, library) in candidates.enumerated() {
+                guard let parentID = library.id else { continue }
+                group.addTask { @MainActor in
+                    let latestItems = try await provider.latestMedia(in: library, limit: 12)
+                    let items = ContentRatingGate.filter(
+                        LatestMediaDisplayMapper.displayItems(from: latestItems, libraryCollectionType: library.collectionType)
+                    )
+                    guard !items.isEmpty else { return (index, nil) }
+                    return (index, HomeLatestSection(
                         id: parentID,
                         title: String(
                             localized: "Recently Added \(library.name ?? "Library")",
                             comment: "Home latest media section title, e.g. Recently Added Movies"
                         ),
                         items: items
-                    )
-                )
+                    ))
+                }
             }
+
+            var collected: [(Int, HomeLatestSection)] = []
+            for try await(index, section) in group {
+                if let section {
+                    collected.append((index, section))
+                }
+            }
+            return collected
         }
 
-        return sections
+        return sectionsByIndex.sorted { $0.0 < $1.0 }.map(\.1)
     }
 }

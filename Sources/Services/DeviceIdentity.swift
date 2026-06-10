@@ -46,7 +46,10 @@ enum DeviceIdentity {
     }
 
     /// Friendly device name. Uses the host name where meaningful, falling back to platform.
-    static var deviceName: String {
+    ///
+    /// Cached: `ProcessInfo.hostName` can block on reverse-DNS, and clients are built on
+    /// every connect/sign-in/restore — the lookup must not repeat per client.
+    static let deviceName: String = {
         #if os(macOS)
             return Host.current().localizedName ?? "Mac"
         #else
@@ -55,7 +58,7 @@ enum DeviceIdentity {
                 .trimmingCharacters(in: .whitespacesAndNewlines)
             return host.isEmpty ? "\(platformName) Device" : host
         #endif
-    }
+    }()
 
     /// App marketing version (`CFBundleShortVersionString`).
     static var appVersion: String {
