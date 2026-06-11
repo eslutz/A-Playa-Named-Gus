@@ -522,6 +522,7 @@ milestone once it becomes the active focus and is ready to carry a hard acceptan
 | watchOS companion | `[~]` In app; on-device verification matrix remains |
 | Expanded immersive environments | `[ ]` Not started |
 | Apple Intelligence library assistant & generated artwork | `[ ]` Not started |
+| WidgetKit home screen & lock screen widgets | `[ ]` Not started |
 | User-initiated diagnostic export | `[ ]` Not started |
 | Advanced accessibility enhancements | `[ ]` Not started |
 | Emby support (provider investigation) | `[ ]` Not started — unblocked by M7 |
@@ -679,6 +680,45 @@ milestone once it becomes the active focus and is ready to carry a hard acceptan
  from Settings, pending the `com.apple.developer.declared-age-range` entitlement grant;
  ManagedSettings/FamilyControls device-restriction reading remains entitlement-gated
  follow-up per the brief.)*
+
+- [ ] **WidgetKit home screen, lock screen, and desktop widgets.** Add WidgetKit widgets
+ for iPhone, iPad, and Mac that surface the most useful at-a-glance information from the
+ user's Jellyfin library without requiring the app to be open. Candidate scope:
+ - **Continue Watching** — the top in-progress item (poster, title, progress bar) with a
+   tap that deep-links to `gus://play/<id>` to resume immediately. Small, medium, and
+   large sizes; Lock Screen / StandBy accessory variant showing title + progress.
+ - **On Deck / Next Up** — next unwatched episode in an active series, with series
+   artwork and episode name. Medium and large sizes.
+ - **Recently Added** — a grid of newly added library items for the configured library
+   section. Medium and large sizes.
+ - **Interactive widget actions** (iOS 17+/macOS 14+) — a play button inline in the
+   widget that fires a `gus://play/<id>` intent without opening the app's full UI.
+ - **Widget configuration** — a WidgetKit `AppIntentConfiguration` lets users pick which
+   server, user, and library section to display; the widget uses the credential-free App
+   Group snapshot (`group.dev.ericslutz.gus`) already written by `HomeStore` for the
+   tvOS Top Shelf, extended to carry the fields widgets need.
+ - **Live Activities / Dynamic Island** — a Now Playing Live Activity for active video
+   or audio playback, showing artwork, title, and elapsed/remaining time with play/pause
+   controls from the lock screen or Dynamic Island.
+
+ Implementation notes:
+ - Use `WidgetKit` + `AppIntentConfiguration`; `TimelineProvider` fetches from the App
+   Group snapshot (no direct network call from the widget extension).
+ - The widget extension target links only `Models/` and the App Group snapshot reader —
+   no `JellyfinClient`, no `Keychain`, no `AVPlayer`. All content resolves from the
+   snapshot the main app keeps fresh.
+ - Deep links use the existing `gus://item/<id>` and `gus://play/<id>` content link
+   scheme (`Models/ContentLink.swift`); the main app's `ContentLinkHandler` handles them.
+ - Artwork is cached in the shared container as downscaled thumbnails so the widget
+   extension never makes image network requests.
+ - Declare the widget extension in `project.yml` with the App Group entitlement; add the
+   extension target to the `Gus iOS Unit Tests` scheme for widget snapshot tests.
+
+ *Acceptance:* a product brief defines which widget families ship first, the App Group
+ snapshot schema additions needed, the timeline refresh cadence and rate-limit strategy,
+ privacy copy (no credentials leave the device, no server URL in the widget UI unless the
+ user opts in), and a device test matrix covering iPhone home screen, Lock Screen, StandBy,
+ iPad home screen, and Mac desktop before implementation starts.
 
 - [ ] **User-initiated diagnostic export.** Add a Settings diagnostics section after the
  Apple-native diagnostics foundation is stable. The export must be explicitly initiated by
