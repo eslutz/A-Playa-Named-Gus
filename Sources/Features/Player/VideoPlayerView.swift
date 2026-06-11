@@ -109,6 +109,16 @@ struct VideoPlayerView: View {
             #endif
             store?.teardown()
         }
+        // Handoff: continue playback on another device. The continuing device resumes
+        // from the server-side position kept fresh by progress reporting.
+        .userActivity(GusUserActivity.playback, isActive: item.id != nil) { activity in
+            GusUserActivity.configure(
+                activity,
+                item: item,
+                serverID: session.server.id,
+                userID: session.user.id
+            )
+        }
     }
 }
 

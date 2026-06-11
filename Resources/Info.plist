@@ -35,6 +35,14 @@
 		</dict>
 	</array>
 
+	<!-- Handoff: continue browsing an item or playback on another device.
+	     Payloads carry item/server/user ids only — never tokens (UserActivities.swift). -->
+	<key>NSUserActivityTypes</key>
+	<array>
+		<string>dev.ericslutz.gus.item-detail</string>
+		<string>dev.ericslutz.gus.playback</string>
+	</array>
+
 	<!-- Export-compliance: no non-exempt encryption. -->
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>

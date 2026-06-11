@@ -44,6 +44,16 @@ struct ItemDetailView: View {
         }
         .playerPresentation(item: $playerItem)
         .downloadErrorAlert(downloads)
+        // Handoff: continue browsing this item on another device. Restricted items
+        // (family safety) are never advertised.
+        .userActivity(GusUserActivity.itemDetail, isActive: !isRestricted && (store?.item.id ?? item.id) != nil) { activity in
+            GusUserActivity.configure(
+                activity,
+                item: store?.item ?? item,
+                serverID: session.server.id,
+                userID: session.user.id
+            )
+        }
     }
 
     private func detailContent(for store: ItemDetailStore) -> some View {
