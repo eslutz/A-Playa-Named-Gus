@@ -332,9 +332,26 @@ device/archive signing (simulators don't enforce it). See
 The full milestone plan lives in `Documentation/ROADMAP.md`. Keep it current — when scope
 changes or a milestone completes, update the roadmap as part of the same change.
 
-Long-form contributor and user-facing documentation belongs in the wiki repo at
-`/Users/ericslutz/Developer/Code/A Playa Named Gus/Gus.wiki`; repo docs are links or
-brief summaries.
+## Companion repos: wiki & website (keep in sync)
+
+Two sibling repos document Gus and **must be kept up to date with relevant changes as
+part of the same unit of work** — don't let app changes land while their documentation
+goes stale:
+
+- **Wiki — `../Gus.wiki`** — the **primary source for user-facing documentation**
+  (feature guides, setup instructions, FAQs). When a change adds, removes, or alters
+  user-visible behavior, update the corresponding wiki page(s) alongside it. Make wiki
+  changes locally in that repo.
+- **Website — `../Gus.website`** — the marketing/support/compliance site at
+  `gus.ericslutz.dev` (marketing, support, privacy policy, accessibility, age
+  suitability — see `Documentation/AppStore/review-support-pages.md`). Update it when a
+  change affects anything it presents: feature claims, screenshots, support
+  instructions, privacy or accessibility disclosures, or brand assets
+  (`assets/gus-mark.svg` there is the app-icon source of truth).
+
+Repo docs in this project stay intentionally compact — links or brief summaries that
+point at the wiki; long-form contributor and user-facing documentation belongs in the
+wiki, not here.
 
 ---
 
