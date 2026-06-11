@@ -11,6 +11,12 @@ import SwiftUI
 /// per-account order/visibility in `NavigationPreferencesStore`.
 struct RootContainer: View {
     var body: some View {
+        platformRoot
+            .gusContentLinks()
+    }
+
+    @ViewBuilder
+    private var platformRoot: some View {
         #if os(tvOS)
             TabRootView()
         #elseif os(visionOS)
