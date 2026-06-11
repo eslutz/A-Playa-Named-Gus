@@ -140,6 +140,8 @@ targets:
       - path: Sources/TopShelf
         excludes:
           - "Info.plist"
+      # Shared app↔extension contract for the Continue Watching snapshot.
+      - path: Sources/Models/TopShelfSnapshot.swift
       - path: Resources/Localizable.xcstrings
     dependencies:
       - sdk: AppIntents.framework
@@ -150,7 +152,7 @@ targets:
         PRODUCT_MODULE_NAME: GusTopShelf
         PRODUCT_BUNDLE_IDENTIFIER: dev.ericslutz.gus.topshelf
         ASSETCATALOG_COMPILER_APPICON_NAME: ""
-        CODE_SIGN_ENTITLEMENTS: ""
+        CODE_SIGN_ENTITLEMENTS: Config/GusTopShelf.entitlements
 
   GusTests:
     type: bundle.unit-test

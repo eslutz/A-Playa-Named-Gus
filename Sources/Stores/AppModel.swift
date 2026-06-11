@@ -331,6 +331,10 @@ final class AppModel {
         tokenStore.deleteToken(account: credential.legacyAccount)
         users.removeAll { $0.id == session.user.id && $0.serverID == session.user.serverID }
         serverStore.saveUsers(users)
+        SpotlightIndexer.deleteIndex(serverID: session.server.id, userID: session.user.id)
+        #if os(tvOS)
+            TopShelfSnapshot.clear()
+        #endif
         lastSessionAccount = nil
         currentSession = nil
     }

@@ -25,6 +25,7 @@ App Store archives belong in Xcode Cloud, not GitHub Actions.
 | No-exempt encryption | All | `ITSAppUsesNonExemptEncryption = false` in `Info.plist` | ✓ |
 | Offline downloads | iOS / iPadOS / macOS / visionOS / watchOS (audio) | Application Support storage — no extra capability required | ✓ |
 | Watch companion | watchOS | `GusWatch` target embedded in the iOS archive — no extra capability required | ✓ |
+| App Group (Top Shelf snapshot) | tvOS app + GusTopShelf extension | `com.apple.security.application-groups` = `group.dev.ericslutz.gus` in `Config/Gus-tvOS.entitlements` and `Config/GusTopShelf.entitlements` | ✓ code-side; **register the group with the App ID** before tvOS device/archive signing (simulators don't enforce it). The shared container carries only the Continue Watching snapshot (`TopShelfSnapshot.swift`) — no credentials. |
 
 **Removed:** `NSFaceIDUsageDescription` was present but `LocalAuthentication` is never
 called in A Playa Named Gus source code. A false usage description is an App Review red

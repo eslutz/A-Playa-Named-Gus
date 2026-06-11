@@ -9,5 +9,14 @@
 	<array>
 		<string>runs-as-current-user-with-user-independent-keychain</string>
 	</array>
+
+	<!-- Shared container for the Top Shelf snapshot (TopShelfSnapshot.swift): the app
+	     writes Continue Watching data, the GusTopShelf extension reads it. No
+	     credentials cross this boundary. Register the group with the App ID before
+	     device/archive signing (see Documentation/AppStore/signing-capabilities.md). -->
+	<key>com.apple.security.application-groups</key>
+	<array>
+		<string>group.dev.ericslutz.gus</string>
+	</array>
 </dict>
 </plist>

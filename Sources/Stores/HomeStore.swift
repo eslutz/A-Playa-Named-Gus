@@ -68,12 +68,35 @@ final class HomeStore {
             nextUpItems = try await ContentRatingGate.filter(nextUp)
             latestSections = try await loadLatestSections(for: libraries)
             state = .loaded
+            donateToSystemSearch()
         } catch {
             let gusError = GusError(from: error)
             guard !gusError.isCancellation else { return } // navigated away mid-load
             logger.error("Home load failed: \(gusError.localizedDescription, privacy: .public)")
             state = .failed(gusError.localizedDescription)
         }
+    }
+
+    /// Donates the rating-gated home content to Core Spotlight (no-op where the
+    /// platform lacks it) so library items surface in system search, and refreshes the
+    /// tvOS Top Shelf snapshot.
+    private func donateToSystemSearch() {
+        let items = resumeItems + nextUpItems + latestSections.flatMap(\.items)
+        SpotlightIndexer.index(items, serverID: session.server.id, userID: session.user.id)
+
+        #if os(tvOS)
+            let provider = session.mediaProvider
+            let shelfItems = (resumeItems + nextUpItems).prefix(8).compactMap { item -> TopShelfSnapshot.Item? in
+                guard let id = item.id else { return nil }
+                return TopShelfSnapshot.Item(
+                    id: id,
+                    title: item.displayTitle,
+                    imageURL: provider.backdropImageURL(for: item, maxWidth: 1280),
+                    playbackProgress: item.playbackProgress
+                )
+            }
+            TopShelfSnapshot(items: Array(shelfItems)).save()
+        #endif
     }
 
     private func loadLibraries() async throws -> [MediaItem] {
