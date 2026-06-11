@@ -12,6 +12,7 @@ Scripts/screenshots.sh iphone    # iPhone 6.9" only
 Scripts/screenshots.sh ipad      # iPad 13" only
 Scripts/screenshots.sh tv        # Apple TV 1080p only
 Scripts/screenshots.sh vision    # Apple Vision Pro only
+Scripts/screenshots.sh watch     # Apple Watch companion only
 Scripts/screenshots.sh mac       # print manual macOS instructions
 Scripts/screenshots.sh           # all simulator platforms
 ```
@@ -19,8 +20,12 @@ Scripts/screenshots.sh           # all simulator platforms
 Run `xcodegen generate` before the script if the Xcode project is stale.
 
 **Without a live server**, the script captures only the Connect screen for each
-platform. Signed-in scenes (Home, Item Detail, Player, Downloads, Gus Cinema) require
-a real or demo Jellyfin server. See the manual scenes table below.
+platform. **With `Scripts/demo-server.sh` running**, it signs in via
+`--gus-demo-server` and also captures the signed-in scenes automatically: Home,
+Libraries, and Settings, plus deep-linked content scenes (movie detail, music album,
+book detail, and full-screen video playback) through `--gus-route` with
+`gus://item/<id>` / `gus://play/<id>` content links. The watch captures its Connect
+screen plus the signed-in Remote glance. See the scenes table below.
 
 ## Screenshot Size Matrix
 
@@ -30,9 +35,10 @@ The script targets these automatically:
 | Platform | Device | Resolution | Script target |
 |---|---|---|---|
 | iPhone | iPhone 17 Pro Max | 1320×2868 (@3x, 6.9") | `iphone` |
-| iPad | iPad Pro 13-inch (M4) | 2064×2752 (@2x, 13") | `ipad` |
+| iPad | iPad Pro 13-inch (M5) | 2064×2752 (@2x, 13") | `ipad` |
 | Apple TV | Apple TV 4K 3rd gen (1080p) | 1920×1080 | `tv` |
 | Apple Vision Pro | Apple Vision Pro | 2980×2980 | `vision` |
+| Apple Watch | Apple Watch Ultra 3 (49mm) | 410×502 | `watch` |
 | Mac | Manual (see below) | 1280×800 or 2560×1600 | `mac` |
 
 > **Note:** The script resolves UDIDs from the simulators installed on the current
@@ -42,17 +48,20 @@ The script targets these automatically:
 
 ## Required Scenes
 
-Capture these scenes for each platform. Automated = script captures it with no
-server; Manual = requires a connected Jellyfin server.
+Capture these scenes for each platform. Auto = script captures it with no server;
+Auto-demo = script captures it when the local demo server is running; Manual =
+requires capturing by hand.
 
-| Scene | iPhone | iPad | TV | Vision | Mac | Notes |
-|---|---|---|---|---|---|---|
-| Connect screen | Auto | Auto | Auto | Auto | Auto | First impression |
-| Home (libraries + Continue Watching) | Manual | Manual | Manual | Manual | Manual | Shows main content |
-| Item Detail | Manual | Manual | Manual | Manual | Manual | Metadata + Play button |
-| Playback (full-screen) | Manual | Manual | Manual | Manual | Manual | Core feature |
-| Downloads / Settings | Manual | Manual | — | Manual | Manual | tvOS has no downloads |
-| Gus Cinema | — | — | — | Manual | — | visionOS immersive highlight |
+| Scene | iPhone | iPad | TV | Vision | Watch | Mac | Notes |
+|---|---|---|---|---|---|---|---|
+| Connect screen | Auto | Auto | Auto | Auto | Auto | Manual | First impression |
+| Home (libraries + Continue Watching) | Auto-demo | Auto-demo | Auto-demo | Auto-demo | — | Manual | Shows main content |
+| Libraries / Settings | Auto-demo | Auto-demo | Auto-demo | Auto-demo | — | Manual | Appearance + Navigation + Restrictions |
+| Item Detail (movie, album, book) | Auto-demo | Auto-demo | Auto-demo | Auto-demo | — | Manual | Via `gus://item/<id>` deep link |
+| Playback (full-screen) | Auto-demo | Auto-demo | Auto-demo | Auto-demo | — | Manual | Via `gus://play/<id>` deep link |
+| Remote glance | — | — | — | — | Auto-demo | — | Watch companion highlight |
+| TV-series / Live TV scenes | — | — | — | — | — | — | Blocked on demo data (no series/tuner) |
+| Gus Cinema | — | — | — | Manual | — | — | visionOS immersive highlight |
 
 > Avoid personal server URLs, real usernames, or copyrighted artwork. Seed a
 > demo server with non-sensitive or rights-cleared sample media before capture.

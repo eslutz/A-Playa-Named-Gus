@@ -12,10 +12,13 @@
 #   Scripts/screenshots.sh mac        # print macOS manual instructions and exit
 #
 # Each platform captures the Connect screen, then — if Scripts/demo-server.sh is
-# running — signed-in scenes (Home, Libraries, Settings) over the local demo Jellyfin
-# server. Home shows the Winter Chill theme + Liquid Glass; Settings shows the
-# Appearance, Navigation, and Content Restrictions controls. The watch captures its
-# Connect screen plus the signed-in Remote glance.
+# running — signed-in scenes over the local demo Jellyfin server: Home, Libraries,
+# Settings, plus content deep-link scenes (movie detail, music album, book detail, and
+# video playback via gus://item/<id> and gus://play/<id>). Home shows the Winter Chill
+# theme + Liquid Glass; Settings shows the Appearance, Navigation, and Content
+# Restrictions controls. The watch captures its Connect screen plus the signed-in
+# Remote glance. TV-series and Live TV scenes need demo data the sample library
+# doesn't have yet (no series, no tuner) — tracked in the ROADMAP.
 #
 # Output lands in Screenshots/<platform>/ (git-ignored).
 # Run `xcodegen generate` before this script if the project is stale.
@@ -135,30 +138,102 @@ install_and_launch() {
   sleep "$SETTLE_SECONDS"
 }
 
+# Relaunches the already-installed app with new launch arguments. Scenes differ
+# only by arguments, so skipping the per-scene reinstall keeps relaunches fast —
+# reinstall churn over a just-terminated instance can stall the next launch long
+# enough that the capture catches the bare launch screen.
+relaunch() {
+  local udid="$1"
+  shift
+  terminate_app "$udid"
+  sleep 1   # let the previous instance finish tearing down
+  log "Launching $BUNDLE_ID $* …"
+  xcrun simctl launch "$udid" "$BUNDLE_ID" "$@" >/dev/null
+  log "Settling for ${SETTLE_SECONDS}s …"
+  sleep "$SETTLE_SECONDS"
+}
+
 # Demo server (Scripts/demo-server.sh) lets us capture real signed-in scenes.
 demo_server_running() {
   curl -fsS --max-time 2 "http://localhost:8096/System/Info/Public" >/dev/null 2>&1
 }
 
-# Captures Home / Search / Settings by relaunching with --gus-demo-server and a
-# --gus-route destination per scene (external gus:// opens show a confirm dialog).
-capture_signed_in_scenes() {
-  local udid="$1" outdir="$2" app_path="$3"
+# Representative demo item ids for content deep-link scenes (gus://item, gus://play),
+# resolved once per run. Empty when a type isn't in the demo library.
+DEMO_IDS_RESOLVED=""
+DEMO_MOVIE_ID=""
+DEMO_ALBUM_ID=""
+DEMO_BOOK_ID=""
 
-  terminate_app "$udid"
-  install_and_launch "$udid" "$app_path" --gus-demo-server
+resolve_demo_ids() {
+  [[ -n "$DEMO_IDS_RESOLVED" ]] && return 0
+  DEMO_IDS_RESOLVED=1
+  local auth token
+  auth=$(curl -fsS --max-time 5 -X POST "http://localhost:8096/Users/AuthenticateByName" \
+    -H 'Content-Type: application/json' \
+    -H 'X-Emby-Authorization: MediaBrowser Client="GusShots", Device="shots", DeviceId="shots-1", Version="1.0"' \
+    -d '{"Username":"gus","Pw":"playa-demo"}' 2>/dev/null) || return 0
+  token=$(printf '%s' "$auth" | python3 -c 'import json,sys; print(json.load(sys.stdin).get("AccessToken",""))' 2>/dev/null)
+  [[ -z "$token" ]] && return 0
+
+  demo_first_id() {
+    curl -fsS --max-time 5 "http://localhost:8096/Items?IncludeItemTypes=$1&Recursive=true&Limit=1&SortBy=SortName" \
+      -H "X-Emby-Token: $token" 2>/dev/null \
+      | python3 -c 'import json,sys
+items = json.load(sys.stdin).get("Items", [])
+print(items[0]["Id"] if items else "")' 2>/dev/null
+  }
+
+  DEMO_MOVIE_ID=$(demo_first_id "Movie")
+  DEMO_ALBUM_ID=$(demo_first_id "MusicAlbum")
+  DEMO_BOOK_ID=$(demo_first_id "Book")
+}
+
+# Captures the signed-in scenes by relaunching (the app is already installed by
+# the platform's Connect capture) with --gus-demo-server and a --gus-route
+# destination per scene (external gus:// opens show a confirm dialog).
+# Fixed routes cover Home/Libraries/Settings; content deep links (gus://item/<id>,
+# gus://play/<id>) cover movie detail, music album, book detail, and video playback.
+capture_signed_in_scenes() {
+  local udid="$1" outdir="$2"
+
+  relaunch "$udid" --gus-demo-server
   sleep 6   # extra settle: demo sign-in + Home load over localhost
   capture "$udid" "$outdir" "02-home"
 
-  terminate_app "$udid"
-  install_and_launch "$udid" "$app_path" --gus-demo-server --gus-route libraries
+  relaunch "$udid" --gus-demo-server --gus-route libraries
   sleep 6
   capture "$udid" "$outdir" "03-libraries"
 
-  terminate_app "$udid"
-  install_and_launch "$udid" "$app_path" --gus-demo-server --gus-route settings
+  relaunch "$udid" --gus-demo-server --gus-route settings
   sleep 6
   capture "$udid" "$outdir" "04-settings"
+
+  resolve_demo_ids
+
+  if [[ -n "$DEMO_MOVIE_ID" ]]; then
+    relaunch "$udid" --gus-demo-server --gus-route "item/$DEMO_MOVIE_ID"
+    sleep 6
+    capture "$udid" "$outdir" "05-movie-detail"
+  fi
+
+  if [[ -n "$DEMO_ALBUM_ID" ]]; then
+    relaunch "$udid" --gus-demo-server --gus-route "item/$DEMO_ALBUM_ID"
+    sleep 6
+    capture "$udid" "$outdir" "06-album"
+  fi
+
+  if [[ -n "$DEMO_BOOK_ID" ]]; then
+    relaunch "$udid" --gus-demo-server --gus-route "item/$DEMO_BOOK_ID"
+    sleep 6
+    capture "$udid" "$outdir" "07-book-detail"
+  fi
+
+  if [[ -n "$DEMO_MOVIE_ID" ]]; then
+    relaunch "$udid" --gus-demo-server --gus-route "play/$DEMO_MOVIE_ID"
+    sleep 14   # player spin-up + localhost HLS transcode start
+    capture "$udid" "$outdir" "08-player"
+  fi
 
   terminate_app "$udid"
 }
@@ -208,7 +283,7 @@ capture_iphone() {
   install_and_launch "$IPHONE_UDID" "$app" --gus-skip-session-restore
   capture "$IPHONE_UDID" "$OUT/iphone" "01-connect"
   if demo_server_running; then
-    capture_signed_in_scenes "$IPHONE_UDID" "$OUT/iphone" "$app"
+    capture_signed_in_scenes "$IPHONE_UDID" "$OUT/iphone"
     ok "iPhone: captured Connect + signed-in scenes"
   else
     ok "iPhone: captured Connect (start Scripts/demo-server.sh for signed-in scenes)"
@@ -227,7 +302,7 @@ capture_ipad() {
   install_and_launch "$IPAD_UDID" "$app" --gus-skip-session-restore
   capture "$IPAD_UDID" "$OUT/ipad" "01-connect"
   if demo_server_running; then
-    capture_signed_in_scenes "$IPAD_UDID" "$OUT/ipad" "$app"
+    capture_signed_in_scenes "$IPAD_UDID" "$OUT/ipad"
     ok "iPad: captured Connect + signed-in scenes"
   else
     ok "iPad: captured Connect (start Scripts/demo-server.sh for signed-in scenes)"
@@ -246,7 +321,7 @@ capture_tv() {
   install_and_launch "$TV_UDID" "$app" --gus-skip-session-restore
   capture "$TV_UDID" "$OUT/tv" "01-connect"
   if demo_server_running; then
-    capture_signed_in_scenes "$TV_UDID" "$OUT/tv" "$app"
+    capture_signed_in_scenes "$TV_UDID" "$OUT/tv"
     ok "TV: captured Connect + signed-in scenes"
   else
     ok "TV: captured Connect (start Scripts/demo-server.sh for signed-in scenes)"
@@ -265,7 +340,7 @@ capture_vision() {
   install_and_launch "$VISION_UDID" "$app" --gus-skip-session-restore
   capture "$VISION_UDID" "$OUT/vision" "01-connect"
   if demo_server_running; then
-    capture_signed_in_scenes "$VISION_UDID" "$OUT/vision" "$app"
+    capture_signed_in_scenes "$VISION_UDID" "$OUT/vision"
     ok "Vision Pro: captured Connect + signed-in scenes"
   else
     ok "Vision Pro: captured Connect (start Scripts/demo-server.sh for signed-in scenes)"

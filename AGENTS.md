@@ -180,6 +180,18 @@ Fixed app destinations use `AppRoute` + `AppNavigationModel` for `gus://home`,
 `gus://search`, and `gus://settings`, which are shared by URL opens, menu commands, and
 the tvOS Top Shelf extension. `RootContainer` maps those fixed routes onto tabs or split
 selection, while search focus requests stay in the search feature views.
+**Content deep links** (`gus://item/<id>`, `gus://play/<id>` — `Models/ContentLink.swift`)
+ride the same `AppNavigationModel` via a consume-once pending-link request;
+`Platform/ContentLinkHandler.swift` resolves the id through the session's provider and
+presents the detail sheet or player. Content links are the shared entry point for system
+integration: **Handoff** (`Platform/UserActivities.swift` — detail/player surfaces publish
+`NSUserActivity` with ids only, never tokens), **Core Spotlight**
+(`Services/SpotlightIndexer.swift` — donates browsed items with `server|user|item`
+identifiers, refuses other-account continuations, deindexes on sign-out; no
+watchOS/tvOS), **Siri/App Intents** (`App/GusAppIntents.swift` — "Play media" provider
+search), and the **content-aware tvOS Top Shelf** (Continue Watching snapshot via the
+`group.dev.ericslutz.gus` App Group, written by `HomeStore`, read by the credential-free
+`GusTopShelf` extension).
 Keep platform `#if` branches in `Platform/` (or small guarded modifiers) rather than
 scattering them through feature views.
 

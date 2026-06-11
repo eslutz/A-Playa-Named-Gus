@@ -268,9 +268,12 @@ automated build verification. (Covers priority: *polish & testing*.)
 - [x] **tvOS.** Focus engine polish (poster focus scaling, sensible focus order), Top Shelf
   content, large-canvas layout. *Acceptance:* navigable entirely by remote; focus never
   trapped/lost. *(Done: poster navigation preserves native focus styling, related rails
-  and grids are grouped for focus, and a static `GusTopShelf` extension opens home,
-  search, and settings via `gus://` routes. The app target declares tvOS User Management so
-  each Apple TV profile gets separate app storage and Keychain-scoped Jellyfin tokens.)*
+  and grids are grouped for focus, and the `GusTopShelf` extension is content-aware — it
+  renders the signed-in user's Continue Watching row (artwork, progress bars, play/detail
+  actions via `gus://play` / `gus://item` links) from a credential-free App Group snapshot
+  written by `HomeStore`, falling back to static home/search/settings shortcuts when
+  signed out. The app target declares tvOS User Management so each Apple TV profile gets
+  separate app storage and Keychain-scoped Jellyfin tokens.)*
 - [x] **visionOS.** Ornaments/toolbars, `.glassBackgroundEffect()` on panels, hover
   effects, real look-to-scroll, depth-aware layout. *Acceptance:* matches HIG immersive
   guidance; comfortable at default scale. *(Done: signed-in panels use glass, split-view
@@ -439,15 +442,19 @@ validation, TestFlight, and submission work are actually done.
   setup; `--gus-demo-server` launch argument and a Debug-only Connect button sign
   straight in; Home population verified on the iPhone simulator; docs in
   `Documentation/AppStore/demo-server.md`. Remaining: tap-through validation of
-  playback/downloads per platform and a hosted instance for App Review access; series/
-  spatial examples are not yet represented in the sample library.)*
+  playback/downloads per platform and a hosted instance for App Review access; TV-series/
+  Live-TV/spatial examples are not yet represented in the sample library, which also
+  blocks their screenshot scenes.)*
 - [~] **Screenshots & previews.** Required sizes for iPhone/iPad/Apple TV/Vision Pro/Mac
   (scripted via `simctl` where possible). *Acceptance:* all required slots filled.
   *(Started: `Scripts/screenshots.sh` resolves required-size simulators by name, drives
   the demo server (`--gus-demo-server` + `--gus-route`), and captures Connect, Home,
-  Libraries, and Settings on iPhone/iPad/Apple TV/Vision Pro; macOS stays manual per the
-  script's instructions. Final marketing-quality capture and App Store Connect upload
-  remain.)*
+  Libraries, and Settings on iPhone/iPad/Apple TV/Vision Pro/Apple Watch, plus
+  deep-linked content scenes (movie detail, album, book detail, video player) via
+  `gus://item`/`gus://play` content links on every simulator platform; macOS stays
+  manual per the script's instructions. TV-series and Live TV scenes need demo data
+  first (see the demo-library item). Final marketing-quality capture and App Store
+  Connect upload remain.)*
 - [x] **Review-guidelines compliance audit.** Walk the
   [App Review Guidelines](https://developer.apple.com/app-store/review/guidelines/):
   third-party-server clients, scoped ATS (`NSAllowsLocalNetworking` for self-hosted LAN
@@ -540,6 +547,23 @@ milestone only after the launch scope is stable.
  visionOS sidebar, split view) render the customized sections dynamically; removed
  server libraries drop gracefully and new ones append visible; `gus://` routes map onto
  the customized layout with a Home fallback when Libraries is hidden.)*
+
+- [x] **Content deep links & system integration.** Deep-link individual library items and
+ surface them through the system features that depend on it. *Acceptance:* `gus://item/
+ <id>` and `gus://play/<id>` open the detail surface or player from a cold or warm
+ launch; system entry points carry no credentials and refuse links donated by another
+ account. *(Done: `ContentLink` + a consume-once `AppNavigationModel` pending-link
+ request resolve ids through the session provider (`Platform/ContentLinkHandler.swift`),
+ gated by family-safety restrictions. Built on it: **Handoff** — detail and player
+ surfaces publish `NSUserActivity` (ids only) and continue on another device;
+ **Core Spotlight** — `SpotlightIndexer` donates browsed/loaded items with
+ `server|user|item` identifiers, opens results in-app, and deindexes on sign-out (no
+ watchOS/tvOS indexing); **Siri/App Intents** — a "Play media" intent with provider
+ search plus an App Shortcut phrase; **content-aware tvOS Top Shelf** — Continue
+ Watching with artwork/progress/play actions from the credential-free
+ `group.dev.ericslutz.gus` App Group snapshot. Remaining: device verification of
+ Handoff/Siri/Spotlight surfaces, and registering the App Group with the App ID before
+ tvOS archive signing — tracked in `Documentation/AppStore/signing-capabilities.md`.)*
 
 - [ ] **Apple Intelligence library assistant and generated artwork.** Integrate Apple's
  Foundation Models, Core Spotlight LLM search, Private Cloud Compute, and Image Playground
