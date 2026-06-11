@@ -5,62 +5,85 @@ import Testing
 
 @Suite("AVPlayer device profile")
 struct StreamURLBuilderTests {
-    @Test("biases playback toward H.264 MPEG-TS HLS transcoding while preserving direct-play containers")
-    func avPlayerProfileUsesHLSAndAVKitContainers() {
-        let profile = StreamURLBuilder.avPlayerProfile(maxStreamingBitrate: 42_000_000)
+    private let fullCapabilities = DevicePlaybackCapabilities(
+        supportsHEVCDecode: true,
+        supportsAV1Decode: true,
+        supportsHDRPlayback: true
+    )
+
+    private let baselineCapabilities = DevicePlaybackCapabilities(
+        supportsHEVCDecode: false,
+        supportsAV1Decode: false,
+        supportsHDRPlayback: false
+    )
+
+    @Test("declares hardware-gated direct play and an HEVC-preferred fMP4 HLS transcode")
+    func avPlayerProfileLeansDirectPlayWithModernTranscode() {
+        let profile = StreamURLBuilder.avPlayerProfile(maxStreamingBitrate: 42_000_000, capabilities: fullCapabilities)
         let directPlay = profile.directPlayProfiles?.first
         let transcoding = profile.transcodingProfiles?.first
 
         #expect(profile.maxStaticBitrate == 42_000_000)
         #expect(profile.maxStreamingBitrate == 42_000_000)
         #expect(directPlay?.container == "mp4,m4v,mov")
-        #expect(directPlay?.videoCodec == "h264,hevc")
+        #expect(directPlay?.videoCodec == "h264,hevc,av1")
         #expect(transcoding?.protocol == .hls)
-        #expect(transcoding?.container == "ts")
-        #expect(transcoding?.audioCodec == "aac")
-        #expect(transcoding?.videoCodec == "h264")
-        #expect(transcoding?.enableMpegtsM2TsMode == true)
+        #expect(transcoding?.container == "mp4")
+        #expect(transcoding?.videoCodec == "hevc,h264")
+        #expect(transcoding?.maxAudioChannels == "8")
+        #expect(transcoding?.enableSubtitlesInManifest == true)
+        #expect(transcoding?.isBreakOnNonKeyFrames == true)
         #expect(transcoding?.type == .video)
         #expect(transcoding?.context == .streaming)
     }
 
-    @Test("direct-play profile keeps HEVC available for AVKit-native containers")
-    func avPlayerProfileAllowsDirectPlayHEVC() {
-        let profile = StreamURLBuilder.avPlayerProfile(maxStreamingBitrate: 42_000_000)
+    @Test("baseline hardware drops HEVC/AV1 from direct play and transcodes to H.264")
+    func avPlayerProfileHonorsBaselineHardware() {
+        let profile = StreamURLBuilder.avPlayerProfile(maxStreamingBitrate: 42_000_000, capabilities: baselineCapabilities)
         let directPlay = profile.directPlayProfiles?.first
+        let transcoding = profile.transcodingProfiles?.first
 
-        #expect(directPlay?.container == "mp4,m4v,mov")
-        #expect(directPlay?.videoCodec?.split(separator: ",").contains("hevc") == true)
+        #expect(directPlay?.videoCodec == "h264")
+        #expect(transcoding?.videoCodec == "h264")
     }
 
-    @Test("MPEG-TS HLS fallback remains H.264-only")
-    func avPlayerProfileKeepsTransportStreamFallbackH264Only() {
-        let profile = StreamURLBuilder.avPlayerProfile(maxStreamingBitrate: 42_000_000)
-        let transportStreamProfiles = profile.transcodingProfiles?.filter { profile in
-            profile.protocol == .hls && profile.container == "ts"
-        } ?? []
+    @Test("transport-stream direct play covers Live TV containers")
+    func avPlayerProfileDirectPlaysTransportStreams() throws {
+        let profile = StreamURLBuilder.avPlayerProfile(maxStreamingBitrate: 42_000_000, capabilities: fullCapabilities)
+        let ts = try #require(profile.directPlayProfiles?.first { $0.container?.contains("mpegts") == true })
 
-        let transportStream = try? #require(transportStreamProfiles.first)
-        #expect(transportStreamProfiles.count == 1)
-        #expect(transportStream?.audioCodec == "aac")
-        #expect(transportStream?.videoCodec == "h264")
-        #expect(transportStream?.enableMpegtsM2TsMode == true)
+        #expect(ts.videoCodec == "h264,hevc")
+        #expect(ts.audioCodec?.split(separator: ",").contains("eac3") == true)
     }
 
-    @Test("ordinary HLS transcoding only advertises the proven H.264 transport stream profile")
-    func avPlayerProfileOnlyOffersH264TransportStreamTranscoding() throws {
-        let profile = StreamURLBuilder.avPlayerProfile(maxStreamingBitrate: 42_000_000)
-        let transcodingProfiles = try #require(profile.transcodingProfiles)
+    @Test("text subtitles ride the HLS manifest; bitmap subtitles burn in")
+    func avPlayerProfileDeclaresSubtitleDelivery() throws {
+        let profile = StreamURLBuilder.avPlayerProfile(maxStreamingBitrate: 42_000_000, capabilities: fullCapabilities)
+        let subtitles = try #require(profile.subtitleProfiles)
 
-        #expect(transcodingProfiles.count == 1)
-        let h264 = try #require(transcodingProfiles.first)
-        #expect(h264.protocol == .hls)
-        #expect(h264.container == "ts")
-        #expect(h264.audioCodec == "aac")
-        #expect(h264.videoCodec == "h264")
-        #expect(h264.enableMpegtsM2TsMode == true)
-        #expect(h264.type == .video)
-        #expect(h264.context == .streaming)
+        #expect(subtitles.contains { $0.format == "vtt" && $0.method == .hls })
+        #expect(subtitles.contains { $0.format == "pgssub" && $0.method == .encode })
+        #expect(subtitles.contains { $0.format == "ttml" && $0.method == .embed })
+        // Nothing may declare external delivery — AVPlayer can't attach sidecar files.
+        #expect(!subtitles.contains { $0.method == .external })
+    }
+
+    @Test("codec conditions exclude Hi10P/interlaced H.264 and gate HDR on display eligibility")
+    func avPlayerProfileConstrainsCodecVariants() throws {
+        let hdrProfile = StreamURLBuilder.avPlayerProfile(maxStreamingBitrate: 42_000_000, capabilities: fullCapabilities)
+        let sdrProfile = StreamURLBuilder.avPlayerProfile(maxStreamingBitrate: 42_000_000, capabilities: baselineCapabilities)
+
+        let h264 = try #require(hdrProfile.codecProfiles?.first { $0.codec == "h264" })
+        #expect(h264.conditions?.contains { $0.property == .videoBitDepth && $0.value == "8" } == true)
+        #expect(h264.conditions?.contains { $0.property == .isInterlaced } == true)
+
+        let hevcHDR = try #require(hdrProfile.codecProfiles?.first { $0.codec == "hevc" })
+        let hdrRange = try #require(hevcHDR.conditions?.first { $0.property == .videoRangeType }?.value)
+        #expect(hdrRange.contains("HDR10"))
+        #expect(hdrRange.contains("HLG"))
+
+        let hevcSDR = try #require(sdrProfile.codecProfiles?.first { $0.codec == "hevc" })
+        #expect(hevcSDR.conditions?.first { $0.property == .videoRangeType }?.value == "SDR")
     }
 
     @Test("direct-play body disables transcoding for stereo sources")

@@ -136,6 +136,25 @@ struct GusApp: App {
         #endif
         .gusCommands(appModel: appModel, navigation: appNavigation)
 
+        #if os(macOS)
+            // Dedicated cinematic player window: video opens here (QuickTime-style,
+            // user-resizable, green-button fullscreen) instead of a sheet.
+            WindowGroup(id: GusPlayerWindow.sceneID, for: ItemRef.self) { $ref in
+                if let ref {
+                    GusPlayerWindowContent(ref: ref)
+                        .environment(appModel)
+                        .environment(appNavigation)
+                        .environment(playbackRefresh)
+                        .environment(offlineDownloads)
+                        .environment(upNext)
+                        .environment(navigationPreferences)
+                        .preferredColorScheme(appearance.colorScheme)
+                }
+            }
+            .defaultSize(width: 1024, height: 576)
+            .windowResizability(.contentMinSize)
+        #endif
+
         #if os(visionOS)
             ImmersiveSpace(id: GusCinema.spaceID) {
                 GusCinema()

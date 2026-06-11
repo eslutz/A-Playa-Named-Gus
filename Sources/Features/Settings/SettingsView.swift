@@ -11,6 +11,8 @@ struct SettingsView: View {
     @AppStorage(ContentRatingGate.limitDefaultsKey) private var contentLimitRawValue = ContentRatingGate.Limit.off.rawValue
     @AppStorage(ContentRatingGate.hideUnratedDefaultsKey) private var hideUnratedContent = false
     @AppStorage(AppearanceSetting.defaultsKey) private var appearanceRawValue = AppearanceSetting.system.rawValue
+    @AppStorage(PlaybackQuality.defaultsKey) private var playbackQualityRawValue = PlaybackQuality.maximum.rawValue
+    @AppStorage(PlaybackPreferences.autoPlayNextEpisodeKey) private var autoPlayNextEpisode = true
 
     var body: some View {
         Form {
@@ -39,6 +41,19 @@ struct SettingsView: View {
                 DownloadsSettingsSection(
                     byteCount: downloads.totalByteCount(serverID: session.server.id, userID: session.user.id)
                 )
+            }
+
+            Section {
+                Picker("Streaming Quality", selection: $playbackQualityRawValue) {
+                    ForEach(PlaybackQuality.allCases) { quality in
+                        Text(quality.title).tag(quality.rawValue)
+                    }
+                }
+                Toggle("Auto-Play Next Episode", isOn: $autoPlayNextEpisode)
+            } header: {
+                Text("Playback")
+            } footer: {
+                Text("Maximum lets compatible files play at original quality. Lower settings cap the streaming bitrate for constrained networks.")
             }
 
             Section {

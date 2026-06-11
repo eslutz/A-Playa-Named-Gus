@@ -24,6 +24,9 @@ final class PlaybackStore {
     private(set) var stereoPresentation: Stereo3DPresentation = .native2D
     private(set) var stereoFallbackNotice: String?
     private(set) var viewingMode: Stereo3DViewingMode = .automatic
+    /// Set when playback reaches its natural end with nothing left to auto-play;
+    /// the player view observes it to dismiss itself.
+    private(set) var didFinishPlayback = false
 
     private(set) var item: MediaItem
     private let session: SessionStore
@@ -33,7 +36,11 @@ final class PlaybackStore {
     private let logger = Logger(category: .playback)
     private var reportContext: PlaybackReportContext?
     private var progressObserver: Any?
+    private var endObserver: NSObjectProtocol?
+    private var pauseStateObservation: NSKeyValueObservation?
+    private var didReportPause = false
     private var didReportStopped = false
+    private var isTranscodedPlayback = false
     private var streamSelection = PlaybackStreamSelection.none
 
     init(item: MediaItem, session: SessionStore, playbackRefresh: PlaybackRefreshStore, downloads: OfflineDownloadStore? = nil) {
@@ -81,19 +88,71 @@ final class PlaybackStore {
     func prepare() async {
         guard player == nil else { return }
         didReportStopped = false
+        didFinishPlayback = false
         await loadPlayback(startTimeTicks: PlaybackTime.resumePositionTicks(for: item), replacingCurrentItem: false)
     }
 
     func selectAudioStream(index: Int?) async {
         guard streamSelection.audioStreamIndex != index else { return }
+        if let index, await applyInPlaceMediaSelection(kind: .audio, streamIndex: index) {
+            streamSelection.audioStreamIndex = index
+            refreshReportedStreamSelection()
+            return
+        }
         streamSelection.audioStreamIndex = index
         await rebuildCurrentItemPreservingPosition()
     }
 
     func selectSubtitleStream(index: Int?) async {
         guard streamSelection.subtitleStreamIndex != index else { return }
+        if await applyInPlaceMediaSelection(kind: .subtitle, streamIndex: index) {
+            streamSelection.subtitleStreamIndex = index
+            refreshReportedStreamSelection()
+            return
+        }
         streamSelection.subtitleStreamIndex = index
         await rebuildCurrentItemPreservingPosition()
+    }
+
+    /// Direct-played files expose their embedded tracks to AVKit, so switching can use
+    /// `AVMediaSelection` in place — no multi-second stream rebuild. Transcoded streams
+    /// carry only the negotiated tracks and must re-resolve against the server.
+    private func applyInPlaceMediaSelection(kind: MediaStreamKind, streamIndex: Int?) async -> Bool {
+        guard !isTranscodedPlayback, let playerItem = player?.currentItem else { return false }
+        let characteristic: AVMediaCharacteristic = kind == .audio ? .audible : .legible
+        guard let group = try? await playerItem.asset.loadMediaSelectionGroup(for: characteristic) else { return false }
+
+        guard let streamIndex else {
+            guard group.allowsEmptySelection else { return false }
+            playerItem.select(nil, in: group)
+            return true
+        }
+
+        let candidates = group.options.enumerated().map { offset, option in
+            MediaSelectionCandidate(position: offset, languageTag: option.extendedLanguageTag)
+        }
+        guard let position = PlaybackMediaSelectionMatcher.candidatePosition(
+            forStreamIndex: streamIndex,
+            kind: kind,
+            streams: item.mediaSources.first?.mediaStreams ?? [],
+            candidates: candidates
+        ), group.options.indices.contains(position) else { return false }
+
+        playerItem.select(group.options[position], in: group)
+        return true
+    }
+
+    /// Progress reports carry the stream selection; keep the context honest after an
+    /// in-place switch that didn't restart the play session.
+    private func refreshReportedStreamSelection() {
+        guard let context = reportContext else { return }
+        reportContext = PlaybackReportContext(
+            itemID: context.itemID,
+            mediaSourceID: context.mediaSourceID,
+            playSessionID: context.playSessionID,
+            playMethod: context.playMethod,
+            streamSelection: streamSelection
+        )
     }
 
     func seek(to chapter: PlaybackChapter) async {
@@ -157,10 +216,11 @@ final class PlaybackStore {
                 stereoPresentation = .native2D
             } else {
                 let requestedPresentation = Media3DDetector.presentation(for: item, viewingMode: viewingMode)
+                let maxStreamingBitrate = PlaybackQuality.stored.maxStreamingBitrate
                 let remoteResolution = try await NetworkRetryPolicy.idempotent.run {
                     try await self.session.mediaProvider.resolvePlayback(
                         for: itemID,
-                        maxStreamingBitrate: 120_000_000,
+                        maxStreamingBitrate: maxStreamingBitrate,
                         streamSelection: self.streamSelection,
                         startTimeTicks: startTimeTicks,
                         stereoLayout: requestedPresentation.resolutionStereoLayout
@@ -180,6 +240,11 @@ final class PlaybackStore {
             logger.info("Playing \(self.item.name ?? "item", privacy: .public) (local: \(localURL != nil, privacy: .public), transcoding: \(resolution?.isTranscoding == true, privacy: .public))")
 
             let playerItem = AVPlayerItem(url: playbackURL)
+            #if !os(macOS)
+                // System title/info chrome; AVPlayerItem has no externalMetadata on
+                // macOS (AVPlayerView's floating controls don't present it).
+                playerItem.externalMetadata = item.externalPlayerMetadata
+            #endif
             let player: AVPlayer
             if let existing = self.player, replacingCurrentItem {
                 existing.replaceCurrentItem(with: playerItem)
@@ -192,6 +257,9 @@ final class PlaybackStore {
             #endif
             player.automaticallyWaitsToMinimizeStalling = true
             self.player = player
+            isTranscodedPlayback = localURL == nil && resolution?.isTranscoding == true
+            installEndObserver(for: playerItem)
+            installPauseObservation(on: player)
             let context = PlaybackReportContext(
                 itemID: itemID,
                 mediaSourceID: resolution?.mediaSourceID,
@@ -240,6 +308,11 @@ final class PlaybackStore {
         let finalTicks = currentPositionTicks()
         let context = reportContext
         removeProgressObserver()
+        removeEndObserver()
+        pauseStateObservation?.invalidate()
+        pauseStateObservation = nil
+        didReportPause = false
+        isTranscodedPlayback = false
         player?.pause()
         nowPlaying.stop()
         player = nil
@@ -252,6 +325,62 @@ final class PlaybackStore {
         if reportStopped, let context, !didReportStopped {
             didReportStopped = true
             reportPlaybackStopped(context: context, positionTicks: finalTicks)
+        }
+    }
+
+    // MARK: - Natural end (auto-play next / dismiss)
+
+    private func installEndObserver(for playerItem: AVPlayerItem) {
+        removeEndObserver()
+        endObserver = NotificationCenter.default.addObserver(
+            forName: AVPlayerItem.didPlayToEndTimeNotification,
+            object: playerItem,
+            queue: .main
+        ) { [weak self] _ in
+            MainActor.assumeIsolated {
+                self?.handlePlaybackEnded()
+            }
+        }
+    }
+
+    private func removeEndObserver() {
+        if let endObserver {
+            NotificationCenter.default.removeObserver(endObserver)
+        }
+        endObserver = nil
+    }
+
+    private func handlePlaybackEnded() {
+        if PlaybackPreferences.autoPlaysNextEpisode, nextUpItem != nil {
+            Task { await playNextUp() }
+        } else {
+            didFinishPlayback = true
+        }
+    }
+
+    // MARK: - Immediate pause/resume reporting
+
+    /// The 10-second progress tick is too slow for pause state — the server dashboard
+    /// (and anything watching the session) would show "playing" for up to 10 s after a
+    /// pause. Report transitions as they happen.
+    private func installPauseObservation(on player: AVPlayer) {
+        didReportPause = false
+        pauseStateObservation?.invalidate()
+        pauseStateObservation = player.observe(\.timeControlStatus, options: [.new]) { [weak self] player, _ in
+            let status = player.timeControlStatus
+            Task { @MainActor in
+                guard let self, self.player === player, self.state == .ready else { return }
+                switch status {
+                case .paused where !self.didReportPause:
+                    self.didReportPause = true
+                    self.reportPlaybackProgress(positionTicks: self.currentPositionTicks(), isPaused: true)
+                case .playing where self.didReportPause:
+                    self.didReportPause = false
+                    self.reportPlaybackProgress(positionTicks: self.currentPositionTicks(), isPaused: false)
+                default:
+                    break
+                }
+            }
         }
     }
 

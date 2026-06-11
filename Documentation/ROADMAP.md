@@ -222,8 +222,26 @@ automated build verification. (Covers priority: *polish & testing*.)
 - [x] **Audio & subtitle track selection.** Expose `MediaStream`s; let the user switch
   audio/subtitle tracks (request appropriate stream indices / transcode). *Acceptance:*
   track changes apply; selection persists within a session. *(Done: playback exposes
-  audio/subtitle menus, posts selected stream indices, rebuilds the player item, and
-  preserves position.)*
+  audio/subtitle menus; direct-played files switch in place via `AVMediaSelection`
+  (ordinal+language matching with a conservative refusal path), and transcoded streams
+  rebuild the player item server-side, preserving position either way.)*
+- [x] **Native player pipeline & chrome overhaul.** Make the AVKit player behave and
+  look first-party: an honest, hardware-gated device profile and pure system chrome.
+  *Acceptance:* compatible files direct-play untouched; transcodes preserve surround,
+  HDR honesty, and manifest subtitles; the system surface presents item metadata.
+  *(Done: `DevicePlaybackCapabilities` gates HEVC/AV1 direct play on
+  `VTIsHardwareDecodeSupported` and HDR ranges on `AVPlayer.eligibleForHDRPlayback`
+  (Hi10P/interlaced H.264 excluded via codec conditions); the transcode target is
+  HEVC-preferred fMP4 HLS with 8-channel audio and `enableSubtitlesInManifest` (text
+  subs ride the manifest, only bitmap subs burn in); `AVPlayerItem.externalMetadata`
+  feeds the system title/info chrome (sans macOS, which lacks the API);
+  `updatesNowPlayingInfoCenter = false` on iOS so `NowPlayingController` is the single
+  Now Playing writer; the iOS overlay drops the duplicate AirPlay picker (system bar has
+  one — macOS keeps it); macOS video opens in a dedicated cinematic `WindowGroup`
+  (QuickTime-style, green-button fullscreen) instead of a sheet; natural end auto-plays
+  the next episode (Settings toggle, default on) or dismisses the player; pause/resume
+  report immediately instead of on the 10 s tick; and Settings gains a Streaming Quality
+  picker (Maximum/High/Medium/Low) replacing the hardcoded 120 Mbps.)*
 - [~] **Picture in Picture.** Enable PiP where supported (iOS/iPadOS/macOS) and verify the
   background-audio + `UIBackgroundModes` path. *Acceptance:* PiP starts on backgrounding;
   audio continues. *(Implementation note: the iOS/iPadOS surface is now

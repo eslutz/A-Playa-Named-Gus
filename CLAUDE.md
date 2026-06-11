@@ -193,11 +193,22 @@ written by `HomeStore`, read by the credential-free `GusTopShelf` extension).
 ### Playback
 
 **Video:** `StreamURLBuilder` POSTs `Paths.getPostedPlaybackInfo` with a `DeviceProfile`
-biased toward HLS transcoding so `AVPlayer` always receives a playable container.
-`PlaybackStore` owns the `AVPlayer` and tears it down on dismiss. Surface is `VideoPlayer`
-on iOS/macOS/visionOS and `AVPlayerViewController` (via representable) on tvOS.
-`NowPlayingController` feeds `MPNowPlayingInfoCenter` / `MPRemoteCommandCenter`.
-`AVAudioSession` is guarded (`#if os(iOS) || os(tvOS) || os(visionOS)` — doesn't exist on macOS).
+that leans **direct play** for everything the device's hardware decodes
+(`DevicePlaybackCapabilities` gates HEVC/AV1 on `VTIsHardwareDecodeSupported` — guarded
+`canImport(VideoToolbox)` for watchOS — and HDR ranges on `AVPlayer.eligibleForHDRPlayback`),
+falling back to HEVC-preferred fMP4 HLS transcoding with 8-channel audio and
+`enableSubtitlesInManifest` (bitmap subs burn in; text subs ride the manifest).
+`PlaybackStore` owns the `AVPlayer` and tears it down on dismiss; it sets
+`AVPlayerItem.externalMetadata` (not on macOS — no API), auto-plays next episodes or
+dismisses at natural end (`PlaybackPreferences`), reports pause/resume immediately, and
+reads the Settings-backed `PlaybackQuality` bitrate cap. Track switching is in-place via
+`AVMediaSelection` for direct play (`PlaybackMediaSelectionMatcher`, ordinal+language)
+with a server-side rebuild fallback. Surfaces: `AVPlayerViewController` on iOS
+(`updatesNowPlayingInfoCenter = false` — `NowPlayingController` is the single Now Playing
+writer) and tvOS, `AVPlayerView` on macOS (video opens in the dedicated `GusPlayerWindow`
+window scene, not a sheet), SwiftUI `VideoPlayer` on visionOS. `NowPlayingController`
+feeds `MPNowPlayingInfoCenter` / `MPRemoteCommandCenter`. `AVAudioSession` is guarded
+(`#if os(iOS) || os(tvOS) || os(visionOS)` — doesn't exist on macOS).
 
 **Audio:** songs and audiobooks play through `AudioPlayerStore` + `AudioPlayerView` (queue,
 shuffle/repeat, speed, chapters) over the Jellyfin universal audio endpoint.

@@ -103,6 +103,13 @@ struct VideoPlayerView: View {
             await syncFramePackedCinemaIfNeeded(store)
         }
         #endif
+        // Natural end with nothing left to auto-play: close the player instead of
+        // leaving a spinner over black.
+        .onChange(of: store?.didFinishPlayback ?? false) { _, finished in
+            if finished {
+                dismiss()
+            }
+        }
         .onDisappear {
             #if os(visionOS)
                 closeFramePackedCinemaIfNeeded()
@@ -213,7 +220,11 @@ private struct PlaybackOptionsOverlay: View {
 
     var body: some View {
         HStack(spacing: 6) {
-            AirPlayRoutePicker()
+            // The iOS system control bar already has a route button; only macOS's
+            // floating AVPlayerView chrome lacks one. (visionOS has no AirPlay.)
+            #if os(macOS)
+                AirPlayRoutePicker()
+            #endif
 
             PlaybackOptionsMenu(store: store)
         }
@@ -481,6 +492,10 @@ private struct PlayerSurface: View {
             controller.player = player
             controller.allowsPictureInPicturePlayback = true
             controller.canStartPictureInPictureAutomaticallyFromInline = true
+            // NowPlayingController owns the lock-screen transport; leaving AVKit's
+            // automatic publishing on would race two writers on the process-global
+            // MPNowPlayingInfoCenter (flickering metadata/artwork).
+            controller.updatesNowPlayingInfoCenter = false
             return controller
         }
 

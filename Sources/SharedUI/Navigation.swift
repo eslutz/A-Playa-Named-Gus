@@ -22,7 +22,9 @@ struct LibraryRef: Hashable, Identifiable {
     }
 }
 
-struct ItemRef: Hashable, Identifiable {
+/// Codable so macOS can hand the ref to the dedicated player window scene
+/// (`WindowGroup(for:)` round-trips presented values through Codable).
+struct ItemRef: Hashable, Identifiable, Codable {
     let item: MediaItem
     /// See LibraryRef.id — must stay stable across accesses.
     var id: String {

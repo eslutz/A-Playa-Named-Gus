@@ -1,12 +1,51 @@
+import AVFoundation
 import Foundation
 import JellyfinAPI
 import OSLog
+#if canImport(VideoToolbox)
+    import VideoToolbox
+#endif
+
+/// What this device's hardware can actually decode and display.
+///
+/// Direct play is declared only for codecs the device handles natively — an honest
+/// profile lets compatible files play untouched while anything questionable goes to the
+/// server transcoder, instead of failing in `AVPlayer` at play time. Injectable so the
+/// profile builder is deterministic under test.
+struct DevicePlaybackCapabilities {
+    var supportsHEVCDecode: Bool
+    var supportsAV1Decode: Bool
+    var supportsHDRPlayback: Bool
+
+    static let current: DevicePlaybackCapabilities = {
+        #if canImport(VideoToolbox)
+            let hevc = VTIsHardwareDecodeSupported(kCMVideoCodecType_HEVC)
+            let av1 = VTIsHardwareDecodeSupported(kCMVideoCodecType_AV1)
+        #else
+            // watchOS has no VideoToolbox; constrained playback sticks to H.264.
+            let hevc = false
+            let av1 = false
+        #endif
+        #if os(watchOS)
+            let hdr = false
+        #else
+            let hdr = AVPlayer.eligibleForHDRPlayback
+        #endif
+        return DevicePlaybackCapabilities(
+            supportsHEVCDecode: hevc,
+            supportsAV1Decode: av1,
+            supportsHDRPlayback: hdr
+        )
+    }()
+}
 
 /// Resolves a playable URL for an item using pure AVKit + Jellyfin server transcoding.
 ///
-/// Pattern reference: Swiftfin's `MediaPlayerItem+Build.streamURL`. A Playa Named Gus biases the
-/// `DeviceProfile` toward **HLS transcoding** so `AVPlayer` is handed an `.m3u8` it can
-/// always play, while still allowing direct play of AVKit-native containers (mp4/mov/m4v).
+/// Pattern reference: Swiftfin's `MediaPlayerItem+Build.streamURL`. The `DeviceProfile`
+/// leans **direct play** for everything this device's hardware genuinely decodes
+/// (gated via VideoToolbox/HDR eligibility), and falls back to server-side HLS/fMP4
+/// transcoding — HEVC-preferred, surround preserved, text subtitles in the manifest —
+/// only when the source needs it.
 struct StreamURLBuilder {
     enum StereoFallbackReason: Equatable {
         case directPlayUnavailable(Stereo3DLayout)
@@ -107,7 +146,9 @@ struct StreamURLBuilder {
             .fallingBackTo2D(from: stereoLayout)
         }
 
-        // Prefer a server-built transcoding URL (HLS) when present for ordinary 2D playback.
+        // The server negotiates the play method against the device profile: it returns a
+        // transcoding URL only when the source genuinely needs server-side work for this
+        // device/selection. Absent one, the file direct-streams below.
         if !stereoLayout.requiresDirectPlay, let transcodingURL = source.transcodingURL, let url = authenticatedPlaybackURL(path: transcodingURL) {
             logger.debug("Resolved HLS transcoding URL for item \(itemID, privacy: .public)")
             return Resolution(
@@ -149,47 +190,116 @@ struct StreamURLBuilder {
 
     // MARK: - Device profile
 
-    /// A minimal AVKit-friendly profile: direct-play common containers, otherwise
-    /// transcode to H.264/AAC HLS, which `AVPlayer` reliably handles on every platform.
-    static func avPlayerProfile(maxStreamingBitrate: Int) -> DeviceProfile {
-        let directPlay = [
+    /// An AVKit-honest profile: direct-play every container/codec combination this
+    /// device's hardware decodes, otherwise transcode to HLS with fMP4 segments —
+    /// HEVC-preferred where supported, up to 7.1 audio (AVFoundation downmixes for the
+    /// active output), and text subtitles delivered in the manifest instead of burned in.
+    static func avPlayerProfile(
+        maxStreamingBitrate: Int,
+        capabilities: DevicePlaybackCapabilities = .current
+    ) -> DeviceProfile {
+        DeviceProfile(
+            codecProfiles: codecProfiles(capabilities: capabilities),
+            directPlayProfiles: directPlayProfiles(capabilities: capabilities),
+            maxStaticBitrate: maxStreamingBitrate,
+            maxStreamingBitrate: maxStreamingBitrate,
+            name: DeviceIdentity.clientName,
+            subtitleProfiles: subtitleProfiles(),
+            transcodingProfiles: [hlsTranscodingProfile(capabilities: capabilities)]
+        )
+    }
+
+    private static func directPlayProfiles(capabilities: DevicePlaybackCapabilities) -> [DirectPlayProfile] {
+        var mp4Video = ["h264"]
+        if capabilities.supportsHEVCDecode { mp4Video.append("hevc") }
+        if capabilities.supportsAV1Decode { mp4Video.append("av1") }
+
+        var tsVideo = ["h264"]
+        if capabilities.supportsHEVCDecode { tsVideo.append("hevc") }
+
+        return [
             DirectPlayProfile(
                 audioCodec: "aac,mp3,ac3,eac3,alac,flac",
                 container: "mp4,m4v,mov",
                 type: .video,
-                videoCodec: "h264,hevc"
+                videoCodec: mp4Video.joined(separator: ",")
+            ),
+            // Live TV and PVR recordings commonly arrive as transport streams.
+            DirectPlayProfile(
+                audioCodec: "aac,mp3,ac3,eac3",
+                container: "ts,mpegts",
+                type: .video,
+                videoCodec: tsVideo.joined(separator: ",")
             ),
         ]
-
-        let transcoding = [
-            h264TransportStreamHLSProfile(),
-        ]
-
-        return DeviceProfile(
-            directPlayProfiles: directPlay,
-            maxStaticBitrate: maxStreamingBitrate,
-            maxStreamingBitrate: maxStreamingBitrate,
-            name: DeviceIdentity.clientName,
-            transcodingProfiles: transcoding
-        )
     }
 
-    private static func h264TransportStreamHLSProfile() -> TranscodingProfile {
+    /// Constraints that route AVFoundation-incompatible variants of otherwise
+    /// direct-playable codecs (Hi10P H.264, interlaced video, 12-bit HEVC, HDR on
+    /// non-HDR displays) to the server transcoder instead of failing at play time.
+    private static func codecProfiles(capabilities: DevicePlaybackCapabilities) -> [CodecProfile] {
+        let hevcRanges = capabilities.supportsHDRPlayback
+            ? "SDR|HDR10|HLG|DOVIWithHDR10|DOVIWithHLG|DOVIWithSDR"
+            : "SDR"
+
+        return [
+            CodecProfile(
+                codec: "h264",
+                conditions: [
+                    ProfileCondition(condition: .lessThanEqual, isRequired: false, property: .videoBitDepth, value: "8"),
+                    ProfileCondition(condition: .notEquals, isRequired: false, property: .isInterlaced, value: "true"),
+                ],
+                type: .video
+            ),
+            CodecProfile(
+                codec: "hevc",
+                conditions: [
+                    ProfileCondition(condition: .lessThanEqual, isRequired: false, property: .videoBitDepth, value: "10"),
+                    ProfileCondition(condition: .equalsAny, isRequired: false, property: .videoRangeType, value: hevcRanges),
+                ],
+                type: .video
+            ),
+        ]
+    }
+
+    /// Text subtitles ride the HLS manifest (the server converts SRT/ASS/etc. to VTT
+    /// segments); embedded TTML/CC pass through; bitmap formats burn in — the only
+    /// delivery `AVPlayer` can render for them.
+    private static func subtitleProfiles() -> [SubtitleProfile] {
+        [
+            SubtitleProfile(format: "vtt", method: .hls),
+            SubtitleProfile(format: "webvtt", method: .hls),
+            SubtitleProfile(format: "ttml", method: .embed),
+            SubtitleProfile(format: "cc_dec", method: .embed),
+            SubtitleProfile(format: "pgssub", method: .encode),
+            SubtitleProfile(format: "dvbsub", method: .encode),
+            SubtitleProfile(format: "dvdsub", method: .encode),
+            SubtitleProfile(format: "xsub", method: .encode),
+        ]
+    }
+
+    private static func hlsTranscodingProfile(capabilities: DevicePlaybackCapabilities) -> TranscodingProfile {
         TranscodingProfile(
             protocol: .hls,
-            audioCodec: "aac",
-            container: "ts",
+            // Listing AC3/EAC3/FLAC/ALAC lets the server copy those streams into the
+            // transcode untouched; otherwise audio re-encodes to AAC.
+            audioCodec: "aac,ac3,eac3,alac,flac",
+            container: "mp4",
             context: .streaming,
-            enableMpegtsM2TsMode: true,
-            maxAudioChannels: "2",
+            enableSubtitlesInManifest: true,
+            isBreakOnNonKeyFrames: true,
+            maxAudioChannels: "8",
             minSegments: 2,
             type: .video,
-            videoCodec: "h264"
+            videoCodec: capabilities.supportsHEVCDecode ? "hevc,h264" : "h264"
         )
     }
 
-    static func directPlayOnlyProfile(maxStreamingBitrate: Int) -> DeviceProfile {
-        var profile = avPlayerProfile(maxStreamingBitrate: maxStreamingBitrate)
+    static func directPlayOnlyProfile(
+        maxStreamingBitrate: Int,
+        capabilities: DevicePlaybackCapabilities = .current
+    ) -> DeviceProfile {
+        var profile = avPlayerProfile(maxStreamingBitrate: maxStreamingBitrate, capabilities: capabilities)
         profile.transcodingProfiles = []
         return profile
     }
