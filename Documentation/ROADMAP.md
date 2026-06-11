@@ -166,9 +166,10 @@ automated build verification. (Covers priority: *polish & testing*.)
   26.5, and requires SwiftFormat/string-catalog lint, an iPhone/iPad/macOS/tvOS/visionOS
   build matrix, plus native unit tests on each platform.)*
 - [x] **Update `project.yml` for the test target & schemes.** *Acceptance:* generated
-  project includes test target; `-scheme 'A Playa Named Gus'` test action works. *(Done:
-  platform-native unit/UI test targets, CI unit schemes, and local UI-inclusive platform
-  schemes are generated from `project.yml`.)*
+  project includes the test targets; the per-platform `Gus <platform> Unit Tests` test
+  actions work (the `A Playa Named Gus` scheme is build-only). *(Done: platform-native
+  unit/UI test targets, CI unit schemes, and local UI-inclusive platform schemes are
+  generated from `project.yml`.)*
 
 ---
 
@@ -500,8 +501,30 @@ Treat documentation as part of every milestone, not a phase:
 
 ## Future Features
 
-These are intentionally outside the 1.0 App Store path above. Promote them into a
-milestone only after the launch scope is stable.
+These were scoped as post-1.0 work, outside the App Store path above. Several have since
+**landed in the codebase ahead of being formally milestoned** — they ship in the app today
+even if post-1.0 device verification or polish remains — while others are still unstarted.
+The per-item checkbox is the source of truth (`[x]` done · `[~]` in progress · `[ ]` not
+started); the table below is a status-at-a-glance index. Promote an item into a numbered
+milestone once it becomes the active focus and is ready to carry a hard acceptance bar.
+
+| Feature | Status |
+|---|---|
+| Customizable main navigation | `[x]` Done |
+| Content deep links & system integration (Handoff, Spotlight, Siri, Top Shelf) | `[x]` Done |
+| Music library support | `[~]` In app; genre browse + live-library validation remain |
+| Books & audiobooks | `[~]` In app; visionOS reader blocked on an upstream Readium fix |
+| Photos | `[~]` In app; favorites + casting remain |
+| Live TV & DVR | `[~]` In app; full EPG grid + tuner-equipped validation remain |
+| CarPlay audio companion | `[~]` In app; entitlement + Siri intents + vehicle test remain |
+| SyncPlay | `[~]` In app (Jellyfin-gated); multi-client drift validation remains |
+| Family safety controls & age assurance | `[~]` In app; Declared Age Range entitlement pending |
+| watchOS companion | `[~]` In app; on-device verification matrix remains |
+| Expanded immersive environments | `[ ]` Not started |
+| Apple Intelligence library assistant & generated artwork | `[ ]` Not started |
+| User-initiated diagnostic export | `[ ]` Not started |
+| Advanced accessibility enhancements | `[ ]` Not started |
+| Emby support (provider investigation) | `[ ]` Not started — unblocked by M7 |
 
 - [~] **watchOS companion app.** Build a focused watchOS experience that extends A Playa
  Named Gus beyond the five launch platforms without trying to make the watch the primary video
