@@ -1,13 +1,12 @@
 import Foundation
-import Get
 
 /// A small, typed error surface for A Playa Named Gus. Lower-level errors (cancellation, URL/network
 /// failures, and anything the Jellyfin SDK throws) are mapped into user-presentable
 /// messages via `init(from:)`.
 ///
-/// `Get` is jellyfin-sdk-swift's own transport package (not an extra dependency); its
-/// `APIError` carries the HTTP status, which is how expired tokens (401) become a
-/// "sign in again" message instead of an opaque failure.
+/// The Jellyfin SDK's transport layer (`Get.APIError`) surfaces HTTP status codes. JellyfinAPI
+/// does not re-export Get, so `init(from:)` detects `APIError` by its fully-qualified type name
+/// and extracts the status code through reflection — avoiding a direct `import Get`. See ADR 0011.
 enum GusError: LocalizedError, Equatable {
     case network(String)
     case offline
@@ -67,11 +66,11 @@ enum GusError: LocalizedError, Equatable {
             default:
                 self = .network(urlError.localizedDescription)
             }
-        } else if let apiError = error as? APIError {
-            switch apiError {
-            case let .unacceptableStatusCode(statusCode):
-                self = Self.fromHTTPStatusCode(statusCode)
-            }
+        } else if String(reflecting: type(of: error)) == "Get.APIError",
+                  let statusCode = Mirror(reflecting: error).children.compactMap({ $0.value as? Int }).first {
+            // Get.APIError is `enum APIError { case unacceptableStatusCode(Int) }`.
+            // Mirror gives one child whose value is the associated Int — the HTTP status code.
+            self = Self.fromHTTPStatusCode(statusCode)
         } else if let gusError = error as? GusError {
             self = gusError
         } else {

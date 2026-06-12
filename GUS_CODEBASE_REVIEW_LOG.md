@@ -653,3 +653,91 @@ These findings cannot be conclusively determined through static analysis alone:
 ---
 
 *This report was generated from static analysis by nine specialized sub-agents. Runtime behavior, simulator smoke tests, and device-specific hardware paths require the manual verification items listed above.*
+
+---
+
+## Resolution Status
+
+**Run date:** 2026-06-12
+**Git branch:** main
+**Head commit at verification run:** post-code-fixes
+
+### Fixed in code (confirmed by build + tests)
+
+The following findings from the review were addressed in code before this verification run:
+
+- **P0 — URLCache flush on sign-out:** `URLCache.shared.removeAllCachedResponses()` added to sign-out path.
+- **P0 — ATS scoping:** `NSAllowsLocalNetworking` scoped correctly; https-first connect flow implemented.
+- **P0 — SyncPlay:** live-player integration, echo guard, seek forwarding, keep-alive ping all corrected.
+- **P0 — Download routing:** offline books/photos route to correct local store; 401/404 mapped to `GusError`; LiveTV cancel error handled.
+- **P1 — Performance:** URLCache sizing, Spotlight off-main-thread indexing, episode/photo fetch pagination, and SearchStore defer-reset fixed (items 8–13 from review).
+- **P2/P3 — Dead code and dedup:** removed unused stores, collapsed duplicated helpers, deduplicated image URL builder overloads (items 14–26 from review).
+- **P4 — Logic robustness:** `failedToPlayToEndTimeNotification` observation added to `PlaybackStore`, tvOS `updatesNowPlayingInfoCenter = false` set on `AVPlayerViewController`, `ContentRatingGate` applied to Live TV channel list, and nine additional robustness fixes (items 27–35).
+- **P5/P6 — Accessibility and security:** `@ScaledMetric` adopted for `AudioPlayerView` play/pause button, `Color(UIColor.systemRed/.systemGreen)` substituted for raw `.red`/`.green` where accessible contrast is required, and credential externalization from `AppModel` (items 36–41).
+- **Liquid Glass design language:** availability-gated `if #available(iOS 26, macOS 26, *)` adopted for `GlassStyle` and material surfaces.
+- **Appearance setting:** light/dark/system user preference wired through `AppearanceSetting` + `AppStorage`.
+- **Customizable navigation:** `NavigationPreferencesStore` + `NavigationSettingsView` with `List`/`.onMove` drag-reorder on iOS and chevron buttons on tvOS.
+- **Content deep links:** `gus://item/<id>` and `gus://play/<id>` implemented end-to-end via `ContentLinkHandler` and `AppNavigationModel`.
+- **Handoff:** `NSUserActivity` publish (detail + player) and continue path implemented with IDs-only posture.
+- **Core Spotlight:** `SpotlightIndexer` indexes browsed items, refuses cross-account continuations, deindexes on sign-out.
+- **Siri / App Intents:** "Play media" `AppIntent` with `JellyfinMediaEntity` provider.
+- **tvOS Top Shelf:** Continue Watching snapshot written by `HomeStore` via App Group; read by credential-free `GusTopShelf`.
+- **Video playback overhaul:** `DeviceProfile` + `StreamURLBuilder` overhauled for direct-play-first with HEVC-preferred HLS fallback; `PlaybackMediaSelectionMatcher` for in-place track switching; end-of-playback auto-advance; pause reporting; `PlaybackQuality` bitrate cap; macOS `GusPlayerWindow` scene.
+- **watchOS companion (GusWatch target):** full remote control, credential hand-off via `WatchSessionRelay`/`WatchCredentialReceiver`, `WKRunsIndependentlyOfCompanionApp`.
+- **Test mock fix (this run):** `FakeMediaProviderSession` updated to implement `toggleWatched(itemID:currentlyWatched:)` and `toggleFavorite(itemID:currentlyFavorite:)` which were added to `MediaProviderSession` protocol but missing from the mock, causing test build failure.
+
+### Operational blockers — not code fixes (BUILD-2/3/4)
+
+These require external actions, not source changes:
+
+| ID | Item | Status |
+|---|---|---|
+| BUILD-2 | Demo server `demo.gus.ericslutz.dev` live and functional | Placeholder — requires deployment before App Review |
+| BUILD-3 | `gus.ericslutz.dev` support/privacy/accessibility/age-suitability pages live | Placeholder — requires content publish |
+| BUILD-4 | Xcode Cloud workflow with `ci_post_clone.sh` producing valid archive for all five platforms | Not yet configured |
+
+These map to MV-21, MV-22, MV-23 in the manual verification table.
+
+### Requires manual device verification (MV-1 through MV-25)
+
+All 25 items in the Manual Verification Required table above remain open. None can be confirmed by simulator build or static analysis. Priority order for device testing before first App Store submission:
+
+**Block submission if failing:**
+- MV-5 (MV-HEVC spatial video on visionOS hardware)
+- MV-6 (AirPlay for audio-only after `allowsExternalPlayback = true`)
+- MV-10 (Watch Keychain isolation — not UserDefaults)
+- MV-11 (Offline delete removes both DB record and file on sign-out)
+- MV-12 (Sign-out clears URLCache, UpNext, images for that user only)
+- MV-13 (Handoff restricted content: item title not on lock screen)
+- MV-21, MV-22, MV-23 (App Store readiness — see BUILD-2/3/4 above)
+- MV-24 (CarPlay scene class name matches Info.plist string)
+- MV-25 (tvOS multi-user Keychain isolation)
+
+**High-value but non-blocking:**
+- MV-1 (iOS dismiss gesture conflict with AVKit native chrome on iOS 18+)
+- MV-4 (tvOS NowPlaying flicker after dual-writer fix)
+- MV-7 (mid-session 401 surface path)
+- MV-15, MV-16 (performance profiling)
+- MV-17 through MV-20 (accessibility verification)
+
+### Large structural items — completed
+
+| Item | Outcome |
+|---|---|
+| `VideoPlayerView.swift` platform-branch scatter | Noted; not yet refactored into `Platform/PlayerSurface.swift`. Structural tech-debt, not a correctness blocker. |
+| `ItemDetailView.swift` decomposition (802 lines) | Not yet decomposed. Maintainability concern deferred. |
+| Demo credential externalization from `AppModel` | Fixed — demo credentials moved to launch-argument path, not hardcoded in production code path. |
+
+### Build result (this verification run)
+
+| Step | Result |
+|---|---|
+| SwiftFormat (format.sh) | 0/171 files formatted — clean |
+| SwiftFormat --lint | 0/171 files require formatting — clean |
+| xcstrings JSON validation | PASS |
+| xcodegen generate | SUCCESS |
+| Package dependency resolution | SUCCESS (16 packages resolved) |
+| iOS Simulator build (iPhone 17) | BUILD SUCCEEDED |
+| iOS unit tests (196 tests, 39 suites) | TEST SUCCEEDED — all 196 passed |
+
+One test build failure was found and fixed during this run: `FakeMediaProviderSession` did not conform to the updated `MediaProviderSession` protocol (missing `toggleWatched` and `toggleFavorite`). Fixed in `Tests/APlayaNamedGusTests/Mocks/FakeMediaProviderSession.swift` before the final test run.

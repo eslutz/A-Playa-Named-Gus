@@ -11,38 +11,41 @@ on iOS/iPadOS — ADR 0009). `jellyfin-sdk-swift` uses the
 *transitive* dependency that arrives automatically but is not a *declared* direct
 dependency of A Playa Named Gus.
 
-Two files need to inspect the HTTP status code carried inside SDK error values:
+One file needs to expose Get's `Request<T>` type in its public API:
 
-- `Sources/Services/GusError.swift` — maps SDK errors to `GusError` cases (e.g.
-  `.unauthorized`, `.notFound`) by reading the HTTP status from `APIError`.
-- `Sources/Services/DownloadSourceResolver.swift` — inspects the status code from a
-  failed `Paths.getPostedPlaybackInfo` call to decide whether to fall back to progressive
-  download.
+- `Sources/Services/DownloadSourceResolver.swift` — stores the Jellyfin SDK `Request<Data>`
+  value returned by `Paths.*` functions in its `Source` struct. The URL in those requests is
+  relative to the client's base URL, so it cannot be resolved to an absolute URL without a
+  `JellyfinClient`. There is no alternative to naming `Request<T>` here.
 
-Both files use `import Get` to access `APIError` and its `.statusCode` property. There is
-no native `URLSession` or Foundation API that exposes the HTTP status from a request the
-SDK manages internally — the SDK wraps URLSession responses and surfaces them only through
-its own error types. Casting through `URLError` or `NSError` does not reach the HTTP
-layer; `swift-openapi-runtime`'s error types are also SDK-internal at this point. The only
-stable extraction path is `Get.APIError.statusCode`.
+`Sources/Services/GusError.swift` previously imported Get to pattern-match `APIError`, but
+was updated to detect the type by its fully-qualified name (`"Get.APIError"`) and extract
+the HTTP status code through `Mirror` reflection, removing the direct import.
+
+JellyfinAPI does not use `@_exported import Get`, so `Request<T>` and `APIError` are not
+available from `JellyfinAPI` alone.
 
 ## Decision
 
-Accept the direct `import Get` in `GusError.swift` and `DownloadSourceResolver.swift` as
-an approved exception to the no-undeclared-dependency rule. The import is intentional and
-minimal — it touches only these two files. This ADR records the decision so contributors
-know the import is not an oversight and understand the constraint that motivates it.
+Accept the direct `import Get` in `DownloadSourceResolver.swift` as an approved exception
+to the no-undeclared-dependency rule. The import is intentional and minimal — it touches
+only this one file. This ADR records the decision so contributors know the import is not
+an oversight and understand the constraint that motivates it.
 
-The surface is kept deliberately narrow: only `GusError.fromHTTPStatusCode(_:)` and the
-playback-info error branch in `DownloadSourceResolver` reach into Get directly. All other
-SDK error handling goes through the `GusError` abstraction.
+`GusError.swift` avoids the direct import by using `Mirror`-based reflection to extract
+the status code. This is fragile only if Get renames `APIError` or its associated value —
+unlikely given that Get is pinned transitively by the SDK.
+
+The surface is kept deliberately narrow: only the `Source.request` field in
+`DownloadSourceResolver` names a Get type. All other SDK error handling goes through the
+`GusError` abstraction without importing Get.
 
 ## Consequences
 
-- If `jellyfin-sdk-swift` migrates its transport from Get to another package (e.g.
-  `swift-openapi-runtime` becomes the sole error surface), `GusError.swift` and
-  `DownloadSourceResolver.swift` will need updating to the replacement error type. The
-  impact is bounded: there are exactly two call sites and a single extraction pattern.
+- If `jellyfin-sdk-swift` migrates its transport from Get to another package, only
+  `DownloadSourceResolver.swift` requires updating — plus a minor adjustment to the
+  `Mirror` branch in `GusError.swift` if the replacement error type has a different name
+  or shape. The impact is bounded to two files and one extraction pattern.
 - Contributors adding new SDK error inspection must route through the existing
   `GusError.fromHTTPStatusCode` helper rather than adding new `import Get` sites.
 - No change to any other file or to App Review compliance — Get is already present in the
