@@ -1,4 +1,5 @@
 import Foundation
+
 // Get is jellyfin-sdk-swift's transport package. JellyfinAPI does not re-export Request<T>,
 // and Paths.* functions return Request<T> values whose URL is relative to the client's base
 // URL — so the type cannot be removed without abandoning the Paths namespace entirely.

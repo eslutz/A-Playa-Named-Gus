@@ -260,7 +260,7 @@ final class AudioPlayerStore {
             let playerItem = AVPlayerItem(url: playbackURL)
             let player = self.player ?? AVPlayer()
             player.replaceCurrentItem(with: playerItem)
-            #if !os(watchOS)
+            #if os(iOS) || os(tvOS) || os(macOS)
                 player.allowsExternalPlayback = true
             #endif
             self.player = player

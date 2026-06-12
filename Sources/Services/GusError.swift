@@ -67,7 +67,8 @@ enum GusError: LocalizedError, Equatable {
                 self = .network(urlError.localizedDescription)
             }
         } else if String(reflecting: type(of: error)) == "Get.APIError",
-                  let statusCode = Mirror(reflecting: error).children.compactMap({ $0.value as? Int }).first {
+                  let statusCode = Mirror(reflecting: error).children.compactMap({ $0.value as? Int }).first
+        {
             // Get.APIError is `enum APIError { case unacceptableStatusCode(Int) }`.
             // Mirror gives one child whose value is the associated Int — the HTTP status code.
             self = Self.fromHTTPStatusCode(statusCode)
