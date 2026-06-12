@@ -50,6 +50,36 @@ final class ItemDetailStore {
         }
     }
 
+    /// Toggles the watched/played state of the item on the server and refreshes local state.
+    func toggleWatched() async {
+        guard let itemID = item.id else { return }
+        let wasWatched = item.userData?.isWatched == true
+        do {
+            try await session.mediaProvider.toggleWatched(itemID: itemID, currentlyWatched: wasWatched)
+            // Refresh item so userData reflects the new state.
+            item = try await session.mediaProvider.item(id: itemID)
+        } catch {
+            let gusError = GusError(from: error)
+            guard !gusError.isCancellation else { return }
+            logger.error("Toggle watched failed: \(gusError.localizedDescription, privacy: .public)")
+        }
+    }
+
+    /// Toggles the favourite state of the item on the server and refreshes local state.
+    func toggleFavorite() async {
+        guard let itemID = item.id else { return }
+        let wasFavorite = item.userData?.isFavorite == true
+        do {
+            try await session.mediaProvider.toggleFavorite(itemID: itemID, currentlyFavorite: wasFavorite)
+            // Refresh item so userData reflects the new state.
+            item = try await session.mediaProvider.item(id: itemID)
+        } catch {
+            let gusError = GusError(from: error)
+            guard !gusError.isCancellation else { return }
+            logger.error("Toggle favourite failed: \(gusError.localizedDescription, privacy: .public)")
+        }
+    }
+
     private func loadRelatedContent(for item: MediaItem) async {
         async let similar = loadSimilarItems(for: item)
         async let special = loadSpecialFeatures(for: item)
@@ -134,7 +164,11 @@ final class SeriesDetailStore {
         episodes = []
 
         do {
-            episodes = try await session.mediaProvider.episodes(seriesID: seriesID, seasonID: seasonID, limit: 300)
+            let page = try await session.mediaProvider.episodes(seriesID: seriesID, seasonID: seasonID, limit: 1000)
+            if let totalRecordCount = page.totalRecordCount, totalRecordCount > 1000 {
+                logger.warning("Episode list truncated: series has \(totalRecordCount) episodes but only 1000 were fetched")
+            }
+            episodes = page.items
             episodesState = .loaded
         } catch {
             let gusError = GusError(from: error)

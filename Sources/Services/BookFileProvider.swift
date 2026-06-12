@@ -96,7 +96,7 @@ struct BookFileProvider {
         try? FileManager.default.removeItem(at: directory)
     }
 
-    nonisolated private static func cacheDirectory(
+    private nonisolated static func cacheDirectory(
         forItemID itemID: String?,
         scope: AccountScope,
         cachesDirectory: URL
@@ -107,14 +107,14 @@ struct BookFileProvider {
             .appendingPathComponent(storageComponent(itemID ?? "unknown"), isDirectory: true)
     }
 
-    nonisolated private static func sanitizedFileName(_ name: String) -> String {
+    private nonisolated static func sanitizedFileName(_ name: String) -> String {
         let invalid = CharacterSet(charactersIn: "/\\:?%*|\"<>")
         let cleaned = name.components(separatedBy: invalid).joined(separator: " ")
             .trimmingCharacters(in: .whitespacesAndNewlines)
         return cleaned.isEmpty ? "Book" : cleaned
     }
 
-    nonisolated private static func storageComponent(_ value: String) -> String {
+    private nonisolated static func storageComponent(_ value: String) -> String {
         let allowed = CharacterSet.alphanumerics.union(CharacterSet(charactersIn: "-_"))
         let cleaned = value.unicodeScalars.map { scalar in
             allowed.contains(scalar) ? String(scalar) : "_"
@@ -208,7 +208,7 @@ final class BookProgressStore {
         "\(scope.storageKey)__\(storageComponent(itemID))"
     }
 
-    nonisolated private static func storageComponent(_ value: String) -> String {
+    private nonisolated static func storageComponent(_ value: String) -> String {
         let allowed = CharacterSet.alphanumerics.union(CharacterSet(charactersIn: "-_"))
         let cleaned = value.unicodeScalars.map { scalar in
             allowed.contains(scalar) ? String(scalar) : "_"

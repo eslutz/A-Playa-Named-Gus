@@ -21,6 +21,10 @@ enum GusUserActivity {
         serverID: String,
         userID: String
     ) {
+        guard ContentRatingGate.admitsStored(item) else {
+            activity.resignCurrent()
+            return
+        }
         activity.title = item.displayTitle
         activity.isEligibleForHandoff = true
         activity.isEligibleForSearch = false

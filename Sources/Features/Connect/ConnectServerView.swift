@@ -12,6 +12,7 @@ struct ConnectServerView: View {
     @State private var isConnecting = false
     @State private var errorMessage: String?
     @State private var discoveryStore = ServerDiscoveryStore()
+    @State private var connectTask: Task<Void, Never>?
 
     var body: some View {
         Form {
@@ -29,6 +30,7 @@ struct ConnectServerView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .navigationTitle("Connect to Jellyfin")
         .onDisappear {
+            connectTask?.cancel()
             discoveryStore.cancel()
         }
     }
@@ -50,7 +52,11 @@ struct ConnectServerView: View {
         if let errorMessage {
             Section {
                 Label(errorMessage, systemImage: "exclamationmark.triangle")
-                    .foregroundStyle(.red)
+                #if os(macOS)
+                    .foregroundStyle(Color(NSColor.systemRed))
+                #else
+                    .foregroundStyle(Color(UIColor.systemRed))
+                #endif
                     .font(.callout)
             }
         }
@@ -150,7 +156,8 @@ struct ConnectServerView: View {
         guard !isConnecting else { return }
         errorMessage = nil
         isConnecting = true
-        Task {
+        connectTask?.cancel()
+        connectTask = Task {
             defer { isConnecting = false }
             do {
                 let server = try await appModel.connect(to: urlText)

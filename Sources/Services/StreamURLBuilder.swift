@@ -117,7 +117,9 @@ struct StreamURLBuilder {
             body
         )
 
-        let response = try await client.send(request).value
+        let response = try await NetworkRetryPolicy.idempotent.run {
+            try await client.send(request).value
+        }
 
         guard let source = response.mediaSources?.first else {
             if stereoLayout.requiresDirectPlay {

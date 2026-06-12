@@ -256,7 +256,9 @@ final class AppModel {
         func connectToLocalDemoServer() async {
             do {
                 let server = try await connect(to: "http://localhost:8096")
-                try await signIn(to: server, username: "gus", password: "playa-demo")
+                let username = ProcessInfo.processInfo.environment["GUS_DEMO_USERNAME"] ?? "gus"
+                let password = ProcessInfo.processInfo.environment["GUS_DEMO_PASSWORD"] ?? "playa-demo"
+                try await signIn(to: server, username: username, password: password)
             } catch {
                 logger.error("Demo server connect failed: \(error.localizedDescription, privacy: .public)")
             }
@@ -445,6 +447,7 @@ final class AppModel {
         accountCleanup.clearBookState(scope)
         accountCleanup.clearDownloads(scope)
         accountCleanup.clearWatchCredential(server, user)
+        JellyfinClientFactory.urlCache.removeAllCachedResponses()
     }
 
     private func completeSignIn(
@@ -473,6 +476,7 @@ final class AppModel {
         // SDK sign-in methods already set the access token on this client's configuration.
         clearCurrentAccountDataIfNeeded(replacingWith: user, on: server)
         currentSession = SessionStore(client: client, user: user, server: server)
+        currentSession?.onUnauthorized = { [weak self] in self?.signOutCurrentUser() }
         publishSessionToWatch(server: server, user: user, token: token)
         logger.info("Signed in user \(user.name, privacy: .private)")
     }

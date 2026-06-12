@@ -117,7 +117,7 @@ struct AlbumDetailView: View {
             let page = try await session.mediaProvider.items(query: MediaItemQuery(
                 parentID: album.id,
                 startIndex: 0,
-                limit: 300,
+                limit: 1000,
                 sort: .trackOrder
             ))
             tracks = page.items.filter(\.isAudioPlayable)

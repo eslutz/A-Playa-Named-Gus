@@ -44,7 +44,9 @@ struct DownloadSourceResolver {
 
         // Video needing a server transcode: ask the server for the media source.
         guard let itemID = item.id else { throw ResolverError.missingItemID }
-        let response = try await client.send(playbackInfoRequest(itemID: itemID)).value
+        let response = try await NetworkRetryPolicy.idempotent.run {
+            try await client.send(playbackInfoRequest(itemID: itemID)).value
+        }
         guard let source = response.mediaSources?.first else { throw ResolverError.noMediaSource }
         guard let mediaSourceID = source.id else { throw ResolverError.missingMediaSourceID }
         return Self.transcodedSource(itemID: itemID, mediaSourceID: mediaSourceID)

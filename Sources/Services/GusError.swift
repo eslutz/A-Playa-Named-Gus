@@ -45,6 +45,14 @@ enum GusError: LocalizedError, Equatable {
         self == .cancelled
     }
 
+    /// Triggers sign-out if this error represents an expired or revoked session.
+    @MainActor
+    func handleIfUnauthorized(session: SessionStore) {
+        if self == .unauthorized {
+            session.onUnauthorized()
+        }
+    }
+
     init(from error: Error) {
         if error is CancellationError {
             self = .cancelled

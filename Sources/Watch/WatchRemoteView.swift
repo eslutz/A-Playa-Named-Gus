@@ -32,7 +32,7 @@ struct WatchRemoteView: View {
         LoadingStateView(
             state: store.state,
             isEmpty: store.sessions.isEmpty,
-            emptyTitle: "No Active Players",
+            emptyTitle: String(localized: "No Active Players", comment: "Remote control empty-state title when no Jellyfin sessions are playing"),
             emptySymbol: "play.tv",
             retryAction: { Task { await store.refresh() } }
         ) {
@@ -81,7 +81,7 @@ struct WatchRemoteDetailView: View {
                             .multilineTextAlignment(.center)
                         if let ticks = remote.positionTicks, let runtime = remote.nowPlaying?.runTimeTicks, runtime > 0 {
                             ProgressView(value: Double(ticks), total: Double(runtime))
-                                .accessibilityLabel("Playback position")
+                                .accessibilityLabel(String(localized: "Playback position", comment: "Accessibility label for the remote session progress bar"))
                                 .accessibilityValue(
                                     PlaybackTime.accessibilityProgressValue(
                                         currentSeconds: PlaybackTime.seconds(fromTicks: ticks),
@@ -97,7 +97,7 @@ struct WatchRemoteDetailView: View {
                         } label: {
                             Image(systemName: "gobackward.15")
                         }
-                        .accessibilityLabel("Back 15 seconds")
+                        .accessibilityLabel(String(localized: "Back 15 seconds", comment: "Accessibility label for the seek-back 15 seconds button"))
 
                         Button {
                             Task { await store.togglePlayPause(sessionID: sessionID) }
@@ -105,14 +105,14 @@ struct WatchRemoteDetailView: View {
                             Image(systemName: remote.isPaused ? "play.circle.fill" : "pause.circle.fill")
                                 .font(.title2)
                         }
-                        .accessibilityLabel(remote.isPaused ? "Play" : "Pause")
+                        .accessibilityLabel(remote.isPaused ? String(localized: "Play", comment: "Accessibility label for the play button") : String(localized: "Pause", comment: "Accessibility label for the pause button"))
 
                         Button {
                             Task { await store.seek(sessionID: sessionID, bySeconds: 15) }
                         } label: {
                             Image(systemName: "goforward.15")
                         }
-                        .accessibilityLabel("Forward 15 seconds")
+                        .accessibilityLabel(String(localized: "Forward 15 seconds", comment: "Accessibility label for the seek-forward 15 seconds button"))
                     }
                     .buttonStyle(.plain)
 
@@ -122,21 +122,21 @@ struct WatchRemoteDetailView: View {
                         } label: {
                             Image(systemName: "backward.fill")
                         }
-                        .accessibilityLabel("Previous")
+                        .accessibilityLabel(String(localized: "Previous Track", comment: "Accessibility label for the previous track button"))
 
                         Button {
                             Task { await store.toggleMute(sessionID: sessionID) }
                         } label: {
                             Image(systemName: remote.isMuted ? "speaker.slash.fill" : "speaker.fill")
                         }
-                        .accessibilityLabel(remote.isMuted ? "Unmute" : "Mute")
+                        .accessibilityLabel(remote.isMuted ? String(localized: "Unmute", comment: "Accessibility label for the unmute button") : String(localized: "Mute", comment: "Accessibility label for the mute button"))
 
                         Button {
                             Task { await store.nextTrack(sessionID: sessionID) }
                         } label: {
                             Image(systemName: "forward.fill")
                         }
-                        .accessibilityLabel("Next")
+                        .accessibilityLabel(String(localized: "Next Track", comment: "Accessibility label for the next track button"))
                     }
                     .buttonStyle(.plain)
 
@@ -146,21 +146,21 @@ struct WatchRemoteDetailView: View {
                         } label: {
                             Image(systemName: "speaker.minus.fill")
                         }
-                        .accessibilityLabel("Volume down")
+                        .accessibilityLabel(String(localized: "Volume down", comment: "Accessibility label for the volume-down button"))
 
                         Button {
                             Task { await store.volumeUp(sessionID: sessionID) }
                         } label: {
                             Image(systemName: "speaker.plus.fill")
                         }
-                        .accessibilityLabel("Volume up")
+                        .accessibilityLabel(String(localized: "Volume up", comment: "Accessibility label for the volume-up button"))
 
                         Button(role: .destructive) {
                             Task { await store.stopPlayback(sessionID: sessionID) }
                         } label: {
                             Image(systemName: "stop.fill")
                         }
-                        .accessibilityLabel("Stop")
+                        .accessibilityLabel(String(localized: "Stop", comment: "Accessibility label for the stop playback button"))
                     }
                     .buttonStyle(.plain)
                 } else {

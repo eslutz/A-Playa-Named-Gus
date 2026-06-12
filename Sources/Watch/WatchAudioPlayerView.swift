@@ -21,7 +21,7 @@ struct WatchAudioPlayerView: View {
 
                 if store.duration > 0 {
                     ProgressView(value: min(store.currentTime, store.duration), total: store.duration)
-                        .accessibilityLabel("Playback position")
+                        .accessibilityLabel(String(localized: "Playback position", comment: "Accessibility label for the audio playback progress bar"))
                         .accessibilityValue(
                             PlaybackTime.accessibilityProgressValue(
                                 currentSeconds: min(store.currentTime, store.duration),
@@ -36,7 +36,7 @@ struct WatchAudioPlayerView: View {
                     } label: {
                         Image(systemName: "backward.fill")
                     }
-                    .accessibilityLabel("Previous Track")
+                    .accessibilityLabel(String(localized: "Previous Track", comment: "Accessibility label for the previous track button"))
 
                     Button {
                         store.playPause()
@@ -44,7 +44,7 @@ struct WatchAudioPlayerView: View {
                         Image(systemName: store.isPlaying ? "pause.circle.fill" : "play.circle.fill")
                             .font(.title)
                     }
-                    .accessibilityLabel(store.isPlaying ? "Pause" : "Play")
+                    .accessibilityLabel(store.isPlaying ? String(localized: "Pause", comment: "Accessibility label for the pause button") : String(localized: "Play", comment: "Accessibility label for the play button"))
 
                     Button {
                         Task { await store.next() }
@@ -52,7 +52,7 @@ struct WatchAudioPlayerView: View {
                         Image(systemName: "forward.fill")
                     }
                     .disabled(!store.queue.hasNext)
-                    .accessibilityLabel("Next Track")
+                    .accessibilityLabel(String(localized: "Next Track", comment: "Accessibility label for the next track button"))
                 }
                 .buttonStyle(.plain)
 

@@ -126,7 +126,9 @@ enum JellyfinMediaItemMapper {
     private static func mediaUserData(from userData: UserItemDataDto) -> MediaUserData {
         MediaUserData(
             playbackPositionTicks: userData.playbackPositionTicks,
-            playedPercentage: userData.playedPercentage
+            playedPercentage: userData.playedPercentage,
+            isWatched: userData.isPlayed,
+            isFavorite: userData.isFavorite
         )
     }
 

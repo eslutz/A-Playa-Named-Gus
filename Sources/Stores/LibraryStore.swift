@@ -214,7 +214,11 @@ final class LibraryStore {
             paging.appendResults(receivedCount: page.items.count, totalRecordCount: page.totalRecordCount)
         }
         state = .loaded
-        SpotlightIndexer.index(admitted, serverID: session.server.id, userID: session.user.id)
+        let serverID = session.server.id
+        let userID = session.user.id
+        Task.detached(priority: .background) {
+            SpotlightIndexer.index(admitted, serverID: serverID, userID: userID)
+        }
     }
 
     private func handle(_ error: Error) {

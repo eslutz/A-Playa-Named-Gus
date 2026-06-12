@@ -36,8 +36,10 @@ final class PlaybackStore {
     private let logger = Logger(category: .playback)
     private var reportContext: PlaybackReportContext?
     private var progressObserver: Any?
-    private var endObserver: NSObjectProtocol?
+    private var endObserver: (any NSObjectProtocol)?
+    private var failedEndObserver: (any NSObjectProtocol)?
     private var pauseStateObservation: NSKeyValueObservation?
+    private var lastReportTask: Task<Void, Never>?
     private var didReportPause = false
     private var didReportStopped = false
     private var isTranscodedPlayback = false
@@ -305,6 +307,7 @@ final class PlaybackStore {
     }
 
     private func teardown(reportStopped: Bool) {
+        lastReportTask?.cancel()
         let finalTicks = currentPositionTicks()
         let context = reportContext
         removeProgressObserver()
@@ -341,6 +344,18 @@ final class PlaybackStore {
                 self?.handlePlaybackEnded()
             }
         }
+        failedEndObserver = NotificationCenter.default.addObserver(
+            forName: AVPlayerItem.failedToPlayToEndTimeNotification,
+            object: playerItem,
+            queue: .main
+        ) { [weak self] notification in
+            MainActor.assumeIsolated {
+                let error = notification.userInfo?[AVPlayerItemFailedToPlayToEndTimeErrorKey] as? Error
+                let message = error.map { GusError(from: $0).localizedDescription }
+                    ?? String(localized: "Playback stopped unexpectedly.", comment: "Generic playback failure message")
+                self?.state = .failed(message)
+            }
+        }
     }
 
     private func removeEndObserver() {
@@ -348,6 +363,10 @@ final class PlaybackStore {
             NotificationCenter.default.removeObserver(endObserver)
         }
         endObserver = nil
+        if let failedEndObserver {
+            NotificationCenter.default.removeObserver(failedEndObserver)
+        }
+        failedEndObserver = nil
     }
 
     private func handlePlaybackEnded() {
@@ -441,12 +460,14 @@ final class PlaybackStore {
     }
 
     private func sendReport(_ kind: String, operation: @escaping () async throws -> Void) {
-        Task {
+        lastReportTask?.cancel()
+        lastReportTask = Task {
             do {
                 try await operation()
             } catch {
                 let gusError = GusError(from: error)
                 guard !gusError.isCancellation else { return }
+                gusError.handleIfUnauthorized(session: session)
                 logger.error("Playback \(kind, privacy: .public) report failed: \(gusError.localizedDescription, privacy: .public)")
             }
         }

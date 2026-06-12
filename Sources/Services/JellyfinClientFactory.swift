@@ -11,13 +11,25 @@ enum JellyfinClientFactory {
     /// `AsyncImage` requests flow through the same `URLSession`, so they hit this cache.
     /// Distinct `maxWidth` values create distinct cache entries and server renders; A Playa Named Gus
     /// keeps those values to a fixed set in `ImageURLBuilder.ImageContext`.
-    static let urlCache: URLCache = URLCache(
-        memoryCapacity: 64 * 1024 * 1024, // 64 MB
-        diskCapacity: 512 * 1024 * 1024, // 512 MB
-        directory: FileManager.default
-            .urls(for: .cachesDirectory, in: .userDomainMask).first?
-            .appendingPathComponent("GusImageCache", isDirectory: true)
-    )
+    static let urlCache: URLCache = {
+        #if os(tvOS)
+            return URLCache(
+                memoryCapacity: 64 * 1024 * 1024, // 64 MB
+                diskCapacity: 200 * 1024 * 1024, // 200 MB — tvOS has tighter per-process cache budgets
+                directory: FileManager.default
+                    .urls(for: .cachesDirectory, in: .userDomainMask).first?
+                    .appendingPathComponent("GusImageCache", isDirectory: true)
+            )
+        #else
+            return URLCache(
+                memoryCapacity: 64 * 1024 * 1024, // 64 MB
+                diskCapacity: 512 * 1024 * 1024, // 512 MB
+                directory: FileManager.default
+                    .urls(for: .cachesDirectory, in: .userDomainMask).first?
+                    .appendingPathComponent("GusImageCache", isDirectory: true)
+            )
+        #endif
+    }()
 
     static func makeSessionConfiguration() -> URLSessionConfiguration {
         let configuration = URLSessionConfiguration.default

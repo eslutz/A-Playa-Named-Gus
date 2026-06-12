@@ -62,6 +62,12 @@ tokens without an extra capability.
 
 ## CarPlay (Pending Apple Grant)
 
+**Current state:** `CPTemplateApplicationSceneSessionRoleApplication` is declared in
+`Info.plist` and `Sources/CarPlay/CarPlaySceneDelegate.swift` is compiled into the iOS
+target, but `com.apple.developer.carplay-audio` has **not** been granted by Apple and is
+**not** wired into signing. The scene declaration is inert without the entitlement — iOS
+will not activate it at runtime. Archives pass validation in this state.
+
 The CarPlay audio companion (`Sources/CarPlay/`) is implemented and its template scene
 is declared in `Info.plist`, but `com.apple.developer.carplay-audio` requires an Apple
 entitlement grant. Until granted, `Config/Gus-CarPlay.entitlements` stays **unwired** so

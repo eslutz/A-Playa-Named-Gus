@@ -7,6 +7,8 @@ struct AudioPlayerView: View {
     @Environment(SessionStore.self) private var session
     let store: AudioPlayerStore
 
+    @ScaledMetric(relativeTo: .title) private var playPauseIconSize: CGFloat = 56
+
     @State private var scrubTime: Double = 0
     @State private var isScrubbing = false
 
@@ -96,22 +98,30 @@ struct AudioPlayerView: View {
                 Image(systemName: "shuffle")
                     .symbolVariant(store.isShuffled ? .circle.fill : .none)
             }
-            .accessibilityLabel(store.isShuffled ? "Shuffle On" : "Shuffle Off")
+            .accessibilityLabel(
+                store.isShuffled
+                    ? String(localized: "Shuffle On", comment: "Accessibility label for the shuffle button when active")
+                    : String(localized: "Shuffle Off", comment: "Accessibility label for the shuffle button when inactive")
+            )
 
             Button {
                 Task { await store.previous() }
             } label: {
                 Image(systemName: "backward.fill")
             }
-            .accessibilityLabel("Previous Track")
+            .accessibilityLabel(String(localized: "Previous Track", comment: "Accessibility label for the previous track button"))
 
             Button {
                 store.playPause()
             } label: {
                 Image(systemName: store.isPlaying ? "pause.circle.fill" : "play.circle.fill")
-                    .font(.system(size: 56))
+                    .font(.system(size: playPauseIconSize))
             }
-            .accessibilityLabel(store.isPlaying ? "Pause" : "Play")
+            .accessibilityLabel(
+                store.isPlaying
+                    ? String(localized: "Pause", comment: "Accessibility label for the pause button")
+                    : String(localized: "Play", comment: "Accessibility label for the play button")
+            )
 
             Button {
                 Task { await store.next() }
@@ -119,7 +129,7 @@ struct AudioPlayerView: View {
                 Image(systemName: "forward.fill")
             }
             .disabled(!store.queue.hasNext)
-            .accessibilityLabel("Next Track")
+            .accessibilityLabel(String(localized: "Next Track", comment: "Accessibility label for the next track button"))
 
             Button {
                 store.cycleRepeatMode()

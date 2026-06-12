@@ -15,6 +15,7 @@ struct SignInView: View {
     @State private var errorMessage: String?
     @State private var quickConnectStore: QuickConnectStore?
     @State private var signInStore: SignInStore?
+    @State private var signInTask: Task<Void, Never>?
 
     var body: some View {
         Form {
@@ -34,6 +35,7 @@ struct SignInView: View {
             await refreshQuickConnectAvailability()
         }
         .onDisappear {
+            signInTask?.cancel()
             quickConnectStore?.cancel()
         }
     }
@@ -86,7 +88,9 @@ struct SignInView: View {
         Section {
             TextField("Username", text: $username)
                 .autocorrectionDisabled()
+                .textContentType(.username)
             SecureField("Password", text: $password)
+                .textContentType(.password)
                 .onSubmit(signIn)
         } header: {
             Text("Sign In")
@@ -140,7 +144,11 @@ struct SignInView: View {
 
                 case let .failed(message):
                     Label(message, systemImage: "exclamationmark.triangle")
-                        .foregroundStyle(.red)
+                    #if os(macOS)
+                        .foregroundStyle(Color(NSColor.systemRed))
+                    #else
+                        .foregroundStyle(Color(UIColor.systemRed))
+                    #endif
                     Button {
                         quickConnectStore.start()
                     } label: {
@@ -156,7 +164,11 @@ struct SignInView: View {
         if let errorMessage {
             Section {
                 Label(errorMessage, systemImage: "exclamationmark.triangle")
-                    .foregroundStyle(.red)
+                #if os(macOS)
+                    .foregroundStyle(Color(NSColor.systemRed))
+                #else
+                    .foregroundStyle(Color(UIColor.systemRed))
+                #endif
                     .font(.callout)
             }
         }
@@ -179,7 +191,8 @@ struct SignInView: View {
         guard !isSigningIn else { return }
         errorMessage = nil
         isSigningIn = true
-        Task {
+        signInTask?.cancel()
+        signInTask = Task {
             defer { isSigningIn = false }
             do {
                 try await appModel.signIn(to: server, username: username, password: password)

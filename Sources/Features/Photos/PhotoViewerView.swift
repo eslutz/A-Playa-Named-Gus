@@ -16,7 +16,7 @@ struct PhotoViewerView: View {
         LoadingStateView(
             state: state,
             isEmpty: siblings.isEmpty,
-            emptyTitle: "No Photos",
+            emptyTitle: String(localized: "No Photos", comment: "Photo viewer empty-state title when no photos are available"),
             emptySymbol: "photo"
         ) {
             TabView(selection: $selectedID) {

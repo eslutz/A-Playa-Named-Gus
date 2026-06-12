@@ -66,25 +66,28 @@ struct NavigationSettingsView: View {
                     Label(section.title, systemImage: section.systemImage)
                 }
 
-                Button {
-                    move(section, by: -1)
-                } label: {
-                    Image(systemName: "chevron.up")
-                }
-                .buttonStyle(.borderless)
-                .disabled(index == 0)
-                .accessibilityLabel("Move \(section.title) up")
+                #if os(tvOS)
+                    Button {
+                        move(section, by: -1)
+                    } label: {
+                        Image(systemName: "chevron.up")
+                    }
+                    .buttonStyle(.borderless)
+                    .disabled(index == 0)
+                    .accessibilityLabel("Move \(section.title) up")
 
-                Button {
-                    move(section, by: 1)
-                } label: {
-                    Image(systemName: "chevron.down")
-                }
-                .buttonStyle(.borderless)
-                .disabled(index == sections.count - 1)
-                .accessibilityLabel("Move \(section.title) down")
+                    Button {
+                        move(section, by: 1)
+                    } label: {
+                        Image(systemName: "chevron.down")
+                    }
+                    .buttonStyle(.borderless)
+                    .disabled(index == sections.count - 1)
+                    .accessibilityLabel("Move \(section.title) down")
+                #endif
             }
         }
+        .onMove(perform: moveSections)
     }
 
     private func fixedRow(title: String, systemImage: String) -> some View {
@@ -115,6 +118,26 @@ struct NavigationSettingsView: View {
             serverID: session.server.id,
             userID: session.user.id
         )
+    }
+
+    private func moveSections(from source: IndexSet, to destination: Int) {
+        let sections = navigationPreferences.resolvedSections(
+            libraries: libraries,
+            serverID: session.server.id,
+            userID: session.user.id
+        )
+        guard let sourceIndex = source.first else { return }
+        let offset = destination > sourceIndex ? destination - sourceIndex - 1 : sourceIndex - destination
+        let direction = destination > sourceIndex ? 1 : -1
+        for _ in 0 ..< offset {
+            navigationPreferences.move(
+                sectionID: sections[sourceIndex].id,
+                by: direction,
+                libraries: libraries,
+                serverID: session.server.id,
+                userID: session.user.id
+            )
+        }
     }
 
     private func loadLibraries() async {

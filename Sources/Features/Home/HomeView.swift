@@ -45,17 +45,17 @@ struct HomeView: View {
         return LoadingStateView(
             state: store.state,
             isEmpty: store.resumeItems.isEmpty && nextUpItems.isEmpty && store.latestSections.isEmpty,
-            emptyTitle: "No Recent Media",
+            emptyTitle: String(localized: "No Recent Media", comment: "Home empty-state title when no media has been watched recently"),
             emptySymbol: "clock",
             retryAction: { Task { await store.load() } }
         ) {
             ScrollView {
                 VStack(alignment: .leading, spacing: 32) {
                     if !store.resumeItems.isEmpty {
-                        MediaRail(title: "Continue Watching", items: store.resumeItems)
+                        MediaRail(title: String(localized: "Continue Watching", comment: "Home rail title for in-progress media"), items: store.resumeItems)
                     }
                     if !nextUpItems.isEmpty {
-                        MediaRail(title: "Next Up", items: nextUpItems, style: .backdrop)
+                        MediaRail(title: String(localized: "Next Up", comment: "Home rail title for next episodes"), items: nextUpItems, style: .backdrop)
                     }
                     ForEach(store.latestSections) { section in
                         MediaRail(title: section.title, items: section.items)

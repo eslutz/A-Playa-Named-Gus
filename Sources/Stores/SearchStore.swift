@@ -58,8 +58,8 @@ final class SearchStore {
         else { return }
 
         isLoadingNextPage = true
+        defer { isLoadingNextPage = false }
         await loadPage(startIndex: paging.nextStartIndex, replaceResults: false)
-        isLoadingNextPage = false
     }
 
     private func loadPage(startIndex: Int, replaceResults shouldReplaceResults: Bool) async {
@@ -86,8 +86,12 @@ final class SearchStore {
         } catch {
             let gusError = GusError(from: error)
             guard !gusError.isCancellation else { return }
+            gusError.handleIfUnauthorized(session: session)
             logger.error("Search failed: \(gusError.localizedDescription, privacy: .public)")
-            state = .failed(gusError.localizedDescription)
+            if shouldReplaceResults {
+                state = .failed(gusError.localizedDescription)
+            }
+            // Pagination errors: keep state = .loaded so the user can retry by scrolling
         }
     }
 }

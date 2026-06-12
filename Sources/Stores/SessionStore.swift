@@ -14,6 +14,8 @@ final class SessionStore {
     let mediaProvider: any MediaProviderSession
     let user: StoredUser
     let server: ServerConnection
+    /// Called when any request in this session receives a 401; navigates back to sign-in.
+    var onUnauthorized: () -> Void = {}
 
     init(
         client: JellyfinClient,

@@ -141,7 +141,7 @@ final class JellyfinMediaProviderSession: MediaProviderSession {
         return JellyfinMediaItemMapper.mediaItems(from: response.value.items ?? [])
     }
 
-    func episodes(seriesID: String, seasonID: String, limit: Int) async throws -> [MediaItem] {
+    func episodes(seriesID: String, seasonID: String, limit: Int) async throws -> MediaItemPage {
         let parameters = Paths.GetEpisodesParameters(
             userID: userID,
             fields: Self.metadataFields,
@@ -155,7 +155,10 @@ final class JellyfinMediaProviderSession: MediaProviderSession {
         let response = try await NetworkRetryPolicy.idempotent.run {
             try await client.send(Paths.getEpisodes(seriesID: seriesID, parameters: parameters))
         }
-        return JellyfinMediaItemMapper.mediaItems(from: response.value.items ?? [])
+        return MediaItemPage(
+            items: JellyfinMediaItemMapper.mediaItems(from: response.value.items ?? []),
+            totalRecordCount: response.value.totalRecordCount
+        )
     }
 
     func primaryImageURL(for item: MediaItem, context: ImageURLBuilder.ImageContext) -> URL? {
@@ -282,6 +285,22 @@ final class JellyfinMediaProviderSession: MediaProviderSession {
 
     func cancelLiveTVTimer(id: String) async throws {
         try await client.send(Paths.cancelTimer(timerID: id))
+    }
+
+    func toggleWatched(itemID: String, currentlyWatched: Bool) async throws {
+        if currentlyWatched {
+            try await client.send(Paths.markUnplayedItem(itemID: itemID, userID: userID))
+        } else {
+            try await client.send(Paths.markPlayedItem(itemID: itemID, userID: userID))
+        }
+    }
+
+    func toggleFavorite(itemID: String, currentlyFavorite: Bool) async throws {
+        if currentlyFavorite {
+            try await client.send(Paths.unmarkFavoriteItem(itemID: itemID, userID: userID))
+        } else {
+            try await client.send(Paths.markFavoriteItem(itemID: itemID, userID: userID))
+        }
     }
 
     func reportPlaybackStart(context: PlaybackReportContext, positionTicks: Int, isPaused: Bool) async throws {

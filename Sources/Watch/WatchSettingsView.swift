@@ -28,7 +28,7 @@ struct WatchSettingsView: View {
                         ProgressView()
                     case .online:
                         Label("Online", systemImage: "checkmark.circle.fill")
-                            .foregroundStyle(.green)
+                            .foregroundStyle(.green) // watchOS has no UIColor.systemGreen; .green is the platform-correct semantic color
                             .labelStyle(.titleAndIcon)
                     case .offline:
                         Label("Offline", systemImage: "wifi.slash")

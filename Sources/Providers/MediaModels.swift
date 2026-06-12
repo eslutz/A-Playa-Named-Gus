@@ -83,20 +83,30 @@ enum MediaPlaybackMethod: String, Codable, Hashable {
 struct MediaUserData: Codable, Hashable {
     var playbackPositionTicks: Int?
     var playedPercentage: Double?
+    /// Whether the user has fully watched/played this item on the server.
+    var isWatched: Bool?
+    /// Whether the user has marked this item as a favourite on the server.
+    var isFavorite: Bool?
 
     private enum CodingKeys: String, CodingKey {
         case playbackPositionTicks
         case playedPercentage
+        case isWatched
+        case isFavorite
     }
 
     private enum LegacyCodingKeys: String, CodingKey {
         case playbackPositionTicks = "PlaybackPositionTicks"
         case playedPercentage = "PlayedPercentage"
+        case isWatched = "Played"
+        case isFavorite = "IsFavorite"
     }
 
-    init(playbackPositionTicks: Int? = nil, playedPercentage: Double? = nil) {
+    init(playbackPositionTicks: Int? = nil, playedPercentage: Double? = nil, isWatched: Bool? = nil, isFavorite: Bool? = nil) {
         self.playbackPositionTicks = playbackPositionTicks
         self.playedPercentage = playedPercentage
+        self.isWatched = isWatched
+        self.isFavorite = isFavorite
     }
 
     init(from decoder: Decoder) throws {
@@ -106,6 +116,10 @@ struct MediaUserData: Codable, Hashable {
             ?? legacyContainer.decodeIfPresent(Int.self, forKey: .playbackPositionTicks)
         playedPercentage = try container.decodeIfPresent(Double.self, forKey: .playedPercentage)
             ?? legacyContainer.decodeIfPresent(Double.self, forKey: .playedPercentage)
+        isWatched = try container.decodeIfPresent(Bool.self, forKey: .isWatched)
+            ?? legacyContainer.decodeIfPresent(Bool.self, forKey: .isWatched)
+        isFavorite = try container.decodeIfPresent(Bool.self, forKey: .isFavorite)
+            ?? legacyContainer.decodeIfPresent(Bool.self, forKey: .isFavorite)
     }
 }
 

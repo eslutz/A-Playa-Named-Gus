@@ -90,7 +90,7 @@ protocol MediaProviderSession: AnyObject {
     func similarItems(itemID: String, limit: Int) async throws -> [MediaItem]
     func specialFeatures(itemID: String) async throws -> [MediaItem]
     func seasons(seriesID: String) async throws -> [MediaItem]
-    func episodes(seriesID: String, seasonID: String, limit: Int) async throws -> [MediaItem]
+    func episodes(seriesID: String, seasonID: String, limit: Int) async throws -> MediaItemPage
 
     func primaryImageURL(for item: MediaItem, context: ImageURLBuilder.ImageContext) -> URL?
     func primaryImageURL(for item: MediaItem, maxWidth: Int) -> URL?
@@ -119,6 +119,11 @@ protocol MediaProviderSession: AnyObject {
     func liveTVRecordings(limit: Int) async throws -> [MediaItem]
     func liveTVTimers() async throws -> [LiveTVTimer]
     func cancelLiveTVTimer(id: String) async throws
+
+    /// Marks an item as played or unplayed for the current user.
+    func toggleWatched(itemID: String, currentlyWatched: Bool) async throws
+    /// Marks or unmarks an item as a favourite for the current user.
+    func toggleFavorite(itemID: String, currentlyFavorite: Bool) async throws
 
     func reportPlaybackStart(context: PlaybackReportContext, positionTicks: Int, isPaused: Bool) async throws
     func reportPlaybackProgress(context: PlaybackReportContext, positionTicks: Int, isPaused: Bool) async throws

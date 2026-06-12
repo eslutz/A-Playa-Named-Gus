@@ -235,3 +235,34 @@ own server library and includes parental content-restriction controls.
 - Configure Xcode Cloud signing/provisioning and validate Release archives.
 - Upload screenshots and submit to TestFlight before final submission.
 - Request the Declared Age Range entitlement alongside the CarPlay audio entitlement.
+
+### Operational blockers requiring external action
+
+The following items cannot be resolved by code changes. Each needs a specific out-of-repo
+action before first submission.
+
+**BUILD-2 — Provision demo server at `demo.gus.ericslutz.dev`**
+Action required: deploy a Jellyfin Docker instance (using `Scripts/demo-server.sh` as the
+template) at a stable public host and point the subdomain at it. The draft "Notes for
+Review" above references this URL for App Review access. Until it is live, reviewers must
+run the demo server locally from the repository. Update the Notes for Review draft in this
+file once the hosted instance is confirmed.
+
+**BUILD-3 — Publish website pages at `gus.ericslutz.dev`**
+Action required: the support, privacy policy, accessibility, and age-suitability pages
+referenced throughout this audit (`review-support-pages.md`) live in the sibling
+`../Gus.website` repo and must be deployed before submission. App Store Connect requires
+a reachable support URL and a reachable privacy policy URL; App Review will visit both.
+Confirm each page loads over HTTPS and matches current app behavior before submitting.
+Changes to the app that affect privacy disclosures, supported features, or accessibility
+claims must be reflected in the website as part of the same unit of work (per the wiki
+and website sync policy in `CLAUDE.md`).
+
+**BUILD-4 — Create Xcode Cloud workflow in App Store Connect**
+Action required: sign in to App Store Connect → Xcode Cloud, connect the repository, and
+configure a workflow for the `dev.ericslutz.gus` bundle ID. The workflow must build the
+main app target plus the `GusTopShelf` tvOS extension and the `GusWatch` watchOS target,
+manage provisioning profiles for all three, and produce signed archives for iOS/iPadOS,
+tvOS, visionOS, and macOS. Until this exists, no TestFlight build or App Store submission
+is possible. See `Documentation/AppStore/ci-strategy.md` and the CI Signing Ownership
+section of `signing-capabilities.md` for the intended Xcode Cloud scope.

@@ -58,7 +58,7 @@ struct LiveTVView: View {
             LoadingStateView(
                 state: store.state,
                 isEmpty: store.channels.isEmpty && store.recordings.isEmpty && store.timers.isEmpty,
-                emptyTitle: "No Live TV Content",
+                emptyTitle: String(localized: "No Live TV Content", comment: "Live TV empty-state title when there are no channels or recordings"),
                 emptySymbol: "antenna.radiowaves.left.and.right",
                 retryAction: { Task { await store.load() } }
             ) {
@@ -250,7 +250,7 @@ final class LiveTVStore {
             async let recordingsLoad = session.mediaProvider.liveTVRecordings(limit: 100)
             async let timersLoad = session.mediaProvider.liveTVTimers()
             let (channelPage, loadedRecordings, loadedTimers) = try await(channelsLoad, recordingsLoad, timersLoad)
-            channels = channelPage.items
+            channels = ContentRatingGate.filter(channelPage.items)
             recordings = ContentRatingGate.filter(loadedRecordings)
             timers = loadedTimers
             state = .loaded

@@ -24,7 +24,7 @@ struct WatchConnectView: View {
                 if let errorMessage {
                     Text(errorMessage)
                         .font(.footnote)
-                        .foregroundStyle(.red)
+                        .foregroundStyle(.red) // watchOS has no UIColor.systemRed; .red is the platform-correct semantic color
                 }
 
                 Button {
@@ -101,7 +101,7 @@ private struct WatchSignInView: View {
                     case let .failed(message):
                         Text(message)
                             .font(.footnote)
-                            .foregroundStyle(.red)
+                            .foregroundStyle(.red) // watchOS has no UIColor.systemRed; .red is the platform-correct semantic color
                         Button("Try Again") {
                             quickConnect.start()
                         }
@@ -117,7 +117,7 @@ private struct WatchSignInView: View {
                 if let errorMessage {
                     Text(errorMessage)
                         .font(.footnote)
-                        .foregroundStyle(.red)
+                        .foregroundStyle(.red) // watchOS has no UIColor.systemRed; .red is the platform-correct semantic color
                 }
                 Button {
                     signIn()
