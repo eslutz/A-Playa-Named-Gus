@@ -84,6 +84,22 @@ enum PlaybackTime {
         guard let ticks = item.userData?.playbackPositionTicks, ticks > 0 else { return nil }
         return ticks
     }
+
+    static func accessibilityDuration(seconds: Double) -> String {
+        let roundedSeconds = max(0, Int(seconds.rounded()))
+        let formatter = DateComponentsFormatter()
+        formatter.allowedUnits = roundedSeconds >= 3600 ? [.hour, .minute] : [.minute, .second]
+        formatter.unitsStyle = .full
+        formatter.maximumUnitCount = 2
+        formatter.zeroFormattingBehavior = .dropAll
+        return formatter.string(from: TimeInterval(roundedSeconds)) ?? String(localized: "0 seconds", comment: "Zero duration fallback")
+    }
+
+    static func accessibilityProgressValue(currentSeconds: Double, durationSeconds: Double) -> String {
+        let current = accessibilityDuration(seconds: currentSeconds)
+        let duration = accessibilityDuration(seconds: durationSeconds)
+        return String(localized: "\(current) of \(duration)", comment: "Accessibility value for elapsed media playback time")
+    }
 }
 
 @MainActor

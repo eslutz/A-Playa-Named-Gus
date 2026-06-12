@@ -1,0 +1,28 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "CFBundleDisplayName" : {
+      "comment" : "Short app name shown by the system.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gus"
+          }
+        }
+      }
+    },
+    "NSLocalNetworkUsageDescription" : {
+      "comment" : "System permission prompt shown when the user chooses local Jellyfin server discovery.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A Playa Named Gus can find Jellyfin servers on your local network when you choose Find Local Servers."
+          }
+        }
+      }
+    }
+  },
+  "version" : "1.0"
+}

@@ -23,11 +23,32 @@ struct AppModelSessionTests {
         #expect(fixture.tokens.token(for: SessionCredential(user: fixture.userB)) == "token-b")
     }
 
-    @Test("signing out deletes only the active user's token and stored record")
-    func signOutDeletesOnlyActiveUser() throws {
-        let fixture = try Fixture()
+    @Test("switching stored users clears outgoing account system surfaces")
+    func switchingStoredUsersClearsOutgoingAccountSystemSurfaces() throws {
+        let cleanup = AccountCleanupSpy()
+        let fixture = try Fixture(accountCleanup: cleanup.actions)
 
         try fixture.appModel.switchToStoredUser(fixture.userA)
+        cleanup.events.removeAll()
+
+        try fixture.appModel.switchToStoredUser(fixture.userB)
+
+        #expect(cleanup.events == [
+            .spotlight(serverID: fixture.serverA.id, userID: fixture.userA.id),
+            .topShelf,
+            .books(serverID: fixture.serverA.id, userID: fixture.userA.id),
+            .downloads(serverID: fixture.serverA.id, userID: fixture.userA.id),
+            .watch(serverID: fixture.serverA.id, userID: fixture.userA.id),
+        ])
+    }
+
+    @Test("signing out deletes only the active user's token and stored record")
+    func signOutDeletesOnlyActiveUser() throws {
+        let cleanup = AccountCleanupSpy()
+        let fixture = try Fixture(accountCleanup: cleanup.actions)
+
+        try fixture.appModel.switchToStoredUser(fixture.userA)
+        cleanup.events.removeAll()
         fixture.appModel.signOut()
 
         #expect(fixture.appModel.currentSession == nil)
@@ -37,6 +58,13 @@ struct AppModelSessionTests {
         #expect(fixture.store.loadUsers() == [fixture.userB])
         #expect(fixture.tokens.token(for: SessionCredential(user: fixture.userA)) == nil)
         #expect(fixture.tokens.token(for: SessionCredential(user: fixture.userB)) == "token-b")
+        #expect(cleanup.events == [
+            .spotlight(serverID: fixture.serverA.id, userID: fixture.userA.id),
+            .topShelf,
+            .books(serverID: fixture.serverA.id, userID: fixture.userA.id),
+            .downloads(serverID: fixture.serverA.id, userID: fixture.userA.id),
+            .watch(serverID: fixture.serverA.id, userID: fixture.userA.id),
+        ])
     }
 
     @Test("stored users without a token are marked for sign-in instead of restored")
@@ -150,6 +178,67 @@ struct AppModelSessionTests {
             #expect(fixture.tokens.token(for: SessionCredential(user: fixture.userB)) == "token-b")
         #endif
     }
+
+    @Test("clearing handed off session removes only the matching watch account")
+    func clearingHandedOffSessionRemovesOnlyMatchingWatchAccount() throws {
+        let fixture = try Fixture()
+
+        fixture.appModel.adoptHandedOffSession(server: fixture.serverA, user: fixture.userA, token: "watch-token-a")
+        fixture.appModel.adoptHandedOffSession(server: fixture.serverB, user: fixture.userB, token: "watch-token-b")
+
+        fixture.appModel.clearHandedOffSession(serverID: fixture.serverB.id, userID: fixture.userB.id)
+
+        #expect(fixture.appModel.currentSession?.user == fixture.userA)
+        #expect(fixture.tokens.token(for: SessionCredential(user: fixture.userA)) == "watch-token-a")
+        #expect(fixture.tokens.token(for: SessionCredential(user: fixture.userB)) == nil)
+        #expect(fixture.appModel.users == [fixture.userA])
+        #expect(fixture.store.loadUsers() == [fixture.userA])
+    }
+
+    @Test("clearing active handed off session signs out watch")
+    func clearingActiveHandedOffSessionSignsOutWatch() throws {
+        let fixture = try Fixture()
+
+        try fixture.appModel.switchToStoredUser(fixture.userA)
+        fixture.appModel.clearHandedOffSession(serverID: fixture.serverA.id, userID: fixture.userA.id)
+
+        #expect(fixture.appModel.currentSession == nil)
+        #expect(fixture.appModel.lastSessionAccount == nil)
+        #expect(fixture.tokens.token(for: SessionCredential(user: fixture.userA)) == nil)
+        #expect(fixture.tokens.token(for: SessionCredential(user: fixture.userB)) == "token-b")
+    }
+}
+
+private final class AccountCleanupSpy {
+    enum Event: Equatable {
+        case spotlight(serverID: String, userID: String)
+        case topShelf
+        case books(serverID: String, userID: String)
+        case downloads(serverID: String, userID: String)
+        case watch(serverID: String, userID: String)
+    }
+
+    var events: [Event] = []
+
+    var actions: AppModel.AccountCleanupActions {
+        AppModel.AccountCleanupActions(
+            clearSearchIndex: { [self] serverID, userID in
+                events.append(.spotlight(serverID: serverID, userID: userID))
+            },
+            clearTopShelf: { [self] in
+                events.append(.topShelf)
+            },
+            clearBookState: { [self] scope in
+                events.append(.books(serverID: scope.serverID, userID: scope.userID))
+            },
+            clearDownloads: { [self] scope in
+                events.append(.downloads(serverID: scope.serverID, userID: scope.userID))
+            },
+            clearWatchCredential: { [self] server, user in
+                events.append(.watch(serverID: server.id, userID: user.id))
+            }
+        )
+    }
 }
 
 private final class MemoryTokenStore: TokenStore {
@@ -192,7 +281,11 @@ private struct Fixture {
     let appModel: AppModel
 
     @MainActor
-    init(seedTokenA: Bool = true, seedTokenB: Bool = true) throws {
+    init(
+        seedTokenA: Bool = true,
+        seedTokenB: Bool = true,
+        accountCleanup: AppModel.AccountCleanupActions = .live
+    ) throws {
         directory = FileManager.default.temporaryDirectory
             .appendingPathComponent(UUID().uuidString, isDirectory: true)
         store = ServerStore(directory: directory)
@@ -219,6 +312,11 @@ private struct Fixture {
         if seedTokenB {
             tokens.setToken("token-b", for: SessionCredential(user: userB))
         }
-        appModel = AppModel(serverStore: store, tokenStore: tokens, userDefaults: userDefaults)
+        appModel = AppModel(
+            serverStore: store,
+            tokenStore: tokens,
+            userDefaults: userDefaults,
+            accountCleanup: accountCleanup
+        )
     }
 }

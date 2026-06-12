@@ -114,6 +114,7 @@ targets:
       - path: Sources/Platform/DownloadsAvailability.swift
       - path: Sources/SharedUI/LoadingStateView.swift
       - path: Resources/Localizable.xcstrings
+      - path: Resources/Watch/InfoPlist.xcstrings
       - path: Resources/Watch/Assets.xcassets
       # The watch binary uses required-reason APIs (UserDefaults via DeviceIdentity,
       # DiskSpace via downloads), so it carries the same privacy manifest as the app.
@@ -307,11 +308,6 @@ schemes:
     build:
       targets:
         GusWatch: all
-    test:
-      gatherCoverageData: true
-      targets:
-        - GusTests
-        - GusUITests
 
   Gus iOS Tests:
     build:

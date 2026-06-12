@@ -46,6 +46,8 @@ struct WatchDownloadsView: View {
                                     .foregroundStyle(.secondary)
                             }
                         }
+                        .accessibilityLabel(record.item.displayTitle)
+                        .accessibilityValue(statusText(for: record))
                         .swipeActions {
                             Button(role: .destructive) {
                                 downloads.delete(record, serverID: session.server.id, userID: session.user.id)

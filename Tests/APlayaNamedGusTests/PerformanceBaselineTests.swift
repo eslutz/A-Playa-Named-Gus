@@ -2,13 +2,14 @@
 import JellyfinAPI
 import XCTest
 
-/// XCTest `measure` baselines for hot pure-logic paths, recorded in
+/// XCTest `measure` probes for hot pure-logic paths, recorded in
 /// `Documentation/AppStore/performance-baselines.md`.
 ///
 /// These complement the `DiagnosticsHub` signpost intervals (server connect, library
 /// load, playback startup, search), which are measured in Instruments against a live
-/// server. XCTest is used here because Swift Testing has no `measure` equivalent.
-final class PerformanceBaselineTests: XCTestCase {
+/// server. These tests are intentionally named as measurements rather than pass/fail
+/// budgets; release thresholds live in the documented baseline workflow.
+final class PerformanceMeasurementTests: XCTestCase {
     private static let mapperItemCount = 2000
 
     private static func makeItems(count: Int) -> [BaseItemDto] {
@@ -40,14 +41,14 @@ final class PerformanceBaselineTests: XCTestCase {
         }
     }
 
-    func testMediaItemMapperThroughputBaseline() {
+    func testMediaItemMapperThroughputMeasurement() {
         let items = Self.makeItems(count: Self.mapperItemCount)
         measure {
             _ = JellyfinMediaItemMapper.mediaItems(from: items)
         }
     }
 
-    func testServerURLNormalizationBaseline() {
+    func testServerURLNormalizationMeasurement() {
         let inputs = (0 ..< 2000).map { "  server-\($0).example.com:8096/jellyfin/  " }
         measure {
             for input in inputs {
@@ -56,7 +57,7 @@ final class PerformanceBaselineTests: XCTestCase {
         }
     }
 
-    func testHistogramMathBaseline() {
+    func testHistogramMathMeasurement() {
         let buckets = (0 ..< 10000).map { index in
             HistogramMath.Bucket(start: Double(index), end: Double(index + 1), count: index % 7)
         }

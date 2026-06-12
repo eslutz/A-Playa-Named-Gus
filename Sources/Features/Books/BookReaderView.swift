@@ -14,6 +14,7 @@
         let item: MediaItem
         let fileURL: URL
         let provider: (any MediaProviderSession)?
+        let accountScope: AccountScope
 
         @State private var model: BookReaderModel?
 
@@ -45,7 +46,12 @@
             }
             .task {
                 if model == nil {
-                    let model = BookReaderModel(item: item, fileURL: fileURL, provider: provider)
+                    let model = BookReaderModel(
+                        item: item,
+                        fileURL: fileURL,
+                        provider: provider,
+                        accountScope: accountScope
+                    )
                     self.model = model
                     await model.open()
                 }
@@ -99,6 +105,7 @@
         let item: MediaItem
         let fileURL: URL
         private let provider: (any MediaProviderSession)?
+        private let accountScope: AccountScope
         private let progressStore = BookProgressStore.shared
         weak var navigator: EPUBNavigatorViewController?
 
@@ -111,10 +118,16 @@
         private static let assetRetriever = AssetRetriever(httpClient: httpClient)
         static let httpServer = GCDHTTPServer(assetRetriever: assetRetriever)
 
-        init(item: MediaItem, fileURL: URL, provider: (any MediaProviderSession)?) {
+        init(
+            item: MediaItem,
+            fileURL: URL,
+            provider: (any MediaProviderSession)?,
+            accountScope: AccountScope
+        ) {
             self.item = item
             self.fileURL = fileURL
             self.provider = provider
+            self.accountScope = accountScope
         }
 
         private var syncEnabled: Bool {
@@ -159,7 +172,7 @@
         /// server's coarse fraction so a book resumes across devices.
         private func resolveInitialLocation(in publication: Publication) async -> Locator? {
             guard let itemID = item.id else { return nil }
-            if let json = progressStore.locatorJSON(forItemID: itemID),
+            if let json = progressStore.locatorJSON(forItemID: itemID, scope: accountScope),
                let locator = try? Locator(jsonString: json)
             {
                 return locator
@@ -174,7 +187,7 @@
         func saveLocation(_ locator: Locator) {
             guard let itemID = item.id else { return }
             if let json = try? locator.jsonString() {
-                progressStore.save(locatorJSON: json, forItemID: itemID)
+                progressStore.save(locatorJSON: json, forItemID: itemID, scope: accountScope)
             }
             scheduleRemoteReport(fraction: locator.locations.totalProgression)
         }

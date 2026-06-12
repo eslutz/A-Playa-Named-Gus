@@ -48,6 +48,38 @@ final class AppModel {
         }
     }
 
+    struct AccountCleanupActions {
+        var clearSearchIndex: @MainActor (_ serverID: String, _ userID: String) -> Void
+        var clearTopShelf: @MainActor () -> Void
+        var clearBookState: @MainActor (_ scope: AccountScope) -> Void
+        var clearDownloads: @MainActor (_ scope: AccountScope) -> Void
+        var clearWatchCredential: @MainActor (_ server: ServerConnection, _ user: StoredUser) -> Void
+
+        static let live = AccountCleanupActions(
+            clearSearchIndex: { serverID, userID in
+                SpotlightIndexer.deleteIndex(serverID: serverID, userID: userID)
+            },
+            clearTopShelf: {
+                #if os(tvOS)
+                    TopShelfSnapshot.clear()
+                #endif
+            },
+            clearBookState: { scope in
+                BookFileProvider.purgeCachedFiles(scope: scope)
+                BookProgressStore.shared.deleteLocators(scope: scope)
+                BookProgressStore.shared.flush()
+            },
+            clearDownloads: { scope in
+                try? OfflineDownloadFileStore.shared.deleteRecords(serverID: scope.serverID, userID: scope.userID)
+            },
+            clearWatchCredential: { server, user in
+                #if os(iOS) && canImport(WatchConnectivity)
+                    WatchSessionRelay.shared.clear(server: server, user: user)
+                #endif
+            }
+        )
+    }
+
     private static let lastSessionAccountDefaultsKey = "dev.ericslutz.gus.lastSignedInSessionAccount"
     private static let legacyLastUserIDDefaultsKey = "dev.ericslutz.gus.lastSignedInUserID"
     #if DEBUG
@@ -58,6 +90,7 @@ final class AppModel {
     private let serverStore: ServerStore
     private let tokenStore: TokenStore
     private let userDefaults: UserDefaults
+    private let accountCleanup: AccountCleanupActions
     private let logger = Logger(category: .appModel)
 
     private(set) var servers: [ServerConnection] = []
@@ -102,11 +135,13 @@ final class AppModel {
     init(
         serverStore: ServerStore = .shared,
         tokenStore: TokenStore = KeychainStore.shared,
-        userDefaults: UserDefaults = .standard
+        userDefaults: UserDefaults = .standard,
+        accountCleanup: AccountCleanupActions = .live
     ) {
         self.serverStore = serverStore
         self.tokenStore = tokenStore
         self.userDefaults = userDefaults
+        self.accountCleanup = accountCleanup
         servers = serverStore.loadServers()
         users = serverStore.loadUsers()
         lastSessionAccount = Self.loadLastSessionAccount(from: userDefaults, users: users)
@@ -131,17 +166,24 @@ final class AppModel {
 
     /// Restores a saved user's session when its server and Keychain token are present.
     func restoreSavedSession(for user: StoredUser) throws {
+        try restoreSavedSession(for: user, clearingCurrentAccount: false)
+    }
+
+    private func restoreSavedSession(for user: StoredUser, clearingCurrentAccount: Bool) throws {
         guard let server = server(for: user) else { throw SessionSwitchError.missingServer }
         guard let token = tokenMigratingLegacyAccountIfNeeded(for: user) else {
             throw SessionSwitchError.missingToken
         }
 
+        if clearingCurrentAccount {
+            clearCurrentAccountDataIfNeeded(replacingWith: user, on: server)
+        }
         let client = JellyfinClientFactory.makeClient(url: server.url, accessToken: token)
         currentSession = SessionStore(client: client, user: user, server: server)
         lastSessionAccount = SessionCredential(user: user).account
         DiagnosticsHub.shared.record(.sessionRestored)
         publishSessionToWatch(server: server, user: user, token: token)
-        logger.info("Restored session for user \(user.name, privacy: .public)")
+        logger.info("Restored session for user \(user.name, privacy: .private)")
     }
 
     /// Hands the active session to a paired Apple Watch (iOS only; no-op elsewhere).
@@ -162,11 +204,37 @@ final class AppModel {
         guard currentSession == nil else { return }
         let client = JellyfinClientFactory.makeClient(url: server.url, accessToken: token)
         currentSession = SessionStore(client: client, user: user, server: server)
-        logger.info("Adopted handed-off session for user \(user.name, privacy: .public)")
+        logger.info("Adopted handed-off session for user \(user.name, privacy: .private)")
     }
 
     func switchToStoredUser(_ user: StoredUser) throws {
-        try restoreSavedSession(for: user)
+        guard currentSession?.user != user else { return }
+        try restoreSavedSession(for: user, clearingCurrentAccount: true)
+    }
+
+    func clearHandedOffSession(serverID: String, userID: String) {
+        guard let user = users.first(where: { $0.id == userID && $0.serverID == serverID }) else {
+            let credential = SessionCredential(serverID: serverID, userID: userID)
+            tokenStore.deleteToken(for: credential)
+            tokenStore.deleteToken(account: credential.legacyAccount)
+            return
+        }
+
+        let credential = SessionCredential(user: user)
+        tokenStore.deleteToken(for: credential)
+        tokenStore.deleteToken(account: credential.legacyAccount)
+        users.removeAll { $0.id == userID && $0.serverID == serverID }
+        serverStore.saveUsers(users)
+
+        guard currentSession?.user == user else {
+            if lastSessionAccount == credential.account {
+                lastSessionAccount = nil
+            }
+            return
+        }
+
+        lastSessionAccount = nil
+        currentSession = nil
     }
 
     func hasStoredToken(for user: StoredUser) -> Bool {
@@ -327,14 +395,11 @@ final class AppModel {
         let credential = SessionCredential(user: session.user)
         let client = session.client
         Task { try? await client.signOut() } // best-effort server-side revoke
+        clearAccountData(server: session.server, user: session.user)
         tokenStore.deleteToken(for: credential)
         tokenStore.deleteToken(account: credential.legacyAccount)
         users.removeAll { $0.id == session.user.id && $0.serverID == session.user.serverID }
         serverStore.saveUsers(users)
-        SpotlightIndexer.deleteIndex(serverID: session.server.id, userID: session.user.id)
-        #if os(tvOS)
-            TopShelfSnapshot.clear()
-        #endif
         lastSessionAccount = nil
         currentSession = nil
     }
@@ -367,6 +432,21 @@ final class AppModel {
         serverStore.saveUsers(users)
     }
 
+    private func clearCurrentAccountDataIfNeeded(replacingWith user: StoredUser, on server: ServerConnection) {
+        guard let session = currentSession else { return }
+        guard session.user != user || session.server.id != server.id else { return }
+        clearAccountData(server: session.server, user: session.user)
+    }
+
+    private func clearAccountData(server: ServerConnection, user: StoredUser) {
+        let scope = AccountScope(serverID: server.id, userID: user.id)
+        accountCleanup.clearSearchIndex(server.id, user.id)
+        accountCleanup.clearTopShelf()
+        accountCleanup.clearBookState(scope)
+        accountCleanup.clearDownloads(scope)
+        accountCleanup.clearWatchCredential(server, user)
+    }
+
     private func completeSignIn(
         to server: ServerConnection,
         client: JellyfinClient,
@@ -391,9 +471,10 @@ final class AppModel {
         lastSessionAccount = SessionCredential(user: user).account
 
         // SDK sign-in methods already set the access token on this client's configuration.
+        clearCurrentAccountDataIfNeeded(replacingWith: user, on: server)
         currentSession = SessionStore(client: client, user: user, server: server)
         publishSessionToWatch(server: server, user: user, token: token)
-        logger.info("Signed in user \(user.name, privacy: .public)")
+        logger.info("Signed in user \(user.name, privacy: .private)")
     }
 
     private func tokenMigratingLegacyAccountIfNeeded(for user: StoredUser) -> String? {

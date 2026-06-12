@@ -314,6 +314,17 @@ struct OfflineDownloadFileStore {
         saveRecords(records)
     }
 
+    func deleteRecords(serverID: String, userID: String) throws {
+        var records = loadRecords()
+        records.removeAll { $0.serverID == serverID && $0.userID == userID }
+        saveRecords(records)
+
+        let accountDirectory = accountDirectory(serverID: serverID, userID: userID)
+        if FileManager.default.fileExists(atPath: accountDirectory.path) {
+            try FileManager.default.removeItem(at: accountDirectory)
+        }
+    }
+
     static func recordID(itemID: String, serverID: String, userID: String) -> String {
         "\(serverID):\(userID):\(itemID)"
     }
@@ -330,14 +341,18 @@ struct OfflineDownloadFileStore {
     }
 
     private func destinationURL(itemID: String, serverID: String, userID: String, fileExtension: String) throws -> URL {
-        let destinationDirectory = directory
-            .appendingPathComponent(safePathComponent(serverID), isDirectory: true)
-            .appendingPathComponent(safePathComponent(userID), isDirectory: true)
+        let destinationDirectory = accountDirectory(serverID: serverID, userID: userID)
         try FileManager.default.createDirectory(at: destinationDirectory, withIntermediateDirectories: true)
 
         return destinationDirectory
             .appendingPathComponent(safePathComponent(itemID))
             .appendingPathExtension(fileExtension)
+    }
+
+    private func accountDirectory(serverID: String, userID: String) -> URL {
+        directory
+            .appendingPathComponent(safePathComponent(serverID), isDirectory: true)
+            .appendingPathComponent(safePathComponent(userID), isDirectory: true)
     }
 
     private func loadRecords() -> [OfflineDownloadRecord] {
@@ -390,6 +405,8 @@ final class OfflineDownloadStore: DownloadSessionCoordinatorEventHandler {
     private let fileStore: OfflineDownloadFileStore
     private let coordinator: DownloadSessionCoordinating
     private let logger = Logger(category: .downloads)
+    private var loadedServerID: String?
+    private var loadedUserID: String?
 
     init(fileStore: OfflineDownloadFileStore = .shared, coordinator: DownloadSessionCoordinating = DownloadSessionCoordinator.shared) {
         self.fileStore = fileStore
@@ -398,6 +415,8 @@ final class OfflineDownloadStore: DownloadSessionCoordinatorEventHandler {
     }
 
     func load(serverID: String, userID: String) {
+        loadedServerID = serverID
+        loadedUserID = userID
         reloadRecords(serverID: serverID, userID: userID)
         coordinator.reconnectActiveTasks()
     }
@@ -517,6 +536,23 @@ final class OfflineDownloadStore: DownloadSessionCoordinatorEventHandler {
                 activeItemIDs.remove(itemID)
             }
             reloadRecords(serverID: serverID, userID: userID)
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    func deleteAll(serverID: String, userID: String) {
+        do {
+            let scopedRecords = fileStore.records(serverID: serverID, userID: userID)
+            for record in scopedRecords {
+                coordinator.cancel(recordID: record.id)
+            }
+            try fileStore.deleteRecords(serverID: serverID, userID: userID)
+
+            if loadedServerID == serverID, loadedUserID == userID {
+                records = []
+                activeItemIDs = []
+            }
         } catch {
             errorMessage = error.localizedDescription
         }

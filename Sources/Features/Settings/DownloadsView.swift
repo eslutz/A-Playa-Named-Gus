@@ -141,6 +141,7 @@ private struct DownloadProgressRow: View {
 
             ProgressView(value: record.progress)
                 .accessibilityLabel("Download progress for \(record.item.displayTitle)")
+                .accessibilityValue(statusText)
         }
     }
 

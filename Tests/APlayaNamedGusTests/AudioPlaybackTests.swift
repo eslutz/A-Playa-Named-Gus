@@ -1,6 +1,7 @@
 import Foundation
 @testable import Gus
 import JellyfinAPI
+import MediaPlayer
 import Testing
 
 @Suite("Audio playback")
@@ -112,6 +113,29 @@ struct AudioPlaybackTests {
         #expect(mappedSong.artists == ["HoliznaCC0", "Guest"])
         #expect(mappedSong.isAudioPlayable)
         #expect(!JellyfinMediaItemMapper.mediaItem(from: book).isAudioPlayable)
+    }
+
+    @MainActor
+    @Test("Now Playing treats audiobooks as audio media")
+    func nowPlayingTreatsAudiobooksAsAudio() {
+        let audiobook = MediaItem(id: "ab-1", name: "Dracula", type: .audioBook)
+        let movie = MediaItem(id: "movie-1", name: "Psych: The Movie", type: .movie)
+
+        #expect(NowPlayingController.mediaType(for: audiobook) == .audio)
+        #expect(NowPlayingController.mediaType(for: movie) == .video)
+    }
+
+    @Test("audio playback start reporting uses resumed position")
+    func audioStartReportingUsesResumedPosition() {
+        let audiobook = MediaItem(
+            id: "ab-1",
+            name: "Dracula",
+            type: .audioBook,
+            userData: MediaUserData(playbackPositionTicks: 123 * PlaybackTime.ticksPerSecond)
+        )
+
+        #expect(AudioPlayerStore.initialReportSeconds(for: audiobook, resume: true) == 123)
+        #expect(AudioPlayerStore.initialReportSeconds(for: audiobook, resume: false) == 0)
     }
 
     @Test("audio-only originals with playable containers qualify for original download")

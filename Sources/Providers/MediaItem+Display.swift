@@ -24,10 +24,14 @@ extension MediaItem {
     var runtimeText: String? {
         guard let ticks = runTimeTicks, ticks > 0 else { return nil }
         let totalSeconds = Int(ticks / 10_000_000)
-        let hours = totalSeconds / 3600
-        let minutes = (totalSeconds % 3600) / 60
-        if hours > 0 { return "\(hours)h \(minutes)m" }
-        return "\(minutes)m"
+        let visibleSeconds = max(60, totalSeconds - (totalSeconds % 60))
+
+        let formatter = DateComponentsFormatter()
+        formatter.allowedUnits = [.hour, .minute]
+        formatter.unitsStyle = .abbreviated
+        formatter.maximumUnitCount = 2
+        formatter.zeroFormattingBehavior = .dropAll
+        return formatter.string(from: TimeInterval(visibleSeconds))
     }
 
     var communityRatingText: String? {

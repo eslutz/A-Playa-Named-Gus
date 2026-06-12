@@ -132,6 +132,11 @@ final class AudioPlayerStore {
         queue = AudioQueue(tracks: tracks, startIndex: startIndex)
     }
 
+    nonisolated static func initialReportSeconds(for item: MediaItem, resume: Bool) -> Double {
+        guard resume, let resumeTicks = PlaybackTime.resumePositionTicks(for: item) else { return 0 }
+        return PlaybackTime.seconds(fromTicks: resumeTicks)
+    }
+
     var currentTrack: MediaItem? {
         queue.currentTrack
     }
@@ -266,19 +271,32 @@ final class AudioPlayerStore {
             )
             reportContext = context
 
-            if resume, let resumeTicks = PlaybackTime.resumePositionTicks(for: track) {
+            let initialSeconds = Self.initialReportSeconds(for: track, resume: resume)
+            if initialSeconds > 0 {
                 await player.seek(
-                    to: CMTime(seconds: PlaybackTime.seconds(fromTicks: resumeTicks), preferredTimescale: 600),
+                    to: CMTime(seconds: initialSeconds, preferredTimescale: 600),
                     toleranceBefore: .zero,
                     toleranceAfter: .zero
                 )
             }
+            currentTime = initialSeconds
+            lastProgressReportTime = initialSeconds
 
             duration = track.runTimeTicks.map(PlaybackTime.seconds(fromTicks:)) ?? 0
             nowPlaying.start(
                 player: player,
                 item: track,
-                artworkURL: session.mediaProvider.primaryImageURL(for: track, context: .nowPlayingArtwork)
+                artworkURL: session.mediaProvider.primaryImageURL(for: track, context: .nowPlayingArtwork),
+                onNextTrack: { [weak self] in
+                    Task { @MainActor in
+                        await self?.next()
+                    }
+                },
+                onPreviousTrack: { [weak self] in
+                    Task { @MainActor in
+                        await self?.previous()
+                    }
+                }
             )
             addObservers(player: player)
             state = .loaded

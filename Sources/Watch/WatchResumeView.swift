@@ -30,6 +30,8 @@ struct WatchResumeView: View {
                                 .lineLimit(2)
                             if let progress = item.playbackProgress {
                                 ProgressView(value: progress)
+                                    .accessibilityLabel("Playback progress for \(item.displayTitle)")
+                                    .accessibilityValue(progress.formatted(.percent.precision(.fractionLength(0))))
                             }
                         }
                     }

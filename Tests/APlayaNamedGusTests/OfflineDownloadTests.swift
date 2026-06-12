@@ -165,6 +165,41 @@ struct OfflineDownloadTests {
         #expect(store.totalByteCount(serverID: "server-1", userID: "user-1") == 0)
     }
 
+    @Test("file store deletes downloaded media for only the requested account")
+    func fileStoreDeletesRecordsForOnlyRequestedAccount() throws {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+        let store = OfflineDownloadFileStore(directory: directory)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+
+        let accountSource = directory.appendingPathComponent("account-source.mp4")
+        let otherSource = directory.appendingPathComponent("other-source.mp4")
+        try Data("video-a".utf8).write(to: accountSource)
+        try Data("video-b".utf8).write(to: otherSource)
+
+        let accountRecord = try store.persistDownloadedFile(
+            accountSource,
+            item: MediaItem(id: "item-1", name: "Office Space"),
+            serverID: "server-1",
+            userID: "user-1",
+            downloadedAt: Date(timeIntervalSince1970: 100)
+        )
+        let otherRecord = try store.persistDownloadedFile(
+            otherSource,
+            item: MediaItem(id: "item-1", name: "Office Space"),
+            serverID: "server-2",
+            userID: "user-2",
+            downloadedAt: Date(timeIntervalSince1970: 200)
+        )
+
+        try store.deleteRecords(serverID: "server-1", userID: "user-1")
+
+        #expect(store.records(serverID: "server-1", userID: "user-1").isEmpty)
+        #expect(store.localFileURL(for: accountRecord) == nil)
+        #expect(store.record(forItemID: "item-1", serverID: "server-2", userID: "user-2") == otherRecord)
+        #expect(store.localFileURL(for: otherRecord) != nil)
+    }
+
     @Test("default application support location migrates legacy download records")
     func defaultLocationMigratesLegacyDownloadRecords() throws {
         let baseDirectory = FileManager.default.temporaryDirectory
@@ -249,6 +284,50 @@ struct OfflineDownloadTests {
 
         #expect(coordinator.cancelledRecordIDs == [record.id])
         #expect(fileStore.record(forItemID: "item-1", serverID: "server-1", userID: "user-1") == nil)
+    }
+
+    @MainActor
+    @Test("delete all cancels and clears only the loaded account")
+    func storeDeleteAllCancelsAndRemovesOnlyLoadedAccount() {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+        let fileStore = OfflineDownloadFileStore(directory: directory)
+        let coordinator = FakeDownloadSessionCoordinator()
+        let store = OfflineDownloadStore(fileStore: fileStore, coordinator: coordinator)
+        let activeRecord = fileStore.prepareDownloadRecord(
+            item: MediaItem(id: "item-1", name: "Office Space"),
+            serverID: "server-1",
+            userID: "user-1",
+            fileExtension: "mp4",
+            status: .downloading(0.5),
+            progress: 0.5
+        )
+        let pausedRecord = fileStore.prepareDownloadRecord(
+            item: MediaItem(id: "item-2", name: "The Big Lebowski"),
+            serverID: "server-1",
+            userID: "user-1",
+            fileExtension: "mp4",
+            status: .paused,
+            progress: 0.5,
+            resumeData: Data("resume".utf8)
+        )
+        let otherRecord = fileStore.prepareDownloadRecord(
+            item: MediaItem(id: "item-1", name: "Office Space"),
+            serverID: "server-2",
+            userID: "user-2",
+            fileExtension: "mp4",
+            status: .queued,
+            progress: 0
+        )
+        store.load(serverID: "server-1", userID: "user-1")
+
+        store.deleteAll(serverID: "server-1", userID: "user-1")
+
+        #expect(Set(coordinator.cancelledRecordIDs) == [activeRecord.id, pausedRecord.id])
+        #expect(store.records.isEmpty)
+        #expect(store.activeItemIDs.isEmpty)
+        #expect(fileStore.records(serverID: "server-1", userID: "user-1").isEmpty)
+        #expect(fileStore.record(forItemID: "item-1", serverID: "server-2", userID: "user-2") == otherRecord)
     }
 
     @MainActor

@@ -81,6 +81,13 @@ struct WatchRemoteDetailView: View {
                             .multilineTextAlignment(.center)
                         if let ticks = remote.positionTicks, let runtime = remote.nowPlaying?.runTimeTicks, runtime > 0 {
                             ProgressView(value: Double(ticks), total: Double(runtime))
+                                .accessibilityLabel("Playback position")
+                                .accessibilityValue(
+                                    PlaybackTime.accessibilityProgressValue(
+                                        currentSeconds: PlaybackTime.seconds(fromTicks: ticks),
+                                        durationSeconds: PlaybackTime.seconds(fromTicks: runtime)
+                                    )
+                                )
                         }
                     }
 

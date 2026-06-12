@@ -21,6 +21,13 @@ struct WatchAudioPlayerView: View {
 
                 if store.duration > 0 {
                     ProgressView(value: min(store.currentTime, store.duration), total: store.duration)
+                        .accessibilityLabel("Playback position")
+                        .accessibilityValue(
+                            PlaybackTime.accessibilityProgressValue(
+                                currentSeconds: min(store.currentTime, store.duration),
+                                durationSeconds: store.duration
+                            )
+                        )
                 }
 
                 HStack(spacing: 14) {

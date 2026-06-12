@@ -29,6 +29,17 @@
         }
 
         private func adopt(_ context: [String: Any]) {
+            if let shouldClear = context["clearCredential"] as? Bool,
+               shouldClear,
+               let serverID = context["serverID"] as? String,
+               let userID = context["userID"] as? String
+            {
+                Task { @MainActor in
+                    AppModel.shared.clearHandedOffSession(serverID: serverID, userID: userID)
+                }
+                return
+            }
+
             guard let serverData = context["server"] as? Data,
                   let userData = context["user"] as? Data,
                   let token = context["token"] as? String,

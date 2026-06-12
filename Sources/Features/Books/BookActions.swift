@@ -132,7 +132,12 @@ struct BookActionButtons: View {
 
         var body: some View {
             if let fileURL {
-                BookReaderScreen(item: item, fileURL: fileURL, provider: session.mediaProvider)
+                BookReaderScreen(
+                    item: item,
+                    fileURL: fileURL,
+                    provider: session.mediaProvider,
+                    accountScope: AccountScope(serverID: session.server.id, userID: session.user.id)
+                )
             } else if let errorMessage {
                 NavigationStack {
                     ContentUnavailableView {

@@ -42,6 +42,23 @@
             send(payload)
         }
 
+        func clear(server: ServerConnection, user: StoredUser) {
+            guard WCSession.isSupported() else { return }
+
+            let payload: [String: Any] = [
+                "clearCredential": true,
+                "serverID": server.id,
+                "userID": user.id,
+            ]
+
+            guard WCSession.default.activationState == .activated else {
+                pendingPayload = payload
+                activate()
+                return
+            }
+            send(payload)
+        }
+
         private func send(_ payload: [String: Any]) {
             do {
                 try WCSession.default.updateApplicationContext(payload)

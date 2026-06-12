@@ -46,17 +46,15 @@ destinations build; iOS launches and renders the Connect screen.
 **Goal:** A Playa Named Gus looks like a finished product at first glance — real icon,
 considered launch and accent, consistent semantic theming.
 
-- [x] **App icon (all platforms).** Official Winter Chill palette: deep teal background
-  `#0B2E33`, icy pineapple body using `#B8E3E9` highlights into `#4F7C82` depth, and
-  `#93B1B5` for the diamond crosshatch lattice and muted crown detail. Produce
+- [x] **App icon (all platforms).** Use the official Gus brand mark from
+  `Gus.website/assets/gus-mark.svg` as the source of truth. Produce
   `AppIcon.appiconset` (iOS + macOS idioms), `AppIcon.brandassets` (tvOS App Icon + Top
   Shelf), and `AppIcon.solidimagestack` (visionOS layered), all named `AppIcon`; remove the
   `ASSETCATALOG_COMPILER_APPICON_NAME: ""` override in `project.yml`.
   *Acceptance:* actool produces no missing-icon errors on any SDK; icon renders on each
-  Home screen / launcher. *(Done: `Scripts/generate-app-icon.swift` renders the Winter
-  Chill pineapple across every idiom — iOS universal with default/dark/tinted
-  appearances, macOS sizes, tvOS brand assets + Top Shelf, the visionOS layered stack,
-  and the watchOS icon in `Resources/Watch/Assets.xcassets`.)*
+  Home screen / launcher. *(Done: current source-controlled assets use the Gus brand mark;
+  the older `Scripts/generate-app-icon.swift` pineapple generator is retired and must not be
+  used for regeneration.)*
 - [x] **Launch experience.** Confirm `UILaunchScreen` presents cleanly; consider a minimal
   branded launch on platforms that support it. *Acceptance:* no flash of unstyled content;
   consistent first frame. *(Done: iOS/iPadOS use a color-only `UILaunchScreen` backed by
@@ -76,7 +74,7 @@ considered launch and accent, consistent semantic theming.
   on Apple semantic colors unless a future brand brief adds dedicated accessible status
   colors; do not use palette colors as body text on low-contrast pairings. *Acceptance:*
   light/dark both legible; no raw `Color(red:…)` in feature views; asset catalog colors,
-  generated app icon art, launch background, and cinema lighting all use Winter Chill.
+  current app icon art, launch background, and cinema lighting all use Winter Chill.
   *(Done: `AccentColor` and `LaunchBackground` carry the Winter Chill light/dark role
   values, the `Cinema*` colorsets use the always-dark immersive variants, and
   `GusCinemaPalette` fallbacks match; no raw brand literals remain outside the asset
@@ -104,17 +102,17 @@ theme.
 
 - [x] **Palette asset refresh.** Update every brand color asset and generated-color input
   to the M1 Winter Chill role table: `AccentColor`, launch background, cinema key/fill/
-  backdrop colors, app icon generator constants, and any other non-system brand tokens.
+  backdrop colors, current app icon assets, and any other non-system brand tokens.
   *Acceptance:* asset catalog values match the roadmap roles in light and dark mode; old
   brand hex values are gone from source-controlled assets/scripts/docs except historical
   ADR context; `xcodegen generate` and the platform builds still pass. *(Done — verified
   by grep across Sources/Scripts/docs.)*
 - [x] **Winter Chill app icon regeneration.** Regenerate the iOS/macOS app icon, tvOS
-  brand assets, Top Shelf images, and visionOS layered icon using the Winter Chill
-  pineapple treatment. *Acceptance:* actool produces no icon warnings on any destination,
-  the icon reads clearly in light/dark launchers, and the generated images no longer use
-  the old purple/blue palette. *(Done; iOS additionally ships dark and tinted appearance
-  variants.)*
+  brand assets, Top Shelf images, and visionOS layered icon from the Gus brand mark SVG.
+  *Acceptance:* actool produces no icon warnings on any destination, the icon reads clearly
+  in light/dark launchers, and generated images no longer use the old purple/blue palette.
+  *(Done; iOS additionally ships dark and tinted appearance variants. The legacy pineapple
+  generator is retired.)*
 - [~] **Theme consistency audit.** Sweep signed-out, signed-in, playback, downloads,
   settings, search, music, photos, books, Live TV, CarPlay, Top Shelf, and visionOS Cinema
   surfaces for stale brand colors or one-off styling. Preserve Apple semantic colors,

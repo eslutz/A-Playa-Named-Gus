@@ -3,7 +3,7 @@ import Foundation
 import JellyfinAPI
 import Testing
 
-@Suite("Library store helpers")
+@Suite("Library store helpers", .serialized)
 struct LibraryStoreTests {
     @Test("builds paged provider library queries")
     func buildsPagedLibraryQuery() {

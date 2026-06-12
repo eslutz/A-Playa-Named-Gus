@@ -18,7 +18,18 @@ final class NowPlayingController {
     private var timeObserver: Any?
     private var artworkTask: Task<Void, Never>?
 
-    func start(player: AVPlayer, item: MediaItem, artworkURL: URL?) {
+    nonisolated static func mediaType(for item: MediaItem) -> MPNowPlayingInfoMediaType {
+        item.isAudioPlayable ? .audio : .video
+    }
+
+    func start(
+        player: AVPlayer,
+        item: MediaItem,
+        artworkURL: URL?,
+        onNextTrack: (() -> Void)? = nil,
+        onPreviousTrack: (() -> Void)? = nil
+    ) {
+        removeTimeObserver()
         Self.activeController = self
         self.player = player
         artworkTask?.cancel()
@@ -36,19 +47,18 @@ final class NowPlayingController {
         if let ticks = item.runTimeTicks, ticks > 0 {
             info[MPMediaItemPropertyPlaybackDuration] = Double(ticks) / 10_000_000
         }
-        let isAudioItem = item.type == .audio
-        info[MPNowPlayingInfoPropertyMediaType] = (isAudioItem ? MPNowPlayingInfoMediaType.audio : .video).rawValue
+        info[MPNowPlayingInfoPropertyMediaType] = Self.mediaType(for: item).rawValue
         info[MPNowPlayingInfoPropertyElapsedPlaybackTime] = 0.0
         info[MPNowPlayingInfoPropertyPlaybackRate] = 1.0
         MPNowPlayingInfoCenter.default().nowPlayingInfo = info
         loadArtwork(from: artworkURL)
 
-        configureRemoteCommands(for: player)
+        configureRemoteCommands(for: player, onNextTrack: onNextTrack, onPreviousTrack: onPreviousTrack)
 
         let interval = CMTime(seconds: 1, preferredTimescale: 1)
-        timeObserver = player.addPeriodicTimeObserver(forInterval: interval, queue: .main) { [weak self] time in
+        timeObserver = player.addPeriodicTimeObserver(forInterval: interval, queue: .main) { [weak self, weak player] time in
             MainActor.assumeIsolated {
-                self?.updateElapsed(time.seconds, rate: Double(player.rate))
+                self?.updateElapsed(time.seconds, rate: Double(player?.rate ?? 0))
             }
         }
     }
@@ -56,10 +66,7 @@ final class NowPlayingController {
     func stop() {
         artworkTask?.cancel()
         artworkTask = nil
-        if let timeObserver {
-            player?.removeTimeObserver(timeObserver)
-        }
-        timeObserver = nil
+        removeTimeObserver()
         player = nil
 
         // Only the active owner may clear the global transport — another controller
@@ -75,6 +82,17 @@ final class NowPlayingController {
         center.skipForwardCommand.removeTarget(nil)
         center.skipBackwardCommand.removeTarget(nil)
         center.changePlaybackPositionCommand.removeTarget(nil)
+        center.nextTrackCommand.removeTarget(nil)
+        center.previousTrackCommand.removeTarget(nil)
+        center.nextTrackCommand.isEnabled = false
+        center.previousTrackCommand.isEnabled = false
+    }
+
+    private func removeTimeObserver() {
+        if let timeObserver {
+            player?.removeTimeObserver(timeObserver)
+        }
+        timeObserver = nil
     }
 
     private func updateElapsed(_ seconds: Double, rate: Double) {
@@ -105,7 +123,11 @@ final class NowPlayingController {
 
     /// Command targets capture the player weakly: the command center is process-global,
     /// so a strong capture would keep a torn-down player alive until the next start().
-    private func configureRemoteCommands(for player: AVPlayer) {
+    private func configureRemoteCommands(
+        for player: AVPlayer,
+        onNextTrack: (() -> Void)?,
+        onPreviousTrack: (() -> Void)?
+    ) {
         let center = MPRemoteCommandCenter.shared()
 
         center.playCommand.removeTarget(nil)
@@ -157,6 +179,24 @@ final class NowPlayingController {
                 toleranceAfter: .zero
             )
             return .success
+        }
+
+        center.nextTrackCommand.removeTarget(nil)
+        center.nextTrackCommand.isEnabled = onNextTrack != nil
+        if let onNextTrack {
+            center.nextTrackCommand.addTarget { _ in
+                Task { @MainActor in onNextTrack() }
+                return .success
+            }
+        }
+
+        center.previousTrackCommand.removeTarget(nil)
+        center.previousTrackCommand.isEnabled = onPreviousTrack != nil
+        if let onPreviousTrack {
+            center.previousTrackCommand.addTarget { _ in
+                Task { @MainActor in onPreviousTrack() }
+                return .success
+            }
         }
     }
 }

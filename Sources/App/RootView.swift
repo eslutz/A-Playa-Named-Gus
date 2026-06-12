@@ -10,6 +10,7 @@ struct RootView: View {
     var body: some View {
         if let session = appModel.currentSession {
             RootContainer()
+                .id(SessionCredential(user: session.user).account)
                 .environment(session)
         } else {
             ConnectFlowView()

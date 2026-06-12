@@ -6,7 +6,14 @@ Simulator and local macOS builds use ad-hoc signing (`CODE_SIGN_IDENTITY = -`,
 `CODE_SIGNING_REQUIRED = NO`) so GitHub PR builds work without provisioning profiles.
 The bundle ID `dev.ericslutz.gus` and paid Apple Developer Program Team ID
 `QS3GC3CT43` are set in `Config/Shared.xcconfig`. Entitlements and capability
-declarations are complete.
+declarations cover the currently wired release surface; CarPlay audio and Declared Age
+Range remain pending manual entitlement/provisioning gates and are intentionally not
+advertised in App Store metadata until they are granted and wired.
+
+Gus is built and validated with Xcode 26.5 while retaining older deployment targets
+(`iOS 18`, `tvOS 18`, `visionOS 2`, `macOS 15`, and `watchOS 11`). OS 26-specific
+features are guarded with availability checks or fail closed when the required framework
+or entitlement is absent.
 
 Local device builds use the git-ignored `Config/Local.xcconfig` override to switch to
 automatic signing. Distributable build signing, provisioning, TestFlight upload, and
@@ -26,6 +33,10 @@ App Store archives belong in Xcode Cloud, not GitHub Actions.
 | Offline downloads | iOS / iPadOS / macOS / visionOS / watchOS (audio) | Application Support storage — no extra capability required | ✓ |
 | Watch companion | watchOS | `GusWatch` target embedded in the iOS archive — no extra capability required | ✓ |
 | App Group (Top Shelf snapshot) | tvOS app + GusTopShelf extension | `com.apple.security.application-groups` = `group.dev.ericslutz.gus` in `Config/Gus-tvOS.entitlements` and `Config/GusTopShelf.entitlements` | ✓ code-side; **register the group with the App ID** before tvOS device/archive signing (simulators don't enforce it). The shared container carries only the Continue Watching snapshot (`TopShelfSnapshot.swift`) — no credentials. |
+
+Do not move CarPlay or Declared Age Range into the "Confirmed Ready" table, release
+metadata, or wired entitlements until the Apple Developer portal/App ID state has been
+updated and an archive has been validated with the granted capability.
 
 **Removed:** `NSFaceIDUsageDescription` was present but `LocalAuthentication` is never
 called in A Playa Named Gus source code. A false usage description is an App Review red

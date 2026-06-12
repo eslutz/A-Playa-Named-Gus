@@ -58,10 +58,23 @@ jobs:
         run: |
           plutil -lint \
             Resources/Info.plist \
+            Resources/Watch/Info.plist \
             Resources/PrivacyInfo.xcprivacy \
             Sources/TopShelf/Info.plist \
             Config/Gus.entitlements \
-            Config/Gus-tvOS.entitlements
+            Config/Gus-tvOS.entitlements \
+            Config/GusTopShelf.entitlements \
+            Config/Gus-CarPlay.entitlements
+
+      - name: Validate pending entitlement policy
+        run: |
+          ruby <<'RUBY'
+          config = File.read("Config/Shared.xcconfig")
+          project = File.read("project.yml")
+          if config.include?("Gus-CarPlay.entitlements") || project.include?("Gus-CarPlay.entitlements")
+            abort("CarPlay entitlements are pending Apple's grant and must stay unwired")
+          end
+          RUBY
 
       - name: Validate workflow YAML
         run: |

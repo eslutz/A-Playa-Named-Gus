@@ -1,18 +1,25 @@
 #!/usr/bin/env swift
 
-// Generates the A Playa Named Gus app icon set in the official Winter Chill palette:
-// a deep teal field, an icy pineapple body shading into teal depth, and a mist-toned
-// diamond lattice + crown. Outputs cover every platform idiom the app ships:
-//   - AppIcon.appiconset      iOS universal (default + dark + tinted appearances) + macOS sizes
-//   - AppIcon.brandassets     tvOS layered App Icon + Top Shelf images
-//   - AppIcon.solidimagestack visionOS layered icon
-//   - Watch asset catalog     watchOS universal 1024
-// Core Graphics only (Apple-first; no third-party image tooling). Run from the repo root:
-//   swift Scripts/generate-app-icon.swift
+// Retired legacy icon generator.
+//
+// The current app icon source of truth is the Gus brand mark SVG at:
+//   ../Gus.website/assets/gus-mark.svg
+//
+// Do not regenerate icons from the legacy pineapple drawing below. It is kept only as
+// historical source context until the current SVG rasterization workflow is automated.
 
 import AppKit
 import CoreGraphics
+import Darwin
 import Foundation
+
+let retirementMessage = """
+Scripts/generate-app-icon.swift is retired and intentionally does not generate assets.
+Use ../Gus.website/assets/gus-mark.svg as the app-icon source of truth, then rasterize it into Resources/Assets.xcassets and Resources/Watch/Assets.xcassets.
+"""
+
+FileHandle.standardError.write(Data(retirementMessage.utf8))
+exit(EXIT_FAILURE)
 
 private let root = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
 private let assets = root.appending(path: "Resources/Assets.xcassets")

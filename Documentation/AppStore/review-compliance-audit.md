@@ -80,7 +80,7 @@ backend, hosts no content, and collects no data.*
 
 ## 4. Design
 
-- **4.1 Copycats** — Original name, original icon (Winter Chill pineapple), original
+- **4.1 Copycats** — Original name, original Gus brand mark icon, original
   code. The mature Swiftfin client is a *pattern* reference only (documented policy in
   `AGENTS.md`); no code is copied, and the stacks differ fundamentally (pure
   AVKit/SwiftUI vs VLCKit/UIKit).
