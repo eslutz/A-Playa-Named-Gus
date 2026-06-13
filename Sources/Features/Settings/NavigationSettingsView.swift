@@ -37,7 +37,7 @@ struct NavigationSettingsView: View {
             } header: {
                 Text("Sections")
             } footer: {
-                Text("Hidden sections stay available from the Libraries grid. New libraries on the server appear here automatically.")
+                Text("Hidden categories stay available from search and the Libraries grid. New categories appear here automatically when matching libraries exist.")
             }
 
             Section {

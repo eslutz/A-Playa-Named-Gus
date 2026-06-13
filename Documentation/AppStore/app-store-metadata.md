@@ -22,8 +22,8 @@ video.
 Beyond video, Gus plays your music and audiobooks with a full queue, shuffle/repeat, and
 playback speed; reads EPUB books in an in-app reader on iPhone and iPad (or hands off to
 Apple Books elsewhere); browses photo libraries with slideshows; and surfaces Live TV
-channels, recordings, and scheduled recordings when your server has a tuner. SyncPlay
-keeps a watch party in sync across clients.
+channels, recordings, and scheduled recordings when your server has a tuner. SharePlay
+uses Apple's native Group Activities stack for watch parties on Apple devices.
 
 On iPhone, iPad, Mac, and Apple Vision Pro, Gus saves content from your own Jellyfin
 server for offline playback — AVPlayer-native originals directly, and other formats

@@ -130,10 +130,10 @@ App/        @main entry + RootView (signed-out vs signed-in switch) + GusAppInte
 Models/     Codable value types (ServerConnection, StoredUser, SessionCredential, ContentLink)
 Services/   Stateless helpers: client factory, device identity, Keychain, persistence,
             image/stream URL builders, diagnostics (DiagnosticsHub/MetricKitCollector),
-            content rating gate, SyncPlay + Sessions sockets, WatchConnectivity relay,
+            content rating gate, Sessions socket, WatchConnectivity relay,
             SpotlightIndexer
 Stores/     @Observable state objects — AudioPlayerStore (song/audiobook queue),
-            SyncPlayStore + RemoteSessionsStore (Jellyfin-gated),
+            SharePlayCoordinator + RemoteSessionsStore (Jellyfin-gated),
             NavigationPreferencesStore (customizable nav)
 Features/   One folder per screen area (Connect, Home, Item, Player, Settings, Music,
             Photos, LiveTV, Books)
@@ -228,7 +228,7 @@ Platform availability routed through `Platform/DownloadsAvailability.swift`. tvO
 
 `GusWatch` is a second application target (`WKRunsIndependentlyOfCompanionApp`), embedded
 in `Watch/`. Compiles the shared subset — `Models/`, `Providers/`, `Services/`, and
-non-video `Stores/` (no `PlaybackStore`/`SyncPlayStore`) — plus `Sources/Watch`. Remote
+non-video `Stores` (no `PlaybackStore`) — plus `Sources/Watch`. Remote
 control rides `RemoteSessionsStore` + `SessionsSocket`; credentials hand off from iPhone
 via `WatchSessionRelay` / `WatchCredentialReceiver`.
 

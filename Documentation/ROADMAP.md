@@ -217,12 +217,14 @@ automated build verification. (Covers priority: *polish & testing*.)
 
 **Goal:** playback is competitive and system-integrated.
 
-- [x] **Audio & subtitle track selection.** Expose `MediaStream`s; let the user switch
+- [~] **Audio & subtitle track selection.** Expose `MediaStream`s; let the user switch
   audio/subtitle tracks (request appropriate stream indices / transcode). *Acceptance:*
-  track changes apply; selection persists within a session. *(Done: playback exposes
-  audio/subtitle menus; direct-played files switch in place via `AVMediaSelection`
-  (ordinal+language matching with a conservative refusal path), and transcoded streams
-  rebuild the player item server-side, preserving position either way.)*
+  track changes apply; selection persists within a session. *(Implementation note:
+  playback plumbing still supports `AVMediaSelection` in-place switches and Jellyfin
+  stream-index rebuilds for transcoded streams. tvOS can still expose these through
+  Apple's native `transportBarCustomMenuItems`, but the custom non-tvOS video options
+  overlay was removed. Restoring iOS/iPadOS/macOS/visionOS in-player selection is tracked
+  as a native-player API gap in ADR 0011.)*
 - [x] **Native player pipeline & chrome overhaul.** Make the AVKit player behave and
   look first-party: an honest, hardware-gated device profile and pure system chrome.
   *Acceptance:* compatible files direct-play untouched; transcodes preserve surround,
@@ -234,12 +236,13 @@ automated build verification. (Covers priority: *polish & testing*.)
   subs ride the manifest, only bitmap subs burn in); `AVPlayerItem.externalMetadata`
   feeds the system title/info chrome (sans macOS, which lacks the API);
   `updatesNowPlayingInfoCenter = false` on iOS so `NowPlayingController` is the single
-  Now Playing writer; the iOS overlay drops the duplicate AirPlay picker (system bar has
-  one — macOS keeps it); macOS video opens in a dedicated cinematic `WindowGroup`
-  (QuickTime-style, green-button fullscreen) instead of a sheet; natural end auto-plays
-  the next episode (Settings toggle, default on) or dismisses the player; pause/resume
-  report immediately instead of on the 10 s tick; and Settings gains a Streaming Quality
-  picker (Maximum/High/Medium/Low) replacing the hardcoded 120 Mbps.)*
+  Now Playing writer; custom non-tvOS player option overlays were removed so video stays
+  on system chrome (see ADR 0011 for the native API gaps this exposes); macOS video opens
+  in a dedicated cinematic `WindowGroup` (QuickTime-style, green-button fullscreen)
+  instead of a sheet; natural end auto-plays the next episode (Settings toggle, default on)
+  or dismisses the player; pause/resume report immediately instead of on the 10 s tick;
+  and Settings gains a Streaming Quality picker (Maximum/High/Medium/Low) replacing the
+  hardcoded 120 Mbps.)*
 - [~] **Picture in Picture.** Enable PiP where supported (iOS/iPadOS/macOS) and verify the
   background-audio + `UIBackgroundModes` path. *Acceptance:* PiP starts on backgrounding;
   audio continues. *(Implementation note: the iOS/iPadOS surface is now
@@ -248,9 +251,10 @@ automated build verification. (Covers priority: *polish & testing*.)
   exposed no PiP, which this replaces; device PiP/background verification is still
   pending in the manual verification.)*
 - [~] **AirPlay & external displays.** Verify AVKit AirPlay routing. *Acceptance:* route
-  picker works; playback hands off cleanly. *(Implementation note: system
-  `AVRoutePickerView` is wired for supported platforms and external playback is enabled
-  where available; route handoff verification is pending manual verification.)*
+  picker works; playback hands off cleanly. *(Implementation note: external playback is
+  enabled where available, iOS/iPadOS use AVKit's system player route affordance, macOS
+  relies on native AVKit/system behavior for video, and audio playback still exposes
+  `AVRoutePickerView`. The removed custom video route picker is not planned to return.)*
 - [~] **Now Playing artwork & metadata polish.** Load poster into `MPMediaItemArtwork`
   (platform image), accurate duration/elapsed/rate. *Acceptance:* lock screen / Control
   Center / Apple TV Remote show artwork + correct scrubbing. *(Implementation note:
@@ -271,10 +275,11 @@ automated build verification. (Covers priority: *polish & testing*.)
   where Jellyfin metadata or user override can identify a 3D source. *Acceptance:*
   supported 3D formats are documented, playback chooses the correct AVKit/visionOS
   presentation path, and unsupported formats fall back gracefully. *(Done: MV-HEVC uses
-  AVKit direct play with a Spatial badge and manual override; SBS/TAB uses the Gus Cinema
-  RealityKit screen; MVC, missing direct play, and non-visionOS platforms fall back to 2D
-  with notices where visible. Device-only stereo separation remains a manual Vision Pro
-  verification item.)*
+  AVKit direct play with a Spatial badge; SBS/TAB uses the Gus Cinema RealityKit screen;
+  MVC, missing direct play, and non-visionOS platforms fall back to 2D with notices where
+  visible. The removed manual override is not planned to return without a native
+  system-presented viewing-mode surface. Device-only stereo separation remains a manual
+  Vision Pro verification item.)*
 
 ---
 
@@ -533,7 +538,7 @@ milestone once it becomes the active focus and is ready to carry a hard acceptan
 | Photos | `[~]` In app; favorites + casting remain |
 | Live TV & DVR | `[~]` In app; full EPG grid + tuner-equipped validation remain |
 | CarPlay audio companion | `[~]` In app; entitlement + Siri intents + vehicle test remain |
-| SyncPlay | `[~]` In app (Jellyfin-gated); multi-client drift validation remains |
+| SharePlay | `[x]` Native Group Activities integration with item-detail system launch |
 | Family safety controls & age assurance | `[~]` In app; Declared Age Range entitlement pending |
 | watchOS companion | `[~]` In app; on-device verification matrix remains |
 | Expanded immersive environments | `[ ]` Not started |
@@ -563,17 +568,19 @@ milestone once it becomes the active focus and is ready to carry a hard acceptan
  playback-focused. *Acceptance:* users can choose from multiple immersive environments,
  environment changes do not interrupt playback, and the default remains simple and stable.
 
-- [~] **SyncPlay.** Add Jellyfin SyncPlay support for shared playback sessions. Candidate
- scope includes creating/joining/leaving groups, selecting a host/client, synchronized
- play/pause/seek, participant visibility, and graceful handling of drift or unsupported
- clients. *Acceptance:* users can create or join a SyncPlay group and maintain synchronized
- playback across supported Jellyfin clients. *(Working: `SyncPlayStore` creates/joins/
- leaves groups from the player options menu (Jellyfin-gated); `SyncPlaySocket` listens on
- the server WebSocket, sends periodic KeepAlive, and applies inbound play/pause/seek to
- the live player (re-attached across Play Next); local pause/play and seeks observed from
- the transport forward to the group with a time-windowed echo guard. Precise
- When-scheduled application, ready/buffering reporting, and multi-client drift validation
- against real clients remain.)*
+- [~] **SharePlay.** Use Apple's native Group Activities stack for shared playback
+ sessions instead of Jellyfin SyncPlay. *Acceptance:* users can start SharePlay from
+ the item-detail native system surface, incoming SharePlay sessions route to the shared
+ item via the existing content-link player flow, and the active `AVPlayer` coordinates
+ through `AVPlaybackCoordinator` without sharing Jellyfin tokens or stream URLs.
+ *(Implementation note:
+ `SharePlayCoordinator` defines the `GusPlaybackActivity`, listens for incoming
+ `GroupActivity.sessions()`, opens the requested item through `AppNavigationModel`, and
+ calls `coordinateWithSession` on the live player. Eligible item detail screens present
+ Apple's native `GroupActivitySharingController` on iOS/iPadOS/visionOS/macOS; tvOS can
+ still join and coordinate incoming sessions but does not expose that sharing controller.
+ The old Jellyfin SyncPlay store/socket/menu/tests have been removed. Leaving/ending
+ SharePlay stays in Apple's system SharePlay controls, not custom player chrome.)*
 
 - [x] **Customizable main navigation.** Let users choose from Settings which sections are
  visible in the primary app menu/tab/sidebar and in what order, while keeping Home fixed at
@@ -582,10 +589,11 @@ milestone once it becomes the active focus and is ready to carry a hard acceptan
  user, unavailable provider sections are handled gracefully, and each platform still
  preserves its native tab, sidebar, or focus behavior. *(Done:
  `NavigationPreferencesStore` persists per-account order/visibility for the Libraries
- grid plus every server library; Settings → Navigation edits with toggles and move
- controls that work on every platform including tvOS focus; all three roots (tabs,
- visionOS sidebar, split view) render the customized sections dynamically; removed
- server libraries drop gracefully and new ones append visible; `gus://` routes map onto
+ grid plus consolidated categories (Movies, Shows, Music, Books, Photos, Live TV);
+ Settings → Navigation edits with toggles and move controls that work on every platform
+ including tvOS focus; all three roots (tabs, visionOS sidebar, split view) render the
+ customized sections dynamically; removed categories drop gracefully and newly available
+ categories append visible; `gus://` routes map onto
  the customized layout with a Home fallback when Libraries is hidden.)*
 
 - [x] **Content deep links & system integration.** Deep-link individual library items and
@@ -842,8 +850,8 @@ milestone once it becomes the active focus and is ready to carry a hard acceptan
    capabilities may depend on Emby Premiere.
  - The app should represent Premiere-gated functionality as capability/entitlement state
    rather than assuming all Emby servers support every feature.
- - SyncPlay should remain Jellyfin-specific unless an equivalent Emby-supported shared
-   playback model is identified.
+ - Shared playback should remain Apple-native through SharePlay unless an Emby-specific
+   capability is needed for a future non-Apple platform.
  - Branding, naming, App Store metadata, and support copy must make it clear which backend
    a user is connecting to and avoid implying that Emby support is official unless that is
    explicitly approved.

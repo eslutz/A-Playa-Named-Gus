@@ -2,10 +2,101 @@ import Foundation
 import Observation
 import OSLog
 
+enum NavigationCategory: String, CaseIterable, Codable, Hashable, Identifiable {
+    case movies
+    case tvshows
+    case music
+    case books
+    case photos
+    case livetv
+
+    var id: String {
+        "category.\(rawValue)"
+    }
+
+    var title: String {
+        switch self {
+        case .movies:
+            return String(localized: "Movies", comment: "Navigation category: movies")
+        case .tvshows:
+            return String(localized: "Shows", comment: "Navigation category: TV shows")
+        case .music:
+            return String(localized: "Music", comment: "Navigation category: music")
+        case .books:
+            return String(localized: "Books", comment: "Navigation category: books")
+        case .photos:
+            return String(localized: "Photos", comment: "Navigation category: photos")
+        case .livetv:
+            return String(localized: "Live TV", comment: "Navigation category: live TV")
+        }
+    }
+
+    var systemImage: String {
+        switch self {
+        case .movies:
+            return "film"
+        case .tvshows:
+            return "tv"
+        case .music:
+            return "music.note"
+        case .books:
+            return "book"
+        case .photos:
+            return "photo"
+        case .livetv:
+            return "antenna.radiowaves.left.and.right"
+        }
+    }
+
+    var collectionType: MediaCollectionType {
+        switch self {
+        case .movies:
+            return .movies
+        case .tvshows:
+            return .tvshows
+        case .music:
+            return .music
+        case .books:
+            return .books
+        case .photos:
+            return .photos
+        case .livetv:
+            return .livetv
+        }
+    }
+
+    var includeTypes: [MediaItemType] {
+        switch self {
+        case .movies:
+            return [.movie]
+        case .tvshows:
+            return [.series]
+        case .music:
+            return [.musicArtist, .musicAlbum, .playlist]
+        case .books:
+            return [.book, .audioBook]
+        case .photos:
+            return [.photo]
+        case .livetv:
+            return [.liveChannel, .recording]
+        }
+    }
+
+    init?(id: String) {
+        guard id.hasPrefix("category.") else { return nil }
+        self.init(rawValue: String(id.dropFirst("category.".count)))
+    }
+
+    static func available(in libraries: [MediaItem]) -> [NavigationCategory] {
+        let collectionTypes = Set(libraries.compactMap(\.collectionType))
+        return allCases.filter { collectionTypes.contains($0.collectionType) }
+    }
+}
+
 /// One entry in the user's customized navigation: a section id plus visibility.
-/// `"libraries"` is the fixed Libraries grid; any other id is a library (user view) on
-/// the active server. Home and Settings are never represented here — they are fixed at
-/// the start and end of navigation by design.
+/// `"libraries"` is the fixed individual Libraries grid; category ids such as
+/// `"category.movies"` represent consolidated media categories across every matching
+/// library on the active server. Home and Settings are fixed at the start and end.
 struct NavigationSectionPreference: Codable, Equatable {
     static let librariesID = "libraries"
 
@@ -19,14 +110,17 @@ struct ResolvedNavigationSection: Identifiable, Equatable {
     let title: String
     let systemImage: String
     let isVisible: Bool
-    /// The backing library item; `nil` for the fixed Libraries grid entry.
-    let library: MediaItem?
+    /// The backing category; `nil` for the fixed Libraries grid entry.
+    let category: NavigationCategory?
+    /// The server libraries represented by this section. Empty for the fixed Libraries
+    /// grid, which intentionally surfaces all individual libraries itself.
+    let libraries: [MediaItem]
 }
 
 /// Persists per-account navigation customization (order + visibility of the sections
 /// between Home and Settings) as JSON in Application Support, mirroring the Up Next
 /// store's scoping. Stored ids that no longer exist on the server are dropped at
-/// resolution time, and new libraries appear automatically (visible, at the end), so a
+/// resolution time, and new categories appear automatically (visible, at the end), so a
 /// changed server never breaks navigation.
 @MainActor
 @Observable
@@ -57,20 +151,29 @@ final class NavigationPreferencesStore {
         }
     }
 
-    /// Merges stored preferences with the libraries the server has right now:
-    /// stored order wins, unknown stored ids are dropped, new sections append visible.
-    /// The Libraries grid entry is always present.
+    /// Merges stored preferences with the categories the server has right now: stored
+    /// order wins, unknown stored ids are dropped, new sections append visible. The
+    /// individual Libraries grid entry is always present.
     func resolvedSections(libraries: [MediaItem], serverID: String, userID: String) -> [ResolvedNavigationSection] {
         let scope = AccountScope(serverID: serverID, userID: userID)
         let stored = preferencesByScope[scope] ?? []
-        let libraryByID = Dictionary(uniqueKeysWithValues: libraries.compactMap { item in
-            item.id.map { ($0, item) }
-        })
+        let categories = NavigationCategory.available(in: libraries)
+        let categoryByID = Dictionary(uniqueKeysWithValues: categories.map { ($0.id, $0) })
+        let librariesByCategory = Dictionary(grouping: libraries.compactMap { library -> (NavigationCategory, MediaItem)? in
+            guard let collectionType = library.collectionType,
+                  let category = NavigationCategory.allCases.first(where: { $0.collectionType == collectionType })
+            else { return nil }
+            return (category, library)
+        }) { pair in
+            pair.0
+        }.mapValues { pairs in
+            pairs.map(\.1)
+        }
 
         var orderedIDs: [String] = []
         var visibility: [String: Bool] = [:]
         for preference in stored {
-            let isKnown = preference.id == NavigationSectionPreference.librariesID || libraryByID[preference.id] != nil
+            let isKnown = preference.id == NavigationSectionPreference.librariesID || categoryByID[preference.id] != nil
             guard isKnown, !orderedIDs.contains(preference.id) else { continue }
             orderedIDs.append(preference.id)
             visibility[preference.id] = preference.isVisible
@@ -80,10 +183,10 @@ final class NavigationPreferencesStore {
             orderedIDs.insert(NavigationSectionPreference.librariesID, at: 0)
             visibility[NavigationSectionPreference.librariesID] = true
         }
-        for library in libraries {
-            guard let id = library.id, !orderedIDs.contains(id) else { continue }
-            orderedIDs.append(id)
-            visibility[id] = true
+        for category in categories {
+            guard !orderedIDs.contains(category.id) else { continue }
+            orderedIDs.append(category.id)
+            visibility[category.id] = true
         }
 
         return orderedIDs.map { id in
@@ -93,16 +196,18 @@ final class NavigationPreferencesStore {
                     title: String(localized: "Libraries", comment: "Navigation section: the libraries grid"),
                     systemImage: "rectangle.stack",
                     isVisible: visibility[id] ?? true,
-                    library: nil
+                    category: nil,
+                    libraries: []
                 )
             }
-            let library = libraryByID[id]
+            let category = categoryByID[id]
             return ResolvedNavigationSection(
                 id: id,
-                title: library?.name ?? id,
-                systemImage: library?.librarySymbol ?? "rectangle.stack",
+                title: category?.title ?? id,
+                systemImage: category?.systemImage ?? "rectangle.stack",
                 isVisible: visibility[id] ?? true,
-                library: library
+                category: category,
+                libraries: category.flatMap { librariesByCategory[$0] } ?? []
             )
         }
     }

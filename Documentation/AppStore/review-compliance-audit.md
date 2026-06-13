@@ -22,8 +22,9 @@ backend, hosts no content, and collects no data.*
   player/browser for the user's own files, equivalent in posture to the Files app or VLC.
 - **1.2 User-generated content** — Not a UGC platform: there is no public sharing, no
   user-to-user interaction, no discovery of other people's content, and no developer-run
-  service to moderate. SyncPlay synchronizes playback only among accounts on the *same
-  private server* (a household watch party), which does not create UGC obligations.
+  service to moderate. SharePlay uses Apple's system Group Activities session for users
+  who already have access to the same media item; Gus shares item identifiers and display
+  metadata only, never server credentials or stream URLs.
 - **1.3 Kids Category** — Not a Kids Category app and not marketed to children. The app
   still ships family safety features: an app-level content-rating limit
   (Settings → Content Restrictions) covering US and international rating systems, gating
@@ -86,7 +87,7 @@ backend, hosts no content, and collects no data.*
   AVKit/SwiftUI vs VLCKit/UIKit).
 - **4.2 Minimum functionality** — A full-featured native client (browse, search,
   playback with track selection and chapters, downloads, music, books with an in-app
-  reader, photos, Live TV, SyncPlay, CarPlay, watchOS remote/companion).
+  reader, photos, Live TV, SharePlay, CarPlay, watchOS remote/companion).
 - **4.4 Extensions** — The tvOS Top Shelf extension serves static, safe entry points
   (`gus://` deep links) and fetches nothing.
 - **4.8 Login services** — Sign in with Apple is **not required**: authentication is to
@@ -171,6 +172,7 @@ excluded from iCloud backup. Nothing is shared outward. ADR 0005 records the des
 |---|---|
 | macOS App Sandbox + outbound network | Shipped (`Config/Gus.entitlements`) |
 | tvOS User Management (runs as current user) | Shipped (`Config/Gus-tvOS.entitlements`) |
+| SharePlay / Group Activities | Shipped (`com.apple.developer.group-session`) |
 | Background audio (`UIBackgroundModes`) | Shipped (Info.plist) |
 | CarPlay audio | Code complete; entitlement awaits Apple grant — not wired into signing (`Config/Gus-CarPlay.entitlements`) |
 | Declared Age Range (OS 26+) | Code complete and self-disabling; requires the `com.apple.developer.declared-age-range` entitlement before the Settings action functions on device (see `Documentation/AppStore/signing-capabilities.md`) |

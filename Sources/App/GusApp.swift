@@ -95,6 +95,7 @@ struct GusApp: App {
                 .environment(cinema)
             #endif
                 .task {
+                    SharePlayCoordinator.shared.startListening(appModel: appModel, navigation: appNavigation)
                     #if DEBUG
                         if shouldInstallDebugPreviewSession {
                             appModel.installDebugPreviewSession()

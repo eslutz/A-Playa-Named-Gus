@@ -22,3 +22,6 @@ friendly HLS transcoding when direct playback is not suitable.
 Playback behavior stays aligned with platform controls, focus, AirPlay, Picture in Picture,
 and system media integrations. Format support depends on AVPlayer and Jellyfin server
 transcoding rather than bundling a broader third-party decoder.
+
+The non-tvOS video player does not ship a custom options overlay. ADR 0011 tracks the
+Jellyfin-specific player controls that remain blocked on native Apple player surfaces.

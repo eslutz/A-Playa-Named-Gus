@@ -26,14 +26,14 @@ and WatchConnectivity hand-off from the iPhone (`WatchSessionRelay` /
 
 **Shared-code subset, not the whole app.** Feature views assume the desktop/TV platforms,
 so the watch target compiles only the verified subset — `Models/`, `Providers/`,
-`Services/`, and the non-video `Stores/` (no `PlaybackStore`/`SyncPlayStore`) — plus
+`Services/`, and the non-video `Stores/` (no `PlaybackStore`) — plus
 platform-neutral `NowPlayingController`, `NowPlayingArtworkFactory`,
 `DownloadsAvailability`, and `LoadingStateView`. The watch UI lives in `Sources/Watch`.
 XcodeGen `sources` lists enumerate the subset; this is the same exclusion discipline the
 TopShelf and CarPlay code already use.
 
 **Remote control rides the Jellyfin `Sessions` API**, behind a `providerKind` gate exactly
-like SyncPlay (`RemoteSessionsStore` + `SessionsSocket`), rather than joining the shared
+like remote sessions (`RemoteSessionsStore` + `SessionsSocket`), rather than joining the shared
 `MediaProviderSession` contract. The session-based control model (list controllable
 clients, `Sessions/{id}/Playing/{command}`, `Sessions/{id}/Command`, `Sessions/{id}/Playing`
 to start playback, WebSocket session events with a polling fallback) is intentionally
@@ -48,7 +48,7 @@ rule), and on-watch audio reuses the shared `AudioPlayerStore` queue engine with
   WatchConnectivity). It ships and is signed as part of the iOS app archive in Xcode
   Cloud; CI gains a watchOS build lane (kept out of the required unit-test matrix, like
   UI tests).
-- `Sessions`-based remote control is a second Jellyfin-gated subsystem alongside SyncPlay,
+- `Sessions`-based remote control is a Jellyfin-gated subsystem,
   outside the provider contract. When the Emby provider arrives, the shared remote-control
   surface is the place to generalize it (or keep parallel provider-gated implementations),
   not the `MediaProviderSession` protocol.

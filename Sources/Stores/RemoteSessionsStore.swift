@@ -20,8 +20,8 @@ struct RemoteSession: Identifiable, Equatable {
 /// list controllable sessions, send transport/volume commands, and start remote
 /// playback ("quick resume" sends Continue Watching items to a chosen client).
 ///
-/// Like SyncPlay, this rides Jellyfin's session APIs directly and stays behind a
-/// `providerKind` gate instead of joining the shared provider contract; the
+/// This rides Jellyfin's session APIs directly and stays behind a `providerKind` gate
+/// instead of joining the shared provider contract; the
 /// session-based model also serves the future Emby provider per the roadmap.
 /// Live updates use the server WebSocket only while a remote-control surface is
 /// frontmost, with a timed polling fallback (battery rules from the watchOS brief).

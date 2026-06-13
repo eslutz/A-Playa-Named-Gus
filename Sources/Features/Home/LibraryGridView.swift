@@ -5,8 +5,16 @@ import SwiftUI
 /// Pattern reference: Swiftfin's library/`getItems` paging.
 struct LibraryGridView: View {
     @Environment(SessionStore.self) private var session
-    let library: MediaItem
+    let scope: LibraryGridScope
     @State private var store: LibraryStore?
+
+    init(library: MediaItem) {
+        scope = .library(library)
+    }
+
+    init(scope: LibraryGridScope) {
+        self.scope = scope
+    }
 
     var body: some View {
         Group {
@@ -16,7 +24,7 @@ struct LibraryGridView: View {
                 ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
-        .navigationTitle(library.name ?? "Library")
+        .navigationTitle(scope.title)
         .toolbar {
             if let store {
                 ToolbarItem {
@@ -25,8 +33,8 @@ struct LibraryGridView: View {
                 }
             }
         }
-        .task(id: library.storeIdentity) {
-            let store = LibraryStore(library: library, session: session)
+        .task(id: scope.storeIdentity) {
+            let store = LibraryStore(scope: scope, session: session)
             self.store = store
             await store.load()
         }
@@ -114,11 +122,5 @@ private struct LibraryFilterMenu: View {
             filter.status = status
             Task { await store.applyFilter(filter) }
         }
-    }
-}
-
-private extension MediaItem {
-    var storeIdentity: String {
-        id ?? name ?? collectionType?.rawValue ?? "library"
     }
 }

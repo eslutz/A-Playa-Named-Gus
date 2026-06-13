@@ -48,7 +48,15 @@ final class SessionsSocket: @unchecked Sendable {
     /// The token rides in the query (`api_key`) — Jellyfin's WebSocket auth contract.
     /// The resulting URL is sensitive; never log it.
     static func socketURL(serverURL: URL, accessToken: String, deviceID: String) -> URL? {
-        SyncPlaySocket.socketURL(serverURL: serverURL, accessToken: accessToken, deviceID: deviceID)
+        guard var components = URLComponents(url: serverURL, resolvingAgainstBaseURL: false) else { return nil }
+        components.scheme = components.scheme == "https" ? "wss" : "ws"
+        let basePath = components.path.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
+        components.path = basePath.isEmpty ? "/socket" : "/\(basePath)/socket"
+        components.queryItems = [
+            URLQueryItem(name: "api_key", value: accessToken),
+            URLQueryItem(name: "deviceId", value: deviceID),
+        ]
+        return components.url
     }
 
     init(url: URL) {

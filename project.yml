@@ -57,6 +57,7 @@ targets:
           - "Watch/**"
     dependencies:
       - sdk: AppIntents.framework
+      - sdk: GroupActivities.framework
       - package: JellyfinSDK
         product: JellyfinAPI
       # Readium links only into the destinations that have the in-app reader.
@@ -108,7 +109,6 @@ targets:
       - path: Sources/Stores
         excludes:
           - "PlaybackStore.swift"
-          - "SyncPlayStore.swift"
       - path: Sources/Features/Player/NowPlayingController.swift
       - path: Sources/Platform/NowPlayingArtworkFactory.swift
       - path: Sources/Platform/DownloadsAvailability.swift

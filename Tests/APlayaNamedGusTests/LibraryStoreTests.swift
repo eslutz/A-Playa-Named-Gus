@@ -8,7 +8,7 @@ struct LibraryStoreTests {
     @Test("builds paged provider library queries")
     func buildsPagedLibraryQuery() {
         let query = LibraryRequest.parameters(
-            parentID: "library-1",
+            scope: .library(mediaItem(id: "library-1")),
             startIndex: 60,
             limit: 60
         )
@@ -21,10 +21,27 @@ struct LibraryStoreTests {
         #expect(query.statusFilter == .all)
     }
 
+    @Test("builds recursive provider category queries")
+    func buildsRecursiveCategoryQuery() {
+        let query = LibraryRequest.parameters(
+            scope: .category(.movies),
+            startIndex: 0,
+            limit: 60
+        )
+
+        #expect(query.parentID == nil)
+        #expect(query.includeTypes == [.movie])
+        #expect(query.startIndex == 0)
+        #expect(query.limit == 60)
+        #expect(query.isRecursive == true)
+        #expect(query.sort == .name)
+        #expect(query.statusFilter == .all)
+    }
+
     @Test("applies status filters and sort options to library queries")
     func appliesStatusFiltersAndSortOptions() {
         let query = LibraryRequest.parameters(
-            parentID: "library-1",
+            scope: .library(mediaItem(id: "library-1")),
             startIndex: 0,
             limit: 60,
             filter: LibraryFilterState(sort: .recentlyAdded, status: .unplayed)
@@ -37,7 +54,7 @@ struct LibraryStoreTests {
     @Test("builds resumable and random filter queries")
     func buildsResumableAndRandomFilterQueries() {
         let query = LibraryRequest.parameters(
-            parentID: "library-1",
+            scope: .library(mediaItem(id: "library-1")),
             startIndex: 0,
             limit: 60,
             filter: LibraryFilterState(sort: .random, status: .resumable)
@@ -126,7 +143,7 @@ struct LibraryStoreTests {
         ])
 
         let store = try LibraryStore(
-            library: mediaItem(id: "library-1"),
+            scope: .library(mediaItem(id: "library-1")),
             session: libraryTestSession()
         )
 

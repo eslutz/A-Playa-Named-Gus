@@ -10,7 +10,7 @@ struct RemoteSessionsTests {
         let start = #"{"MessageType":"PlaybackStart","Data":{}}"#
         let progress = #"{"MessageType":"PlaybackProgress","Data":{}}"#
         let stopped = #"{"MessageType":"PlaybackStopped","Data":{}}"#
-        let unrelated = #"{"MessageType":"SyncPlayCommand","Data":{}}"#
+        let unrelated = #"{"MessageType":"GeneralCommand","Data":{}}"#
 
         #expect(SessionsSocketMessageDecoder.event(from: Data(sessions.utf8)) == .sessionsChanged)
         #expect(SessionsSocketMessageDecoder.event(from: Data(start.utf8)) == .sessionsChanged)

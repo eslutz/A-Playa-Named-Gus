@@ -27,6 +27,7 @@ App Store archives belong in Xcode Cloud, not GitHub Actions.
 | Outbound network | macOS | `com.apple.security.network.client` in `Config/Gus.entitlements` | ✓ |
 | App Sandbox | macOS | `com.apple.security.app-sandbox` in `Config/Gus.entitlements` | ✓ |
 | User Management | tvOS | `com.apple.developer.user-management` in `Config/Gus-tvOS.entitlements` | ✓ |
+| SharePlay / Group Activities | iOS / iPadOS / tvOS / visionOS / macOS | `com.apple.developer.group-session` in the app entitlements | ✓ |
 | Local network usage | iOS / iPadOS / visionOS | `NSLocalNetworkUsageDescription` in `Info.plist` | ✓ |
 | Keychain | All | Keychain Services via `SecItem*` — no capability entry required | ✓ |
 | No-exempt encryption | All | `ITSAppUsesNonExemptEncryption = false` in `Info.plist` | ✓ |

@@ -19,6 +19,7 @@ struct VideoPlayerView: View {
     let item: MediaItem
 
     @State private var store: PlaybackStore?
+    @State private var sharePlay = SharePlayCoordinator.shared
     #if os(visionOS)
         @State private var openedFramePackedCinema = false
         @State private var stereoRenderer: StereoFrameRenderer?
@@ -54,37 +55,17 @@ struct VideoPlayerView: View {
                     .tint(.white)
             }
         }
-        #if !os(tvOS)
-        .overlay(alignment: .topLeading) {
-            Button {
-                dismiss()
-            } label: {
-                Image(systemName: "xmark")
-                    .font(.body.weight(.semibold))
-                    .padding(12)
-            }
-            .buttonStyle(.plain)
-            .gusGlassSurface(in: Circle())
-            .tint(.white)
-            .foregroundStyle(.white)
-            .padding()
-            .accessibilityLabel("Close Player")
-        }
-        #endif
-        #if !os(tvOS)
+        #if os(visionOS)
         .overlay(alignment: .topTrailing) {
-            if let store {
+            if let store, store.isSpatialPlaybackActive || store.stereoFallbackNotice != nil {
                 VStack(alignment: .trailing, spacing: 8) {
-                    PlaybackOptionsOverlay(store: store)
-                    #if os(visionOS)
-                        if store.isSpatialPlaybackActive {
-                            SpatialPlaybackBadge()
-                        }
+                    if store.isSpatialPlaybackActive {
+                        SpatialPlaybackBadge()
+                    }
 
-                        if let notice = store.stereoFallbackNotice {
-                            StereoFallbackNotice(text: notice)
-                        }
-                    #endif
+                    if let notice = store.stereoFallbackNotice {
+                        StereoFallbackNotice(text: notice)
+                    }
                 }
                 .padding()
             }
@@ -96,6 +77,12 @@ struct VideoPlayerView: View {
                 self.store = store
                 await store.prepare()
             }
+        }
+        .task(id: store?.player.map(ObjectIdentifier.init)) {
+            attachSharePlayPlayer()
+        }
+        .task(id: store?.item.id) {
+            attachSharePlayPlayer()
         }
         #if os(visionOS)
         .task(id: store?.stereoPresentation) {
@@ -116,6 +103,23 @@ struct VideoPlayerView: View {
             #endif
             store?.teardown()
         }
+        .alert(
+            "SharePlay Unavailable",
+            isPresented: Binding(
+                get: { sharePlay.errorMessage != nil },
+                set: { isPresented in
+                    if !isPresented {
+                        sharePlay.errorMessage = nil
+                    }
+                }
+            )
+        ) {
+            Button("OK", role: .cancel) {
+                sharePlay.errorMessage = nil
+            }
+        } message: {
+            Text(sharePlay.errorMessage ?? "")
+        }
         // Handoff: continue playback on another device. The continuing device resumes
         // from the server-side position kept fresh by progress reporting.
         .userActivity(GusUserActivity.playback, isActive: item.id != nil) { activity in
@@ -126,6 +130,11 @@ struct VideoPlayerView: View {
                 userID: session.user.id
             )
         }
+    }
+
+    private func attachSharePlayPlayer() {
+        guard let store else { return }
+        sharePlay.attachPlayer(store.player, item: store.item)
     }
 }
 
@@ -211,165 +220,6 @@ struct VideoPlayerView: View {
                 .foregroundStyle(.white)
                 .padding(.horizontal)
                 .accessibilityLabel(text)
-        }
-    }
-#endif
-
-private struct PlaybackOptionsOverlay: View {
-    let store: PlaybackStore
-
-    var body: some View {
-        HStack(spacing: 6) {
-            // The iOS system control bar already has a route button; only macOS's
-            // floating AVPlayerView chrome lacks one. (visionOS has no AirPlay.)
-            #if os(macOS)
-                AirPlayRoutePicker()
-            #endif
-
-            PlaybackOptionsMenu(store: store)
-        }
-        .padding(.horizontal, 8)
-        .padding(.vertical, 6)
-        .gusGlassCapsule()
-        .foregroundStyle(.white)
-    }
-}
-
-private struct PlaybackOptionsMenu: View {
-    @Environment(SessionStore.self) private var session
-    let store: PlaybackStore
-
-    @State private var syncPlay: SyncPlayStore?
-
-    var body: some View {
-        Menu {
-            if !store.audioOptions.isEmpty {
-                Section("Audio") {
-                    ForEach(store.audioOptions) { option in
-                        Button {
-                            Task { await store.selectAudioStream(index: option.id) }
-                        } label: {
-                            Label(option.title, systemImage: store.selectedAudioStreamIndex == option.id ? "checkmark" : "waveform")
-                        }
-                    }
-                }
-            }
-
-            if !store.subtitleOptions.isEmpty {
-                Section("Subtitles") {
-                    Button {
-                        Task { await store.selectSubtitleStream(index: nil) }
-                    } label: {
-                        Label("Off", systemImage: store.selectedSubtitleStreamIndex == nil ? "checkmark" : "captions.bubble")
-                    }
-                    ForEach(store.subtitleOptions) { option in
-                        Button {
-                            Task { await store.selectSubtitleStream(index: option.id) }
-                        } label: {
-                            Label(option.title, systemImage: store.selectedSubtitleStreamIndex == option.id ? "checkmark" : "captions.bubble")
-                        }
-                    }
-                }
-            }
-
-            if !store.chapterTargets.isEmpty {
-                Section("Chapters") {
-                    ForEach(store.chapterTargets) { chapter in
-                        Button(chapter.title) {
-                            Task { await store.seek(to: chapter) }
-                        }
-                    }
-                }
-            }
-
-            if let next = store.nextUpItem, store.isNextUpPromptVisible {
-                Section {
-                    Button {
-                        Task { await store.playNextUp() }
-                    } label: {
-                        Label("Play Next: \(next.displayTitle)", systemImage: "forward.end.fill")
-                    }
-                }
-            }
-
-            #if os(visionOS)
-                ViewingModeMenu(store: store)
-            #endif
-
-            if let syncPlay, syncPlay.isSupported {
-                syncPlaySection(syncPlay)
-            }
-        } label: {
-            Image(systemName: "ellipsis.circle.fill")
-                .font(.title2)
-                .symbolRenderingMode(.hierarchical)
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel("Playback Options")
-        .task {
-            if syncPlay == nil {
-                let syncPlayStore = SyncPlayStore(session: session)
-                syncPlay = syncPlayStore
-                await syncPlayStore.loadGroups()
-            }
-            syncPlay?.attachPlayer(store.player)
-        }
-        // PlaybackStore rebuilds its AVPlayer across Play Next; re-attach so SyncPlay
-        // commands and observers always target the live player.
-        .task(id: store.player.map(ObjectIdentifier.init)) {
-            syncPlay?.attachPlayer(store.player)
-        }
-        .onDisappear {
-            syncPlay?.stop()
-        }
-    }
-
-    private func syncPlaySection(_ syncPlay: SyncPlayStore) -> some View {
-        Section("SyncPlay") {
-            if syncPlay.isInGroup {
-                Button(role: .destructive) {
-                    Task { await syncPlay.leave() }
-                } label: {
-                    Label("Leave Watch Party", systemImage: "person.2.slash")
-                }
-            } else {
-                ForEach(syncPlay.groups) { group in
-                    Button {
-                        Task { await syncPlay.join(groupID: group.id) }
-                    } label: {
-                        Label("Join \(group.name) (\(group.participants.count))", systemImage: "person.2")
-                    }
-                }
-                Button {
-                    Task { await syncPlay.createGroup(named: String(localized: "Gus Watch Party", comment: "Default SyncPlay group name")) }
-                } label: {
-                    Label("Start Watch Party", systemImage: "person.2.badge.plus")
-                }
-            }
-        }
-    }
-}
-
-#if os(visionOS)
-    private struct ViewingModeMenu: View {
-        let store: PlaybackStore
-
-        var body: some View {
-            Menu {
-                viewingModeButton(.automatic, title: "Auto", systemImage: "wand.and.stars")
-                viewingModeButton(.twoD, title: "2D", systemImage: "rectangle")
-                viewingModeButton(.spatial, title: "Spatial", systemImage: "view.3d")
-            } label: {
-                Label("Viewing Mode", systemImage: "view.3d")
-            }
-        }
-
-        private func viewingModeButton(_ mode: Stereo3DViewingMode, title: LocalizedStringKey, systemImage: String) -> some View {
-            Button {
-                Task { await store.selectViewingMode(mode) }
-            } label: {
-                Label(title, systemImage: store.viewingMode == mode ? "checkmark" : systemImage)
-            }
         }
     }
 #endif

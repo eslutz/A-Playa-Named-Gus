@@ -10,6 +10,9 @@ struct ItemDetailView: View {
     let item: MediaItem
 
     @State private var playerItem: ItemRef?
+    @State private var sharePlay = SharePlayCoordinator.shared
+    @State private var sharePlayPresentation: SharePlayPresentation?
+    @State private var sharePlayErrorMessage: String?
     @State private var store: ItemDetailStore?
     // Read via @AppStorage so a changed household limit re-gates already-pushed screens.
     @AppStorage(ContentRatingGate.limitDefaultsKey) private var contentLimitRawValue = ContentRatingGate.Limit.off.rawValue
@@ -43,6 +46,7 @@ struct ItemDetailView: View {
             }
         }
         .playerPresentation(item: $playerItem)
+        .sharePlaySharingPresentation(presentation: $sharePlayPresentation, errorMessage: $sharePlayErrorMessage)
         .downloadErrorAlert(downloads)
         // Handoff: continue browsing this item on another device. Restricted items
         // (family safety) are never advertised.
@@ -93,6 +97,17 @@ struct ItemDetailView: View {
                             Task { await store.toggleFavorite() }
                         }
                     )
+                    #if !os(tvOS)
+                        if SharePlayCoordinator.canShare(store.item) {
+                            ItemUserActionButton(
+                                title: "SharePlay",
+                                systemImage: "shareplay",
+                                action: {
+                                    startSharePlay(for: store.item)
+                                }
+                            )
+                        }
+                    #endif
                     if store.item.type == .book {
                         BookActionButtons(item: store.item)
                     }
@@ -152,4 +167,14 @@ struct ItemDetailView: View {
             return EdgeInsets(top: 24, leading: 20, bottom: 32, trailing: 20)
         #endif
     }
+
+    #if !os(tvOS)
+        private func startSharePlay(for item: MediaItem) {
+            guard let activity = sharePlay.activity(for: item, session: session) else {
+                sharePlayErrorMessage = String(localized: "This item can't be shared with SharePlay.", comment: "SharePlay error when an item cannot create a Group Activity")
+                return
+            }
+            sharePlayPresentation = SharePlayPresentation(activity: activity)
+        }
+    #endif
 }

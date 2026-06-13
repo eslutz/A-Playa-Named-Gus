@@ -433,6 +433,14 @@
       "comment" : "watchOS connection status label when the server is reachable",
       "extractionState" : "manual"
     },
+    "SharePlay" : {
+      "comment" : "Item detail action for starting SharePlay with the selected media",
+      "extractionState" : "manual"
+    },
+    "SharePlay Unavailable" : {
+      "comment" : "Alert title when SharePlay cannot be started",
+      "extractionState" : "manual"
+    },
     "Open A Playa Named Gus" : {
       "comment" : "Top Shelf action that opens the app home screen",
       "extractionState" : "manual"
@@ -708,6 +716,10 @@
     },
     "This item can't be played." : {
       "comment" : "Playback error: item has no playable identifier",
+      "extractionState" : "manual"
+    },
+    "This item can't be shared with SharePlay." : {
+      "comment" : "SharePlay error when an item cannot create a Group Activity",
       "extractionState" : "manual"
     },
     "This player is no longer active." : {

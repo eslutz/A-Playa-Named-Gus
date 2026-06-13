@@ -64,7 +64,7 @@ desktop/TV platforms). The compiling subset for the watch target:
 - Existing: auth, Quick Connect, `getResumeItems`, image URLs, universal audio, item
   browsing/search, download/progressive audio URLs, and playback URL resolution.
 - New provider surface (watch milestone adds to the Jellyfin session, gated like
-  SyncPlay): `getSessions` (controllable clients), `Sessions/{id}/Playing/{command}`
+  SharePlay): `getSessions` (controllable clients), `Sessions/{id}/Playing/{command}`
   (remote transport), `Sessions/{id}/Command` (volume/mute), and WebSocket-backed session
   update events with an HTTP polling fallback.
 - The session-based remote-control model also serves the future Emby provider per the

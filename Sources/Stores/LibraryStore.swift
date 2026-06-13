@@ -92,19 +92,80 @@ struct LibraryFilterState: Equatable {
     }
 }
 
+enum LibraryGridScope: Equatable {
+    case library(MediaItem)
+    case category(NavigationCategory)
+
+    var title: String {
+        switch self {
+        case let .library(library):
+            return library.name ?? String(localized: "Library", comment: "Fallback library title")
+        case let .category(category):
+            return category.title
+        }
+    }
+
+    var systemImage: String {
+        switch self {
+        case let .library(library):
+            return library.librarySymbol
+        case let .category(category):
+            return category.systemImage
+        }
+    }
+
+    var parentID: String? {
+        switch self {
+        case let .library(library):
+            return library.id
+        case .category:
+            return nil
+        }
+    }
+
+    var includeTypes: [MediaItemType]? {
+        switch self {
+        case .library:
+            return nil
+        case let .category(category):
+            return category.includeTypes
+        }
+    }
+
+    var isRecursive: Bool {
+        switch self {
+        case .library:
+            return false
+        case .category:
+            return true
+        }
+    }
+
+    var storeIdentity: String {
+        switch self {
+        case let .library(library):
+            return library.id ?? library.name ?? library.collectionType?.rawValue ?? "library"
+        case let .category(category):
+            return category.id
+        }
+    }
+}
+
 enum LibraryRequest {
     static let pageSize = 60
 
     static func parameters(
-        parentID: String?,
+        scope: LibraryGridScope,
         startIndex: Int,
         limit: Int,
         filter: LibraryFilterState = .default
     ) -> MediaItemQuery {
         MediaItemQuery(
-            parentID: parentID,
+            parentID: scope.parentID,
+            includeTypes: scope.includeTypes,
             startIndex: startIndex,
             limit: limit,
+            isRecursive: scope.isRecursive,
             sort: filter.sort.mediaSort,
             statusFilter: filter.status.mediaStatusFilter
         )
@@ -122,19 +183,23 @@ final class LibraryStore {
     private(set) var isLoadingNextPage = false
     private(set) var filter = LibraryFilterState.default
 
-    let library: MediaItem
+    let scope: LibraryGridScope
     private let session: SessionStore
     private let logger = Logger(category: .library)
     private var paging = Paging(pageSize: LibraryRequest.pageSize, prefetchThreshold: 12)
     private var loadGeneration = 0
 
-    init(library: MediaItem, session: SessionStore) {
-        self.library = library
+    convenience init(library: MediaItem, session: SessionStore) {
+        self.init(scope: .library(library), session: session)
+    }
+
+    init(scope: LibraryGridScope, session: SessionStore) {
+        self.scope = scope
         self.session = session
     }
 
     var title: String {
-        library.name ?? "Library"
+        scope.title
     }
 
     var isLoading: Bool {
@@ -197,7 +262,7 @@ final class LibraryStore {
 
     private func loadPage(startIndex: Int, replaceResults: Bool, generation: Int) async throws {
         let query = LibraryRequest.parameters(
-            parentID: library.id,
+            scope: scope,
             startIndex: startIndex,
             limit: paging.pageSize,
             filter: filter

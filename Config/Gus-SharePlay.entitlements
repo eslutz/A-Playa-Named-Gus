@@ -2,12 +2,8 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<!-- macOS only: sandbox the app and allow outbound network connections
-	     (so it can reach a self-hosted Jellyfin server). -->
-	<key>com.apple.security.app-sandbox</key>
-	<true/>
-	<key>com.apple.security.network.client</key>
-	<true/>
+	<!-- Native SharePlay / Group Activities support. The activity payload carries
+	     item identifiers and display metadata only, never Jellyfin tokens or stream URLs. -->
 	<key>com.apple.developer.group-session</key>
 	<true/>
 </dict>

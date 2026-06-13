@@ -7,8 +7,8 @@ import SwiftUI
 /// - visionOS → `.sidebarAdaptable` `TabView` for the native floating sidebar style.
 ///
 /// Navigation is user-customizable: Home is fixed first and Settings fixed last, while
-/// the sections between them (the Libraries grid plus each server library) follow the
-/// per-account order/visibility in `NavigationPreferencesStore`.
+/// the sections between them (the individual Libraries grid plus consolidated media
+/// categories) follow the per-account order/visibility in `NavigationPreferencesStore`.
 struct RootContainer: View {
     var body: some View {
         platformRoot
@@ -94,18 +94,18 @@ private enum RootSection: Hashable {
     }
 }
 
-/// Renders one customizable section: the Libraries grid, a Live TV library, or a
-/// media library grid.
+/// Renders one customizable section: the individual Libraries grid, Live TV, or a
+/// consolidated media category grid.
 private struct SectionDestination: View {
     let section: ResolvedNavigationSection
     let home: HomeStore?
 
     var body: some View {
-        if let library = section.library {
-            if library.collectionType == .livetv {
+        if let category = section.category {
+            if category == .livetv {
                 LiveTVView()
             } else {
-                LibraryGridView(library: library)
+                LibraryGridView(scope: .category(category))
             }
         } else {
             LibrariesLandingView(store: home)
