@@ -3,8 +3,7 @@ import SwiftUI
 
 /// Pure-AVKit player surface.
 ///
-/// `VideoPlayer` on iOS/macOS/visionOS; `AVPlayerViewController` (via a representable) on
-/// tvOS, which has no SwiftUI `VideoPlayer`. The `PlaybackStore` owns the `AVPlayer` and
+/// Native AVKit surfaces on every video platform. The `PlaybackStore` owns the `AVPlayer` and
 /// tears it down on dismiss.
 struct VideoPlayerView: View {
     @Environment(SessionStore.self) private var session
@@ -228,8 +227,9 @@ struct VideoPlayerView: View {
 ///
 /// SwiftUI `VideoPlayer` exposes no Picture in Picture, so iOS/iPadOS and macOS use the
 /// AVKit controller/view surfaces, which provide the PiP button and (on iOS) automatic
-/// PiP when the app is backgrounded. visionOS keeps `VideoPlayer` (no PiP there).
-/// The concrete surface types (`TVPlayerSurface`, `PiPCapablePlayerSurface`) live in
+/// PiP when the app is backgrounded. visionOS uses `AVPlayerViewController` so Apple owns
+/// the native expanded and immersive playback controls.
+/// The concrete surface types (`TVPlayerSurface`, `VisionPlayerSurface`, `PiPCapablePlayerSurface`) live in
 /// `Sources/Platform/PlayerSurface.swift`.
 private struct PlayerSurface: View {
     let player: AVPlayer
@@ -239,7 +239,7 @@ private struct PlayerSurface: View {
         #if os(tvOS)
             TVPlayerSurface(player: player, store: store)
         #elseif os(visionOS)
-            VideoPlayer(player: player)
+            VisionPlayerSurface(player: player)
         #else
             PiPCapablePlayerSurface(player: player)
         #endif

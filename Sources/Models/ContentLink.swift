@@ -3,11 +3,17 @@ import Foundation
 /// A deep link to a specific media item, alongside the fixed `AppRoute` destinations:
 /// `gus://item/<id>` opens the item's detail surface; `gus://play/<id>` starts playback
 /// (routed by media type — video player, audio player, book reader, photo viewer).
+/// Universal Links use the same route shape at `https://gus.ericslutz.dev/item/<id>`
+/// and `/play/<id>` so Messages/Shared with You can hand off content through the
+/// system universal-link pipeline.
 ///
 /// This is the shared primitive behind the content-aware Top Shelf, Handoff, Spotlight
-/// results, Siri/App Intents, and screenshot automation. Item ids are Jellyfin item ids
-/// on the active server; links to items the current session can't resolve fail softly.
-enum ContentLink: Equatable {
+/// results, Siri/App Intents, Shared with You, and screenshot automation. Item ids are
+/// Jellyfin item ids on the active server; links to items the current session can't
+/// resolve fail softly.
+enum ContentLink: Hashable {
+    static let universalLinkHost = "gus.ericslutz.dev"
+
     case item(id: String)
     case play(id: String)
 
@@ -20,6 +26,15 @@ enum ContentLink: Equatable {
         }
     }
 
+    var universalURL: URL {
+        switch self {
+        case let .item(id):
+            return URL(string: "https://\(Self.universalLinkHost)/item/\(id)")!
+        case let .play(id):
+            return URL(string: "https://\(Self.universalLinkHost)/play/\(id)")!
+        }
+    }
+
     var itemID: String {
         switch self {
         case let .item(id), let .play(id):
@@ -28,18 +43,35 @@ enum ContentLink: Equatable {
     }
 
     init?(url: URL) {
-        guard url.scheme == "gus",
-              let host = url.host(percentEncoded: false)
+        if url.scheme == "gus" {
+            guard let host = url.host(percentEncoded: false) else { return nil }
+
+            let id = url.lastPathComponent
+            guard !id.isEmpty, id != "/" else { return nil }
+
+            switch host {
+            case "item":
+                self = .item(id: id)
+            case "play":
+                self = .play(id: id)
+            default:
+                return nil
+            }
+            return
+        }
+
+        guard url.scheme == "https",
+              url.host(percentEncoded: false) == Self.universalLinkHost
         else { return nil }
 
-        let id = url.lastPathComponent
-        guard !id.isEmpty, id != "/" else { return nil }
+        let components = url.pathComponents.filter { $0 != "/" }
+        guard components.count == 2 else { return nil }
 
-        switch host {
+        switch components[0] {
         case "item":
-            self = .item(id: id)
+            self = .item(id: components[1])
         case "play":
-            self = .play(id: id)
+            self = .play(id: components[1])
         default:
             return nil
         }

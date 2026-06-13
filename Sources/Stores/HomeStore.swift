@@ -35,6 +35,11 @@ final class HomeStore {
     private(set) var libraries: [MediaItem] = []
     private(set) var resumeItems: [MediaItem] = []
     private(set) var nextUpItems: [MediaItem] = []
+    private(set) var sharedWithYouTitle = String(
+        localized: "Shared with You",
+        comment: "Fallback title for Apple's Shared with You highlight collection"
+    )
+    private(set) var sharedWithYouItems: [MediaItem] = []
     private(set) var latestSections: [HomeLatestSection] = []
 
     private let session: SessionStore
@@ -53,6 +58,39 @@ final class HomeStore {
     /// revision bump.
     func refresh() async {
         await load(showsLoadingState: state != .loaded)
+    }
+
+    func loadSharedWithYou(links: [ContentLink], title: String) async {
+        sharedWithYouTitle = title
+        guard !links.isEmpty else {
+            sharedWithYouItems = []
+            return
+        }
+
+        let provider = session.mediaProvider
+        let indexedItems = await withTaskGroup(of: (Int, MediaItem?).self) { group in
+            for (index, link) in links.enumerated() {
+                group.addTask { @MainActor in
+                    do {
+                        return try (index, await provider.item(id: link.itemID))
+                    } catch {
+                        return (index, nil)
+                    }
+                }
+            }
+
+            var collected: [(Int, MediaItem)] = []
+            for await(index, item) in group {
+                if let item {
+                    collected.append((index, item))
+                }
+            }
+            return collected
+        }
+
+        sharedWithYouItems = ContentRatingGate.filter(
+            indexedItems.sorted { $0.0 < $1.0 }.map(\.1)
+        )
     }
 
     private func load(showsLoadingState: Bool) async {
@@ -79,7 +117,7 @@ final class HomeStore {
 
     /// Donates the rating-gated home content to Core Spotlight (no-op where the
     /// platform lacks it) so library items surface in system search, and refreshes the
-    /// tvOS Top Shelf snapshot.
+    /// optional tvOS Top Shelf snapshot when the app is signed with an App Group.
     private func donateToSystemSearch() {
         let items = resumeItems + nextUpItems + latestSections.flatMap(\.items)
         SpotlightIndexer.index(items, serverID: session.server.id, userID: session.user.id)

@@ -2,6 +2,13 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<!-- Universal Links power web handoff on platforms that do not use the
+	     Declared Age Range entitlement file. -->
+	<key>com.apple.developer.associated-domains</key>
+	<array>
+		<string>applinks:gus.ericslutz.dev</string>
+	</array>
+
 	<!-- Native SharePlay / Group Activities support. The activity payload carries
 	     item identifiers and display metadata only, never Jellyfin tokens or stream URLs. -->
 	<key>com.apple.developer.group-session</key>

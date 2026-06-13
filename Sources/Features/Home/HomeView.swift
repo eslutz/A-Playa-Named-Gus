@@ -8,6 +8,7 @@ import SwiftUI
 struct HomeView: View {
     @Environment(SessionStore.self) private var session
     @Environment(PlaybackRefreshStore.self) private var playbackRefresh
+    @Environment(SharedWithYouStore.self) private var sharedWithYou
     @Environment(UpNextStore.self) private var upNext
     let store: HomeStore?
 
@@ -31,6 +32,14 @@ struct HomeView: View {
             guard playbackRefresh.revision > 0, let store else { return }
             await store.refresh()
         }
+        .task(id: sharedWithYou.revision) {
+            guard let store else { return }
+            await store.loadSharedWithYou(links: sharedWithYou.links, title: sharedWithYou.collectionTitle)
+        }
+        .task(id: store != nil) {
+            guard let store else { return }
+            await store.loadSharedWithYou(links: sharedWithYou.links, title: sharedWithYou.collectionTitle)
+        }
     }
 
     private func content(_ store: HomeStore) -> some View {
@@ -44,7 +53,7 @@ struct HomeView: View {
 
         return LoadingStateView(
             state: store.state,
-            isEmpty: store.resumeItems.isEmpty && nextUpItems.isEmpty && store.latestSections.isEmpty,
+            isEmpty: store.resumeItems.isEmpty && store.sharedWithYouItems.isEmpty && nextUpItems.isEmpty && store.latestSections.isEmpty,
             emptyTitle: String(localized: "No Recent Media", comment: "Home empty-state title when no media has been watched recently"),
             emptySymbol: "clock",
             retryAction: { Task { await store.load() } }
@@ -53,6 +62,9 @@ struct HomeView: View {
                 VStack(alignment: .leading, spacing: 32) {
                     if !store.resumeItems.isEmpty {
                         MediaRail(title: String(localized: "Continue Watching", comment: "Home rail title for in-progress media"), items: store.resumeItems)
+                    }
+                    if !store.sharedWithYouItems.isEmpty {
+                        MediaRail(title: store.sharedWithYouTitle, items: store.sharedWithYouItems)
                     }
                     if !nextUpItems.isEmpty {
                         MediaRail(title: String(localized: "Next Up", comment: "Home rail title for next episodes"), items: nextUpItems, style: .backdrop)

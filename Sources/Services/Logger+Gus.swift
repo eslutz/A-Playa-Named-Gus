@@ -17,6 +17,7 @@ extension Logger {
         case downloads = "Downloads"
         case quickConnect = "QuickConnect"
         case stream = "Stream"
+        case carPlay = "CarPlay"
         case keychain = "Keychain"
         case serverStore = "ServerStore"
         case diagnostics = "Diagnostics"

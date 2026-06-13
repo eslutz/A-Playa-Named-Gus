@@ -173,9 +173,12 @@ excluded from iCloud backup. Nothing is shared outward. ADR 0005 records the des
 | macOS App Sandbox + outbound network | Shipped (`Config/Gus.entitlements`) |
 | tvOS User Management (runs as current user) | Shipped (`Config/Gus-tvOS.entitlements`) |
 | SharePlay / Group Activities | Shipped (`com.apple.developer.group-session`) |
+| Universal Links / Associated Domains | Shipped for `applinks:gus.ericslutz.dev` |
+| Shared with You | Shipped via Universal Links, `SWHighlightCenter`, and `SWAttributionView` |
+| tvOS App Group / Top Shelf snapshot | Shipped (`group.dev.ericslutz.gus`) |
 | Background audio (`UIBackgroundModes`) | Shipped (Info.plist) |
 | CarPlay audio | Code complete; entitlement awaits Apple grant — not wired into signing (`Config/Gus-CarPlay.entitlements`) |
-| Declared Age Range (OS 26+) | Code complete and self-disabling; requires the `com.apple.developer.declared-age-range` entitlement before the Settings action functions on device (see `Documentation/AppStore/signing-capabilities.md`) |
+| Declared Age Range (OS 26+) | Code complete and entitlement-wired for iOS/iPadOS/macOS; device verification remains (see `Documentation/AppStore/signing-capabilities.md`) |
 | Family Controls / ManagedSettings | **Not used** — documented as entitlement-gated follow-up in `Documentation/family-safety-brief.md` |
 
 ---
@@ -236,7 +239,7 @@ own server library and includes parental content-restriction controls.
   with the live one.
 - Configure Xcode Cloud signing/provisioning and validate Release archives.
 - Upload screenshots and submit to TestFlight before final submission.
-- Request the Declared Age Range entitlement alongside the CarPlay audio entitlement.
+- Request the CarPlay audio entitlement.
 
 ### Operational blockers requiring external action
 

@@ -1,5 +1,4 @@
 #if canImport(ReadiumNavigator)
-    import ReadiumAdapterGCDWebServer
     import ReadiumNavigator
     import ReadiumShared
     import ReadiumStreamer
@@ -113,10 +112,9 @@
         private var pendingFraction: Double?
         private var reportTask: Task<Void, Never>?
 
-        // Shared Readium plumbing: the navigator serves resources over a loopback server.
+        // Shared Readium plumbing for opening local publication assets.
         private static let httpClient = DefaultHTTPClient()
         private static let assetRetriever = AssetRetriever(httpClient: httpClient)
-        static let httpServer = GCDHTTPServer(assetRetriever: assetRetriever)
 
         init(
             item: MediaItem,
@@ -234,8 +232,7 @@
                   let navigator = try? EPUBNavigatorViewController(
                       publication: publication,
                       initialLocation: model.initialLocation,
-                      config: EPUBNavigatorViewController.Configuration(),
-                      httpServer: BookReaderModel.httpServer
+                      config: EPUBNavigatorViewController.Configuration()
                   )
             else {
                 return UIViewController()

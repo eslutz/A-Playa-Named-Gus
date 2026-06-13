@@ -422,11 +422,10 @@ validation, TestFlight, and submission work are actually done.
   string). *Acceptance:* Xcode Cloud Release archives sign for each platform. *(Code side
   complete per `Documentation/AppStore/signing-capabilities.md` — entitlements, capability
   declarations, committed Team ID, and the Optic ID/Face ID no-usage-string rationale;
-  remaining work is the account-blocked Xcode Cloud workflow and archive validation, plus
-  two pending entitlements whose request/wire/verify steps are tracked as checklists in
-  `signing-capabilities.md`: CarPlay audio (`com.apple.developer.carplay-audio`, manual
-  Apple grant) and Declared Age Range (`com.apple.developer.declared-age-range`, OS 26+).
-  Both are code-complete and self-disable until granted.)*
+  remaining work is the account-blocked Xcode Cloud workflow and archive validation,
+  CarPlay audio (`com.apple.developer.carplay-audio`, manual Apple grant), and device
+  verification for the portal-backed App Groups, Associated Domains, Shared with You, and
+  Declared Age Range capabilities.)*
 - [ ] **App Store Connect record.** Create the app, set categories, age rating, support &
   marketing URLs, privacy policy URL, description, keywords. *Acceptance:* record
   complete and consistent across platforms, using the published `gus.ericslutz.dev`
@@ -532,18 +531,20 @@ milestone once it becomes the active focus and is ready to carry a hard acceptan
 | Feature | Status |
 |---|---|
 | Customizable main navigation | `[x]` Done |
-| Content deep links & system integration (Handoff, Spotlight, Siri, Top Shelf) | `[x]` Done |
+| Content deep links & system integration (Universal Links, Shared with You, Handoff, Spotlight, Siri, Top Shelf) | `[x]` Done |
 | Music library support | `[~]` In app; genre browse + live-library validation remain |
 | Books & audiobooks | `[~]` In app; visionOS reader blocked on an upstream Readium fix |
 | Photos | `[~]` In app; favorites + casting remain |
 | Live TV & DVR | `[~]` In app; full EPG grid + tuner-equipped validation remain |
 | CarPlay audio companion | `[~]` In app; entitlement + Siri intents + vehicle test remain |
 | SharePlay | `[x]` Native Group Activities integration with item-detail system launch |
-| Family safety controls & age assurance | `[~]` In app; Declared Age Range entitlement pending |
+| Family safety controls & age assurance | `[~]` In app; Declared Age Range entitlement wired, device verification remains |
 | watchOS companion | `[~]` In app; on-device verification matrix remains |
 | Expanded immersive environments | `[ ]` Not started |
 | Apple Intelligence library assistant & generated artwork | `[ ]` Not started |
 | WidgetKit home screen & lock screen widgets | `[ ]` Not started |
+| Push Notifications | `[ ]` Future — [#12](https://github.com/eslutz/A-Playa-Named-Gus/issues/12) |
+| Tap to Share | `[ ]` Future — [#13](https://github.com/eslutz/A-Playa-Named-Gus/issues/13) |
 | User-initiated diagnostic export | `[ ]` Not started |
 | Advanced accessibility enhancements | `[ ]` Not started |
 | Emby support (provider investigation) | `[ ]` Not started — unblocked by M7 |
@@ -598,20 +599,24 @@ milestone once it becomes the active focus and is ready to carry a hard acceptan
 
 - [x] **Content deep links & system integration.** Deep-link individual library items and
  surface them through the system features that depend on it. *Acceptance:* `gus://item/
- <id>` and `gus://play/<id>` open the detail surface or player from a cold or warm
- launch; system entry points carry no credentials and refuse links donated by another
+ <id>`, `gus://play/<id>`, `https://gus.ericslutz.dev/item/<id>`, and
+ `https://gus.ericslutz.dev/play/<id>` open the detail surface or player from a cold or
+ warm launch; system entry points carry no credentials and refuse links donated by another
  account. *(Done: `ContentLink` + a consume-once `AppNavigationModel` pending-link
  request resolve ids through the session provider (`Platform/ContentLinkHandler.swift`),
- gated by family-safety restrictions. Built on it: **Handoff** — detail and player
- surfaces publish `NSUserActivity` (ids only) and continue on another device;
+ gated by family-safety restrictions. Built on it: **Universal Links / Shared with You** —
+ `applinks:gus.ericslutz.dev` supports `/item/*` and `/play/*`, Apple's
+ `SWHighlightCenter` feeds a Home "Shared with You" rail, and item detail shows Apple's
+ `SWAttributionView` when the current account can resolve the shared link;
+ **Handoff** — detail and player surfaces publish `NSUserActivity` (ids only) and continue
+ on another device;
  **Core Spotlight** — `SpotlightIndexer` donates browsed/loaded items with
  `server|user|item` identifiers, opens results in-app, and deindexes on sign-out (no
  watchOS/tvOS indexing); **Siri/App Intents** — a "Play media" intent with provider
- search plus an App Shortcut phrase; **content-aware tvOS Top Shelf** — Continue
- Watching with artwork/progress/play actions from the credential-free
- `group.dev.ericslutz.gus` App Group snapshot. Remaining: device verification of
- Handoff/Siri/Spotlight surfaces, and registering the App Group with the App ID before
- tvOS archive signing — tracked in `Documentation/AppStore/signing-capabilities.md`.)*
+ search plus an App Shortcut phrase; **tvOS Top Shelf** — static deep-link entry points
+ plus personalized Continue Watching when the App Group snapshot is available. Remaining:
+ device verification of Shared with You, Handoff/Siri/Spotlight, Universal Links, and the
+ personalized Top Shelf surface.)*
 
 - [ ] **Apple Intelligence library assistant and generated artwork.** Integrate Apple's
  Foundation Models, Core Spotlight LLM search, Private Cloud Compute, and Image Playground
@@ -701,9 +706,9 @@ milestone once it becomes the active focus and is ready to carry a hard acceptan
  bare ages) and now gates item detail and playback with a clear explanation in addition
  to filtering Home/library/search/similar/Up Next/Live TV recordings/CarPlay/watch
  lists; Declared Age Range (iOS/macOS 26+) offers privacy-preserving age-aware defaults
- from Settings, pending the `com.apple.developer.declared-age-range` entitlement grant;
- ManagedSettings/FamilyControls device-restriction reading remains entitlement-gated
- follow-up per the brief.)*
+ from Settings with the entitlement now wired, pending real-device system-sheet
+ verification; ManagedSettings/FamilyControls device-restriction reading remains
+ entitlement-gated follow-up per the brief.)*
 
 - [ ] **WidgetKit home screen, lock screen, and desktop widgets.** Add WidgetKit widgets
  for iPhone, iPad, and Mac that surface the most useful at-a-glance information from the
@@ -718,9 +723,9 @@ milestone once it becomes the active focus and is ready to carry a hard acceptan
  - **Interactive widget actions** (iOS 17+/macOS 14+) — a play button inline in the
    widget that fires a `gus://play/<id>` intent without opening the app's full UI.
  - **Widget configuration** — a WidgetKit `AppIntentConfiguration` lets users pick which
-   server, user, and library section to display; the widget uses the credential-free App
-   Group snapshot (`group.dev.ericslutz.gus`) already written by `HomeStore` for the
-   tvOS Top Shelf, extended to carry the fields widgets need.
+   server, user, and library section to display; the widget uses a credential-free App
+   Group snapshot, which should be wired only after the App Group is enabled in the
+   developer portal.
  - **Live Activities / Dynamic Island** — a Now Playing Live Activity for active video
    or audio playback, showing artwork, title, and elapsed/remaining time with play/pause
    controls from the lock screen or Dynamic Island.

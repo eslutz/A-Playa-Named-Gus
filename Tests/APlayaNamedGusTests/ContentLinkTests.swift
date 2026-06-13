@@ -15,11 +15,27 @@ struct ContentLinkTests {
         #expect(ContentLink(url: play.url) == play)
     }
 
+    @Test("universal link URLs round-trip")
+    func universalURLRoundTrip() throws {
+        let item = ContentLink.item(id: "778975ecc43b55232b4330c87917f4eb")
+        let play = ContentLink.play(id: "abc123")
+
+        #expect(item.universalURL.absoluteString == "https://gus.ericslutz.dev/item/778975ecc43b55232b4330c87917f4eb")
+        #expect(play.universalURL.absoluteString == "https://gus.ericslutz.dev/play/abc123")
+        #expect(ContentLink(url: item.universalURL) == item)
+        #expect(ContentLink(url: play.universalURL) == play)
+
+        #expect(try ContentLink(url: #require(URL(string: "https://gus.ericslutz.dev/item/item-1?source=messages"))) == .item(id: "item-1"))
+    }
+
     @Test("rejects non-content URLs")
     func rejectsNonContentURLs() throws {
         #expect(try ContentLink(url: #require(URL(string: "gus://home"))) == nil)
         #expect(try ContentLink(url: #require(URL(string: "gus://item"))) == nil)
         #expect(try ContentLink(url: #require(URL(string: "https://item/abc"))) == nil)
+        #expect(try ContentLink(url: #require(URL(string: "https://example.com/item/abc"))) == nil)
+        #expect(try ContentLink(url: #require(URL(string: "https://gus.ericslutz.dev/library/abc"))) == nil)
+        #expect(try ContentLink(url: #require(URL(string: "http://gus.ericslutz.dev/item/abc"))) == nil)
         #expect(try ContentLink(url: #require(URL(string: "gus://unknown/abc"))) == nil)
     }
 

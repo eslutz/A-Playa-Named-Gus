@@ -6,9 +6,9 @@ Simulator and local macOS builds use ad-hoc signing (`CODE_SIGN_IDENTITY = -`,
 `CODE_SIGNING_REQUIRED = NO`) so GitHub PR builds work without provisioning profiles.
 The bundle ID `dev.ericslutz.gus` and paid Apple Developer Program Team ID
 `QS3GC3CT43` are set in `Config/Shared.xcconfig`. Entitlements and capability
-declarations cover the currently wired release surface; CarPlay audio and Declared Age
-Range remain pending manual entitlement/provisioning gates and are intentionally not
-advertised in App Store metadata until they are granted and wired.
+declarations cover the currently wired release surface; CarPlay audio remains pending a
+manual Apple grant and is intentionally not advertised in App Store metadata until it is
+granted and wired.
 
 Gus is built and validated with Xcode 26.5 while retaining older deployment targets
 (`iOS 18`, `tvOS 18`, `visionOS 2`, `macOS 15`, and `watchOS 11`). OS 26-specific
@@ -28,16 +28,24 @@ App Store archives belong in Xcode Cloud, not GitHub Actions.
 | App Sandbox | macOS | `com.apple.security.app-sandbox` in `Config/Gus.entitlements` | ✓ |
 | User Management | tvOS | `com.apple.developer.user-management` in `Config/Gus-tvOS.entitlements` | ✓ |
 | SharePlay / Group Activities | iOS / iPadOS / tvOS / visionOS / macOS | `com.apple.developer.group-session` in the app entitlements | ✓ |
+| Universal Links / Associated Domains | iOS / iPadOS / tvOS / visionOS / macOS | `com.apple.developer.associated-domains: applinks:gus.ericslutz.dev` in the app entitlements | ✓ |
+| Shared with You | iOS / iPadOS / tvOS / macOS | `SharedWithYou.framework` plus Universal Links | ✓ |
+| Declared Age Range | iOS / iPadOS / macOS | `com.apple.developer.declared-age-range` in `Config/Gus-iOS.entitlements` and `Config/Gus.entitlements` | ✓ |
+| tvOS App Group / Top Shelf snapshot | tvOS app + Top Shelf extension | `com.apple.security.application-groups: group.dev.ericslutz.gus` in tvOS app and extension entitlements | ✓ |
 | Local network usage | iOS / iPadOS / visionOS | `NSLocalNetworkUsageDescription` in `Info.plist` | ✓ |
 | Keychain | All | Keychain Services via `SecItem*` — no capability entry required | ✓ |
 | No-exempt encryption | All | `ITSAppUsesNonExemptEncryption = false` in `Info.plist` | ✓ |
 | Offline downloads | iOS / iPadOS / macOS / visionOS / watchOS (audio) | Application Support storage — no extra capability required | ✓ |
 | Watch companion | watchOS | `GusWatch` target embedded in the iOS archive — no extra capability required | ✓ |
-| App Group (Top Shelf snapshot) | tvOS app + GusTopShelf extension | `com.apple.security.application-groups` = `group.dev.ericslutz.gus` in `Config/Gus-tvOS.entitlements` and `Config/GusTopShelf.entitlements` | ✓ code-side; **register the group with the App ID** before tvOS device/archive signing (simulators don't enforce it). The shared container carries only the Continue Watching snapshot (`TopShelfSnapshot.swift`) — no credentials. |
 
-Do not move CarPlay or Declared Age Range into the "Confirmed Ready" table, release
-metadata, or wired entitlements until the Apple Developer portal/App ID state has been
-updated and an archive has been validated with the granted capability.
+Do not move CarPlay into the "Confirmed Ready" table, release metadata, or wired
+entitlements until Apple grants it and an archive has been validated with the granted
+capability.
+
+**Universal Links / Shared with You:** Gus claims `applinks:gus.ericslutz.dev` and
+supports `/item/<id>` and `/play/<id>`. The required associated-domains file is documented
+in `Documentation/AppStore/universal-links.md` and
+`Documentation/AppStore/apple-app-site-association.json`.
 
 **Removed:** `NSFaceIDUsageDescription` was present but `LocalAuthentication` is never
 called in A Playa Named Gus source code. A false usage description is an App Review red
@@ -90,22 +98,18 @@ Steps to enable (none are code work — the implementation is complete):
 - [ ] **Verify** in the CarPlay simulator (Simulator app → I/O → External Displays →
   CarPlay) and on real CarPlay hardware.
 
-## Declared Age Range (Pending Entitlement)
+## Declared Age Range
 
 The family-safety "Set from Age Range" action (`Sources/Features/Settings/
 AgeRangeDefaults.swift`, OS 26+ only) uses Apple's DeclaredAgeRange framework, which
-requires the `com.apple.developer.declared-age-range` entitlement at runtime. The code
-self-disables without it: the request throws and Settings shows a graceful status
-message while the manual rating picker keeps working. Scope and privacy rules:
+requires the `com.apple.developer.declared-age-range` entitlement at runtime. The
+entitlement is wired for iOS/iPadOS and macOS; the code still self-disables if the runtime
+or provisioning profile does not make the service available. Settings shows a graceful
+status message while the manual rating picker keeps working. Scope and privacy rules:
 `Documentation/family-safety-brief.md`.
 
-Steps to enable (none are code work — the implementation is complete):
+Remaining validation:
 
-- [ ] **Add the Declared Age Range capability** to the App ID in the Developer portal.
-  Unlike CarPlay this is self-serve (no manual Apple grant).
-- [ ] **Add `com.apple.developer.declared-age-range`** to the iOS and macOS entitlements
-  files (extend `Config/Gus.entitlements` for macOS; add an iOS entitlements file), and
-  wire them per-SDK in `Config/Shared.xcconfig` the same way as CarPlay above.
 - [ ] **Verify on an iOS 26 / macOS 26 device** that Settings → Content Restrictions →
   "Set from Age Range" presents the system sheet and maps the result to a limit
   (simulators may not surface the system sheet). visionOS/tvOS/watchOS do not expose the
@@ -153,8 +157,8 @@ signing `Config/Local.xcconfig`, and regenerates `A Playa Named Gus.xcodeproj` f
 
 - **CarPlay audio entitlement** — request, grant-wait, wire, and verify (see the CarPlay
   section above).
-- **Declared Age Range entitlement** — add the capability, wire the entitlements, and
-  verify on an OS 26 device (see the Declared Age Range section above).
+- **Declared Age Range device verification** — verify on an OS 26 device that the system
+  sheet presents and maps back to Gus's content limit.
 - Create/configure the Xcode Cloud workflow for `dev.ericslutz.gus`, the tvOS Top
   Shelf extension, and the `GusWatch` watch app.
 - Let Xcode Cloud manage App Store provisioning profiles for the app plus the tvOS Top

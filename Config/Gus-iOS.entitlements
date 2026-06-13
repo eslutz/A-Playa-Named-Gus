@@ -2,18 +2,18 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<!-- macOS only: sandbox the app and allow outbound network connections
-	     (so it can reach a self-hosted Jellyfin server). -->
-	<key>com.apple.security.app-sandbox</key>
-	<true/>
-	<key>com.apple.security.network.client</key>
-	<true/>
+	<!-- Universal Links power Shared with You, Messages shares, and web handoff. -->
 	<key>com.apple.developer.associated-domains</key>
 	<array>
 		<string>applinks:gus.ericslutz.dev</string>
 	</array>
+
+	<!-- Native Declared Age Range support for the Settings "Set from Age Range" action. -->
 	<key>com.apple.developer.declared-age-range</key>
 	<true/>
+
+	<!-- Native SharePlay / Group Activities support. The activity payload carries
+	     item identifiers and display metadata only, never Jellyfin tokens or stream URLs. -->
 	<key>com.apple.developer.group-session</key>
 	<true/>
 </dict>

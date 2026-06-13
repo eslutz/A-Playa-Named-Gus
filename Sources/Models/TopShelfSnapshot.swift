@@ -1,8 +1,8 @@
 import Foundation
 
-/// The data contract between the tvOS app and its Top Shelf extension: a small JSON
-/// snapshot of Continue Watching / Next Up, written by the app into the shared App
-/// Group container whenever Home loads, and read by the extension to render posters.
+/// The optional data contract between the tvOS app and its Top Shelf extension: a
+/// small JSON snapshot of Continue Watching / Next Up. It is only active when the app
+/// and extension are signed with a shared App Group entitlement.
 ///
 /// The snapshot deliberately carries **no credentials**: image URLs are Jellyfin's
 /// unauthenticated image endpoints and the actions are `gus://` deep links, so the

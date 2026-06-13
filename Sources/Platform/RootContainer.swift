@@ -6,9 +6,9 @@ import SwiftUI
 /// - iPad / macOS → `NavigationSplitView` (sidebar = sections).
 /// - visionOS → `.sidebarAdaptable` `TabView` for the native floating sidebar style.
 ///
-/// Navigation is user-customizable: Home is fixed first and Settings fixed last, while
-/// the sections between them (the individual Libraries grid plus consolidated media
-/// categories) follow the per-account order/visibility in `NavigationPreferencesStore`.
+/// Navigation is user-customizable from one ordered section list. Home is fixed first;
+/// Libraries, Settings, and visible consolidated media categories follow the per-account
+/// order in `NavigationPreferencesStore`.
 struct RootContainer: View {
     var body: some View {
         platformRoot
@@ -94,14 +94,30 @@ private enum RootSection: Hashable {
     }
 }
 
-/// Renders one customizable section: the individual Libraries grid, Live TV, or a
-/// consolidated media category grid.
-private struct SectionDestination: View {
+private extension ResolvedNavigationSection {
+    var rootSelection: RootSection {
+        switch id {
+        case NavigationSectionPreference.homeID:
+            return .home
+        case NavigationSectionPreference.settingsID:
+            return .settings
+        default:
+            return .section(id)
+        }
+    }
+}
+
+/// Renders one visible navigation section.
+private struct RootSectionDestination: View {
     let section: ResolvedNavigationSection
     let home: HomeStore?
 
     var body: some View {
-        if let category = section.category {
+        if section.id == NavigationSectionPreference.homeID {
+            HomeView(store: home)
+        } else if section.id == NavigationSectionPreference.settingsID {
+            SettingsView()
+        } else if let category = section.category {
             if category == .livetv {
                 LiveTVView()
             } else {
@@ -131,29 +147,16 @@ private struct TabRootView: View {
 
     var body: some View {
         TabView(selection: $selection) {
-            Tab("Home", systemImage: "house", value: RootSection.home) {
-                NavigationStack {
-                    SearchRootView {
-                        HomeView(store: home)
-                    }
-                    .gusItemDestinations()
-                }
-            }
             ForEach(sections) { section in
-                Tab(value: RootSection.section(section.id)) {
+                Tab(value: section.rootSelection) {
                     NavigationStack {
                         SearchRootView {
-                            SectionDestination(section: section, home: home)
+                            RootSectionDestination(section: section, home: home)
                         }
                         .gusItemDestinations()
                     }
                 } label: {
                     Label(section.title, systemImage: section.systemImage)
-                }
-            }
-            Tab("Settings", systemImage: "gearshape", value: RootSection.settings) {
-                NavigationStack {
-                    SettingsView()
                 }
             }
         }
@@ -192,7 +195,7 @@ private struct TabRootView: View {
     private func adopt(route: AppRoute) {
         guard let routed = RootSection(route: route) else { return }
         // A hidden Libraries section falls back to Home rather than a blank tab.
-        if case let .section(id) = routed, !sections.contains(where: { $0.id == id }) {
+        if !sections.contains(where: { $0.rootSelection == routed }) {
             selection = .home
             return
         }
@@ -220,31 +223,16 @@ private struct TabRootView: View {
 
         var body: some View {
             TabView(selection: $selection) {
-                Tab("Home", systemImage: "house", value: RootSection.home) {
-                    NavigationStack {
-                        SearchRootView {
-                            HomeView(store: home)
-                        }
-                        .gusItemDestinations()
-                    }
-                }
-
                 ForEach(sections) { section in
-                    Tab(value: RootSection.section(section.id)) {
+                    Tab(value: section.rootSelection) {
                         NavigationStack {
                             SearchRootView {
-                                SectionDestination(section: section, home: home)
+                                RootSectionDestination(section: section, home: home)
                             }
                             .gusItemDestinations()
                         }
                     } label: {
                         Label(section.title, systemImage: section.systemImage)
-                    }
-                }
-
-                Tab("Settings", systemImage: "gearshape", value: RootSection.settings) {
-                    NavigationStack {
-                        SettingsView()
                     }
                 }
             }
@@ -279,7 +267,9 @@ private struct TabRootView: View {
                 }
             }
             .onChange(of: navigation.route) { _, route in
-                if let routed = RootSection(route: route) {
+                if let routed = RootSection(route: route),
+                   sections.contains(where: { $0.rootSelection == routed })
+                {
                     selection = routed
                 }
             }
@@ -316,12 +306,10 @@ private struct SplitRootView: View {
     var body: some View {
         NavigationSplitView {
             List(selection: $selection) {
-                Label("Home", systemImage: "house").tag(RootSection.home)
                 ForEach(sections) { section in
                     Label(section.title, systemImage: section.systemImage)
-                        .tag(RootSection.section(section.id))
+                        .tag(section.rootSelection)
                 }
-                Label("Settings", systemImage: "gearshape").tag(RootSection.settings)
             }
             .navigationTitle(Text("A Playa Named Gus", comment: "App name"))
             #if os(macOS)
@@ -386,17 +374,15 @@ private struct SplitRootView: View {
     @ViewBuilder
     private var detail: some View {
         switch selection {
-        case .settings:
-            SettingsView()
-        case let .section(id):
-            if let section = sections.first(where: { $0.id == id }) {
-                SectionDestination(section: section, home: home)
+        case let selection?:
+            if let section = sections.first(where: { $0.rootSelection == selection }) {
+                RootSectionDestination(section: section, home: home)
             } else {
                 // The stored selection refers to a hidden/removed section; sections may
                 // also still be loading — Home is the graceful fallback either way.
                 HomeView(store: home)
             }
-        case .home, .none:
+        case .none:
             HomeView(store: home)
         }
     }

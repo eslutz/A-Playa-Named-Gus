@@ -18,6 +18,7 @@ struct GusApp: App {
     @State private var offlineDownloads = OfflineDownloadStore()
     @State private var upNext = UpNextStore()
     @State private var navigationPreferences = NavigationPreferencesStore()
+    @State private var sharedWithYou = SharedWithYouStore()
     @AppStorage(AppearanceSetting.defaultsKey) private var appearanceRawValue = AppearanceSetting.system.rawValue
     private let shouldRestoreLastSession: Bool
     private let shouldInstallDebugPreviewSession: Bool
@@ -91,6 +92,7 @@ struct GusApp: App {
                 .environment(offlineDownloads)
                 .environment(upNext)
                 .environment(navigationPreferences)
+                .environment(sharedWithYou)
             #if os(visionOS)
                 .environment(cinema)
             #endif
@@ -113,6 +115,12 @@ struct GusApp: App {
                     appModel.restoreLastSession()
                 }
                 .onOpenURL { url in
+                    appNavigation.open(url: url)
+                }
+                // Universal Links (including Messages / Shared with You) may arrive as
+                // a browsing-web activity instead of a direct open-URL event.
+                .onContinueUserActivity(NSUserActivityTypeBrowsingWeb) { activity in
+                    guard let url = activity.webpageURL else { return }
                     appNavigation.open(url: url)
                 }
                 // Handoff continuations from another device's detail/player surface.
@@ -149,6 +157,7 @@ struct GusApp: App {
                         .environment(offlineDownloads)
                         .environment(upNext)
                         .environment(navigationPreferences)
+                        .environment(sharedWithYou)
                         .preferredColorScheme(appearance.colorScheme)
                 }
             }

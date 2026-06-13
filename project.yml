@@ -58,6 +58,8 @@ targets:
     dependencies:
       - sdk: AppIntents.framework
       - sdk: GroupActivities.framework
+      - sdk: SharedWithYou.framework
+        destinationFilters: [iOS, tvOS, macOS]
       - package: JellyfinSDK
         product: JellyfinAPI
       # Readium links only into the destinations that have the in-app reader.

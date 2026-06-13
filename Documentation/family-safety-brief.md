@@ -58,7 +58,7 @@ would make the feature unusable, while the strict toggle serves households that 
 | API | Availability | Entitlement | Status |
 |---|---|---|---|
 | App-level `ContentRatingGate` | All platforms (incl. watchOS browse) | none | shipped |
-| DeclaredAgeRange (`AgeRangeService`) | iOS 26+/macOS 26+ (visionOS/tvOS/watchOS unavailable) | `com.apple.developer.declared-age-range` | code shipped; entitlement request pending (CarPlay-style: code self-disables without it) |
+| DeclaredAgeRange (`AgeRangeService`) | iOS 26+/macOS 26+ (visionOS/tvOS/watchOS unavailable) | `com.apple.developer.declared-age-range` | code shipped; entitlement wired; real-device system-sheet verification remains |
 | ManagedSettings read of device media-rating restrictions | iOS/iPadOS | Family Controls (`com.apple.developer.family-controls`, distribution requires Apple approval) | **follow-up only** — per the roadmap, pursued only if Gus needs Screen-Time-style controls beyond media-rating filtering |
 | PermissionKit / significant-change parental consent | iOS 26.4+ | TBD | evaluated; not needed while Gus collects nothing and ships no communication features |
 
@@ -90,7 +90,7 @@ answers and the parental-controls disclosure live in
 | Adult (18+) declared | Limit unchanged |
 | Declined sharing | No change; no error; nothing stored |
 | OS/platform without DeclaredAgeRange | Button absent; manual picker only |
-| Entitlement missing (pre-grant build) | Request fails gracefully; status message; manual picker unaffected |
+| Service unavailable (missing profile support, unsupported OS, or runtime denial) | Request fails gracefully; status message; manual picker unaffected |
 | Unrated item, Hide Unrated off/on | Admitted / hidden+gated |
 | International ratings (BBFC/FSK/ACB/prefixed/bare-age) | Mapped per `ContentRatingGateTests` |
 | Deep link / downloaded record to restricted item | Detail and player both gate with explanation |

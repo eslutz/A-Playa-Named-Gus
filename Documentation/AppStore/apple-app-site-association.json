@@ -1,0 +1,21 @@
+{
+  "applinks": {
+    "details": [
+      {
+        "appIDs": [
+          "QS3GC3CT43.dev.ericslutz.gus"
+        ],
+        "components": [
+          {
+            "/": "/item/*",
+            "comment": "Open a Jellyfin item detail surface in Gus."
+          },
+          {
+            "/": "/play/*",
+            "comment": "Start playback for a Jellyfin item in Gus."
+          }
+        ]
+      }
+    ]
+  }
+}

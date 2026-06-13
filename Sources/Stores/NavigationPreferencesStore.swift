@@ -94,14 +94,19 @@ enum NavigationCategory: String, CaseIterable, Codable, Hashable, Identifiable {
 }
 
 /// One entry in the user's customized navigation: a section id plus visibility.
-/// `"libraries"` is the fixed individual Libraries grid; category ids such as
-/// `"category.movies"` represent consolidated media categories across every matching
-/// library on the active server. Home and Settings are fixed at the start and end.
+/// Required ids (`"home"`, `"libraries"`, `"settings"`) stay visible; category ids
+/// such as `"category.movies"` represent consolidated media categories across every
+/// matching library on the active server.
 struct NavigationSectionPreference: Codable, Equatable {
+    static let homeID = "home"
     static let librariesID = "libraries"
+    static let settingsID = "settings"
 
     var id: String
-    var isVisible: Bool
+    /// `nil` means the section follows the server-derived default: categories with
+    /// content are visible, empty categories are hidden. A non-nil value is the user's
+    /// explicit show/hide choice.
+    var isVisible: Bool?
 }
 
 /// A preference resolved against the libraries the server actually has right now.
@@ -115,13 +120,17 @@ struct ResolvedNavigationSection: Identifiable, Equatable {
     /// The server libraries represented by this section. Empty for the fixed Libraries
     /// grid, which intentionally surfaces all individual libraries itself.
     let libraries: [MediaItem]
+    /// Home stays fixed; every other visible/hidden section can be reordered within its
+    /// current list.
+    let canMove: Bool
+    /// Only category sections can be hidden. Home, Libraries, and Settings remain visible.
+    let canHide: Bool
 }
 
-/// Persists per-account navigation customization (order + visibility of the sections
-/// between Home and Settings) as JSON in Application Support, mirroring the Up Next
-/// store's scoping. Stored ids that no longer exist on the server are dropped at
-/// resolution time, and new categories appear automatically (visible, at the end), so a
-/// changed server never breaks navigation.
+/// Persists per-account navigation customization as JSON in Application Support,
+/// mirroring the Up Next store's scoping. All known category sections are resolvable:
+/// categories with matching libraries default into Sections, while empty categories
+/// default into Hidden until the user shows them or content appears later.
 @MainActor
 @Observable
 final class NavigationPreferencesStore {
@@ -151,14 +160,15 @@ final class NavigationPreferencesStore {
         }
     }
 
-    /// Merges stored preferences with the categories the server has right now: stored
-    /// order wins, unknown stored ids are dropped, new sections append visible. The
-    /// individual Libraries grid entry is always present.
+    /// Merges stored preferences with the sections the app knows about. Stored order wins,
+    /// unknown stored ids are dropped, and missing ids are appended in the native default
+    /// order. Hidden rows are returned after visible rows so the editor can present
+    /// Sections and Hidden as separate lists without losing each row's ordering.
     func resolvedSections(libraries: [MediaItem], serverID: String, userID: String) -> [ResolvedNavigationSection] {
         let scope = AccountScope(serverID: serverID, userID: userID)
         let stored = preferencesByScope[scope] ?? []
-        let categories = NavigationCategory.available(in: libraries)
-        let categoryByID = Dictionary(uniqueKeysWithValues: categories.map { ($0.id, $0) })
+        let availableCategories = Set(NavigationCategory.available(in: libraries))
+        let categoryByID = Dictionary(uniqueKeysWithValues: NavigationCategory.allCases.map { ($0.id, $0) })
         let librariesByCategory = Dictionary(grouping: libraries.compactMap { library -> (NavigationCategory, MediaItem)? in
             guard let collectionType = library.collectionType,
                   let category = NavigationCategory.allCases.first(where: { $0.collectionType == collectionType })
@@ -173,52 +183,49 @@ final class NavigationPreferencesStore {
         var orderedIDs: [String] = []
         var visibility: [String: Bool] = [:]
         for preference in stored {
-            let isKnown = preference.id == NavigationSectionPreference.librariesID || categoryByID[preference.id] != nil
+            let isKnown = isKnownSectionID(preference.id)
             guard isKnown, !orderedIDs.contains(preference.id) else { continue }
             orderedIDs.append(preference.id)
-            visibility[preference.id] = preference.isVisible
-        }
-
-        if !orderedIDs.contains(NavigationSectionPreference.librariesID) {
-            orderedIDs.insert(NavigationSectionPreference.librariesID, at: 0)
-            visibility[NavigationSectionPreference.librariesID] = true
-        }
-        for category in categories {
-            guard !orderedIDs.contains(category.id) else { continue }
-            orderedIDs.append(category.id)
-            visibility[category.id] = true
-        }
-
-        return orderedIDs.map { id in
-            if id == NavigationSectionPreference.librariesID {
-                return ResolvedNavigationSection(
-                    id: id,
-                    title: String(localized: "Libraries", comment: "Navigation section: the libraries grid"),
-                    systemImage: "rectangle.stack",
-                    isVisible: visibility[id] ?? true,
-                    category: nil,
-                    libraries: []
-                )
+            if let isVisible = preference.isVisible {
+                visibility[preference.id] = isVisible
             }
-            let category = categoryByID[id]
-            return ResolvedNavigationSection(
-                id: id,
-                title: category?.title ?? id,
-                systemImage: category?.systemImage ?? "rectangle.stack",
-                isVisible: visibility[id] ?? true,
-                category: category,
-                libraries: category.flatMap { librariesByCategory[$0] } ?? []
+        }
+
+        for id in defaultSectionIDs(availableCategories: availableCategories) where !orderedIDs.contains(id) {
+            orderedIDs.append(id)
+        }
+
+        orderedIDs.removeAll { $0 == NavigationSectionPreference.homeID }
+        orderedIDs.insert(NavigationSectionPreference.homeID, at: 0)
+
+        let sections = orderedIDs.compactMap { id -> ResolvedNavigationSection? in
+            section(
+                for: id,
+                visibility: visibility,
+                availableCategories: availableCategories,
+                categoryByID: categoryByID,
+                librariesByCategory: librariesByCategory
             )
         }
+
+        return sections.filter(\.isVisible) + sections.filter { !$0.isVisible }
     }
 
-    /// The visible sections in display order — what the roots render between Home and
-    /// Settings.
+    /// The visible sections in display order — what the roots render.
     func visibleSections(libraries: [MediaItem], serverID: String, userID: String) -> [ResolvedNavigationSection] {
         resolvedSections(libraries: libraries, serverID: serverID, userID: userID).filter(\.isVisible)
     }
 
+    /// Hidden category sections in display order for the navigation editor.
+    func hiddenSections(libraries: [MediaItem], serverID: String, userID: String) -> [ResolvedNavigationSection] {
+        resolvedSections(libraries: libraries, serverID: serverID, userID: userID).filter { !$0.isVisible }
+    }
+
     func setVisibility(_ isVisible: Bool, forSectionID id: String, libraries: [MediaItem], serverID: String, userID: String) {
+        let section = resolvedSections(libraries: libraries, serverID: serverID, userID: userID)
+            .first { $0.id == id }
+        guard section?.canHide == true else { return }
+
         updatePreferences(libraries: libraries, serverID: serverID, userID: userID) { preferences in
             guard let index = preferences.firstIndex(where: { $0.id == id }) else { return }
             preferences[index].isVisible = isVisible
@@ -228,16 +235,127 @@ final class NavigationPreferencesStore {
     /// Moves a section by `offset` positions (negative = toward Home), shifting the
     /// sections it passes rather than swapping with the landing spot.
     func move(sectionID id: String, by offset: Int, libraries: [MediaItem], serverID: String, userID: String) {
+        let sections = resolvedSections(libraries: libraries, serverID: serverID, userID: userID)
+        guard let section = sections.first(where: { $0.id == id }), section.canMove else { return }
+
+        let group = sections.filter { $0.isVisible == section.isVisible && $0.canMove }.map(\.id)
+        guard let index = group.firstIndex(of: id) else { return }
+        let target = index + offset
+        guard group.indices.contains(target) else { return }
+
+        var orderedGroup = group
+        let element = orderedGroup.remove(at: index)
+        orderedGroup.insert(element, at: target)
+
         updatePreferences(libraries: libraries, serverID: serverID, userID: userID) { preferences in
-            guard let index = preferences.firstIndex(where: { $0.id == id }) else { return }
-            let target = index + offset
-            guard preferences.indices.contains(target) else { return }
-            let element = preferences.remove(at: index)
-            preferences.insert(element, at: target)
+            applyOrder(orderedGroup, to: &preferences)
+        }
+    }
+
+    func moveVisibleSections(from source: IndexSet, to destination: Int, libraries: [MediaItem], serverID: String, userID: String) {
+        let visible = visibleSections(libraries: libraries, serverID: serverID, userID: userID)
+        guard let sourceIndex = source.first,
+              visible.indices.contains(sourceIndex),
+              visible[sourceIndex].canMove
+        else { return }
+
+        var reordered = visible
+        let element = reordered.remove(at: sourceIndex)
+        let adjustedDestination = destination > sourceIndex ? destination - 1 : destination
+        let boundedDestination = min(max(adjustedDestination, 1), reordered.count)
+        reordered.insert(element, at: boundedDestination)
+        let orderedMovableIDs = reordered.filter(\.canMove).map(\.id)
+
+        updatePreferences(libraries: libraries, serverID: serverID, userID: userID) { preferences in
+            applyOrder(orderedMovableIDs, to: &preferences)
         }
     }
 
     // MARK: - Private
+
+    private func isKnownSectionID(_ id: String) -> Bool {
+        id == NavigationSectionPreference.homeID ||
+            id == NavigationSectionPreference.librariesID ||
+            id == NavigationSectionPreference.settingsID ||
+            NavigationCategory(id: id) != nil
+    }
+
+    private func defaultSectionIDs(availableCategories: Set<NavigationCategory>) -> [String] {
+        let visibleCategories = NavigationCategory.allCases.filter { availableCategories.contains($0) }.map(\.id)
+        let hiddenCategories = NavigationCategory.allCases.filter { !availableCategories.contains($0) }.map(\.id)
+
+        return [NavigationSectionPreference.homeID, NavigationSectionPreference.librariesID] +
+            visibleCategories +
+            [NavigationSectionPreference.settingsID] +
+            hiddenCategories
+    }
+
+    private func section(
+        for id: String,
+        visibility: [String: Bool],
+        availableCategories: Set<NavigationCategory>,
+        categoryByID: [String: NavigationCategory],
+        librariesByCategory: [NavigationCategory: [MediaItem]]
+    ) -> ResolvedNavigationSection? {
+        switch id {
+        case NavigationSectionPreference.homeID:
+            return ResolvedNavigationSection(
+                id: id,
+                title: String(localized: "Home", comment: "Navigation section: home"),
+                systemImage: "house",
+                isVisible: true,
+                category: nil,
+                libraries: [],
+                canMove: false,
+                canHide: false
+            )
+        case NavigationSectionPreference.librariesID:
+            return ResolvedNavigationSection(
+                id: id,
+                title: String(localized: "Libraries", comment: "Navigation section: the libraries grid"),
+                systemImage: "rectangle.stack",
+                isVisible: true,
+                category: nil,
+                libraries: [],
+                canMove: true,
+                canHide: false
+            )
+        case NavigationSectionPreference.settingsID:
+            return ResolvedNavigationSection(
+                id: id,
+                title: String(localized: "Settings", comment: "Settings navigation label"),
+                systemImage: "gearshape",
+                isVisible: true,
+                category: nil,
+                libraries: [],
+                canMove: true,
+                canHide: false
+            )
+        default:
+            guard let category = categoryByID[id] else { return nil }
+            return ResolvedNavigationSection(
+                id: id,
+                title: category.title,
+                systemImage: category.systemImage,
+                isVisible: visibility[id] ?? availableCategories.contains(category),
+                category: category,
+                libraries: librariesByCategory[category] ?? [],
+                canMove: true,
+                canHide: true
+            )
+        }
+    }
+
+    private func applyOrder(_ orderedIDs: [String], to preferences: inout [NavigationSectionPreference]) {
+        let orderedSet = Set(orderedIDs)
+        let preferenceByID = Dictionary(uniqueKeysWithValues: preferences.map { ($0.id, $0) })
+        var nextIDs = orderedIDs.makeIterator()
+
+        for index in preferences.indices where orderedSet.contains(preferences[index].id) {
+            guard let nextID = nextIDs.next(), let preference = preferenceByID[nextID] else { return }
+            preferences[index] = preference
+        }
+    }
 
     /// Materializes the current resolved order into stored preferences, applies the
     /// mutation, persists, and bumps the revision.
@@ -248,8 +366,11 @@ final class NavigationPreferencesStore {
         mutate: (inout [NavigationSectionPreference]) -> Void
     ) {
         let scope = AccountScope(serverID: serverID, userID: userID)
+        let storedByID = Dictionary(uniqueKeysWithValues: (preferencesByScope[scope] ?? []).map { ($0.id, $0) })
         var preferences = resolvedSections(libraries: libraries, serverID: serverID, userID: userID)
-            .map { NavigationSectionPreference(id: $0.id, isVisible: $0.isVisible) }
+            .map { section in
+                NavigationSectionPreference(id: section.id, isVisible: storedByID[section.id]?.isVisible)
+            }
         mutate(&preferences)
         preferencesByScope[scope] = preferences
         loadedScopes.insert(scope)

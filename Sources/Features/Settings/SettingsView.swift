@@ -6,6 +6,7 @@ struct SettingsView: View {
     @Environment(SessionStore.self) private var session
     @Environment(OfflineDownloadStore.self) private var downloads
 
+    @State private var isShowingNavigationSettings = false
     @State private var reauthenticationServer: ServerConnection?
     @State private var switchErrorMessage: String?
     @AppStorage(ContentRatingGate.limitDefaultsKey) private var contentLimitRawValue = ContentRatingGate.Limit.off.rawValue
@@ -62,10 +63,8 @@ struct SettingsView: View {
                         Text(appearance.title).tag(appearance.rawValue)
                     }
                 }
-                NavigationLink {
-                    NavigationSettingsView()
-                } label: {
-                    Label("Navigation", systemImage: "list.bullet.indent")
+                NavigationLink(value: SettingsDestination.navigation) {
+                    Label("Navigation", systemImage: "list.bullet")
                 }
             } header: {
                 Text("Appearance")
@@ -108,6 +107,19 @@ struct SettingsView: View {
         }
         .settingsFormStyle()
         .navigationTitle("Settings")
+        .navigationDestination(for: SettingsDestination.self) { destination in
+            switch destination {
+            case .navigation:
+                NavigationSettingsView()
+                    .onAppear {
+                        isShowingNavigationSettings = true
+                    }
+                    .onDisappear {
+                        isShowingNavigationSettings = false
+                    }
+            }
+        }
+        .navigationBarBackButtonHidden(isShowingNavigationSettings)
         .task {
             downloads.load(serverID: session.server.id, userID: session.user.id)
         }
@@ -182,6 +194,10 @@ struct SettingsView: View {
             switchErrorMessage = error.localizedDescription
         }
     }
+}
+
+private enum SettingsDestination: Hashable {
+    case navigation
 }
 
 private extension View {

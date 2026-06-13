@@ -284,27 +284,27 @@ final class JellyfinMediaProviderSession: MediaProviderSession {
     }
 
     func cancelLiveTVTimer(id: String) async throws {
-        try await client.send(Paths.cancelTimer(timerID: id))
+        _ = try await client.send(Paths.cancelTimer(timerID: id))
     }
 
     func toggleWatched(itemID: String, currentlyWatched: Bool) async throws {
         if currentlyWatched {
-            try await client.send(Paths.markUnplayedItem(itemID: itemID, userID: userID))
+            _ = try await client.send(Paths.markUnplayedItem(itemID: itemID, userID: userID))
         } else {
-            try await client.send(Paths.markPlayedItem(itemID: itemID, userID: userID))
+            _ = try await client.send(Paths.markPlayedItem(itemID: itemID, userID: userID))
         }
     }
 
     func toggleFavorite(itemID: String, currentlyFavorite: Bool) async throws {
         if currentlyFavorite {
-            try await client.send(Paths.unmarkFavoriteItem(itemID: itemID, userID: userID))
+            _ = try await client.send(Paths.unmarkFavoriteItem(itemID: itemID, userID: userID))
         } else {
-            try await client.send(Paths.markFavoriteItem(itemID: itemID, userID: userID))
+            _ = try await client.send(Paths.markFavoriteItem(itemID: itemID, userID: userID))
         }
     }
 
     func reportPlaybackStart(context: PlaybackReportContext, positionTicks: Int, isPaused: Bool) async throws {
-        try await client.send(
+        _ = try await client.send(
             Paths.reportPlaybackStart(
                 playbackStateInfo(for: context, positionTicks: positionTicks, isPaused: isPaused)
             )
@@ -312,7 +312,7 @@ final class JellyfinMediaProviderSession: MediaProviderSession {
     }
 
     func reportPlaybackProgress(context: PlaybackReportContext, positionTicks: Int, isPaused: Bool) async throws {
-        try await client.send(
+        _ = try await client.send(
             Paths.reportPlaybackProgress(
                 playbackStateInfo(for: context, positionTicks: positionTicks, isPaused: isPaused)
             )
@@ -320,7 +320,7 @@ final class JellyfinMediaProviderSession: MediaProviderSession {
     }
 
     func reportPlaybackStopped(context: PlaybackReportContext, positionTicks: Int) async throws {
-        try await client.send(
+        _ = try await client.send(
             Paths.reportPlaybackStopped(
                 PlaybackStopInfo(
                     isFailed: false,
@@ -336,7 +336,7 @@ final class JellyfinMediaProviderSession: MediaProviderSession {
     // MARK: - Book reading progress
 
     func reportBookProgress(itemID: String, fraction: Double) async throws {
-        try await client.send(
+        _ = try await client.send(
             Paths.updateItemUserData(
                 itemID: itemID,
                 userID: userID,

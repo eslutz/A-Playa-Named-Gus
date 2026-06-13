@@ -131,7 +131,7 @@ struct StreamURLBuilderTests {
             ),
         ])
 
-        let builder = try StreamURLBuilder(
+        let builder = StreamURLBuilder(
             client: fixture.client,
             userID: "user-1"
         )
@@ -170,7 +170,7 @@ struct StreamURLBuilderTests {
             ),
         ])
 
-        let builder = try StreamURLBuilder(
+        let builder = StreamURLBuilder(
             client: fixture.client,
             userID: "user-1"
         )

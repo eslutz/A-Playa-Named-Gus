@@ -117,6 +117,10 @@ struct ItemDetailView: View {
                 }
 
                 VStack(alignment: .leading, spacing: 30) {
+                    if let itemID = store.item.id {
+                        SharedWithYouAttributionView(link: .item(id: itemID))
+                    }
+
                     if let seriesStore = store.seriesStore {
                         SeriesEpisodesView(store: seriesStore)
                     }

@@ -205,8 +205,9 @@ reads the Settings-backed `PlaybackQuality` bitrate cap. Track switching is in-p
 `AVMediaSelection` for direct play (`PlaybackMediaSelectionMatcher`, ordinal+language)
 with a server-side rebuild fallback. Surfaces: `AVPlayerViewController` on iOS
 (`updatesNowPlayingInfoCenter = false` — `NowPlayingController` is the single Now Playing
-writer) and tvOS, `AVPlayerView` on macOS (video opens in the dedicated `GusPlayerWindow`
-window scene, not a sheet), SwiftUI `VideoPlayer` on visionOS. `NowPlayingController`
+writer), tvOS, and visionOS (where `AVExperienceController` provides native expanded and
+immersive playback controls), and `AVPlayerView` on macOS (video opens in the dedicated
+`GusPlayerWindow` window scene, not a sheet). `NowPlayingController`
 feeds `MPNowPlayingInfoCenter` / `MPRemoteCommandCenter`. `AVAudioSession` is guarded
 (`#if os(iOS) || os(tvOS) || os(visionOS)` — doesn't exist on macOS).
 

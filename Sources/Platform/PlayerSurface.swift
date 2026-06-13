@@ -113,6 +113,38 @@ import SwiftUI
         }
     }
 
+#elseif os(visionOS)
+    /// visionOS-native `AVPlayerViewController` surface. AVKit owns the playback chrome,
+    /// including expanded and immersive experience controls where the OS supports them.
+    struct VisionPlayerSurface: UIViewControllerRepresentable {
+        let player: AVPlayer
+
+        func makeUIViewController(context: Context) -> AVPlayerViewController {
+            let controller = AVPlayerViewController()
+            controller.player = player
+            controller.showsPlaybackControls = true
+            controller.allowsPictureInPicturePlayback = false
+            controller.canStartPictureInPictureAutomaticallyFromInline = false
+            controller.updatesNowPlayingInfoCenter = false
+            controller.appliesPreferredDisplayCriteriaAutomatically = true
+
+            if #available(visionOS 26.0, *) {
+                controller.experienceController.allowedExperiences = .recommended(including: [.expanded, .immersive])
+                controller.experienceController.configuration.expanded.automaticTransitionToImmersive = .default
+            } else {
+                controller.experienceController.allowedExperiences = .recommended(including: [.expanded])
+            }
+
+            return controller
+        }
+
+        func updateUIViewController(_ controller: AVPlayerViewController, context: Context) {
+            if controller.player !== player {
+                controller.player = player
+            }
+        }
+    }
+
 #elseif os(macOS)
     /// macOS `AVPlayerView` surface with Picture in Picture enabled.
     struct PiPCapablePlayerSurface: NSViewRepresentable {

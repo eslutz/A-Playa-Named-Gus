@@ -1,10 +1,8 @@
 import Foundation
 import TVServices
 
-/// Content-aware Top Shelf: renders the Continue Watching / Next Up snapshot the app
-/// writes into the shared App Group container (`TopShelfSnapshot`) — posters, progress
-/// bars, and `gus://` play/detail actions. Falls back to static app entry points when
-/// no snapshot exists (first run, signed out, or App Group unavailable).
+/// Static Top Shelf by default, with a content-aware path when the app and extension
+/// can read the shared App Group `TopShelfSnapshot`.
 ///
 /// The extension holds no credentials: snapshot image URLs are unauthenticated Jellyfin
 /// image endpoints and every action is a deep link handled by the app.

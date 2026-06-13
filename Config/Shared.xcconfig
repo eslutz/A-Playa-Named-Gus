@@ -52,15 +52,18 @@ CODE_SIGNING_ALLOWED = YES
 // the user-domain sandbox container, UserDefaults, Application Support, and Keychain.
 CODE_SIGN_ENTITLEMENTS[sdk=macosx*] = Config/Gus.entitlements
 
-// Native SharePlay / Group Activities.
-CODE_SIGN_ENTITLEMENTS[sdk=iphoneos*] = Config/Gus-SharePlay.entitlements
-CODE_SIGN_ENTITLEMENTS[sdk=iphonesimulator*] = Config/Gus-SharePlay.entitlements
+// Native SharePlay / Group Activities, Universal Links, and Declared Age Range on iOS.
+CODE_SIGN_ENTITLEMENTS[sdk=iphoneos*] = Config/Gus-iOS.entitlements
+CODE_SIGN_ENTITLEMENTS[sdk=iphonesimulator*] = Config/Gus-iOS.entitlements
+
+// Native SharePlay / Group Activities and Universal Links. Declared Age Range is
+// unavailable on visionOS in the installed Xcode 26.5 SDK.
 CODE_SIGN_ENTITLEMENTS[sdk=xros*] = Config/Gus-SharePlay.entitlements
 CODE_SIGN_ENTITLEMENTS[sdk=xrsimulator*] = Config/Gus-SharePlay.entitlements
 
 // tvOS runs A Playa Named Gus as the current Apple TV profile so each profile gets
-// separate app storage and Keychain items. The app intentionally does not use
-// kSecUseUserIndependentKeychain for Jellyfin access tokens.
+// separate app storage and Keychain items. The App Group is used only for the
+// credential-free Top Shelf snapshot.
 CODE_SIGN_ENTITLEMENTS[sdk=appletvos*] = Config/Gus-tvOS.entitlements
 CODE_SIGN_ENTITLEMENTS[sdk=appletvsimulator*] = Config/Gus-tvOS.entitlements
 

@@ -1,5 +1,6 @@
 #if os(iOS) && canImport(CarPlay)
     import CarPlay
+    import OSLog
     import UIKit
 
     /// CarPlay audio companion: native CarPlay templates over the active Jellyfin
@@ -41,6 +42,7 @@
         // The shared instance — CarPlay must see the same session the app does, so
         // sign-out and account switches propagate.
         private let appModel = AppModel.shared
+        private let logger = Logger(category: .carPlay)
         private var audioPlayer: AudioPlayerStore?
         private weak var interfaceController: CPInterfaceController?
 
@@ -72,7 +74,9 @@
                 title: String(localized: "Gus", comment: "CarPlay root title"),
                 sections: [CPListSection(items: [item])]
             )
-            try? await interfaceController?.setRootTemplate(list, animated: false)
+            await performTemplateOperation("set signed-out root") { interfaceController in
+                try await interfaceController.setRootTemplate(list, animated: false)
+            }
         }
 
         private func setLibraryRoot(session: SessionStore) async {
@@ -93,7 +97,9 @@
             audiobooksTemplate.tabImage = UIImage(systemName: "book")
 
             let tabBar = CPTabBarTemplate(templates: [albumsTemplate, audiobooksTemplate])
-            try? await interfaceController?.setRootTemplate(tabBar, animated: false)
+            await performTemplateOperation("set library root") { interfaceController in
+                try await interfaceController.setRootTemplate(tabBar, animated: false)
+            }
         }
 
         private func albumSection(_ albums: [MediaItem], session: SessionStore) -> CPListSection {
@@ -142,7 +148,9 @@
                 title: album.displayTitle,
                 sections: [trackSection(tracks, session: session)]
             )
-            try? await interfaceController?.pushTemplate(template, animated: true)
+            await performTemplateOperation("push album template") { interfaceController in
+                try await interfaceController.pushTemplate(template, animated: true)
+            }
         }
 
         private func play(tracks: [MediaItem], startIndex: Int, session: SessionStore) async {
@@ -150,7 +158,9 @@
             let player = AudioPlayerStore(session: session, tracks: tracks, startIndex: startIndex)
             audioPlayer = player
             await player.start()
-            try? await interfaceController?.pushTemplate(CPNowPlayingTemplate.shared, animated: true)
+            await performTemplateOperation("push now playing template") { interfaceController in
+                try await interfaceController.pushTemplate(CPNowPlayingTemplate.shared, animated: true)
+            }
         }
 
         private func loadItems(types: [MediaItemType], session: SessionStore) async -> [MediaItem] {
@@ -163,6 +173,18 @@
             ))
             // The household content-rating limit applies in the car too.
             return ContentRatingGate.filter(page?.items ?? [])
+        }
+
+        private func performTemplateOperation(
+            _ operation: String,
+            _ body: (CPInterfaceController) async throws -> Void
+        ) async {
+            guard let interfaceController else { return }
+            do {
+                try await body(interfaceController)
+            } catch {
+                logger.error("CarPlay template operation failed: \(operation, privacy: .public), \(error.localizedDescription, privacy: .public)")
+            }
         }
     }
 #endif
