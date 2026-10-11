@@ -48,6 +48,11 @@ struct Configuration {
 
     init(root: URL = repositoryRoot, environment: [String: String] = ProcessInfo.processInfo.environment) throws {
         values = [:]
+        let accountURL = FileManager.default.homeDirectoryForCurrentUser
+            .appendingPathComponent(".appstoreconnect/config.env")
+        if FileManager.default.fileExists(atPath: accountURL.path) {
+            values = try parseEnvironment(String(contentsOf: accountURL, encoding: .utf8))
+        }
         for name in [".env.local", ".env.asc.local"] {
             let url = root.appendingPathComponent(name)
             if FileManager.default.fileExists(atPath: url.path) {
@@ -196,7 +201,7 @@ struct Client {
             let jwt = try token(
                 configuration: configuration,
                 key: key,
-                path: url.path,
+                path: url.path + (url.query.map { "?" + $0 } ?? ""),
                 now: Int(Date().timeIntervalSince1970)
             )
             request.setValue("Bearer " + jwt, forHTTPHeaderField: "Authorization")
@@ -207,7 +212,12 @@ struct Client {
             }
             guard (200 ..< 300).contains(response.statusCode) else {
                 // Do not dump server bodies or Authorization headers into logs.
-                throw ASCError.message("Apple returned HTTP \(response.statusCode) for GET \(url.path).")
+                let document = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
+                let codes = (document?["errors"] as? [[String: Any]])?
+                    .compactMap { $0["code"] as? String }
+                    .filter { $0.range(of: "^[A-Z0-9_.-]+$", options: .regularExpression) != nil }
+                    .joined(separator: ", ") ?? "unknown"
+                throw ASCError.message("Apple returned HTTP \(response.statusCode) for GET \(url.path) (\(codes)).")
             }
             guard let document = try JSONSerialization.jsonObject(with: data) as? [String: Any],
                   let page = document["data"] as? [[String: Any]]
@@ -312,6 +322,8 @@ func selfTest() throws {
     try check(payload["iss"] as? String == team.values["ASC_ISSUER_ID"], "team issuer")
     try check(payload["exp"] as? Int == 1600, "ten-minute expiry")
     try check(payload["scope"] as? [String] == ["GET /v1/apps"], "read-only request scope")
+    let queryPath = "/v1/apps?filter%5BbundleId%5D=dev.ericslutz.gus"
+    try check(claims(configuration: team, path: queryPath, now: 1000)["scope"] as? [String] == ["GET " + queryPath], "query parameters retained in scope")
     let individual = Configuration(values: ["ASC_KEY_TYPE": "individual", "ASC_KEY_ID": "ABC1234567"])
     let individualClaims = claims(configuration: individual, path: "/v1/apps", now: 1000)
     try check(individualClaims["sub"] as? String == "user" && individualClaims["iss"] == nil, "individual claims")
@@ -352,13 +364,19 @@ do {
         try emit(status)
     case "inspect":
         try await inspect(Configuration())
+    case "apps":
+        let configuration = try Configuration()
+        let client = try Client(configuration: configuration, key: configuration.privateKey())
+        defer { client.session.invalidateAndCancel() }
+        try await emit(client.list("/v1/apps", query: ["fields[apps]": "name,bundleId,sku", "limit": "200"]))
     default:
         print("""
-        Usage: swift Scripts/app-store-connect.swift preflight | self-test | inspect
+        Usage: swift Scripts/app-store-connect.swift preflight | self-test | inspect | apps
         preflight: check local configuration without network access.
         self-test: test authentication with an ephemeral, non-Apple key.
         inspect: GET Gus app, Cloud workflow/repository IDs, builds, beta groups, and available toolchains.
-        Configuration: .env.asc.local, with .env.local fallback and ASC_* environment overrides.
+        apps: list every app accessible to the account key, without a bundle-ID filter.
+        Configuration: ~/.appstoreconnect/config.env, then .env.local, .env.asc.local, and ASC_* environment overrides.
         Private keys and JWTs never print. This tool cannot create workflows or start/distribute builds.
         """)
         if command != "help" {

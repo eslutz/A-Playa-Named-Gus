@@ -1,3 +1,4 @@
+import AVFoundation
 import Foundation
 @testable import Gus
 import JellyfinAPI
@@ -210,4 +211,142 @@ struct AudioPlaybackTests {
         let components = URLComponents(url: url, resolvingAgainstBaseURL: false)
         #expect(components?.queryItems?.contains { $0.name == "api_key" && $0.value == "token-123" } == true)
     }
+}
+
+@MainActor
+@Suite("Audio queue replay", .serialized)
+struct AudioReplayTests {
+    @Test("Play after natural queue completion restarts playback and tracks the next completion")
+    func replaysAfterNaturalCompletion() async throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let url = try silentAudio(in: directory)
+        let provider = FakeMediaProviderSession(capabilities: ProviderCapabilities())
+        provider.audioHandler = {
+            PlaybackSourceResolution(
+                url: url,
+                playSessionID: nil,
+                mediaSourceID: nil,
+                playMethod: .directStream,
+                stereoLayout: .none,
+                stereoFallbackReason: nil
+            )
+        }
+        let player = AVPlayer()
+        player.isMuted = true
+        let store = try AudioPlayerStore(session: session(provider: provider), tracks: [track], playerFactory: { player })
+        defer { store.teardown() }
+
+        await store.start()
+        let finishedItem = try #require(player.currentItem)
+        try #require(await waitUntil { !store.isPlaying && store.state == .loaded })
+        #expect(store.currentTime == 0)
+
+        store.playPause()
+        try #require(await waitUntil { player.currentItem !== finishedItem && store.isPlaying })
+        #expect(provider.audioResolutionCallCount == 2)
+        // The second completion proves replay reinstalls its end observer.
+        try #require(await waitUntil { !store.isPlaying && store.state == .loaded })
+    }
+
+    @Test("Replay after automatic deletion respects local-only playback and does not stream")
+    func deletedDownloadDoesNotStreamOnReplay() async throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let source = try silentAudio(in: directory)
+        let files = OfflineDownloadFileStore(directory: directory.appendingPathComponent("downloads"))
+        let record = try files.persistDownloadedFile(source, item: track, serverID: "s", userID: "u", fileExtension: "wav")
+        let suite = UUID().uuidString
+        let defaults = try #require(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        defaults.set(true, forKey: OfflineDownloadStore.deleteFinishedDefaultsKey)
+        let downloads = OfflineDownloadStore(fileStore: files, coordinator: AudioReplayDownloadCoordinator(), defaults: defaults)
+        downloads.load(serverID: "s", userID: "u")
+        let provider = FakeMediaProviderSession(capabilities: ProviderCapabilities())
+        let player = AVPlayer()
+        player.isMuted = true
+        let store = try AudioPlayerStore(
+            session: session(provider: provider),
+            tracks: [track],
+            downloads: downloads,
+            localOnly: true,
+            localProgress: OfflinePlaybackProgressStore(directory: directory.appendingPathComponent("progress")),
+            playerFactory: { player }
+        )
+        defer { store.teardown() }
+
+        await store.start()
+        try #require(await waitUntil { !store.isPlaying && files.record(forRecordID: record.id) == nil })
+        store.playPause()
+        try #require(await waitUntil {
+            if case .failed = store.state {
+                return true
+            }
+            return false
+        })
+        #expect(!store.isPlaying)
+        #expect(provider.audioResolutionCallCount == 0)
+    }
+
+    private var track: MediaItem {
+        MediaItem(id: "replay", name: "Replay", runTimeTicks: 4_000_000, type: .audio)
+    }
+
+    private func session(provider: FakeMediaProviderSession) throws -> SessionStore {
+        let url = try #require(URL(string: "https://example.com"))
+        return try SessionStore(
+            client: JellyfinClientFactory.makeClient(url: url),
+            user: StoredUser(id: "u", name: "User", serverID: "s"),
+            server: ServerConnection(id: "s", name: "Server", url: url),
+            mediaProvider: provider
+        )
+    }
+
+    private func waitUntil(_ condition: () -> Bool) async throws -> Bool {
+        let deadline = ContinuousClock.now + .seconds(8)
+        while !condition(), ContinuousClock.now < deadline {
+            try await Task.sleep(for: .milliseconds(20))
+        }
+        return condition()
+    }
+
+    /// A valid 400 ms PCM file exercises AVPlayer's actual completion notification.
+    private func silentAudio(in directory: URL) throws -> URL {
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        let byteCount: UInt32 = 6400
+        var data = Data("RIFF".utf8)
+        func append<T: FixedWidthInteger>(_ value: T) {
+            var value = value.littleEndian
+            withUnsafeBytes(of: &value) { data.append(contentsOf: $0) }
+        }
+        append(byteCount + 36)
+        data.append(Data("WAVEfmt ".utf8))
+        append(UInt32(16))
+        append(UInt16(1))
+        append(UInt16(1))
+        append(UInt32(8000))
+        append(UInt32(16000))
+        append(UInt16(2))
+        append(UInt16(16))
+        data.append(Data("data".utf8))
+        append(byteCount)
+        data.append(Data(count: Int(byteCount)))
+        let url = directory.appendingPathComponent("replay.wav")
+        try data.write(to: url)
+        return url
+    }
+}
+
+/// No background transfers are involved in the completed-file replay regression.
+@MainActor
+private final class AudioReplayDownloadCoordinator: DownloadSessionCoordinating {
+    func setEventHandler(_ eventHandler: DownloadSessionCoordinatorEventHandler?) {}
+    func startDownload(from url: URL, recordID: String) {}
+    func resumeDownload(with resumeData: Data, recordID: String) {}
+    func pause(recordID: String, completion: @escaping (Data?) -> Void) {
+        completion(nil)
+    }
+
+    func cancel(recordID: String) {}
+    func reconnectActiveTasks() {}
 }

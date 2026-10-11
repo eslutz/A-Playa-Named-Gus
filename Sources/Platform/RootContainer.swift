@@ -17,7 +17,7 @@ struct RootContainer: View {
             .gusContentLinks()
             .gusSessionPlayerHost(state: state, enabled: state.detailItem == nil)
             .gusAudioHost(coordinator: audio, enabled: state.detailItem == nil)
-        #if os(iOS) || os(tvOS)
+        #if os(iOS) || os(tvOS) || os(macOS)
             .gusNowPlaying(coordinator: audio, enabled: state.detailItem == nil)
         #endif
             .task {
@@ -138,7 +138,8 @@ private struct SplitRootView: View {
             })) {
                 ForEach(sections) { section in Label(section.title, systemImage: section.systemImage).tag(section.id) }
             }
-            .navigationTitle("A Playa Named Gus")
+            .navigationTitle("Gus")
+            .navigationSplitViewColumnWidth(min: 180, ideal: 220, max: 260)
         } detail: {
             SectionStack(sectionID: state.selectedSectionID)
         }
@@ -158,6 +159,8 @@ private struct SectionStack: View {
     }
 
     var body: some View {
+        // Read the observable reference before the escaping search-content closure.
+        let home = state.home
         NavigationStack(path: state.pathBinding(for: sectionID)) {
             Group {
                 if sectionID == RootNavigationState.moreID {
@@ -170,11 +173,11 @@ private struct SectionStack: View {
                         DownloadedLibraryView()
                     } else {
                         SearchRootView(state: state.searchState(for: section.id, session: session)) {
-                            RootSectionDestination(section: section, home: state.home)
+                            RootSectionDestination(section: section, home: home)
                         }
                     }
                 } else {
-                    HomeView(store: state.home)
+                    HomeView(store: home)
                 }
             }
             .gusItemDestinations()
@@ -186,7 +189,7 @@ private struct SectionStack: View {
                 }
             }
         }
-        #if !os(iOS) && !os(tvOS)
+        #if os(visionOS)
         .gusNowPlaying(coordinator: audio, enabled: state.detailItem == nil)
         #endif
     }

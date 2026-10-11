@@ -122,8 +122,11 @@ final class AudioPlayerStore {
     private let localProgress: OfflinePlaybackProgressStore
     private let progressWriterToken: UUID
     private var isLocalPlayback = false
+    private var playingDownload: OfflineDownloadRecord?
+    private var completedRepeats: [String: OfflineDownloadRecord] = [:]
     private let nowPlaying = NowPlayingController()
     private let logger = Logger(category: .playback)
+    private let playerFactory: @MainActor () -> AVPlayer
     private var player: AVPlayer?
     private var timeObserver: Any?
     private var endObserver: NSObjectProtocol?
@@ -132,10 +135,15 @@ final class AudioPlayerStore {
     private var reportContext: PlaybackReportContext?
     private var lastProgressReportTime: Double = 0
 
-    init(session: SessionStore, tracks: [MediaItem], startIndex: Int = 0, downloads: OfflineDownloadStore? = nil, localOnly: Bool = false, localProgress: OfflinePlaybackProgressStore? = nil) {
+    convenience init(session: SessionStore, tracks: [MediaItem], startIndex: Int = 0, downloads: OfflineDownloadStore? = nil, localOnly: Bool = false, localProgress: OfflinePlaybackProgressStore? = nil) {
+        self.init(session: session, tracks: tracks, startIndex: startIndex, downloads: downloads, localOnly: localOnly, localProgress: localProgress, playerFactory: { AVPlayer() })
+    }
+
+    init(session: SessionStore, tracks: [MediaItem], startIndex: Int = 0, downloads: OfflineDownloadStore? = nil, localOnly: Bool = false, localProgress: OfflinePlaybackProgressStore? = nil, playerFactory: @escaping @MainActor () -> AVPlayer) {
         self.session = session
         self.downloads = downloads
         self.localOnly = localOnly
+        self.playerFactory = playerFactory
         let progress = localProgress ?? .shared
         self.localProgress = progress
         progressWriterToken = progress.writerToken(for: AccountScope(serverID: session.server.id, userID: session.user.id))
@@ -168,6 +176,16 @@ final class AudioPlayerStore {
     }
 
     func playPause() {
+        if state == .loaded, player == nil {
+            // Completion releases the player and reporting context. Prepare again
+            // instead of trying to resume an ended item without its observers.
+            let generation = preparationGeneration
+            Task { [weak self] in
+                guard let self, self.preparationGeneration == generation else { return }
+                await self.playCurrentTrack(resume: false)
+            }
+            return
+        }
         guard let player else { return }
         if isPlaying {
             player.pause()
@@ -240,6 +258,7 @@ final class AudioPlayerStore {
         player?.pause()
         nowPlaying.stop()
         player = nil
+        cleanUpCompletedRepeats()
         isPlaying = false
         state = .idle
         deactivateAudioSession()
@@ -267,6 +286,7 @@ final class AudioPlayerStore {
             await PlaybackAudioSession.activate(video: false)
             try Task.checkCancellation()
             guard generation == preparationGeneration else { return }
+            playingDownload = downloads?.record(for: track, serverID: session.server.id, userID: session.user.id)
             let localURL = downloads?.localFileURL(for: track, serverID: session.server.id, userID: session.user.id)
             guard ContentRatingGate.admitsStored(track) else {
                 throw GusError.server(String(localized: "This item is restricted.", comment: "Restricted playback"))
@@ -289,7 +309,7 @@ final class AudioPlayerStore {
             guard generation == preparationGeneration else { return }
             removeObservers()
             let playerItem = AVPlayerItem(url: playbackURL)
-            let player = self.player ?? AVPlayer()
+            let player = self.player ?? playerFactory()
             player.replaceCurrentItem(with: playerItem)
             #if os(iOS) || os(tvOS) || os(macOS)
                 player.allowsExternalPlayback = true
@@ -360,6 +380,14 @@ final class AudioPlayerStore {
 
     private func trackDidFinish() async {
         reportStopped()
+        if let playingDownload {
+            if queue.repeatMode == .off {
+                downloads?.deleteAfterCompletion(playingDownload)
+            } else {
+                // Keep local files available throughout Repeat One/All.
+                completedRepeats[playingDownload.id] = playingDownload
+            }
+        }
         guard queue.advance(automatic: true) != nil else {
             finishQueue()
             return
@@ -367,22 +395,35 @@ final class AudioPlayerStore {
         await playCurrentTrack(resume: false)
     }
 
+    private func cleanUpCompletedRepeats() {
+        for record in completedRepeats.values {
+            downloads?.deleteAfterCompletion(record)
+        }
+        completedRepeats.removeAll()
+    }
+
     private func finishQueue() {
+        preparationGeneration += 1
         removeObservers()
         player?.pause()
         nowPlaying.stop()
+        player = nil
         isPlaying = false
         currentTime = 0
+        cleanUpCompletedRepeats()
     }
 
     // MARK: - Observers
 
     private func addObservers(player: AVPlayer) {
+        let generation = preparationGeneration
         statusObserver = player.currentItem?.observe(\.status, options: [.initial, .new]) { [weak self] item, _ in
             guard item.status == .failed else { return }
             let message = item.error?.localizedDescription ?? String(localized: "Can't Play This")
-            Task { @MainActor [weak self, weak item] in
-                guard let self, let item, self.player?.currentItem === item else { return }
+            let itemID = ObjectIdentifier(item)
+            Task { @MainActor [weak self] in
+                guard let self, self.preparationGeneration == generation,
+                      self.player?.currentItem.map(ObjectIdentifier.init) == itemID else { return }
                 self.player?.pause()
                 self.isPlaying = false
                 self.state = .failed(message)
@@ -391,18 +432,22 @@ final class AudioPlayerStore {
         let interval = CMTime(seconds: 1, preferredTimescale: 1)
         timeObserver = player.addPeriodicTimeObserver(forInterval: interval, queue: .main) { [weak self] time in
             MainActor.assumeIsolated {
-                guard let self else { return }
+                guard let self, self.preparationGeneration == generation else { return }
                 self.currentTime = time.seconds.isFinite ? time.seconds : 0
                 self.reportProgress(force: false)
             }
         }
+        let observedItem = player.currentItem
+        let observedItemID = observedItem.map(ObjectIdentifier.init)
         endObserver = NotificationCenter.default.addObserver(
             forName: AVPlayerItem.didPlayToEndTimeNotification,
-            object: player.currentItem,
+            object: observedItem,
             queue: .main
         ) { [weak self] _ in
             Task { @MainActor [weak self] in
-                await self?.trackDidFinish()
+                guard let self, let observedItemID, self.preparationGeneration == generation,
+                      self.player?.currentItem.map(ObjectIdentifier.init) == observedItemID else { return }
+                await self.trackDidFinish()
             }
         }
     }

@@ -1,4 +1,5 @@
 import Foundation
+import ImageIO
 import Observation
 import OSLog
 
@@ -235,7 +236,20 @@ struct OfflineDownloadFileStore {
 
     func localArtworkURL(for record: OfflineDownloadRecord) -> URL? {
         let url = artworkURL(for: record)
-        return FileManager.default.fileExists(atPath: url.path) ? url : nil
+        guard let source = CGImageSourceCreateWithURL(url as CFURL, nil),
+              CGImageSourceCreateImageAtIndex(source, 0, nil) != nil else { return nil }
+        return url
+    }
+
+    func persistArtwork(_ data: Data, for record: OfflineDownloadRecord) throws {
+        guard !data.isEmpty, data.count <= 4 * 1024 * 1024,
+              let source = CGImageSourceCreateWithData(data as CFData, nil),
+              CGImageSourceCreateImageAtIndex(source, 0, nil) != nil,
+              self.record(forRecordID: record.id)?.downloadedAt == record.downloadedAt else { return }
+        let destination = artworkURL(for: record)
+        try FileManager.default.createDirectory(at: destination.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try data.write(to: destination, options: .atomic)
+        try excludeFromBackup(destination)
     }
 
     func artworkURL(for record: OfflineDownloadRecord) -> URL {
@@ -466,6 +480,9 @@ final class OfflineDownloadStore: DownloadSessionCoordinatorEventHandler {
     private(set) var activities: [String: DownloadActivity] = [:]
     private var lastCheckpoint: [String: Date] = [:]
     private var resolvingGenerations: [String: Date] = [:]
+    private var artworkRequests: Set<String> = []
+    static let deleteFinishedDefaultsKey = "downloads.deleteFinished"
+    private let defaults: UserDefaults
     private(set) var errorMessage: String?
 
     private let fileStore: OfflineDownloadFileStore
@@ -474,8 +491,9 @@ final class OfflineDownloadStore: DownloadSessionCoordinatorEventHandler {
     private var loadedServerID: String?
     private var loadedUserID: String?
 
-    init(fileStore: OfflineDownloadFileStore = .shared, coordinator: DownloadSessionCoordinating = DownloadSessionCoordinator.shared) {
+    init(fileStore: OfflineDownloadFileStore = .shared, coordinator: DownloadSessionCoordinating = DownloadSessionCoordinator.shared, defaults: UserDefaults = .standard) {
         self.fileStore = fileStore
+        self.defaults = defaults
         self.coordinator = coordinator
         coordinator.setEventHandler(self)
     }
@@ -580,7 +598,7 @@ final class OfflineDownloadStore: DownloadSessionCoordinatorEventHandler {
             try fileStore.persist(record)
             activities[record.id] = record.activity
             refreshDisplayedRecords()
-            cacheArtwork(for: record, session: session)
+            Task { await cacheArtwork(for: record, session: session) }
 
             DiagnosticsHub.shared.record(.downloadQueued)
             coordinator.startDownload(from: source.url, recordID: record.id)
@@ -657,18 +675,37 @@ final class OfflineDownloadStore: DownloadSessionCoordinatorEventHandler {
         coordinator.resumeDownload(with: resumeData, recordID: record.id)
     }
 
+    /// Only the captured generation can be removed: a stale confirmation or player
+    /// must never delete a replacement download or another account's file.
     func delete(_ record: OfflineDownloadRecord, serverID: String, userID: String) {
+        guard record.serverID == serverID, record.userID == userID,
+              let current = fileStore.record(forRecordID: record.id),
+              current.downloadedAt == record.downloadedAt else { return }
         do {
             coordinator.cancel(recordID: record.id)
-            try fileStore.delete(record)
+            try fileStore.delete(current)
             activities.removeValue(forKey: record.id)
             lastCheckpoint.removeValue(forKey: record.id)
             if let itemID = record.item.id {
                 activeItemIDs.remove(itemID)
             }
-            reloadRecords(serverID: serverID, userID: userID)
+            refreshDisplayedRecords()
         } catch {
             errorMessage = error.localizedDescription
+        }
+    }
+
+    /// Called only for a natural media end or a reader closed at its final location.
+    /// No historical played flags or partial progress trigger this opt-in policy.
+    func deleteAfterCompletion(_ record: OfflineDownloadRecord?) {
+        guard defaults.bool(forKey: Self.deleteFinishedDefaultsKey),
+              let record, record.status.isComplete else { return }
+        delete(record, serverID: record.serverID, userID: record.userID)
+    }
+
+    func delete(_ selected: [OfflineDownloadRecord], serverID: String, userID: String) {
+        for record in selected {
+            delete(record, serverID: serverID, userID: userID)
         }
     }
 
@@ -832,29 +869,40 @@ final class OfflineDownloadStore: DownloadSessionCoordinatorEventHandler {
         reloadRecords(serverID: loadedServerID, userID: loadedUserID)
     }
 
-    /// Thumbnails are optional and do not delay download startup or completion.
-    private func cacheArtwork(for record: OfflineDownloadRecord, session: SessionStore) {
-        guard let url = session.mediaProvider.primaryImageURL(for: record.item, context: .posterRail),
-              fileStore.localArtworkURL(for: record) == nil else { return }
-        let destination = fileStore.artworkURL(for: record)
-        Task {
-            do {
-                var request = URLRequest(url: url)
-                request.timeoutInterval = 15
-                if let token = session.client.accessToken {
-                    request.setValue("MediaBrowser Client=\"A Playa Named Gus\", Device=\"Gus Offline Artwork\", DeviceId=\"\(DeviceIdentity.deviceID)\", Version=\"1\", Token=\"\(token)\"", forHTTPHeaderField: "Authorization")
-                }
-                let (data, response) = try await URLSession.shared.data(for: request)
-                guard let http = response as? HTTPURLResponse, (200 ..< 300).contains(http.statusCode),
-                      http.mimeType?.hasPrefix("image/") == true, data.count <= 4 * 1024 * 1024,
-                      fileStore.record(forRecordID: record.id)?.downloadedAt == record.downloadedAt else { return }
-                try data.write(to: destination, options: .atomic)
-                var values = URLResourceValues()
-                values.isExcludedFromBackup = true
-                var saved = destination
-                try saved.setResourceValues(values)
-                refreshDisplayedRecords()
-            } catch { /* Artwork failure must not affect playable media. */ }
+    /// Retry missing artwork for existing downloads on foreground entry, including
+    /// records created before artwork caching existed. Local browsing stays file-only.
+    func repairMissingArtwork(session: SessionStore) async {
+        let pending = fileStore.records(serverID: session.server.id, userID: session.user.id)
+        for record in pending where record.status.isComplete {
+            guard !Task.isCancelled, loadedServerID == session.server.id,
+                  loadedUserID == session.user.id else { return }
+            await cacheArtwork(for: record, session: session)
+        }
+    }
+
+    private func cacheArtwork(for record: OfflineDownloadRecord, session: SessionStore) async {
+        guard fileStore.localArtworkURL(for: record) == nil,
+              fileStore.record(forRecordID: record.id)?.downloadedAt == record.downloadedAt,
+              !artworkRequests.contains(record.id),
+              let url = session.mediaProvider.primaryImageURL(for: record.item, context: .posterRail) else { return }
+        artworkRequests.insert(record.id)
+        defer { artworkRequests.remove(record.id) }
+        do {
+            var request = URLRequest(url: url)
+            request.timeoutInterval = 15
+            if let token = session.client.accessToken {
+                request.setValue("MediaBrowser Token=\"\(token)\"", forHTTPHeaderField: "Authorization")
+            }
+            let (data, response) = try await URLSession.shared.data(for: request)
+            try Task.checkCancellation()
+            guard let http = response as? HTTPURLResponse, (200 ..< 300).contains(http.statusCode),
+                  http.mimeType?.hasPrefix("image/") == true,
+                  fileStore.record(forRecordID: record.id)?.downloadedAt == record.downloadedAt else { return }
+            try fileStore.persistArtwork(data, for: record)
+            refreshDisplayedRecords()
+        } catch {
+            // A failed thumbnail never invalidates downloaded media. Foreground entry retries.
+            logger.debug("Download artwork remains unavailable")
         }
     }
 

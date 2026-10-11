@@ -1,0 +1,45 @@
+{
+  "devicesAndConfigurations" : [
+    {
+      "device" : {
+        "architecture" : "arm64",
+        "deviceId" : "1711D519-F8C9-42CA-A705-5F12E87D96F2",
+        "deviceName" : "Apple Vision Pro",
+        "modelName" : "Apple Vision Pro",
+        "osBuildNumber" : "23O470",
+        "osVersion" : "26.5",
+        "platform" : "visionOS Simulator"
+      },
+      "expectedFailures" : 0,
+      "failedTests" : 0,
+      "passedTests" : 1,
+      "skippedTests" : 0,
+      "testPlanConfiguration" : {
+        "configurationId" : "1",
+        "configurationName" : "Test Scheme Action"
+      }
+    }
+  ],
+  "environmentDescription" : "PlaySizeVision · Built with macOS 27.0.1",
+  "expectedFailures" : 0,
+  "failedTests" : 0,
+  "finishTime" : 1791738762.899,
+  "passedTests" : 1,
+  "result" : "Passed",
+  "runtimeWarnings" : [
+
+  ],
+  "skippedTests" : 0,
+  "startTime" : 1791738738.451,
+  "statistics" : [
+
+  ],
+  "testFailures" : [
+
+  ],
+  "title" : "Test - PlaySizeVision",
+  "topInsights" : [
+
+  ],
+  "totalTestCount" : 1
+}

@@ -30,9 +30,19 @@ unavailable on visionOS, so the toolkit does not compile for the native xrOS SDK
 the destination filters when upstream adopts the async `load(.metadata)` API. The fix is
 small and worth offering upstream as a PR.
 
-Products used: `ReadiumShared`, `ReadiumStreamer`, `ReadiumNavigator`,
-`ReadiumAdapterGCDWebServer` (the navigator serves publication resources over a loopback
-server).
+Products used: `ReadiumShared`, `ReadiumStreamer`, and `ReadiumNavigator`.
+Readium 3.9 serves EPUB resources through WebKit `WKURLSchemeHandler`; its legacy
+HTTP-server initializer is deprecated. The unused `ReadiumAdapterGCDWebServer`
+product was removed from Gus on October 11, 2026.
+
+The reader retains and binds Readium's `DirectionalNavigationAdapter` for edge taps
+and hardware-key page navigation. Its chapter browser uses a native SwiftUI sheet,
+`List`, and recursive `DisclosureGroup` entries, including separate parent-link
+navigation. A toolbar-hosted nested `Menu` exposed an unwanted software keyboard in
+the iOS 27 simulator; the chapter button ends editing in its own reader window before
+presenting the sheet. Dismissal restores the visible navigator's first-responder
+status. Opening chapter navigation is not treated as reader completion for automatic
+download deletion.
 
 Reading position uses two layers. The exact Readium `Locator` persists locally per book
 (`BookProgressStore`) for precise same-device resume. A coarse 0...1 fraction also syncs
@@ -49,10 +59,11 @@ interrupts reading. See `JellyfinBookProgress` for the mapping.
   Readium on iOS/iPadOS/visionOS for EPUB reading"; AGENTS.md is updated alongside this
   ADR.
 - Readium pulls transitive dependencies (CryptoSwift, SwiftSoup, ZIPFoundation fork,
-  GCDWebServer fork, Fuzi fork, Zip, DifferenceKit) into the iOS/visionOS link units
-  only. tvOS/macOS binaries are unchanged.
+  Fuzi fork, Zip, DifferenceKit) into the iOS/iPadOS build graph only.
+  GCDWebServer and SQLite may still resolve because Readium declares optional
+  adapters at package level; Gus does not select those products.
 - The reader inherits Readium's accessibility and pagination behavior rather than Apple
   Books' polish; the share sheet remains the escape hatch to Books on every non-tvOS
   platform.
-- Privacy: Readium renders local files over loopback; no network beyond the existing
+- Privacy: Readium renders local files through a WebKit URL-scheme handler; no network beyond the existing
   Jellyfin fetch, no analytics. The compliance audit's framework list gains Readium.

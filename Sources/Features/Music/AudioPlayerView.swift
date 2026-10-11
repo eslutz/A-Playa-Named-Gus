@@ -18,21 +18,9 @@ struct AudioPlayerView: View {
 
     var body: some View {
         LoadingStateView(state: store.state, retryAction: { audio.retry() }) {
-            GeometryReader { geometry in
-                ScrollView {
-                    ViewThatFits(in: .horizontal) {
-                        HStack(alignment: .center, spacing: 24) {
-                            artwork.frame(width: min(geometry.size.height * 0.5, 240))
-                            controls.frame(minWidth: 280, maxWidth: 560)
-                        }
-                        VStack(spacing: 24) { artwork; controls }
-                    }
-                    .padding(24)
-                    .frame(maxWidth: .infinity)
-                }
-            }
+            AdaptiveAudioLayout { artwork } controls: { controls }
         }
-        .onChange(of: store.currentTime) { _, time in
+        .onChange(of: store.currentTime, initial: true) { _, time in
             guard !isScrubbing else { return }
             scrubTime = time
         }

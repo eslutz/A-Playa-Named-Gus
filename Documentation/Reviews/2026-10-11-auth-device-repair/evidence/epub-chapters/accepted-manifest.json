@@ -1,0 +1,15 @@
+{
+  "resultBundle": "/tmp/gus-epub-audit/committed-native-chapters-waits.xcresult",
+  "attachments": {
+    "0AD78352-AA16-4E22-ACED-541D2E58E299.png": "chapters-after.png",
+    "55A08B2F-06BB-4FCB-8253-9AE3C24C13EB.png": "nested-chapters-after.png",
+    "83A83ADD-A07F-4DE1-B854-8AD90B827057.png": "chapter-portrait.png",
+    "A1A6A495-CD09-46D0-B5EE-770DB40C2291.png": "chapter-landscape.png",
+    "5397E164-6CA4-4826-875E-933EA1688DC4.png": "page-forward-landscape.png",
+    "3B9DB197-503B-4945-A209-D7C433E4A06E.png": "page-back-landscape.png",
+    "8339D087-9566-40EB-8DBF-B80B136DB3AA.png": "reader-dismissed-landscape.png",
+    "40EBECE0-3757-4AC8-9E76-5DFDDC16D446.txt": "reader-input-bounds.txt",
+    "87626D4A-FA0D-4277-8BD7-97D85B9F884F.txt": "reader-done-bounds.txt"
+  },
+  "visualInspection": "Each saved screen was inspected individually at original resolution; native chapter sheet, portrait prose, landscape forward/back navigation and reader dismissal verified."
+}

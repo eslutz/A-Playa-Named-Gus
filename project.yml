@@ -75,9 +75,6 @@ targets:
       - package: Readium
         product: ReadiumNavigator
         destinationFilters: [iOS]
-      - package: Readium
-        product: ReadiumAdapterGCDWebServer
-        destinationFilters: [iOS]
       - target: GusTopShelf
         destinationFilters: [tvOS]
         embed: true

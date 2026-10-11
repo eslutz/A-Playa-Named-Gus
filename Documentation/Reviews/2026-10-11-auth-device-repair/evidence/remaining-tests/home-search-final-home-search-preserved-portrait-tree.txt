@@ -1,0 +1,149 @@
+Attributes: Application, 0x109f79e00, pid: 80075, label: 'Gus'
+Element subtree:
+ →Application, 0x109f79e00, pid: 80075, label: 'Gus'
+    Window (Main), 0x109f79400, {{0.0, 0.0}, {440.0, 956.0}}
+      Other, 0x109f79540, {{0.0, 0.0}, {440.0, 956.0}}
+      Other, 0x109f792c0, {{0.0, 0.0}, {440.0, 956.0}}
+        Other, 0x109f79680, {{0.0, 0.0}, {440.0, 956.0}}
+          Other, 0x109f7abc0, {{0.0, 0.0}, {440.0, 956.0}}
+            Other, 0x109f797c0, {{0.0, 0.0}, {440.0, 956.0}}
+              Other, 0x109f7a1c0, {{0.0, 0.0}, {440.0, 956.0}}
+                Other, 0x109f7a440, {{0.0, 0.0}, {440.0, 956.0}}
+                  Other, 0x109f79cc0, {{0.0, 0.0}, {440.0, 956.0}}
+                    Other, 0x109f7a300, {{0.0, 0.0}, {440.0, 956.0}}
+                      Other, 0x109f7a580, {{0.0, 0.0}, {440.0, 956.0}}
+                        Other, 0x109f7a800, {{0.0, 0.0}, {440.0, 956.0}}
+                          Other, 0x109f7af80, {{0.0, 0.0}, {440.0, 956.0}}
+                            NavigationBar, 0x109f7b0c0, {{0.0, 62.0}, {440.0, 54.0}}, identifier: '_TtGC7SwiftUI32NavigationStackHosting'
+                              SearchField, 0x109f7ad00, {{20.0, 62.0}, {345.0, 44.0}}, label: 'Search Library', placeholderValue: 'Search Library', value: Sneeze, Keyboard Focused
+                                Image, 0x109f7ae40, {{32.0, 74.0}, {20.7, 19.3}}, identifier: 'magnifyingglass', label: 'Search'
+                                Button, 0x109f7a940, {{330.7, 73.7}, {20.0, 20.0}}, label: 'Clear text'
+                              Button, 0x109f7a6c0, {{376.0, 62.0}, {44.0, 44.0}}, label: 'Close'
+                            Other, 0x109f7b200, {{0.0, 0.0}, {440.0, 956.0}}
+                              Other, 0x109f7b340, {{0.0, 0.0}, {440.0, 956.0}}
+                                Other, 0x109f7b700, {{0.0, 0.0}, {440.0, 956.0}}
+                                  Other, 0x109f7bac0, {{0.0, 0.0}, {440.0, 956.0}}
+                                    ScrollView, 0x109f7b480, {{0.0, 0.0}, {440.0, 956.0}}
+                                      Other, 0x109f7b980, {{0.0, 0.0}, {440.0, 956.0}}
+                                        Other, 0x109f7b5c0, {{0.0, 0.0}, {440.0, 156.0}}
+                                        Other, 0x109f79040, {{0.0, 823.0}, {440.0, 133.0}}
+                                      Other, 0x109f7bd40, {{0.0, 0.0}, {440.0, 956.0}}
+                                      Other, 0x109f7be80, {{0.0, 116.0}, {440.0, 349.0}}
+                                        Other, 0x109f78780, {{16.0, 132.0}, {195.0, 316.7}}
+                                          Button, 0x109f7bc00, {{16.0, 132.0}, {195.0, 316.7}}, label: 'Edison Kinetoscopic Record of a Sneeze (1894)'
+                                            Image, 0x109f78000, {{-81.3, 132.0}, {390.0, 292.7}}
+                                            StaticText, 0x109f7b840, {{16.0, 132.0}, {195.0, 316.7}}, label: 'Edison Kinetoscopic Record of a Sneeze (1894)'
+                                      Other, 0x109f78c80, {{407.0, 116.0}, {30.0, 757.0}}, label: 'Vertical scroll bar, 1 page', value: 0%
+                                        Other, 0x109f79f40, {{434.0, 527.0}, {3.0, 343.0}}
+                                      Other, 0x109f79180, {{407.0, 116.0}, {30.0, 757.0}}, label: 'Vertical scroll bar, 1 page', value: 0%
+                                        Other, 0x109f78f00, {{434.0, 527.0}, {3.0, 343.0}}
+                                Other, 0x1137aa1c0, {{0.0, 0.0}, {440.0, 956.0}}
+                                  Other, 0x1137a8000, {{0.0, 0.0}, {440.0, 956.0}}
+                                    Other, 0x1137a8140, {{0.0, 0.0}, {440.0, 956.0}}
+                            Toolbar, 0x1137a8280, {{0.0, 0.0}, {440.0, 956.0}}, identifier: 'Toolbar', label: 'Toolbar'
+                              Other, 0x1137a83c0, {{0.0, 0.0}, {440.0, 956.0}}
+                Other, 0x1137a8500, {{0.0, 0.0}, {440.0, 956.0}}
+                  Other, 0x1137a9900, {{0.0, 873.0}, {440.0, 83.0}}
+                    Other, 0x1137a9a40, {{0.0, 0.0}, {440.0, 956.0}}
+                      TabBar, 0x1137a9b80, {{0.0, 873.0}, {440.0, 83.0}}, label: 'Tab Bar'
+                        Other, 0x1137a9cc0, {{21.0, 873.0}, {398.0, 62.0}}
+                          Other, 0x1137a9e00, {{21.0, 873.0}, {90.4, 54.0}}
+                          Other, 0x1137a9f40, {{21.0, 873.0}, {398.0, 62.0}}
+                            Button, 0x1137aa080, {{25.0, 877.0}, {90.4, 54.0}}, identifier: 'house', label: 'Home', Selected
+                              Image, 0x10a328000, {{53.7, 883.0}, {33.3, 28.0}}, identifier: 'house.fill', label: 'home'
+                            Button, 0x10a328140, {{93.4, 877.0}, {114.8, 54.0}}, identifier: 'arrow.down.circle', label: 'Downloaded'
+                              Image, 0x10a328280, {{137.0, 883.3}, {27.3, 27.3}}, identifier: 'arrow.down.circle.fill', label: 'Arrow Down Circle'
+                            Button, 0x10a328b40, {{186.2, 877.0}, {92.1, 54.0}}, identifier: 'rectangle.stack', label: 'Libraries'
+                              Image, 0x10a328a00, {{217.2, 882.0}, {30.0, 31.3}}, identifier: 'rectangle.stack.fill', label: 'Album'
+                            Button, 0x10a3288c0, {{256.3, 877.0}, {90.4, 54.0}}, identifier: 'film', label: 'Movies'
+                              Image, 0x10a3283c0, {{284.9, 884.3}, {33.0, 25.0}}, identifier: 'film.fill', label: 'movie'
+                            Button, 0x10a328500, {{324.6, 877.0}, {90.4, 54.0}}, identifier: 'ellipsis', label: 'More'
+                              Image, 0x10a328640, {{357.3, 892.7}, {25.0, 8.7}}, identifier: 'ellipsis', label: 'More'
+                          Other, 0x10a328780, {{21.0, 873.0}, {398.0, 62.0}}
+                          Other, 0x10a329900, {{25.0, 877.0}, {90.4, 54.0}}
+                            Other, 0x10a329680, {{25.0, 877.0}, {90.3, 54.0}}
+                              Other, 0x10a329040, {{25.0, 877.0}, {90.3, 54.0}}
+                              Other, 0x10a329400, {{25.0, 877.0}, {90.3, 54.0}}
+                                Other, 0x10a329180, {{25.0, 877.0}, {90.3, 54.0}}
+                                  Other, 0x10a3292c0, {{25.0, 877.0}, {90.3, 54.0}}
+                                    Other, 0x10a3297c0, {{25.0, 877.0}, {90.3, 54.0}}
+                                  Other, 0x10a329e00, {{25.0, 877.0}, {90.3, 54.0}}
+                                Other, 0x10a329b80, {{25.0, 877.0}, {90.3, 54.0}}
+                    Other, 0x10a328c80, {{0.0, 873.0}, {440.0, 83.0}}
+                      Other, 0x10a328dc0, {{0.0, 873.0}, {440.0, 83.0}}
+                        Other, 0x10a329540, {{0.0, 873.0}, {440.0, 83.0}}
+                          Other, 0x10a328f00, {{0.0, 873.0}, {440.0, 83.0}}
+                            Other, 0x10a329a40, {{0.0, 873.0}, {440.0, 83.0}}
+                              Other, 0x10a32a1c0, {{0.0, 873.0}, {440.0, 83.0}}
+                          Other, 0x10a32a300, {{0.0, 873.0}, {440.0, 83.0}}
+                            Other, 0x10a329f40, {{0.0, 873.0}, {440.0, 83.0}}
+    Window, 0x10a329cc0, {{0.0, 0.0}, {440.0, 956.0}}
+      Other, 0x10a32a080, {{0.0, 0.0}, {440.0, 956.0}}
+        Other, 0x10a32a440, {{0.0, 0.0}, {440.0, 956.0}}
+    Window, 0x10a32a580, {{0.0, 0.0}, {440.0, 956.0}}
+      Other, 0x1137ba080, {{0.0, 0.0}, {440.0, 956.0}}
+        Other, 0x1137ba1c0, {{0.0, 956.0}, {440.0, 289.0}}
+          Other, 0x1137ba300, {{0.0, 956.0}, {440.0, 44.0}}, identifier: 'SystemInputAssistantView'
+            Other, 0x1137ba440, {{0.0, 956.0}, {440.0, 44.0}}
+              Other, 0x1137ba580, {{0.0, 956.0}, {440.0, 24.0}}, identifier: 'CenterPageView'
+                Other, 0x1137ba6c0, {{0.0, 356.0}, {440.0, 1224.0}}
+                  ScrollView, 0x1137ba800, {{0.0, 956.0}, {440.0, 24.0}}
+                Other, 0x1137ba940, {{0.0, 956.0}, {440.0, 24.0}}
+                  Other, 0x1137baa80, {{0.0, 956.0}, {440.0, 24.0}}
+                    Other, 0x1137babc0, {{0.0, 956.0}, {440.0, 24.0}}, label: 'Typing Predictions'
+                      Other, 0x1137bad00, {{0.0, 956.0}, {440.0, 24.0}}
+                        Other, 0x1137bb200, {{0.0, 956.0}, {440.0, 24.0}}
+                          Button, 0x1137bb340, {{0.0, 956.0}, {146.7, 24.0}}
+                          Button, 0x1137bb480, {{146.7, 956.0}, {146.7, 24.0}}
+                          Button, 0x1137bb5c0, {{293.3, 956.0}, {146.7, 24.0}}
+          Other, 0x1137bb700, {{0.0, 956.0}, {440.0, 290.0}}
+            Other, 0x1137bbd40, {{0.0, 956.0}, {440.0, 290.0}}
+              Other, 0x1137bbe80, {{0.0, 956.0}, {440.0, 290.0}}
+          Other, 0x1137bbc00, {{0.0, 1000.0}, {440.0, 245.0}}
+            Keyboard, 0x1137bb980, {{0.0, 1000.0}, {440.0, 245.0}}
+              Other, 0x1137bbac0, {{0.0, 1000.0}, {440.0, 245.0}}
+                Other, 0x1137bb840, {{0.0, 1000.0}, {440.0, 245.0}}, identifier: 'UIKeyboardLayoutStar Preview'
+                  Key, 0x1137bae40, {{0.0, 1000.0}, {0.0, 0.0}}, label: 'Padding-Left'
+                  Key, 0x1137bb0c0, {{0.0, 1000.0}, {0.0, 0.0}}, label: 'Padding-Right'
+                  Key, 0x1137baf80, {{0.0, 1000.0}, {0.0, 0.0}}, label: 'Padding-Left'
+                  Key, 0x10a318000, {{0.0, 1000.0}, {0.0, 0.0}}, label: 'Padding-Right'
+                  Key, 0x10a318140, {{0.0, 1000.0}, {0.0, 0.0}}, label: 'Padding-Left'
+                  Key, 0x10a318280, {{0.0, 1000.0}, {0.0, 0.0}}, label: 'Padding-Right'
+                  Key, 0x10a3183c0, {{4.7, 1007.0}, {43.0, 56.0}}, label: 'q'
+                  Key, 0x10a318500, {{47.7, 1007.0}, {43.3, 56.0}}, label: 'w'
+                  Key, 0x10a318640, {{91.0, 1007.0}, {43.3, 56.0}}, label: 'e'
+                  Key, 0x10a318780, {{134.3, 1007.0}, {43.3, 56.0}}, label: 'r'
+                  Key, 0x10a3188c0, {{177.7, 1007.0}, {43.3, 56.0}}, label: 't'
+                  Key, 0x10a318a00, {{221.0, 1007.0}, {43.3, 56.0}}, label: 'y'
+                  Key, 0x10a318b40, {{264.3, 1007.0}, {43.3, 56.0}}, label: 'u'
+                  Key, 0x10a318c80, {{307.7, 1007.0}, {43.3, 56.0}}, label: 'i'
+                  Key, 0x10a318dc0, {{351.0, 1007.0}, {43.3, 56.0}}, label: 'o'
+                  Key, 0x10a318f00, {{394.3, 1007.0}, {43.3, 56.0}}, label: 'p'
+                  Key, 0x10a319040, {{26.0, 1063.0}, {43.3, 56.0}}, label: 'a'
+                  Key, 0x10a319180, {{69.3, 1063.0}, {43.3, 56.0}}, label: 's'
+                  Key, 0x10a3192c0, {{112.7, 1063.0}, {43.3, 56.0}}, label: 'd'
+                  Key, 0x10a319400, {{156.0, 1063.0}, {43.3, 56.0}}, label: 'f'
+                  Key, 0x10a319540, {{199.3, 1063.0}, {43.3, 56.0}}, label: 'g'
+                  Key, 0x10a319680, {{242.7, 1063.0}, {43.3, 56.0}}, label: 'h'
+                  Key, 0x10a3197c0, {{286.0, 1063.0}, {43.3, 56.0}}, label: 'j'
+                  Key, 0x10a319900, {{329.3, 1063.0}, {43.3, 56.0}}, label: 'k'
+                  Key, 0x10a319a40, {{372.7, 1063.0}, {43.3, 56.0}}, label: 'l'
+                  Button, 0x10a319b80, {{4.7, 1119.0}, {56.0, 56.0}}, identifier: 'shift', label: 'shift'
+                  Key, 0x10a319cc0, {{69.3, 1119.0}, {43.3, 56.0}}, label: 'z'
+                  Key, 0x10a319e00, {{112.7, 1119.0}, {43.3, 56.0}}, label: 'x'
+                  Key, 0x10a319f40, {{156.0, 1119.0}, {43.3, 56.0}}, label: 'c'
+                  Key, 0x10a31a080, {{199.3, 1119.0}, {43.3, 56.0}}, label: 'v'
+                  Key, 0x10a31a1c0, {{242.7, 1119.0}, {43.3, 56.0}}, label: 'b'
+                  Key, 0x10a31a300, {{286.0, 1119.0}, {43.3, 56.0}}, label: 'n'
+                  Key, 0x10a31a440, {{329.3, 1119.0}, {43.3, 56.0}}, label: 'm'
+                  Key, 0x10a31a580, {{381.3, 1119.0}, {56.3, 56.0}}, identifier: 'delete', label: 'delete'
+                  Key, 0x10a31a6c0, {{4.7, 1175.0}, {108.0, 56.0}}, identifier: 'more', label: 'numbers'
+                  Key, 0x10a31a800, {{112.7, 1175.0}, {216.7, 56.0}}, identifier: 'space', label: 'space'
+                  Button, 0x10a31a940, {{329.3, 1175.0}, {108.3, 56.0}}, identifier: 'Search', label: 'search'
+Path to element:
+ →Application, 0x109f79e00, pid: 80075, label: 'Gus'
+Query chain:
+ →Find: Application 'dev.ericslutz.gus'
+  Output: {
+    Application, 0x10a31aa80, pid: 80075, label: 'Gus'
+  }

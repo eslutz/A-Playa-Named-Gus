@@ -320,7 +320,6 @@
 		B570ED3CBBF103230A9DE53F /* Paging.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04C3B5EE3F0EE73219C3DF2B /* Paging.swift */; };
 		B5A0DF1426EFF7A9350598D8 /* JellyfinAPI in Frameworks */ = {isa = PBXBuildFile; productRef = F4019F5B828FE06178861D89 /* JellyfinAPI */; };
 		B6A41D566B2A818C8AA55C1B /* TopShelfSnapshotTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 05471BDB258E9DD0DF3E8758 /* TopShelfSnapshotTests.swift */; };
-		B6A9A0F73A4FB8507444B004 /* ReadiumAdapterGCDWebServer in Frameworks */ = {isa = PBXBuildFile; platformFilters = (ios, ); productRef = D21046B510709B1DD1A98428 /* ReadiumAdapterGCDWebServer */; };
 		B897371C6232FF7A3C6AEE0B /* WatchConnectView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A4B9365AB3BFE8565B7BCBF /* WatchConnectView.swift */; };
 		B9216108F42DC09B68CDF26D /* LiveTVView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A16BAE5E809012D1729B74B /* LiveTVView.swift */; };
 		B99B06A7965341C2E9B50EC4 /* CastRail.swift in Sources */ = {isa = PBXBuildFile; fileRef = F9986315EC652604F7F3EFA2 /* CastRail.swift */; };
@@ -826,7 +825,6 @@
 				19D38E5FFC74A6AABB92F1AB /* ReadiumShared in Frameworks */,
 				4AB907C23870C35832246AA6 /* ReadiumStreamer in Frameworks */,
 				58ECA397481C7A3F7555A032 /* ReadiumNavigator in Frameworks */,
-				B6A9A0F73A4FB8507444B004 /* ReadiumAdapterGCDWebServer in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1496,7 +1494,6 @@
 				ADC058B98C1045D98EE94732 /* ReadiumShared */,
 				CB79CECA4D0745A20AC1863F /* ReadiumStreamer */,
 				8EA6A6C4F7D6B792C10609A7 /* ReadiumNavigator */,
-				D21046B510709B1DD1A98428 /* ReadiumAdapterGCDWebServer */,
 			);
 			productName = Gus;
 			productReference = DFEC80139C4AD778FF4E22FC /* Gus.app */;
@@ -3054,11 +3051,6 @@
 			isa = XCSwiftPackageProductDependency;
 			package = A79CDE490A778F71753DD281 /* XCRemoteSwiftPackageReference "swift-toolkit" */;
 			productName = ReadiumStreamer;
-		};
-		D21046B510709B1DD1A98428 /* ReadiumAdapterGCDWebServer */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = A79CDE490A778F71753DD281 /* XCRemoteSwiftPackageReference "swift-toolkit" */;
-			productName = ReadiumAdapterGCDWebServer;
 		};
 		F4019F5B828FE06178861D89 /* JellyfinAPI */ = {
 			isa = XCSwiftPackageProductDependency;

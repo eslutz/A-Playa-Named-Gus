@@ -1,0 +1,215 @@
+Attributes: Application, 0x106798a00, pid: 1911, label: 'Gus'
+Element subtree:
+ →Application, 0x106798a00, pid: 1911, label: 'Gus'
+    Window (Main), 0x106798f00, {{0.0, 0.0}, {440.0, 956.0}}
+      Other, 0x106799400, {{0.0, 0.0}, {440.0, 956.0}}
+      Other, 0x106799900, {{0.0, 0.0}, {440.0, 956.0}}
+        Other, 0x10679b200, {{0.0, 0.0}, {440.0, 956.0}}
+          Other, 0x10679b980, {{0.0, 0.0}, {440.0, 956.0}}
+            Other, 0x10679b700, {{0.0, 0.0}, {440.0, 956.0}}
+              Other, 0x10679bc00, {{0.0, 0.0}, {440.0, 956.0}}
+                Other, 0x10679b5c0, {{0.0, 0.0}, {440.0, 956.0}}
+                  Other, 0x10679a080, {{0.0, 0.0}, {440.0, 956.0}}
+                    Other, 0x106799040, {{0.0, 0.0}, {440.0, 956.0}}
+                      Other, 0x106799680, {{0.0, 0.0}, {440.0, 956.0}}
+                        Other, 0x106799cc0, {{0.0, 0.0}, {440.0, 956.0}}
+                          Other, 0x10679bd40, {{0.0, 0.0}, {440.0, 956.0}}
+                            NavigationBar, 0x10679a440, {{0.0, 62.0}, {440.0, 160.0}}, identifier: 'Home'
+                              StaticText, 0x106798780, {{20.0, 119.7}, {94.3, 40.7}}, label: 'Home'
+                              SearchField, 0x10679af80, {{20.0, 168.0}, {400.0, 44.0}}, label: 'Search Library', placeholderValue: 'Search Library'
+                                Image, 0x10679be80, {{32.0, 180.0}, {20.7, 19.3}}, identifier: 'magnifyingglass', label: 'Search'
+                            Other, 0x10679b340, {{0.0, 0.0}, {440.0, 956.0}}
+                              Other, 0x10679b480, {{0.0, 0.0}, {440.0, 956.0}}
+                                Other, 0x10679aa80, {{0.0, 0.0}, {440.0, 956.0}}
+                                  Other, 0x10679abc0, {{0.0, 0.0}, {440.0, 956.0}}
+                                    ScrollView, 0x10679a940, {{0.0, 0.0}, {440.0, 956.0}}
+                                      Other, 0x10679b0c0, {{0.0, 0.0}, {440.0, 956.0}}
+                                        Other, 0x106799f40, {{0.0, 0.0}, {440.0, 102.0}}
+                                        Other, 0x106799e00, {{0.0, 823.0}, {440.0, 133.0}}
+                                      Other, 0x10679a580, {{0.0, 0.0}, {440.0, 956.0}}
+                                        Other, 0x10679a6c0, {{0.0, 823.0}, {440.0, 133.0}}
+                                      Other, 0x106799540, {{0.0, 222.0}, {440.0, 1999.7}}
+                                        StaticText, 0x10679a800, {{16.0, 238.0}, {195.7, 26.3}}, label: 'Continue Watching'
+                                        ScrollView, 0x10679a1c0, {{16.0, 276.3}, {408.0, 272.3}}
+                                          Other, 0x10679b840, {{16.0, 276.3}, {1312.0, 272.3}}
+                                            Other, 0x10679ad00, {{16.0, 280.3}, {814.0, 264.3}}
+                                              Button, 0x10679ae40, {{16.0, 280.3}, {150.0, 264.3}}, label: 'Goosebumps, S3·E9'
+                                                Image, 0x106799180, {{-59.0, 280.3}, {300.0, 225.0}}
+                                                StaticText, 0x106799b80, {{16.0, 511.3}, {93.3, 18.0}}, label: 'Goosebumps'
+                                                StaticText, 0x10679a300, {{16.0, 530.3}, {33.7, 14.3}}, label: 'S3·E9'
+                                              Button, 0x106799a40, {{182.0, 280.3}, {150.0, 264.3}}, label: 'In Living Color, S1·E5'
+                                                Image, 0x106586d00, {{107.0, 280.3}, {300.0, 225.0}}
+                                                StaticText, 0x106587840, {{182.0, 511.3}, {100.3, 18.0}}, label: 'In Living Color'
+                                                StaticText, 0x106587700, {{182.0, 530.3}, {31.7, 14.3}}, label: 'S1·E5'
+                                              Button, 0x106584f00, {{348.0, 280.3}, {150.0, 264.3}}, label: 'Squid Game, S2·E1'
+                                                Image, 0x106587480, {{222.7, 280.3}, {400.7, 225.0}}
+                                                StaticText, 0x106585040, {{348.0, 511.3}, {85.3, 18.0}}, label: 'Squid Game'
+                                                StaticText, 0x1065870c0, {{348.0, 530.3}, {31.3, 14.3}}, label: 'S2·E1'
+                                              Button, 0x1065875c0, {{514.0, 280.3}, {150.0, 264.3}}, label: 'Anaconda, 2025'
+                                                Image, 0x106587980, {{514.0, 280.3}, {150.0, 225.0}}
+                                                StaticText, 0x1097a4000, {{514.0, 511.3}, {70.7, 18.0}}, label: 'Anaconda'
+                                                StaticText, 0x1097a4140, {{514.0, 530.3}, {29.7, 14.3}}, label: '2025'
+                                              Button, 0x1097a4280, {{680.0, 280.3}, {150.0, 264.3}}, label: 'Peacemaker, S1·E1'
+                                                Image, 0x1097a43c0, {{554.7, 280.3}, {400.7, 225.0}}
+                                                StaticText, 0x1097a4500, {{680.0, 511.3}, {86.7, 18.0}}, label: 'Peacemaker'
+                                                StaticText, 0x1097a4640, {{680.0, 530.3}, {29.7, 14.3}}, label: 'S1·E1'
+                                        StaticText, 0x1097a4780, {{16.0, 580.6}, {82.3, 26.3}}, label: 'Next Up'
+                                        ScrollView, 0x1097a48c0, {{16.0, 619.0}, {408.0, 216.0}}
+                                          Other, 0x1097a4a00, {{16.0, 619.0}, {2876.0, 216.0}}
+                                            Other, 0x1097a4b40, {{16.0, 623.0}, {944.0, 208.0}}
+                                              Button, 0x1097a4c80, {{16.0, 623.0}, {300.0, 208.0}}, label: 'Trespass, 1h 41m'
+                                                Image, 0x1097a4dc0, {{146.3, 692.0}, {39.3, 30.7}}, identifier: 'play.rectangle', label: 'Slideshow'
+                                                StaticText, 0x1097a4f00, {{16.1, 797.7}, {63.3, 18.0}}, label: 'Trespass'
+                                                StaticText, 0x1097a5040, {{16.1, 816.7}, {39.7, 14.3}}, label: '1h 41m'
+                                              Button, 0x1097a5180, {{338.0, 623.0}, {300.0, 208.0}}, label: 'In Living Color, S1·E5'
+                                                Image, 0x1097a52c0, {{375.7, 623.0}, {224.7, 168.7}}
+                                                StaticText, 0x1097a5400, {{338.1, 797.7}, {100.3, 18.0}}, label: 'In Living Color'
+                                                StaticText, 0x1097a5540, {{338.1, 816.7}, {31.7, 14.3}}, label: 'S1·E5'
+                                              Button, 0x1097a5680, {{660.0, 623.0}, {300.0, 208.0}}, label: 'Are You Afraid of the Dark?, S1·E6'
+                                                Image, 0x1097a57c0, {{660.0, 623.0}, {300.0, 168.7}}
+                                                StaticText, 0x1097a5900, {{660.1, 797.7}, {189.7, 18.0}}, label: 'Are You Afraid of the Dark?'
+                                                StaticText, 0x1097a5a40, {{660.1, 816.7}, {31.7, 14.3}}, label: 'S1·E6'
+                                        StaticText, 0x1097a5b80, {{16.0, 867.0}, {240.3, 26.3}}, label: 'Recently Added Movies'
+                                        ScrollView, 0x1097a5cc0, {{16.0, 905.3}, {408.0, 272.3}}
+                                          Other, 0x1097a5e00, {{16.0, 905.3}, {1976.0, 272.3}}
+                                            Other, 0x1097a5f40, {{16.0, 909.3}, {814.0, 264.3}}
+                                              Button, 0x1097a6080, {{16.0, 909.3}, {150.0, 264.3}}, label: 'Final Destination 5, 2011'
+                                                Image, 0x1097a61c0, {{16.0, 909.3}, {150.0, 225.0}}
+                                                StaticText, 0x1097a6300, {{16.0, 1140.3}, {130.0, 18.0}}, label: 'Final Destination 5'
+                                                StaticText, 0x1097a6440, {{16.0, 1159.3}, {26.0, 14.3}}, label: '2011'
+                                              Button, 0x1097a6580, {{182.0, 909.3}, {150.0, 264.3}}, label: 'Final Destination 3, 2006'
+                                                Image, 0x1097a66c0, {{182.0, 909.3}, {150.0, 225.0}}
+                                                StaticText, 0x1097a6800, {{182.0, 1140.3}, {130.3, 18.0}}, label: 'Final Destination 3'
+                                                StaticText, 0x1097a6940, {{182.0, 1159.3}, {30.0, 14.3}}, label: '2006'
+                                              Button, 0x1097a6a80, {{348.0, 909.3}, {150.0, 264.3}}, label: 'Sinners, 2025'
+                                                Image, 0x1097a6bc0, {{348.0, 909.3}, {150.0, 225.0}}
+                                                StaticText, 0x1097a6d00, {{348.0, 1140.3}, {53.0, 18.0}}, label: 'Sinners'
+                                                StaticText, 0x1097a6e40, {{348.0, 1159.3}, {29.7, 14.3}}, label: '2025'
+                                              Button, 0x1097a6f80, {{514.0, 909.3}, {150.0, 264.3}}, label: 'Resident Evil: Welcome to Raccoon City, 2021'
+                                                Image, 0x1097a70c0, {{513.0, 909.3}, {152.0, 225.0}}
+                                                StaticText, 0x1097a7200, {{514.0, 1140.3}, {145.3, 18.0}}, label: 'Resident Evil: Welcome to Raccoon City'
+                                                StaticText, 0x1097a7340, {{514.0, 1159.3}, {27.7, 14.3}}, label: '2021'
+                                              Button, 0x1097a7480, {{680.0, 909.3}, {150.0, 264.3}}, label: 'Return to Silent Hill, 2026'
+                                                Image, 0x1097a75c0, {{680.0, 909.3}, {150.0, 225.0}}
+                                                StaticText, 0x1097a7700, {{680.0, 1140.3}, {135.0, 18.0}}, label: 'Return to Silent Hill'
+                                                StaticText, 0x1097a7840, {{680.0, 1159.3}, {30.0, 14.3}}, label: '2026'
+                                        StaticText, 0x1097a7980, {{16.0, 1209.7}, {311.7, 26.3}}, label: 'Recently Added Family Movies'
+                                        ScrollView, 0x1097a7ac0, {{16.0, 1248.0}, {408.0, 272.3}}
+                                          Other, 0x1097a7c00, {{16.0, 1248.0}, {1976.0, 272.3}}
+                                            Other, 0x1097a7d40, {{16.0, 1252.0}, {814.0, 264.3}}
+                                              Button, 0x1097a7e80, {{16.0, 1252.0}, {150.0, 264.3}}, label: 'Swapped, 2026'
+                                                Image, 0x1097c8000, {{16.0, 1252.0}, {150.0, 225.0}}
+                                                StaticText, 0x1097c8140, {{16.0, 1483.0}, {65.3, 18.0}}, label: 'Swapped'
+                                                StaticText, 0x1097c8280, {{16.0, 1502.0}, {30.0, 14.3}}, label: '2026'
+                                              Button, 0x1097c83c0, {{182.0, 1252.0}, {150.0, 264.3}}, label: 'Cloudy with a Chance of Meatballs, 2009'
+                                                Image, 0x1097c8500, {{182.0, 1252.0}, {150.0, 225.0}}
+                                                StaticText, 0x1097c8640, {{182.0, 1483.0}, {148.3, 18.0}}, label: 'Cloudy with a Chance of Meatballs'
+                                                StaticText, 0x1097c8780, {{182.0, 1502.0}, {30.0, 14.3}}, label: '2009'
+                                              Button, 0x1097c88c0, {{348.0, 1252.0}, {150.0, 264.3}}, label: 'Crocodile Dundee II, 1988'
+                                                Image, 0x1097c8a00, {{348.0, 1252.0}, {150.0, 225.0}}
+                                                StaticText, 0x1097c8b40, {{348.0, 1483.0}, {137.7, 18.0}}, label: 'Crocodile Dundee II'
+                                                StaticText, 0x1097c8c80, {{348.0, 1502.0}, {28.7, 14.3}}, label: '1988'
+                                              Button, 0x1097c8dc0, {{514.0, 1252.0}, {150.0, 264.3}}, label: 'Crocodile Dundee, 1986'
+                                                Image, 0x1097c8f00, {{514.0, 1252.0}, {150.0, 225.0}}
+                                                StaticText, 0x1097c9040, {{514.0, 1483.0}, {125.7, 18.0}}, label: 'Crocodile Dundee'
+                                                StaticText, 0x1097c9180, {{514.0, 1502.0}, {28.7, 14.3}}, label: '1986'
+                                              Button, 0x1097c92c0, {{680.0, 1252.0}, {150.0, 264.3}}, label: 'Jurassic World: Fallen Kingdom, 2018'
+                                                Image, 0x1097c9400, {{680.0, 1252.0}, {150.0, 225.0}}
+                                                StaticText, 0x1097c9540, {{680.0, 1483.0}, {148.7, 18.0}}, label: 'Jurassic World: Fallen Kingdom'
+                                                StaticText, 0x1097c9680, {{680.0, 1502.0}, {28.3, 14.3}}, label: '2018'
+                                        StaticText, 0x1097c97c0, {{16.0, 1552.4}, {307.7, 26.3}}, label: 'Recently Added Family Shows'
+                                        ScrollView, 0x1097c9900, {{16.0, 1590.7}, {408.0, 272.3}}
+                                          Other, 0x1097c9a40, {{16.0, 1590.7}, {1146.0, 272.3}}
+                                            Other, 0x1097c9b80, {{16.0, 1594.7}, {814.0, 264.3}}
+                                              Button, 0x1097c9cc0, {{16.0, 1594.7}, {150.0, 264.3}}, label: 'Season 17, 2026'
+                                                Image, 0x1097c9e00, {{16.0, 1594.3}, {150.0, 225.7}}
+                                                StaticText, 0x1097c9f40, {{16.0, 1825.7}, {71.3, 18.0}}, label: 'Season 17'
+                                                StaticText, 0x1097ca080, {{16.0, 1844.7}, {30.0, 14.3}}, label: '2026'
+                                              Button, 0x1097ca1c0, {{182.0, 1594.7}, {150.0, 264.3}}, label: 'Hailey's On It!, 2023'
+                                                Image, 0x1097ca300, {{182.0, 1594.7}, {150.0, 225.0}}
+                                                StaticText, 0x1097ca440, {{182.0, 1825.7}, {98.0, 18.0}}, label: 'Hailey's On It!'
+                                                StaticText, 0x1097ca580, {{182.0, 1844.7}, {29.7, 14.3}}, label: '2023'
+                                              Button, 0x1097ca6c0, {{348.0, 1594.7}, {150.0, 264.3}}, label: 'Star Trek: Prodigy, 2021'
+                                                Image, 0x1097ca800, {{348.0, 1594.7}, {150.0, 225.0}}
+                                                StaticText, 0x1097ca940, {{348.0, 1825.7}, {126.3, 18.0}}, label: 'Star Trek: Prodigy'
+                                                StaticText, 0x1097caa80, {{348.0, 1844.7}, {27.7, 14.3}}, label: '2021'
+                                              Button, 0x1097cabc0, {{514.0, 1594.7}, {150.0, 264.3}}, label: 'Are You Afraid of the Dark?, 1990'
+                                                Image, 0x1097cad00, {{512.3, 1594.7}, {153.3, 225.0}}
+                                                StaticText, 0x1097cae40, {{514.0, 1825.7}, {149.3, 18.0}}, label: 'Are You Afraid of the Dark?'
+                                                StaticText, 0x1097caf80, {{514.0, 1844.7}, {28.7, 14.3}}, label: '1990'
+                                              Button, 0x1097cb0c0, {{680.0, 1594.7}, {150.0, 264.3}}, label: 'Goosebumps, 1995'
+                                                Image, 0x1097cb200, {{680.0, 1594.7}, {150.0, 225.0}}
+                                                StaticText, 0x1097cb340, {{680.0, 1825.7}, {93.3, 18.0}}, label: 'Goosebumps'
+                                                StaticText, 0x1097cb480, {{680.0, 1844.7}, {28.3, 14.3}}, label: '1995'
+                                        StaticText, 0x1097cb5c0, {{16.0, 1895.0}, {236.0, 26.3}}, label: 'Recently Added Shows'
+                                        ScrollView, 0x1097cb700, {{16.0, 1933.3}, {408.0, 272.3}}
+                                          Other, 0x1097cb840, {{16.0, 1933.3}, {1976.0, 272.3}}
+                                            Other, 0x1097cb980, {{16.0, 1937.3}, {814.0, 264.3}}
+                                              Button, 0x1097cbac0, {{16.0, 1937.3}, {150.0, 264.3}}, label: 'Spartacus: House of Ashur, 2025'
+                                                Image, 0x1097cbc00, {{16.0, 1937.3}, {150.0, 225.0}}
+                                                StaticText, 0x1097cbd40, {{16.0, 2168.3}, {137.7, 18.0}}, label: 'Spartacus: House of Ashur'
+                                                StaticText, 0x1097cbe80, {{16.0, 2187.3}, {29.7, 14.3}}, label: '2025'
+                                              Button, 0x1097a0000, {{182.0, 1937.3}, {150.0, 264.3}}, label: 'Season 6, 1989'
+                                                Image, 0x1097a0140, {{182.0, 1937.3}, {150.0, 225.0}}
+                                                StaticText, 0x1097a0280, {{182.0, 2168.3}, {65.3, 18.0}}, label: 'Season 6'
+                                                StaticText, 0x1097a03c0, {{182.0, 2187.3}, {28.7, 14.3}}, label: '1989'
+                                              Button, 0x1097a0500, {{348.0, 1937.3}, {150.0, 264.3}}, label: 'Season 2, 2012'
+                                                Image, 0x1097a0640, {{348.0, 1937.3}, {150.0, 225.0}}
+                                                StaticText, 0x1097a0780, {{348.0, 2168.3}, {64.7, 18.0}}, label: 'Season 2'
+                                                StaticText, 0x1097a08c0, {{348.0, 2187.3}, {27.7, 14.3}}, label: '2012'
+                                              Button, 0x1097a0a00, {{514.0, 1937.3}, {150.0, 264.3}}, label: 'Season 2, 2016'
+                                                Image, 0x1097a0b40, {{514.0, 1937.3}, {150.0, 225.0}}
+                                                StaticText, 0x1097a0c80, {{514.0, 2168.3}, {64.7, 18.0}}, label: 'Season 2'
+                                                StaticText, 0x1097a0dc0, {{514.0, 2187.3}, {28.3, 14.3}}, label: '2016'
+                                              Button, 0x1097a0f00, {{680.0, 1937.3}, {150.0, 264.3}}, label: 'Season 1, 2023'
+                                                Image, 0x1097a1040, {{680.0, 1937.3}, {150.0, 225.0}}
+                                                StaticText, 0x1097a1180, {{680.0, 2168.3}, {62.7, 18.0}}, label: 'Season 1'
+                                                StaticText, 0x1097a12c0, {{680.0, 2187.3}, {29.7, 14.3}}, label: '2023'
+                                      Other, 0x1097a1400, {{407.0, 116.0}, {30.0, 757.0}}, label: 'Vertical scroll bar, 4 pages', value: 0%
+                                        Other, 0x1097a1540, {{434.0, 119.0}, {3.0, 311.7}}
+                                      Other, 0x1097a1680, {{407.0, 116.0}, {30.0, 757.0}}, label: 'Vertical scroll bar, 4 pages', value: 0%
+                                        Other, 0x1097a17c0, {{434.0, 119.0}, {3.0, 311.7}}
+                            Toolbar, 0x1097a1900, {{0.0, 0.0}, {440.0, 956.0}}, identifier: 'Toolbar', label: 'Toolbar'
+                              Other, 0x1097a1a40, {{0.0, 0.0}, {440.0, 956.0}}
+                Other, 0x1097a1b80, {{0.0, 0.0}, {440.0, 956.0}}
+                  Other, 0x1097a1cc0, {{0.0, 873.0}, {440.0, 83.0}}
+                    Other, 0x1097a1e00, {{0.0, 0.0}, {440.0, 956.0}}
+                      TabBar, 0x1097a1f40, {{0.0, 873.0}, {440.0, 83.0}}, label: 'Tab Bar'
+                        Other, 0x1097a2080, {{21.0, 873.0}, {398.0, 62.0}}
+                          Other, 0x1097a21c0, {{21.0, 873.0}, {90.4, 54.0}}
+                          Other, 0x1097a2300, {{21.0, 873.0}, {398.0, 62.0}}
+                            Button, 0x1097a2440, {{25.0, 877.0}, {90.4, 54.0}}, label: 'Home', Selected
+                              Image, 0x1097a2580, {{53.7, 883.0}, {33.3, 28.0}}, identifier: 'house.fill', label: 'home'
+                            Button, 0x1097a26c0, {{93.4, 877.0}, {114.8, 54.0}}, label: 'Downloaded'
+                              Image, 0x1097a2800, {{137.0, 883.3}, {27.3, 27.3}}, identifier: 'arrow.down.circle.fill', label: 'Arrow Down Circle'
+                            Button, 0x1097a2940, {{186.2, 877.0}, {92.1, 54.0}}, label: 'Libraries'
+                              Image, 0x1097a2a80, {{217.2, 882.0}, {30.0, 31.3}}, identifier: 'rectangle.stack.fill', label: 'Album'
+                            Button, 0x1097a2bc0, {{256.3, 877.0}, {90.4, 54.0}}, label: 'Movies'
+                              Image, 0x1097a2d00, {{284.9, 884.3}, {33.0, 25.0}}, identifier: 'film.fill', label: 'movie'
+                            Button, 0x1097a2e40, {{324.6, 877.0}, {90.4, 54.0}}, label: 'More'
+                              Image, 0x1097a2f80, {{357.3, 892.7}, {25.0, 8.7}}, identifier: 'ellipsis', label: 'More'
+                          Other, 0x1097a30c0, {{21.0, 873.0}, {398.0, 62.0}}
+                          Other, 0x1097a3200, {{25.0, 877.0}, {90.4, 54.0}}
+                            Other, 0x1097a3340, {{25.0, 877.0}, {90.3, 54.0}}
+                              Other, 0x1097a3480, {{25.0, 877.0}, {90.3, 54.0}}
+                              Other, 0x1097a35c0, {{25.0, 877.0}, {90.3, 54.0}}
+                                Other, 0x1097a3700, {{25.0, 877.0}, {90.3, 54.0}}
+                                  Other, 0x1097a3840, {{25.0, 877.0}, {90.3, 54.0}}
+                                    Other, 0x1097a3980, {{25.0, 877.0}, {90.3, 54.0}}
+                                  Other, 0x1097a3ac0, {{25.0, 877.0}, {90.3, 54.0}}
+                                Other, 0x1097a3c00, {{25.0, 877.0}, {90.3, 54.0}}
+                    Other, 0x1097a3d40, {{0.0, 873.0}, {440.0, 83.0}}
+                      Other, 0x1097a3e80, {{0.0, 873.0}, {440.0, 83.0}}
+                        Other, 0x1097cc000, {{0.0, 873.0}, {440.0, 83.0}}
+                          Other, 0x1097cc140, {{0.0, 873.0}, {440.0, 83.0}}
+                            Other, 0x1097cc280, {{0.0, 873.0}, {440.0, 83.0}}
+                              Other, 0x1097cc3c0, {{0.0, 873.0}, {440.0, 83.0}}
+                          Other, 0x1097cc500, {{0.0, 873.0}, {440.0, 83.0}}
+                            Other, 0x1097cc640, {{0.0, 873.0}, {440.0, 83.0}}
+Path to element:
+ →Application, 0x106798a00, pid: 1911, label: 'Gus'
+Query chain:
+ →Find: Application 'dev.ericslutz.gus'
+  Output: {
+    Application, 0x1097cc780, pid: 1911, label: 'Gus'
+  }

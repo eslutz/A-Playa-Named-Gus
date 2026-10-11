@@ -1,0 +1,279 @@
+{
+  "devices" : [
+    {
+      "architecture" : "arm64",
+      "deviceId" : "00006000-001028293438801E",
+      "deviceName" : "My Mac",
+      "modelName" : "MacBook Pro",
+      "osBuildNumber" : "26A434",
+      "osVersion" : "27.0.1",
+      "platform" : "macOS"
+    }
+  ],
+  "testNodes" : [
+    {
+      "children" : [
+        {
+          "children" : [
+            {
+              "children" : [
+                {
+                  "children" : [
+                    {
+                      "name" : "Expectation failed: await waitUntil { player.currentItem !== finishedItem && store.isPlaying }",
+                      "nodeType" : "Failure Message",
+                      "sourceLocation" : {
+                        "filePath" : "/Users/ericslutz/Developer/Code/Side Projects/A Playa Named Gus/Gus/Tests/APlayaNamedGusTests/AudioPlaybackTests.swift",
+                        "lineNumber" : 246
+                      }
+                    }
+                  ],
+                  "duration" : "12s",
+                  "durationInSeconds" : 12.193687200546265,
+                  "name" : "Play after natural queue completion restarts playback and tracks the next completion",
+                  "nodeIdentifier" : "AudioReplayTests/replaysAfterNaturalCompletion()",
+                  "nodeIdentifierURL" : "test://com.apple.xcode/A%20Playa%20Named%20Gus/GusMacOSTests/AudioReplayTests/replaysAfterNaturalCompletion()",
+                  "nodeType" : "Test Case",
+                  "result" : "Failed"
+                },
+                {
+                  "children" : [
+                    {
+                      "name" : "Expectation failed: await waitUntil {\n            if case .failed = store.state {\n                return true\n            }\n            return false\n        }",
+                      "nodeType" : "Failure Message",
+                      "sourceLocation" : {
+                        "filePath" : "/Users/ericslutz/Developer/Code/Side Projects/A Playa Named Gus/Gus/Tests/APlayaNamedGusTests/AudioPlaybackTests.swift",
+                        "lineNumber" : 280
+                      }
+                    }
+                  ],
+                  "duration" : "9s",
+                  "durationInSeconds" : 9.170588731765747,
+                  "name" : "Replay after automatic deletion respects local-only playback and does not stream",
+                  "nodeIdentifier" : "AudioReplayTests/deletedDownloadDoesNotStreamOnReplay()",
+                  "nodeIdentifierURL" : "test://com.apple.xcode/A%20Playa%20Named%20Gus/GusMacOSTests/AudioReplayTests/deletedDownloadDoesNotStreamOnReplay()",
+                  "nodeType" : "Test Case",
+                  "result" : "Failed"
+                }
+              ],
+              "name" : "Audio queue replay",
+              "nodeIdentifierURL" : "test://com.apple.xcode/A%20Playa%20Named%20Gus/GusMacOSTests/AudioReplayTests",
+              "nodeType" : "Test Suite",
+              "result" : "Failed"
+            },
+            {
+              "children" : [
+                {
+                  "duration" : "0.0092s",
+                  "durationInSeconds" : 0.009154081344604492,
+                  "name" : "cancelled detail load resets and can be entered again",
+                  "nodeIdentifier" : "UIRemediationTests/cancelledDetailCanReload()",
+                  "nodeIdentifierURL" : "test://com.apple.xcode/A%20Playa%20Named%20Gus/GusMacOSTests/UIRemediationTests/cancelledDetailCanReload()",
+                  "nodeType" : "Test Case",
+                  "result" : "Passed"
+                },
+                {
+                  "duration" : "0.003s",
+                  "durationInSeconds" : 0.0030329227447509766,
+                  "name" : "cancelled successful detail response cannot publish",
+                  "nodeIdentifier" : "UIRemediationTests/cancelledDetailSuccessDoesNotPublish()",
+                  "nodeIdentifierURL" : "test://com.apple.xcode/A%20Playa%20Named%20Gus/GusMacOSTests/UIRemediationTests/cancelledDetailSuccessDoesNotPublish()",
+                  "nodeType" : "Test Case",
+                  "result" : "Passed"
+                },
+                {
+                  "duration" : "0.0063s",
+                  "durationInSeconds" : 0.00629878044128418,
+                  "name" : "late search pagination cannot append to a replacement query",
+                  "nodeIdentifier" : "UIRemediationTests/staleSearchPage()",
+                  "nodeIdentifierURL" : "test://com.apple.xcode/A%20Playa%20Named%20Gus/GusMacOSTests/UIRemediationTests/staleSearchPage()",
+                  "nodeType" : "Test Case",
+                  "result" : "Passed"
+                },
+                {
+                  "duration" : "0.0031s",
+                  "durationInSeconds" : 0.0031249523162841797,
+                  "name" : "stale search failure cannot fail a replacement query",
+                  "nodeIdentifier" : "UIRemediationTests/staleSearchFailure()",
+                  "nodeIdentifierURL" : "test://com.apple.xcode/A%20Playa%20Named%20Gus/GusMacOSTests/UIRemediationTests/staleSearchFailure()",
+                  "nodeType" : "Test Case",
+                  "result" : "Passed"
+                },
+                {
+                  "duration" : "0.0013s",
+                  "durationInSeconds" : 0.0012531280517578125,
+                  "name" : "filtered search pages use raw offsets and stop after three pages",
+                  "nodeIdentifier" : "UIRemediationTests/filteredSearch()",
+                  "nodeIdentifierURL" : "test://com.apple.xcode/A%20Playa%20Named%20Gus/GusMacOSTests/UIRemediationTests/filteredSearch()",
+                  "nodeType" : "Test Case",
+                  "result" : "Passed"
+                },
+                {
+                  "duration" : "0.002s",
+                  "durationInSeconds" : 0.0019731521606445312,
+                  "name" : "filtered library scans later pages without a visible cell",
+                  "nodeIdentifier" : "UIRemediationTests/filteredLibrary()",
+                  "nodeIdentifierURL" : "test://com.apple.xcode/A%20Playa%20Named%20Gus/GusMacOSTests/UIRemediationTests/filteredLibrary()",
+                  "nodeType" : "Test Case",
+                  "result" : "Passed"
+                },
+                {
+                  "duration" : "0.00036s",
+                  "durationInSeconds" : 0.0003600120544433594,
+                  "name" : "empty server pages terminate even with an inconsistent total",
+                  "nodeIdentifier" : "UIRemediationTests/emptyPagesTerminate()",
+                  "nodeIdentifierURL" : "test://com.apple.xcode/A%20Playa%20Named%20Gus/GusMacOSTests/UIRemediationTests/emptyPagesTerminate()",
+                  "nodeType" : "Test Case",
+                  "result" : "Passed"
+                },
+                {
+                  "duration" : "0.0027s",
+                  "durationInSeconds" : 0.002749204635620117,
+                  "name" : "reversed season responses cannot overwrite selected episodes",
+                  "nodeIdentifier" : "UIRemediationTests/staleSeasons()",
+                  "nodeIdentifierURL" : "test://com.apple.xcode/A%20Playa%20Named%20Gus/GusMacOSTests/UIRemediationTests/staleSeasons()",
+                  "nodeType" : "Test Case",
+                  "result" : "Passed"
+                },
+                {
+                  "duration" : "0.007s",
+                  "durationInSeconds" : 0.007046937942504883,
+                  "name" : "selected season can retry after failure",
+                  "nodeIdentifier" : "UIRemediationTests/retrySeason()",
+                  "nodeIdentifierURL" : "test://com.apple.xcode/A%20Playa%20Named%20Gus/GusMacOSTests/UIRemediationTests/retrySeason()",
+                  "nodeType" : "Test Case",
+                  "result" : "Passed"
+                },
+                {
+                  "duration" : "0.0026s",
+                  "durationInSeconds" : 0.002590179443359375,
+                  "name" : "late season failure does not fail the current season",
+                  "nodeIdentifier" : "UIRemediationTests/staleSeasonFailure()",
+                  "nodeIdentifierURL" : "test://com.apple.xcode/A%20Playa%20Named%20Gus/GusMacOSTests/UIRemediationTests/staleSeasonFailure()",
+                  "nodeType" : "Test Case",
+                  "result" : "Passed"
+                },
+                {
+                  "duration" : "0.00059s",
+                  "durationInSeconds" : 0.0005922317504882812,
+                  "name" : "successful mutation with failed refresh cannot toggle twice",
+                  "nodeIdentifier" : "UIRemediationTests/reconcileMutation()",
+                  "nodeIdentifierURL" : "test://com.apple.xcode/A%20Playa%20Named%20Gus/GusMacOSTests/UIRemediationTests/reconcileMutation()",
+                  "nodeType" : "Test Case",
+                  "result" : "Passed"
+                },
+                {
+                  "duration" : "0.0023s",
+                  "durationInSeconds" : 0.002343893051147461,
+                  "name" : "concurrent detail mutations serialize and failures remain visible",
+                  "nodeIdentifier" : "UIRemediationTests/serializedMutations()",
+                  "nodeIdentifierURL" : "test://com.apple.xcode/A%20Playa%20Named%20Gus/GusMacOSTests/UIRemediationTests/serializedMutations()",
+                  "nodeType" : "Test Case",
+                  "result" : "Passed"
+                },
+                {
+                  "duration" : "0.00039s",
+                  "durationInSeconds" : 0.00039005279541015625,
+                  "name" : "opened photo survives an unrelated first page and is deduplicated",
+                  "nodeIdentifier" : "UIRemediationTests/selectedPhoto()",
+                  "nodeIdentifierURL" : "test://com.apple.xcode/A%20Playa%20Named%20Gus/GusMacOSTests/UIRemediationTests/selectedPhoto()",
+                  "nodeType" : "Test Case",
+                  "result" : "Passed"
+                },
+                {
+                  "duration" : "0.0054s",
+                  "durationInSeconds" : 0.005395174026489258,
+                  "name" : "section navigation, stores, and search survive layout ownership changes",
+                  "nodeIdentifier" : "UIRemediationTests/sharedNavigation()",
+                  "nodeIdentifierURL" : "test://com.apple.xcode/A%20Playa%20Named%20Gus/GusMacOSTests/UIRemediationTests/sharedNavigation()",
+                  "nodeType" : "Test Case",
+                  "result" : "Passed"
+                },
+                {
+                  "duration" : "0.0027s",
+                  "durationInSeconds" : 0.0026950836181640625,
+                  "name" : "audio closing and reopening preserve the same queue and local-only intent",
+                  "nodeIdentifier" : "UIRemediationTests/audioCloseReopen()",
+                  "nodeIdentifierURL" : "test://com.apple.xcode/A%20Playa%20Named%20Gus/GusMacOSTests/UIRemediationTests/audioCloseReopen()",
+                  "nodeType" : "Test Case",
+                  "result" : "Passed"
+                },
+                {
+                  "duration" : "0.0027s",
+                  "durationInSeconds" : 0.0027108192443847656,
+                  "name" : "cancelled video preparation cannot install a late player",
+                  "nodeIdentifier" : "UIRemediationTests/cancelledVideo()",
+                  "nodeIdentifierURL" : "test://com.apple.xcode/A%20Playa%20Named%20Gus/GusMacOSTests/UIRemediationTests/cancelledVideo()",
+                  "nodeType" : "Test Case",
+                  "result" : "Passed"
+                },
+                {
+                  "duration" : "0.0025s",
+                  "durationInSeconds" : 0.0025289058685302734,
+                  "name" : "video teardown rejects late preparation without canceling its caller",
+                  "nodeIdentifier" : "UIRemediationTests/tornDownVideoPreparation()",
+                  "nodeIdentifierURL" : "test://com.apple.xcode/A%20Playa%20Named%20Gus/GusMacOSTests/UIRemediationTests/tornDownVideoPreparation()",
+                  "nodeType" : "Test Case",
+                  "result" : "Passed"
+                },
+                {
+                  "duration" : "0.29s",
+                  "durationInSeconds" : 0.2889719009399414,
+                  "name" : "video teardown cancels an already queued automatic next episode",
+                  "nodeIdentifier" : "UIRemediationTests/tornDownQueuedAutoplay()",
+                  "nodeIdentifierURL" : "test://com.apple.xcode/A%20Playa%20Named%20Gus/GusMacOSTests/UIRemediationTests/tornDownQueuedAutoplay()",
+                  "nodeType" : "Test Case",
+                  "result" : "Passed"
+                },
+                {
+                  "duration" : "0.018s",
+                  "durationInSeconds" : 0.017904996871948242,
+                  "name" : "closing audio during preparation prevents a late playback start",
+                  "nodeIdentifier" : "UIRemediationTests/cancelledAudio()",
+                  "nodeIdentifierURL" : "test://com.apple.xcode/A%20Playa%20Named%20Gus/GusMacOSTests/UIRemediationTests/cancelledAudio()",
+                  "nodeType" : "Test Case",
+                  "result" : "Passed"
+                },
+                {
+                  "duration" : "0.00016s",
+                  "durationInSeconds" : 0.00015687942504882812,
+                  "name" : "an explicit repeated Home route still issues a navigation request",
+                  "nodeIdentifier" : "UIRemediationTests/repeatedFixedRoute()",
+                  "nodeIdentifierURL" : "test://com.apple.xcode/A%20Playa%20Named%20Gus/GusMacOSTests/UIRemediationTests/repeatedFixedRoute()",
+                  "nodeType" : "Test Case",
+                  "result" : "Passed"
+                },
+                {
+                  "duration" : "0.31s",
+                  "durationInSeconds" : 0.3067951202392578,
+                  "name" : "a re-mounted search surface does not restart its pending query",
+                  "nodeIdentifier" : "UIRemediationTests/searchRemount()",
+                  "nodeIdentifierURL" : "test://com.apple.xcode/A%20Playa%20Named%20Gus/GusMacOSTests/UIRemediationTests/searchRemount()",
+                  "nodeType" : "Test Case",
+                  "result" : "Passed"
+                }
+              ],
+              "name" : "UI remediation regressions",
+              "nodeIdentifierURL" : "test://com.apple.xcode/A%20Playa%20Named%20Gus/GusMacOSTests/UIRemediationTests",
+              "nodeType" : "Test Suite",
+              "result" : "Passed"
+            }
+          ],
+          "name" : "GusMacOSTests",
+          "nodeIdentifierURL" : "test://com.apple.xcode/A%20Playa%20Named%20Gus/GusMacOSTests",
+          "nodeType" : "Unit test bundle",
+          "result" : "Failed"
+        }
+      ],
+      "name" : "Gus macOS Unit Tests",
+      "nodeType" : "Test Plan",
+      "result" : "Failed"
+    }
+  ],
+  "testPlanConfigurations" : [
+    {
+      "configurationId" : "1",
+      "configurationName" : "Test Scheme Action"
+    }
+  ]
+}

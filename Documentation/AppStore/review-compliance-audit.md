@@ -67,7 +67,7 @@ backend, hosts no content, and collects no data.*
     (ADR 0009). No app-owned private API use was identified in the source audit;
     Apple upload validation remains pending.
   - **2.5.2 Self-contained** — No code download or remote execution. The EPUB reader
-    renders local book files over a loopback server; it executes no remote code.
+    renders local book files through a WebKit URL-scheme handler; it executes no remote code.
   - **2.5.4 Background audio** — The `audio` background mode is used exactly for
     user-initiated media playback (music, audiobooks, video audio, PiP).
   - **2.5.6 WebKit** — Readium renders EPUB content in `WKWebView` (content display, not

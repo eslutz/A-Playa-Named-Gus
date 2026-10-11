@@ -13,15 +13,15 @@ struct DownloadButton: View {
         if let record = downloads.record(for: item, serverID: session.server.id, userID: session.user.id) {
             switch record.status {
             case .complete where downloads.localFileURL(for: item, serverID: session.server.id, userID: session.user.id) != nil:
-                downloadLabel("Downloaded", systemImage: "checkmark.circle.fill")
+                statusLabel("Downloaded", systemImage: "checkmark.circle.fill")
                     .foregroundStyle(.secondary)
                     .accessibilityLabel("Downloaded")
                     .accessibilityValue(record.downloadedAt.formatted(date: .abbreviated, time: .shortened))
             case .queued:
-                downloadLabel("Queued", systemImage: "clock")
+                statusLabel("Queued", systemImage: "clock")
                     .foregroundStyle(.secondary)
             case .downloading:
-                downloadLabel(activityLabel(for: record), systemImage: "arrow.down.circle")
+                statusLabel(activityLabel(for: record), systemImage: "arrow.down.circle")
                     .foregroundStyle(.secondary)
             case .paused:
                 Button {
@@ -30,8 +30,9 @@ struct DownloadButton: View {
                     downloadLabel("Resume", systemImage: "play.fill")
                 }
                 .gusGlassButtonStyle()
-                .controlSize(.large)
-                .visionHoverEffect(cornerRadius: 10)
+                .controlSize(iconOnly ? .regular : .large)
+                .frame(minWidth: 44, minHeight: 44)
+                .visionHoverEffect(Capsule())
             case .failed, .complete:
                 downloadAction(itemID: item.id)
             }
@@ -66,8 +67,22 @@ struct DownloadButton: View {
         }
         .disabled(itemID.map { downloads.activeItemIDs.contains($0) } ?? true)
         .gusGlassButtonStyle()
-        .controlSize(.large)
-        .visionHoverEffect(cornerRadius: 10)
+        .controlSize(iconOnly ? .regular : .large)
+        .frame(minWidth: 44, minHeight: 44)
+        .visionHoverEffect(Capsule())
+    }
+
+    @ViewBuilder
+    private func statusLabel(_ title: LocalizedStringKey, systemImage: String) -> some View {
+        if iconOnly {
+            Button {} label: { downloadLabel(title, systemImage: systemImage) }
+                .gusGlassButtonStyle()
+                .controlSize(.regular)
+                .frame(minWidth: 44, minHeight: 44)
+                .disabled(true)
+        } else {
+            downloadLabel(title, systemImage: systemImage)
+        }
     }
 
     /// Compact icon form when used as a hero accessory; full label elsewhere. The title
@@ -77,7 +92,7 @@ struct DownloadButton: View {
         if iconOnly {
             Label(title, systemImage: systemImage)
                 .labelStyle(.iconOnly)
-                .frame(width: 44, height: 36)
+                .frame(maxWidth: .infinity, minHeight: 28)
         } else {
             Label(title, systemImage: systemImage)
         }

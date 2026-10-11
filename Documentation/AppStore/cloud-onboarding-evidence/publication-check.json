@@ -1,0 +1,39 @@
+{
+  "date": "2026-10-11",
+  "scope": "Read-only privacy-pattern audit of unpublished commit 423bfa0, pending publication text, and phone/physical screenshot evidence",
+  "text": {
+    "unpublished_commit_text_blobs_scanned": 707,
+    "pending_publication_paths": 420,
+    "pending_text_files_scanned": 272,
+    "pending_binary_files_skipped": 148,
+    "credential_or_private_key_pattern_findings": 0,
+    "medical_keyword_candidates_reviewed": 2,
+    "medical_alert_content_findings": 0,
+    "keyword_candidate_disposition": "Both candidates describe visual occlusion; root verified they contain no medical details."
+  },
+  "screenshots": {
+    "images_scanned": 220,
+    "initial_text_recognized": 195,
+    "orientation_follow_up_images": 25,
+    "orientation_follow_up_text_recognized": 24,
+    "combined_text_recognized": 219,
+    "ocr_request_failures": 0,
+    "image_read_failures": 0,
+    "medical_alert_keyword_findings": 0,
+    "unpublished_commit_phone_image_hash_matches": 138,
+    "remaining_no_text_images_visually_reviewed_by_root": 1,
+    "remaining_image": "Documentation/Reviews/2026-10-09-ios-ui/evidence/physical-2026-10-10/playback-direct-downloaded-player-landscape.png",
+    "remaining_image_disposition": "Opening film frame with no controls, text or alerts.",
+    "additional_physical_player_frames_visually_reviewed_by_root": 2,
+    "additional_cloud_setup_images_visually_reviewed_by_root": 2,
+    "visual_sensitive_content_findings": 0
+  },
+  "sensitive_pattern_findings": 0,
+  "recognized_text_exported": false,
+  "source_images_or_history_changed_by_audit": false,
+  "finalCandidateTextCheck": {
+    "textFilesScanned": 278,
+    "credentialPatternFindings": 0,
+    "nativeChapterEvidenceIndividuallyInspected": true
+  }
+}

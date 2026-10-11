@@ -1,0 +1,256 @@
+Play frame: (339.0, 440.5, 320.0, 50.5)
+App frame: (0.0, 0.0, 1210.0, 834.0)
+Attributes: Application, 0x107b78b40, pid: 43560, label: 'Gus'
+Element subtree:
+ →Application, 0x107b78b40, pid: 43560, label: 'Gus'
+    Window (Main), 0x107b78c80, {{0.0, 0.0}, {1210.0, 834.0}}
+      Other, 0x107b788c0, {{0.0, 0.0}, {1210.0, 834.0}}
+        Other, 0x107b78a00, {{0.0, 0.0}, {1210.0, 834.0}}
+          Other, 0x107b78640, {{-1210.0, -834.0}, {3630.0, 2502.0}}, identifier: 'PopoverDismissRegion', label: 'dismiss popup'
+          Other, 0x107b78780, {{0.0, 0.0}, {1210.0, 834.0}}
+            Other, 0x107b78500, {{0.0, 0.0}, {1210.0, 834.0}}
+              Other, 0x107b783c0, {{0.0, 0.0}, {1210.0, 834.0}}
+                Other, 0x107b78280, {{0.0, 0.0}, {1210.0, 834.0}}
+                  Other, 0x107b78140, {{0.0, 0.0}, {1210.0, 834.0}}
+                    Other, 0x107b78000, {{0.0, 0.0}, {220.0, 834.0}}
+                      Other, 0x107b7a1c0, {{0.0, 0.0}, {220.0, 834.0}}
+                        Other, 0x107b7bc00, {{0.0, 0.0}, {220.0, 834.0}}
+                          Other, 0x107b7be80, {{0.0, 0.0}, {220.0, 834.0}}
+                            Other, 0x107b7bd40, {{0.0, 0.0}, {220.0, 834.0}}
+                              Other, 0x107b7b340, {{0.0, 0.0}, {220.0, 834.0}}
+                                CollectionView, 0x107b7b5c0, {{0.0, 0.0}, {220.0, 834.0}}, label: 'Sidebar'
+                                  Other, 0x107b7b700, {{-16.0, -2334.0}, {252.0, 5266.0}}
+                                  Other, 0x107b7b840, {{0.0, 0.0}, {220.0, 834.0}}
+                                    Other, 0x107b7bac0, {{0.0, 0.0}, {220.0, 126.0}}
+                                  Other, 0x107b7b980, {{0.0, 0.0}, {220.0, 834.0}}
+                                  Cell, 0x107b7b480, {{16.0, 86.0}, {188.0, 52.0}}, Selected
+                                    Other, 0x107b7a800, {{16.0, 86.0}, {188.0, 52.0}}
+                                      Other, 0x107b7ad00, {{16.0, 86.0}, {188.0, 52.0}}
+                                        Other, 0x107b7ae40, {{16.0, 86.0}, {188.0, 52.0}}
+                                    Other, 0x107b7af80, {{16.0, 86.0}, {188.0, 52.0}}
+                                      Other, 0x107b7abc0, {{16.0, 86.0}, {188.0, 52.0}}
+                                        Other, 0x107b7a6c0, {{16.0, 86.0}, {188.0, 52.0}}
+                                          StaticText, 0x107b7a440, {{16.0, 86.0}, {188.0, 52.0}}, label: 'Home', Selected
+                                          Image, 0x107b7a580, {{31.0, 100.5}, {26.0, 23.0}}, identifier: 'house', label: 'Home', Selected
+                                  Cell, 0x107b7a300, {{16.0, 138.0}, {188.0, 52.0}}
+                                    Other, 0x107b792c0, {{16.0, 138.0}, {188.0, 52.0}}
+                                    Other, 0x107b7b0c0, {{16.0, 138.0}, {188.0, 52.0}}
+                                      Other, 0x107b7a940, {{16.0, 138.0}, {188.0, 52.0}}
+                                        Other, 0x103633980, {{16.0, 138.0}, {188.0, 52.0}}
+                                          StaticText, 0x103633ac0, {{16.0, 138.0}, {188.0, 52.0}}, label: 'Downloaded'
+                                          Image, 0x1036312c0, {{33.0, 153.0}, {22.0, 22.0}}, identifier: 'arrow.down.circle', label: 'Arrow Down Circle'
+                                  Cell, 0x103631180, {{16.0, 190.0}, {188.0, 52.0}}
+                                    Other, 0x1036330c0, {{16.0, 190.0}, {188.0, 52.0}}
+                                    Other, 0x103633480, {{16.0, 190.0}, {188.0, 52.0}}
+                                      Other, 0x1036335c0, {{16.0, 190.0}, {188.0, 52.0}}
+                                        Other, 0x103633700, {{16.0, 190.0}, {188.0, 52.0}}
+                                          StaticText, 0x103633840, {{16.0, 190.0}, {188.0, 52.0}}, label: 'Libraries'
+                                          Image, 0x106488c80, {{31.0, 203.5}, {26.5, 25.5}}, identifier: 'rectangle.stack', label: 'Stack Of Rectangles'
+                                  Cell, 0x10648a440, {{16.0, 242.0}, {188.0, 52.0}}
+                                    Other, 0x106489040, {{16.0, 242.0}, {188.0, 52.0}}
+                                    Other, 0x106489400, {{16.0, 242.0}, {188.0, 52.0}}
+                                      Other, 0x1064892c0, {{16.0, 242.0}, {188.0, 52.0}}
+                                        Other, 0x10648af80, {{16.0, 242.0}, {188.0, 52.0}}
+                                          StaticText, 0x10648b0c0, {{16.0, 242.0}, {188.0, 52.0}}, label: 'Movies'
+                                          Image, 0x10648ae40, {{31.5, 258.0}, {25.5, 20.0}}, identifier: 'film', label: 'Movie'
+                                  Cell, 0x10648b200, {{16.0, 294.0}, {188.0, 52.0}}
+                                    Other, 0x10648b340, {{16.0, 294.0}, {188.0, 52.0}}
+                                    Other, 0x10648b5c0, {{16.0, 294.0}, {188.0, 52.0}}
+                                      Other, 0x10648b480, {{16.0, 294.0}, {188.0, 52.0}}
+                                        Other, 0x10648b700, {{16.0, 294.0}, {188.0, 52.0}}
+                                          StaticText, 0x10648b840, {{16.0, 294.0}, {188.0, 52.0}}, label: 'Shows'
+                                          Image, 0x10648a1c0, {{31.0, 309.5}, {26.5, 21.0}}, identifier: 'tv', label: 'Tv'
+                                  Cell, 0x10648a580, {{16.0, 346.0}, {188.0, 52.0}}
+                                    Other, 0x10648a800, {{16.0, 346.0}, {188.0, 52.0}}
+                                    Other, 0x10648bd40, {{16.0, 346.0}, {188.0, 52.0}}
+                                      Other, 0x10648be80, {{16.0, 346.0}, {188.0, 52.0}}
+                                        Other, 0x106488500, {{16.0, 346.0}, {188.0, 52.0}}
+                                          StaticText, 0x10648abc0, {{16.0, 346.0}, {188.0, 52.0}}, label: 'Music'
+                                          Image, 0x106488640, {{37.5, 361.5}, {13.0, 21.5}}, identifier: 'music.note', label: 'Song'
+                                  Cell, 0x10648ad00, {{16.0, 398.0}, {188.0, 52.0}}
+                                    Other, 0x10648b980, {{16.0, 398.0}, {188.0, 52.0}}
+                                    Other, 0x10648bc00, {{16.0, 398.0}, {188.0, 52.0}}
+                                      Other, 0x10648aa80, {{16.0, 398.0}, {188.0, 52.0}}
+                                        Other, 0x10648a6c0, {{16.0, 398.0}, {188.0, 52.0}}
+                                          StaticText, 0x10648a940, {{16.0, 398.0}, {188.0, 52.0}}, label: 'Books'
+                                          Image, 0x10648a300, {{32.0, 414.0}, {24.0, 20.0}}, identifier: 'book', label: 'Bookmark'
+                                  Cell, 0x106489180, {{16.0, 450.0}, {188.0, 52.0}}
+                                    Other, 0x10648bac0, {{16.0, 450.0}, {188.0, 52.0}}
+                                    Other, 0x106489540, {{16.0, 450.0}, {188.0, 52.0}}
+                                      Other, 0x106489900, {{16.0, 450.0}, {188.0, 52.0}}
+                                        Other, 0x106489a40, {{16.0, 450.0}, {188.0, 52.0}}
+                                          StaticText, 0x106489cc0, {{16.0, 450.0}, {188.0, 52.0}}, label: 'Settings'
+                                          Image, 0x106489b80, {{32.5, 464.5}, {23.0, 23.0}}, identifier: 'gearshape', label: 'Gear Shape'
+                                  Other, 0x106489e00, {{187.0, 86.0}, {30.0, 748.0}}, label: 'Vertical scroll bar, 1 page', value: 0%
+                                    Other, 0x106489f40, {{214.0, 1180.0}, {3.0, 7.0}}
+                                  Other, 0x107ac8000, {{187.0, 86.0}, {30.0, 748.0}}, label: 'Vertical scroll bar, 1 page', value: 0%
+                                    Other, 0x107ac8140, {{214.0, 1180.0}, {3.0, 7.0}}
+                        NavigationBar, 0x107ac8280, {{0.0, 32.0}, {220.0, 54.0}}, identifier: 'Gus'
+                          StaticText, 0x107ac83c0, {{94.0, 43.5}, {31.5, 21.0}}, label: 'Gus'
+                          Button, 0x107ac8500, {{170.0, 36.0}, {36.0, 36.0}}, label: 'Hide Sidebar'
+                        Toolbar, 0x107ac8640, {{0.0, 0.0}, {220.0, 834.0}}, identifier: 'Toolbar', label: 'Toolbar'
+                          Other, 0x107ac8780, {{0.0, 0.0}, {220.0, 834.0}}
+                      Other, 0x107ac88c0, {{0.0, 0.0}, {220.0, 834.0}}
+                        Other, 0x107ac8a00, {{0.0, 0.0}, {220.0, 834.0}}
+                          Other, 0x107ac8b40, {{0.0, 0.0}, {220.0, 834.0}}
+                            Other, 0x107ac8c80, {{0.0, 0.0}, {220.0, 834.0}}
+                              Other, 0x107ac8dc0, {{0.0, 0.0}, {220.0, 834.0}}
+                                Other, 0x107ac8f00, {{0.0, 0.0}, {220.0, 1210.0}}
+                            Other, 0x107ac9040, {{0.0, 0.0}, {220.0, 834.0}}
+                              Other, 0x107ac9180, {{0.0, 0.0}, {220.0, 1210.0}}
+                    Other, 0x107ac92c0, {{0.0, 0.0}, {1210.0, 834.0}}
+                      Other, 0x107ac9400, {{0.0, 0.0}, {1210.0, 834.0}}
+                        NavigationBar, 0x107ac9540, {{0.0, 32.0}, {1210.0, 106.0}}, identifier: 'Home'
+                          SearchField, 0x107ac9680, {{960.0, 32.0}, {240.0, 44.0}}, label: 'Search Library', placeholderValue: 'Search Library'
+                            Image, 0x107ac97c0, {{972.0, 43.5}, {20.5, 20.0}}, identifier: 'magnifyingglass', label: 'Search'
+                          StaticText, 0x107ac9900, {{240.0, 89.5}, {94.5, 41.0}}, label: 'Home'
+                        Other, 0x107ac9a40, {{0.0, 0.0}, {1210.0, 834.0}}
+                          Other, 0x107ac9b80, {{0.0, 0.0}, {1210.0, 834.0}}
+                            Other, 0x107ac9cc0, {{0.0, 0.0}, {1210.0, 834.0}}
+                              Other, 0x107ac9e00, {{0.0, 0.0}, {1210.0, 834.0}}
+                                ScrollView, 0x107ac9f40, {{0.0, 0.0}, {1210.0, 834.0}}
+                                  Other, 0x107aca080, {{0.0, 0.0}, {1210.0, 834.0}}
+                                    Other, 0x107aca1c0, {{0.0, 0.0}, {1210.0, 126.0}}
+                                  Other, 0x107aca300, {{0.0, 0.0}, {1210.0, 834.0}}
+                                  Other, 0x107aca440, {{0.0, 138.0}, {1210.0, 1668.5}}
+                                    StaticText, 0x107aca580, {{236.0, 154.0}, {231.0, 26.5}}, label: 'Recently Added Books'
+                                    ScrollView, 0x107aca6c0, {{236.0, 192.5}, {958.0, 257.0}}
+                                      Other, 0x107aca800, {{236.0, 192.5}, {482.0, 257.0}}
+                                        Other, 0x107aca940, {{236.0, 196.5}, {482.0, 249.0}}
+                                          Button, 0x107acaa80, {{236.0, 196.5}, {150.0, 249.0}}, label: 'Peter Pan'
+                                            Image, 0x107acabc0, {{291.5, 293.5}, {39.5, 31.0}}, identifier: 'film', label: 'Movie'
+                                            StaticText, 0x107acad00, {{236.0, 427.5}, {68.0, 18.0}}, label: 'Peter Pan'
+                                          Button, 0x107acae40, {{402.0, 196.5}, {150.0, 249.0}}, label: 'Dracula'
+                                            Image, 0x107acaf80, {{457.5, 293.5}, {39.5, 31.0}}, identifier: 'film', label: 'Movie'
+                                            StaticText, 0x107acb0c0, {{402.0, 427.5}, {54.0, 18.0}}, label: 'Dracula'
+                                          Button, 0x107acb200, {{568.0, 196.5}, {150.0, 249.0}}, label: 'Frankenstein'
+                                            Image, 0x107acb340, {{623.5, 293.5}, {39.5, 31.0}}, identifier: 'film', label: 'Movie'
+                                            StaticText, 0x107acb480, {{568.0, 427.5}, {90.5, 18.0}}, label: 'Frankenstein'
+                                    StaticText, 0x107acb5c0, {{236.0, 481.5}, {240.5, 26.5}}, label: 'Recently Added Movies'
+                                    ScrollView, 0x107acb700, {{236.0, 520.0}, {958.0, 272.5}}
+                                      Other, 0x107acb840, {{236.0, 520.0}, {316.0, 272.5}}
+                                        Other, 0x107acb980, {{236.0, 524.0}, {316.0, 264.5}}
+                                          Button, 0x107acbac0, {{236.0, 524.0}, {150.0, 264.5}}, label: 'President McKinley Taking the Oath, 1901'
+                                            Image, 0x107acbc00, {{236.0, 524.0}, {150.0, 225.0}}
+                                            StaticText, 0x107acbd40, {{236.0, 755.0}, {148.0, 18.0}}, label: 'President McKinley Taking the Oath'
+                                            StaticText, 0x107acbe80, {{236.0, 774.0}, {26.5, 14.5}}, label: '1901'
+                                          Button, 0x107b44000, {{402.0, 524.0}, {150.0, 264.5}}, label: 'May Irwin Kiss (1896), 2024'
+                                            Image, 0x107b44140, {{276.5, 524.0}, {401.0, 225.0}}
+                                            StaticText, 0x107b44280, {{402.0, 755.0}, {149.0, 18.0}}, label: 'May Irwin Kiss (1896)'
+                                            StaticText, 0x107b443c0, {{402.0, 774.0}, {30.0, 14.5}}, label: '2024'
+                                    StaticText, 0x107b44500, {{236.0, 824.5}, {228.5, 26.5}}, label: 'Recently Added Music'
+                                    ScrollView, 0x107b44640, {{236.0, 863.0}, {958.0, 257.0}}
+                                      Other, 0x107b44780, {{236.0, 863.0}, {482.0, 257.0}}
+                                        Other, 0x107b448c0, {{236.0, 867.0}, {482.0, 249.0}}
+                                          Button, 0x107b44a00, {{236.0, 867.0}, {150.0, 249.0}}, label: 'Sax and Piano (free track)'
+                                            Image, 0x107b44b40, {{198.5, 867.0}, {225.0, 225.0}}
+                                            StaticText, 0x107b44c80, {{236.0, 867.0}, {150.0, 249.0}}, label: 'Sax and Piano (free track)'
+                                          Button, 0x107b44dc0, {{402.0, 867.0}, {150.0, 249.0}}, label: '01 - Tranquil Mindscape'
+                                            Image, 0x107b44f00, {{457.5, 964.0}, {39.5, 31.0}}, identifier: 'film', label: 'Movie'
+                                            StaticText, 0x107b45040, {{402.0, 1098.0}, {147.0, 18.0}}, label: '01 - Tranquil Mindscape'
+                                          Button, 0x107b45180, {{568.0, 867.0}, {150.0, 249.0}}, label: '02 - Whispers of the Glen'
+                                            Image, 0x107b452c0, {{623.5, 964.0}, {39.5, 31.0}}, identifier: 'film', label: 'Movie'
+                                            StaticText, 0x107b45400, {{568.0, 1098.0}, {148.5, 18.0}}, label: '02 - Whispers of the Glen'
+                                    StaticText, 0x107b45540, {{236.0, 1152.0}, {239.5, 26.5}}, label: 'Recently Added Photos'
+                                    ScrollView, 0x107b45680, {{236.0, 1190.5}, {958.0, 257.0}}
+                                      Other, 0x107b457c0, {{236.0, 1190.5}, {482.0, 257.0}}
+                                        Other, 0x107b45900, {{236.0, 1194.5}, {482.0, 249.0}}
+                                          Button, 0x107b45a40, {{236.0, 1194.5}, {150.0, 249.0}}, label: 'Zion National Park - Ranger Naturalist Service'
+                                            Image, 0x107b45b80, {{228.0, 1194.5}, {166.0, 225.0}}
+                                            StaticText, 0x107b45cc0, {{236.0, 1194.5}, {150.0, 249.0}}, label: 'Zion National Park - Ranger Naturalist Service'
+                                          Button, 0x107b45e00, {{402.0, 1194.5}, {150.0, 249.0}}, label: 'Grand Canyon National Park'
+                                            Image, 0x107b45f40, {{393.5, 1194.5}, {167.0, 225.0}}
+                                            StaticText, 0x107b46080, {{402.0, 1194.5}, {150.0, 249.0}}, label: 'Grand Canyon National Park'
+                                          Button, 0x107b461c0, {{568.0, 1194.5}, {150.0, 249.0}}, label: 'Yellowstone National Park - Ranger Naturalist Service'
+                                            Image, 0x107b46300, {{560.0, 1194.5}, {166.0, 225.0}}
+                                            StaticText, 0x107b46440, {{568.0, 1194.5}, {150.0, 249.0}}, label: 'Yellowstone National Park - Ranger Naturalist Service'
+                                    StaticText, 0x107b46580, {{236.0, 1479.5}, {236.0, 26.5}}, label: 'Recently Added Shows'
+                                    ScrollView, 0x107b466c0, {{236.0, 1518.0}, {958.0, 272.5}}
+                                      Other, 0x107b46800, {{236.0, 1518.0}, {316.0, 272.5}}
+                                        Other, 0x107b46940, {{236.0, 1522.0}, {316.0, 264.5}}
+                                          Button, 0x107b46a80, {{236.0, 1522.0}, {150.0, 264.5}}, label: 'Racket Squad (1952), 1970'
+                                            Image, 0x107b46bc0, {{291.5, 1619.0}, {39.5, 31.0}}, identifier: 'film', label: 'Movie'
+                                            StaticText, 0x107b46d00, {{236.0, 1753.0}, {147.5, 18.0}}, label: 'Racket Squad (1952)'
+                                            StaticText, 0x107b46e40, {{236.0, 1772.0}, {27.5, 14.5}}, label: '1970'
+                                          Button, 0x107b46f80, {{402.0, 1522.0}, {150.0, 264.5}}, label: 'Crossroads, 1955'
+                                            Image, 0x107b470c0, {{402.0, 1522.0}, {150.0, 225.0}}
+                                            StaticText, 0x107b47200, {{402.0, 1753.0}, {80.5, 18.0}}, label: 'Crossroads'
+                                            StaticText, 0x107b47340, {{402.0, 1772.0}, {28.5, 14.5}}, label: '1955'
+                                  Other, 0x107b47480, {{1177.0, 86.0}, {30.0, 718.0}}, label: 'Vertical scroll bar, 3 pages', value: 0%
+                                    Other, 0x107b475c0, {{1204.0, 89.0}, {3.0, 327.0}}
+                                  Other, 0x107b47700, {{1177.0, 86.0}, {30.0, 718.0}}, label: 'Vertical scroll bar, 3 pages', value: 0%
+                                    Other, 0x107b47840, {{1204.0, 89.0}, {3.0, 327.0}}
+                        Toolbar, 0x107b47980, {{0.0, 0.0}, {1210.0, 834.0}}, identifier: 'Toolbar', label: 'Toolbar'
+                          Other, 0x107b47ac0, {{0.0, 0.0}, {1210.0, 834.0}}
+                    Toolbar, 0x107b47c00, {{0.0, 0.0}, {1210.0, 834.0}}, identifier: 'Toolbar', label: 'Toolbar'
+                      Other, 0x107b47d40, {{0.0, 0.0}, {1210.0, 834.0}}
+                Other, 0x107b47e80, {{0.0, 0.0}, {1210.0, 834.0}}
+                  Other, 0x107b5c000, {{0.0, 0.0}, {1210.0, 834.0}}
+      Other, 0x107b5c140, {{0.0, 0.0}, {1210.0, 834.0}}
+        Other, 0x107b5c280, {{-1210.0, -834.0}, {3630.0, 2502.0}}, identifier: 'PopoverDismissRegion', label: 'dismiss popup'
+        Other, 0x107b5c3c0, {{315.0, 87.0}, {580.0, 660.0}}
+          Image, 0x107b5c500, {{165.0, -63.0}, {880.0, 960.0}}
+          Other, 0x107b5c640, {{315.0, 87.0}, {580.0, 660.0}}
+            Other, 0x107b5c780, {{315.0, 87.0}, {580.0, 660.0}}
+              Other, 0x107b5c8c0, {{315.0, 87.0}, {580.0, 660.0}}
+                Other, 0x107b5ca00, {{315.0, 87.0}, {580.0, 660.0}}
+                  NavigationBar, 0x107b5cb40, {{315.0, 97.0}, {580.0, 54.0}}, identifier: 'Edison Kinetoscopic Record of a Sneeze (1894)'
+                    Other, 0x107b5cc80, {{329.0, 101.0}, {64.5, 36.0}}
+                      Other, 0x107b5cdc0, {{329.0, 101.0}, {64.5, 36.0}}
+                        Button, 0x107b5cf00, {{329.0, 101.0}, {64.5, 36.0}}, identifier: 'ContentLink.detailDone', label: 'Done'
+                    StaticText, 0x107b5d040, {{417.0, 108.5}, {376.0, 21.0}}, label: 'Edison Kinetoscopic Record of a Sneeze (1894)'
+                  Other, 0x107b5d180, {{315.0, 87.0}, {580.0, 660.0}}
+                    Other, 0x107b5d2c0, {{315.0, 87.0}, {580.0, 660.0}}
+                      Other, 0x107b5d400, {{315.0, 87.0}, {580.0, 660.0}}
+                        Other, 0x107b5d540, {{315.0, 87.0}, {580.0, 660.0}}
+                          ScrollView, 0x107b5d680, {{315.0, 87.0}, {580.0, 660.0}}
+                            Other, 0x107b5d7c0, {{315.0, 87.0}, {580.0, 660.0}}
+                              Other, 0x107b5d900, {{315.0, 87.0}, {580.0, 104.0}}
+                            Other, 0x107b5da40, {{315.0, 87.0}, {580.0, 660.0}}
+                            Other, 0x107b5db80, {{315.0, 151.0}, {580.0, 1088.0}}
+                              Other, 0x107b5dcc0, {{315.0, 143.5}, {580.0, 435.0}}
+                                Image, 0x107b5de00, {{315.0, 143.5}, {580.0, 435.0}}
+                                StaticText, 0x107b5df40, {{351.0, 313.0}, {425.5, 67.5}}, label: 'Edison Kinetoscopic Record of a Sneeze (1894)'
+                                StaticText, 0x107b5e080, {{351.0, 392.5}, {20.5, 18.0}}, label: '1m'
+                                Button, 0x107b5e1c0, {{339.0, 440.5}, {320.0, 50.5}}, identifier: 'Detail.play', label: 'Play'
+                                  StaticText, 0x107b5e300, {{339.0, 440.5}, {320.0, 50.5}}, identifier: 'Detail.play', label: 'Play'
+                                  Image, 0x107b5e440, {{471.5, 457.5}, {14.0, 15.5}}, identifier: 'Detail.play', label: 'Play'
+                                Button, 0x107b5e580, {{339.0, 504.0}, {57.5, 42.0}}, identifier: 'plus', label: 'Add to Up Next'
+                                Button, 0x107b5e6c0, {{404.5, 504.0}, {57.5, 42.0}}, identifier: 'checkmark.circle.fill', label: 'Mark as Unwatched', Selected
+                                Button, 0x107b5e800, {{470.0, 504.0}, {58.0, 42.0}}, identifier: 'heart', label: 'Add to Favorites'
+                                Button, 0x107b5e940, {{536.0, 504.0}, {57.5, 42.0}}, identifier: 'shareplay', label: 'SharePlay'
+                                Button, 0x107b5ea80, {{601.5, 504.0}, {57.5, 42.0}}, identifier: 'arrow.down.circle', label: 'Download'
+                              StaticText, 0x107b5ebc0, {{335.0, 625.0}, {155.5, 26.5}}, label: 'Recommended'
+                              ScrollView, 0x107b5ed00, {{335.0, 663.5}, {540.0, 272.5}}
+                                Other, 0x107b5ee40, {{335.0, 663.5}, {316.0, 272.5}}
+                                  Other, 0x107b5ef80, {{335.0, 667.5}, {316.0, 264.5}}
+                                    Button, 0x107b5f0c0, {{335.0, 667.5}, {150.0, 264.5}}, label: 'May Irwin Kiss (1896), 2024'
+                                      Image, 0x107b5f200, {{209.5, 667.5}, {401.0, 225.0}}
+                                      StaticText, 0x107b5f340, {{335.0, 898.5}, {149.0, 18.0}}, label: 'May Irwin Kiss (1896)'
+                                      StaticText, 0x107b5f480, {{335.0, 917.5}, {30.0, 14.5}}, label: '2024'
+                                    Button, 0x107b5f5c0, {{501.0, 667.5}, {150.0, 264.5}}, label: 'President McKinley Taking the Oath, 1901'
+                                      Image, 0x107b5f700, {{501.0, 667.5}, {150.0, 225.0}}
+                                      StaticText, 0x107b5f840, {{501.0, 898.5}, {148.0, 18.0}}, label: 'President McKinley Taking the Oath'
+                                      StaticText, 0x107b5f980, {{501.0, 917.5}, {26.5, 14.5}}, label: '1901'
+                              StaticText, 0x107b5fac0, {{335.0, 966.0}, {63.0, 26.5}}, label: 'About'
+                              ScrollView, 0x107b5fc00, {{335.0, 1004.5}, {540.0, 202.5}}, identifier: 'Detail.aboutCards'
+                                Other, 0x107b5fd40, {{335.0, 1004.5}, {536.0, 202.5}}
+                                  Other, 0x107b5fe80, {{314.5, 1024.5}, {526.0, 162.5}}
+                                    StaticText, 0x107b68000, {{351.0, 1024.5}, {226.0, 42.5}}, label: 'Edison Kinetoscopic Record of a Sneeze (1894)'
+                                    StaticText, 0x107b68140, {{627.0, 1024.5}, {48.5, 20.5}}, label: 'Media'
+                                    StaticText, 0x107b68280, {{627.0, 1055.0}, {21.0, 19.5}}, label: '1m'
+                                    Image, 0x107b683c0, {{314.5, 1077.0}, {147.0, 110.0}}
+                                    StaticText, 0x107b68500, {{627.0, 1082.5}, {213.5, 19.5}}, label: 'MOV,MP4,M4A,3GP,3G2,MJ2'
+                            Other, 0x107b68640, {{862.0, 151.0}, {30.0, 564.0}}, label: 'Vertical scroll bar, 2 pages', value: 0%
+                              Other, 0x107b68780, {{889.0, 154.0}, {3.0, 454.0}}
+                            Other, 0x107b688c0, {{862.0, 151.0}, {30.0, 564.0}}, label: 'Vertical scroll bar, 2 pages', value: 0%
+                              Other, 0x107b68a00, {{889.0, 154.0}, {3.0, 454.0}}
+                  Toolbar, 0x107b68b40, {{315.0, 87.0}, {580.0, 660.0}}, identifier: 'Toolbar', label: 'Toolbar'
+                    Other, 0x107b68c80, {{315.0, 87.0}, {580.0, 660.0}}
+Path to element:
+ →Application, 0x107b78b40, pid: 43560, label: 'Gus'
+Query chain:
+ →Find: Application 'dev.ericslutz.gus'
+  Output: {
+    Application, 0x107b68dc0, pid: 43560, label: 'Gus'
+  }

@@ -1,0 +1,125 @@
+{
+  "data": {
+    "attributes": {
+      "actions": [
+        {
+          "actionType": "BUILD",
+          "buildDistributionAudience": null,
+          "destination": "ANY_IOS_DEVICE",
+          "isRequiredToPass": true,
+          "name": "Build - iOS",
+          "platform": "IOS",
+          "scheme": "A Playa Named Gus",
+          "testConfiguration": null
+        },
+        {
+          "actionType": "BUILD",
+          "buildDistributionAudience": null,
+          "destination": "ANY_MAC",
+          "isRequiredToPass": true,
+          "name": "Build - macOS",
+          "platform": "MACOS",
+          "scheme": "A Playa Named Gus",
+          "testConfiguration": null
+        },
+        {
+          "actionType": "BUILD",
+          "buildDistributionAudience": null,
+          "destination": "ANY_TVOS_DEVICE",
+          "isRequiredToPass": true,
+          "name": "Build - tvOS",
+          "platform": "TVOS",
+          "scheme": "A Playa Named Gus",
+          "testConfiguration": null
+        },
+        {
+          "actionType": "BUILD",
+          "buildDistributionAudience": null,
+          "destination": "ANY_VISIONOS_DEVICE",
+          "isRequiredToPass": true,
+          "name": "Build - visionOS",
+          "platform": "VISIONOS",
+          "scheme": "A Playa Named Gus",
+          "testConfiguration": null
+        }
+      ],
+      "branchStartCondition": null,
+      "clean": true,
+      "containerFilePath": "A Playa Named Gus.xcodeproj",
+      "description": "Manual validation builds for iOS, macOS, tvOS, and visionOS. No distribution.",
+      "isEnabled": true,
+      "isLockedForEditing": false,
+      "lastModifiedDate": "2026-10-11T21:32:36.181Z",
+      "manualBranchStartCondition": {
+        "source": {
+          "isAllMatch": true,
+          "patterns": []
+        }
+      },
+      "manualPullRequestStartCondition": null,
+      "manualTagStartCondition": null,
+      "name": "Gus Multiplatform Validation",
+      "pullRequestStartCondition": null,
+      "scheduledStartCondition": null,
+      "tagStartCondition": null
+    },
+    "id": "A15758DF-3577-4ED3-99F5-4B549E19BD8F",
+    "links": {
+      "self": "https://api.appstoreconnect.apple.com/v1/ciWorkflows/A15758DF-3577-4ED3-99F5-4B549E19BD8F"
+    },
+    "relationships": {
+      "buildRuns": {
+        "links": {
+          "related": "https://api.appstoreconnect.apple.com/v1/ciWorkflows/A15758DF-3577-4ED3-99F5-4B549E19BD8F/buildRuns",
+          "self": "https://api.appstoreconnect.apple.com/v1/ciWorkflows/A15758DF-3577-4ED3-99F5-4B549E19BD8F/relationships/buildRuns"
+        }
+      },
+      "macOsVersion": {
+        "data": {
+          "id": "28564437-d89b-4d10-94a4-eb2f433c1a06",
+          "type": "ciMacOsVersions"
+        }
+      },
+      "repository": {
+        "links": {
+          "related": "https://api.appstoreconnect.apple.com/v1/ciWorkflows/A15758DF-3577-4ED3-99F5-4B549E19BD8F/repository",
+          "self": "https://api.appstoreconnect.apple.com/v1/ciWorkflows/A15758DF-3577-4ED3-99F5-4B549E19BD8F/relationships/repository"
+        }
+      },
+      "xcodeVersion": {
+        "data": {
+          "id": "b58a2915-f652-4460-a360-3c7412b03e89",
+          "type": "ciXcodeVersions"
+        }
+      }
+    },
+    "type": "ciWorkflows"
+  },
+  "included": [
+    {
+      "attributes": {
+        "name": "Xcode 27.1 RC",
+        "version": "27A9275"
+      },
+      "id": "b58a2915-f652-4460-a360-3c7412b03e89",
+      "links": {
+        "self": "https://api.appstoreconnect.apple.com/v1/ciXcodeVersions/b58a2915-f652-4460-a360-3c7412b03e89"
+      },
+      "type": "ciXcodeVersions"
+    },
+    {
+      "attributes": {
+        "name": "macOS Golden Gate 27.2 beta 2",
+        "version": "26B5091g"
+      },
+      "id": "28564437-d89b-4d10-94a4-eb2f433c1a06",
+      "links": {
+        "self": "https://api.appstoreconnect.apple.com/v1/ciMacOsVersions/28564437-d89b-4d10-94a4-eb2f433c1a06"
+      },
+      "type": "ciMacOsVersions"
+    }
+  ],
+  "links": {
+    "self": "https://api.appstoreconnect.apple.com/v1/ciWorkflows/A15758DF-3577-4ED3-99F5-4B549E19BD8F?fields%5BciMacOsVersions%5D=name%2Cversion&fields%5BciXcodeVersions%5D=name%2Cversion&include=macOsVersion%2CxcodeVersion"
+  }
+}

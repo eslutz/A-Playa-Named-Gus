@@ -167,7 +167,9 @@ struct ConnectServerView: View {
                                 isConnecting = false
                             }
                         }
-                        await appModel.connectToLocalDemoServer()
+                        let failure = await appModel.connectToLocalDemoServer()
+                        guard generation == connectGeneration, !Task.isCancelled else { return }
+                        errorMessage = failure
                     }
                 } label: {
                     Label("Use Local Demo Server", systemImage: "shippingbox")

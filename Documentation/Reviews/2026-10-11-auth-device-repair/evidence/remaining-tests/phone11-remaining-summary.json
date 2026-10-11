@@ -1,0 +1,64 @@
+{
+  "devicesAndConfigurations" : [
+    {
+      "device" : {
+        "architecture" : "arm64",
+        "deviceId" : "00008160-00067D8908C1400A",
+        "deviceName" : "Eric’s iPhone 18 Pro Max",
+        "modelName" : "iPhone 18 Pro Max",
+        "osBuildNumber" : "24A446",
+        "osVersion" : "27.0.1",
+        "platform" : "iOS"
+      },
+      "expectedFailures" : 0,
+      "failedTests" : 2,
+      "passedTests" : 1,
+      "skippedTests" : 0,
+      "testPlanConfiguration" : {
+        "configurationId" : "1",
+        "configurationName" : "Test Scheme Action"
+      }
+    }
+  ],
+  "environmentDescription" : "GusPhysicalAudit · Built with macOS 27.0.1",
+  "expectedFailures" : 0,
+  "failedTests" : 2,
+  "finishTime" : 1791741466.85,
+  "passedTests" : 1,
+  "result" : "Failed",
+  "runtimeWarnings" : [
+
+  ],
+  "skippedTests" : 0,
+  "startTime" : 1791741368.637,
+  "statistics" : [
+
+  ],
+  "testFailures" : [
+    {
+      "failureText" : "Failed to launch dev.ericslutz.gus: The request to open \"dev.ericslutz.gus\" failed. The request was denied by service delegate (SBMainWorkspace) for reason: Locked (\"Unable to launch dev.ericslutz.gus because the device was not, or could not be, unlocked\"). (Underlying Error: The operation couldn’t be completed. Unable to launch dev.ericslutz.gus because the device was not, or could not be, unlocked.)",
+      "targetName" : "GusPhysicalAuditTests",
+      "testIdentifier" : 2,
+      "testIdentifierString" : "RemainingPhone/testBCompactActions()",
+      "testIdentifierURL" : "test://com.apple.xcode/GusPhysicalAudit/GusPhysicalAuditTests/RemainingPhone/testBCompactActions",
+      "testName" : "testBCompactActions()"
+    },
+    {
+      "failureText" : "Failed to launch dev.ericslutz.gus: The request to open \"dev.ericslutz.gus\" failed. The request was denied by service delegate (SBMainWorkspace) for reason: Locked (\"Unable to launch dev.ericslutz.gus because the device was not, or could not be, unlocked\"). (Underlying Error: The operation couldn’t be completed. Unable to launch dev.ericslutz.gus because the device was not, or could not be, unlocked.)",
+      "targetName" : "GusPhysicalAuditTests",
+      "testIdentifier" : 3,
+      "testIdentifierString" : "RemainingPhone/testCHomeScrolling()",
+      "testIdentifierURL" : "test://com.apple.xcode/GusPhysicalAudit/GusPhysicalAuditTests/RemainingPhone/testCHomeScrolling",
+      "testName" : "testCHomeScrolling()"
+    }
+  ],
+  "title" : "Test - GusPhysicalAudit",
+  "topInsights" : [
+    {
+      "category" : "Common Failures",
+      "impact" : "100% of failures",
+      "text" : "2 runs of 2 tests failed with Failed to launch dev.ericslutz.gus: The request to open \"dev.ericslutz.gus\" failed. The request was denied by service delegate (SBMainWorkspace) for reason: Locked (\"Unable to launch dev.ericslutz.gus because the device was not, or could not be, unlocked\"). (Underlying Error: The operation couldn’t be completed. Unable to launch dev.ericslutz.gus because the device was not, or could not be, unlocked.)"
+    }
+  ],
+  "totalTestCount" : 3
+}

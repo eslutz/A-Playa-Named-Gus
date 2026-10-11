@@ -10,6 +10,8 @@
     /// readium/swift-toolkit compiles for the native xrOS SDK (see the ADR).
     struct BookReaderScreen: View {
         @Environment(\.dismiss) private var dismiss
+        @Environment(OfflineDownloadStore.self) private var downloads
+        @State private var openedDownload: OfflineDownloadRecord?
         let item: MediaItem
         let fileURL: URL
         let provider: (any MediaProviderSession)?
@@ -17,6 +19,7 @@
         var close: (() -> Void)?
 
         @State private var model: BookReaderModel?
+        @State private var showingChapters = false
 
         var body: some View {
             NavigationStack {
@@ -46,13 +49,22 @@
                         }
                         ToolbarItem {
                             if let model, !model.tableOfContents.isEmpty {
-                                chaptersMenu(model)
+                                chaptersButton(model)
                             }
                         }
                     }
             }
+            .sheet(isPresented: $showingChapters, onDismiss: {
+                guard let navigator = model?.navigator, navigator.viewIfLoaded?.window != nil else { return }
+                navigator.becomeFirstResponder()
+            }) {
+                if let model {
+                    chapterBrowser(model)
+                }
+            }
             .task {
                 if model == nil {
+                    openedDownload = downloads.record(for: item, serverID: accountScope.serverID, userID: accountScope.userID)
                     let model = BookReaderModel(
                         item: item,
                         fileURL: fileURL,
@@ -65,6 +77,10 @@
             }
             .onDisappear {
                 model?.flushProgress()
+                // Presenting the chapter browser does not close the reader.
+                if !showingChapters, model?.isAtEnd == true {
+                    downloads.deleteAfterCompletion(openedDownload)
+                }
             }
         }
 
@@ -86,17 +102,62 @@
             }
         }
 
-        private func chaptersMenu(_ model: BookReaderModel) -> some View {
-            Menu {
-                ForEach(Array(model.tableOfContents.enumerated()), id: \.offset) { _, link in
-                    Button(link.title ?? link.href.description) {
-                        model.go(to: link)
-                    }
-                }
-            } label: {
-                Label("Chapters", systemImage: "list.bullet")
+        private func chaptersButton(_ model: BookReaderModel) -> some View {
+            Button("Chapters", systemImage: "list.bullet") {
+                model.navigator?.view.window?.endEditing(true)
+                showingChapters = true
             }
             .accessibilityLabel("Chapters")
+        }
+
+        private func chapterBrowser(_ model: BookReaderModel) -> some View {
+            NavigationStack {
+                List {
+                    BookChapterListEntries(links: model.tableOfContents) { link in
+                        model.go(to: link)
+                        showingChapters = false
+                    }
+                }
+                .navigationTitle("Chapters")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button("Done") { showingChapters = false }
+                            .accessibilityIdentifier("BookChapters.done")
+                    }
+                }
+            }
+        }
+    }
+
+    /// EPUB tables of contents can group chapters beneath a book or part entry.
+    /// Preserve that hierarchy in a native list and keep each parent readable.
+    private struct BookChapterListEntries: View {
+        let links: [ReadiumShared.Link]
+        let navigate: (ReadiumShared.Link) -> Void
+
+        var body: some View {
+            ForEach(Array(links.enumerated()), id: \.offset) { _, link in
+                let title = link.title ?? link.href.description
+                if link.children.isEmpty {
+                    if link.href.isEmpty || link.href == "#" {
+                        Text(title)
+                    } else {
+                        Button(title) { navigate(link) }
+                    }
+                } else {
+                    DisclosureGroup {
+                        if !link.href.isEmpty, link.href != "#" {
+                            Button("Open \(title)") { navigate(link) }
+                                .accessibilityIdentifier("BookChapters.open.\(title)")
+                        }
+                        BookChapterListEntries(links: link.children, navigate: navigate)
+                    } label: {
+                        Text(title)
+                    }
+                    .accessibilityIdentifier("BookChapters.group.\(title)")
+                }
+            }
         }
     }
 
@@ -119,6 +180,7 @@
 
         // Server sync is best-effort and debounced so a page-turn burst is one write.
         private var pendingFraction: Double?
+        private var finalPageVisible = false
         private var reportTask: Task<Void, Never>?
 
         // Shared Readium plumbing for opening local publication assets.
@@ -136,6 +198,12 @@
             self.provider = provider
             self.accountScope = accountScope
             progressWriterToken = OfflinePlaybackProgressStore.shared.writerToken(for: accountScope)
+        }
+
+        /// Use the visible end of the final reading-order resource, not a 90% guess
+        /// or the locator at the beginning of the current page.
+        var isAtEnd: Bool {
+            OfflinePlaybackProgressStore.shared.writerToken(for: accountScope) == progressWriterToken && finalPageVisible
         }
 
         private var syncEnabled: Bool {
@@ -193,6 +261,13 @@
         }
 
         func saveLocation(_ locator: Locator) {
+            if let last = publication?.readingOrder.last?.url(),
+               let visible = navigator?.viewport?.resources.last
+            {
+                finalPageVisible = visible.href == last && visible.progression.upperBound >= 1
+            } else {
+                finalPageVisible = false
+            }
             guard OfflinePlaybackProgressStore.shared.writerToken(for: accountScope) == progressWriterToken,
                   let itemID = item.id else { return }
             if let json = try? locator.jsonString() {
@@ -254,6 +329,7 @@
                 return UIViewController()
             }
             navigator.delegate = context.coordinator
+            context.coordinator.bindInput(to: navigator)
             model.navigator = navigator
             return navigator
         }
@@ -264,11 +340,16 @@
             Coordinator(model: model)
         }
 
-        final class Coordinator: NSObject, EPUBNavigatorDelegate {
+        @MainActor final class Coordinator: NSObject, EPUBNavigatorDelegate {
             private let model: BookReaderModel
+            private let directionalNavigation = DirectionalNavigationAdapter()
 
             init(model: BookReaderModel) {
                 self.model = model
+            }
+
+            func bindInput(to navigator: EPUBNavigatorViewController) {
+                directionalNavigation.bind(to: navigator)
             }
 
             func navigator(_ navigator: Navigator, locationDidChange locator: Locator) {

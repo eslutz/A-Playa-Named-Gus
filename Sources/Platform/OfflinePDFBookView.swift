@@ -57,6 +57,7 @@ struct OfflineBookShareView: View {
 struct OfflinePDFBookView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(SessionStore.self) private var session
+    @Environment(OfflineDownloadStore.self) private var downloads
     let item: MediaItem
     let fileURL: URL
 
@@ -67,7 +68,10 @@ struct OfflinePDFBookView: View {
                     LocalPDFSurface(
                         fileURL: fileURL,
                         itemID: item.id,
-                        scope: AccountScope(serverID: session.server.id, userID: session.user.id)
+                        scope: AccountScope(serverID: session.server.id, userID: session.user.id),
+                        onCompletion: { [record = downloads.record(for: item, serverID: session.server.id, userID: session.user.id)] in
+                            downloads.deleteAfterCompletion(record)
+                        }
                     )
                     .navigationTitle(item.displayTitle)
                     .toolbar {
@@ -97,8 +101,10 @@ struct OfflinePDFBookView: View {
         private let scope: AccountScope
         private let writerToken: UUID
         private var pageObserver: NSObjectProtocol?
+        private let onCompletion: () -> Void
 
-        init(itemID: String?, scope: AccountScope) {
+        init(itemID: String?, scope: AccountScope, onCompletion: @escaping () -> Void) {
+            self.onCompletion = onCompletion
             self.itemID = itemID
             self.scope = scope
             writerToken = OfflinePlaybackProgressStore.shared.writerToken(for: scope)
@@ -138,6 +144,13 @@ struct OfflinePDFBookView: View {
 
         func dismantle(_ view: PDFView) {
             save(view)
+            if OfflinePlaybackProgressStore.shared.writerToken(for: scope) == writerToken,
+               let document = view.document, let page = view.currentPage,
+               document.pageCount > 0, document.index(for: page) == document.pageCount - 1
+            {
+                view.document = nil
+                onCompletion()
+            }
             BookProgressStore.shared.flush()
             if let pageObserver {
                 NotificationCenter.default.removeObserver(pageObserver)
@@ -152,8 +165,9 @@ struct OfflinePDFBookView: View {
         let fileURL: URL
         let itemID: String?
         let scope: AccountScope
+        let onCompletion: () -> Void
         func makeCoordinator() -> PDFReadingCoordinator {
-            PDFReadingCoordinator(itemID: itemID, scope: scope)
+            PDFReadingCoordinator(itemID: itemID, scope: scope, onCompletion: onCompletion)
         }
 
         func makeNSView(context: Context) -> PDFView {
@@ -174,8 +188,9 @@ struct OfflinePDFBookView: View {
         let fileURL: URL
         let itemID: String?
         let scope: AccountScope
+        let onCompletion: () -> Void
         func makeCoordinator() -> PDFReadingCoordinator {
-            PDFReadingCoordinator(itemID: itemID, scope: scope)
+            PDFReadingCoordinator(itemID: itemID, scope: scope, onCompletion: onCompletion)
         }
 
         func makeUIView(context: Context) -> PDFView {

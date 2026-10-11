@@ -1,0 +1,210 @@
+Attributes: Application, 0x10bf83e80, pid: 1921, label: 'Gus'
+Element subtree:
+ →Application, 0x10bf83e80, pid: 1921, label: 'Gus'
+    Window, 0x10bf83c00, {{0.0, 0.0}, {0.0, 0.0}}
+      Other, 0x10bf83ac0, {{0.0, 0.0}, {0.0, 0.0}}
+        Other, 0x10bf83980, {{0.0, 0.0}, {0.0, 0.0}}
+          Other, 0x10bf81680, {{0.0, 0.0}, {0.0, 0.0}}
+    Window (Main), 0x10bf830c0, {{0.0, 0.0}, {440.0, 956.0}}
+      Other, 0x10bf812c0, {{0.0, 0.0}, {440.0, 956.0}}
+      Other, 0x10bf80280, {{0.0, 0.0}, {440.0, 956.0}}
+        Other, 0x10bf80640, {{0.0, 0.0}, {440.0, 956.0}}
+          Other, 0x10bf80a00, {{0.0, 0.0}, {440.0, 956.0}}
+            Other, 0x10bf83480, {{0.0, 0.0}, {440.0, 956.0}}
+              Other, 0x10bf826c0, {{0.0, 0.0}, {440.0, 956.0}}
+                Other, 0x10bf82800, {{0.0, 0.0}, {440.0, 956.0}}
+                  Other, 0x10bf80780, {{0.0, 0.0}, {440.0, 956.0}}
+                    Other, 0x10bf80dc0, {{0.0, 0.0}, {440.0, 956.0}}
+                      Other, 0x10bf81180, {{0.0, 0.0}, {440.0, 956.0}}
+                        Other, 0x10bf83340, {{0.0, 0.0}, {440.0, 956.0}}
+                          Other, 0x10bf81b80, {{0.0, 0.0}, {440.0, 956.0}}
+                            NavigationBar, 0x10bf81400, {{0.0, 62.0}, {440.0, 106.0}}, identifier: 'Downloaded'
+                              Button, 0x10bf83840, {{380.0, 66.0}, {36.0, 36.0}}, label: 'Manage Downloads'
+                              StaticText, 0x10bf80c80, {{20.0, 119.7}, {199.3, 40.7}}, label: 'Downloaded'
+                            Other, 0x10bf82bc0, {{0.0, 0.0}, {440.0, 956.0}}
+                              Other, 0x10bf82a80, {{0.0, 0.0}, {440.0, 956.0}}
+                                Other, 0x10bf82d00, {{0.0, 0.0}, {440.0, 956.0}}
+                                  Other, 0x10bf83700, {{0.0, 0.0}, {440.0, 956.0}}
+                                    SegmentedControl, 0x10bf81f40, {{16.0, 184.0}, {408.0, 31.0}}
+                                      Button, 0x10bf817c0, {{16.0, 184.0}, {81.0, 32.0}}, label: 'All', Selected
+                                      Button, 0x10bf81e00, {{97.0, 184.0}, {82.0, 32.0}}, label: 'Movies'
+                                      Button, 0x10bff0000, {{179.0, 184.0}, {81.0, 32.0}}, label: 'Shows'
+                                      Button, 0x10bff0140, {{260.0, 184.0}, {82.0, 32.0}}, label: 'Audio'
+                                      Button, 0x10bff0280, {{342.0, 184.0}, {82.0, 32.0}}, label: 'Books'
+                                    CollectionView, 0x10bff1040, {{0.0, 0.0}, {440.0, 956.0}}
+                                      Other, 0x10bff1180, {{-20.0, -1673.0}, {480.0, 4072.3}}
+                                      Other, 0x10bff12c0, {{0.0, 0.0}, {440.0, 956.0}}
+                                        Other, 0x10bff1400, {{0.0, 0.0}, {440.0, 156.0}}
+                                        Other, 0x10bff1540, {{0.0, 823.0}, {440.0, 133.0}}
+                                      Other, 0x10bff0dc0, {{0.0, 0.0}, {440.0, 956.0}}
+                                      Cell, 0x10bff0f00, {{20.0, 239.0}, {400.0, 40.3}}
+                                        Other, 0x10bff0780, {{20.0, 239.0}, {400.0, 40.3}}
+                                        Other, 0x10bff08c0, {{20.0, 239.0}, {400.0, 40.3}}
+                                          Other, 0x10bff0a00, {{20.0, 239.0}, {400.0, 40.3}}
+                                            Other, 0x10bff0b40, {{20.0, 239.0}, {400.0, 40.3}}
+                                              StaticText, 0x10bff0c80, {{20.0, 239.0}, {400.0, 40.3}}, label: 'All'
+                                      Cell, 0x10bff03c0, {{20.0, 279.3}, {400.0, 94.0}}
+                                        Other, 0x10bff0640, {{20.0, 279.3}, {400.0, 94.0}}
+                                          Other, 0x10bff0500, {{20.0, 279.3}, {400.0, 94.0}}
+                                        Other, 0x113c5b340, {{20.0, 279.3}, {400.0, 94.0}}
+                                          Other, 0x113c5b980, {{20.0, 279.3}, {400.0, 94.0}}
+                                            Other, 0x113c5bc00, {{20.0, 279.3}, {400.0, 94.0}}
+                                              Button, 0x113c5bd40, {{20.0, 279.3}, {400.0, 94.0}}, label: 'Idle Hands'
+                                                Image, 0x113c5be80, {{40.0, 294.3}, {48.0, 64.0}}, identifier: 'film', label: 'Movie'
+                                                StaticText, 0x113c5bac0, {{40.0, 294.3}, {360.0, 64.0}}, label: 'Idle Hands'
+                                                Image, 0x113c5b480, {{387.0, 319.3}, {12.7, 14.0}}, identifier: 'play.fill', label: 'Play'
+                                      Cell, 0x113c5b5c0, {{20.0, 373.3}, {400.0, 94.0}}
+                                        Other, 0x113c5b700, {{20.0, 373.3}, {400.0, 94.0}}
+                                          Other, 0x113c5b840, {{20.0, 373.3}, {400.0, 94.0}}
+                                        Other, 0x10bfac000, {{20.0, 373.3}, {400.0, 94.0}}
+                                          Other, 0x10bfac140, {{20.0, 373.3}, {400.0, 94.0}}
+                                            Other, 0x10bfac280, {{20.0, 373.3}, {400.0, 94.0}}
+                                              Button, 0x10bfac3c0, {{20.0, 373.3}, {400.0, 94.0}}, label: 'The Faculty'
+                                                Image, 0x10bfac500, {{40.0, 388.3}, {48.0, 64.0}}, identifier: 'film', label: 'Movie'
+                                                StaticText, 0x10bfac640, {{40.0, 388.3}, {360.0, 64.0}}, label: 'The Faculty'
+                                                Image, 0x10bfac780, {{387.0, 413.3}, {12.7, 14.0}}, identifier: 'play.fill', label: 'Play'
+                                      Other, 0x10bfac8c0, {{100.0, 372.3}, {300.0, 1.0}}
+                                      Other, 0x10bfaca00, {{407.0, 116.0}, {30.0, 757.0}}, label: 'Vertical scroll bar, 1 page', value: 0%
+                                        Other, 0x10bfacb40, {{434.0, 504.7}, {3.0, 365.3}}
+                                      Other, 0x10bfacc80, {{407.0, 116.0}, {30.0, 757.0}}, label: 'Vertical scroll bar, 1 page', value: 0%
+                                        Other, 0x10bfacdc0, {{434.0, 504.7}, {3.0, 365.3}}
+                            Toolbar, 0x10bfacf00, {{0.0, 0.0}, {440.0, 956.0}}, identifier: 'Toolbar', label: 'Toolbar'
+                              Other, 0x10bfad040, {{0.0, 0.0}, {440.0, 956.0}}
+                Other, 0x10bfad180, {{0.0, 0.0}, {440.0, 956.0}}
+                  Other, 0x10bfad2c0, {{0.0, 873.0}, {440.0, 83.0}}
+                    Other, 0x10bfad400, {{0.0, 0.0}, {440.0, 956.0}}
+                      TabBar, 0x10bfad540, {{0.0, 873.0}, {440.0, 83.0}}, label: 'Tab Bar'
+                        Other, 0x10bfad680, {{21.0, 873.0}, {398.0, 62.0}}
+                          Other, 0x10bfad7c0, {{21.0, 873.0}, {114.8, 54.0}}
+                          Other, 0x10bfad900, {{21.0, 873.0}, {398.0, 62.0}}
+                            Button, 0x10bfada40, {{25.0, 877.0}, {90.4, 54.0}}, identifier: 'house', label: 'Home'
+                              Image, 0x10bfadb80, {{53.7, 883.0}, {33.3, 28.0}}, identifier: 'house.fill', label: 'home'
+                            Button, 0x10bfadcc0, {{93.4, 877.0}, {114.8, 54.0}}, identifier: 'arrow.down.circle', label: 'Downloaded', Selected
+                              Image, 0x10bfade00, {{137.0, 883.3}, {27.3, 27.3}}, identifier: 'arrow.down.circle.fill', label: 'Arrow Down Circle'
+                            Button, 0x10bfadf40, {{186.2, 877.0}, {92.1, 54.0}}, identifier: 'rectangle.stack', label: 'Libraries'
+                              Image, 0x10bfae080, {{217.2, 882.0}, {30.0, 31.3}}, identifier: 'rectangle.stack.fill', label: 'Album'
+                            Button, 0x10bfae1c0, {{256.3, 877.0}, {90.4, 54.0}}, identifier: 'film', label: 'Movies'
+                              Image, 0x10bfae300, {{284.9, 884.3}, {33.0, 25.0}}, identifier: 'film.fill', label: 'movie'
+                            Button, 0x10bfae440, {{324.6, 877.0}, {90.4, 54.0}}, identifier: 'ellipsis', label: 'More'
+                              Image, 0x10bfae580, {{357.3, 892.7}, {25.0, 8.7}}, identifier: 'ellipsis', label: 'More'
+                          Other, 0x10bfae6c0, {{21.0, 873.0}, {398.0, 62.0}}
+                          Other, 0x10bfae800, {{93.4, 877.0}, {114.8, 54.0}}
+                            Other, 0x10bfae940, {{93.4, 877.0}, {114.7, 54.0}}
+                              Other, 0x10bfaea80, {{93.4, 877.0}, {114.7, 54.0}}
+                              Other, 0x10bfaebc0, {{93.4, 877.0}, {114.7, 54.0}}
+                                Other, 0x10bfaed00, {{93.4, 877.0}, {114.7, 54.0}}
+                                  Other, 0x10bfaee40, {{93.4, 877.0}, {114.7, 54.0}}
+                                    Other, 0x10bfaef80, {{93.4, 877.0}, {114.7, 54.0}}
+                                  Other, 0x10bfaf0c0, {{93.4, 877.0}, {114.7, 54.0}}
+                                Other, 0x10bfaf200, {{93.4, 877.0}, {114.7, 54.0}}
+                    Other, 0x10bfaf340, {{0.0, 873.0}, {440.0, 83.0}}
+                      Other, 0x10bfaf480, {{0.0, 873.0}, {440.0, 83.0}}
+                        Other, 0x10bfaf5c0, {{0.0, 873.0}, {440.0, 83.0}}
+                          Other, 0x10bfaf700, {{0.0, 873.0}, {440.0, 83.0}}
+                            Other, 0x10bfaf840, {{0.0, 873.0}, {440.0, 83.0}}
+                              Other, 0x10bfaf980, {{0.0, 873.0}, {440.0, 83.0}}
+                          Other, 0x10bfafac0, {{0.0, 873.0}, {440.0, 83.0}}
+                            Other, 0x10bfafc00, {{0.0, 873.0}, {440.0, 83.0}}
+      Other, 0x10bfafd40, {{0.0, 0.0}, {440.0, 956.0}}
+        Other, 0x10bfafe80, {{0.0, 0.0}, {440.0, 956.0}}
+          Other, 0x10bf6c000, {{0.0, 0.0}, {440.0, 956.0}}
+            Other, 0x10bf6c140, {{0.0, 0.0}, {440.0, 956.0}}
+              Other, 0x10bf6c280, {{0.0, 0.0}, {440.0, 956.0}}
+                Other, 0x10bf6c3c0, {{0.0, 0.0}, {440.0, 956.0}}
+                  Other, 0x10bf6c500, {{0.0, 0.0}, {440.0, 956.0}}
+                    Other, 0x10bf6c640, {{0.0, 0.0}, {440.0, 956.0}}
+                      Other, 0x10bf6c780, {{0.0, 0.0}, {440.0, 956.0}}
+                        Other, 0x10bf6c8c0, {{0.0, 0.0}, {440.0, 956.0}}
+                          Other, 0x10bf6ca00, {{0.0, 0.0}, {440.0, 956.0}}
+                            Other, 0x10bf6cb40, {{0.0, 0.0}, {440.0, 956.0}}, label: 'Video'
+                            Other, 0x10bf6cc80, {{0.0, 0.0}, {440.0, 956.0}}
+                            Other, 0x10bf6cdc0, {{0.0, 358.8}, {440.0, 238.3}}
+                              Other, 0x10bf6cf00, {{0.0, 358.8}, {440.0, 238.3}}
+                                Other, 0x10bf6d040, {{0.0, 358.8}, {440.0, 238.3}}
+                                Image, 0x10bf6d180, {{0.0, 358.8}, {440.0, 238.3}}, label: 'Liftable subject available'
+                      Other, 0x10bf6d2c0, {{0.0, 0.0}, {440.0, 956.0}}
+                        Other, 0x10bf6d400, {{0.0, 0.0}, {440.0, 956.0}}
+                Other, 0x10bf6d540, {{0.0, 0.0}, {440.0, 956.0}}
+                Other, 0x10bf6d680, {{0.0, 0.0}, {440.0, 956.0}}
+                  Other, 0x10bf6d7c0, {{0.0, 0.0}, {440.0, 956.0}}
+                    Other, 0x10bf6d900, {{0.0, 0.0}, {440.0, 956.0}}
+                      Other, 0x10bf6da40, {{0.0, 0.0}, {440.0, 956.0}}
+                        Other, 0x10bf6db80, {{0.0, 0.0}, {440.0, 956.0}}
+                          Other, 0x10bf6dcc0, {{0.0, 0.0}, {440.0, 956.0}}
+                            Other, 0x10bf6de00, {{0.0, 0.0}, {440.0, 156.0}}
+                              Other, 0x10bf6df40, {{0.0, 0.0}, {440.0, 156.0}}
+                                Other, 0x10bf6e080, {{0.0, 0.0}, {440.0, 156.0}}
+                                  Other, 0x10bf6e1c0, {{0.0, 0.0}, {440.0, 156.0}}
+                                    Other, 0x10bf6e300, {{0.0, 0.0}, {440.0, 156.0}}
+                                      Other, 0x10bf6e440, {{0.0, 0.0}, {440.0, 156.0}}
+                                        Other, 0x10bf6e580, {{0.0, 0.0}, {440.0, 146.3}}
+                                    Other, 0x10bf6e6c0, {{0.0, 0.0}, {440.0, 156.0}}
+                                      Other, 0x10bf6e800, {{0.0, 0.0}, {44.0, 44.0}}
+                                      Other, 0x10bf6e940, {{0.0, 0.0}, {44.0, 44.0}}
+                                      Other, 0x10bf6ea80, {{0.0, 0.0}, {112.0, 44.0}}
+                                    Other, 0x10bf6ebc0, {{0.0, 0.0}, {440.0, 156.0}}
+                                      Other, 0x10bf6ed00, {{0.0, 0.0}, {440.0, 146.3}}
+                              Other, 0x10bf6ee40, {{21.0, 62.0}, {168.0, 44.0}}
+                                Other, 0x10bf6ef80, {{21.0, 62.0}, {44.0, 44.0}}
+                                  Button, 0x10bf6f0c0, {{32.8, 73.0}, {20.3, 22.0}}, identifier: 'Close Button', label: 'Close'
+                                Other, 0x10bf6f200, {{77.0, 62.0}, {112.0, 44.0}}
+                                  Button, 0x10bf6f340, {{88.0, 72.0}, {30.0, 24.0}}, identifier: 'PIP Button', label: 'minimize video'
+                                  Other, 0x10bf6f480, {{148.0, 67.0}, {30.0, 34.0}}
+                                    Button, 0x10bf6f5c0, {{148.0, 69.0}, {30.0, 32.0}}, identifier: 'AirPlay', label: 'AirPlay'
+                                      StaticText, 0x10bf6f700, {{148.0, 69.0}, {0.0, 0.0}}
+                              Other, 0x10bf6f840, {{375.0, 62.0}, {44.0, 44.0}}
+                                Other, 0x10bf6f980, {{375.0, 62.0}, {44.0, 44.0}}
+                                  Slider, 0x10bf6fac0, {{384.0, 80.0}, {24.0, 8.0}}, identifier: 'Volume Slider', label: 'Current position'
+                                    Other, 0x10bf6fc00, {{384.0, 80.0}, {24.0, 8.0}}
+                                    Other, 0x10bf6fd40, {{384.0, 80.0}, {24.0, 8.0}}
+                                      Button, 0x10bf6fe80, {{384.0, 72.0}, {24.0, 24.0}}, identifier: 'Mute/Unmute', label: 'Volume', value: 30%
+                            Other, 0x113ca0000, {{0.0, 0.0}, {440.0, 956.0}}
+                              Other, 0x113ca0140, {{0.0, 0.0}, {440.0, 956.0}}
+                                Other, 0x113ca0280, {{0.0, 0.0}, {440.0, 956.0}}
+                                  Other, 0x113ca03c0, {{0.0, 0.0}, {440.0, 956.0}}
+                                    Other, 0x113ca0500, {{0.0, 0.0}, {440.0, 956.0}}
+                                      Other, 0x113ca0640, {{0.0, 0.0}, {440.0, 956.0}}
+                                        Other, 0x113ca0780, {{0.0, 0.0}, {440.0, 956.0}}
+                                    Other, 0x113ca08c0, {{0.0, 0.0}, {440.0, 956.0}}
+                                      Other, 0x113ca0a00, {{0.0, 0.0}, {398.0, 44.0}}
+                                      Other, 0x113ca0b40, {{0.0, 0.0}, {44.0, 44.0}}
+                                    Other, 0x113ca0c80, {{0.0, 0.0}, {440.0, 956.0}}
+                                      Other, 0x113ca0dc0, {{0.0, 0.0}, {440.0, 956.0}}
+                              Other, 0x113ca0f00, {{21.0, 524.0}, {398.0, 398.0}}
+                                Other, 0x113ca1040, {{21.0, 524.0}, {398.0, 398.0}}
+                                  Other, 0x113ca1180, {{375.0, 822.0}, {44.0, 44.0}}
+                                    Other, 0x113ca12c0, {{375.0, 822.0}, {44.0, 44.0}}
+                                      Button, 0x113ca1400, {{386.5, 822.0}, {21.0, 44.0}}, identifier: 'Overflow Menu', label: 'More Controls'
+                                  Other, 0x113ca1540, {{21.0, 839.7}, {342.0, 26.3}}
+                                    Other, 0x113ca1680, {{21.0, 839.7}, {342.0, 26.3}}
+                                      StaticText, 0x113ca17c0, {{21.0, 839.7}, {342.0, 26.3}}, identifier: 'Title', label: 'Idle Hands'
+                                  Other, 0x113ca1900, {{21.0, 878.0}, {398.0, 44.0}}
+                                    Other, 0x113ca1a40, {{21.0, 878.0}, {398.0, 44.0}}
+                                      Other, 0x113ca1b80, {{37.0, 878.0}, {366.0, 44.0}}
+                                      StaticText, 0x113ca1cc0, {{37.0, 892.2}, {49.7, 15.7}}, identifier: 'Elapsed Time', label: '0:00:22 elapsed'
+                                      Slider, 0x113ca1e00, {{98.7, 896.0}, {234.3, 8.0}}, identifier: 'Current position', label: 'Current position', value: 22 seconds elapsed...
+                                      StaticText, 0x113ca1f40, {{345.0, 892.2}, {58.0, 15.7}}, identifier: 'Remaining Time', label: '‎−1:31:43 remaining'
+                            Other, 0x113ca2080, {{21.0, 387.0}, {398.0, 182.0}}
+                              Other, 0x113ca21c0, {{21.0, 387.0}, {398.0, 182.0}}
+                                Other, 0x113ca2300, {{21.0, 387.0}, {398.0, 182.0}}
+                                  Other, 0x113ca2440, {{21.0, 387.0}, {398.0, 182.0}}
+                                    Other, 0x113ca2580, {{21.0, 387.0}, {398.0, 182.0}}
+                                      Other, 0x113ca26c0, {{21.0, 387.0}, {398.0, 182.0}}
+                                        Other, 0x113ca2800, {{21.0, 387.0}, {398.0, 182.0}}
+                                    Other, 0x113ca2940, {{21.0, 387.0}, {398.0, 182.0}}
+                                      Other, 0x113ca2a80, {{21.0, 387.0}, {64.0, 64.0}}
+                                      Other, 0x113ca2bc0, {{21.0, 387.0}, {64.0, 64.0}}
+                                      Other, 0x113ca2d00, {{21.0, 387.0}, {92.0, 92.0}}
+                                    Other, 0x113ca2e40, {{21.0, 387.0}, {398.0, 182.0}}
+                                      Other, 0x113ca2f80, {{21.0, 387.0}, {398.0, 182.0}}
+                              Other, 0x113ca30c0, {{21.0, 432.0}, {398.0, 92.0}}
+                                Button, 0x113ca3200, {{71.1, 446.0}, {64.0, 64.0}}, identifier: 'Skip Backward', label: 'Go Backward 10 Seconds'
+                                Button, 0x113ca3340, {{174.0, 432.0}, {92.0, 92.0}}, identifier: 'Play/Pause', label: 'Play'
+                                Button, 0x113ca3480, {{304.9, 446.0}, {64.0, 64.0}}, identifier: 'Skip Forward', label: 'Go Forward 10 Seconds'
+Path to element:
+ →Application, 0x10bf83e80, pid: 1921, label: 'Gus'
+Query chain:
+ →Find: Application 'dev.ericslutz.gus'
+  Output: {
+    Application, 0x113ca35c0, pid: 1921, label: 'Gus'
+  }

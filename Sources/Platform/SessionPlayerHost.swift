@@ -1,5 +1,45 @@
 import SwiftUI
 
+/// Separates artwork and transport at an active display fold while keeping each
+/// region scrollable. Playback and scrubbing state remain owned by the caller.
+struct AdaptiveAudioLayout<Artwork: View, Controls: View>: View {
+    @ViewBuilder let artwork: Artwork
+    @ViewBuilder let controls: Controls
+
+    var body: some View {
+        GeometryReader { geometry in
+            #if os(iOS)
+                if #available(iOS 27.1, *), !geometry.reservedRegions(kind: .division).isEmpty {
+                    ArrangementView {
+                        ScrollView { artwork.padding(24).frame(maxWidth: .infinity) }
+                    } secondary: {
+                        ScrollView { controls.padding(24).frame(maxWidth: .infinity) }
+                    }
+                    .arrangementViewStyle(.split)
+                } else {
+                    continuousLayout(geometry: geometry)
+                }
+            #else
+                continuousLayout(geometry: geometry)
+            #endif
+        }
+    }
+
+    private func continuousLayout(geometry: GeometryProxy) -> some View {
+        ScrollView {
+            ViewThatFits(in: .horizontal) {
+                HStack(alignment: .center, spacing: 24) {
+                    artwork.frame(width: min(geometry.size.height * 0.5, 240))
+                    controls.frame(minWidth: 280, maxWidth: 560)
+                }
+                VStack(spacing: 24) { artwork; controls }
+            }
+            .padding(24)
+            .frame(maxWidth: .infinity)
+        }
+    }
+}
+
 extension View {
     @ViewBuilder func gusSessionPlayerHost(state: RootNavigationState, enabled: Bool = true) -> some View {
         #if os(macOS)
@@ -11,7 +51,11 @@ extension View {
 
     @ViewBuilder func gusAudioHost(coordinator: AudioPlaybackCoordinator, enabled: Bool = true) -> some View {
         #if os(macOS)
-            sheet(isPresented: audioPresentation(coordinator, enabled: enabled)) { SessionAudioPlayer() }
+            sheet(isPresented: audioPresentation(coordinator, enabled: enabled)) {
+                SessionAudioPlayer()
+                    // GeometryReader has no intrinsic height for AppKit sheet sizing.
+                    .frame(minWidth: 640, idealWidth: 720, minHeight: 420, idealHeight: 520)
+            }
         #else
             fullScreenCover(isPresented: audioPresentation(coordinator, enabled: enabled)) { SessionAudioPlayer() }
         #endif
@@ -20,7 +64,9 @@ extension View {
     @ViewBuilder func gusNowPlaying(coordinator: AudioPlaybackCoordinator, usesTabAccessory: Bool = true, enabled: Bool = true) -> some View {
         #if os(iOS)
             modifier(IOSNowPlaying(coordinator: coordinator, usesTabAccessory: usesTabAccessory, enabled: enabled))
-        #elseif os(tvOS)
+        #elseif os(tvOS) || os(macOS)
+            // A split view's outer toolbar may not reach its active detail stack.
+            // Keep the session return control outside that navigation ownership.
             safeAreaInset(edge: .bottom) {
                 if enabled, !coordinator.isPresented, let store = coordinator.store {
                     NowPlayingReturnView(coordinator: coordinator, store: store)
@@ -81,8 +127,8 @@ private struct SessionAudioPlayer: View {
                 }
             }
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("Done") { audio.close() } }
-                ToolbarItem { Button("Stop") { audio.stop() } }
+                ToolbarItem(placement: .cancellationAction) { Button("Done", systemImage: "xmark") { audio.close() } }
+                ToolbarItem { Button("Stop", systemImage: "stop.fill") { audio.stop() } }
             }
             .accessibilityAction(.escape) { audio.close() }
         }

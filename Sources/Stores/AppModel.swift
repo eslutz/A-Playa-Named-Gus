@@ -253,14 +253,17 @@ final class AppModel {
         /// Connects and signs in to the local demo Jellyfin container started by
         /// `Scripts/demo-server.sh` — a real signed-in session over the rights-cleared
         /// demo library, used for screenshots and reviewer/tester walkthroughs.
-        func connectToLocalDemoServer() async {
+        func connectToLocalDemoServer() async -> String? {
             do {
                 let server = try await connect(to: "http://localhost:8096")
                 let username = ProcessInfo.processInfo.environment["GUS_DEMO_USERNAME"] ?? "gus"
                 let password = ProcessInfo.processInfo.environment["GUS_DEMO_PASSWORD"] ?? "playa-demo"
                 try await signIn(to: server, username: username, password: password)
+                return nil
             } catch {
+                guard !GusError(from: error).isCancellation else { return nil }
                 logger.error("Demo server connect failed: \(error.localizedDescription, privacy: .private)")
+                return error.localizedDescription
             }
         }
 
@@ -337,6 +340,12 @@ final class AppModel {
         throw ConnectError.unreachable(detail)
     }
 
+    /// Only authentication rejection should suggest changing credentials.
+    static func signInError(from error: Error) -> any Error {
+        let mapped = GusError(from: error)
+        return mapped == .unauthorized ? ConnectError.authenticationFailed : mapped
+    }
+
     // MARK: - Sign in
 
     func signIn(to server: ServerConnection, username: String, password: String) async throws {
@@ -349,7 +358,7 @@ final class AppModel {
             let gusError = GusError(from: error)
             guard !gusError.isCancellation else { throw error }
             logger.error("Sign in failed: \(gusError.localizedDescription, privacy: .private)")
-            throw ConnectError.authenticationFailed
+            throw Self.signInError(from: error)
         }
 
         try Task.checkCancellation()
@@ -366,7 +375,7 @@ final class AppModel {
             let gusError = GusError(from: error)
             guard !gusError.isCancellation else { throw error }
             logger.error("Quick Connect sign in failed: \(gusError.localizedDescription, privacy: .private)")
-            throw ConnectError.authenticationFailed
+            throw Self.signInError(from: error)
         }
 
         try Task.checkCancellation()
@@ -466,7 +475,7 @@ final class AppModel {
         guard let token = result.accessToken,
               let userDto = result.user,
               let userID = userDto.id
-        else { throw ConnectError.authenticationFailed }
+        else { throw GusError(from: URLError(.cannotParseResponse)) }
 
         let user = StoredUser(
             id: userID,

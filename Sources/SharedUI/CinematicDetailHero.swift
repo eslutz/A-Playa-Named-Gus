@@ -17,7 +17,7 @@ struct CinematicDetailHero<Accessory: View>: View {
                 titleBlock
                     .frame(maxWidth: 760, alignment: .leading)
                 actionStack
-                    .frame(width: 320)
+                    .frame(width: DetailActionMetrics.maximumRowWidth)
             }
             VStack(alignment: .leading, spacing: 18) {
                 titleBlock
@@ -25,6 +25,7 @@ struct CinematicDetailHero<Accessory: View>: View {
             }
         }
         .padding(heroPadding)
+        .frame(maxWidth: PageContentMetrics.maxWidth, alignment: .leading)
         .frame(maxWidth: .infinity, minHeight: baseHeroHeight, alignment: .bottomLeading)
         .background {
             GeometryReader { geometry in
@@ -35,6 +36,9 @@ struct CinematicDetailHero<Accessory: View>: View {
                         LinearGradient(colors: [.black.opacity(0.85), .black.opacity(0.6), .black.opacity(0.2)], startPoint: .bottom, endPoint: .top)
                     }
             }
+            // Extend artwork to the pane edge in landscape while keeping the
+            // foreground controls inside the container's safe area.
+            .ignoresSafeArea(.container, edges: .horizontal)
         }
         .accessibilityElement(children: .contain)
     }
@@ -71,14 +75,15 @@ struct CinematicDetailHero<Accessory: View>: View {
                 // viewport scrolls the secondary lazy grid in and out of view.
                 BookActionButtons(item: item)
             }
-            if dynamicTypeSize.isAccessibilitySize {
-                VStack(alignment: .leading, spacing: 12) { upNextButton; accessory }
-            } else {
-                LazyVGrid(columns: [GridItem(.adaptive(minimum: 120), spacing: 12)], alignment: .leading, spacing: 12) {
-                    upNextButton
-                    accessory
-                }
+            HStack(spacing: 8) {
+                upNextButton
+                accessory
             }
+            // These controls have spoken labels rather than visible text. Keep
+            // symbols compact so accessibility text sizes cannot overlap peers.
+            .dynamicTypeSize(...DynamicTypeSize.large)
+            .buttonBorderShape(.capsule)
+            .frame(maxWidth: DetailActionMetrics.maximumRowWidth)
         }
     }
 
@@ -98,9 +103,12 @@ struct CinematicDetailHero<Accessory: View>: View {
             }
             .gusProminentGlassButtonStyle()
             .controlSize(.large)
+            // Keep the primary action prominent without turning wide panes into
+            // a full-width button. Narrow panes can still shrink naturally.
+            .frame(maxWidth: min(320, DetailActionMetrics.maximumRowWidth))
             .tint(.accentColor)
             .gusDefaultActionShortcut()
-            .visionHoverEffect(cornerRadius: 10)
+            .visionHoverEffect(Capsule())
         }
     }
 
@@ -204,10 +212,12 @@ struct ItemUserActionButton: View {
         Button(action: action) {
             Label(title, systemImage: systemImage)
                 .labelStyle(.iconOnly)
-                .frame(minWidth: 44, minHeight: 44)
+                .frame(maxWidth: .infinity, minHeight: 28)
         }
         .gusGlassButtonStyle()
-        .visionHoverEffect(cornerRadius: 10)
+        .controlSize(.regular)
+        .frame(minWidth: 44, minHeight: 44)
+        .visionHoverEffect(Capsule())
         .accessibilityLabel(title)
     }
 }

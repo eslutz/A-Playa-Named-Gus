@@ -1,4 +1,6 @@
-# Gus UI review — October 9–10, 2026
+# Gus UI review — October 9–11, 2026
+
+**Mac follow-up (October 11):** The [native Mac follow-up](MAC-FOLLOWUP-2026-10-11.md) adds **GUS-UI-025**, a reproduced sign-in failure with a Unicode computer name and misleading credential error. Connect/sign-in screenshots were checked after unlocking; signed-in Mac coverage remains blocked. This follow-up uses newer revision `423bfa0`; earlier findings remain historical, not revalidated. There are now **25 historical deduplicated findings across the report and addenda**, not 25 confirmed open defects on the current revision.
 
 **Multiplatform update (October 10):** The [simulator addendum](MULTIPLATFORM-SIMULATOR-ADDENDUM-2026-10-10.md) records the Apple TV → iPad → Vision Pro → Mac → Watch continuation using the real local demo Jellyfin server. It adds tvOS detail-sheet compression (024), reproduces audio exit and book action defects (001, 009), and expands the device coverage of overlapping media cards and clipped detail content (020, 021). There are now **24 deduplicated findings**, including the original source risks and validation candidates. Consult the addendum's coverage matrix for actual visual coverage and tooling blockers; this is not a clean UI sign-off. No app fixes were made.
 
@@ -288,3 +290,7 @@ AX5 evidence: [run log](evidence/large-direct.log), [Settings portrait](evidence
 The [external harness](evidence/harness/project.yml) and its [UI tests](evidence/harness/Tests/Preview.swift) are retained for reproduction. The [direct screenshot watcher](evidence/harness/watch-captures.py) captures after rotation settles, because XCTest attachment images were sometimes incorrectly transformed. Rejected landscape attachment files remain in raw exports for traceability and are not used as visual findings. The [phone](evidence/phone-direct.log) and [iPad](evidence/ipad.log) run logs retain assertions and accessibility warnings. Tool/desktop access failures are environment limitations, not Gus defects. No application source fixes, commits, distribution uploads or production-server mutations were performed.
 
 Reviewed source SHA-256 fingerprints matched at completion, and Git status matched the recorded baseline. Review artifacts are saved under this report directory; the existing application changes were preserved.
+
+## Repair follow-up
+
+GUS-UI-025 and the subsequently discovered Mac presentation defects are repaired in the working tree. See the [October 11 repair and verification report](../2026-10-11-auth-device-repair/REPORT.md) for current evidence and the remaining acceptance limits. The observations above remain historical.

@@ -1,5 +1,7 @@
 # Multiplatform automated UI review — 2026-10-10
 
+**October 11 follow-up:** The Mac was unlocked and its Connect/sign-in UI inspected on a newer revision. A reproduced authentication defect now blocks signed-in coverage; see [Mac follow-up](MAC-FOLLOWUP-2026-10-11.md). The locked-host descriptions below document the original October 10 attempt.
+
 This continuation uses the real local demo Jellyfin server and the current dirty checkout, without app fixes. Platform order: Apple TV → iPad → Vision Pro → Mac → Watch. Findings below supplement the original report and physical-phone addendum; source risks and observed defects remain distinct. **Verdict: significant shared layout defects remain.** This pass adds one finding (024), upgrades two existing risks with runtime evidence (001 and 009), and broadens existing 020/021 evidence. Mac runtime review remains blocked by the locked desktop; all platform builds succeeded. No clean UI or release-readiness sign-off is supported.
 
 ## Baseline and data

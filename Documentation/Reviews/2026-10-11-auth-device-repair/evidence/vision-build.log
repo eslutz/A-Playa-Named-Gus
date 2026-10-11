@@ -1,0 +1,5 @@
+Command line invocation:
+    /Applications/Development/Xcode.app/Contents/Developer/usr/bin/xcodebuild -project "A Playa Named Gus.xcodeproj" -scheme "A Playa Named Gus" -destination "generic/platform=visionOS Simulator" -derivedDataPath build/release-validation-audit build
+
+** BUILD SUCCEEDED **
+Full raw log retained in /tmp/gus-device-repair/vision-build.log

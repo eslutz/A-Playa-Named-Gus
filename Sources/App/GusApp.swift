@@ -109,7 +109,7 @@ struct GusApp: App {
                             return
                         }
                         if shouldConnectToDemoServer {
-                            await appModel.connectToLocalDemoServer()
+                            _ = await appModel.connectToLocalDemoServer()
                             if let launchRouteURL {
                                 appNavigation.open(url: launchRouteURL)
                             }

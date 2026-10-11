@@ -60,6 +60,14 @@ enum DeviceIdentity {
         #endif
     }()
 
+    /// The SDK inserts device names directly into an unquoted HTTP Authorization field.
+    /// Preserve Unicode and delimiters as UTF-8 percent escapes so URLSession sends
+    /// the header and a name cannot inject another Jellyfin authentication field.
+    static func authorizationDeviceName(_ name: String) -> String {
+        let allowed = CharacterSet(charactersIn: "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 -._~")
+        return name.addingPercentEncoding(withAllowedCharacters: allowed) ?? "Apple Device"
+    }
+
     /// App marketing version (`CFBundleShortVersionString`).
     static var appVersion: String {
         Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.0"

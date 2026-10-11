@@ -5,6 +5,69 @@ import Testing
 @MainActor
 @Suite("Download store integration")
 struct DownloadStoreIntegrationTests {
+    @Test("completion cleanup is opt-in, scoped, and cannot delete a replacement")
+    func completionCleanup() throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let files = OfflineDownloadFileStore(directory: directory)
+        let suite = UUID().uuidString
+        let defaults = try #require(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let store = OfflineDownloadStore(fileStore: files, coordinator: IntegrationDownloadCoordinator(), defaults: defaults)
+        let item = MediaItem(id: "same", name: "Media")
+        func save(_ user: String) throws -> OfflineDownloadRecord {
+            let source = directory.appendingPathComponent(UUID().uuidString)
+            try Data("media".utf8).write(to: source)
+            return try files.persistDownloadedFile(source, item: item, serverID: "s", userID: user, fileExtension: "mp3")
+        }
+        let original = try save("a")
+        let other = try save("b")
+        store.load(serverID: "s", userID: "b")
+        store.deleteAfterCompletion(original)
+        #expect(files.localFileURL(for: original) != nil)
+        defaults.set(true, forKey: OfflineDownloadStore.deleteFinishedDefaultsKey)
+        let replacement = try save("a")
+        store.deleteAfterCompletion(original)
+        #expect(files.localFileURL(for: replacement) != nil)
+        store.delete(replacement, serverID: "s", userID: "b")
+        #expect(files.localFileURL(for: replacement) != nil)
+        store.deleteAfterCompletion(replacement)
+        #expect(files.record(forRecordID: replacement.id) == nil)
+        #expect(files.localFileURL(for: other) != nil)
+        #expect(store.records.map(\.userID) == ["b"])
+    }
+
+    @Test("saved artwork survives store recreation and is removed with its download")
+    func artworkPersistenceAndDeletion() throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let files = OfflineDownloadFileStore(directory: directory)
+        let record = files.prepareDownloadRecord(item: MediaItem(id: "art", name: "Artwork"), serverID: "s", userID: "u", fileExtension: "mp3", status: .complete, progress: 1)
+        let png = try #require(Data(base64Encoded: "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII="))
+        try files.persistArtwork(png, for: record)
+        let reopened = OfflineDownloadFileStore(directory: directory)
+        let url = try #require(reopened.localArtworkURL(for: record))
+        #expect(try Data(contentsOf: url) == png)
+        try reopened.delete(record)
+        #expect(reopened.localArtworkURL(for: record) == nil)
+        try files.persistArtwork(png, for: record)
+        #expect(files.localArtworkURL(for: record) == nil, "A late fetch cannot recreate deleted artwork")
+    }
+
+    @Test("bulk deletion preserves unselected downloads and rejects wrong accounts")
+    func selectiveDeletion() {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let files = OfflineDownloadFileStore(directory: directory)
+        let store = OfflineDownloadStore(fileStore: files, coordinator: IntegrationDownloadCoordinator())
+        let records = ["a", "b", "c"].map { files.prepareDownloadRecord(item: MediaItem(id: $0, name: $0), serverID: "s", userID: "u", fileExtension: "mp3", status: .paused, progress: 0) }
+        store.load(serverID: "s", userID: "u")
+        store.delete(Array(records.prefix(2)), serverID: "s", userID: "wrong")
+        #expect(store.records.count == 3)
+        store.delete(Array(records.prefix(2)), serverID: "s", userID: "u")
+        #expect(store.records.map(\.id) == [records[2].id])
+    }
+
     @Test("background completion saves the originating account without replacing displayed records")
     func backgroundAccountIsolation() throws {
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)

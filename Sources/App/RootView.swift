@@ -28,6 +28,13 @@ struct RootView: View {
                 .task(id: scenePhase) {
                     downloads.load(serverID: session.server.id, userID: session.user.id)
                     guard scenePhase == .active else { return }
+                    await downloads.repairMissingArtwork(session: session)
+                }
+                .task(id: scenePhase) {
+                    guard scenePhase == .active else { return }
+                    // Artwork retries can be slow offline. Progress reconciliation has
+                    // its own view-scoped task so it starts immediately and shares the
+                    // same foreground/account cancellation lifetime.
                     while !Task.isCancelled {
                         await OfflinePlaybackProgressStore.shared.sync(session: session) {
                             appModel.currentSession?.server.id == session.server.id &&

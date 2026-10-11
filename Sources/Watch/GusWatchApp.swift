@@ -31,7 +31,7 @@ struct GusWatchApp: App {
                 .task {
                     #if DEBUG
                         if shouldConnectToDemoServer {
-                            await appModel.connectToLocalDemoServer()
+                            _ = await appModel.connectToLocalDemoServer()
                             return
                         }
                     #endif

@@ -1,0 +1,52 @@
+{
+  "devicesAndConfigurations" : [
+    {
+      "device" : {
+        "architecture" : "arm64",
+        "deviceId" : "188DD406-3103-454A-911F-DF680344ACCC",
+        "deviceName" : "iPad Pro 11-inch (M5)",
+        "modelName" : "iPad Pro 11-inch (M5)",
+        "osBuildNumber" : "24A434",
+        "osVersion" : "27.0",
+        "platform" : "iOS Simulator"
+      },
+      "expectedFailures" : 0,
+      "failedTests" : 1,
+      "passedTests" : 0,
+      "skippedTests" : 0,
+      "testPlanConfiguration" : {
+        "configurationId" : "1",
+        "configurationName" : "Test Scheme Action"
+      }
+    }
+  ],
+  "environmentDescription" : "GusPhysicalAudit · Built with macOS 27.0.1",
+  "expectedFailures" : 0,
+  "failedTests" : 1,
+  "finishTime" : 1791741693.579,
+  "passedTests" : 0,
+  "result" : "Failed",
+  "runtimeWarnings" : [
+
+  ],
+  "skippedTests" : 0,
+  "startTime" : 1791741565.347,
+  "statistics" : [
+
+  ],
+  "testFailures" : [
+    {
+      "failureText" : "Failed to tap \"Done\" Button: Find single matching element. Multiple matching elements found for <XCUIElementQuery: 0x107aef890>.\nSparse tree of matches:\n→Application, pid: 65213, label: 'Gus'\n  ↳Window (Main)\n    ↳Other\n    ⋅ ↳Other\n    ⋅   ↳Other\n    ⋅     ↳Other\n    ⋅       ↳NavigationBar, identifier: '_TtGC7SwiftUI32NavigationStackHosting'\n    ⋅         ↳Other\n    ⋅           ↳Other\n    ⋅             ↳Button, label: 'Done'\n    ↳Other\n      ↳Other\n        ↳Other\n          ↳Other\n            ↳Other\n              ↳Other\n                ↳NavigationBar, identifier: 'Repeat All QA'\n                  ↳Other\n                    ↳Other\n                      ↳Button, identifier: 'ContentLink.detailDone', label: 'Done'",
+      "targetName" : "GusPhysicalAuditTests",
+      "testIdentifier" : 1,
+      "testIdentifierString" : "RepeatAllRemaining/testTwoTrackRepeatAll()",
+      "testIdentifierURL" : "test://com.apple.xcode/GusPhysicalAudit/GusPhysicalAuditTests/RepeatAllRemaining/testTwoTrackRepeatAll",
+      "testName" : "testTwoTrackRepeatAll()"
+    }
+  ],
+  "title" : "Test - GusPhysicalAudit",
+  "topInsights" : [
+
+  ],
+  "totalTestCount" : 1
+}

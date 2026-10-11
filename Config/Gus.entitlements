@@ -8,6 +8,9 @@
 	<true/>
 	<key>com.apple.security.network.client</key>
 	<true/>
+	<!-- Jellyfin discovery binds an ephemeral UDP socket to receive replies. -->
+	<key>com.apple.security.network.server</key>
+	<true/>
 	<key>com.apple.developer.associated-domains</key>
 	<array>
 		<string>applinks:gus.ericslutz.dev</string>

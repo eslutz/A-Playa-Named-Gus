@@ -48,7 +48,7 @@ DEVELOPMENT_TEAM = QS3GC3CT43
 CODE_SIGNING_REQUIRED = NO
 CODE_SIGNING_ALLOWED = YES
 
-// Sandbox + outbound network only on macOS (network.client/app-sandbox are
+// Sandbox + network access on macOS (including UDP discovery replies; these are
 // macOS-sandbox entitlements). macOS app state remains per OS login account via
 // the user-domain sandbox container, UserDefaults, Application Support, and Keychain.
 CODE_SIGN_ENTITLEMENTS[sdk=macosx*] = Config/Gus.entitlements

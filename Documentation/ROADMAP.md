@@ -20,8 +20,9 @@ constrain *how* each item is built.
 
 ## October 2026 UI remediation
 
-- [x] Implement remediation for the 24 findings in the October 9–10 review and both addenda: bounded artwork/detail layouts, adaptive actions/audio, persistent audio dismissal/reopening, shared navigation across width changes, explicit iPhone More, tvOS link navigation, cancellation/retry, request identity, filtered paging, and localized accessibility fixes. All six platform builds and the four 274-test suites pass; see [the remediation report](Reviews/2026-10-10-ui-remediation/REPORT.md) for scoped runtime and contrast evidence.
-- [~] Complete release acceptance: physical streamed/downloaded playback rotation, Mac window/keyboard checks, assistive technology and platform input, remaining appearance/metadata/error variants, full iPad contrast acceptance (native Xcode 27 sampler blocked), minimum-OS execution, and signed TestFlight acceptance. The Watch stall is fixed and retested locally on 40 mm and 46 mm. Simulator checks do not close these gates.
+- [~] October 11 repairs cover sign-in/error feedback, Mac discovery, persistent download artwork, confirmed/selective/bulk management deletion, native swipe deletion, completion cleanup, adaptive hero/actions/sidebar, audio return controls, and playback lifecycle/replay. Physical phone checks finished on **1.0.0 (11)**; management scrolling/Cancel and compact actions passed, and the phone is released with no automation pending. Later source changes have not been installed on it. The landscape Home search repair passed 1/1; full narrow-screen portrait/landscape checks passed 2/2 in light/dark at accessibility XXXL. The final focused playback run passed **23/23** (two real natural-completion/replay checks and 21 UI/lifecycle regressions). Nested EPUB chapter navigation now uses a native sheet/list with recursive disclosure groups and retains Readium’s directional navigation adapter. Its isolated iOS simulator acceptance passed **1/1**, covering chapter selection, readable portrait/landscape pages, forward/backward paging, keyboard absence, and return to book details. See [current repair evidence](Reviews/2026-10-11-auth-device-repair/REPORT.md).
+- [x] Implement remediation for the 24 findings in the October 9–10 review and both addenda: bounded artwork/detail layouts, adaptive actions/audio, persistent audio dismissal/reopening, shared navigation across width changes, explicit iPhone More, tvOS link navigation, cancellation/retry, request identity, filtered paging, and localized accessibility fixes. The earlier candidate passed all six platform builds and four 274-test suites; see [the remediation report](Reviews/2026-10-10-ui-remediation/REPORT.md) for scoped runtime and contrast evidence.
+- [~] Complete release acceptance: physical acceptance of later source changes, Mac window/keyboard checks, assistive technology and platform input, remaining appearance/metadata/error variants, full iPad contrast acceptance (native Xcode 27 sampler blocked), exact minimum-OS execution, live Duo display transitions, and signed TestFlight acceptance. The Watch stall was fixed and retested locally on 40 mm and 46 mm. Simulator checks do not close these gates.
 
 ## Global Definition of Done (applies to every milestone)
 
@@ -448,7 +449,7 @@ validation, TestFlight, and submission work are actually done.
   string). *Acceptance:* Xcode Cloud Release archives sign for each platform. *(Code side
   complete per `Documentation/AppStore/signing-capabilities.md` — entitlements, capability
   declarations, committed Team ID, and the Optic ID/Face ID no-usage-string rationale;
-  remaining work is the account-blocked Xcode Cloud workflow and archive validation,
+  remaining work is Xcode Cloud archive validation,
   CarPlay audio (`com.apple.developer.carplay-audio`, manual Apple grant), and device
   verification for the portal-backed App Groups, Associated Domains, Shared with You, and
   Declared Age Range capabilities.)*
@@ -512,8 +513,9 @@ validation, TestFlight, and submission work are actually done.
   shipped configuration, and drafts the Notes for Review and age-rating answers.)*
 - [x] **Local API/Cloud preparation.** Secure key location, ignored configuration, native
   read-only API client, offline signing/bootstrap tests, shared project snapshot and
-  dependency pins prepared. API authentication, portal onboarding and publication of the
-  complete candidate remain pending; see `AppStore/api-access.md`.
+  dependency pins prepared. Account-wide API authentication and Cloud onboarding are
+  verified; publication and signed archive acceptance of the complete candidate remain
+  pending; see `AppStore/api-access.md` and `AppStore/xcode-cloud-dependency-onboarding.md`.
 - [ ] **TestFlight beta.** Upload through Xcode Cloud, internal/external testing, gather
   crash/feedback.
   *Acceptance:* a clean build runs from TestFlight on each platform.
@@ -904,3 +906,13 @@ milestone once it becomes the active focus and is ready to carry a hard acceptan
  feature set, Premiere-gated capability handling, testing requirements, App Store naming/
  branding constraints, and the first Emby prototype milestone. No user-facing Emby work
  starts until M7 is complete.
+
+## October 11 current validation and publication status
+
+The phone's three requested final flows completed on build 11: Downloads management landscape scrolling/Cancel, compact portrait/landscape actions, and Home capture. No physical automation or new install is pending. The Home capture exposed GUS-UI-038, subsequently repaired with native top-toolbar search in compact-height iOS 26+ layouts and verified on the simulator. GUS-UI-037's largest-text action separation and full narrow-screen bounds are verified in light/dark portrait/landscape. Both later repairs remain source/simulator acceptance rather than build-11 physical acceptance.
+
+Xcode 27.1 RC is installed. SDK-backed Duo audio arrangement and closed, flat-open, and partially folded simulator flows passed individually. Continuous playback through live display transitions remains unverified. Exact minimum-OS execution remains blocked by unavailable compatible runtimes and the lack of a macOS 15 host/VM; deployment-target builds are not minimum-OS execution. Manual VoiceOver speech, rotor, and focus-order acceptance remains open.
+
+Final source review repaired Vision Pro capsule hover shapes, video preparation/autoplay teardown, independent artwork backfill/progress synchronization, nested EPUB chapter navigation, and audio replay after natural queue completion. The focused playback run passed 23/23, including real WAV replay, local-only behavior after automatic deletion, and all three video lifecycle regressions. Full source/test lint passes for 193 files; shared project validation covers 12 schemes and 16 pins, and six bootstrap tests pass. The final native EPUB chapter sheet acceptance passed 1/1, zero skipped, with inspected portrait/landscape prose, forward/backward paging, and return-to-detail captures. Readium’s directional navigation adapter is retained and bound to the navigator; hardware-key input and completion deletion specifically while opening Chapters at the final page were source-reviewed rather than runtime-tested. Tests are serialized with two build jobs after measured host memory pressure was relieved. Detailed evidence and test scope live in [the repair report](Reviews/2026-10-11-auth-device-repair/REPORT.md).
+
+The unused ReadiumAdapterGCDWebServer product is removed; the 16 validated pins, including Readium 3.9.0, remain. Account-wide App Store Connect API authentication and initial Cloud onboarding are verified. The manual-only Gus Multiplatform Validation workflow has four BUILD actions (iOS/macOS/tvOS/visionOS), Xcode 27.1 RC, and a compatible macOS host, without distribution. The complete reviewed local candidate, shared snapshot/pins, and root-safe bootstrap await publication to origin/main. The first real Cloud build has not started; signed archives, upload, and TestFlight acceptance remain pending. See [API setup](AppStore/api-access.md) and [Cloud diagnosis](AppStore/xcode-cloud-dependency-onboarding.md).

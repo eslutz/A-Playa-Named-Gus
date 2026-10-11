@@ -1,0 +1,110 @@
+Attributes: Application, 0x10f9048c0, pid: 1849, label: 'Gus'
+Element subtree:
+ →Application, 0x10f9048c0, pid: 1849, label: 'Gus'
+    Window (Main), 0x10f9061c0, {{0.0, 0.0}, {440.0, 956.0}}
+      Other, 0x10fa18280, {{0.0, 0.0}, {440.0, 956.0}}
+      Other, 0x10fa19b80, {{0.0, 0.0}, {440.0, 956.0}}
+        Other, 0x10fa18dc0, {{0.0, 0.0}, {440.0, 956.0}}
+          Other, 0x10fa19180, {{0.0, 0.0}, {440.0, 956.0}}
+            Other, 0x10fa19540, {{0.0, 0.0}, {440.0, 956.0}}
+              Other, 0x10fa197c0, {{0.0, 0.0}, {440.0, 956.0}}
+                Other, 0x10fa18c80, {{0.0, 0.0}, {440.0, 956.0}}
+                  Other, 0x10fa18f00, {{0.0, 0.0}, {440.0, 956.0}}
+                    Other, 0x10fa19900, {{0.0, 0.0}, {440.0, 956.0}}
+                      Other, 0x10fa19a40, {{0.0, 0.0}, {440.0, 956.0}}
+                        Other, 0x10fa18780, {{0.0, 0.0}, {440.0, 956.0}}
+                          Other, 0x10fa19cc0, {{0.0, 0.0}, {440.0, 956.0}}
+                            NavigationBar, 0x10fa19400, {{0.0, 62.0}, {440.0, 106.0}}, identifier: 'Downloaded'
+                              Button, 0x10fa18b40, {{380.0, 66.0}, {36.0, 36.0}}, label: 'Manage Downloads'
+                              StaticText, 0x10fa18000, {{20.0, 119.7}, {199.3, 40.7}}, label: 'Downloaded'
+                            Other, 0x10fa18640, {{0.0, 0.0}, {440.0, 956.0}}
+                              Other, 0x10fa183c0, {{0.0, 0.0}, {440.0, 956.0}}
+                                Other, 0x10fa18500, {{0.0, 0.0}, {440.0, 956.0}}
+                                  Other, 0x10fa18a00, {{0.0, 0.0}, {440.0, 956.0}}
+                                    SegmentedControl, 0x10fa192c0, {{16.0, 184.0}, {408.0, 31.0}}
+                                      Button, 0x10fa18140, {{16.0, 184.0}, {81.0, 32.0}}, label: 'All', Selected
+                                      Button, 0x10fa188c0, {{97.0, 184.0}, {82.0, 32.0}}, label: 'Movies'
+                                      Button, 0x10fa19040, {{179.0, 184.0}, {81.0, 32.0}}, label: 'Shows'
+                                      Button, 0x10fa19680, {{260.0, 184.0}, {82.0, 32.0}}, label: 'Audio'
+                                      Button, 0x10f93fac0, {{342.0, 184.0}, {82.0, 32.0}}, label: 'Books'
+                                    CollectionView, 0x10f93fc00, {{0.0, 0.0}, {440.0, 956.0}}
+                                      Other, 0x10f93fd40, {{-20.0, -1673.0}, {480.0, 4072.3}}
+                                      Other, 0x10f93fe80, {{0.0, 0.0}, {440.0, 956.0}}
+                                        Other, 0x10c3a5f40, {{0.0, 0.0}, {440.0, 156.0}}
+                                        Other, 0x10c3a5b80, {{0.0, 823.0}, {440.0, 133.0}}
+                                      Other, 0x10c3a7980, {{0.0, 0.0}, {440.0, 956.0}}
+                                      Cell, 0x10c3a6a80, {{20.0, 239.0}, {400.0, 40.3}}
+                                        Other, 0x10c3a66c0, {{20.0, 239.0}, {400.0, 40.3}}
+                                        Other, 0x10c3a6d00, {{20.0, 239.0}, {400.0, 40.3}}
+                                          Other, 0x10c3a57c0, {{20.0, 239.0}, {400.0, 40.3}}
+                                            Other, 0x10c3a6440, {{20.0, 239.0}, {400.0, 40.3}}
+                                              StaticText, 0x10c3a70c0, {{20.0, 239.0}, {400.0, 40.3}}, label: 'All'
+                                      Cell, 0x10c3a7e80, {{20.0, 279.3}, {400.0, 94.0}}
+                                        Other, 0x10c3a5e00, {{20.0, 279.3}, {400.0, 94.0}}
+                                          Other, 0x10c3a75c0, {{20.0, 279.3}, {400.0, 94.0}}
+                                        Other, 0x10c3a4640, {{20.0, 279.3}, {400.0, 94.0}}
+                                          Other, 0x10c3a5900, {{20.0, 279.3}, {400.0, 94.0}}
+                                            Other, 0x10c3a4500, {{20.0, 279.3}, {400.0, 94.0}}
+                                              Button, 0x10c3a6940, {{20.0, 279.3}, {400.0, 94.0}}, label: 'Idle Hands'
+                                                Image, 0x10c3a6080, {{40.0, 294.3}, {48.0, 64.0}}, identifier: 'film', label: 'Movie'
+                                                StaticText, 0x10c3a5680, {{40.0, 294.3}, {360.0, 64.0}}, label: 'Idle Hands'
+                                                Image, 0x10c3a61c0, {{387.0, 319.3}, {12.7, 14.0}}, identifier: 'play.fill', label: 'Play'
+                                      Cell, 0x10c3a7340, {{20.0, 373.3}, {400.0, 94.0}}
+                                        Other, 0x10c3a6300, {{20.0, 373.3}, {400.0, 94.0}}
+                                          Other, 0x10c3a6800, {{20.0, 373.3}, {400.0, 94.0}}
+                                        Other, 0x10c3a5040, {{20.0, 373.3}, {400.0, 94.0}}
+                                          Other, 0x10c3a5400, {{20.0, 373.3}, {400.0, 94.0}}
+                                            Other, 0x10c3a4f00, {{20.0, 373.3}, {400.0, 94.0}}
+                                              Button, 0x10c3a6e40, {{20.0, 373.3}, {400.0, 94.0}}, label: 'The Faculty'
+                                                Image, 0x10c3a7c00, {{40.0, 388.3}, {48.0, 64.0}}, identifier: 'film', label: 'Movie'
+                                                StaticText, 0x10c3a7ac0, {{40.0, 388.3}, {360.0, 64.0}}, label: 'The Faculty'
+                                                Image, 0x10c3a6bc0, {{387.0, 413.3}, {12.7, 14.0}}, identifier: 'play.fill', label: 'Play'
+                                      Other, 0x10c3a5180, {{100.0, 372.3}, {300.0, 1.0}}
+                                      Other, 0x10c3a7d40, {{407.0, 116.0}, {30.0, 757.0}}, label: 'Vertical scroll bar, 1 page', value: 0%
+                                        Other, 0x10c3a4a00, {{434.0, 863.0}, {3.0, 7.0}}
+                                      Other, 0x10c3a5cc0, {{407.0, 116.0}, {30.0, 757.0}}, label: 'Vertical scroll bar, 1 page', value: 0%
+                                        Other, 0x10c3a6f80, {{434.0, 863.0}, {3.0, 7.0}}
+                            Toolbar, 0x10c3a5540, {{0.0, 0.0}, {440.0, 956.0}}, identifier: 'Toolbar', label: 'Toolbar'
+                              Other, 0x10c3a7700, {{0.0, 0.0}, {440.0, 956.0}}
+                Other, 0x10c3a5a40, {{0.0, 0.0}, {440.0, 956.0}}
+                  Other, 0x10c3a7480, {{0.0, 873.0}, {440.0, 83.0}}
+                    Other, 0x10c3a52c0, {{0.0, 0.0}, {440.0, 956.0}}
+                      TabBar, 0x10c3a7200, {{0.0, 873.0}, {440.0, 83.0}}, label: 'Tab Bar'
+                        Other, 0x10c1eb5c0, {{21.0, 873.0}, {398.0, 62.0}}
+                          Other, 0x10c1eb980, {{21.0, 873.0}, {114.8, 54.0}}
+                          Other, 0x10c1eb840, {{21.0, 873.0}, {398.0, 62.0}}
+                            Button, 0x10c1e9040, {{25.0, 877.0}, {90.4, 54.0}}, identifier: 'house', label: 'Home'
+                              Image, 0x10f9d6e40, {{53.7, 883.0}, {33.3, 28.0}}, identifier: 'house.fill', label: 'home'
+                            Button, 0x10f9d5e00, {{93.4, 877.0}, {114.8, 54.0}}, identifier: 'arrow.down.circle', label: 'Downloaded', Selected
+                              Image, 0x10f9d75c0, {{137.0, 883.3}, {27.3, 27.3}}, identifier: 'arrow.down.circle.fill', label: 'Arrow Down Circle'
+                            Button, 0x10f9d52c0, {{186.2, 877.0}, {92.1, 54.0}}, identifier: 'rectangle.stack', label: 'Libraries'
+                              Image, 0x10f9d43c0, {{217.2, 882.0}, {30.0, 31.3}}, identifier: 'rectangle.stack.fill', label: 'Album'
+                            Button, 0x10f9d61c0, {{256.3, 877.0}, {90.4, 54.0}}, identifier: 'film', label: 'Movies'
+                              Image, 0x10f9d6300, {{284.9, 884.3}, {33.0, 25.0}}, identifier: 'film.fill', label: 'movie'
+                            Button, 0x10f9d6580, {{324.6, 877.0}, {90.4, 54.0}}, identifier: 'ellipsis', label: 'More'
+                              Image, 0x10f9d4c80, {{357.3, 892.7}, {25.0, 8.7}}, identifier: 'ellipsis', label: 'More'
+                          Other, 0x10f9d6800, {{21.0, 873.0}, {398.0, 62.0}}
+                          Other, 0x10f9d7200, {{93.4, 877.0}, {114.8, 54.0}}
+                            Other, 0x10f9d5040, {{93.4, 877.0}, {114.7, 54.0}}
+                              Other, 0x10f9d4280, {{93.4, 877.0}, {114.7, 54.0}}
+                              Other, 0x10f9d4640, {{93.4, 877.0}, {114.7, 54.0}}
+                                Other, 0x10f9d4500, {{93.4, 877.0}, {114.7, 54.0}}
+                                  Other, 0x10f9d5540, {{93.4, 877.0}, {114.7, 54.0}}
+                                    Other, 0x10f9d7340, {{93.4, 877.0}, {114.7, 54.0}}
+                                  Other, 0x10f9d70c0, {{93.4, 877.0}, {114.7, 54.0}}
+                                Other, 0x10f9d6440, {{93.4, 877.0}, {114.7, 54.0}}
+                    Other, 0x10f9d6f80, {{0.0, 873.0}, {440.0, 83.0}}
+                      Other, 0x10f9d5680, {{0.0, 873.0}, {440.0, 83.0}}
+                        Other, 0x10f9d66c0, {{0.0, 873.0}, {440.0, 83.0}}
+                          Other, 0x10f9d4a00, {{0.0, 873.0}, {440.0, 83.0}}
+                            Other, 0x10f9d6bc0, {{0.0, 873.0}, {440.0, 83.0}}
+                              Other, 0x10f9d4780, {{0.0, 873.0}, {440.0, 83.0}}
+                          Other, 0x10f9d5400, {{0.0, 873.0}, {440.0, 83.0}}
+                            Other, 0x10f9d5b80, {{0.0, 873.0}, {440.0, 83.0}}
+Path to element:
+ →Application, 0x10f9048c0, pid: 1849, label: 'Gus'
+Query chain:
+ →Find: Application 'dev.ericslutz.gus'
+  Output: {
+    Application, 0x10f9d7480, pid: 1849, label: 'Gus'
+  }

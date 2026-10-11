@@ -70,6 +70,9 @@ struct DownloadedLibraryView: View {
                                     .contentShape(Rectangle())
                                 }
                                 .buttonStyle(.plain)
+                                .gusDownloadSwipeDelete {
+                                    downloads.delete(record, serverID: session.server.id, userID: session.user.id)
+                                }
                                 .accessibilityHint(record.item.type == .book ? "Opens the downloaded book" : "Plays the downloaded file")
                             }
                         }
@@ -102,6 +105,7 @@ struct DownloadedLibraryView: View {
             }
         }
         .playerPresentation(item: $playerItem)
+        .downloadErrorAlert(downloads)
         .alert("Download Unavailable", isPresented: $missingFile) {
             Button("OK", role: .cancel) {}
         } message: {

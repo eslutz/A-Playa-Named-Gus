@@ -1,0 +1,358 @@
+Attributes: Application, 0x115c1a6c0, pid: 2468, label: 'Gus'
+Element subtree:
+ →Application, 0x115c1a6c0, pid: 2468, label: 'Gus'
+    Window (Main), 0x115c1a580, {{-12.9, 114.8}, {1051.5, 43.0}}
+      Other, 0x115c1a300, {{-12.9, 114.8}, {1051.5, 43.0}}
+        Other, 0x115c1a1c0, {{-12.9, 114.8}, {1051.5, 43.0}}
+          Other, 0x115c1ae40, {{0.0, -956.0}, {956.0, 956.0}}
+          Other, 0x115c1a440, {{-440.0, 0.0}, {440.0, 440.0}}
+          Other, 0x115c19b80, {{871.2, -249.1}, {574.4, 239.4}}
+          Other, 0x115c19f40, {{154.6, 521.7}, {1247.9, 520.2}}
+        Other, 0x115c18f00, {{-11.8, 97.9}, {1047.0, 106.6}}
+          Other, 0x115c19040, {{-11.8, 97.9}, {1047.0, 106.6}}
+            Other, 0x115c19a40, {{-11.8, 97.9}, {1047.0, 106.6}}
+              Other, 0x115c19900, {{-11.8, 97.9}, {1047.0, 106.6}}
+                Other, 0x115c19680, {{-11.8, 97.9}, {1047.0, 106.6}}
+                  Other, 0x115c19400, {{-11.8, 97.9}, {1047.0, 106.6}}
+                    Other, 0x115c197c0, {{-11.8, 97.9}, {409.3, 324.9}}
+                      Other, 0x115c19540, {{-11.8, 97.9}, {409.3, 324.9}}
+                        NavigationBar, 0x115c18dc0, {{-4.0, 80.3}, {284.3, 40.3}}, identifier: 'Gus'
+                          StaticText, 0x115c192c0, {{131.6, 86.5}, {36.3, 9.4}}, label: 'Gus'
+                          Button, 0x115c18780, {{216.8, 49.2}, {45.7, 22.4}}, label: 'Hide Sidebar'
+                        Other, 0x115c18280, {{-11.8, 97.9}, {409.3, 324.9}}
+                          Other, 0x115c18140, {{-10.5, 82.0}, {390.5, 347.3}}
+                            Other, 0x115c183c0, {{-10.5, 82.0}, {390.5, 347.3}}
+                              Other, 0x115c18500, {{-10.5, 82.0}, {390.5, 347.3}}
+                                CollectionView, 0x115c19180, {{-10.5, 82.0}, {390.5, 347.3}}, label: 'Sidebar'
+                                  Other, 0x115c18c80, {{-78.0, -802.0}, {376.0, 2082.0}}
+                                  Other, 0x115c1aa80, {{-10.5, 82.0}, {390.5, 347.3}}
+                                    Other, 0x115c18000, {{-10.5, 82.0}, {303.4, 37.3}}
+                                  Other, 0x115c1a800, {{-10.5, 82.0}, {390.5, 347.3}}
+                                  Cell, 0x115c1a940, {{85.6, 135.2}, {195.1, 0.8}}, Selected
+                                    Other, 0x115c18640, {{85.6, 135.2}, {195.1, 0.8}}
+                                      Other, 0x115c18a00, {{85.6, 135.2}, {195.1, 0.8}}
+                                        Other, 0x115c18b40, {{85.6, 135.2}, {195.1, 0.8}}
+                                    Other, 0x115c19cc0, {{85.6, 135.2}, {195.1, 0.8}}
+                                      Other, 0x115c1a080, {{85.6, 135.2}, {195.1, 0.8}}
+                                        Other, 0x115c19e00, {{85.6, 135.2}, {195.1, 0.8}}
+                                          StaticText, 0x115c188c0, {{85.6, 135.2}, {195.1, 0.8}}, label: 'Home', Selected
+                                          Image, 0x115c1ad00, {{104.1, 146.1}, {30.8, 14.9}}, identifier: 'house', label: 'Home', Selected
+                                  Cell, 0x115c1b0c0, {{99.7, 185.3}, {195.1, 0.8}}
+                                    Other, 0x115c1abc0, {{99.7, 185.3}, {195.1, 0.8}}
+                                    Other, 0x115c1af80, {{99.7, 185.3}, {195.1, 0.8}}
+                                      Other, 0x115c1b700, {{99.7, 185.3}, {195.1, 0.8}}
+                                        Other, 0x115c1b5c0, {{99.7, 185.3}, {195.1, 0.8}}
+                                          StaticText, 0x115c1bac0, {{95.6, 176.8}, {194.8, 9.2}}, label: 'Downloaded'
+                                          Image, 0x115c1b840, {{115.9, 188.0}, {25.9, 16.3}}, identifier: 'arrow.down.circle', label: 'Arrow Down Circle'
+                                  Cell, 0x115c1be80, {{107.1, 227.6}, {194.8, 9.2}}
+                                    Other, 0x115c1bd40, {{107.1, 227.6}, {194.8, 9.2}}
+                                    Other, 0x115c1b480, {{107.1, 227.6}, {194.8, 9.2}}
+                                      Other, 0x115c1b980, {{107.1, 227.6}, {194.8, 9.2}}
+                                        Other, 0x115c1b340, {{101.1, 219.3}, {194.2, 18.1}}
+                                          StaticText, 0x115c1bc00, {{101.1, 219.3}, {194.2, 18.1}}, label: 'Libraries'
+                                          Image, 0x10ad8ed00, {{118.2, 229.8}, {30.4, 20.3}}, identifier: 'rectangle.stack', label: 'Stack Of Rectangles'
+                                  Cell, 0x10ad8f340, {{110.2, 270.5}, {194.2, 18.1}}
+                                    Other, 0x10ad8cf00, {{110.2, 270.5}, {194.2, 18.1}}
+                                    Other, 0x10ad8f480, {{110.2, 270.5}, {194.2, 18.1}}
+                                      Other, 0x10ad8f700, {{110.2, 270.5}, {194.2, 18.1}}
+                                        Other, 0x10ad8ef80, {{110.2, 270.5}, {194.2, 18.1}}
+                                          StaticText, 0x10ad8f0c0, {{110.2, 270.5}, {194.2, 18.1}}, label: 'Movies'
+                                          Image, 0x10ad8ea80, {{128.2, 283.9}, {28.4, 14.9}}, identifier: 'film', label: 'Movie'
+                                  Cell, 0x10ad8f5c0, {{119.4, 321.7}, {194.2, 18.1}}
+                                    Other, 0x10ad8d040, {{119.4, 321.7}, {194.2, 18.1}}
+                                    Other, 0x10ad8f980, {{119.4, 321.7}, {194.2, 18.1}}
+                                      Other, 0x10ad8f840, {{109.9, 314.6}, {193.3, 25.9}}
+                                        Other, 0x10df97980, {{109.9, 314.6}, {193.3, 25.9}}
+                                          StaticText, 0x10df97840, {{109.9, 314.6}, {193.3, 25.9}}, label: 'Shows'
+                                          Image, 0x10df97c00, {{126.5, 328.1}, {29.3, 17.2}}, identifier: 'tv', label: 'Tv'
+                                  Cell, 0x10df97ac0, {{116.9, 366.1}, {193.3, 25.9}}
+                                    Other, 0x10df97e80, {{116.9, 366.1}, {193.3, 25.9}}
+                                    Other, 0x10df97d40, {{116.9, 366.1}, {193.3, 25.9}}
+                                      Other, 0x10df97480, {{116.9, 366.1}, {193.3, 25.9}}
+                                        Other, 0x10df97200, {{116.9, 366.1}, {193.3, 25.9}}
+                                          StaticText, 0x10df97700, {{116.9, 366.1}, {193.3, 25.9}}, label: 'Settings'
+                                          Image, 0x10df975c0, {{135.4, 378.3}, {25.9, 19.3}}, identifier: 'gearshape', label: 'Gear Shape'
+                                  Other, 0x10df97340, {{250.7, 83.7}, {66.5, 357.1}}, label: 'Vertical scroll bar, 1 page', value: 0%
+                                    Other, 0x10df970c0, {{311.1, 411.2}, {3.7, 6.7}}
+                                  Other, 0x10df94280, {{250.7, 83.7}, {66.5, 357.1}}, label: 'Vertical scroll bar, 1 page', value: 0%
+                                    Other, 0x10df94640, {{311.1, 411.2}, {3.7, 6.7}}
+                        Toolbar, 0x10df94780, {{-4.9, 31.2}, {325.1, 409.2}}, identifier: 'Toolbar', label: 'Toolbar'
+                          Other, 0x10df952c0, {{-4.9, 31.2}, {325.1, 409.2}}
+                      Other, 0x10df96d00, {{-4.9, 31.2}, {325.1, 409.2}}
+                        Other, 0x10df95540, {{-4.9, 31.2}, {325.1, 409.2}}
+                          Other, 0x10df96e40, {{-4.9, 31.2}, {325.1, 409.2}}
+                            Other, 0x10df94000, {{-4.9, 31.2}, {325.1, 409.2}}
+                              Other, 0x10df94140, {{-4.9, 31.2}, {325.1, 409.2}}
+                                Other, 0x10df96bc0, {{-4.9, 31.2}, {263.4, 415.5}}
+                            Other, 0x10df96800, {{-4.9, 31.2}, {325.1, 409.2}}
+                              Other, 0x10df948c0, {{-4.9, 31.2}, {263.4, 415.5}}
+                    Other, 0x10df94500, {{-4.9, 31.2}, {995.6, 341.0}}
+                      Other, 0x1164e0140, {{-4.9, 31.2}, {995.6, 341.0}}
+                        NavigationBar, 0x1164e03c0, {{-2.5, 12.1}, {956.6, 43.0}}, identifier: 'Home'
+                          StaticText, 0x1164e0500, {{577.0, 7.9}, {49.2, 15.8}}, label: 'Home'
+                        Other, 0x1164e0000, {{-3.6, 22.2}, {985.0, 370.5}}
+                          Other, 0x1164e0640, {{-3.6, 22.2}, {985.0, 370.5}}
+                            Other, 0x1165ab980, {{-3.6, 22.2}, {985.0, 370.5}}
+                              Other, 0x1165abe80, {{-3.6, 22.2}, {985.0, 370.5}}
+                                ScrollView, 0x1165ab340, {{-3.6, 22.2}, {985.0, 370.5}}
+                                  Other, 0x1165ab480, {{-3.6, 22.2}, {985.0, 370.5}}
+                                    Other, 0x1165abc00, {{-3.6, 22.2}, {962.0, 49.3}}
+                                    Other, 0x1165abd40, {{12.7, 336.3}, {960.5, 72.8}}
+                                  Other, 0x1165ab0c0, {{-2.5, 14.7}, {975.7, 394.4}}
+                                    Other, 0x1165a8b40, {{12.7, 336.3}, {960.5, 72.8}}
+                                  Other, 0x1165a8c80, {{1.2, 92.6}, {987.3, 1955.3}}
+                                    StaticText, 0x1165a8f00, {{299.6, 94.5}, {196.7, 17.1}}, label: 'Continue Watching'
+                                    ScrollView, 0x1165a9900, {{301.4, 132.8}, {592.2, 244.7}}
+                                      Other, 0x1165a9400, {{301.4, 132.8}, {1323.4, 210.2}}
+                                        Other, 0x1165a97c0, {{301.6, 136.8}, {1157.2, 210.0}}
+                                          Button, 0x1165a88c0, {{301.6, 136.8}, {162.3, 257.0}}, label: 'Goosebumps, S3·E9'
+                                            Image, 0x1165a8500, {{361.5, 231.4}, {40.7, 28.8}}, identifier: 'film', label: 'Movie'
+                                            ActivityIndicator, 0x1165a8640, {{371.4, 236.3}, {20.9, 19.0}}, value: 1
+                                              ActivityIndicator, 0x1165a83c0, {{371.4, 236.3}, {20.9, 19.0}}, value: 1
+                                            StaticText, 0x1165a8280, {{312.5, 367.6}, {94.1, 13.6}}, label: 'Goosebumps'
+                                            StaticText, 0x1165aaa80, {{313.4, 386.5}, {34.3, 12.7}}, label: 'S3·E9'
+                                          Button, 0x1165aabc0, {{467.4, 129.0}, {162.3, 257.0}}, label: 'In Living Color, S1·E5'
+                                            Image, 0x1165a92c0, {{524.2, 227.8}, {40.2, 29.6}}, identifier: 'film', label: 'Movie'
+                                            ActivityIndicator, 0x1165a9180, {{534.0, 232.8}, {20.6, 19.4}}, value: 1
+                                              ActivityIndicator, 0x1165a9b80, {{534.0, 232.8}, {20.6, 19.4}}, value: 1
+                                            StaticText, 0x1165a9040, {{472.6, 362.9}, {100.8, 15.2}}, label: 'In Living Color'
+                                            StaticText, 0x1165a9a40, {{473.1, 381.9}, {32.1, 13.4}}, label: 'S1·E5'
+                                          Button, 0x1165a9cc0, {{632.1, 127.4}, {157.3, 260.0}}, label: 'Squid Game, S2·E1'
+                                            Image, 0x1165aa6c0, {{690.1, 223.1}, {40.2, 29.6}}, identifier: 'film', label: 'Movie'
+                                            ActivityIndicator, 0x1165a9e00, {{699.9, 228.2}, {20.6, 19.4}}, value: 1
+                                              ActivityIndicator, 0x1165aa080, {{699.9, 228.2}, {20.6, 19.4}}, value: 1
+                                            StaticText, 0x1165aa580, {{638.5, 358.3}, {85.8, 15.6}}, label: 'Squid Game'
+                                            StaticText, 0x1165a9f40, {{639.1, 377.3}, {31.7, 13.5}}, label: 'S2·E1'
+                                          Button, 0x1165aa440, {{798.0, 122.7}, {157.3, 260.0}}, label: 'Anaconda, 2025'
+                                            Image, 0x1165aa300, {{856.0, 218.5}, {40.2, 29.6}}, identifier: 'film', label: 'Movie'
+                                            ActivityIndicator, 0x1165aa1c0, {{865.8, 223.5}, {20.6, 19.4}}, value: 1
+                                              ActivityIndicator, 0x1165aad00, {{865.8, 223.5}, {20.6, 19.4}}, value: 1
+                                            StaticText, 0x1165aa940, {{804.5, 353.7}, {71.1, 16.0}}, label: 'Anaconda'
+                                            StaticText, 0x1165aae40, {{800.5, 379.6}, {29.9, 13.9}}, label: '2025'
+                                          Button, 0x1165aaf80, {{963.0, 127.3}, {153.7, 262.2}}, label: 'Peacemaker, S1·E1'
+                                            Image, 0x1165ab200, {{1019.7, 223.9}, {39.8, 30.1}}, identifier: 'film', label: 'Movie'
+                                            ActivityIndicator, 0x1165aa800, {{1029.5, 229.1}, {20.3, 19.7}}, value: 1
+                                              ActivityIndicator, 0x1165ab5c0, {{1029.5, 229.1}, {20.3, 19.7}}, value: 1
+                                            StaticText, 0x1165ab700, {{966.3, 358.3}, {86.9, 16.8}}, label: 'Peacemaker'
+                                            StaticText, 0x1165ab840, {{966.5, 377.3}, {29.9, 13.9}}, label: 'S1·E1'
+                                          Button, 0x1165a9540, {{1129.0, 125.0}, {153.7, 262.2}}, label: 'Hell on Wheels, S5·E12'
+                                            Image, 0x1165a8a00, {{1185.7, 221.5}, {39.8, 30.1}}, identifier: 'film', label: 'Movie'
+                                            ActivityIndicator, 0x1165a8780, {{1195.4, 226.7}, {20.3, 19.7}}, value: 1
+                                              ActivityIndicator, 0x1165a8dc0, {{1195.4, 226.7}, {20.3, 19.7}}, value: 1
+                                            StaticText, 0x1165a9680, {{1132.2, 356.0}, {104.9, 16.5}}, label: 'Hell on Wheels'
+                                            StaticText, 0x1165abac0, {{1132.5, 375.0}, {38.9, 13.8}}, label: 'S5·E12'
+                                          Button, 0x115c70640, {{1295.0, 122.7}, {153.7, 262.2}}, label: 'Hell on Wheels, S5·E13'
+                                            Image, 0x115c70a00, {{1351.7, 219.2}, {39.8, 30.1}}, identifier: 'film', label: 'Movie'
+                                            ActivityIndicator, 0x115c703c0, {{1361.4, 224.4}, {20.3, 19.7}}, value: 1
+                                              ActivityIndicator, 0x115c70500, {{1361.4, 224.4}, {20.3, 19.7}}, value: 1
+                                            StaticText, 0x115c70b40, {{1298.2, 353.7}, {104.9, 16.5}}, label: 'Hell on Wheels'
+                                            StaticText, 0x115c70f00, {{1298.5, 372.7}, {39.2, 13.8}}, label: 'S5·E13'
+                                    StaticText, 0x115c708c0, {{303.3, 436.8}, {82.7, 25.2}}, label: 'Next Up'
+                                    ScrollView, 0x115c70dc0, {{303.8, 475.2}, {582.9, 207.9}}
+                                      Other, 0x115c70c80, {{303.8, 475.2}, {2878.7, 176.0}}
+                                        Other, 0x115c71a40, {{303.9, 479.2}, {1268.8, 190.4}}
+                                          Button, 0x115c71040, {{300.0, 479.1}, {301.0, 206.6}}, label: 'Trespass, 1h 41m'
+                                            Image, 0x115c71680, {{430.7, 547.4}, {39.5, 30.5}}, identifier: 'play.rectangle', label: 'Slideshow'
+                                            ActivityIndicator, 0x115c717c0, {{440.4, 552.7}, {20.1, 19.9}}, value: 1
+                                              ActivityIndicator, 0x115c71400, {{440.4, 552.7}, {20.1, 19.9}}, value: 1
+                                            StaticText, 0x115c712c0, {{300.9, 653.7}, {63.4, 17.7}}, label: 'Trespass'
+                                            StaticText, 0x115c70140, {{301.0, 672.7}, {39.7, 14.1}}, label: '1h 41m'
+                                          Button, 0x115c71180, {{622.0, 477.5}, {301.0, 206.6}}, label: 'In Living Color, S1·E5'
+                                            Image, 0x115c70000, {{752.7, 545.9}, {39.5, 30.5}}, identifier: 'play.rectangle', label: 'Slideshow'
+                                            ActivityIndicator, 0x115c71540, {{760.3, 553.0}, {20.0, 20.0}}, value: 1
+                                              ActivityIndicator, 0x115c71900, {{760.3, 553.0}, {20.0, 20.0}}, value: 1
+                                            StaticText, 0x115c71b80, {{620.5, 653.5}, {100.3, 17.9}}, label: 'In Living Color'
+                                            StaticText, 0x115c71cc0, {{620.5, 672.5}, {31.7, 14.3}}, label: 'S1·E5'
+                                          Button, 0x115c70280, {{942.3, 478.6}, {300.1, 207.8}}, label: 'Are You Afraid of the Dark?, S1·E6'
+                                            Image, 0x115c70780, {{1072.7, 547.5}, {39.4, 30.6}}, identifier: 'play.rectangle', label: 'Slideshow'
+                                            ActivityIndicator, 0x1165b2e40, {{1082.3, 552.8}, {20.0, 20.0}}, value: 1
+                                              ActivityIndicator, 0x1165b3840, {{1082.3, 552.8}, {20.0, 20.0}}, value: 1
+                                            StaticText, 0x1165b21c0, {{942.5, 653.2}, {189.7, 17.9}}, label: 'Are You Afraid of the Dark?'
+                                            StaticText, 0x1165b1e00, {{942.5, 672.2}, {31.7, 14.3}}, label: 'S1·E6'
+                                          Button, 0x1165b2080, {{1264.3, 478.4}, {300.1, 207.8}}, label: 'Succession, S3·E7'
+                                            Image, 0x1165b2940, {{1394.7, 547.3}, {39.4, 30.6}}, identifier: 'play.rectangle', label: 'Slideshow'
+                                            ActivityIndicator, 0x1165b2300, {{1404.3, 552.6}, {20.0, 20.0}}, value: 1
+                                              ActivityIndicator, 0x1165b1f40, {{1404.3, 552.6}, {20.0, 20.0}}, value: 1
+                                            StaticText, 0x1165b2440, {{1264.5, 653.0}, {80.3, 17.9}}, label: 'Succession'
+                                            StaticText, 0x1165b3200, {{1264.5, 672.0}, {32.6, 15.0}}, label: 'S3·E7'
+                                    StaticText, 0x1165b2a80, {{298.0, 723.0}, {240.3, 26.3}}, label: 'Recently Added Movies'
+                                    ScrollView, 0x1165b2f80, {{298.0, 761.3}, {580.0, 272.3}}
+                                      Other, 0x1165b30c0, {{298.0, 761.3}, {1976.0, 272.3}}
+                                        Other, 0x1165b3d40, {{298.0, 765.3}, {1146.0, 264.3}}
+                                          Button, 0x1165b3340, {{298.0, 765.3}, {150.0, 264.3}}, label: 'Inglourious Basterds, 2009'
+                                            Image, 0x1165b3480, {{353.3, 862.7}, {39.3, 30.7}}, identifier: 'film', label: 'Movie'
+                                            ActivityIndicator, 0x1165b3ac0, {{363.0, 868.0}, {20.0, 20.0}}, value: 1
+                                              ActivityIndicator, 0x1165b26c0, {{363.0, 868.0}, {20.0, 20.0}}, value: 1
+                                            StaticText, 0x1165b3e80, {{298.0, 996.3}, {144.7, 18.0}}, label: 'Inglourious Basterds'
+                                            StaticText, 0x1165b3c00, {{298.0, 1015.3}, {30.0, 14.3}}, label: '2009'
+                                          Button, 0x1165b2800, {{464.0, 765.3}, {150.0, 264.3}}, label: 'Final Destination 3, 2006'
+                                            Image, 0x1165b35c0, {{519.3, 862.7}, {39.3, 30.7}}, identifier: 'film', label: 'Movie'
+                                            ActivityIndicator, 0x1165b2580, {{529.0, 868.0}, {20.0, 20.0}}, value: 1
+                                              ActivityIndicator, 0x1165b3700, {{529.0, 868.0}, {20.0, 20.0}}, value: 1
+                                            StaticText, 0x1165b3980, {{464.0, 996.3}, {130.3, 18.0}}, label: 'Final Destination 3'
+                                            StaticText, 0x1165b2d00, {{464.0, 1015.3}, {30.0, 14.3}}, label: '2006'
+                                          Button, 0x1165b2bc0, {{630.0, 765.3}, {150.0, 264.3}}, label: 'Final Destination 5, 2011'
+                                            Image, 0x11652f840, {{685.3, 862.7}, {39.3, 30.7}}, identifier: 'film', label: 'Movie'
+                                            ActivityIndicator, 0x11652fc00, {{695.0, 868.0}, {20.0, 20.0}}, value: 1
+                                              ActivityIndicator, 0x11652fe80, {{695.0, 868.0}, {20.0, 20.0}}, value: 1
+                                            StaticText, 0x11652fd40, {{630.0, 996.3}, {130.0, 18.0}}, label: 'Final Destination 5'
+                                            StaticText, 0x10af7a300, {{630.0, 1015.3}, {26.0, 14.3}}, label: '2011'
+                                          Button, 0x10af792c0, {{796.0, 765.3}, {150.0, 264.3}}, label: 'Sinners, 2025'
+                                            Image, 0x10af7a800, {{851.3, 862.7}, {39.3, 30.7}}, identifier: 'film', label: 'Movie'
+                                            ActivityIndicator, 0x10af78500, {{861.0, 868.0}, {20.0, 20.0}}, value: 1
+                                              ActivityIndicator, 0x10af7b340, {{861.0, 868.0}, {20.0, 20.0}}, value: 1
+                                            StaticText, 0x10af797c0, {{796.0, 996.3}, {53.0, 18.0}}, label: 'Sinners'
+                                            StaticText, 0x10af78a00, {{796.0, 1015.3}, {29.7, 14.3}}, label: '2025'
+                                          Button, 0x10af7b0c0, {{962.0, 765.3}, {150.0, 264.3}}, label: 'Resident Evil: Welcome to Raccoon City, 2021'
+                                            Image, 0x10af79b80, {{1017.3, 862.7}, {39.3, 30.7}}, identifier: 'film', label: 'Movie'
+                                            ActivityIndicator, 0x10af79540, {{1027.0, 868.0}, {20.0, 20.0}}, value: 1
+                                              ActivityIndicator, 0x10af7b980, {{1027.0, 868.0}, {20.0, 20.0}}, value: 1
+                                            StaticText, 0x10af7b200, {{962.0, 996.3}, {145.3, 18.0}}, label: 'Resident Evil: Welcome to Raccoon City'
+                                            StaticText, 0x10af7ae40, {{962.0, 1015.3}, {27.7, 14.3}}, label: '2021'
+                                          Button, 0x10af79180, {{1128.0, 765.3}, {150.0, 264.3}}, label: 'Return to Silent Hill, 2026'
+                                            Image, 0x10af7bac0, {{1183.3, 862.7}, {39.3, 30.7}}, identifier: 'film', label: 'Movie'
+                                            ActivityIndicator, 0x10af7aa80, {{1193.0, 868.0}, {20.0, 20.0}}, value: 1
+                                              ActivityIndicator, 0x10af7a940, {{1193.0, 868.0}, {20.0, 20.0}}, value: 1
+                                            StaticText, 0x10af78f00, {{1128.0, 996.3}, {135.0, 18.0}}, label: 'Return to Silent Hill'
+                                            StaticText, 0x10af79cc0, {{1128.0, 1015.3}, {30.0, 14.3}}, label: '2026'
+                                          Button, 0x10af79f40, {{1294.0, 765.3}, {150.0, 264.3}}, label: 'For a Few Dollars More, 1965'
+                                            Image, 0x10af7a6c0, {{1294.0, 765.3}, {150.0, 225.0}}
+                                            StaticText, 0x10af7af80, {{1294.0, 996.3}, {133.3, 18.0}}, label: 'For a Few Dollars More'
+                                            StaticText, 0x10af7abc0, {{1294.0, 1015.3}, {28.3, 14.3}}, label: '1965'
+                                    StaticText, 0x10af7a080, {{298.0, 1065.7}, {311.7, 26.3}}, label: 'Recently Added Family Movies'
+                                    ScrollView, 0x10af7b5c0, {{298.0, 1104.0}, {580.0, 272.3}}
+                                      Other, 0x10af7bc00, {{298.0, 1104.0}, {1976.0, 272.3}}
+                                        Other, 0x10af79900, {{298.0, 1108.0}, {1146.0, 264.3}}
+                                          Button, 0x10af79680, {{298.0, 1108.0}, {150.0, 264.3}}, label: 'Swapped, 2026'
+                                            Image, 0x10af79040, {{353.3, 1205.3}, {39.3, 30.7}}, identifier: 'film', label: 'Movie'
+                                            ActivityIndicator, 0x10af7a580, {{363.0, 1210.7}, {20.0, 20.0}}, value: 1
+                                              ActivityIndicator, 0x10af7b700, {{363.0, 1210.7}, {20.0, 20.0}}, value: 1
+                                            StaticText, 0x10af7be80, {{298.0, 1339.0}, {65.3, 18.0}}, label: 'Swapped'
+                                            StaticText, 0x10af78640, {{298.0, 1358.0}, {30.0, 14.3}}, label: '2026'
+                                          Button, 0x10af7b480, {{464.0, 1108.0}, {150.0, 264.3}}, label: 'Cloudy with a Chance of Meatballs, 2009'
+                                            Image, 0x10af79e00, {{519.3, 1205.3}, {39.3, 30.7}}, identifier: 'film', label: 'Movie'
+                                            ActivityIndicator, 0x10af79a40, {{529.0, 1210.7}, {20.0, 20.0}}, value: 1
+                                              ActivityIndicator, 0x10af7bd40, {{529.0, 1210.7}, {20.0, 20.0}}, value: 1
+                                            StaticText, 0x10af7a1c0, {{464.0, 1339.0}, {148.3, 18.0}}, label: 'Cloudy with a Chance of Meatballs'
+                                            StaticText, 0x10af7ad00, {{464.0, 1358.0}, {30.0, 14.3}}, label: '2009'
+                                          Button, 0x10af79400, {{630.0, 1108.0}, {150.0, 264.3}}, label: 'Crocodile Dundee II, 1988'
+                                            Image, 0x115c783c0, {{685.3, 1205.3}, {39.3, 30.7}}, identifier: 'film', label: 'Movie'
+                                            ActivityIndicator, 0x115c78500, {{695.0, 1210.7}, {20.0, 20.0}}, value: 1
+                                              ActivityIndicator, 0x115c78c80, {{695.0, 1210.7}, {20.0, 20.0}}, value: 1
+                                            StaticText, 0x115c78b40, {{630.0, 1339.0}, {137.7, 18.0}}, label: 'Crocodile Dundee II'
+                                            StaticText, 0x115c788c0, {{630.0, 1358.0}, {28.7, 14.3}}, label: '1988'
+                                          Button, 0x115c79040, {{796.0, 1108.0}, {150.0, 264.3}}, label: 'Crocodile Dundee, 1986'
+                                            Image, 0x115c78780, {{851.3, 1205.3}, {39.3, 30.7}}, identifier: 'film', label: 'Movie'
+                                            ActivityIndicator, 0x115c78280, {{861.0, 1210.7}, {20.0, 20.0}}, value: 1
+                                              ActivityIndicator, 0x115c78000, {{861.0, 1210.7}, {20.0, 20.0}}, value: 1
+                                            StaticText, 0x115c78dc0, {{796.0, 1339.0}, {125.7, 18.0}}, label: 'Crocodile Dundee'
+                                            StaticText, 0x115c79540, {{796.0, 1358.0}, {28.7, 14.3}}, label: '1986'
+                                          Button, 0x115c78640, {{962.0, 1108.0}, {150.0, 264.3}}, label: 'Jurassic World: Fallen Kingdom, 2018'
+                                            Image, 0x115c79400, {{1017.3, 1205.3}, {39.3, 30.7}}, identifier: 'film', label: 'Movie'
+                                            ActivityIndicator, 0x115c79680, {{1027.0, 1210.7}, {20.0, 20.0}}, value: 1
+                                              ActivityIndicator, 0x115c792c0, {{1027.0, 1210.7}, {20.0, 20.0}}, value: 1
+                                            StaticText, 0x115c79180, {{962.0, 1339.0}, {148.7, 18.0}}, label: 'Jurassic World: Fallen Kingdom'
+                                            StaticText, 0x115c78f00, {{962.0, 1358.0}, {28.3, 14.3}}, label: '2018'
+                                          Button, 0x115c78140, {{1128.0, 1108.0}, {150.0, 264.3}}, label: 'Jurassic World Dominion, 2022'
+                                            Image, 0x115c78a00, {{1128.0, 1108.0}, {150.0, 225.0}}
+                                            StaticText, 0x1165552c0, {{1128.0, 1339.0}, {140.0, 18.0}}, label: 'Jurassic World Dominion'
+                                            StaticText, 0x116555b80, {{1128.0, 1358.0}, {29.3, 14.3}}, label: '2022'
+                                          Button, 0x116556580, {{1294.0, 1108.0}, {150.0, 264.3}}, label: 'Jurassic World Rebirth, 2025'
+                                            Image, 0x116554280, {{1168.7, 1108.0}, {400.7, 225.0}}
+                                            StaticText, 0x116554780, {{1294.0, 1339.0}, {147.7, 18.0}}, label: 'Jurassic World Rebirth'
+                                            StaticText, 0x116554dc0, {{1294.0, 1358.0}, {29.7, 14.3}}, label: '2025'
+                                    StaticText, 0x116554140, {{298.0, 1408.4}, {307.7, 26.3}}, label: 'Recently Added Family Shows'
+                                    ScrollView, 0x1165543c0, {{298.0, 1446.7}, {580.0, 272.3}}
+                                      Other, 0x1165557c0, {{298.0, 1446.7}, {1146.0, 272.3}}
+                                        Other, 0x116556300, {{298.0, 1450.7}, {1146.0, 264.3}}
+                                          Button, 0x116555540, {{298.0, 1450.7}, {150.0, 264.3}}, label: 'Season 17, 2026'
+                                            Image, 0x116555040, {{353.3, 1548.0}, {39.3, 30.7}}, identifier: 'film', label: 'Movie'
+                                            ActivityIndicator, 0x116555180, {{363.0, 1553.3}, {20.0, 20.0}}, value: 1
+                                              ActivityIndicator, 0x116555400, {{363.0, 1553.3}, {20.0, 20.0}}, value: 1
+                                            StaticText, 0x116556080, {{298.0, 1681.7}, {71.3, 18.0}}, label: 'Season 17'
+                                            StaticText, 0x116555f40, {{298.0, 1700.7}, {30.0, 14.3}}, label: '2026'
+                                          Button, 0x116555e00, {{464.0, 1450.7}, {150.0, 264.3}}, label: 'Hailey's On It!, 2023'
+                                            Image, 0x116556940, {{464.0, 1450.7}, {150.0, 225.0}}
+                                            StaticText, 0x116555680, {{464.0, 1681.7}, {98.0, 18.0}}, label: 'Hailey's On It!'
+                                            StaticText, 0x116555900, {{464.0, 1700.7}, {29.7, 14.3}}, label: '2023'
+                                          Button, 0x116555a40, {{630.0, 1450.7}, {150.0, 264.3}}, label: 'Star Trek: Prodigy, 2021'
+                                            Image, 0x116556440, {{685.3, 1548.0}, {39.3, 30.7}}, identifier: 'film', label: 'Movie'
+                                            ActivityIndicator, 0x1165561c0, {{695.0, 1553.3}, {20.0, 20.0}}, value: 1
+                                              ActivityIndicator, 0x116556800, {{695.0, 1553.3}, {20.0, 20.0}}, value: 1
+                                            StaticText, 0x1165566c0, {{630.0, 1681.7}, {126.3, 18.0}}, label: 'Star Trek: Prodigy'
+                                            StaticText, 0x116555cc0, {{630.0, 1700.7}, {27.7, 14.3}}, label: '2021'
+                                          Button, 0x116556d00, {{796.0, 1450.7}, {150.0, 264.3}}, label: 'Are You Afraid of the Dark?, 1990'
+                                            Image, 0x116556f80, {{794.3, 1450.7}, {153.3, 225.0}}
+                                            StaticText, 0x116557200, {{796.0, 1681.7}, {149.3, 18.0}}, label: 'Are You Afraid of the Dark?'
+                                            StaticText, 0x116556e40, {{796.0, 1700.7}, {28.7, 14.3}}, label: '1990'
+                                          Button, 0x116557480, {{962.0, 1450.7}, {150.0, 264.3}}, label: 'Goosebumps, 1995'
+                                            Image, 0x1165570c0, {{1017.3, 1548.0}, {39.3, 30.7}}, identifier: 'film', label: 'Movie'
+                                            ActivityIndicator, 0x1165575c0, {{1027.0, 1553.3}, {20.0, 20.0}}, value: 1
+                                              ActivityIndicator, 0x116556a80, {{1027.0, 1553.3}, {20.0, 20.0}}, value: 1
+                                            StaticText, 0x116556bc0, {{962.0, 1681.7}, {93.3, 18.0}}, label: 'Goosebumps'
+                                            StaticText, 0x116557340, {{962.0, 1700.7}, {28.3, 14.3}}, label: '1995'
+                                          Button, 0x116557700, {{1128.0, 1450.7}, {150.0, 264.3}}, label: 'The Three Stooges, 1960'
+                                            Image, 0x116554f00, {{1128.0, 1450.7}, {150.0, 225.0}}
+                                            StaticText, 0x116554a00, {{1128.0, 1681.7}, {133.3, 18.0}}, label: 'The Three Stooges'
+                                            StaticText, 0x116554b40, {{1128.0, 1700.7}, {28.7, 14.3}}, label: '1960'
+                                          Button, 0x116554c80, {{1294.0, 1450.7}, {150.0, 264.3}}, label: 'Beetlejuice, 1989'
+                                            Image, 0x1165548c0, {{1294.0, 1450.7}, {150.0, 225.0}}
+                                            StaticText, 0x116554500, {{1294.0, 1681.7}, {77.7, 18.0}}, label: 'Beetlejuice'
+                                            StaticText, 0x116554000, {{1294.0, 1700.7}, {28.7, 14.3}}, label: '1989'
+                                    StaticText, 0x116554640, {{298.0, 1751.0}, {236.0, 26.3}}, label: 'Recently Added Shows'
+                                    ScrollView, 0x1165b7480, {{298.0, 1789.3}, {580.0, 272.3}}
+                                      Other, 0x1165b7340, {{298.0, 1789.3}, {1976.0, 272.3}}
+                                        Other, 0x1165b6a80, {{298.0, 1793.3}, {1146.0, 264.3}}
+                                          Button, 0x1165b6440, {{298.0, 1793.3}, {150.0, 264.3}}, label: 'Spartacus: House of Ashur, 2025'
+                                            Image, 0x1165b6800, {{298.0, 1793.3}, {150.0, 225.0}}
+                                            StaticText, 0x1165b66c0, {{298.0, 2024.3}, {137.7, 18.0}}, label: 'Spartacus: House of Ashur'
+                                            StaticText, 0x1165b6580, {{298.0, 2043.3}, {29.7, 14.3}}, label: '2025'
+                                          Button, 0x1165b5f40, {{464.0, 1793.3}, {150.0, 264.3}}, label: 'Season 6, 1989'
+                                            Image, 0x1165b6300, {{464.0, 1793.3}, {150.0, 225.0}}
+                                            StaticText, 0x1165b5e00, {{464.0, 2024.3}, {65.3, 18.0}}, label: 'Season 6'
+                                            StaticText, 0x1165b6080, {{464.0, 2043.3}, {28.7, 14.3}}, label: '1989'
+                                          Button, 0x1165b61c0, {{630.0, 1793.3}, {150.0, 264.3}}, label: 'Season 2, 2012'
+                                            Image, 0x1165b6940, {{630.0, 1793.3}, {150.0, 225.0}}
+                                            StaticText, 0x1165b6f80, {{630.0, 2024.3}, {64.7, 18.0}}, label: 'Season 2'
+                                            StaticText, 0x1165b70c0, {{630.0, 2043.3}, {27.7, 14.3}}, label: '2012'
+                                          Button, 0x1165b75c0, {{796.0, 1793.3}, {150.0, 264.3}}, label: 'Season 2, 2016'
+                                            Image, 0x1165b7840, {{796.0, 1793.3}, {150.0, 225.0}}
+                                            StaticText, 0x1165b7d40, {{796.0, 2024.3}, {64.7, 18.0}}, label: 'Season 2'
+                                            StaticText, 0x1165b7200, {{796.0, 2043.3}, {28.3, 14.3}}, label: '2016'
+                                          Button, 0x1165b7ac0, {{962.0, 1793.3}, {150.0, 264.3}}, label: 'Season 1, 2023'
+                                            Image, 0x1165b7980, {{962.0, 1793.3}, {150.0, 225.0}}
+                                            StaticText, 0x1165b7c00, {{962.0, 2024.3}, {62.7, 18.0}}, label: 'Season 1'
+                                            StaticText, 0x1165b7e80, {{962.0, 2043.3}, {29.7, 14.3}}, label: '2023'
+                                          Button, 0x1165b7700, {{1128.0, 1793.3}, {150.0, 264.3}}, label: 'Doctor Who, 2005'
+                                            Image, 0x1165b6bc0, {{1128.0, 1793.3}, {150.0, 225.0}}
+                                            StaticText, 0x1165b6e40, {{1128.0, 2024.3}, {84.0, 18.0}}, label: 'Doctor Who'
+                                            StaticText, 0x1165b6d00, {{1128.0, 2043.3}, {30.0, 14.3}}, label: '2005'
+                                          Button, 0x1165a4780, {{1294.0, 1793.3}, {150.0, 264.3}}, label: 'The Lord of the Rings: The Rings of Power, 2022'
+                                            Image, 0x1165a48c0, {{1294.0, 1793.3}, {150.0, 225.0}}
+                                            StaticText, 0x1165a4a00, {{1294.0, 2024.3}, {146.0, 18.0}}, label: 'The Lord of the Rings: The Rings of Power'
+                                            StaticText, 0x1165a4b40, {{1294.0, 2043.3}, {29.3, 14.3}}, label: '2022'
+                                  Other, 0x1165a4c80, {{923.0, 78.0}, {30.0, 300.0}}, label: 'Vertical scroll bar, 8 pages', value: 0%
+                                    Other, 0x1165a4dc0, {{950.0, 81.0}, {3.0, 60.0}}
+                                  Other, 0x1165a4f00, {{923.0, 78.0}, {30.0, 300.0}}, label: 'Vertical scroll bar, 8 pages', value: 0%
+                                    Other, 0x1165a5040, {{950.0, 81.0}, {3.0, 60.0}}
+                        Toolbar, 0x1165a5180, {{0.0, 0.0}, {956.0, 440.0}}, identifier: 'Toolbar', label: 'Toolbar'
+                          Other, 0x1165a52c0, {{0.0, 0.0}, {956.0, 440.0}}
+                    Toolbar, 0x1165a5400, {{0.0, 0.0}, {956.0, 440.0}}, identifier: 'Toolbar', label: 'Toolbar'
+                      Other, 0x1165a5900, {{0.0, 0.0}, {956.0, 440.0}}
+                        Other, 0x1165a5a40, {{0.0, 0.0}, {956.0, 440.0}}
+                          Other, 0x1165a5b80, {{0.0, 0.0}, {956.0, 440.0}}
+                            Other, 0x1165a5cc0, {{0.0, 0.0}, {0.0, 0.0}}
+                              Other, 0x1165a5e00, {{385.0, 372.0}, {440.0, 44.0}}
+                                Other, 0x1165a7e80, {{385.0, 372.0}, {440.0, 44.0}}
+                                  Other, 0x1165a75c0, {{385.0, 380.0}, {440.0, 28.0}}
+                                    SearchField, 0x1165a7840, {{385.0, 380.0}, {440.0, 28.0}}, label: 'Search Library', placeholderValue: 'Search Library'
+                                      Image, 0x1165a7980, {{397.0, 384.0}, {20.7, 19.3}}, identifier: 'magnifyingglass', label: 'Search'
+                Other, 0x1165a7ac0, {{0.0, 0.0}, {956.0, 440.0}}
+                  Other, 0x1165a7d40, {{0.0, 0.0}, {956.0, 440.0}}
+Path to element:
+ →Application, 0x115c1a6c0, pid: 2468, label: 'Gus'
+Query chain:
+ →Find: Application 'dev.ericslutz.gus'
+  Output: {
+    Application, 0x1165a7c00, pid: 2468, label: 'Gus'
+  }

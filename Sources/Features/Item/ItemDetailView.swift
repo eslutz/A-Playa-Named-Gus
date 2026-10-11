@@ -161,8 +161,9 @@ struct ItemDetailView: View {
                     }
                     .scrollTargetLayout()
                     .padding(sectionPadding)
+                    .frame(width: min(geometry.size.width, PageContentMetrics.maxWidth), alignment: .leading)
+                    .frame(width: geometry.size.width)
                 }
-                .frame(width: min(geometry.size.width, PageContentMetrics.maxWidth), alignment: .leading)
                 .frame(width: geometry.size.width)
             }
             .scrollPosition(id: navigationState.scrollBinding(for: "detail:" + ItemRef(item: item).id))

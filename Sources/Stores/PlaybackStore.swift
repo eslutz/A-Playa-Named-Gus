@@ -36,6 +36,7 @@ final class PlaybackStore {
     private let localProgress: OfflinePlaybackProgressStore
     private let progressWriterToken: UUID
     private var isLocalPlayback = false
+    private var playingDownload: OfflineDownloadRecord?
     private let nowPlaying = NowPlayingController()
     private let logger = Logger(category: .playback)
     private var reportContext: PlaybackReportContext?
@@ -234,6 +235,7 @@ final class PlaybackStore {
             await PlaybackAudioSession.activate(video: true)
             try Task.checkCancellation()
             guard generation == preparationGeneration else { return }
+            playingDownload = downloads?.record(for: item, serverID: session.server.id, userID: session.user.id)
             let localURL = downloads?.localFileURL(for: item, serverID: session.server.id, userID: session.user.id)
             guard ContentRatingGate.admitsStored(item) else {
                 throw GusError.server(String(localized: "This item is restricted.", comment: "Restricted playback"))
@@ -356,6 +358,9 @@ final class PlaybackStore {
     }
 
     private func teardown(reportStopped: Bool) {
+        // Automatic next-episode preparation is independent of the view's task.
+        // Invalidate its pending results even when its caller was not canceled.
+        preparationGeneration += 1
         lastReportTask?.cancel()
         let finalTicks = currentPositionTicks()
         let context = reportContext
@@ -368,6 +373,9 @@ final class PlaybackStore {
         player?.pause()
         nowPlaying.stop()
         player = nil
+        playingDownload = nil
+        nextUpItem = nil
+        isNextUpPromptVisible = false
         reportContext = nil
         state = .idle
         stereoPresentation = .native2D
@@ -384,13 +392,18 @@ final class PlaybackStore {
 
     private func installEndObserver(for playerItem: AVPlayerItem) {
         removeEndObserver()
+        let generation = preparationGeneration
+        let itemIdentity = ObjectIdentifier(playerItem)
         endObserver = NotificationCenter.default.addObserver(
             forName: AVPlayerItem.didPlayToEndTimeNotification,
             object: playerItem,
             queue: .main
         ) { [weak self] _ in
             MainActor.assumeIsolated {
-                self?.handlePlaybackEnded()
+                guard let self, let currentItem = self.player?.currentItem,
+                      self.preparationGeneration == generation,
+                      ObjectIdentifier(currentItem) == itemIdentity else { return }
+                self.handlePlaybackEnded()
             }
         }
         failedEndObserver = NotificationCenter.default.addObserver(
@@ -400,9 +413,12 @@ final class PlaybackStore {
         ) { [weak self] notification in
             let error = notification.userInfo?[AVPlayerItemFailedToPlayToEndTimeErrorKey] as? Error
             MainActor.assumeIsolated {
+                guard let self, let currentItem = self.player?.currentItem,
+                      self.preparationGeneration == generation,
+                      ObjectIdentifier(currentItem) == itemIdentity else { return }
                 let message = error.map { GusError(from: $0).localizedDescription }
                     ?? String(localized: "Playback stopped unexpectedly.", comment: "Generic playback failure message")
-                self?.state = .failed(message)
+                self.state = .failed(message)
             }
         }
     }
@@ -419,8 +435,14 @@ final class PlaybackStore {
     }
 
     private func handlePlaybackEnded() {
+        downloads?.deleteAfterCompletion(playingDownload)
+        playingDownload = nil
         if PlaybackPreferences.autoPlaysNextEpisode, nextUpItem != nil {
-            Task { await playNextUp() }
+            let generation = preparationGeneration
+            Task {
+                guard preparationGeneration == generation, state == .ready else { return }
+                await playNextUp()
+            }
         } else {
             didFinishPlayback = true
         }
@@ -569,8 +591,12 @@ final class PlaybackStore {
 
     private func loadNextUpIfNeeded() async {
         guard nextUpItem == nil, item.type == .episode, let seriesID = item.seriesID else { return }
+        let generation = preparationGeneration
+        let itemID = item.id
         do {
             let items = try await session.mediaProvider.nextUpItems(seriesID: seriesID, limit: 1)
+            guard !Task.isCancelled, generation == preparationGeneration,
+                  item.id == itemID, player != nil else { return }
             nextUpItem = ContentRatingGate.filter(items).first { $0.id != item.id }
         } catch {
             let gusError = GusError(from: error)

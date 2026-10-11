@@ -1,0 +1,235 @@
+Attributes: Application, 0x1144de1c0, pid: 2187, label: 'Gus'
+Element subtree:
+ →Application, 0x1144de1c0, pid: 2187, label: 'Gus'
+    Window (Main), 0x1144dea80, {{0.0, 0.0}, {440.0, 956.0}}
+      Other, 0x1144ddb80, {{0.0, 0.0}, {440.0, 956.0}}
+      Other, 0x1144de580, {{0.0, 0.0}, {440.0, 956.0}}
+        Other, 0x1144dda40, {{0.0, 0.0}, {440.0, 956.0}}
+          Other, 0x1144dd540, {{0.0, 0.0}, {440.0, 956.0}}
+            Other, 0x1144df840, {{0.0, 0.0}, {440.0, 956.0}}
+              Other, 0x1144dfd40, {{0.0, 0.0}, {440.0, 956.0}}
+                Other, 0x1144dfc00, {{0.0, 0.0}, {440.0, 956.0}}
+                  Other, 0x1144dee40, {{0.0, 0.0}, {440.0, 956.0}}
+                    Other, 0x1144de6c0, {{0.0, 0.0}, {440.0, 956.0}}
+                      Other, 0x1144dfe80, {{0.0, 0.0}, {440.0, 956.0}}
+                        Other, 0x1144dfac0, {{0.0, 0.0}, {440.0, 956.0}}
+                          Other, 0x1144e5040, {{0.0, 0.0}, {440.0, 956.0}}
+                            NavigationBar, 0x1144e4000, {{0.0, 62.0}, {440.0, 54.0}}, identifier: 'Downloads'
+                              Button, 0x1144e48c0, {{20.0, 62.0}, {44.0, 44.0}}, identifier: 'BackButton', label: 'Downloaded'
+                              StaticText, 0x1144e4c80, {{175.7, 73.7}, {88.3, 20.7}}, label: 'Downloads'
+                              Other, 0x1144e5b80, {{351.7, 66.0}, {64.3, 36.0}}
+                                Other, 0x1144e5a40, {{351.7, 66.0}, {64.3, 36.0}}
+                                  Button, 0x1144e4500, {{351.7, 66.0}, {64.3, 36.0}}, identifier: 'Downloads.select', label: 'Done'
+                            Other, 0x1144e57c0, {{0.0, 0.0}, {440.0, 956.0}}
+                              Other, 0x1144e4b40, {{0.0, 0.0}, {440.0, 956.0}}
+                                Other, 0x1144e43c0, {{0.0, 0.0}, {440.0, 956.0}}
+                                  Other, 0x1144e4780, {{0.0, 0.0}, {440.0, 956.0}}
+                                    CollectionView, 0x1144e4f00, {{0.0, 0.0}, {440.0, 956.0}}
+                                      Other, 0x1144e5900, {{-20.0, -1930.3}, {480.0, 2181.7}}
+                                      Cell, 0x1144e6080, {{20.0, -18.3}, {400.0, 52.0}}
+                                        Other, 0x1144e4140, {{20.0, -18.3}, {400.0, 52.0}}
+                                          Other, 0x1144e52c0, {{20.0, -18.3}, {400.0, 52.0}}
+                                        Other, 0x1144e4280, {{20.0, -18.3}, {400.0, 52.0}}
+                                          Other, 0x1144e4dc0, {{20.0, -18.3}, {400.0, 52.0}}
+                                            Other, 0x1144e5680, {{20.0, -18.3}, {400.0, 52.0}}
+                                              StaticText, 0x1144e5180, {{20.0, -18.3}, {400.0, 52.0}}, label: 'Storage Used, 3.28 GB'
+                                              StaticText, 0x1144e5540, {{40.0, -2.5}, {104.3, 20.3}}, label: 'Storage Used'
+                                      Other, 0x1144e4640, {{0.0, -0.0}, {440.0, 956.0}}
+                                        Other, 0x1144e4a00, {{0.0, -0.0}, {440.0, 156.0}}
+                                        Other, 0x1144e5e00, {{0.0, 823.0}, {440.0, 133.0}}
+                                      Other, 0x1144e5f40, {{0.0, -0.0}, {440.0, 956.0}}
+                                        Other, 0x1144e5cc0, {{0.0, -0.0}, {440.0, 156.0}}
+                                        Other, 0x1144e6300, {{0.0, 823.0}, {440.0, 133.0}}
+                                      Cell, 0x1144e5400, {{20.0, 33.7}, {400.0, 52.0}}
+                                        Other, 0x1144e61c0, {{20.0, 33.7}, {400.0, 52.0}}
+                                          Other, 0x1144da440, {{20.0, 33.7}, {400.0, 52.0}}
+                                        Other, 0x1144d9900, {{20.0, 33.7}, {400.0, 52.0}}
+                                          Other, 0x1144d9540, {{20.0, 33.7}, {400.0, 52.0}}
+                                            Other, 0x1144d9680, {{20.0, 33.7}, {400.0, 52.0}}
+                                              StaticText, 0x1144d97c0, {{20.0, 33.7}, {400.0, 52.0}}, label: 'Soft Cap, 21.47 GB'
+                                              StaticText, 0x1144d9400, {{40.0, 49.5}, {66.7, 20.3}}, label: 'Soft Cap'
+                                      Other, 0x1144db840, {{40.0, 32.7}, {360.0, 1.0}}
+                                      Cell, 0x1144d83c0, {{20.0, 85.7}, {400.0, 52.0}}
+                                        Other, 0x1144da1c0, {{20.0, 85.7}, {400.0, 52.0}}
+                                          Other, 0x1144d92c0, {{20.0, 85.7}, {400.0, 52.0}}
+                                        Other, 0x1144da940, {{20.0, 85.7}, {400.0, 52.0}}
+                                          Other, 0x1144dad00, {{20.0, 85.7}, {400.0, 52.0}}
+                                            Other, 0x1144daf80, {{20.0, 85.7}, {400.0, 52.0}}
+                                              StaticText, 0x1144da6c0, {{20.0, 85.7}, {400.0, 52.0}}, label: 'Active Downloads, 0'
+                                              StaticText, 0x1144dae40, {{40.0, 101.5}, {136.0, 20.3}}, label: 'Active Downloads'
+                                      Other, 0x1144da580, {{40.0, 84.7}, {360.0, 1.0}}
+                                      Cell, 0x1144dbd40, {{20.0, 137.7}, {400.0, 52.0}}
+                                        Other, 0x1144da080, {{20.0, 137.7}, {400.0, 52.0}}
+                                          Other, 0x1144da300, {{20.0, 137.7}, {400.0, 52.0}}
+                                        Other, 0x1144db200, {{20.0, 137.7}, {400.0, 52.0}}
+                                          Other, 0x1144db980, {{20.0, 137.7}, {400.0, 52.0}}
+                                            Other, 0x1144d9e00, {{20.0, 137.7}, {400.0, 52.0}}
+                                              StaticText, 0x1144db5c0, {{20.0, 137.7}, {400.0, 52.0}}, label: 'Paused Downloads, 0'
+                                              StaticText, 0x1144da800, {{40.0, 153.5}, {145.0, 20.3}}, label: 'Paused Downloads'
+                                      Other, 0x1144dbac0, {{40.0, 136.7}, {360.0, 1.0}}
+                                      Cell, 0x1144dbc00, {{20.0, 189.7}, {400.0, 61.7}}
+                                        Other, 0x1144db0c0, {{20.0, 189.7}, {400.0, 61.7}}
+                                        Other, 0x1144daa80, {{20.0, 189.7}, {400.0, 61.7}}
+                                          Other, 0x1144dabc0, {{20.0, 189.7}, {400.0, 61.7}}
+                                            Other, 0x1144dbe80, {{20.0, 189.7}, {400.0, 61.7}}
+                                              StaticText, 0x1144db700, {{20.0, 189.7}, {400.0, 61.7}}, label: 'Downloads use system background transfers. Avoid force-quitting Gus while downloading. Saved media stays on this device and is excluded from backup.'
+                                      Other, 0x1144db340, {{-20.0, 251.3}, {480.0, 179.3}}
+                                      Cell, 0x1144d9cc0, {{20.0, 269.0}, {400.0, 52.0}}
+                                        Other, 0x1144d8140, {{20.0, 269.0}, {400.0, 52.0}}
+                                          Other, 0x1144d9a40, {{20.0, 269.0}, {400.0, 52.0}}
+                                        Other, 0x1144d8f00, {{20.0, 269.0}, {400.0, 52.0}}
+                                          Other, 0x1144d9040, {{20.0, 269.0}, {400.0, 52.0}}
+                                            Other, 0x1144d9f40, {{20.0, 269.0}, {400.0, 52.0}}
+                                              Switch, 0x1144d9180, {{20.0, 269.0}, {400.0, 52.0}}, identifier: 'Downloads.deleteFinished', label: 'Delete After Finishing', value: 0
+                                                StaticText, 0x1144d88c0, {{40.0, 284.8}, {163.0, 20.3}}, label: 'Delete After Finishing'
+                                                Switch, 0x1144db480, {{339.0, 281.0}, {63.0, 28.0}}, value: 0
+                                      Cell, 0x1144d8dc0, {{20.0, 321.0}, {400.0, 109.7}}
+                                        Other, 0x1144d8b40, {{20.0, 321.0}, {400.0, 109.7}}
+                                        Other, 0x1144d8a00, {{20.0, 321.0}, {400.0, 109.7}}
+                                          Other, 0x1144d8640, {{20.0, 321.0}, {400.0, 109.7}}
+                                            Other, 0x1144d8780, {{20.0, 321.0}, {400.0, 109.7}}
+                                              StaticText, 0x1144d8c80, {{20.0, 321.0}, {400.0, 109.7}}, label: 'Automatically remove finished downloads from this device without asking. Video and audio are removed after playback ends; books are removed when you close the reader at the end. Repeated audio is kept until playback stops. Books opened in other apps are not removed automatically.'
+                                      Other, 0x1144d9b80, {{-20.0, 430.7}, {480.0, 139.0}}
+                                      Cell, 0x1144d8500, {{20.0, 448.0}, {400.0, 52.0}}
+                                        Other, 0x1144d8280, {{20.0, 448.0}, {400.0, 52.0}}
+                                          Other, 0x10bfe4a00, {{20.0, 448.0}, {400.0, 52.0}}
+                                        Other, 0x10bfe4f00, {{20.0, 448.0}, {400.0, 52.0}}
+                                          Other, 0x10bfe4780, {{20.0, 448.0}, {400.0, 52.0}}
+                                            Other, 0x10bfe5040, {{20.0, 448.0}, {400.0, 52.0}}
+                                              Button, 0x10bfe5540, {{20.0, 448.0}, {400.0, 52.0}}, label: 'Select All'
+                                      Cell, 0x10bfe5400, {{20.0, 500.0}, {400.0, 52.0}}
+                                        Other, 0x10bfe5680, {{20.0, 500.0}, {400.0, 52.0}}
+                                          Other, 0x10bfe4dc0, {{20.0, 500.0}, {400.0, 52.0}}
+                                        Other, 0x10bfe52c0, {{20.0, 500.0}, {400.0, 52.0}}
+                                          Other, 0x10bfe4000, {{20.0, 500.0}, {400.0, 52.0}}
+                                            Other, 0x10bfe4640, {{20.0, 500.0}, {400.0, 52.0}}
+                                              Button, 0x10bfe4b40, {{20.0, 500.0}, {400.0, 52.0}}, identifier: 'Downloads.deleteSelected', label: 'Delete Selected (1)'
+                                      Other, 0x10bfe5180, {{40.0, 499.0}, {360.0, 1.0}}
+                                      Other, 0x10bfe4500, {{-20.0, 569.7}, {480.0, 214.0}}
+                                      Cell, 0x10bfe4c80, {{20.0, 569.7}, {400.0, 40.3}}
+                                        Other, 0x10bfe48c0, {{20.0, 569.7}, {400.0, 40.3}}
+                                        Other, 0x10bfe4280, {{20.0, 569.7}, {400.0, 40.3}}
+                                          Other, 0x10bfe4140, {{20.0, 569.7}, {400.0, 40.3}}
+                                            Other, 0x10bfe43c0, {{20.0, 569.7}, {400.0, 40.3}}
+                                              StaticText, 0x1089e4f00, {{20.0, 569.7}, {400.0, 40.3}}, label: 'Downloaded Media'
+                                      Cell, 0x1089e6d00, {{20.0, 610.0}, {400.0, 78.0}}
+                                        Other, 0x114842e40, {{20.0, 610.0}, {400.0, 78.0}}
+                                          Other, 0x114843200, {{20.0, 610.0}, {400.0, 78.0}}
+                                        Other, 0x114842bc0, {{20.0, 610.0}, {400.0, 78.0}}
+                                          Other, 0x114843ac0, {{20.0, 610.0}, {400.0, 78.0}}
+                                            Other, 0x114842580, {{20.0, 610.0}, {400.0, 78.0}}
+                                              Button, 0x1148426c0, {{40.0, 627.0}, {44.0, 44.0}}, identifier: 'circle', label: 'Select The Faculty', value: Not Selected
+                                              Image, 0x1148430c0, {{92.0, 622.0}, {36.0, 54.0}}
+                                              StaticText, 0x114843480, {{136.0, 630.7}, {88.3, 20.3}}, label: 'The Faculty'
+                                              Button, 0x114842d00, {{381.0, 638.3}, {19.0, 21.3}}, identifier: 'trash', label: 'Delete The Faculty'
+                                              StaticText, 0x114842800, {{136.0, 653.0}, {42.7, 14.3}}, label: '1.74 GB'
+                                      Cell, 0x114843c00, {{20.0, 688.0}, {400.0, 78.0}}
+                                        Other, 0x114843e80, {{20.0, 688.0}, {400.0, 78.0}}
+                                          Other, 0x114843700, {{20.0, 688.0}, {400.0, 78.0}}
+                                        Other, 0x114843340, {{20.0, 688.0}, {400.0, 78.0}}
+                                          Other, 0x114843840, {{20.0, 688.0}, {400.0, 78.0}}
+                                            Other, 0x114842f80, {{20.0, 688.0}, {400.0, 78.0}}
+                                              Button, 0x114843d40, {{40.0, 705.0}, {44.0, 44.0}}, identifier: 'checkmark.circle.fill', label: 'Select Idle Hands', value: Selected, Selected
+                                              Image, 0x1148435c0, {{92.0, 700.0}, {36.0, 54.0}}
+                                              StaticText, 0x114842a80, {{136.0, 708.7}, {81.0, 20.3}}, label: 'Idle Hands'
+                                              Button, 0x114843980, {{381.0, 716.3}, {19.0, 21.3}}, identifier: 'trash', label: 'Delete Idle Hands'
+                                              StaticText, 0x114842940, {{136.0, 731.0}, {44.0, 14.3}}, label: '1.54 GB'
+                                      Other, 0x1144e35c0, {{136.0, 687.0}, {264.0, 1.0}}
+                                      Other, 0x1144e2a80, {{-20.0, 783.3}, {480.0, 2001.7}}
+                                      Cell, 0x1144e2580, {{20.0, 801.0}, {400.0, 52.0}}
+                                        Other, 0x1144e3ac0, {{20.0, 801.0}, {400.0, 52.0}}
+                                          Other, 0x1144e2bc0, {{20.0, 801.0}, {400.0, 52.0}}
+                                        Other, 0x1144e26c0, {{20.0, 801.0}, {400.0, 52.0}}
+                                          Other, 0x1144e3980, {{20.0, 801.0}, {400.0, 52.0}}
+                                            Other, 0x1144e1e00, {{20.0, 801.0}, {400.0, 52.0}}
+                                              Button, 0x1144e3480, {{20.0, 801.0}, {400.0, 52.0}}, identifier: 'Downloads.deleteAll', label: 'Delete All Downloads'
+                                      Other, 0x1144e30c0, {{407.0, 116.0}, {30.0, 757.0}}, label: 'Vertical scroll bar, 2 pages', value: 100%
+                                        Other, 0x1144e3700, {{434.0, 211.7}, {3.0, 658.3}}
+                                      Other, 0x1144e1680, {{407.0, 116.0}, {30.0, 757.0}}, label: 'Vertical scroll bar, 2 pages', value: 100%
+                                        Other, 0x1144e3d40, {{434.0, 211.7}, {3.0, 658.3}}
+                            Toolbar, 0x1144e2940, {{0.0, 0.0}, {440.0, 956.0}}, identifier: 'Toolbar', label: 'Toolbar'
+                              Other, 0x1144e3840, {{0.0, 0.0}, {440.0, 956.0}}
+                Other, 0x1144e3340, {{0.0, 0.0}, {440.0, 956.0}}
+                  Other, 0x1144e2080, {{0.0, 873.0}, {440.0, 83.0}}
+                    Other, 0x1144e1cc0, {{0.0, 0.0}, {440.0, 956.0}}
+                      TabBar, 0x1144e2e40, {{0.0, 873.0}, {440.0, 83.0}}, label: 'Tab Bar'
+                        Other, 0x1144e1b80, {{21.0, 873.0}, {398.0, 62.0}}
+                          Other, 0x1144e2300, {{21.0, 873.0}, {114.8, 54.0}}
+                          Other, 0x1144e1900, {{21.0, 873.0}, {398.0, 62.0}}
+                            Button, 0x1144e3c00, {{25.0, 877.0}, {90.4, 54.0}}, identifier: 'house', label: 'Home'
+                              Image, 0x1144e2d00, {{53.7, 883.0}, {33.3, 28.0}}, identifier: 'house.fill', label: 'home'
+                            Button, 0x1144e1540, {{93.4, 877.0}, {114.8, 54.0}}, identifier: 'arrow.down.circle', label: 'Downloaded', Selected
+                              Image, 0x1144e1f40, {{137.0, 883.3}, {27.3, 27.3}}, identifier: 'arrow.down.circle.fill', label: 'Arrow Down Circle'
+                            Button, 0x1144e2f80, {{186.2, 877.0}, {92.1, 54.0}}, identifier: 'rectangle.stack', label: 'Libraries'
+                              Image, 0x1144e1a40, {{217.2, 882.0}, {30.0, 31.3}}, identifier: 'rectangle.stack.fill', label: 'Album'
+                            Button, 0x1144e17c0, {{256.3, 877.0}, {90.4, 54.0}}, identifier: 'film', label: 'Movies'
+                              Image, 0x1144e2440, {{284.9, 884.3}, {33.0, 25.0}}, identifier: 'film.fill', label: 'movie'
+                            Button, 0x1144e3e80, {{324.6, 877.0}, {90.4, 54.0}}, identifier: 'ellipsis', label: 'More'
+                              Image, 0x1144e3200, {{357.3, 892.7}, {25.0, 8.7}}, identifier: 'ellipsis', label: 'More'
+                          Other, 0x1144e2800, {{21.0, 873.0}, {398.0, 62.0}}
+                          Other, 0x1144e1400, {{93.4, 877.0}, {114.8, 54.0}}
+                            Other, 0x1144e21c0, {{93.4, 877.0}, {114.7, 54.0}}
+                              Other, 0x10bf75180, {{93.4, 877.0}, {114.7, 54.0}}
+                              Other, 0x10bf74dc0, {{93.4, 877.0}, {114.7, 54.0}}
+                                Other, 0x10bf75680, {{93.4, 877.0}, {114.7, 54.0}}
+                                  Other, 0x10bf74b40, {{93.4, 877.0}, {114.7, 54.0}}
+                                    Other, 0x10bf75040, {{93.4, 877.0}, {114.7, 54.0}}
+                                  Other, 0x10bf75900, {{93.4, 877.0}, {114.7, 54.0}}
+                                Other, 0x10bf743c0, {{93.4, 877.0}, {114.7, 54.0}}
+                    Other, 0x10bf75f40, {{0.0, 873.0}, {440.0, 83.0}}
+                      Other, 0x10bf75e00, {{0.0, 873.0}, {440.0, 83.0}}
+                        Other, 0x10bf75a40, {{0.0, 873.0}, {440.0, 83.0}}
+                          Other, 0x10bf761c0, {{0.0, 873.0}, {440.0, 83.0}}
+                            Other, 0x10bf74c80, {{0.0, 873.0}, {440.0, 83.0}}
+                              Other, 0x10bf74780, {{0.0, 873.0}, {440.0, 83.0}}
+                          Other, 0x10bf74280, {{0.0, 873.0}, {440.0, 83.0}}
+                            Other, 0x10bf76080, {{0.0, 873.0}, {440.0, 83.0}}
+      Other, 0x10bf74f00, {{0.0, 0.0}, {440.0, 956.0}}
+        Other, 0x10bf75cc0, {{0.0, 0.0}, {440.0, 956.0}}
+        Other, 0x10bf75400, {{0.0, 0.0}, {440.0, 956.0}}
+        Alert, 0x10bf757c0, {{60.0, 378.0}, {320.0, 228.0}}, label: 'Delete Downloads?'
+          Other, 0x10bf74a00, {{60.0, 378.0}, {320.0, 228.0}}
+            Other, 0x10bf74640, {{60.0, 378.0}, {320.0, 228.0}}
+              Other, 0x10bf74140, {{60.0, 378.0}, {320.0, 228.0}}
+              Other, 0x10bf748c0, {{60.0, 378.0}, {320.0, 228.0}}
+                ScrollView, 0x10bf75540, {{60.0, 378.0}, {320.0, 92.0}}
+                  Other, 0x10bf75b80, {{60.0, 378.0}, {320.0, 92.0}}
+                    StaticText, 0x10bf74500, {{90.0, 400.0}, {260.0, 20.3}}, label: 'Delete Downloads?'
+                    StaticText, 0x10bf752c0, {{90.0, 427.7}, {260.0, 38.0}}, label: 'Remove Idle Hands from this device? The server copy will remain available.'
+                  Other, 0x10bf74000, {{60.0, 468.0}, {320.0, 2.0}}
+                  Other, 0x10bfb4000, {{347.0, 378.0}, {30.0, 92.0}}, label: 'Vertical scroll bar, 2 pages', value: 0%
+                    Other, 0x10bfb4140, {{374.0, 339.0}, {3.0, 36.0}}
+                  Other, 0x10bfb4280, {{60.0, 437.0}, {320.0, 30.0}}, label: 'Horizontal scroll bar, 1 page', value: 0%
+                    Other, 0x10bfb43c0, {{21.0, 464.0}, {36.0, 3.0}}
+                  Other, 0x10bfb4500, {{347.0, 378.0}, {30.0, 92.0}}, label: 'Vertical scroll bar, 2 pages', value: 0%
+                    Other, 0x10bfb4640, {{374.0, 339.0}, {3.0, 36.0}}
+                  Other, 0x10bfb4780, {{60.0, 437.0}, {320.0, 30.0}}, label: 'Horizontal scroll bar, 1 page', value: 0%
+                    Other, 0x10bfb48c0, {{21.0, 464.0}, {36.0, 3.0}}
+                ScrollView, 0x10bfb4a00, {{60.0, 470.0}, {320.0, 136.0}}
+                  Other, 0x10bfb4b40, {{60.0, 470.0}, {320.0, 136.0}}
+                    Other, 0x10bfb4c80, {{76.0, 486.0}, {288.0, 104.0}}
+                      Button, 0x10bfb4dc0, {{76.0, 486.0}, {288.0, 48.0}}, label: 'Delete Download'
+                      Button, 0x10bfb4f00, {{76.0, 542.0}, {288.0, 48.0}}, label: 'Cancel'
+                  Other, 0x10bfb5040, {{347.0, 470.0}, {30.0, 136.0}}, label: 'Vertical scroll bar, 1 page', value: 0%
+                    Other, 0x10bfb5180, {{374.0, 560.0}, {3.0, 7.0}}
+                  Other, 0x10bfb52c0, {{60.0, 573.0}, {320.0, 30.0}}, label: 'Horizontal scroll bar, 1 page', value: 0%
+                    Other, 0x10bfb5400, {{150.0, 600.0}, {7.0, 3.0}}
+                  Other, 0x10bfb5540, {{347.0, 470.0}, {30.0, 136.0}}, label: 'Vertical scroll bar, 1 page', value: 0%
+                    Other, 0x10bfb5680, {{374.0, 560.0}, {3.0, 7.0}}
+                  Other, 0x10bfb57c0, {{60.0, 573.0}, {320.0, 30.0}}, label: 'Horizontal scroll bar, 1 page', value: 0%
+                    Other, 0x10bfb5900, {{150.0, 600.0}, {7.0, 3.0}}
+          Other, 0x10bfb5a40, {{60.0, 378.0}, {320.0, 228.0}}
+            Other, 0x10bfb5b80, {{60.0, 378.0}, {320.0, 228.0}}
+              Other, 0x10bfb5cc0, {{60.0, 378.0}, {320.0, 228.0}}
+                Other, 0x10bfb5e00, {{60.0, 378.0}, {320.0, 228.0}}
+                  Other, 0x10bfb5f40, {{60.0, 378.0}, {320.0, 228.0}}
+                    Other, 0x10bfb6080, {{60.0, 378.0}, {440.0, 956.0}}
+                Other, 0x10bfb61c0, {{60.0, 378.0}, {320.0, 228.0}}
+                  Other, 0x10bfb6300, {{60.0, 378.0}, {440.0, 956.0}}
+Path to element:
+ →Application, 0x1144de1c0, pid: 2187, label: 'Gus'
+Query chain:
+ →Find: Application 'dev.ericslutz.gus'
+  Output: {
+    Application, 0x10bfb6440, pid: 2187, label: 'Gus'
+  }

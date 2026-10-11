@@ -48,7 +48,7 @@ enum JellyfinClientFactory {
             url: url,
             accessToken: accessToken,
             client: DeviceIdentity.clientName,
-            deviceName: DeviceIdentity.deviceName,
+            deviceName: DeviceIdentity.authorizationDeviceName(DeviceIdentity.deviceName),
             deviceID: DeviceIdentity.deviceID,
             version: DeviceIdentity.appVersion
         )

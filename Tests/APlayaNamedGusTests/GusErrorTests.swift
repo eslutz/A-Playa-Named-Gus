@@ -121,4 +121,18 @@ struct GusErrorTests {
             Issue.record("Expected .unknown for unrecognized error type")
         }
     }
+
+    @MainActor
+    @Test("sign-in preserves server and transport failures")
+    func signInFailureClassification() {
+        for status in [400, 404, 500, 503] {
+            let error = AppModel.signInError(from: APIError.unacceptableStatusCode(status))
+            #expect(error as? GusError == GusError.fromHTTPStatusCode(status))
+        }
+        #expect(AppModel.signInError(from: URLError(.timedOut)) as? GusError == .timeout)
+        #expect(AppModel.signInError(from: CancellationError()) as? GusError == .cancelled)
+        for status in [401, 403] {
+            #expect(AppModel.signInError(from: APIError.unacceptableStatusCode(status)) is AppModel.ConnectError)
+        }
+    }
 }

@@ -111,6 +111,9 @@ extension View {
         #else
             searchable(text: text, isPresented: isPresented, prompt: prompt)
                 .searchFocused(isFocused)
+            #if os(iOS)
+                .modifier(CompactHeightSearchPlacement())
+            #endif
         #endif
     }
 
@@ -184,3 +187,35 @@ enum PosterGrid {
         #endif
     }
 }
+
+/// Keep icon actions compact while allowing larger spatial and television controls.
+enum DetailActionMetrics {
+    static var maximumRowWidth: CGFloat {
+        #if os(macOS)
+            return 280
+        #elseif os(tvOS)
+            return 440
+        #elseif os(visionOS)
+            return 360
+        #else
+            return 320
+        #endif
+    }
+}
+
+#if os(iOS)
+    /// Keep search out of short landscape content while retaining native search behavior.
+    private struct CompactHeightSearchPlacement: ViewModifier {
+        @Environment(\.verticalSizeClass) private var heightClass
+
+        func body(content: Content) -> some View {
+            if #available(iOS 26.0, *), heightClass == .compact {
+                content.toolbar {
+                    DefaultToolbarItem(kind: .search, placement: .topBarTrailing)
+                }
+            } else {
+                content
+            }
+        }
+    }
+#endif

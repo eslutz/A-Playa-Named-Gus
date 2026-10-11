@@ -1,0 +1,6 @@
+Running SwiftFormat...
+(lint mode - no files will be changed.)
+Reading config file at /Users/ericslutz/Developer/Code/Side Projects/A Playa Named Gus/Gus/.swiftformat
+warning: Failed to write cache file at /Users/ericslutz/Library/Caches/com.charcoaldesign.swiftformat/swiftformat.cache.
+SwiftFormat completed in 2.46s.
+0/193 files require formatting.

@@ -1,0 +1,105 @@
+{
+  "date": "2026-10-11",
+  "physicalRAMBytes": 17179869184,
+  "swapBeforeMB": 34532.19,
+  "swapAfterMB": 5789.44,
+  "causeObserved": {
+    "idleXcodeBuildServiceFootprintsGB": [
+      22,
+      22,
+      21
+    ]
+  },
+  "actions": [
+    "Canceled own builds and tests",
+    "Shut down Gus Duo and EPUB simulators",
+    "Terminated three oversized idle Xcode UI build services",
+    "Terminated idle Device Hub frontend after graceful termination was ignored"
+  ],
+  "preserved": [
+    "Active unrelated command-line build and its separate service",
+    "Active unrelated iPhone simulator",
+    "Source files and build caches"
+  ],
+  "followup": "Resume Gus tests serially with two build jobs; avoid simultaneous Xcode UI builds.",
+  "recurrence": {
+    "idleXcode27ServiceFootprintMB": 7032,
+    "action": "Suspend idle Xcode27.0 UI PID51923 using SIGSTOP; terminate oversized support servicePID19498",
+    "reversibleResume": "SIGCONT to the paused UI process; native quit/save requires unlocked macOS",
+    "preserved": "Active command-line build service and Xcode27.1"
+  },
+  "secondRecurrence": {
+    "measuredSwapMB": 7384.38,
+    "pausedParents": [
+      {
+        "pid": 157,
+        "role": "Xcode 27.1 RC UI"
+      },
+      {
+        "pid": 1806,
+        "role": "Xcode 27.0 background service"
+      },
+      {
+        "pid": 51923,
+        "role": "Xcode 27.0 UI"
+      }
+    ],
+    "action": "Temporarily suspend parent processes to prevent automatic service recreation; terminate their oversized build-service children",
+    "sampleObservation": "RC build service held 4.2 GB while computing a target dependency graph; no specific project or internal cause established",
+    "resume": "SIGCONT each surviving paused parent, then save and quit normally through native UI when macOS is unlocked",
+    "preserved": "Unrelated active command-line build and simulator; all documents and caches"
+  },
+  "currentMitigation": {
+    "parentProcessesResumed": [
+      157,
+      1806,
+      51923
+    ],
+    "pausedIdleIndexServices": [
+      40509,
+      40767,
+      40787
+    ],
+    "reason": "Suspending parent Xcode windows blocked CLI project reads in NSFileCoordinator; resuming them released the lock. Idle support services are paused separately to stop indexing growth.",
+    "activeCLIServicePreserved": 40902,
+    "reversibleResume": "SIGCONT the surviving idle services before native quit/save or further UI indexing",
+    "nativeWindowCleanupBlockedByLockedMac": true
+  },
+  "latestDuringSerialValidation": {
+    "swapUsedMB": 9789.75,
+    "idleIndexServicesRemainPaused": true,
+    "ownBuildConcurrency": 2,
+    "simulatorBuildArchitectures": [
+      "arm64"
+    ],
+    "physicalPhoneAutomation": false,
+    "measuredAt": "2026-10-11 19:30 local",
+    "loadAverage": [
+      6.7,
+      17.09,
+      41.99
+    ],
+    "cpuIdlePercent": 63.63,
+    "physicalUnusedMB": 214,
+    "compressedMemoryMB": 5005,
+    "memoryPressureReportedFreePercent": 37
+  },
+  "normalWorkspaceCleanup": {
+    "closedViaXcodeAPI": "workspace-cpYxOubmCb",
+    "remainingNativeWindow": "windowtab-Tr3jUVfuvl",
+    "remainingWindowCloseStatus": "API reports no matching workspace; native close requires unlocked Mac",
+    "documentsDiscarded": false
+  },
+  "latestAfterTestCleanup": {
+    "measuredAt": "2026-10-11 19:39 local",
+    "swapUsedMB": 8384.81,
+    "memoryPressureReportedFreePercent": 40,
+    "cpuIdlePercent": 76.3,
+    "oneSecondSwapinsPages": 12,
+    "oneSecondSwapoutsPages": 0,
+    "ownEPUBSimulatorStopped": true,
+    "ownDemoServerStopped": true,
+    "idleIndexServicesRemainPaused": true,
+    "nativeCleanupBlockedByLockedMac": true
+  }
+}

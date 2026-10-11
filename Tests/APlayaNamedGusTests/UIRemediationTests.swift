@@ -1,3 +1,4 @@
+import AVFoundation
 import Foundation
 @testable import Gus
 import JellyfinAPI
@@ -309,6 +310,58 @@ struct UIRemediationTests {
         #expect(store.player == nil && store.state != .ready)
     }
 
+    @Test("video teardown rejects late preparation without canceling its caller")
+    func tornDownVideoPreparation() async {
+        let p = provider(), delayed = PendingResolution()
+        p.playbackHandler = { try await delayed.value() }
+        let store = PlaybackStore(item: MediaItem(id: "video", type: .movie), session: session(p), playbackRefresh: PlaybackRefreshStore())
+        let task = Task { await store.prepare() }
+        await waitFor { delayed.isWaiting }
+        store.teardown()
+        delayed.succeed()
+        await task.value
+        #expect(!task.isCancelled)
+        #expect(store.player == nil && store.state == .idle)
+    }
+
+    @Test("video teardown cancels an already queued automatic next episode")
+    func tornDownQueuedAutoplay() async throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let files = OfflineDownloadFileStore(directory: directory)
+        let downloads = OfflineDownloadStore(fileStore: files, coordinator: RemediationDownloadCoordinator())
+        let first = MediaItem(id: "first", indexNumber: 1, parentIndexNumber: 1, seriesID: "show", type: .episode)
+        let second = MediaItem(id: "second", indexNumber: 2, parentIndexNumber: 1, seriesID: "show", type: .episode)
+        for item in [first, second] {
+            let source = directory.appendingPathComponent(UUID().uuidString)
+            try Data("playback lifecycle fixture".utf8).write(to: source)
+            try files.persistDownloadedFile(source, item: item, serverID: "s", userID: "u", fileExtension: "mp4")
+        }
+        downloads.load(serverID: "s", userID: "u")
+        let defaults = UserDefaults.standard
+        let previous = defaults.object(forKey: PlaybackPreferences.autoPlayNextEpisodeKey)
+        defaults.set(true, forKey: PlaybackPreferences.autoPlayNextEpisodeKey)
+        defer {
+            if let previous {
+                defaults.set(previous, forKey: PlaybackPreferences.autoPlayNextEpisodeKey)
+            } else {
+                defaults.removeObject(forKey: PlaybackPreferences.autoPlayNextEpisodeKey)
+            }
+        }
+        let store = PlaybackStore(item: first, session: session(provider()), playbackRefresh: PlaybackRefreshStore(), downloads: downloads)
+        await store.prepare()
+        let endedItem = try #require(store.player?.currentItem)
+        #expect(store.nextUpItem?.id == second.id)
+        NotificationCenter.default.post(name: AVPlayerItem.didPlayToEndTimeNotification, object: endedItem)
+        #expect(!store.didFinishPlayback)
+        store.teardown()
+        for _ in 0 ..< 10 {
+            await Task.yield()
+        }
+        #expect(store.state == .idle && store.player == nil)
+        #expect(store.item.id == first.id && store.nextUpItem == nil)
+    }
+
     @Test("closing audio during preparation prevents a late playback start")
     func cancelledAudio() async {
         let p = provider(), delayed = PendingResolution()
@@ -347,6 +400,18 @@ struct UIRemediationTests {
         await waitFor { store.state == .loaded }
         #expect(calls == 1 && store.results.first?.id == "result")
     }
+}
+
+private final class RemediationDownloadCoordinator: DownloadSessionCoordinating {
+    func setEventHandler(_ eventHandler: DownloadSessionCoordinatorEventHandler?) {}
+    func startDownload(from url: URL, recordID: String) {}
+    func resumeDownload(with resumeData: Data, recordID: String) {}
+    func pause(recordID: String, completion: @escaping (Data?) -> Void) {
+        completion(nil)
+    }
+
+    func cancel(recordID: String) {}
+    func reconnectActiveTasks() {}
 }
 
 @MainActor private final class PendingPage {

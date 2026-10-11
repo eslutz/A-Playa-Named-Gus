@@ -1,3 +1,5 @@
+import SwiftUI
+
 enum DownloadsAvailability {
     static var isSupported: Bool {
         #if os(tvOS)
@@ -14,6 +16,21 @@ enum DownloadsAvailability {
             return 2 * 1024 * 1024 * 1024
         #else
             return 20 * 1024 * 1024 * 1024
+        #endif
+    }
+}
+
+extension View {
+    @ViewBuilder
+    func gusDownloadSwipeDelete(action: @escaping () -> Void) -> some View {
+        #if os(tvOS)
+            self
+        #else
+            swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                Button(role: .destructive, action: action) {
+                    Label("Delete", systemImage: "trash")
+                }
+            }
         #endif
     }
 }

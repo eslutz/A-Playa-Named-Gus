@@ -156,7 +156,9 @@ final class GusAuthenticatedUITests: XCTestCase {
             }
             read.tap()
             XCTAssertTrue(app.webViews.firstMatch.waitForExistence(timeout: 30))
-            XCTAssertTrue(app.webViews.firstMatch.staticTexts.firstMatch.waitForExistence(timeout: 30))
+            // Readium nests WebKit accessibility containers and can still be
+            // paginating after the web view first appears on a busy simulator.
+            XCTAssertTrue(app.webViews.descendants(matching: .staticText).firstMatch.waitForExistence(timeout: 75))
             XCTAssertFalse(read.isHittable)
             capture(app, "book-reader")
             rotateToLandscape(app)
@@ -167,6 +169,87 @@ final class GusAuthenticatedUITests: XCTestCase {
             reveal(app.buttons["Read"].firstMatch, in: app)
             capture(app, "book-reader-dismissed")
             XCTAssertTrue(app.buttons["Read"].firstMatch.isHittable)
+        }
+
+        func testBookReaderNestedChapters() throws {
+            try prepare()
+            executionTimeAllowance = 300
+            defer { finish() }
+            // The rights-cleared Dracula fixture groups its chapters under the
+            // book title, so a flat top-level menu cannot reach chapter I.
+            let app = try launch("item/" + required("NestedBook"))
+            let read = app.buttons["Read"].firstMatch
+            XCTAssertTrue(read.waitForExistence(timeout: 30))
+            reveal(read, in: app)
+            read.tap()
+            let bookText = app.webViews.descendants(matching: .staticText)
+            XCTAssertTrue(bookText.firstMatch.waitForExistence(timeout: 75))
+            app.buttons["Chapters"].tap()
+            XCTAssertTrue(app.buttons["BookChapters.done"].waitForExistence(timeout: 5))
+            capture(app, "book-chapters-top-level")
+            let menuTree = XCTAttachment(string: app.debugDescription)
+            menuTree.name = "book-chapters-tree"
+            menuTree.lifetime = .keepAlways
+            add(menuTree)
+            XCTAssertFalse(app.keyboards.firstMatch.exists)
+            let group = app.buttons["BookChapters.group.Dracula"].firstMatch
+            reveal(group, in: app)
+            group.tap()
+            let chapter = app.buttons["I"]
+            XCTAssertTrue(chapter.waitForExistence(timeout: 5))
+            XCTAssertFalse(app.keyboards.firstMatch.exists)
+            capture(app, "book-nested-chapters")
+            chapter.tap()
+            let chapterText = bookText.matching(NSPredicate(format: "label CONTAINS[c] 'Harker'")).firstMatch
+            XCTAssertTrue(chapterText.waitForExistence(timeout: 30))
+            let readerDone = app.buttons["BookReader.done"].firstMatch
+            let chapterClosed = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+                !app.buttons["BookChapters.done"].firstMatch.isHittable && readerDone.isHittable
+            }, object: nil)
+            XCTAssertEqual(XCTWaiter.wait(for: [chapterClosed], timeout: 30), .completed)
+            capture(app, "book-chapter-one")
+            rotateToLandscape(app)
+            XCTAssertTrue(chapterText.waitForExistence(timeout: 15))
+            XCTAssertTrue(app.buttons["BookReader.done"].isHittable)
+            capture(app, "book-chapter-landscape")
+            // Use the actual landscape window for reader-edge input. App-level
+            // coordinates and paginated WebKit text bounds can be misleading.
+            let paragraph = bookText.matching(NSPredicate(format: "label CONTAINS[c] 'Bistritz'")).firstMatch
+            let heading = bookText.matching(NSPredicate(format: "label == 'I'")).firstMatch
+            let window = app.windows.firstMatch
+            let bounds = XCTAttachment(string: "App: \(app.frame)\nWindow: \(window.frame)\nHeading: \(heading.frame)")
+            bounds.name = "book-reader-input-bounds"
+            bounds.lifetime = .keepAlways
+            add(bounds)
+            window.coordinate(withNormalizedOffset: CGVector(dx: 0.88, dy: 0.65)).tap()
+            capture(app, "book-page-forward-immediate")
+            Thread.sleep(forTimeInterval: 2)
+            XCTAssertTrue(paragraph.waitForExistence(timeout: 15))
+            // Paginated WebKit text can span columns and have no activation
+            // point. Its prose is verified by the saved screen, not hit-testing.
+            capture(app, "book-prose-landscape")
+            window.coordinate(withNormalizedOffset: CGVector(dx: 0.25, dy: 0.65)).tap()
+            capture(app, "book-page-back-immediate")
+            // WebKit exposes the whole chapter DOM while its native spread
+            // transition completes. Give the backwards page a bounded settle
+            // before closing; saved screens establish which page is visible.
+            Thread.sleep(forTimeInterval: 5)
+            capture(app, "book-page-back-landscape")
+            let doneBounds = XCTAttachment(string: "Reader Done: \(readerDone.frame)\nWindow: \(window.frame)")
+            doneBounds.name = "book-reader-done-bounds"
+            doneBounds.lifetime = .keepAlways
+            add(doneBounds)
+            XCTAssertTrue(readerDone.isHittable)
+            readerDone.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
+            let dismissed = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+                read.isHittable && !readerDone.isHittable
+            }, object: nil)
+            let dismissalResult = XCTWaiter.wait(for: [dismissed], timeout: 30)
+            capture(app, "book-reader-close-result")
+            XCTAssertEqual(dismissalResult, .completed)
+            reveal(read, in: app)
+            XCTAssertTrue(read.isHittable)
+            capture(app, "book-chapter-dismissed")
         }
 
         func testConnectCurrentScreenAccessibility() throws {
@@ -463,6 +546,9 @@ final class GusAuthenticatedUITests: XCTestCase {
             if type == "Movie" {
                 result["MovieTitle"] = item["Name"] as? String
             }
+        }
+        if let book = items.first(where: { $0["Type"] as? String == "Book" && $0["Name"] as? String == "Dracula" }) {
+            result["NestedBook"] = book["Id"] as? String
         }
         guard let synopsisMovie = items.filter({
             $0["Type"] as? String == "Movie" && !($0["Overview"] as? String ?? "").isEmpty

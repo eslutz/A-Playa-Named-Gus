@@ -1,0 +1,26 @@
+Window: "", App: Gus.
+0 sheet Secondary Actions: Raise
+	1 container
+		2 scroll area Secondary Actions: Cancel
+			3 text Sax and Piano (free track), Maarten Schellekens, PUBLIC DOMAIN
+			4 slider (settable, float) Description: Playback position, Value: 15.178181531, Details: 0:15 of 1:34
+			5 text 0:15 1:34
+			6 button Description: Shuffle Off, ID: shuffle
+			7 button Description: Previous Track, ID: backward.fill
+			8 button Description: Play, ID: play.circle.fill
+			9 button (disabled) Description: Next Track, ID: forward.fill
+			10 button Description: Repeat Off, ID: repeat
+			11 button show external playback menu
+				12 button show external playback menu
+		13 button Stop
+		14 button Done
+15 menu bar
+	16 A Playa Named Gus
+	17 Edit
+	18 View
+	19 Navigate
+	20 Account
+	21 Window
+	22 Help
+
+The focused UI element is 0 sheet Secondary Actions: Raise

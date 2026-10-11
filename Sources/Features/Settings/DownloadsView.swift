@@ -3,109 +3,132 @@ import SwiftUI
 struct DownloadsView: View {
     @Environment(SessionStore.self) private var session
     @Environment(OfflineDownloadStore.self) private var downloads
-    @State private var playerItem: ItemRef?
+    @AppStorage(OfflineDownloadStore.deleteFinishedDefaultsKey) private var deleteFinished = false
+    @State private var selecting = false
+    @State private var selection: Set<String> = []
+    @State private var pendingDeletion: [OfflineDownloadRecord] = []
+    @State private var confirmingDeletion = false
+
+    private var records: [OfflineDownloadRecord] {
+        downloads.records.filter { $0.serverID == session.server.id && $0.userID == session.user.id }
+    }
 
     var body: some View {
         List {
             Section {
                 LabeledContent("Storage Used", value: ByteCountFormatter.string(fromByteCount: downloads.totalByteCount(serverID: session.server.id, userID: session.user.id), countStyle: .file))
                 LabeledContent("Soft Cap", value: ByteCountFormatter.string(fromByteCount: OfflineDownloadStore.softCapBytes, countStyle: .file))
-                LabeledContent("Active Downloads", value: "\(activeRecords.count)")
-                LabeledContent("Paused Downloads", value: "\(pausedRecords.count)")
+                LabeledContent("Active Downloads", value: "\(records.filter { $0.status.isActive }.count)")
+                LabeledContent("Paused Downloads", value: "\(records.filter { $0.status == .paused }.count)")
             } footer: {
                 Text("Downloads use system background transfers. Avoid force-quitting Gus while downloading. Saved media stays on this device and is excluded from backup.")
             }
-
-            if downloads.records.isEmpty {
+            Section {
+                Toggle("Delete After Finishing", isOn: $deleteFinished)
+                    .accessibilityIdentifier("Downloads.deleteFinished")
+            } footer: {
+                Text("Automatically remove finished downloads from this device without asking. Video and audio are removed after playback ends; books are removed when you close the reader at the end. Repeated audio is kept until playback stops. Books opened in other apps are not removed automatically.")
+            }
+            if records.isEmpty {
+                ContentUnavailableView("No Downloads", systemImage: "arrow.down.circle", description: Text("Downloaded items from this server and user will appear here."))
+            } else {
+                if selecting {
+                    Section {
+                        Button(selection.count == records.count ? "Deselect All" : "Select All") {
+                            selection = selection.count == records.count ? [] : Set(records.map(\.id))
+                        }
+                        Button("Delete Selected (\(selection.count))", role: .destructive) {
+                            requestDeletion(records.filter { selection.contains($0.id) })
+                        }
+                        .disabled(selection.isEmpty)
+                        .accessibilityIdentifier("Downloads.deleteSelected")
+                    }
+                }
+                recordSection("In Progress", records.filter { $0.status.isActive })
+                recordSection("Paused", records.filter { $0.status == .paused })
+                recordSection("Failed", records.filter {
+                    if case .failed = $0.status {
+                        return true
+                    }; return false
+                })
+                recordSection("Downloaded Media", records.filter { $0.status.isComplete })
                 Section {
-                    ContentUnavailableView("No Downloads", systemImage: "arrow.down.circle", description: Text("Downloaded items from this server and user will appear here."))
-                }
-            }
-
-            if !activeRecords.isEmpty {
-                Section("In Progress") {
-                    ForEach(activeRecords) { record in
-                        DownloadProgressRow(record: record, activity: downloads.activities[record.id] ?? record.activity) {
-                            Task { await downloads.pause(itemID: record.item.id ?? "") }
-                        } delete: {
-                            downloads.delete(record, serverID: session.server.id, userID: session.user.id)
-                        }
-                    }
-                }
-            }
-
-            if !pausedRecords.isEmpty {
-                Section("Paused") {
-                    ForEach(pausedRecords) { record in
-                        DownloadPausedRow(record: record, activity: downloads.activities[record.id] ?? record.activity) {
-                            Task { await downloads.resume(itemID: record.item.id ?? "", session: session) }
-                        } delete: {
-                            downloads.delete(record, serverID: session.server.id, userID: session.user.id)
-                        }
-                    }
-                }
-            }
-
-            if !failedRecords.isEmpty {
-                Section("Failed") {
-                    ForEach(failedRecords) { record in
-                        DownloadFailedRow(record: record) {
-                            downloads.delete(record, serverID: session.server.id, userID: session.user.id)
-                        }
-                    }
-                }
-            }
-
-            if !completeRecords.isEmpty {
-                Section("Downloaded Media") {
-                    ForEach(completeRecords) { record in
-                        DownloadCompleteRow(record: record) {
-                            playerItem = ItemRef(item: record.item, localOnly: true, serverID: record.serverID, userID: record.userID)
-                        } delete: {
-                            downloads.delete(record, serverID: session.server.id, userID: session.user.id)
-                        }
-                    }
-                    .onDelete { offsets in
-                        for index in offsets {
-                            downloads.delete(completeRecords[index], serverID: session.server.id, userID: session.user.id)
-                        }
-                    }
+                    Button("Delete All Downloads", role: .destructive) { requestDeletion(records) }
+                        .accessibilityIdentifier("Downloads.deleteAll")
                 }
             }
         }
         .navigationTitle("Downloads")
-        .task {
-            downloads.load(serverID: session.server.id, userID: session.user.id)
+        .toolbar {
+            ToolbarItem {
+                Button(selecting ? "Done" : "Select") {
+                    selecting.toggle()
+                    selection.removeAll()
+                }
+                .disabled(!selecting && records.isEmpty)
+                .accessibilityIdentifier("Downloads.select")
+            }
         }
-        .playerPresentation(item: $playerItem)
+        .task { downloads.load(serverID: session.server.id, userID: session.user.id) }
+        .onChange(of: records.map(\.id)) { _, ids in selection.formIntersection(ids) }
+        .alert("Delete Downloads?", isPresented: $confirmingDeletion) {
+            Button(pendingDeletion.count == 1 ? String(localized: "Delete Download") : String(localized: "Delete \(pendingDeletion.count) Downloads"), role: .destructive) {
+                downloads.delete(pendingDeletion, serverID: session.server.id, userID: session.user.id)
+                selection.subtract(pendingDeletion.map(\.id))
+                pendingDeletion = []
+            }
+            Button("Cancel", role: .cancel) { pendingDeletion = [] }
+        } message: {
+            if pendingDeletion.count == 1, let record = pendingDeletion.first {
+                Text("Remove \(record.item.displayTitle) from this device? The server copy will remain available.")
+            } else {
+                Text("Remove \(pendingDeletion.count) downloads from this device? Server copies will remain available. Active transfers will be canceled.")
+            }
+        }
         .downloadErrorAlert(downloads)
     }
 
-    private var activeRecords: [OfflineDownloadRecord] {
-        downloads.records.filter { record in
-            switch record.status {
-            case .queued, .downloading:
-                return true
-            case .paused, .complete, .failed:
-                return false
+    private func requestDeletion(_ records: [OfflineDownloadRecord]) {
+        pendingDeletion = records
+        confirmingDeletion = !records.isEmpty
+    }
+
+    @ViewBuilder
+    private func recordSection(_ title: LocalizedStringKey, _ records: [OfflineDownloadRecord]) -> some View {
+        if !records.isEmpty {
+            Section(title) {
+                ForEach(records) { record in
+                    HStack {
+                        if selecting {
+                            Button {
+                                if !selection.insert(record.id).inserted {
+                                    selection.remove(record.id)
+                                }
+                            } label: {
+                                Image(systemName: selection.contains(record.id) ? "checkmark.circle.fill" : "circle")
+                                    .frame(minWidth: 44, minHeight: 44)
+                            }
+                            .buttonStyle(.borderless)
+                            .accessibilityLabel("Select \(record.item.displayTitle)")
+                            .accessibilityValue(selection.contains(record.id) ? "Selected" : "Not Selected")
+                        }
+                        switch record.status {
+                        case .queued, .downloading:
+                            DownloadProgressRow(record: record, activity: downloads.activities[record.id] ?? record.activity) {
+                                Task { await downloads.pause(itemID: record.item.id ?? "") }
+                            } delete: { requestDeletion([record]) }
+                        case .paused:
+                            DownloadPausedRow(record: record, activity: downloads.activities[record.id] ?? record.activity) {
+                                Task { await downloads.resume(itemID: record.item.id ?? "", session: session) }
+                            } delete: { requestDeletion([record]) }
+                        case .failed:
+                            DownloadFailedRow(record: record) { requestDeletion([record]) }
+                        case .complete:
+                            DownloadCompleteRow(record: record) { requestDeletion([record]) }
+                        }
+                    }
+                }
             }
-        }
-    }
-
-    private var pausedRecords: [OfflineDownloadRecord] {
-        downloads.records.filter { $0.status == .paused }
-    }
-
-    private var completeRecords: [OfflineDownloadRecord] {
-        downloads.records.filter { $0.status == .complete }
-    }
-
-    private var failedRecords: [OfflineDownloadRecord] {
-        downloads.records.filter { record in
-            if case .failed = record.status {
-                return true
-            }
-            return false
         }
     }
 }
@@ -287,12 +310,14 @@ private struct DownloadPausedRow: View {
 }
 
 private struct DownloadCompleteRow: View {
+    @Environment(OfflineDownloadStore.self) private var downloads
     let record: OfflineDownloadRecord
-    let play: () -> Void
     let delete: () -> Void
 
     var body: some View {
         HStack {
+            OfflineArtwork(url: downloads.localArtworkURL(for: record.item, serverID: record.serverID, userID: record.userID), systemImage: "arrow.down.circle")
+                .frame(width: 36, height: 48)
             VStack(alignment: .leading) {
                 Text(record.item.displayTitle)
                 Text(ByteCountFormatter.string(fromByteCount: record.byteCount, countStyle: .file))
@@ -301,12 +326,6 @@ private struct DownloadCompleteRow: View {
             }
 
             Spacer()
-
-            Button(action: play) {
-                Image(systemName: "play.fill")
-            }
-            .buttonStyle(.borderless)
-            .accessibilityLabel("Play \(record.item.displayTitle)")
 
             Button(role: .destructive, action: delete) {
                 Image(systemName: "trash")

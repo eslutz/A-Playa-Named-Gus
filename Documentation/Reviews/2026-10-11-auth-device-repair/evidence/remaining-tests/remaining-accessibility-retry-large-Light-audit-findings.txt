@@ -1,0 +1,2 @@
+<XCUIAccessibilityAuditIssue: 0x109eb9230>AuditType:"65536" CompactDescription:"Dynamic Type font sizes are partially unsupported" DetailedDescription:"User will not be able to change the font size of this SwiftUI.AccessibilityNode" Element:"ContentLink.detailDone" Button
+<XCUIAccessibilityAuditIssue: 0x109eb9440>AuditType:"131072" CompactDescription:"Text clipped" DetailedDescription:"Text of this UILabel may be clipped at larger Dynamic Type sizes." Element:"Edison Kinetoscopic Record of a Sneeze (1894)" StaticText

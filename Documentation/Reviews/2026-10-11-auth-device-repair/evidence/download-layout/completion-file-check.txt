@@ -1,0 +1,1 @@
+Demo simulator records no longer contain finished video or audio. Other seeded records remain.

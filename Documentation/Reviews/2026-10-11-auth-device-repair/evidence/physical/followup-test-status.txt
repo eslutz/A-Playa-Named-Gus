@@ -1,0 +1,12 @@
+Test Case '-[GusPhysicalAuditTests.Followup testDownloadManager]' started.
+    t =     7.46s Added attachment named 'downloads-portrait'
+    t =     7.65s Added attachment named 'downloads-portrait-tree'
+    t =    11.66s Added attachment named 'download-manager-portrait'
+    t =    11.88s Added attachment named 'download-manager-portrait-tree'
+    t =    16.30s Added attachment named 'download-manager-landscape'
+    t =    16.57s Added attachment named 'download-manager-landscape-tree'
+Test Case '-[GusPhysicalAuditTests.Followup testDownloadManager]' passed (17.704 seconds).
+Test Case '-[GusPhysicalAuditTests.Followup testHome]' started.
+    t =     7.64s Added attachment named 'home-portrait'
+    t =     7.93s Added attachment named 'home-portrait-tree'
+Run interrupted intentionally; incomplete tests are not accepted as passing.
