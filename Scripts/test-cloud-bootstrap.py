@@ -40,7 +40,9 @@ class BootstrapTests(unittest.TestCase):
 
     def test_cloud_from_scripts_directory_preserves_project_and_pins(self):
         self.assertEqual(self.run_script().returncode, 0)
-        self.assertIn("CODE_SIGNING_ALLOWED = YES", (self.root / "Config/Local.xcconfig").read_text())
+        config = (self.root / "Config/Local.xcconfig").read_text()
+        self.assertIn("CODE_SIGNING_ALLOWED = YES", config)
+        self.assertIn("DEVELOPMENT_TEAM = QS3GC3CT43", config)
         self.assertEqual((self.project / "project.pbxproj").read_text(), "fixture project")
         self.assertEqual(self.lock.read_text(), "fixture pins")
         self.assertFalse((self.root / "invoked-tool").exists())
@@ -49,8 +51,28 @@ class BootstrapTests(unittest.TestCase):
         self.env["CI_PRIMARY_REPOSITORY_PATH"] = str(self.root)
         self.assertEqual(self.run_script().returncode, 0)
 
+    def test_cloud_team_uuid_keeps_developer_signing_team(self):
+        self.env["CI_TEAM_ID"] = "1f3fb703-e0b0-42fc-bc0b-d00a3bfdf58e"
+        self.assertEqual(self.run_script().returncode, 0)
+        config = (self.root / "Config/Local.xcconfig").read_text()
+        self.assertIn("DEVELOPMENT_TEAM = QS3GC3CT43", config)
+        self.assertNotIn(self.env["CI_TEAM_ID"], config)
+        self.assertEqual((self.project / "project.pbxproj").read_text(), "fixture project")
+        self.assertEqual(self.lock.read_text(), "fixture pins")
+        self.assertFalse((self.root / "invoked-tool").exists())
+
     def test_wrong_team_rejected_before_signing_write(self):
         self.env["CI_TEAM_ID"] = "WRONGTEAM"
+        self.assertEqual(self.run_script().returncode, 65)
+        self.assertFalse((self.root / "Config/Local.xcconfig").exists())
+
+    def test_wrong_cloud_uuid_rejected_before_signing_write(self):
+        self.env["CI_TEAM_ID"] = "00000000-0000-4000-8000-000000000001"
+        self.assertEqual(self.run_script().returncode, 65)
+        self.assertFalse((self.root / "Config/Local.xcconfig").exists())
+
+    def test_missing_cloud_team_rejected_before_signing_write(self):
+        self.env.pop("CI_TEAM_ID")
         self.assertEqual(self.run_script().returncode, 65)
         self.assertFalse((self.root / "Config/Local.xcconfig").exists())
 

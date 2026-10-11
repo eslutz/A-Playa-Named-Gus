@@ -1,0 +1,23 @@
+{
+  "acceptanceReached": {
+    "buildStart": true,
+    "compilation": false,
+    "dependencyResolution": false,
+    "distribution": false,
+    "postClone": false,
+    "signedArchive": false,
+    "sourceCommit": true
+  },
+  "artifactDownloadURLsExcluded": true,
+  "commonFirstIssue": "Running ci_post_clone.sh script failed (exited with code 65)",
+  "completionStatus": "FAILED",
+  "executionProgress": "COMPLETE",
+  "failedBuildActions": 4,
+  "number": 1,
+  "paginationComplete": true,
+  "passedBuildActions": 0,
+  "requiredBuildActions": 4,
+  "runID": "5c1749b4-56a3-461c-a93c-4f3b8fe17b9c",
+  "sourceCommitSHA": "755ff09c9d69872a945fcd1f464aa7a7ea701153",
+  "sourceVerified": true
+}

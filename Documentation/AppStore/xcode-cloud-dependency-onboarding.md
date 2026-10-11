@@ -5,7 +5,10 @@ requires connections for public upstream packages and keeps **Next** disabled. T
 was reproduced with Xcode 27.0 and 27.1 RC. A disposable local project without package
 references subsequently completed onboarding against Gus's existing app and primary
 repository. This bypasses the failing dependency-connection step; the internal Apple cause is
-**not confirmed**. Actual Cloud build acceptance is pending.
+**not confirmed**. The complete repairs were published directly on `origin/main`;
+Cloud Build 1 verified the source commit but stopped at a bootstrap identity comparison.
+That comparison is being repaired before a second validation run. Final build acceptance
+is pending.
 
 ## Observed failure and expected behavior
 
@@ -85,7 +88,48 @@ full package graph. The authenticated API subsequently confirmed Gus product
 `f2e5bb18-7cd2-44ab-b88c-9d54ac63b512`, primary repository
 `af9d4248-65b2-413a-a7bd-25a8885ff13e`, and workflow
 `A15758DF-3577-4ED3-99F5-4B549E19BD8F` with four BUILD actions: iOS, macOS, tvOS,
-and visionOS. The real project’s saved workflow configuration is verified by the API: manual starts only, Xcode 27.1 RC (27A9275), and compatible macOS GoldenGate 27.2 beta 2 (26B5091g). It has no distribution audience or post-actions. A real remote build remains the next acceptance check.
+and visionOS. The real project’s saved workflow configuration is verified by the API: manual starts only, Xcode 27.1 RC (27A9275), and compatible macOS GoldenGate 27.2 beta 2 (26B5091g). It has no distribution audience or post-actions. The real remote build reached the bootstrap; its repair and a successful build remain the acceptance check.
+
+## Main publication and first remote build
+
+The complete local app/UI/download/playback/chapter repairs, shared generated project,
+root-safe Cloud bootstrap, and all 16 dependency pins were pushed directly to
+`origin/main` as `755ff09c9d69872a945fcd1f464aa7a7ea701153`. The package-free experiment
+was not committed or published.
+
+The guarded API preflight verified the enabled, clean, manual-only four-platform
+workflow and canonical `main` reference. The single `POST /v1/ciBuildRuns` request
+returned HTTP 405 `METHOD_NOT_ALLOWED`; a subsequent read confirmed zero runs. This
+unexpected response does not establish a key-permission or request-body defect.
+No key rotation, permission expansion, or blind POST retry was performed.
+
+App Store Connect's **Start Build** dialog then successfully started **Build 1**
+using **Gus Multiplatform Validation → main**. Run ID:
+`5c1749b4-56a3-461c-a93c-4f3b8fe17b9c`. Authenticated API verification confirms its
+actual source commit exactly matches the published SHA above. It used
+Xcode 27.1 RC and the configured compatible macOS image. All four required BUILD
+actions failed in `ci_post_clone.sh` before compilation or package-build acceptance. This is a validation workflow with no
+distribution or TestFlight action.
+
+### Build 1 bootstrap failure and focused repair
+
+The expanded Cloud log identifies the shared exit-65 cause:
+`CI_TEAM_ID` was `1f3fb703-e0b0-42fc-bc0b-d00a3bfdf58e`, the verified App Store Connect
+account/team UUID, while the script compared it with signing Team ID `QS3GC3CT43`.
+This is the correct configured account, not evidence of an unexpected team.
+Apple's [environment-variable reference](https://developer.apple.com/documentation/xcode/environment-variable-reference)
+describes a ten-character development-team example; the actual current run supplied
+the Cloud team UUID instead. The repaired bootstrap passes nine focused checks, including both expected identities,
+wrong/missing accounts, signing output, preserved pins, and working directory.
+It distinguishes the two known identities,
+accepts either expected form, and continues rejecting an unrelated account before
+writing signing configuration. `DEVELOPMENT_TEAM` remains `QS3GC3CT43`.
+
+[Actual failed bootstrap log](cloud-onboarding-evidence/build-1-bootstrap-failure.jpg),
+[Build 1 summary](cloud-onboarding-evidence/run-1/summary.json), and
+[failed overview](cloud-onboarding-evidence/build-1-failed-overview.jpg) preserve the
+failure. Source fetching and project configuration checks passed in the sampled iOS
+log; a successful complete build is still required.
 
 ## Recovery and acceptance
 

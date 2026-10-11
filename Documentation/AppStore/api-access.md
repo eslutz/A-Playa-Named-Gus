@@ -1,6 +1,6 @@
 # App Store Connect API preparation
 
-API authentication verified on 2026-10-11; Xcode Cloud onboarding is complete; the first remote build remains pending. Marketing version is **1.0.0**, with a separate numeric build number.
+API authentication verified on 2026-10-11; Xcode Cloud onboarding is complete; the first remote build verified the published main commit but stopped at a bootstrap team-identifier comparison; its repair and repeat validation are in progress. Marketing version is **1.0.0**, with a separate numeric build number.
 
 - `.env.asc.example` is the safe template; `.env.asc.local` is ignored and mode 600.
 - The account-wide team key is installed in `~/.appstoreconnect/private_keys/` (directory 700, key 600). Shared configuration lives in `~/.appstoreconnect/config.env` (600), outside all repositories.
@@ -8,8 +8,8 @@ API authentication verified on 2026-10-11; Xcode Cloud onboarding is complete; t
 - Authenticated Gus inspection succeeded: its app record and Cloud product/workflow now exist. See [Cloud setup evidence](xcode-cloud-dependency-onboarding.md). Authentication and Cloud onboarding are verified separately; neither establishes distribution acceptance.
 - `Scripts/app-store-connect.swift` signs short-lived ES256 tokens using Apple CryptoKit
   and performs read-only API discovery. It never prints keys or bearer tokens.
-- The shared generated project, schemes, and 16 dependency pins are prepared for git.
-  The complete app candidate must be published before Cloud can use these changes.
+- The complete repairs, shared generated project, schemes, and 16 dependency pins were
+  published directly to `origin/main` at `755ff09`. Cloud Build 1 verified that exact source commit; its bootstrap failed before compilation.
 - `api-templates/` contains disabled archive-workflow drafts for iOS, tvOS, visionOS,
   and macOS, plus build-trigger and internal TestFlight group requests. All seven
   templates were checked against Apple's OpenAPI 4.5.1 schema; IDs remain placeholders.

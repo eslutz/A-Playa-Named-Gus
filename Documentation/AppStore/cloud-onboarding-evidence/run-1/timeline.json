@@ -1,0 +1,68 @@
+[
+  {
+    "actions": [
+      {
+        "completionStatus": null,
+        "executionProgress": "RUNNING",
+        "issueCounts": null,
+        "name": "Build - iOS"
+      },
+      {
+        "completionStatus": null,
+        "executionProgress": "RUNNING",
+        "issueCounts": null,
+        "name": "Build - macOS"
+      },
+      {
+        "completionStatus": null,
+        "executionProgress": "RUNNING",
+        "issueCounts": null,
+        "name": "Build - tvOS"
+      },
+      {
+        "completionStatus": null,
+        "executionProgress": "RUNNING",
+        "issueCounts": null,
+        "name": "Build - visionOS"
+      }
+    ],
+    "observedAt": "2026-10-11T23:44:41+00:00",
+    "run": {
+      "completionStatus": null,
+      "executionProgress": "RUNNING"
+    }
+  },
+  {
+    "actions": [
+      {
+        "completionStatus": "FAILED",
+        "executionProgress": "COMPLETE",
+        "issueCounts": null,
+        "name": "Build - iOS"
+      },
+      {
+        "completionStatus": "FAILED",
+        "executionProgress": "COMPLETE",
+        "issueCounts": null,
+        "name": "Build - macOS"
+      },
+      {
+        "completionStatus": "FAILED",
+        "executionProgress": "COMPLETE",
+        "issueCounts": null,
+        "name": "Build - tvOS"
+      },
+      {
+        "completionStatus": "FAILED",
+        "executionProgress": "COMPLETE",
+        "issueCounts": null,
+        "name": "Build - visionOS"
+      }
+    ],
+    "observedAt": "2026-10-11T23:45:15+00:00",
+    "run": {
+      "completionStatus": "FAILED",
+      "executionProgress": "COMPLETE"
+    }
+  }
+]

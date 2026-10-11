@@ -1,0 +1,18 @@
+{
+  "attributes": {
+    "completionStatus": "FAILED",
+    "createdDate": "2026-10-11T23:43:16.167Z",
+    "executionProgress": "COMPLETE",
+    "finishedDate": "2026-10-11T23:44:37.137Z",
+    "issueCounts": null,
+    "number": 1,
+    "startReason": "MANUAL",
+    "startedDate": "2026-10-11T23:43:27.786Z"
+  },
+  "expectedMainSHA": "755ff09c9d69872a945fcd1f464aa7a7ea701153",
+  "id": "5c1749b4-56a3-461c-a93c-4f3b8fe17b9c",
+  "observedAt": "2026-10-11T23:45:15+00:00",
+  "sourceCommitSHA": "755ff09c9d69872a945fcd1f464aa7a7ea701153",
+  "sourceVerified": true,
+  "type": "ciBuildRuns"
+}
