@@ -1,5 +1,6 @@
 import Foundation
 import Observation
+import os
 import SwiftUI
 
 #if canImport(SharedWithYou) && (os(iOS) || os(tvOS) || os(macOS))
@@ -39,11 +40,26 @@ final class SharedWithYouStore {
     }
 
     #if canImport(SharedWithYou) && (os(iOS) || os(tvOS) || os(macOS))
-        func highlight(for url: URL) async -> SWHighlight? {
-            await withCheckedContinuation { continuation in
-                highlightCenter.getHighlightFor(url) { highlight, _ in
-                    continuation.resume(returning: highlight)
+        func loadHighlight(for url: URL, receive: @escaping @MainActor @Sendable (SWHighlight?) -> Void) async {
+            let cancelled = OSAllocatedUnfairLock(initialState: false)
+            await withTaskCancellationHandler {
+                await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
+                    highlightCenter.getHighlightFor(url) { highlight, _ in
+                        // SWHighlightCenter.h guarantees this callback on the main
+                        // queue. Consume the non-Sendable highlight there; only Void
+                        // crosses the continuation boundary.
+                        // SDK completion isolation is documented but not annotated.
+                        nonisolated(unsafe) let mainQueueHighlight = highlight
+                        MainActor.assumeIsolated {
+                            if !cancelled.withLock({ $0 }) {
+                                receive(mainQueueHighlight)
+                            }
+                            continuation.resume()
+                        }
+                    }
                 }
+            } onCancel: {
+                cancelled.withLock { $0 = true }
             }
         }
 
@@ -69,7 +85,9 @@ final class SharedWithYouStore {
 
         func highlightCenterHighlightsDidChange(_ highlightCenter: SWHighlightCenter) {
             Task { @MainActor [weak store] in
-                store?.reloadHighlights(from: highlightCenter.highlights)
+                // Read our own center on its owning actor; do not transfer the
+                // delegate's non-Sendable center across queues.
+                store?.refresh()
             }
         }
     }
@@ -90,7 +108,7 @@ final class SharedWithYouStore {
                 }
             }
             .task(id: link.universalURL) {
-                highlight = await sharedWithYou.highlight(for: link.universalURL)
+                await sharedWithYou.loadHighlight(for: link.universalURL) { highlight = $0 }
             }
         }
     }

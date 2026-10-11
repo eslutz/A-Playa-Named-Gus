@@ -5,6 +5,87 @@ import Testing
 
 @Suite("Offline downloads")
 struct OfflineDownloadTests {
+    @Test("HEVC normalization changes only the sample tag and preserves encoded media")
+    func normalizerPreservesMediaBytes() throws {
+        let file = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: file) }
+        let original = Self.containerFixture(tag: "hev1")
+        try original.write(to: file)
+        try OfflineMP4Compatibility.normalizeHEVCTag(in: file)
+        #expect(try Data(contentsOf: file) == Self.containerFixture(tag: "hvc1"))
+        try OfflineMP4Compatibility.normalizeHEVCTag(in: file)
+        #expect(try Data(contentsOf: file) == Self.containerFixture(tag: "hvc1"))
+    }
+
+    @Test("malformed HEVC configuration is rejected before changing the file")
+    func normalizerRejectsIncompleteConfiguration() throws {
+        let file = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: file) }
+        let original = Self.containerFixture(tag: "hev1", validConfiguration: false)
+        try original.write(to: file)
+        #expect(throws: CocoaError.self) { try OfflineMP4Compatibility.normalizeHEVCTag(in: file) }
+        #expect(try Data(contentsOf: file) == original)
+    }
+
+    private static func containerFixture(tag: String, validConfiguration: Bool = true) -> Data {
+        func box(_ tag: String, _ payload: Data) -> Data {
+            let size = UInt32(payload.count + 8)
+            return Data([UInt8((size >> 24) & 255), UInt8((size >> 16) & 255), UInt8((size >> 8) & 255), UInt8(size & 255)]) + Data(tag.utf8) + payload
+        }
+        var configuration = Data(repeating: 0, count: 23)
+        configuration[0] = validConfiguration ? 1 : 0
+        configuration[22] = 3
+        for type: UInt8 in [32, 33, 34] {
+            configuration += Data([type, 0, 1, 0, 1, type << 1])
+        }
+        let entry = box(tag, Data(repeating: 0, count: 78) + box("hvcC", configuration))
+        let stsd = box("stsd", Data([0, 0, 0, 0, 0, 0, 0, 1]) + entry)
+        return box("ftyp", Data("isom".utf8)) + box("moov", box("trak", box("mdia", box("minf", box("stbl", stsd))))) + box("mdat", Data("hev1 media payload untouched".utf8))
+    }
+
+    @MainActor
+    @Test("completed downloads survive URLSession temporary-file cleanup before the main actor saves them")
+    func completedDownloadSurvivesDelegateReturn() async throws {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let temporaryFile = directory.appendingPathComponent("CFNetworkDownload.tmp")
+        let content = Data("downloaded media".utf8)
+        try content.write(to: temporaryFile)
+
+        let fileStore = OfflineDownloadFileStore(directory: directory.appendingPathComponent("Downloads"))
+        let coordinator = DownloadSessionCoordinator()
+        let handler = DownloadCompletionTestHandler()
+        coordinator.setEventHandler(handler)
+        let requestURL = try #require(URL(string: "https://example.com/media"))
+        let task = URLSession.shared.downloadTask(with: requestURL)
+        task.taskDescription = "record-1"
+
+        let record: OfflineDownloadRecord = try await withCheckedThrowingContinuation { continuation in
+            handler.onFinish = { location in
+                continuation.resume(with: Result {
+                    try fileStore.persistDownloadedFile(
+                        location,
+                        item: MediaItem(id: "item-1", name: "Episode"),
+                        serverID: "server-1",
+                        userID: "user-1",
+                        fileExtension: "mp4"
+                    )
+                })
+            }
+            handler.onFailure = { continuation.resume(throwing: $0) }
+            coordinator.urlSession(.shared, downloadTask: task, didFinishDownloadingTo: temporaryFile)
+            // Model URLSession reclaiming its temporary URL immediately after the
+            // delegate returns, before the main actor has run the completion task.
+            try? FileManager.default.removeItem(at: temporaryFile)
+        }
+
+        #expect(record.status == .complete)
+        #expect(record.byteCount == Int64(content.count))
+        #expect(try Data(contentsOf: URL(fileURLWithPath: record.filePath)) == content)
+    }
+
     @Test("offers downloads for any server-downloadable item")
     func gatesDownloadsOnlyByServerFlag() {
         let playable = MediaItem(
@@ -76,7 +157,7 @@ struct OfflineDownloadTests {
         #expect(source.request.id == "GetDownload")
     }
 
-    @Test("download source resolver builds MP4 transcode request for incompatible sources")
+    @Test("download source resolver copies HEVC video while converting incompatible audio")
     func sourceResolverBuildsTranscodeRequestForIncompatibleSource() throws {
         let item = MediaItem(
             canDownload: true,
@@ -94,7 +175,7 @@ struct OfflineDownloadTests {
             ]
         )
 
-        let source = try DownloadSourceResolver.localSource(for: item)
+        let source = try DownloadSourceResolver.localSource(for: item, capabilities: Self.modernCapabilities)
         let query = source.request.query ?? []
 
         #expect(source.kind == DownloadSourceResolver.SourceKind.transcoded)
@@ -102,11 +183,87 @@ struct OfflineDownloadTests {
         #expect(source.request.id == "GetVideoStreamByContainer")
         #expect(source.request.url?.path == "/Videos/item-1/stream.mp4")
         #expect(query.value(for: "mediaSourceId") == "source-1")
+        #expect(query.value(for: "videoCodec") == "hevc")
+        #expect(query.value(for: "audioCodec") == "aac")
+        #expect(query.value(for: "maxVideoBitDepth") == "10")
+        #expect(query.value(for: "maxAudioChannels") == "8")
+        #expect(query.value(for: "allowVideoStreamCopy") == "true")
+        #expect(query.value(for: "allowAudioStreamCopy") == "false")
+        #expect(query.value(for: "deviceId") == DeviceIdentity.deviceID)
+    }
+
+    private static let modernCapabilities = DevicePlaybackCapabilities(supportsHEVCDecode: true, supportsAV1Decode: true, supportsHDRPlayback: true)
+
+    @Test("HEVC Main 10 and surround AAC in MKV remux without encoding or downscaling")
+    func compatibleMKVRemuxes() throws {
+        let source = try DownloadSourceResolver.convertedSource(
+            itemID: "episode",
+            source: MediaSource(container: "mkv", id: "source", mediaStreams: [
+                MediaStreamInfo(codec: "hevc", index: 0, profile: "Main 10", type: .video, bitDepth: 10, width: 1920, height: 1080),
+                MediaStreamInfo(codec: "aac", index: 1, type: .audio, channels: 6),
+            ]),
+            capabilities: Self.modernCapabilities
+        )
+        let query = source.request.query ?? []
+        #expect(source.kind == .remuxed)
+        #expect(source.fileExtension == "mp4")
+        #expect(query.value(for: "allowVideoStreamCopy") == "true")
+        #expect(query.value(for: "allowAudioStreamCopy") == "true")
+        #expect(query.value(for: "videoCodec") == "hevc")
+        #expect(query.value(for: "audioCodec") == "aac")
+        #expect(query.value(for: "maxWidth") == "1920")
+        #expect(query.value(for: "maxHeight") == "1080")
+        #expect(query.value(for: "maxAudioChannels") == "8")
+        #expect(query.value(for: "subtitleStreamIndex") == "-1")
+    }
+
+    @Test("unsupported video and audio encode to H264 and AAC")
+    func incompatibleStreamsEncode() throws {
+        let source = try DownloadSourceResolver.convertedSource(itemID: "episode", source: MediaSource(id: "source", mediaStreams: [
+            MediaStreamInfo(codec: "vp9", type: .video, width: 1920, height: 1080),
+            MediaStreamInfo(codec: "opus", type: .audio),
+        ]), capabilities: Self.modernCapabilities)
+        let query = source.request.query ?? []
+        #expect(source.kind == .transcoded)
+        #expect(query.value(for: "allowVideoStreamCopy") == "false")
+        #expect(query.value(for: "allowAudioStreamCopy") == "false")
         #expect(query.value(for: "videoCodec") == "h264")
         #expect(query.value(for: "audioCodec") == "aac")
-        #expect(query.value(for: "maxVideoBitDepth") == "8")
-        #expect(query.value(for: "maxAudioChannels") == "2")
-        #expect(query.value(for: "deviceId") == DeviceIdentity.deviceID)
+        #expect(query.value(for: "maxWidth") == "1920")
+    }
+
+    @Test("HEVC on a device without HEVC decoding encodes only video")
+    func unsupportedDeviceEncodesVideo() throws {
+        let source = try DownloadSourceResolver.localSource(for: MediaItem(canDownload: true, id: "episode", mediaSources: [
+            MediaSource(container: "mp4", id: "source", mediaStreams: [
+                MediaStreamInfo(codec: "hevc", type: .video),
+                MediaStreamInfo(codec: "aac", type: .audio),
+            ]),
+        ]), capabilities: DevicePlaybackCapabilities(supportsHEVCDecode: false, supportsAV1Decode: false, supportsHDRPlayback: false))
+        let query = source.request.query ?? []
+        #expect(source.kind == .transcoded)
+        #expect(query.value(for: "allowVideoStreamCopy") == "false")
+        #expect(query.value(for: "allowAudioStreamCopy") == "true")
+        #expect(query.value(for: "videoCodec") == "h264")
+    }
+
+    @Test("10-bit H264 and HDR on an SDR device cannot bypass conversion")
+    func unsupportedProfilesNeedEncoding() {
+        #expect(!OfflineDownloadEligibility.isVideoStreamPlayable(MediaStreamInfo(codec: "h264", profile: "High 10", type: .video, bitDepth: 10), capabilities: Self.modernCapabilities))
+        #expect(!OfflineDownloadEligibility.isVideoStreamPlayable(MediaStreamInfo(codec: "hevc", type: .video, videoRange: "HDR"), capabilities: DevicePlaybackCapabilities(supportsHEVCDecode: true, supportsAV1Decode: false, supportsHDRPlayback: false)))
+    }
+
+    @Test("HEVC originals tagged hev1 require an Apple-compatible container remux")
+    func incompatibleHEVCTagRemuxes() throws {
+        let source = try DownloadSourceResolver.localSource(for: MediaItem(canDownload: true, id: "episode", mediaSources: [
+            MediaSource(container: "mp4", id: "source", mediaStreams: [
+                MediaStreamInfo(codec: "hevc", codecTag: "hev1", type: .video),
+                MediaStreamInfo(codec: "aac", type: .audio),
+            ]),
+        ]), capabilities: Self.modernCapabilities)
+        #expect(source.kind == .remuxed)
+        #expect(source.fileExtension == "mp4")
+        #expect(source.request.query?.value(for: "allowVideoStreamCopy") == "true")
     }
 
     @Test("download records decode existing completed records without status fields")
@@ -257,7 +414,7 @@ struct OfflineDownloadTests {
         await store.resume(itemID: "item-1", session: .testSession)
 
         #expect(coordinator.resumedRecordIDs == [record.id])
-        #expect(store.records.first?.status == .downloading(0))
+        #expect(store.records.first?.status == .downloading(0.4))
         #expect(store.records.first?.resumeData == nil)
     }
 
@@ -353,6 +510,20 @@ struct OfflineDownloadTests {
         #expect(provider.downloadSourceCallCount == 0)
         #expect(coordinator.startedRecordIDs.isEmpty)
         #expect(store.records.isEmpty)
+    }
+}
+
+@MainActor
+private final class DownloadCompletionTestHandler: DownloadSessionCoordinatorEventHandler {
+    var onFinish: ((URL) -> Void)?
+    var onFailure: ((Error) -> Void)?
+
+    func downloadSessionCoordinator(_ coordinator: DownloadSessionCoordinating, didFinishDownloadingTo location: URL, recordID: String) {
+        onFinish?(location)
+    }
+
+    func downloadSessionCoordinator(_ coordinator: DownloadSessionCoordinating, didFailWith error: Error, resumeData: Data?, recordID: String) {
+        onFailure?(error)
     }
 }
 

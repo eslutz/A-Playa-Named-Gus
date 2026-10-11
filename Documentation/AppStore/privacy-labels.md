@@ -37,7 +37,7 @@ through an A Playa Named Gus developer backend.
 
 | Category | Reason | Call site |
 |---|---|---|
-| NSPrivacyAccessedAPICategoryDiskSpace | 85F4.1 | `OfflineDownloadStore.ensureDiskBudget` checks available volume capacity (`volumeAvailableCapacityForImportantUsage`, or `volumeAvailableCapacity` on watchOS) before starting a download |
+| NSPrivacyAccessedAPICategoryDiskSpace | E174.1 | `OfflineDownloadStore.ensureDiskBudget` checks available volume capacity (`volumeAvailableCapacityForImportantUsage`, or `volumeAvailableCapacity` on watchOS) before starting a download |
 | NSPrivacyAccessedAPICategoryUserDefaults | CA92.1 | `AppModel` (last-signed-in user ID), `DeviceIdentity` (stable device UUID), and `@AppStorage`/`@SceneStorage` preferences (sidebar selection, appearance, content limit, navigation order) — app-own keys only |
 
 `Resources/PrivacyInfo.xcprivacy` is bundled into the main app target **and** the

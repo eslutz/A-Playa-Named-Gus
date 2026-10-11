@@ -3,6 +3,7 @@ import SwiftUI
 /// Item detail surface re-expressed from the Swiftfin visionOS PR layout using A Playa Named Gus's
 /// native SwiftUI stack: cinematic header, inline actions, metadata rows, and about cards.
 struct ItemDetailView: View {
+    @Environment(RootNavigationState.self) private var navigationState
     @Environment(SessionStore.self) private var session
     @Environment(OfflineDownloadStore.self) private var downloads
     @Environment(PlaybackRefreshStore.self) private var playbackRefresh
@@ -23,7 +24,7 @@ struct ItemDetailView: View {
             if isRestricted {
                 RestrictedContentView()
             } else if let store {
-                LoadingStateView(state: store.state) {
+                LoadingStateView(state: store.state, retryAction: { Task { await store.load() } }) {
                     detailContent(for: store)
                 }
             } else {
@@ -40,9 +41,8 @@ struct ItemDetailView: View {
         #endif
         .task {
             if store == nil {
-                let store = ItemDetailStore(item: item, session: session)
+                let store = navigationState.detailStore(for: item, session: session)
                 self.store = store
-                await store.load()
             }
         }
         .playerPresentation(item: $playerItem)
@@ -61,93 +61,111 @@ struct ItemDetailView: View {
     }
 
     private func detailContent(for store: ItemDetailStore) -> some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 0) {
-                CinematicDetailHero(
-                    item: store.item,
-                    backdropURL: session.mediaProvider.backdropImageURL(for: store.item, context: .backdrop),
-                    play: {
-                        playerItem = ItemRef(item: store.item)
-                    },
-                    isInUpNext: upNext.contains(store.item, serverID: session.server.id, userID: session.user.id),
-                    toggleUpNext: {
-                        upNext.toggle(store.item, serverID: session.server.id, userID: session.user.id)
-                        playbackRefresh.markPlaybackProgressChanged()
-                    }
-                ) {
-                    ItemUserActionButton(
-                        title: store.item.userData?.isWatched == true
-                            ? "Mark as Unwatched"
-                            : "Mark as Watched",
-                        systemImage: store.item.userData?.isWatched == true
-                            ? "checkmark.circle.fill"
-                            : "checkmark.circle",
-                        action: {
-                            Task { await store.toggleWatched() }
-                        }
-                    )
-                    ItemUserActionButton(
-                        title: store.item.userData?.isFavorite == true
-                            ? "Remove from Favorites"
-                            : "Add to Favorites",
-                        systemImage: store.item.userData?.isFavorite == true
-                            ? "heart.fill"
-                            : "heart",
-                        action: {
-                            Task { await store.toggleFavorite() }
-                        }
-                    )
-                    #if !os(tvOS)
-                        if SharePlayCoordinator.canShare(store.item) {
-                            ItemUserActionButton(
-                                title: "SharePlay",
-                                systemImage: "shareplay",
-                                action: {
-                                    startSharePlay(for: store.item)
-                                }
-                            )
-                        }
-                    #endif
-                    if store.item.type == .book {
-                        BookActionButtons(item: store.item)
-                    }
-                    if DownloadsAvailability.isSupported, session.mediaProvider.capabilities.supportsDownloads {
-                        DownloadButton(item: store.item, iconOnly: true)
-                    }
-                }
-
-                VStack(alignment: .leading, spacing: 30) {
-                    if let itemID = store.item.id {
-                        SharedWithYouAttributionView(link: .item(id: itemID))
-                    }
-
-                    if let seriesStore = store.seriesStore {
-                        SeriesEpisodesView(store: seriesStore)
-                    }
-
-                    DetailMetadataRows(item: store.item)
-
-                    if !store.item.people.isEmpty {
-                        CastRail(people: store.item.people)
-                    }
-
-                    if !store.specialFeatures.isEmpty {
-                        MediaRail(title: String(localized: "Special Features", comment: "Item detail section header for bonus/extra content"), items: store.specialFeatures, style: .backdrop)
-                    }
-
-                    if !store.similarItems.isEmpty {
-                        MediaRail(title: String(localized: "Recommended", comment: "Item detail section header for similar/recommended items"), items: store.similarItems)
-                    }
-
-                    AboutCardsView(
+        GeometryReader { geometry in
+            ScrollView {
+                VStack(alignment: .leading, spacing: 0) {
+                    CinematicDetailHero(
                         item: store.item,
-                        posterURL: session.mediaProvider.primaryImageURL(for: store.item, context: .posterRail)
-                    )
+                        backdropURL: session.mediaProvider.backdropImageURL(for: store.item, context: .backdrop),
+                        play: {
+                            playerItem = ItemRef(item: store.item)
+                        },
+                        isInUpNext: upNext.contains(store.item, serverID: session.server.id, userID: session.user.id),
+                        toggleUpNext: {
+                            upNext.toggle(store.item, serverID: session.server.id, userID: session.user.id)
+                            playbackRefresh.markPlaybackProgressChanged()
+                        }
+                    ) {
+                        ItemUserActionButton(
+                            title: store.item.userData?.isWatched == true
+                                ? "Mark as Unwatched"
+                                : "Mark as Watched",
+                            systemImage: store.item.userData?.isWatched == true
+                                ? "checkmark.circle.fill"
+                                : "checkmark.circle",
+                            action: {
+                                Task { await store.toggleWatched() }
+                            }
+                        )
+                        .disabled(store.isUpdatingUserData || store.needsUserDataRefresh)
+                        ItemUserActionButton(
+                            title: store.item.userData?.isFavorite == true
+                                ? "Remove from Favorites"
+                                : "Add to Favorites",
+                            systemImage: store.item.userData?.isFavorite == true
+                                ? "heart.fill"
+                                : "heart",
+                            action: {
+                                Task { await store.toggleFavorite() }
+                            }
+                        )
+                        .disabled(store.isUpdatingUserData || store.needsUserDataRefresh)
+                        #if !os(tvOS)
+                            if SharePlayCoordinator.canShare(store.item) {
+                                ItemUserActionButton(
+                                    title: "SharePlay",
+                                    systemImage: "shareplay",
+                                    action: {
+                                        startSharePlay(for: store.item)
+                                    }
+                                )
+                            }
+                        #endif
+                        if DownloadsAvailability.isSupported, session.mediaProvider.capabilities.supportsDownloads {
+                            DownloadButton(item: store.item, iconOnly: true)
+                        }
+                    }
+
+                    VStack(alignment: .leading, spacing: 30) {
+                        if store.isUpdatingUserData {
+                            ProgressView("Updating…")
+                        }
+                        if let error = store.actionError {
+                            VStack(alignment: .leading) {
+                                Text(error).foregroundStyle(.secondary)
+                                Button(store.needsUserDataRefresh ? String(localized: "Refresh Status") : String(localized: "Dismiss")) {
+                                    if store.needsUserDataRefresh {
+                                        Task { await store.refreshUserData() }
+                                    } else {
+                                        store.actionError = nil
+                                    }
+                                }
+                            }
+                        }
+                        if let itemID = store.item.id {
+                            SharedWithYouAttributionView(link: .item(id: itemID))
+                        }
+
+                        if let seriesStore = store.seriesStore {
+                            SeriesEpisodesView(store: seriesStore).id("episodes")
+                        }
+
+                        DetailMetadataRows(item: store.item).id("metadata")
+
+                        if !store.item.people.isEmpty {
+                            CastRail(people: store.item.people).id("cast")
+                        }
+
+                        if !store.specialFeatures.isEmpty {
+                            MediaRail(title: String(localized: "Special Features", comment: "Item detail section header for bonus/extra content"), items: store.specialFeatures, style: .backdrop)
+                        }
+
+                        if !store.similarItems.isEmpty {
+                            MediaRail(title: String(localized: "Recommended", comment: "Item detail section header for similar/recommended items"), items: store.similarItems)
+                        }
+
+                        AboutCardsView(
+                            item: store.item,
+                            posterURL: session.mediaProvider.primaryImageURL(for: store.item, context: .posterRail)
+                        )
+                    }
+                    .scrollTargetLayout()
+                    .padding(sectionPadding)
                 }
-                .padding(sectionPadding)
+                .frame(width: min(geometry.size.width, PageContentMetrics.maxWidth), alignment: .leading)
+                .frame(width: geometry.size.width)
             }
-            .frame(maxWidth: PageContentMetrics.maxWidth, alignment: .leading)
-            .frame(maxWidth: .infinity)
+            .scrollPosition(id: navigationState.scrollBinding(for: "detail:" + ItemRef(item: item).id))
         }
         .lookToScroll()
         .task {

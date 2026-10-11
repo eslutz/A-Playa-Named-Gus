@@ -107,7 +107,12 @@ final class NowPlayingController {
         guard let url else { return }
         artworkTask = Task { [weak self] in
             do {
-                let (data, _) = try await URLSession.shared.data(from: url)
+                let data: Data
+                if url.isFileURL {
+                    data = try Data(contentsOf: url)
+                } else {
+                    data = try await URLSession.shared.data(from: url).0
+                }
                 guard !Task.isCancelled, let artwork = NowPlayingArtworkFactory.artwork(from: data) else { return }
                 await MainActor.run {
                     guard let self, Self.activeController === self else { return }
@@ -147,7 +152,11 @@ final class NowPlayingController {
         center.togglePlayPauseCommand.removeTarget(nil)
         center.togglePlayPauseCommand.addTarget { [weak player] _ in
             guard let player else { return .noActionableNowPlayingItem }
-            if player.rate == 0 { player.play() } else { player.pause() }
+            if player.rate == 0 {
+                player.play()
+            } else {
+                player.pause()
+            }
             return .success
         }
 

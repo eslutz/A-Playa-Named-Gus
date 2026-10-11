@@ -37,5 +37,11 @@ extension View {
         .navigationDestination(for: ItemRef.self) { ref in
             ItemRouteDestination(item: ref.item)
         }
+        .navigationDestination(for: AppScreen.self) { screen in
+            switch screen {
+            case .downloads: DownloadsView()
+            case .navigationSettings: NavigationSettingsView()
+            }
+        }
     }
 }

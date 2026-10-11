@@ -31,11 +31,14 @@ their look**.
 ## Commands
 
 The Xcode project is **generated** from `project.yml` by XcodeGen;
-`A Playa Named Gus.xcodeproj` is git-ignored. `project.yml` is the source of truth.
+The shared `A Playa Named Gus.xcodeproj` snapshot and `Package.resolved` belong in git
+for Xcode Cloud discovery. `project.yml` remains the source of truth; user workspace
+state remains ignored. Include regenerated project changes when source files change.
 
 ```sh
 brew install xcodegen          # one-time
 xcodegen generate              # regenerate — REQUIRED after adding/removing any file
+python3 Scripts/check-cloud-project.py # verify shared snapshot and dependency pins
 xcodebuild -resolvePackageDependencies -project 'A Playa Named Gus.xcodeproj' -scheme 'A Playa Named Gus'
 Scripts/format.sh              # format Sources + Tests with SwiftFormat
 swiftformat Sources Tests --lint
@@ -77,7 +80,7 @@ xcrun simctl boot 'iPhone 17'; open -a Simulator
 xcodebuild -project 'A Playa Named Gus.xcodeproj' -scheme 'A Playa Named Gus' \
   -destination 'platform=iOS Simulator,name=iPhone 17' -derivedDataPath build build
 xcrun simctl install booted \
-  "$(find build/Build/Products/Debug-iphonesimulator -name 'A Playa Named Gus.app' | head -1)"
+  'build/Build/Products/Debug-iphonesimulator/A Playa Named Gus.app'
 xcrun simctl launch booted dev.ericslutz.gus
 ```
 
@@ -106,8 +109,10 @@ xcodebuild test -project 'A Playa Named Gus.xcodeproj' -scheme 'Gus iOS Unit Tes
 ```
 
 `GusTests`/`GusTVOSTests`/`GusVisionOSTests`/`GusMacOSTests` cover shared pure logic with
-Swift Testing and are the only test bundles run in CI. The matching `Gus iOS Tests`/
-`Gus tvOS Tests`/etc. schemes are narrow local smoke tests for the Connect screen.
+Swift Testing and are the test bundles run in CI. The matching `Gus iOS Tests`/
+`Gus tvOS Tests`/etc. schemes also provide local authenticated UI regressions using
+`Scripts/demo-server.sh start`; `Gus watchOS Tests` covers Watch browse/audio.
+`python3 Scripts/validate-release.py --phase all` runs the sequential local matrix.
 
 Screenshot automation:
 
@@ -122,8 +127,9 @@ Scripts/screenshots.sh iphone
 
 ## Architecture
 
-A single multiplatform SwiftUI app target, five Supported Destinations. Pure SwiftUI
-lifecycle (`@main struct GusApp: App`), no AppDelegate. Source is layered under `Sources/`:
+A single multiplatform SwiftUI app target, five Supported Destinations. SwiftUI
+lifecycle (`@main struct GusApp: App`), with a minimal iOS `UIApplicationDelegateAdaptor`
+only for background URLSession wake/completion events (ADR 0005). Source is layered under `Sources/`:
 
 ```
 App/        @main entry + RootView (signed-out vs signed-in switch) + GusAppIntents.swift
@@ -157,8 +163,10 @@ State objects are `@Observable @MainActor` classes (Observation framework — no
   connect / sign-in / restore / sign-out.
 - `RootView` switches on `AppModel.currentSession`: `nil` → `ConnectFlowView`; otherwise
   injects a `SessionStore` (authenticated `JellyfinClient` + user + server) into the signed-in tree.
-- Feature stores (`HomeStore`, `LibraryStore`, `PlaybackStore`) take a `SessionStore` and
-  are created inside a view's `.task`; they call `session.client.send(...)`.
+- Feature stores take a `SessionStore` and use its media provider. `RootNavigationState`
+  owns Home, cached library/detail stores, per-section search, navigation paths, and
+  scroll anchors for the signed-in account; adaptive view replacement reuses that state.
+  `RootView` owns `AudioPlaybackCoordinator` and stops it when the account changes.
 
 ### Auth & session flow
 
@@ -178,10 +186,15 @@ navigation destinations are registered once at each `NavigationStack` root via
 `.gusItemDestinations()`; feature views push typed `LibraryRef`/`ItemRef` values. Fixed
 app destinations use `AppRoute` + `AppNavigationModel` for `gus://home`, `gus://search`,
 and `gus://settings`, shared by URL opens, menu commands, and the tvOS Top Shelf extension.
+All section stacks bind their paths to `RootNavigationState`. Compact iPhone navigation
+with more than five sections exposes the first four plus an explicit More list, keeping
+one stack per section. Settings/Downloads children use the typed `AppScreen` destinations.
 
 **Content deep links** (`gus://item/<id>`, `gus://play/<id>` — `Models/ContentLink.swift`)
 ride `AppNavigationModel` via a consume-once pending-link; `Platform/ContentLinkHandler.swift`
-resolves the id through the session's provider and presents the detail sheet or player.
+resolves the id through the session's provider. tvOS item links push into the selected
+section's normal stack; other platforms present a detail sheet. Session player hosts sit
+above adaptive layout replacement, with the detail sheet hosting playback while it is open.
 Content links are the shared entry point for: **Handoff** (`Platform/UserActivities.swift`
 — detail/player surfaces publish `NSUserActivity` with ids only, never tokens), **Core
 Spotlight** (`Services/SpotlightIndexer.swift` — donates browsed items, refuses
@@ -214,6 +227,12 @@ feeds `MPNowPlayingInfoCenter` / `MPRemoteCommandCenter`. `AVAudioSession` is gu
 **Audio:** songs and audiobooks play through `AudioPlayerStore` + `AudioPlayerView` (queue,
 shuffle/repeat, speed, chapters) over the Jellyfin universal audio endpoint.
 `playerPresentation` routes by `MediaItem.isAudioPlayable`.
+`AudioPlaybackCoordinator` owns the queue and preparation task independently of the player
+presentation. Done closes prepared audio while playback continues; the persistent Now
+Playing control reopens it, and Stop ends the queue. Closing during preparation cancels
+the task. Audio/video stores reject late results after cancellation or teardown; loading
+and failed player states expose cancellation and retry. The Watch companion uses its own
+scrollable audio sheet and tears down playback when leaving that sheet.
 
 **visionOS 3D:** `Media3DDetector` maps Jellyfin SBS/TAB/MVC metadata into a
 `Stereo3DPresentation`; non-visionOS always resolves to 2D. SBS/TAB use Gus Cinema
@@ -240,7 +259,9 @@ via `WatchSessionRelay` / `WatchCredentialReceiver`.
 - **Language/style:** Swift API Design Guidelines. Match surrounding code's idiom. Doc-comment
   types and non-obvious methods with `///`; explain *why*, not *what*.
 - **Concurrency:** `@MainActor @Observable` state objects. `async`/`await` for networking;
-  no Combine. Project builds in **Swift 5 language mode** (`SWIFT_VERSION = 5`) deliberately.
+  no Combine. Complete checking on all targets. Watch, Top Shelf and tvOS/visionOS app
+  use Swift 6; iOS/macOS use Swift 5 pending the documented Readium/Declared Age Range
+  isolation boundaries in `Documentation/Reviews/2026-10-10-release-validation/SWIFT-CONCURRENCY.md`.
 - **Platform branches:** confine `#if os(...)` to `Platform/` and small guarded view
   modifiers. Feature views should read as ordinary SwiftUI.
 - **Errors & states:** use `ContentUnavailableView` + `LoadState` + `LoadingStateView`. Log

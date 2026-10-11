@@ -8,7 +8,7 @@
     /// *accelerator* per the watchOS brief — the watch signs in standalone (Quick
     /// Connect) without it. Transport is Apple's encrypted device-to-device channel;
     /// the token never touches a third party.
-    final class WatchSessionRelay: NSObject, WCSessionDelegate {
+    @MainActor final class WatchSessionRelay: NSObject, WCSessionDelegate {
         static let shared = WatchSessionRelay()
 
         private let logger = Logger(subsystem: Logger.subsystem, category: "WatchRelay")
@@ -63,21 +63,24 @@
             do {
                 try WCSession.default.updateApplicationContext(payload)
             } catch {
-                logger.info("Watch hand-off skipped: \(error.localizedDescription, privacy: .public)")
+                logger.info("Watch hand-off skipped: \(error.localizedDescription, privacy: .private)")
             }
         }
 
         // MARK: - WCSessionDelegate
 
-        func session(_ session: WCSession, activationDidCompleteWith activationState: WCSessionActivationState, error: (any Error)?) {
-            guard activationState == .activated, let pendingPayload else { return }
-            self.pendingPayload = nil
-            send(pendingPayload)
+        nonisolated func session(_ session: WCSession, activationDidCompleteWith activationState: WCSessionActivationState, error: (any Error)?) {
+            guard activationState == .activated else { return }
+            Task { @MainActor [weak self] in
+                guard let self, let pendingPayload = self.pendingPayload else { return }
+                self.pendingPayload = nil
+                self.send(pendingPayload)
+            }
         }
 
-        func sessionDidBecomeInactive(_ session: WCSession) {}
+        nonisolated func sessionDidBecomeInactive(_ session: WCSession) {}
 
-        func sessionDidDeactivate(_ session: WCSession) {
+        nonisolated func sessionDidDeactivate(_ session: WCSession) {
             session.activate()
         }
     }

@@ -121,7 +121,7 @@ final class SharePlayCoordinator {
             _ = try await activity.activate()
         } catch {
             let gusError = GusError(from: error)
-            logger.error("SharePlay activation failed: \(gusError.localizedDescription, privacy: .public)")
+            logger.error("SharePlay activation failed: \(gusError.localizedDescription, privacy: .private)")
             errorMessage = gusError.localizedDescription
         }
     }

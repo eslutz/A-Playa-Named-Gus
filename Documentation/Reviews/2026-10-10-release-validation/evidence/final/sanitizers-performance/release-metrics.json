@@ -1,0 +1,71 @@
+[
+  {
+    "test": "PerformanceMeasurementTests/testHistogramMathMeasurement()",
+    "metric": "Time",
+    "unit": "seconds",
+    "measurements": [
+      0.00012525,
+      5.9125e-05,
+      5.7e-05,
+      5.6958e-05,
+      5.5916e-05,
+      5.5833e-05,
+      5.5541e-05,
+      5.5791e-05,
+      5.5583e-05,
+      5.5375e-05
+    ],
+    "samples": 10,
+    "mean": 6.32372e-05,
+    "median": 5.5874499999999995e-05,
+    "minimum": 5.5375e-05,
+    "maximum": 0.00012525,
+    "scope": "Optimized macOS Release, testability enabled, code coverage disabled; pure logic; no enforced production budget"
+  },
+  {
+    "test": "PerformanceMeasurementTests/testMediaItemMapperThroughputMeasurement()",
+    "metric": "Time",
+    "unit": "seconds",
+    "measurements": [
+      0.007477458,
+      0.004858,
+      0.005433458,
+      0.006245041,
+      0.002037916,
+      0.001864333,
+      0.001850583,
+      0.001850041,
+      0.001882791,
+      0.001852916
+    ],
+    "samples": 10,
+    "mean": 0.0035352537,
+    "median": 0.0019603535,
+    "minimum": 0.001850041,
+    "maximum": 0.007477458,
+    "scope": "Optimized macOS Release, testability enabled, code coverage disabled; pure logic; no enforced production budget"
+  },
+  {
+    "test": "PerformanceMeasurementTests/testServerURLNormalizationMeasurement()",
+    "metric": "Time",
+    "unit": "seconds",
+    "measurements": [
+      0.01154975,
+      0.010116083,
+      0.006568291,
+      0.004365125,
+      0.004308916,
+      0.004296666,
+      0.004366291,
+      0.00524725,
+      0.004781041,
+      0.005815416
+    ],
+    "samples": 10,
+    "mean": 0.0061414829,
+    "median": 0.0050141455,
+    "minimum": 0.004296666,
+    "maximum": 0.01154975,
+    "scope": "Optimized macOS Release, testability enabled, code coverage disabled; pure logic; no enforced production budget"
+  }
+]

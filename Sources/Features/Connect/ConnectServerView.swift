@@ -13,9 +13,11 @@ struct ConnectServerView: View {
     @State private var errorMessage: String?
     @State private var discoveryStore = ServerDiscoveryStore()
     @State private var connectTask: Task<Void, Never>?
+    @State private var connectGeneration = 0
 
     var body: some View {
         Form {
+            Section { Text("Connect to Jellyfin").font(.headline).fixedSize(horizontal: false, vertical: true) }
             serverAddressSection
             connectErrorSection
             connectActionSection
@@ -28,9 +30,9 @@ struct ConnectServerView: View {
         .tint(.accentColor)
         .frame(maxWidth: 720)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-        .navigationTitle("Connect to Jellyfin")
+        .navigationTitle("Connect")
         .onDisappear {
-            connectTask?.cancel()
+            cancelConnect()
             discoveryStore.cancel()
         }
     }
@@ -38,12 +40,19 @@ struct ConnectServerView: View {
     private var serverAddressSection: some View {
         Section {
             TextField("http://192.168.1.50:8096", text: $urlText)
+                .accessibilityIdentifier("ConnectServerView.serverAddress")
+                .accessibilityLabel("Server Address")
                 .urlFieldStyle()
+            #if os(iOS)
+                .frame(minHeight: 44)
+            #endif
                 .onSubmit(connect)
         } header: {
             Text("Server Address")
+                .foregroundStyle(Color.primary)
         } footer: {
             Text("Enter your Jellyfin server's address, including the port (default 8096).")
+                .foregroundStyle(Color.primary)
         }
     }
 
@@ -68,16 +77,22 @@ struct ConnectServerView: View {
                 HStack {
                     Text("Connect")
                     Spacer()
-                    if isConnecting { ProgressView() }
+                    if isConnecting {
+                        ProgressView()
+                    }
                 }
             }
             .disabled(urlText.trimmingCharacters(in: .whitespaces).isEmpty || isConnecting)
             .accessibilityIdentifier("ConnectServerView.connectButton")
+            if isConnecting {
+                Button("Cancel", role: .cancel) { cancelConnect() }
+                    .accessibilityIdentifier("ConnectServerView.cancelButton")
+            }
         }
     }
 
     private var localServersSection: some View {
-        Section("Local Servers") {
+        Section {
             HStack {
                 Label(discoveryStore.isSearching ? "Searching for Local Servers" : "Local Server Discovery", systemImage: "network")
                 Spacer()
@@ -90,6 +105,8 @@ struct ConnectServerView: View {
                         Label("Refresh", systemImage: "arrow.clockwise")
                     }
                     .labelStyle(.iconOnly)
+                    .frame(minWidth: 44, minHeight: 44)
+                    .contentShape(Rectangle())
                     .buttonStyle(.borderless)
                 }
             }
@@ -106,11 +123,12 @@ struct ConnectServerView: View {
 
             switch discoveryStore.state {
             case .idle:
-                ContentUnavailableView(
-                    "Find Local Servers",
-                    systemImage: "network",
-                    description: Text("Use Refresh to search for Jellyfin servers on this network.")
-                )
+                ContentUnavailableView {
+                    Label("Find Local Servers", systemImage: "network")
+                } description: {
+                    Text("Use Refresh to search for Jellyfin servers on this network.")
+                        .foregroundStyle(Color.primary)
+                }
             case .empty:
                 ContentUnavailableView(
                     "No Servers Found",
@@ -126,6 +144,9 @@ struct ConnectServerView: View {
             default:
                 EmptyView()
             }
+        } header: {
+            Text("Local Servers")
+                .foregroundStyle(Color.primary)
         }
     }
 
@@ -138,8 +159,14 @@ struct ConnectServerView: View {
                     guard !isConnecting else { return }
                     errorMessage = nil
                     isConnecting = true
-                    Task {
-                        defer { isConnecting = false }
+                    connectGeneration += 1
+                    let generation = connectGeneration
+                    connectTask = Task {
+                        defer {
+                            if generation == connectGeneration {
+                                isConnecting = false
+                            }
+                        }
                         await appModel.connectToLocalDemoServer()
                     }
                 } label: {
@@ -157,16 +184,33 @@ struct ConnectServerView: View {
         errorMessage = nil
         isConnecting = true
         connectTask?.cancel()
+        connectGeneration += 1
+        let generation = connectGeneration
+        let address = urlText
         connectTask = Task {
-            defer { isConnecting = false }
+            defer {
+                if generation == connectGeneration {
+                    isConnecting = false
+                }
+            }
             do {
-                let server = try await appModel.connect(to: urlText)
+                let server = try await appModel.connect(to: address)
+                try Task.checkCancellation()
+                guard generation == connectGeneration else { return }
                 onConnected(server)
             } catch {
-                guard !GusError(from: error).isCancellation else { return }
+                guard generation == connectGeneration, !Task.isCancelled, !GusError(from: error).isCancellation else { return }
                 errorMessage = error.localizedDescription
             }
         }
+    }
+
+    private func cancelConnect() {
+        connectGeneration += 1
+        connectTask?.cancel()
+        connectTask = nil
+        isConnecting = false
+        errorMessage = nil
     }
 }
 

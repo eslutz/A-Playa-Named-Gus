@@ -1,0 +1,1 @@
+<XCUIAccessibilityAuditIssue: 0x10ead9530>AuditType:"4" CompactDescription:"Hit area is too small" DetailedDescription:"The size of this SwiftUI.AccessibilityNode is too small for user to interact." Element:"Manage Downloads" Button

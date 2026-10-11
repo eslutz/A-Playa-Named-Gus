@@ -41,10 +41,15 @@ Use Xcode Cloud for Apple-distributable work:
 | UI tests on Apple targets | Xcode Cloud |
 | Release candidate validation | Xcode Cloud |
 
-`ci_scripts/ci_post_clone.sh` installs XcodeGen when needed, validates that Xcode Cloud
-is using Team ID `QS3GC3CT43`, writes a temporary automatic-signing override, and
-regenerates `A Playa Named Gus.xcodeproj` before Xcode Cloud builds. Keep the generated
-project out of git.
+The shared generated project, shared schemes, and `Package.resolved` must be committed
+before Cloud onboarding. `project.yml` remains authoritative; GitHub Actions checks
+snapshot drift with `Scripts/check-cloud-project.py` and resolves only pinned versions.
+
+`ci_scripts/ci_post_clone.sh` handles Apple's `ci_scripts` working directory, validates
+Team ID `QS3GC3CT43`, and writes the automatic-signing override. In Cloud it requires the
+existing project and lockfile and does not regenerate them. Outside Cloud it retains
+local XcodeGen convenience. See [API preparation](api-access.md) for authentication
+and the remaining portal steps. These are prepared local changes, not a live workflow.
 
 ## Default Triggers
 

@@ -70,7 +70,7 @@ final class HomeStore {
         let provider = session.mediaProvider
         let indexedItems = await withTaskGroup(of: (Int, MediaItem?).self) { group in
             for (index, link) in links.enumerated() {
-                group.addTask { @MainActor in
+                group.addTask {
                     do {
                         return try (index, await provider.item(id: link.itemID))
                     } catch {
@@ -110,7 +110,7 @@ final class HomeStore {
         } catch {
             let gusError = GusError(from: error)
             guard !gusError.isCancellation else { return } // navigated away mid-load
-            logger.error("Home load failed: \(gusError.localizedDescription, privacy: .public)")
+            logger.error("Home load failed: \(gusError.localizedDescription, privacy: .private)")
             state = .failed(gusError.localizedDescription)
         }
     }
@@ -160,7 +160,7 @@ final class HomeStore {
         ) { group in
             for (index, library) in candidates.enumerated() {
                 guard let parentID = library.id else { continue }
-                group.addTask { @MainActor in
+                group.addTask {
                     let latestItems = try await provider.latestMedia(in: library, limit: 12)
                     let items = ContentRatingGate.filter(
                         LatestMediaDisplayMapper.displayItems(from: latestItems, libraryCollectionType: library.collectionType)

@@ -1,0 +1,82 @@
+[
+  {
+    "path": "audio-ax5/Tests/GusAuthenticatedUITests.swift",
+    "sha256": "f0870bd48332ff451baac838f6d655a9816fd3c88169deda4199a7e2a81f04ff"
+  },
+  {
+    "path": "audio-ax5/project.yml",
+    "sha256": "1790abb987e4b5c7870c6d639e6bce242e0c5c924ba80a5a984a6b206b07ef2e"
+  },
+  {
+    "path": "audio-ax5-final.py",
+    "sha256": "f8c945edf74f7c26296b396711c88610d1887f2f731fa48f8b47db80bc91aa83"
+  },
+  {
+    "path": "expanded-ui.py",
+    "sha256": "d9eee4c9495ac0faff1434b4bf5fb8aeb5f73095d6e2218b27fb8a5dbeedd9af"
+  },
+  {
+    "path": "final-driver.py",
+    "sha256": "710789c4a5e2ac6cce16ded27f977bff5212b4946887267bcd74f000411dcad8"
+  },
+  {
+    "path": "history/StateValidation-first-attempt.swift",
+    "sha256": "1fe900ceac2aa40b222dbc7023d396a5d526871d22bd964fd33bea30caa6ac08"
+  },
+  {
+    "path": "launch-correction.py",
+    "sha256": "fd120a74e2bfc363b93eef83f07c156038787fdab29872ce2a91efc6f85febe0"
+  },
+  {
+    "path": "native-mac-ui.py",
+    "sha256": "62ecfba3c9114f8ecd601ea7f781125851b111e40bfff62a78c9e4ce7cf2a53d"
+  },
+  {
+    "path": "native-vision-observer.py",
+    "sha256": "0c731a10cb86f3551f9ad30049138f850a1c474ce335fbd9fc310344bff6285a"
+  },
+  {
+    "path": "profile-supplement.py",
+    "sha256": "3f343f2f6bf316f44daf69b22710ae49d9a0976d046bf7e833e2684d8795f36a"
+  },
+  {
+    "path": "profile.py",
+    "sha256": "daddccc88efb4fe97edd85046191a7ebad722938710c74030809d1f90e7a4e48"
+  },
+  {
+    "path": "resume-final.py",
+    "sha256": "19e6697f6a4161bdf05e88d7916fcbb64e42f4864326faedf74a9ad7e2126e5d"
+  },
+  {
+    "path": "sanitizers-performance.py",
+    "sha256": "d6477eacb96809f7db03cc866c8bd3ca773d7896ffd2fd94d9894747b6ffe48d"
+  },
+  {
+    "path": "slow-server.py",
+    "sha256": "c21826796175f5764ded7ac634ea62b7d32a8d81d357708897f9c094c00f42a2"
+  },
+  {
+    "path": "state/Tests/StateValidation.swift",
+    "sha256": "367d4d8a8d01b18cf5401d1ea82aa7ffba1328753b25a925dfdb24b7abd93a1e"
+  },
+  {
+    "path": "state/Tests/fixture.json",
+    "sha256": "bae79fca660f62c811c60c345d3e3c6487a9c4f0a8f5dfc99a9c98629d589d38"
+  },
+  {
+    "path": "state/project.yml",
+    "sha256": "3023b788699860a2b242ef03b2d03ad396e6e19be38baa2756fa212957b3df9b"
+  },
+  {
+    "path": "vision-capture/Tests/GusAuthenticatedUITests.swift",
+    "sha256": "a782a2798a12dec1f099961f68586668f8607a806965390a208b66b9738e0fe9"
+  },
+  {
+    "path": "vision-capture/project.yml",
+    "sha256": "c2b60f6993538065b8a5cc7f766299d3cdd25b2f0be491a514b82b18e705f472"
+  },
+  {
+    "path": "vision-capture-server.py",
+    "sha256": "f5a1b0c4587a800004eec82ba1d1baa5de2243eb409bea44cb7e66877a34182b"
+  }
+]

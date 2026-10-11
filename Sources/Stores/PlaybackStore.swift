@@ -32,6 +32,10 @@ final class PlaybackStore {
     private let session: SessionStore
     private let playbackRefresh: PlaybackRefreshStore
     private let downloads: OfflineDownloadStore?
+    private let localOnly: Bool
+    private let localProgress: OfflinePlaybackProgressStore
+    private let progressWriterToken: UUID
+    private var isLocalPlayback = false
     private let nowPlaying = NowPlayingController()
     private let logger = Logger(category: .playback)
     private var reportContext: PlaybackReportContext?
@@ -44,12 +48,21 @@ final class PlaybackStore {
     private var didReportStopped = false
     private var isTranscodedPlayback = false
     private var streamSelection = PlaybackStreamSelection.none
+    private var preparationGeneration = 0
 
-    init(item: MediaItem, session: SessionStore, playbackRefresh: PlaybackRefreshStore, downloads: OfflineDownloadStore? = nil) {
+    init(item: MediaItem, session: SessionStore, playbackRefresh: PlaybackRefreshStore, downloads: OfflineDownloadStore? = nil, localOnly: Bool = false, localProgress: OfflinePlaybackProgressStore? = nil) {
         self.item = item
         self.session = session
         self.playbackRefresh = playbackRefresh
         self.downloads = downloads
+        self.localOnly = localOnly
+        let progress = localProgress ?? .shared
+        self.localProgress = progress
+        progressWriterToken = progress.writerToken(for: AccountScope(serverID: session.server.id, userID: session.user.id))
+    }
+
+    private var accountScope: AccountScope {
+        AccountScope(serverID: session.server.id, userID: session.user.id)
     }
 
     var audioOptions: [PlaybackStreamOption] {
@@ -91,7 +104,13 @@ final class PlaybackStore {
         guard player == nil else { return }
         didReportStopped = false
         didFinishPlayback = false
-        await loadPlayback(startTimeTicks: PlaybackTime.resumePositionTicks(for: item), replacingCurrentItem: false)
+        let hasLocalFile = downloads?.localFileURL(for: item, serverID: session.server.id, userID: session.user.id) != nil
+        let localTicks = hasLocalFile ? item.id.flatMap { localProgress.positionTicks(forItemID: $0, scope: accountScope) } : nil
+        let resumeTicks = localTicks ?? PlaybackTime.resumePositionTicks(for: item)
+        let initialTicks = resumeTicks.map { ticks in
+            item.runTimeTicks.map { $0 > 0 && ticks >= $0 ? 0 : ticks } ?? ticks
+        }
+        await loadPlayback(startTimeTicks: initialTicks, replacingCurrentItem: false)
     }
 
     func selectAudioStream(index: Int?) async {
@@ -101,6 +120,7 @@ final class PlaybackStore {
             refreshReportedStreamSelection()
             return
         }
+        guard !isLocalPlayback else { return }
         streamSelection.audioStreamIndex = index
         await rebuildCurrentItemPreservingPosition()
     }
@@ -112,6 +132,7 @@ final class PlaybackStore {
             refreshReportedStreamSelection()
             return
         }
+        guard !isLocalPlayback else { return }
         streamSelection.subtitleStreamIndex = index
         await rebuildCurrentItemPreservingPosition()
     }
@@ -167,7 +188,7 @@ final class PlaybackStore {
     }
 
     func selectViewingMode(_ mode: Stereo3DViewingMode) async {
-        guard viewingMode != mode else { return }
+        guard !isLocalPlayback, viewingMode != mode else { return }
         viewingMode = mode
         await rebuildCurrentItemPreservingPosition()
     }
@@ -194,9 +215,10 @@ final class PlaybackStore {
     }
 
     private func loadPlayback(startTimeTicks: Int?, replacingCurrentItem: Bool) async {
+        preparationGeneration += 1
+        let generation = preparationGeneration
         state = .loading
         stereoFallbackNotice = nil
-        configureAudioSession()
         let diagnostics = DiagnosticsHub.shared
         diagnostics.record(.playbackStartRequested)
         let startupInterval = diagnostics.beginInterval("PlaybackStartup")
@@ -209,7 +231,17 @@ final class PlaybackStore {
         }
 
         do {
+            await PlaybackAudioSession.activate(video: true)
+            try Task.checkCancellation()
+            guard generation == preparationGeneration else { return }
             let localURL = downloads?.localFileURL(for: item, serverID: session.server.id, userID: session.user.id)
+            guard ContentRatingGate.admitsStored(item) else {
+                throw GusError.server(String(localized: "This item is restricted.", comment: "Restricted playback"))
+            }
+            if localURL == nil, localOnly || downloads?.record(for: item, serverID: session.server.id, userID: session.user.id)?.status.isComplete == true {
+                throw GusError.server(String(localized: "The downloaded file is missing. Download it again to play it offline.", comment: "Missing offline file"))
+            }
+            isLocalPlayback = localURL != nil
             let resolution: PlaybackSourceResolution?
             let playbackURL: URL
             if let localURL {
@@ -239,7 +271,9 @@ final class PlaybackStore {
                     resolution: remoteResolution
                 )
             }
-            logger.info("Playing \(self.item.name ?? "item", privacy: .public) (local: \(localURL != nil, privacy: .public), transcoding: \(resolution?.isTranscoding == true, privacy: .public))")
+            try Task.checkCancellation()
+            guard generation == preparationGeneration else { return }
+            logger.info("Playing \(self.item.name ?? "item", privacy: .private) (local: \(localURL != nil, privacy: .public), transcoding: \(resolution?.isTranscoding == true, privacy: .public))")
 
             let playerItem = AVPlayerItem(url: playbackURL)
             #if !os(macOS)
@@ -279,7 +313,15 @@ final class PlaybackStore {
                 )
             }
 
-            nowPlaying.start(player: player, item: item, artworkURL: session.mediaProvider.primaryImageURL(for: item, context: .nowPlayingArtwork))
+            try Task.checkCancellation()
+            guard generation == preparationGeneration else { return }
+            nowPlaying.start(
+                player: player,
+                item: item,
+                artworkURL: isLocalPlayback
+                    ? downloads?.localArtworkURL(for: item, serverID: session.server.id, userID: session.user.id)
+                    : session.mediaProvider.primaryImageURL(for: item, context: .nowPlayingArtwork)
+            )
             if progressObserver == nil {
                 addProgressObserver(player: player)
             }
@@ -291,13 +333,20 @@ final class PlaybackStore {
             ))
             reportPlaybackStart(context: context, player: player)
             player.play()
-            await loadNextUpIfNeeded()
+            if isLocalPlayback {
+                nextUpItem = DownloadedLibrary.nextEpisode(after: item, records: downloads?.completedRecords(
+                    serverID: session.server.id, userID: session.user.id
+                ) ?? [])
+            } else {
+                await loadNextUpIfNeeded()
+            }
         } catch {
             diagnostics.endInterval("PlaybackStartup", startupInterval)
+            guard generation == preparationGeneration else { return }
             let gusError = GusError(from: error)
             guard !gusError.isCancellation else { return } // dismissed before playback resolved
             diagnostics.record(.playbackFailed)
-            logger.error("Playback prepare failed: \(gusError.localizedDescription, privacy: .public)")
+            logger.error("Playback prepare failed: \(gusError.localizedDescription, privacy: .private)")
             state = .failed(gusError.localizedDescription)
         }
     }
@@ -349,8 +398,8 @@ final class PlaybackStore {
             object: playerItem,
             queue: .main
         ) { [weak self] notification in
+            let error = notification.userInfo?[AVPlayerItemFailedToPlayToEndTimeErrorKey] as? Error
             MainActor.assumeIsolated {
-                let error = notification.userInfo?[AVPlayerItemFailedToPlayToEndTimeErrorKey] as? Error
                 let message = error.map { GusError(from: $0).localizedDescription }
                     ?? String(localized: "Playback stopped unexpectedly.", comment: "Generic playback failure message")
                 self?.state = .failed(message)
@@ -430,6 +479,10 @@ final class PlaybackStore {
     }
 
     private func reportPlaybackStart(context: PlaybackReportContext, player: AVPlayer) {
+        if isLocalPlayback {
+            localProgress.checkpoint(itemID: context.itemID, positionTicks: currentPositionTicks(), scope: accountScope, writerToken: progressWriterToken)
+            return
+        }
         sendReport("start") { [self] in
             try await self.session.mediaProvider.reportPlaybackStart(
                 context: context,
@@ -441,6 +494,10 @@ final class PlaybackStore {
 
     private func reportPlaybackProgress(positionTicks: Int, isPaused: Bool) {
         guard let reportContext else { return }
+        if isLocalPlayback {
+            localProgress.checkpoint(itemID: reportContext.itemID, positionTicks: positionTicks, scope: accountScope, writerToken: progressWriterToken)
+            return
+        }
         sendReport("progress") { [self] in
             try await self.session.mediaProvider.reportPlaybackProgress(
                 context: reportContext,
@@ -451,6 +508,11 @@ final class PlaybackStore {
     }
 
     private func reportPlaybackStopped(context: PlaybackReportContext, positionTicks: Int) {
+        if isLocalPlayback {
+            localProgress.checkpoint(itemID: context.itemID, positionTicks: positionTicks, scope: accountScope, writerToken: progressWriterToken)
+            playbackRefresh.markPlaybackProgressChanged()
+            return
+        }
         sendReport("stopped") { [self] in
             try await self.session.mediaProvider.reportPlaybackStopped(context: context, positionTicks: positionTicks)
             await MainActor.run {
@@ -468,7 +530,7 @@ final class PlaybackStore {
                 let gusError = GusError(from: error)
                 guard !gusError.isCancellation else { return }
                 gusError.handleIfUnauthorized(session: session)
-                logger.error("Playback \(kind, privacy: .public) report failed: \(gusError.localizedDescription, privacy: .public)")
+                logger.error("Playback \(kind, privacy: .public) report failed: \(gusError.localizedDescription, privacy: .private)")
             }
         }
     }
@@ -509,11 +571,11 @@ final class PlaybackStore {
         guard nextUpItem == nil, item.type == .episode, let seriesID = item.seriesID else { return }
         do {
             let items = try await session.mediaProvider.nextUpItems(seriesID: seriesID, limit: 1)
-            nextUpItem = items.first { $0.id != item.id }
+            nextUpItem = ContentRatingGate.filter(items).first { $0.id != item.id }
         } catch {
             let gusError = GusError(from: error)
             guard !gusError.isCancellation else { return }
-            logger.error("Next-up load failed: \(gusError.localizedDescription, privacy: .public)")
+            logger.error("Next-up load failed: \(gusError.localizedDescription, privacy: .private)")
         }
     }
 
@@ -528,17 +590,7 @@ final class PlaybackStore {
 
     // MARK: - Audio session (no-op on macOS, which has no AVAudioSession)
 
-    private func configureAudioSession() {
-        #if os(iOS) || os(tvOS) || os(visionOS)
-            let session = AVAudioSession.sharedInstance()
-            try? session.setCategory(.playback, mode: .moviePlayback)
-            try? session.setActive(true)
-        #endif
-    }
-
     private func deactivateAudioSession() {
-        #if os(iOS) || os(tvOS) || os(visionOS)
-            try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
-        #endif
+        PlaybackAudioSession.deactivate()
     }
 }

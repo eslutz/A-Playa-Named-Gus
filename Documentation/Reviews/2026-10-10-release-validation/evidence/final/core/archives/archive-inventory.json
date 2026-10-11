@@ -1,0 +1,258 @@
+[
+  {
+    "archive": "vision.xcarchive",
+    "bundle": "Products/Applications/A Playa Named Gus.app",
+    "identifier": "dev.ericslutz.gus",
+    "version": "1.0.0",
+    "build": "1",
+    "binarySHA256": "29bdaf3a91ddba7d3e95b2d70c3cf5d5be6a57ca122db94692ad1e69e964cbbc",
+    "manifests": [
+      {
+        "path": "PrivacyInfo.xcprivacy",
+        "accessedAPIs": [
+          {
+            "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryDiskSpace",
+            "NSPrivacyAccessedAPITypeReasons": [
+              "E174.1"
+            ]
+          },
+          {
+            "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryUserDefaults",
+            "NSPrivacyAccessedAPITypeReasons": [
+              "CA92.1"
+            ]
+          }
+        ],
+        "tracking": false
+      },
+      {
+        "path": "swift-nio_NIOPosix.bundle/PrivacyInfo.xcprivacy",
+        "accessedAPIs": [
+          {
+            "NSPrivacyAccessedAPITypeReasons": [
+              "0A2A.1"
+            ],
+            "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryFileTimestamp"
+          }
+        ],
+        "tracking": false
+      }
+    ]
+  },
+  {
+    "archive": "ios.xcarchive",
+    "bundle": "Products/Applications/A Playa Named Gus.app",
+    "identifier": "dev.ericslutz.gus",
+    "version": "1.0.0",
+    "build": "1",
+    "binarySHA256": "c779da00183f7934c5a945f06f90a1359c09457db0d2d6e8e705d6a6655eeaee",
+    "manifests": [
+      {
+        "path": "PrivacyInfo.xcprivacy",
+        "accessedAPIs": [
+          {
+            "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryDiskSpace",
+            "NSPrivacyAccessedAPITypeReasons": [
+              "E174.1"
+            ]
+          },
+          {
+            "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryUserDefaults",
+            "NSPrivacyAccessedAPITypeReasons": [
+              "CA92.1"
+            ]
+          }
+        ],
+        "tracking": false
+      },
+      {
+        "path": "CryptoSwift_CryptoSwiftResources.bundle/PrivacyInfo.xcprivacy",
+        "accessedAPIs": [],
+        "tracking": false
+      },
+      {
+        "path": "swift-nio_NIOPosix.bundle/PrivacyInfo.xcprivacy",
+        "accessedAPIs": [
+          {
+            "NSPrivacyAccessedAPITypeReasons": [
+              "0A2A.1"
+            ],
+            "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryFileTimestamp"
+          }
+        ],
+        "tracking": false
+      },
+      {
+        "path": "ReadiumZIPFoundation_ReadiumZIPFoundation.bundle/PrivacyInfo.xcprivacy",
+        "accessedAPIs": [
+          {
+            "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryFileTimestamp",
+            "NSPrivacyAccessedAPITypeReasons": [
+              "3B52.1"
+            ]
+          }
+        ],
+        "tracking": false
+      },
+      {
+        "path": "Watch/GusWatch.app/PrivacyInfo.xcprivacy",
+        "accessedAPIs": [
+          {
+            "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryDiskSpace",
+            "NSPrivacyAccessedAPITypeReasons": [
+              "E174.1"
+            ]
+          },
+          {
+            "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryUserDefaults",
+            "NSPrivacyAccessedAPITypeReasons": [
+              "CA92.1"
+            ]
+          }
+        ],
+        "tracking": false
+      },
+      {
+        "path": "Watch/GusWatch.app/swift-nio_NIOPosix.bundle/PrivacyInfo.xcprivacy",
+        "accessedAPIs": [
+          {
+            "NSPrivacyAccessedAPITypeReasons": [
+              "0A2A.1"
+            ],
+            "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryFileTimestamp"
+          }
+        ],
+        "tracking": false
+      }
+    ]
+  },
+  {
+    "archive": "ios.xcarchive",
+    "bundle": "Products/Applications/A Playa Named Gus.app/Watch/GusWatch.app",
+    "identifier": "dev.ericslutz.gus.watchkitapp",
+    "version": "1.0.0",
+    "build": "1",
+    "binarySHA256": "0e79112924864ce6aff964204f684bbaea337dfacf1f7ea48524dc974150204d",
+    "manifests": [
+      {
+        "path": "PrivacyInfo.xcprivacy",
+        "accessedAPIs": [
+          {
+            "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryDiskSpace",
+            "NSPrivacyAccessedAPITypeReasons": [
+              "E174.1"
+            ]
+          },
+          {
+            "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryUserDefaults",
+            "NSPrivacyAccessedAPITypeReasons": [
+              "CA92.1"
+            ]
+          }
+        ],
+        "tracking": false
+      },
+      {
+        "path": "swift-nio_NIOPosix.bundle/PrivacyInfo.xcprivacy",
+        "accessedAPIs": [
+          {
+            "NSPrivacyAccessedAPITypeReasons": [
+              "0A2A.1"
+            ],
+            "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryFileTimestamp"
+          }
+        ],
+        "tracking": false
+      }
+    ]
+  },
+  {
+    "archive": "tv.xcarchive",
+    "bundle": "Products/Applications/A Playa Named Gus.app",
+    "identifier": "dev.ericslutz.gus",
+    "version": "1.0.0",
+    "build": "1",
+    "binarySHA256": "60bc9bbba8ff584b137fef4c5ade8e5d2fd9a69637938a5bbd54cf7113efc6e1",
+    "manifests": [
+      {
+        "path": "PrivacyInfo.xcprivacy",
+        "accessedAPIs": [
+          {
+            "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryDiskSpace",
+            "NSPrivacyAccessedAPITypeReasons": [
+              "E174.1"
+            ]
+          },
+          {
+            "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryUserDefaults",
+            "NSPrivacyAccessedAPITypeReasons": [
+              "CA92.1"
+            ]
+          }
+        ],
+        "tracking": false
+      },
+      {
+        "path": "swift-nio_NIOPosix.bundle/PrivacyInfo.xcprivacy",
+        "accessedAPIs": [
+          {
+            "NSPrivacyAccessedAPITypeReasons": [
+              "0A2A.1"
+            ],
+            "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryFileTimestamp"
+          }
+        ],
+        "tracking": false
+      }
+    ]
+  },
+  {
+    "archive": "tv.xcarchive",
+    "bundle": "Products/Applications/A Playa Named Gus.app/PlugIns/GusTopShelf.appex",
+    "identifier": "dev.ericslutz.gus.topshelf",
+    "version": "1.0.0",
+    "build": "1",
+    "binarySHA256": "92cc8a822f90bc49b7edc211c9e9aba78f1d87d4ab4f6ec1b8c4d3490f4245f7",
+    "manifests": []
+  },
+  {
+    "archive": "mac.xcarchive",
+    "bundle": "Products/Applications/A Playa Named Gus.app",
+    "identifier": "dev.ericslutz.gus",
+    "version": "1.0.0",
+    "build": "1",
+    "binarySHA256": "36f9e39af34067c3529ae6026a0fd32c199a7604b8bc6acd7206aed60669888a",
+    "manifests": [
+      {
+        "path": "Contents/Resources/PrivacyInfo.xcprivacy",
+        "accessedAPIs": [
+          {
+            "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryDiskSpace",
+            "NSPrivacyAccessedAPITypeReasons": [
+              "E174.1"
+            ]
+          },
+          {
+            "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryUserDefaults",
+            "NSPrivacyAccessedAPITypeReasons": [
+              "CA92.1"
+            ]
+          }
+        ],
+        "tracking": false
+      },
+      {
+        "path": "Contents/Resources/swift-nio_NIOPosix.bundle/Contents/Resources/PrivacyInfo.xcprivacy",
+        "accessedAPIs": [
+          {
+            "NSPrivacyAccessedAPITypeReasons": [
+              "0A2A.1"
+            ],
+            "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryFileTimestamp"
+          }
+        ],
+        "tracking": false
+      }
+    ]
+  }
+]

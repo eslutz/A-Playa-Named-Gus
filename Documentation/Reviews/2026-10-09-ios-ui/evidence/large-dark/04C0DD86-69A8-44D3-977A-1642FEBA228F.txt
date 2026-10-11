@@ -1,0 +1,1 @@
+<XCUIAccessibilityAuditIssue: 0x10a5982a0>AuditType:"131072" CompactDescription:"Text clipped" DetailedDescription:"Text of this SwiftUI.UIKitTextField may be clipped at larger Dynamic Type sizes." Element:"http://192.168.1.50:8096" TextField

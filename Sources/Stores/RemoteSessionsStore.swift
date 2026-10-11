@@ -71,7 +71,7 @@ final class RemoteSessionsStore {
         } catch {
             let gusError = GusError(from: error)
             guard !gusError.isCancellation else { return }
-            logger.error("Sessions load failed: \(gusError.localizedDescription, privacy: .public)")
+            logger.error("Sessions load failed: \(gusError.localizedDescription, privacy: .private)")
             state = .failed(gusError.localizedDescription)
         }
     }
@@ -176,7 +176,7 @@ final class RemoteSessionsStore {
             ))
             await refresh()
         } catch {
-            logger.error("Remote seek failed: \(GusError(from: error).localizedDescription, privacy: .public)")
+            logger.error("Remote seek failed: \(GusError(from: error).localizedDescription, privacy: .private)")
         }
     }
 
@@ -201,7 +201,7 @@ final class RemoteSessionsStore {
                 startPositionTicks: startPositionTicks
             )))
         } catch {
-            logger.error("Remote play failed: \(GusError(from: error).localizedDescription, privacy: .public)")
+            logger.error("Remote play failed: \(GusError(from: error).localizedDescription, privacy: .private)")
         }
     }
 
@@ -210,7 +210,7 @@ final class RemoteSessionsStore {
             try await session.client.send(Paths.sendPlaystateCommand(sessionID: sessionID, command: command.rawValue))
             await refresh()
         } catch {
-            logger.error("Remote \(command.rawValue, privacy: .public) failed: \(GusError(from: error).localizedDescription, privacy: .public)")
+            logger.error("Remote \(command.rawValue, privacy: .public) failed: \(GusError(from: error).localizedDescription, privacy: .private)")
         }
     }
 
@@ -219,7 +219,7 @@ final class RemoteSessionsStore {
             try await session.client.send(Paths.sendGeneralCommand(sessionID: sessionID, command: command))
             await refresh()
         } catch {
-            logger.error("Remote \(command, privacy: .public) failed: \(GusError(from: error).localizedDescription, privacy: .public)")
+            logger.error("Remote \(command, privacy: .public) failed: \(GusError(from: error).localizedDescription, privacy: .private)")
         }
     }
 }

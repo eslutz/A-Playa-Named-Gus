@@ -7,11 +7,11 @@ struct DetailMetadataRows: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             if let genres = item.genres.nonEmptyStrings, !genres.isEmpty {
-                MetadataPillRow(title: "Genres", values: genres)
+                MetadataPillRow(title: "Genres", values: genres, identifier: "Detail.metadataGenres")
             }
 
             if let studios = item.studios.compactMap(\.name).nonEmptyStrings, !studios.isEmpty {
-                MetadataPillRow(title: "Studios", values: studios)
+                MetadataPillRow(title: "Studios", values: studios, identifier: "Detail.metadataStudios")
             }
         }
     }
@@ -22,12 +22,14 @@ struct DetailMetadataRows: View {
 private struct MetadataPillRow: View {
     let title: LocalizedStringKey
     let values: [String]
+    let identifier: String
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text(title)
                 .font(.headline)
                 .accessibilityAddTraits(.isHeader)
+                .accessibilityIdentifier(identifier)
 
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 10) {

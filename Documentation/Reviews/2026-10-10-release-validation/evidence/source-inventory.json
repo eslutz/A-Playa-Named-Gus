@@ -1,0 +1,1452 @@
+[
+  {
+    "path": "Sources/App/GusApp.swift",
+    "area": "App",
+    "sha256": "446ec46841364d8989dfb1f76eb453d99451c24da997ebe955d61ec8227fa6c9",
+    "lines": 193,
+    "review": "compiler + static API/isolation/ownership/privacy inventory; critical paths traced separately",
+    "taskSites": 0,
+    "uncheckedSendable": false,
+    "availabilityGuards": 11
+  },
+  {
+    "path": "Sources/App/GusAppIntents.swift",
+    "area": "App",
+    "sha256": "fa4dad069aa3a952e9756934ed36592fedc25e1d7344c37775e022d26bb7fbea",
+    "lines": 87,
+    "review": "compiler + static API/isolation/ownership/privacy inventory; critical paths traced separately",
+    "taskSites": 0,
+    "uncheckedSendable": false,
+    "availabilityGuards": 0
+  },
+  {
+    "path": "Sources/App/RootView.swift",
+    "area": "App",
+    "sha256": "dd33fd176d5af6e477069074b87811723e25a291a053f4aec6e1772fa43b07b5",
+    "lines": 43,
+    "review": "compiler + static API/isolation/ownership/privacy inventory; critical paths traced separately",
+    "taskSites": 0,
+    "uncheckedSendable": false,
+    "availabilityGuards": 0
+  },
+  {
+    "path": "Sources/CarPlay/CarPlaySceneDelegate.swift",
+    "area": "CarPlay",
+    "sha256": "ed082b097eb3336f20db87c4eae3c6c175d2e650952bb8410047909edc6bf235",
+    "lines": 190,
+    "review": "compiler + static API/isolation/ownership/privacy inventory; critical paths traced separately",
+    "taskSites": 4,
+    "uncheckedSendable": false,
+    "availabilityGuards": 1
+  },
+  {
+    "path": "Sources/Features/Books/BookActions.swift",
+    "area": "Features",
+    "sha256": "5c54d1361f6ff94186cc7be1ac95f63233ba3f3dc1d2392d26bcd84eb86fbf08",
+    "lines": 184,
+    "review": "compiler + static API/isolation/ownership/privacy inventory; critical paths traced separately",
+    "taskSites": 2,
+    "uncheckedSendable": false,
+    "availabilityGuards": 5
+  },
+  {
+    "path": "Sources/Features/Books/BookReaderView.swift",
+    "area": "Features",
+    "sha256": "d0d66bddb0df3c7592f887dad8d1ed2fdbf93178d6c18976a256e8831124ab25",
+    "lines": 277,
+    "review": "compiler + static API/isolation/ownership/privacy inventory; critical paths traced separately",
+    "taskSites": 3,
+    "uncheckedSendable": false,
+    "availabilityGuards": 2
+  },
+  {
+    "path": "Sources/Features/Connect/ConnectFlowView.swift",
+    "area": "Features",
+    "sha256": "5f74dfa327ba2bf91eebaf2212c7cbd83ee1983007e8c240319d1986d20cc7b6",
+    "lines": 20,
+    "review": "compiler + static API/isolation/ownership/privacy inventory; critical paths traced separately",
+    "taskSites": 0,
+    "uncheckedSendable": false,
+    "availabilityGuards": 0
+  },
+  {
+    "path": "Sources/Features/Connect/ConnectServerView.swift",
+    "area": "Features",
+    "sha256": "f67662689724d03740beb9214b5ff0ba7b79e241b8939c59e11d7feb4c6bece4",
+    "lines": 240,
+    "review": "compiler + static API/isolation/ownership/privacy inventory; critical paths traced separately",
+    "taskSites": 2,
+    "uncheckedSendable": false,
+    "availabilityGuards": 3
+  },
+  {
+    "path": "Sources/Features/Connect/SignInView.swift",
+    "area": "Features",
+    "sha256": "912f743032d0f6ac96b47b1c2a8abceac6c7c37bb5b362a79f434c58424490a9",
+    "lines": 255,
+    "review": "compiler + static API/isolation/ownership/privacy inventory; critical paths traced separately",
+    "taskSites": 1,
+    "uncheckedSendable": false,
+    "availabilityGuards": 2
+  },
+  {
+    "path": "Sources/Features/Downloads/DownloadedBookPlayerView.swift",
+    "area": "Features",
+    "sha256": "205133f3ec2ae34578f5f314ac08614dba91362e3ac94047af65475f620e0b0e",
+    "lines": 40,
+    "review": "compiler + static API/isolation/ownership/privacy inventory; critical paths traced separately",
+    "taskSites": 0,
+    "uncheckedSendable": false,
+    "availabilityGuards": 1
+  },
+  {
+    "path": "Sources/Features/Downloads/DownloadedLibrary.swift",
+    "area": "Features",
+    "sha256": "5dc4f522464485dd2fd93fced4820fe322dbd5d02920923edc2b9e2d595178fe",
+    "lines": 141,
+    "review": "compiler + static API/isolation/ownership/privacy inventory; critical paths traced separately",
+    "taskSites": 0,
+    "uncheckedSendable": false,
+    "availabilityGuards": 0
+  },
+  {
+    "path": "Sources/Features/Downloads/DownloadedLibraryView.swift",
+    "area": "Features",
+    "sha256": "ed72e4d594c3f3fba8dee46d84fcc44b9a60be0de1e3401963d7085f3ae60f40",
+    "lines": 126,
+    "review": "compiler + static API/isolation/ownership/privacy inventory; critical paths traced separately",
+    "taskSites": 0,
+    "uncheckedSendable": false,
+    "availabilityGuards": 0
+  },
+  {
+    "path": "Sources/Features/Home/HomeView.swift",
+    "area": "Features",
+    "sha256": "aaf21793948c77d30958a34391b226f0a14742fe3acaa70b5101942da7b1b73a",
+    "lines": 309,
+    "review": "compiler + static API/isolation/ownership/privacy inventory; critical paths traced separately",
+    "taskSites": 3,
+    "uncheckedSendable": false,
+    "availabilityGuards": 1
+  },
+  {
+    "path": "Sources/Features/Home/LibraryGridView.swift",
+    "area": "Features",
+    "sha256": "88270030ab00e8ca2ce74c6b3c306335cabb39b6675024b9a9791ca51efb2d0b",
+    "lines": 137,
+    "review": "compiler + static API/isolation/ownership/privacy inventory; critical paths traced separately",
+    "taskSites": 4,
+    "uncheckedSendable": false,
+    "availabilityGuards": 0
+  },
+  {
+    "path": "Sources/Features/Item/DownloadButton.swift",
+    "area": "Features",
+    "sha256": "aec623bb5f14b68fb28d35c70ba8e66437c50fbdcffc206ae4d99bad376c19cb",
+    "lines": 85,
+    "review": "compiler + static API/isolation/ownership/privacy inventory; critical paths traced separately",
+    "taskSites": 2,
+    "uncheckedSendable": false,
+    "availabilityGuards": 0
+  },
+  {
+    "path": "Sources/Features/Item/ItemDetailView.swift",
+    "area": "Features",
+    "sha256": "3eace3ba56acd485907a610c10ee66370391f2fe9eb06b658f1e8131c163be58",
+    "lines": 205,
+    "review": "compiler + static API/isolation/ownership/privacy inventory; critical paths traced separately",
+    "taskSites": 4,
+    "uncheckedSendable": false,
+    "availabilityGuards": 5
+  },
+  {
+    "path": "Sources/Features/Item/SeriesEpisodesView.swift",
+    "area": "Features",
+    "sha256": "60c37a8055cb5780a229564696cd6a5c095fc5c04096e6b28d902ff696cd513a",
+    "lines": 147,
+    "review": "compiler + static API/isolation/ownership/privacy inventory; critical paths traced separately",
+    "taskSites": 3,
+    "uncheckedSendable": false,
+    "availabilityGuards": 1
+  },
+  {
+    "path": "Sources/Features/LiveTV/LiveTVView.swift",
+    "area": "Features",
+    "sha256": "29bebf55227df01bb9f0de6a32cfd3189f09af9fa25bfd93b47f52d30bee82ba",
+    "lines": 274,
+    "review": "compiler + static API/isolation/ownership/privacy inventory; critical paths traced separately",
+    "taskSites": 2,
+    "uncheckedSendable": false,
+    "availabilityGuards": 0
+  },
+  {
+    "path": "Sources/Features/Music/AlbumDetailView.swift",
+    "area": "Features",
+    "sha256": "5afc274d0f4f07543e062b14da4799a297b4825f93ddcd34d006d64b79da91f9",
+    "lines": 223,
+    "review": "compiler + static API/isolation/ownership/privacy inventory; critical paths traced separately",
+    "taskSites": 2,
+    "uncheckedSendable": false,
+    "availabilityGuards": 0
+  },
+  {
+    "path": "Sources/Features/Music/AudioPlayerView.swift",
+    "area": "Features",
+    "sha256": "699dd33a7c8a234dfb3c74a9426b93c97b81fcee1ae76a82bf29e815100477a3",
+    "lines": 273,
+    "review": "compiler + static API/isolation/ownership/privacy inventory; critical paths traced separately",
+    "taskSites": 4,
+    "uncheckedSendable": false,
+    "availabilityGuards": 1
+  },
+  {
+    "path": "Sources/Features/Photos/PhotoViewerView.swift",
+    "area": "Features",
+    "sha256": "ab6b52cb0e7dae36272ce1e1581ea72037d1824ebb2edfc354dabb59e432f670",
+    "lines": 134,
+    "review": "compiler + static API/isolation/ownership/privacy inventory; critical paths traced separately",
+    "taskSites": 0,
+    "uncheckedSendable": false,
+    "availabilityGuards": 2
+  },
+  {
+    "path": "Sources/Features/Player/NowPlayingController.swift",
+    "area": "Features",
+    "sha256": "814c6dfd8330db42222f54c68369bd3d10dd25ca0d3e5321ce4769606a5a2059",
+    "lines": 211,
+    "review": "compiler + static API/isolation/ownership/privacy inventory; critical paths traced separately",
+    "taskSites": 3,
+    "uncheckedSendable": false,
+    "availabilityGuards": 0
+  },
+  {
+    "path": "Sources/Features/Player/PlayerExternalMetadata.swift",
+    "area": "Features",
+    "sha256": "a03ce516bb23d1093f7f17b94da2d8b0bf1036c49537c7572073814c39ceb680",
+    "lines": 31,
+    "review": "compiler + static API/isolation/ownership/privacy inventory; critical paths traced separately",
+    "taskSites": 0,
+    "uncheckedSendable": false,
+    "availabilityGuards": 0
+  },
+  {
+    "path": "Sources/Features/Player/PlayerPresentation.swift",
+    "area": "Features",
+    "sha256": "f28112e8bf837c4adc91b7e68e96e112e4d5953b97405c2e7233204bbcb09125",
+    "lines": 172,
+    "review": "compiler + static API/isolation/ownership/privacy inventory; critical paths traced separately",
+    "taskSites": 0,
+    "uncheckedSendable": false,
+    "availabilityGuards": 3
+  },
+  {
+    "path": "Sources/Features/Player/SharePlayCoordinator.swift",
+    "area": "Features",
+    "sha256": "6063832fdd31ff736a6c3f7194280481683bd2cdce5587726af32d820f5d89d7",
+    "lines": 179,
+    "review": "compiler + static API/isolation/ownership/privacy inventory; critical paths traced separately",
+    "taskSites": 1,
+    "uncheckedSendable": false,
+    "availabilityGuards": 0
+  },
+  {
+    "path": "Sources/Features/Player/VideoPlayerView.swift",
+    "area": "Features",
+    "sha256": "7066ee54965bfd93d42c68d853d60d2065af5edcfd92c03efb34480ea3a561d1",
+    "lines": 273,
+    "review": "compiler + static API/isolation/ownership/privacy inventory; critical paths traced separately",
+    "taskSites": 2,
+    "uncheckedSendable": false,
+    "availabilityGuards": 8
+  },
+  {
+    "path": "Sources/Features/Search/SearchResultsView.swift",
+    "area": "Features",
+    "sha256": "493051fefa21a6b3d5d216b22d63a1e95bd220a2c2ddc6f6e3434faa96601855",
+    "lines": 105,
+    "review": "compiler + static API/isolation/ownership/privacy inventory; critical paths traced separately",
+    "taskSites": 2,
+    "uncheckedSendable": false,
+    "availabilityGuards": 0
+  },
+  {
+    "path": "Sources/Features/Settings/AgeRangeDefaults.swift",
+    "area": "Features",
+    "sha256": "434e4c231930ad04d9ba2f08f41e7ce310b93253822cad3a778c4f25e96c7466",
+    "lines": 103,
+    "review": "compiler + static API/isolation/ownership/privacy inventory; critical paths traced separately",
+    "taskSites": 1,
+    "uncheckedSendable": false,
+    "availabilityGuards": 2
+  },
+  {
+    "path": "Sources/Features/Settings/DownloadsView.swift",
+    "area": "Features",
+    "sha256": "442440cedb05947d6c020a5275a45f101976d83a334d76d55916a68ef484dd6b",
+    "lines": 349,
+    "review": "compiler + static API/isolation/ownership/privacy inventory; critical paths traced separately",
+    "taskSites": 2,
+    "uncheckedSendable": false,
+    "availabilityGuards": 0
+  },
+  {
+    "path": "Sources/Features/Settings/NavigationSettingsView.swift",
+    "area": "Features",
+    "sha256": "20659299faf6fb5bef207b2557e4368d3594a7183fa3b870f4ee4af9c81875d6",
+    "lines": 221,
+    "review": "compiler + static API/isolation/ownership/privacy inventory; critical paths traced separately",
+    "taskSites": 1,
+    "uncheckedSendable": false,
+    "availabilityGuards": 5
+  },
+  {
+    "path": "Sources/Features/Settings/SettingsView.swift",
+    "area": "Features",
+    "sha256": "2ce5b7e4713136b755f6fe2dd0017101869635300bb8b9e2d285b6486b64697e",
+    "lines": 214,
+    "review": "compiler + static API/isolation/ownership/privacy inventory; critical paths traced separately",
+    "taskSites": 0,
+    "uncheckedSendable": false,
+    "availabilityGuards": 3
+  },
+  {
+    "path": "Sources/Immersive/CinemaModel.swift",
+    "area": "Immersive",
+    "sha256": "24152b275d18a3fd3d44f7924ff74ad7ce700916a4717c29e6073175d5bcf827",
+    "lines": 223,
+    "review": "compiler + static API/isolation/ownership/privacy inventory; critical paths traced separately",
+    "taskSites": 1,
+    "uncheckedSendable": false,
+    "availabilityGuards": 1
+  },
+  {
+    "path": "Sources/Immersive/GusCinema.swift",
+    "area": "Immersive",
+    "sha256": "31248493084fdf1533d289f93c2d9c297e2b96e7a4f4e0c15daee910bf508bab",
+    "lines": 203,
+    "review": "compiler + static API/isolation/ownership/privacy inventory; critical paths traced separately",
+    "taskSites": 0,
+    "uncheckedSendable": false,
+    "availabilityGuards": 1
+  },
+  {
+    "path": "Sources/Immersive/Stereo3DScreen.swift",
+    "area": "Immersive",
+    "sha256": "041eff6fcaadec54dbc1c71688b303730cf2d9fe8a8f3fdbd9ed63b1ec4e7ae4",
+    "lines": 63,
+    "review": "compiler + static API/isolation/ownership/privacy inventory; critical paths traced separately",
+    "taskSites": 0,
+    "uncheckedSendable": false,
+    "availabilityGuards": 1
+  },
+  {
+    "path": "Sources/Immersive/StereoFrameRenderer.swift",
+    "area": "Immersive",
+    "sha256": "15dadd1537be1e7e37e304347a69e375d742f2bc36d60d1294a348f47b3d1423",
+    "lines": 236,
+    "review": "compiler + static API/isolation/ownership/privacy inventory; critical paths traced separately",
+    "taskSites": 1,
+    "uncheckedSendable": false,
+    "availabilityGuards": 1
+  },
+  {
+    "path": "Sources/Models/AccountScope.swift",
+    "area": "Models",
+    "sha256": "2639f9ff98c146bbc3c0d7c2bf3caa51eb1778bf9676b46f9984e04d183a3f26",
+    "lines": 18,
+    "review": "compiler + static API/isolation/ownership/privacy inventory; critical paths traced separately",
+    "taskSites": 0,
+    "uncheckedSendable": false,
+    "availabilityGuards": 0
+  },
+  {
+    "path": "Sources/Models/ContentLink.swift",
+    "area": "Models",
+    "sha256": "6ab07094c27c52a25effa79187bed658ef55b476828b35eee0c3b921609b2b47",
+    "lines": 79,
+    "review": "compiler + static API/isolation/ownership/privacy inventory; critical paths traced separately",
+    "taskSites": 0,
+    "uncheckedSendable": false,
+    "availabilityGuards": 0
+  },
+  {
+    "path": "Sources/Models/ServerConnection.swift",
+    "area": "Models",
+    "sha256": "62e736f346df1da211cad272491043f343b60dbff7927257eaa41e8375cad75e",
+    "lines": 41,
+    "review": "compiler + static API/isolation/ownership/privacy inventory; critical paths traced separately",
+    "taskSites": 0,
+    "uncheckedSendable": false,
+    "availabilityGuards": 0
+  },
+  {
+    "path": "Sources/Models/SessionCredential.swift",
+    "area": "Models",
+    "sha256": "4899dad4c966de4fff4eff4447ec7686546d4ab855f61ec34fc1f6c62d3baade",
+    "lines": 47,
+    "review": "compiler + static API/isolation/ownership/privacy inventory; critical paths traced separately",
+    "taskSites": 0,
+    "uncheckedSendable": false,
+    "availabilityGuards": 0
+  },
+  {
+    "path": "Sources/Models/StoredUser.swift",
+    "area": "Models",
+    "sha256": "6fe9cec13da7e13067630193f1a49780c91f534d92d4badc83da7161ca4a4c9a",
+    "lines": 51,
+    "review": "compiler + static API/isolation/ownership/privacy inventory; critical paths traced separately",
+    "taskSites": 0,
+    "uncheckedSendable": false,
+    "availabilityGuards": 0
+  },
+  {
+    "path": "Sources/Models/TopShelfSnapshot.swift",
+    "area": "Models",
+    "sha256": "6074a79418771cad80088ddbfe1224bdbb9ee3252ab718fc04e6ad16e63c271d",
+    "lines": 48,
+    "review": "compiler + static API/isolation/ownership/privacy inventory; critical paths traced separately",
+    "taskSites": 0,
+    "uncheckedSendable": false,
+    "availabilityGuards": 0
+  },
+  {
+    "path": "Sources/Platform/AirPlayRoutePicker.swift",
+    "area": "Platform",
+    "sha256": "66c248cace7490ffe517da950ba85cef17cdb468105a3eceb61f423546929b2a",
+    "lines": 38,
+    "review": "compiler + static API/isolation/ownership/privacy inventory; critical paths traced separately",
+    "taskSites": 0,
+    "uncheckedSendable": false,
+    "availabilityGuards": 3
+  },
+  {
+    "path": "Sources/Platform/AppNavigationModel.swift",
+    "area": "Platform",
+    "sha256": "4f2ef5face64f00abc299d92109a8d9abfc743a95c3d17f16f8dc3468c332d77",
+    "lines": 55,
+    "review": "compiler + static API/isolation/ownership/privacy inventory; critical paths traced separately",
+    "taskSites": 0,
+    "uncheckedSendable": false,
+    "availabilityGuards": 0
+  },
+  {
+    "path": "Sources/Platform/AppRoute.swift",
+    "area": "Platform",
+    "sha256": "e731be085ae65b3559cd904e97c6369c8173ff8aa16b2982eaa454cb8b5dafd3",
+    "lines": 28,
+    "review": "compiler + static API/isolation/ownership/privacy inventory; critical paths traced separately",
+    "taskSites": 0,
+    "uncheckedSendable": false,
+    "availabilityGuards": 0
+  },
+  {
+    "path": "Sources/Platform/ContentLinkHandler.swift",
+    "area": "Platform",
+    "sha256": "f30da53b9e95ebbf8a51dbe4dcb009ee2a605cc89c0d207b0d1387502e06ae89",
+    "lines": 86,
+    "review": "compiler + static API/isolation/ownership/privacy inventory; critical paths traced separately",
+    "taskSites": 0,
+    "uncheckedSendable": false,
+    "availabilityGuards": 1
+  },
+  {
+    "path": "Sources/Platform/DownloadAppDelegate.swift",
+    "area": "Platform",
+    "sha256": "e5371ae0f34b87d913f56d001615d647af70b25dc1780eb236d510b1eafb1552",
+    "lines": 20,
+    "review": "compiler + static API/isolation/ownership/privacy inventory; critical paths traced separately",
+    "taskSites": 0,
+    "uncheckedSendable": false,
+    "availabilityGuards": 1
+  },
+  {
+    "path": "Sources/Platform/DownloadsAvailability.swift",
+    "area": "Platform",
+    "sha256": "49644ebf46a6389f9730dcd39b21f1dc9bbb6518735169a7f606e9a5138e48e9",
+    "lines": 19,
+    "review": "compiler + static API/isolation/ownership/privacy inventory; critical paths traced separately",
+    "taskSites": 0,
+    "uncheckedSendable": false,
+    "availabilityGuards": 2
+  },
+  {
+    "path": "Sources/Platform/GusCommands.swift",
+    "area": "Platform",
+    "sha256": "4b45664da939fb336cf9088b31b365655f504b38a7405177b8424de64f8b258b",
+    "lines": 49,
+    "review": "compiler + static API/isolation/ownership/privacy inventory; critical paths traced separately",
+    "taskSites": 0,
+    "uncheckedSendable": false,
+    "availabilityGuards": 1
+  },
+  {
+    "path": "Sources/Platform/NavigationDestinations.swift",
+    "area": "Platform",
+    "sha256": "f8f85ee82ee8e7ef5bffe3a5b075e9a67883ee053ef4d07c956c258a13223095",
+    "lines": 47,
+    "review": "compiler + static API/isolation/ownership/privacy inventory; critical paths traced separately",
+    "taskSites": 0,
+    "uncheckedSendable": false,
+    "availabilityGuards": 0
+  },
+  {
+    "path": "Sources/Platform/NowPlayingArtworkFactory.swift",
+    "area": "Platform",
+    "sha256": "a70be3fa83ec05997dbd0e2d8ed338dc32ff02ad83c6e84f272e264f45329f6e",
+    "lines": 20,
+    "review": "compiler + static API/isolation/ownership/privacy inventory; critical paths traced separately",
+    "taskSites": 0,
+    "uncheckedSendable": false,
+    "availabilityGuards": 2
+  },
+  {
+    "path": "Sources/Platform/OfflineArtwork.swift",
+    "area": "Platform",
+    "sha256": "b892ee4a1e18f977aa515aa2b2d72c1a7fb33586b8fcf55a46a774484b6000af",
+    "lines": 40,
+    "review": "compiler + static API/isolation/ownership/privacy inventory; critical paths traced separately",
+    "taskSites": 0,
+    "uncheckedSendable": false,
+    "availabilityGuards": 2
+  },
+  {
+    "path": "Sources/Platform/OfflinePDFBookView.swift",
+    "area": "Platform",
+    "sha256": "694555b126c29803b39b406468583f4546cbc34b417c11eeabce675fdd4f5786",
+    "lines": 194,
+    "review": "compiler + static API/isolation/ownership/privacy inventory; critical paths traced separately",
+    "taskSites": 0,
+    "uncheckedSendable": false,
+    "availabilityGuards": 5
+  },
+  {
+    "path": "Sources/Platform/PlatformModifiers.swift",
+    "area": "Platform",
+    "sha256": "9034b7d61b9fa9b2efabbc710f69b209dbfb8ba205b2a4753376955cd569843a",
+    "lines": 186,
+    "review": "compiler + static API/isolation/ownership/privacy inventory; critical paths traced separately",
+    "taskSites": 0,
+    "uncheckedSendable": false,
+    "availabilityGuards": 16
+  },
+  {
+    "path": "Sources/Platform/PlayerSurface.swift",
+    "area": "Platform",
+    "sha256": "13122c74aff520d105d801484b5b3022fa2be18e31b63e0157d2ab3904fb1f4b",
+    "lines": 167,
+    "review": "compiler + static API/isolation/ownership/privacy inventory; critical paths traced separately",
+    "taskSites": 4,
+    "uncheckedSendable": false,
+    "availabilityGuards": 2
+  },
+  {
+    "path": "Sources/Platform/RootContainer.swift",
+    "area": "Platform",
+    "sha256": "b02e56f71c586076da31f559044187bc6743154645fbca0427eb8e8caa337dae",
+    "lines": 202,
+    "review": "compiler + static API/isolation/ownership/privacy inventory; critical paths traced separately",
+    "taskSites": 0,
+    "uncheckedSendable": false,
+    "availabilityGuards": 5
+  },
+  {
+    "path": "Sources/Platform/RootNavigationState.swift",
+    "area": "Platform",
+    "sha256": "25b0abb717165af87627f6ae103705e9cc701f615ed65e031974f571040715ad",
+    "lines": 107,
+    "review": "compiler + static API/isolation/ownership/privacy inventory; critical paths traced separately",
+    "taskSites": 3,
+    "uncheckedSendable": false,
+    "availabilityGuards": 0
+  },
+  {
+    "path": "Sources/Platform/SessionPlayerHost.swift",
+    "area": "Platform",
+    "sha256": "9764b5c4e03c7f4bf7b37d6e72cd373b0a18a99bd29243cc6d6e7aeffafca496",
+    "lines": 169,
+    "review": "compiler + static API/isolation/ownership/privacy inventory; critical paths traced separately",
+    "taskSites": 0,
+    "uncheckedSendable": false,
+    "availabilityGuards": 8
+  },
+  {
+    "path": "Sources/Platform/SharePlaySharingController.swift",
+    "area": "Platform",
+    "sha256": "6971b4c8311c89f9f313afdd2ba453f018c9ab0b9f683e2ceb5fe3efa85aa5b1",
+    "lines": 174,
+    "review": "compiler + static API/isolation/ownership/privacy inventory; critical paths traced separately",
+    "taskSites": 2,
+    "uncheckedSendable": false,
+    "availabilityGuards": 4
+  },
+  {
+    "path": "Sources/Platform/SharedWithYouSupport.swift",
+    "area": "Platform",
+    "sha256": "34ed0583ef0bfd3a809312a29efe39e5e6f6b40d6469f197562e2efdf42a5cc5",
+    "lines": 143,
+    "review": "compiler + static API/isolation/ownership/privacy inventory; critical paths traced separately",
+    "taskSites": 1,
+    "uncheckedSendable": false,
+    "availabilityGuards": 8
+  },
+  {
+    "path": "Sources/Platform/UserActivities.swift",
+    "area": "Platform",
+    "sha256": "dc7c26ba3e04a0e6b997c17ccf8bd7d5785c3bd831e35bd87fc667e6db15f3d7",
+    "lines": 68,
+    "review": "compiler + static API/isolation/ownership/privacy inventory; critical paths traced separately",
+    "taskSites": 0,
+    "uncheckedSendable": false,
+    "availabilityGuards": 0
+  },
+  {
+    "path": "Sources/Platform/View+LookToScroll.swift",
+    "area": "Platform",
+    "sha256": "e7cb83dc6ab02e80e2a11a82f58a70723b9c87e89e261875a6db2dadf6b8b2d8",
+    "lines": 21,
+    "review": "compiler + static API/isolation/ownership/privacy inventory; critical paths traced separately",
+    "taskSites": 0,
+    "uncheckedSendable": false,
+    "availabilityGuards": 2
+  },
+  {
+    "path": "Sources/Providers/Jellyfin/JellyfinBookProgress.swift",
+    "area": "Providers",
+    "sha256": "7d31071f47da36cc15e93e90e5896059779387ae78ea6b3810fb9fb915c15f77",
+    "lines": 28,
+    "review": "compiler + static API/isolation/ownership/privacy inventory; critical paths traced separately",
+    "taskSites": 0,
+    "uncheckedSendable": false,
+    "availabilityGuards": 0
+  },
+  {
+    "path": "Sources/Providers/Jellyfin/JellyfinMediaItemMapper.swift",
+    "area": "Providers",
+    "sha256": "ce967c78dcad814f26c86ff8e5e9664a0e37a89a6eb085bc608352bf23cad156",
+    "lines": 227,
+    "review": "compiler + static API/isolation/ownership/privacy inventory; critical paths traced separately",
+    "taskSites": 0,
+    "uncheckedSendable": false,
+    "availabilityGuards": 0
+  },
+  {
+    "path": "Sources/Providers/Jellyfin/JellyfinMediaProviderSession.swift",
+    "area": "Providers",
+    "sha256": "cc472249e82270a25add1eb04c7334a9c0446361b902526c96f30e31be83759e",
+    "lines": 497,
+    "review": "compiler + static API/isolation/ownership/privacy inventory; critical paths traced separately",
+    "taskSites": 0,
+    "uncheckedSendable": false,
+    "availabilityGuards": 0
+  },
+  {
+    "path": "Sources/Providers/MediaItem+Display.swift",
+    "area": "Providers",
+    "sha256": "76160111c33b8ee0290d158f0101c8b3c6ad92d435da4851266a2c158b92ab25",
+    "lines": 127,
+    "review": "compiler + static API/isolation/ownership/privacy inventory; critical paths traced separately",
+    "taskSites": 0,
+    "uncheckedSendable": false,
+    "availabilityGuards": 0
+  },
+  {
+    "path": "Sources/Providers/MediaModels.swift",
+    "area": "Providers",
+    "sha256": "c470212e37411b95dcda7d2cb1c75c436c20f701b474915991bf9a8e9c94715e",
+    "lines": 558,
+    "review": "compiler + static API/isolation/ownership/privacy inventory; critical paths traced separately",
+    "taskSites": 0,
+    "uncheckedSendable": false,
+    "availabilityGuards": 0
+  },
+  {
+    "path": "Sources/Providers/MediaProviderKind.swift",
+    "area": "Providers",
+    "sha256": "01b5defcbd34349391d03e0c605ed9d93828dadb858ddbbbfb0245434c0236f5",
+    "lines": 6,
+    "review": "compiler + static API/isolation/ownership/privacy inventory; critical paths traced separately",
+    "taskSites": 0,
+    "uncheckedSendable": false,
+    "availabilityGuards": 0
+  },
+  {
+    "path": "Sources/Providers/MediaProviderSession.swift",
+    "area": "Providers",
+    "sha256": "d0f011978b2688d158b813cfa4f29de6cef0f22a332fce587622f615d08ffa79",
+    "lines": 150,
+    "review": "compiler + static API/isolation/ownership/privacy inventory; critical paths traced separately",
+    "taskSites": 0,
+    "uncheckedSendable": false,
+    "availabilityGuards": 0
+  },
+  {
+    "path": "Sources/Services/AppStorageLocation.swift",
+    "area": "Services",
+    "sha256": "06b8e46c77f87949b1532e17948192cc6aa64a37702443fc03e445e1e8ea49cf",
+    "lines": 36,
+    "review": "compiler + static API/isolation/ownership/privacy inventory; critical paths traced separately",
+    "taskSites": 0,
+    "uncheckedSendable": false,
+    "availabilityGuards": 0
+  },
+  {
+    "path": "Sources/Services/AsyncStreamBridge.swift",
+    "area": "Services",
+    "sha256": "c4a646b18749aac190d5ee87bc95503cc51a49a302ae12de26896da5d80da418",
+    "lines": 28,
+    "review": "compiler + static API/isolation/ownership/privacy inventory; critical paths traced separately",
+    "taskSites": 1,
+    "uncheckedSendable": false,
+    "availabilityGuards": 0
+  },
+  {
+    "path": "Sources/Services/BookFileProvider.swift",
+    "area": "Services",
+    "sha256": "d59950c547fd4fdc9342180df9387d9ed72d9a5ace3ca25ede3b04a2dd7dc22f",
+    "lines": 219,
+    "review": "compiler + static API/isolation/ownership/privacy inventory; critical paths traced separately",
+    "taskSites": 1,
+    "uncheckedSendable": false,
+    "availabilityGuards": 0
+  },
+  {
+    "path": "Sources/Services/ContentRatingGate.swift",
+    "area": "Services",
+    "sha256": "c7ce5b90fa91b8cd4854ea7a042ba5070ec583b44fd6dd0fedffb7eb925163ad",
+    "lines": 161,
+    "review": "compiler + static API/isolation/ownership/privacy inventory; critical paths traced separately",
+    "taskSites": 0,
+    "uncheckedSendable": false,
+    "availabilityGuards": 0
+  },
+  {
+    "path": "Sources/Services/DeviceIdentity.swift",
+    "area": "Services",
+    "sha256": "a71b178b3f66a494a8685de6d842d02bc71691dfb35052189524acec2df3d191",
+    "lines": 67,
+    "review": "compiler + static API/isolation/ownership/privacy inventory; critical paths traced separately",
+    "taskSites": 0,
+    "uncheckedSendable": false,
+    "availabilityGuards": 3
+  },
+  {
+    "path": "Sources/Services/DiagnosticSummary.swift",
+    "area": "Services",
+    "sha256": "dba5fa315154253fc1b1ac2b8951b8b057d4c62bf3ccaf583672dfae1758d36f",
+    "lines": 109,
+    "review": "compiler + static API/isolation/ownership/privacy inventory; critical paths traced separately",
+    "taskSites": 0,
+    "uncheckedSendable": false,
+    "availabilityGuards": 0
+  },
+  {
+    "path": "Sources/Services/DiagnosticsHub.swift",
+    "area": "Services",
+    "sha256": "9266a728d0ee3e2b5082deb1c1976ee2ea2cbb37e194c9fadf1869cdcca55e36",
+    "lines": 117,
+    "review": "compiler + static API/isolation/ownership/privacy inventory; critical paths traced separately",
+    "taskSites": 0,
+    "uncheckedSendable": false,
+    "availabilityGuards": 0
+  },
+  {
+    "path": "Sources/Services/DownloadActivity.swift",
+    "area": "Services",
+    "sha256": "3ca8a986e33c12e4c6de4d30a5382156d310fd53b6c6665f6dbbba7e19798e87",
+    "lines": 127,
+    "review": "compiler + static API/isolation/ownership/privacy inventory; critical paths traced separately",
+    "taskSites": 0,
+    "uncheckedSendable": false,
+    "availabilityGuards": 0
+  },
+  {
+    "path": "Sources/Services/DownloadBackgroundEvents.swift",
+    "area": "Services",
+    "sha256": "0f2a5c33d8b28f670a7021e06ae2c691d6bc0ff3b19174a2c15e5dfa2677d099",
+    "lines": 24,
+    "review": "compiler + static API/isolation/ownership/privacy inventory; critical paths traced separately",
+    "taskSites": 0,
+    "uncheckedSendable": false,
+    "availabilityGuards": 0
+  },
+  {
+    "path": "Sources/Services/DownloadSessionCoordinator.swift",
+    "area": "Services",
+    "sha256": "55df8979b67156d22fff741e8f63a3095c00528e333d055dba5206d62393dffe",
+    "lines": 468,
+    "review": "compiler + static API/isolation/ownership/privacy inventory; critical paths traced separately",
+    "taskSites": 1,
+    "uncheckedSendable": false,
+    "availabilityGuards": 0
+  },
+  {
+    "path": "Sources/Services/DownloadSourceResolver.swift",
+    "area": "Services",
+    "sha256": "d7ad336388c74a52a71f83a4025321e626f0a754d0549bdf0f3c2e68aa83eb4f",
+    "lines": 200,
+    "review": "compiler + static API/isolation/ownership/privacy inventory; critical paths traced separately",
+    "taskSites": 0,
+    "uncheckedSendable": false,
+    "availabilityGuards": 0
+  },
+  {
+    "path": "Sources/Services/GusError.swift",
+    "area": "Services",
+    "sha256": "76dc2ed897bc8cc417d1718687fb02ff3605bfdb7820fcf986e90b9646cb2a06",
+    "lines": 100,
+    "review": "compiler + static API/isolation/ownership/privacy inventory; critical paths traced separately",
+    "taskSites": 0,
+    "uncheckedSendable": false,
+    "availabilityGuards": 0
+  },
+  {
+    "path": "Sources/Services/ImageURLBuilder.swift",
+    "area": "Services",
+    "sha256": "50043e845957b8302b2f02d60fd7d464709aff21cf6dcad7d6c1a19688283355",
+    "lines": 84,
+    "review": "compiler + static API/isolation/ownership/privacy inventory; critical paths traced separately",
+    "taskSites": 0,
+    "uncheckedSendable": false,
+    "availabilityGuards": 0
+  },
+  {
+    "path": "Sources/Services/JellyfinClientFactory.swift",
+    "area": "Services",
+    "sha256": "d5b4cb1a33a5ccf4a173f6a528bba79b9de636def2c7cb9eb1f52acf443c8267",
+    "lines": 60,
+    "review": "compiler + static API/isolation/ownership/privacy inventory; critical paths traced separately",
+    "taskSites": 0,
+    "uncheckedSendable": false,
+    "availabilityGuards": 1
+  },
+  {
+    "path": "Sources/Services/KeychainStore.swift",
+    "area": "Services",
+    "sha256": "ad3c1a3ff3313fc30156285bcea8e7d98233e6d1bc7b85ef4fd01f5ff23062e8",
+    "lines": 139,
+    "review": "compiler + static API/isolation/ownership/privacy inventory; critical paths traced separately",
+    "taskSites": 0,
+    "uncheckedSendable": false,
+    "availabilityGuards": 4
+  },
+  {
+    "path": "Sources/Services/Logger+Gus.swift",
+    "area": "Services",
+    "sha256": "2b2490f8e2f2ea6542e0b9ff8c4ff098cc56b94aa3ecd34cd956bba4514fcd03",
+    "lines": 30,
+    "review": "compiler + static API/isolation/ownership/privacy inventory; critical paths traced separately",
+    "taskSites": 0,
+    "uncheckedSendable": false,
+    "availabilityGuards": 0
+  },
+  {
+    "path": "Sources/Services/Media3DDetector.swift",
+    "area": "Services",
+    "sha256": "cc91b4e0666e5deee1a1c5edba4ef6354a8f0fbbb2fa25a000577880927e5209",
+    "lines": 164,
+    "review": "compiler + static API/isolation/ownership/privacy inventory; critical paths traced separately",
+    "taskSites": 0,
+    "uncheckedSendable": false,
+    "availabilityGuards": 1
+  },
+  {
+    "path": "Sources/Services/MetricKitCollector.swift",
+    "area": "Services",
+    "sha256": "0d353cbe39a242fe754f555bb1653503fd0f74abe18bcd5f3c9e54cf4bb8b0ca",
+    "lines": 136,
+    "review": "compiler + static API/isolation/ownership/privacy inventory; critical paths traced separately",
+    "taskSites": 0,
+    "uncheckedSendable": false,
+    "availabilityGuards": 6
+  },
+  {
+    "path": "Sources/Services/NetworkRetryPolicy.swift",
+    "area": "Services",
+    "sha256": "d524ef33adebcd7c9507176fc809a81b20e4b156ff0100a64962267ec1a0755c",
+    "lines": 63,
+    "review": "compiler + static API/isolation/ownership/privacy inventory; critical paths traced separately",
+    "taskSites": 0,
+    "uncheckedSendable": false,
+    "availabilityGuards": 0
+  },
+  {
+    "path": "Sources/Services/OfflineDownloadStore.swift",
+    "area": "Services",
+    "sha256": "c4586d9838599ad79234efa4c2ee72c91ff04a4bccdea5640531d2435f61238a",
+    "lines": 894,
+    "review": "compiler + static API/isolation/ownership/privacy inventory; critical paths traced separately",
+    "taskSites": 2,
+    "uncheckedSendable": false,
+    "availabilityGuards": 2
+  },
+  {
+    "path": "Sources/Services/OfflineMP4Compatibility.swift",
+    "area": "Services",
+    "sha256": "4907546833cfb190a13d0329dfd06d882f7e3c9f5ff1ffc65ffbdbc5983d0a11",
+    "lines": 129,
+    "review": "compiler + static API/isolation/ownership/privacy inventory; critical paths traced separately",
+    "taskSites": 0,
+    "uncheckedSendable": false,
+    "availabilityGuards": 0
+  },
+  {
+    "path": "Sources/Services/OfflinePlaybackProgressStore.swift",
+    "area": "Services",
+    "sha256": "daed5c3aedcbe73faa10c574638b4692ac38b079ef2e490b6aaca3c6ccba56a0",
+    "lines": 133,
+    "review": "compiler + static API/isolation/ownership/privacy inventory; critical paths traced separately",
+    "taskSites": 0,
+    "uncheckedSendable": false,
+    "availabilityGuards": 0
+  },
+  {
+    "path": "Sources/Services/ServerStore.swift",
+    "area": "Services",
+    "sha256": "d3e3760d0461d41a5e6df09f056c81abec9a730b78f16a4b6354fc5532778636",
+    "lines": 84,
+    "review": "compiler + static API/isolation/ownership/privacy inventory; critical paths traced separately",
+    "taskSites": 0,
+    "uncheckedSendable": false,
+    "availabilityGuards": 0
+  },
+  {
+    "path": "Sources/Services/SessionsSocket.swift",
+    "area": "Services",
+    "sha256": "0e90542301f1c503e78270f23eeaad9b92d5c2f5c4d502a4b78f53a55cae69a9",
+    "lines": 157,
+    "review": "compiler + static API/isolation/ownership/privacy inventory; critical paths traced separately",
+    "taskSites": 1,
+    "uncheckedSendable": true,
+    "availabilityGuards": 0
+  },
+  {
+    "path": "Sources/Services/SpotlightIndexer.swift",
+    "area": "Services",
+    "sha256": "33fa182709ba40376820f3f4ca2e1c5f6cb6e9304f417591bb22676a14cda357",
+    "lines": 116,
+    "review": "compiler + static API/isolation/ownership/privacy inventory; critical paths traced separately",
+    "taskSites": 0,
+    "uncheckedSendable": false,
+    "availabilityGuards": 2
+  },
+  {
+    "path": "Sources/Services/Stereo3DScreenMetrics.swift",
+    "area": "Services",
+    "sha256": "05b9ee1438008628124eb7e759231cb4ad13c78425583c7cfdab8e4aefda489d",
+    "lines": 42,
+    "review": "compiler + static API/isolation/ownership/privacy inventory; critical paths traced separately",
+    "taskSites": 0,
+    "uncheckedSendable": false,
+    "availabilityGuards": 0
+  },
+  {
+    "path": "Sources/Services/StreamURLBuilder.swift",
+    "area": "Services",
+    "sha256": "40a4402fa422b6c459d28fa65a07fd0040478ecab5a9b180386274caf127a0b6",
+    "lines": 389,
+    "review": "compiler + static API/isolation/ownership/privacy inventory; critical paths traced separately",
+    "taskSites": 0,
+    "uncheckedSendable": false,
+    "availabilityGuards": 3
+  },
+  {
+    "path": "Sources/Services/WatchSessionRelay.swift",
+    "area": "Services",
+    "sha256": "32557002b7b763f3a5d10f3824c94e169094481a622c2b75810f2d691eda881b",
+    "lines": 84,
+    "review": "compiler + static API/isolation/ownership/privacy inventory; critical paths traced separately",
+    "taskSites": 0,
+    "uncheckedSendable": false,
+    "availabilityGuards": 1
+  },
+  {
+    "path": "Sources/SharedUI/AboutCardsView.swift",
+    "area": "SharedUI",
+    "sha256": "825640413942c4785fd07d313487af65e41acce1374e75d5827fadef252b7c7f",
+    "lines": 106,
+    "review": "compiler + static API/isolation/ownership/privacy inventory; critical paths traced separately",
+    "taskSites": 0,
+    "uncheckedSendable": false,
+    "availabilityGuards": 0
+  },
+  {
+    "path": "Sources/SharedUI/AppearanceSetting.swift",
+    "area": "SharedUI",
+    "sha256": "984731885b51ff6887b796608e26cac7cbe97e460d6569b7ca3614a4b0ad994c",
+    "lines": 40,
+    "review": "compiler + static API/isolation/ownership/privacy inventory; critical paths traced separately",
+    "taskSites": 0,
+    "uncheckedSendable": false,
+    "availabilityGuards": 0
+  },
+  {
+    "path": "Sources/SharedUI/ArtworkTile.swift",
+    "area": "SharedUI",
+    "sha256": "26b61c2f8f18f4c006e0a3ab5b8ce3ad0ad10c66245cd745901fb500e8ccba99",
+    "lines": 22,
+    "review": "compiler + static API/isolation/ownership/privacy inventory; critical paths traced separately",
+    "taskSites": 0,
+    "uncheckedSendable": false,
+    "availabilityGuards": 0
+  },
+  {
+    "path": "Sources/SharedUI/AsyncPoster.swift",
+    "area": "SharedUI",
+    "sha256": "43f353a65892db964454dccb801e8d7f316d8588c2e1360c60e10d829de40115",
+    "lines": 53,
+    "review": "compiler + static API/isolation/ownership/privacy inventory; critical paths traced separately",
+    "taskSites": 0,
+    "uncheckedSendable": false,
+    "availabilityGuards": 0
+  },
+  {
+    "path": "Sources/SharedUI/CastRail.swift",
+    "area": "SharedUI",
+    "sha256": "b8ec787e40d9a74d8c4df215cff94d318b43551d2842ec36daadd892b539b490",
+    "lines": 78,
+    "review": "compiler + static API/isolation/ownership/privacy inventory; critical paths traced separately",
+    "taskSites": 0,
+    "uncheckedSendable": false,
+    "availabilityGuards": 0
+  },
+  {
+    "path": "Sources/SharedUI/CinematicDetailHero.swift",
+    "area": "SharedUI",
+    "sha256": "c06c1d06015fcfd34d14160ed1a47c64123f4338a045fea44641e63c71c39f0b",
+    "lines": 202,
+    "review": "compiler + static API/isolation/ownership/privacy inventory; critical paths traced separately",
+    "taskSites": 0,
+    "uncheckedSendable": false,
+    "availabilityGuards": 3
+  },
+  {
+    "path": "Sources/SharedUI/Color+Gus.swift",
+    "area": "SharedUI",
+    "sha256": "baef7decd67f269e5dfc3f21d8b77c435b06db0004b372fb9cebd191958b6f0f",
+    "lines": 13,
+    "review": "compiler + static API/isolation/ownership/privacy inventory; critical paths traced separately",
+    "taskSites": 0,
+    "uncheckedSendable": false,
+    "availabilityGuards": 0
+  },
+  {
+    "path": "Sources/SharedUI/DetailMetadataRows.swift",
+    "area": "SharedUI",
+    "sha256": "0a1d5115638633b3dbaa5f2f0e9fc916ab44abf0cdcecc207e17ee3aa8b2ed03",
+    "lines": 47,
+    "review": "compiler + static API/isolation/ownership/privacy inventory; critical paths traced separately",
+    "taskSites": 0,
+    "uncheckedSendable": false,
+    "availabilityGuards": 0
+  },
+  {
+    "path": "Sources/SharedUI/DownloadErrorAlert.swift",
+    "area": "SharedUI",
+    "sha256": "1afb70c483bbd1a8b894e4a24a400fa032521f56b773882d3682ff54c66698b7",
+    "lines": 25,
+    "review": "compiler + static API/isolation/ownership/privacy inventory; critical paths traced separately",
+    "taskSites": 0,
+    "uncheckedSendable": false,
+    "availabilityGuards": 0
+  },
+  {
+    "path": "Sources/SharedUI/GlassStyle.swift",
+    "area": "SharedUI",
+    "sha256": "2ba289f0e5e2e74d7eff316c6f6e74b78a8c819adec403c893b92425dfe2126c",
+    "lines": 62,
+    "review": "compiler + static API/isolation/ownership/privacy inventory; critical paths traced separately",
+    "taskSites": 0,
+    "uncheckedSendable": false,
+    "availabilityGuards": 6
+  },
+  {
+    "path": "Sources/SharedUI/LayoutMetrics.swift",
+    "area": "SharedUI",
+    "sha256": "91556bc062193aec910c822fd12f8111026de23abbe1ffeb846ae429f562027b",
+    "lines": 26,
+    "review": "compiler + static API/isolation/ownership/privacy inventory; critical paths traced separately",
+    "taskSites": 0,
+    "uncheckedSendable": false,
+    "availabilityGuards": 0
+  },
+  {
+    "path": "Sources/SharedUI/LoadingStateView.swift",
+    "area": "SharedUI",
+    "sha256": "97aef0a8e732dddef209117b1cad482e8e21956d7dfd7fcfd71b9eaf400c9ae4",
+    "lines": 39,
+    "review": "compiler + static API/isolation/ownership/privacy inventory; critical paths traced separately",
+    "taskSites": 0,
+    "uncheckedSendable": false,
+    "availabilityGuards": 0
+  },
+  {
+    "path": "Sources/SharedUI/Navigation.swift",
+    "area": "SharedUI",
+    "sha256": "95848a84682acac7cdcca05fbccd1e31a934601b7a8a5cbcda0821f717b2b664",
+    "lines": 48,
+    "review": "compiler + static API/isolation/ownership/privacy inventory; critical paths traced separately",
+    "taskSites": 0,
+    "uncheckedSendable": false,
+    "availabilityGuards": 0
+  },
+  {
+    "path": "Sources/SharedUI/PosterCard.swift",
+    "area": "SharedUI",
+    "sha256": "88fcbeb1c0247e36a3000bc540e5ec4763b3fef707e094484205fca0aca57e21",
+    "lines": 68,
+    "review": "compiler + static API/isolation/ownership/privacy inventory; critical paths traced separately",
+    "taskSites": 0,
+    "uncheckedSendable": false,
+    "availabilityGuards": 0
+  },
+  {
+    "path": "Sources/SharedUI/RestrictedContentView.swift",
+    "area": "SharedUI",
+    "sha256": "3bb09509730c81abf576eb7c9dc5a20f0d1894467b29e0aab39b61e58e25479e",
+    "lines": 15,
+    "review": "compiler + static API/isolation/ownership/privacy inventory; critical paths traced separately",
+    "taskSites": 0,
+    "uncheckedSendable": false,
+    "availabilityGuards": 0
+  },
+  {
+    "path": "Sources/SharedUI/StringHelpers.swift",
+    "area": "SharedUI",
+    "sha256": "7d4baace88d8f5f523eb3a19f03899507ec41472d00e7afba34e2d42e2f29927",
+    "lines": 19,
+    "review": "compiler + static API/isolation/ownership/privacy inventory; critical paths traced separately",
+    "taskSites": 0,
+    "uncheckedSendable": false,
+    "availabilityGuards": 0
+  },
+  {
+    "path": "Sources/Stores/AppModel.swift",
+    "area": "Stores",
+    "sha256": "3b9264a00d6733f3cc20c37a69f4bde197b820822b146a23dba521b8a85307cb",
+    "lines": 550,
+    "review": "compiler + static API/isolation/ownership/privacy inventory; critical paths traced separately",
+    "taskSites": 1,
+    "uncheckedSendable": false,
+    "availabilityGuards": 7
+  },
+  {
+    "path": "Sources/Stores/AudioPlaybackCoordinator.swift",
+    "area": "Stores",
+    "sha256": "9ac1b16d91bdc4491ea6f01c30dc40d569646b03cb01c429af6fdea629e5cf82",
+    "lines": 56,
+    "review": "compiler + static API/isolation/ownership/privacy inventory; critical paths traced separately",
+    "taskSites": 2,
+    "uncheckedSendable": false,
+    "availabilityGuards": 0
+  },
+  {
+    "path": "Sources/Stores/AudioPlayerStore.swift",
+    "area": "Stores",
+    "sha256": "db61b3d18b2dba74493077f601acc4c52a5efd9a1697fa8889f29bfad4cde285",
+    "lines": 485,
+    "review": "compiler + static API/isolation/ownership/privacy inventory; critical paths traced separately",
+    "taskSites": 7,
+    "uncheckedSendable": false,
+    "availabilityGuards": 3
+  },
+  {
+    "path": "Sources/Stores/HomeStore.swift",
+    "area": "Stores",
+    "sha256": "260fcad253c3fdc67561c4987d97500710ba965c428cc2b3ef420cc9c647091b",
+    "lines": 191,
+    "review": "compiler + static API/isolation/ownership/privacy inventory; critical paths traced separately",
+    "taskSites": 0,
+    "uncheckedSendable": false,
+    "availabilityGuards": 1
+  },
+  {
+    "path": "Sources/Stores/ItemDetailStore.swift",
+    "area": "Stores",
+    "sha256": "b0e38cbd57d921fbf904e4c1553451c80377b3324652e9fa559f9cf69bca5d1e",
+    "lines": 227,
+    "review": "compiler + static API/isolation/ownership/privacy inventory; critical paths traced separately",
+    "taskSites": 1,
+    "uncheckedSendable": false,
+    "availabilityGuards": 0
+  },
+  {
+    "path": "Sources/Stores/LibraryStore.swift",
+    "area": "Stores",
+    "sha256": "674c3ea16b8b46561f31fbd409a698e5a39b5f86bdf752173284d9002d7fa357",
+    "lines": 330,
+    "review": "compiler + static API/isolation/ownership/privacy inventory; critical paths traced separately",
+    "taskSites": 1,
+    "uncheckedSendable": false,
+    "availabilityGuards": 0
+  },
+  {
+    "path": "Sources/Stores/LoadState.swift",
+    "area": "Stores",
+    "sha256": "0fdb0faf58fb3f9686f06fb8a1cf7de7ca76ac1ad0f206151e4ce6431e829aef",
+    "lines": 13,
+    "review": "compiler + static API/isolation/ownership/privacy inventory; critical paths traced separately",
+    "taskSites": 0,
+    "uncheckedSendable": false,
+    "availabilityGuards": 0
+  },
+  {
+    "path": "Sources/Stores/NavigationPreferencesStore.swift",
+    "area": "Stores",
+    "sha256": "cd2a7817263c8c2e0f8df3493cd34b035970626fcd006a76a2f82c348316c71f",
+    "lines": 415,
+    "review": "compiler + static API/isolation/ownership/privacy inventory; critical paths traced separately",
+    "taskSites": 0,
+    "uncheckedSendable": false,
+    "availabilityGuards": 0
+  },
+  {
+    "path": "Sources/Stores/Paging.swift",
+    "area": "Stores",
+    "sha256": "7a86f94d4d7f3bb35dfbe3d16027faab78eefe437ac67d39f314fc237511bb8a",
+    "lines": 40,
+    "review": "compiler + static API/isolation/ownership/privacy inventory; critical paths traced separately",
+    "taskSites": 0,
+    "uncheckedSendable": false,
+    "availabilityGuards": 0
+  },
+  {
+    "path": "Sources/Stores/PlaybackMediaSelection.swift",
+    "area": "Stores",
+    "sha256": "4dd96e86726fe1badfe0ca4d32ff91fc32ec626a4fa3a03be44db238a53effd5",
+    "lines": 66,
+    "review": "compiler + static API/isolation/ownership/privacy inventory; critical paths traced separately",
+    "taskSites": 0,
+    "uncheckedSendable": false,
+    "availabilityGuards": 0
+  },
+  {
+    "path": "Sources/Stores/PlaybackPreferences.swift",
+    "area": "Stores",
+    "sha256": "2086e297ea844e07d51e31434f9774b524f7b9d6a8f7991416b7593d61fc16e3",
+    "lines": 58,
+    "review": "compiler + static API/isolation/ownership/privacy inventory; critical paths traced separately",
+    "taskSites": 0,
+    "uncheckedSendable": false,
+    "availabilityGuards": 0
+  },
+  {
+    "path": "Sources/Stores/PlaybackReporting.swift",
+    "area": "Stores",
+    "sha256": "5346722de31da8470ac79e18e0f36eea31b21e8cdbee22c87521d426d1b27bf9",
+    "lines": 113,
+    "review": "compiler + static API/isolation/ownership/privacy inventory; critical paths traced separately",
+    "taskSites": 0,
+    "uncheckedSendable": false,
+    "availabilityGuards": 0
+  },
+  {
+    "path": "Sources/Stores/PlaybackStore.swift",
+    "area": "Stores",
+    "sha256": "07caf07538e8524907c1ce76c040540b1a8d04661baa21414e12383f91d0b927",
+    "lines": 604,
+    "review": "compiler + static API/isolation/ownership/privacy inventory; critical paths traced separately",
+    "taskSites": 3,
+    "uncheckedSendable": false,
+    "availabilityGuards": 4
+  },
+  {
+    "path": "Sources/Stores/QuickConnectStore.swift",
+    "area": "Stores",
+    "sha256": "fae0a898c4c4f0047df32848bf11a9ffc238fe5a00b54ddc8bf05943907fe416",
+    "lines": 160,
+    "review": "compiler + static API/isolation/ownership/privacy inventory; critical paths traced separately",
+    "taskSites": 1,
+    "uncheckedSendable": false,
+    "availabilityGuards": 0
+  },
+  {
+    "path": "Sources/Stores/RemoteSessionsStore.swift",
+    "area": "Stores",
+    "sha256": "42ecc0c79ac3eb90173061d1a8671c5e65dbe3ea4e4f48acbefd1a23d186b46e",
+    "lines": 225,
+    "review": "compiler + static API/isolation/ownership/privacy inventory; critical paths traced separately",
+    "taskSites": 2,
+    "uncheckedSendable": false,
+    "availabilityGuards": 0
+  },
+  {
+    "path": "Sources/Stores/SearchStore.swift",
+    "area": "Stores",
+    "sha256": "caec56e41344f65472d8e94f4669e7948db46ed1cec6e08ea8ce8d3b3b501900",
+    "lines": 139,
+    "review": "compiler + static API/isolation/ownership/privacy inventory; critical paths traced separately",
+    "taskSites": 1,
+    "uncheckedSendable": false,
+    "availabilityGuards": 0
+  },
+  {
+    "path": "Sources/Stores/ServerDiscoveryStore.swift",
+    "area": "Stores",
+    "sha256": "cc75f81e69a7ad0e90edfa5d6bd0e88e48569f378e7b862ca25e02c10283b9c5",
+    "lines": 106,
+    "review": "compiler + static API/isolation/ownership/privacy inventory; critical paths traced separately",
+    "taskSites": 1,
+    "uncheckedSendable": false,
+    "availabilityGuards": 0
+  },
+  {
+    "path": "Sources/Stores/SessionStore.swift",
+    "area": "Stores",
+    "sha256": "93bc50781b4eec4b61a15990ab837b96f35d6cfd33cfc7f2cf6f42244b329671",
+    "lines": 31,
+    "review": "compiler + static API/isolation/ownership/privacy inventory; critical paths traced separately",
+    "taskSites": 0,
+    "uncheckedSendable": false,
+    "availabilityGuards": 0
+  },
+  {
+    "path": "Sources/Stores/SignInStore.swift",
+    "area": "Stores",
+    "sha256": "d1e47b16ea13ae362443442b12f13117d41ae439749eaad33ba034960bf090fa",
+    "lines": 107,
+    "review": "compiler + static API/isolation/ownership/privacy inventory; critical paths traced separately",
+    "taskSites": 0,
+    "uncheckedSendable": false,
+    "availabilityGuards": 0
+  },
+  {
+    "path": "Sources/Stores/UpNextStore.swift",
+    "area": "Stores",
+    "sha256": "d37a33cecb82203d4aa060029c7475f745c2986ecec4f94489bd3b124e59d5de",
+    "lines": 111,
+    "review": "compiler + static API/isolation/ownership/privacy inventory; critical paths traced separately",
+    "taskSites": 0,
+    "uncheckedSendable": false,
+    "availabilityGuards": 0
+  },
+  {
+    "path": "Sources/TopShelf/TopShelfContentProvider.swift",
+    "area": "TopShelf",
+    "sha256": "7b67bf9b0f440e09224808fa65b2e34aeba5600db716e2004824f7ee540b6102",
+    "lines": 60,
+    "review": "compiler + static API/isolation/ownership/privacy inventory; critical paths traced separately",
+    "taskSites": 0,
+    "uncheckedSendable": false,
+    "availabilityGuards": 0
+  },
+  {
+    "path": "Sources/Watch/GusWatchApp.swift",
+    "area": "Watch",
+    "sha256": "b8dabe81f041374f39e756251a9e214f0beb6017f6ee669773cbb849ead9f327",
+    "lines": 96,
+    "review": "compiler + static API/isolation/ownership/privacy inventory; critical paths traced separately",
+    "taskSites": 0,
+    "uncheckedSendable": false,
+    "availabilityGuards": 2
+  },
+  {
+    "path": "Sources/Watch/WatchAudioPlayerView.swift",
+    "area": "Watch",
+    "sha256": "d8886df7d0176ca47ed2cc0e027ee4b2024833d5eea7115663665c58a52d4d77",
+    "lines": 98,
+    "review": "compiler + static API/isolation/ownership/privacy inventory; critical paths traced separately",
+    "taskSites": 3,
+    "uncheckedSendable": false,
+    "availabilityGuards": 0
+  },
+  {
+    "path": "Sources/Watch/WatchBrowseView.swift",
+    "area": "Watch",
+    "sha256": "fd6392361fee03805265c59dcc89aad62bdf9f68ccd895adae859af890b4bd26",
+    "lines": 212,
+    "review": "compiler + static API/isolation/ownership/privacy inventory; critical paths traced separately",
+    "taskSites": 3,
+    "uncheckedSendable": false,
+    "availabilityGuards": 0
+  },
+  {
+    "path": "Sources/Watch/WatchConnectView.swift",
+    "area": "Watch",
+    "sha256": "6c6ccdc5defcff3f403c1fd881c10668cd1d7d9fde6081e414a219b509c96cf5",
+    "lines": 160,
+    "review": "compiler + static API/isolation/ownership/privacy inventory; critical paths traced separately",
+    "taskSites": 2,
+    "uncheckedSendable": false,
+    "availabilityGuards": 0
+  },
+  {
+    "path": "Sources/Watch/WatchCredentialReceiver.swift",
+    "area": "Watch",
+    "sha256": "bb48bd6712e0cdc23e4fc3446201247f6c343ab537285228494dd1fdee71fb3a",
+    "lines": 55,
+    "review": "compiler + static API/isolation/ownership/privacy inventory; critical paths traced separately",
+    "taskSites": 2,
+    "uncheckedSendable": false,
+    "availabilityGuards": 1
+  },
+  {
+    "path": "Sources/Watch/WatchDownloadsView.swift",
+    "area": "Watch",
+    "sha256": "9e4845547776599b90f96cec5bd5702e9606e9db542b866268ce5ec13346b545",
+    "lines": 85,
+    "review": "compiler + static API/isolation/ownership/privacy inventory; critical paths traced separately",
+    "taskSites": 0,
+    "uncheckedSendable": false,
+    "availabilityGuards": 0
+  },
+  {
+    "path": "Sources/Watch/WatchItemActionsView.swift",
+    "area": "Watch",
+    "sha256": "c2fc879e5a03b83e82982a49376352816ad369a7dd2c87c29148f8dd5b4d07f5",
+    "lines": 100,
+    "review": "compiler + static API/isolation/ownership/privacy inventory; critical paths traced separately",
+    "taskSites": 1,
+    "uncheckedSendable": false,
+    "availabilityGuards": 0
+  },
+  {
+    "path": "Sources/Watch/WatchPoster.swift",
+    "area": "Watch",
+    "sha256": "156d87196f21551eb52f972e3a70ca5d056bf4ad144b2b1a2860c7f02e3e9338",
+    "lines": 30,
+    "review": "compiler + static API/isolation/ownership/privacy inventory; critical paths traced separately",
+    "taskSites": 0,
+    "uncheckedSendable": false,
+    "availabilityGuards": 0
+  },
+  {
+    "path": "Sources/Watch/WatchRemoteView.swift",
+    "area": "Watch",
+    "sha256": "54e77df62e3e999b17c1e27fedcd649999049865ff8fc8e0478a5a60b6e0c69f",
+    "lines": 183,
+    "review": "compiler + static API/isolation/ownership/privacy inventory; critical paths traced separately",
+    "taskSites": 10,
+    "uncheckedSendable": false,
+    "availabilityGuards": 0
+  },
+  {
+    "path": "Sources/Watch/WatchResumeView.swift",
+    "area": "Watch",
+    "sha256": "e2b433db74a687e53574049313010988af700065729733e98c831df023ddb74d",
+    "lines": 119,
+    "review": "compiler + static API/isolation/ownership/privacy inventory; critical paths traced separately",
+    "taskSites": 3,
+    "uncheckedSendable": false,
+    "availabilityGuards": 0
+  },
+  {
+    "path": "Sources/Watch/WatchSettingsView.swift",
+    "area": "Watch",
+    "sha256": "570aa632f49d3249698af5c99ba3837071ad73c941e9ee586cc9943ef675d72d",
+    "lines": 66,
+    "review": "compiler + static API/isolation/ownership/privacy inventory; critical paths traced separately",
+    "taskSites": 0,
+    "uncheckedSendable": false,
+    "availabilityGuards": 0
+  },
+  {
+    "path": "Sources/Watch/WatchVideoPlayerView.swift",
+    "area": "Watch",
+    "sha256": "70b469ebce0ec5285e19c1c490907ac4f0ffd3933a6619037a53821661f12834",
+    "lines": 73,
+    "review": "compiler + static API/isolation/ownership/privacy inventory; critical paths traced separately",
+    "taskSites": 0,
+    "uncheckedSendable": false,
+    "availabilityGuards": 0
+  }
+]

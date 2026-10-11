@@ -48,7 +48,7 @@ final class AppModel {
         }
     }
 
-    struct AccountCleanupActions {
+    @MainActor struct AccountCleanupActions {
         var clearSearchIndex: @MainActor (_ serverID: String, _ userID: String) -> Void
         var clearTopShelf: @MainActor () -> Void
         var clearBookState: @MainActor (_ scope: AccountScope) -> Void
@@ -160,7 +160,7 @@ final class AppModel {
         do {
             try restoreSavedSession(for: user)
         } catch {
-            logger.error("Last-session restore failed: \(error.localizedDescription, privacy: .public)")
+            logger.error("Last-session restore failed: \(error.localizedDescription, privacy: .private)")
         }
     }
 
@@ -260,7 +260,7 @@ final class AppModel {
                 let password = ProcessInfo.processInfo.environment["GUS_DEMO_PASSWORD"] ?? "playa-demo"
                 try await signIn(to: server, username: username, password: password)
             } catch {
-                logger.error("Demo server connect failed: \(error.localizedDescription, privacy: .public)")
+                logger.error("Demo server connect failed: \(error.localizedDescription, privacy: .private)")
             }
         }
 
@@ -304,6 +304,7 @@ final class AppModel {
             let client = JellyfinClientFactory.makeClient(url: url)
             do {
                 let response = try await client.send(Paths.getPublicSystemInfo)
+                try Task.checkCancellation()
                 let baseURL = Self.followRedirect(
                     responseURL: (response.response as? HTTPURLResponse)?.url,
                     fallback: url
@@ -332,7 +333,7 @@ final class AppModel {
         diagnostics.endInterval("ServerConnect", connectInterval)
         diagnostics.record(.serverConnectFailed)
         let detail = lastError?.localizedDescription ?? ""
-        logger.error("Connect failed: \(detail, privacy: .public)")
+        logger.error("Connect failed: \(detail, privacy: .private)")
         throw ConnectError.unreachable(detail)
     }
 
@@ -347,10 +348,11 @@ final class AppModel {
         } catch {
             let gusError = GusError(from: error)
             guard !gusError.isCancellation else { throw error }
-            logger.error("Sign in failed: \(gusError.localizedDescription, privacy: .public)")
+            logger.error("Sign in failed: \(gusError.localizedDescription, privacy: .private)")
             throw ConnectError.authenticationFailed
         }
 
+        try Task.checkCancellation()
         try completeSignIn(to: server, client: client, result: result, fallbackName: username)
     }
 
@@ -363,10 +365,11 @@ final class AppModel {
         } catch {
             let gusError = GusError(from: error)
             guard !gusError.isCancellation else { throw error }
-            logger.error("Quick Connect sign in failed: \(gusError.localizedDescription, privacy: .public)")
+            logger.error("Quick Connect sign in failed: \(gusError.localizedDescription, privacy: .private)")
             throw ConnectError.authenticationFailed
         }
 
+        try Task.checkCancellation()
         try completeSignIn(
             to: server,
             client: client,
@@ -437,15 +440,19 @@ final class AppModel {
     private func clearCurrentAccountDataIfNeeded(replacingWith user: StoredUser, on server: ServerConnection) {
         guard let session = currentSession else { return }
         guard session.user != user || session.server.id != server.id else { return }
-        clearAccountData(server: session.server, user: session.user)
+        clearAccountData(server: session.server, user: session.user, preservingDownloads: true)
     }
 
-    private func clearAccountData(server: ServerConnection, user: StoredUser) {
+    private func clearAccountData(server: ServerConnection, user: StoredUser, preservingDownloads: Bool = false) {
         let scope = AccountScope(serverID: server.id, userID: user.id)
         accountCleanup.clearSearchIndex(server.id, user.id)
         accountCleanup.clearTopShelf()
-        accountCleanup.clearBookState(scope)
-        accountCleanup.clearDownloads(scope)
+        if !preservingDownloads {
+            accountCleanup.clearBookState(scope)
+            OfflinePlaybackProgressStore.shared.deleteCheckpoints(scope: scope)
+            OfflineDownloadStore.shared.deleteAll(serverID: server.id, userID: user.id)
+            accountCleanup.clearDownloads(scope)
+        }
         accountCleanup.clearWatchCredential(server, user)
         JellyfinClientFactory.urlCache.removeAllCachedResponses()
     }
@@ -504,7 +511,9 @@ final class AppModel {
         var string = raw.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !string.isEmpty else { throw ConnectError.invalidURL }
 
-        if !string.contains("://") { string = "http://" + string }
+        if !string.contains("://") {
+            string = "http://" + string
+        }
         while string.hasSuffix("/") {
             string.removeLast()
         }

@@ -1,0 +1,219 @@
+Attributes: Application, 0x109764500, pid: 4499, label: 'Gus'
+Element subtree:
+ →Application, 0x109764500, pid: 4499, label: 'Gus'
+    Window (Main), 0x109764780, {{0.0, 0.0}, {440.0, 956.0}}
+      Other, 0x1097643c0, {{0.0, 0.0}, {440.0, 956.0}}
+      Other, 0x109764280, {{0.0, 0.0}, {440.0, 956.0}}
+        Other, 0x109764640, {{0.0, 0.0}, {440.0, 956.0}}
+          Other, 0x109764000, {{0.0, 0.0}, {440.0, 956.0}}
+            Other, 0x109764140, {{0.0, 0.0}, {440.0, 956.0}}
+              Other, 0x1097648c0, {{0.0, 0.0}, {440.0, 956.0}}
+                Other, 0x109765180, {{0.0, 0.0}, {440.0, 956.0}}
+                  Other, 0x109764a00, {{0.0, 0.0}, {440.0, 956.0}}
+                    Other, 0x109764c80, {{0.0, 0.0}, {440.0, 956.0}}
+                      Other, 0x109765040, {{0.0, 0.0}, {440.0, 956.0}}
+                        Other, 0x1097652c0, {{0.0, 0.0}, {440.0, 956.0}}
+                          Other, 0x109764b40, {{0.0, 0.0}, {440.0, 956.0}}
+                            NavigationBar, 0x109764dc0, {{0.0, 62.0}, {440.0, 54.0}}, identifier: 'The Alamo'
+                              Button, 0x109764f00, {{20.0, 62.0}, {44.0, 44.0}}, identifier: 'BackButton', label: 'Movies'
+                              StaticText, 0x109765540, {{177.7, 73.7}, {84.7, 20.7}}, label: 'The Alamo'
+                            Other, 0x109765900, {{0.0, 0.0}, {440.0, 956.0}}
+                              Other, 0x109765a40, {{0.0, 0.0}, {440.0, 956.0}}
+                                Other, 0x109765b80, {{0.0, 0.0}, {440.0, 956.0}}
+                                  Other, 0x109765cc0, {{0.0, 0.0}, {440.0, 956.0}}
+                                    ScrollView, 0x109765e00, {{-153.7, 0.0}, {747.3, 956.0}}
+                                      Other, 0x109765f40, {{-153.7, -871.0}, {747.3, 1744.0}}
+                                        Other, 0x109766080, {{-153.7, -871.3}, {747.3, 420.3}}
+                                          Image, 0x1097661c0, {{-153.7, -871.3}, {747.3, 420.3}}
+                                          StaticText, 0x109766300, {{-129.7, -763.4}, {139.7, 33.7}}, label: 'The Alamo'
+                                          StaticText, 0x109766440, {{-129.7, -718.2}, {271.7, 23.0}}, label: '1960, 2h 16m, NR, ★ 7.1, Critic 55%'
+                                            StaticText, 0x109766940, {{-129.7, -715.7}, {35.7, 18.0}}, label: '1960'
+                                            StaticText, 0x109766e40, {{-84.0, -715.7}, {51.7, 18.0}}, label: '2h 16m'
+                                            StaticText, 0x109766f80, {{-16.3, -715.7}, {21.0, 18.0}}, label: 'NR'
+                                            StaticText, 0x1097670c0, {{20.7, -715.7}, {37.0, 18.0}}, label: '★ 7.1'
+                                            StaticText, 0x109767d40, {{67.7, -715.7}, {74.3, 18.0}}, label: 'Critic 55%'
+                                          StaticText, 0x109767e80, {{-129.7, -683.7}, {699.3, 64.3}}, label: 'The legendary true story of a small band of soldiers who sacrificed their lives in hopeless combat against a massive army in order to prevent a tyrant from smashing the new Republic of Texas.'
+                                          Button, 0x109767c00, {{-53.7, -601.3}, {320.0, 50.3}}, label: 'Play'
+                                            StaticText, 0x109767480, {{-53.7, -601.3}, {320.0, 50.3}}, label: 'Play'
+                                            Image, 0x1097666c0, {{79.0, -583.7}, {13.7, 15.3}}, identifier: 'play.fill', label: 'Play'
+                                          Button, 0x109765680, {{182.3, -541.0}, {84.0, 66.0}}, identifier: 'arrow.down.circle', label: 'Download'
+                                          Button, 0x109766800, {{-129.7, -533.0}, {68.0, 50.0}}, identifier: 'plus', label: 'Add to Up Next'
+                                          Button, 0x109767840, {{-51.7, -533.0}, {68.0, 50.0}}, identifier: 'checkmark.circle', label: 'Mark as Watched', Selected
+                                          Button, 0x109766580, {{26.3, -533.0}, {68.0, 50.0}}, identifier: 'heart', label: 'Add to Favorites'
+                                          Button, 0x109767200, {{104.3, -533.0}, {68.0, 50.0}}, identifier: 'shareplay', label: 'SharePlay'
+                                        StaticText, 0x109767340, {{-133.7, -427.0}, {57.0, 20.3}}, label: 'Genres'
+                                        ScrollView, 0x1097675c0, {{-133.7, -396.7}, {707.3, 36.0}}
+                                          Other, 0x109767700, {{-133.7, -396.7}, {336.0, 36.0}}
+                                            StaticText, 0x109767980, {{-121.7, -387.7}, {28.0, 18.0}}, label: 'War'
+                                            StaticText, 0x109767ac0, {{-59.7, -387.7}, {72.3, 18.0}}, label: 'Adventure'
+                                            StaticText, 0x109766a80, {{46.7, -387.7}, {51.0, 18.0}}, label: 'History'
+                                            StaticText, 0x109766d00, {{131.7, -387.7}, {58.7, 18.0}}, label: 'Western'
+                                        StaticText, 0x109766bc0, {{-133.7, -344.7}, {60.7, 20.3}}, label: 'Studios'
+                                        ScrollView, 0x1097657c0, {{-133.7, -314.3}, {707.3, 36.0}}
+                                          Other, 0x109772bc0, {{-133.7, -314.3}, {336.0, 36.0}}
+                                            StaticText, 0x109772d00, {{-121.7, -305.3}, {132.7, 18.0}}, label: 'Batjac Productions'
+                                            StaticText, 0x109792d00, {{45.0, -305.3}, {145.3, 18.0}}, label: 'The Alamo Company'
+                                        StaticText, 0x109792440, {{-133.7, -248.4}, {126.7, 26.3}}, label: 'Cast & Crew'
+                                        ScrollView, 0x109791cc0, {{-133.7, -210.0}, {707.3, 199.7}}
+                                          Other, 0x1097912c0, {{-133.7, -210.0}, {2160.0, 199.7}}
+                                            Other, 0x109791680, {{-133.7, -221.3}, {1480.0, 207.0}}
+                                              StaticText, 0x109791b80, {{-133.7, -221.0}, {120.0, 206.7}}, label: 'John Wayne, Col. Davy Crockett'
+                                                Image, 0x109791e00, {{-133.7, -221.0}, {120.0, 180.0}}
+                                                StaticText, 0x109791f40, {{-133.7, -49.0}, {70.3, 14.3}}, label: 'John Wayne'
+                                                StaticText, 0x109793340, {{-133.7, -27.7}, {98.3, 13.3}}, label: 'Col. Davy Crockett'
+                                              StaticText, 0x109791540, {{2.3, -221.0}, {120.0, 206.7}}, label: 'Richard Widmark, Jim Bowie'
+                                                Image, 0x1097926c0, {{2.3, -221.0}, {120.0, 180.0}}
+                                                StaticText, 0x109791400, {{2.3, -49.0}, {99.3, 14.3}}, label: 'Richard Widmark'
+                                                StaticText, 0x109793c00, {{2.3, -27.7}, {53.0, 13.3}}, label: 'Jim Bowie'
+                                              StaticText, 0x109793200, {{138.3, -221.0}, {120.0, 206.7}}, label: 'Laurence Harvey, Col. William Travis'
+                                                Image, 0x109793480, {{138.3, -221.0}, {120.0, 180.0}}
+                                                StaticText, 0x109792580, {{138.3, -49.0}, {97.7, 14.3}}, label: 'Laurence Harvey'
+                                                StaticText, 0x109792300, {{138.3, -27.7}, {96.0, 13.3}}, label: 'Col. William Travis'
+                                              StaticText, 0x109792800, {{274.3, -221.3}, {120.0, 207.0}}, label: 'Frankie Avalon, Smitty'
+                                                Image, 0x109791a40, {{274.3, -221.3}, {120.0, 180.7}}
+                                                StaticText, 0x109792bc0, {{274.3, -49.0}, {84.3, 14.3}}, label: 'Frankie Avalon'
+                                                StaticText, 0x109793840, {{274.3, -27.7}, {33.7, 13.3}}, label: 'Smitty'
+                                              StaticText, 0x109790c80, {{410.3, -221.0}, {120.0, 206.7}}, label: 'Patrick Wayne, Capt. James Butler Bonham'
+                                                Image, 0x109792a80, {{410.3, -221.0}, {120.0, 180.0}}
+                                                StaticText, 0x109790f00, {{410.3, -49.0}, {82.7, 14.3}}, label: 'Patrick Wayne'
+                                                StaticText, 0x109790dc0, {{410.3, -27.7}, {119.3, 13.3}}, label: 'Capt. James Butler Bonham'
+                                              StaticText, 0x109793980, {{546.3, -221.0}, {120.0, 206.7}}, label: 'Linda Cristal, Flaca'
+                                                Image, 0x109791040, {{546.3, -221.0}, {120.0, 180.0}}
+                                                StaticText, 0x109790a00, {{546.3, -49.0}, {72.7, 14.3}}, label: 'Linda Cristal'
+                                                StaticText, 0x109791900, {{546.3, -27.7}, {28.0, 13.3}}, label: 'Flaca'
+                                              StaticText, 0x109791180, {{682.3, -221.0}, {120.0, 206.7}}, label: 'Joan O'Brien, Mrs. Sue Dickinson'
+                                                Image, 0x109792080, {{682.3, -221.0}, {120.0, 180.0}}
+                                                StaticText, 0x1097935c0, {{682.3, -49.0}, {74.7, 14.3}}, label: 'Joan O'Brien'
+                                                StaticText, 0x109793700, {{682.3, -27.7}, {100.7, 13.3}}, label: 'Mrs. Sue Dickinson'
+                                              StaticText, 0x109793d40, {{818.3, -221.0}, {120.0, 206.7}}, label: 'Chill Wills, Beekeeper'
+                                                Image, 0x109792f80, {{818.3, -221.0}, {120.0, 180.0}}
+                                                StaticText, 0x1097917c0, {{818.3, -49.0}, {56.7, 14.3}}, label: 'Chill Wills'
+                                                StaticText, 0x109790b40, {{818.3, -27.7}, {56.0, 13.3}}, label: 'Beekeeper'
+                                              StaticText, 0x109793ac0, {{954.3, -220.7}, {120.0, 206.3}}, label: 'Joseph Calleia, Juan Seguin'
+                                                Image, 0x1097921c0, {{954.3, -220.7}, {120.0, 179.3}}
+                                                StaticText, 0x1097908c0, {{954.3, -49.0}, {84.3, 14.3}}, label: 'Joseph Calleia'
+                                                StaticText, 0x109793e80, {{954.3, -27.7}, {64.3, 13.3}}, label: 'Juan Seguin'
+                                              StaticText, 0x109792e40, {{1090.3, -221.0}, {120.0, 206.7}}, label: 'Ken Curtis, Capt. Almeron Dickinson'
+                                                Image, 0x109792940, {{1090.3, -221.0}, {120.0, 180.0}}
+                                                StaticText, 0x1097930c0, {{1090.3, -49.0}, {60.3, 14.3}}, label: 'Ken Curtis'
+                                                StaticText, 0x10976ca00, {{1090.3, -27.7}, {119.3, 13.3}}, label: 'Capt. Almeron Dickinson'
+                                              StaticText, 0x10976c000, {{1226.3, -206.0}, {120.0, 191.7}}, label: 'Carlos Arruza, Lt. Reyes'
+                                                Image, 0x10976c3c0, {{1272.0, -146.3}, {29.0, 31.0}}, identifier: 'person', label: 'Person Silhouette'
+                                                StaticText, 0x10976c280, {{1226.3, -49.0}, {79.3, 14.3}}, label: 'Carlos Arruza'
+                                                StaticText, 0x10976c780, {{1226.3, -27.7}, {48.0, 13.3}}, label: 'Lt. Reyes'
+                                        StaticText, 0x10976c140, {{-133.7, 19.6}, {170.3, 26.3}}, label: 'Special Features'
+                                        ScrollView, 0x10976c640, {{-133.7, 58.0}, {707.3, 216.0}}
+                                          Other, 0x10976c8c0, {{-133.7, 58.0}, {1588.0, 216.0}}
+                                            Other, 0x10976c500, {{-133.7, 62.0}, {1588.0, 208.0}}
+                                              Button, 0x109776a80, {{-133.7, 62.0}, {300.0, 208.0}}, label: 'Deep in the Heart of Texans, 6m'
+                                                Image, 0x1097766c0, {{-95.0, 62.0}, {222.7, 168.7}}
+                                                StaticText, 0x109777e80, {{-133.6, 236.7}, {194.0, 18.0}}, label: 'Deep in the Heart of Texans'
+                                                StaticText, 0x109776bc0, {{-133.6, 255.7}, {18.3, 14.3}}, label: '6m'
+                                              Button, 0x109775e00, {{188.3, 62.0}, {300.0, 208.0}}, label: 'Deleted Scenes, 6m'
+                                                Image, 0x109775680, {{188.3, 81.0}, {300.0, 130.7}}
+                                                StaticText, 0x1097752c0, {{188.4, 236.7}, {110.0, 18.0}}, label: 'Deleted Scenes'
+                                                StaticText, 0x109777d40, {{188.4, 255.7}, {18.3, 14.3}}, label: '6m'
+                                              Button, 0x109776e40, {{510.3, 62.0}, {300.0, 208.0}}, label: 'The Making of The Alamo, 18m'
+                                                Image, 0x109777340, {{549.0, 62.0}, {222.7, 168.7}}
+                                                StaticText, 0x1097761c0, {{510.4, 236.7}, {178.7, 18.0}}, label: 'The Making of The Alamo'
+                                                StaticText, 0x1097770c0, {{510.4, 255.7}, {24.0, 14.3}}, label: '18m'
+                                              Button, 0x109775f40, {{832.3, 62.0}, {300.0, 208.0}}, label: 'Special Tattoo, 1m'
+                                                Image, 0x109777980, {{871.3, 62.0}, {222.0, 168.7}}
+                                                StaticText, 0x109775cc0, {{832.4, 236.7}, {100.0, 18.0}}, label: 'Special Tattoo'
+                                                StaticText, 0x109776440, {{832.4, 255.7}, {16.3, 14.3}}, label: '1m'
+                                              Button, 0x109776800, {{1154.3, 62.0}, {300.0, 208.0}}, label: 'Walking in the Footsteps of Heros, 11m'
+                                                Image, 0x109777c00, {{1193.3, 62.0}, {222.0, 168.7}}
+                                                StaticText, 0x109774c80, {{1154.4, 236.7}, {236.3, 18.0}}, label: 'Walking in the Footsteps of Heros'
+                                                StaticText, 0x109775b80, {{1154.4, 255.7}, {21.7, 14.3}}, label: '11m'
+                                        StaticText, 0x109776940, {{-133.7, 304.0}, {155.3, 26.3}}, label: 'Recommended'
+                                        ScrollView, 0x109775a40, {{-133.7, 342.3}, {707.3, 272.3}}
+                                          Other, 0x109774f00, {{-133.7, 342.3}, {814.0, 272.3}}
+                                            Other, 0x109775040, {{-133.7, 346.3}, {814.0, 264.3}}
+                                              Button, 0x1097775c0, {{-133.7, 346.3}, {150.0, 264.3}}, label: 'The Dogs of War, 1980'
+                                                Image, 0x1097757c0, {{-133.7, 346.3}, {150.0, 225.0}}
+                                                StaticText, 0x109777840, {{-133.7, 577.3}, {117.0, 18.0}}, label: 'The Dogs of War'
+                                                StaticText, 0x109777ac0, {{-133.7, 596.3}, {28.7, 14.3}}, label: '1980'
+                                              Button, 0x109774b40, {{32.3, 346.3}, {150.0, 264.3}}, label: 'Pee-wee's Big Adventure, 1985'
+                                                Image, 0x109776080, {{32.3, 346.3}, {150.0, 225.0}}
+                                                StaticText, 0x109777200, {{32.3, 577.3}, {143.7, 18.0}}, label: 'Pee-wee's Big Adventure'
+                                                StaticText, 0x109775400, {{32.3, 596.3}, {28.3, 14.3}}, label: '1985'
+                                              Button, 0x109776d00, {{198.3, 346.3}, {150.0, 264.3}}, label: 'El Mariachi, 1993'
+                                                Image, 0x109776f80, {{198.3, 346.3}, {150.0, 225.0}}
+                                                StaticText, 0x109774dc0, {{198.3, 577.3}, {76.7, 18.0}}, label: 'El Mariachi'
+                                                StaticText, 0x109776580, {{198.3, 596.3}, {28.7, 14.3}}, label: '1993'
+                                              Button, 0x109777480, {{364.3, 346.3}, {150.0, 264.3}}, label: 'Inglourious Basterds, 2009'
+                                                Image, 0x109776300, {{364.3, 346.3}, {150.0, 225.0}}
+                                                StaticText, 0x109777700, {{364.3, 577.3}, {144.7, 18.0}}, label: 'Inglourious Basterds'
+                                                StaticText, 0x109775540, {{364.3, 596.3}, {30.0, 14.3}}, label: '2009'
+                                              Button, 0x109775900, {{530.3, 346.3}, {150.0, 264.3}}, label: 'The Last Samurai, 2003'
+                                                Image, 0x109775180, {{530.3, 346.3}, {150.0, 225.0}}
+                                                StaticText, 0x1097948c0, {{530.3, 577.3}, {122.0, 18.0}}, label: 'The Last Samurai'
+                                                StaticText, 0x109794500, {{530.3, 596.3}, {30.0, 14.3}}, label: '2003'
+                                        StaticText, 0x109794000, {{-133.7, 644.7}, {63.0, 26.3}}, label: 'About'
+                                        ScrollView, 0x109794640, {{-133.7, 683.0}, {707.3, 158.0}}
+                                          Other, 0x109794a00, {{-133.7, 683.0}, {812.0, 158.0}}
+                                            Other, 0x109795040, {{-117.7, 703.0}, {765.7, 140.7}}
+                                              StaticText, 0x109794280, {{-117.7, 703.0}, {84.7, 20.3}}, label: 'The Alamo'
+                                              StaticText, 0x109794780, {{158.3, 703.0}, {84.7, 20.3}}, label: 'The Alamo'
+                                              StaticText, 0x1097943c0, {{434.3, 703.0}, {48.7, 20.3}}, label: 'Media'
+                                              Image, 0x109795180, {{-117.7, 733.0}, {74.0, 110.7}}
+                                              StaticText, 0x109794b40, {{-31.7, 733.3}, {142.0, 61.3}}, label: 'The Mission That Became a Fortress! The Fortress That Became a Shrine!'
+                                              StaticText, 0x109794c80, {{158.3, 733.3}, {224.3, 82.3}}, label: 'The legendary true story of a small band of soldiers who sacrificed their lives in hopeless combat against a massive army in order to prevent a tyrant from smashing the new Republic of Texas.'
+                                              StaticText, 0x109794dc0, {{434.3, 733.3}, {53.3, 19.3}}, label: '2h 16m'
+                                              StaticText, 0x109794140, {{434.3, 760.7}, {22.0, 19.3}}, label: 'NR'
+                                              StaticText, 0x109794f00, {{434.3, 788.0}, {213.7, 19.3}}, label: 'MOV,MP4,M4A,3GP,3G2,MJ2'
+                                              StaticText, 0x1097992c0, {{-31.7, 800.7}, {36.7, 19.3}}, label: '1960'
+                                      Other, 0x109799cc0, {{-153.7, 0.0}, {747.3, 956.0}}
+                                        Other, 0x109799900, {{-153.7, 0.0}, {747.3, 156.0}}
+                                        Other, 0x109799400, {{-153.7, 823.0}, {747.3, 133.0}}
+                                      Other, 0x109799680, {{-153.7, 0.0}, {747.3, 956.0}}
+                                        Other, 0x109799e00, {{-153.7, 0.0}, {747.3, 156.0}}
+                                        Other, 0x109799a40, {{-153.7, 823.0}, {747.3, 133.0}}
+                                      Other, 0x10979a1c0, {{560.7, 116.0}, {30.0, 757.0}}, label: 'Vertical scroll bar, 3 pages', value: 100%
+                                        Other, 0x10979a080, {{587.7, 500.3}, {3.0, 369.7}}
+                                      Other, 0x10979a800, {{560.7, 116.0}, {30.0, 757.0}}, label: 'Vertical scroll bar, 3 pages', value: 100%
+                                        Other, 0x10979a300, {{587.7, 500.3}, {3.0, 369.7}}
+                            Toolbar, 0x10979aa80, {{0.0, 0.0}, {440.0, 956.0}}, identifier: 'Toolbar', label: 'Toolbar'
+                              Other, 0x10979a940, {{0.0, 0.0}, {440.0, 956.0}}
+                Other, 0x1097997c0, {{0.0, 0.0}, {440.0, 956.0}}
+                  Other, 0x10979abc0, {{0.0, 873.0}, {440.0, 83.0}}
+                    Other, 0x109799b80, {{0.0, 0.0}, {440.0, 956.0}}
+                      TabBar, 0x109799f40, {{0.0, 873.0}, {440.0, 83.0}}, label: 'Tab Bar'
+                        Other, 0x10979af80, {{21.0, 873.0}, {398.0, 62.0}}
+                          Other, 0x10979bd40, {{21.0, 873.0}, {90.4, 54.0}}
+                          Other, 0x10979b840, {{21.0, 873.0}, {398.0, 62.0}}
+                            Button, 0x10979b200, {{25.0, 877.0}, {90.4, 54.0}}, identifier: 'house', label: 'Home'
+                              Image, 0x10979ae40, {{53.7, 883.0}, {33.3, 28.0}}, identifier: 'house.fill', label: 'home'
+                            Button, 0x10979b700, {{93.4, 877.0}, {114.8, 54.0}}, identifier: 'arrow.down.circle', label: 'Downloaded'
+                              Image, 0x10979bac0, {{137.0, 883.3}, {27.3, 27.3}}, identifier: 'arrow.down.circle.fill', label: 'Arrow Down Circle'
+                            Button, 0x10979b340, {{186.2, 877.0}, {92.1, 54.0}}, identifier: 'rectangle.stack', label: 'Libraries'
+                              Image, 0x10979a6c0, {{217.2, 882.0}, {30.0, 31.3}}, identifier: 'rectangle.stack.fill', label: 'Album'
+                            Button, 0x10979b0c0, {{256.3, 877.0}, {90.4, 54.0}}, identifier: 'film', label: 'Movies', Selected
+                              Image, 0x10979bc00, {{284.9, 884.3}, {33.0, 25.0}}, identifier: 'film.fill', label: 'movie'
+                            Button, 0x10979a440, {{324.6, 877.0}, {90.4, 54.0}}, label: 'More'
+                              Image, 0x10979be80, {{357.3, 892.7}, {25.0, 8.7}}, identifier: 'ellipsis', label: 'More'
+                          Other, 0x10979b480, {{21.0, 873.0}, {398.0, 62.0}}
+                          Other, 0x10979ad00, {{256.3, 877.0}, {90.4, 54.0}}
+                            Other, 0x10979b5c0, {{256.3, 877.0}, {90.3, 54.0}}
+                              Other, 0x109799540, {{256.3, 877.0}, {90.3, 54.0}}
+                              Other, 0x10979a580, {{256.3, 877.0}, {90.3, 54.0}}
+                                Other, 0x10979b980, {{256.3, 877.0}, {90.3, 54.0}}
+                                  Other, 0x1097a0140, {{256.3, 877.0}, {90.3, 54.0}}
+                                    Other, 0x1097a0780, {{256.3, 877.0}, {90.3, 54.0}}
+                                  Other, 0x1097a0c80, {{256.3, 877.0}, {90.3, 54.0}}
+                                Other, 0x1097a1180, {{256.3, 877.0}, {90.3, 54.0}}
+                    Other, 0x1097a0dc0, {{0.0, 873.0}, {440.0, 83.0}}
+                      Other, 0x1097a0500, {{0.0, 873.0}, {440.0, 83.0}}
+                        Other, 0x1097a0640, {{0.0, 873.0}, {440.0, 83.0}}
+                          Other, 0x1097a03c0, {{0.0, 873.0}, {440.0, 83.0}}
+                            Other, 0x1097a0280, {{0.0, 873.0}, {440.0, 83.0}}
+                              Other, 0x1097a08c0, {{0.0, 873.0}, {440.0, 83.0}}
+                          Other, 0x1097a0a00, {{0.0, 873.0}, {440.0, 83.0}}
+                            Other, 0x1097a2300, {{0.0, 873.0}, {440.0, 83.0}}
+Path to element:
+ →Application, 0x109764500, pid: 4499, label: 'Gus'
+Query chain:
+ →Find: Application 'dev.ericslutz.gus'
+  Output: {
+    Application, 0x1097a3c00, pid: 4499, label: 'Gus'
+  }

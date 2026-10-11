@@ -82,7 +82,7 @@ final class QuickConnectStore {
         } catch {
             let gusError = GusError(from: error)
             guard !gusError.isCancellation else { return }
-            logger.error("Quick Connect availability failed: \(gusError.localizedDescription, privacy: .public)")
+            logger.error("Quick Connect availability failed: \(gusError.localizedDescription, privacy: .private)")
             availability = .unavailable
         }
     }
@@ -140,7 +140,7 @@ final class QuickConnectStore {
                 state = .idle
                 return
             }
-            logger.error("Quick Connect failed: \(gusError.localizedDescription, privacy: .public)")
+            logger.error("Quick Connect failed: \(gusError.localizedDescription, privacy: .private)")
             state = .failed(gusError.localizedDescription)
         }
     }

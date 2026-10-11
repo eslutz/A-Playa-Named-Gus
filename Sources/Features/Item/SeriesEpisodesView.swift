@@ -18,13 +18,15 @@ struct SeriesEpisodesView: View {
                 state: store.seasonsState,
                 isEmpty: store.seasons.isEmpty,
                 emptyTitle: "No Seasons",
-                emptySymbol: "rectangle.stack"
+                emptySymbol: "rectangle.stack",
+                retryAction: { Task { await store.loadSeasons() } }
             ) {
                 LoadingStateView(
                     state: store.episodesState,
                     isEmpty: store.episodes.isEmpty,
                     emptyTitle: "No Episodes",
-                    emptySymbol: "play.rectangle"
+                    emptySymbol: "play.rectangle",
+                    retryAction: { Task { await store.retryEpisodes() } }
                 ) {
                     ScrollView(.horizontal, showsIndicators: false) {
                         LazyHStack(alignment: .top, spacing: 18) {
@@ -100,18 +102,13 @@ private struct EpisodeCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            ZStack {
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .fill(.regularMaterial)
+            ArtworkTile(
+                url: session.mediaProvider.backdropImageURL(for: episode, maxWidth: 420),
+                aspectRatio: 16.0 / 9.0,
+                contentMode: .fit,
+                placeholderSymbol: "play.rectangle"
+            )
 
-                AsyncPoster(
-                    url: session.mediaProvider.backdropImageURL(for: episode, maxWidth: 420),
-                    contentMode: .fit,
-                    placeholderSymbol: "play.rectangle"
-                )
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-            }
-            .aspectRatio(16.0 / 9.0, contentMode: .fit)
             .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
             .posterHoverEffect()
 

@@ -16,8 +16,11 @@ struct VideoPlayerView: View {
         @Environment(\.dismissImmersiveSpace) private var dismissImmersiveSpace
     #endif
     let item: MediaItem
+    var localOnly = false
 
     @State private var store: PlaybackStore?
+    @State private var preparation: Task<Void, Never>?
+    @State private var retryGeneration = 0
     @State private var sharePlay = SharePlayCoordinator.shared
     #if os(visionOS)
         @State private var openedFramePackedCinema = false
@@ -28,7 +31,7 @@ struct VideoPlayerView: View {
         ZStack {
             Color.black.ignoresSafeArea()
 
-            if let store, let player = store.player {
+            if let store, store.state == .ready, let player = store.player {
                 #if os(visionOS)
                     if store.isFramePackedImmersivePlaybackActive {
                         Color.black
@@ -46,6 +49,13 @@ struct VideoPlayerView: View {
                     Label("Can't Play This", systemImage: "exclamationmark.triangle")
                 } description: {
                     Text(message)
+                } actions: {
+                    Button("Try Again") {
+                        preparation?.cancel()
+                        store?.teardown()
+                        self.store = nil
+                        retryGeneration += 1
+                    }
                 }
                 .foregroundStyle(.white)
             } else {
@@ -54,81 +64,97 @@ struct VideoPlayerView: View {
                     .tint(.white)
             }
         }
-        #if os(visionOS)
-        .overlay(alignment: .topTrailing) {
-            if let store, store.isSpatialPlaybackActive || store.stereoFallbackNotice != nil {
-                VStack(alignment: .trailing, spacing: 8) {
-                    if store.isSpatialPlaybackActive {
-                        SpatialPlaybackBadge()
-                    }
-
-                    if let notice = store.stereoFallbackNotice {
-                        StereoFallbackNotice(text: notice)
-                    }
+        .overlay(alignment: .topLeading) {
+            if store?.state != .ready {
+                Button("Close", systemImage: "xmark") {
+                    preparation?.cancel()
+                    store?.teardown()
+                    dismiss()
                 }
+                .frame(minWidth: 44, minHeight: 44)
                 .padding()
+                .foregroundStyle(.white)
             }
         }
-        #endif
-        .task {
-            if store == nil {
-                let store = PlaybackStore(item: item, session: session, playbackRefresh: playbackRefresh, downloads: downloads)
-                self.store = store
-                await store.prepare()
-            }
-        }
-        .task(id: store?.player.map(ObjectIdentifier.init)) {
-            attachSharePlayPlayer()
-        }
-        .task(id: store?.item.id) {
-            attachSharePlayPlayer()
-        }
+        .accessibilityAction(.escape) { preparation?.cancel(); store?.teardown(); dismiss() }
         #if os(visionOS)
-        .task(id: store?.stereoPresentation) {
-            guard let store else { return }
-            await syncFramePackedCinemaIfNeeded(store)
-        }
-        #endif
-        // Natural end with nothing left to auto-play: close the player instead of
-        // leaving a spinner over black.
-        .onChange(of: store?.didFinishPlayback ?? false) { _, finished in
-            if finished {
-                dismiss()
-            }
-        }
-        .onDisappear {
-            #if os(visionOS)
-                closeFramePackedCinemaIfNeeded()
-            #endif
-            store?.teardown()
-        }
-        .alert(
-            "SharePlay Unavailable",
-            isPresented: Binding(
-                get: { sharePlay.errorMessage != nil },
-                set: { isPresented in
-                    if !isPresented {
-                        sharePlay.errorMessage = nil
+            .overlay(alignment: .topTrailing) {
+                if let store, store.isSpatialPlaybackActive || store.stereoFallbackNotice != nil {
+                    VStack(alignment: .trailing, spacing: 8) {
+                        if store.isSpatialPlaybackActive {
+                            SpatialPlaybackBadge()
+                        }
+
+                        if let notice = store.stereoFallbackNotice {
+                            StereoFallbackNotice(text: notice)
+                        }
                     }
+                    .padding()
                 }
-            )
-        ) {
-            Button("OK", role: .cancel) {
-                sharePlay.errorMessage = nil
             }
-        } message: {
-            Text(sharePlay.errorMessage ?? "")
-        }
-        // Handoff: continue playback on another device. The continuing device resumes
-        // from the server-side position kept fresh by progress reporting.
-        .userActivity(GusUserActivity.playback, isActive: item.id != nil) { activity in
-            GusUserActivity.configure(
-                activity,
-                item: item,
-                serverID: session.server.id,
-                userID: session.user.id
-            )
-        }
+        #endif
+            .task(id: retryGeneration) {
+                if store == nil {
+                    let store = PlaybackStore(item: item, session: session, playbackRefresh: playbackRefresh, downloads: downloads, localOnly: localOnly)
+                    self.store = store
+                    let task = Task { await store.prepare() }
+                    preparation = task
+                    await withTaskCancellationHandler { await task.value } onCancel: { task.cancel() }
+                }
+            }
+            .task(id: store?.player.map(ObjectIdentifier.init)) {
+                attachSharePlayPlayer()
+            }
+            .task(id: store?.item.id) {
+                attachSharePlayPlayer()
+            }
+        #if os(visionOS)
+            .task(id: store?.stereoPresentation) {
+                guard let store else { return }
+                await syncFramePackedCinemaIfNeeded(store)
+            }
+        #endif
+            // Natural end with nothing left to auto-play: close the player instead of
+            // leaving a spinner over black.
+            .onChange(of: store?.didFinishPlayback ?? false) { _, finished in
+                if finished {
+                    dismiss()
+                }
+            }
+            .onDisappear {
+                preparation?.cancel()
+                #if os(visionOS)
+                    closeFramePackedCinemaIfNeeded()
+                #endif
+                store?.teardown()
+            }
+            .alert(
+                "SharePlay Unavailable",
+                isPresented: Binding(
+                    get: { sharePlay.errorMessage != nil },
+                    set: { isPresented in
+                        if !isPresented {
+                            sharePlay.errorMessage = nil
+                        }
+                    }
+                )
+            ) {
+                Button("OK", role: .cancel) {
+                    sharePlay.errorMessage = nil
+                }
+            } message: {
+                Text(sharePlay.errorMessage ?? "")
+            }
+            // Handoff: continue playback on another device. The continuing device resumes
+            // from the server-side position kept fresh by progress reporting.
+            .userActivity(GusUserActivity.playback, isActive: item.id != nil) { activity in
+                GusUserActivity.configure(
+                    activity,
+                    item: item,
+                    serverID: session.server.id,
+                    userID: session.user.id
+                )
+            }
     }
 
     private func attachSharePlayPlayer() {

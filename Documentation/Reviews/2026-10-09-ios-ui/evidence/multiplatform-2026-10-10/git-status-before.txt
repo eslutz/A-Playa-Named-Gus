@@ -1,0 +1,49 @@
+ M CLAUDE.md
+ M Config/Shared.xcconfig
+ M Documentation/ROADMAP.md
+ M Documentation/adr/0005-offline-downloads-foreground-scope.md
+ M Resources/InfoPlist.xcstrings
+ M Resources/Localizable.xcstrings
+ M Resources/Watch/InfoPlist.xcstrings
+ M Sources/App/GusApp.swift
+ M Sources/App/RootView.swift
+ M Sources/Features/Books/BookReaderView.swift
+ M Sources/Features/Home/HomeView.swift
+ M Sources/Features/Item/DownloadButton.swift
+ M Sources/Features/Music/AudioPlayerView.swift
+ M Sources/Features/Player/NowPlayingController.swift
+ M Sources/Features/Player/PlayerPresentation.swift
+ M Sources/Features/Player/VideoPlayerView.swift
+ M Sources/Features/Settings/DownloadsView.swift
+ M Sources/Platform/AppRoute.swift
+ M Sources/Platform/RootContainer.swift
+ M Sources/Providers/Jellyfin/JellyfinMediaItemMapper.swift
+ M Sources/Providers/Jellyfin/JellyfinMediaProviderSession.swift
+ M Sources/Providers/MediaModels.swift
+ M Sources/Providers/MediaProviderSession.swift
+ M Sources/Services/DownloadSessionCoordinator.swift
+ M Sources/Services/DownloadSourceResolver.swift
+ M Sources/Services/OfflineDownloadStore.swift
+ M Sources/SharedUI/Navigation.swift
+ M Sources/Stores/AppModel.swift
+ M Sources/Stores/AudioPlayerStore.swift
+ M Sources/Stores/NavigationPreferencesStore.swift
+ M Sources/Stores/PlaybackStore.swift
+ M Sources/Watch/GusWatchApp.swift
+ M Tests/APlayaNamedGusTests/AppModelSessionTests.swift
+ M Tests/APlayaNamedGusTests/Mocks/FakeMediaProviderSession.swift
+ M Tests/APlayaNamedGusTests/NavigationPreferencesTests.swift
+ M Tests/APlayaNamedGusTests/OfflineDownloadTests.swift
+?? Documentation/Reviews/
+?? Sources/Features/Downloads/
+?? Sources/Platform/DownloadAppDelegate.swift
+?? Sources/Platform/OfflineArtwork.swift
+?? Sources/Platform/OfflinePDFBookView.swift
+?? Sources/Services/DownloadActivity.swift
+?? Sources/Services/DownloadBackgroundEvents.swift
+?? Sources/Services/OfflineMP4Compatibility.swift
+?? Sources/Services/OfflinePlaybackProgressStore.swift
+?? Tests/APlayaNamedGusTests/DownloadActivityTests.swift
+?? Tests/APlayaNamedGusTests/DownloadStoreIntegrationTests.swift
+?? Tests/APlayaNamedGusTests/DownloadedLibraryTests.swift
+?? sample_media

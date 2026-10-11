@@ -1,0 +1,13 @@
+{
+  "authentication" : "pending",
+  "bundleId" : "dev.ericslutz.gus",
+  "keyType" : "team",
+  "missingSettings" : [
+    "ASC_KEY_ID",
+    "ASC_PRIVATE_KEY_PATH",
+    "ASC_ISSUER_ID"
+  ],
+  "networkRequests" : 0,
+  "privateKeyFileExists" : false,
+  "reason" : "API access pending: configure ASC_KEY_ID, ASC_PRIVATE_KEY_PATH, ASC_ISSUER_ID in .env.asc.local."
+}

@@ -51,11 +51,13 @@ struct WatchResumeView: View {
         guard state != .loading else { return }
         state = .loading
         do {
-            items = try await ContentRatingGate.filter(session.mediaProvider.resumeItems(limit: 3))
+            let loadedItems = try await session.mediaProvider.resumeItems(limit: 3)
+            try Task.checkCancellation()
+            items = ContentRatingGate.filter(loadedItems)
             state = .loaded
         } catch {
             let gusError = GusError(from: error)
-            guard !gusError.isCancellation else { return }
+            guard !gusError.isCancellation else { state = .idle; return }
             state = .failed(gusError.localizedDescription)
         }
     }

@@ -180,7 +180,9 @@ struct SignInView: View {
                 HStack {
                     Text("Sign In")
                     Spacer()
-                    if isSigningIn { ProgressView() }
+                    if isSigningIn {
+                        ProgressView()
+                    }
                 }
             }
             .disabled(username.isEmpty || isSigningIn)

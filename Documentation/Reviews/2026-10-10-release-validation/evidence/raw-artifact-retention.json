@@ -1,0 +1,402 @@
+[
+  {
+    "originalPath": "/tmp/gus-final-validation-11",
+    "retainedPath": "build/release-validation-2026-10-10/core-final",
+    "files": 3092,
+    "bytes": 493063149,
+    "metadataHashes": [
+      {
+        "path": "archives/vision.xcarchive/Info.plist",
+        "sha256": "ba722bd79c20d172b03b50ed0c56588620612086b84d21915dde94b5b410104e"
+      },
+      {
+        "path": "archives/ios.xcarchive/Info.plist",
+        "sha256": "5c982a0edd8a452f37a4b1791fb8401705aec6d3c4276a2d43b8c18325e24e87"
+      },
+      {
+        "path": "archives/tv.xcarchive/Info.plist",
+        "sha256": "437bc429788591a50a319d0398a0216d10f515ba485e0600701f96e8be05bb20"
+      },
+      {
+        "path": "archives/mac.xcarchive/Info.plist",
+        "sha256": "31e953e007ada05288dfead28ab3c7ed39f05a2ade65bbc5d6a471b5eb46d2ff"
+      },
+      {
+        "path": "archives/mac.xcarchive/dSYMs/A Playa Named Gus.app.dSYM/Contents/Info.plist",
+        "sha256": "ab165a2628dfa0bb74065adf21aaea140e0768b4cfa4a5a0253e1e5265dea79f"
+      },
+      {
+        "path": "archives/mac.xcarchive/Products/Applications/A Playa Named Gus.app/Contents/Info.plist",
+        "sha256": "ad4d21be22ae8e6537f5063c585dc83f8e82287dda9a0b92e5dbf0f0486c2b44"
+      },
+      {
+        "path": "archives/mac.xcarchive/Products/Applications/A Playa Named Gus.app/Contents/Resources/swift-nio_NIOPosix.bundle/Contents/Info.plist",
+        "sha256": "7201e54106c2f992344fdb08ca4003c1c51c9aa7d1d2a944c02eaf448a43d696"
+      },
+      {
+        "path": "archives/tv.xcarchive/dSYMs/A Playa Named Gus.app.dSYM/Contents/Info.plist",
+        "sha256": "ab165a2628dfa0bb74065adf21aaea140e0768b4cfa4a5a0253e1e5265dea79f"
+      },
+      {
+        "path": "archives/tv.xcarchive/dSYMs/GusTopShelf.appex.dSYM/Contents/Info.plist",
+        "sha256": "cc30c0aef596cae11bb350ec4960b54c10f1085fb9e1cb6816c0c8a49be415c6"
+      },
+      {
+        "path": "archives/tv.xcarchive/Products/Applications/A Playa Named Gus.app/Info.plist",
+        "sha256": "1c7fe86e1e773dea89027a3646d526f0fff7a4635bfc0cf895dbaab16c68ad6a"
+      },
+      {
+        "path": "archives/tv.xcarchive/Products/Applications/A Playa Named Gus.app/swift-nio_NIOPosix.bundle/Info.plist",
+        "sha256": "5263bfd5473bb877111d8f9343da4289ef1a416d4d7a3b93265afd4e2a9dcf4c"
+      },
+      {
+        "path": "archives/tv.xcarchive/Products/Applications/A Playa Named Gus.app/PlugIns/GusTopShelf.appex/Info.plist",
+        "sha256": "e2d8308c40d78c887f208d4bf9376e3e26ac82c3111739102e7f81719e064155"
+      },
+      {
+        "path": "archives/ios.xcarchive/dSYMs/A Playa Named Gus.app.dSYM/Contents/Info.plist",
+        "sha256": "ab165a2628dfa0bb74065adf21aaea140e0768b4cfa4a5a0253e1e5265dea79f"
+      },
+      {
+        "path": "archives/ios.xcarchive/dSYMs/GusWatch.app.dSYM/Contents/Info.plist",
+        "sha256": "be9373b9d7a18bedf63af9f326741b20721f471aa5433dfa488a285c665450c0"
+      },
+      {
+        "path": "archives/ios.xcarchive/Products/Applications/A Playa Named Gus.app/Info.plist",
+        "sha256": "febf45638576336f03a89e2a555eb4ec405417ea44dbc29aa6c415cad875bc87"
+      },
+      {
+        "path": "archives/ios.xcarchive/Products/Applications/A Playa Named Gus.app/CryptoSwift_CryptoSwiftResources.bundle/Info.plist",
+        "sha256": "1c990ceec690665f5b3011d81ffb476721cfe79db8c33355ff0a45993557dab4"
+      },
+      {
+        "path": "archives/ios.xcarchive/Products/Applications/A Playa Named Gus.app/Readium_ReadiumStreamer.bundle/Info.plist",
+        "sha256": "aa2c0661d3b57338577bd9b1fc719b4176fad840487a722b9614106257ee4910"
+      },
+      {
+        "path": "archives/ios.xcarchive/Products/Applications/A Playa Named Gus.app/Readium_ReadiumShared.bundle/Info.plist",
+        "sha256": "28095640979f26690ad310e04c0018a6fc9b663e951187d80d2aaa1f627c1fcf"
+      },
+      {
+        "path": "archives/ios.xcarchive/Products/Applications/A Playa Named Gus.app/Readium_ReadiumNavigator.bundle/Info.plist",
+        "sha256": "3ea71b6e40e688a8d241a43b72b8cf4509434eca3b84451f78a019a1a63aa90b"
+      },
+      {
+        "path": "archives/ios.xcarchive/Products/Applications/A Playa Named Gus.app/swift-nio_NIOPosix.bundle/Info.plist",
+        "sha256": "dfa4343e484a52f240f39bc26117c2db4560fc8711bfd604bf5dc59d08b90002"
+      },
+      {
+        "path": "archives/ios.xcarchive/Products/Applications/A Playa Named Gus.app/ReadiumZIPFoundation_ReadiumZIPFoundation.bundle/Info.plist",
+        "sha256": "82e30bc25c121eacabb64becf55b9713c7835513536a9ae9b48528be2607e955"
+      },
+      {
+        "path": "archives/ios.xcarchive/Products/Applications/A Playa Named Gus.app/Watch/GusWatch.app/Info.plist",
+        "sha256": "bac70ab50112001a104c1c3d7fecef3b79772a49fa73e92e995c8e71cc6e171a"
+      },
+      {
+        "path": "archives/ios.xcarchive/Products/Applications/A Playa Named Gus.app/Watch/GusWatch.app/swift-nio_NIOPosix.bundle/Info.plist",
+        "sha256": "6d22b80c270faddfe1325aa6c22e48d0bb92498d7df8a2c3dcb3491dfe107a1c"
+      },
+      {
+        "path": "archives/vision.xcarchive/dSYMs/A Playa Named Gus.app.dSYM/Contents/Info.plist",
+        "sha256": "ab165a2628dfa0bb74065adf21aaea140e0768b4cfa4a5a0253e1e5265dea79f"
+      },
+      {
+        "path": "archives/vision.xcarchive/Products/Applications/A Playa Named Gus.app/Info.plist",
+        "sha256": "5fd8305bcab3b875a0c66b64d9365c957f66a6b2b80de78edcb23b8b87979c27"
+      },
+      {
+        "path": "archives/vision.xcarchive/Products/Applications/A Playa Named Gus.app/swift-nio_NIOPosix.bundle/Info.plist",
+        "sha256": "33896d8f39bfa75dba20dacc5dc708f53f20c2b2ff898b09508f1c940fcb1d5d"
+      },
+      {
+        "path": "tests/unit-ios.xcresult/Info.plist",
+        "sha256": "1858a8b957c2560495d5a574e50f2ab04d24df35e14856090e4c5c4f3e6b886e"
+      },
+      {
+        "path": "tests/unit-vision.xcresult/Info.plist",
+        "sha256": "9c01b409459fdeb1bc299d0501f07064694ec178463d5155e17543203ca5a265"
+      },
+      {
+        "path": "tests/unit-tv.xcresult/Info.plist",
+        "sha256": "bb13f0df9ffcfe45c62e21653a54a847b10f07326ba2cc9c0651c4634108226c"
+      },
+      {
+        "path": "tests/unit-mac.xcresult/Info.plist",
+        "sha256": "5a583e1d6b34f6d18eb8ea8d4cf8856013f1eccd4d2ce182c8cddea3b4466b1c"
+      },
+      {
+        "path": "ui/ui-ipad.xcresult/Info.plist",
+        "sha256": "d1bc60509659a7728ef8af52ebd6c4973c459d5db11542e2022cc3d9e3d13ab0"
+      },
+      {
+        "path": "ui/ui-tv.xcresult/Info.plist",
+        "sha256": "2395914ec9c86eb30b39831c10c971c489df5abdd798d73552f6767a6e0c75f9"
+      },
+      {
+        "path": "ui/ui-watch.xcresult/Info.plist",
+        "sha256": "d74631623da174ebbfe53a82b0e84384025024549850ee514aa4d85413bab0b8"
+      },
+      {
+        "path": "ui/ui-ios.xcresult/Info.plist",
+        "sha256": "8f1a97ce7159a825959b668ce58bbb9a3a4ed65fc85afd62f54824b6a266549d"
+      },
+      {
+        "path": "ui/ui-vision.xcresult/Info.plist",
+        "sha256": "1ac700c82f5d3f0845e64b49e82edd32f26b9375c6a68d47bdf1d6e87970dfb4"
+      }
+    ],
+    "scope": "Raw immutable local validation evidence; ignored by Git"
+  },
+  {
+    "originalPath": "/tmp/gus-extra-validation",
+    "retainedPath": "build/release-validation-2026-10-10/sanitizers-performance",
+    "files": 1303,
+    "bytes": 9051839,
+    "metadataHashes": [
+      {
+        "path": "mac-address-sanitizer.xcresult/Info.plist",
+        "sha256": "40dbc6c9ca18f42a3931a9ce9bb2efcf4419f0196bd336b71bcac3c35d2236ae"
+      },
+      {
+        "path": "release-performance-fixed.xcresult/Info.plist",
+        "sha256": "722a18e82ad7edb84ae4573ed8083450a0d7ad191f76cb30b54eee685ea28d64"
+      },
+      {
+        "path": "mac-thread-sanitizer.xcresult/Info.plist",
+        "sha256": "8305c9f202ecaddbe53cc7bf9542babf44946b9ff7028a75792e1fac9556907c"
+      },
+      {
+        "path": "history/release-performance.xcresult/Info.plist",
+        "sha256": "29e6cede91486a0256c9127c7a581dbf3f5e4b58a09c7efe8570cade3104d85a"
+      }
+    ],
+    "scope": "Raw immutable local validation evidence; ignored by Git"
+  },
+  {
+    "originalPath": "/tmp/gus-ui-extra-validation",
+    "retainedPath": "build/release-validation-2026-10-10/expanded-ui",
+    "files": 617,
+    "bytes": 58438717,
+    "metadataHashes": [
+      {
+        "path": "vision-native-capture.xcresult/Info.plist",
+        "sha256": "f62e4fe60e4b91a86a54be9b9e72b8ba4680f2d5748cbb23998b64602f20c90f"
+      },
+      {
+        "path": "audio-ax5-landscape.xcresult/Info.plist",
+        "sha256": "b8dcda7b56e7be0d9be8ee6d21164980c4daaed73da662f489f5e3fe322d5e24"
+      },
+      {
+        "path": "iphone-dark-contrast-ax5.xcresult/Info.plist",
+        "sha256": "859bcc9f614fa8b1ab306bfd58ceb5146a7bcfc2ffe31fd4db704fc3275329e7"
+      },
+      {
+        "path": "ipad-mini.xcresult/Info.plist",
+        "sha256": "2489b525ba5bfebe0c15d8bfe105a902c346520504da358dfc0e1db989014185"
+      },
+      {
+        "path": "tv-1080p.xcresult/Info.plist",
+        "sha256": "2d98b3432afe8901f347445ebfec064b508f0b8bf2ffc44a4c0a17b89102d066"
+      },
+      {
+        "path": "iphone-large.xcresult/Info.plist",
+        "sha256": "314b342d5dc78ea869d6089c86237ae53d10218dc8110dcff899de5a6c5687ce"
+      },
+      {
+        "path": "watch-large.xcresult/Info.plist",
+        "sha256": "e32d5c5ae919c2fc50ec42ee02f9359e0939a25f42d8575b83af92001d4a97cb"
+      },
+      {
+        "path": "ios-26-fallback.xcresult/Info.plist",
+        "sha256": "1873df0c10deef334a552a810a781fbdc99f879fdb56edcabb4650e6a48bfa7b"
+      },
+      {
+        "path": "iphone-narrow-se.xcresult/Info.plist",
+        "sha256": "c386e9c18123005062b3bc57cca8c9eae8d13883d6055eea9f9e488c3561d8fe"
+      },
+      {
+        "path": "history/audio-ax5-compile/audio-ax5-landscape.xcresult/Info.plist",
+        "sha256": "1dca220efd07a701d045d8bb70c24e347dd35bdec035f98d7f0e3a508661e84f"
+      },
+      {
+        "path": "history/audio-ax5-first-runtime/audio-ax5-landscape.xcresult/Info.plist",
+        "sha256": "40bdf4d0e0a7289cd781ed11a6c2e1bcb9a00f1784907fc2ea57cad929df5604"
+      }
+    ],
+    "scope": "Raw immutable local validation evidence; ignored by Git"
+  },
+  {
+    "originalPath": "/tmp/gus-state-history",
+    "retainedPath": "build/release-validation-2026-10-10/state-history",
+    "files": 98,
+    "bytes": 17128017,
+    "metadataHashes": [
+      {
+        "path": "gus-state-final-all.xcresult/Info.plist",
+        "sha256": "38280d65b01efecbdb86f3265ce17215f0f51ecc9208dbd5a30eca4386aeb9c8"
+      }
+    ],
+    "scope": "Raw immutable local validation evidence; ignored by Git"
+  },
+  {
+    "originalPath": "/tmp/gus-state-final-all.xcresult",
+    "retainedPath": "build/release-validation-2026-10-10/state-final.xcresult",
+    "files": 82,
+    "bytes": 9021960,
+    "metadataHashes": [
+      {
+        "path": "Info.plist",
+        "sha256": "04c4bfbddcf03a5105789b67a93da03e4a0f1856431c2337c15ce05e31f25c52"
+      }
+    ],
+    "scope": "Raw immutable local validation evidence; ignored by Git"
+  },
+  {
+    "originalPath": "/tmp/gus-final-profiles",
+    "retainedPath": "build/release-validation-2026-10-10/profiles",
+    "files": 1015,
+    "bytes": 432782806,
+    "metadataHashes": [],
+    "scope": "Raw immutable local validation evidence; ignored by Git"
+  },
+  {
+    "originalPath": "/tmp/gus-mac-ui-final",
+    "retainedPath": "build/release-validation-2026-10-10/mac-ui",
+    "files": 33,
+    "bytes": 2046999,
+    "metadataHashes": [
+      {
+        "path": "mac-ui.xcresult/Info.plist",
+        "sha256": "54634eb40bffcdaae40c9906a158d7cff084023268292be51fc2c18d0e5d8f81"
+      }
+    ],
+    "scope": "Raw immutable local validation evidence; ignored by Git"
+  },
+  {
+    "originalPath": "/tmp/gus-final-validation-10/archives",
+    "retainedPath": "build/release-validation-2026-10-10/historical-archive-failure",
+    "files": 145,
+    "bytes": 401981595,
+    "metadataHashes": [
+      {
+        "path": "vision.xcarchive/Info.plist",
+        "sha256": "e24274521bb8af7f05c594b6c46ca0f01869bff500166802e7fa156f0668e802"
+      },
+      {
+        "path": "ios.xcarchive/Info.plist",
+        "sha256": "112342a6679919cd9aea6ad73884d958cce912ca1b712ced9c840b69345a3626"
+      },
+      {
+        "path": "tv.xcarchive/Info.plist",
+        "sha256": "fd4b24b4f8e32b8a6a31e8a565ac117039b440cb6b2dc149487948cf55cbdd80"
+      },
+      {
+        "path": "mac.xcarchive/Info.plist",
+        "sha256": "463dd37798da9cde2cf78e287b500ca039434407ba06b28fb77802bfa988f599"
+      },
+      {
+        "path": "mac.xcarchive/dSYMs/A Playa Named Gus.app.dSYM/Contents/Info.plist",
+        "sha256": "ab165a2628dfa0bb74065adf21aaea140e0768b4cfa4a5a0253e1e5265dea79f"
+      },
+      {
+        "path": "mac.xcarchive/Products/Applications/A Playa Named Gus.app/Contents/Info.plist",
+        "sha256": "ad4d21be22ae8e6537f5063c585dc83f8e82287dda9a0b92e5dbf0f0486c2b44"
+      },
+      {
+        "path": "mac.xcarchive/Products/Applications/A Playa Named Gus.app/Contents/Resources/swift-nio_NIOPosix.bundle/Contents/Info.plist",
+        "sha256": "7201e54106c2f992344fdb08ca4003c1c51c9aa7d1d2a944c02eaf448a43d696"
+      },
+      {
+        "path": "tv.xcarchive/dSYMs/A Playa Named Gus.app.dSYM/Contents/Info.plist",
+        "sha256": "ab165a2628dfa0bb74065adf21aaea140e0768b4cfa4a5a0253e1e5265dea79f"
+      },
+      {
+        "path": "tv.xcarchive/dSYMs/GusTopShelf.appex.dSYM/Contents/Info.plist",
+        "sha256": "cc30c0aef596cae11bb350ec4960b54c10f1085fb9e1cb6816c0c8a49be415c6"
+      },
+      {
+        "path": "tv.xcarchive/Products/Applications/A Playa Named Gus.app/Info.plist",
+        "sha256": "1c7fe86e1e773dea89027a3646d526f0fff7a4635bfc0cf895dbaab16c68ad6a"
+      },
+      {
+        "path": "tv.xcarchive/Products/Applications/A Playa Named Gus.app/swift-nio_NIOPosix.bundle/Info.plist",
+        "sha256": "5263bfd5473bb877111d8f9343da4289ef1a416d4d7a3b93265afd4e2a9dcf4c"
+      },
+      {
+        "path": "tv.xcarchive/Products/Applications/A Playa Named Gus.app/PlugIns/GusTopShelf.appex/Info.plist",
+        "sha256": "e2d8308c40d78c887f208d4bf9376e3e26ac82c3111739102e7f81719e064155"
+      },
+      {
+        "path": "ios.xcarchive/dSYMs/A Playa Named Gus.app.dSYM/Contents/Info.plist",
+        "sha256": "ab165a2628dfa0bb74065adf21aaea140e0768b4cfa4a5a0253e1e5265dea79f"
+      },
+      {
+        "path": "ios.xcarchive/dSYMs/GusWatch.app.dSYM/Contents/Info.plist",
+        "sha256": "be9373b9d7a18bedf63af9f326741b20721f471aa5433dfa488a285c665450c0"
+      },
+      {
+        "path": "ios.xcarchive/Products/Applications/A Playa Named Gus.app/Info.plist",
+        "sha256": "febf45638576336f03a89e2a555eb4ec405417ea44dbc29aa6c415cad875bc87"
+      },
+      {
+        "path": "ios.xcarchive/Products/Applications/A Playa Named Gus.app/CryptoSwift_CryptoSwiftResources.bundle/Info.plist",
+        "sha256": "1c990ceec690665f5b3011d81ffb476721cfe79db8c33355ff0a45993557dab4"
+      },
+      {
+        "path": "ios.xcarchive/Products/Applications/A Playa Named Gus.app/Readium_ReadiumStreamer.bundle/Info.plist",
+        "sha256": "aa2c0661d3b57338577bd9b1fc719b4176fad840487a722b9614106257ee4910"
+      },
+      {
+        "path": "ios.xcarchive/Products/Applications/A Playa Named Gus.app/Readium_ReadiumShared.bundle/Info.plist",
+        "sha256": "28095640979f26690ad310e04c0018a6fc9b663e951187d80d2aaa1f627c1fcf"
+      },
+      {
+        "path": "ios.xcarchive/Products/Applications/A Playa Named Gus.app/Readium_ReadiumNavigator.bundle/Info.plist",
+        "sha256": "3ea71b6e40e688a8d241a43b72b8cf4509434eca3b84451f78a019a1a63aa90b"
+      },
+      {
+        "path": "ios.xcarchive/Products/Applications/A Playa Named Gus.app/swift-nio_NIOPosix.bundle/Info.plist",
+        "sha256": "dfa4343e484a52f240f39bc26117c2db4560fc8711bfd604bf5dc59d08b90002"
+      },
+      {
+        "path": "ios.xcarchive/Products/Applications/A Playa Named Gus.app/ReadiumZIPFoundation_ReadiumZIPFoundation.bundle/Info.plist",
+        "sha256": "82e30bc25c121eacabb64becf55b9713c7835513536a9ae9b48528be2607e955"
+      },
+      {
+        "path": "ios.xcarchive/Products/Applications/A Playa Named Gus.app/Watch/GusWatch.app/Info.plist",
+        "sha256": "bac70ab50112001a104c1c3d7fecef3b79772a49fa73e92e995c8e71cc6e171a"
+      },
+      {
+        "path": "ios.xcarchive/Products/Applications/A Playa Named Gus.app/Watch/GusWatch.app/swift-nio_NIOPosix.bundle/Info.plist",
+        "sha256": "6d22b80c270faddfe1325aa6c22e48d0bb92498d7df8a2c3dcb3491dfe107a1c"
+      },
+      {
+        "path": "vision.xcarchive/dSYMs/A Playa Named Gus.app.dSYM/Contents/Info.plist",
+        "sha256": "ab165a2628dfa0bb74065adf21aaea140e0768b4cfa4a5a0253e1e5265dea79f"
+      },
+      {
+        "path": "vision.xcarchive/Products/Applications/A Playa Named Gus.app/Info.plist",
+        "sha256": "5fd8305bcab3b875a0c66b64d9365c957f66a6b2b80de78edcb23b8b87979c27"
+      },
+      {
+        "path": "vision.xcarchive/Products/Applications/A Playa Named Gus.app/swift-nio_NIOPosix.bundle/Info.plist",
+        "sha256": "33896d8f39bfa75dba20dacc5dc708f53f20c2b2ff898b09508f1c940fcb1d5d"
+      }
+    ],
+    "scope": "Raw immutable local validation evidence; ignored by Git"
+  },
+  {
+    "originalPath": "/tmp/gus-final-validation-9/ui/ui-vision.xcresult",
+    "retainedPath": "build/release-validation-2026-10-10/historical-vision-failure.xcresult",
+    "files": 62,
+    "bytes": 50571507,
+    "metadataHashes": [
+      {
+        "path": "Info.plist",
+        "sha256": "201f41bd91835375a9bc2569fd45f86688e89cf545613ef87b548165c808728c"
+      }
+    ],
+    "scope": "Raw immutable local validation evidence; ignored by Git"
+  }
+]

@@ -4,6 +4,21 @@ import Testing
 
 @Suite("Network retry policy")
 struct NetworkRetryPolicyTests {
+    @MainActor @Test("retry operations retain the caller's actor")
+    func retainsMainActor() async throws {
+        let policy = NetworkRetryPolicy(maxRetries: 1, initialDelay: .zero) { _ in }
+        var calls = 0
+        let value = try await policy.run {
+            MainActor.preconditionIsolated()
+            calls += 1
+            if calls == 1 {
+                throw URLError(.timedOut)
+            }
+            return calls
+        }
+        #expect(value == 2)
+    }
+
     @Test("retries transient URL errors and returns the successful result")
     func retriesTransientErrors() async throws {
         let policy = NetworkRetryPolicy(maxRetries: 2, initialDelay: .zero) { _ in }

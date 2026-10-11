@@ -126,3 +126,21 @@ state that dependency plainly.
       suitable tracks.
 - [ ] Accessibility issues found during release testing are filed, prioritized, and linked
       from the release checklist.
+
+
+## October 10 local validation scope
+
+The [final review](../Reviews/2026-10-10-release-validation/VALIDATION.md) records native
+AX5 with rendered-growth assertions, Apple's RTL/doubled-string stress modes, dark and
+Increased Contrast, actual Reduce Motion/Reduce Transparency/Differentiate Without
+Color/Bold Text settings, native control geometry/descriptions and scoped iPhone
+contrast checks. Settings were restored afterward. Native screenshots support layout
+review on narrow/large phones, large/mini iPads, TV, Vision and both Watch sizes.
+
+The Xcode 27 native iPad form-sheet contrast sampler is blocked by verified clipped/
+offscreen sampling. Its geometry/description audit and visible primary-control color
+guards pass, but **full iPad contrast acceptance is still required**. Five upstream
+concurrency diagnostics also remain; see the source review. None of these results
+establish VoiceOver spoken output, rotor/escape behavior, Voice Control, Switch Control,
+physical Crown/remote/spatial interaction or broad accessibility-disclosure eligibility.
+The release checkboxes above intentionally remain pending for their complete scope.

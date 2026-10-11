@@ -10,7 +10,7 @@ declarations cover the currently wired release surface; CarPlay audio remains pe
 manual Apple grant and is intentionally not advertised in App Store metadata until it is
 granted and wired.
 
-Gus is built and validated with Xcode 26.5 while retaining older deployment targets
+Gus is configured for Xcode 27.0 (final validation recorded in the release review) while retaining older deployment targets
 (`iOS 18`, `tvOS 18`, `visionOS 2`, `macOS 15`, and `watchOS 11`). OS 26-specific
 features are guarded with availability checks or fail closed when the required framework
 or entitlement is absent.
@@ -150,8 +150,9 @@ Xcode Cloud owns signed iOS, iPadOS, tvOS, visionOS, and macOS archives, provisi
 TestFlight builds, App Store release archives, notarized Mac app builds, UI/device
 matrix testing, and release-candidate validation. `ci_scripts/ci_post_clone.sh` validates
 that Xcode Cloud is running under Team ID `QS3GC3CT43`, writes a temporary automatic
-signing `Config/Local.xcconfig`, and regenerates `A Playa Named Gus.xcodeproj` from
-`project.yml` before Xcode Cloud builds.
+signing `Config/Local.xcconfig`, and requires the committed shared Xcode project and
+`Package.resolved`. Generate the project locally from `project.yml`; Cloud does not
+regenerate it. See [API preparation](api-access.md).
 
 ## Remaining Submission Steps (Account-Blocked)
 

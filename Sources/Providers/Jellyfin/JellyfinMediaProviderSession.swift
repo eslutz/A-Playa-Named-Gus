@@ -225,7 +225,8 @@ final class JellyfinMediaProviderSession: MediaProviderSession {
         return DownloadSourceResolution(
             url: url,
             fileExtension: source.fileExtension,
-            requiresTranscoding: source.kind == .transcoded
+            requiresTranscoding: source.kind == .transcoded,
+            operation: DownloadActivity.SourceOperation(rawValue: source.kind.rawValue)
         )
     }
 
@@ -330,6 +331,17 @@ final class JellyfinMediaProviderSession: MediaProviderSession {
                     positionTicks: positionTicks
                 )
             )
+        )
+    }
+
+    func updatePlaybackPosition(itemID: String, positionTicks: Int) async throws {
+        _ = try await client.send(
+            Paths.updateItemUserData(
+                itemID: itemID,
+                userID: userID,
+                UpdateUserItemDataDto(playbackPositionTicks: max(0, positionTicks))
+            ),
+            configure: { @Sendable request in request.timeoutInterval = 10 }
         )
     }
 

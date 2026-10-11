@@ -1,0 +1,267 @@
+Command line invocation:
+    /Applications/Development/Xcode.app/Contents/Developer/usr/bin/xcodebuild test -project /tmp/gus-ui-audit-20261009/GusAudit.xcodeproj -scheme GusAudit -destination "platform=iOS Simulator,id=8D6A5B35-B67B-4725-B428-DC0EAA80797D" -derivedDataPath /tmp/gus-ui-audit-20261009/build "-only-testing:GusAuditTests/PreviewAudit" -resultBundlePath /tmp/gus-ui-audit-20261009/preview.xcresult
+
+Writing result bundle at path:
+	/tmp/gus-ui-audit-20261009/preview.xcresult
+
+ComputePackagePrebuildTargetDependencyGraph
+
+Prepare packages
+
+CreateBuildRequest
+
+SendProjectDescription
+
+CreateBuildOperation
+
+ComputeTargetDependencyGraph
+note: Building targets in dependency order
+note: Target dependency graph (1 target)
+    Target 'GusAuditTests' in project 'GusAudit' (no dependencies)
+
+GatherProvisioningInputs
+
+CreateBuildDescription
+
+ExecuteExternalTool /Applications/Development/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -v -E -dM -isysroot /Applications/Development/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.0.sdk -x c -c /dev/null
+
+ExecuteExternalTool /Applications/Development/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc --version
+
+ExecuteExternalTool /Applications/Development/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ld -version_details
+
+Build description signature: 90301819f201ec637dc7003e8d4dc51e
+Build description path: /tmp/gus-ui-audit-20261009/build/Build/Intermediates.noindex/XCBuildData/90301819f201ec637dc7003e8d4dc51e.xcbuilddata
+ClangStatCache /Applications/Development/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang-stat-cache /Applications/Development/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.0.sdk /tmp/gus-ui-audit-20261009/build/SDKStatCaches.noindex/iphonesimulator27.0-24A430-8b98ade55cdca77b755c004ede0894fd.sdkstatcache
+    cd /tmp/gus-ui-audit-20261009/GusAudit.xcodeproj
+    /Applications/Development/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang-stat-cache /Applications/Development/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.0.sdk -o /tmp/gus-ui-audit-20261009/build/SDKStatCaches.noindex/iphonesimulator27.0-24A430-8b98ade55cdca77b755c004ede0894fd.sdkstatcache
+
+WriteAuxiliaryFile /tmp/gus-ui-audit-20261009/build/Build/Intermediates.noindex/GusAudit.build/Debug-iphonesimulator/GusAuditTests.build/Objects-normal/arm64/GusAuditTests.SwiftFileList (in target 'GusAuditTests' from project 'GusAudit')
+    cd /tmp/gus-ui-audit-20261009
+    write-file /tmp/gus-ui-audit-20261009/build/Build/Intermediates.noindex/GusAudit.build/Debug-iphonesimulator/GusAuditTests.build/Objects-normal/arm64/GusAuditTests.SwiftFileList
+
+WriteAuxiliaryFile /tmp/gus-ui-audit-20261009/build/Build/Intermediates.noindex/GusAudit.build/Debug-iphonesimulator/GusAuditTests.build/Objects-normal/arm64/GusAuditTests.SwiftConstValuesFileList (in target 'GusAuditTests' from project 'GusAudit')
+    cd /tmp/gus-ui-audit-20261009
+    write-file /tmp/gus-ui-audit-20261009/build/Build/Intermediates.noindex/GusAudit.build/Debug-iphonesimulator/GusAuditTests.build/Objects-normal/arm64/GusAuditTests.SwiftConstValuesFileList
+
+WriteAuxiliaryFile /tmp/gus-ui-audit-20261009/build/Build/Intermediates.noindex/GusAudit.build/Debug-iphonesimulator/GusAuditTests.build/Objects-normal/arm64/GusAuditTests.LinkFileList (in target 'GusAuditTests' from project 'GusAudit')
+    cd /tmp/gus-ui-audit-20261009
+    write-file /tmp/gus-ui-audit-20261009/build/Build/Intermediates.noindex/GusAudit.build/Debug-iphonesimulator/GusAuditTests.build/Objects-normal/arm64/GusAuditTests.LinkFileList
+
+WriteAuxiliaryFile /tmp/gus-ui-audit-20261009/build/Build/Intermediates.noindex/GusAudit.build/Debug-iphonesimulator/GusAuditTests.build/Objects-normal/arm64/GusAuditTests-OutputFileMap.json (in target 'GusAuditTests' from project 'GusAudit')
+    cd /tmp/gus-ui-audit-20261009
+    write-file /tmp/gus-ui-audit-20261009/build/Build/Intermediates.noindex/GusAudit.build/Debug-iphonesimulator/GusAuditTests.build/Objects-normal/arm64/GusAuditTests-OutputFileMap.json
+
+SwiftDriver GusAuditTests normal arm64 com.apple.xcode.tools.swift.compiler (in target 'GusAuditTests' from project 'GusAudit')
+    cd /tmp/gus-ui-audit-20261009
+    builtin-SwiftDriver -- /Applications/Development/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc -module-name GusAuditTests -Onone @/tmp/gus-ui-audit-20261009/build/Build/Intermediates.noindex/GusAudit.build/Debug-iphonesimulator/GusAuditTests.build/Objects-normal/arm64/GusAuditTests.SwiftFileList -DDEBUG -module-alias Testing\=_Testing_Unavailable -plugin-path /Applications/Development/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing -enable-bare-slash-regex -enable-experimental-feature DebugDescriptionMacro -sdk /Applications/Development/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.0.sdk -target arm64-apple-ios18.0-simulator -g -module-cache-path /tmp/gus-ui-audit-20261009/build/ModuleCache.noindex -Xfrontend -serialize-debugging-options -enable-testing -index-store-path /tmp/gus-ui-audit-20261009/build/Index.noindex/DataStore -Xcc -D_LIBCPP_HARDENING_MODE\=_LIBCPP_HARDENING_MODE_DEBUG -swift-version 5 -I /tmp/gus-ui-audit-20261009/build/Build/Products/Debug-iphonesimulator -Isystem /Applications/Development/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/usr/lib -F /tmp/gus-ui-audit-20261009/build/Build/Products/Debug-iphonesimulator -F /Applications/Development/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/Library/Frameworks -F /Applications/Development/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.0.sdk/Developer/Library/Frameworks -c -j10 -enable-batch-mode -incremental -Xcc -ivfsstatcache -Xcc /tmp/gus-ui-audit-20261009/build/SDKStatCaches.noindex/iphonesimulator27.0-24A430-8b98ade55cdca77b755c004ede0894fd.sdkstatcache -output-file-map /tmp/gus-ui-audit-20261009/build/Build/Intermediates.noindex/GusAudit.build/Debug-iphonesimulator/GusAuditTests.build/Objects-normal/arm64/GusAuditTests-OutputFileMap.json -save-temps -no-color-diagnostics -explicit-module-build -module-cache-path /tmp/gus-ui-audit-20261009/build/Build/Intermediates.noindex/SwiftExplicitPrecompiledModules -clang-scanner-module-cache-path /tmp/gus-ui-audit-20261009/build/ModuleCache.noindex -sdk-module-cache-path /tmp/gus-ui-audit-20261009/build/SDKExplicitPrecompiledModules -emit-dependencies -emit-module -emit-module-path /tmp/gus-ui-audit-20261009/build/Build/Intermediates.noindex/GusAudit.build/Debug-iphonesimulator/GusAuditTests.build/Objects-normal/arm64/GusAuditTests.swiftmodule -serialize-diagnostics -dependency-scan-serialize-diagnostics-path /tmp/gus-ui-audit-20261009/build/Build/Intermediates.noindex/GusAudit.build/Debug-iphonesimulator/GusAuditTests.build/Objects-normal/arm64/GusAuditTests-dependency-scan.dia -validate-clang-modules-once -clang-build-session-file /tmp/gus-ui-audit-20261009/build/ModuleCache.noindex/Session.modulevalidation -Xcc -fmodules-prune-interval\=86400 -Xcc -fmodules-prune-after\=345600 -emit-const-values -const-gather-protocols-list /tmp/gus-ui-audit-20261009/build/Build/Intermediates.noindex/GusAudit.build/Debug-iphonesimulator/GusAuditTests.build/Objects-normal/arm64/GusAuditTests_const_extract_protocols.json -Xcc -iquote -Xcc /tmp/gus-ui-audit-20261009/build/Build/Intermediates.noindex/GusAudit.build/Debug-iphonesimulator/GusAuditTests.build/GusAuditTests-generated-files.hmap -Xcc -I/tmp/gus-ui-audit-20261009/build/Build/Intermediates.noindex/GusAudit.build/Debug-iphonesimulator/GusAuditTests.build/GusAuditTests-own-target-headers.hmap -Xcc -I/tmp/gus-ui-audit-20261009/build/Build/Intermediates.noindex/GusAudit.build/Debug-iphonesimulator/GusAuditTests.build/GusAuditTests-all-target-headers.hmap -Xcc -iquote -Xcc /tmp/gus-ui-audit-20261009/build/Build/Intermediates.noindex/GusAudit.build/Debug-iphonesimulator/GusAuditTests.build/GusAuditTests-project-headers.hmap -Xcc -I/tmp/gus-ui-audit-20261009/build/Build/Products/Debug-iphonesimulator/include -Xcc -I/tmp/gus-ui-audit-20261009/build/Build/Intermediates.noindex/GusAudit.build/Debug-iphonesimulator/GusAuditTests.build/DerivedSources-normal/arm64 -Xcc -I/tmp/gus-ui-audit-20261009/build/Build/Intermediates.noindex/GusAudit.build/Debug-iphonesimulator/GusAuditTests.build/DerivedSources/arm64 -Xcc -I/tmp/gus-ui-audit-20261009/build/Build/Intermediates.noindex/GusAudit.build/Debug-iphonesimulator/GusAuditTests.build/DerivedSources -Xcc -DDEBUG\=1 -emit-objc-header -emit-objc-header-path /tmp/gus-ui-audit-20261009/build/Build/Intermediates.noindex/GusAudit.build/Debug-iphonesimulator/GusAuditTests.build/Objects-normal/arm64/GusAuditTests-Swift.h -working-directory /tmp/gus-ui-audit-20261009 -experimental-emit-module-separately -disable-cmo
+
+SwiftCompile normal arm64 Compiling\ Preview.swift /tmp/gus-ui-audit-20261009/Tests/Preview.swift (in target 'GusAuditTests' from project 'GusAudit')
+
+SwiftCompile normal arm64 /tmp/gus-ui-audit-20261009/Tests/Preview.swift (in target 'GusAuditTests' from project 'GusAudit')
+    cd /tmp/gus-ui-audit-20261009
+    builtin-SwiftPerFileCompile Preview.swift
+
+SwiftEmitModule normal arm64 Emitting\ module\ for\ GusAuditTests (in target 'GusAuditTests' from project 'GusAudit')
+
+SwiftCompile normal arm64 (in target 'GusAuditTests' from project 'GusAudit')
+    cd /tmp/gus-ui-audit-20261009
+    
+
+SwiftCompile normal arm64 Compiling\ Audit.swift /tmp/gus-ui-audit-20261009/Tests/Audit.swift (in target 'GusAuditTests' from project 'GusAudit')
+
+SwiftCompile normal arm64 /tmp/gus-ui-audit-20261009/Tests/Audit.swift (in target 'GusAuditTests' from project 'GusAudit')
+    cd /tmp/gus-ui-audit-20261009
+    builtin-SwiftPerFileCompile Audit.swift
+
+SwiftDriverJobDiscovery normal arm64 Emitting module for GusAuditTests (in target 'GusAuditTests' from project 'GusAudit')
+
+SwiftDriver\ Compilation\ Requirements GusAuditTests normal arm64 com.apple.xcode.tools.swift.compiler (in target 'GusAuditTests' from project 'GusAudit')
+    cd /tmp/gus-ui-audit-20261009
+    builtin-Swift-Compilation-Requirements -- /Applications/Development/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc -module-name GusAuditTests -Onone @/tmp/gus-ui-audit-20261009/build/Build/Intermediates.noindex/GusAudit.build/Debug-iphonesimulator/GusAuditTests.build/Objects-normal/arm64/GusAuditTests.SwiftFileList -DDEBUG -module-alias Testing\=_Testing_Unavailable -plugin-path /Applications/Development/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing -enable-bare-slash-regex -enable-experimental-feature DebugDescriptionMacro -sdk /Applications/Development/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.0.sdk -target arm64-apple-ios18.0-simulator -g -module-cache-path /tmp/gus-ui-audit-20261009/build/ModuleCache.noindex -Xfrontend -serialize-debugging-options -enable-testing -index-store-path /tmp/gus-ui-audit-20261009/build/Index.noindex/DataStore -Xcc -D_LIBCPP_HARDENING_MODE\=_LIBCPP_HARDENING_MODE_DEBUG -swift-version 5 -I /tmp/gus-ui-audit-20261009/build/Build/Products/Debug-iphonesimulator -Isystem /Applications/Development/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/usr/lib -F /tmp/gus-ui-audit-20261009/build/Build/Products/Debug-iphonesimulator -F /Applications/Development/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/Library/Frameworks -F /Applications/Development/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.0.sdk/Developer/Library/Frameworks -c -j10 -enable-batch-mode -incremental -Xcc -ivfsstatcache -Xcc /tmp/gus-ui-audit-20261009/build/SDKStatCaches.noindex/iphonesimulator27.0-24A430-8b98ade55cdca77b755c004ede0894fd.sdkstatcache -output-file-map /tmp/gus-ui-audit-20261009/build/Build/Intermediates.noindex/GusAudit.build/Debug-iphonesimulator/GusAuditTests.build/Objects-normal/arm64/GusAuditTests-OutputFileMap.json -save-temps -no-color-diagnostics -explicit-module-build -module-cache-path /tmp/gus-ui-audit-20261009/build/Build/Intermediates.noindex/SwiftExplicitPrecompiledModules -clang-scanner-module-cache-path /tmp/gus-ui-audit-20261009/build/ModuleCache.noindex -sdk-module-cache-path /tmp/gus-ui-audit-20261009/build/SDKExplicitPrecompiledModules -emit-dependencies -emit-module -emit-module-path /tmp/gus-ui-audit-20261009/build/Build/Intermediates.noindex/GusAudit.build/Debug-iphonesimulator/GusAuditTests.build/Objects-normal/arm64/GusAuditTests.swiftmodule -serialize-diagnostics -dependency-scan-serialize-diagnostics-path /tmp/gus-ui-audit-20261009/build/Build/Intermediates.noindex/GusAudit.build/Debug-iphonesimulator/GusAuditTests.build/Objects-normal/arm64/GusAuditTests-dependency-scan.dia -validate-clang-modules-once -clang-build-session-file /tmp/gus-ui-audit-20261009/build/ModuleCache.noindex/Session.modulevalidation -Xcc -fmodules-prune-interval\=86400 -Xcc -fmodules-prune-after\=345600 -emit-const-values -const-gather-protocols-list /tmp/gus-ui-audit-20261009/build/Build/Intermediates.noindex/GusAudit.build/Debug-iphonesimulator/GusAuditTests.build/Objects-normal/arm64/GusAuditTests_const_extract_protocols.json -Xcc -iquote -Xcc /tmp/gus-ui-audit-20261009/build/Build/Intermediates.noindex/GusAudit.build/Debug-iphonesimulator/GusAuditTests.build/GusAuditTests-generated-files.hmap -Xcc -I/tmp/gus-ui-audit-20261009/build/Build/Intermediates.noindex/GusAudit.build/Debug-iphonesimulator/GusAuditTests.build/GusAuditTests-own-target-headers.hmap -Xcc -I/tmp/gus-ui-audit-20261009/build/Build/Intermediates.noindex/GusAudit.build/Debug-iphonesimulator/GusAuditTests.build/GusAuditTests-all-target-headers.hmap -Xcc -iquote -Xcc /tmp/gus-ui-audit-20261009/build/Build/Intermediates.noindex/GusAudit.build/Debug-iphonesimulator/GusAuditTests.build/GusAuditTests-project-headers.hmap -Xcc -I/tmp/gus-ui-audit-20261009/build/Build/Products/Debug-iphonesimulator/include -Xcc -I/tmp/gus-ui-audit-20261009/build/Build/Intermediates.noindex/GusAudit.build/Debug-iphonesimulator/GusAuditTests.build/DerivedSources-normal/arm64 -Xcc -I/tmp/gus-ui-audit-20261009/build/Build/Intermediates.noindex/GusAudit.build/Debug-iphonesimulator/GusAuditTests.build/DerivedSources/arm64 -Xcc -I/tmp/gus-ui-audit-20261009/build/Build/Intermediates.noindex/GusAudit.build/Debug-iphonesimulator/GusAuditTests.build/DerivedSources -Xcc -DDEBUG\=1 -emit-objc-header -emit-objc-header-path /tmp/gus-ui-audit-20261009/build/Build/Intermediates.noindex/GusAudit.build/Debug-iphonesimulator/GusAuditTests.build/Objects-normal/arm64/GusAuditTests-Swift.h -working-directory /tmp/gus-ui-audit-20261009 -experimental-emit-module-separately -disable-cmo
+
+Copy /tmp/gus-ui-audit-20261009/build/Build/Products/Debug-iphonesimulator/GusAuditTests.swiftmodule/arm64-apple-ios-simulator.swiftmodule /tmp/gus-ui-audit-20261009/build/Build/Intermediates.noindex/GusAudit.build/Debug-iphonesimulator/GusAuditTests.build/Objects-normal/arm64/GusAuditTests.swiftmodule (in target 'GusAuditTests' from project 'GusAudit')
+    cd /tmp/gus-ui-audit-20261009
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks -rename /tmp/gus-ui-audit-20261009/build/Build/Intermediates.noindex/GusAudit.build/Debug-iphonesimulator/GusAuditTests.build/Objects-normal/arm64/GusAuditTests.swiftmodule /tmp/gus-ui-audit-20261009/build/Build/Products/Debug-iphonesimulator/GusAuditTests.swiftmodule/arm64-apple-ios-simulator.swiftmodule
+
+Copy /tmp/gus-ui-audit-20261009/build/Build/Products/Debug-iphonesimulator/GusAuditTests.swiftmodule/arm64-apple-ios-simulator.abi.json /tmp/gus-ui-audit-20261009/build/Build/Intermediates.noindex/GusAudit.build/Debug-iphonesimulator/GusAuditTests.build/Objects-normal/arm64/GusAuditTests.abi.json (in target 'GusAuditTests' from project 'GusAudit')
+    cd /tmp/gus-ui-audit-20261009
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks -rename /tmp/gus-ui-audit-20261009/build/Build/Intermediates.noindex/GusAudit.build/Debug-iphonesimulator/GusAuditTests.build/Objects-normal/arm64/GusAuditTests.abi.json /tmp/gus-ui-audit-20261009/build/Build/Products/Debug-iphonesimulator/GusAuditTests.swiftmodule/arm64-apple-ios-simulator.abi.json
+
+Copy /tmp/gus-ui-audit-20261009/build/Build/Products/Debug-iphonesimulator/GusAuditTests.swiftmodule/Project/arm64-apple-ios-simulator.swiftsourceinfo /tmp/gus-ui-audit-20261009/build/Build/Intermediates.noindex/GusAudit.build/Debug-iphonesimulator/GusAuditTests.build/Objects-normal/arm64/GusAuditTests.swiftsourceinfo (in target 'GusAuditTests' from project 'GusAudit')
+    cd /tmp/gus-ui-audit-20261009
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks -rename /tmp/gus-ui-audit-20261009/build/Build/Intermediates.noindex/GusAudit.build/Debug-iphonesimulator/GusAuditTests.build/Objects-normal/arm64/GusAuditTests.swiftsourceinfo /tmp/gus-ui-audit-20261009/build/Build/Products/Debug-iphonesimulator/GusAuditTests.swiftmodule/Project/arm64-apple-ios-simulator.swiftsourceinfo
+
+SwiftDriverJobDiscovery normal arm64 Compiling Audit.swift (in target 'GusAuditTests' from project 'GusAudit')
+
+SwiftDriverJobDiscovery normal arm64 Compiling Preview.swift (in target 'GusAuditTests' from project 'GusAudit')
+
+SwiftDriver\ Compilation GusAuditTests normal arm64 com.apple.xcode.tools.swift.compiler (in target 'GusAuditTests' from project 'GusAudit')
+    cd /tmp/gus-ui-audit-20261009
+    builtin-Swift-Compilation -- /Applications/Development/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc -module-name GusAuditTests -Onone @/tmp/gus-ui-audit-20261009/build/Build/Intermediates.noindex/GusAudit.build/Debug-iphonesimulator/GusAuditTests.build/Objects-normal/arm64/GusAuditTests.SwiftFileList -DDEBUG -module-alias Testing\=_Testing_Unavailable -plugin-path /Applications/Development/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing -enable-bare-slash-regex -enable-experimental-feature DebugDescriptionMacro -sdk /Applications/Development/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.0.sdk -target arm64-apple-ios18.0-simulator -g -module-cache-path /tmp/gus-ui-audit-20261009/build/ModuleCache.noindex -Xfrontend -serialize-debugging-options -enable-testing -index-store-path /tmp/gus-ui-audit-20261009/build/Index.noindex/DataStore -Xcc -D_LIBCPP_HARDENING_MODE\=_LIBCPP_HARDENING_MODE_DEBUG -swift-version 5 -I /tmp/gus-ui-audit-20261009/build/Build/Products/Debug-iphonesimulator -Isystem /Applications/Development/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/usr/lib -F /tmp/gus-ui-audit-20261009/build/Build/Products/Debug-iphonesimulator -F /Applications/Development/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/Library/Frameworks -F /Applications/Development/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.0.sdk/Developer/Library/Frameworks -c -j10 -enable-batch-mode -incremental -Xcc -ivfsstatcache -Xcc /tmp/gus-ui-audit-20261009/build/SDKStatCaches.noindex/iphonesimulator27.0-24A430-8b98ade55cdca77b755c004ede0894fd.sdkstatcache -output-file-map /tmp/gus-ui-audit-20261009/build/Build/Intermediates.noindex/GusAudit.build/Debug-iphonesimulator/GusAuditTests.build/Objects-normal/arm64/GusAuditTests-OutputFileMap.json -save-temps -no-color-diagnostics -explicit-module-build -module-cache-path /tmp/gus-ui-audit-20261009/build/Build/Intermediates.noindex/SwiftExplicitPrecompiledModules -clang-scanner-module-cache-path /tmp/gus-ui-audit-20261009/build/ModuleCache.noindex -sdk-module-cache-path /tmp/gus-ui-audit-20261009/build/SDKExplicitPrecompiledModules -emit-dependencies -emit-module -emit-module-path /tmp/gus-ui-audit-20261009/build/Build/Intermediates.noindex/GusAudit.build/Debug-iphonesimulator/GusAuditTests.build/Objects-normal/arm64/GusAuditTests.swiftmodule -serialize-diagnostics -dependency-scan-serialize-diagnostics-path /tmp/gus-ui-audit-20261009/build/Build/Intermediates.noindex/GusAudit.build/Debug-iphonesimulator/GusAuditTests.build/Objects-normal/arm64/GusAuditTests-dependency-scan.dia -validate-clang-modules-once -clang-build-session-file /tmp/gus-ui-audit-20261009/build/ModuleCache.noindex/Session.modulevalidation -Xcc -fmodules-prune-interval\=86400 -Xcc -fmodules-prune-after\=345600 -emit-const-values -const-gather-protocols-list /tmp/gus-ui-audit-20261009/build/Build/Intermediates.noindex/GusAudit.build/Debug-iphonesimulator/GusAuditTests.build/Objects-normal/arm64/GusAuditTests_const_extract_protocols.json -Xcc -iquote -Xcc /tmp/gus-ui-audit-20261009/build/Build/Intermediates.noindex/GusAudit.build/Debug-iphonesimulator/GusAuditTests.build/GusAuditTests-generated-files.hmap -Xcc -I/tmp/gus-ui-audit-20261009/build/Build/Intermediates.noindex/GusAudit.build/Debug-iphonesimulator/GusAuditTests.build/GusAuditTests-own-target-headers.hmap -Xcc -I/tmp/gus-ui-audit-20261009/build/Build/Intermediates.noindex/GusAudit.build/Debug-iphonesimulator/GusAuditTests.build/GusAuditTests-all-target-headers.hmap -Xcc -iquote -Xcc /tmp/gus-ui-audit-20261009/build/Build/Intermediates.noindex/GusAudit.build/Debug-iphonesimulator/GusAuditTests.build/GusAuditTests-project-headers.hmap -Xcc -I/tmp/gus-ui-audit-20261009/build/Build/Products/Debug-iphonesimulator/include -Xcc -I/tmp/gus-ui-audit-20261009/build/Build/Intermediates.noindex/GusAudit.build/Debug-iphonesimulator/GusAuditTests.build/DerivedSources-normal/arm64 -Xcc -I/tmp/gus-ui-audit-20261009/build/Build/Intermediates.noindex/GusAudit.build/Debug-iphonesimulator/GusAuditTests.build/DerivedSources/arm64 -Xcc -I/tmp/gus-ui-audit-20261009/build/Build/Intermediates.noindex/GusAudit.build/Debug-iphonesimulator/GusAuditTests.build/DerivedSources -Xcc -DDEBUG\=1 -emit-objc-header -emit-objc-header-path /tmp/gus-ui-audit-20261009/build/Build/Intermediates.noindex/GusAudit.build/Debug-iphonesimulator/GusAuditTests.build/Objects-normal/arm64/GusAuditTests-Swift.h -working-directory /tmp/gus-ui-audit-20261009 -experimental-emit-module-separately -disable-cmo
+
+Ld /tmp/gus-ui-audit-20261009/build/Build/Products/Debug-iphonesimulator/GusAuditTests-Runner.app/PlugIns/GusAuditTests.xctest/GusAuditTests normal (in target 'GusAuditTests' from project 'GusAudit')
+    cd /tmp/gus-ui-audit-20261009
+    /Applications/Development/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -Xlinker -reproducible -target arm64-apple-ios18.0-simulator -bundle -isysroot /Applications/Development/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.0.sdk -O0 -Xlinker -no_warn_duplicate_libraries -L/tmp/gus-ui-audit-20261009/build/Build/Intermediates.noindex/EagerLinkingTBDs/Debug-iphonesimulator -L/tmp/gus-ui-audit-20261009/build/Build/Products/Debug-iphonesimulator -L/Applications/Development/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/usr/lib -F/tmp/gus-ui-audit-20261009/build/Build/Intermediates.noindex/EagerLinkingTBDs/Debug-iphonesimulator -F/tmp/gus-ui-audit-20261009/build/Build/Products/Debug-iphonesimulator -iframework /Applications/Development/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/Library/Frameworks -iframework /Applications/Development/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.0.sdk/Developer/Library/Frameworks -filelist /tmp/gus-ui-audit-20261009/build/Build/Intermediates.noindex/GusAudit.build/Debug-iphonesimulator/GusAuditTests.build/Objects-normal/arm64/GusAuditTests.LinkFileList -Xlinker -rpath -Xlinker /usr/lib/swift -Xlinker -rpath -Xlinker @loader_path/Frameworks -Xlinker -rpath -Xlinker @executable_path/Frameworks -Xlinker -dead_strip -Xlinker -object_path_lto -Xlinker /tmp/gus-ui-audit-20261009/build/Build/Intermediates.noindex/GusAudit.build/Debug-iphonesimulator/GusAuditTests.build/Objects-normal/arm64/GusAuditTests_lto.o -rdynamic -Xlinker -no_deduplicate -Xlinker -objc_abi_version -Xlinker 2 -Xlinker -dependency_info -Xlinker /tmp/gus-ui-audit-20261009/build/Build/Intermediates.noindex/GusAudit.build/Debug-iphonesimulator/GusAuditTests.build/Objects-normal/arm64/GusAuditTests_dependency_info.dat -fobjc-link-runtime -L/Applications/Development/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphonesimulator -L/usr/lib/swift -Xlinker -add_ast_path -Xlinker /tmp/gus-ui-audit-20261009/build/Build/Intermediates.noindex/GusAudit.build/Debug-iphonesimulator/GusAuditTests.build/Objects-normal/arm64/GusAuditTests.swiftmodule -Xlinker -needed_framework -Xlinker XCTest -framework XCTest -Xlinker -needed-lXCTestSwiftSupport -lXCTestSwiftSupport -o /tmp/gus-ui-audit-20261009/build/Build/Products/Debug-iphonesimulator/GusAuditTests-Runner.app/PlugIns/GusAuditTests.xctest/GusAuditTests
+
+ExtractAppIntentsMetadata (in target 'GusAuditTests' from project 'GusAudit')
+    cd /tmp/gus-ui-audit-20261009
+    /Applications/Development/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/appintentsmetadataprocessor --toolchain-dir /Applications/Development/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain --module-name GusAuditTests --sdk-root /Applications/Development/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.0.sdk --xcode-version 27A266a --platform-family iOS --deployment-target 18.0 --bundle-identifier dev.ericslutz.gus.audit --output /tmp/gus-ui-audit-20261009/build/Build/Products/Debug-iphonesimulator/GusAuditTests-Runner.app/PlugIns/GusAuditTests.xctest --target-triple arm64-apple-ios18.0-simulator --binary-file /tmp/gus-ui-audit-20261009/build/Build/Products/Debug-iphonesimulator/GusAuditTests-Runner.app/PlugIns/GusAuditTests.xctest/GusAuditTests --dependency-file /tmp/gus-ui-audit-20261009/build/Build/Intermediates.noindex/GusAudit.build/Debug-iphonesimulator/GusAuditTests.build/Objects-normal/arm64/GusAuditTests_dependency_info.dat --stringsdata-file /tmp/gus-ui-audit-20261009/build/Build/Intermediates.noindex/GusAudit.build/Debug-iphonesimulator/GusAuditTests.build/Objects-normal/arm64/ExtractedAppShortcutsMetadata.stringsdata --source-file-list /tmp/gus-ui-audit-20261009/build/Build/Intermediates.noindex/GusAudit.build/Debug-iphonesimulator/GusAuditTests.build/Objects-normal/arm64/GusAuditTests.SwiftFileList --metadata-file-list /tmp/gus-ui-audit-20261009/build/Build/Intermediates.noindex/GusAudit.build/Debug-iphonesimulator/GusAuditTests.build/GusAuditTests.DependencyMetadataFileList --static-metadata-file-list /tmp/gus-ui-audit-20261009/build/Build/Intermediates.noindex/GusAudit.build/Debug-iphonesimulator/GusAuditTests.build/GusAuditTests.DependencyStaticMetadataFileList --swift-const-vals-list /tmp/gus-ui-audit-20261009/build/Build/Intermediates.noindex/GusAudit.build/Debug-iphonesimulator/GusAuditTests.build/Objects-normal/arm64/GusAuditTests.SwiftConstValuesFileList --compile-time-extraction --deployment-aware-processing --no-app-shortcuts-localization
+2026-10-09 21:56:13.603 appintentsmetadataprocessor[52565:408993] Starting appintentsmetadataprocessor export
+2026-10-09 21:56:13.613 appintentsmetadataprocessor[52565:408993] warning: Metadata extraction skipped, no AppIntents.framework dependency found
+
+CopySwiftLibs /tmp/gus-ui-audit-20261009/build/Build/Products/Debug-iphonesimulator/GusAuditTests-Runner.app/PlugIns/GusAuditTests.xctest (in target 'GusAuditTests' from project 'GusAudit')
+    cd /tmp/gus-ui-audit-20261009
+    builtin-swiftStdLibTool --copy --verbose --scan-executable /tmp/gus-ui-audit-20261009/build/Build/Products/Debug-iphonesimulator/GusAuditTests-Runner.app/PlugIns/GusAuditTests.xctest/GusAuditTests --scan-folder /tmp/gus-ui-audit-20261009/build/Build/Products/Debug-iphonesimulator/GusAuditTests-Runner.app/PlugIns/GusAuditTests.xctest/Frameworks --scan-folder /tmp/gus-ui-audit-20261009/build/Build/Products/Debug-iphonesimulator/GusAuditTests-Runner.app/PlugIns/GusAuditTests.xctest/PlugIns --scan-folder /tmp/gus-ui-audit-20261009/build/Build/Products/Debug-iphonesimulator/GusAuditTests-Runner.app/PlugIns/GusAuditTests.xctest/SystemExtensions --scan-folder /tmp/gus-ui-audit-20261009/build/Build/Products/Debug-iphonesimulator/GusAuditTests-Runner.app/PlugIns/GusAuditTests.xctest/Extensions --platform iphonesimulator --toolchain /Applications/Development/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain --destination /tmp/gus-ui-audit-20261009/build/Build/Products/Debug-iphonesimulator/GusAuditTests-Runner.app/PlugIns/GusAuditTests.xctest/Frameworks --strip-bitcode --scan-executable /Applications/Development/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/usr/lib/libXCTestSwiftSupport.dylib --strip-bitcode-tool /Applications/Development/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/bitcode_strip --emit-dependency-info /tmp/gus-ui-audit-20261009/build/Build/Intermediates.noindex/GusAudit.build/Debug-iphonesimulator/GusAuditTests.build/SwiftStdLibToolInputDependencies.dep --filter-for-swift-os
+Ignoring --strip-bitcode because --sign was not passed
+
+ProcessInfoPlistFile /tmp/gus-ui-audit-20261009/build/Build/Products/Debug-iphonesimulator/GusAuditTests-Runner.app/PlugIns/GusAuditTests.xctest/Info.plist /tmp/gus-ui-audit-20261009/build/Build/Intermediates.noindex/GusAudit.build/Debug-iphonesimulator/GusAuditTests.build/empty-GusAuditTests.plist (in target 'GusAuditTests' from project 'GusAudit')
+    cd /tmp/gus-ui-audit-20261009
+    builtin-infoPlistUtility /tmp/gus-ui-audit-20261009/build/Build/Intermediates.noindex/GusAudit.build/Debug-iphonesimulator/GusAuditTests.build/empty-GusAuditTests.plist -producttype com.apple.product-type.bundle.ui-testing -expandbuildsettings -format binary -platform iphonesimulator -additionalcontentfile /tmp/gus-ui-audit-20261009/build/Build/Intermediates.noindex/GusAudit.build/Debug-iphonesimulator/GusAuditTests.build/ProductTypeInfoPlistAdditions.plist -o /tmp/gus-ui-audit-20261009/build/Build/Products/Debug-iphonesimulator/GusAuditTests-Runner.app/PlugIns/GusAuditTests.xctest/Info.plist
+
+PruneExplicitPrecompiledModules /tmp/gus-ui-audit-20261009/build/Build/Intermediates.noindex/ExplicitPrecompiledModules
+
+PruneExplicitPrecompiledModules /tmp/gus-ui-audit-20261009/build/SDKExplicitPrecompiledModules
+
+PruneExplicitPrecompiledModules /tmp/gus-ui-audit-20261009/build/Build/Intermediates.noindex/SwiftExplicitPrecompiledModules
+
+2026-10-09 21:56:21.024064-0400 GusAuditTests-Runner[52604:409462] [Default] Running tests...
+    t =      nans Interface orientation changed to Portrait
+Test Suite 'Selected tests' started at 2026-10-09 21:56:27.075.
+Test Suite 'GusAuditTests.xctest' started at 2026-10-09 21:56:27.079.
+Test Suite 'PreviewAudit' started at 2026-10-09 21:56:27.079.
+Test Case '-[GusAuditTests.PreviewAudit testPreviewSurfaces]' started.
+    t =     0.01s Start Test at 2026-10-09 21:56:27.091
+    t =     0.13s Set Up
+    t =     0.20s Setting device orientation to Portrait
+    t =     0.29s     Wait for dev.ericslutz.gus to idle
+    t =     0.45s Open dev.ericslutz.gus
+    t =     0.45s     Launch dev.ericslutz.gus
+    t =     0.45s         Terminate dev.ericslutz.gus:52257
+    t =     1.72s         Wait for accessibility to load
+    t =     1.73s         Setting up automation session
+objc[52604]: Class UIAccessibilityLoaderWebShared is implemented in both /private/var/run/com.apple.security.cryptexd/mnt/com.apple.iPhoneOS.SimulatorRuntime-v24.1.434.0.KNvHId/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 27.0.simruntime/Contents/Resources/RuntimeRoot/System/Library/AccessibilityBundles/WebKit.axbundle/WebKit (0x1061c0398) and /private/var/run/com.apple.security.cryptexd/mnt/com.apple.iPhoneOS.SimulatorRuntime-v24.1.434.0.KNvHId/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 27.0.simruntime/Contents/Resources/RuntimeRoot/System/Library/AccessibilityBundles/WebCore.axbundle/WebCore (0x1062f8310). This may cause spurious casting failures and mysterious crashes. One of the duplicates must be removed or renamed.
+    t =     5.68s         Wait for dev.ericslutz.gus to idle
+    t =     9.89s Waiting 5.0s for "Settings" Button to exist
+    t =    10.94s     Checking `Expect predicate `existsNoRetry == 1` for object "Settings" Button`
+    t =    10.94s         Checking existence of `"Settings" Button`
+    t =    11.33s Tap "Settings" Button
+    t =    11.33s     Wait for dev.ericslutz.gus to idle
+    t =    11.35s     Find the "Settings" Button
+    t =    11.38s     Check for interrupting elements affecting "Settings" Button
+    t =    11.46s     Synthesize event
+    t =    12.01s     Wait for dev.ericslutz.gus to idle
+    t =    15.59s Added attachment named 'preview-settings-portrait'
+    t =    15.59s Requesting snapshot of accessibility hierarchy for app with pid 52807
+    t =    16.53s Requesting snapshot of accessibility hierarchy for app with pid 52807
+    t =    16.60s Added attachment named 'preview-settings-portrait-tree'
+    t =    16.60s Setting device orientation to Landscape Left
+    t =    16.63s     Device orientation changed to Landscape Left
+    t =    16.85s     Interface orientation changed to Landscape Right
+    t =    19.11s     Wait for dev.ericslutz.gus to idle
+    t =    21.45s Added attachment named 'preview-settings-landscape'
+    t =    21.45s Requesting snapshot of accessibility hierarchy for app with pid 52807
+    t =    22.58s Requesting snapshot of accessibility hierarchy for app with pid 52807
+    t =    22.67s Added attachment named 'preview-settings-landscape-tree'
+    t =    22.67s Setting device orientation to Portrait
+    t =    22.68s     Device orientation changed to Portrait
+    t =    22.70s     Interface orientation changed to Portrait
+    t =    22.75s     Wait for dev.ericslutz.gus to idle
+    t =    22.94s Waiting 5.0s for "Downloaded Media" Button to exist
+    t =    23.97s     Checking `Expect predicate `existsNoRetry == 1` for object "Downloaded Media" Button`
+    t =    24.00s         Checking existence of `"Downloaded Media" Button`
+    t =    24.14s         Capturing element debug description
+    t =    24.96s     Checking `Expect predicate `existsNoRetry == 1` for object "Downloaded Media" Button`
+    t =    24.96s         Checking existence of `"Downloaded Media" Button`
+    t =    25.08s         Capturing element debug description
+    t =    26.02s     Checking `Expect predicate `existsNoRetry == 1` for object "Downloaded Media" Button`
+    t =    26.02s         Checking existence of `"Downloaded Media" Button`
+    t =    26.17s         Capturing element debug description
+    t =    27.00s     Checking `Expect predicate `existsNoRetry == 1` for object "Downloaded Media" Button`
+    t =    27.00s         Checking existence of `"Downloaded Media" Button`
+    t =    27.08s         Capturing element debug description
+    t =    27.94s     Checking `Expect predicate `existsNoRetry == 1` for object "Downloaded Media" Button`
+    t =    27.94s         Checking existence of `"Downloaded Media" Button`
+    t =    28.01s         Capturing element debug description
+    t =    28.01s     Checking existence of `"Downloaded Media" Button`
+    t =    28.09s Collecting debug information to assist test failure triage
+    t =    28.09s     Requesting snapshot of accessibility hierarchy for app with pid 52807
+    t =    28.20s Tap "Downloaded Media" StaticText
+    t =    28.20s     Wait for dev.ericslutz.gus to idle
+    t =    28.20s     Find the "Downloaded Media" StaticText
+    t =    28.27s     Check for interrupting elements affecting "Downloaded Media" StaticText
+    t =    28.32s     Synthesize event
+    t =    28.68s     Wait for dev.ericslutz.gus to idle
+    t =    29.71s Added attachment named 'preview-manage-downloads-portrait'
+    t =    29.71s Requesting snapshot of accessibility hierarchy for app with pid 52807
+    t =    30.31s Requesting snapshot of accessibility hierarchy for app with pid 52807
+    t =    30.38s Added attachment named 'preview-manage-downloads-portrait-tree'
+    t =    30.38s Setting device orientation to Landscape Left
+    t =    30.38s     Device orientation changed to Landscape Left
+    t =    30.45s     Interface orientation changed to Landscape Right
+    t =    30.45s     Wait for dev.ericslutz.gus to idle
+    t =    30.71s Added attachment named 'preview-manage-downloads-after-rotation'
+    t =    30.72s Requesting snapshot of accessibility hierarchy for app with pid 52807
+    t =    31.03s Requesting snapshot of accessibility hierarchy for app with pid 52807
+    t =    31.09s Added attachment named 'preview-manage-downloads-after-rotation-tree'
+    t =    31.09s Checking existence of `"Downloads" NavigationBar`
+ROTATION_DOWNLOADS_STILL_PRESENT true
+    t =    31.12s Setting device orientation to Portrait
+    t =    31.12s     Device orientation changed to Portrait
+    t =    31.17s     Interface orientation changed to Portrait
+    t =    31.17s     Wait for dev.ericslutz.gus to idle
+    t =    31.81s Terminate dev.ericslutz.gus:52807
+    t =    32.86s Open dev.ericslutz.gus
+    t =    32.86s     Launch dev.ericslutz.gus
+    t =    33.26s         Setting up automation session
+    t =    37.58s         Wait for dev.ericslutz.gus to idle
+    t =    44.22s Waiting 5.0s for "Downloaded" Button to exist
+    t =    45.24s     Checking `Expect predicate `existsNoRetry == 1` for object "Downloaded" Button`
+    t =    45.25s         Checking existence of `"Downloaded" Button`
+    t =    45.46s Tap "Downloaded" Button
+    t =    45.46s     Wait for dev.ericslutz.gus to idle
+    t =    45.49s     Find the "Downloaded" Button
+    t =    45.50s     Check for interrupting elements affecting "Downloaded" Button
+    t =    45.57s     Synthesize event
+    t =    45.89s     Wait for dev.ericslutz.gus to idle
+    t =    48.31s Added attachment named 'preview-downloaded-portrait'
+    t =    48.31s Requesting snapshot of accessibility hierarchy for app with pid 53113
+    t =    48.64s Requesting snapshot of accessibility hierarchy for app with pid 53113
+    t =    48.73s Added attachment named 'preview-downloaded-portrait-tree'
+    t =    48.74s Setting device orientation to Landscape Left
+    t =    48.75s     Device orientation changed to Landscape Left
+    t =    48.82s     Interface orientation changed to Landscape Right
+    t =    48.83s     Wait for dev.ericslutz.gus to idle
+    t =    49.17s Added attachment named 'preview-downloaded-landscape'
+    t =    49.17s Requesting snapshot of accessibility hierarchy for app with pid 53113
+    t =    49.49s Requesting snapshot of accessibility hierarchy for app with pid 53113
+    t =    49.56s Added attachment named 'preview-downloaded-landscape-tree'
+    t =    52.16s Find the Any (Descendant with identity binding to AX element pid: 53113, elementOrHash.elementID: 4640000832.105)
+    t =    52.20s Added attachment named 'preview-download-audit-issue'
+    t =    52.20s Find the Any (Descendant with identity binding to AX element pid: 53113, elementOrHash.elementID: 4640000832.105)
+AUDIT_ISSUE preview-download <XCUIAccessibilityAuditIssue: 0x10ead9530>AuditType:"4" CompactDescription:"Hit area is too small" DetailedDescription:"The size of this SwiftUI.AccessibilityNode is too small for user to interact." Element:"Manage Downloads" Button
+    t =    52.23s Find the Any (Descendant with identity binding to AX element pid: 53113, elementOrHash.elementID: 4381595904.73)
+    t =    52.26s Added attachment named 'preview-download-audit-issue'
+    t =    52.26s Find the Any (Descendant with identity binding to AX element pid: 53113, elementOrHash.elementID: 4381595904.73)
+AUDIT_ISSUE preview-download <XCUIAccessibilityAuditIssue: 0x10ead96e0>AuditType:"131072" CompactDescription:"Text clipped" DetailedDescription:"Text of this UISearchBarTextField may be clipped at larger Dynamic Type sizes." Element:"Search Downloaded" SearchField
+    t =    52.31s Setting device orientation to Portrait
+    t =    52.31s     Device orientation changed to Portrait
+    t =    52.36s     Interface orientation changed to Portrait
+    t =    52.36s     Wait for dev.ericslutz.gus to idle
+    t =    52.45s Tear Down
+Test Case '-[GusAuditTests.PreviewAudit testPreviewSurfaces]' passed (52.837 seconds).
+Test Suite 'PreviewAudit' passed at 2026-10-09 21:57:19.929.
+	 Executed 1 test, with 0 failures (0 unexpected) in 52.837 (52.850) seconds
+Test Suite 'GusAuditTests.xctest' passed at 2026-10-09 21:57:19.929.
+	 Executed 1 test, with 0 failures (0 unexpected) in 52.837 (52.850) seconds
+Test Suite 'Selected tests' passed at 2026-10-09 21:57:19.929.
+	 Executed 1 test, with 0 failures (0 unexpected) in 52.837 (52.854) seconds
+2026-10-09 21:57:20.403 xcodebuild[52326:407738] [MT] IDETestOperationsObserverDebug: 66.734 elapsed -- Testing started completed.
+2026-10-09 21:57:20.403 xcodebuild[52326:407738] [MT] IDETestOperationsObserverDebug: 0.000 sec, +0.000 sec -- start
+2026-10-09 21:57:20.403 xcodebuild[52326:407738] [MT] IDETestOperationsObserverDebug: 66.734 sec, +66.734 sec -- end
+
+Test session results, code coverage, and logs:
+	/tmp/gus-ui-audit-20261009/preview.xcresult
+
+** TEST SUCCEEDED **
+
+Testing started

@@ -1,0 +1,20 @@
+{
+  "screenshot": "fixed-series-detail-top-landscape.png",
+  "sample_rect_pixels": [
+    1190,
+    1130,
+    1670,
+    1190
+  ],
+  "predominant_fill_colors": [
+    "#CBE7EC",
+    "#CCE8ED"
+  ],
+  "label_color": "#FFFFFF",
+  "white_contrast_ratios": {
+    "#CBE7EC": 1.2978269837528487,
+    "#CCE8ED": 1.2857402195027405,
+    "#B8E3E9": 1.3813661189224624
+  },
+  "method": "NSBitmapImageRep sampled as sRGB; relative-luminance ratio; capture-specific, not a complete conformance audit"
+}

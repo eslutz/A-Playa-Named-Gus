@@ -1,0 +1,77 @@
+Attributes: Application, 0x105c13700, pid: 53113, label: 'Gus'
+Element subtree:
+ →Application, 0x105c13700, pid: 53113, label: 'Gus'
+    Window (Main), 0x105c12e40, {{0.0, 0.0}, {402.0, 874.0}}
+      Other, 0x105c13840, {{0.0, 0.0}, {402.0, 874.0}}
+      Other, 0x105c12d00, {{0.0, 0.0}, {402.0, 874.0}}
+        Other, 0x105c135c0, {{0.0, 0.0}, {402.0, 874.0}}
+          Other, 0x105c12bc0, {{0.0, 0.0}, {402.0, 874.0}}
+            Other, 0x105c10f00, {{0.0, 0.0}, {402.0, 874.0}}
+              Other, 0x105c11e00, {{0.0, 0.0}, {402.0, 874.0}}
+                Other, 0x105c117c0, {{0.0, 0.0}, {402.0, 874.0}}
+                  Other, 0x105c11900, {{0.0, 0.0}, {402.0, 874.0}}
+                    Other, 0x105c10b40, {{0.0, 0.0}, {402.0, 874.0}}
+                      Other, 0x105c11040, {{0.0, 0.0}, {402.0, 874.0}}
+                        Other, 0x105c11cc0, {{0.0, 0.0}, {402.0, 874.0}}
+                          Other, 0x105c11b80, {{0.0, 0.0}, {402.0, 874.0}}
+                            NavigationBar, 0x105c12800, {{0.0, 62.0}, {402.0, 160.0}}, identifier: 'Downloaded'
+                              Button, 0x105c12a80, {{346.0, 66.0}, {36.0, 36.0}}, label: 'Manage Downloads'
+                              StaticText, 0x105c10dc0, {{16.0, 119.7}, {199.3, 40.7}}, label: 'Downloaded'
+                              SearchField, 0x105c11540, {{16.0, 168.0}, {370.0, 44.0}}, label: 'Search Downloaded', placeholderValue: 'Search Downloaded'
+                                Image, 0x105c11a40, {{28.0, 180.0}, {20.7, 19.3}}, identifier: 'magnifyingglass', label: 'Search'
+                            Other, 0x105c10c80, {{0.0, 0.0}, {402.0, 874.0}}
+                              Other, 0x105c10a00, {{0.0, 0.0}, {402.0, 874.0}}
+                                Other, 0x105c13480, {{0.0, 0.0}, {402.0, 874.0}}
+                                  Other, 0x105c130c0, {{0.0, 0.0}, {402.0, 874.0}}
+                                    SegmentedControl, 0x105c12f80, {{16.0, 238.0}, {370.0, 31.0}}
+                                      Button, 0x105c13c00, {{16.0, 238.0}, {74.0, 32.0}}, label: 'All', Selected
+                                      Button, 0x105c12940, {{90.0, 238.0}, {74.0, 32.0}}, label: 'Movies'
+                                      Button, 0x105c12580, {{164.0, 238.0}, {74.0, 32.0}}, label: 'Shows'
+                                      Button, 0x105c13340, {{238.0, 238.0}, {74.0, 32.0}}, label: 'Audio'
+                                      Button, 0x105c121c0, {{312.0, 238.0}, {74.0, 32.0}}, label: 'Books'
+                                    StaticText, 0x105c126c0, {{95.8, 450.0}, {210.3, 87.3}}, label: 'No Downloaded Media'
+                                    Image, 0x105c12440, {{181.0, 450.0}, {40.0, 40.0}}, identifier: 'arrow.down.circle', label: 'Arrow Down Circle'
+                                    StaticText, 0x105c11f40, {{46.5, 540.3}, {309.0, 49.0}}, label: 'Completed downloads available on this device appear here.'
+                                    Button, 0x105c13980, {{133.7, 619.3}, {134.7, 18.0}}, label: 'Manage Downloads'
+                            Toolbar, 0x105c10140, {{0.0, 0.0}, {402.0, 874.0}}, identifier: 'Toolbar', label: 'Toolbar'
+                              Other, 0x105c13200, {{0.0, 0.0}, {402.0, 874.0}}
+                Other, 0x105c13ac0, {{0.0, 0.0}, {402.0, 874.0}}
+                  Other, 0x105c12080, {{0.0, 791.0}, {402.0, 83.0}}
+                    Other, 0x10662fac0, {{0.0, 0.0}, {402.0, 874.0}}
+                      TabBar, 0x10662f840, {{0.0, 791.0}, {402.0, 83.0}}, label: 'Tab Bar'
+                        Other, 0x10662f980, {{21.0, 791.0}, {360.0, 62.0}}
+                          Other, 0x10662f480, {{21.0, 791.0}, {101.3, 54.0}}
+                          Other, 0x10662f700, {{21.0, 791.0}, {360.0, 62.0}}
+                            Button, 0x10662f340, {{25.0, 795.0}, {101.3, 54.0}}, identifier: 'house', label: 'Home'
+                              Image, 0x10662d900, {{59.0, 801.0}, {33.3, 28.0}}, identifier: 'house.fill', label: 'home'
+                            Button, 0x10662e800, {{108.6, 795.0}, {101.3, 54.0}}, identifier: 'arrow.down.circle', label: 'Downloaded', Selected
+                              Image, 0x10662e940, {{145.6, 801.3}, {27.3, 27.3}}, identifier: 'arrow.down.circle.fill', label: 'Arrow Down Circle'
+                            Button, 0x10662f5c0, {{192.1, 795.0}, {101.3, 54.0}}, identifier: 'rectangle.stack', label: 'Libraries'
+                              Image, 0x10662fe80, {{227.8, 800.0}, {30.0, 31.3}}, identifier: 'rectangle.stack.fill', label: 'Album'
+                            Button, 0x10662fd40, {{275.7, 795.0}, {101.3, 54.0}}, identifier: 'gearshape', label: 'Settings'
+                              Image, 0x10662f200, {{312.3, 801.0}, {28.0, 28.0}}, identifier: 'gearshape.fill', label: 'Gear shape, filled'
+                          Other, 0x10662fc00, {{21.0, 791.0}, {360.0, 62.0}}
+                          Other, 0x10662ef80, {{108.6, 795.0}, {101.3, 54.0}}
+                            Other, 0x10662f0c0, {{108.6, 795.0}, {101.3, 54.0}}
+                              Other, 0x10662e1c0, {{108.6, 795.0}, {101.3, 54.0}}
+                              Other, 0x10662e580, {{108.6, 795.0}, {101.3, 54.0}}
+                                Other, 0x10662e6c0, {{108.6, 795.0}, {101.3, 54.0}}
+                                  Other, 0x10662ea80, {{108.6, 795.0}, {101.3, 54.0}}
+                                    Other, 0x10662ee40, {{108.6, 795.0}, {101.3, 54.0}}
+                                  Other, 0x10662ed00, {{108.6, 795.0}, {101.3, 54.0}}
+                                Other, 0x10662ebc0, {{108.6, 795.0}, {101.3, 54.0}}
+                    Other, 0x10662e300, {{0.0, 791.0}, {402.0, 83.0}}
+                      Other, 0x10662e440, {{0.0, 791.0}, {402.0, 83.0}}
+                        Other, 0x10662e080, {{0.0, 791.0}, {402.0, 83.0}}
+                          Other, 0x10662d7c0, {{0.0, 791.0}, {402.0, 83.0}}
+                            Other, 0x10662db80, {{0.0, 791.0}, {402.0, 83.0}}
+                              Other, 0x10662dcc0, {{0.0, 791.0}, {402.0, 83.0}}
+                          Other, 0x10662de00, {{0.0, 791.0}, {402.0, 83.0}}
+                            Other, 0x10662df40, {{0.0, 791.0}, {402.0, 83.0}}
+Path to element:
+ →Application, 0x105c13700, pid: 53113, label: 'Gus'
+Query chain:
+ →Find: Application 'dev.ericslutz.gus'
+  Output: {
+    Application, 0x10662d180, pid: 53113, label: 'Gus'
+  }

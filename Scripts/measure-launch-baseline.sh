@@ -7,7 +7,8 @@
 # `dev.ericslutz.gus`, category `Diagnostics`. Record results in
 # Documentation/AppStore/performance-baselines.md.
 #
-# Usage: Scripts/measure-launch-baseline.sh ["iPhone 17"] [runs]
+# Usage: Scripts/measure-launch-baseline.sh ["iPhone 17" | simulator-UDID] [runs]
+# GUS_LAUNCH_APP_PATH can reuse an already validated simulator app without building.
 set -euo pipefail
 zmodload zsh/datetime
 
@@ -15,15 +16,37 @@ DEVICE="${1:-iPhone 17}"
 RUNS="${2:-5}"
 BUNDLE_ID="dev.ericslutz.gus"
 
+# Simulator names can exist on several runtimes. Resolve a compatible UUID first.
+DEVICE=$(python3 - "$DEVICE" <<'PY'
+import json, re, subprocess, sys
+requested = sys.argv[1]
+data = json.loads(subprocess.check_output(['xcrun', 'simctl', 'list', 'devices', 'available', '--json']))
+candidates = []
+for runtime, devices in data['devices'].items():
+    version = re.search(r'iOS-(\d+)-(\d+)', runtime)
+    if not version or int(version[1]) < 18:
+        continue
+    for device in devices:
+        if requested in (device['name'], device['udid']) and device.get('isAvailable', True):
+            candidates.append(((int(version[1]), int(version[2])), device['udid']))
+if not candidates:
+    sys.exit('No matching available iOS simulator at or above the deployment target')
+print(max(candidates)[1])
+PY
+)
+
 xcrun simctl boot "$DEVICE" 2>/dev/null || true
-open -a Simulator
+xcrun simctl bootstatus "$DEVICE" -b >/dev/null
 
-xcodebuild -project 'A Playa Named Gus.xcodeproj' -scheme 'A Playa Named Gus' \
-  -destination "platform=iOS Simulator,name=$DEVICE" -derivedDataPath build build -quiet
-
-APP_PATH=$(find build/Build/Products/Debug-iphonesimulator -maxdepth 1 -name 'A Playa Named Gus.app' | head -1)
+APP_PATH="${GUS_LAUNCH_APP_PATH:-}"
 if [[ -z "$APP_PATH" ]]; then
-  echo "error: built app not found under build/Build/Products/Debug-iphonesimulator" >&2
+  xcodebuild -project 'A Playa Named Gus.xcodeproj' -scheme 'A Playa Named Gus' \
+    -destination "platform=iOS Simulator,id=$DEVICE" -derivedDataPath build build -quiet
+  APP_PATH="build/Build/Products/Debug-iphonesimulator/A Playa Named Gus.app"
+fi
+
+if [[ ! -d "$APP_PATH" ]]; then
+  echo "error: simulator app not found: $APP_PATH" >&2
   exit 1
 fi
 xcrun simctl install "$DEVICE" "$APP_PATH"

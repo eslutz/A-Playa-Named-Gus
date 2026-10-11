@@ -1,0 +1,22 @@
+{
+  "data": {
+    "type": "ciBuildRuns",
+    "attributes": {
+      "clean": true
+    },
+    "relationships": {
+      "workflow": {
+        "data": {
+          "type": "ciWorkflows",
+          "id": "REPLACE_WORKFLOW_ID"
+        }
+      },
+      "sourceBranchOrTag": {
+        "data": {
+          "type": "scmGitReferences",
+          "id": "REPLACE_GIT_REFERENCE_ID"
+        }
+      }
+    }
+  }
+}

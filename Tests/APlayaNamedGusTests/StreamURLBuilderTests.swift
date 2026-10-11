@@ -1,6 +1,7 @@
 import Foundation
 @testable import Gus
 import JellyfinAPI
+import os
 import Testing
 
 @Suite("AVPlayer device profile")
@@ -239,21 +240,16 @@ private final class PlaybackInfoClientFixture {
 private final class PlaybackInfoURLProtocol: URLProtocol {
     static let stateHeaderName = "X-Gus-PlaybackInfo-State-ID"
 
-    private static let lock = NSLock()
-    private static var states: [String: PlaybackInfoURLProtocolState] = [:]
+    private static let states = OSAllocatedUnfairLock(initialState: [String: PlaybackInfoURLProtocolState]())
 
     static func register(state: PlaybackInfoURLProtocolState) -> String {
         let stateID = UUID().uuidString
-        lock.lock()
-        defer { lock.unlock() }
-        states[stateID] = state
+        states.withLock { $0[stateID] = state }
         return stateID
     }
 
     static func unregister(stateID: String) {
-        lock.lock()
-        defer { lock.unlock() }
-        states[stateID] = nil
+        states.withLock { $0[stateID] = nil }
     }
 
     override class func canInit(with request: URLRequest) -> Bool {
@@ -294,17 +290,15 @@ private final class PlaybackInfoURLProtocol: URLProtocol {
             throw URLError(.badServerResponse)
         }
 
-        lock.lock()
-        defer { lock.unlock() }
-
-        guard let state = states[stateID] else {
+        guard let state = states.withLock({ $0[stateID] }) else {
             throw URLError(.badServerResponse)
         }
         return state
     }
 }
 
-private final class PlaybackInfoURLProtocolState {
+/// The lock serializes all response consumption and recorded-body snapshots.
+private final class PlaybackInfoURLProtocolState: @unchecked Sendable {
     private let lock = NSLock()
     private var responses: [PlaybackInfoResponse]
     private var bodies: [PlaybackInfoDto] = []

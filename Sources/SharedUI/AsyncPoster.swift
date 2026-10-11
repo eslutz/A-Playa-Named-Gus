@@ -22,7 +22,11 @@ struct AsyncPoster: View {
             case .failure:
                 placeholder
             case .empty:
-                placeholder.overlay { ProgressView() }
+                placeholder.overlay {
+                    if url != nil {
+                        ProgressView()
+                    }
+                }
             @unknown default:
                 placeholder
             }

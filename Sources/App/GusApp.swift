@@ -8,14 +8,17 @@ import SwiftUI
 
 /// A Playa Named Gus — an Apple-first, multiplatform Jellyfin client.
 ///
-/// Pure SwiftUI lifecycle (no AppDelegate). The root `AppModel` is created here and
+/// SwiftUI lifecycle with a minimal background-transfer delegate bridge. The root `AppModel` is created here and
 /// injected via `@Environment`; on visionOS an `ImmersiveSpace` hosts the "Gus Cinema".
 @main
 struct GusApp: App {
     @State private var appModel = AppModel.shared
     @State private var appNavigation = AppNavigationModel.shared
     @State private var playbackRefresh = PlaybackRefreshStore()
-    @State private var offlineDownloads = OfflineDownloadStore()
+    #if os(iOS)
+        @UIApplicationDelegateAdaptor(DownloadAppDelegate.self) private var downloadDelegate
+    #endif
+    @State private var offlineDownloads = OfflineDownloadStore.shared
     @State private var upNext = UpNextStore()
     @State private var navigationPreferences = NavigationPreferencesStore()
     @State private var sharedWithYou = SharedWithYouStore()
@@ -31,12 +34,13 @@ struct GusApp: App {
 
     init() {
         // Route `AsyncImage` (which uses `URLSession.shared`) through our tuned cache.
+        OfflineDownloadStore.shared.bootstrapBackgroundTransfers()
         URLCache.shared = JellyfinClientFactory.urlCache
         DiagnosticsHub.shared.record(.appLaunched)
         DiagnosticsHub.shared.startMetricCollection()
-        let arguments = ProcessInfo.processInfo.arguments
-        shouldRestoreLastSession = !arguments.contains("--gus-skip-session-restore")
         #if DEBUG
+            let arguments = ProcessInfo.processInfo.arguments
+            shouldRestoreLastSession = !arguments.contains("--gus-skip-session-restore")
             shouldInstallDebugPreviewSession = arguments.contains("--gus-debug-preview-session")
             shouldConnectToDemoServer = arguments.contains("--gus-demo-server")
             // "--gus-route <path>" opens a destination after launch — used by
@@ -51,6 +55,7 @@ struct GusApp: App {
                 launchRouteURL = nil
             }
         #else
+            shouldRestoreLastSession = true
             shouldInstallDebugPreviewSession = false
             shouldConnectToDemoServer = false
             launchRouteURL = nil

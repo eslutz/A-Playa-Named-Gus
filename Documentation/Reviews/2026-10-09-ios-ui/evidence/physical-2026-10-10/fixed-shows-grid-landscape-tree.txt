@@ -1,0 +1,144 @@
+Attributes: Application, 0x12c219180, pid: 4531, label: 'Gus'
+Element subtree:
+ →Application, 0x12c219180, pid: 4531, label: 'Gus'
+    Window (Main), 0x12c2192c0, {{0.0, 0.0}, {956.0, 440.0}}
+      Other, 0x12c219400, {{0.0, 0.0}, {956.0, 440.0}}
+        Other, 0x12c219540, {{0.0, 0.0}, {956.0, 440.0}}
+          Other, 0x12c219680, {{0.0, 0.0}, {956.0, 440.0}}
+            Other, 0x12c2197c0, {{0.0, 0.0}, {956.0, 440.0}}
+              Other, 0x12c219900, {{0.0, 0.0}, {956.0, 440.0}}
+                Other, 0x12c219a40, {{0.0, 0.0}, {956.0, 440.0}}
+                  Other, 0x12c219b80, {{0.0, 0.0}, {956.0, 440.0}}
+                    Other, 0x12c219cc0, {{0.0, 0.0}, {382.0, 440.0}}
+                      Other, 0x12c219e00, {{0.0, 0.0}, {382.0, 440.0}}
+                        NavigationBar, 0x12c219f40, {{0.0, 24.0}, {382.0, 54.0}}, identifier: 'A Playa Named Gus'
+                          StaticText, 0x12c21a080, {{127.3, 35.7}, {155.0, 20.7}}, label: 'A Playa Named Gus'
+                          Button, 0x12c21a1c0, {{332.0, 28.0}, {36.0, 36.0}}, label: 'Hide Sidebar'
+                        Other, 0x12c21a300, {{0.0, 0.0}, {382.0, 440.0}}
+                          Other, 0x12c21a440, {{0.0, 0.0}, {382.0, 440.0}}
+                            Other, 0x12c21a580, {{0.0, 0.0}, {382.0, 440.0}}
+                              Other, 0x12c21a6c0, {{0.0, 0.0}, {382.0, 440.0}}
+                                CollectionView, 0x12c21a800, {{0.0, 0.0}, {382.0, 440.0}}, label: 'Sidebar'
+                                  Other, 0x12c21a940, {{-78.0, -802.0}, {476.0, 2082.0}}
+                                  Other, 0x12c21aa80, {{0.0, 0.0}, {382.0, 440.0}}
+                                    Other, 0x12c21abc0, {{0.0, 0.0}, {382.0, 118.0}}
+                                  Other, 0x12c21ad00, {{0.0, 0.0}, {382.0, 440.0}}
+                                  Cell, 0x12c21ae40, {{78.0, 78.0}, {288.0, 52.0}}
+                                    Other, 0x12c21af80, {{78.0, 78.0}, {288.0, 52.0}}
+                                    Other, 0x12c21b0c0, {{78.0, 78.0}, {288.0, 52.0}}
+                                      Other, 0x12c21b200, {{78.0, 78.0}, {288.0, 52.0}}
+                                        Other, 0x12c21b340, {{78.0, 78.0}, {288.0, 52.0}}
+                                          StaticText, 0x12c21b480, {{78.0, 78.0}, {288.0, 52.0}}, label: 'Home'
+                                          Image, 0x12c21b5c0, {{93.3, 93.0}, {25.3, 22.3}}, identifier: 'house', label: 'Home'
+                                  Cell, 0x12c21b700, {{78.0, 130.0}, {288.0, 52.0}}
+                                    Other, 0x12c21b840, {{78.0, 130.0}, {288.0, 52.0}}
+                                    Other, 0x12c21b980, {{78.0, 130.0}, {288.0, 52.0}}
+                                      Other, 0x12c21bac0, {{78.0, 130.0}, {288.0, 52.0}}
+                                        Other, 0x12c21bc00, {{78.0, 130.0}, {288.0, 52.0}}
+                                          StaticText, 0x12c21bd40, {{78.0, 130.0}, {288.0, 52.0}}, label: 'Downloaded'
+                                          Image, 0x12c21be80, {{95.3, 145.3}, {21.7, 21.7}}, identifier: 'arrow.down.circle', label: 'Arrow Down Circle'
+                                  Cell, 0x12afb9a40, {{78.0, 182.0}, {288.0, 52.0}}, Selected
+                                    Other, 0x12afb8500, {{78.0, 182.0}, {288.0, 52.0}}
+                                      Other, 0x12afb97c0, {{78.0, 182.0}, {288.0, 52.0}}
+                                        Other, 0x12afb9680, {{78.0, 182.0}, {288.0, 52.0}}
+                                    Other, 0x12afb8780, {{78.0, 182.0}, {288.0, 52.0}}
+                                      Other, 0x12afb9b80, {{78.0, 182.0}, {288.0, 52.0}}
+                                        Other, 0x12afb9400, {{78.0, 182.0}, {288.0, 52.0}}
+                                          StaticText, 0x12afb92c0, {{78.0, 182.0}, {288.0, 52.0}}, label: 'Libraries', Selected
+                                          Image, 0x12afb8f00, {{93.0, 195.3}, {26.3, 25.7}}, identifier: 'rectangle.stack', label: 'Stack Of Rectangles', Selected
+                                  Cell, 0x12afb8a00, {{78.0, 234.0}, {288.0, 52.0}}
+                                    Other, 0x12afb9900, {{78.0, 234.0}, {288.0, 52.0}}
+                                    Other, 0x12afb83c0, {{78.0, 234.0}, {288.0, 52.0}}
+                                      Other, 0x12afb8dc0, {{78.0, 234.0}, {288.0, 52.0}}
+                                        Other, 0x12afba080, {{78.0, 234.0}, {288.0, 52.0}}
+                                          StaticText, 0x12afb9040, {{78.0, 234.0}, {288.0, 52.0}}, label: 'Movies'
+                                          Image, 0x12afba1c0, {{93.3, 250.3}, {25.3, 19.7}}, identifier: 'film', label: 'Movie'
+                                  Cell, 0x12afb9f40, {{78.0, 286.0}, {288.0, 52.0}}
+                                    Other, 0x12afb8b40, {{78.0, 286.0}, {288.0, 52.0}}
+                                    Other, 0x12afb8640, {{78.0, 286.0}, {288.0, 52.0}}
+                                      Other, 0x12afb8c80, {{78.0, 286.0}, {288.0, 52.0}}
+                                        Other, 0x12afb88c0, {{78.0, 286.0}, {288.0, 52.0}}
+                                          StaticText, 0x12afb8280, {{78.0, 286.0}, {288.0, 52.0}}, label: 'Shows'
+                                          Image, 0x12afb8000, {{92.7, 301.7}, {26.7, 21.0}}, identifier: 'tv', label: 'Tv'
+                                  Cell, 0x12af84f00, {{78.0, 338.0}, {288.0, 52.0}}
+                                    Other, 0x12af84500, {{78.0, 338.0}, {288.0, 52.0}}
+                                    Other, 0x12af84780, {{78.0, 338.0}, {288.0, 52.0}}
+                                      Other, 0x12af84a00, {{78.0, 338.0}, {288.0, 52.0}}
+                                        Other, 0x12af84c80, {{78.0, 338.0}, {288.0, 52.0}}
+                                          StaticText, 0x12af84140, {{78.0, 338.0}, {288.0, 52.0}}, label: 'Settings'
+                                          Image, 0x12af85040, {{94.7, 352.7}, {23.0, 22.7}}, identifier: 'gearshape', label: 'Gear Shape'
+                                  Other, 0x12af84640, {{349.0, 78.0}, {30.0, 362.0}}, label: 'Vertical scroll bar, 1 page', value: 0%
+                                    Other, 0x12af848c0, {{376.0, 101.0}, {3.0, 336.0}}
+                                  Other, 0x12af852c0, {{349.0, 78.0}, {30.0, 362.0}}, label: 'Vertical scroll bar, 1 page', value: 0%
+                                    Other, 0x12af843c0, {{376.0, 101.0}, {3.0, 336.0}}
+                        Toolbar, 0x12af84000, {{0.0, 0.0}, {382.0, 440.0}}, identifier: 'Toolbar', label: 'Toolbar'
+                          Other, 0x12af85180, {{0.0, 0.0}, {382.0, 440.0}}
+                      Other, 0x12af84dc0, {{0.0, 0.0}, {382.0, 440.0}}
+                        Other, 0x12af84280, {{0.0, 0.0}, {382.0, 440.0}}
+                          Other, 0x12af84b40, {{0.0, 0.0}, {382.0, 440.0}}
+                            Other, 0x12af85400, {{0.0, 0.0}, {382.0, 440.0}}
+                              Other, 0x12a175040, {{0.0, 0.0}, {382.0, 440.0}}
+                                Other, 0x12a177700, {{0.0, 0.0}, {382.0, 440.0}}
+                            Other, 0x12a174f00, {{0.0, 0.0}, {382.0, 440.0}}
+                              Other, 0x12a177980, {{0.0, 0.0}, {382.0, 440.0}}
+                    Other, 0x12a177840, {{0.0, 0.0}, {956.0, 440.0}}
+                      Other, 0x12bb9c3c0, {{0.0, 0.0}, {956.0, 440.0}}
+                        NavigationBar, 0x12bb9c000, {{0.0, 24.0}, {956.0, 54.0}}, identifier: 'Family Shows'
+                          Button, 0x12bb9c8c0, {{392.0, 24.0}, {44.0, 44.0}}, identifier: 'BackButton', label: 'Libraries'
+                          StaticText, 0x12bb9e940, {{600.7, 35.7}, {108.3, 20.7}}, label: 'Family Shows'
+                          Button, 0x12bb9f0c0, {{878.0, 28.0}, {36.0, 36.0}}, label: 'Filter'
+                        Other, 0x12bb9c780, {{0.0, 0.0}, {956.0, 440.0}}
+                          Other, 0x12bb9fe80, {{0.0, 0.0}, {956.0, 440.0}}
+                            Other, 0x12bb9e800, {{0.0, 0.0}, {956.0, 440.0}}
+                              Other, 0x12bb9e440, {{0.0, 0.0}, {956.0, 440.0}}
+                                ScrollView, 0x12bb9fac0, {{0.0, 0.0}, {956.0, 440.0}}
+                                  Other, 0x12bb9f200, {{0.0, 0.0}, {956.0, 440.0}}
+                                    Other, 0x12bb9c140, {{0.0, 0.0}, {956.0, 118.0}}
+                                  Other, 0x12bb9df40, {{0.0, 0.0}, {956.0, 440.0}}
+                                  Other, 0x12bb9c500, {{0.0, 78.0}, {894.0, 852.0}}
+                                    Other, 0x12bb9f5c0, {{398.0, 94.0}, {480.0, 820.0}}
+                                      Button, 0x12bb9c640, {{398.0, 94.0}, {151.0, 261.3}}, label: 'Are You Afraid of the Dark?, 1990'
+                                        Image, 0x12bb9ea80, {{398.0, 94.0}, {151.0, 222.0}}
+                                        StaticText, 0x12bb9dcc0, {{398.0, 322.0}, {140.7, 18.0}}, label: 'Are You Afraid of the Dark?'
+                                        StaticText, 0x12bb9cc80, {{398.0, 341.0}, {28.7, 14.3}}, label: '1990'
+                                      Button, 0x12bb9f980, {{564.0, 94.0}, {148.0, 261.3}}, label: 'Beetlejuice, 1989'
+                                        Image, 0x12bb9d180, {{564.0, 94.0}, {148.0, 222.0}}
+                                        StaticText, 0x12bb9f840, {{564.0, 322.0}, {77.7, 18.0}}, label: 'Beetlejuice'
+                                        StaticText, 0x12bb9da40, {{564.0, 341.0}, {28.7, 14.3}}, label: '1989'
+                                      Button, 0x12bb9ed00, {{730.0, 94.0}, {148.0, 261.3}}, label: 'Goosebumps, 1995'
+                                        Image, 0x12bb9de00, {{730.0, 94.0}, {148.0, 222.0}}
+                                        StaticText, 0x12bb9db80, {{730.0, 322.0}, {93.3, 18.0}}, label: 'Goosebumps'
+                                        StaticText, 0x12bb9cdc0, {{730.0, 341.0}, {28.3, 14.3}}, label: '1995'
+                                      Button, 0x12bb9c280, {{398.0, 373.3}, {148.0, 261.3}}, label: 'Hailey's On It!, 2023'
+                                        Image, 0x12bb9e580, {{398.0, 373.3}, {148.0, 222.0}}
+                                        StaticText, 0x12bb9ebc0, {{398.0, 601.3}, {98.0, 18.0}}, label: 'Hailey's On It!'
+                                        StaticText, 0x12bb9d040, {{398.0, 620.3}, {29.7, 14.3}}, label: '2023'
+                                      Button, 0x12bb9f700, {{564.0, 373.3}, {148.0, 261.3}}, label: 'SpongeBob SquarePants, 1999'
+                                        Image, 0x12bb9cf00, {{564.0, 373.3}, {148.0, 222.0}}
+                                        StaticText, 0x12bb9ef80, {{564.0, 601.3}, {148.0, 18.0}}, label: 'SpongeBob SquarePants'
+                                        StaticText, 0x12bb9ee40, {{564.0, 620.3}, {28.7, 14.3}}, label: '1999'
+                                      Button, 0x12bb9f340, {{730.0, 373.3}, {148.0, 261.3}}, label: 'Star Trek: Prodigy, 2021'
+                                        Image, 0x12bb9f480, {{730.0, 373.3}, {148.0, 222.0}}
+                                        StaticText, 0x12bb9d540, {{730.0, 601.3}, {126.3, 18.0}}, label: 'Star Trek: Prodigy'
+                                        StaticText, 0x12bb9d2c0, {{730.0, 620.3}, {27.7, 14.3}}, label: '2021'
+                                      Button, 0x12bb9fc00, {{398.0, 652.7}, {148.0, 261.3}}, label: 'The Three Stooges, 1960'
+                                        Image, 0x12bb9cb40, {{398.0, 652.7}, {148.0, 222.0}}
+                                        StaticText, 0x12bb9d680, {{398.0, 880.7}, {133.3, 18.0}}, label: 'The Three Stooges'
+                                        StaticText, 0x12bb9ca00, {{398.0, 899.7}, {28.7, 14.3}}, label: '1960'
+                                  Other, 0x12bb9d900, {{923.0, 78.0}, {30.0, 300.0}}, label: 'Vertical scroll bar, 3 pages', value: 0%
+                                    Other, 0x12bb9e6c0, {{950.0, 81.0}, {3.0, 136.3}}
+                                  Other, 0x12bb9e1c0, {{923.0, 78.0}, {30.0, 300.0}}, label: 'Vertical scroll bar, 3 pages', value: 0%
+                                    Other, 0x12bb9d400, {{950.0, 81.0}, {3.0, 136.3}}
+                        Toolbar, 0x12bb9fd40, {{0.0, 0.0}, {956.0, 440.0}}, identifier: 'Toolbar', label: 'Toolbar'
+                          Other, 0x12a3a3980, {{0.0, 0.0}, {956.0, 440.0}}
+                    Toolbar, 0x12a3a1a40, {{0.0, 0.0}, {956.0, 440.0}}, identifier: 'Toolbar', label: 'Toolbar'
+                      Other, 0x12a3a0b40, {{0.0, 0.0}, {956.0, 440.0}}
+                Other, 0x12a3a1040, {{0.0, 0.0}, {956.0, 440.0}}
+                  Other, 0x12a3a1900, {{0.0, 0.0}, {956.0, 440.0}}
+Path to element:
+ →Application, 0x12c219180, pid: 4531, label: 'Gus'
+Query chain:
+ →Find: Application 'dev.ericslutz.gus'
+  Output: {
+    Application, 0x12a3a35c0, pid: 4531, label: 'Gus'
+  }

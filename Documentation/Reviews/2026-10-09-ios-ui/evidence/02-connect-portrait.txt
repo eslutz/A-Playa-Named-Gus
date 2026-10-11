@@ -1,0 +1,97 @@
+Device orientation: Portrait
+------------------------
+Application bundle identifier: dev.ericslutz.gus
+Application UI orientation: Portrait
+Application, pid: 49837, label: 'Gus'
+ Window, {{0.0, 0.0}, {402.0, 874.0}}, hitPoint: {201.0, 437.0}
+  Other, {{0.0, 0.0}, {402.0, 874.0}}, hitPoint: {201.0, 437.0}
+   Other, {{0.0, 0.0}, {402.0, 874.0}}, hitPoint: {201.0, 437.0}
+    Other, {{0.0, 0.0}, {402.0, 874.0}}, hitPoint: {201.0, 437.0}
+     Other, {{0.0, 0.0}, {402.0, 874.0}}, hitPoint: {201.0, 437.0}
+      Other, {{0.0, 0.0}, {402.0, 874.0}}, hitPoint: {201.0, 437.0}
+       NavigationBar, {{0.0, 62.0}, {402.0, 106.0}}, identifier: 'Connect to Jellyfin', hitPoint: {201.0, 115.0}
+        StaticText, {{16.0, 119.7}, {297.0, 40.7}}, label: 'Connect to Jellyfin', hitPoint: {164.5, 140.0}
+       Other, {{0.0, 0.0}, {402.0, 874.0}}, hitPoint: {201.0, 437.0}
+        Other, {{0.0, 0.0}, {402.0, 874.0}}, hitPoint: {201.0, 437.0}
+         Other, {{0.0, 0.0}, {402.0, 874.0}}, hitPoint: {201.0, 437.0}
+          Other, {{0.0, 0.0}, {402.0, 874.0}}, hitPoint: {201.0, 437.0}
+           CollectionView, {{0.0, 0.0}, {402.0, 874.0}}, hitPoint: {201.0, 437.0}
+            Other, {{-16.0, -1580.0}, {434.0, 1886.0}}, hitPoint: {201.0, 153.0}
+            Other, {{0.0, 0.0}, {402.0, 874.0}}, hitPoint: {201.0, 437.0}
+             Other, {{0.0, 0.0}, {402.0, 102.0}}, hitPoint: {201.0, 51.0}
+            Other, {{0.0, 0.0}, {402.0, 874.0}}, hitPoint: {201.0, 437.0}
+            Cell, {{16.0, 168.0}, {370.0, 40.3}}, hitPoint: {201.0, 188.2}
+             Other, {{16.0, 168.0}, {370.0, 40.3}}, hitPoint: {201.0, 188.2}
+             Other, {{16.0, 168.0}, {370.0, 40.3}}, hitPoint: {201.0, 188.2}
+              Other, {{16.0, 168.0}, {370.0, 40.3}}, hitPoint: {201.0, 188.2}
+               Other, {{16.0, 168.0}, {370.0, 40.3}}, hitPoint: {201.0, 188.2}
+                StaticText, {{16.0, 168.0}, {370.0, 40.3}}, label: 'Server Address', hitPoint: {201.0, 188.2}
+            Cell, {{16.0, 208.3}, {370.0, 52.0}}, hitPoint: {201.0, 234.3}
+             Other, {{16.0, 208.3}, {370.0, 52.0}}, hitPoint: {201.0, 234.3}
+              Other, {{16.0, 208.3}, {370.0, 52.0}}, hitPoint: {201.0, 234.3}
+             Other, {{16.0, 208.3}, {370.0, 52.0}}, hitPoint: {201.0, 234.3}
+              Other, {{16.0, 208.3}, {370.0, 52.0}}, hitPoint: {201.0, 234.3}
+               Other, {{16.0, 208.3}, {370.0, 52.0}}, hitPoint: {201.0, 234.3}
+                TextField, {{32.0, 223.3}, {338.0, 22.0}}, placeholderValue: 'http://192.168.1.50:8096', hitPoint: {201.0, 234.3}
+            Cell, {{16.0, 260.3}, {370.0, 45.7}}, hitPoint: {201.0, 283.2}
+             Other, {{16.0, 260.3}, {370.0, 45.7}}, hitPoint: {201.0, 283.2}
+             Other, {{16.0, 260.3}, {370.0, 45.7}}, hitPoint: {201.0, 283.2}
+              Other, {{16.0, 260.3}, {370.0, 45.7}}, hitPoint: {201.0, 283.2}
+               Other, {{16.0, 260.3}, {370.0, 45.7}}, hitPoint: {201.0, 283.2}
+                StaticText, {{16.0, 260.3}, {370.0, 45.7}}, label: 'Enter your Jellyfin server's address, including the port (default 8096).', hitPoint: {201.0, 283.2}
+            Other, {{-16.0, 306.0}, {434.0, 87.0}}, hitPoint: {201.0, 349.5}
+            Cell, {{16.0, 323.7}, {370.0, 52.0}}, hitPoint: {201.0, 349.7}
+             Other, {{16.0, 323.7}, {370.0, 52.0}}, hitPoint: {201.0, 349.7}
+              Other, {{16.0, 323.7}, {370.0, 52.0}}, hitPoint: {201.0, 349.7}
+             Other, {{16.0, 323.7}, {370.0, 52.0}}, hitPoint: {201.0, 349.7}
+              Other, {{16.0, 323.7}, {370.0, 52.0}}, hitPoint: {201.0, 349.7}
+               Other, {{16.0, 323.7}, {370.0, 52.0}}, hitPoint: {201.0, 349.7}
+                Button, {{16.0, 323.7}, {370.0, 52.0}}, identifier: 'ConnectServerView.connectButton', label: 'Connect', Disabled, hitPoint: {201.0, 349.7}
+            Other, {{-16.0, 393.0}, {434.0, 370.0}}, hitPoint: {201.0, 578.0}
+            Cell, {{16.0, 393.0}, {370.0, 40.3}}, hitPoint: {201.0, 413.2}
+             Other, {{16.0, 393.0}, {370.0, 40.3}}, hitPoint: {201.0, 413.2}
+             Other, {{16.0, 393.0}, {370.0, 40.3}}, hitPoint: {201.0, 413.2}
+              Other, {{16.0, 393.0}, {370.0, 40.3}}, hitPoint: {201.0, 413.2}
+               Other, {{16.0, 393.0}, {370.0, 40.3}}, hitPoint: {201.0, 413.2}
+                StaticText, {{16.0, 393.0}, {370.0, 40.3}}, label: 'Local Servers', hitPoint: {201.0, 413.2}
+            Cell, {{16.0, 433.3}, {370.0, 52.0}}, hitPoint: {201.0, 459.3}
+             Other, {{16.0, 433.3}, {370.0, 52.0}}, hitPoint: {201.0, 459.3}
+              Other, {{16.0, 433.3}, {370.0, 52.0}}, hitPoint: {201.0, 459.3}
+             Other, {{16.0, 433.3}, {370.0, 52.0}}, hitPoint: {201.0, 459.3}
+              Other, {{16.0, 433.3}, {370.0, 52.0}}, hitPoint: {201.0, 459.3}
+               Other, {{16.0, 433.3}, {370.0, 52.0}}, hitPoint: {201.0, 459.3}
+                StaticText, {{33.3, 448.7}, {212.7, 21.7}}, label: 'Local Server Discovery', hitPoint: {139.7, 459.5}
+                Image, {{33.3, 448.7}, {21.7, 21.7}}, identifier: 'network', label: 'Network Nodes Connected By Lines', hitPoint: {44.2, 459.5}
+                Button, {{352.7, 449.0}, {17.3, 20.7}}, identifier: 'arrow.clockwise', label: 'Refresh', hitPoint: {361.3, 459.3}
+            Cell, {{16.0, 485.3}, {370.0, 260.0}}, hitPoint: {201.0, 615.3}
+             Other, {{16.0, 485.3}, {370.0, 260.0}}, hitPoint: {201.0, 615.3}
+              Other, {{16.0, 485.3}, {370.0, 260.0}}, hitPoint: {201.0, 615.3}
+             Other, {{16.0, 485.3}, {370.0, 260.0}}, hitPoint: {201.0, 615.3}
+              Other, {{16.0, 485.3}, {370.0, 260.0}}, hitPoint: {201.0, 615.3}
+               Other, {{16.0, 485.3}, {370.0, 260.0}}, hitPoint: {201.0, 615.3}
+                StaticText, {{115.0, 519.7}, {172.0, 87.5}}, label: 'Find Local Servers', hitPoint: {201.0, 563.4}
+                Image, {{181.0, 519.7}, {40.0, 40.0}}, identifier: 'network', label: 'Network Nodes Connected By Lines', hitPoint: {201.0, 539.7}
+                StaticText, {{87.8, 610.2}, {226.3, 74.0}}, label: 'Use Refresh to search for Jellyfin servers on this network.', hitPoint: {201.0, 647.2}
+            Other, {{72.0, 484.3}, {298.0, 1.0}}, hitPoint: {221.0, 484.8}
+            Other, {{-16.0, 762.7}, {434.0, 1847.3}}, hitPoint: {201.0, 818.3}
+            Cell, {{16.0, 780.3}, {370.0, 52.0}}, hitPoint: {201.0, 806.3}
+             Other, {{16.0, 780.3}, {370.0, 52.0}}, hitPoint: {201.0, 806.3}
+              Other, {{16.0, 780.3}, {370.0, 52.0}}, hitPoint: {201.0, 806.3}
+             Other, {{16.0, 780.3}, {370.0, 52.0}}, hitPoint: {201.0, 806.3}
+              Other, {{16.0, 780.3}, {370.0, 52.0}}, hitPoint: {201.0, 806.3}
+               Other, {{16.0, 780.3}, {370.0, 52.0}}, hitPoint: {201.0, 806.3}
+                Button, {{16.0, 780.3}, {370.0, 52.0}}, label: 'Use Local Demo Server', hitPoint: {201.0, 806.3}
+                 Image, {{33.0, 794.7}, {21.7, 23.7}}, identifier: 'shippingbox', label: 'Box', hitPoint: {43.8, 806.5}
+                 StaticText, {{33.0, 794.7}, {217.0, 23.7}}, label: 'Use Local Demo Server', hitPoint: {141.5, 806.5}
+            Cell, {{16.0, 832.3}, {370.0, 29.7}}, hitPoint: {201.0, 847.2}
+             Other, {{16.0, 832.3}, {370.0, 29.7}}, hitPoint: {201.0, 847.2}
+             Other, {{16.0, 832.3}, {370.0, 29.7}}, hitPoint: {201.0, 847.2}
+              Other, {{16.0, 832.3}, {370.0, 29.7}}, hitPoint: {201.0, 847.2}
+               Other, {{16.0, 832.3}, {370.0, 29.7}}, hitPoint: {201.0, 847.2}
+                StaticText, {{16.0, 832.3}, {370.0, 29.7}}, label: 'Debug builds only. Start it with Scripts/demo-server.sh.', hitPoint: {201.0, 847.2}
+            Other, {{51.0, 116.0}, {30.0, 696.0}}, label: 'Vertical scroll bar, 2 pages', value: 0%, hitPoint: {66.0, 464.0}
+             Other, {{78.0, 119.0}, {3.0, 121.0}}, hitPoint: {79.5, 179.5}
+            Other, {{51.0, 116.0}, {30.0, 696.0}}, label: 'Vertical scroll bar, 2 pages', value: 0%, hitPoint: {66.0, 464.0}
+             Other, {{78.0, 119.0}, {3.0, 121.0}}, hitPoint: {79.5, 179.5}
+       Toolbar, {{0.0, 0.0}, {402.0, 874.0}}, identifier: 'Toolbar', label: 'Toolbar', hitPoint: {201.0, 437.0}
+        Other, {{0.0, 0.0}, {402.0, 874.0}}, hitPoint: {201.0, 437.0}

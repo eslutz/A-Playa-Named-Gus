@@ -1,0 +1,1 @@
+<XCUIAccessibilityAuditIssue: 0x10f1a57a0>AuditType:"1" CompactDescription:"Contrast nearly passed" DetailedDescription:"Contrast is not high enough for SwiftUI.AccessibilityNode unless font size is larger." Element:"Local Servers" StaticText

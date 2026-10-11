@@ -1,0 +1,49 @@
+{
+  "data": {
+    "type": "ciWorkflows",
+    "attributes": {
+      "name": "Gus IOS Release",
+      "description": "Manual Release archive for Gus 1.0.0; enable after validating portal configuration.",
+      "isEnabled": false,
+      "clean": true,
+      "containerFilePath": "A Playa Named Gus.xcodeproj",
+      "actions": [
+        {
+          "name": "Archive IOS",
+          "actionType": "ARCHIVE",
+          "platform": "IOS",
+          "destination": "ANY_IOS_DEVICE",
+          "scheme": "A Playa Named Gus",
+          "isRequiredToPass": true,
+          "buildDistributionAudience": "APP_STORE_ELIGIBLE"
+        }
+      ]
+    },
+    "relationships": {
+      "product": {
+        "data": {
+          "type": "ciProducts",
+          "id": "REPLACE_PRODUCT_ID"
+        }
+      },
+      "repository": {
+        "data": {
+          "type": "scmRepositories",
+          "id": "REPLACE_REPOSITORY_ID"
+        }
+      },
+      "xcodeVersion": {
+        "data": {
+          "type": "ciXcodeVersions",
+          "id": "REPLACE_XCODE_VERSION_ID"
+        }
+      },
+      "macOsVersion": {
+        "data": {
+          "type": "ciMacOsVersions",
+          "id": "REPLACE_MACOS_VERSION_ID"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "status": "Inconclusive: runner launched but no XCTest started within five minutes; stopped the audit-owned xcodebuild with SIGINT",
+  "observedElapsedSeconds": 311,
+  "completedUIExecutions": 0,
+  "scope": "Unsigned native macOS maintained UI scheme; not a product assertion failure or a passed UI lane",
+  "nextGate": "Authorized native Mac automation startup plus window/keyboard/menu and physical acceptance; no TCC/signing root cause established",
+  "xcresultFailure": "Testing was canceled; one runner error synthesized, zero app UI executions completed"
+}

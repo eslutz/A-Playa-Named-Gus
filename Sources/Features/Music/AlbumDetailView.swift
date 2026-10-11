@@ -3,14 +3,13 @@ import SwiftUI
 /// Track list for a music album, playlist, or audiobook container: artwork header,
 /// Play/Shuffle actions, and tappable track rows that start the audio player queue.
 struct AlbumDetailView: View {
+    @Environment(AudioPlaybackCoordinator.self) private var audio
     @Environment(SessionStore.self) private var session
     @Environment(OfflineDownloadStore.self) private var downloads
     let album: MediaItem
 
     @State private var tracks: [MediaItem] = []
     @State private var state: LoadState = .idle
-    @State private var audioPlayer: AudioPlayerStore?
-    @State private var isPlayerPresented = false
 
     var body: some View {
         LoadingStateView(
@@ -35,60 +34,52 @@ struct AlbumDetailView: View {
         .task {
             await loadTracks()
         }
-        .sheet(isPresented: $isPlayerPresented) {
-            audioPlayer?.teardown()
-            audioPlayer = nil
-        } content: {
-            if let audioPlayer {
-                AudioPlayerView(store: audioPlayer)
-                    .task { await audioPlayer.start() }
+    }
+
+    private var header: some View {
+        ViewThatFits(in: .horizontal) {
+            HStack(alignment: .top, spacing: 20) { albumArtwork; albumInfo }
+            VStack(alignment: .leading, spacing: 20) { albumArtwork; albumInfo }
+        }
+    }
+
+    private var albumArtwork: some View {
+        ArtworkTile(url: session.mediaProvider.primaryImageURL(for: album, context: .posterGrid), aspectRatio: 1, placeholderSymbol: "music.note")
+            .frame(width: 180)
+            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+    }
+
+    private var albumInfo: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(album.displayTitle).font(.title.bold()).fixedSize(horizontal: false, vertical: true)
+            if let artist = album.albumArtist ?? album.artists.first {
+                Text(artist).font(.title3)
+            }
+            if let year = album.productionYear {
+                Text(String(year)).foregroundStyle(.secondary)
+            }
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: 12) { albumActions }
+                VStack(alignment: .leading, spacing: 12) { albumActions }
             }
         }
     }
 
-    private var header: some View {
-        HStack(alignment: .top, spacing: 20) {
-            AsyncPoster(
-                url: session.mediaProvider.primaryImageURL(for: album, context: .posterGrid),
-                placeholderSymbol: "music.note"
-            )
-            .aspectRatio(1, contentMode: .fit)
-            .frame(width: 180)
-            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-
-            VStack(alignment: .leading, spacing: 8) {
-                Text(album.displayTitle)
-                    .font(.title.bold())
-                if let artist = album.albumArtist ?? album.artists.first {
-                    Text(artist)
-                        .font(.title3)
-                        .foregroundStyle(.secondary)
-                }
-                if let year = album.productionYear {
-                    Text(String(year))
-                        .font(.callout)
-                        .foregroundStyle(.secondary)
-                }
-
-                HStack(spacing: 12) {
-                    Button {
-                        play(startingAt: 0)
-                    } label: {
-                        Label("Play", systemImage: "play.fill")
-                    }
-                    .gusProminentGlassButtonStyle()
-
-                    Button {
-                        play(startingAt: 0, shuffled: true)
-                    } label: {
-                        Label("Shuffle", systemImage: "shuffle")
-                    }
-                    .gusGlassButtonStyle()
-                }
-                .padding(.top, 8)
-            }
-            Spacer()
+    @ViewBuilder private var albumActions: some View {
+        Button { play(startingAt: 0) } label: {
+            Label("Play", systemImage: "play.fill")
+                .foregroundStyle(Color.gusProminentActionForeground)
+                .frame(minHeight: 44)
         }
+        .gusProminentGlassButtonStyle()
+        .controlSize(.large)
+        .fixedSize()
+        Button { play(startingAt: 0, shuffled: true) } label: {
+            Label("Shuffle", systemImage: "shuffle").frame(minHeight: 44)
+        }
+        .gusGlassButtonStyle()
+        .controlSize(.large)
+        .fixedSize()
     }
 
     private var trackList: some View {
@@ -131,12 +122,7 @@ struct AlbumDetailView: View {
 
     private func play(startingAt index: Int, shuffled: Bool = false) {
         guard !tracks.isEmpty else { return }
-        let store = AudioPlayerStore(session: session, tracks: tracks, startIndex: index, downloads: downloads)
-        if shuffled {
-            store.toggleShuffle()
-        }
-        audioPlayer = store
-        isPlayerPresented = true
+        audio.play(tracks: tracks, startIndex: index, shuffled: shuffled, session: session, downloads: downloads)
     }
 }
 

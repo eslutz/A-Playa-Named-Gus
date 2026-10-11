@@ -1,0 +1,435 @@
+Command line invocation:
+    /Applications/Development/Xcode.app/Contents/Developer/usr/bin/xcodebuild test -project /tmp/gus-ui-audit-20261009/GusAudit.xcodeproj -scheme GusAudit -destination "platform=iOS Simulator,id=188DD406-3103-454A-911F-DF680344ACCC" -derivedDataPath /tmp/gus-ui-audit-20261009/build -resultBundlePath /tmp/gus-ui-audit-20261009/ipad.xcresult
+
+Writing result bundle at path:
+	/tmp/gus-ui-audit-20261009/ipad.xcresult
+
+ComputePackagePrebuildTargetDependencyGraph
+
+Prepare packages
+
+CreateBuildRequest
+
+SendProjectDescription
+
+CreateBuildOperation
+
+ComputeTargetDependencyGraph
+note: Building targets in dependency order
+note: Target dependency graph (1 target)
+    Target 'GusAuditTests' in project 'GusAudit' (no dependencies)
+
+GatherProvisioningInputs
+
+CreateBuildDescription
+
+ExecuteExternalTool /Applications/Development/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -v -E -dM -isysroot /Applications/Development/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.0.sdk -x c -c /dev/null
+
+ExecuteExternalTool /Applications/Development/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc --version
+
+ExecuteExternalTool /Applications/Development/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ld -version_details
+
+Build description signature: ca6632787e82dc13484b027800595c42
+Build description path: /tmp/gus-ui-audit-20261009/build/Build/Intermediates.noindex/XCBuildData/ca6632787e82dc13484b027800595c42.xcbuilddata
+ClangStatCache /Applications/Development/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang-stat-cache /Applications/Development/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.0.sdk /tmp/gus-ui-audit-20261009/build/SDKStatCaches.noindex/iphonesimulator27.0-24A430-8b98ade55cdca77b755c004ede0894fd.sdkstatcache
+    cd /tmp/gus-ui-audit-20261009/GusAudit.xcodeproj
+    /Applications/Development/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang-stat-cache /Applications/Development/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.0.sdk -o /tmp/gus-ui-audit-20261009/build/SDKStatCaches.noindex/iphonesimulator27.0-24A430-8b98ade55cdca77b755c004ede0894fd.sdkstatcache
+
+SwiftDriver GusAuditTests normal arm64 com.apple.xcode.tools.swift.compiler (in target 'GusAuditTests' from project 'GusAudit')
+    cd /tmp/gus-ui-audit-20261009
+    builtin-SwiftDriver -- /Applications/Development/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc -module-name GusAuditTests -Onone @/tmp/gus-ui-audit-20261009/build/Build/Intermediates.noindex/GusAudit.build/Debug-iphonesimulator/GusAuditTests.build/Objects-normal/arm64/GusAuditTests.SwiftFileList -DDEBUG -module-alias Testing\=_Testing_Unavailable -plugin-path /Applications/Development/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing -enable-bare-slash-regex -enable-experimental-feature DebugDescriptionMacro -sdk /Applications/Development/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.0.sdk -target arm64-apple-ios18.0-simulator -g -module-cache-path /tmp/gus-ui-audit-20261009/build/ModuleCache.noindex -Xfrontend -serialize-debugging-options -enable-testing -index-store-path /tmp/gus-ui-audit-20261009/build/Index.noindex/DataStore -Xcc -D_LIBCPP_HARDENING_MODE\=_LIBCPP_HARDENING_MODE_DEBUG -swift-version 5 -I /tmp/gus-ui-audit-20261009/build/Build/Products/Debug-iphonesimulator -Isystem /Applications/Development/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/usr/lib -F /tmp/gus-ui-audit-20261009/build/Build/Products/Debug-iphonesimulator -F /Applications/Development/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/Library/Frameworks -F /Applications/Development/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.0.sdk/Developer/Library/Frameworks -c -j10 -enable-batch-mode -incremental -Xcc -ivfsstatcache -Xcc /tmp/gus-ui-audit-20261009/build/SDKStatCaches.noindex/iphonesimulator27.0-24A430-8b98ade55cdca77b755c004ede0894fd.sdkstatcache -output-file-map /tmp/gus-ui-audit-20261009/build/Build/Intermediates.noindex/GusAudit.build/Debug-iphonesimulator/GusAuditTests.build/Objects-normal/arm64/GusAuditTests-OutputFileMap.json -save-temps -no-color-diagnostics -explicit-module-build -module-cache-path /tmp/gus-ui-audit-20261009/build/Build/Intermediates.noindex/SwiftExplicitPrecompiledModules -clang-scanner-module-cache-path /tmp/gus-ui-audit-20261009/build/ModuleCache.noindex -sdk-module-cache-path /tmp/gus-ui-audit-20261009/build/SDKExplicitPrecompiledModules -emit-dependencies -emit-module -emit-module-path /tmp/gus-ui-audit-20261009/build/Build/Intermediates.noindex/GusAudit.build/Debug-iphonesimulator/GusAuditTests.build/Objects-normal/arm64/GusAuditTests.swiftmodule -serialize-diagnostics -dependency-scan-serialize-diagnostics-path /tmp/gus-ui-audit-20261009/build/Build/Intermediates.noindex/GusAudit.build/Debug-iphonesimulator/GusAuditTests.build/Objects-normal/arm64/GusAuditTests-dependency-scan.dia -validate-clang-modules-once -clang-build-session-file /tmp/gus-ui-audit-20261009/build/ModuleCache.noindex/Session.modulevalidation -Xcc -fmodules-prune-interval\=86400 -Xcc -fmodules-prune-after\=345600 -emit-const-values -const-gather-protocols-list /tmp/gus-ui-audit-20261009/build/Build/Intermediates.noindex/GusAudit.build/Debug-iphonesimulator/GusAuditTests.build/Objects-normal/arm64/GusAuditTests_const_extract_protocols.json -Xcc -iquote -Xcc /tmp/gus-ui-audit-20261009/build/Build/Intermediates.noindex/GusAudit.build/Debug-iphonesimulator/GusAuditTests.build/GusAuditTests-generated-files.hmap -Xcc -I/tmp/gus-ui-audit-20261009/build/Build/Intermediates.noindex/GusAudit.build/Debug-iphonesimulator/GusAuditTests.build/GusAuditTests-own-target-headers.hmap -Xcc -I/tmp/gus-ui-audit-20261009/build/Build/Intermediates.noindex/GusAudit.build/Debug-iphonesimulator/GusAuditTests.build/GusAuditTests-all-target-headers.hmap -Xcc -iquote -Xcc /tmp/gus-ui-audit-20261009/build/Build/Intermediates.noindex/GusAudit.build/Debug-iphonesimulator/GusAuditTests.build/GusAuditTests-project-headers.hmap -Xcc -I/tmp/gus-ui-audit-20261009/build/Build/Products/Debug-iphonesimulator/include -Xcc -I/tmp/gus-ui-audit-20261009/build/Build/Intermediates.noindex/GusAudit.build/Debug-iphonesimulator/GusAuditTests.build/DerivedSources-normal/arm64 -Xcc -I/tmp/gus-ui-audit-20261009/build/Build/Intermediates.noindex/GusAudit.build/Debug-iphonesimulator/GusAuditTests.build/DerivedSources/arm64 -Xcc -I/tmp/gus-ui-audit-20261009/build/Build/Intermediates.noindex/GusAudit.build/Debug-iphonesimulator/GusAuditTests.build/DerivedSources -Xcc -DDEBUG\=1 -emit-objc-header -emit-objc-header-path /tmp/gus-ui-audit-20261009/build/Build/Intermediates.noindex/GusAudit.build/Debug-iphonesimulator/GusAuditTests.build/Objects-normal/arm64/GusAuditTests-Swift.h -working-directory /tmp/gus-ui-audit-20261009 -experimental-emit-module-separately -disable-cmo
+
+SwiftCompile normal arm64 Compiling\ Preview.swift /tmp/gus-ui-audit-20261009/Tests/Preview.swift (in target 'GusAuditTests' from project 'GusAudit')
+
+SwiftCompile normal arm64 /tmp/gus-ui-audit-20261009/Tests/Preview.swift (in target 'GusAuditTests' from project 'GusAudit')
+    cd /tmp/gus-ui-audit-20261009
+    builtin-SwiftPerFileCompile Preview.swift
+
+SwiftCompile normal arm64 Compiling\ Audit.swift /tmp/gus-ui-audit-20261009/Tests/Audit.swift (in target 'GusAuditTests' from project 'GusAudit')
+
+SwiftCompile normal arm64 /tmp/gus-ui-audit-20261009/Tests/Audit.swift (in target 'GusAuditTests' from project 'GusAudit')
+    cd /tmp/gus-ui-audit-20261009
+    builtin-SwiftPerFileCompile Audit.swift
+
+SwiftEmitModule normal arm64 Emitting\ module\ for\ GusAuditTests (in target 'GusAuditTests' from project 'GusAudit')
+
+SwiftCompile normal arm64 (in target 'GusAuditTests' from project 'GusAudit')
+    cd /tmp/gus-ui-audit-20261009
+    
+
+SwiftDriverJobDiscovery normal arm64 Compiling Audit.swift (in target 'GusAuditTests' from project 'GusAudit')
+
+SwiftDriverJobDiscovery normal arm64 Compiling Preview.swift (in target 'GusAuditTests' from project 'GusAudit')
+
+SwiftDriver\ Compilation GusAuditTests normal arm64 com.apple.xcode.tools.swift.compiler (in target 'GusAuditTests' from project 'GusAudit')
+    cd /tmp/gus-ui-audit-20261009
+    builtin-Swift-Compilation -- /Applications/Development/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc -module-name GusAuditTests -Onone @/tmp/gus-ui-audit-20261009/build/Build/Intermediates.noindex/GusAudit.build/Debug-iphonesimulator/GusAuditTests.build/Objects-normal/arm64/GusAuditTests.SwiftFileList -DDEBUG -module-alias Testing\=_Testing_Unavailable -plugin-path /Applications/Development/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing -enable-bare-slash-regex -enable-experimental-feature DebugDescriptionMacro -sdk /Applications/Development/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.0.sdk -target arm64-apple-ios18.0-simulator -g -module-cache-path /tmp/gus-ui-audit-20261009/build/ModuleCache.noindex -Xfrontend -serialize-debugging-options -enable-testing -index-store-path /tmp/gus-ui-audit-20261009/build/Index.noindex/DataStore -Xcc -D_LIBCPP_HARDENING_MODE\=_LIBCPP_HARDENING_MODE_DEBUG -swift-version 5 -I /tmp/gus-ui-audit-20261009/build/Build/Products/Debug-iphonesimulator -Isystem /Applications/Development/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/usr/lib -F /tmp/gus-ui-audit-20261009/build/Build/Products/Debug-iphonesimulator -F /Applications/Development/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/Library/Frameworks -F /Applications/Development/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.0.sdk/Developer/Library/Frameworks -c -j10 -enable-batch-mode -incremental -Xcc -ivfsstatcache -Xcc /tmp/gus-ui-audit-20261009/build/SDKStatCaches.noindex/iphonesimulator27.0-24A430-8b98ade55cdca77b755c004ede0894fd.sdkstatcache -output-file-map /tmp/gus-ui-audit-20261009/build/Build/Intermediates.noindex/GusAudit.build/Debug-iphonesimulator/GusAuditTests.build/Objects-normal/arm64/GusAuditTests-OutputFileMap.json -save-temps -no-color-diagnostics -explicit-module-build -module-cache-path /tmp/gus-ui-audit-20261009/build/Build/Intermediates.noindex/SwiftExplicitPrecompiledModules -clang-scanner-module-cache-path /tmp/gus-ui-audit-20261009/build/ModuleCache.noindex -sdk-module-cache-path /tmp/gus-ui-audit-20261009/build/SDKExplicitPrecompiledModules -emit-dependencies -emit-module -emit-module-path /tmp/gus-ui-audit-20261009/build/Build/Intermediates.noindex/GusAudit.build/Debug-iphonesimulator/GusAuditTests.build/Objects-normal/arm64/GusAuditTests.swiftmodule -serialize-diagnostics -dependency-scan-serialize-diagnostics-path /tmp/gus-ui-audit-20261009/build/Build/Intermediates.noindex/GusAudit.build/Debug-iphonesimulator/GusAuditTests.build/Objects-normal/arm64/GusAuditTests-dependency-scan.dia -validate-clang-modules-once -clang-build-session-file /tmp/gus-ui-audit-20261009/build/ModuleCache.noindex/Session.modulevalidation -Xcc -fmodules-prune-interval\=86400 -Xcc -fmodules-prune-after\=345600 -emit-const-values -const-gather-protocols-list /tmp/gus-ui-audit-20261009/build/Build/Intermediates.noindex/GusAudit.build/Debug-iphonesimulator/GusAuditTests.build/Objects-normal/arm64/GusAuditTests_const_extract_protocols.json -Xcc -iquote -Xcc /tmp/gus-ui-audit-20261009/build/Build/Intermediates.noindex/GusAudit.build/Debug-iphonesimulator/GusAuditTests.build/GusAuditTests-generated-files.hmap -Xcc -I/tmp/gus-ui-audit-20261009/build/Build/Intermediates.noindex/GusAudit.build/Debug-iphonesimulator/GusAuditTests.build/GusAuditTests-own-target-headers.hmap -Xcc -I/tmp/gus-ui-audit-20261009/build/Build/Intermediates.noindex/GusAudit.build/Debug-iphonesimulator/GusAuditTests.build/GusAuditTests-all-target-headers.hmap -Xcc -iquote -Xcc /tmp/gus-ui-audit-20261009/build/Build/Intermediates.noindex/GusAudit.build/Debug-iphonesimulator/GusAuditTests.build/GusAuditTests-project-headers.hmap -Xcc -I/tmp/gus-ui-audit-20261009/build/Build/Products/Debug-iphonesimulator/include -Xcc -I/tmp/gus-ui-audit-20261009/build/Build/Intermediates.noindex/GusAudit.build/Debug-iphonesimulator/GusAuditTests.build/DerivedSources-normal/arm64 -Xcc -I/tmp/gus-ui-audit-20261009/build/Build/Intermediates.noindex/GusAudit.build/Debug-iphonesimulator/GusAuditTests.build/DerivedSources/arm64 -Xcc -I/tmp/gus-ui-audit-20261009/build/Build/Intermediates.noindex/GusAudit.build/Debug-iphonesimulator/GusAuditTests.build/DerivedSources -Xcc -DDEBUG\=1 -emit-objc-header -emit-objc-header-path /tmp/gus-ui-audit-20261009/build/Build/Intermediates.noindex/GusAudit.build/Debug-iphonesimulator/GusAuditTests.build/Objects-normal/arm64/GusAuditTests-Swift.h -working-directory /tmp/gus-ui-audit-20261009 -experimental-emit-module-separately -disable-cmo
+
+SwiftDriverJobDiscovery normal arm64 Emitting module for GusAuditTests (in target 'GusAuditTests' from project 'GusAudit')
+
+SwiftDriver\ Compilation\ Requirements GusAuditTests normal arm64 com.apple.xcode.tools.swift.compiler (in target 'GusAuditTests' from project 'GusAudit')
+    cd /tmp/gus-ui-audit-20261009
+    builtin-Swift-Compilation-Requirements -- /Applications/Development/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc -module-name GusAuditTests -Onone @/tmp/gus-ui-audit-20261009/build/Build/Intermediates.noindex/GusAudit.build/Debug-iphonesimulator/GusAuditTests.build/Objects-normal/arm64/GusAuditTests.SwiftFileList -DDEBUG -module-alias Testing\=_Testing_Unavailable -plugin-path /Applications/Development/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing -enable-bare-slash-regex -enable-experimental-feature DebugDescriptionMacro -sdk /Applications/Development/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.0.sdk -target arm64-apple-ios18.0-simulator -g -module-cache-path /tmp/gus-ui-audit-20261009/build/ModuleCache.noindex -Xfrontend -serialize-debugging-options -enable-testing -index-store-path /tmp/gus-ui-audit-20261009/build/Index.noindex/DataStore -Xcc -D_LIBCPP_HARDENING_MODE\=_LIBCPP_HARDENING_MODE_DEBUG -swift-version 5 -I /tmp/gus-ui-audit-20261009/build/Build/Products/Debug-iphonesimulator -Isystem /Applications/Development/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/usr/lib -F /tmp/gus-ui-audit-20261009/build/Build/Products/Debug-iphonesimulator -F /Applications/Development/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/Library/Frameworks -F /Applications/Development/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.0.sdk/Developer/Library/Frameworks -c -j10 -enable-batch-mode -incremental -Xcc -ivfsstatcache -Xcc /tmp/gus-ui-audit-20261009/build/SDKStatCaches.noindex/iphonesimulator27.0-24A430-8b98ade55cdca77b755c004ede0894fd.sdkstatcache -output-file-map /tmp/gus-ui-audit-20261009/build/Build/Intermediates.noindex/GusAudit.build/Debug-iphonesimulator/GusAuditTests.build/Objects-normal/arm64/GusAuditTests-OutputFileMap.json -save-temps -no-color-diagnostics -explicit-module-build -module-cache-path /tmp/gus-ui-audit-20261009/build/Build/Intermediates.noindex/SwiftExplicitPrecompiledModules -clang-scanner-module-cache-path /tmp/gus-ui-audit-20261009/build/ModuleCache.noindex -sdk-module-cache-path /tmp/gus-ui-audit-20261009/build/SDKExplicitPrecompiledModules -emit-dependencies -emit-module -emit-module-path /tmp/gus-ui-audit-20261009/build/Build/Intermediates.noindex/GusAudit.build/Debug-iphonesimulator/GusAuditTests.build/Objects-normal/arm64/GusAuditTests.swiftmodule -serialize-diagnostics -dependency-scan-serialize-diagnostics-path /tmp/gus-ui-audit-20261009/build/Build/Intermediates.noindex/GusAudit.build/Debug-iphonesimulator/GusAuditTests.build/Objects-normal/arm64/GusAuditTests-dependency-scan.dia -validate-clang-modules-once -clang-build-session-file /tmp/gus-ui-audit-20261009/build/ModuleCache.noindex/Session.modulevalidation -Xcc -fmodules-prune-interval\=86400 -Xcc -fmodules-prune-after\=345600 -emit-const-values -const-gather-protocols-list /tmp/gus-ui-audit-20261009/build/Build/Intermediates.noindex/GusAudit.build/Debug-iphonesimulator/GusAuditTests.build/Objects-normal/arm64/GusAuditTests_const_extract_protocols.json -Xcc -iquote -Xcc /tmp/gus-ui-audit-20261009/build/Build/Intermediates.noindex/GusAudit.build/Debug-iphonesimulator/GusAuditTests.build/GusAuditTests-generated-files.hmap -Xcc -I/tmp/gus-ui-audit-20261009/build/Build/Intermediates.noindex/GusAudit.build/Debug-iphonesimulator/GusAuditTests.build/GusAuditTests-own-target-headers.hmap -Xcc -I/tmp/gus-ui-audit-20261009/build/Build/Intermediates.noindex/GusAudit.build/Debug-iphonesimulator/GusAuditTests.build/GusAuditTests-all-target-headers.hmap -Xcc -iquote -Xcc /tmp/gus-ui-audit-20261009/build/Build/Intermediates.noindex/GusAudit.build/Debug-iphonesimulator/GusAuditTests.build/GusAuditTests-project-headers.hmap -Xcc -I/tmp/gus-ui-audit-20261009/build/Build/Products/Debug-iphonesimulator/include -Xcc -I/tmp/gus-ui-audit-20261009/build/Build/Intermediates.noindex/GusAudit.build/Debug-iphonesimulator/GusAuditTests.build/DerivedSources-normal/arm64 -Xcc -I/tmp/gus-ui-audit-20261009/build/Build/Intermediates.noindex/GusAudit.build/Debug-iphonesimulator/GusAuditTests.build/DerivedSources/arm64 -Xcc -I/tmp/gus-ui-audit-20261009/build/Build/Intermediates.noindex/GusAudit.build/Debug-iphonesimulator/GusAuditTests.build/DerivedSources -Xcc -DDEBUG\=1 -emit-objc-header -emit-objc-header-path /tmp/gus-ui-audit-20261009/build/Build/Intermediates.noindex/GusAudit.build/Debug-iphonesimulator/GusAuditTests.build/Objects-normal/arm64/GusAuditTests-Swift.h -working-directory /tmp/gus-ui-audit-20261009 -experimental-emit-module-separately -disable-cmo
+
+Copy /tmp/gus-ui-audit-20261009/build/Build/Products/Debug-iphonesimulator/GusAuditTests.swiftmodule/arm64-apple-ios-simulator.abi.json /tmp/gus-ui-audit-20261009/build/Build/Intermediates.noindex/GusAudit.build/Debug-iphonesimulator/GusAuditTests.build/Objects-normal/arm64/GusAuditTests.abi.json (in target 'GusAuditTests' from project 'GusAudit')
+    cd /tmp/gus-ui-audit-20261009
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks -rename /tmp/gus-ui-audit-20261009/build/Build/Intermediates.noindex/GusAudit.build/Debug-iphonesimulator/GusAuditTests.build/Objects-normal/arm64/GusAuditTests.abi.json /tmp/gus-ui-audit-20261009/build/Build/Products/Debug-iphonesimulator/GusAuditTests.swiftmodule/arm64-apple-ios-simulator.abi.json
+
+Copy /tmp/gus-ui-audit-20261009/build/Build/Products/Debug-iphonesimulator/GusAuditTests.swiftmodule/Project/arm64-apple-ios-simulator.swiftsourceinfo /tmp/gus-ui-audit-20261009/build/Build/Intermediates.noindex/GusAudit.build/Debug-iphonesimulator/GusAuditTests.build/Objects-normal/arm64/GusAuditTests.swiftsourceinfo (in target 'GusAuditTests' from project 'GusAudit')
+    cd /tmp/gus-ui-audit-20261009
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks -rename /tmp/gus-ui-audit-20261009/build/Build/Intermediates.noindex/GusAudit.build/Debug-iphonesimulator/GusAuditTests.build/Objects-normal/arm64/GusAuditTests.swiftsourceinfo /tmp/gus-ui-audit-20261009/build/Build/Products/Debug-iphonesimulator/GusAuditTests.swiftmodule/Project/arm64-apple-ios-simulator.swiftsourceinfo
+
+Ld /tmp/gus-ui-audit-20261009/build/Build/Products/Debug-iphonesimulator/GusAuditTests-Runner.app/PlugIns/GusAuditTests.xctest/GusAuditTests normal (in target 'GusAuditTests' from project 'GusAudit')
+    cd /tmp/gus-ui-audit-20261009
+    /Applications/Development/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -Xlinker -reproducible -target arm64-apple-ios18.0-simulator -bundle -isysroot /Applications/Development/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.0.sdk -O0 -Xlinker -no_warn_duplicate_libraries -L/tmp/gus-ui-audit-20261009/build/Build/Intermediates.noindex/EagerLinkingTBDs/Debug-iphonesimulator -L/tmp/gus-ui-audit-20261009/build/Build/Products/Debug-iphonesimulator -L/Applications/Development/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/usr/lib -F/tmp/gus-ui-audit-20261009/build/Build/Intermediates.noindex/EagerLinkingTBDs/Debug-iphonesimulator -F/tmp/gus-ui-audit-20261009/build/Build/Products/Debug-iphonesimulator -iframework /Applications/Development/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/Library/Frameworks -iframework /Applications/Development/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.0.sdk/Developer/Library/Frameworks -filelist /tmp/gus-ui-audit-20261009/build/Build/Intermediates.noindex/GusAudit.build/Debug-iphonesimulator/GusAuditTests.build/Objects-normal/arm64/GusAuditTests.LinkFileList -Xlinker -rpath -Xlinker /usr/lib/swift -Xlinker -rpath -Xlinker @loader_path/Frameworks -Xlinker -rpath -Xlinker @executable_path/Frameworks -Xlinker -dead_strip -Xlinker -object_path_lto -Xlinker /tmp/gus-ui-audit-20261009/build/Build/Intermediates.noindex/GusAudit.build/Debug-iphonesimulator/GusAuditTests.build/Objects-normal/arm64/GusAuditTests_lto.o -rdynamic -Xlinker -no_deduplicate -Xlinker -objc_abi_version -Xlinker 2 -Xlinker -dependency_info -Xlinker /tmp/gus-ui-audit-20261009/build/Build/Intermediates.noindex/GusAudit.build/Debug-iphonesimulator/GusAuditTests.build/Objects-normal/arm64/GusAuditTests_dependency_info.dat -fobjc-link-runtime -L/Applications/Development/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphonesimulator -L/usr/lib/swift -Xlinker -add_ast_path -Xlinker /tmp/gus-ui-audit-20261009/build/Build/Intermediates.noindex/GusAudit.build/Debug-iphonesimulator/GusAuditTests.build/Objects-normal/arm64/GusAuditTests.swiftmodule -Xlinker -needed_framework -Xlinker XCTest -framework XCTest -Xlinker -needed-lXCTestSwiftSupport -lXCTestSwiftSupport -o /tmp/gus-ui-audit-20261009/build/Build/Products/Debug-iphonesimulator/GusAuditTests-Runner.app/PlugIns/GusAuditTests.xctest/GusAuditTests
+
+ExtractAppIntentsMetadata (in target 'GusAuditTests' from project 'GusAudit')
+    cd /tmp/gus-ui-audit-20261009
+    /Applications/Development/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/appintentsmetadataprocessor --toolchain-dir /Applications/Development/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain --module-name GusAuditTests --sdk-root /Applications/Development/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.0.sdk --xcode-version 27A266a --platform-family iOS --deployment-target 18.0 --bundle-identifier dev.ericslutz.gus.audit --output /tmp/gus-ui-audit-20261009/build/Build/Products/Debug-iphonesimulator/GusAuditTests-Runner.app/PlugIns/GusAuditTests.xctest --target-triple arm64-apple-ios18.0-simulator --binary-file /tmp/gus-ui-audit-20261009/build/Build/Products/Debug-iphonesimulator/GusAuditTests-Runner.app/PlugIns/GusAuditTests.xctest/GusAuditTests --dependency-file /tmp/gus-ui-audit-20261009/build/Build/Intermediates.noindex/GusAudit.build/Debug-iphonesimulator/GusAuditTests.build/Objects-normal/arm64/GusAuditTests_dependency_info.dat --stringsdata-file /tmp/gus-ui-audit-20261009/build/Build/Intermediates.noindex/GusAudit.build/Debug-iphonesimulator/GusAuditTests.build/Objects-normal/arm64/ExtractedAppShortcutsMetadata.stringsdata --source-file-list /tmp/gus-ui-audit-20261009/build/Build/Intermediates.noindex/GusAudit.build/Debug-iphonesimulator/GusAuditTests.build/Objects-normal/arm64/GusAuditTests.SwiftFileList --metadata-file-list /tmp/gus-ui-audit-20261009/build/Build/Intermediates.noindex/GusAudit.build/Debug-iphonesimulator/GusAuditTests.build/GusAuditTests.DependencyMetadataFileList --static-metadata-file-list /tmp/gus-ui-audit-20261009/build/Build/Intermediates.noindex/GusAudit.build/Debug-iphonesimulator/GusAuditTests.build/GusAuditTests.DependencyStaticMetadataFileList --swift-const-vals-list /tmp/gus-ui-audit-20261009/build/Build/Intermediates.noindex/GusAudit.build/Debug-iphonesimulator/GusAuditTests.build/Objects-normal/arm64/GusAuditTests.SwiftConstValuesFileList --compile-time-extraction --deployment-aware-processing --no-app-shortcuts-localization
+2026-10-09 21:58:27.405 appintentsmetadataprocessor[53350:418114] Starting appintentsmetadataprocessor export
+2026-10-09 21:58:27.411 appintentsmetadataprocessor[53350:418114] warning: Metadata extraction skipped, no AppIntents.framework dependency found
+
+CopySwiftLibs /tmp/gus-ui-audit-20261009/build/Build/Products/Debug-iphonesimulator/GusAuditTests-Runner.app/PlugIns/GusAuditTests.xctest (in target 'GusAuditTests' from project 'GusAudit')
+    cd /tmp/gus-ui-audit-20261009
+    builtin-swiftStdLibTool --copy --verbose --scan-executable /tmp/gus-ui-audit-20261009/build/Build/Products/Debug-iphonesimulator/GusAuditTests-Runner.app/PlugIns/GusAuditTests.xctest/GusAuditTests --scan-folder /tmp/gus-ui-audit-20261009/build/Build/Products/Debug-iphonesimulator/GusAuditTests-Runner.app/PlugIns/GusAuditTests.xctest/Frameworks --scan-folder /tmp/gus-ui-audit-20261009/build/Build/Products/Debug-iphonesimulator/GusAuditTests-Runner.app/PlugIns/GusAuditTests.xctest/PlugIns --scan-folder /tmp/gus-ui-audit-20261009/build/Build/Products/Debug-iphonesimulator/GusAuditTests-Runner.app/PlugIns/GusAuditTests.xctest/SystemExtensions --scan-folder /tmp/gus-ui-audit-20261009/build/Build/Products/Debug-iphonesimulator/GusAuditTests-Runner.app/PlugIns/GusAuditTests.xctest/Extensions --platform iphonesimulator --toolchain /Applications/Development/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain --destination /tmp/gus-ui-audit-20261009/build/Build/Products/Debug-iphonesimulator/GusAuditTests-Runner.app/PlugIns/GusAuditTests.xctest/Frameworks --strip-bitcode --scan-executable /Applications/Development/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/usr/lib/libXCTestSwiftSupport.dylib --strip-bitcode-tool /Applications/Development/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/bitcode_strip --emit-dependency-info /tmp/gus-ui-audit-20261009/build/Build/Intermediates.noindex/GusAudit.build/Debug-iphonesimulator/GusAuditTests.build/SwiftStdLibToolInputDependencies.dep --filter-for-swift-os
+Ignoring --strip-bitcode because --sign was not passed
+
+ProcessInfoPlistFile /tmp/gus-ui-audit-20261009/build/Build/Products/Debug-iphonesimulator/GusAuditTests-Runner.app/PlugIns/GusAuditTests.xctest/Info.plist /tmp/gus-ui-audit-20261009/build/Build/Intermediates.noindex/GusAudit.build/Debug-iphonesimulator/GusAuditTests.build/empty-GusAuditTests.plist (in target 'GusAuditTests' from project 'GusAudit')
+    cd /tmp/gus-ui-audit-20261009
+    builtin-infoPlistUtility /tmp/gus-ui-audit-20261009/build/Build/Intermediates.noindex/GusAudit.build/Debug-iphonesimulator/GusAuditTests.build/empty-GusAuditTests.plist -producttype com.apple.product-type.bundle.ui-testing -expandbuildsettings -format binary -platform iphonesimulator -additionalcontentfile /tmp/gus-ui-audit-20261009/build/Build/Intermediates.noindex/GusAudit.build/Debug-iphonesimulator/GusAuditTests.build/ProductTypeInfoPlistAdditions.plist -o /tmp/gus-ui-audit-20261009/build/Build/Products/Debug-iphonesimulator/GusAuditTests-Runner.app/PlugIns/GusAuditTests.xctest/Info.plist
+
+PruneExplicitPrecompiledModules /tmp/gus-ui-audit-20261009/build/SDKExplicitPrecompiledModules
+
+PruneExplicitPrecompiledModules /tmp/gus-ui-audit-20261009/build/Build/Intermediates.noindex/ExplicitPrecompiledModules
+
+PruneExplicitPrecompiledModules /tmp/gus-ui-audit-20261009/build/Build/Intermediates.noindex/SwiftExplicitPrecompiledModules
+
+2026-10-09 21:58:33.002889-0400 GusAuditTests-Runner[53356:418330] [Default] Running tests...
+2026-10-09 21:58:33.206302-0400 GusAuditTests-Runner[53356:418330] [UIKit App Config] Update the Info.plist: Launch screens will soon be required.
+    t =      nans Interface orientation changed to Portrait
+objc[53356]: Class UIAccessibilityLoaderWebShared is implemented in both /private/var/run/com.apple.security.cryptexd/mnt/com.apple.iPhoneOS.SimulatorRuntime-v24.1.434.0.KNvHId/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 27.0.simruntime/Contents/Resources/RuntimeRoot/System/Library/AccessibilityBundles/WebKit.axbundle/WebKit (0x109bec398) and /private/var/run/com.apple.security.cryptexd/mnt/com.apple.iPhoneOS.SimulatorRuntime-v24.1.434.0.KNvHId/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 27.0.simruntime/Contents/Resources/RuntimeRoot/System/Library/AccessibilityBundles/WebCore.axbundle/WebCore (0x10a1a4310). This may cause spurious casting failures and mysterious crashes. One of the duplicates must be removed or renamed.
+Test Suite 'All tests' started at 2026-10-09 21:58:40.320.
+Test Suite 'GusAuditTests.xctest' started at 2026-10-09 21:58:40.323.
+Test Suite 'Audit' started at 2026-10-09 21:58:40.323.
+Test Case '-[GusAuditTests.Audit testConnectLayouts]' started.
+    t =     0.00s Start Test at 2026-10-09 21:58:40.326
+    t =     0.36s Set Up
+    t =     0.36s Open dev.ericslutz.gus
+    t =     0.36s     Launch dev.ericslutz.gus
+    t =     1.21s         Setting up automation session
+    t =     3.90s         Wait for dev.ericslutz.gus to idle
+    t =     6.81s Waiting 15.0s for "ConnectServerView.connectButton" Button to exist
+    t =     7.88s     Checking `Expect predicate `existsNoRetry == 1` for object "ConnectServerView.connectButton" Button`
+    t =     7.88s         Checking existence of `"ConnectServerView.connectButton" Button`
+    t =     8.12s Setting device orientation to Portrait
+    t =     8.13s     Device orientation changed to Portrait
+    t =     8.18s     Wait for dev.ericslutz.gus to idle
+    t =     8.18s     Wait for com.apple.springboard to idle
+CAPTURE_READY portrait
+    t =    15.06s Added attachment named 'portrait'
+    t =    15.08s Requesting snapshot of accessibility hierarchy for app with pid 53397
+    t =    15.81s Requesting snapshot of accessibility hierarchy for app with pid 53397
+    t =    15.85s Added attachment named 'portrait-tree'
+    t =    18.92s Find the Any (Descendant with identity binding to AX element pid: 53397, elementOrHash.elementID: 4415499840.86)
+    t =    18.96s Added attachment named 'portrait-audit-issue'
+    t =    18.96s Find the Any (Descendant with identity binding to AX element pid: 53397, elementOrHash.elementID: 4415499840.86)
+AUDIT_ISSUE portrait <XCUIAccessibilityAuditIssue: 0x112e653e0>AuditType:"4" CompactDescription:"Hit area is too small" DetailedDescription:"The size of this SwiftUI.AccessibilityNode is too small for user to interact." Element:"arrow.clockwise" Button
+    t =    18.99s Find the Any (Descendant with identity binding to AX element pid: 53397, elementOrHash.elementID: 4415497920.79)
+    t =    19.01s Added attachment named 'portrait-audit-issue'
+    t =    19.01s Find the Any (Descendant with identity binding to AX element pid: 53397, elementOrHash.elementID: 4415497920.79)
+AUDIT_ISSUE portrait <XCUIAccessibilityAuditIssue: 0x112e65590>AuditType:"1" CompactDescription:"Contrast nearly passed" DetailedDescription:"Contrast is not high enough for SwiftUI.AccessibilityNode unless font size is larger." Element:"Server Address" StaticText
+    t =    19.04s Added attachment named 'portrait-audit-issue'
+AUDIT_ISSUE portrait <XCUIAccessibilityAuditIssue: 0x112e65530>AuditType:"1" CompactDescription:"Contrast nearly passed" DetailedDescription:"Contrast is not high enough for SwiftUI.AccessibilityNode unless font size is larger." Element:(null)
+    t =    19.04s Find the Any (Descendant with identity binding to AX element pid: 53397, elementOrHash.elementID: 4415499040.82)
+    t =    19.06s Added attachment named 'portrait-audit-issue'
+    t =    19.06s Find the Any (Descendant with identity binding to AX element pid: 53397, elementOrHash.elementID: 4415499040.82)
+AUDIT_ISSUE portrait <XCUIAccessibilityAuditIssue: 0x112e65650>AuditType:"1" CompactDescription:"Contrast failed" DetailedDescription:"Contrast failed for SwiftUI.AccessibilityNode" Element:"ConnectServerView.connectButton" Button
+    t =    19.08s Find the Any (Descendant with identity binding to AX element pid: 53397, elementOrHash.elementID: 4415499360.83)
+    t =    19.11s Added attachment named 'portrait-audit-issue'
+    t =    19.11s Find the Any (Descendant with identity binding to AX element pid: 53397, elementOrHash.elementID: 4415499360.83)
+AUDIT_ISSUE portrait <XCUIAccessibilityAuditIssue: 0x112e657a0>AuditType:"1" CompactDescription:"Contrast nearly passed" DetailedDescription:"Contrast is not high enough for SwiftUI.AccessibilityNode unless font size is larger." Element:"Local Servers" StaticText
+    t =    19.13s Added attachment named 'portrait-audit-issue'
+AUDIT_ISSUE portrait <XCUIAccessibilityAuditIssue: 0x112e657d0>AuditType:"1" CompactDescription:"Contrast nearly passed" DetailedDescription:"Contrast is not high enough for SwiftUI.AccessibilityNode unless font size is larger." Element:(null)
+    t =    19.13s Setting device orientation to Landscape Left
+    t =    19.14s     Device orientation changed to Landscape Left
+    t =    19.60s     Interface orientation changed to Landscape Right
+    t =    19.64s     Wait for dev.ericslutz.gus to idle
+    t =    20.44s     Wait for com.apple.springboard to idle
+CAPTURE_READY landscape-left
+    t =    26.66s Added attachment named 'landscape-left'
+    t =    26.66s Requesting snapshot of accessibility hierarchy for app with pid 53397
+    t =    27.01s Requesting snapshot of accessibility hierarchy for app with pid 53397
+    t =    27.07s Added attachment named 'landscape-left-tree'
+    t =    30.44s Added attachment named 'landscape-left-audit-issue'
+AUDIT_ISSUE landscape-left <XCUIAccessibilityAuditIssue: 0x112f3d410>AuditType:"4" CompactDescription:"Hit area is too small" DetailedDescription:"The size of this SwiftUI.AccessibilityNode is too small for user to interact." Element:(null)
+    t =    30.45s Find the Any (Descendant with identity binding to AX element pid: 53397, elementOrHash.elementID: 4415497920.79)
+    t =    30.48s Added attachment named 'landscape-left-audit-issue'
+    t =    30.48s Find the Any (Descendant with identity binding to AX element pid: 53397, elementOrHash.elementID: 4415497920.79)
+AUDIT_ISSUE landscape-left <XCUIAccessibilityAuditIssue: 0x112f3d3e0>AuditType:"1" CompactDescription:"Contrast nearly passed" DetailedDescription:"Contrast is not high enough for SwiftUI.AccessibilityNode unless font size is larger." Element:"Server Address" StaticText
+    t =    30.51s Added attachment named 'landscape-left-audit-issue'
+AUDIT_ISSUE landscape-left <XCUIAccessibilityAuditIssue: 0x112f3d4d0>AuditType:"1" CompactDescription:"Contrast nearly passed" DetailedDescription:"Contrast is not high enough for SwiftUI.AccessibilityNode unless font size is larger." Element:(null)
+    t =    30.51s Added attachment named 'landscape-left-audit-issue'
+AUDIT_ISSUE landscape-left <XCUIAccessibilityAuditIssue: 0x112f3d680>AuditType:"1" CompactDescription:"Contrast failed" DetailedDescription:"Contrast failed for SwiftUI.AccessibilityNode" Element:(null)
+    t =    30.51s Find the Any (Descendant with identity binding to AX element pid: 53397, elementOrHash.elementID: 4415499360.83)
+    t =    30.54s Added attachment named 'landscape-left-audit-issue'
+    t =    30.55s Find the Any (Descendant with identity binding to AX element pid: 53397, elementOrHash.elementID: 4415499360.83)
+AUDIT_ISSUE landscape-left <XCUIAccessibilityAuditIssue: 0x112f3d7d0>AuditType:"1" CompactDescription:"Contrast nearly passed" DetailedDescription:"Contrast is not high enough for SwiftUI.AccessibilityNode unless font size is larger." Element:"Local Servers" StaticText
+    t =    30.58s Added attachment named 'landscape-left-audit-issue'
+AUDIT_ISSUE landscape-left <XCUIAccessibilityAuditIssue: 0x112f3d860>AuditType:"1" CompactDescription:"Contrast nearly passed" DetailedDescription:"Contrast is not high enough for SwiftUI.AccessibilityNode unless font size is larger." Element:(null)
+    t =    30.58s Setting device orientation to Landscape Right
+    t =    30.59s     Device orientation changed to Landscape Right
+    t =    30.75s     Interface orientation changed to Landscape Left
+    t =    30.78s     Wait for dev.ericslutz.gus to idle
+    t =    30.81s     Wait for com.apple.springboard to idle
+CAPTURE_READY landscape-right
+    t =    38.61s Added attachment named 'landscape-right'
+    t =    38.61s Requesting snapshot of accessibility hierarchy for app with pid 53397
+    t =    38.84s Requesting snapshot of accessibility hierarchy for app with pid 53397
+    t =    38.88s Added attachment named 'landscape-right-tree'
+    t =    41.25s Added attachment named 'landscape-right-audit-issue'
+AUDIT_ISSUE landscape-right <XCUIAccessibilityAuditIssue: 0x113c21350>AuditType:"4" CompactDescription:"Hit area is too small" DetailedDescription:"The size of this SwiftUI.AccessibilityNode is too small for user to interact." Element:(null)
+    t =    41.26s Find the Any (Descendant with identity binding to AX element pid: 53397, elementOrHash.elementID: 4415497920.79)
+    t =    41.28s Added attachment named 'landscape-right-audit-issue'
+    t =    41.28s Find the Any (Descendant with identity binding to AX element pid: 53397, elementOrHash.elementID: 4415497920.79)
+AUDIT_ISSUE landscape-right <XCUIAccessibilityAuditIssue: 0x113c21200>AuditType:"1" CompactDescription:"Contrast nearly passed" DetailedDescription:"Contrast is not high enough for SwiftUI.AccessibilityNode unless font size is larger." Element:"Server Address" StaticText
+    t =    41.31s Added attachment named 'landscape-right-audit-issue'
+AUDIT_ISSUE landscape-right <XCUIAccessibilityAuditIssue: 0x113c21620>AuditType:"1" CompactDescription:"Contrast nearly passed" DetailedDescription:"Contrast is not high enough for SwiftUI.AccessibilityNode unless font size is larger." Element:(null)
+    t =    41.31s Added attachment named 'landscape-right-audit-issue'
+AUDIT_ISSUE landscape-right <XCUIAccessibilityAuditIssue: 0x113c214d0>AuditType:"1" CompactDescription:"Contrast failed" DetailedDescription:"Contrast failed for SwiftUI.AccessibilityNode" Element:(null)
+    t =    41.31s Find the Any (Descendant with identity binding to AX element pid: 53397, elementOrHash.elementID: 4415499360.83)
+    t =    41.33s Added attachment named 'landscape-right-audit-issue'
+    t =    41.33s Find the Any (Descendant with identity binding to AX element pid: 53397, elementOrHash.elementID: 4415499360.83)
+AUDIT_ISSUE landscape-right <XCUIAccessibilityAuditIssue: 0x113c217a0>AuditType:"1" CompactDescription:"Contrast nearly passed" DetailedDescription:"Contrast is not high enough for SwiftUI.AccessibilityNode unless font size is larger." Element:"Local Servers" StaticText
+    t =    41.36s Added attachment named 'landscape-right-audit-issue'
+AUDIT_ISSUE landscape-right <XCUIAccessibilityAuditIssue: 0x113c21770>AuditType:"1" CompactDescription:"Contrast nearly passed" DetailedDescription:"Contrast is not high enough for SwiftUI.AccessibilityNode unless font size is larger." Element:(null)
+    t =    41.36s Setting device orientation to Portrait
+    t =    41.36s     Device orientation changed to Portrait
+    t =    41.45s     Interface orientation changed to Portrait
+    t =    41.50s     Wait for dev.ericslutz.gus to idle
+    t =    41.99s     Wait for com.apple.springboard to idle
+    t =    42.22s Tear Down
+Test Case '-[GusAuditTests.Audit testConnectLayouts]' passed (43.049 seconds).
+Test Case '-[GusAuditTests.Audit testInvalidAddressRecovery]' started.
+    t =     0.00s Start Test at 2026-10-09 21:59:23.381
+    t =     0.08s Set Up
+    t =     0.08s Open dev.ericslutz.gus
+    t =     0.09s     Launch dev.ericslutz.gus
+    t =     0.09s         Terminate dev.ericslutz.gus:53397
+    t =     2.31s         Setting up automation session
+    t =     6.02s         Wait for dev.ericslutz.gus to idle
+    t =     8.70s Waiting 15.0s for TextField (First Match) to exist
+    t =     9.73s     Checking `Expect predicate `existsNoRetry == 1` for object TextField (First Match)`
+    t =     9.73s         Checking existence of `TextField (First Match)`
+    t =     9.83s Tap TextField (First Match)
+    t =     9.83s     Wait for dev.ericslutz.gus to idle
+    t =     9.84s     Find the TextField (First Match)
+    t =     9.87s     Check for interrupting elements affecting "http://192.168.1.50:8096" TextField
+    t =     9.92s         Wait for com.apple.springboard to idle
+    t =    10.21s Ignoring failure to get hierarchy for remote element in process 53157 (Error getting main window kAXErrorServerNotFound)
+    t =    10.21s Ignoring failure to get hierarchy for remote element in process 53157 (Error getting main window kAXErrorServerNotFound)
+    t =    10.23s     Synthesize event
+    t =    10.66s     Wait for dev.ericslutz.gus to idle
+    t =    13.17s Type '://
+' into "http://192.168.1.50:8096" TextField
+    t =    13.17s     Wait for dev.ericslutz.gus to idle
+    t =    13.46s     Find the "http://192.168.1.50:8096" TextField
+    t =    13.74s     Check for interrupting elements affecting "http://192.168.1.50:8096" TextField
+    t =    13.81s         Wait for com.apple.springboard to idle
+    t =    13.85s Ignoring failure to get hierarchy for remote element in process 53157 (Error getting main window kAXErrorServerNotFound)
+    t =    13.89s Ignoring failure to get hierarchy for remote element in process 53157 (Error getting main window kAXErrorServerNotFound)
+    t =    13.91s     Synthesize event
+    t =    14.47s     Wait for dev.ericslutz.gus to idle
+CAPTURE_READY invalid-address
+    t =    21.53s Added attachment named 'invalid-address'
+    t =    21.54s Requesting snapshot of accessibility hierarchy for app with pid 53550
+    t =    21.89s Requesting snapshot of accessibility hierarchy for app with pid 53550
+    t =    21.95s Added attachment named 'invalid-address-tree'
+    t =    21.95s Tear Down
+Test Case '-[GusAuditTests.Audit testInvalidAddressRecovery]' passed (22.226 seconds).
+Test Suite 'Audit' passed at 2026-10-09 21:59:45.604.
+	 Executed 2 tests, with 0 failures (0 unexpected) in 65.275 (65.281) seconds
+Test Suite 'PreviewAudit' started at 2026-10-09 21:59:45.607.
+Test Case '-[GusAuditTests.PreviewAudit testPreviewSurfaces]' started.
+    t =     0.00s Start Test at 2026-10-09 21:59:45.608
+    t =     0.04s Set Up
+    t =     0.05s Setting device orientation to Portrait
+    t =     0.06s     Wait for dev.ericslutz.gus to idle
+    t =     0.06s     Wait for com.apple.springboard to idle
+    t =     0.07s Open dev.ericslutz.gus
+    t =     0.07s     Launch dev.ericslutz.gus
+    t =     0.07s         Terminate dev.ericslutz.gus:53550
+    t =     1.94s         Setting up automation session
+    t =     6.01s         Wait for dev.ericslutz.gus to idle
+    t =    10.85s Waiting 5.0s for "Settings" Button to exist
+    t =    11.88s     Checking `Expect predicate `existsNoRetry == 1` for object "Settings" Button`
+    t =    11.88s         Checking existence of `"Settings" Button`
+    t =    12.03s         Capturing element debug description
+    t =    12.86s     Checking `Expect predicate `existsNoRetry == 1` for object "Settings" Button`
+    t =    12.86s         Checking existence of `"Settings" Button`
+    t =    12.90s         Capturing element debug description
+    t =    13.94s     Checking `Expect predicate `existsNoRetry == 1` for object "Settings" Button`
+    t =    13.94s         Checking existence of `"Settings" Button`
+    t =    13.98s         Capturing element debug description
+    t =    14.85s     Checking `Expect predicate `existsNoRetry == 1` for object "Settings" Button`
+    t =    14.86s         Checking existence of `"Settings" Button`
+    t =    14.97s         Capturing element debug description
+    t =    15.88s     Checking `Expect predicate `existsNoRetry == 1` for object "Settings" Button`
+    t =    15.88s         Checking existence of `"Settings" Button`
+    t =    15.92s         Capturing element debug description
+    t =    15.92s     Checking existence of `"Settings" Button`
+    t =    15.96s Collecting debug information to assist test failure triage
+    t =    15.96s     Requesting snapshot of accessibility hierarchy for app with pid 53657
+    t =    16.07s Tap "Settings" StaticText
+    t =    16.07s     Wait for dev.ericslutz.gus to idle
+    t =    16.07s     Find the "Settings" StaticText
+    t =    16.11s     Check for interrupting elements affecting "Settings" StaticText
+    t =    16.16s         Wait for com.apple.springboard to idle
+    t =    16.24s Ignoring failure to get hierarchy for remote element in process 53157 (Error getting main window kAXErrorServerNotFound)
+    t =    16.25s Ignoring failure to get hierarchy for remote element in process 53157 (Error getting main window kAXErrorServerNotFound)
+    t =    16.29s     Synthesize event
+    t =    16.71s     Wait for dev.ericslutz.gus to idle
+CAPTURE_READY preview-settings-portrait
+    t =    23.32s Added attachment named 'preview-settings-portrait'
+    t =    23.32s Requesting snapshot of accessibility hierarchy for app with pid 53657
+    t =    24.08s Requesting snapshot of accessibility hierarchy for app with pid 53657
+    t =    24.22s Added attachment named 'preview-settings-portrait-tree'
+    t =    24.22s Setting device orientation to Landscape Left
+    t =    24.22s     Device orientation changed to Landscape Left
+    t =    24.45s     Interface orientation changed to Landscape Right
+    t =    24.49s     Wait for dev.ericslutz.gus to idle
+    t =    24.60s     Wait for com.apple.springboard to idle
+CAPTURE_READY preview-settings-landscape
+    t =    31.41s Added attachment named 'preview-settings-landscape'
+    t =    31.41s Requesting snapshot of accessibility hierarchy for app with pid 53657
+    t =    32.20s Requesting snapshot of accessibility hierarchy for app with pid 53657
+    t =    32.34s Added attachment named 'preview-settings-landscape-tree'
+    t =    32.34s Setting device orientation to Portrait
+    t =    32.34s     Device orientation changed to Portrait
+    t =    32.38s     Interface orientation changed to Portrait
+    t =    32.54s     Wait for dev.ericslutz.gus to idle
+    t =    33.18s     Wait for com.apple.springboard to idle
+    t =    33.44s Waiting 5.0s for "Downloaded Media" Button to exist
+    t =    34.47s     Checking `Expect predicate `existsNoRetry == 1` for object "Downloaded Media" Button`
+    t =    34.48s         Checking existence of `"Downloaded Media" Button`
+    t =    34.61s         Capturing element debug description
+    t =    35.44s     Checking `Expect predicate `existsNoRetry == 1` for object "Downloaded Media" Button`
+    t =    35.44s         Checking existence of `"Downloaded Media" Button`
+    t =    35.52s         Capturing element debug description
+    t =    36.44s     Checking `Expect predicate `existsNoRetry == 1` for object "Downloaded Media" Button`
+    t =    36.44s         Checking existence of `"Downloaded Media" Button`
+    t =    36.52s         Capturing element debug description
+    t =    37.45s     Checking `Expect predicate `existsNoRetry == 1` for object "Downloaded Media" Button`
+    t =    37.45s         Checking existence of `"Downloaded Media" Button`
+    t =    37.56s         Capturing element debug description
+    t =    38.44s     Checking `Expect predicate `existsNoRetry == 1` for object "Downloaded Media" Button`
+    t =    38.44s         Checking existence of `"Downloaded Media" Button`
+    t =    38.53s         Capturing element debug description
+    t =    38.53s     Checking existence of `"Downloaded Media" Button`
+    t =    38.63s Collecting debug information to assist test failure triage
+    t =    38.63s     Requesting snapshot of accessibility hierarchy for app with pid 53657
+    t =    38.77s Tap "Downloaded Media" StaticText
+    t =    38.78s     Wait for dev.ericslutz.gus to idle
+    t =    38.78s     Find the "Downloaded Media" StaticText
+    t =    38.88s     Check for interrupting elements affecting "Downloaded Media" StaticText
+    t =    38.95s         Wait for com.apple.springboard to idle
+    t =    39.00s Ignoring failure to get hierarchy for remote element in process 53157 (Error getting main window kAXErrorServerNotFound)
+    t =    39.00s Ignoring failure to get hierarchy for remote element in process 53157 (Error getting main window kAXErrorServerNotFound)
+    t =    39.02s     Synthesize event
+    t =    39.35s     Wait for dev.ericslutz.gus to idle
+CAPTURE_READY preview-manage-downloads-portrait
+    t =    45.89s Added attachment named 'preview-manage-downloads-portrait'
+    t =    45.90s Requesting snapshot of accessibility hierarchy for app with pid 53657
+    t =    46.36s Requesting snapshot of accessibility hierarchy for app with pid 53657
+    t =    46.43s Added attachment named 'preview-manage-downloads-portrait-tree'
+    t =    46.43s Setting device orientation to Landscape Left
+    t =    46.43s     Device orientation changed to Landscape Left
+    t =    46.59s     Interface orientation changed to Landscape Right
+    t =    46.91s     Wait for dev.ericslutz.gus to idle
+    t =    47.57s     Wait for com.apple.springboard to idle
+CAPTURE_READY preview-manage-downloads-after-rotation
+    t =    53.78s Added attachment named 'preview-manage-downloads-after-rotation'
+    t =    53.78s Requesting snapshot of accessibility hierarchy for app with pid 53657
+    t =    54.08s Requesting snapshot of accessibility hierarchy for app with pid 53657
+    t =    54.14s Added attachment named 'preview-manage-downloads-after-rotation-tree'
+    t =    54.14s Checking existence of `"Downloads" NavigationBar`
+ROTATION_DOWNLOADS_STILL_PRESENT true
+    t =    54.18s Setting device orientation to Portrait
+    t =    54.18s     Device orientation changed to Portrait
+    t =    54.32s     Interface orientation changed to Portrait
+    t =    54.33s     Wait for dev.ericslutz.gus to idle
+    t =    54.90s     Wait for com.apple.springboard to idle
+    t =    55.04s Terminate dev.ericslutz.gus:53657
+    t =    56.06s Open dev.ericslutz.gus
+    t =    56.06s     Launch dev.ericslutz.gus
+    t =    56.14s         Setting up automation session
+    t =    61.46s         Wait for dev.ericslutz.gus to idle
+    t =    65.14s Waiting 5.0s for "Downloaded" Button to exist
+    t =    66.16s     Checking `Expect predicate `existsNoRetry == 1` for object "Downloaded" Button`
+    t =    66.16s         Checking existence of `"Downloaded" Button`
+    t =    66.31s         Capturing element debug description
+    t =    67.14s     Checking `Expect predicate `existsNoRetry == 1` for object "Downloaded" Button`
+    t =    67.17s         Checking existence of `"Downloaded" Button`
+    t =    67.24s         Capturing element debug description
+    t =    68.17s     Checking `Expect predicate `existsNoRetry == 1` for object "Downloaded" Button`
+    t =    68.17s         Checking existence of `"Downloaded" Button`
+    t =    68.21s         Capturing element debug description
+    t =    69.22s     Checking `Expect predicate `existsNoRetry == 1` for object "Downloaded" Button`
+    t =    69.23s         Checking existence of `"Downloaded" Button`
+    t =    69.27s         Capturing element debug description
+    t =    70.14s     Checking `Expect predicate `existsNoRetry == 1` for object "Downloaded" Button`
+    t =    70.14s         Checking existence of `"Downloaded" Button`
+    t =    70.18s         Capturing element debug description
+    t =    70.18s     Checking existence of `"Downloaded" Button`
+    t =    70.21s Collecting debug information to assist test failure triage
+    t =    70.21s     Requesting snapshot of accessibility hierarchy for app with pid 53876
+    t =    70.32s Tap "Downloaded" StaticText
+    t =    70.32s     Wait for dev.ericslutz.gus to idle
+    t =    70.32s     Find the "Downloaded" StaticText
+    t =    70.35s     Check for interrupting elements affecting "Downloaded" StaticText
+    t =    70.38s         Wait for com.apple.springboard to idle
+    t =    70.45s Ignoring failure to get hierarchy for remote element in process 53157 (Error getting main window kAXErrorServerNotFound)
+    t =    70.45s Ignoring failure to get hierarchy for remote element in process 53157 (Error getting main window kAXErrorServerNotFound)
+    t =    70.45s     Synthesize event
+    t =    70.77s     Wait for dev.ericslutz.gus to idle
+CAPTURE_READY preview-downloaded-portrait
+    t =    77.01s Added attachment named 'preview-downloaded-portrait'
+    t =    77.02s Requesting snapshot of accessibility hierarchy for app with pid 53876
+    t =    77.30s Requesting snapshot of accessibility hierarchy for app with pid 53876
+    t =    77.36s Added attachment named 'preview-downloaded-portrait-tree'
+    t =    77.37s Setting device orientation to Landscape Left
+    t =    77.37s     Device orientation changed to Landscape Left
+    t =    77.48s     Interface orientation changed to Landscape Right
+    t =    77.58s     Wait for dev.ericslutz.gus to idle
+    t =    77.59s     Wait for com.apple.springboard to idle
+CAPTURE_READY preview-downloaded-landscape
+    t =    83.76s Added attachment named 'preview-downloaded-landscape'
+    t =    83.76s Requesting snapshot of accessibility hierarchy for app with pid 53876
+    t =    84.00s Requesting snapshot of accessibility hierarchy for app with pid 53876
+    t =    84.06s Added attachment named 'preview-downloaded-landscape-tree'
+    t =    86.64s Find the Any (Descendant with identity binding to AX element pid: 53876, elementOrHash.elementID: 4377661504.92)
+    t =    86.68s Added attachment named 'preview-download-audit-issue'
+    t =    86.68s Find the Any (Descendant with identity binding to AX element pid: 53876, elementOrHash.elementID: 4377661504.92)
+AUDIT_ISSUE preview-download <XCUIAccessibilityAuditIssue: 0x112f01440>AuditType:"4" CompactDescription:"Hit area is too small" DetailedDescription:"The size of this SwiftUI.AccessibilityNode is too small for user to interact." Element:"Manage Downloads" Button
+    t =    86.71s Setting device orientation to Portrait
+    t =    86.72s     Device orientation changed to Portrait
+    t =    86.80s     Interface orientation changed to Portrait
+    t =    86.80s     Wait for dev.ericslutz.gus to idle
+    t =    87.40s     Wait for com.apple.springboard to idle
+    t =    87.54s Tear Down
+Test Case '-[GusAuditTests.PreviewAudit testPreviewSurfaces]' passed (92.653 seconds).
+Test Suite 'PreviewAudit' passed at 2026-10-09 22:01:18.261.
+	 Executed 1 test, with 0 failures (0 unexpected) in 92.653 (92.654) seconds
+Test Suite 'GusAuditTests.xctest' passed at 2026-10-09 22:01:18.264.
+	 Executed 3 tests, with 0 failures (0 unexpected) in 157.928 (157.941) seconds
+Test Suite 'All tests' passed at 2026-10-09 22:01:18.264.
+	 Executed 3 tests, with 0 failures (0 unexpected) in 157.928 (157.944) seconds
+2026-10-09 22:01:18.815 xcodebuild[53314:417678] [MT] IDETestOperationsObserverDebug: 171.349 elapsed -- Testing started completed.
+2026-10-09 22:01:18.815 xcodebuild[53314:417678] [MT] IDETestOperationsObserverDebug: 0.000 sec, +0.000 sec -- start
+2026-10-09 22:01:18.815 xcodebuild[53314:417678] [MT] IDETestOperationsObserverDebug: 171.349 sec, +171.349 sec -- end
+
+Test session results, code coverage, and logs:
+	/tmp/gus-ui-audit-20261009/ipad.xcresult
+
+** TEST SUCCEEDED **
+
+Testing started

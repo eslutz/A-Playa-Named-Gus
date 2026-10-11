@@ -1,0 +1,1 @@
+<XCUIAccessibilityAuditIssue: 0x10f111770>AuditType:"1" CompactDescription:"Contrast failed" DetailedDescription:"Contrast failed for SwiftUI.AccessibilityNode" Element:(null)

@@ -148,6 +148,8 @@ struct MediaPerson: Codable, Hashable, Identifiable {
 }
 
 struct MediaStreamInfo: Codable, Hashable {
+    var bitDepth: Int?
+    var channels: Int?
     var codecTag: String?
     var codec: String?
     var displayTitle: String?
@@ -157,6 +159,9 @@ struct MediaStreamInfo: Codable, Hashable {
     var profile: String?
     var title: String?
     var type: MediaStreamKind?
+    var width: Int?
+    var height: Int?
+    var videoRange: String?
 
     init(
         codec: String? = nil,
@@ -167,7 +172,12 @@ struct MediaStreamInfo: Codable, Hashable {
         language: String? = nil,
         profile: String? = nil,
         title: String? = nil,
-        type: MediaStreamKind? = nil
+        type: MediaStreamKind? = nil,
+        bitDepth: Int? = nil,
+        channels: Int? = nil,
+        width: Int? = nil,
+        height: Int? = nil,
+        videoRange: String? = nil
     ) {
         self.codecTag = codecTag
         self.codec = codec
@@ -178,6 +188,11 @@ struct MediaStreamInfo: Codable, Hashable {
         self.profile = profile
         self.title = title
         self.type = type
+        self.bitDepth = bitDepth
+        self.channels = channels
+        self.width = width
+        self.height = height
+        self.videoRange = videoRange
     }
 }
 

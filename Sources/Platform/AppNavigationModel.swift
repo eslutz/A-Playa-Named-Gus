@@ -12,6 +12,8 @@ final class AppNavigationModel {
     static let shared = AppNavigationModel()
 
     private(set) var route: AppRoute = .home
+    /// Explicit routes must also be handled when they repeat the last routed value.
+    private(set) var routeRequest = 0
     private(set) var searchFocusRequest = 0
 
     /// Pending content deep link plus a monotonically increasing request token so the
@@ -28,6 +30,7 @@ final class AppNavigationModel {
         }
 
         self.route = route
+        routeRequest += 1
     }
 
     func open(url: URL) {

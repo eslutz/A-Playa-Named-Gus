@@ -132,7 +132,7 @@ enum JellyfinMediaItemMapper {
         )
     }
 
-    private static func mediaSource(from source: JellyfinAPI.MediaSourceInfo) -> MediaSource {
+    static func mediaSource(from source: JellyfinAPI.MediaSourceInfo) -> MediaSource {
         MediaSource(
             container: source.container,
             id: source.id,
@@ -169,7 +169,12 @@ enum JellyfinMediaItemMapper {
             language: stream.language,
             profile: stream.profile,
             title: stream.title,
-            type: mediaStreamKind(from: stream.type)
+            type: mediaStreamKind(from: stream.type),
+            bitDepth: stream.bitDepth,
+            channels: stream.channels,
+            width: stream.width,
+            height: stream.height,
+            videoRange: stream.videoRange?.rawValue
         )
     }
 

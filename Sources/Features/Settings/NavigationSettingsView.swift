@@ -32,6 +32,7 @@ struct NavigationSettingsView: View {
                     Label(message, systemImage: "exclamationmark.triangle")
                         .foregroundStyle(.red)
                         .font(.callout)
+                    Button("Try Again") { Task { await loadLibraries() } }
                 }
             case .loaded:
                 Section("Sections") {

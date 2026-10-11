@@ -52,7 +52,6 @@ struct UILayoutMetricsTests {
     @Test("navigation appearance row uses aligned list icon")
     func navigationAppearanceRowUsesAlignedListIcon() throws {
         let settingsSource = try sourceFile(named: "SettingsView.swift", under: "Sources/Features/Settings")
-
         #expect(settingsSource.contains("Label(\"Navigation\", systemImage: \"list.bullet\")"))
         #expect(!settingsSource.contains("list.bullet.indent"))
     }
@@ -60,7 +59,6 @@ struct UILayoutMetricsTests {
     @Test("navigation editor uses native edit, reorder, and delete list behavior")
     func navigationEditorUsesNativeEditReorderAndDeleteListBehavior() throws {
         let source = try sourceFile(named: "NavigationSettingsView.swift", under: "Sources/Features/Settings")
-        let settingsSource = try sourceFile(named: "SettingsView.swift", under: "Sources/Features/Settings")
 
         #expect(source.contains("EditButton()"))
         #expect(source.contains(".onMove"))
@@ -78,10 +76,6 @@ struct UILayoutMetricsTests {
         #expect(source.contains("private var isEditing"))
         #expect(source.contains("if isEditing"))
         #expect(source.contains(".id(navigationPreferences.revision)"))
-        #expect(settingsSource.contains("@State private var isShowingNavigationSettings = false"))
-        #expect(settingsSource.contains("NavigationLink(value: SettingsDestination.navigation)"))
-        #expect(settingsSource.contains(".navigationDestination(for: SettingsDestination.self)"))
-        #expect(settingsSource.contains(".navigationBarBackButtonHidden(isShowingNavigationSettings)"))
         #expect(!source.contains("Home is always first."))
         #expect(!source.contains("Settings is always last."))
     }

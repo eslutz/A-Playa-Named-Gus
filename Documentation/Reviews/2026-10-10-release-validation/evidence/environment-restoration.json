@@ -1,0 +1,35 @@
+{
+  "services": [
+    {
+      "service": "gus-state-slow-server.py",
+      "action": "Stopped exact audit-owned process"
+    },
+    {
+      "service": "capture-server.py",
+      "action": "Stopped exact audit-owned process"
+    },
+    {
+      "service": "gus-vision-native-capture-server.py",
+      "action": "Stopped exact audit-owned process"
+    },
+    {
+      "service": "gus-demo-jellyfin",
+      "action": "Restored stopped state; container and media volume preserved"
+    }
+  ],
+  "auditSimulatorsShutdown": [
+    "0091C2E3-7B8A-4452-B708-095D613AEB3A",
+    "42BB7891-1C89-4DF7-A7F7-5CF4A9C71326",
+    "1711D519-F8C9-42CA-A705-5F12E87D96F2",
+    "E750FF2F-A908-427E-8325-9CC3A6C2C306"
+  ],
+  "deletedOnlyAuditCreatedSE": "3BB872EF-4DDD-4002-B9A8-7E0BF6D9B261",
+  "ownedSimulatorsRestoredShutdown": true,
+  "auditLocalPortsClosed": {
+    "8097": 61,
+    "8098": 61,
+    "8099": 61
+  },
+  "accessibilityAndAppearanceRestoration": "Actual assertions and baseline/restored evidence recorded separately",
+  "scope": "Other simulators, user caches, credential files and unrelated services preserved"
+}

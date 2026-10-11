@@ -12,56 +12,10 @@ struct WatchAudioPlayerView: View {
     @State private var store: AudioPlayerStore?
 
     var body: some View {
-        VStack(spacing: 8) {
+        ScrollView {
             if let store {
-                Text(store.currentTrack?.displayTitle ?? "")
-                    .font(.headline)
-                    .lineLimit(2)
-                    .multilineTextAlignment(.center)
-
-                if store.duration > 0 {
-                    ProgressView(value: min(store.currentTime, store.duration), total: store.duration)
-                        .accessibilityLabel(String(localized: "Playback position", comment: "Accessibility label for the audio playback progress bar"))
-                        .accessibilityValue(
-                            PlaybackTime.accessibilityProgressValue(
-                                currentSeconds: min(store.currentTime, store.duration),
-                                durationSeconds: store.duration
-                            )
-                        )
-                }
-
-                HStack(spacing: 14) {
-                    Button {
-                        Task { await store.previous() }
-                    } label: {
-                        Image(systemName: "backward.fill")
-                    }
-                    .accessibilityLabel(String(localized: "Previous Track", comment: "Accessibility label for the previous track button"))
-
-                    Button {
-                        store.playPause()
-                    } label: {
-                        Image(systemName: store.isPlaying ? "pause.circle.fill" : "play.circle.fill")
-                            .font(.title)
-                    }
-                    .accessibilityLabel(store.isPlaying ? String(localized: "Pause", comment: "Accessibility label for the pause button") : String(localized: "Play", comment: "Accessibility label for the play button"))
-
-                    Button {
-                        Task { await store.next() }
-                    } label: {
-                        Image(systemName: "forward.fill")
-                    }
-                    .disabled(!store.queue.hasNext)
-                    .accessibilityLabel(String(localized: "Next Track", comment: "Accessibility label for the next track button"))
-                }
-                .buttonStyle(.plain)
-
-                if store.currentTrack?.type == .audioBook {
-                    Picker("Speed", selection: speedBinding(store)) {
-                        ForEach([0.75, 1.0, 1.25, 1.5, 2.0], id: \.self) { rate in
-                            Text("\(rate.formatted(.number.precision(.fractionLength(0 ... 2))))×").tag(rate)
-                        }
-                    }
+                LoadingStateView(state: store.state, retryAction: { Task { await store.start() } }) {
+                    playerControls(store)
                 }
             } else {
                 ProgressView()
@@ -77,6 +31,60 @@ struct WatchAudioPlayerView: View {
         }
         .onDisappear {
             store?.teardown()
+        }
+    }
+
+    private func playerControls(_ store: AudioPlayerStore) -> some View {
+        VStack(spacing: 8) {
+            Text(store.currentTrack?.displayTitle ?? "")
+                .font(.headline)
+                .lineLimit(2)
+                .multilineTextAlignment(.center)
+
+            if store.duration > 0 {
+                ProgressView(value: min(store.currentTime, store.duration), total: store.duration)
+                    .accessibilityLabel(String(localized: "Playback position", comment: "Accessibility label for the audio playback progress bar"))
+                    .accessibilityValue(
+                        PlaybackTime.accessibilityProgressValue(
+                            currentSeconds: min(store.currentTime, store.duration),
+                            durationSeconds: store.duration
+                        )
+                    )
+            }
+
+            HStack(spacing: 14) {
+                Button {
+                    Task { await store.previous() }
+                } label: {
+                    Image(systemName: "backward.fill")
+                }
+                .accessibilityLabel(String(localized: "Previous Track", comment: "Accessibility label for the previous track button"))
+
+                Button {
+                    store.playPause()
+                } label: {
+                    Image(systemName: store.isPlaying ? "pause.circle.fill" : "play.circle.fill")
+                        .font(.title)
+                }
+                .accessibilityLabel(store.isPlaying ? String(localized: "Pause", comment: "Accessibility label for the pause button") : String(localized: "Play", comment: "Accessibility label for the play button"))
+
+                Button {
+                    Task { await store.next() }
+                } label: {
+                    Image(systemName: "forward.fill")
+                }
+                .disabled(!store.queue.hasNext)
+                .accessibilityLabel(String(localized: "Next Track", comment: "Accessibility label for the next track button"))
+            }
+            .buttonStyle(.plain)
+
+            if store.currentTrack?.type == .audioBook {
+                Picker("Speed", selection: speedBinding(store)) {
+                    ForEach([0.75, 1.0, 1.25, 1.5, 2.0], id: \.self) { rate in
+                        Text("\(rate.formatted(.number.precision(.fractionLength(0 ... 2))))×").tag(rate)
+                    }
+                }
+            }
         }
     }
 

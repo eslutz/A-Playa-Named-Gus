@@ -184,18 +184,22 @@ final class LibraryStore {
     private(set) var filter = LibraryFilterState.default
 
     let scope: LibraryGridScope
+    private let admits: (MediaItem) -> Bool
     private let session: SessionStore
     private let logger = Logger(category: .library)
     private var paging = Paging(pageSize: LibraryRequest.pageSize, prefetchThreshold: 12)
     private var loadGeneration = 0
+    private var pageTask: Task<MediaItemPage, Error>?
+    private(set) var pageError: String?
 
     convenience init(library: MediaItem, session: SessionStore) {
         self.init(scope: .library(library), session: session)
     }
 
-    init(scope: LibraryGridScope, session: SessionStore) {
+    init(scope: LibraryGridScope, session: SessionStore, admits: @escaping (MediaItem) -> Bool = { ContentRatingGate.admitsStored($0) }) {
         self.scope = scope
         self.session = session
+        self.admits = admits
     }
 
     var title: String {
@@ -209,6 +213,8 @@ final class LibraryStore {
     func load() async {
         guard state != .loading else { return }
         loadGeneration += 1
+        pageTask?.cancel()
+        pageError = nil
         let generation = loadGeneration
         isLoadingNextPage = false
         state = .loading
@@ -217,7 +223,7 @@ final class LibraryStore {
         diagnostics.record(.libraryLoadStarted)
         let loadInterval = diagnostics.beginInterval("LibraryLoad")
         do {
-            try await loadPage(startIndex: 0, replaceResults: true, generation: generation)
+            try await scanPages(replaceResults: true, generation: generation)
             diagnostics.endInterval("LibraryLoad", loadInterval)
             diagnostics.record(.libraryLoadFinished(itemCount: items.count))
         } catch {
@@ -244,19 +250,41 @@ final class LibraryStore {
               paging.shouldLoadMore(currentIndex: index, loadedCount: items.count)
         else { return }
 
+        await continueSearching()
+    }
+
+    func continueSearching() async {
+        guard canLoadMore, !isLoadingNextPage, state == .loaded else { return }
         let generation = loadGeneration
         isLoadingNextPage = true
+        pageError = nil
         defer {
             if generation == loadGeneration {
                 isLoadingNextPage = false
             }
         }
-
-        do {
-            try await loadPage(startIndex: paging.nextStartIndex, replaceResults: false, generation: generation)
-        } catch {
+        do { try await scanPages(replaceResults: false, generation: generation) }
+        catch {
             guard generation == loadGeneration else { return }
-            handle(error)
+            let failure = GusError(from: error)
+            if !failure.isCancellation {
+                pageError = failure.localizedDescription
+            }
+        }
+    }
+
+    private func scanPages(replaceResults: Bool, generation: Int) async throws {
+        var replace = replaceResults
+        for _ in 0 ..< 3 {
+            try Task.checkCancellation()
+            guard generation == loadGeneration else { return }
+            let before = replace ? 0 : items.count
+            try await loadPage(startIndex: replace ? 0 : paging.nextStartIndex, replaceResults: replace, generation: generation)
+            guard generation == loadGeneration else { return }
+            replace = false
+            if items.count > before || !canLoadMore {
+                break
+            }
         }
     }
 
@@ -267,10 +295,13 @@ final class LibraryStore {
             limit: paging.pageSize,
             filter: filter
         )
-        let page = try await session.mediaProvider.items(query: query)
+        let task = Task { try await session.mediaProvider.items(query: query) }
+        pageTask = task
+        let page = try await withTaskCancellationHandler { try await task.value } onCancel: { task.cancel() }
+        try Task.checkCancellation()
         guard generation == loadGeneration else { return }
 
-        let admitted = ContentRatingGate.filter(page.items)
+        let admitted = page.items.filter(admits)
         if replaceResults {
             items = admitted
             paging.replaceResults(receivedCount: page.items.count, totalRecordCount: page.totalRecordCount)
@@ -288,8 +319,12 @@ final class LibraryStore {
 
     private func handle(_ error: Error) {
         let gusError = GusError(from: error)
-        guard !gusError.isCancellation else { return } // navigated away mid-load
-        logger.error("Library load failed: \(gusError.localizedDescription, privacy: .public)")
+        guard !gusError.isCancellation else {
+            if state == .loading {
+                state = .idle
+            }; return
+        }
+        logger.error("Library load failed: \(gusError.localizedDescription, privacy: .private)")
         state = .failed(gusError.localizedDescription)
     }
 }

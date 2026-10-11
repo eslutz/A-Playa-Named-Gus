@@ -23,7 +23,7 @@ extension DiagnosticsHub {
 #if canImport(MetricKit) && !os(tvOS)
     /// Subscribes to `MXMetricManager` and normalizes payloads into app-owned
     /// `DiagnosticSummary` records so nothing else in the app touches MetricKit types.
-    final class MetricKitCollector: NSObject, MXMetricManagerSubscriber {
+    final class MetricKitCollector: NSObject, MXMetricManagerSubscriber, Sendable {
         static let shared = MetricKitCollector()
 
         private let logger = Logger(category: .diagnostics)

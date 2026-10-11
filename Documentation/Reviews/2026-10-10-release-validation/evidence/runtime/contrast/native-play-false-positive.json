@@ -1,0 +1,55 @@
+{
+  "identifier": "Detail.play",
+  "auditType": "contrast",
+  "image": "native-play-false-positive.png",
+  "imageSHA256": "0caf78f591e9104e8cc697fb08146f620a327b4e1f2a8cd43c68ea3fa0d195e0",
+  "whiteGlyphPixels": 2554,
+  "dominantBackgrounds": [
+    {
+      "rgb": [
+        61,
+        100,
+        105
+      ],
+      "pixels": 22222,
+      "whiteContrast": 6.511
+    },
+    {
+      "rgb": [
+        62,
+        101,
+        106
+      ],
+      "pixels": 21290,
+      "whiteContrast": 6.413
+    },
+    {
+      "rgb": [
+        63,
+        102,
+        107
+      ],
+      "pixels": 19592,
+      "whiteContrast": 6.317
+    },
+    {
+      "rgb": [
+        64,
+        104,
+        109
+      ],
+      "pixels": 19308,
+      "whiteContrast": 6.142
+    },
+    {
+      "rgb": [
+        62,
+        100,
+        105
+      ],
+      "pixels": 5974,
+      "whiteContrast": 6.498
+    }
+  ],
+  "scope": "One native prominent-glass label. Maintained audit independently measures each native label capture before accepting the exact issue."
+}

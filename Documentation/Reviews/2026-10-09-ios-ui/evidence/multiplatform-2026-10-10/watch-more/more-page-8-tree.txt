@@ -1,0 +1,77 @@
+Attributes: Application, 0x106ce1540, pid: 27247, label: 'Gus'
+Element subtree:
+ →Application, 0x106ce1540, pid: 27247, label: 'Gus'
+    Window, 0x106ce0500, {{0.0, 0.0}, {211.0, 257.0}}
+      Other, 0x106ce0c80, {{0.0, 0.0}, {211.0, 257.0}}
+        Other, 0x106ce2e40, {{0.0, 0.0}, {211.0, 257.0}}
+          Other, 0x106ce1a40, {{0.0, 0.0}, {211.0, 257.0}}
+            Other, 0x106ce0b40, {{0.0, 0.0}, {211.0, 257.0}}
+              Other, 0x106ce1180, {{0.0, 0.0}, {211.0, 257.0}}
+              Other, 0x106ce2d00, {{0.0, 0.0}, {211.0, 257.0}}
+              CollectionView, 0x106ce0a00, {{0.0, 0.0}, {211.0, 257.0}}, identifier: 'PUICPageViewController_collectionView'
+                Cell, 0x106ce0640, {{0.0, 0.0}, {211.0, 257.0}}
+                  Other, 0x106ce03c0, {{0.0, 0.0}, {211.0, 257.0}}
+                    Other, 0x106ce1040, {{0.0, 0.0}, {211.0, 257.0}}
+                      Other, 0x106ce2580, {{0.0, 0.0}, {211.0, 257.0}}
+                        Other, 0x106ce3c00, {{0.0, 0.0}, {211.0, 257.0}}
+                          Other, 0x106ce0f00, {{0.0, 0.0}, {211.0, 257.0}}
+                            NavigationBar, 0x106ce3d40, {{0.0, 0.0}, {211.0, 66.0}}, identifier: 'Settings'
+                              StaticText, 0x106ce12c0, {{16.5, 38.0}, {178.0, 20.5}}, label: 'Settings'
+                            Other, 0x106ce0140, {{0.0, 0.0}, {211.0, 257.0}}
+                              Other, 0x106ce2bc0, {{0.0, 0.0}, {211.0, 257.0}}
+                                Other, 0x106ce3980, {{0.0, 0.0}, {211.0, 257.0}}
+                                  Other, 0x106ce2440, {{0.0, 0.0}, {211.0, 257.0}}
+                                    CollectionView, 0x106ce30c0, {{0.0, 0.0}, {211.0, 257.0}}
+                                      Cell, 0x106ce2300, {{2.0, -22.5}, {207.0, 59.0}}, label: 'Connection, Online'
+                                        Other, 0x106ce1680, {{2.0, -22.5}, {207.0, 59.0}}
+                                          Other, 0x106ce3700, {{2.0, -22.5}, {207.0, 59.0}}
+                                        Other, 0x106ce2f80, {{2.0, -22.5}, {207.0, 59.0}}
+                                          Other, 0x106ce08c0, {{2.0, -22.5}, {207.0, 59.0}}
+                                            Other, 0x106ce0dc0, {{2.0, -22.5}, {207.0, 59.0}}
+                                              StaticText, 0x106ce3200, {{16.5, -3.2}, {89.5, 20.5}}, label: 'Connection'
+                                              Image, 0x106ce0780, {{121.5, -1.0}, {16.5, 16.5}}, identifier: 'checkmark.circle.fill', label: 'Selected', Selected
+                                              StaticText, 0x106ce2a80, {{121.5, -3.2}, {73.0, 20.5}}, label: 'Online'
+                                      Other, 0x106ce1e00, {{0.0, 0.0}, {211.0, 257.0}}
+                                        Other, 0x106ce26c0, {{0.0, 0.0}, {211.0, 93.6}}
+                                      Other, 0x106ce2800, {{0.0, 0.0}, {211.0, 257.0}}
+                                        Other, 0x106ce3ac0, {{0.0, 0.0}, {211.0, 93.6}}
+                                          Other, 0x106ce2940, {{0.0, 0.0}, {211.0, 58.5}}
+                                          Other, 0x106cdf980, {{0.0, 0.0}, {211.0, 93.6}}
+                                            Other, 0x106cdfc00, {{0.0, 0.0}, {211.0, 93.6}}
+                                          Other, 0x106cdf700, {{0.0, 0.0}, {211.0, 93.6}}
+                                            Other, 0x106cdfe80, {{0.0, 0.0}, {211.0, 93.6}}
+                                          Other, 0x106cd92c0, {{0.0, 0.0}, {211.0, 93.6}}
+                                            Other, 0x106cd8500, {{0.0, 0.0}, {211.0, 93.6}}
+                                            Other, 0x106ce8000, {{0.0, 0.0}, {211.0, 93.6}}
+                                      Cell, 0x106ce83c0, {{2.0, 58.5}, {207.0, 59.0}}, label: 'Sign Out'
+                                        Other, 0x106ce97c0, {{2.0, 58.5}, {207.0, 59.0}}
+                                          Other, 0x106ce8280, {{2.0, 58.5}, {207.0, 59.0}}
+                                        Other, 0x106ce8140, {{2.0, 58.5}, {207.0, 59.0}}
+                                          Other, 0x106cd7840, {{2.0, 58.5}, {207.0, 59.0}}
+                                            Other, 0x106cd6580, {{2.0, 58.5}, {207.0, 59.0}}
+                                              Button, 0x106cecf00, {{2.0, 58.5}, {207.0, 59.0}}, label: 'Sign Out'
+                                      Other, 0x106cec780, {{0.0, 139.5}, {211.0, 18.5}}
+                                        Other, 0x106cbbc00, {{0.0, 139.5}, {211.0, 18.5}}
+                                          Other, 0x106cb97c0, {{0.0, 139.5}, {211.0, 18.5}}
+                                            StaticText, 0x106cba940, {{16.5, 139.5}, {40.5, 17.0}}, label: 'About'
+                                      Cell, 0x106cb9900, {{2.0, 158.0}, {207.0, 59.0}}, label: 'Version, 1.0.0'
+                                        Other, 0x106cb8f00, {{2.0, 158.0}, {207.0, 59.0}}
+                                          Other, 0x106cb9a40, {{2.0, 158.0}, {207.0, 59.0}}
+                                        Other, 0x106cba1c0, {{2.0, 158.0}, {207.0, 59.0}}
+                                          Other, 0x106cb9040, {{2.0, 158.0}, {207.0, 59.0}}
+                                            Other, 0x106cb9680, {{2.0, 158.0}, {207.0, 59.0}}
+                                              StaticText, 0x106cb8280, {{16.5, 177.2}, {59.0, 20.5}}, label: 'Version'
+                                              StaticText, 0x106cb83c0, {{2.0, 158.0}, {207.0, 59.0}}, label: 'Version, 1.0.0'
+    Window (Main), 0x106cb9400, {{203.0, 61.5}, {6.0, 48.0}}
+      Other, 0x106cb8dc0, {{203.0, 61.5}, {6.0, 48.0}}, value: page 5 of 5
+    Window, 0x106cb9f40, {{0.0, 0.0}, {211.0, 257.0}}
+      StatusBar, 0x106cbbac0, {{0.0, 0.0}, {211.0, 40.0}}
+        Other, 0x106cbbd40, {{0.0, 0.0}, {211.0, 40.0}}
+        Other, 0x106cb8780, {{0.0, 0.0}, {211.0, 40.0}}
+Path to element:
+ →Application, 0x106ce1540, pid: 27247, label: 'Gus'
+Query chain:
+ →Find: Application 'dev.ericslutz.gus.watchkitapp'
+  Output: {
+    Application, 0x106cbae40, pid: 27247, label: 'Gus'
+  }

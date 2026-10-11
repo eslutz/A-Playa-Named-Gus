@@ -1,0 +1,21 @@
+name: GusAudit
+options:
+  deploymentTarget:
+    iOS: '18.0'
+targets:
+  GusAuditTests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources: [Tests]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: dev.ericslutz.gus.audit
+        GENERATE_INFOPLIST_FILE: YES
+        CODE_SIGNING_ALLOWED: NO
+schemes:
+  GusAudit:
+    build:
+      targets:
+        GusAuditTests: all
+    test:
+      targets: [GusAuditTests]

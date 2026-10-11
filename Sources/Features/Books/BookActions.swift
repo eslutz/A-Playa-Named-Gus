@@ -15,18 +15,19 @@ struct BookActionButtons: View {
     @State private var shareFileURL: URL?
     @State private var isPreparingShare = false
     @State private var shareErrorMessage: String?
-    @State private var isReaderPresented = false
+    @State private var readerItem: ItemRef?
 
     var body: some View {
         #if os(tvOS)
             EmptyView()
         #else
-            HStack(spacing: 10) {
+            VStack(alignment: .leading, spacing: 10) {
                 #if canImport(ReadiumNavigator)
                     Button {
-                        isReaderPresented = true
+                        readerItem = ItemRef(item: item)
                     } label: {
                         Label("Read", systemImage: "book")
+                            .foregroundStyle(Color.gusProminentActionForeground)
                     }
                     .gusProminentGlassButtonStyle()
                     .controlSize(.large)
@@ -42,9 +43,7 @@ struct BookActionButtons: View {
                 shareFileURL = BookFileProvider(session: session, downloads: downloads).existingLocalFile(for: item)
             }
             #if canImport(ReadiumNavigator)
-            .fullScreenCover(isPresented: $isReaderPresented) {
-                BookReaderPresenter(item: item)
-            }
+            .playerPresentation(item: $readerItem)
             #endif
             .alert(
                 "Couldn't Prepare Book",
@@ -126,46 +125,70 @@ struct BookActionButtons: View {
         @Environment(OfflineDownloadStore.self) private var downloads
         @Environment(\.dismiss) private var dismiss
         let item: MediaItem
+        var close: (() -> Void)?
 
         @State private var fileURL: URL?
         @State private var errorMessage: String?
+        @State private var retryGeneration = 0
+        @State private var preparation: Task<Void, Never>?
 
         var body: some View {
-            if let fileURL {
-                BookReaderScreen(
-                    item: item,
-                    fileURL: fileURL,
-                    provider: session.mediaProvider,
-                    accountScope: AccountScope(serverID: session.server.id, userID: session.user.id)
-                )
-            } else if let errorMessage {
-                NavigationStack {
-                    ContentUnavailableView {
-                        Label("Can't Open This Book", systemImage: "book.closed")
-                    } description: {
-                        Text(errorMessage)
-                    }
-                    .toolbar {
-                        ToolbarItem(placement: .cancellationAction) {
-                            Button("Done") {
-                                dismiss()
+            Group {
+                if let fileURL {
+                    BookReaderScreen(
+                        item: item,
+                        fileURL: fileURL,
+                        provider: session.mediaProvider,
+                        accountScope: AccountScope(serverID: session.server.id, userID: session.user.id),
+                        close: close
+                    )
+                } else {
+                    NavigationStack {
+                        Group {
+                            if let errorMessage {
+                                ContentUnavailableView {
+                                    Label("Can't Open This Book", systemImage: "book.closed")
+                                } description: { Text(errorMessage) } actions: {
+                                    Button("Try Again") { self.errorMessage = nil; retryGeneration += 1 }
+                                }
+                            } else {
+                                ProgressView("Preparing Book…").frame(maxWidth: .infinity, maxHeight: .infinity)
+                            }
+                        }
+                        .toolbar {
+                            ToolbarItem(placement: .cancellationAction) {
+                                Button("Done") {
+                                    preparation?.cancel()
+                                    if let close {
+                                        close()
+                                    } else {
+                                        dismiss()
+                                    }
+                                }
+                                .accessibilityIdentifier("BookReader.done")
                             }
                         }
                     }
                 }
-            } else {
-                ProgressView("Preparing Book…")
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .task {
-                        do {
-                            fileURL = try await BookFileProvider(session: session, downloads: downloads).localFile(for: item)
-                        } catch {
-                            let gusError = GusError(from: error)
-                            guard !gusError.isCancellation else { return }
-                            errorMessage = gusError.localizedDescription
+            }
+            .task(id: retryGeneration) {
+                guard fileURL == nil else { return }
+                let task = Task {
+                    do {
+                        let url = try await BookFileProvider(session: session, downloads: downloads).localFile(for: item)
+                        try Task.checkCancellation()
+                        fileURL = url
+                    } catch {
+                        let failure = GusError(from: error)
+                        if !failure.isCancellation && !Task.isCancelled {
+                            errorMessage = failure.localizedDescription
                         }
                     }
+                }
+                preparation = task
+                await withTaskCancellationHandler { await task.value } onCancel: { task.cancel() }
             }
+            .onDisappear { preparation?.cancel() }
         }
     }
 #endif

@@ -239,7 +239,9 @@ final class LiveTVStore {
         guard state != .loading else { return }
         state = .loading
 
-        isLiveTVEnabled = await session.mediaProvider.liveTVIsEnabled()
+        let enabled = await session.mediaProvider.liveTVIsEnabled()
+        guard !Task.isCancelled else { state = .idle; return }
+        isLiveTVEnabled = enabled
         guard isLiveTVEnabled else {
             state = .loaded
             return
@@ -250,13 +252,14 @@ final class LiveTVStore {
             async let recordingsLoad = session.mediaProvider.liveTVRecordings(limit: 100)
             async let timersLoad = session.mediaProvider.liveTVTimers()
             let (channelPage, loadedRecordings, loadedTimers) = try await(channelsLoad, recordingsLoad, timersLoad)
+            try Task.checkCancellation()
             channels = ContentRatingGate.filter(channelPage.items)
             recordings = ContentRatingGate.filter(loadedRecordings)
             timers = loadedTimers
             state = .loaded
         } catch {
             let gusError = GusError(from: error)
-            guard !gusError.isCancellation else { return }
+            guard !gusError.isCancellation else { state = .idle; return }
             state = .failed(gusError.localizedDescription)
         }
     }

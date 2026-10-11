@@ -1,0 +1,257 @@
+Command line invocation:
+    /Applications/Development/Xcode.app/Contents/Developer/usr/bin/xcodebuild test-without-building -project /tmp/gus-physical-audit-20261010/GusPhysicalAudit.xcodeproj -scheme GusPhysicalAudit -destination platform=iOS,id=00008160-00067D8908C1400A -derivedDataPath /tmp/gus-physical-audit-20261010/build -resultBundlePath /tmp/gus-physical-audit-20261010/playback-landscape.xcresult "-only-testing:GusPhysicalAuditTests/PlaybackAudit" -maximum-test-execution-time-allowance 90 -test-timeouts-enabled YES
+
+Writing result bundle at path:
+	/tmp/gus-physical-audit-20261010/playback-landscape.xcresult
+
+2026-10-10 04:30:16.293145-0400 GusPhysicalAuditTests-Runner[4619:830569] [Default] Running tests...
+    t =      nans Interface orientation changed to Portrait
+Test Suite 'Selected tests' started at 2026-10-10 04:30:16.467.
+Test Suite 'GusPhysicalAuditTests.xctest' started at 2026-10-10 04:30:16.467.
+Test Suite 'PlaybackAudit' started at 2026-10-10 04:30:16.467.
+Test Case '-[GusPhysicalAuditTests.PlaybackAudit testDownloaded]' started.
+    t =     0.00s Start Test at 2026-10-10 04:30:16.468
+    t =     0.01s Set Up
+    t =     0.01s Open dev.ericslutz.gus
+    t =     0.01s     Launch dev.ericslutz.gus
+    t =     0.09s         Interface orientation changed to Landscape Right
+    t =     0.20s         Setting up automation session
+    t =     0.20s         Wait for dev.ericslutz.gus to idle
+    t =     1.36s Tap "Downloaded" StaticText
+    t =     1.36s     Wait for dev.ericslutz.gus to idle
+    t =     1.37s     Find the "Downloaded" StaticText
+    t =     1.40s         Requesting snapshot of accessibility hierarchy for app with pid 4621
+    t =     1.50s     Check for interrupting elements affecting "Downloaded" StaticText
+    t =     1.52s         Requesting snapshot of accessibility hierarchy for app with pid 4621
+    t =     1.56s         Find: Descendants matching predicate identifier == "NotificationShortLookView" OR elementType == 7
+    t =     1.57s     Synthesize event
+    t =     1.87s     Wait for dev.ericslutz.gus to idle
+    t =     1.88s Waiting 10.0s for "Idle Hands" Button to exist
+    t =     2.97s     Checking `Expect predicate `existsNoRetry == 1` for object "Idle Hands" Button`
+    t =     2.97s         Checking existence of `"Idle Hands" Button`
+    t =     2.98s             Requesting snapshot of accessibility hierarchy for app with pid 4621
+    t =     3.05s Tap "Idle Hands" Button
+    t =     3.05s     Wait for dev.ericslutz.gus to idle
+    t =     3.06s     Find the "Idle Hands" Button
+    t =     3.06s         Requesting snapshot of accessibility hierarchy for app with pid 4621
+    t =     3.11s     Check for interrupting elements affecting "Idle Hands" Button
+    t =     3.13s         Requesting snapshot of accessibility hierarchy for app with pid 4621
+    t =     3.17s         Find: Descendants matching predicate identifier == "NotificationShortLookView" OR elementType == 7
+    t =     3.17s     Synthesize event
+    t =     3.47s     Wait for dev.ericslutz.gus to idle
+    t =     8.48s Checking existence of `"Pause" Button`
+    t =     8.49s     Requesting snapshot of accessibility hierarchy for app with pid 4621
+    t =     8.57s     Find: Descendants matching type Button
+    t =     8.58s     Find: Elements matching predicate '"Pause" IN identifiers'
+    t =     8.58s Tap Application 'dev.ericslutz.gus'[0.50, 0.50]
+    t =     8.58s     Wait for dev.ericslutz.gus to idle
+    t =     8.59s     Find the Application 'dev.ericslutz.gus'
+    t =     8.59s         Requesting snapshot of accessibility hierarchy for app with pid 4621
+    t =     8.66s     Check for interrupting elements affecting "Gus" Application
+    t =     8.68s         Requesting snapshot of accessibility hierarchy for app with pid 4621
+    t =     8.75s         Find: Descendants matching predicate identifier == "NotificationShortLookView" OR elementType == 7
+    t =     8.76s     Synthesize event
+    t =     8.78s         Find the Application 'dev.ericslutz.gus'
+    t =     8.78s             Requesting snapshot of accessibility hierarchy for app with pid 4621
+    t =     8.86s         Find the Application 'dev.ericslutz.gus'
+    t =     8.86s             Requesting snapshot of accessibility hierarchy for app with pid 4621
+    t =     8.95s         Find the Application 'dev.ericslutz.gus'
+    t =     8.95s             Requesting snapshot of accessibility hierarchy for app with pid 4621
+    t =     9.30s     Wait for dev.ericslutz.gus to idle
+    t =     9.33s Checking existence of `"Pause" Button`
+    t =     9.33s     Requesting snapshot of accessibility hierarchy for app with pid 4621
+    t =     9.40s     Find: Descendants matching type Button
+    t =     9.40s     Find: Elements matching predicate '"Pause" IN identifiers'
+    t =    11.40s Find the Application 'dev.ericslutz.gus'
+    t =    11.41s     Requesting snapshot of accessibility hierarchy for app with pid 4621
+    t =    11.49s Find the Application 'dev.ericslutz.gus'
+    t =    11.49s     Requesting snapshot of accessibility hierarchy for app with pid 4621
+    t =    11.57s Requesting snapshot of accessibility hierarchy for app with pid 4621
+    t =    11.80s Requesting snapshot of accessibility hierarchy for app with pid 4621
+    t =    11.89s Added attachment named 'playback-direct-downloaded-player-landscape-tree'
+CAPTURE_READY playback-direct-downloaded-player-landscape
+    t =    14.90s Checking existence of `"More Controls" Button`
+    t =    14.91s     Requesting snapshot of accessibility hierarchy for app with pid 4621
+    t =    14.99s     Find: Descendants matching type Button
+    t =    14.99s     Find: Elements matching predicate '"More Controls" IN identifiers'
+    t =    14.99s Checking existence of `"Close Button" Button`
+    t =    15.00s     Requesting snapshot of accessibility hierarchy for app with pid 4621
+    t =    15.06s     Find: Descendants matching type Button
+    t =    15.06s     Find: Elements matching predicate '"Close Button" IN identifiers'
+    t =    17.07s Find the Application 'dev.ericslutz.gus'
+    t =    17.08s     Requesting snapshot of accessibility hierarchy for app with pid 4621
+    t =    17.16s Find the Application 'dev.ericslutz.gus'
+    t =    17.16s     Requesting snapshot of accessibility hierarchy for app with pid 4621
+    t =    17.24s Requesting snapshot of accessibility hierarchy for app with pid 4621
+    t =    17.46s Requesting snapshot of accessibility hierarchy for app with pid 4621
+    t =    17.56s Added attachment named 'playback-direct-downloaded-closed-landscape-tree'
+CAPTURE_READY playback-direct-downloaded-closed-landscape
+    t =    20.57s Terminate dev.ericslutz.gus:4621
+    t =    20.70s     Interface orientation changed to Portrait
+    t =    21.58s Tear Down
+Test Case '-[GusPhysicalAuditTests.PlaybackAudit testDownloaded]' passed (21.731 seconds).
+Test Case '-[GusPhysicalAuditTests.PlaybackAudit testStreamed]' started.
+    t =     0.00s Start Test at 2026-10-10 04:30:38.200
+    t =     0.02s Set Up
+    t =     0.03s Open dev.ericslutz.gus
+    t =     0.03s     Launch dev.ericslutz.gus
+    t =     0.11s         Interface orientation changed to Landscape Right
+    t =     0.12s         Setting up automation session
+    t =     0.15s         Wait for dev.ericslutz.gus to idle
+    t =     1.30s Tap "Movies" StaticText
+    t =     1.30s     Wait for dev.ericslutz.gus to idle
+    t =     1.31s     Find the "Movies" StaticText
+    t =     1.32s         Requesting snapshot of accessibility hierarchy for app with pid 4624
+    t =     1.42s     Check for interrupting elements affecting "Movies" StaticText
+    t =     1.45s         Requesting snapshot of accessibility hierarchy for app with pid 4624
+    t =     1.49s         Find: Descendants matching predicate identifier == "NotificationShortLookView" OR elementType == 7
+    t =     1.50s     Synthesize event
+    t =     1.80s     Wait for dev.ericslutz.gus to idle
+    t =     1.81s Waiting 10.0s for "The Alamo, 1960" Button to exist
+    t =     2.84s     Checking `Expect predicate `existsNoRetry == 1` for object "The Alamo, 1960" Button`
+    t =     2.84s         Checking existence of `"The Alamo, 1960" Button`
+    t =     2.85s             Requesting snapshot of accessibility hierarchy for app with pid 4624
+    t =     2.94s Tap "The Alamo, 1960" Button
+    t =     2.94s     Wait for dev.ericslutz.gus to idle
+    t =     2.95s     Find the "The Alamo, 1960" Button
+    t =     2.95s         Requesting snapshot of accessibility hierarchy for app with pid 4624
+    t =     3.01s     Check for interrupting elements affecting "The Alamo, 1960" Button
+    t =     3.03s         Requesting snapshot of accessibility hierarchy for app with pid 4624
+    t =     3.07s         Find: Descendants matching predicate identifier == "NotificationShortLookView" OR elementType == 7
+    t =     3.08s     Synthesize event
+    t =     3.10s         Scroll element to visible
+    t =     3.10s         Find the "The Alamo, 1960" Button
+    t =     3.10s             Requesting snapshot of accessibility hierarchy for app with pid 4624
+    t =     3.18s         Computed hit point {-1, -1} after scrolling to visible
+    t =     3.47s     Wait for dev.ericslutz.gus to idle
+    t =     3.84s Waiting 10.0s for "Play" Button to exist
+    t =     4.86s     Checking `Expect predicate `existsNoRetry == 1` for object "Play" Button`
+    t =     4.86s         Checking existence of `"Play" Button`
+    t =     4.86s             Requesting snapshot of accessibility hierarchy for app with pid 4624
+    t =     4.98s Tap "Play" Button[0.85, 0.50]
+    t =     4.98s     Wait for dev.ericslutz.gus to idle
+    t =     4.98s     Find the "Play" Button
+    t =     4.98s         Requesting snapshot of accessibility hierarchy for app with pid 4624
+    t =     5.06s     Check for interrupting elements affecting "Play" Button
+    t =     5.08s         Requesting snapshot of accessibility hierarchy for app with pid 4624
+    t =     5.14s         Find: Descendants matching predicate identifier == "NotificationShortLookView" OR elementType == 7
+    t =     5.15s     Synthesize event
+    t =     5.15s         Find the "Play" Button
+    t =     5.16s             Requesting snapshot of accessibility hierarchy for app with pid 4624
+    t =     5.24s         Find the "Play" Button
+    t =     5.24s             Requesting snapshot of accessibility hierarchy for app with pid 4624
+    t =     5.33s         Find the "Play" Button
+    t =     5.33s             Requesting snapshot of accessibility hierarchy for app with pid 4624
+    t =     5.71s     Wait for dev.ericslutz.gus to idle
+    t =    11.60s Checking existence of `"Pause" Button`
+    t =    11.61s     Requesting snapshot of accessibility hierarchy for app with pid 4624
+    t =    11.69s     Find: Descendants matching type Button
+    t =    11.69s     Find: Elements matching predicate '"Pause" IN identifiers'
+    t =    11.70s Tap Application 'dev.ericslutz.gus'[0.50, 0.50]
+    t =    11.70s     Wait for dev.ericslutz.gus to idle
+    t =    11.70s     Find the Application 'dev.ericslutz.gus'
+    t =    11.71s         Requesting snapshot of accessibility hierarchy for app with pid 4624
+    t =    11.78s     Check for interrupting elements affecting "Gus" Application
+    t =    11.79s         Requesting snapshot of accessibility hierarchy for app with pid 4624
+    t =    11.85s         Find: Descendants matching predicate identifier == "NotificationShortLookView" OR elementType == 7
+    t =    11.85s     Synthesize event
+    t =    11.88s         Find the Application 'dev.ericslutz.gus'
+    t =    11.88s             Requesting snapshot of accessibility hierarchy for app with pid 4624
+    t =    11.95s         Find the Application 'dev.ericslutz.gus'
+    t =    11.95s             Requesting snapshot of accessibility hierarchy for app with pid 4624
+    t =    12.04s         Find the Application 'dev.ericslutz.gus'
+    t =    12.04s             Requesting snapshot of accessibility hierarchy for app with pid 4624
+    t =    12.40s     Wait for dev.ericslutz.gus to idle
+    t =    12.41s Checking existence of `"Pause" Button`
+    t =    12.42s     Requesting snapshot of accessibility hierarchy for app with pid 4624
+    t =    12.49s     Find: Descendants matching type Button
+    t =    12.50s     Find: Elements matching predicate '"Pause" IN identifiers'
+    t =    14.52s Find the Application 'dev.ericslutz.gus'
+    t =    14.53s     Requesting snapshot of accessibility hierarchy for app with pid 4624
+    t =    14.66s Find the Application 'dev.ericslutz.gus'
+    t =    14.66s     Requesting snapshot of accessibility hierarchy for app with pid 4624
+    t =    14.75s Requesting snapshot of accessibility hierarchy for app with pid 4624
+    t =    15.09s Requesting snapshot of accessibility hierarchy for app with pid 4624
+    t =    15.21s Added attachment named 'playback-direct-streamed-player-landscape-tree'
+CAPTURE_READY playback-direct-streamed-player-landscape
+    t =    18.22s Checking existence of `"More Controls" Button`
+    t =    18.23s     Requesting snapshot of accessibility hierarchy for app with pid 4624
+    t =    18.34s     Find: Descendants matching type Button
+    t =    18.34s     Find: Elements matching predicate '"More Controls" IN identifiers'
+    t =    18.34s Tap "More Controls" Button
+    t =    18.34s     Wait for dev.ericslutz.gus to idle
+    t =    18.35s     Find the "More Controls" Button
+    t =    18.35s         Requesting snapshot of accessibility hierarchy for app with pid 4624
+    t =    18.43s         Find: Descendants matching type Button
+    t =    18.44s         Find: Elements matching predicate '"More Controls" IN identifiers'
+    t =    18.44s     Check for interrupting elements affecting "Overflow Menu" Button
+    t =    18.46s         Requesting snapshot of accessibility hierarchy for app with pid 4624
+    t =    18.53s         Find: Descendants matching predicate identifier == "NotificationShortLookView" OR elementType == 7
+    t =    18.54s     Synthesize event
+    t =    18.84s     Wait for dev.ericslutz.gus to idle
+    t =    21.67s Find the Application 'dev.ericslutz.gus'
+    t =    21.67s     Requesting snapshot of accessibility hierarchy for app with pid 4624
+    t =    21.80s Find the Application 'dev.ericslutz.gus'
+    t =    21.80s     Requesting snapshot of accessibility hierarchy for app with pid 4624
+    t =    21.90s Requesting snapshot of accessibility hierarchy for app with pid 4624
+    t =    22.24s Requesting snapshot of accessibility hierarchy for app with pid 4624
+    t =    22.38s Added attachment named 'playback-direct-streamed-menu-landscape-tree'
+CAPTURE_READY playback-direct-streamed-menu-landscape
+    t =    25.38s Tap Application 'dev.ericslutz.gus'[0.50, 0.15]
+    t =    25.38s     Wait for dev.ericslutz.gus to idle
+    t =    25.39s     Find the Application 'dev.ericslutz.gus'
+    t =    25.40s         Requesting snapshot of accessibility hierarchy for app with pid 4624
+    t =    25.52s     Check for interrupting elements affecting "Gus" Application
+    t =    25.53s         Requesting snapshot of accessibility hierarchy for app with pid 4624
+    t =    25.64s         Find: Descendants matching predicate identifier == "NotificationShortLookView" OR elementType == 7
+    t =    25.65s     Synthesize event
+    t =    25.66s         Find the Application 'dev.ericslutz.gus'
+    t =    25.66s             Requesting snapshot of accessibility hierarchy for app with pid 4624
+    t =    25.75s         Find the Application 'dev.ericslutz.gus'
+    t =    25.75s             Requesting snapshot of accessibility hierarchy for app with pid 4624
+    t =    25.83s         Find the Application 'dev.ericslutz.gus'
+    t =    25.83s             Requesting snapshot of accessibility hierarchy for app with pid 4624
+    t =    26.20s     Wait for dev.ericslutz.gus to idle
+    t =    27.26s Checking existence of `"Close Button" Button`
+    t =    27.26s     Requesting snapshot of accessibility hierarchy for app with pid 4624
+    t =    27.37s     Find: Descendants matching type Button
+    t =    27.37s     Find: Elements matching predicate '"Close Button" IN identifiers'
+    t =    27.38s Tap "Close Button" Button
+    t =    27.38s     Wait for dev.ericslutz.gus to idle
+    t =    27.38s     Find the "Close Button" Button
+    t =    27.38s         Requesting snapshot of accessibility hierarchy for app with pid 4624
+    t =    27.47s         Find: Descendants matching type Button
+    t =    27.47s         Find: Elements matching predicate '"Close Button" IN identifiers'
+    t =    27.48s     Check for interrupting elements affecting "Close Button" Button
+    t =    27.49s         Requesting snapshot of accessibility hierarchy for app with pid 4624
+    t =    27.57s         Find: Descendants matching predicate identifier == "NotificationShortLookView" OR elementType == 7
+    t =    27.58s     Synthesize event
+    t =    27.88s     Wait for dev.ericslutz.gus to idle
+    t =    30.70s Find the Application 'dev.ericslutz.gus'
+    t =    30.71s     Requesting snapshot of accessibility hierarchy for app with pid 4624
+    t =    30.81s Find the Application 'dev.ericslutz.gus'
+    t =    30.81s     Requesting snapshot of accessibility hierarchy for app with pid 4624
+    t =    30.89s Requesting snapshot of accessibility hierarchy for app with pid 4624
+    t =    31.15s Requesting snapshot of accessibility hierarchy for app with pid 4624
+    t =    31.26s Added attachment named 'playback-direct-streamed-closed-landscape-tree'
+CAPTURE_READY playback-direct-streamed-closed-landscape
+    t =    34.26s Terminate dev.ericslutz.gus:4624
+    t =    34.36s     Interface orientation changed to Portrait
+    t =    35.29s Tear Down
+Test Case '-[GusPhysicalAuditTests.PlaybackAudit testStreamed]' passed (35.363 seconds).
+Test Suite 'PlaybackAudit' passed at 2026-10-10 04:31:13.564.
+	 Executed 2 tests, with 0 failures (0 unexpected) in 57.094 (57.096) seconds
+Test Suite 'GusPhysicalAuditTests.xctest' passed at 2026-10-10 04:31:13.564.
+	 Executed 2 tests, with 0 failures (0 unexpected) in 57.094 (57.097) seconds
+Test Suite 'Selected tests' passed at 2026-10-10 04:31:13.566.
+	 Executed 2 tests, with 0 failures (0 unexpected) in 57.094 (57.099) seconds
+2026-10-10 04:31:13.859 xcodebuild[73219:827364] [MT] IDETestOperationsObserverDebug: 58.939 elapsed -- Testing started completed.
+2026-10-10 04:31:13.859 xcodebuild[73219:827364] [MT] IDETestOperationsObserverDebug: 0.000 sec, +0.000 sec -- start
+2026-10-10 04:31:13.859 xcodebuild[73219:827364] [MT] IDETestOperationsObserverDebug: 58.939 sec, +58.939 sec -- end
+
+Test session results, code coverage, and logs:
+	/tmp/gus-physical-audit-20261010/playback-landscape.xcresult
+
+** TEST EXECUTE SUCCEEDED **
+
+Testing started

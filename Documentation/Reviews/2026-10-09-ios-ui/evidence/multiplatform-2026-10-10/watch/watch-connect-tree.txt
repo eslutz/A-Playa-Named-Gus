@@ -1,0 +1,35 @@
+Attributes: Application, 0x1060dc140, pid: 26568, label: 'Gus'
+Element subtree:
+ →Application, 0x1060dc140, pid: 26568, label: 'Gus'
+    Window, 0x1060dc000, {{0.0, 0.0}, {211.0, 257.0}}
+      Other, 0x1060c3700, {{0.0, 0.0}, {211.0, 257.0}}
+        Other, 0x1060d83c0, {{0.0, 0.0}, {211.0, 257.0}}
+          Other, 0x1060d8000, {{0.0, 0.0}, {211.0, 257.0}}
+            Other, 0x1060d9040, {{0.0, 0.0}, {211.0, 257.0}}
+              NavigationBar, 0x1060d92c0, {{0.0, 0.0}, {211.0, 47.5}}, identifier: '_TtGC7SwiftUI32NavigationStackHosting'
+                Other, 0x1060d8280, {{0.0, 0.0}, {0.0, 0.0}}
+              Other, 0x1060d9400, {{0.0, 0.0}, {211.0, 257.0}}
+                Other, 0x1060d9540, {{0.0, 0.0}, {211.0, 257.0}}
+                  Other, 0x1060d8b40, {{0.0, 0.0}, {211.0, 257.0}}
+                    Other, 0x1060e0a00, {{0.0, 0.0}, {211.0, 257.0}}
+                      ScrollView, 0x1060e1680, {{0.0, 0.0}, {211.0, 257.0}}
+                        Other, 0x1060e3d40, {{0.0, 0.0}, {211.0, 257.0}}
+                          Other, 0x1060ec000, {{0.0, 0.0}, {211.0, 73.1}}
+                        Other, 0x1060ec140, {{0.0, 0.0}, {211.0, 257.0}}
+                        Other, 0x1060ec280, {{0.0, 47.5}, {209.0, 211.5}}
+                          StaticText, 0x1060ec3c0, {{29.8, 47.5}, {151.5, 20.5}}, label: 'Connect to Jellyfin'
+                          TextField, 0x1060ec500, {{2.0, 78.0}, {207.0, 55.5}}, placeholderValue: 'Server Address', value: Server Address
+                          Button, 0x1060ec640, {{16.5, 143.5}, {178.0, 55.5}}, label: 'Connect', Disabled
+                          StaticText, 0x1060ec780, {{2.0, 209.0}, {207.0, 50.0}}, label: 'Or open A Playa Named Gus on your iPhone — the watch signs in automatically.'
+    Window (Main), 0x1060ec8c0, {{203.0, 61.5}, {6.0, 48.0}}
+    Window, 0x1060eca00, {{0.0, 0.0}, {211.0, 257.0}}
+      StatusBar, 0x1060ecb40, {{0.0, 0.0}, {211.0, 40.0}}
+        Other, 0x1060ecc80, {{0.0, 0.0}, {211.0, 40.0}}
+        Other, 0x1060ecdc0, {{0.0, 0.0}, {211.0, 40.0}}
+Path to element:
+ →Application, 0x1060dc140, pid: 26568, label: 'Gus'
+Query chain:
+ →Find: Application 'dev.ericslutz.gus.watchkitapp'
+  Output: {
+    Application, 0x1060ed040, pid: 26568, label: 'Gus'
+  }

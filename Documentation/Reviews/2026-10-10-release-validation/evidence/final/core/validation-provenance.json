@@ -1,0 +1,19 @@
+{
+  "candidate": "candidate-11",
+  "reusedPhases": [
+    "builds",
+    "tests",
+    "ui"
+  ],
+  "reusedFrom": "candidate-10",
+  "reason": "Only shipping source change is the release-only skip-session argument removal. All active DEBUG source tokens remain identical; all four Release archives and static checks rerun. Launch helper is a separate script-only path correction validated by static checks and five actual launch runs.",
+  "oldAppSourceSHA256": "446ec46841364d8989dfb1f76eb453d99451c24da997ebe955d61ec8227fa6c9",
+  "newAppSourceSHA256": "d3dadafde9e6085013b0cebfd7c1494d8501fe72cfa8b720310f64c37dfe3784",
+  "activeDebugTokensSHA256": "94d5dcda17da60e55adf04dd27917c549628810fa3f4efa0f3205b5889719608",
+  "activeDebugTokensIdentical": true,
+  "changedInputsSinceCandidate10": [
+    "Scripts/measure-launch-baseline.sh",
+    "Sources/App/GusApp.swift"
+  ],
+  "allOtherSourceConfigDependenciesAndTestsIdentical": true
+}

@@ -1,0 +1,49 @@
+Command line invocation:
+    /Applications/Development/Xcode.app/Contents/Developer/usr/bin/xcodebuild test-without-building -project /tmp/gus-multiplatform-audit/GusTailAudit.xcodeproj -scheme VisionAudit -destination "platform=visionOS Simulator,id=1711D519-F8C9-42CA-A705-5F12E87D96F2" -derivedDataPath /tmp/gus-multiplatform-audit/tail-build -resultBundlePath /tmp/gus-multiplatform-audit/vision-screens.xcresult
+
+Writing result bundle at path:
+	/tmp/gus-multiplatform-audit/vision-screens.xcresult
+
+objc[24217]: Class AXMRUIAccessibilityAssertionService is implemented in both /Library/Developer/CoreSimulator/Volumes/xrOS_23O470/Library/Developer/CoreSimulator/Profiles/Runtimes/xrOS 26.5.simruntime/Contents/Resources/RuntimeRoot/System/Library/PrivateFrameworks/AccessibilityUIUtilities.framework/AccessibilityUIUtilities (0x1f7396748) and /Library/Developer/CoreSimulator/Volumes/xrOS_23O470/Library/Developer/CoreSimulator/Profiles/Runtimes/xrOS 26.5.simruntime/Contents/Resources/RuntimeRoot/System/Library/PrivateFrameworks/MuseAccessibilityUI.framework/MuseAccessibilityUI (0x106048118). This may cause spurious casting failures and mysterious crashes. One of the duplicates must be removed or renamed.
+2026-10-10 13:43:46.272350-0400 VisionAudit-Runner[24217:144120] [Default] Running tests...
+2026-10-10 13:43:46.551825-0400 VisionAudit-Runner[24217:144303] [plugin] AddInstanceForFactory: No factory registered for id <CFUUID 0x102db8b60> F8BB1C28-BAE8-11D6-9C31-00039315CD46
+2026-10-10 13:43:46.561406-0400 VisionAudit-Runner[24217:144304] [connection] nw_socket_copy_info [C1:2] getsockopt TCP_INFO failed [102: Operation not supported on socket]
+2026-10-10 13:43:46.561528-0400 VisionAudit-Runner[24217:144304] [] nw_socket_copy_info getsockopt TCP_INFO failed [102: Operation not supported on socket]
+objc[24217]: Class UIAccessibilityLoaderWebShared is implemented in both /Library/Developer/CoreSimulator/Volumes/xrOS_23O470/Library/Developer/CoreSimulator/Profiles/Runtimes/xrOS 26.5.simruntime/Contents/Resources/RuntimeRoot/System/Library/AccessibilityBundles/WebKit.axbundle/WebKit (0x1068d4398) and /Library/Developer/CoreSimulator/Volumes/xrOS_23O470/Library/Developer/CoreSimulator/Profiles/Runtimes/xrOS 26.5.simruntime/Contents/Resources/RuntimeRoot/System/Library/AccessibilityBundles/WebCore.axbundle/WebCore (0x106a54310). This may cause spurious casting failures and mysterious crashes. One of the duplicates must be removed or renamed.
+2026-10-10 13:43:47.415264-0400 VisionAudit-Runner[24217:144120] [AXLoading] Failed to load item AXCodeItem<0x106c301c0> [Rank:6000] SpringBoardUIServices [AXBundle name:/Library/Developer/CoreSimulator/Volumes/xrOS_23O470/Library/Developer/CoreSimulator/Profiles/Runtimes/xrOS 26.5.simruntime/Contents/Resources/RuntimeRoot/System/Library/AccessibilityBundles/SpringBoardUIServices.axbundle/SpringBoardUIServices] [Platforms and Targets:{     iOS = SpringBoardUIServices; } Framework] [Excluded: (null)]. error: Error Domain=AXLoading Code=0 "URL does not exist: file:///Library/Developer/CoreSimulator/Volumes/xrOS_23O470/Library/Developer/CoreSimulator/Profiles/Runtimes/xrOS%2026.5.simruntime/Contents/Resources/RuntimeRoot/System/Library/AccessibilityBundles/SpringBoardUIServices.axbundle" UserInfo={NSLocalizedDescription=URL does not exist: file:///Library/Developer/CoreSimulator/Volumes/xrOS_23O470/Library/Developer/CoreSimulator/Profiles/Runtimes/xrOS%2026.5.simruntime/Contents/Resources/RuntimeRoot/System/Library/AccessibilityBundles/SpringBoardUIServices.axbundle}
+Test Suite 'All tests' started at 2026-10-10 13:43:47.622.
+Test Suite 'VisionAudit.xctest' started at 2026-10-10 13:43:47.623.
+Test Suite 'Tail' started at 2026-10-10 13:43:47.623.
+Test Case '-[VisionAudit.Tail testScreens]' started.
+    t =     0.00s Start Test at 2026-10-10 13:43:47.626
+2026-10-10 13:43:47.637073-0400 VisionAudit-Runner[24217:144120] [AXLoading] Failed to load item AXCodeItem<0x106c301c0> [Rank:6000] SpringBoardUIServices [AXBundle name:/Library/Developer/CoreSimulator/Volumes/xrOS_23O470/Library/Developer/CoreSimulator/Profiles/Runtimes/xrOS 26.5.simruntime/Contents/Resources/RuntimeRoot/System/Library/AccessibilityBundles/SpringBoardUIServices.axbundle/SpringBoardUIServices] [Platforms and Targets:{     iOS = SpringBoardUIServices; } Framework] [Excluded: (null)]. error: Error Domain=AXLoading Code=0 "URL does not exist: file:///Library/Developer/CoreSimulator/Volumes/xrOS_23O470/Library/Developer/CoreSimulator/Profiles/Runtimes/xrOS%2026.5.simruntime/Contents/Resources/RuntimeRoot/System/Library/AccessibilityBundles/SpringBoardUIServices.axbundle" UserInfo={NSLocalizedDescription=URL does not exist: file:///Library/Developer/CoreSimulator/Volumes/xrOS_23O470/Library/Developer/CoreSimulator/Profiles/Runtimes/xrOS%2026.5.simruntime/Contents/Resources/RuntimeRoot/System/Library/AccessibilityBundles/SpringBoardUIServices.axbundle}
+2026-10-10 13:43:48.912690-0400 VisionAudit-Runner[24217:144120] [AXLoading] Failed to load item AXCodeItem<0x106c301c0> [Rank:6000] SpringBoardUIServices [AXBundle name:/Library/Developer/CoreSimulator/Volumes/xrOS_23O470/Library/Developer/CoreSimulator/Profiles/Runtimes/xrOS 26.5.simruntime/Contents/Resources/RuntimeRoot/System/Library/AccessibilityBundles/SpringBoardUIServices.axbundle/SpringBoardUIServices] [Platforms and Targets:{     iOS = SpringBoardUIServices; } Framework] [Excluded: (null)]. error: Error Domain=AXLoading Code=0 "URL does not exist: file:///Library/Developer/CoreSimulator/Volumes/xrOS_23O470/Library/Developer/CoreSimulator/Profiles/Runtimes/xrOS%2026.5.simruntime/Contents/Resources/RuntimeRoot/System/Library/AccessibilityBundles/SpringBoardUIServices.axbundle" UserInfo={NSLocalizedDescription=URL does not exist: file:///Library/Developer/CoreSimulator/Volumes/xrOS_23O470/Library/Developer/CoreSimulator/Profiles/Runtimes/xrOS%2026.5.simruntime/Contents/Resources/RuntimeRoot/System/Library/AccessibilityBundles/SpringBoardUIServices.axbundle}
+    t =     1.33s Set Up
+    t =     1.34s Open dev.ericslutz.gus
+    t =     1.34s     Launch dev.ericslutz.gus
+    t =     1.91s         Setting up automation session
+    t =     4.19s         Wait for dev.ericslutz.gus to idle
+    t =    14.41s Find the Application 'dev.ericslutz.gus'
+/tmp/gus-multiplatform-audit/TailTests/Tail.swift:5: error: -[VisionAudit.Tail testScreens] : Failed to get screenshot: Unable to take a screenshot - remote interface does not have this capability.
+    t =    36.30s Tear Down
+2026-10-10 13:44:23.934385-0400 VisionAudit-Runner[24217:144120] [AXLoading] Failed to load item AXCodeItem<0x106c301c0> [Rank:6000] SpringBoardUIServices [AXBundle name:/Library/Developer/CoreSimulator/Volumes/xrOS_23O470/Library/Developer/CoreSimulator/Profiles/Runtimes/xrOS 26.5.simruntime/Contents/Resources/RuntimeRoot/System/Library/AccessibilityBundles/SpringBoardUIServices.axbundle/SpringBoardUIServices] [Platforms and Targets:{     iOS = SpringBoardUIServices; } Framework] [Excluded: (null)]. error: Error Domain=AXLoading Code=0 "URL does not exist: file:///Library/Developer/CoreSimulator/Volumes/xrOS_23O470/Library/Developer/CoreSimulator/Profiles/Runtimes/xrOS%2026.5.simruntime/Contents/Resources/RuntimeRoot/System/Library/AccessibilityBundles/SpringBoardUIServices.axbundle" UserInfo={NSLocalizedDescription=URL does not exist: file:///Library/Developer/CoreSimulator/Volumes/xrOS_23O470/Library/Developer/CoreSimulator/Profiles/Runtimes/xrOS%2026.5.simruntime/Contents/Resources/RuntimeRoot/System/Library/AccessibilityBundles/SpringBoardUIServices.axbundle}
+Test Case '-[VisionAudit.Tail testScreens]' failed (37.131 seconds).
+Test Suite 'Tail' failed at 2026-10-10 13:44:24.756.
+	 Executed 1 test, with 1 failure (0 unexpected) in 37.131 (37.133) seconds
+Test Suite 'VisionAudit.xctest' failed at 2026-10-10 13:44:24.758.
+	 Executed 1 test, with 1 failure (0 unexpected) in 37.131 (37.135) seconds
+Test Suite 'All tests' failed at 2026-10-10 13:44:24.758.
+	 Executed 1 test, with 1 failure (0 unexpected) in 37.131 (37.136) seconds
+2026-10-10 13:44:52.611 xcodebuild[23916:143959] [MT] IDETestOperationsObserverDebug: 71.420 elapsed -- Testing started completed.
+2026-10-10 13:44:52.611 xcodebuild[23916:143959] [MT] IDETestOperationsObserverDebug: 0.000 sec, +0.000 sec -- start
+2026-10-10 13:44:52.611 xcodebuild[23916:143959] [MT] IDETestOperationsObserverDebug: 71.420 sec, +71.420 sec -- end
+
+Test session results, code coverage, and logs:
+	/tmp/gus-multiplatform-audit/vision-screens.xcresult
+
+Failing tests:
+	Tail.testScreens()
+
+** TEST EXECUTE FAILED **
+
+Testing started

@@ -6,16 +6,17 @@
 PRODUCT_NAME = A Playa Named Gus
 PRODUCT_MODULE_NAME = Gus
 PRODUCT_BUNDLE_IDENTIFIER = dev.ericslutz.gus
-MARKETING_VERSION = 1.0
+MARKETING_VERSION = 1.0.0
 CURRENT_PROJECT_VERSION = 1
 
 // MARK: - Swift
 
-// Swift 5 language mode for the first milestone: all modern APIs (@Observable,
-// NavigationStack, glass) are availability-gated, not language-mode-gated, so we
-// keep them while avoiding strict-concurrency churn against the Jellyfin SDK.
+// Complete checking applies to every target. project.yml opts Watch, Top Shelf,
+// and the tvOS/visionOS app into Swift 6. iOS/macOS retain Swift 5 while the
+// documented Readium/Declared Age Range isolation boundaries are resolved.
+// Language mode is independent of availability-gated platform APIs.
 SWIFT_VERSION = 5
-SWIFT_STRICT_CONCURRENCY = minimal
+SWIFT_STRICT_CONCURRENCY = complete
 SWIFT_EMIT_LOC_STRINGS = YES
 ENABLE_PREVIEWS = YES
 
@@ -57,7 +58,7 @@ CODE_SIGN_ENTITLEMENTS[sdk=iphoneos*] = Config/Gus-iOS.entitlements
 CODE_SIGN_ENTITLEMENTS[sdk=iphonesimulator*] = Config/Gus-iOS.entitlements
 
 // Native SharePlay / Group Activities and Universal Links. Declared Age Range is
-// unavailable on visionOS in the installed Xcode 26.5 SDK.
+// unavailable on visionOS in the installed Xcode 27.0 SDK.
 CODE_SIGN_ENTITLEMENTS[sdk=xros*] = Config/Gus-SharePlay.entitlements
 CODE_SIGN_ENTITLEMENTS[sdk=xrsimulator*] = Config/Gus-SharePlay.entitlements
 

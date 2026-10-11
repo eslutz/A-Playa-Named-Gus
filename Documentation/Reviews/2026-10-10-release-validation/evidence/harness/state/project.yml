@@ -1,0 +1,22 @@
+name: GusStateValidation
+options:
+  deploymentTarget:
+    iOS: '18.0'
+targets:
+  GusStateUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources: [Tests]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: dev.ericslutz.gus.validation.states
+        GENERATE_INFOPLIST_FILE: YES
+        CODE_SIGNING_ALLOWED: NO
+        SWIFT_STRICT_CONCURRENCY: complete
+schemes:
+  GusStateValidation:
+    build:
+      targets:
+        GusStateUITests: all
+    test:
+      targets: [GusStateUITests]

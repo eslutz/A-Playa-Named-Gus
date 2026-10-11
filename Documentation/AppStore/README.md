@@ -11,6 +11,7 @@ implementation work.
 - `privacy-labels.md` - draft App Privacy answers.
 - `review-compliance-audit.md` - App Review self-audit, including downloaded media.
 - `signing-capabilities.md` - signing and capability gaps.
+- `api-access.md` - keyless API preparation, verification commands, and portal handoff.
 - `ci-strategy.md` - GitHub Actions and Xcode Cloud ownership split.
 - `app-store-metadata.md` - draft product metadata.
 - `accessibility.md` - accessibility readiness, public accessibility page, and release

@@ -92,8 +92,10 @@ accepts for the 2560×1600 slot.
 Before uploading to TestFlight:
 - [ ] Local device signing works with the real Apple Developer Team in
       `Config/Local.xcconfig`.
-- [ ] Xcode Cloud workflow exists and runs `ci_scripts/ci_post_clone.sh` to generate the
-      Xcode project and automatic-signing override for Team ID `QS3GC3CT43`.
+- [x] Local API tooling and Cloud bootstrap prepared and tested without Apple credentials.
+- [ ] Shared project, dependency pins, and complete candidate published to the release branch.
+- [ ] Xcode Cloud workflow exists and runs `ci_scripts/ci_post_clone.sh` against the
+      committed project with an automatic-signing override for Team ID `QS3GC3CT43`.
 - [ ] Xcode Cloud signed archives build for iOS/iPadOS, tvOS, visionOS, and macOS.
 - [ ] Xcode Cloud validation passes for the archives intended for TestFlight upload.
 - [ ] `ITSAppUsesNonExemptEncryption = false` confirmed in `Info.plist`.

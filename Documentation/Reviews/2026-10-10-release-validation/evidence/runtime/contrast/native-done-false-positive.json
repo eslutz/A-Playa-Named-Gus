@@ -1,0 +1,84 @@
+{
+  "identifier": "ContentLink.detailDone",
+  "auditType": "contrast",
+  "image": "native-done-false-positive.png",
+  "imageSHA256": "a8679fde251f7c676ea8064964e7f8c2d472e559d922b84e5b1e830bc293ec2e",
+  "dominantColors": [
+    [
+      [
+        253,
+        253,
+        253
+      ],
+      6906
+    ],
+    [
+      [
+        249,
+        249,
+        249
+      ],
+      4165
+    ],
+    [
+      [
+        250,
+        250,
+        250
+      ],
+      2601
+    ],
+    [
+      [
+        251,
+        251,
+        251
+      ],
+      2223
+    ],
+    [
+      [
+        252,
+        252,
+        252
+      ],
+      1946
+    ]
+  ],
+  "scope": "Native toolbar control; element-specific exception only. Dark and large-text captures require separate inspection.",
+  "dominantDarkGlyphColors": [
+    [
+      [
+        0,
+        0,
+        0
+      ],
+      979
+    ],
+    [
+      [
+        8,
+        8,
+        8
+      ],
+      30
+    ],
+    [
+      [
+        6,
+        6,
+        6
+      ],
+      18
+    ],
+    [
+      [
+        16,
+        16,
+        16
+      ],
+      15
+    ]
+  ],
+  "dominantSolidContrastApprox": 20.65
+}

@@ -7,12 +7,12 @@ on:
       - main
 
 env:
-  XCODE_APP: /Applications/Xcode_26.5.app
+  XCODE_APP: /Applications/Xcode_27.0.app
 
 jobs:
   lint:
     name: Lint
-    runs-on: macos-26
+    runs-on: xcode-27
     timeout-minutes: 15
 
     steps:
@@ -33,12 +33,17 @@ jobs:
 
   docs:
     name: Docs and Config
-    runs-on: macos-26
+    runs-on: xcode-27
     timeout-minutes: 15
 
     steps:
       - name: Checkout
         uses: actions/checkout@v6
+
+      - name: Verify release tooling offline
+        run: |
+          python3 Scripts/test-cloud-bootstrap.py
+          swift Scripts/app-store-connect.swift self-test
 
       - name: Validate Markdown encoding
         run: |
@@ -86,7 +91,7 @@ jobs:
 
   build:
     name: Build ${{ matrix.name }}
-    runs-on: macos-26
+    runs-on: xcode-27
     timeout-minutes: 45
     strategy:
       fail-fast: false
@@ -110,7 +115,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
-      - name: Select Xcode 26.5
+      - name: Select Xcode 27.0
         run: |
           set -euo pipefail
           if [ ! -d "$XCODE_APP" ]; then
@@ -124,18 +129,18 @@ jobs:
       - name: Install build tools
         run: command -v xcodegen >/dev/null || brew install xcodegen
 
-      - name: Generate Xcode project
-        run: xcodegen generate
+      - name: Verify shared Xcode project
+        run: python3 Scripts/check-cloud-project.py
 
       - name: Resolve packages
-        run: xcodebuild -resolvePackageDependencies -project 'A Playa Named Gus.xcodeproj' -scheme 'A Playa Named Gus'
+        run: xcodebuild -onlyUsePackageVersionsFromResolvedFile -resolvePackageDependencies -project 'A Playa Named Gus.xcodeproj' -scheme 'A Playa Named Gus'
 
       - name: Build ${{ matrix.name }}
         run: xcodebuild -project 'A Playa Named Gus.xcodeproj' -scheme '${{ matrix.scheme || 'A Playa Named Gus' }}' -destination '${{ matrix.destination }}' build
 
   test:
     name: Test ${{ matrix.name }}
-    runs-on: macos-26
+    runs-on: xcode-27
     timeout-minutes: 60
     strategy:
       fail-fast: false
@@ -161,7 +166,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
-      - name: Select Xcode 26.5
+      - name: Select Xcode 27.0
         run: |
           set -euo pipefail
           if [ ! -d "$XCODE_APP" ]; then
@@ -175,11 +180,11 @@ jobs:
       - name: Install build tools
         run: command -v xcodegen >/dev/null || brew install xcodegen
 
-      - name: Generate Xcode project
-        run: xcodegen generate
+      - name: Verify shared Xcode project
+        run: python3 Scripts/check-cloud-project.py
 
       - name: Resolve packages
-        run: xcodebuild -resolvePackageDependencies -project 'A Playa Named Gus.xcodeproj' -scheme '${{ matrix.scheme }}'
+        run: xcodebuild -onlyUsePackageVersionsFromResolvedFile -resolvePackageDependencies -project 'A Playa Named Gus.xcodeproj' -scheme '${{ matrix.scheme }}'
 
       - name: Pick visionOS simulator
         id: vision-sim

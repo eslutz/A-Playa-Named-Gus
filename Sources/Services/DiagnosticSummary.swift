@@ -64,9 +64,12 @@ enum HistogramMath {
 
 /// Codable + `FileManager` persistence for recent `DiagnosticSummary` records, capped so
 /// the file stays small. Mirrors the `ServerStore` JSON-in-Application-Support idiom.
-struct DiagnosticSummaryStore {
+struct DiagnosticSummaryStore: Sendable {
     static let maxStoredSummaries = 60
     static let shared = DiagnosticSummaryStore()
+    /// MetricKit may deliver metrics and diagnostics on different callback queues.
+    /// Serialize the complete read/modify/write, including separate store instances.
+    private static let persistenceLock = NSLock()
 
     private let logger = Logger(category: .diagnostics)
     private let directory: URL
@@ -81,18 +84,26 @@ struct DiagnosticSummaryStore {
     }
 
     func loadSummaries() -> [DiagnosticSummary] {
+        Self.persistenceLock.withLock { readSummaries() }
+    }
+
+    private func readSummaries() -> [DiagnosticSummary] {
         guard let data = try? Data(contentsOf: summariesURL) else { return [] }
         do {
             return try JSONDecoder().decode([DiagnosticSummary].self, from: data)
         } catch {
-            logger.error("Failed to decode diagnostic summaries: \(error.localizedDescription, privacy: .public)")
+            logger.error("Failed to decode diagnostic summaries: \(error.localizedDescription, privacy: .private)")
             return []
         }
     }
 
     func append(_ summaries: [DiagnosticSummary]) {
         guard !summaries.isEmpty else { return }
-        var all = loadSummaries()
+        Self.persistenceLock.withLock { appendLocked(summaries) }
+    }
+
+    private func appendLocked(_ summaries: [DiagnosticSummary]) {
+        var all = readSummaries()
         all.append(contentsOf: summaries)
         if all.count > Self.maxStoredSummaries {
             all.removeFirst(all.count - Self.maxStoredSummaries)
@@ -103,7 +114,7 @@ struct DiagnosticSummaryStore {
             let data = try encoder.encode(all)
             try data.write(to: summariesURL, options: .atomic)
         } catch {
-            logger.error("Failed to write diagnostic summaries: \(error.localizedDescription, privacy: .public)")
+            logger.error("Failed to write diagnostic summaries: \(error.localizedDescription, privacy: .private)")
         }
     }
 }

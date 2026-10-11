@@ -1,0 +1,157 @@
+Attributes: Application, 0x115823d40, pid: 4593, label: 'Gus'
+Element subtree:
+ →Application, 0x115823d40, pid: 4593, label: 'Gus'
+    Window (Main), 0x115823e80, {{0.0, 0.0}, {440.0, 956.0}}
+      Other, 0x10dbac140, {{0.0, 0.0}, {440.0, 956.0}}
+      Other, 0x10dbac280, {{0.0, 0.0}, {440.0, 956.0}}
+      Other, 0x10dbac000, {{0.0, 0.0}, {440.0, 956.0}}
+        Other, 0x10a99f200, {{0.0, 0.0}, {440.0, 956.0}}
+          Other, 0x10a99f480, {{0.0, 0.0}, {440.0, 956.0}}
+            Other, 0x10a99f840, {{0.0, 0.0}, {440.0, 956.0}}
+              Other, 0x10a99d040, {{0.0, 0.0}, {440.0, 956.0}}
+                Other, 0x10a99f700, {{0.0, 0.0}, {440.0, 956.0}}
+                  Other, 0x10a99f5c0, {{0.0, 0.0}, {440.0, 956.0}}
+                    Other, 0x10a99cf00, {{0.0, 0.0}, {440.0, 956.0}}
+                      Other, 0x10db6c000, {{0.0, 0.0}, {440.0, 956.0}}
+                        Other, 0x10db6c500, {{0.0, 0.0}, {440.0, 956.0}}
+                          Other, 0x10db6c8c0, {{0.0, 0.0}, {440.0, 956.0}}
+                            NavigationBar, 0x10db6c140, {{0.0, 62.0}, {440.0, 160.0}}, identifier: 'Movies'
+                              StaticText, 0x10db6c640, {{20.0, 119.7}, {113.0, 40.7}}, label: 'Movies'
+                              SearchField, 0x10db6c780, {{20.0, 168.0}, {400.0, 44.0}}, label: 'Search Library', placeholderValue: 'Search Library'
+                                Image, 0x10db6ca00, {{32.0, 180.0}, {20.7, 19.3}}, identifier: 'magnifyingglass', label: 'Search'
+                            Other, 0x10db6cb40, {{0.0, 0.0}, {440.0, 956.0}}
+                              Other, 0x10db6c280, {{0.0, 0.0}, {440.0, 956.0}}
+                                Other, 0x10db6c3c0, {{0.0, 0.0}, {440.0, 956.0}}
+                                  Other, 0x10dbba940, {{0.0, 0.0}, {440.0, 956.0}}
+                                    ScrollView, 0x10dbbaa80, {{0.0, 0.0}, {440.0, 956.0}}
+                                      Other, 0x10dbba800, {{0.0, 0.0}, {440.0, 956.0}}
+                                        Other, 0x10dbbb480, {{0.0, 0.0}, {440.0, 156.0}}
+                                        Other, 0x10dbbabc0, {{0.0, 823.0}, {440.0, 133.0}}
+                                      Other, 0x10dbbb340, {{0.0, 0.0}, {440.0, 956.0}}
+                                        Other, 0x10dbb9540, {{0.0, 823.0}, {440.0, 133.0}}
+                                      Other, 0x10dbb92c0, {{0.0, 222.0}, {440.0, 10509.0}}
+                                        Other, 0x10dbba440, {{16.0, 238.0}, {408.0, 1381.3}}
+                                          Button, 0x10dbb9040, {{16.0, 238.0}, {205.3, 332.0}}, label: 'The 51st State, 2001'
+                                            Image, 0x10dbb9400, {{16.0, 238.0}, {205.3, 292.7}}
+                                            StaticText, 0x10dbba580, {{16.0, 536.5}, {101.3, 18.0}}, label: 'The 51st State'
+                                            StaticText, 0x10dbbae40, {{16.0, 555.5}, {28.0, 14.3}}, label: '2001'
+                                          Button, 0x10dbba300, {{229.0, 238.0}, {195.0, 332.0}}, label: 'The Alamo, 1960'
+                                            Image, 0x10dbbbd40, {{229.0, 238.0}, {195.0, 292.7}}
+                                            StaticText, 0x10dbba6c0, {{229.0, 536.5}, {75.0, 18.0}}, label: 'The Alamo'
+                                            StaticText, 0x10dbbb5c0, {{229.0, 555.5}, {28.7, 14.3}}, label: '1960'
+                                          Button, 0x10dbbbc00, {{16.0, 588.0}, {195.0, 331.7}}, label: 'Anaconda, 1997'
+                                            Image, 0x10dbbb840, {{16.0, 588.0}, {195.0, 292.3}}
+                                            StaticText, 0x10dbbbe80, {{16.0, 886.3}, {70.7, 18.0}}, label: 'Anaconda'
+                                            StaticText, 0x10dbbb980, {{16.0, 905.3}, {27.7, 14.3}}, label: '1997'
+                                          Button, 0x10dbbb0c0, {{229.0, 588.0}, {195.0, 331.7}}, label: 'Anaconda, 2025'
+                                            Image, 0x10dbbb700, {{229.0, 588.0}, {195.0, 292.3}}
+                                            StaticText, 0x10dbbb200, {{229.0, 886.3}, {70.7, 18.0}}, label: 'Anaconda'
+                                            StaticText, 0x10dbbaf80, {{229.0, 905.3}, {29.7, 14.3}}, label: '2025'
+                                          Button, 0x10dbbbac0, {{16.0, 937.7}, {195.0, 332.0}}, label: 'Appaloosa, 2008'
+                                            Image, 0x10dbb8c80, {{16.0, 937.7}, {195.0, 292.7}}
+                                            StaticText, 0x10dbb9f40, {{16.0, 1236.2}, {74.3, 18.0}}, label: 'Appaloosa'
+                                            StaticText, 0x10dbbad00, {{16.0, 1255.2}, {30.3, 14.3}}, label: '2008'
+                                          Button, 0x10dbb9b80, {{229.0, 937.7}, {195.0, 332.0}}, label: 'Automaton Transfusion, 2008'
+                                            Image, 0x10dbb9e00, {{229.0, 937.7}, {195.0, 292.7}}
+                                            StaticText, 0x10dbba080, {{229.0, 1236.2}, {163.3, 18.0}}, label: 'Automaton Transfusion'
+                                            StaticText, 0x10dbb8a00, {{229.0, 1255.2}, {30.3, 14.3}}, label: '2008'
+                                          Button, 0x10dbb8b40, {{16.0, 1287.7}, {195.0, 331.7}}, label: 'Bad Boys: Ride or Die, 2024'
+                                            Image, 0x10dbb8f00, {{16.0, 1287.7}, {195.0, 292.3}}
+                                            StaticText, 0x10dbba1c0, {{16.0, 1586.0}, {150.3, 18.0}}, label: 'Bad Boys: Ride or Die'
+                                            StaticText, 0x10dbb9680, {{16.0, 1605.0}, {29.7, 14.3}}, label: '2024'
+                                          Button, 0x10dbb9a40, {{229.0, 1287.7}, {195.0, 331.7}}, label: 'Barbie, 2023'
+                                            Image, 0x10dbb97c0, {{229.0, 1287.7}, {195.0, 292.3}}
+                                            StaticText, 0x10dbb9900, {{229.0, 1586.0}, {45.3, 18.0}}, label: 'Barbie'
+                                            StaticText, 0x10dbb8dc0, {{229.0, 1605.0}, {29.7, 14.3}}, label: '2023'
+                                      Other, 0x10dbb9180, {{407.0, 116.0}, {30.0, 757.0}}, label: 'Vertical scroll bar, 17 pages', value: 0%
+                                        Other, 0x10dbb9cc0, {{434.0, 119.0}, {3.0, 66.3}}
+                                      Other, 0x10ab992c0, {{407.0, 116.0}, {30.0, 757.0}}, label: 'Vertical scroll bar, 17 pages', value: 0%
+                                        Other, 0x10ab9b340, {{434.0, 119.0}, {3.0, 66.3}}
+                            Toolbar, 0x10ab9ae40, {{0.0, 0.0}, {440.0, 956.0}}, identifier: 'Toolbar', label: 'Toolbar'
+                              Other, 0x10ab9b980, {{0.0, 0.0}, {440.0, 956.0}}
+                Other, 0x10ab9a440, {{0.0, 0.0}, {440.0, 956.0}}
+                  Other, 0x10ab9b700, {{0.0, 873.0}, {440.0, 83.0}}
+                    Other, 0x10ab9b200, {{0.0, 0.0}, {440.0, 956.0}}
+                      TabBar, 0x10ab98dc0, {{0.0, 873.0}, {440.0, 83.0}}, label: 'Tab Bar'
+                        Other, 0x10ab99f40, {{21.0, 873.0}, {398.0, 62.0}}
+                          Other, 0x10ab9aa80, {{21.0, 873.0}, {90.4, 54.0}}
+                          Other, 0x10ab99b80, {{21.0, 873.0}, {398.0, 62.0}}
+                            Button, 0x10ab98a00, {{25.0, 877.0}, {90.4, 54.0}}, identifier: 'house', label: 'Home'
+                              Image, 0x10ab98c80, {{53.7, 883.0}, {33.3, 28.0}}, identifier: 'house.fill', label: 'home'
+                            Button, 0x10ab9b5c0, {{93.4, 877.0}, {114.8, 54.0}}, identifier: 'arrow.down.circle', label: 'Downloaded'
+                              Image, 0x10ab9bd40, {{137.0, 883.3}, {27.3, 27.3}}, identifier: 'arrow.down.circle.fill', label: 'Arrow Down Circle'
+                            Button, 0x10ab9bac0, {{186.2, 877.0}, {92.1, 54.0}}, identifier: 'rectangle.stack', label: 'Libraries'
+                              Image, 0x10ab9a080, {{217.2, 882.0}, {30.0, 31.3}}, identifier: 'rectangle.stack.fill', label: 'Album'
+                            Button, 0x10ab9a6c0, {{256.3, 877.0}, {90.4, 54.0}}, identifier: 'film', label: 'Movies', Selected
+                              Image, 0x10ab99a40, {{284.9, 884.3}, {33.0, 25.0}}, identifier: 'film.fill', label: 'movie'
+                            Button, 0x10ab9af80, {{324.6, 877.0}, {90.4, 54.0}}, label: 'More'
+                              Image, 0x10ab983c0, {{357.3, 892.7}, {25.0, 8.7}}, identifier: 'ellipsis', label: 'More'
+                          Other, 0x10ab99680, {{21.0, 873.0}, {398.0, 62.0}}
+                          Other, 0x10ab98640, {{256.3, 877.0}, {90.4, 54.0}}
+                            Other, 0x10ab9b480, {{256.3, 877.0}, {90.3, 54.0}}
+                              Other, 0x10ab9a580, {{256.3, 877.0}, {90.3, 54.0}}
+                              Other, 0x10ab9be80, {{256.3, 877.0}, {90.3, 54.0}}
+                                Other, 0x10ab9a300, {{256.3, 877.0}, {90.3, 54.0}}
+                                  Other, 0x10ab997c0, {{256.3, 877.0}, {90.3, 54.0}}
+                                    Other, 0x10ab99900, {{256.3, 877.0}, {90.3, 54.0}}
+                                  Other, 0x10ab99180, {{256.3, 877.0}, {90.3, 54.0}}
+                                Other, 0x10ab99040, {{256.3, 877.0}, {90.3, 54.0}}
+                    Other, 0x10ab9ad00, {{0.0, 873.0}, {440.0, 83.0}}
+                      Other, 0x10ab9b840, {{0.0, 873.0}, {440.0, 83.0}}
+                        Other, 0x10ab9a1c0, {{0.0, 873.0}, {440.0, 83.0}}
+                          Other, 0x10ab98140, {{0.0, 873.0}, {440.0, 83.0}}
+                            Other, 0x10ab9a940, {{0.0, 873.0}, {440.0, 83.0}}
+                              Other, 0x10ab9bc00, {{0.0, 873.0}, {440.0, 83.0}}
+                          Other, 0x10ab9b0c0, {{0.0, 873.0}, {440.0, 83.0}}
+                            Other, 0x10ab9a800, {{0.0, 873.0}, {440.0, 83.0}}
+      Other, 0x10ab99540, {{0.0, 0.0}, {440.0, 956.0}}
+        Other, 0x10ab98f00, {{0.0, 0.0}, {440.0, 956.0}}
+          Other, 0x10db4c000, {{171.7, 62.0}, {250.0, 419.0}}
+            Other, 0x10db4c8c0, {{171.7, 62.0}, {250.0, 419.0}}
+              Other, 0x10db4c140, {{171.7, 62.0}, {250.0, 419.0}}
+                Other, 0x10db4c280, {{171.7, 62.0}, {250.0, 419.0}}
+                CollectionView, 0x10db4ca00, {{171.7, 62.0}, {250.0, 956.0}}
+                  Cell, 0x10db4c640, {{171.7, 72.0}, {250.0, 42.0}}
+                    Button, 0x10db4c780, {{171.7, 72.0}, {250.0, 42.0}}, label: 'Name', Selected
+                      Image, 0x10db4cc80, {{192.7, 87.0}, {13.3, 12.3}}, identifier: 'checkmark', label: 'selected'
+                  Cell, 0x10db4cb40, {{171.7, 114.0}, {250.0, 42.0}}
+                    Button, 0x10db4c500, {{171.7, 114.0}, {250.0, 42.0}}, label: 'Recently Added'
+                  Cell, 0x10db4c3c0, {{171.7, 156.0}, {250.0, 42.0}}
+                    Button, 0x10dbb6580, {{171.7, 156.0}, {250.0, 42.0}}, label: 'Release Date'
+                  Cell, 0x10dbb66c0, {{171.7, 198.0}, {250.0, 42.0}}
+                    Button, 0x10dbb4b40, {{171.7, 198.0}, {250.0, 42.0}}, label: 'Rating'
+                  Cell, 0x10dbb5540, {{171.7, 240.0}, {250.0, 42.0}}
+                    Button, 0x10dbb7ac0, {{171.7, 240.0}, {250.0, 42.0}}, label: 'Random'
+                  Other, 0x10dbb6940, {{195.7, 292.0}, {202.0, 1.0}}
+                  Cell, 0x10dbb7840, {{171.7, 303.0}, {250.0, 42.0}}
+                    Button, 0x10dbb75c0, {{171.7, 303.0}, {250.0, 42.0}}, label: 'All', Selected
+                      Image, 0x10dbb57c0, {{192.7, 318.0}, {13.3, 12.3}}, identifier: 'checkmark', label: 'selected'
+                  Cell, 0x10dbb6080, {{171.7, 345.0}, {250.0, 42.0}}
+                    Button, 0x10dbb7e80, {{171.7, 345.0}, {250.0, 42.0}}, label: 'Unplayed'
+                  Cell, 0x10dbb52c0, {{171.7, 387.0}, {250.0, 42.0}}
+                    Button, 0x10dbb5900, {{171.7, 387.0}, {250.0, 42.0}}, label: 'Played'
+                  Cell, 0x10dbb7980, {{171.7, 429.0}, {250.0, 42.0}}
+                    Button, 0x10dbb6bc0, {{171.7, 429.0}, {250.0, 42.0}}, label: 'In Progress'
+                  Other, 0x10dbb61c0, {{388.7, 92.0}, {30.0, 359.0}}, label: 'Vertical scroll bar, 1 page', value: 0%
+                    Other, 0x10dbb70c0, {{415.7, 95.0}, {3.0, 353.0}}
+                  Other, 0x10dbb6800, {{171.7, 418.0}, {206.3, 30.0}}, label: 'Horizontal scroll bar, 1 page', value: 0%
+                    Other, 0x10dbb4780, {{174.7, 445.0}, {200.3, 3.0}}
+                  Other, 0x10dbb7200, {{388.7, 92.0}, {30.0, 359.0}}, label: 'Vertical scroll bar, 1 page', value: 0%
+                    Other, 0x10dbb4f00, {{415.7, 95.0}, {3.0, 353.0}}
+                  Other, 0x10dbb5180, {{171.7, 418.0}, {206.3, 30.0}}, label: 'Horizontal scroll bar, 1 page', value: 0%
+                    Other, 0x10dbb7340, {{174.7, 445.0}, {200.3, 3.0}}
+              Other, 0x10dbb5cc0, {{171.7, 62.0}, {250.0, 419.0}}
+                Other, 0x10dbb4dc0, {{171.7, 62.0}, {250.0, 419.0}}
+                  Other, 0x10dbb4140, {{171.7, 62.0}, {250.0, 419.0}}
+                    Other, 0x10dbb6e40, {{171.7, 62.0}, {250.0, 419.0}}
+                      Other, 0x10dbb6f80, {{171.7, 62.0}, {250.0, 419.0}}
+                        Other, 0x10dbb48c0, {{171.7, 62.0}, {250.0, 44.0}}
+                    Other, 0x10dbb4000, {{171.7, 62.0}, {250.0, 419.0}}
+                      Other, 0x10dbb6d00, {{171.7, 62.0}, {250.0, 44.0}}
+Path to element:
+ →Application, 0x115823d40, pid: 4593, label: 'Gus'
+Query chain:
+ →Find: Application 'dev.ericslutz.gus'
+  Output: {
+    Application, 0x10dbb5b80, pid: 4593, label: 'Gus'
+  }

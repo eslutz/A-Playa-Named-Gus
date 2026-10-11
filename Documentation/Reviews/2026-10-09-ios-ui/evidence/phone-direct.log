@@ -1,0 +1,152 @@
+Command line invocation:
+    /Applications/Development/Xcode.app/Contents/Developer/usr/bin/xcodebuild test-without-building -project /tmp/gus-ui-audit-20261009/GusAudit.xcodeproj -scheme GusAudit -destination "platform=iOS Simulator,id=8D6A5B35-B67B-4725-B428-DC0EAA80797D" -derivedDataPath /tmp/gus-ui-audit-20261009/build "-only-testing:GusAuditTests/PreviewAudit" -resultBundlePath /tmp/gus-ui-audit-20261009/phone-direct.xcresult
+
+Writing result bundle at path:
+	/tmp/gus-ui-audit-20261009/phone-direct.xcresult
+
+2026-10-09 21:58:57.576382-0400 GusAuditTests-Runner[53434:419417] [Default] Running tests...
+    t =      nans Interface orientation changed to Portrait
+Test Suite 'Selected tests' started at 2026-10-09 21:59:02.900.
+Test Suite 'GusAuditTests.xctest' started at 2026-10-09 21:59:02.903.
+Test Suite 'PreviewAudit' started at 2026-10-09 21:59:02.903.
+Test Case '-[GusAuditTests.PreviewAudit testPreviewSurfaces]' started.
+    t =     0.01s Start Test at 2026-10-09 21:59:02.912
+    t =     0.09s Set Up
+    t =     0.12s Setting device orientation to Portrait
+    t =     0.13s     Wait for dev.ericslutz.gus to idle
+    t =     0.14s Open dev.ericslutz.gus
+    t =     0.15s     Launch dev.ericslutz.gus
+    t =     0.15s         Terminate dev.ericslutz.gus:53113
+objc[53434]: Class UIAccessibilityLoaderWebShared is implemented in both /private/var/run/com.apple.security.cryptexd/mnt/com.apple.iPhoneOS.SimulatorRuntime-v24.1.434.0.KNvHId/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 27.0.simruntime/Contents/Resources/RuntimeRoot/System/Library/AccessibilityBundles/WebKit.axbundle/WebKit (0x107394398) and /private/var/run/com.apple.security.cryptexd/mnt/com.apple.iPhoneOS.SimulatorRuntime-v24.1.434.0.KNvHId/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 27.0.simruntime/Contents/Resources/RuntimeRoot/System/Library/AccessibilityBundles/WebCore.axbundle/WebCore (0x10ac78310). This may cause spurious casting failures and mysterious crashes. One of the duplicates must be removed or renamed.
+    t =     1.50s         Setting up automation session
+    t =     6.82s         Wait for dev.ericslutz.gus to idle
+    t =    10.24s Waiting 5.0s for "Settings" Button to exist
+    t =    11.27s     Checking `Expect predicate `existsNoRetry == 1` for object "Settings" Button`
+    t =    11.27s         Checking existence of `"Settings" Button`
+    t =    11.37s Tap "Settings" Button
+    t =    11.37s     Wait for dev.ericslutz.gus to idle
+    t =    11.37s     Find the "Settings" Button
+    t =    11.39s     Check for interrupting elements affecting "Settings" Button
+    t =    11.43s     Synthesize event
+    t =    11.76s     Wait for dev.ericslutz.gus to idle
+CAPTURE_READY preview-settings-portrait
+    t =    20.15s Added attachment named 'preview-settings-portrait'
+    t =    20.15s Requesting snapshot of accessibility hierarchy for app with pid 53464
+    t =    21.14s Requesting snapshot of accessibility hierarchy for app with pid 53464
+    t =    21.30s Added attachment named 'preview-settings-portrait-tree'
+    t =    21.30s Setting device orientation to Landscape Left
+    t =    21.31s     Device orientation changed to Landscape Left
+    t =    21.40s     Interface orientation changed to Landscape Right
+    t =    21.40s     Wait for dev.ericslutz.gus to idle
+CAPTURE_READY preview-settings-landscape
+    t =    27.70s Added attachment named 'preview-settings-landscape'
+    t =    27.70s Requesting snapshot of accessibility hierarchy for app with pid 53464
+    t =    28.16s Requesting snapshot of accessibility hierarchy for app with pid 53464
+    t =    28.24s Added attachment named 'preview-settings-landscape-tree'
+    t =    28.25s Setting device orientation to Portrait
+    t =    28.25s     Device orientation changed to Portrait
+    t =    28.31s     Interface orientation changed to Portrait
+    t =    28.32s     Wait for dev.ericslutz.gus to idle
+    t =    28.39s Waiting 5.0s for "Downloaded Media" Button to exist
+    t =    29.42s     Checking `Expect predicate `existsNoRetry == 1` for object "Downloaded Media" Button`
+    t =    29.42s         Checking existence of `"Downloaded Media" Button`
+    t =    29.50s         Capturing element debug description
+    t =    30.44s     Checking `Expect predicate `existsNoRetry == 1` for object "Downloaded Media" Button`
+    t =    30.44s         Checking existence of `"Downloaded Media" Button`
+    t =    30.50s         Capturing element debug description
+    t =    31.43s     Checking `Expect predicate `existsNoRetry == 1` for object "Downloaded Media" Button`
+    t =    31.43s         Checking existence of `"Downloaded Media" Button`
+    t =    31.49s         Capturing element debug description
+    t =    32.42s     Checking `Expect predicate `existsNoRetry == 1` for object "Downloaded Media" Button`
+    t =    32.42s         Checking existence of `"Downloaded Media" Button`
+    t =    32.49s         Capturing element debug description
+    t =    33.40s     Checking `Expect predicate `existsNoRetry == 1` for object "Downloaded Media" Button`
+    t =    33.40s         Checking existence of `"Downloaded Media" Button`
+    t =    33.48s         Capturing element debug description
+    t =    33.48s     Checking existence of `"Downloaded Media" Button`
+    t =    33.55s Collecting debug information to assist test failure triage
+    t =    33.55s     Requesting snapshot of accessibility hierarchy for app with pid 53464
+    t =    33.66s Tap "Downloaded Media" StaticText
+    t =    33.66s     Wait for dev.ericslutz.gus to idle
+    t =    33.67s     Find the "Downloaded Media" StaticText
+    t =    33.75s     Check for interrupting elements affecting "Downloaded Media" StaticText
+    t =    33.82s     Synthesize event
+    t =    34.15s     Wait for dev.ericslutz.gus to idle
+CAPTURE_READY preview-manage-downloads-portrait
+    t =    40.56s Added attachment named 'preview-manage-downloads-portrait'
+    t =    40.57s Requesting snapshot of accessibility hierarchy for app with pid 53464
+    t =    40.86s Requesting snapshot of accessibility hierarchy for app with pid 53464
+    t =    40.91s Added attachment named 'preview-manage-downloads-portrait-tree'
+    t =    40.91s Setting device orientation to Landscape Left
+    t =    40.91s     Device orientation changed to Landscape Left
+    t =    41.04s     Interface orientation changed to Landscape Right
+    t =    41.07s     Wait for dev.ericslutz.gus to idle
+CAPTURE_READY preview-manage-downloads-after-rotation
+    t =    47.29s Added attachment named 'preview-manage-downloads-after-rotation'
+    t =    47.29s Requesting snapshot of accessibility hierarchy for app with pid 53464
+    t =    47.68s Requesting snapshot of accessibility hierarchy for app with pid 53464
+    t =    47.73s Added attachment named 'preview-manage-downloads-after-rotation-tree'
+    t =    47.73s Checking existence of `"Downloads" NavigationBar`
+ROTATION_DOWNLOADS_STILL_PRESENT true
+    t =    47.76s Setting device orientation to Portrait
+    t =    47.77s     Device orientation changed to Portrait
+    t =    47.91s     Interface orientation changed to Portrait
+    t =    47.91s     Wait for dev.ericslutz.gus to idle
+    t =    48.17s Terminate dev.ericslutz.gus:53464
+    t =    49.27s Open dev.ericslutz.gus
+    t =    49.28s     Launch dev.ericslutz.gus
+    t =    49.33s         Setting up automation session
+    t =    52.70s         Wait for dev.ericslutz.gus to idle
+    t =    54.87s Waiting 5.0s for "Downloaded" Button to exist
+    t =    55.90s     Checking `Expect predicate `existsNoRetry == 1` for object "Downloaded" Button`
+    t =    55.90s         Checking existence of `"Downloaded" Button`
+    t =    55.99s Tap "Downloaded" Button
+    t =    55.99s     Wait for dev.ericslutz.gus to idle
+    t =    56.00s     Find the "Downloaded" Button
+    t =    56.01s     Check for interrupting elements affecting "Downloaded" Button
+    t =    56.05s     Synthesize event
+    t =    56.39s     Wait for dev.ericslutz.gus to idle
+CAPTURE_READY preview-downloaded-portrait
+    t =    64.60s Added attachment named 'preview-downloaded-portrait'
+    t =    64.60s Requesting snapshot of accessibility hierarchy for app with pid 53675
+    t =    64.91s Requesting snapshot of accessibility hierarchy for app with pid 53675
+    t =    64.95s Added attachment named 'preview-downloaded-portrait-tree'
+    t =    64.95s Setting device orientation to Landscape Left
+    t =    64.97s     Device orientation changed to Landscape Left
+    t =    65.16s     Interface orientation changed to Landscape Right
+    t =    65.16s     Wait for dev.ericslutz.gus to idle
+CAPTURE_READY preview-downloaded-landscape
+    t =    71.94s Added attachment named 'preview-downloaded-landscape'
+    t =    71.94s Requesting snapshot of accessibility hierarchy for app with pid 53675
+    t =    72.20s Requesting snapshot of accessibility hierarchy for app with pid 53675
+    t =    72.25s Added attachment named 'preview-downloaded-landscape-tree'
+    t =    74.72s Find the Any (Descendant with identity binding to AX element pid: 53675, elementOrHash.elementID: 4640376544.100)
+    t =    74.75s Added attachment named 'preview-download-audit-issue'
+    t =    74.76s Find the Any (Descendant with identity binding to AX element pid: 53675, elementOrHash.elementID: 4640376544.100)
+AUDIT_ISSUE preview-download <XCUIAccessibilityAuditIssue: 0x113075230>AuditType:"4" CompactDescription:"Hit area is too small" DetailedDescription:"The size of this SwiftUI.AccessibilityNode is too small for user to interact." Element:"Manage Downloads" Button
+    t =    74.79s Find the Any (Descendant with identity binding to AX element pid: 53675, elementOrHash.elementID: 4355478528.73)
+    t =    74.82s Added attachment named 'preview-download-audit-issue'
+    t =    74.82s Find the Any (Descendant with identity binding to AX element pid: 53675, elementOrHash.elementID: 4355478528.73)
+AUDIT_ISSUE preview-download <XCUIAccessibilityAuditIssue: 0x113075440>AuditType:"131072" CompactDescription:"Text clipped" DetailedDescription:"Text of this UISearchBarTextField may be clipped at larger Dynamic Type sizes." Element:"Search Downloaded" SearchField
+    t =    74.85s Setting device orientation to Portrait
+    t =    74.85s     Device orientation changed to Portrait
+    t =    74.92s     Interface orientation changed to Portrait
+    t =    74.92s     Wait for dev.ericslutz.gus to idle
+    t =    75.56s Tear Down
+Test Case '-[GusAuditTests.PreviewAudit testPreviewSurfaces]' passed (76.644 seconds).
+Test Suite 'PreviewAudit' passed at 2026-10-09 22:00:19.556.
+	 Executed 1 test, with 0 failures (0 unexpected) in 76.644 (76.653) seconds
+Test Suite 'GusAuditTests.xctest' passed at 2026-10-09 22:00:19.563.
+	 Executed 1 test, with 0 failures (0 unexpected) in 76.644 (76.660) seconds
+Test Suite 'Selected tests' passed at 2026-10-09 22:00:19.567.
+	 Executed 1 test, with 0 failures (0 unexpected) in 76.644 (76.667) seconds
+2026-10-09 22:00:20.005 xcodebuild[53419:419099] [MT] IDETestOperationsObserverDebug: 85.865 elapsed -- Testing started completed.
+2026-10-09 22:00:20.005 xcodebuild[53419:419099] [MT] IDETestOperationsObserverDebug: 0.000 sec, +0.000 sec -- start
+2026-10-09 22:00:20.005 xcodebuild[53419:419099] [MT] IDETestOperationsObserverDebug: 85.865 sec, +85.865 sec -- end
+
+Test session results, code coverage, and logs:
+	/tmp/gus-ui-audit-20261009/phone-direct.xcresult
+
+** TEST EXECUTE SUCCEEDED **
+
+Testing started

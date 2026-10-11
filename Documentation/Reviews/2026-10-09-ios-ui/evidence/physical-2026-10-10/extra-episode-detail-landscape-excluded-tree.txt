@@ -1,0 +1,235 @@
+Attributes: Application, 0x10bb99680, pid: 4560, label: 'Gus'
+Element subtree:
+ →Application, 0x10bb99680, pid: 4560, label: 'Gus'
+    Window (Main), 0x10bb983c0, {{0.0, 0.0}, {956.0, 440.0}}
+      Other, 0x10bb98280, {{0.0, 0.0}, {956.0, 440.0}}
+        Other, 0x10bb98a00, {{0.0, 0.0}, {956.0, 440.0}}
+          Other, 0x10bb98c80, {{0.0, 0.0}, {956.0, 440.0}}
+            Other, 0x10bb9a6c0, {{0.0, 0.0}, {956.0, 440.0}}
+              Other, 0x10bb99180, {{0.0, 0.0}, {956.0, 440.0}}
+                Other, 0x10bb99b80, {{0.0, 0.0}, {956.0, 440.0}}
+                  Other, 0x10bb9a940, {{0.0, 0.0}, {956.0, 440.0}}
+                    Other, 0x10bb9b5c0, {{0.0, 0.0}, {382.0, 440.0}}
+                      Other, 0x10bb99cc0, {{0.0, 0.0}, {382.0, 440.0}}
+                        NavigationBar, 0x10bb9af80, {{0.0, 24.0}, {382.0, 54.0}}, identifier: 'A Playa Named Gus'
+                          StaticText, 0x10bb9a080, {{127.3, 35.7}, {155.0, 20.7}}, label: 'A Playa Named Gus'
+                          Button, 0x10bb99040, {{332.0, 28.0}, {36.0, 36.0}}, label: 'Hide Sidebar'
+                        Other, 0x10bb9b0c0, {{0.0, 0.0}, {382.0, 440.0}}
+                          Other, 0x10bb9abc0, {{0.0, 0.0}, {382.0, 440.0}}
+                            Other, 0x10bb9a440, {{0.0, 0.0}, {382.0, 440.0}}
+                              Other, 0x10bb992c0, {{0.0, 0.0}, {382.0, 440.0}}
+                                CollectionView, 0x10bb9a1c0, {{0.0, 0.0}, {382.0, 440.0}}, label: 'Sidebar'
+                                  Other, 0x10bb98f00, {{-78.0, -802.0}, {476.0, 2082.0}}
+                                  Other, 0x10bb99e00, {{0.0, 0.0}, {382.0, 440.0}}
+                                    Other, 0x10bb9b700, {{0.0, 0.0}, {382.0, 118.0}}
+                                  Other, 0x10bb9be80, {{0.0, 0.0}, {382.0, 440.0}}
+                                  Cell, 0x10bb9bac0, {{78.0, 78.0}, {288.0, 52.0}}
+                                    Other, 0x10bb9ae40, {{78.0, 78.0}, {288.0, 52.0}}
+                                    Other, 0x10bb9a300, {{78.0, 78.0}, {288.0, 52.0}}
+                                      Other, 0x10bb9b840, {{78.0, 78.0}, {288.0, 52.0}}
+                                        Other, 0x10bb9a800, {{78.0, 78.0}, {288.0, 52.0}}
+                                          StaticText, 0x10bb9b480, {{78.0, 78.0}, {288.0, 52.0}}, label: 'Home'
+                                          Image, 0x10bb9ad00, {{93.3, 93.0}, {25.3, 22.3}}, identifier: 'house', label: 'Home'
+                                  Cell, 0x10bb9bd40, {{78.0, 130.0}, {288.0, 52.0}}
+                                    Other, 0x113811a40, {{78.0, 130.0}, {288.0, 52.0}}
+                                    Other, 0x113812440, {{78.0, 130.0}, {288.0, 52.0}}
+                                      Other, 0x113810c80, {{78.0, 130.0}, {288.0, 52.0}}
+                                        Other, 0x113811680, {{78.0, 130.0}, {288.0, 52.0}}
+                                          StaticText, 0x113812300, {{78.0, 130.0}, {288.0, 52.0}}, label: 'Downloaded'
+                                          Image, 0x1138112c0, {{95.3, 145.3}, {21.7, 21.7}}, identifier: 'arrow.down.circle', label: 'Arrow Down Circle'
+                                  Cell, 0x113812080, {{78.0, 182.0}, {288.0, 52.0}}, Selected
+                                    Other, 0x113810f00, {{78.0, 182.0}, {288.0, 52.0}}
+                                      Other, 0x1138121c0, {{78.0, 182.0}, {288.0, 52.0}}
+                                        Other, 0x113811cc0, {{78.0, 182.0}, {288.0, 52.0}}
+                                    Other, 0x113811400, {{78.0, 182.0}, {288.0, 52.0}}
+                                      Other, 0x113811540, {{78.0, 182.0}, {288.0, 52.0}}
+                                        Other, 0x11387da40, {{78.0, 182.0}, {288.0, 52.0}}
+                                          StaticText, 0x11387d180, {{78.0, 182.0}, {288.0, 52.0}}, label: 'Libraries', Selected
+                                          Image, 0x11387d040, {{93.0, 195.3}, {26.3, 25.7}}, identifier: 'rectangle.stack', label: 'Stack Of Rectangles', Selected
+                                  Cell, 0x11387cb40, {{78.0, 234.0}, {288.0, 52.0}}
+                                    Other, 0x11387de00, {{78.0, 234.0}, {288.0, 52.0}}
+                                    Other, 0x11387d540, {{78.0, 234.0}, {288.0, 52.0}}
+                                      Other, 0x11387d7c0, {{78.0, 234.0}, {288.0, 52.0}}
+                                        Other, 0x11387d680, {{78.0, 234.0}, {288.0, 52.0}}
+                                          StaticText, 0x11387ca00, {{78.0, 234.0}, {288.0, 52.0}}, label: 'Movies'
+                                          Image, 0x11387d900, {{93.3, 250.3}, {25.3, 19.7}}, identifier: 'film', label: 'Movie'
+                                  Cell, 0x11387cdc0, {{78.0, 286.0}, {288.0, 52.0}}
+                                    Other, 0x11387d400, {{78.0, 286.0}, {288.0, 52.0}}
+                                    Other, 0x10bb91900, {{78.0, 286.0}, {288.0, 52.0}}
+                                      Other, 0x10bb921c0, {{78.0, 286.0}, {288.0, 52.0}}
+                                        Other, 0x10bb93700, {{78.0, 286.0}, {288.0, 52.0}}
+                                          StaticText, 0x10bb93480, {{78.0, 286.0}, {288.0, 52.0}}, label: 'Shows'
+                                          Image, 0x10bb93c00, {{92.7, 301.7}, {26.7, 21.0}}, identifier: 'tv', label: 'Tv'
+                                  Cell, 0x10bb92f80, {{78.0, 338.0}, {288.0, 52.0}}
+                                    Other, 0x10bb91cc0, {{78.0, 338.0}, {288.0, 52.0}}
+                                    Other, 0x10bb91f40, {{78.0, 338.0}, {288.0, 52.0}}
+                                      Other, 0x10bb930c0, {{78.0, 338.0}, {288.0, 52.0}}
+                                        Other, 0x10bb91040, {{78.0, 338.0}, {288.0, 52.0}}
+                                          StaticText, 0x10bb93e80, {{78.0, 338.0}, {288.0, 52.0}}, label: 'Settings'
+                                          Image, 0x10bb91540, {{94.7, 352.7}, {23.0, 22.7}}, identifier: 'gearshape', label: 'Gear Shape'
+                                  Other, 0x10bb92300, {{349.0, 78.0}, {30.0, 362.0}}, label: 'Vertical scroll bar, 1 page', value: 0%
+                                    Other, 0x10bb91680, {{376.0, 101.0}, {3.0, 336.0}}
+                                  Other, 0x10bb917c0, {{349.0, 78.0}, {30.0, 362.0}}, label: 'Vertical scroll bar, 1 page', value: 0%
+                                    Other, 0x10bb91e00, {{376.0, 101.0}, {3.0, 336.0}}
+                        Toolbar, 0x10bb90c80, {{0.0, 0.0}, {382.0, 440.0}}, identifier: 'Toolbar', label: 'Toolbar'
+                          Other, 0x10bb912c0, {{0.0, 0.0}, {382.0, 440.0}}
+                      Other, 0x10bb91a40, {{0.0, 0.0}, {382.0, 440.0}}
+                        Other, 0x10bb93840, {{0.0, 0.0}, {382.0, 440.0}}
+                          Other, 0x10bb92940, {{0.0, 0.0}, {382.0, 440.0}}
+                            Other, 0x10bb93200, {{0.0, 0.0}, {382.0, 440.0}}
+                              Other, 0x10bb93980, {{0.0, 0.0}, {382.0, 440.0}}
+                                Other, 0x10bb90dc0, {{0.0, 0.0}, {382.0, 440.0}}
+                            Other, 0x10bb93ac0, {{0.0, 0.0}, {382.0, 440.0}}
+                              Other, 0x10bb92800, {{0.0, 0.0}, {382.0, 440.0}}
+                    Other, 0x10bb92440, {{0.0, 0.0}, {956.0, 440.0}}
+                      Other, 0x10bb935c0, {{0.0, 0.0}, {956.0, 440.0}}
+                        NavigationBar, 0x10bb92bc0, {{0.0, 24.0}, {956.0, 54.0}}, identifier: 'Are You Afraid of the Dark?'
+                          Button, 0x10bb92a80, {{392.0, 24.0}, {44.0, 44.0}}, identifier: 'BackButton', label: 'Family Shows'
+                          StaticText, 0x10bb92e40, {{547.7, 35.7}, {214.3, 20.7}}, label: 'Are You Afraid of the Dark?'
+                        Other, 0x10bb91b80, {{0.0, 0.0}, {956.0, 440.0}}
+                          Other, 0x10bb92580, {{0.0, 0.0}, {956.0, 440.0}}
+                            Other, 0x10bb93d40, {{0.0, 0.0}, {956.0, 440.0}}
+                              Other, 0x10bb93340, {{0.0, 0.0}, {956.0, 440.0}}
+                                ScrollView, 0x10bb926c0, {{0.0, 0.0}, {1011.3, 440.0}}
+                                  Other, 0x113dea6c0, {{0.0, -793.0}, {1011.3, 1775.0}}
+                                    Other, 0x113dea440, {{0.0, -793.0}, {1011.3, 420.0}}
+                                      Image, 0x113debe80, {{264.7, -793.0}, {746.7, 420.0}}
+                                      StaticText, 0x113debac0, {{288.7, -691.3}, {351.0, 33.7}}, label: 'Are You Afraid of the Dark?'
+                                      StaticText, 0x113debd40, {{288.7, -646.2}, {237.0, 23.0}}, label: '1990, TV-Y7, ★ 8.2, Critic 20%'
+                                        StaticText, 0x113dea300, {{288.7, -643.6}, {35.7, 18.0}}, label: '1990'
+                                        StaticText, 0x113deabc0, {{340.3, -643.6}, {43.3, 18.0}}, label: 'TV-Y7'
+                                        StaticText, 0x113dea080, {{399.7, -643.6}, {41.7, 18.0}}, label: '★ 8.2'
+                                        StaticText, 0x113dea940, {{451.3, -643.6}, {74.3, 18.0}}, label: 'Critic 20%'
+                                      StaticText, 0x113deaf80, {{288.7, -611.6}, {693.0, 86.3}}, label: 'This spooky anthology series for kids recounts ghost stories told by the young members of the Midnight Society as they gather around a campfire. Each episode opens with members of the Midnight Society at their secret spot in the woods, where they prepare their fire and the night's storyteller announces the title of the his or her offering. However, the cameras soon leave the storyteller and switch to the tale being told.'
+                                      Button, 0x113deb340, {{288.7, -507.3}, {320.0, 50.3}}, label: 'Play'
+                                        StaticText, 0x113dea800, {{288.7, -507.3}, {320.0, 50.3}}, label: 'Play'
+                                        Image, 0x113deb5c0, {{421.3, -489.7}, {13.7, 15.3}}, identifier: 'play.fill', label: 'Play'
+                                      Button, 0x113debc00, {{384.7, -447.0}, {68.0, 50.0}}, identifier: 'plus', label: 'Add to Up Next'
+                                      Button, 0x113deaa80, {{462.7, -447.0}, {68.0, 50.0}}, identifier: 'checkmark.circle', label: 'Mark as Watched', Selected
+                                      Button, 0x113de9a40, {{540.7, -447.0}, {68.0, 50.0}}, identifier: 'heart', label: 'Add to Favorites'
+                                    StaticText, 0x113deb200, {{284.7, -349.0}, {93.7, 26.3}}, label: 'Episodes'
+                                    Button, 0x113deb980, {{900.0, -346.0}, {91.3, 20.3}}, label: 'Season 1'
+                                      Button, 0x113dead00, {{900.0, -346.0}, {91.3, 20.3}}
+                                        StaticText, 0x113dea1c0, {{902.0, -346.0}, {89.3, 20.3}}, label: 'Season 1'
+                                        Image, 0x113de9e00, {{902.0, -343.7}, {11.3, 16.0}}, identifier: 'chevron.up.chevron.down', label: 'Up And Down Chevrons'
+                                    ScrollView, 0x113deb700, {{284.7, -306.7}, {706.7, 243.0}}
+                                      Other, 0x113deae40, {{284.7, -306.7}, {3596.0, 243.0}}
+                                        Other, 0x113deb0c0, {{284.7, -302.7}, {1650.0, 235.0}}
+                                          Button, 0x113de9cc0, {{284.7, -302.7}, {260.0, 235.0}}, label: 'S1·E1, The Tale of the Phantom Cab, 23m'
+                                            Image, 0x113deb840, {{284.7, -302.7}, {260.0, 146.3}}
+                                            StaticText, 0x113de9b80, {{284.7, -148.4}, {29.7, 14.3}}, label: 'S1·E1'
+                                            StaticText, 0x113de9f40, {{284.7, -130.1}, {228.3, 20.3}}, label: 'The Tale of the Phantom Cab'
+                                            StaticText, 0x113dea580, {{284.7, -105.8}, {260.0, 38.0}}, label: 'Two brothers, while lost in the woods, come across a mysterious cab driver and a very unusual man named Dr. Vink who won't let any of his victims go unless they solve a riddle.'
+                                          Button, 0x113deb480, {{562.7, -302.7}, {260.0, 235.0}}, label: 'S1·E2, The Tale of Laughing in the Dark, 24m'
+                                            Image, 0x113de35c0, {{562.7, -302.7}, {260.0, 146.3}}
+                                            StaticText, 0x113de2940, {{562.7, -148.4}, {31.3, 14.3}}, label: 'S1·E2'
+                                            StaticText, 0x113de2f80, {{562.7, -130.1}, {254.7, 20.3}}, label: 'The Tale of Laughing in the Dark'
+                                            StaticText, 0x113de30c0, {{562.7, -105.8}, {253.3, 38.0}}, label: 'A kid named Josh decides to prove that a fun house isn't haunted by stealing the nose of the clown who is supposed to haunt the place. He learns that the story isn't fiction when Zeebo pays him a little visit.'
+                                          Button, 0x113de3340, {{840.7, -302.7}, {260.0, 235.0}}, label: 'S1·E3, The Tale of the Lonely Ghost, 24m'
+                                            Image, 0x113de2800, {{840.7, -302.7}, {260.0, 146.3}}
+                                            StaticText, 0x113de2bc0, {{840.7, -148.4}, {31.7, 14.3}}, label: 'S1·E3'
+                                            StaticText, 0x113de0140, {{840.7, -130.1}, {225.0, 20.3}}, label: 'The Tale of the Lonely Ghost'
+                                            StaticText, 0x113de26c0, {{840.7, -105.8}, {256.7, 38.0}}, label: 'A girl who desperately wants to be friends with her snotty cousin and her group of friends agrees to spend the night in the haunted house next door to become part of the group.'
+                                          Button, 0x113de2080, {{1118.7, -302.7}, {260.0, 235.0}}, label: 'S1·E4, The Tale of the Twisted Claw, 23m'
+                                            Image, 0x113de1e00, {{1118.7, -302.7}, {260.0, 146.3}}
+                                            StaticText, 0x113de3980, {{1118.7, -148.4}, {31.7, 14.3}}, label: 'S1·E4'
+                                            StaticText, 0x113de1680, {{1118.7, -130.1}, {226.7, 20.3}}, label: 'The Tale of the Twisted Claw'
+                                            StaticText, 0x113de3480, {{1118.7, -105.8}, {259.3, 38.0}}, label: 'In a twist of "The Monkey's Paw," two boys scare an old lady to death the night before Halloween just as the next night they receive a hand granting them wishes with consequences.'
+                                          Button, 0x113de1400, {{1396.7, -302.7}, {260.0, 235.0}}, label: 'S1·E5, The Tale of the Hungry Hounds, 24m'
+                                            Image, 0x113de3840, {{1396.7, -302.7}, {260.0, 146.3}}
+                                            StaticText, 0x113de1540, {{1396.7, -148.4}, {31.7, 14.3}}, label: 'S1·E5'
+                                            StaticText, 0x113de3700, {{1396.7, -130.1}, {246.0, 20.3}}, label: 'The Tale of the Hungry Hounds'
+                                            StaticText, 0x113de3200, {{1396.7, -105.8}, {252.7, 38.0}}, label: 'Two girls go to an attic where one of them tries on a uniform that belonged to a dead relative where her spirit lives on.'
+                                          Button, 0x108b96e40, {{1674.7, -302.7}, {260.0, 235.0}}, label: 'S1·E6, The Tale of the Super Specs, 24m'
+                                            Image, 0x108b97840, {{1674.7, -302.7}, {260.0, 146.3}}
+                                            StaticText, 0x108b97d40, {{1674.7, -148.4}, {31.7, 14.3}}, label: 'S1·E6'
+                                            StaticText, 0x108b948c0, {{1674.7, -130.1}, {221.7, 20.3}}, label: 'The Tale of the Super Specs'
+                                            StaticText, 0x108b952c0, {{1674.7, -105.8}, {256.7, 38.0}}, label: 'Weeds, a prankster, buys his friend Marybeth a pair of super spec glasses as part of an April's Fool Day where once she places on the glasses, strange figures appear and can't be explained.'
+                                    StaticText, 0x108b97480, {{284.7, -33.7}, {57.0, 20.3}}, label: 'Genres'
+                                    ScrollView, 0x108b970c0, {{284.7, -3.3}, {706.7, 36.0}}
+                                      Other, 0x108b96a80, {{284.7, -3.3}, {226.0, 36.0}}
+                                        StaticText, 0x10bb35900, {{296.7, 5.7}, {57.0, 18.0}}, label: 'Mystery'
+                                        StaticText, 0x10bb35e00, {{387.7, 5.7}, {30.7, 18.0}}, label: 'Kids'
+                                        StaticText, 0x10bb352c0, {{452.3, 5.7}, {46.3, 18.0}}, label: 'Drama'
+                                    StaticText, 0x10bb35b80, {{284.7, 48.6}, {60.7, 20.3}}, label: 'Studios'
+                                    ScrollView, 0x10bb35a40, {{284.7, 79.0}, {706.7, 36.0}}
+                                      Other, 0x10bb357c0, {{284.7, 79.0}, {315.7, 36.0}}
+                                        StaticText, 0x10bb35680, {{296.7, 88.0}, {87.3, 18.0}}, label: 'Nickelodeon'
+                                        StaticText, 0x10bb37840, {{418.0, 88.0}, {29.7, 18.0}}, label: 'YTV'
+                                        StaticText, 0x10bb370c0, {{481.7, 88.0}, {106.7, 18.0}}, label: 'Family Channel'
+                                    StaticText, 0x10bb35f40, {{284.7, 145.0}, {126.7, 26.3}}, label: 'Cast & Crew'
+                                    ScrollView, 0x10bb35040, {{284.7, 183.3}, {706.7, 199.7}}
+                                      Other, 0x10bb34140, {{260.0, 183.3}, {800.0, 199.7}}
+                                        Other, 0x10bb37980, {{260.0, 172.3}, {800.0, 206.7}}
+                                          StaticText, 0x10bb36e40, {{260.0, 172.3}, {120.0, 206.7}}, label: 'Daniel DeSanto, Tucker'
+                                            Image, 0x10bb34280, {{260.0, 172.3}, {120.0, 180.0}}
+                                            StaticText, 0x10bb34c80, {{260.0, 344.3}, {89.0, 14.3}}, label: 'Daniel DeSanto'
+                                            StaticText, 0x10bb34b40, {{260.0, 365.7}, {35.3, 13.3}}, label: 'Tucker'
+                                          StaticText, 0x10bb348c0, {{532.0, 172.3}, {120.0, 206.7}}, label: 'Vanessa Lengies, Vange'
+                                            Image, 0x10bb366c0, {{532.0, 172.3}, {120.0, 180.0}}
+                                            StaticText, 0x10bb34f00, {{532.0, 344.3}, {96.7, 14.3}}, label: 'Vanessa Lengies'
+                                            StaticText, 0x10bb36300, {{532.0, 365.7}, {33.0, 13.3}}, label: 'Vange'
+                                          StaticText, 0x10bb37700, {{804.0, 172.3}, {120.0, 206.7}}, label: 'Elisha Cuthbert, Megan'
+                                            Image, 0x10bb37c00, {{804.0, 172.3}, {120.0, 180.0}}
+                                            StaticText, 0x10bb36d00, {{804.0, 344.3}, {89.3, 14.3}}, label: 'Elisha Cuthbert'
+                                            StaticText, 0x10bb343c0, {{804.0, 365.7}, {35.7, 13.3}}, label: 'Megan'
+                                          StaticText, 0x10bb36940, {{940.0, 172.3}, {120.0, 206.7}}, label: 'D.J. MacHale, Producer'
+                                            Image, 0x10bb36a80, {{940.0, 172.3}, {120.0, 180.0}}
+                                            StaticText, 0x10bb37480, {{940.0, 344.3}, {76.0, 14.3}}, label: 'D.J. MacHale'
+                                            StaticText, 0x10bb36f80, {{940.0, 365.7}, {48.0, 13.3}}, label: 'Producer'
+                                          StaticText, 0x10bb35540, {{396.0, 187.3}, {120.0, 191.7}}, label: 'David Deveau, Andy'
+                                            Image, 0x10bb35400, {{441.7, 247.0}, {29.0, 31.0}}, identifier: 'person', label: 'Person Silhouette'
+                                            StaticText, 0x10bb37d40, {{396.0, 344.3}, {79.3, 14.3}}, label: 'David Deveau'
+                                            StaticText, 0x10bb375c0, {{396.0, 365.7}, {27.0, 13.3}}, label: 'Andy'
+                                          StaticText, 0x10bb37340, {{668.0, 187.3}, {120.0, 191.7}}, label: 'Kareem Blackwell, Quinn'
+                                            Image, 0x10bb35cc0, {{713.7, 247.0}, {29.0, 31.0}}, identifier: 'person', label: 'Person Silhouette'
+                                            StaticText, 0x10bb37ac0, {{668.0, 344.3}, {102.0, 14.3}}, label: 'Kareem Blackwell'
+                                            StaticText, 0x10bb37e80, {{668.0, 365.7}, {31.0, 13.3}}, label: 'Quinn'
+                                    StaticText, 0x10bb34a00, {{284.7, 413.0}, {155.3, 26.3}}, label: 'Recommended'
+                                    ScrollView, 0x10bb34dc0, {{284.7, 451.3}, {706.7, 272.3}}
+                                      Other, 0x10bb35180, {{284.7, 451.3}, {482.0, 272.3}}
+                                        Other, 0x113de66c0, {{284.7, 455.3}, {482.0, 264.3}}
+                                          Button, 0x113de5a40, {{284.7, 455.3}, {150.0, 264.3}}, label: 'Tales from the Crypt, 1989'
+                                            Image, 0x113de7ac0, {{284.7, 455.3}, {150.0, 225.0}}
+                                            StaticText, 0x113de4f00, {{284.7, 686.3}, {143.3, 18.0}}, label: 'Tales from the Crypt'
+                                            StaticText, 0x113de4dc0, {{284.7, 705.3}, {28.7, 14.3}}, label: '1989'
+                                          Button, 0x113de6580, {{450.7, 455.3}, {150.0, 264.3}}, label: 'The Twilight Zone, 1959'
+                                            Image, 0x113de7480, {{450.7, 455.3}, {150.0, 225.0}}
+                                            StaticText, 0x113de5b80, {{450.7, 686.3}, {125.3, 18.0}}, label: 'The Twilight Zone'
+                                            StaticText, 0x113de4a00, {{450.7, 705.3}, {28.3, 14.3}}, label: '1959'
+                                          Button, 0x113de7980, {{616.7, 455.3}, {150.0, 264.3}}, label: 'Goosebumps, 1995'
+                                            Image, 0x113de6a80, {{616.7, 455.3}, {150.0, 225.0}}
+                                            StaticText, 0x113de4780, {{616.7, 686.3}, {93.3, 18.0}}, label: 'Goosebumps'
+                                            StaticText, 0x113de4000, {{616.7, 705.3}, {28.3, 14.3}}, label: '1995'
+                                    StaticText, 0x113de5400, {{284.7, 753.6}, {63.0, 26.3}}, label: 'About'
+                                    ScrollView, 0x113de4b40, {{284.7, 792.0}, {706.7, 158.0}}
+                                      Other, 0x113de4500, {{260.0, 792.0}, {812.0, 158.0}}
+                                        Other, 0x113de6bc0, {{275.7, 812.0}, {601.0, 140.3}}
+                                          StaticText, 0x113de52c0, {{276.0, 812.0}, {214.3, 20.3}}, label: 'Are You Afraid of the Dark?'
+                                          StaticText, 0x113de6d00, {{552.0, 812.0}, {214.3, 20.3}}, label: 'Are You Afraid of the Dark?'
+                                          StaticText, 0x113de6440, {{828.0, 812.0}, {48.7, 20.3}}, label: 'Media'
+                                          Image, 0x113de6300, {{275.7, 842.3}, {74.7, 110.0}}
+                                          StaticText, 0x113de48c0, {{362.0, 842.3}, {36.7, 19.3}}, label: '1990'
+                                          StaticText, 0x113de5540, {{552.0, 842.3}, {224.3, 82.3}}, label: 'This spooky anthology series for kids recounts ghost stories told by the young members of the Midnight Society as they gather around a campfire. Each episode opens with members of the Midnight Society at their secret spot in the woods, where they prepare their fire and the night's storyteller announces the title of the his or her offering. However, the cameras soon leave the storyteller and switch to the tale being told.'
+                                          StaticText, 0x113de6f80, {{828.0, 842.3}, {44.7, 19.3}}, label: 'TV-Y7'
+                                  Other, 0x113de7c00, {{0.0, 0.0}, {1011.3, 440.0}}
+                                    Other, 0x113de6940, {{0.0, 0.0}, {1011.3, 118.0}}
+                                  Other, 0x113de70c0, {{0.0, 0.0}, {1011.3, 440.0}}
+                                    Other, 0x113de6800, {{0.0, 0.0}, {1011.3, 118.0}}
+                                  Other, 0x113de5680, {{978.3, 78.0}, {30.0, 300.0}}, label: 'Vertical scroll bar, 6 pages', value: 61%
+                                    Other, 0x113de5040, {{1005.3, 217.7}, {3.0, 69.0}}
+                                  Other, 0x113de4640, {{978.3, 78.0}, {30.0, 300.0}}, label: 'Vertical scroll bar, 6 pages', value: 61%
+                                    Other, 0x113de43c0, {{1005.3, 217.7}, {3.0, 69.0}}
+                        Toolbar, 0x113de7d40, {{0.0, 0.0}, {956.0, 440.0}}, identifier: 'Toolbar', label: 'Toolbar'
+                          Other, 0x113de7200, {{0.0, 0.0}, {956.0, 440.0}}
+                    Toolbar, 0x113de7700, {{0.0, 0.0}, {956.0, 440.0}}, identifier: 'Toolbar', label: 'Toolbar'
+                      Other, 0x113d9f480, {{0.0, 0.0}, {956.0, 440.0}}
+                Other, 0x113d9f700, {{0.0, 0.0}, {956.0, 440.0}}
+                  Other, 0x113d9f5c0, {{0.0, 0.0}, {956.0, 440.0}}
+Path to element:
+ →Application, 0x10bb99680, pid: 4560, label: 'Gus'
+Query chain:
+ →Find: Application 'dev.ericslutz.gus'
+  Output: {
+    Application, 0x113d9e6c0, pid: 4560, label: 'Gus'
+  }

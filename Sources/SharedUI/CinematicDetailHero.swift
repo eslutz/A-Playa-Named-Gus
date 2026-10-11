@@ -3,6 +3,7 @@ import SwiftUI
 /// Full-bleed backdrop header for an item detail screen: artwork, gradient scrim,
 /// title block, play/up-next actions, and a caller-supplied accessory slot.
 struct CinematicDetailHero<Accessory: View>: View {
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     let item: MediaItem
     let backdropURL: URL?
     let play: () -> Void
@@ -10,64 +11,32 @@ struct CinematicDetailHero<Accessory: View>: View {
     let toggleUpNext: () -> Void
     @ViewBuilder let accessory: Accessory
 
-    /// Scales the hero with Dynamic Type (capped — the hero is artwork-led, and text
-    /// inside it wraps) so accessibility sizes don't clip the title block.
-    @ScaledMetric(relativeTo: .title) private var heroTypeScale: CGFloat = 1.0
-
     var body: some View {
-        ZStack(alignment: .bottomLeading) {
-            AsyncPoster(url: backdropURL, contentMode: .fill, placeholderSymbol: item.type == .series ? "tv" : "film")
-                .frame(maxWidth: .infinity)
-                .frame(height: heroHeight)
-                .clipped()
-
-            LinearGradient(
-                colors: [
-                    .black.opacity(0.82),
-                    .black.opacity(0.54),
-                    .black.opacity(0.18),
-                    .clear,
-                ],
-                startPoint: .bottom,
-                endPoint: .top
-            )
-
-            LinearGradient(
-                colors: [.black.opacity(0.72), .clear],
-                startPoint: .leading,
-                endPoint: .trailing
-            )
-
-            ViewThatFits(in: .horizontal) {
-                wideOverlay
-                compactOverlay
+        ViewThatFits(in: .horizontal) {
+            HStack(alignment: .bottom, spacing: 28) {
+                titleBlock
+                    .frame(maxWidth: 760, alignment: .leading)
+                actionStack
+                    .frame(width: 320)
             }
-            .foregroundStyle(.white)
-            .padding(heroPadding)
+            VStack(alignment: .leading, spacing: 18) {
+                titleBlock
+                actionStack
+            }
         }
-        .background(Color.black.opacity(0.22))
-        .ignoresSafeArea(edges: .top)
+        .padding(heroPadding)
+        .frame(maxWidth: .infinity, minHeight: baseHeroHeight, alignment: .bottomLeading)
+        .background {
+            GeometryReader { geometry in
+                AsyncPoster(url: backdropURL, placeholderSymbol: item.type == .series ? "tv" : "film")
+                    .frame(width: geometry.size.width, height: geometry.size.height)
+                    .clipped()
+                    .overlay {
+                        LinearGradient(colors: [.black.opacity(0.85), .black.opacity(0.6), .black.opacity(0.2)], startPoint: .bottom, endPoint: .top)
+                    }
+            }
+        }
         .accessibilityElement(children: .contain)
-    }
-
-    private var wideOverlay: some View {
-        HStack(alignment: .bottom, spacing: 28) {
-            titleBlock
-                .frame(maxWidth: 760, alignment: .leading)
-
-            Spacer(minLength: 24)
-
-            actionStack
-                .frame(width: actionWidth, alignment: .trailing)
-        }
-    }
-
-    private var compactOverlay: some View {
-        VStack(alignment: .leading, spacing: 18) {
-            titleBlock
-            actionStack
-                .frame(maxWidth: 320, alignment: .leading)
-        }
     }
 
     private var titleBlock: some View {
@@ -75,7 +44,6 @@ struct CinematicDetailHero<Accessory: View>: View {
             Text(item.displayTitle)
                 .font(titleFont)
                 .fontWeight(.bold)
-                .lineLimit(3)
                 .fixedSize(horizontal: false, vertical: true)
 
             HeroMetadataRow(item: item)
@@ -83,23 +51,30 @@ struct CinematicDetailHero<Accessory: View>: View {
             if let overview = item.overview?.trimmedNilIfEmpty {
                 Text(overview)
                     .font(.body)
-                    .foregroundStyle(.white.opacity(0.82))
+                    .foregroundStyle(.white)
                     .lineLimit(4)
+                    .accessibilityIdentifier("Detail.heroOverview")
             }
         }
+        .foregroundStyle(.white)
+        // Metadata and synopsis need a predictable contrast surface over arbitrary
+        // artwork. Opaque black keeps white text independent of the image beneath it.
+        .padding(12)
+        .background(.black, in: RoundedRectangle(cornerRadius: 8))
     }
 
     private var actionStack: some View {
-        ViewThatFits(in: .horizontal) {
-            HStack(spacing: 10) {
-                playButton
-                upNextButton
-                accessory
+        VStack(alignment: .leading, spacing: 12) {
+            playButton
+            if item.type == .book {
+                // Primary reading actions must stay realized when a short landscape
+                // viewport scrolls the secondary lazy grid in and out of view.
+                BookActionButtons(item: item)
             }
-
-            VStack(alignment: .trailing, spacing: 10) {
-                playButton
-                HStack(spacing: 10) {
+            if dynamicTypeSize.isAccessibilitySize {
+                VStack(alignment: .leading, spacing: 12) { upNextButton; accessory }
+            } else {
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 120), spacing: 12)], alignment: .leading, spacing: 12) {
                     upNextButton
                     accessory
                 }
@@ -117,7 +92,9 @@ struct CinematicDetailHero<Accessory: View>: View {
         if isPlayableItem {
             Button(action: play) {
                 Label("Play", systemImage: "play.fill")
+                    .foregroundStyle(Color.gusProminentActionForeground)
                     .frame(maxWidth: .infinity)
+                    .accessibilityIdentifier("Detail.play")
             }
             .gusProminentGlassButtonStyle()
             .controlSize(.large)
@@ -148,10 +125,6 @@ struct CinematicDetailHero<Accessory: View>: View {
         #endif
     }
 
-    private var heroHeight: CGFloat {
-        baseHeroHeight * min(max(heroTypeScale, 1.0), 1.5)
-    }
-
     private var baseHeroHeight: CGFloat {
         #if os(tvOS)
             return 620
@@ -169,14 +142,6 @@ struct CinematicDetailHero<Accessory: View>: View {
             return 40
         #else
             return 24
-        #endif
-    }
-
-    private var actionWidth: CGFloat {
-        #if os(tvOS) || os(visionOS)
-            return 220
-        #else
-            return 180
         #endif
     }
 }
@@ -198,7 +163,7 @@ struct HeroMetadataRow: View {
             }
         }
         .font(.subheadline.weight(.medium))
-        .foregroundStyle(.white.opacity(0.72))
+        .foregroundStyle(.white)
         .accessibilityElement(children: .combine)
     }
 
@@ -221,7 +186,7 @@ struct HeroMetadataRow: View {
         }
         if let community = item.communityRatingText {
             Text(community)
-                .foregroundStyle(Color.gusRatingStar)
+                .foregroundStyle(.white)
         }
         if let critic = item.criticRatingText {
             Text(String(localized: "Critic \(critic)", comment: "Critic score label, e.g. 'Critic 74%'"))
@@ -239,7 +204,7 @@ struct ItemUserActionButton: View {
         Button(action: action) {
             Label(title, systemImage: systemImage)
                 .labelStyle(.iconOnly)
-                .frame(width: 44, height: 36)
+                .frame(minWidth: 44, minHeight: 44)
         }
         .gusGlassButtonStyle()
         .visionHoverEffect(cornerRadius: 10)

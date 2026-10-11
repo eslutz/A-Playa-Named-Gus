@@ -1,0 +1,110 @@
+[
+  {
+    "lane": "ios",
+    "command": [
+      "xcodebuild",
+      "-project",
+      "A Playa Named Gus.xcodeproj",
+      "-scheme",
+      "Gus iOS Unit Tests",
+      "-destination",
+      "platform=iOS Simulator,id=8D6A5B35-B67B-4725-B428-DC0EAA80797D",
+      "-derivedDataPath",
+      "build/DerivedData",
+      "ONLY_ACTIVE_ARCH=YES",
+      "build"
+    ],
+    "exitCode": 0,
+    "seconds": 115.2
+  },
+  {
+    "lane": "ipad",
+    "command": [
+      "xcodebuild",
+      "-project",
+      "A Playa Named Gus.xcodeproj",
+      "-scheme",
+      "A Playa Named Gus",
+      "-destination",
+      "platform=iOS Simulator,id=4B7E6FD5-C808-4263-9CCA-764AD6A6BE3D",
+      "-derivedDataPath",
+      "build/DerivedData",
+      "ONLY_ACTIVE_ARCH=YES",
+      "build"
+    ],
+    "exitCode": 0,
+    "seconds": 367.8
+  },
+  {
+    "lane": "mac",
+    "command": [
+      "xcodebuild",
+      "-project",
+      "A Playa Named Gus.xcodeproj",
+      "-scheme",
+      "Gus macOS Unit Tests",
+      "-destination",
+      "platform=macOS",
+      "-derivedDataPath",
+      "build/DerivedData",
+      "ONLY_ACTIVE_ARCH=YES",
+      "build"
+    ],
+    "exitCode": 0,
+    "seconds": 54.6
+  },
+  {
+    "lane": "tv",
+    "command": [
+      "xcodebuild",
+      "-project",
+      "A Playa Named Gus.xcodeproj",
+      "-scheme",
+      "Gus tvOS Unit Tests",
+      "-destination",
+      "platform=tvOS Simulator,id=07FA9453-0F67-4F99-AA46-7799B3883D6E",
+      "-derivedDataPath",
+      "build/DerivedData",
+      "ONLY_ACTIVE_ARCH=YES",
+      "build"
+    ],
+    "exitCode": 0,
+    "seconds": 100.3
+  },
+  {
+    "lane": "vision",
+    "command": [
+      "xcodebuild",
+      "-project",
+      "A Playa Named Gus.xcodeproj",
+      "-scheme",
+      "Gus visionOS Unit Tests",
+      "-destination",
+      "platform=visionOS Simulator,id=1711D519-F8C9-42CA-A705-5F12E87D96F2",
+      "-derivedDataPath",
+      "build/DerivedData",
+      "ONLY_ACTIVE_ARCH=YES",
+      "build"
+    ],
+    "exitCode": 0,
+    "seconds": 14.8
+  },
+  {
+    "lane": "watch",
+    "command": [
+      "xcodebuild",
+      "-project",
+      "A Playa Named Gus.xcodeproj",
+      "-scheme",
+      "Gus watchOS",
+      "-destination",
+      "platform=watchOS Simulator,id=42BB7891-1C89-4DF7-A7F7-5CF4A9C71326",
+      "-derivedDataPath",
+      "build/DerivedData",
+      "ONLY_ACTIVE_ARCH=YES",
+      "build"
+    ],
+    "exitCode": 0,
+    "seconds": 32.6
+  }
+]

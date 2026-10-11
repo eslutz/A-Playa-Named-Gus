@@ -58,6 +58,7 @@ struct DownloadSourceResolution {
     var url: URL
     var fileExtension: String
     var requiresTranscoding: Bool
+    var operation: DownloadActivity.SourceOperation? = nil
 }
 
 struct PlaybackReportContext {
@@ -77,7 +78,7 @@ struct LiveTVTimer: Identifiable, Equatable {
 }
 
 @MainActor
-protocol MediaProviderSession: AnyObject {
+protocol MediaProviderSession: AnyObject, Sendable {
     var providerKind: MediaProviderKind { get }
     var capabilities: ProviderCapabilities { get }
 
@@ -129,6 +130,9 @@ protocol MediaProviderSession: AnyObject {
     func reportPlaybackProgress(context: PlaybackReportContext, positionTicks: Int, isPaused: Bool) async throws
     func reportPlaybackStopped(context: PlaybackReportContext, positionTicks: Int) async throws
 
+    /// Updates saved item progress without inventing a live playback session.
+    func updatePlaybackPosition(itemID: String, positionTicks: Int) async throws
+
     // MARK: Book reading progress (gated by `capabilities.supportsBookProgressSync`)
 
     /// Reports EPUB reading position as a 0...1 fraction through the book, so it surfaces
@@ -137,4 +141,10 @@ protocol MediaProviderSession: AnyObject {
     func reportBookProgress(itemID: String, fraction: Double) async throws
     /// Returns the server-side reading fraction (0...1), or nil if none is stored.
     func bookProgress(itemID: String) async throws -> Double?
+}
+
+extension MediaProviderSession {
+    func updatePlaybackPosition(itemID: String, positionTicks: Int) async throws {
+        throw GusError.server(String(localized: "This server does not support saved playback progress.", comment: "Unsupported offline progress sync"))
+    }
 }

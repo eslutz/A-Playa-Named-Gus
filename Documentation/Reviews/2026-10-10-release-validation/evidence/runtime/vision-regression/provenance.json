@@ -1,0 +1,23 @@
+{
+  "finding": "GUS-RV-016",
+  "resultBundle": "/tmp/gus-final-validation-9/ui/ui-vision.xcresult",
+  "test": "GusAuthenticatedUITests/testAudioCloseAndReopen()",
+  "nativeRecording": "E111446B-8754-4C9D-96BD-9FD045DE2646.mp4",
+  "recordingSHA256": "b923f56bb4431eac4013b447f86cff57d8274fcb89aad76245012f07c200ad31",
+  "frames": [
+    {
+      "file": "loaded-before-done.png",
+      "offsetSeconds": 7
+    },
+    {
+      "file": "home-missing-now-playing.png",
+      "offsetSeconds": 16
+    }
+  ],
+  "nativeScreenSize": [
+    3840,
+    2160
+  ],
+  "unchangedDecodedNativeRecordingFrames": true,
+  "scope": "Foreground loaded player followed by Home missing the return control; screenshot API produces unusable 1x1 PNGs."
+}

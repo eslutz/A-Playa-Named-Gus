@@ -1,0 +1,1 @@
+<XCUIAccessibilityAuditIssue: 0x10f1a5800>AuditType:"131072" CompactDescription:"Text clipped" DetailedDescription:"Text of this element may be clipped at larger Dynamic Type sizes." Element:(null)

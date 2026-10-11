@@ -1,0 +1,64 @@
+<?xml version="1.0"?>
+
+<trace-toc>
+    <run number="1">
+        <info>
+            <target>
+                <device platform="iOS Simulator" model="Simulated iPhone 17e" memory-size="17179869184" name="iPhone 17e" os-version="27.0 (24A434)" uuid="0091C2E3-7B8A-4452-B708-095D613AEB3A"/>
+                <host-device platform="macOS" model="MacBook Pro" name="Eric’s MacBook Pro" os-version="27.0.1 (26A434)" uuid="B9DF7556-F06A-5132-82AE-6D1B4622A7DD"/>
+                <process arguments="--gus-demo-server --gus-route item/e324275401dd350d45914c3388b5c8e0" type="launched" return-exit-status="0" name="A Playa Named Gus" pid="7135" termination-reason="exit(0)"/>
+            </target>
+            <summary>
+                <start-date>2026-10-11T01:20:28.365-04:00</start-date>
+                <end-date>2026-10-11T01:20:49.037-04:00</end-date>
+                <duration>20.671542</duration>
+                <end-reason>Time limit reached</end-reason>
+                <instruments-version>27.0 (27A266a)</instruments-version>
+                <template-name>Leaks</template-name>
+                <recording-mode>Deferred</recording-mode>
+                <time-limit>20 seconds</time-limit>
+                <intruments-recording-settings>
+                    <instrument name="Allocations">
+                        <options>
+                            <option key="Record" value="Heap and VM allocations
+Reference counts
+Identities of virtual C++ objects"/>
+                            <option key="When stopping" value="Immediately discard unrecorded data"/>
+                            <option key="Freed memory" value="Keep events"/>
+                            <option key="Type Filters" value="Record all types"/>
+                        </options>
+                    </instrument>
+                </intruments-recording-settings>
+            </summary>
+        </info>
+        <processes>
+            <process name="kernel" pid="0" path="/System/Library/Kernels/kernel.release.t6000"/>
+            <process name="A Playa Named Gus" pid="7135" path="/Users/ericslutz/Developer/Code/Side Projects/A Playa Named Gus/Gus/build/release-validation-audit/Build/Products/Debug-iphonesimulator/A Playa Named Gus.app"/>
+        </processes>
+        <data>
+            <table schema="os-signpost" category="PointsOfInterest" target-pid="SINGLE" documentation="Holds a signpost event from the OS's Unified Logging and Tracing component."/>
+            <table swift-table="&quot;StateReportingIntervals()&quot;" schema="StateReportingIntervals" documentation="Tracks named application states, volatile updates, and rate-limit windows reported via the State Reporting API, per process and domain"/>
+            <table schema="os-signpost-arg" category="PointsOfInterest" target-pid="SINGLE" documentation="Holds a signpost metadata argument from the OS's Unified Logging and Tracing component."/>
+            <table schema="os-log" category="PointsOfInterest" target-pid="SINGLE" documentation="Holds a message from the OS's Unified Logging and Tracing component."/>
+            <table swift-table="&quot;OSSignpostIntervals(layoutScope: InstrumentsPlugIn.OSSignpostLayoutScope.name, categories: Set([\&quot;PointsOfInterest\&quot;]), mustTargetAllProcesses: false)&quot;" schema="OSSignpostIntervals"/>
+            <table schema="thread-info" documentation="Associates threads with their owning process."/>
+            <table schema="os-signpost" subsystem="&quot;com.apple.StateReporting.Heartbeat&quot; &quot;com.apple.StateReporting.Volatile&quot; &quot;com.apple.StateReporting.Transition&quot;" target-pid="ALL" documentation="Holds a signpost event from the OS's Unified Logging and Tracing component."/>
+            <table target-pid="SINGLE" dynamic-tracing-enabled-subsystems="&quot;com.apple.neappprivacy&quot;" category="PointsOfInterest" schema="os-signpost" documentation="Holds a signpost event from the OS's Unified Logging and Tracing component."/>
+            <table schema="process-info" documentation="Associates processes with their process names."/>
+            <table swift-table="&quot;PointsOfInterestEvents(excludeOSLogs: false, mustTargetAllProcesses: false)&quot;" schema="PointsOfInterestEvents"/>
+        </data>
+        <tracks>
+            <track name="Allocations">
+                <details>
+                    <detail kind="table" name="Statistics"/>
+                    <detail kind="table" name="Allocations List"/>
+                </details>
+            </track>
+            <track name="Leaks">
+                <details>
+                    <detail kind="table" name="Leaks"/>
+                </details>
+            </track>
+        </tracks>
+    </run>
+</trace-toc>

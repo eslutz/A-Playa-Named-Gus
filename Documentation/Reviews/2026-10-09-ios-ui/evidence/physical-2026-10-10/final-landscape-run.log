@@ -1,0 +1,260 @@
+Command line invocation:
+    /Applications/Development/Xcode.app/Contents/Developer/usr/bin/xcodebuild test-without-building -project /tmp/gus-physical-audit-20261010/GusPhysicalAudit.xcodeproj -scheme GusPhysicalAudit -destination platform=iOS,id=00008160-00067D8908C1400A -derivedDataPath /tmp/gus-physical-audit-20261010/build -resultBundlePath /tmp/gus-physical-audit-20261010/final-landscape.xcresult "-only-testing:GusPhysicalAuditTests/ExtraAudit/testEpisodeDetail" "-only-testing:GusPhysicalAuditTests/ExtraAudit/testNavigationAndAbout" -maximum-test-execution-time-allowance 100 -test-timeouts-enabled YES
+
+Writing result bundle at path:
+	/tmp/gus-physical-audit-20261010/final-landscape.xcresult
+
+2026-10-10 04:19:29.893474-0400 GusPhysicalAuditTests-Runner[4578:820991] [Default] Running tests...
+    t =      nans Interface orientation changed to Landscape Right
+Test Suite 'Selected tests' started at 2026-10-10 04:19:30.097.
+Test Suite 'GusPhysicalAuditTests.xctest' started at 2026-10-10 04:19:30.097.
+Test Suite 'ExtraAudit' started at 2026-10-10 04:19:30.097.
+Test Case '-[GusPhysicalAuditTests.ExtraAudit testEpisodeDetail]' started.
+    t =     0.00s Start Test at 2026-10-10 04:19:30.098
+    t =     0.01s Set Up
+    t =     0.01s Open dev.ericslutz.gus
+    t =     0.01s     Launch dev.ericslutz.gus
+    t =     0.01s         Terminate dev.ericslutz.gus:4575
+    t =     0.05s             Interface orientation changed to Portrait
+    t =     1.12s         Interface orientation changed to Landscape Right
+    t =     1.14s         Setting up automation session
+    t =     1.19s         Wait for dev.ericslutz.gus to idle
+    t =     2.32s Checking existence of `"Libraries" Button`
+    t =     2.33s     Requesting snapshot of accessibility hierarchy for app with pid 4579
+    t =     2.41s     Find: Descendants matching type TabBar
+    t =     2.42s Tap "Libraries" StaticText
+    t =     2.42s     Wait for dev.ericslutz.gus to idle
+    t =     2.42s     Find the "Libraries" StaticText
+    t =     2.43s         Requesting snapshot of accessibility hierarchy for app with pid 4579
+    t =     2.48s     Check for interrupting elements affecting "Libraries" StaticText
+    t =     2.50s         Requesting snapshot of accessibility hierarchy for app with pid 4579
+    t =     2.53s         Find: Descendants matching predicate identifier == "NotificationShortLookView" OR elementType == 7
+    t =     2.54s     Synthesize event
+    t =     2.84s     Wait for dev.ericslutz.gus to idle
+    t =     2.85s Tap "Family Shows" Button
+    t =     2.85s     Wait for dev.ericslutz.gus to idle
+    t =     2.86s     Find the "Family Shows" Button
+    t =     2.86s         Requesting snapshot of accessibility hierarchy for app with pid 4579
+    t =     2.90s         Find: Descendants matching type Button
+    t =     2.91s         Find: Elements matching predicate '"Family Shows" IN identifiers'
+    t =     2.91s     Check for interrupting elements affecting "Family Shows" Button
+    t =     2.93s         Requesting snapshot of accessibility hierarchy for app with pid 4579
+    t =     2.97s         Find: Descendants matching predicate identifier == "NotificationShortLookView" OR elementType == 7
+    t =     2.97s     Synthesize event
+    t =     2.99s         Scroll element to visible
+    t =     3.00s         Find the "Family Shows" Button
+    t =     3.00s             Requesting snapshot of accessibility hierarchy for app with pid 4579
+    t =     3.03s             Find: Descendants matching type Button
+    t =     3.03s             Find: Elements matching predicate '"Family Shows" IN identifiers'
+    t =     3.06s         Computed hit point {-1, -1} after scrolling to visible
+    t =     3.36s     Wait for dev.ericslutz.gus to idle
+    t =     3.71s Waiting 8.0s for "Are You Afraid of the Dark?, 1990" Button to exist
+    t =     4.74s     Checking `Expect predicate `existsNoRetry == 1` for object "Are You Afraid of the Dark?, 1990" Button`
+    t =     4.74s         Checking existence of `"Are You Afraid of the Dark?, 1990" Button`
+    t =     4.74s             Requesting snapshot of accessibility hierarchy for app with pid 4579
+    t =     4.82s             Find: Descendants matching type Button
+    t =     4.82s             Find: Elements matching predicate '"Are You Afraid of the Dark?, 1990" IN identifiers'
+    t =     4.82s Tap "Are You Afraid of the Dark?, 1990" Button
+    t =     4.82s     Wait for dev.ericslutz.gus to idle
+    t =     4.83s     Find the "Are You Afraid of the Dark?, 1990" Button
+    t =     4.83s         Requesting snapshot of accessibility hierarchy for app with pid 4579
+    t =     4.87s         Find: Descendants matching type Button
+    t =     4.87s         Find: Elements matching predicate '"Are You Afraid of the Dark?, 1990" IN identifiers'
+    t =     4.88s     Check for interrupting elements affecting "Are You Afraid of the Dark?, 1990" Button
+    t =     4.89s         Requesting snapshot of accessibility hierarchy for app with pid 4579
+    t =     4.93s         Find: Descendants matching predicate identifier == "NotificationShortLookView" OR elementType == 7
+    t =     4.93s     Synthesize event
+    t =     5.22s     Wait for dev.ericslutz.gus to idle
+    t =     8.60s Find the Application 'dev.ericslutz.gus'
+    t =     8.60s     Requesting snapshot of accessibility hierarchy for app with pid 4579
+    t =     8.69s Find the Application 'dev.ericslutz.gus'
+    t =     8.69s     Requesting snapshot of accessibility hierarchy for app with pid 4579
+    t =     8.74s Press Application 'dev.ericslutz.gus'[0.80, 0.76] for 0.1 seconds, then drag to Application 'dev.ericslutz.gus'[0.80, 0.28] with velocity of 500.00 pixels per second, and then hold for 0.0 seconds 
+    t =     8.74s     Wait for dev.ericslutz.gus to idle
+    t =     8.75s     Find the Application 'dev.ericslutz.gus'
+    t =     8.75s         Requesting snapshot of accessibility hierarchy for app with pid 4579
+    t =     8.81s     Check for interrupting elements affecting "Gus" Application
+    t =     8.82s         Requesting snapshot of accessibility hierarchy for app with pid 4579
+    t =     8.86s         Find: Descendants matching predicate identifier == "NotificationShortLookView" OR elementType == 7
+    t =     8.87s     Synthesize event
+    t =     8.89s         Find the Application 'dev.ericslutz.gus'
+    t =     8.89s             Requesting snapshot of accessibility hierarchy for app with pid 4579
+    t =     8.94s         Find the Application 'dev.ericslutz.gus'
+    t =     8.94s             Requesting snapshot of accessibility hierarchy for app with pid 4579
+    t =     8.99s         Find the Application 'dev.ericslutz.gus'
+    t =     8.99s             Requesting snapshot of accessibility hierarchy for app with pid 4579
+    t =     9.04s         Find the Application 'dev.ericslutz.gus'
+    t =     9.04s             Requesting snapshot of accessibility hierarchy for app with pid 4579
+    t =     9.10s         Find the Application 'dev.ericslutz.gus'
+    t =     9.10s             Requesting snapshot of accessibility hierarchy for app with pid 4579
+    t =     9.91s     Wait for dev.ericslutz.gus to idle
+    t =    14.38s Find the Application 'dev.ericslutz.gus'
+    t =    14.39s     Requesting snapshot of accessibility hierarchy for app with pid 4579
+    t =    14.46s Find the Application 'dev.ericslutz.gus'
+    t =    14.47s     Requesting snapshot of accessibility hierarchy for app with pid 4579
+    t =    14.53s Requesting snapshot of accessibility hierarchy for app with pid 4579
+    t =    14.76s Requesting snapshot of accessibility hierarchy for app with pid 4579
+    t =    14.85s Added attachment named 'extra-episode-rail-landscape-tree'
+CAPTURE_READY extra-episode-rail-landscape
+    t =    17.86s Find the Application 'dev.ericslutz.gus'
+    t =    17.86s     Requesting snapshot of accessibility hierarchy for app with pid 4579
+    t =    17.94s Find the Application 'dev.ericslutz.gus'
+    t =    17.94s     Requesting snapshot of accessibility hierarchy for app with pid 4579
+    t =    18.01s Tap Application 'dev.ericslutz.gus'[0.73, 0.70]
+    t =    18.01s     Wait for dev.ericslutz.gus to idle
+    t =    18.01s     Find the Application 'dev.ericslutz.gus'
+    t =    18.01s         Requesting snapshot of accessibility hierarchy for app with pid 4579
+    t =    18.07s     Check for interrupting elements affecting "Gus" Application
+    t =    18.09s         Requesting snapshot of accessibility hierarchy for app with pid 4579
+    t =    18.13s         Find: Descendants matching predicate identifier == "NotificationShortLookView" OR elementType == 7
+    t =    18.14s     Synthesize event
+    t =    18.16s         Find the Application 'dev.ericslutz.gus'
+    t =    18.16s             Requesting snapshot of accessibility hierarchy for app with pid 4579
+    t =    18.21s         Find the Application 'dev.ericslutz.gus'
+    t =    18.21s             Requesting snapshot of accessibility hierarchy for app with pid 4579
+    t =    18.27s         Find the Application 'dev.ericslutz.gus'
+    t =    18.27s             Requesting snapshot of accessibility hierarchy for app with pid 4579
+    t =    18.60s     Wait for dev.ericslutz.gus to idle
+    t =    21.96s Find the Application 'dev.ericslutz.gus'
+    t =    21.97s     Requesting snapshot of accessibility hierarchy for app with pid 4579
+    t =    22.06s Find the Application 'dev.ericslutz.gus'
+    t =    22.06s     Requesting snapshot of accessibility hierarchy for app with pid 4579
+    t =    22.12s Requesting snapshot of accessibility hierarchy for app with pid 4579
+    t =    22.31s Requesting snapshot of accessibility hierarchy for app with pid 4579
+    t =    22.40s Added attachment named 'extra-episode-detail-landscape-tree'
+CAPTURE_READY extra-episode-detail-landscape
+    t =    25.41s Tear Down
+Test Case '-[GusPhysicalAuditTests.ExtraAudit testEpisodeDetail]' passed (25.471 seconds).
+Test Case '-[GusPhysicalAuditTests.ExtraAudit testNavigationAndAbout]' started.
+    t =     0.00s Start Test at 2026-10-10 04:19:55.570
+    t =     0.01s Set Up
+    t =     0.01s Open dev.ericslutz.gus
+    t =     0.01s     Launch dev.ericslutz.gus
+    t =     0.01s         Terminate dev.ericslutz.gus:4579
+    t =     0.18s             Interface orientation changed to Portrait
+    t =     1.11s         Interface orientation changed to Landscape Right
+    t =     1.12s         Setting up automation session
+    t =     1.16s         Wait for dev.ericslutz.gus to idle
+    t =     2.32s Checking existence of `"More" Button`
+    t =     2.33s     Requesting snapshot of accessibility hierarchy for app with pid 4582
+    t =     2.43s     Find: Descendants matching type TabBar
+    t =     2.44s Checking existence of `"Settings" Button`
+    t =     2.44s     Requesting snapshot of accessibility hierarchy for app with pid 4582
+    t =     2.49s     Find: Descendants matching type TabBar
+    t =     2.50s Tap "Settings" StaticText
+    t =     2.50s     Wait for dev.ericslutz.gus to idle
+    t =     2.50s     Find the "Settings" StaticText
+    t =     2.51s         Requesting snapshot of accessibility hierarchy for app with pid 4582
+    t =     2.56s     Check for interrupting elements affecting "Settings" StaticText
+    t =     2.58s         Requesting snapshot of accessibility hierarchy for app with pid 4582
+    t =     2.63s         Find: Descendants matching predicate identifier == "NotificationShortLookView" OR elementType == 7
+    t =     2.64s     Synthesize event
+    t =     2.66s         Scroll element to visible
+    t =     2.66s         Find the "Settings" StaticText
+    t =     2.67s             Requesting snapshot of accessibility hierarchy for app with pid 4582
+    t =     2.76s         Computed hit point {-1, -1} after scrolling to visible
+    t =     3.05s     Wait for dev.ericslutz.gus to idle
+    t =     3.06s Find the Application 'dev.ericslutz.gus'
+    t =     3.07s     Requesting snapshot of accessibility hierarchy for app with pid 4582
+    t =     3.15s Find the Application 'dev.ericslutz.gus'
+    t =     3.15s     Requesting snapshot of accessibility hierarchy for app with pid 4582
+    t =     3.22s Press Application 'dev.ericslutz.gus'[0.80, 0.76] for 0.1 seconds, then drag to Application 'dev.ericslutz.gus'[0.80, 0.28] with velocity of 500.00 pixels per second, and then hold for 0.0 seconds 
+    t =     3.23s     Wait for dev.ericslutz.gus to idle
+    t =     3.23s     Find the Application 'dev.ericslutz.gus'
+    t =     3.23s         Requesting snapshot of accessibility hierarchy for app with pid 4582
+    t =     3.32s     Check for interrupting elements affecting "Gus" Application
+    t =     3.33s         Requesting snapshot of accessibility hierarchy for app with pid 4582
+    t =     3.40s         Find: Descendants matching predicate identifier == "NotificationShortLookView" OR elementType == 7
+    t =     3.41s     Synthesize event
+    t =     3.43s         Find the Application 'dev.ericslutz.gus'
+    t =     3.43s             Requesting snapshot of accessibility hierarchy for app with pid 4582
+    t =     3.51s         Find the Application 'dev.ericslutz.gus'
+    t =     3.51s             Requesting snapshot of accessibility hierarchy for app with pid 4582
+    t =     3.58s         Find the Application 'dev.ericslutz.gus'
+    t =     3.58s             Requesting snapshot of accessibility hierarchy for app with pid 4582
+    t =     3.65s         Find the Application 'dev.ericslutz.gus'
+    t =     3.65s             Requesting snapshot of accessibility hierarchy for app with pid 4582
+    t =     3.73s         Find the Application 'dev.ericslutz.gus'
+    t =     3.73s             Requesting snapshot of accessibility hierarchy for app with pid 4582
+    t =     4.56s     Wait for dev.ericslutz.gus to idle
+    t =     6.08s Press Application 'dev.ericslutz.gus'[0.80, 0.76] for 0.1 seconds, then drag to Application 'dev.ericslutz.gus'[0.80, 0.28] with velocity of 500.00 pixels per second, and then hold for 0.0 seconds 
+    t =     6.08s     Wait for dev.ericslutz.gus to idle
+    t =     6.09s     Find the Application 'dev.ericslutz.gus'
+    t =     6.09s         Requesting snapshot of accessibility hierarchy for app with pid 4582
+    t =     6.18s     Check for interrupting elements affecting "Gus" Application
+    t =     6.20s         Requesting snapshot of accessibility hierarchy for app with pid 4582
+    t =     6.27s         Find: Descendants matching predicate identifier == "NotificationShortLookView" OR elementType == 7
+    t =     6.27s     Synthesize event
+    t =     6.29s         Find the Application 'dev.ericslutz.gus'
+    t =     6.30s             Requesting snapshot of accessibility hierarchy for app with pid 4582
+    t =     6.38s         Find the Application 'dev.ericslutz.gus'
+    t =     6.38s             Requesting snapshot of accessibility hierarchy for app with pid 4582
+    t =     6.47s         Find the Application 'dev.ericslutz.gus'
+    t =     6.47s             Requesting snapshot of accessibility hierarchy for app with pid 4582
+    t =     6.55s         Find the Application 'dev.ericslutz.gus'
+    t =     6.55s             Requesting snapshot of accessibility hierarchy for app with pid 4582
+    t =     6.64s         Find the Application 'dev.ericslutz.gus'
+    t =     6.64s             Requesting snapshot of accessibility hierarchy for app with pid 4582
+    t =     7.48s     Wait for dev.ericslutz.gus to idle
+    t =     8.98s Press Application 'dev.ericslutz.gus'[0.80, 0.70] for 0.1 seconds, then drag to Application 'dev.ericslutz.gus'[0.80, 0.50] with velocity of 500.00 pixels per second, and then hold for 0.0 seconds 
+    t =     8.98s     Wait for dev.ericslutz.gus to idle
+    t =     8.99s     Find the Application 'dev.ericslutz.gus'
+    t =     8.99s         Requesting snapshot of accessibility hierarchy for app with pid 4582
+    t =     9.08s     Check for interrupting elements affecting "Gus" Application
+    t =     9.09s         Requesting snapshot of accessibility hierarchy for app with pid 4582
+    t =     9.16s         Find: Descendants matching predicate identifier == "NotificationShortLookView" OR elementType == 7
+    t =     9.17s     Synthesize event
+    t =     9.18s         Find the Application 'dev.ericslutz.gus'
+    t =     9.18s             Requesting snapshot of accessibility hierarchy for app with pid 4582
+    t =     9.27s         Find the Application 'dev.ericslutz.gus'
+    t =     9.27s             Requesting snapshot of accessibility hierarchy for app with pid 4582
+    t =     9.36s         Find the Application 'dev.ericslutz.gus'
+    t =     9.36s             Requesting snapshot of accessibility hierarchy for app with pid 4582
+    t =     9.44s         Find the Application 'dev.ericslutz.gus'
+    t =     9.44s             Requesting snapshot of accessibility hierarchy for app with pid 4582
+    t =     9.53s         Find the Application 'dev.ericslutz.gus'
+    t =     9.54s             Requesting snapshot of accessibility hierarchy for app with pid 4582
+    t =    10.14s     Wait for dev.ericslutz.gus to idle
+    t =    13.15s Find the Application 'dev.ericslutz.gus'
+    t =    13.15s     Requesting snapshot of accessibility hierarchy for app with pid 4582
+    t =    13.24s Find the Application 'dev.ericslutz.gus'
+    t =    13.24s     Requesting snapshot of accessibility hierarchy for app with pid 4582
+    t =    13.32s Requesting snapshot of accessibility hierarchy for app with pid 4582
+    t =    13.55s Requesting snapshot of accessibility hierarchy for app with pid 4582
+    t =    13.63s Added attachment named 'extra-settings-navigation-row-landscape-tree'
+CAPTURE_READY extra-settings-navigation-row-landscape
+    t =    16.63s Tap "Navigation" Button
+    t =    16.63s     Wait for dev.ericslutz.gus to idle
+    t =    16.64s     Find the "Navigation" Button
+    t =    16.65s         Requesting snapshot of accessibility hierarchy for app with pid 4582
+    t =    16.74s     Check for interrupting elements affecting "Navigation" Button
+    t =    16.76s         Requesting snapshot of accessibility hierarchy for app with pid 4582
+    t =    16.84s         Find: Descendants matching predicate identifier == "NotificationShortLookView" OR elementType == 7
+    t =    16.84s     Synthesize event
+    t =    17.17s     Wait for dev.ericslutz.gus to idle
+    t =    20.18s Find the Application 'dev.ericslutz.gus'
+    t =    20.18s     Requesting snapshot of accessibility hierarchy for app with pid 4582
+    t =    20.27s Find the Application 'dev.ericslutz.gus'
+    t =    20.28s     Requesting snapshot of accessibility hierarchy for app with pid 4582
+    t =    20.33s Requesting snapshot of accessibility hierarchy for app with pid 4582
+    t =    20.52s Requesting snapshot of accessibility hierarchy for app with pid 4582
+    t =    20.61s Added attachment named 'extra-navigation-settings-landscape-tree'
+CAPTURE_READY extra-navigation-settings-landscape
+    t =    23.62s Tear Down
+Test Case '-[GusPhysicalAuditTests.ExtraAudit testNavigationAndAbout]' passed (23.650 seconds).
+Test Suite 'ExtraAudit' passed at 2026-10-10 04:20:19.220.
+	 Executed 2 tests, with 0 failures (0 unexpected) in 49.122 (49.123) seconds
+Test Suite 'GusPhysicalAuditTests.xctest' passed at 2026-10-10 04:20:19.220.
+	 Executed 2 tests, with 0 failures (0 unexpected) in 49.122 (49.123) seconds
+Test Suite 'Selected tests' passed at 2026-10-10 04:20:19.221.
+	 Executed 2 tests, with 0 failures (0 unexpected) in 49.122 (49.124) seconds
+2026-10-10 04:20:19.518 xcodebuild[71645:804880] [MT] IDETestOperationsObserverDebug: 50.895 elapsed -- Testing started completed.
+2026-10-10 04:20:19.518 xcodebuild[71645:804880] [MT] IDETestOperationsObserverDebug: 0.000 sec, +0.000 sec -- start
+2026-10-10 04:20:19.518 xcodebuild[71645:804880] [MT] IDETestOperationsObserverDebug: 50.895 sec, +50.895 sec -- end
+
+Test session results, code coverage, and logs:
+	/tmp/gus-physical-audit-20261010/final-landscape.xcresult
+
+** TEST EXECUTE SUCCEEDED **
+
+Testing started

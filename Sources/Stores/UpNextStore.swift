@@ -22,7 +22,7 @@ struct UpNextPersistence {
         do {
             return try JSONDecoder().decode([MediaItem].self, from: data)
         } catch {
-            logger.error("Failed to decode Up Next items: \(error.localizedDescription, privacy: .public)")
+            logger.error("Failed to decode Up Next items: \(error.localizedDescription, privacy: .private)")
             return []
         }
     }
@@ -35,7 +35,7 @@ struct UpNextPersistence {
             let data = try encoder.encode(items)
             try data.write(to: fileURL(for: scope), options: .atomic)
         } catch {
-            logger.error("Failed to save Up Next items: \(error.localizedDescription, privacy: .public)")
+            logger.error("Failed to save Up Next items: \(error.localizedDescription, privacy: .private)")
         }
     }
 

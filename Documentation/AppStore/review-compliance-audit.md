@@ -1,7 +1,9 @@
 # App Review Compliance Audit
 
-Status: **self-audit complete — no open red flags against the current codebase.**
-Remaining items are account-blocked operational steps, listed at the end.
+Status: **source/configuration self-audit; release acceptance pending.**
+The current findings, runtime evidence and manual/device gates are recorded in
+[the October 10 release audit](../Reviews/2026-10-10-release-validation/REPORT.md).
+This document does not establish Apple approval or full runtime coverage.
 
 This document walks the [App Review Guidelines](https://developer.apple.com/app-store/review/guidelines/)
 section by section for A Playa Named Gus, then audits the shipped configuration, and
@@ -42,9 +44,10 @@ backend, hosts no content, and collects no data.*
 
 ## 2. Performance
 
-- **2.1 App completeness** — All shipped features are functional; there are no
-  placeholder screens or "coming soon" UI. Reviewers can exercise every flow against the
-  demo Jellyfin library (see Notes for Review draft below).
+- **2.1 App completeness** — The local demo supports selected authentication, library,
+  playback and book journeys. Full feature acceptance still requires the device,
+  server-capability, recovery and accessibility checks in the release audit. Confirm
+  the reviewer demo server is reachable before submission.
 - **2.2 Beta testing** — Beta builds stay on TestFlight; the App Store build is final.
 - **2.3 Accurate metadata** — Screenshots are captured from the rights-cleared,
   public-domain/CC0 demo library (`Documentation/AppStore/demo-server.md`), so store
@@ -53,15 +56,16 @@ backend, hosts no content, and collects no data.*
   affiliated with the Jellyfin project.
 - **2.4 Hardware compatibility** — Native on iOS, iPadOS, tvOS, visionOS, and macOS,
   with a watchOS companion. Background work is limited to declared modes (audio) and
-  system background `URLSession` transfers; there are no battery-draining background
-  loops (verified by MetricKit baselines —
-  `Documentation/AppStore/performance-baselines.md`).
+  system background `URLSession` transfers. Watch remote updates are limited to visible
+  surfaces. Device battery/thermal acceptance and production MetricKit baselines remain
+  pending; simulator/source evidence cannot establish them.
 - **2.5 Software requirements**
   - **2.5.1 Public APIs only** — SwiftUI, AVKit/AVFoundation, MediaPlayer, Security,
     Foundation/URLSession, RealityKit, MetricKit, OSLog, WatchConnectivity, and (OS 26+)
     DeclaredAgeRange. Runtime third-party dependencies: `jellyfin-sdk-swift` (MPL-2.0)
     and, on iOS/iPadOS only, the BSD-licensed Readium toolkit for EPUB rendering
-    (ADR 0009). No private API use.
+    (ADR 0009). No app-owned private API use was identified in the source audit;
+    Apple upload validation remains pending.
   - **2.5.2 Self-contained** — No code download or remote execution. The EPUB reader
     renders local book files over a loopback server; it executes no remote code.
   - **2.5.4 Background audio** — The `audio` background mode is used exactly for
@@ -85,11 +89,14 @@ backend, hosts no content, and collects no data.*
   code. The mature Swiftfin client is a *pattern* reference only (documented policy in
   `AGENTS.md`); no code is copied, and the stacks differ fundamentally (pure
   AVKit/SwiftUI vs VLCKit/UIKit).
-- **4.2 Minimum functionality** — A full-featured native client (browse, search,
+- **4.2 Minimum functionality** — The native client implements browse, search,
   playback with track selection and chapters, downloads, music, books with an in-app
-  reader, photos, Live TV, SharePlay, CarPlay, watchOS remote/companion).
-- **4.4 Extensions** — The tvOS Top Shelf extension serves static, safe entry points
-  (`gus://` deep links) and fetches nothing.
+  reader, photos, Live TV, SharePlay and a Watch companion. Runtime acceptance follows
+  the release-validation ledger. CarPlay templates exist but remain unwired pending
+  Apple entitlement approval; do not advertise CarPlay as a shipping capability.
+- **4.4 Extensions** — The tvOS Top Shelf extension reads a local App Group Continue Watching snapshot,
+  supplies unauthenticated artwork URLs to the system, and uses `gus://` deep links.
+  It holds no credentials and falls back to static entry points when no snapshot exists.
 - **4.8 Login services** — Sign in with Apple is **not required**: authentication is to
   the *user's own self-hosted server* with that server's local accounts. There is no
   third-party or social login service in the flow, and the developer receives no
@@ -105,7 +112,7 @@ backend, hosts no content, and collects no data.*
 - **5.1.1 Privacy — data collection and storage** — The developer collects **nothing**.
   `Resources/PrivacyInfo.xcprivacy` declares `NSPrivacyTracking = false`, an empty
   `NSPrivacyCollectedDataTypes`, and exactly the two required-reason APIs in use
-  (Disk Space `85F4.1`, UserDefaults `CA92.1`) — call-site audit in
+  (Disk Space `E174.1`, UserDefaults `CA92.1`) — call-site audit in
   `Documentation/AppStore/privacy-labels.md`. Server credentials, tokens, playback
   state, and downloads stay on-device or travel only to the user's chosen server.
   Diagnostics are Apple-native (MetricKit + on-device aggregate summaries, no

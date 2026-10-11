@@ -10,6 +10,7 @@ import JellyfinAPI
 struct DownloadSourceResolver {
     enum SourceKind: String, Codable, Equatable {
         case original
+        case remuxed
         case transcoded
     }
 
@@ -53,22 +54,19 @@ struct DownloadSourceResolver {
             try await client.send(playbackInfoRequest(itemID: itemID)).value
         }
         guard let source = response.mediaSources?.first else { throw ResolverError.noMediaSource }
-        guard let mediaSourceID = source.id else { throw ResolverError.missingMediaSourceID }
-        return Self.transcodedSource(itemID: itemID, mediaSourceID: mediaSourceID)
+        return try Self.convertedSource(itemID: itemID, source: JellyfinMediaItemMapper.mediaSource(from: source))
     }
 
     /// Synchronous resolution from item metadata only (no network round-trip); video
     /// transcodes fall back to the item's own media-source list.
-    static func localSource(for item: MediaItem) throws -> Source {
-        if let source = try metadataResolvedSource(for: item, userID: nil) {
+    static func localSource(for item: MediaItem, capabilities: DevicePlaybackCapabilities = .current) throws -> Source {
+        if let source = try metadataResolvedSource(for: item, userID: nil, capabilities: capabilities) {
             return source
         }
 
         guard let itemID = item.id else { throw ResolverError.missingItemID }
-        if let source = item.mediaSources.first,
-           let mediaSourceID = source.id
-        {
-            return transcodedSource(itemID: itemID, mediaSourceID: mediaSourceID)
+        if let source = item.mediaSources.first {
+            return try convertedSource(itemID: itemID, source: source, capabilities: capabilities)
         }
 
         throw ResolverError.noMediaSource
@@ -76,11 +74,13 @@ struct DownloadSourceResolver {
 
     /// The shared, metadata-only cases: AVPlayer-native originals, book originals, and
     /// audio via the universal endpoint. Returns nil when a video transcode is needed.
-    private static func metadataResolvedSource(for item: MediaItem, userID: String?) throws -> Source? {
+    private static func metadataResolvedSource(for item: MediaItem, userID: String?, capabilities: DevicePlaybackCapabilities = .current) throws -> Source? {
         guard let itemID = item.id else { throw ResolverError.missingItemID }
         guard item.canDownload == true else { throw ResolverError.notDownloadable }
 
-        if let source = item.mediaSources.first(where: OfflineDownloadEligibility.isAVPlayerPlayable) {
+        // GetDownload serves the primary source, so an alternate playable source
+        // cannot make downloading the primary original safe.
+        if let source = item.mediaSources.first, OfflineDownloadEligibility.isAVPlayerPlayable(source, capabilities: capabilities) {
             return Source(
                 kind: .original,
                 request: Paths.getDownload(itemID: itemID),
@@ -131,24 +131,44 @@ struct DownloadSourceResolver {
         )
     }
 
-    static func transcodedSource(itemID: String, mediaSourceID: String) -> Source {
+    /// Copy compatible streams independently; changing an MKV container alone must
+    /// not force video encoding, stereo downmixing, or a resolution reduction.
+    static func convertedSource(itemID: String, source: MediaSource, capabilities: DevicePlaybackCapabilities = .current) throws -> Source {
+        guard let mediaSourceID = source.id else { throw ResolverError.missingMediaSourceID }
+        let videos = source.mediaStreams.filter { $0.type == .video }
+        let audios = source.mediaStreams.filter { $0.type == .audio }
+        let video = videos.first(where: { $0.isDefault == true }) ?? videos.first
+        let audio = audios.first(where: { $0.isDefault == true }) ?? audios.first
+        let copyVideo = video.map { OfflineDownloadEligibility.isVideoStreamPlayable($0, capabilities: capabilities) } ?? false
+        let copyAudio = audio.map { ["aac", "ac3", "eac3", "alac"].contains($0.codec?.lowercased() ?? "") && ($0.channels ?? 2) <= 8 } ?? true
+        let videoCodec = copyVideo ? (video?.codec?.lowercased() ?? "h264") : "h264"
+        // The file store normalizes Jellyfin's hev1 tag to Apple's hvc1 after the
+        // transfer; neither the video nor the audio needs encoding for that repair.
+        let container = "mp4"
         let parameters = Paths.GetVideoStreamByContainerParameters(
             isStatic: false,
             mediaSourceID: mediaSourceID,
             deviceID: DeviceIdentity.deviceID,
-            audioCodec: "aac",
-            enableAutoStreamCopy: false,
-            allowVideoStreamCopy: false,
-            allowAudioStreamCopy: false,
-            maxAudioChannels: 2,
-            maxVideoBitDepth: 8,
-            videoCodec: "h264",
+            audioCodec: copyAudio ? (audio?.codec?.lowercased() ?? "aac") : "aac",
+            enableAutoStreamCopy: true,
+            allowVideoStreamCopy: copyVideo,
+            allowAudioStreamCopy: copyAudio,
+            audioBitRate: copyAudio ? nil : 256_000,
+            maxAudioChannels: 8,
+            maxWidth: video?.width ?? 4096,
+            maxHeight: video?.height ?? 4096,
+            videoBitRate: copyVideo ? 120_000_000 : 40_000_000,
+            subtitleStreamIndex: -1,
+            maxVideoBitDepth: videoCodec == "hevc" ? 10 : 8,
+            videoCodec: videoCodec,
+            audioStreamIndex: audio?.index,
+            videoStreamIndex: video?.index,
             context: .streaming
         )
         return Source(
-            kind: .transcoded,
-            request: Paths.getVideoStreamByContainer(itemID: itemID, container: "mp4", parameters: parameters),
-            fileExtension: "mp4"
+            kind: copyVideo && copyAudio ? .remuxed : .transcoded,
+            request: Paths.getVideoStreamByContainer(itemID: itemID, container: container, parameters: parameters),
+            fileExtension: container
         )
     }
 

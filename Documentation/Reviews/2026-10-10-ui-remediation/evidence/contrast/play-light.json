@@ -1,0 +1,23 @@
+{
+  "scope": "iPhone 18 Pro Max simulator, iOS 27, standard Large text, enabled movie Play, light appearance",
+  "source": "../audio-closure/movie-contrast.png",
+  "cropPixels": [
+    550,
+    1040,
+    780,
+    1140
+  ],
+  "foreground": [
+    255,
+    255,
+    255
+  ],
+  "background": [
+    65,
+    105,
+    110
+  ],
+  "contrast": 6.051,
+  "foregroundCorePixelCount": 2554,
+  "method": "Most frequent fill and white core glyphs in central button crop; sRGB relative luminance. This capture is scoped evidence, not complete conformance."
+}

@@ -1,0 +1,15 @@
+ios:
+✔ Test run with 274 tests in 46 suites passed after 2.003 seconds.
+** TEST SUCCEEDED **
+mac:
+􁁛 Test run with 274 tests in 46 suites passed after 1.222 seconds.
+** TEST SUCCEEDED **
+tv:
+✔ Test run with 274 tests in 46 suites passed after 1.198 seconds.
+** TEST SUCCEEDED **
+vision:
+✔ Test run with 274 tests in 46 suites passed after 1.286 seconds.
+** TEST SUCCEEDED **
+Final tvOS safe-area return change:
+✔ Test run with 274 tests in 46 suites passed after 1.369 seconds.
+** TEST SUCCEEDED **

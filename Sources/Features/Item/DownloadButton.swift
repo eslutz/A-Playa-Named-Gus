@@ -21,7 +21,7 @@ struct DownloadButton: View {
                 downloadLabel("Queued", systemImage: "clock")
                     .foregroundStyle(.secondary)
             case .downloading:
-                downloadLabel(record.requiresTranscodingForDownload && record.progress == 0 ? "Transcoding for download..." : "Downloading", systemImage: "arrow.down.circle")
+                downloadLabel(activityLabel(for: record), systemImage: "arrow.down.circle")
                     .foregroundStyle(.secondary)
             case .paused:
                 Button {
@@ -40,6 +40,17 @@ struct DownloadButton: View {
                   let itemID = item.id
         {
             downloadAction(itemID: itemID)
+        }
+    }
+
+    private func activityLabel(for record: OfflineDownloadRecord) -> LocalizedStringKey {
+        switch (downloads.activities[record.id] ?? record.activity)?.phase {
+        case .resolving: return "Finding download source"
+        case .queued: return "Queued"
+        case .waitingForServer: return "Waiting for server"
+        case .waitingForConnectivity: return "Waiting for connection"
+        case .saving: return "Saving download"
+        default: return "Downloading"
         }
     }
 

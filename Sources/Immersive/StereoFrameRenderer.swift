@@ -10,7 +10,10 @@
 
         @objc func step(_ link: CADisplayLink) {
             guard let owner else { return }
-            MainActor.assumeIsolated { owner.processFrame(link) }
+            // The link is scheduled on RunLoop.main. Transfer only its numeric
+            // time value; CADisplayLink itself is not Sendable.
+            let targetTimestamp = link.targetTimestamp
+            MainActor.assumeIsolated { owner.processFrame(atHostTime: targetTimestamp) }
         }
     }
 
@@ -125,10 +128,10 @@
 
         // MARK: - Per-frame processing
 
-        fileprivate func processFrame(_ link: CADisplayLink) {
+        fileprivate func processFrame(atHostTime targetTimestamp: CFTimeInterval) {
             guard let output = playerItemOutput else { return }
 
-            let itemTime = output.itemTime(forHostTime: link.targetTimestamp)
+            let itemTime = output.itemTime(forHostTime: targetTimestamp)
             guard itemTime.isValid, output.hasNewPixelBuffer(forItemTime: itemTime) else { return }
 
             var displayTime = CMTime.invalid

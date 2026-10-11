@@ -6,6 +6,8 @@ import SwiftUI
 /// Libraries destination, so home content is fetched once per session instead of
 /// once per consuming screen.
 struct HomeView: View {
+    @Environment(RootNavigationState.self) private var rootState
+    @Environment(AppNavigationModel.self) private var navigation
     @Environment(SessionStore.self) private var session
     @Environment(PlaybackRefreshStore.self) private var playbackRefresh
     @Environment(SharedWithYouStore.self) private var sharedWithYou
@@ -19,7 +21,20 @@ struct HomeView: View {
     var body: some View {
         Group {
             if let store {
-                content(store)
+                if case let .failed(message) = store.state, DownloadsAvailability.isSupported {
+                    ContentUnavailableView {
+                        Label("Server Unavailable", systemImage: "wifi.slash")
+                    } description: {
+                        Text(message)
+                    } actions: {
+                        Button("Downloaded", systemImage: "arrow.down.circle") {
+                            navigation.open(.downloaded)
+                        }
+                        Button("Try Again") { Task { await store.load() } }
+                    }
+                } else {
+                    content(store)
+                }
             } else {
                 ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity)
             }
@@ -61,22 +76,24 @@ struct HomeView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 32) {
                     if !store.resumeItems.isEmpty {
-                        MediaRail(title: String(localized: "Continue Watching", comment: "Home rail title for in-progress media"), items: store.resumeItems)
+                        MediaRail(title: String(localized: "Continue Watching", comment: "Home rail title for in-progress media"), items: store.resumeItems).id("resume")
                     }
                     if !store.sharedWithYouItems.isEmpty {
-                        MediaRail(title: store.sharedWithYouTitle, items: store.sharedWithYouItems)
+                        MediaRail(title: store.sharedWithYouTitle, items: store.sharedWithYouItems).id("shared")
                     }
                     if !nextUpItems.isEmpty {
-                        MediaRail(title: String(localized: "Next Up", comment: "Home rail title for next episodes"), items: nextUpItems, style: .backdrop)
+                        MediaRail(title: String(localized: "Next Up", comment: "Home rail title for next episodes"), items: nextUpItems, style: .backdrop).id("next")
                     }
                     ForEach(store.latestSections) { section in
-                        MediaRail(title: section.title, items: section.items)
+                        MediaRail(title: section.title, items: section.items).id(section.id)
                     }
                 }
+                .scrollTargetLayout()
                 .padding()
                 .frame(maxWidth: PageContentMetrics.maxWidth, alignment: .leading)
                 .frame(maxWidth: .infinity)
             }
+            .scrollPosition(id: rootState.scrollBinding(for: "home"))
             .lookToScroll()
             .refreshable { await store.refresh() }
         }
@@ -183,17 +200,9 @@ private struct BackdropCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            ZStack {
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .fill(.regularMaterial)
-
-                AsyncPoster(url: imageURL, contentMode: .fit, placeholderSymbol: "play.rectangle")
-                    .aspectRatio(contentMode: .fit)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-            }
-            .aspectRatio(MediaRailMetrics.aspectRatio(for: .backdrop), contentMode: .fit)
-            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-            .posterHoverEffect()
+            ArtworkTile(url: imageURL, aspectRatio: MediaRailMetrics.aspectRatio(for: .backdrop), contentMode: .fit, placeholderSymbol: "play.rectangle")
+                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .posterHoverEffect()
 
             VStack(alignment: .leading, spacing: 1) {
                 Text(title)

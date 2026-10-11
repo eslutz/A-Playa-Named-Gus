@@ -1,0 +1,124 @@
+{
+  "originalSettingsRestored": {
+    "appearance": "light",
+    "contentSize": "large",
+    "increaseContrast": "disabled"
+  },
+  "auditSimulatorsStopped": 6,
+  "captureServiceStopped": true,
+  "demoServerStopped": true,
+  "recovery": "Initial settings reset and phone boot stalled. After shutting down audit devices and restarting CoreSimulatorService, phone boot/restoration succeeded.",
+  "commands": [
+    {
+      "command": [
+        "xcrun",
+        "simctl",
+        "ui",
+        "7889A486-07F4-4BE9-B92A-903BA2C1A1E9",
+        "appearance",
+        "light"
+      ],
+      "exitCode": 0,
+      "output": "",
+      "error": ""
+    },
+    {
+      "command": [
+        "xcrun",
+        "simctl",
+        "ui",
+        "7889A486-07F4-4BE9-B92A-903BA2C1A1E9",
+        "appearance"
+      ],
+      "exitCode": 0,
+      "output": "light",
+      "error": ""
+    },
+    {
+      "command": [
+        "xcrun",
+        "simctl",
+        "ui",
+        "7889A486-07F4-4BE9-B92A-903BA2C1A1E9",
+        "content_size",
+        "large"
+      ],
+      "exitCode": 0,
+      "output": "",
+      "error": ""
+    },
+    {
+      "command": [
+        "xcrun",
+        "simctl",
+        "ui",
+        "7889A486-07F4-4BE9-B92A-903BA2C1A1E9",
+        "content_size"
+      ],
+      "exitCode": 0,
+      "output": "large",
+      "error": ""
+    },
+    {
+      "command": [
+        "xcrun",
+        "simctl",
+        "ui",
+        "7889A486-07F4-4BE9-B92A-903BA2C1A1E9",
+        "increase_contrast",
+        "disabled"
+      ],
+      "exitCode": 0,
+      "output": "",
+      "error": ""
+    },
+    {
+      "command": [
+        "xcrun",
+        "simctl",
+        "ui",
+        "7889A486-07F4-4BE9-B92A-903BA2C1A1E9",
+        "increase_contrast"
+      ],
+      "exitCode": 0,
+      "output": "disabled",
+      "error": ""
+    },
+    {
+      "command": [
+        "xcrun",
+        "simctl",
+        "shutdown",
+        "7889A486-07F4-4BE9-B92A-903BA2C1A1E9"
+      ],
+      "exitCode": 0,
+      "output": "",
+      "error": ""
+    },
+    {
+      "command": [
+        "xcrun",
+        "simctl",
+        "list",
+        "devices",
+        "booted",
+        "--json"
+      ],
+      "exitCode": 0,
+      "output": "{\n  \"devices\" : {\n    \"com.apple.CoreSimulator.SimRuntime.xrOS-26-5\" : [\n\n    ],\n    \"com.apple.CoreSimulator.SimRuntime.iOS-27-0\" : [\n\n    ],\n    \"com.apple.CoreSimulator.SimRuntime.tvOS-26-5\" : [\n\n    ],\n    \"com.apple.CoreSimulator.SimRuntime.watchOS-26-5\" : [\n\n    ],\n    \"com.apple.CoreSimulator.SimRuntime.watchOS-10-5\" : [\n\n    ],\n    \"com.apple.CoreSimulator.SimRuntime.iOS-26-5\" : [\n\n    ],\n    \"com.apple.CoreSimulator.SimRuntime.tvOS-17-5\" : [\n\n    ],\n    \"com.apple.CoreSimulator.SimRuntime.iOS-17-5\" : [\n\n    ],\n    \"com.apple.CoreSimulator.SimRuntime.xrOS-1-2\" : [\n\n    ]\n  }\n}",
+      "error": ""
+    },
+    {
+      "command": [
+        "docker",
+        "inspect",
+        "-f",
+        "{{.State.Running}}",
+        "gus-demo-jellyfin"
+      ],
+      "exitCode": 0,
+      "output": "false",
+      "error": ""
+    }
+  ]
+}

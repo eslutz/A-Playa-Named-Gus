@@ -1,0 +1,42 @@
+Attributes: Application, 0x1060d8280, pid: 26588, label: 'Gus'
+Element subtree:
+ →Application, 0x1060d8280, pid: 26588, label: 'Gus'
+    Window, 0x1060d83c0, {{0.0, 0.0}, {211.0, 257.0}}
+      Other, 0x1060d8000, {{0.0, 0.0}, {211.0, 257.0}}
+        Other, 0x1060d9540, {{0.0, 0.0}, {211.0, 257.0}}
+          Other, 0x1060d9040, {{0.0, 0.0}, {211.0, 257.0}}
+            Other, 0x1060c3700, {{0.0, 0.0}, {211.0, 257.0}}
+              Other, 0x1060e3d40, {{0.0, 0.0}, {211.0, 257.0}}
+              Other, 0x1060e83c0, {{0.0, 0.0}, {211.0, 257.0}}
+              CollectionView, 0x1060eb5c0, {{0.0, 0.0}, {211.0, 257.0}}, identifier: 'PUICPageViewController_collectionView'
+                Cell, 0x1060dc000, {{0.0, 0.0}, {211.0, 257.0}}
+                  Other, 0x1060dc140, {{0.0, 0.0}, {211.0, 257.0}}
+                    Other, 0x1060eca00, {{0.0, 0.0}, {211.0, 257.0}}
+                      Other, 0x1060ee440, {{0.0, 0.0}, {211.0, 257.0}}
+                        Other, 0x1060ee1c0, {{0.0, 0.0}, {211.0, 257.0}}
+                          Other, 0x1060ee080, {{0.0, 0.0}, {211.0, 257.0}}
+                            NavigationBar, 0x1060edf40, {{0.0, 0.0}, {211.0, 66.0}}, identifier: 'Resume'
+                              StaticText, 0x1060ee580, {{16.5, 29.0}, {91.0, 31.5}}, label: 'Resume'
+                            Other, 0x1060ecc80, {{0.0, 0.0}, {211.0, 257.0}}
+                              Other, 0x1060ec8c0, {{0.0, 0.0}, {211.0, 257.0}}
+                                Other, 0x1060ec280, {{0.0, 0.0}, {211.0, 257.0}}
+                                  Other, 0x1060ec780, {{0.0, 0.0}, {211.0, 257.0}}
+                                    ScrollView, 0x1060ec640, {{14.5, 0.0}, {182.5, 257.0}}
+                                      Other, 0x1060ec140, {{14.5, 0.0}, {182.5, 257.0}}
+                                        Other, 0x1060ec000, {{14.5, 0.0}, {182.5, 93.6}}
+                                      Other, 0x1060eea80, {{14.5, 0.0}, {182.5, 257.0}}
+                                      Other, 0x1060eee40, {{14.5, 66.0}, {182.5, 81.5}}
+                                        StaticText, 0x1060ee940, {{22.5, 75.5}, {166.5, 61.0}}, label: 'Nothing In Progress'
+    Window (Main), 0x1060eed00, {{203.0, 61.5}, {6.0, 48.0}}
+      Other, 0x1060ed180, {{203.0, 61.5}, {6.0, 48.0}}, value: page 2 of 5
+    Window, 0x1060ed400, {{0.0, 0.0}, {211.0, 257.0}}
+      StatusBar, 0x1060ed540, {{0.0, 0.0}, {211.0, 40.0}}
+        Other, 0x1060ed900, {{0.0, 0.0}, {211.0, 40.0}}
+        Other, 0x1060eda40, {{0.0, 0.0}, {211.0, 40.0}}
+Path to element:
+ →Application, 0x1060d8280, pid: 26588, label: 'Gus'
+Query chain:
+ →Find: Application 'dev.ericslutz.gus.watchkitapp'
+  Output: {
+    Application, 0x1060ee800, pid: 26588, label: 'Gus'
+  }

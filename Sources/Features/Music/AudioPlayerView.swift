@@ -3,7 +3,7 @@ import SwiftUI
 /// Now-playing surface for songs and audiobooks: artwork, scrubber, queue transport,
 /// shuffle/repeat, and — for audiobooks — playback speed and chapter navigation.
 struct AudioPlayerView: View {
-    @Environment(\.dismiss) private var dismiss
+    @Environment(AudioPlaybackCoordinator.self) private var audio
     @Environment(SessionStore.self) private var session
     let store: AudioPlayerStore
 
@@ -17,28 +17,37 @@ struct AudioPlayerView: View {
     }
 
     var body: some View {
-        VStack(spacing: 24) {
-            artwork
-            titleBlock
-            progressBlock
-            transportControls
-            secondaryControls
+        LoadingStateView(state: store.state, retryAction: { audio.retry() }) {
+            GeometryReader { geometry in
+                ScrollView {
+                    ViewThatFits(in: .horizontal) {
+                        HStack(alignment: .center, spacing: 24) {
+                            artwork.frame(width: min(geometry.size.height * 0.5, 240))
+                            controls.frame(minWidth: 280, maxWidth: 560)
+                        }
+                        VStack(spacing: 24) { artwork; controls }
+                    }
+                    .padding(24)
+                    .frame(maxWidth: .infinity)
+                }
+            }
         }
-        .padding(32)
-        .frame(maxWidth: 560)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .onChange(of: store.currentTime) { _, time in
             guard !isScrubbing else { return }
             scrubTime = time
         }
     }
 
+    private var controls: some View {
+        VStack(spacing: 20) { titleBlock; progressBlock; transportControls; secondaryControls }
+    }
+
     private var artwork: some View {
-        AsyncPoster(
+        ArtworkTile(
             url: track.flatMap { session.mediaProvider.primaryImageURL(for: $0, context: .posterGrid) },
+            aspectRatio: 1,
             placeholderSymbol: track?.type == .audioBook ? "book" : "music.note"
         )
-        .aspectRatio(1, contentMode: .fit)
         .frame(maxWidth: 320)
         .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
         .accessibilityHidden(true)
@@ -91,55 +100,71 @@ struct AudioPlayerView: View {
     }
 
     private var transportControls: some View {
-        HStack(spacing: 36) {
-            Button {
-                store.toggleShuffle()
-            } label: {
-                Image(systemName: "shuffle")
-                    .symbolVariant(store.isShuffled ? .circle.fill : .none)
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: 12) { shuffleButton; previousButton; playPauseButton; nextButton; repeatButton }
+            VStack(spacing: 12) {
+                HStack(spacing: 12) { previousButton; playPauseButton; nextButton }
+                HStack(spacing: 24) { shuffleButton; repeatButton }
             }
-            .accessibilityLabel(
-                store.isShuffled
-                    ? String(localized: "Shuffle On", comment: "Accessibility label for the shuffle button when active")
-                    : String(localized: "Shuffle Off", comment: "Accessibility label for the shuffle button when inactive")
-            )
-
-            Button {
-                Task { await store.previous() }
-            } label: {
-                Image(systemName: "backward.fill")
-            }
-            .accessibilityLabel(String(localized: "Previous Track", comment: "Accessibility label for the previous track button"))
-
-            Button {
-                store.playPause()
-            } label: {
-                Image(systemName: store.isPlaying ? "pause.circle.fill" : "play.circle.fill")
-                    .font(.system(size: playPauseIconSize))
-            }
-            .accessibilityLabel(
-                store.isPlaying
-                    ? String(localized: "Pause", comment: "Accessibility label for the pause button")
-                    : String(localized: "Play", comment: "Accessibility label for the play button")
-            )
-
-            Button {
-                Task { await store.next() }
-            } label: {
-                Image(systemName: "forward.fill")
-            }
-            .disabled(!store.queue.hasNext)
-            .accessibilityLabel(String(localized: "Next Track", comment: "Accessibility label for the next track button"))
-
-            Button {
-                store.cycleRepeatMode()
-            } label: {
-                Image(systemName: repeatSymbol)
-            }
-            .accessibilityLabel(repeatAccessibilityLabel)
         }
         .font(.title2)
-        .buttonStyle(.plain)
+        .buttonStyle(AudioTransportStyle())
+    }
+
+    private var shuffleButton: some View {
+        Button {
+            store.toggleShuffle()
+        } label: {
+            Image(systemName: "shuffle")
+                .symbolVariant(store.isShuffled ? .circle.fill : .none)
+        }
+        .accessibilityLabel(
+            store.isShuffled
+                ? String(localized: "Shuffle On", comment: "Accessibility label for the shuffle button when active")
+                : String(localized: "Shuffle Off", comment: "Accessibility label for the shuffle button when inactive")
+        )
+    }
+
+    private var previousButton: some View {
+        Button {
+            Task { await store.previous() }
+        } label: {
+            Image(systemName: "backward.fill")
+        }
+        .accessibilityLabel(String(localized: "Previous Track", comment: "Accessibility label for the previous track button"))
+    }
+
+    private var playPauseButton: some View {
+        Button {
+            store.playPause()
+        } label: {
+            Image(systemName: store.isPlaying ? "pause.circle.fill" : "play.circle.fill")
+                .font(.system(size: playPauseIconSize))
+        }
+        .accessibilityLabel(
+            store.isPlaying
+                ? String(localized: "Pause", comment: "Accessibility label for the pause button")
+                : String(localized: "Play", comment: "Accessibility label for the play button")
+        )
+    }
+
+    private var nextButton: some View {
+        Button {
+            Task { await store.next() }
+        } label: {
+            Image(systemName: "forward.fill")
+        }
+        .disabled(!store.queue.hasNext)
+        .accessibilityLabel(String(localized: "Next Track", comment: "Accessibility label for the next track button"))
+    }
+
+    private var repeatButton: some View {
+        Button {
+            store.cycleRepeatMode()
+        } label: {
+            Image(systemName: repeatSymbol)
+        }
+        .accessibilityLabel(repeatAccessibilityLabel)
     }
 
     private var secondaryControls: some View {
@@ -215,32 +240,34 @@ struct AudioPlayerView: View {
     }
 }
 
-/// Presents the audio player for a single song/audiobook item, creating its own store.
-/// Used by `playerPresentation` when an audio item is opened from detail/search/rails.
+/// Entry fallback for audio reached through an existing presentation.
 struct AudioPlayerScreen: View {
+    @Environment(AudioPlaybackCoordinator.self) private var audio
     @Environment(SessionStore.self) private var session
     @Environment(OfflineDownloadStore.self) private var downloads
     let item: MediaItem
-
-    @State private var store: AudioPlayerStore?
-
+    var localOnly = false
     var body: some View {
         Group {
-            if let store {
+            if let store = audio.store {
                 AudioPlayerView(store: store)
             } else {
                 ProgressView()
             }
         }
         .task {
-            if store == nil {
-                let store = AudioPlayerStore(session: session, tracks: [item], downloads: downloads)
-                self.store = store
-                await store.start()
+            if audio.store == nil {
+                audio.play(tracks: [item], localOnly: localOnly, session: session, downloads: downloads)
             }
         }
-        .onDisappear {
-            store?.teardown()
-        }
+    }
+}
+
+private struct AudioTransportStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .frame(minWidth: 44, minHeight: 44)
+            .contentShape(Rectangle())
+            .opacity(configuration.isPressed ? 0.6 : 1)
     }
 }

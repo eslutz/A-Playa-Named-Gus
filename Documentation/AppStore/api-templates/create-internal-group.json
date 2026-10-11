@@ -1,0 +1,18 @@
+{
+  "data": {
+    "type": "betaGroups",
+    "attributes": {
+      "name": "Gus Internal",
+      "isInternalGroup": true,
+      "hasAccessToAllBuilds": false
+    },
+    "relationships": {
+      "app": {
+        "data": {
+          "type": "apps",
+          "id": "REPLACE_APP_ID"
+        }
+      }
+    }
+  }
+}

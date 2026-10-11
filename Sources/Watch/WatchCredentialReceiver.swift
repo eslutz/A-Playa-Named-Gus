@@ -6,7 +6,7 @@
     /// Watch-side WatchConnectivity receiver: adopts the session credential the iPhone
     /// app publishes after sign-in/restore, so the watch is signed in without typing.
     /// Standalone Quick Connect sign-in works without this — it is an accelerator.
-    final class WatchCredentialReceiver: NSObject, WCSessionDelegate {
+    final class WatchCredentialReceiver: NSObject, WCSessionDelegate, Sendable {
         static let shared = WatchCredentialReceiver()
 
         private let logger = Logger(subsystem: Logger.subsystem, category: "WatchRelay")

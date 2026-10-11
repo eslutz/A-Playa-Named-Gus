@@ -1,6 +1,7 @@
 import Foundation
 @testable import Gus
 import JellyfinAPI
+import os
 import Testing
 
 @Suite("Library store helpers", .serialized)
@@ -203,7 +204,7 @@ private func libraryTestSession() throws -> SessionStore {
     )
 }
 
-private struct StubbedLibraryItemsResponse {
+private struct StubbedLibraryItemsResponse: Sendable {
     var result: BaseItemDtoQueryResult
     var delayNanoseconds: UInt64 = 0
 }
@@ -217,9 +218,11 @@ private struct RecordedLibraryItemsRequest: Equatable {
     var sortOrder: String?
 }
 
-private final class LibraryItemsURLProtocol: URLProtocol {
+/// Foundation delivers protocol/client callbacks across queues. The only owned
+/// mutable lifecycle value is lock-protected; response state has its own lock.
+private final class LibraryItemsURLProtocol: URLProtocol, @unchecked Sendable {
     private static let state = LibraryItemsURLProtocolState()
-    private var loadingTask: Task<Void, Never>?
+    private let taskStorage = OSAllocatedUnfairLock<Task<Void, Never>?>(initialState: nil)
 
     static var recordedRequests: [RecordedLibraryItemsRequest] {
         state.recordedRequests
@@ -251,7 +254,7 @@ private final class LibraryItemsURLProtocol: URLProtocol {
     override func startLoading() {
         do {
             let response = try Self.state.response(for: request)
-            loadingTask = Task { [weak self] in
+            let task = Task { @Sendable [weak self] in
                 guard let self else { return }
                 do {
                     if response.delayNanoseconds > 0 {
@@ -277,17 +280,19 @@ private final class LibraryItemsURLProtocol: URLProtocol {
                     client?.urlProtocol(self, didFailWithError: error)
                 }
             }
+            taskStorage.withLock { $0 = task }
         } catch {
             client?.urlProtocol(self, didFailWithError: error)
         }
     }
 
     override func stopLoading() {
-        loadingTask?.cancel()
+        taskStorage.withLock { $0?.cancel() }
     }
 }
 
-private final class LibraryItemsURLProtocolState {
+/// All response/request mutations are serialized by lock, including snapshots.
+private final class LibraryItemsURLProtocolState: @unchecked Sendable {
     private let lock = NSLock()
     private var responses: [StubbedLibraryItemsResponse] = []
     private var requests: [RecordedLibraryItemsRequest] = []

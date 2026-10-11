@@ -1,5 +1,9 @@
 import XCTest
+#if os(iOS)
+    import UIKit
+#endif
 
+@MainActor
 final class GusLaunchUITests: XCTestCase {
     func testConnectScreenRendersOnLaunch() {
         let app = makeApp()
@@ -13,28 +17,55 @@ final class GusLaunchUITests: XCTestCase {
             let app = makeApp()
             app.launchArguments += [
                 "-UIPreferredContentSizeCategoryName",
-                "UICTContentSizeCategoryAccessibilityExtraExtraExtraLarge",
+                UIContentSizeCategory.accessibilityExtraExtraExtraLarge.rawValue,
             ]
             app.launch()
 
-            XCTAssertTrue(connectButton(in: app).waitForExistence(timeout: 5))
+            let headline = app.staticTexts["Connect to Jellyfin"].firstMatch
+            XCTAssertTrue(headline.waitForExistence(timeout: 10))
+            XCTAssertGreaterThanOrEqual(headline.frame.height, 40)
+            capture("connect-verified-ax5-top")
+            revealConnect(in: app)
+            capture("connect-verified-ax5-action")
         }
 
         func testConnectScreenRendersWithPseudolocalizationAtLargestAccessibilityContentSize() {
             let app = makeApp()
             app.launchArguments += [
-                "-AppleLanguages",
-                "(en-XA)",
-                "-AppleLocale",
-                "en_XA",
+                "-NSDoubleLocalizedStrings",
+                "YES",
                 "-UIPreferredContentSizeCategoryName",
-                "UICTContentSizeCategoryAccessibilityExtraExtraExtraLarge",
+                UIContentSizeCategory.accessibilityExtraExtraExtraLarge.rawValue,
             ]
             app.launch()
 
-            XCTAssertTrue(connectButton(in: app).waitForExistence(timeout: 5))
+            revealConnect(in: app)
+            XCTAssertGreaterThan(connectButton(in: app).label.count, "Connect".count)
+            capture("connect-native-double-length-ax5")
         }
     #endif
+
+    #if os(iOS)
+        private func revealConnect(in app: XCUIApplication) {
+            let button = connectButton(in: app)
+            for _ in 0 ..< 8 {
+                if button.exists, button.isHittable {
+                    break
+                }
+                app.swipeUp()
+            }
+            XCTAssertTrue(button.waitForExistence(timeout: 5))
+            XCTAssertTrue(button.isHittable)
+        }
+
+    #endif
+
+    private func capture(_ name: String) {
+        let attachment = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+        attachment.name = name
+        attachment.lifetime = .keepAlways
+        add(attachment)
+    }
 
     private func makeApp() -> XCUIApplication {
         let app = XCUIApplication()

@@ -79,7 +79,7 @@ enum SpotlightIndexer {
 
             CSSearchableIndex.default().indexSearchableItems(searchable) { error in
                 if let error {
-                    logger.debug("Spotlight donation failed: \(error.localizedDescription, privacy: .public)")
+                    logger.debug("Spotlight donation failed: \(error.localizedDescription, privacy: .private)")
                 }
             }
         }
@@ -90,7 +90,7 @@ enum SpotlightIndexer {
                 withDomainIdentifiers: [Identifier.domain(serverID: serverID, userID: userID)]
             ) { error in
                 if let error {
-                    logger.debug("Spotlight deindex failed: \(error.localizedDescription, privacy: .public)")
+                    logger.debug("Spotlight deindex failed: \(error.localizedDescription, privacy: .private)")
                 }
             }
         }

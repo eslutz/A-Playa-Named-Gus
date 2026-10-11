@@ -18,11 +18,16 @@ struct WatchBrowseView: View {
             retryAction: { Task { await load() } }
         ) {
             List(libraries, id: \.id) { library in
-                NavigationLink {
-                    WatchLibraryView(library: library)
-                } label: {
-                    Label(library.name ?? "Library", systemImage: library.librarySymbol)
+                if let id = library.id {
+                    NavigationLink(value: WatchLibraryRoute(id: id)) {
+                        Label(library.name ?? "Library", systemImage: library.librarySymbol)
+                    }
                 }
+            }
+        }
+        .navigationDestination(for: WatchLibraryRoute.self) { route in
+            if let library = libraries.first(where: { $0.id == route.id }) {
+                WatchLibraryView(library: library)
             }
         }
         .navigationTitle("Browse")
@@ -35,11 +40,13 @@ struct WatchBrowseView: View {
         guard state != .loading else { return }
         state = .loading
         do {
-            libraries = try await session.mediaProvider.userViews()
+            let loadedLibraries = try await session.mediaProvider.userViews()
+            try Task.checkCancellation()
+            libraries = loadedLibraries
             state = .loaded
         } catch {
             let gusError = GusError(from: error)
-            guard !gusError.isCancellation else { return }
+            guard !gusError.isCancellation else { state = .idle; return }
             state = .failed(gusError.localizedDescription)
         }
     }
@@ -66,6 +73,15 @@ struct WatchLibraryView: View {
                 WatchItemRow(item: item)
             }
         }
+        .navigationDestination(for: WatchItemRoute.self) { route in
+            if let item = items.first(where: { $0.id == route.id }) {
+                if item.type == .musicAlbum {
+                    WatchAlbumView(album: item)
+                } else {
+                    WatchItemActionsView(item: item)
+                }
+            }
+        }
         .navigationTitle(library.name ?? "Library")
         .task {
             await load()
@@ -84,11 +100,12 @@ struct WatchLibraryView: View {
                 isRecursive: true,
                 sort: .recentlyAdded
             ))
+            try Task.checkCancellation()
             items = ContentRatingGate.filter(page.items)
             state = .loaded
         } catch {
             let gusError = GusError(from: error)
-            guard !gusError.isCancellation else { return }
+            guard !gusError.isCancellation else { state = .idle; return }
             state = .failed(gusError.localizedDescription)
         }
     }
@@ -104,23 +121,23 @@ struct WatchLibraryView: View {
     }
 }
 
+private struct WatchLibraryRoute: Hashable {
+    let id: String
+}
+
+private struct WatchItemRoute: Hashable {
+    let id: String
+}
+
 /// One browsable item: albums drill into tracks; everything else opens actions.
 struct WatchItemRow: View {
     let item: MediaItem
 
     var body: some View {
-        if item.type == .musicAlbum {
-            NavigationLink {
-                WatchAlbumView(album: item)
-            } label: {
-                label
-            }
+        if let id = item.id {
+            NavigationLink(value: WatchItemRoute(id: id)) { label }
         } else {
-            NavigationLink {
-                WatchItemActionsView(item: item)
-            } label: {
-                label
-            }
+            label
         }
     }
 
@@ -191,11 +208,12 @@ struct WatchAlbumView: View {
                 limit: 1000,
                 sort: .trackOrder
             ))
+            try Task.checkCancellation()
             tracks = page.items.filter(\.isAudioPlayable)
             state = .loaded
         } catch {
             let gusError = GusError(from: error)
-            guard !gusError.isCancellation else { return }
+            guard !gusError.isCancellation else { state = .idle; return }
             state = .failed(gusError.localizedDescription)
         }
     }

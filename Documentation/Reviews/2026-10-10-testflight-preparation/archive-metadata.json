@@ -1,0 +1,16 @@
+[
+  {
+    "product": "Products/Applications/A Playa Named Gus.app/Info.plist",
+    "bundleID": "dev.ericslutz.gus",
+    "marketingVersion": "1.0.0",
+    "buildNumber": "1",
+    "nonExemptEncryption": false
+  },
+  {
+    "product": "Products/Applications/A Playa Named Gus.app/Watch/GusWatch.app/Info.plist",
+    "bundleID": "dev.ericslutz.gus.watchkitapp",
+    "marketingVersion": "1.0.0",
+    "buildNumber": "1",
+    "nonExemptEncryption": null
+  }
+]

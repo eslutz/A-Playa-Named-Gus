@@ -1,0 +1,102 @@
+Attributes: Application, 0x106418b40, pid: 52236, label: 'Gus'
+Element subtree:
+ →Application, 0x106418b40, pid: 52236, label: 'Gus'
+    Window (Main), 0x106418dc0, {{0.0, 0.0}, {402.0, 874.0}}
+      Other, 0x106418c80, {{0.0, 0.0}, {402.0, 874.0}}
+        Other, 0x106418f00, {{0.0, 0.0}, {402.0, 874.0}}
+          Other, 0x106419540, {{0.0, 0.0}, {402.0, 874.0}}
+            Other, 0x106419040, {{0.0, 0.0}, {402.0, 874.0}}
+              Other, 0x106419680, {{0.0, 0.0}, {402.0, 874.0}}
+                NavigationBar, 0x106419900, {{0.0, 62.0}, {402.0, 106.0}}, identifier: 'Connect to Jellyfin'
+                  StaticText, 0x106419b80, {{16.0, 119.7}, {297.0, 40.7}}, label: 'Connect to Jellyfin'
+                Other, 0x106419cc0, {{0.0, 0.0}, {402.0, 874.0}}
+                  Other, 0x106419a40, {{0.0, 0.0}, {402.0, 874.0}}
+                    Other, 0x106419e00, {{0.0, 0.0}, {402.0, 874.0}}
+                      Other, 0x10641a1c0, {{0.0, 0.0}, {402.0, 874.0}}
+                        CollectionView, 0x106419f40, {{0.0, 0.0}, {402.0, 874.0}}
+                          Other, 0x10641a080, {{-16.0, -1580.0}, {434.0, 1886.0}}
+                          Other, 0x10641a440, {{0.0, 0.0}, {402.0, 874.0}}
+                            Other, 0x10641a6c0, {{0.0, 0.0}, {402.0, 102.0}}
+                          Other, 0x10641a800, {{0.0, 0.0}, {402.0, 874.0}}
+                          Cell, 0x10641a580, {{16.0, 168.0}, {370.0, 40.3}}
+                            Other, 0x10641a940, {{16.0, 168.0}, {370.0, 40.3}}
+                            Other, 0x10641abc0, {{16.0, 168.0}, {370.0, 40.3}}
+                              Other, 0x10641ad00, {{16.0, 168.0}, {370.0, 40.3}}
+                                Other, 0x10641aa80, {{16.0, 168.0}, {370.0, 40.3}}
+                                  StaticText, 0x10641ae40, {{16.0, 168.0}, {370.0, 40.3}}, label: 'Server Address'
+                          Cell, 0x10641b0c0, {{16.0, 208.3}, {370.0, 52.0}}
+                            Other, 0x10641b200, {{16.0, 208.3}, {370.0, 52.0}}
+                              Other, 0x10641af80, {{16.0, 208.3}, {370.0, 52.0}}
+                            Other, 0x10641b340, {{16.0, 208.3}, {370.0, 52.0}}
+                              Other, 0x10641b5c0, {{16.0, 208.3}, {370.0, 52.0}}
+                                Other, 0x10641b700, {{16.0, 208.3}, {370.0, 52.0}}
+                                  TextField, 0x10641b480, {{32.0, 223.3}, {338.0, 22.0}}, placeholderValue: 'http://192.168.1.50:8096'
+                          Cell, 0x10641b840, {{16.0, 260.3}, {370.0, 45.7}}
+                            Other, 0x10641b980, {{16.0, 260.3}, {370.0, 45.7}}
+                            Other, 0x10641bc00, {{16.0, 260.3}, {370.0, 45.7}}
+                              Other, 0x10641bd40, {{16.0, 260.3}, {370.0, 45.7}}
+                                Other, 0x10641be80, {{16.0, 260.3}, {370.0, 45.7}}
+                                  StaticText, 0x10641bac0, {{16.0, 260.3}, {370.0, 45.7}}, label: 'Enter your Jellyfin server's address, including the port (default 8096).'
+                          Other, 0x106418140, {{-16.0, 306.0}, {434.0, 87.0}}
+                          Cell, 0x106418280, {{16.0, 323.7}, {370.0, 52.0}}
+                            Other, 0x1036b2bc0, {{16.0, 323.7}, {370.0, 52.0}}
+                              Other, 0x1036b2e40, {{16.0, 323.7}, {370.0, 52.0}}
+                            Other, 0x1036b2f80, {{16.0, 323.7}, {370.0, 52.0}}
+                              Other, 0x1036b3200, {{16.0, 323.7}, {370.0, 52.0}}
+                                Other, 0x1036b3340, {{16.0, 323.7}, {370.0, 52.0}}
+                                  Button, 0x1036b3480, {{16.0, 323.7}, {370.0, 52.0}}, identifier: 'ConnectServerView.connectButton', label: 'Connect', Disabled
+                          Other, 0x1036b3700, {{-16.0, 393.0}, {434.0, 370.0}}
+                          Cell, 0x1036b35c0, {{16.0, 393.0}, {370.0, 40.3}}
+                            Other, 0x1036b3e80, {{16.0, 393.0}, {370.0, 40.3}}
+                            Other, 0x1036b0c80, {{16.0, 393.0}, {370.0, 40.3}}
+                              Other, 0x1036b0dc0, {{16.0, 393.0}, {370.0, 40.3}}
+                                Other, 0x106dc4000, {{16.0, 393.0}, {370.0, 40.3}}
+                                  StaticText, 0x106dc4140, {{16.0, 393.0}, {370.0, 40.3}}, label: 'Local Servers'
+                          Cell, 0x106dc4280, {{16.0, 433.3}, {370.0, 52.0}}
+                            Other, 0x106dc43c0, {{16.0, 433.3}, {370.0, 52.0}}
+                              Other, 0x106dc4500, {{16.0, 433.3}, {370.0, 52.0}}
+                            Other, 0x106dc4640, {{16.0, 433.3}, {370.0, 52.0}}
+                              Other, 0x106dc4780, {{16.0, 433.3}, {370.0, 52.0}}
+                                Other, 0x106dc48c0, {{16.0, 433.3}, {370.0, 52.0}}
+                                  StaticText, 0x106dc4a00, {{33.3, 448.7}, {212.7, 21.7}}, label: 'Local Server Discovery'
+                                  Image, 0x106dc4b40, {{33.3, 448.7}, {21.7, 21.7}}, identifier: 'network', label: 'Network Nodes Connected By Lines'
+                                  Button, 0x106dc4c80, {{352.7, 449.0}, {17.3, 20.7}}, identifier: 'arrow.clockwise', label: 'Refresh'
+                          Cell, 0x106dc4dc0, {{16.0, 485.3}, {370.0, 260.0}}
+                            Other, 0x106dc4f00, {{16.0, 485.3}, {370.0, 260.0}}
+                              Other, 0x106dc5040, {{16.0, 485.3}, {370.0, 260.0}}
+                            Other, 0x106dc5180, {{16.0, 485.3}, {370.0, 260.0}}
+                              Other, 0x106dc52c0, {{16.0, 485.3}, {370.0, 260.0}}
+                                Other, 0x106dc5400, {{16.0, 485.3}, {370.0, 260.0}}
+                                  StaticText, 0x106dc5540, {{115.0, 519.7}, {172.0, 87.5}}, label: 'Find Local Servers'
+                                  Image, 0x106dc5680, {{181.0, 519.7}, {40.0, 40.0}}, identifier: 'network', label: 'Network Nodes Connected By Lines'
+                                  StaticText, 0x106dc57c0, {{87.8, 610.2}, {226.3, 74.0}}, label: 'Use Refresh to search for Jellyfin servers on this network.'
+                          Other, 0x106dc5900, {{72.0, 484.3}, {298.0, 1.0}}
+                          Other, 0x106dc5a40, {{-16.0, 762.7}, {434.0, 1847.3}}
+                          Cell, 0x106dc5b80, {{16.0, 780.3}, {370.0, 52.0}}
+                            Other, 0x106dc5cc0, {{16.0, 780.3}, {370.0, 52.0}}
+                              Other, 0x106dc5e00, {{16.0, 780.3}, {370.0, 52.0}}
+                            Other, 0x106dc5f40, {{16.0, 780.3}, {370.0, 52.0}}
+                              Other, 0x106dc6080, {{16.0, 780.3}, {370.0, 52.0}}
+                                Other, 0x106dc61c0, {{16.0, 780.3}, {370.0, 52.0}}
+                                  Button, 0x106dc6300, {{16.0, 780.3}, {370.0, 52.0}}, label: 'Use Local Demo Server'
+                                    Image, 0x106dc6440, {{33.0, 794.7}, {21.7, 23.7}}, identifier: 'shippingbox', label: 'Box'
+                                    StaticText, 0x106dc6580, {{33.0, 794.7}, {217.0, 23.7}}, label: 'Use Local Demo Server'
+                          Cell, 0x106dc66c0, {{16.0, 832.3}, {370.0, 29.7}}
+                            Other, 0x106dc6800, {{16.0, 832.3}, {370.0, 29.7}}
+                            Other, 0x106dc6940, {{16.0, 832.3}, {370.0, 29.7}}
+                              Other, 0x106dc6a80, {{16.0, 832.3}, {370.0, 29.7}}
+                                Other, 0x106dc6bc0, {{16.0, 832.3}, {370.0, 29.7}}
+                                  StaticText, 0x106dc6d00, {{16.0, 832.3}, {370.0, 29.7}}, label: 'Debug builds only. Start it with Scripts/demo-server.sh.'
+                          Other, 0x106dc6e40, {{369.0, 116.0}, {30.0, 696.0}}, label: 'Vertical scroll bar, 2 pages', value: 0%
+                            Other, 0x106dc6f80, {{396.0, 802.0}, {3.0, 7.0}}
+                          Other, 0x106dc70c0, {{369.0, 116.0}, {30.0, 696.0}}, label: 'Vertical scroll bar, 2 pages', value: 0%
+                            Other, 0x106dc7200, {{396.0, 802.0}, {3.0, 7.0}}
+                Toolbar, 0x106dc7340, {{0.0, 0.0}, {402.0, 874.0}}, identifier: 'Toolbar', label: 'Toolbar'
+                  Other, 0x106dc7480, {{0.0, 0.0}, {402.0, 874.0}}
+Path to element:
+ →Application, 0x106418b40, pid: 52236, label: 'Gus'
+Query chain:
+ →Find: Application 'dev.ericslutz.gus'
+  Output: {
+    Application, 0x106dc75c0, pid: 52236, label: 'Gus'
+  }

@@ -31,6 +31,7 @@ struct Paging: Equatable {
     }
 
     private func hasMoreResults(loadedCount: Int, receivedCount: Int, totalRecordCount: Int?) -> Bool {
+        guard receivedCount > 0 else { return false }
         if let totalRecordCount {
             return loadedCount < totalRecordCount
         }

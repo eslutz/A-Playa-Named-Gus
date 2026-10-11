@@ -152,7 +152,7 @@ struct StreamURLBuilder {
         // transcoding URL only when the source genuinely needs server-side work for this
         // device/selection. Absent one, the file direct-streams below.
         if !stereoLayout.requiresDirectPlay, let transcodingURL = source.transcodingURL, let url = authenticatedPlaybackURL(path: transcodingURL) {
-            logger.debug("Resolved HLS transcoding URL for item \(itemID, privacy: .public)")
+            logger.debug("Resolved HLS transcoding URL for item \(itemID, privacy: .private)")
             return Resolution(
                 url: url,
                 playSessionID: playSessionID,
@@ -179,7 +179,7 @@ struct StreamURLBuilder {
             throw StreamError.noURL
         }
 
-        logger.debug("Resolved direct-stream URL for item \(itemID, privacy: .public)")
+        logger.debug("Resolved direct-stream URL for item \(itemID, privacy: .private)")
         return Resolution(
             url: url,
             playSessionID: playSessionID,
@@ -213,11 +213,17 @@ struct StreamURLBuilder {
 
     private static func directPlayProfiles(capabilities: DevicePlaybackCapabilities) -> [DirectPlayProfile] {
         var mp4Video = ["h264"]
-        if capabilities.supportsHEVCDecode { mp4Video.append("hevc") }
-        if capabilities.supportsAV1Decode { mp4Video.append("av1") }
+        if capabilities.supportsHEVCDecode {
+            mp4Video.append("hevc")
+        }
+        if capabilities.supportsAV1Decode {
+            mp4Video.append("av1")
+        }
 
         var tsVideo = ["h264"]
-        if capabilities.supportsHEVCDecode { tsVideo.append("hevc") }
+        if capabilities.supportsHEVCDecode {
+            tsVideo.append("hevc")
+        }
 
         return [
             DirectPlayProfile(

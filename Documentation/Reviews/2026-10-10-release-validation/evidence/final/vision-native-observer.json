@@ -1,0 +1,110 @@
+[
+  {
+    "name": "audio-open",
+    "command": [
+      "xcrun",
+      "simctl",
+      "io",
+      "1711D519-F8C9-42CA-A705-5F12E87D96F2",
+      "screenshot",
+      "/tmp/gus-vision-native-final/audio-open.png"
+    ],
+    "captureRequestEpoch": 1791691668.452224,
+    "captureEndEpoch": 1791691669.684733,
+    "exitCode": 0,
+    "scope": "Read-only native simulator capture triggered by passed-test capture marker; rendered state requires independent image inspection, not an exact timestamp equivalence claim.",
+    "file": "audio-open.png",
+    "sha256": "c66dea17e169716054e4a9bf6b68abf3064349d9eea578532493b26f0c6b25fb",
+    "bytes": 6001772
+  },
+  {
+    "name": "audio-closed",
+    "command": [
+      "xcrun",
+      "simctl",
+      "io",
+      "1711D519-F8C9-42CA-A705-5F12E87D96F2",
+      "screenshot",
+      "/tmp/gus-vision-native-final/audio-closed.png"
+    ],
+    "captureRequestEpoch": 1791691670.922953,
+    "captureEndEpoch": 1791691671.385469,
+    "exitCode": 0,
+    "scope": "Read-only native simulator capture triggered by passed-test capture marker; rendered state requires independent image inspection, not an exact timestamp equivalence claim.",
+    "file": "audio-closed.png",
+    "sha256": "fb7224c192088a342fcc69be8cb1cba71958fb117d731c39f0cf68a0afc1a858",
+    "bytes": 6103233
+  },
+  {
+    "name": "audio-reopened",
+    "command": [
+      "xcrun",
+      "simctl",
+      "io",
+      "1711D519-F8C9-42CA-A705-5F12E87D96F2",
+      "screenshot",
+      "/tmp/gus-vision-native-final/audio-reopened.png"
+    ],
+    "captureRequestEpoch": 1791691672.764833,
+    "captureEndEpoch": 1791691673.2204669,
+    "exitCode": 0,
+    "scope": "Read-only native simulator capture triggered by passed-test capture marker; rendered state requires independent image inspection, not an exact timestamp equivalence claim.",
+    "file": "audio-reopened.png",
+    "sha256": "b3819480c6788204e282858b47e2f68ea42f57805434b38c624305e9e84afc21",
+    "bytes": 6001951
+  },
+  {
+    "name": "movie-detail",
+    "command": [
+      "xcrun",
+      "simctl",
+      "io",
+      "1711D519-F8C9-42CA-A705-5F12E87D96F2",
+      "screenshot",
+      "/tmp/gus-vision-native-final/movie-detail.png"
+    ],
+    "captureRequestEpoch": 1791691681.312269,
+    "captureEndEpoch": 1791691682.002975,
+    "exitCode": 0,
+    "scope": "Read-only native simulator capture triggered by passed-test capture marker; rendered state requires independent image inspection, not an exact timestamp equivalence claim.",
+    "file": "movie-detail.png",
+    "sha256": "4af0067267f552e5adfad1d25f660a7f884ecc596789697940940898ae811924",
+    "bytes": 6929444
+  },
+  {
+    "name": "musicalbum-detail",
+    "command": [
+      "xcrun",
+      "simctl",
+      "io",
+      "1711D519-F8C9-42CA-A705-5F12E87D96F2",
+      "screenshot",
+      "/tmp/gus-vision-native-final/musicalbum-detail.png"
+    ],
+    "captureRequestEpoch": 1791691687.201469,
+    "captureEndEpoch": 1791691687.71347,
+    "exitCode": 0,
+    "scope": "Read-only native simulator capture triggered by passed-test capture marker; rendered state requires independent image inspection, not an exact timestamp equivalence claim.",
+    "file": "musicalbum-detail.png",
+    "sha256": "8f47555628b70b1570de5f001d1ef5dd22c0c7931b526d46e418a8622c746a86",
+    "bytes": 6916633
+  },
+  {
+    "name": "book-detail",
+    "command": [
+      "xcrun",
+      "simctl",
+      "io",
+      "1711D519-F8C9-42CA-A705-5F12E87D96F2",
+      "screenshot",
+      "/tmp/gus-vision-native-final/book-detail.png"
+    ],
+    "captureRequestEpoch": 1791691693.347115,
+    "captureEndEpoch": 1791691693.8347678,
+    "exitCode": 0,
+    "scope": "Read-only native simulator capture triggered by passed-test capture marker; rendered state requires independent image inspection, not an exact timestamp equivalence claim.",
+    "file": "book-detail.png",
+    "sha256": "8f47555628b70b1570de5f001d1ef5dd22c0c7931b526d46e418a8622c746a86",
+    "bytes": 6916633
+  }
+]

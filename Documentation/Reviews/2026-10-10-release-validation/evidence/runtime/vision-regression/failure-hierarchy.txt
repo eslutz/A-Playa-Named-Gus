@@ -1,0 +1,131 @@
+Application, 0x1071c1540, pid: 56627, label: 'Gus' <App element pid: 56627>
+  Other, 0x1071c1680, {{0.0, 0.0}, {1200.0, 820.0}}, identifier: 'dev.ericslutz.gus:SFBSystemService-E0F80509-0369-479D-9C1B-D5077F3E0641' <AX element pid: 56627, elementOrHash.elementID: 4505863680.5>
+    Window, 0x1071c17c0, {{0.0, 0.0}, {225.5, 483.0}} <AX element pid: 56627, elementOrHash.elementID: 4694932480.57>
+      Other, 0x1071c1900, {{0.0, 0.0}, {225.5, 483.0}} <AX element pid: 56627, elementOrHash.elementID: 4737058688.58>
+        Other, 0x1071c1a40, {{0.0, 0.0}, {225.5, 483.0}} <AX element pid: 56627, elementOrHash.elementID: 4736263168.60>
+          Other, 0x1071c1b80, {{0.0, 0.0}, {225.5, 483.0}} <AX element pid: 56627, elementOrHash.elementID: 4736831488.62>
+            Other, 0x1071c1cc0, {{0.0, 0.0}, {225.5, 483.0}} <AX element pid: 56627, elementOrHash.elementID: 4391121408.64>
+              Other, 0x1071c1e00, {{0.0, 0.0}, {225.5, 483.0}} <AX element pid: 56627, elementOrHash.elementID: 4505171072.66>
+                Other, 0x1071c1f40, {{5.5, 11.5}, {214.5, 460.0}} <AX element pid: 56627, elementOrHash.elementID: 4505170176.68>
+                  Button, 0x1071c2080, {{17.5, 23.5}, {190.5, 44.0}}, identifier: 'house', label: 'Home', Selected <AX element pid: 56627, elementOrHash.elementID: 4505159872.70>
+                    Button, 0x1071c21c0, {{28.0, 35.5}, {23.0, 20.0}}, label: 'home' <AX element pid: 56627, elementOrHash.elementID: 4505158976.79>
+                    Button, 0x1071c2440, {{65.5, 34.0}, {52.5, 23.0}}, label: 'Home' <AX element pid: 56627, elementOrHash.elementID: 4505159424.80>
+                  Button, 0x1071c2580, {{17.5, 79.5}, {190.5, 44.0}}, identifier: 'arrow.down.circle', label: 'Downloaded' <AX element pid: 56627, elementOrHash.elementID: 4505161216.71>
+                    Button, 0x1071c26c0, {{30.0, 92.0}, {19.5, 19.5}}, label: 'Arrow Down Circle' <AX element pid: 56627, elementOrHash.elementID: 4505160320.81>
+                    Button, 0x1071c2800, {{65.5, 90.0}, {110.5, 23.0}}, label: 'Downloaded' <AX element pid: 56627, elementOrHash.elementID: 4505160768.82>
+                  Button, 0x1071c2940, {{17.5, 135.5}, {190.5, 44.0}}, identifier: 'rectangle.stack', label: 'Libraries' <AX element pid: 56627, elementOrHash.elementID: 4505162560.72>
+                    Button, 0x1071c2a80, {{28.0, 146.0}, {23.0, 23.0}}, label: 'Album' <AX element pid: 56627, elementOrHash.elementID: 4505161664.83>
+                    Button, 0x1071c2bc0, {{65.5, 146.0}, {77.0, 23.0}}, label: 'Libraries' <AX element pid: 56627, elementOrHash.elementID: 4505162112.84>
+                  Button, 0x1071c2d00, {{17.5, 191.5}, {190.5, 44.0}}, identifier: 'film', label: 'Movies' <AX element pid: 56627, elementOrHash.elementID: 4505163904.73>
+                    Button, 0x1071c2e40, {{28.5, 205.0}, {22.0, 17.5}}, label: 'movie' <AX element pid: 56627, elementOrHash.elementID: 4505163008.85>
+                    Button, 0x1071c2f80, {{65.5, 202.0}, {63.0, 23.0}}, label: 'Movies' <AX element pid: 56627, elementOrHash.elementID: 4505163456.86>
+                  Button, 0x1071c30c0, {{17.5, 247.5}, {190.5, 44.0}}, identifier: 'tv', label: 'Shows' <AX element pid: 56627, elementOrHash.elementID: 4505165248.74>
+                    Button, 0x1071c3200, {{27.5, 260.0}, {24.0, 19.5}}, label: 'tv' <AX element pid: 56627, elementOrHash.elementID: 4505164352.87>
+                    Button, 0x1071c3340, {{65.5, 258.0}, {59.0, 23.0}}, label: 'Shows' <AX element pid: 56627, elementOrHash.elementID: 4505164800.88>
+                  Button, 0x1071c3480, {{17.5, 303.5}, {190.5, 44.0}}, identifier: 'music.note', label: 'Music' <AX element pid: 56627, elementOrHash.elementID: 4505166592.75>
+                    Button, 0x1071c35c0, {{33.5, 316.0}, {12.0, 19.0}}, label: 'song' <AX element pid: 56627, elementOrHash.elementID: 4505165696.89>
+                    Button, 0x1071c3700, {{65.5, 314.0}, {53.0, 23.0}}, label: 'Music' <AX element pid: 56627, elementOrHash.elementID: 4505166144.90>
+                  Button, 0x1071c3840, {{17.5, 359.5}, {190.5, 44.0}}, identifier: 'book', label: 'Books' <AX element pid: 56627, elementOrHash.elementID: 4505167936.76>
+                    Button, 0x1071c3980, {{28.5, 373.0}, {22.0, 17.5}}, label: 'bookmark' <AX element pid: 56627, elementOrHash.elementID: 4505167040.91>
+                    Button, 0x1071c3ac0, {{65.5, 370.0}, {54.5, 23.0}}, label: 'Books' <AX element pid: 56627, elementOrHash.elementID: 4505167488.92>
+                  Button, 0x1071c3c00, {{17.5, 415.5}, {190.5, 44.0}}, identifier: 'gearshape', label: 'Settings' <AX element pid: 56627, elementOrHash.elementID: 4505169280.77>
+                    Button, 0x1071c3d40, {{29.5, 427.5}, {20.0, 20.0}}, label: 'gearshape.fill' <AX element pid: 56627, elementOrHash.elementID: 4505168384.93>
+                    Button, 0x1071c3e80, {{65.5, 426.0}, {74.0, 23.0}}, label: 'Settings' <AX element pid: 56627, elementOrHash.elementID: 4505168832.94>
+    Window, 0x10270de00, {{0.0, 0.0}, {1794.7, 1352.0}} <AX element pid: 56627, elementOrHash.elementID: 4390779904.6>
+      Other, 0x10270db80, {{0.0, 0.0}, {1794.5, 1352.0}} <AX element pid: 56627, elementOrHash.elementID: 4674056192.9>
+        Other, 0x10270df40, {{0.0, 0.0}, {1794.5, 1352.0}} <AX element pid: 56627, elementOrHash.elementID: 4676199168.12>
+    Window (Main), 0x10270e300, {{0.0, 0.0}, {1200.0, 820.0}} <AX element pid: 56627, elementOrHash.elementID: 4390769664.56>
+      Other, 0x10270e440, {{0.0, 0.0}, {1200.0, 820.0}} <AX element pid: 56627, elementOrHash.elementID: 4505315968.59>
+        Other, 0x10270e800, {{0.0, 0.0}, {1200.0, 820.0}} <AX element pid: 56627, elementOrHash.elementID: 4509238784.61>
+          Other, 0x10270e6c0, {{0.0, 0.0}, {1200.0, 820.0}} <AX element pid: 56627, elementOrHash.elementID: 4391111168.63>
+            Other, 0x10270ea80, {{0.0, 0.0}, {1200.0, 820.0}} <AX element pid: 56627, elementOrHash.elementID: 4505177152.65>
+              Other, 0x10270ebc0, {{0.0, 0.0}, {1200.0, 820.0}} <AX element pid: 56627, elementOrHash.elementID: 4512899840.67>
+                Other, 0x10270ee40, {{0.0, 0.0}, {1200.0, 820.0}} <AX element pid: 56627, elementOrHash.elementID: 4696323200.69>
+                  Other, 0x10270e940, {{0.0, 0.0}, {1200.0, 820.0}} <AX element pid: 56627, elementOrHash.elementID: 4697277056.78>
+                    Other, 0x10270ed00, {{0.0, 0.0}, {1200.0, 820.0}} <AX element pid: 56627, elementOrHash.elementID: 4697063424.95>
+                      Other, 0x10270f200, {{0.0, 0.0}, {1200.0, 820.0}} <AX element pid: 56627, elementOrHash.elementID: 4505175808.96>
+                        Other, 0x10270ef80, {{0.0, 0.0}, {1200.0, 820.0}} <AX element pid: 56627, elementOrHash.elementID: 4505176256.97>
+                          Other, 0x10270f0c0, {{0.0, 0.0}, {1200.0, 820.0}} <AX element pid: 56627, elementOrHash.elementID: 4697281536.98>
+                            NavigationBar, 0x10270f5c0, {{0.0, 0.0}, {1200.0, 92.0}}, identifier: 'Home' <AX element pid: 56627, elementOrHash.elementID: 4735452032.99>
+                              StaticText, 0x10270f340, {{24.0, 28.5}, {80.5, 35.0}}, label: 'Home' <AX element pid: 56627, elementOrHash.elementID: 4737140736.101>
+                              SearchField, 0x10270f480, {{946.0, 24.0}, {230.0, 44.0}}, label: 'Search Library', placeholderValue: 'Search Library' <AX element pid: 56627, elementOrHash.elementID: 4695157248.102>
+                                Button, 0x10270f700, {{952.0, 30.0}, {32.0, 32.0}}, identifier: 'stagedDictationDwellButton', label: 'Dictate' <AX element pid: 56627, elementOrHash.elementID: 4737889408.104>
+                                Button, 0x10270f980, {{952.0, 30.0}, {32.0, 32.0}}, identifier: 'stagedDictationDwellButton', label: 'Dictate' <AX element pid: 56627, elementOrHash.elementID: 4737889408.104>
+                            Other, 0x10270f840, {{0.0, 0.0}, {1200.0, 820.0}} <AX element pid: 56627, elementOrHash.elementID: 4695700992.100>
+                              Other, 0x10270fac0, {{0.0, 0.0}, {1200.0, 820.0}} <AX element pid: 56627, elementOrHash.elementID: 4737882368.103>
+                                Other, 0x10270fc00, {{0.0, 0.0}, {1200.0, 820.0}} <AX element pid: 56627, elementOrHash.elementID: 4697073664.105>
+                                  Other, 0x10270fd40, {{0.0, 0.0}, {1200.0, 820.0}} <AX element pid: 56627, elementOrHash.elementID: 4505202048.106>
+                                    ScrollView, 0x10270fe80, {{0.0, 0.0}, {1200.0, 820.0}} <AX element pid: 56627, elementOrHash.elementID: 4406119424.107>
+                                      Other, 0x105848780, {{0.0, 92.0}, {1200.0, 1893.5}} <AX element pid: 56627, elementOrHash.elementID: 4763224576.108>
+                                        StaticText, 0x105848500, {{16.0, 108.0}, {247.0, 26.5}}, label: 'Recently Added Books' <AX element pid: 56627, elementOrHash.elementID: 4505175360.110>
+                                        ScrollView, 0x1058483c0, {{16.0, 146.5}, {1168.0, 302.0}} <AX element pid: 56627, elementOrHash.elementID: 4749216768.111>
+                                          Other, 0x105848280, {{16.0, 146.5}, {572.0, 302.0}} <AX element pid: 56627, elementOrHash.elementID: 4762218368.122>
+                                            Other, 0x1058488c0, {{16.0, 150.5}, {572.0, 294.0}} <AX element pid: 56627, elementOrHash.elementID: 4505184768.128>
+                                              Button, 0x105848b40, {{16.0, 150.5}, {180.0, 294.0}}, label: 'Peter Pan' <AX element pid: 56627, elementOrHash.elementID: 4505174016.134>
+                                                Image, 0x105848c80, {{89.0, 272.0}, {34.0, 27.5}}, identifier: 'film', label: 'Movie' <AX element pid: 56627, elementOrHash.elementID: 4505174912.147>
+                                                StaticText, 0x105849040, {{16.0, 426.5}, {68.0, 18.0}}, label: 'Peter Pan' <AX element pid: 56627, elementOrHash.elementID: 4505174464.148>
+                                              Button, 0x1058492c0, {{212.0, 150.5}, {180.0, 294.0}}, label: 'Dracula' <AX element pid: 56627, elementOrHash.elementID: 4505178496.135>
+                                                Image, 0x105849180, {{285.0, 272.0}, {34.0, 27.5}}, identifier: 'film', label: 'Movie' <AX element pid: 56627, elementOrHash.elementID: 4505177600.149>
+                                                StaticText, 0x105849680, {{212.0, 426.5}, {54.0, 18.0}}, label: 'Dracula' <AX element pid: 56627, elementOrHash.elementID: 4505178048.150>
+                                              Button, 0x105849400, {{408.0, 150.5}, {180.0, 294.0}}, label: 'Frankenstein' <AX element pid: 56627, elementOrHash.elementID: 4505184320.136>
+                                                Image, 0x105849b80, {{481.0, 272.0}, {34.0, 27.5}}, identifier: 'film', label: 'Movie' <AX element pid: 56627, elementOrHash.elementID: 4505179840.151>
+                                                StaticText, 0x105849cc0, {{408.0, 426.5}, {90.5, 18.0}}, label: 'Frankenstein' <AX element pid: 56627, elementOrHash.elementID: 4505183872.152>
+                                        StaticText, 0x105849e00, {{16.0, 480.5}, {257.0, 26.5}}, label: 'Recently Added Movies' <AX element pid: 56627, elementOrHash.elementID: 4505185664.112>
+                                        ScrollView, 0x10584a080, {{16.0, 519.0}, {1168.0, 317.5}} <AX element pid: 56627, elementOrHash.elementID: 4749219840.113>
+                                          Other, 0x10584a300, {{16.0, 519.0}, {376.0, 317.5}} <AX element pid: 56627, elementOrHash.elementID: 4762219648.123>
+                                            Other, 0x10584a580, {{16.0, 523.0}, {376.0, 309.5}} <AX element pid: 56627, elementOrHash.elementID: 4408051904.129>
+                                              Button, 0x10584a940, {{16.0, 523.0}, {180.0, 309.5}}, label: 'President McKinley Taking the Oath, 1901' <AX element pid: 56627, elementOrHash.elementID: 4505187456.137>
+                                                Image, 0x10584abc0, {{16.0, 523.0}, {180.0, 270.0}} <AX element pid: 56627, elementOrHash.elementID: 4505186112.153>
+                                                StaticText, 0x10584ad00, {{16.0, 799.0}, {180.0, 18.0}}, label: 'President McKinley Taking the Oath' <AX element pid: 56627, elementOrHash.elementID: 4505186560.154>
+                                                StaticText, 0x10584aa80, {{16.0, 818.0}, {27.5, 14.5}}, label: '1901' <AX element pid: 56627, elementOrHash.elementID: 4505187008.155>
+                                              Button, 0x10584af80, {{212.0, 523.0}, {180.0, 309.5}}, label: 'May Irwin Kiss (1896), 2024' <AX element pid: 56627, elementOrHash.elementID: 4505189696.138>
+                                                Image, 0x10584ae40, {{61.5, 523.0}, {481.0, 270.0}} <AX element pid: 56627, elementOrHash.elementID: 4505187904.156>
+                                                StaticText, 0x10584b0c0, {{212.0, 799.0}, {151.5, 18.0}}, label: 'May Irwin Kiss (1896)' <AX element pid: 56627, elementOrHash.elementID: 4505188352.157>
+                                                StaticText, 0x10584b200, {{212.0, 818.0}, {30.5, 14.5}}, label: '2024' <AX element pid: 56627, elementOrHash.elementID: 4505188800.158>
+                                        StaticText, 0x10584b5c0, {{16.0, 868.5}, {244.5, 26.5}}, label: 'Recently Added Music' <AX element pid: 56627, elementOrHash.elementID: 4407940352.114>
+                                        ScrollView, 0x10584b980, {{16.0, 907.0}, {1168.0, 302.0}} <AX element pid: 56627, elementOrHash.elementID: 4749222912.115>
+                                          Other, 0x10584b840, {{16.0, 907.0}, {572.0, 302.0}} <AX element pid: 56627, elementOrHash.elementID: 4762220928.124>
+                                            Other, 0x10584bac0, {{16.0, 911.0}, {572.0, 294.0}} <AX element pid: 56627, elementOrHash.elementID: 4505136960.130>
+                                              Button, 0x10584be80, {{16.0, 911.0}, {180.0, 294.0}}, label: 'Sax and Piano (free track)' <AX element pid: 56627, elementOrHash.elementID: 4505172864.139>
+                                                Image, 0x10584bd40, {{-29.0, 911.0}, {270.0, 270.0}} <AX element pid: 56627, elementOrHash.elementID: 4407853952.159>
+                                                StaticText, 0x10584a800, {{16.0, 911.0}, {180.0, 294.0}}, label: 'Sax and Piano (free track)' <AX element pid: 56627, elementOrHash.elementID: 4505173312.160>
+                                              Button, 0x10584bc00, {{212.0, 911.0}, {180.0, 294.0}}, label: '01 - Tranquil Mindscape' <AX element pid: 56627, elementOrHash.elementID: 4505171520.140>
+                                                Image, 0x1129c8000, {{285.0, 1032.5}, {34.0, 27.5}}, identifier: 'film', label: 'Movie' <AX element pid: 56627, elementOrHash.elementID: 4505158528.161>
+                                                StaticText, 0x1129c8140, {{212.0, 1187.0}, {168.5, 18.0}}, label: '01 - Tranquil Mindscape' <AX element pid: 56627, elementOrHash.elementID: 4505157632.162>
+                                              Button, 0x1129c8280, {{408.0, 911.0}, {180.0, 294.0}}, label: '02 - Whispers of the Glen' <AX element pid: 56627, elementOrHash.elementID: 4505136064.141>
+                                                Image, 0x1129c83c0, {{481.0, 1032.5}, {34.0, 27.5}}, identifier: 'film', label: 'Movie' <AX element pid: 56627, elementOrHash.elementID: 4505526592.163>
+                                                StaticText, 0x1129c8500, {{408.0, 1187.0}, {180.0, 18.0}}, label: '02 - Whispers of the Glen' <AX element pid: 56627, elementOrHash.elementID: 4505524800.164>
+                                        StaticText, 0x1129c8640, {{16.0, 1241.0}, {256.5, 26.5}}, label: 'Recently Added Photos' <AX element pid: 56627, elementOrHash.elementID: 4505137856.116>
+                                        ScrollView, 0x1129c8780, {{16.0, 1279.5}, {1168.0, 302.0}} <AX element pid: 56627, elementOrHash.elementID: 4749225984.117>
+                                          Other, 0x1129c88c0, {{16.0, 1279.5}, {572.0, 302.0}} <AX element pid: 56627, elementOrHash.elementID: 4763222016.125>
+                                            Other, 0x1129c8a00, {{16.0, 1283.5}, {572.0, 294.0}} <AX element pid: 56627, elementOrHash.elementID: 4505194880.131>
+                                              Button, 0x1129c8b40, {{16.0, 1283.5}, {180.0, 294.0}}, label: 'Zion National Park - Ranger Naturalist Service' <AX element pid: 56627, elementOrHash.elementID: 4505191296.142>
+                                                Image, 0x1129c8c80, {{6.5, 1283.5}, {199.0, 270.0}} <AX element pid: 56627, elementOrHash.elementID: 4505133376.165>
+                                                StaticText, 0x1129c8dc0, {{16.0, 1283.5}, {180.0, 294.0}}, label: 'Zion National Park - Ranger Naturalist Service' <AX element pid: 56627, elementOrHash.elementID: 4505190848.166>
+                                              Button, 0x1129c8f00, {{212.0, 1283.5}, {180.0, 294.0}}, label: 'Grand Canyon National Park' <AX element pid: 56627, elementOrHash.elementID: 4505193088.143>
+                                                Image, 0x1129c9040, {{201.5, 1283.5}, {201.0, 270.0}} <AX element pid: 56627, elementOrHash.elementID: 4505191744.167>
+                                                StaticText, 0x1129c9180, {{212.0, 1283.5}, {180.0, 294.0}}, label: 'Grand Canyon National Park' <AX element pid: 56627, elementOrHash.elementID: 4505192192.168>
+                                              Button, 0x1129c92c0, {{408.0, 1283.5}, {180.0, 294.0}}, label: 'Yellowstone National Park - Ranger Naturalist Service' <AX element pid: 56627, elementOrHash.elementID: 4505194432.144>
+                                                Image, 0x1129c9400, {{398.5, 1283.5}, {199.0, 270.0}} <AX element pid: 56627, elementOrHash.elementID: 4505193536.169>
+                                                StaticText, 0x1129c9540, {{408.0, 1283.5}, {180.0, 294.0}}, label: 'Yellowstone National Park - Ranger Naturalist Service' <AX element pid: 56627, elementOrHash.elementID: 4505193984.170>
+                                        StaticText, 0x1129c9680, {{16.0, 1613.5}, {252.5, 26.5}}, label: 'Recently Added Shows' <AX element pid: 56627, elementOrHash.elementID: 4505196224.118>
+                                        ScrollView, 0x1129c97c0, {{16.0, 1652.0}, {1168.0, 317.5}} <AX element pid: 56627, elementOrHash.elementID: 4406122496.119>
+                                          Other, 0x1129c9900, {{16.0, 1652.0}, {376.0, 317.5}} <AX element pid: 56627, elementOrHash.elementID: 4763223296.126>
+                                            Other, 0x1129c9a40, {{16.0, 1656.0}, {376.0, 309.5}} <AX element pid: 56627, elementOrHash.elementID: 4505200256.132>
+                                              Button, 0x1129c9b80, {{16.0, 1656.0}, {180.0, 309.5}}, label: 'Racket Squad (1952), 1970' <AX element pid: 56627, elementOrHash.elementID: 4505198016.145>
+                                                Image, 0x1129c9cc0, {{89.0, 1777.5}, {34.0, 27.5}}, identifier: 'film', label: 'Movie' <AX element pid: 56627, elementOrHash.elementID: 4505196672.171>
+                                                StaticText, 0x1129c9e00, {{16.0, 1932.0}, {147.5, 18.0}}, label: 'Racket Squad (1952)' <AX element pid: 56627, elementOrHash.elementID: 4505197120.172>
+                                                StaticText, 0x1129c9f40, {{16.0, 1951.0}, {28.5, 14.5}}, label: '1970' <AX element pid: 56627, elementOrHash.elementID: 4505197568.173>
+                                              Button, 0x1129ca080, {{212.0, 1656.0}, {180.0, 309.5}}, label: 'Crossroads, 1955' <AX element pid: 56627, elementOrHash.elementID: 4505199808.146>
+                                                Image, 0x1129ca1c0, {{212.0, 1656.0}, {180.0, 270.0}} <AX element pid: 56627, elementOrHash.elementID: 4505198464.174>
+                                                StaticText, 0x1129ca300, {{212.0, 1932.0}, {80.5, 18.0}}, label: 'Crossroads' <AX element pid: 56627, elementOrHash.elementID: 4505198912.175>
+                                                StaticText, 0x1129ca440, {{212.0, 1951.0}, {29.0, 14.5}}, label: '1955' <AX element pid: 56627, elementOrHash.elementID: 4505199360.176>
+                                      Other, 0x1129ca580, {{1185.0, 0.0}, {12.0, 774.0}}, identifier: 'WolfScrollIndicatorVertical' <AX element pid: 56627, elementOrHash.elementID: 4763681408.109>
+                                        Other, 0x1129ca6c0, {{1185.0, 0.0}, {12.0, 774.0}} <AX element pid: 56627, elementOrHash.elementID: 4763682048.120>
+                                          Other, 0x1129ca800, {{1185.0, 336.0}, {12.0, 99.0}} <AX element pid: 56627, elementOrHash.elementID: 4762079744.127>
+                                            Other, 0x1129ca940, {{1188.0, 339.0}, {6.0, 36.0}} <AX element pid: 56627, elementOrHash.elementID: 4763683328.133>
+                                        Other, 0x1129caa80, {{1175.0, 329.0}, {32.0, 116.0}} <AX element pid: 56627, elementOrHash.elementID: 4674046464.121>
+    Window, 0x1129cabc0, {{0.0, 0.0}, {1794.7, 1352.0}} <AX element pid: 56627, elementOrHash.elementID: 4674924544.7>
+      Other, 0x1129cad00, {{0.0, 0.0}, {1794.5, 1352.0}} <AX element pid: 56627, elementOrHash.elementID: 4676199808.11>
+        Other, 0x1129cae40, {{0.0, 0.0}, {1794.5, 1352.0}} <AX element pid: 56627, elementOrHash.elementID: 4676204288.14>
+    Other, 0x1129caf80, {{0.0, 0.0}, {50.0, 50.0}} <AX element pid: 56627, elementOrHash.elementID: 4764651072.8>

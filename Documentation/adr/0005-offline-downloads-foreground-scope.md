@@ -23,6 +23,16 @@ On-Demand Resources design.
 
 ## Decision
 
+### October 2026 refinement
+
+Downloads now preserve compatible video and audio independently. MKV sources with device-supported H.264 or HEVC and supported audio are remuxed to MP4; incompatible streams are encoded to H.264 or AAC while compatible streams are copied. Native HEVC support, bit depth/profile, HDR capability, source resolution, and up to eight audio channels inform the request. Offline subtitle sidecars remain outside the scope.
+
+Jellyfin's progressive muxer emits `hev1` for copied HEVC, which Apple AVFoundation rejected in native decode validation. Native passthrough export retains that tag. A bounded ISO BMFF metadata correction therefore changes the HEVC sample entry to `hvc1` only after validating that its codec configuration contains VPS, SPS, and PPS parameter sets; encoded media bytes and file offsets remain unchanged. This narrow metadata operation is the exception to the system-framework preference, validated against a real Jellyfin remux and Apple native decoding.
+
+Completed URLSession files are moved into app-owned temporary storage synchronously before the delegate callback returns. Final compatibility normalization and account-scoped persistence occur after that ownership handoff.
+
+The stream-preserving policy supersedes the original forced H.264/stereo/8-bit parameters below.
+
 A Playa Named Gus downloads are:
 
 - Background-capable: transfers use a stable native background `URLSession` identifier
@@ -30,7 +40,7 @@ A Playa Named Gus downloads are:
 - Originals when possible: AVPlayer-native sources still use `Paths.getDownload(itemID:)`.
 - Transcoded when needed: incompatible sources call `Paths.getPostedPlaybackInfo` to pick a
   media source, then use `Paths.getVideoStreamByContainer(itemID:container:"mp4")` with
-  H.264, AAC stereo, and 8-bit output parameters for a progressive MP4 transfer.
+  independent stream-copy decisions, re-encoding incompatible streams for a progressive MP4 transfer.
 - Non-tvOS: iOS, iPadOS, macOS, and visionOS support downloads; tvOS does not expose the
   action or Downloads view.
 - Stateful: `OfflineDownloadRecord` stores status, progress, and resume data so paused and
@@ -38,18 +48,29 @@ A Playa Named Gus downloads are:
 - Per server/user: records and files are stored under an Application Support folder scoped
   by server ID and user ID, excluded from device backup.
 
-To preserve the project's pure SwiftUI lifecycle (no AppDelegate), the app does **not**
-implement `application(_:handleEventsForBackgroundURLSession:completionHandler:)` — that
-callback has no SwiftUI-lifecycle equivalent and would require a `UIApplicationDelegate`.
-It is only an optimization for servicing background relaunches, not a correctness
-requirement: transfers complete in the system URLSession daemon while the app is suspended
-or terminated, and `DownloadSessionCoordinator.reconnectActiveTasks()` (called when
-`OfflineDownloadStore` is constructed at launch) recreates the background session with the
-stable identifier so the system replays completion events. `sessionSendsLaunchEvents` is
-set to `false` accordingly, so the system does not relaunch the app for events it cannot
-acknowledge. The trade-off — completed-while-terminated downloads reconcile on the next
-app launch rather than during a background relaunch — is negligible for a media client and
-keeps the architecture genuinely AppDelegate-free.
+The October 2026 revision adds a minimal `UIApplicationDelegateAdaptor` on iOS/iPadOS
+for Apple's background URLSession wake/completion callbacks. SwiftUI still owns every
+screen. Launch events are enabled; the shared download store attaches before reconnecting.
+The coordinator preserves completed files with recovery manifests and delivers events in
+order. The system completion handler is called after file normalization and record
+persistence. Completion resolves records independently of the displayed account.
+
+This bridge is a native-first exception to the former no-AppDelegate convention: SwiftUI
+has no equivalent background URLSession acknowledgement API. Transfers can continue
+while the device is locked or Gus is suspended. Force-quitting is not supported as a way
+to keep downloads running. Physical-device background acceptance remains required.
+
+`DownloadActivity` keeps real byte counters separately from optional total size. Unknown
+response lengths use indeterminate progress and display received bytes; speed and ETA
+are based on measured transfer samples. Processing percentages are not inferred from
+zero bytes or requested conversion. Jellyfin's current `TranscodingInfo` belongs to a
+device session without a per-download request identifier, so concurrent downloads cannot
+safely use that percentage. The UI states when a remaining-time estimate is unavailable.
+
+The Downloaded section browses account-scoped saved metadata and verified local files.
+It does not request server libraries or remote artwork. Playback starts from local files,
+with local resume checkpoints synchronized later. Ordinary account switching retains
+downloads; explicit sign-out/removal clears the affected account.
 
 ## Rationale
 

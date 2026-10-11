@@ -77,13 +77,14 @@ final class SignInStore {
             async let brandingTask = client.send(Paths.getBrandingOptions)
             let publicUsersResponse = try await publicUsersTask
             let brandingResponse = try await brandingTask
+            try Task.checkCancellation()
             publicUsers = PublicUserProfile.profiles(for: publicUsersResponse.value)
             loginDisclaimer = brandingResponse.value.loginDisclaimer?.trimmingCharacters(in: .whitespacesAndNewlines).nonEmpty
             state = .loaded
         } catch {
             let gusError = GusError(from: error)
-            guard !gusError.isCancellation else { return }
-            logger.error("Public sign-in data failed: \(gusError.localizedDescription, privacy: .public)")
+            guard !gusError.isCancellation else { state = .idle; return }
+            logger.error("Public sign-in data failed: \(gusError.localizedDescription, privacy: .private)")
             state = .failed(gusError.localizedDescription)
         }
     }

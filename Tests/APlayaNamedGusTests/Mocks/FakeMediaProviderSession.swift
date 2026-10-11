@@ -8,7 +8,20 @@ import Foundation
 final class FakeMediaProviderSession: MediaProviderSession {
     let providerKind: MediaProviderKind = .jellyfin
     let capabilities: ProviderCapabilities
+    var itemsHandler: ((MediaItemQuery) async throws -> MediaItemPage)?
+    var itemHandler: ((String) async throws -> MediaItem)?
+    var episodesHandler: ((String) async throws -> MediaItemPage)?
+    var seasonsHandler: (() async throws -> [MediaItem])?
+    var watchedHandler: (() async throws -> Void)?
+    var favoriteHandler: (() async throws -> Void)?
+    var audioHandler: (() async throws -> PlaybackSourceResolution)?
+    var playbackHandler: (() async throws -> PlaybackSourceResolution)?
     var downloadSourceCallCount = 0
+    var playbackResolutionCallCount = 0
+    var audioResolutionCallCount = 0
+    var nextUpCallCount = 0
+    var playbackReportCallCount = 0
+    var artworkCallCount = 0
 
     init(capabilities: ProviderCapabilities) {
         self.capabilities = capabilities
@@ -23,7 +36,8 @@ final class FakeMediaProviderSession: MediaProviderSession {
     }
 
     func nextUpItems(seriesID: String?, limit: Int) async throws -> [MediaItem] {
-        []
+        nextUpCallCount += 1
+        return []
     }
 
     func latestMedia(in library: MediaItem, limit: Int) async throws -> [MediaItem] {
@@ -31,11 +45,17 @@ final class FakeMediaProviderSession: MediaProviderSession {
     }
 
     func items(query: MediaItemQuery) async throws -> MediaItemPage {
-        MediaItemPage(items: [], totalRecordCount: 0)
+        if let itemsHandler {
+            return try await itemsHandler(query)
+        }
+        return MediaItemPage(items: [], totalRecordCount: 0)
     }
 
     func item(id: String) async throws -> MediaItem {
-        MediaItem(id: id)
+        if let itemHandler {
+            return try await itemHandler(id)
+        }
+        return MediaItem(id: id)
     }
 
     func similarItems(itemID: String, limit: Int) async throws -> [MediaItem] {
@@ -47,15 +67,22 @@ final class FakeMediaProviderSession: MediaProviderSession {
     }
 
     func seasons(seriesID: String) async throws -> [MediaItem] {
-        []
+        if let seasonsHandler {
+            return try await seasonsHandler()
+        }
+        return []
     }
 
     func episodes(seriesID: String, seasonID: String, limit: Int) async throws -> MediaItemPage {
-        MediaItemPage(items: [], totalRecordCount: 0)
+        if let episodesHandler {
+            return try await episodesHandler(seasonID)
+        }
+        return MediaItemPage(items: [], totalRecordCount: 0)
     }
 
     func primaryImageURL(for item: MediaItem, context: ImageURLBuilder.ImageContext) -> URL? {
-        nil
+        artworkCallCount += 1
+        return nil
     }
 
     func primaryImageURL(for item: MediaItem, maxWidth: Int) -> URL? {
@@ -81,7 +108,11 @@ final class FakeMediaProviderSession: MediaProviderSession {
         startTimeTicks: Int?,
         stereoLayout: Stereo3DLayout
     ) async throws -> PlaybackSourceResolution {
-        PlaybackSourceResolution(
+        playbackResolutionCallCount += 1
+        if let playbackHandler {
+            return try await playbackHandler()
+        }
+        return PlaybackSourceResolution(
             url: URL(string: "https://example.com/video.mp4")!,
             playSessionID: nil,
             mediaSourceID: nil,
@@ -92,7 +123,11 @@ final class FakeMediaProviderSession: MediaProviderSession {
     }
 
     func resolveAudioPlayback(for itemID: String) async throws -> PlaybackSourceResolution {
-        PlaybackSourceResolution(
+        audioResolutionCallCount += 1
+        if let audioHandler {
+            return try await audioHandler()
+        }
+        return PlaybackSourceResolution(
             url: URL(string: "https://example.com/audio.mp3")!,
             playSessionID: nil,
             mediaSourceID: nil,
@@ -129,15 +164,25 @@ final class FakeMediaProviderSession: MediaProviderSession {
         )
     }
 
-    func toggleWatched(itemID: String, currentlyWatched: Bool) async throws {}
+    func toggleWatched(itemID: String, currentlyWatched: Bool) async throws {
+        try await watchedHandler?()
+    }
 
-    func toggleFavorite(itemID: String, currentlyFavorite: Bool) async throws {}
+    func toggleFavorite(itemID: String, currentlyFavorite: Bool) async throws {
+        try await favoriteHandler?()
+    }
 
-    func reportPlaybackStart(context: PlaybackReportContext, positionTicks: Int, isPaused: Bool) async throws {}
+    func reportPlaybackStart(context: PlaybackReportContext, positionTicks: Int, isPaused: Bool) async throws {
+        playbackReportCallCount += 1
+    }
 
-    func reportPlaybackProgress(context: PlaybackReportContext, positionTicks: Int, isPaused: Bool) async throws {}
+    func reportPlaybackProgress(context: PlaybackReportContext, positionTicks: Int, isPaused: Bool) async throws {
+        playbackReportCallCount += 1
+    }
 
-    func reportPlaybackStopped(context: PlaybackReportContext, positionTicks: Int) async throws {}
+    func reportPlaybackStopped(context: PlaybackReportContext, positionTicks: Int) async throws {
+        playbackReportCallCount += 1
+    }
 
     var reportedBookProgress: (itemID: String, fraction: Double)?
     var storedBookProgress: Double?

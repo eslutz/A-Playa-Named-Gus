@@ -13,9 +13,7 @@ extension View {
         #if os(macOS)
             modifier(MacPlayerPresentation(item: item))
         #else
-            fullScreenCover(item: item) { ref in
-                PresentedPlayer(item: ref.item)
-            }
+            modifier(SessionPlayerRequest(item: item))
         #endif
     }
 }
@@ -33,13 +31,16 @@ extension View {
     }
 
     private struct MacPlayerPresentation: ViewModifier {
+        @Environment(AudioPlaybackCoordinator.self) private var audio
+        @Environment(SessionStore.self) private var session
+        @Environment(OfflineDownloadStore.self) private var downloads
         @Environment(\.openWindow) private var openWindow
         @Binding var item: ItemRef?
 
         /// Non-video refs flow through to the sheet; video refs are intercepted below.
         private var sheetItem: Binding<ItemRef?> {
             Binding(
-                get: { item.flatMap { $0.item.opensInPlayerWindow ? nil : $0 } },
+                get: { item.flatMap { $0.item.opensInPlayerWindow || $0.item.isAudioPlayable ? nil : $0 } },
                 set: { item = $0 }
             )
         }
@@ -47,11 +48,18 @@ extension View {
         func body(content: Content) -> some View {
             content
                 .sheet(item: sheetItem) { ref in
-                    PresentedPlayer(item: ref.item)
+                    PresentedPlayer(item: ref.item, localOnly: ref.localOnly == true)
                         .frame(minWidth: 640, minHeight: 360)
                 }
                 .onChange(of: item) { _, ref in
-                    guard let ref, ref.item.opensInPlayerWindow else { return }
+                    guard let ref else { return }
+                    if ref.item.isAudioPlayable, ContentRatingGate.admitsStored(ref.item) {
+                        audio.play(tracks: [ref.item], localOnly: ref.localOnly == true, session: session, downloads: downloads)
+                        item = nil
+                        return
+                    }
+                    guard ref.item.opensInPlayerWindow else { return }
+                    audio.stop()
                     openWindow(id: GusPlayerWindow.sceneID, value: ref)
                     item = nil
                 }
@@ -65,9 +73,13 @@ extension View {
         let ref: ItemRef
 
         var body: some View {
-            if let session = appModel.currentSession {
-                PresentedPlayer(item: ref.item)
+            if let session = appModel.currentSession,
+               ref.serverID == nil || ref.serverID == session.server.id,
+               ref.userID == nil || ref.userID == session.user.id
+            {
+                PresentedPlayer(item: ref.item, localOnly: ref.localOnly == true)
                     .environment(session)
+                    .id(AccountScope(serverID: session.server.id, userID: session.user.id))
                     .frame(minWidth: 640, minHeight: 360)
             } else {
                 ContentUnavailableView(
@@ -84,6 +96,8 @@ extension View {
 struct PresentedPlayer: View {
     @Environment(\.dismiss) private var dismiss
     let item: MediaItem
+    var localOnly = false
+    var close: (() -> Void)?
 
     var body: some View {
         // Second-layer family-safety gate: list filtering hides restricted items, but
@@ -122,9 +136,9 @@ struct PresentedPlayer: View {
             bookSurface
         default:
             if item.isAudioPlayable {
-                AudioPlayerScreen(item: item)
+                AudioPlayerScreen(item: item, localOnly: localOnly)
             } else {
-                VideoPlayerView(item: item)
+                VideoPlayerView(item: item, localOnly: localOnly)
             }
         }
     }
@@ -133,23 +147,27 @@ struct PresentedPlayer: View {
     /// elsewhere point at the detail page's share flow instead of failing playback.
     @ViewBuilder
     private var bookSurface: some View {
-        #if canImport(ReadiumNavigator)
-            BookReaderPresenter(item: item)
-        #else
-            NavigationStack {
-                ContentUnavailableView {
-                    Label("Reading Isn't Available Here", systemImage: "book")
-                } description: {
-                    Text("Open this book's detail page and use Share to read it in Apple Books.")
-                }
-                .toolbar {
-                    ToolbarItem(placement: .cancellationAction) {
-                        Button("Done") {
-                            dismiss()
+        if localOnly {
+            DownloadedBookPlayerView(item: item, close: close)
+        } else {
+            #if canImport(ReadiumNavigator)
+                BookReaderPresenter(item: item, close: close)
+            #else
+                NavigationStack {
+                    ContentUnavailableView {
+                        Label("Reading Isn't Available Here", systemImage: "book")
+                    } description: {
+                        Text("Open this book's detail page and use Share to read it in Apple Books.")
+                    }
+                    .toolbar {
+                        ToolbarItem(placement: .cancellationAction) {
+                            Button("Done") {
+                                dismiss()
+                            }
                         }
                     }
                 }
-            }
-        #endif
+            #endif
+        }
     }
 }

@@ -66,7 +66,7 @@ struct ServerStore {
         do {
             return try JSONDecoder().decode(T.self, from: data)
         } catch {
-            logger.error("Failed to decode \(url.lastPathComponent, privacy: .public): \(error.localizedDescription, privacy: .public)")
+            logger.error("Failed to decode \(url.lastPathComponent, privacy: .public): \(error.localizedDescription, privacy: .private)")
             return nil
         }
     }
@@ -78,7 +78,7 @@ struct ServerStore {
             let data = try encoder.encode(value)
             try data.write(to: url, options: .atomic)
         } catch {
-            logger.error("Failed to write \(url.lastPathComponent, privacy: .public): \(error.localizedDescription, privacy: .public)")
+            logger.error("Failed to write \(url.lastPathComponent, privacy: .public): \(error.localizedDescription, privacy: .private)")
         }
     }
 }

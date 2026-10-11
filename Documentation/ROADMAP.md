@@ -18,6 +18,11 @@ constrain *how* each item is built.
 - **Native-first** is assumed on every item: reach for the Apple/system API first; a
   bespoke or third-party approach must be justified in the change that introduces it.
 
+## October 2026 UI remediation
+
+- [x] Implement remediation for the 24 findings in the October 9–10 review and both addenda: bounded artwork/detail layouts, adaptive actions/audio, persistent audio dismissal/reopening, shared navigation across width changes, explicit iPhone More, tvOS link navigation, cancellation/retry, request identity, filtered paging, and localized accessibility fixes. All six platform builds and the four 274-test suites pass; see [the remediation report](Reviews/2026-10-10-ui-remediation/REPORT.md) for scoped runtime and contrast evidence.
+- [~] Complete release acceptance: physical streamed/downloaded playback rotation, Mac window/keyboard checks, assistive technology and platform input, remaining appearance/metadata/error variants, full iPad contrast acceptance (native Xcode 27 sampler blocked), minimum-OS execution, and signed TestFlight acceptance. The Watch stall is fixed and retested locally on 40 mm and 46 mm. Simulator checks do not close these gates.
+
 ## Global Definition of Done (applies to every milestone)
 
 - Builds green on iOS, iPadOS, tvOS, visionOS, macOS (`xcodegen generate` first).
@@ -160,8 +165,8 @@ automated build verification. (Covers priority: *polish & testing*.)
   test bundles; CI keeps these UI smoke tests out of the required PR pipeline.)*
 - [x] **CI pipeline.** GitHub Actions (macOS runner): `xcodegen generate` → resolve →
   build all five destinations → run tests → lint. *Acceptance:* green check required on
-  every PR; matrix covers all platforms. *(Done: CI runs on macOS 26 with Xcode
-  26.5, and requires SwiftFormat/string-catalog lint, an iPhone/iPad/macOS/tvOS/visionOS
+  every PR; matrix covers all platforms. *(Done: CI selects the `xcode-27` runner with Xcode
+  27.0, and requires SwiftFormat/string-catalog lint, an iPhone/iPad/macOS/tvOS/visionOS
   build matrix, plus native unit tests on each platform.)*
 - [x] **Update `project.yml` for the test target & schemes.** *Acceptance:* generated
   project includes the test targets; the per-platform `Gus <platform> Unit Tests` test
@@ -350,11 +355,20 @@ automated build verification. (Covers priority: *polish & testing*.)
   tvOS excluded. *Acceptance:* local playback, pause/resume/delete, disk-budget surfacing,
   and an explicit go/no-go recorded. *(Done: `DownloadSourceResolver` keeps
   AVPlayer-native originals and sends incompatible media through Jellyfin's progressive
-  MP4 transcode endpoint; `DownloadSessionCoordinator` uses a native background
+  MP4 conversion endpoint with independent video/audio stream copying, preserving
+  resolution and surround audio when compatible; HEVC sample-entry metadata is
+  normalized for native Apple playback. `DownloadSessionCoordinator` preserves the
+  completed temporary file before its delegate returns and uses a native background
   `URLSessionDownloadTask`; `OfflineDownloadStore` persists status/progress/resume data,
   stores per-server/user media in Application Support, excludes media from backup,
   enforces a 20 GB soft cap plus low-space guard, and prefers local playback URLs. ADR
   0005 records the enhanced background/transcode scope and tvOS exclusion.)*
+- [~] **Download feedback and offline library (#15, #16).** Actual received bytes,
+  optional total/percentage, measured speed/ETA, stalled/waiting states, and a main
+  Downloaded section with local search, show/season grouping, account isolation, cached
+  artwork, and local playback checkpoints. iOS background completion uses a minimal
+  native lifecycle bridge. Implementation and automated verification are tracked locally;
+  physical iPhone background/airplane-mode acceptance is still required before closure.
 
 ---
 
@@ -404,6 +418,17 @@ preserving a clean route to future backends such as Emby.
 
 **Goal:** everything Apple requires to accept and review the app.
 
+- [x] **Complete available local candidate validation and commits.** Execute the iOS 27 Swift,
+  UI/UX/design, accessibility, reliability, privacy and guideline validation plan;
+  remediate verified findings, validate the full staged candidate, and commit all
+  existing and new repository changes across app/wiki/website. Track manual and
+  portal acceptance separately. See
+  [the execution plan](Reviews/2026-10-10-release-validation/PLAN.md) and
+  [final scoped results](Reviews/2026-10-10-release-validation/VALIDATION.md).
+  Six builds, four 282-test suites, maintained/expanded native UI and state tests,
+  shared macOS sanitizers and four unsigned Release archives pass. Manual, SDK
+  migration and portal gates remain separate; M8 release readiness stays open.
+
 Readiness documents, the GitHub Actions/Xcode Cloud ownership split, committed paid
 Developer Team ID, and the app privacy manifest now live under `Documentation/AppStore/`,
 `Config/Shared.xcconfig`, `ci_scripts/`, and `Resources/PrivacyInfo.xcprivacy`, but M8
@@ -415,7 +440,8 @@ validation, TestFlight, and submission work are actually done.
   answers in App Store Connect (data not collected by A Playa Named Gus itself; connects
   to a user-provided server). *Acceptance:* manifest validates; App Store Connect labels
   match behavior. *(Started: `PrivacyInfo.xcprivacy` is bundled with no tracking, no
-  collected data types, Disk Space `85F4.1`, and UserDefaults `CA92.1`; remaining work is
+  collected data types, Disk Space `E174.1` for low-space download refusal, and
+  UserDefaults `CA92.1`; remaining work is
   App Store Connect privacy answers and policy fields.)*
 - [~] **Signing & capabilities.** Real Team/bundle id, Xcode Cloud signing, per-platform
   capability review (background audio, tvOS User Management, sandbox on macOS, Optic ID
@@ -484,6 +510,10 @@ validation, TestFlight, and submission work are actually done.
   *Acceptance:* documented self-audit with no open red flags. *(Done:
   `Documentation/AppStore/review-compliance-audit.md` walks guidelines 1–5, audits the
   shipped configuration, and drafts the Notes for Review and age-rating answers.)*
+- [x] **Local API/Cloud preparation.** Secure key location, ignored configuration, native
+  read-only API client, offline signing/bootstrap tests, shared project snapshot and
+  dependency pins prepared. API authentication, portal onboarding and publication of the
+  complete candidate remain pending; see `AppStore/api-access.md`.
 - [ ] **TestFlight beta.** Upload through Xcode Cloud, internal/external testing, gather
   crash/feedback.
   *Acceptance:* a clean build runs from TestFlight on each platform.

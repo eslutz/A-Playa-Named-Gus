@@ -4,6 +4,7 @@ import SwiftUI
 struct AboutCardsView: View {
     let item: MediaItem
     let posterURL: URL?
+    @State private var showsFullSynopsis = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -19,6 +20,9 @@ struct AboutCardsView: View {
                         DetailInfoCard(title: LocalizedStringKey(item.displayTitle)) {
                             Text(overview)
                                 .lineLimit(5)
+                            Button("Show More") { showsFullSynopsis = true }
+                                .accessibilityIdentifier("Detail.fullSynopsis")
+                                .frame(minHeight: 44)
                         }
                     }
 
@@ -38,14 +42,38 @@ struct AboutCardsView: View {
                 }
                 .padding(.vertical, 4)
             }
+            .accessibilityIdentifier("Detail.aboutCards")
             .lookToScroll(.horizontal)
+        }
+        .sheet(isPresented: $showsFullSynopsis) {
+            NavigationStack {
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 16) {
+                        Text(item.displayTitle)
+                            .font(.title.bold())
+                            .fixedSize(horizontal: false, vertical: true)
+                            .accessibilityAddTraits(.isHeader)
+                            .accessibilityIdentifier("Synopsis.heading")
+                        Text(item.overview ?? "")
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding()
+                }
+                .navigationTitle("Synopsis")
+                .toolbar {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button("Done") { showsFullSynopsis = false }
+                            .accessibilityIdentifier("Synopsis.done")
+                    }
+                }
+            }
         }
     }
 
     private var posterSummaryCard: some View {
         DetailInfoCard(title: LocalizedStringKey(item.displayTitle)) {
             HStack(alignment: .top, spacing: 12) {
-                AsyncPoster(url: posterURL, contentMode: .fill, placeholderSymbol: item.type == .series ? "tv" : "film")
+                ArtworkTile(url: posterURL, placeholderSymbol: item.type == .series ? "tv" : "film")
                     .frame(width: 74, height: 110)
                     .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
 
@@ -66,7 +94,7 @@ struct AboutCardsView: View {
 
 // MARK: - Info card chrome
 
-/// Fixed-size card with a thin-material background used in the About section.
+/// Intrinsically sized card with a thin-material background used in the About section.
 struct DetailInfoCard<Content: View>: View {
     let title: LocalizedStringKey
     @ViewBuilder let content: Content
@@ -81,7 +109,8 @@ struct DetailInfoCard<Content: View>: View {
                 .foregroundStyle(.primary)
         }
         .padding(16)
-        .frame(width: AboutCardMetrics.cardWidth, height: AboutCardMetrics.cardHeight, alignment: .topLeading)
+        .frame(width: AboutCardMetrics.cardWidth, alignment: .topLeading)
+        .frame(minHeight: AboutCardMetrics.cardHeight, alignment: .topLeading)
         .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 }

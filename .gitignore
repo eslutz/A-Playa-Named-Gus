@@ -1,5 +1,5 @@
-# A Playa Named Gus-specific: generated project & platform-specific build artifacts
-A Playa Named Gus.xcodeproj
+# A Playa Named Gus-specific: build artifacts. The XcodeGen project is checked in
+# for Xcode Cloud; project.yml remains its source of truth.
 Gus.xcodeproj
 build/
 build-*/
@@ -14,10 +14,21 @@ Config/Local.xcconfig
 
 # Local environment overrides and secrets for diagnostic scripts.
 .env.local
+.env.asc.local
+*.p8
+__pycache__/
+*.py[cod]
+
+# Keep only shared, reproducible Xcode project files, never local user state.
+A Playa Named Gus.xcodeproj/xcuserdata/
+A Playa Named Gus.xcodeproj/project.xcworkspace/xcuserdata/
+A Playa Named Gus.xcodeproj/project.xcworkspace/xcshareddata/WorkspaceSettings.xcsettings
+A Playa Named Gus.xcodeproj/project.xcworkspace/xcshareddata/IDEWorkspaceChecks.plist
 
 # Rights-cleared demo media served by the local demo Jellyfin container
 # (Scripts/demo-server.sh) — kept out of the repo; provenance lives in
 # sample_media/README.md, workflow in Documentation/AppStore/demo-server.md.
+sample_media
 sample_media/
 
 # Working task list — explicitly kept uncommitted.

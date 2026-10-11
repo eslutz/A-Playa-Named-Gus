@@ -76,7 +76,7 @@ final class SessionsSocket: @unchecked Sendable {
             task.resume()
             task.send(.string(Self.sessionsStartPayload)) { _ in }
 
-            func receiveNext() {
+            @Sendable func receiveNext() {
                 task.receive { [weak self] result in
                     switch result {
                     case let .success(message):
@@ -90,7 +90,7 @@ final class SessionsSocket: @unchecked Sendable {
                         }
                         receiveNext()
                     case let .failure(error):
-                        self?.logger.info("Sessions socket closed: \(error.localizedDescription, privacy: .public)")
+                        self?.logger.info("Sessions socket closed: \(error.localizedDescription, privacy: .private)")
                         self?.stopKeepAlive()
                         continuation.finish()
                     }

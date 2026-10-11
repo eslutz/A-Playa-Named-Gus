@@ -1,0 +1,202 @@
+Attributes: Application, 0x106642080, pid: 52807, label: 'Gus'
+Element subtree:
+ →Application, 0x106642080, pid: 52807, label: 'Gus'
+    Window (Main), 0x1066421c0, {{0.0, 0.0}, {874.0, 402.0}}
+      Other, 0x106642440, {{0.0, 0.0}, {874.0, 402.0}}
+      Other, 0x106642580, {{0.0, 0.0}, {874.0, 402.0}}
+        Other, 0x1066426c0, {{0.0, 0.0}, {874.0, 402.0}}
+          Other, 0x106642800, {{0.0, -874.0}, {874.0, 874.0}}
+          Other, 0x106642940, {{-402.0, 0.0}, {402.0, 402.0}}
+          Other, 0x106642a80, {{874.0, 0.0}, {402.0, 402.0}}
+          Other, 0x106642bc0, {{0.0, 402.0}, {874.0, 874.0}}
+        Other, 0x106642d00, {{0.0, 0.0}, {874.0, 402.0}}
+          Other, 0x106642e40, {{0.0, 0.0}, {874.0, 402.0}}
+            Other, 0x106642f80, {{0.0, 0.0}, {874.0, 402.0}}
+              Other, 0x1066430c0, {{0.0, 0.0}, {874.0, 402.0}}
+                Other, 0x106643480, {{0.0, 0.0}, {874.0, 402.0}}
+                  Other, 0x1066435c0, {{0.0, 0.0}, {874.0, 402.0}}
+                    Other, 0x106643700, {{0.0, 0.0}, {874.0, 402.0}}
+                      Other, 0x106643840, {{0.0, 0.0}, {874.0, 402.0}}
+                        Other, 0x106643980, {{0.0, 0.0}, {874.0, 402.0}}
+                          Other, 0x106643c00, {{0.0, 0.0}, {874.0, 402.0}}
+                            NavigationBar, 0x106643e80, {{0.0, 24.0}, {874.0, 108.0}}, identifier: 'Settings'
+                              StaticText, 0x106643d40, {{403.7, 35.7}, {66.7, 20.7}}, label: 'Settings'
+                              SearchField, 0x106643ac0, {{78.0, 78.0}, {718.0, 44.0}}, label: 'Search Library', placeholderValue: 'Search Library'
+                                Image, 0x106643200, {{90.0, 90.0}, {20.7, 19.3}}, identifier: 'magnifyingglass', label: 'Search'
+                            Other, 0x106643340, {{0.0, 0.0}, {874.0, 402.0}}
+                              Other, 0x106642300, {{0.0, 0.0}, {874.0, 402.0}}
+                                Other, 0x10fb1c000, {{0.0, 0.0}, {874.0, 402.0}}
+                                  Other, 0x10fb1c140, {{0.0, 0.0}, {874.0, 402.0}}
+                                    CollectionView, 0x10fb1c280, {{0.0, 0.0}, {874.0, 402.0}}
+                                      Other, 0x10fb1c3c0, {{-78.0, -672.0}, {1030.0, 1018.0}}
+                                      Other, 0x10fb1c500, {{0.0, 0.0}, {874.0, 402.0}}
+                                        Other, 0x10fb1c640, {{0.0, 0.0}, {874.0, 118.0}}
+                                        Other, 0x10fb1c780, {{0.0, 288.0}, {874.0, 114.0}}
+                                      Other, 0x10fb1c8c0, {{0.0, 0.0}, {874.0, 402.0}}
+                                        Other, 0x10fb1ca00, {{0.0, 288.0}, {874.0, 114.0}}
+                                      Cell, 0x10fb1cb40, {{78.0, 132.0}, {718.0, 40.3}}
+                                        Other, 0x10fb1cc80, {{78.0, 132.0}, {718.0, 40.3}}
+                                        Other, 0x10fb1cdc0, {{78.0, 132.0}, {718.0, 40.3}}
+                                          Other, 0x10fb1cf00, {{78.0, 132.0}, {718.0, 40.3}}
+                                            Other, 0x10fb1d040, {{78.0, 132.0}, {718.0, 40.3}}
+                                              StaticText, 0x10fb1d180, {{78.0, 132.0}, {718.0, 40.3}}, label: 'Account'
+                                      Cell, 0x10fb1d2c0, {{78.0, 172.3}, {718.0, 52.0}}
+                                        Other, 0x10fb1d400, {{78.0, 172.3}, {718.0, 52.0}}
+                                          Other, 0x10fb1d540, {{78.0, 172.3}, {718.0, 52.0}}
+                                        Other, 0x10fb1d680, {{78.0, 172.3}, {718.0, 52.0}}
+                                          Other, 0x10fb1d7c0, {{78.0, 172.3}, {718.0, 52.0}}
+                                            Other, 0x10fb1d900, {{78.0, 172.3}, {718.0, 52.0}}
+                                              StaticText, 0x10fb1da40, {{78.0, 172.3}, {718.0, 52.0}}, label: 'User, Preview User'
+                                              StaticText, 0x10fb1db80, {{94.0, 188.2}, {36.0, 20.3}}, label: 'User'
+                                      Cell, 0x10fb1dcc0, {{78.0, 224.3}, {718.0, 52.0}}
+                                        Other, 0x10fb1de00, {{78.0, 224.3}, {718.0, 52.0}}
+                                          Other, 0x10fb1df40, {{78.0, 224.3}, {718.0, 52.0}}
+                                        Other, 0x10fb1e080, {{78.0, 224.3}, {718.0, 52.0}}
+                                          Other, 0x10fb1e1c0, {{78.0, 224.3}, {718.0, 52.0}}
+                                            Other, 0x10fb1e300, {{78.0, 224.3}, {718.0, 52.0}}
+                                              StaticText, 0x10fb1e440, {{78.0, 224.3}, {718.0, 52.0}}, label: 'Server, Preview Jellyfin'
+                                              StaticText, 0x10fb1e580, {{94.0, 240.2}, {49.7, 20.3}}, label: 'Server'
+                                      Other, 0x10fb1e6c0, {{94.0, 223.3}, {686.0, 1.0}}
+                                      Cell, 0x10fb1e800, {{78.0, 276.3}, {718.0, 52.0}}
+                                        Other, 0x10fb1e940, {{78.0, 276.3}, {718.0, 52.0}}
+                                          Other, 0x10fb1ea80, {{78.0, 276.3}, {718.0, 52.0}}
+                                        Other, 0x10fb1ebc0, {{78.0, 276.3}, {718.0, 52.0}}
+                                          Other, 0x10fb1ed00, {{78.0, 276.3}, {718.0, 52.0}}
+                                            Other, 0x10fb1ee40, {{78.0, 276.3}, {718.0, 52.0}}
+                                              StaticText, 0x10fb1ef80, {{78.0, 276.3}, {718.0, 52.0}}, label: 'Address, https://preview.jellyfin.invalid'
+                                              StaticText, 0x10fb1f0c0, {{94.0, 292.2}, {62.7, 20.3}}, label: 'Address'
+                                      Other, 0x10fb1f200, {{94.0, 275.3}, {686.0, 1.0}}
+                                      Other, 0x10fb1f340, {{-78.0, 346.0}, {1030.0, 138.0}}
+                                      Cell, 0x10fb1f480, {{78.0, 346.0}, {718.0, 40.3}}
+                                        Other, 0x10fb1f5c0, {{78.0, 346.0}, {718.0, 40.3}}
+                                        Other, 0x10fb1f700, {{78.0, 346.0}, {718.0, 40.3}}
+                                          Other, 0x10fb1f840, {{78.0, 346.0}, {718.0, 40.3}}
+                                            Other, 0x10fb1f980, {{78.0, 346.0}, {718.0, 40.3}}
+                                              StaticText, 0x10fb1fac0, {{78.0, 346.0}, {718.0, 40.3}}, label: 'Downloads'
+                                      Cell, 0x10fb1fc00, {{78.0, 386.3}, {718.0, 52.0}}
+                                        Other, 0x10fb1fd40, {{78.0, 386.3}, {718.0, 52.0}}
+                                          Other, 0x10fb1fe80, {{78.0, 386.3}, {718.0, 52.0}}
+                                        Other, 0x10fb20000, {{78.0, 386.3}, {718.0, 52.0}}
+                                          Other, 0x10fb20140, {{78.0, 386.3}, {718.0, 52.0}}
+                                            Other, 0x10fb20280, {{78.0, 386.3}, {718.0, 52.0}}
+                                              Button, 0x10fb203c0, {{78.0, 386.3}, {718.0, 52.0}}, label: 'Downloaded Media, Zero KB'
+                                                StaticText, 0x10fb20500, {{94.0, 402.2}, {664.0, 20.3}}, label: 'Downloaded Media, Zero KB'
+                                                StaticText, 0x10fb20640, {{94.0, 402.2}, {146.0, 20.3}}, label: 'Downloaded Media'
+                                                Image, 0x10fb20780, {{770.7, 406.3}, {7.0, 12.0}}, identifier: 'chevron.forward'
+                                      Cell, 0x10fb208c0, {{78.0, 438.3}, {718.0, 45.7}}
+                                        Other, 0x10fb20a00, {{78.0, 438.3}, {718.0, 45.7}}
+                                        Other, 0x10fb20b40, {{78.0, 438.3}, {718.0, 45.7}}
+                                          Other, 0x10fb20c80, {{78.0, 438.3}, {718.0, 45.7}}
+                                            Other, 0x10fb20dc0, {{78.0, 438.3}, {718.0, 45.7}}
+                                              StaticText, 0x10fb20f00, {{78.0, 438.3}, {718.0, 45.7}}, label: 'Downloads are available on iOS, iPadOS, macOS, and visionOS. tvOS is excluded because its app storage is system-purgeable.'
+                                      Other, 0x10fb21040, {{-78.0, 484.0}, {1030.0, 190.0}}
+                                      Cell, 0x10fb21180, {{78.0, 484.0}, {718.0, 40.3}}
+                                        Other, 0x10fb212c0, {{78.0, 484.0}, {718.0, 40.3}}
+                                        Other, 0x10fb21400, {{78.0, 484.0}, {718.0, 40.3}}
+                                          Other, 0x10fb21540, {{78.0, 484.0}, {718.0, 40.3}}
+                                            Other, 0x10fb21680, {{78.0, 484.0}, {718.0, 40.3}}
+                                              StaticText, 0x10fb217c0, {{78.0, 484.0}, {718.0, 40.3}}, label: 'Playback'
+                                      Cell, 0x10fb21900, {{78.0, 524.3}, {718.0, 52.0}}
+                                        Other, 0x10fb21a40, {{78.0, 524.3}, {718.0, 52.0}}
+                                          Other, 0x10fb21b80, {{78.0, 524.3}, {718.0, 52.0}}
+                                        Other, 0x10fb21cc0, {{78.0, 524.3}, {718.0, 52.0}}
+                                          Other, 0x10fb21e00, {{78.0, 524.3}, {718.0, 52.0}}
+                                            Other, 0x10fb21f40, {{78.0, 524.3}, {718.0, 52.0}}
+                                              Button, 0x10fb22080, {{94.0, 533.3}, {686.0, 34.3}}, label: 'Streaming Quality, Maximum (Original)'
+                                                StaticText, 0x10fb221c0, {{614.7, 540.3}, {149.0, 20.3}}, label: 'Maximum (Original)'
+                                              StaticText, 0x10fb22300, {{94.0, 540.2}, {135.7, 20.3}}, label: 'Streaming Quality'
+                                      Cell, 0x10fb22440, {{78.0, 576.3}, {718.0, 52.0}}
+                                        Other, 0x10fb22580, {{78.0, 576.3}, {718.0, 52.0}}
+                                          Other, 0x10fb226c0, {{78.0, 576.3}, {718.0, 52.0}}
+                                        Other, 0x10fb22800, {{78.0, 576.3}, {718.0, 52.0}}
+                                          Other, 0x10fb22940, {{78.0, 576.3}, {718.0, 52.0}}
+                                            Other, 0x10fb22a80, {{78.0, 576.3}, {718.0, 52.0}}
+                                              Switch, 0x10fb22bc0, {{78.0, 576.3}, {718.0, 52.0}}, label: 'Auto-Play Next Episode', value: 1
+                                                StaticText, 0x10fb22d00, {{94.0, 592.2}, {179.7, 20.3}}, label: 'Auto-Play Next Episode'
+                                                Switch, 0x10fb22e40, {{719.0, 588.3}, {63.0, 28.0}}, value: 1
+                                      Other, 0x10fb22f80, {{94.0, 575.3}, {686.0, 1.0}}
+                                      Cell, 0x10fb230c0, {{78.0, 628.3}, {718.0, 45.7}}
+                                        Other, 0x10fb23200, {{78.0, 628.3}, {718.0, 45.7}}
+                                        Other, 0x10fb23340, {{78.0, 628.3}, {718.0, 45.7}}
+                                          Other, 0x10fb23480, {{78.0, 628.3}, {718.0, 45.7}}
+                                            Other, 0x10fb235c0, {{78.0, 628.3}, {718.0, 45.7}}
+                                              StaticText, 0x10fb23700, {{78.0, 628.3}, {718.0, 45.7}}, label: 'Maximum lets compatible files play at original quality. Lower settings cap the streaming bitrate for constrained networks.'
+                                      Other, 0x10fb23840, {{-78.0, 674.0}, {1030.0, 190.0}}
+                                      Cell, 0x10fb23980, {{78.0, 674.0}, {718.0, 40.3}}
+                                        Other, 0x10fb23ac0, {{78.0, 674.0}, {718.0, 40.3}}
+                                        Other, 0x10fb23c00, {{78.0, 674.0}, {718.0, 40.3}}
+                                          Other, 0x10fb23d40, {{78.0, 674.0}, {718.0, 40.3}}
+                                            Other, 0x10fb23e80, {{78.0, 674.0}, {718.0, 40.3}}
+                                              StaticText, 0x10fb24000, {{78.0, 674.0}, {718.0, 40.3}}, label: 'Appearance'
+                                      Cell, 0x10fb24140, {{78.0, 714.3}, {718.0, 52.0}}
+                                        Other, 0x10fb24280, {{78.0, 714.3}, {718.0, 52.0}}
+                                          Other, 0x10fb243c0, {{78.0, 714.3}, {718.0, 52.0}}
+                                        Other, 0x10fb24500, {{78.0, 714.3}, {718.0, 52.0}}
+                                          Other, 0x10fb24640, {{78.0, 714.3}, {718.0, 52.0}}
+                                            Other, 0x10fb24780, {{78.0, 714.3}, {718.0, 52.0}}
+                                              Button, 0x10fb248c0, {{94.0, 723.3}, {686.0, 34.3}}, label: 'Appearance, System'
+                                                StaticText, 0x10fb24a00, {{707.0, 730.3}, {56.7, 20.3}}, label: 'System'
+                                              StaticText, 0x10fb24b40, {{94.0, 730.2}, {92.0, 20.3}}, label: 'Appearance'
+                                      Cell, 0x10fb24c80, {{78.0, 766.3}, {718.0, 52.0}}
+                                        Other, 0x10fb24dc0, {{78.0, 766.3}, {718.0, 52.0}}
+                                          Other, 0x10fb24f00, {{78.0, 766.3}, {718.0, 52.0}}
+                                        Other, 0x10fb25040, {{78.0, 766.3}, {718.0, 52.0}}
+                                          Other, 0x10fb25180, {{78.0, 766.3}, {718.0, 52.0}}
+                                            Other, 0x10fb252c0, {{78.0, 766.3}, {718.0, 52.0}}
+                                              Button, 0x10fb25400, {{78.0, 766.3}, {718.0, 52.0}}, label: 'Navigation'
+                                                StaticText, 0x10fb25540, {{95.0, 782.2}, {120.0, 20.3}}, label: 'Navigation'
+                                                Image, 0x10fb25680, {{95.0, 784.7}, {21.7, 15.7}}, identifier: 'list.bullet', label: 'List'
+                                                Image, 0x10fb257c0, {{770.7, 786.3}, {7.0, 12.0}}, identifier: 'chevron.forward'
+                                      Other, 0x10fb25900, {{94.0, 765.3}, {686.0, 1.0}}
+                                      Cell, 0x10fb25a40, {{78.0, 818.3}, {718.0, 45.7}}
+                                        Other, 0x10fb25b80, {{78.0, 818.3}, {718.0, 45.7}}
+                                        Other, 0x10fb25cc0, {{78.0, 818.3}, {718.0, 45.7}}
+                                          Other, 0x10fb25e00, {{78.0, 818.3}, {718.0, 45.7}}
+                                            Other, 0x10fb25f40, {{78.0, 818.3}, {718.0, 45.7}}
+                                              StaticText, 0x10fb26080, {{78.0, 818.3}, {718.0, 45.7}}, label: 'System follows your device's light and dark setting. Navigation customizes which sections appear in the main menu.'
+                                      Other, 0x10fb261c0, {{841.0, 78.0}, {30.0, 260.0}}, label: 'Vertical scroll bar, 6 pages', value: 0%
+                                        Other, 0x10fb26300, {{868.0, 81.0}, {3.0, 74.3}}
+                                      Other, 0x10fb26440, {{841.0, 78.0}, {30.0, 260.0}}, label: 'Vertical scroll bar, 6 pages', value: 0%
+                                        Other, 0x10fb26580, {{868.0, 81.0}, {3.0, 74.3}}
+                            Toolbar, 0x10fb266c0, {{0.0, 0.0}, {874.0, 402.0}}, identifier: 'Toolbar', label: 'Toolbar'
+                              Other, 0x10fb26800, {{0.0, 0.0}, {874.0, 402.0}}
+                Other, 0x10fb26940, {{0.0, 0.0}, {874.0, 402.0}}
+                  Other, 0x10fb26a80, {{0.0, 338.0}, {874.0, 64.0}}
+                    Other, 0x10fb26bc0, {{0.0, 0.0}, {874.0, 402.0}}
+                      TabBar, 0x10fb26d00, {{0.0, 338.0}, {874.0, 64.0}}, label: 'Tab Bar'
+                        Other, 0x10fb26e40, {{232.0, 338.0}, {410.3, 44.0}}
+                          Other, 0x10fb26f80, {{232.0, 338.0}, {93.3, 36.0}}
+                          Other, 0x10fb270c0, {{232.0, 338.0}, {410.3, 44.0}}
+                            Button, 0x10fb27200, {{236.0, 342.0}, {83.7, 36.0}}, identifier: 'house', label: 'Home'
+                              Image, 0x10fb27340, {{242.0, 350.0}, {24.3, 20.7}}, identifier: 'house.fill', label: 'home'
+                            Button, 0x10fb27480, {{323.7, 342.0}, {116.3, 36.0}}, identifier: 'arrow.down.circle', label: 'Downloaded'
+                              Image, 0x10fb275c0, {{329.7, 350.3}, {20.0, 20.0}}, identifier: 'arrow.down.circle.fill', label: 'Arrow Down Circle'
+                            Button, 0x10fb27700, {{444.0, 342.0}, {97.0, 36.0}}, identifier: 'rectangle.stack', label: 'Libraries'
+                              Image, 0x10fb27840, {{450.0, 349.0}, {21.7, 23.0}}, identifier: 'rectangle.stack.fill', label: 'Album'
+                            Button, 0x10fb27980, {{545.0, 342.0}, {93.3, 36.0}}, identifier: 'gearshape', label: 'Settings', Selected
+                              Image, 0x10fb27ac0, {{551.0, 350.0}, {20.3, 20.3}}, identifier: 'gearshape.fill', label: 'Gear shape, filled'
+                          Other, 0x10fb27c00, {{232.0, 338.0}, {410.3, 44.0}}
+                          Other, 0x10fb27d40, {{545.0, 342.0}, {93.3, 36.0}}
+                            Other, 0x10fb27e80, {{545.0, 342.0}, {93.3, 36.0}}
+                              Other, 0x10fb28000, {{545.0, 342.0}, {93.3, 36.0}}
+                              Other, 0x10fb28140, {{545.0, 342.0}, {93.3, 36.0}}
+                                Other, 0x10fb28280, {{545.0, 342.0}, {93.3, 36.0}}
+                                  Other, 0x10fb283c0, {{545.0, 342.0}, {93.3, 36.0}}
+                                    Other, 0x10fb28500, {{545.0, 342.0}, {93.3, 36.0}}
+                                  Other, 0x10fb28640, {{545.0, 342.0}, {93.3, 36.0}}
+                                Other, 0x10fb28780, {{545.0, 342.0}, {93.3, 36.0}}
+                    Other, 0x10fb288c0, {{0.0, 338.0}, {874.0, 64.0}}
+                      Other, 0x10fb28a00, {{0.0, 338.0}, {874.0, 64.0}}
+                        Other, 0x10fb28b40, {{0.0, 338.0}, {874.0, 64.0}}
+                          Other, 0x10fb28c80, {{0.0, 338.0}, {874.0, 64.0}}
+                            Other, 0x10fb28dc0, {{0.0, 338.0}, {874.0, 64.0}}
+                              Other, 0x10fb28f00, {{0.0, 338.0}, {402.0, 83.0}}
+                          Other, 0x10fb29040, {{0.0, 338.0}, {874.0, 64.0}}
+                            Other, 0x10fb29180, {{0.0, 338.0}, {402.0, 83.0}}
+Path to element:
+ →Application, 0x106642080, pid: 52807, label: 'Gus'
+Query chain:
+ →Find: Application 'dev.ericslutz.gus'
+  Output: {
+    Application, 0x10fb292c0, pid: 52807, label: 'Gus'
+  }

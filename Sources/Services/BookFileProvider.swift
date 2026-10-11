@@ -59,7 +59,7 @@ struct BookFileProvider {
         }
         try? FileManager.default.removeItem(at: destination)
         try FileManager.default.moveItem(at: temporaryURL, to: destination)
-        logger.info("Cached book file (\(source.fileExtension, privacy: .public))")
+        logger.info("Cached book file (\(source.fileExtension, privacy: .private))")
         return destination
     }
 

@@ -1,0 +1,1553 @@
+[
+  {
+    "path": "final/screenshots/ui-ipad/audio-reopened.png",
+    "test": "GusAuthenticatedUITests/testAudioCloseAndReopen()",
+    "device": "iPad Air 13-inch (M4)",
+    "timestamp": 1791691347.522,
+    "sha256": "78d78327ed531de1f30f7944389acce8f90e3ffe249588610daaa397a9dba183",
+    "bytes": 263995,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/ui-ipad/audio-closed.png",
+    "test": "GusAuthenticatedUITests/testAudioCloseAndReopen()",
+    "device": "iPad Air 13-inch (M4)",
+    "timestamp": 1791691345.279,
+    "sha256": "d077bf66813f6d2ba040f1f3ab713711caf88d741bcca0e9bbf3dabed3cd7a65",
+    "bytes": 1098496,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/ui-ipad/audio-landscape.png",
+    "test": "GusAuthenticatedUITests/testAudioCloseAndReopen()",
+    "device": "iPad Air 13-inch (M4)",
+    "timestamp": 1791691342.651,
+    "sha256": "698a2bae141545289e04df35f2948ad89d9606be6e9639daf07f5cef03e81ad7",
+    "bytes": 263417,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/ui-ipad/audio-open.png",
+    "test": "GusAuthenticatedUITests/testAudioCloseAndReopen()",
+    "device": "iPad Air 13-inch (M4)",
+    "timestamp": 1791691340.111,
+    "sha256": "6e12410f2b786d7a2b7b123cf824a9b2e1aa7baacab4e241ddc188f831a23749",
+    "bytes": 248428,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/ui-ipad/book-reader-dismissed.png",
+    "test": "GusAuthenticatedUITests/testBookReaderDismissal()",
+    "device": "iPad Air 13-inch (M4)",
+    "timestamp": 1791691372.043,
+    "sha256": "b280e6f546811d08f29f38432aa3f731fe1f28c36f7e5a10ca2afc396807c7bb",
+    "bytes": 1490431,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/ui-ipad/book-reader-landscape.png",
+    "test": "GusAuthenticatedUITests/testBookReaderDismissal()",
+    "device": "iPad Air 13-inch (M4)",
+    "timestamp": 1791691370.121,
+    "sha256": "e5a2d144315528dd8adf13cd26a6fe8fdd9ddf713b135124529d70a06e14c32b",
+    "bytes": 120279,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/ui-ipad/book-reader.png",
+    "test": "GusAuthenticatedUITests/testBookReaderDismissal()",
+    "device": "iPad Air 13-inch (M4)",
+    "timestamp": 1791691367.239,
+    "sha256": "2c51849e0795af0a37e259799c7e30be352d040c193a344fd90200c0e9c3c288",
+    "bytes": 111798,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/ui-ipad/connect-input-ax5.png",
+    "test": "GusAuthenticatedUITests/testConnectCurrentScreenAccessibility()",
+    "device": "iPad Air 13-inch (M4)",
+    "timestamp": 1791691400.497,
+    "sha256": "ef6bd9f86ce4c29811a9fc764744de91cb130c9998ce263612aa4355e29b5043",
+    "bytes": 449853,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/ui-ipad/connect-input.png",
+    "test": "GusAuthenticatedUITests/testConnectCurrentScreenAccessibility()",
+    "device": "iPad Air 13-inch (M4)",
+    "timestamp": 1791691386.137,
+    "sha256": "a4f8ae7a372aad4eb43efcd769d38c5e72dcdf85a28530a20ab86fb092f8a92f",
+    "bytes": 278051,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/ui-ipad/contrast-guard-Detail.play.png",
+    "test": "GusAuthenticatedUITests/testDetailCurrentScreenAccessibility()",
+    "device": "iPad Air 13-inch (M4)",
+    "timestamp": 1791691414.206,
+    "sha256": "166f8240bf8ba561a5e1bbf1178be14d7e1a2672f8017078fc9c56e2f329877c",
+    "bytes": 21663,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/ui-ipad/contrast-guard-ContentLink.detailDone.png",
+    "test": "GusAuthenticatedUITests/testDetailCurrentScreenAccessibility()",
+    "device": "iPad Air 13-inch (M4)",
+    "timestamp": 1791691413.503,
+    "sha256": "92cb4a0e203c45a1cbbe41a57f89ddba706b87a8b4036c961a1bc9e62269018f",
+    "bytes": 5760,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/ui-ipad/movie-audit.png",
+    "test": "GusAuthenticatedUITests/testDetailCurrentScreenAccessibility()",
+    "device": "iPad Air 13-inch (M4)",
+    "timestamp": 1791691411.793,
+    "sha256": "6e69d393432878ec0b137d8b96545a9e61df7461da6d9d1f5f9987b7200f7f6e",
+    "bytes": 1031591,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/ui-ipad/full-synopsis.png",
+    "test": "GusAuthenticatedUITests/testFullSynopsisHeading()",
+    "device": "iPad Air 13-inch (M4)",
+    "timestamp": 1791691429.046,
+    "sha256": "8ed63667eec7a3126a2e93f3f83675d9e2f238435436648324651045955d51ac",
+    "bytes": 1129350,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/ui-ipad/book-ax5.png",
+    "test": "GusAuthenticatedUITests/testLargestTextAuthenticatedDetails()",
+    "device": "iPad Air 13-inch (M4)",
+    "timestamp": 1791691472.116,
+    "sha256": "e4f69de46823087afbd4398124b0130e3781afd25722061b96cdb614e8f32756",
+    "bytes": 1116845,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/ui-ipad/musicalbum-ax5.png",
+    "test": "GusAuthenticatedUITests/testLargestTextAuthenticatedDetails()",
+    "device": "iPad Air 13-inch (M4)",
+    "timestamp": 1791691463.39,
+    "sha256": "df13d4cc4d1fcfbc7d8e4e8cc6fcac24d755800c49b88bc007a5742146d32b30",
+    "bytes": 855973,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/ui-ipad/movie-ax5.png",
+    "test": "GusAuthenticatedUITests/testLargestTextAuthenticatedDetails()",
+    "device": "iPad Air 13-inch (M4)",
+    "timestamp": 1791691454.172,
+    "sha256": "f6cc3b8360ec2e5f389d0e1132700044c8968f5f63dc7924c1deca933c879582",
+    "bytes": 998619,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/ui-ipad/book-landscape.png",
+    "test": "GusAuthenticatedUITests/testLoadedDetailLayouts()",
+    "device": "iPad Air 13-inch (M4)",
+    "timestamp": 1791691508.054,
+    "sha256": "9a02f8aec8cf5b710b1c0007bc735605a714a471c97f57aae33e8b88dfa2fb60",
+    "bytes": 1497563,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/ui-ipad/book-detail.png",
+    "test": "GusAuthenticatedUITests/testLoadedDetailLayouts()",
+    "device": "iPad Air 13-inch (M4)",
+    "timestamp": 1791691506.259,
+    "sha256": "6da041fbd97d4bcbf51651e31b7314185de1178a51428ce198411d685a11ab88",
+    "bytes": 1466459,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/ui-ipad/musicalbum-landscape.png",
+    "test": "GusAuthenticatedUITests/testLoadedDetailLayouts()",
+    "device": "iPad Air 13-inch (M4)",
+    "timestamp": 1791691496.416,
+    "sha256": "133e3a1e3b1497eb17450126dac9c1cf6ab3072744c7021191132e1d7127fbf9",
+    "bytes": 714677,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/ui-ipad/musicalbum-detail.png",
+    "test": "GusAuthenticatedUITests/testLoadedDetailLayouts()",
+    "device": "iPad Air 13-inch (M4)",
+    "timestamp": 1791691494.753,
+    "sha256": "72753a05670b35c8c11099f36050a066b44df0c10c44a96138bd2269b08b49ab",
+    "bytes": 1176806,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/ui-ipad/movie-landscape.png",
+    "test": "GusAuthenticatedUITests/testLoadedDetailLayouts()",
+    "device": "iPad Air 13-inch (M4)",
+    "timestamp": 1791691484.718,
+    "sha256": "c9635f0eb270c9c69f8da0d53cd34b4c1aee1baa8338cbc1c581ba87de5d5c0e",
+    "bytes": 949967,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/ui-ipad/movie-detail.png",
+    "test": "GusAuthenticatedUITests/testLoadedDetailLayouts()",
+    "device": "iPad Air 13-inch (M4)",
+    "timestamp": 1791691482.63,
+    "sha256": "7eda9082f4cfdb882fae8d8704008de8a85c48eb386f302fee9cfb856fb69138",
+    "bytes": 1342388,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/ui-ipad/book-rtl-landscape.png",
+    "test": "GusAuthenticatedUITests/testRightToLeftLoadedDetails()",
+    "device": "iPad Air 13-inch (M4)",
+    "timestamp": 1791691545.088,
+    "sha256": "0f377d2b112e245f7b3969a430f8a3e09e64152953808024da558343b08e36dc",
+    "bytes": 1458220,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/ui-ipad/book-rtl.png",
+    "test": "GusAuthenticatedUITests/testRightToLeftLoadedDetails()",
+    "device": "iPad Air 13-inch (M4)",
+    "timestamp": 1791691543.569,
+    "sha256": "620e155d03e04fe73253a5034a334de512d30407243a7a96b81e1256045b4d2a",
+    "bytes": 1427830,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/ui-ipad/musicalbum-rtl-landscape.png",
+    "test": "GusAuthenticatedUITests/testRightToLeftLoadedDetails()",
+    "device": "iPad Air 13-inch (M4)",
+    "timestamp": 1791691532.85,
+    "sha256": "2e3e76eb39c009abfa8f8502f776db9c2ecfac9117fa00b17e5f2e6f62df3caa",
+    "bytes": 674278,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/ui-ipad/musicalbum-rtl.png",
+    "test": "GusAuthenticatedUITests/testRightToLeftLoadedDetails()",
+    "device": "iPad Air 13-inch (M4)",
+    "timestamp": 1791691531.293,
+    "sha256": "d5904b1624b2adcbab17677a6808ab9c43ee0df859511549d30842da00c88acb",
+    "bytes": 1131200,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/ui-ipad/movie-rtl-landscape.png",
+    "test": "GusAuthenticatedUITests/testRightToLeftLoadedDetails()",
+    "device": "iPad Air 13-inch (M4)",
+    "timestamp": 1791691520.686,
+    "sha256": "089d9824c15fa3865993324ed3393c376cfe4b6c86b18a6e6599035e2ee1b4b2",
+    "bytes": 913537,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/ui-ipad/movie-rtl.png",
+    "test": "GusAuthenticatedUITests/testRightToLeftLoadedDetails()",
+    "device": "iPad Air 13-inch (M4)",
+    "timestamp": 1791691519.111,
+    "sha256": "acf25c4b3a7e068a751bf7f8d239baf29287e4ebf2d650ad0e56ea9caf7ea591",
+    "bytes": 1300557,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/ui-ipad/connect-verified-ax5-action.png",
+    "test": "GusLaunchUITests/testConnectScreenRendersAtLargestAccessibilityContentSize()",
+    "device": "iPad Air 13-inch (M4)",
+    "timestamp": 1791691557.655,
+    "sha256": "7b70a9fb2785502faadbd2f8829e4a352045d82a826aba5b3914fa9f9704d43e",
+    "bytes": 326188,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/ui-ipad/connect-verified-ax5-top.png",
+    "test": "GusLaunchUITests/testConnectScreenRendersAtLargestAccessibilityContentSize()",
+    "device": "iPad Air 13-inch (M4)",
+    "timestamp": 1791691556.25,
+    "sha256": "7b70a9fb2785502faadbd2f8829e4a352045d82a826aba5b3914fa9f9704d43e",
+    "bytes": 326188,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/ui-ipad/connect-native-double-length-ax5.png",
+    "test": "GusLaunchUITests/testConnectScreenRendersWithPseudolocalizationAtLargestAccessibilityContentSize()",
+    "device": "iPad Air 13-inch (M4)",
+    "timestamp": 1791691577.108,
+    "sha256": "ac37e39010b09c114f5456a9b00193900ae96166aeb080f7bb1f5c4d59ed2c7c",
+    "bytes": 363995,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/ui-tv/audio-reopened.png",
+    "test": "GusAuthenticatedUITests/testAudioCloseAndReopen()",
+    "device": "Apple TV 4K (3rd generation)",
+    "timestamp": 1791691625.165,
+    "sha256": "e78a9c2a584516663b3ddec474a46066a0dadbbfee1a54566c8e6f76a52caca3",
+    "bytes": 271107,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/ui-tv/audio-closed.png",
+    "test": "GusAuthenticatedUITests/testAudioCloseAndReopen()",
+    "device": "Apple TV 4K (3rd generation)",
+    "timestamp": 1791691621.643,
+    "sha256": "db4a3e27023fce73aaebcc7a8cb49037e3b9be5db99e71e4382c6fcafe1a43c0",
+    "bytes": 6075223,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/ui-tv/audio-open.png",
+    "test": "GusAuthenticatedUITests/testAudioCloseAndReopen()",
+    "device": "Apple TV 4K (3rd generation)",
+    "timestamp": 1791691619.818,
+    "sha256": "a00722d9771f37dc9fa5f54c399e2f6a2c89b4e792b7db88810341b7f2e2d78a",
+    "bytes": 270146,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/ui-tv/musicalbum-detail.png",
+    "test": "GusAuthenticatedUITests/testLoadedDetailLayouts()",
+    "device": "Apple TV 4K (3rd generation)",
+    "timestamp": 1791691637.585,
+    "sha256": "0afaf00d17280ba4aa57afe8a8bd56070995b75bdbd79a2cfbe0591871aa9862",
+    "bytes": 5810212,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/ui-tv/movie-detail.png",
+    "test": "GusAuthenticatedUITests/testLoadedDetailLayouts()",
+    "device": "Apple TV 4K (3rd generation)",
+    "timestamp": 1791691631.688,
+    "sha256": "cf335e687c10fb4a4cdc55257d35f6d1960df4b545015c9147101ab69bee993f",
+    "bytes": 4353581,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/ui-watch/watch-paused.png",
+    "test": "WatchBrowseUITests/testAlbumOpensTracksAndAudioPauses()",
+    "device": "Apple Watch SE 3 (40mm)",
+    "timestamp": 1791691795.602,
+    "sha256": "a32595676ce0f403d0ed0252eba1c3b2c6723e059b526316d7eb9c8af7c3073e",
+    "bytes": 95126,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/ui-watch/watch-audio.png",
+    "test": "WatchBrowseUITests/testAlbumOpensTracksAndAudioPauses()",
+    "device": "Apple Watch SE 3 (40mm)",
+    "timestamp": 1791691794.035,
+    "sha256": "d6059094992eb624533417df5bfccb3526dad14ee14d28d44da577716a69e8fc",
+    "bytes": 94805,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/ui-watch/watch-tracks.png",
+    "test": "WatchBrowseUITests/testAlbumOpensTracksAndAudioPauses()",
+    "device": "Apple Watch SE 3 (40mm)",
+    "timestamp": 1791691791.915,
+    "sha256": "24d8bcc11ad11c572fbd79cb1f0bed43a1238d98066a63a3f93120821497c96b",
+    "bytes": 26174,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/ui-watch/watch-track-state.png",
+    "test": "WatchBrowseUITests/testAlbumOpensTracksAndAudioPauses()",
+    "device": "Apple Watch SE 3 (40mm)",
+    "timestamp": 1791691791.892,
+    "sha256": "24d8bcc11ad11c572fbd79cb1f0bed43a1238d98066a63a3f93120821497c96b",
+    "bytes": 26174,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/ui-watch/watch-music.png",
+    "test": "WatchBrowseUITests/testAlbumOpensTracksAndAudioPauses()",
+    "device": "Apple Watch SE 3 (40mm)",
+    "timestamp": 1791691790.094,
+    "sha256": "337dc361c10fb8b3448ed2c9a1d7d43893f22ed92913266857cf052a683c30d7",
+    "bytes": 28837,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/ui-ios/audio-reopened.png",
+    "test": "GusAuthenticatedUITests/testAudioCloseAndReopen()",
+    "device": "iPhone 17e",
+    "timestamp": 1791691003.888,
+    "sha256": "8c4046e207e0e8af279e6e02319dcc470dd2e7a8c4d9e116391403f82f517fe0",
+    "bytes": 239020,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/ui-ios/audio-closed.png",
+    "test": "GusAuthenticatedUITests/testAudioCloseAndReopen()",
+    "device": "iPhone 17e",
+    "timestamp": 1791691001.617,
+    "sha256": "72897f96405c0fd392b22e948a7d0d0fa8e3ba81cfd85601e0ca5022797eb973",
+    "bytes": 502480,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/ui-ios/audio-landscape.png",
+    "test": "GusAuthenticatedUITests/testAudioCloseAndReopen()",
+    "device": "iPhone 17e",
+    "timestamp": 1791690999.293,
+    "sha256": "121da4724f3e817d8e41187a760db28e4cc5719e7db1d5bdf0d85f009d95a458",
+    "bytes": 239159,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/ui-ios/audio-open.png",
+    "test": "GusAuthenticatedUITests/testAudioCloseAndReopen()",
+    "device": "iPhone 17e",
+    "timestamp": 1791690996.748,
+    "sha256": "12ab92d301e32777f09adedb27bea8e37c765f92e3b27fa123d6fa05af4f366d",
+    "bytes": 352698,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/ui-ios/book-reader-dismissed.png",
+    "test": "GusAuthenticatedUITests/testBookReaderDismissal()",
+    "device": "iPhone 17e",
+    "timestamp": 1791691031.096,
+    "sha256": "99a8fb2e2c633a881db0b6251015c209b3c30b529be5846aff483c785df020cc",
+    "bytes": 1714608,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/ui-ios/book-reader-landscape.png",
+    "test": "GusAuthenticatedUITests/testBookReaderDismissal()",
+    "device": "iPhone 17e",
+    "timestamp": 1791691029.299,
+    "sha256": "d511caa3ba2c6cbdd07f74cd6bd9f1b2e5cdfcee45978c07a9a9f5ad900389e0",
+    "bytes": 85690,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/ui-ios/book-reader.png",
+    "test": "GusAuthenticatedUITests/testBookReaderDismissal()",
+    "device": "iPhone 17e",
+    "timestamp": 1791691026.8,
+    "sha256": "ce4206afc979521bc905f01ceb8860d55300cbbe670488364f85886ad6be40a5",
+    "bytes": 81743,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/ui-ios/connect-input-ax5.png",
+    "test": "GusAuthenticatedUITests/testConnectCurrentScreenAccessibility()",
+    "device": "iPhone 17e",
+    "timestamp": 1791691056.792,
+    "sha256": "cd80d1a2a0d49bd919a96ec58f2372224852c12513bcaead8b907718521e844a",
+    "bytes": 389690,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/ui-ios/connect-input.png",
+    "test": "GusAuthenticatedUITests/testConnectCurrentScreenAccessibility()",
+    "device": "iPhone 17e",
+    "timestamp": 1791691044.101,
+    "sha256": "2bfe78fc58b0a355184c25e0c8a9aec2cce67137dd3ecce037821b51e609f60b",
+    "bytes": 245809,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/ui-ios/contrast-guard-Detail.play.png",
+    "test": "GusAuthenticatedUITests/testDetailCurrentScreenAccessibility()",
+    "device": "iPhone 17e",
+    "timestamp": 1791691071.93,
+    "sha256": "0caf78f591e9104e8cc697fb08146f620a327b4e1f2a8cd43c68ea3fa0d195e0",
+    "bytes": 32190,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/ui-ios/contrast-guard-ContentLink.detailDone.png",
+    "test": "GusAuthenticatedUITests/testDetailCurrentScreenAccessibility()",
+    "device": "iPhone 17e",
+    "timestamp": 1791691071.333,
+    "sha256": "a8679fde251f7c676ea8064964e7f8c2d472e559d922b84e5b1e830bc293ec2e",
+    "bytes": 7252,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/ui-ios/movie-audit.png",
+    "test": "GusAuthenticatedUITests/testDetailCurrentScreenAccessibility()",
+    "device": "iPhone 17e",
+    "timestamp": 1791691068.59,
+    "sha256": "bbebc3b7fdfaa2e87c402ea2a56863421616d259abbccc9333878d46b86f2b01",
+    "bytes": 944589,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/ui-ios/full-synopsis.png",
+    "test": "GusAuthenticatedUITests/testFullSynopsisHeading()",
+    "device": "iPhone 17e",
+    "timestamp": 1791691085.189,
+    "sha256": "e9d70d5e48fec7b5e99f07012031ba2b47421326359c5aff1bd925d75e07b15d",
+    "bytes": 197729,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/ui-ios/book-ax5.png",
+    "test": "GusAuthenticatedUITests/testLargestTextAuthenticatedDetails()",
+    "device": "iPhone 17e",
+    "timestamp": 1791691122.974,
+    "sha256": "e751ed4e6feba2ef404bad7ef55d78ee90a5274234593cb0d4114b09e2ea0ab0",
+    "bytes": 707263,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/ui-ios/musicalbum-ax5.png",
+    "test": "GusAuthenticatedUITests/testLargestTextAuthenticatedDetails()",
+    "device": "iPhone 17e",
+    "timestamp": 1791691110.802,
+    "sha256": "311fe670bddc8cc05e00e228aefbd2f058bd582982063bb3bcb35b42b8625a55",
+    "bytes": 298981,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/ui-ios/movie-ax5.png",
+    "test": "GusAuthenticatedUITests/testLargestTextAuthenticatedDetails()",
+    "device": "iPhone 17e",
+    "timestamp": 1791691101.321,
+    "sha256": "5c296657cb63bb8c6affefc9aa1092f7f7abf615aff4e8b829f0e885a1e4e155",
+    "bytes": 481115,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/ui-ios/book-landscape.png",
+    "test": "GusAuthenticatedUITests/testLoadedDetailLayouts()",
+    "device": "iPhone 17e",
+    "timestamp": 1791691167.175,
+    "sha256": "ecfe21a4cdd286c5f0db82b3d5229b39642b344a666df293db96594908234b7e",
+    "bytes": 1715720,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/ui-ios/book-detail.png",
+    "test": "GusAuthenticatedUITests/testLoadedDetailLayouts()",
+    "device": "iPhone 17e",
+    "timestamp": 1791691165.58,
+    "sha256": "7682c0ff459b3dd23ddce137afa96d954f26e720e65e04e1046d07eeb2f3d88e",
+    "bytes": 689567,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/ui-ios/musicalbum-landscape.png",
+    "test": "GusAuthenticatedUITests/testLoadedDetailLayouts()",
+    "device": "iPhone 17e",
+    "timestamp": 1791691157.572,
+    "sha256": "8962bc999d3bad214963b8d38278f664a1c2aa82be0272a0d85697232fa6d56e",
+    "bytes": 286595,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/ui-ios/musicalbum-detail.png",
+    "test": "GusAuthenticatedUITests/testLoadedDetailLayouts()",
+    "device": "iPhone 17e",
+    "timestamp": 1791691156.273,
+    "sha256": "2befbb177cc5f211ed067a572eca4cea87a2a9924d65429097e78f8926c84cbc",
+    "bytes": 271801,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/ui-ios/movie-landscape.png",
+    "test": "GusAuthenticatedUITests/testLoadedDetailLayouts()",
+    "device": "iPhone 17e",
+    "timestamp": 1791691142.064,
+    "sha256": "01b5d9f20543595ed31e4a6ed9c805bfc040e64c50a3136fe1653440be68ff8a",
+    "bytes": 622878,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/ui-ios/movie-detail.png",
+    "test": "GusAuthenticatedUITests/testLoadedDetailLayouts()",
+    "device": "iPhone 17e",
+    "timestamp": 1791691131.114,
+    "sha256": "1850f423dbf81684c561903dbf5905a25b5bfbe6090da8333caf455414a96887",
+    "bytes": 780518,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/ui-ios/book-rtl-landscape.png",
+    "test": "GusAuthenticatedUITests/testRightToLeftLoadedDetails()",
+    "device": "iPhone 17e",
+    "timestamp": 1791691215.662,
+    "sha256": "d9ed44a633af0f68233aa170877c9a829cbb304552f4919d5fad5869d77b790e",
+    "bytes": 1708328,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/ui-ios/book-rtl.png",
+    "test": "GusAuthenticatedUITests/testRightToLeftLoadedDetails()",
+    "device": "iPhone 17e",
+    "timestamp": 1791691214.157,
+    "sha256": "5df3a093dd7abb0ceef89362d28ca57cbf3122c36581e489c51f4a4257da6fbc",
+    "bytes": 774555,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/ui-ios/musicalbum-rtl-landscape.png",
+    "test": "GusAuthenticatedUITests/testRightToLeftLoadedDetails()",
+    "device": "iPhone 17e",
+    "timestamp": 1791691194.982,
+    "sha256": "d6f7d0d125a1c318f44c18b80e42d676ec5f5c7bd54bad3ad62cecbae2a2a0a7",
+    "bytes": 284884,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/ui-ios/musicalbum-rtl.png",
+    "test": "GusAuthenticatedUITests/testRightToLeftLoadedDetails()",
+    "device": "iPhone 17e",
+    "timestamp": 1791691194.033,
+    "sha256": "3034f0ddf3de26d879cb5e4c75c3ec06b955683f13d9104649de3095a197e091",
+    "bytes": 272303,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/ui-ios/movie-rtl-landscape.png",
+    "test": "GusAuthenticatedUITests/testRightToLeftLoadedDetails()",
+    "device": "iPhone 17e",
+    "timestamp": 1791691185.993,
+    "sha256": "2001a9ab244327c92361b5687c7b80835800a0f2d1939bae6e7079f7cbc8b6df",
+    "bytes": 549311,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/ui-ios/movie-rtl.png",
+    "test": "GusAuthenticatedUITests/testRightToLeftLoadedDetails()",
+    "device": "iPhone 17e",
+    "timestamp": 1791691176.847,
+    "sha256": "c0a3840d649666c469f02e05b167d8b27518345f62773b66f9ffe079fcf2e38b",
+    "bytes": 746587,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/ui-ios/connect-verified-ax5-action.png",
+    "test": "GusLaunchUITests/testConnectScreenRendersAtLargestAccessibilityContentSize()",
+    "device": "iPhone 17e",
+    "timestamp": 1791691233.832,
+    "sha256": "b9825ca967eadf83a769de72a85be6a3721a02e9e8a633395855d5cd50b3cf45",
+    "bytes": 521046,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/ui-ios/connect-verified-ax5-top.png",
+    "test": "GusLaunchUITests/testConnectScreenRendersAtLargestAccessibilityContentSize()",
+    "device": "iPhone 17e",
+    "timestamp": 1791691229.583,
+    "sha256": "d6922a1fb74067a7169cf9e14fc8b85bb465f2caefbb60e7452f7b12a03c6bf3",
+    "bytes": 199841,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/ui-ios/connect-native-double-length-ax5.png",
+    "test": "GusLaunchUITests/testConnectScreenRendersWithPseudolocalizationAtLargestAccessibilityContentSize()",
+    "device": "iPhone 17e",
+    "timestamp": 1791691253.428,
+    "sha256": "1bb5f5b943fafb9608167d2315e24f6ecb19a380015dabc83d20a7275b55b7ca",
+    "bytes": 527433,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/audio-ax5-landscape/audio-ax5-landscape-reopened-reachable-play.png",
+    "test": "GusAuthenticatedUITests/testAudioLargestTextLandscapeTransportReachability()",
+    "device": "iPhone 17e",
+    "timestamp": 1791695950.4,
+    "sha256": "f2d52f2ee4d72382bcfeeebf22accf0bed2acd6f6ba52f04e2240a80ceb0974c",
+    "bytes": 151550,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/audio-ax5-landscape/audio-ax5-landscape-paused.png",
+    "test": "GusAuthenticatedUITests/testAudioLargestTextLandscapeTransportReachability()",
+    "device": "iPhone 17e",
+    "timestamp": 1791695946.033,
+    "sha256": "82648c4ccf4482c4b79b1ceff7f46c0ae35786819991f4edb5b585392546fdb8",
+    "bytes": 155675,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/audio-ax5-landscape/audio-ax5-landscape-reachable-pause.png",
+    "test": "GusAuthenticatedUITests/testAudioLargestTextLandscapeTransportReachability()",
+    "device": "iPhone 17e",
+    "timestamp": 1791695943.542,
+    "sha256": "54cfab63d4675e33f90dc569dd088fe76faa1e88b1edbdd9d9fa733b58a48d53",
+    "bytes": 153062,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/audio-ax5-landscape/audio-ax5-landscape-after-scroll.png",
+    "test": "GusAuthenticatedUITests/testAudioLargestTextLandscapeTransportReachability()",
+    "device": "iPhone 17e",
+    "timestamp": 1791695943.384,
+    "sha256": "54cfab63d4675e33f90dc569dd088fe76faa1e88b1edbdd9d9fa733b58a48d53",
+    "bytes": 153062,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/audio-ax5-landscape/audio-ax5-landscape-before-scroll.png",
+    "test": "GusAuthenticatedUITests/testAudioLargestTextLandscapeTransportReachability()",
+    "device": "iPhone 17e",
+    "timestamp": 1791695940.566,
+    "sha256": "203b004597e21aaba24fbf94f7d0c73b5cb131c9fc60b15987fdeeaac7192152",
+    "bytes": 278584,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/iphone-dark-contrast-ax5/audio-reopened.png",
+    "test": "GusAuthenticatedUITests/testAudioCloseAndReopen()",
+    "device": "iPhone 17e",
+    "timestamp": 1791693566.444,
+    "sha256": "a4fc20378e4ad51f470d449195488fd5692e65fe5c17624d84da3464a05fe67f",
+    "bytes": 141411,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/iphone-dark-contrast-ax5/audio-closed.png",
+    "test": "GusAuthenticatedUITests/testAudioCloseAndReopen()",
+    "device": "iPhone 17e",
+    "timestamp": 1791693564.392,
+    "sha256": "223e0a429f963706d79cdb7f8502bbc41cae3526680c05fc3406c1e6d174cb66",
+    "bytes": 367699,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/iphone-dark-contrast-ax5/audio-landscape.png",
+    "test": "GusAuthenticatedUITests/testAudioCloseAndReopen()",
+    "device": "iPhone 17e",
+    "timestamp": 1791693562.164,
+    "sha256": "261ade40296558a3821bf1ab1f02a5293ef230f2a358d595d9127c0371923c29",
+    "bytes": 157430,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/iphone-dark-contrast-ax5/audio-open.png",
+    "test": "GusAuthenticatedUITests/testAudioCloseAndReopen()",
+    "device": "iPhone 17e",
+    "timestamp": 1791693560.439,
+    "sha256": "806239dfb2f46e4f3f60f54c5f8d73c5109f8eb6cb61b37847adec1c189f44ec",
+    "bytes": 274399,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/iphone-dark-contrast-ax5/contrast-guard-ContentLink.detailDone.png",
+    "test": "GusAuthenticatedUITests/testDetailCurrentScreenAccessibility()",
+    "device": "iPhone 17e",
+    "timestamp": 1791693579.907,
+    "sha256": "50af445a8ada64e721cabeb24058ae07e4a60a8520eda7bd5baef63a1ac8bfc1",
+    "bytes": 6650,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/iphone-dark-contrast-ax5/movie-audit.png",
+    "test": "GusAuthenticatedUITests/testDetailCurrentScreenAccessibility()",
+    "device": "iPhone 17e",
+    "timestamp": 1791693577.867,
+    "sha256": "5279b7eca93289749f23d88a26bbdf511b42b1ae0ed52755a8644275ebf49886",
+    "bytes": 529748,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/iphone-dark-contrast-ax5/full-synopsis.png",
+    "test": "GusAuthenticatedUITests/testFullSynopsisHeading()",
+    "device": "iPhone 17e",
+    "timestamp": 1791693597.09,
+    "sha256": "d5dcb7f2ae6898e3e4f10bc4a4f439803cc23cd47369ee6a8ee0f629ded84c8f",
+    "bytes": 245531,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/iphone-dark-contrast-ax5/book-ax5.png",
+    "test": "GusAuthenticatedUITests/testLargestTextAuthenticatedDetails()",
+    "device": "iPhone 17e",
+    "timestamp": 1791693626.674,
+    "sha256": "3d394e99b914ce4303109358de3fba57e9a3aec8499ae01eacb69350389a3e72",
+    "bytes": 521041,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/iphone-dark-contrast-ax5/musicalbum-ax5.png",
+    "test": "GusAuthenticatedUITests/testLargestTextAuthenticatedDetails()",
+    "device": "iPhone 17e",
+    "timestamp": 1791693618.529,
+    "sha256": "d49b497bc082df3f7b3a67b7316ad15abc9257e352dbce4b65705aefe29f72fb",
+    "bytes": 288473,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/iphone-dark-contrast-ax5/movie-ax5.png",
+    "test": "GusAuthenticatedUITests/testLargestTextAuthenticatedDetails()",
+    "device": "iPhone 17e",
+    "timestamp": 1791693608.385,
+    "sha256": "088bfe57daef4100f15134a645b37b13760101b4d5f445c942f3ae8f6adc35c1",
+    "bytes": 445576,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/ipad-mini/book-reader-dismissed.png",
+    "test": "GusAuthenticatedUITests/testBookReaderDismissal()",
+    "device": "iPad mini (A17 Pro)",
+    "timestamp": 1791694184.176,
+    "sha256": "228c653f5a18c4399c1aaa3c63366bc565962f4560627d93286c4753e1299a37",
+    "bytes": 1165499,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/ipad-mini/book-reader-landscape.png",
+    "test": "GusAuthenticatedUITests/testBookReaderDismissal()",
+    "device": "iPad mini (A17 Pro)",
+    "timestamp": 1791694182.439,
+    "sha256": "822dd793df03f5003ee4ebcfda2b48e563a034143104e286254ee3090d869b7e",
+    "bytes": 87768,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/ipad-mini/book-reader.png",
+    "test": "GusAuthenticatedUITests/testBookReaderDismissal()",
+    "device": "iPad mini (A17 Pro)",
+    "timestamp": 1791694179.732,
+    "sha256": "c6161ca311f99d0368dfb22644824e6133695d519d001953fc56517656fc35c4",
+    "bytes": 79964,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/ipad-mini/book-landscape.png",
+    "test": "GusAuthenticatedUITests/testLoadedDetailLayouts()",
+    "device": "iPad mini (A17 Pro)",
+    "timestamp": 1791694222.557,
+    "sha256": "64e82cd6b99247b72c086cd4f0f34eb11a390b5cd4108a861607d6a66042a614",
+    "bytes": 1167767,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/ipad-mini/book-detail.png",
+    "test": "GusAuthenticatedUITests/testLoadedDetailLayouts()",
+    "device": "iPad mini (A17 Pro)",
+    "timestamp": 1791694220.849,
+    "sha256": "14d84b809cb88bf11204a59ca49ca1c0de24e42c36bfd2b58ea39baf72acf389",
+    "bytes": 873848,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/ipad-mini/musicalbum-landscape.png",
+    "test": "GusAuthenticatedUITests/testLoadedDetailLayouts()",
+    "device": "iPad mini (A17 Pro)",
+    "timestamp": 1791694210.205,
+    "sha256": "15670fb4aef1c8f4c8a69b21b705d2322f145739883c44677e3d3d729b212f82",
+    "bytes": 347440,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/ipad-mini/musicalbum-detail.png",
+    "test": "GusAuthenticatedUITests/testLoadedDetailLayouts()",
+    "device": "iPad mini (A17 Pro)",
+    "timestamp": 1791694208.452,
+    "sha256": "34dcfe8ded57a08a77717d8ee559bf049c0e1e914eb1373f8ff60bf43dda7266",
+    "bytes": 627757,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/ipad-mini/movie-landscape.png",
+    "test": "GusAuthenticatedUITests/testLoadedDetailLayouts()",
+    "device": "iPad mini (A17 Pro)",
+    "timestamp": 1791694196.98,
+    "sha256": "b4aed47ad9dc94009965b58d476d4f64f04fe622c00be28c7882f8c930066e60",
+    "bytes": 605576,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/ipad-mini/movie-detail.png",
+    "test": "GusAuthenticatedUITests/testLoadedDetailLayouts()",
+    "device": "iPad mini (A17 Pro)",
+    "timestamp": 1791694195.352,
+    "sha256": "b4e83566a6f29de320545cf09522431daf50d53a66192b045d16fa2d3f3fde49",
+    "bytes": 894503,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/tv-1080p/audio-reopened.png",
+    "test": "GusAuthenticatedUITests/testAudioCloseAndReopen()",
+    "device": "Apple TV 4K (3rd generation) (at 1080p)",
+    "timestamp": 1791694278.97,
+    "sha256": "82033c497c135f9b1b90791b8869ad47d666ab45f8ee0ce6ca624f7514194b6f",
+    "bytes": 89652,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/tv-1080p/audio-closed.png",
+    "test": "GusAuthenticatedUITests/testAudioCloseAndReopen()",
+    "device": "Apple TV 4K (3rd generation) (at 1080p)",
+    "timestamp": 1791694275.179,
+    "sha256": "0d248eb4436e0ab7bbe89a69318c4590a88895aedc78124f2e59bb0f7c05db69",
+    "bytes": 1926464,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/tv-1080p/audio-open.png",
+    "test": "GusAuthenticatedUITests/testAudioCloseAndReopen()",
+    "device": "Apple TV 4K (3rd generation) (at 1080p)",
+    "timestamp": 1791694273.657,
+    "sha256": "fe7d4d358cfaefea060d61d6b8f57ed2c9d5040e40e42593d4842ac4dc9e9249",
+    "bytes": 89263,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/tv-1080p/musicalbum-detail.png",
+    "test": "GusAuthenticatedUITests/testLoadedDetailLayouts()",
+    "device": "Apple TV 4K (3rd generation) (at 1080p)",
+    "timestamp": 1791694290.404,
+    "sha256": "58910d48d64375681442d54de7bb8fd847be31ee5aad276221096bbf44cc8305",
+    "bytes": 1948733,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/tv-1080p/movie-detail.png",
+    "test": "GusAuthenticatedUITests/testLoadedDetailLayouts()",
+    "device": "Apple TV 4K (3rd generation) (at 1080p)",
+    "timestamp": 1791694285.104,
+    "sha256": "d205f6ba78b642d3e3757fdd5a665933cc63702010438f21edbe64eb909b8fe8",
+    "bytes": 1489640,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/iphone-large/audio-reopened.png",
+    "test": "GusAuthenticatedUITests/testAudioCloseAndReopen()",
+    "device": "iPhone 18 Pro Max",
+    "timestamp": 1791694045.463,
+    "sha256": "a11e1b23b52906ee012ce0f8e59f69b521ea341643565da8a44f81c392c142c0",
+    "bytes": 261216,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/iphone-large/audio-closed.png",
+    "test": "GusAuthenticatedUITests/testAudioCloseAndReopen()",
+    "device": "iPhone 18 Pro Max",
+    "timestamp": 1791694043.074,
+    "sha256": "83b3a02813444e42cd223c544d0e95f4cbfa15c15ad05b01814f8518141e51c6",
+    "bytes": 946185,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/iphone-large/audio-landscape.png",
+    "test": "GusAuthenticatedUITests/testAudioCloseAndReopen()",
+    "device": "iPhone 18 Pro Max",
+    "timestamp": 1791694040.848,
+    "sha256": "fbe77e04a99200c789cb7ac2b5788f96aaf2175f3a5c1728803f6e75c36519c4",
+    "bytes": 261443,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/iphone-large/audio-open.png",
+    "test": "GusAuthenticatedUITests/testAudioCloseAndReopen()",
+    "device": "iPhone 18 Pro Max",
+    "timestamp": 1791694038.717,
+    "sha256": "530341605287d5d6618f585421b23cf5e183dfc20bc360f6433a92428365f537",
+    "bytes": 398351,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/iphone-large/book-landscape.png",
+    "test": "GusAuthenticatedUITests/testLoadedDetailLayouts()",
+    "device": "iPhone 18 Pro Max",
+    "timestamp": 1791694083.432,
+    "sha256": "4b5dbf0dddc4fc744067518e1f6762737ed69f35436b37c745e8ba99ca21b788",
+    "bytes": 2161736,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/iphone-large/book-detail.png",
+    "test": "GusAuthenticatedUITests/testLoadedDetailLayouts()",
+    "device": "iPhone 18 Pro Max",
+    "timestamp": 1791694080.064,
+    "sha256": "18c899b69cc2a01572ec7b86e0e56bcf6a596994a42187a68973fe04bbab0afc",
+    "bytes": 909197,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/iphone-large/musicalbum-landscape.png",
+    "test": "GusAuthenticatedUITests/testLoadedDetailLayouts()",
+    "device": "iPhone 18 Pro Max",
+    "timestamp": 1791694070.279,
+    "sha256": "da0fae35814f89d8818ff82a89a9caca568a64106740536511d310fe5e63870f",
+    "bytes": 302457,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/iphone-large/musicalbum-detail.png",
+    "test": "GusAuthenticatedUITests/testLoadedDetailLayouts()",
+    "device": "iPhone 18 Pro Max",
+    "timestamp": 1791694068.694,
+    "sha256": "b73b45ad93f5df24b59df4b5810763a26ce334a6e4994867d5f3c5cd0aa750e5",
+    "bytes": 291552,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/iphone-large/movie-landscape.png",
+    "test": "GusAuthenticatedUITests/testLoadedDetailLayouts()",
+    "device": "iPhone 18 Pro Max",
+    "timestamp": 1791694058.559,
+    "sha256": "48f35ffba26a0ede10da31b3a86ec819fabb146d82ae6294854f38328de8c75c",
+    "bytes": 920723,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/iphone-large/movie-detail.png",
+    "test": "GusAuthenticatedUITests/testLoadedDetailLayouts()",
+    "device": "iPhone 18 Pro Max",
+    "timestamp": 1791694056.308,
+    "sha256": "ddc25114d8f697fcf933f88540233892173da4a6b5749efc9421e3b3053c662e",
+    "bytes": 801510,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/watch-large/watch-paused.png",
+    "test": "WatchBrowseUITests/testAlbumOpensTracksAndAudioPauses()",
+    "device": "iPhone 17 Pro Max",
+    "timestamp": 1791694471.612,
+    "sha256": "f8fda28d8c5f4c1fc2e513acaf584ef656c60655e82f418b4b1f4f4e123f7926",
+    "bytes": 123338,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/watch-large/watch-audio.png",
+    "test": "WatchBrowseUITests/testAlbumOpensTracksAndAudioPauses()",
+    "device": "iPhone 17 Pro Max",
+    "timestamp": 1791694469.895,
+    "sha256": "4cb821c36953d3a456f71f8b480e6e5f8d1187983a74c909c683387e84a1d8c7",
+    "bytes": 123095,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/watch-large/watch-tracks.png",
+    "test": "WatchBrowseUITests/testAlbumOpensTracksAndAudioPauses()",
+    "device": "iPhone 17 Pro Max",
+    "timestamp": 1791694467.733,
+    "sha256": "cd14507b39014e35cbbe5e672e46252c30574b9c31eea71b73c12bc97396c8b4",
+    "bytes": 28857,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/watch-large/watch-track-state.png",
+    "test": "WatchBrowseUITests/testAlbumOpensTracksAndAudioPauses()",
+    "device": "iPhone 17 Pro Max",
+    "timestamp": 1791694467.69,
+    "sha256": "cd14507b39014e35cbbe5e672e46252c30574b9c31eea71b73c12bc97396c8b4",
+    "bytes": 28857,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/watch-large/watch-music.png",
+    "test": "WatchBrowseUITests/testAlbumOpensTracksAndAudioPauses()",
+    "device": "iPhone 17 Pro Max",
+    "timestamp": 1791694465.891,
+    "sha256": "ceee9a6efa244582f15a2f0a0adaa2f1b1f1e92655fa042c0bc9cf7de1b38e58",
+    "bytes": 32014,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/ios-26-fallback/audio-reopened.png",
+    "test": "GusAuthenticatedUITests/testAudioCloseAndReopen()",
+    "device": "iPhone 17",
+    "timestamp": 1791694598.214,
+    "sha256": "001bc14f643a178ba0f71b919040c978ea6631a6f771ce6bfb1c7c4440b6b097",
+    "bytes": 237378,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/ios-26-fallback/audio-closed.png",
+    "test": "GusAuthenticatedUITests/testAudioCloseAndReopen()",
+    "device": "iPhone 17",
+    "timestamp": 1791694596.007,
+    "sha256": "8276d8c12e8d20b0209206857afd902289278bfccb5fa54837ff17d196a8bf96",
+    "bytes": 577277,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/ios-26-fallback/audio-landscape.png",
+    "test": "GusAuthenticatedUITests/testAudioCloseAndReopen()",
+    "device": "iPhone 17",
+    "timestamp": 1791694593.423,
+    "sha256": "323a9fc39f5a35d376c2677871ad6a11d4a54a7d5c475f704b535ed7c19a3925",
+    "bytes": 237043,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/ios-26-fallback/audio-open.png",
+    "test": "GusAuthenticatedUITests/testAudioCloseAndReopen()",
+    "device": "iPhone 17",
+    "timestamp": 1791694590.408,
+    "sha256": "6eac44110396729dfe6aed95a6eef4267ab799c932a55d74280b35d999607bcf",
+    "bytes": 359351,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/ios-26-fallback/book-landscape.png",
+    "test": "GusAuthenticatedUITests/testLoadedDetailLayouts()",
+    "device": "iPhone 17",
+    "timestamp": 1791694652.911,
+    "sha256": "f8fbb3323f6cf580c778b7a09fca65e573b7f69d33584e89a28b20f28bf86950",
+    "bytes": 1745742,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/ios-26-fallback/book-detail.png",
+    "test": "GusAuthenticatedUITests/testLoadedDetailLayouts()",
+    "device": "iPhone 17",
+    "timestamp": 1791694650.281,
+    "sha256": "f0b85485a625168fa8626f684c41e83e6eb903280c2754bd8ad1e7c88b4d2e79",
+    "bytes": 856680,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/ios-26-fallback/musicalbum-landscape.png",
+    "test": "GusAuthenticatedUITests/testLoadedDetailLayouts()",
+    "device": "iPhone 17",
+    "timestamp": 1791694632.83,
+    "sha256": "ae2de7041a2c83465be0887185958b7a5a76a42b058e39fa255faec93331a3a7",
+    "bytes": 316643,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/ios-26-fallback/musicalbum-detail.png",
+    "test": "GusAuthenticatedUITests/testLoadedDetailLayouts()",
+    "device": "iPhone 17",
+    "timestamp": 1791694630.256,
+    "sha256": "f119615929938eb1410a8c573ea3f459f3f9061131a02ff99354f3a887d601b9",
+    "bytes": 289211,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/ios-26-fallback/movie-landscape.png",
+    "test": "GusAuthenticatedUITests/testLoadedDetailLayouts()",
+    "device": "iPhone 17",
+    "timestamp": 1791694620.759,
+    "sha256": "87bf66897e4458500eb536b9b7c30a93ec49dcab0ea362c80f3406219fc61fb8",
+    "bytes": 607406,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/ios-26-fallback/movie-detail.png",
+    "test": "GusAuthenticatedUITests/testLoadedDetailLayouts()",
+    "device": "iPhone 17",
+    "timestamp": 1791694607.131,
+    "sha256": "3e9b12636ff8ce31872c71ae5a6ee322541646dd0a6c10a82920437149ad5dac",
+    "bytes": 813833,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/iphone-narrow-se/audio-reopened.png",
+    "test": "GusAuthenticatedUITests/testAudioCloseAndReopen()",
+    "device": "Gus Release Narrow iPhone SE 2026-10-11",
+    "timestamp": 1791693776.386,
+    "sha256": "d5c1549b36bfe6b45a8ef9801d82f61365e1b701c39c7196f393181ab8d19104",
+    "bytes": 123855,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/iphone-narrow-se/audio-closed.png",
+    "test": "GusAuthenticatedUITests/testAudioCloseAndReopen()",
+    "device": "Gus Release Narrow iPhone SE 2026-10-11",
+    "timestamp": 1791693774.133,
+    "sha256": "4ffa8e3e1be809376d2f8532b61b2cd15b043716be9af1924ea7a8dbfce66eed",
+    "bytes": 270144,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/iphone-narrow-se/audio-landscape.png",
+    "test": "GusAuthenticatedUITests/testAudioCloseAndReopen()",
+    "device": "Gus Release Narrow iPhone SE 2026-10-11",
+    "timestamp": 1791693771.731,
+    "sha256": "1c2716f838b029c0e6bd3789991e58c3e4c96c6cc671c50c0498653bb4a2e82a",
+    "bytes": 123235,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/iphone-narrow-se/audio-open.png",
+    "test": "GusAuthenticatedUITests/testAudioCloseAndReopen()",
+    "device": "Gus Release Narrow iPhone SE 2026-10-11",
+    "timestamp": 1791693768.107,
+    "sha256": "d354bf2651f7e9099ac181b3efdfd4164eb3cdd7931e4a8110125a962df9b402",
+    "bytes": 214702,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/iphone-narrow-se/book-reader-dismissed.png",
+    "test": "GusAuthenticatedUITests/testBookReaderDismissal()",
+    "device": "Gus Release Narrow iPhone SE 2026-10-11",
+    "timestamp": 1791693816.514,
+    "sha256": "02a0b1d9219cd8674adedcba6a72105ffd01bdd6208c552d83415587c41faa34",
+    "bytes": 732523,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/iphone-narrow-se/book-reader-landscape.png",
+    "test": "GusAuthenticatedUITests/testBookReaderDismissal()",
+    "device": "Gus Release Narrow iPhone SE 2026-10-11",
+    "timestamp": 1791693814.588,
+    "sha256": "50dde69f3ab052a190e3db71c6a18bd54236c0171274df45ccbcebe77d1cdd39",
+    "bytes": 41790,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/iphone-narrow-se/book-reader.png",
+    "test": "GusAuthenticatedUITests/testBookReaderDismissal()",
+    "device": "Gus Release Narrow iPhone SE 2026-10-11",
+    "timestamp": 1791693811.662,
+    "sha256": "10e6cc771f66783ac9d228e2289c0b4d7be4658077eb88189c68863910e7dc6d",
+    "bytes": 41195,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/iphone-narrow-se/connect-input-ax5.png",
+    "test": "GusAuthenticatedUITests/testConnectCurrentScreenAccessibility()",
+    "device": "Gus Release Narrow iPhone SE 2026-10-11",
+    "timestamp": 1791693849.311,
+    "sha256": "08cab63590201d1197ba0ff3b94a63196e0e31ff4d88e47a7c70f3ede6b27c10",
+    "bytes": 259141,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/iphone-narrow-se/connect-input.png",
+    "test": "GusAuthenticatedUITests/testConnectCurrentScreenAccessibility()",
+    "device": "Gus Release Narrow iPhone SE 2026-10-11",
+    "timestamp": 1791693830.164,
+    "sha256": "12f5f9719581d5bacad40c1e51437808c92300ed081cf22957122eda09b4bc73",
+    "bytes": 122538,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/iphone-narrow-se/book-ax5.png",
+    "test": "GusAuthenticatedUITests/testLargestTextAuthenticatedDetails()",
+    "device": "Gus Release Narrow iPhone SE 2026-10-11",
+    "timestamp": 1791693899.374,
+    "sha256": "49e9fb257e56dbad934838df15a2727478eea67c102e71cff34b565dff77b62b",
+    "bytes": 388154,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/iphone-narrow-se/musicalbum-ax5.png",
+    "test": "GusAuthenticatedUITests/testLargestTextAuthenticatedDetails()",
+    "device": "Gus Release Narrow iPhone SE 2026-10-11",
+    "timestamp": 1791693890.648,
+    "sha256": "b19817a3271cbea29f765d7527286d05138766779c394568b480a7453e2f97d7",
+    "bytes": 194989,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/iphone-narrow-se/movie-ax5.png",
+    "test": "GusAuthenticatedUITests/testLargestTextAuthenticatedDetails()",
+    "device": "Gus Release Narrow iPhone SE 2026-10-11",
+    "timestamp": 1791693874.774,
+    "sha256": "7bfccfc87d77092099ab54ecdc50ba5627e38e7123503a1c498ad8b10b7d372d",
+    "bytes": 336486,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/iphone-narrow-se/book-landscape.png",
+    "test": "GusAuthenticatedUITests/testLoadedDetailLayouts()",
+    "device": "Gus Release Narrow iPhone SE 2026-10-11",
+    "timestamp": 1791693938.977,
+    "sha256": "e334be1767027170c5405c1bd7ca6fa7e3cfb6e7c2956f39276cdff089c5f6f6",
+    "bytes": 732656,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/iphone-narrow-se/book-detail.png",
+    "test": "GusAuthenticatedUITests/testLoadedDetailLayouts()",
+    "device": "Gus Release Narrow iPhone SE 2026-10-11",
+    "timestamp": 1791693937.612,
+    "sha256": "7a1eeaae5057d3d1e75d701bd7cb9ee0ddfa7020a67e176cfd87a2f77b4f7d71",
+    "bytes": 331748,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/iphone-narrow-se/musicalbum-landscape.png",
+    "test": "GusAuthenticatedUITests/testLoadedDetailLayouts()",
+    "device": "Gus Release Narrow iPhone SE 2026-10-11",
+    "timestamp": 1791693926.907,
+    "sha256": "d9f77d6ce2b7f599bf49b15dfdd2102cd9c92abfb13f6dc4d186f133ed9ab056",
+    "bytes": 155389,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/iphone-narrow-se/musicalbum-detail.png",
+    "test": "GusAuthenticatedUITests/testLoadedDetailLayouts()",
+    "device": "Gus Release Narrow iPhone SE 2026-10-11",
+    "timestamp": 1791693925.395,
+    "sha256": "7b4ff0e425c8e58ee5edd56092014593db96c18a6077b3684d983168ade99ac5",
+    "bytes": 147558,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/iphone-narrow-se/movie-landscape.png",
+    "test": "GusAuthenticatedUITests/testLoadedDetailLayouts()",
+    "device": "Gus Release Narrow iPhone SE 2026-10-11",
+    "timestamp": 1791693915.179,
+    "sha256": "71e64d9d1fc5d14b9b8f30bf3ae3177faa3236f5ed120c2b1f28513cc0f7610f",
+    "bytes": 234426,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/iphone-narrow-se/movie-detail.png",
+    "test": "GusAuthenticatedUITests/testLoadedDetailLayouts()",
+    "device": "Gus Release Narrow iPhone SE 2026-10-11",
+    "timestamp": 1791693913.372,
+    "sha256": "a0d6dc3b7a8d208f6cc59679f191c4a98b27aead36d06e085732ab0c877a25fb",
+    "bytes": 270945,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/iphone-narrow-se/connect-verified-ax5-action.png",
+    "test": "GusLaunchUITests/testConnectScreenRendersAtLargestAccessibilityContentSize()",
+    "device": "Gus Release Narrow iPhone SE 2026-10-11",
+    "timestamp": 1791693952.346,
+    "sha256": "e48c287e00f33f025555ceb062c385789da6e43f45f02a63ac129a23db918a18",
+    "bytes": 205757,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/iphone-narrow-se/connect-verified-ax5-top.png",
+    "test": "GusLaunchUITests/testConnectScreenRendersAtLargestAccessibilityContentSize()",
+    "device": "Gus Release Narrow iPhone SE 2026-10-11",
+    "timestamp": 1791693948.254,
+    "sha256": "58c1899731192b7ea681549e1c68af95c116f2408fe8602b1d0c4cc95dc21c49",
+    "bytes": 92813,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/gus-state-final-all/display-settings.png",
+    "test": "StateValidation/testAccessibilitySettingsInventory()",
+    "device": "iPhone 17e",
+    "timestamp": 1791695439.65,
+    "sha256": "643b325fdbbe14d7554ea5f60189791504c1c30e463cb60fb648fbbec99cabfd",
+    "bytes": 226065,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/gus-state-final-all/accessibility-settings.png",
+    "test": "StateValidation/testAccessibilitySettingsInventory()",
+    "device": "iPhone 17e",
+    "timestamp": 1791695438.51,
+    "sha256": "102aa0764a9d06e8c4db4d99ef33fb1c9d9cf718c7f5fa998098165c7c142c8a",
+    "bytes": 283441,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/gus-state-final-all/motion-settings.png",
+    "test": "StateValidation/testAccessibilitySettingsInventory()",
+    "device": "iPhone 17e",
+    "timestamp": 1791695437.29,
+    "sha256": "577db67dc6f6c6f210ae25b5511e1dfc672eea0d72dba0226da93f351625653b",
+    "bytes": 203218,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/gus-state-final-all/connect-error-recoverable.png",
+    "test": "StateValidation/testConnectFailureRecovery()",
+    "device": "iPhone 17e",
+    "timestamp": 1791695540.787,
+    "sha256": "da6c9f58bf3da69e17d796daae52af0c5f1f39dfb23675fea94bb97848e5946f",
+    "bytes": 282187,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/gus-state-final-all/connect-cancelled.png",
+    "test": "StateValidation/testConnectPendingCancellation()",
+    "device": "iPhone 17e",
+    "timestamp": 1791695556.757,
+    "sha256": "c3df3c9404f6f9d22a317d4fd203b408d0404c5c24a9d1c9869075455cdc4950",
+    "bytes": 244264,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/gus-state-final-all/connect-pending.png",
+    "test": "StateValidation/testConnectPendingCancellation()",
+    "device": "iPhone 17e",
+    "timestamp": 1791695555.97,
+    "sha256": "603be9daabd0a3f7960855193cb33b431e344496b55816c0311ab57f5e5493f3",
+    "bytes": 280584,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/gus-state-final-all/downloads-management-landscape.png",
+    "test": "StateValidation/testDownloadsManagementRotation()",
+    "device": "iPhone 17e",
+    "timestamp": 1791695566.463,
+    "sha256": "eefe6315f75b2cc89ed18700eb89a3fabc44ab72d2ef2571d3c1a6409eba6571",
+    "bytes": 311065,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/gus-state-final-all/downloads-management.png",
+    "test": "StateValidation/testDownloadsManagementRotation()",
+    "device": "iPhone 17e",
+    "timestamp": 1791695565.968,
+    "sha256": "057c4df95760b637e74a210d668a6c442f102af4782f63d6ea3b7b1f770faabf",
+    "bytes": 231414,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/gus-state-final-all/more-settings-navigation-landscape.png",
+    "test": "StateValidation/testMoreSettingsNavigationRotation()",
+    "device": "iPhone 17e",
+    "timestamp": 1791695585.237,
+    "sha256": "141cc35c87636ab1e174916cb8110090c51047cb74992bd0ac6b237dac9330b0",
+    "bytes": 191750,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/gus-state-final-all/more-settings-navigation.png",
+    "test": "StateValidation/testMoreSettingsNavigationRotation()",
+    "device": "iPhone 17e",
+    "timestamp": 1791695584.712,
+    "sha256": "b9492f9e7792b4f4db77e3e49aa1d9a968be94b9d7c4d9220ab33228b1d557cb",
+    "bytes": 206507,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/gus-state-final-all/video-paused-landscape.png",
+    "test": "StateValidation/testPausedVideoRotation()",
+    "device": "iPhone 17e",
+    "timestamp": 1791695596.468,
+    "sha256": "f303c3989b34d5b22746fd0e8d470f55fe0047fe960b449f33709ff6c36f0f8f",
+    "bytes": 254667,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/gus-state-final-all/video-paused.png",
+    "test": "StateValidation/testPausedVideoRotation()",
+    "device": "iPhone 17e",
+    "timestamp": 1791695594.621,
+    "sha256": "cb86d0a14afa8401f260275e74c7885017c2b2ba46f344e28a3fab38579a5f9b",
+    "bytes": 147076,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/gus-state-final-all/photo-dismissed.png",
+    "test": "StateValidation/testPhotoOpeningRotationAndSlideshow()",
+    "device": "iPhone 17e",
+    "timestamp": 1791695614.81,
+    "sha256": "e7f6cd5a15d4064a617a021db7ee73e0a925d531f37953a4851e58adcddb63cb",
+    "bytes": 452700,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/gus-state-final-all/photo-landscape.png",
+    "test": "StateValidation/testPhotoOpeningRotationAndSlideshow()",
+    "device": "iPhone 17e",
+    "timestamp": 1791695610.195,
+    "sha256": "46c09bb31a4a54b9f232fb287a7a4267f9640bddc1ddea63793c454a0f933284",
+    "bytes": 1214507,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/gus-state-final-all/photo-opened.png",
+    "test": "StateValidation/testPhotoOpeningRotationAndSlideshow()",
+    "device": "iPhone 17e",
+    "timestamp": 1791695609.247,
+    "sha256": "18f2c147830d760e9495e74292d6b60f18e756afe2f3306830fac41b93a85723",
+    "bytes": 2664706,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/gus-state-final-all/movie-reduced-motion-transparency-differentiate.png",
+    "test": "StateValidation/testReducedEffectsAndColorIndependence()",
+    "device": "iPhone 17e",
+    "timestamp": 1791695669.968,
+    "sha256": "918a791970b0fa1b08f8cf028b807bdbd9be7a2b716798ae14de36cad04e53b0",
+    "bytes": 923789,
+    "status": "passed-test capture; visual disposition recorded in VALIDATION.md"
+  },
+  {
+    "path": "final/screenshots/vision-native-io/audio-open.png",
+    "test": "final native Vision UI capture marker: audio-open",
+    "device": "Apple Vision Pro",
+    "timestamp": 1791691669.684733,
+    "sha256": "c66dea17e169716054e4a9bf6b68abf3064349d9eea578532493b26f0c6b25fb",
+    "bytes": 6001772,
+    "status": "native observer capture; rendered state independently inspected",
+    "captureKind": "native simctl IO screenshot",
+    "captureRequestEpoch": 1791691668.452224
+  },
+  {
+    "path": "final/screenshots/vision-native-io/audio-closed.png",
+    "test": "final native Vision UI capture marker: audio-closed",
+    "device": "Apple Vision Pro",
+    "timestamp": 1791691671.385469,
+    "sha256": "fb7224c192088a342fcc69be8cb1cba71958fb117d731c39f0cf68a0afc1a858",
+    "bytes": 6103233,
+    "status": "native observer capture; rendered state independently inspected",
+    "captureKind": "native simctl IO screenshot",
+    "captureRequestEpoch": 1791691670.922953
+  },
+  {
+    "path": "final/screenshots/vision-native-io/audio-reopened.png",
+    "test": "final native Vision UI capture marker: audio-reopened",
+    "device": "Apple Vision Pro",
+    "timestamp": 1791691673.2204669,
+    "sha256": "b3819480c6788204e282858b47e2f68ea42f57805434b38c624305e9e84afc21",
+    "bytes": 6001951,
+    "status": "native observer capture; rendered state independently inspected",
+    "captureKind": "native simctl IO screenshot",
+    "captureRequestEpoch": 1791691672.764833
+  },
+  {
+    "path": "final/screenshots/vision-native-stable/audio-closed.png",
+    "test": "vision-native-capture: audio-closed",
+    "device": "Apple Vision Pro",
+    "timestamp": 1791694698.9619272,
+    "sha256": "6225f3e3262ae9d0f6c85cc4ef68e368bcd92764d116e0a56c968dc181232084",
+    "bytes": 6103360,
+    "status": "synchronous native capture from passed external UI harness; independently inspected",
+    "captureKind": "native simctl IO screenshot via synchronous loopback bridge"
+  },
+  {
+    "path": "final/screenshots/vision-native-stable/audio-open.png",
+    "test": "vision-native-capture: audio-open",
+    "device": "Apple Vision Pro",
+    "timestamp": 1791694692.3315334,
+    "sha256": "2f0a0ec8204875209ebbad9e9bfbfadb86088ac992ed44ebaf07fafe0a79b3cf",
+    "bytes": 6001579,
+    "status": "synchronous native capture from passed external UI harness; independently inspected",
+    "captureKind": "native simctl IO screenshot via synchronous loopback bridge"
+  },
+  {
+    "path": "final/screenshots/vision-native-stable/audio-reopened.png",
+    "test": "vision-native-capture: audio-reopened",
+    "device": "Apple Vision Pro",
+    "timestamp": 1791694701.5748093,
+    "sha256": "6a856411bc0e8bd4c27cf601fd1d9fc90eea9a287293846eddc6bef9d50f78c6",
+    "bytes": 6001637,
+    "status": "synchronous native capture from passed external UI harness; independently inspected",
+    "captureKind": "native simctl IO screenshot via synchronous loopback bridge"
+  },
+  {
+    "path": "final/screenshots/vision-native-stable/book-detail.png",
+    "test": "vision-native-capture: book-detail",
+    "device": "Apple Vision Pro",
+    "timestamp": 1791694728.484189,
+    "sha256": "9253475956e5ba8c00de306a3665b41904d4a73ef85a209c024bd0fa795be399",
+    "bytes": 6214447,
+    "status": "synchronous native capture from passed external UI harness; independently inspected",
+    "captureKind": "native simctl IO screenshot via synchronous loopback bridge"
+  },
+  {
+    "path": "final/screenshots/vision-native-stable/movie-detail.png",
+    "test": "vision-native-capture: movie-detail",
+    "device": "Apple Vision Pro",
+    "timestamp": 1791694710.5151417,
+    "sha256": "d0b0317332c8eedc25c7ae3cc4efc83c8dd8048452aeb8be2d63332eab9ed76b",
+    "bytes": 6145738,
+    "status": "synchronous native capture from passed external UI harness; independently inspected",
+    "captureKind": "native simctl IO screenshot via synchronous loopback bridge"
+  },
+  {
+    "path": "final/screenshots/vision-native-stable/musicalbum-detail.png",
+    "test": "vision-native-capture: musicalbum-detail",
+    "device": "Apple Vision Pro",
+    "timestamp": 1791694722.2180395,
+    "sha256": "878a6940cbcacd0625f4adc80f748865d17bc59a552c50d41295869096bdace1",
+    "bytes": 6238619,
+    "status": "synchronous native capture from passed external UI harness; independently inspected",
+    "captureKind": "native simctl IO screenshot via synchronous loopback bridge"
+  }
+]

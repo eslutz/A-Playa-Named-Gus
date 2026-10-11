@@ -10,9 +10,10 @@ struct DownloadsView: View {
             Section {
                 LabeledContent("Storage Used", value: ByteCountFormatter.string(fromByteCount: downloads.totalByteCount(serverID: session.server.id, userID: session.user.id), countStyle: .file))
                 LabeledContent("Soft Cap", value: ByteCountFormatter.string(fromByteCount: OfflineDownloadStore.softCapBytes, countStyle: .file))
-                LabeledContent("Active Downloads", value: "\(activeRecords.count + pausedRecords.count)")
+                LabeledContent("Active Downloads", value: "\(activeRecords.count)")
+                LabeledContent("Paused Downloads", value: "\(pausedRecords.count)")
             } footer: {
-                Text("Downloads use background transfers from your Jellyfin server, are stored in Application Support, and are excluded from device backup.")
+                Text("Downloads use system background transfers. Avoid force-quitting Gus while downloading. Saved media stays on this device and is excluded from backup.")
             }
 
             if downloads.records.isEmpty {
@@ -24,7 +25,7 @@ struct DownloadsView: View {
             if !activeRecords.isEmpty {
                 Section("In Progress") {
                     ForEach(activeRecords) { record in
-                        DownloadProgressRow(record: record) {
+                        DownloadProgressRow(record: record, activity: downloads.activities[record.id] ?? record.activity) {
                             Task { await downloads.pause(itemID: record.item.id ?? "") }
                         } delete: {
                             downloads.delete(record, serverID: session.server.id, userID: session.user.id)
@@ -36,7 +37,7 @@ struct DownloadsView: View {
             if !pausedRecords.isEmpty {
                 Section("Paused") {
                     ForEach(pausedRecords) { record in
-                        DownloadPausedRow(record: record) {
+                        DownloadPausedRow(record: record, activity: downloads.activities[record.id] ?? record.activity) {
                             Task { await downloads.resume(itemID: record.item.id ?? "", session: session) }
                         } delete: {
                             downloads.delete(record, serverID: session.server.id, userID: session.user.id)
@@ -59,7 +60,7 @@ struct DownloadsView: View {
                 Section("Downloaded Media") {
                     ForEach(completeRecords) { record in
                         DownloadCompleteRow(record: record) {
-                            playerItem = ItemRef(item: record.item)
+                            playerItem = ItemRef(item: record.item, localOnly: true, serverID: record.serverID, userID: record.userID)
                         } delete: {
                             downloads.delete(record, serverID: session.server.id, userID: session.user.id)
                         }
@@ -111,53 +112,146 @@ struct DownloadsView: View {
 
 private struct DownloadProgressRow: View {
     let record: OfflineDownloadRecord
+    let activity: DownloadActivity?
     let pause: () -> Void
     let delete: () -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                VStack(alignment: .leading) {
-                    Text(record.item.displayTitle)
-                    Text(statusText)
+        TimelineView(.periodic(from: .now, by: 1)) { context in
+            VStack(alignment: .leading, spacing: 8) {
+                HStack {
+                    VStack(alignment: .leading) {
+                        Text(record.item.displayTitle)
+                        Text(statusText(at: context.date))
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    Spacer()
+                    Button(action: pause) {
+                        Label("Pause", systemImage: "pause.fill")
+                    }
+                    .buttonStyle(.borderless)
+                    .disabled(activity?.phase == .saving)
+                    .accessibilityLabel("Pause \(record.item.displayTitle)")
+                    Button(role: .destructive, action: delete) {
+                        Image(systemName: "trash")
+                    }
+                    .buttonStyle(.borderless)
+                    .accessibilityLabel("Delete \(record.item.displayTitle)")
+                }
+
+                if let progress = displayedProgress {
+                    ProgressView(value: progress)
+                        .accessibilityLabel("Download progress for \(record.item.displayTitle)")
+                        .accessibilityValue(progress.formatted(.percent.precision(.fractionLength(0))))
+                } else {
+                    ProgressView()
+                        .accessibilityLabel("Download progress for \(record.item.displayTitle)")
+                        .accessibilityValue(statusText(at: context.date))
+                }
+
+                if let activity {
+                    Text(DownloadActivityDisplay.bytes(activity))
                         .font(.caption)
                         .foregroundStyle(.secondary)
+                    if let rate = activity.bytesPerSecond(at: context.date) {
+                        Text(DownloadActivityDisplay.rate(rate))
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    if let preparationETA = activity.preparationETA, activity.phase == .waitingForServer {
+                        Text("Approximately \(DownloadActivityDisplay.duration(preparationETA)) of server preparation remaining")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    } else if let remaining = activity.estimatedTimeRemaining(at: context.date) {
+                        Text("Approximately \(DownloadActivityDisplay.duration(remaining)) remaining")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    } else {
+                        Text("Time remaining unavailable")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
                 }
-
-                Spacer()
-
-                Button(action: pause) {
-                    Label("Pause", systemImage: "pause.fill")
-                }
-                .buttonStyle(.borderless)
-                .accessibilityLabel("Pause \(record.item.displayTitle)")
-
-                Button(role: .destructive, action: delete) {
-                    Image(systemName: "trash")
-                }
-                .buttonStyle(.borderless)
-                .accessibilityLabel("Delete \(record.item.displayTitle)")
             }
-
-            ProgressView(value: record.progress)
-                .accessibilityLabel("Download progress for \(record.item.displayTitle)")
-                .accessibilityValue(statusText)
         }
     }
 
-    private var statusText: String {
-        if record.requiresTranscodingForDownload, record.progress == 0 {
-            return String(localized: "Transcoding for download...", comment: "Download status while server prepares a transcoded file")
+    private var displayedProgress: Double? {
+        if let activity {
+            if let preparation = activity.preparationProgress,
+               activity.phase == .waitingForServer
+            {
+                return min(max(preparation, 0), 1)
+            }
+            return activity.phase == .downloading ? activity.progress : nil
         }
-        if case .queued = record.status {
-            return String(localized: "Queued", comment: "Download queued status label")
+        return record.progress > 0 ? record.progress : nil
+    }
+
+    private func statusText(at date: Date) -> String {
+        guard let activity else {
+            return record.status == .queued ? String(localized: "Queued") : String(localized: "Downloading")
         }
-        return record.progress.formatted(.percent.precision(.fractionLength(0)))
+        switch activity.phase {
+        case .resolving:
+            return String(localized: "Finding download source")
+        case .queued:
+            return String(localized: "Queued")
+        case .waitingForServer:
+            let elapsed = DownloadActivityDisplay.duration(date.timeIntervalSince(activity.updatedAt))
+            if let preparation = activity.preparationProgress {
+                let percent = preparation.formatted(.percent.precision(.fractionLength(0)))
+                return String(localized: "Server preparation: \(percent)")
+            }
+            return String(localized: "Waiting for server · \(elapsed)")
+        case .downloading:
+            if activity.isStalled(at: date) {
+                return String(localized: "Waiting for more data")
+            }
+            if let progress = activity.progress {
+                let percent = progress.formatted(.percent.precision(.fractionLength(0)))
+                return String(localized: "Downloading · \(percent)")
+            }
+            return String(localized: "Downloading · Total size unknown")
+        case .waitingForConnectivity:
+            let elapsed = DownloadActivityDisplay.duration(date.timeIntervalSince(activity.updatedAt))
+            return String(localized: "Waiting for connection · \(elapsed)")
+        case .paused:
+            return String(localized: "Paused")
+        case .saving:
+            return String(localized: "Saving download")
+        case .complete:
+            return String(localized: "Downloaded")
+        case .failed:
+            return String(localized: "Download Failed")
+        }
+    }
+}
+
+private enum DownloadActivityDisplay {
+    static func bytes(_ activity: DownloadActivity) -> String {
+        let received = ByteCountFormatter.string(fromByteCount: activity.receivedBytes, countStyle: .file)
+        if let expected = activity.expectedBytes {
+            let total = ByteCountFormatter.string(fromByteCount: expected, countStyle: .file)
+            return String(localized: "\(received) of \(total)")
+        }
+        return String(localized: "\(received) received · Total size unknown")
+    }
+
+    static func rate(_ bytesPerSecond: Double) -> String {
+        let amount = ByteCountFormatter.string(fromByteCount: Int64(min(bytesPerSecond, Double(Int64.max - 1024))), countStyle: .file)
+        return String(localized: "\(amount)/s")
+    }
+
+    static func duration(_ seconds: TimeInterval) -> String {
+        Duration.seconds(max(0, seconds)).formatted(.units(allowed: [.hours, .minutes, .seconds], width: .abbreviated))
     }
 }
 
 private struct DownloadPausedRow: View {
     let record: OfflineDownloadRecord
+    let activity: DownloadActivity?
     let resume: () -> Void
     let delete: () -> Void
 
@@ -168,6 +262,11 @@ private struct DownloadPausedRow: View {
                 Text("Paused")
                     .font(.caption)
                     .foregroundStyle(.secondary)
+                if let activity {
+                    Text(DownloadActivityDisplay.bytes(activity))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
             }
 
             Spacer()

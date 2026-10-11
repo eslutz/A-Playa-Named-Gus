@@ -14,6 +14,7 @@
         let fileURL: URL
         let provider: (any MediaProviderSession)?
         let accountScope: AccountScope
+        var close: (() -> Void)?
 
         @State private var model: BookReaderModel?
 
@@ -33,8 +34,15 @@
                     .toolbar {
                         ToolbarItem(placement: .cancellationAction) {
                             Button("Done") {
-                                dismiss()
+                                // The session host owns this cover; do not dismiss
+                                // an ancestor detail sheet after adaptive relayout.
+                                if let close {
+                                    close()
+                                } else {
+                                    dismiss()
+                                }
                             }
+                            .accessibilityIdentifier("BookReader.done")
                         }
                         ToolbarItem {
                             if let model, !model.tableOfContents.isEmpty {
@@ -105,6 +113,7 @@
         let fileURL: URL
         private let provider: (any MediaProviderSession)?
         private let accountScope: AccountScope
+        private let progressWriterToken: UUID
         private let progressStore = BookProgressStore.shared
         weak var navigator: EPUBNavigatorViewController?
 
@@ -126,6 +135,7 @@
             self.fileURL = fileURL
             self.provider = provider
             self.accountScope = accountScope
+            progressWriterToken = OfflinePlaybackProgressStore.shared.writerToken(for: accountScope)
         }
 
         private var syncEnabled: Bool {
@@ -183,9 +193,15 @@
         }
 
         func saveLocation(_ locator: Locator) {
-            guard let itemID = item.id else { return }
+            guard OfflinePlaybackProgressStore.shared.writerToken(for: accountScope) == progressWriterToken,
+                  let itemID = item.id else { return }
             if let json = try? locator.jsonString() {
                 progressStore.save(locatorJSON: json, forItemID: itemID, scope: accountScope)
+            }
+            if provider == nil, let fraction = locator.locations.totalProgression {
+                OfflinePlaybackProgressStore.shared.checkpoint(
+                    itemID: itemID, positionTicks: JellyfinBookProgress.ticks(forFraction: fraction), scope: accountScope, writerToken: progressWriterToken
+                )
             }
             scheduleRemoteReport(fraction: locator.locations.totalProgression)
         }

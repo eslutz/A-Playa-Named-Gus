@@ -94,11 +94,12 @@ enum NavigationCategory: String, CaseIterable, Codable, Hashable, Identifiable {
 }
 
 /// One entry in the user's customized navigation: a section id plus visibility.
-/// Required ids (`"home"`, `"libraries"`, `"settings"`) stay visible; category ids
+/// Required ids (`"home"`, `"downloaded"`, `"libraries"`, `"settings"`) stay visible; category ids
 /// such as `"category.movies"` represent consolidated media categories across every
 /// matching library on the active server.
 struct NavigationSectionPreference: Codable, Equatable {
     static let homeID = "home"
+    static let downloadedID = "downloaded"
     static let librariesID = "libraries"
     static let settingsID = "settings"
 
@@ -123,7 +124,7 @@ struct ResolvedNavigationSection: Identifiable, Equatable {
     /// Home stays fixed; every other visible/hidden section can be reordered within its
     /// current list.
     let canMove: Bool
-    /// Only category sections can be hidden. Home, Libraries, and Settings remain visible.
+    /// Only category sections can be hidden. Required destinations remain visible.
     let canHide: Bool
 }
 
@@ -156,7 +157,7 @@ final class NavigationPreferencesStore {
             preferencesByScope[scope] = try JSONDecoder().decode([NavigationSectionPreference].self, from: data)
             revision += 1
         } catch {
-            logger.error("Failed to decode navigation preferences: \(error.localizedDescription, privacy: .public)")
+            logger.error("Failed to decode navigation preferences: \(error.localizedDescription, privacy: .private)")
         }
     }
 
@@ -193,6 +194,12 @@ final class NavigationPreferencesStore {
 
         for id in defaultSectionIDs(availableCategories: availableCategories) where !orderedIDs.contains(id) {
             orderedIDs.append(id)
+        }
+
+        // Insert the new required destination after Home for existing preferences, too.
+        if DownloadsAvailability.isSupported, !stored.contains(where: { $0.id == NavigationSectionPreference.downloadedID }) {
+            orderedIDs.removeAll { $0 == NavigationSectionPreference.downloadedID }
+            orderedIDs.insert(NavigationSectionPreference.downloadedID, at: min(1, orderedIDs.count))
         }
 
         orderedIDs.removeAll { $0 == NavigationSectionPreference.homeID }
@@ -275,6 +282,7 @@ final class NavigationPreferencesStore {
 
     private func isKnownSectionID(_ id: String) -> Bool {
         id == NavigationSectionPreference.homeID ||
+            (id == NavigationSectionPreference.downloadedID && DownloadsAvailability.isSupported) ||
             id == NavigationSectionPreference.librariesID ||
             id == NavigationSectionPreference.settingsID ||
             NavigationCategory(id: id) != nil
@@ -284,7 +292,10 @@ final class NavigationPreferencesStore {
         let visibleCategories = NavigationCategory.allCases.filter { availableCategories.contains($0) }.map(\.id)
         let hiddenCategories = NavigationCategory.allCases.filter { !availableCategories.contains($0) }.map(\.id)
 
-        return [NavigationSectionPreference.homeID, NavigationSectionPreference.librariesID] +
+        let required = [NavigationSectionPreference.homeID] +
+            (DownloadsAvailability.isSupported ? [NavigationSectionPreference.downloadedID] : []) +
+            [NavigationSectionPreference.librariesID]
+        return required +
             visibleCategories +
             [NavigationSectionPreference.settingsID] +
             hiddenCategories
@@ -308,6 +319,14 @@ final class NavigationPreferencesStore {
                 libraries: [],
                 canMove: false,
                 canHide: false
+            )
+        case NavigationSectionPreference.downloadedID:
+            guard DownloadsAvailability.isSupported else { return nil }
+            return ResolvedNavigationSection(
+                id: id,
+                title: String(localized: "Downloaded", comment: "Local media library navigation"),
+                systemImage: "arrow.down.circle",
+                isVisible: true, category: nil, libraries: [], canMove: true, canHide: false
             )
         case NavigationSectionPreference.librariesID:
             return ResolvedNavigationSection(
@@ -386,7 +405,7 @@ final class NavigationPreferencesStore {
             let data = try encoder.encode(preferences)
             try data.write(to: fileURL(for: scope), options: .atomic)
         } catch {
-            logger.error("Failed to save navigation preferences: \(error.localizedDescription, privacy: .public)")
+            logger.error("Failed to save navigation preferences: \(error.localizedDescription, privacy: .private)")
         }
     }
 

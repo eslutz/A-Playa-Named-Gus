@@ -1,0 +1,4424 @@
+--- initial-checkout/CLAUDE.md
++++ remediated-checkout/CLAUDE.md
+@@ -158,8 +158,10 @@
+   connect / sign-in / restore / sign-out.
+ - `RootView` switches on `AppModel.currentSession`: `nil` → `ConnectFlowView`; otherwise
+   injects a `SessionStore` (authenticated `JellyfinClient` + user + server) into the signed-in tree.
+-- Feature stores (`HomeStore`, `LibraryStore`, `PlaybackStore`) take a `SessionStore` and
+-  are created inside a view's `.task`; they call `session.client.send(...)`.
++- Feature stores take a `SessionStore` and use its media provider. `RootNavigationState`
++  owns Home, cached library/detail stores, per-section search, navigation paths, and
++  scroll anchors for the signed-in account; adaptive view replacement reuses that state.
++  `RootView` owns `AudioPlaybackCoordinator` and stops it when the account changes.
+ 
+ ### Auth & session flow
+ 
+@@ -179,10 +181,15 @@
+ `.gusItemDestinations()`; feature views push typed `LibraryRef`/`ItemRef` values. Fixed
+ app destinations use `AppRoute` + `AppNavigationModel` for `gus://home`, `gus://search`,
+ and `gus://settings`, shared by URL opens, menu commands, and the tvOS Top Shelf extension.
++All section stacks bind their paths to `RootNavigationState`. Compact iPhone navigation
++with more than five sections exposes the first four plus an explicit More list, keeping
++one stack per section. Settings/Downloads children use the typed `AppScreen` destinations.
+ 
+ **Content deep links** (`gus://item/<id>`, `gus://play/<id>` — `Models/ContentLink.swift`)
+ ride `AppNavigationModel` via a consume-once pending-link; `Platform/ContentLinkHandler.swift`
+-resolves the id through the session's provider and presents the detail sheet or player.
++resolves the id through the session's provider. tvOS item links push into the selected
++section's normal stack; other platforms present a detail sheet. Session player hosts sit
++above adaptive layout replacement, with the detail sheet hosting playback while it is open.
+ Content links are the shared entry point for: **Handoff** (`Platform/UserActivities.swift`
+ — detail/player surfaces publish `NSUserActivity` with ids only, never tokens), **Core
+ Spotlight** (`Services/SpotlightIndexer.swift` — donates browsed items, refuses
+@@ -215,6 +222,12 @@
+ **Audio:** songs and audiobooks play through `AudioPlayerStore` + `AudioPlayerView` (queue,
+ shuffle/repeat, speed, chapters) over the Jellyfin universal audio endpoint.
+ `playerPresentation` routes by `MediaItem.isAudioPlayable`.
++`AudioPlaybackCoordinator` owns the queue and preparation task independently of the player
++presentation. Done closes prepared audio while playback continues; the persistent Now
++Playing control reopens it, and Stop ends the queue. Closing during preparation cancels
++the task. Audio/video stores reject late results after cancellation or teardown; loading
++and failed player states expose cancellation and retry. The Watch companion uses its own
++scrollable audio sheet and tears down playback when leaving that sheet.
+ 
+ **visionOS 3D:** `Media3DDetector` maps Jellyfin SBS/TAB/MVC metadata into a
+ `Stereo3DPresentation`; non-visionOS always resolves to 2D. SBS/TAB use Gus Cinema
+--- initial-checkout/Documentation/ROADMAP.md
++++ remediated-checkout/Documentation/ROADMAP.md
+@@ -17,6 +17,11 @@
+   all five destinations and meets that bar.
+ - **Native-first** is assumed on every item: reach for the Apple/system API first; a
+   bespoke or third-party approach must be justified in the change that introduces it.
++
++## October 2026 UI remediation
++
++- [x] Implement remediation for the 24 findings in the October 9–10 review and both addenda: bounded artwork/detail layouts, adaptive actions/audio, persistent audio dismissal/reopening, shared navigation across width changes, explicit iPhone More, tvOS link navigation, cancellation/retry, request identity, filtered paging, and localized accessibility fixes. All six platform builds and the four 274-test suites pass; see [the remediation report](Reviews/2026-10-10-ui-remediation/REPORT.md) for scoped runtime and contrast evidence.
++- [~] Complete release acceptance: physical streamed/downloaded playback rotation, Mac window/keyboard checks, assistive technology and platform input, remaining appearance/metadata/error variants, and the newly observed 40 mm Watch album-navigation stall. Simulator checks do not close these gates.
+ 
+ ## Global Definition of Done (applies to every milestone)
+ 
+--- initial-checkout/Resources/Localizable.xcstrings
++++ remediated-checkout/Resources/Localizable.xcstrings
+@@ -236,9 +236,7 @@
+       "comment" : "Local server discovery empty-state guidance",
+       "extractionState" : "manual"
+     },
+-    "Checking Age Range…" : {
+-
+-    },
++    "Checking Age Range…" : {},
+     "Client" : {
+       "comment" : "App client name label",
+       "extractionState" : "manual"
+@@ -892,16 +890,12 @@
+     "Photos" : {
+       "comment" : "Navigation category: photos"
+     },
+-    "Pineapple" : {
+-
+-    },
++    "Pineapple" : {},
+     "Play" : {
+       "comment" : "Playback button title",
+       "extractionState" : "manual"
+     },
+-    "Play ${title}" : {
+-
+-    },
++    "Play ${title}" : {},
+     "Play %@" : {
+       "comment" : "A button that plays a downloaded record. The argument is the title of the record.",
+       "isCommentAutoGenerated" : true
+@@ -922,9 +916,7 @@
+       "comment" : "Play or pause button for a slideshow of photos.",
+       "isCommentAutoGenerated" : true
+     },
+-    "Play on Watch" : {
+-
+-    },
++    "Play on Watch" : {},
+     "Playback" : {
+       "comment" : "Settings section header for playback preferences."
+     },
+@@ -1003,9 +995,7 @@
+       "comment" : "A button that opens a book.",
+       "isCommentAutoGenerated" : true
+     },
+-    "Read this book in A Playa Named Gus on iPhone or iPad." : {
+-
+-    },
++    "Read this book in A Playa Named Gus on iPhone or iPad." : {},
+     "Reading Isn't Available Here" : {
+       "comment" : "A label that describes a book that can't be read.",
+       "isCommentAutoGenerated" : true
+@@ -1118,9 +1108,7 @@
+       "comment" : "Search prompt and empty-state title",
+       "extractionState" : "manual"
+     },
+-    "Search Library" : {
+-
+-    },
++    "Search Library" : {},
+     "Searches your Jellyfin library and starts playback." : {
+       "comment" : "Siri/Shortcuts intent description.",
+       "isCommentAutoGenerated" : true
+@@ -1432,9 +1420,7 @@
+     "The server took too long to respond. Try again in a moment." : {
+       "comment" : "Timeout network error"
+     },
+-    "This Jellyfin server has no Live TV tuner or guide configured." : {
+-
+-    },
++    "This Jellyfin server has no Live TV tuner or guide configured." : {},
+     "This SharePlay session is for a different server." : {
+       "comment" : "SharePlay error when the current server does not match the activity"
+     },
+@@ -1661,7 +1647,106 @@
+       "comment" : "Example Jellyfin server address placeholder",
+       "extractionState" : "manual",
+       "shouldTranslate" : false
++    },
++    "Now Playing" : {
++      "extractionState" : "manual",
++      "localizations" : {
++        "en" : {
++          "stringUnit" : {
++            "state" : "translated",
++            "value" : "Now Playing"
++          }
++        }
++      }
++    },
++    "Opens Now Playing" : {
++      "extractionState" : "manual",
++      "localizations" : {
++        "en" : {
++          "stringUnit" : {
++            "state" : "translated",
++            "value" : "Opens Now Playing"
++          }
++        }
++      }
++    },
++    "Updating…" : {
++      "extractionState" : "manual",
++      "localizations" : {
++        "en" : {
++          "stringUnit" : {
++            "state" : "translated",
++            "value" : "Updating…"
++          }
++        }
++      }
++    },
++    "Refresh Status" : {
++      "extractionState" : "manual",
++      "localizations" : {
++        "en" : {
++          "stringUnit" : {
++            "state" : "translated",
++            "value" : "Refresh Status"
++          }
++        }
++      }
++    },
++    "Dismiss" : {
++      "extractionState" : "manual",
++      "localizations" : {
++        "en" : {
++          "stringUnit" : {
++            "state" : "translated",
++            "value" : "Dismiss"
++          }
++        }
++      }
++    },
++    "Continue Searching" : {
++      "extractionState" : "manual",
++      "localizations" : {
++        "en" : {
++          "stringUnit" : {
++            "state" : "translated",
++            "value" : "Continue Searching"
++          }
++        }
++      }
++    },
++    "Show More" : {
++      "extractionState" : "manual",
++      "localizations" : {
++        "en" : {
++          "stringUnit" : {
++            "state" : "translated",
++            "value" : "Show More"
++          }
++        }
++      }
++    },
++    "More" : {
++      "extractionState" : "manual",
++      "localizations" : {
++        "en" : {
++          "stringUnit" : {
++            "state" : "translated",
++            "value" : "More"
++          }
++        }
++      }
++    },
++    "Close" : {
++      "extractionState" : "manual",
++      "localizations" : {
++        "en" : {
++          "stringUnit" : {
++            "state" : "translated",
++            "value" : "Close"
++          }
++        }
++      }
+     }
+   },
+   "version" : "1.1"
+-}+}
+--- initial-checkout/Sources/App/RootView.swift
++++ remediated-checkout/Sources/App/RootView.swift
+@@ -7,9 +7,20 @@
+ struct RootView: View {
+     @Environment(AppModel.self) private var appModel
+     @Environment(OfflineDownloadStore.self) private var downloads
++    @State private var audio = AudioPlaybackCoordinator()
+     @Environment(\.scenePhase) private var scenePhase
+ 
+     var body: some View {
++        content
++            .environment(audio)
++            .onChange(of: activeAccount) { _, _ in audio.stop() }
++    }
++
++    private var activeAccount: AccountScope? {
++        appModel.currentSession.map { AccountScope(serverID: $0.server.id, userID: $0.user.id) }
++    }
++
++    @ViewBuilder private var content: some View {
+         if let session = appModel.currentSession {
+             RootContainer()
+                 .id(SessionCredential(user: session.user).account)
+--- initial-checkout/Sources/Features/Books/BookActions.swift
++++ remediated-checkout/Sources/Features/Books/BookActions.swift
+@@ -15,18 +15,19 @@
+     @State private var shareFileURL: URL?
+     @State private var isPreparingShare = false
+     @State private var shareErrorMessage: String?
+-    @State private var isReaderPresented = false
++    @State private var readerItem: ItemRef?
+ 
+     var body: some View {
+         #if os(tvOS)
+             EmptyView()
+         #else
+-            HStack(spacing: 10) {
++            VStack(alignment: .leading, spacing: 10) {
+                 #if canImport(ReadiumNavigator)
+                     Button {
+-                        isReaderPresented = true
++                        readerItem = ItemRef(item: item)
+                     } label: {
+                         Label("Read", systemImage: "book")
++                            .foregroundStyle(Color.gusProminentActionForeground)
+                     }
+                     .gusProminentGlassButtonStyle()
+                     .controlSize(.large)
+@@ -42,9 +43,7 @@
+                 shareFileURL = BookFileProvider(session: session, downloads: downloads).existingLocalFile(for: item)
+             }
+             #if canImport(ReadiumNavigator)
+-            .fullScreenCover(isPresented: $isReaderPresented) {
+-                BookReaderPresenter(item: item)
+-            }
++            .playerPresentation(item: $readerItem)
+             #endif
+             .alert(
+                 "Couldn't Prepare Book",
+@@ -129,43 +128,57 @@
+ 
+         @State private var fileURL: URL?
+         @State private var errorMessage: String?
++        @State private var retryGeneration = 0
++        @State private var preparation: Task<Void, Never>?
+ 
+         var body: some View {
+-            if let fileURL {
+-                BookReaderScreen(
+-                    item: item,
+-                    fileURL: fileURL,
+-                    provider: session.mediaProvider,
+-                    accountScope: AccountScope(serverID: session.server.id, userID: session.user.id)
+-                )
+-            } else if let errorMessage {
+-                NavigationStack {
+-                    ContentUnavailableView {
+-                        Label("Can't Open This Book", systemImage: "book.closed")
+-                    } description: {
+-                        Text(errorMessage)
+-                    }
+-                    .toolbar {
+-                        ToolbarItem(placement: .cancellationAction) {
+-                            Button("Done") {
+-                                dismiss()
++            Group {
++                if let fileURL {
++                    BookReaderScreen(
++                        item: item,
++                        fileURL: fileURL,
++                        provider: session.mediaProvider,
++                        accountScope: AccountScope(serverID: session.server.id, userID: session.user.id)
++                    )
++                } else {
++                    NavigationStack {
++                        Group {
++                            if let errorMessage {
++                                ContentUnavailableView {
++                                    Label("Can't Open This Book", systemImage: "book.closed")
++                                } description: { Text(errorMessage) } actions: {
++                                    Button("Try Again") { self.errorMessage = nil; retryGeneration += 1 }
++                                }
++                            } else {
++                                ProgressView("Preparing Book…").frame(maxWidth: .infinity, maxHeight: .infinity)
++                            }
++                        }
++                        .toolbar {
++                            ToolbarItem(placement: .cancellationAction) {
++                                Button("Done") { preparation?.cancel(); dismiss() }
+                             }
+                         }
+                     }
+                 }
+-            } else {
+-                ProgressView("Preparing Book…")
+-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+-                    .task {
+-                        do {
+-                            fileURL = try await BookFileProvider(session: session, downloads: downloads).localFile(for: item)
+-                        } catch {
+-                            let gusError = GusError(from: error)
+-                            guard !gusError.isCancellation else { return }
+-                            errorMessage = gusError.localizedDescription
++            }
++            .task(id: retryGeneration) {
++                guard fileURL == nil else { return }
++                let task = Task {
++                    do {
++                        let url = try await BookFileProvider(session: session, downloads: downloads).localFile(for: item)
++                        try Task.checkCancellation()
++                        fileURL = url
++                    } catch {
++                        let failure = GusError(from: error)
++                        if !failure.isCancellation && !Task.isCancelled {
++                            errorMessage = failure.localizedDescription
+                         }
+                     }
++                }
++                preparation = task
++                await withTaskCancellationHandler { await task.value } onCancel: { task.cancel() }
+             }
++            .onDisappear { preparation?.cancel() }
+         }
+     }
+ #endif
+--- initial-checkout/Sources/Features/Connect/ConnectServerView.swift
++++ remediated-checkout/Sources/Features/Connect/ConnectServerView.swift
+@@ -13,9 +13,11 @@
+     @State private var errorMessage: String?
+     @State private var discoveryStore = ServerDiscoveryStore()
+     @State private var connectTask: Task<Void, Never>?
++    @State private var connectGeneration = 0
+ 
+     var body: some View {
+         Form {
++            Section { Text("Connect to Jellyfin").font(.headline).fixedSize(horizontal: false, vertical: true) }
+             serverAddressSection
+             connectErrorSection
+             connectActionSection
+@@ -28,9 +30,9 @@
+         .tint(.accentColor)
+         .frame(maxWidth: 720)
+         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+-        .navigationTitle("Connect to Jellyfin")
++        .navigationTitle("Connect")
+         .onDisappear {
+-            connectTask?.cancel()
++            cancelConnect()
+             discoveryStore.cancel()
+         }
+     }
+@@ -42,8 +44,10 @@
+                 .onSubmit(connect)
+         } header: {
+             Text("Server Address")
++                .foregroundStyle(Color.primary)
+         } footer: {
+             Text("Enter your Jellyfin server's address, including the port (default 8096).")
++                .foregroundStyle(Color.primary)
+         }
+     }
+ 
+@@ -68,16 +72,22 @@
+                 HStack {
+                     Text("Connect")
+                     Spacer()
+-                    if isConnecting { ProgressView() }
++                    if isConnecting {
++                        ProgressView()
++                    }
+                 }
+             }
+             .disabled(urlText.trimmingCharacters(in: .whitespaces).isEmpty || isConnecting)
+             .accessibilityIdentifier("ConnectServerView.connectButton")
++            if isConnecting {
++                Button("Cancel", role: .cancel) { cancelConnect() }
++                    .accessibilityIdentifier("ConnectServerView.cancelButton")
++            }
+         }
+     }
+ 
+     private var localServersSection: some View {
+-        Section("Local Servers") {
++        Section {
+             HStack {
+                 Label(discoveryStore.isSearching ? "Searching for Local Servers" : "Local Server Discovery", systemImage: "network")
+                 Spacer()
+@@ -90,6 +100,8 @@
+                         Label("Refresh", systemImage: "arrow.clockwise")
+                     }
+                     .labelStyle(.iconOnly)
++                    .frame(minWidth: 44, minHeight: 44)
++                    .contentShape(Rectangle())
+                     .buttonStyle(.borderless)
+                 }
+             }
+@@ -106,11 +118,12 @@
+ 
+             switch discoveryStore.state {
+             case .idle:
+-                ContentUnavailableView(
+-                    "Find Local Servers",
+-                    systemImage: "network",
+-                    description: Text("Use Refresh to search for Jellyfin servers on this network.")
+-                )
++                ContentUnavailableView {
++                    Label("Find Local Servers", systemImage: "network")
++                } description: {
++                    Text("Use Refresh to search for Jellyfin servers on this network.")
++                        .foregroundStyle(Color.primary)
++                }
+             case .empty:
+                 ContentUnavailableView(
+                     "No Servers Found",
+@@ -126,6 +139,9 @@
+             default:
+                 EmptyView()
+             }
++        } header: {
++            Text("Local Servers")
++                .foregroundStyle(Color.primary)
+         }
+     }
+ 
+@@ -138,8 +154,14 @@
+                     guard !isConnecting else { return }
+                     errorMessage = nil
+                     isConnecting = true
+-                    Task {
+-                        defer { isConnecting = false }
++                    connectGeneration += 1
++                    let generation = connectGeneration
++                    connectTask = Task {
++                        defer {
++                            if generation == connectGeneration {
++                                isConnecting = false
++                            }
++                        }
+                         await appModel.connectToLocalDemoServer()
+                     }
+                 } label: {
+@@ -157,16 +179,33 @@
+         errorMessage = nil
+         isConnecting = true
+         connectTask?.cancel()
++        connectGeneration += 1
++        let generation = connectGeneration
++        let address = urlText
+         connectTask = Task {
+-            defer { isConnecting = false }
++            defer {
++                if generation == connectGeneration {
++                    isConnecting = false
++                }
++            }
+             do {
+-                let server = try await appModel.connect(to: urlText)
++                let server = try await appModel.connect(to: address)
++                try Task.checkCancellation()
++                guard generation == connectGeneration else { return }
+                 onConnected(server)
+             } catch {
+-                guard !GusError(from: error).isCancellation else { return }
++                guard generation == connectGeneration, !Task.isCancelled, !GusError(from: error).isCancellation else { return }
+                 errorMessage = error.localizedDescription
+             }
+         }
++    }
++
++    private func cancelConnect() {
++        connectGeneration += 1
++        connectTask?.cancel()
++        connectTask = nil
++        isConnecting = false
++        errorMessage = nil
+     }
+ }
+ 
+--- initial-checkout/Sources/Features/Downloads/DownloadedLibraryView.swift
++++ remediated-checkout/Sources/Features/Downloads/DownloadedLibraryView.swift
+@@ -3,17 +3,24 @@
+ /// Browses saved metadata and verified completed files, including with an offline server.
+ struct DownloadedLibraryView: View {
+     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
++    @Environment(RootNavigationState.self) private var rootState
+     @Environment(SessionStore.self) private var session
+     @Environment(OfflineDownloadStore.self) private var downloads
+     @Environment(AppNavigationModel.self) private var navigation
+-    @State private var filter = DownloadedLibraryFilter.all
+-    @State private var search = ""
+-    @State private var isSearchPresented = false
++
+     @FocusState private var isSearchFocused: Bool
+     @State private var playerItem: ItemRef?
+     @State private var missingFile = false
+     @AppStorage(ContentRatingGate.limitDefaultsKey) private var ratingLimit = "off"
+     @AppStorage(ContentRatingGate.hideUnratedDefaultsKey) private var hideUnrated = false
++
++    private var filter: DownloadedLibraryFilter {
++        rootState.downloadFilter
++    }
++
++    private var search: String {
++        rootState.downloadSearch
++    }
+ 
+     private var completed: [OfflineDownloadRecord] {
+         downloads.completedRecords(serverID: session.server.id, userID: session.user.id)
+@@ -33,7 +40,9 @@
+                 } description: {
+                     Text(search.isEmpty ? "Completed downloads available on this device appear here." : "Try another title, series, or artist.")
+                 } actions: {
+-                    NavigationLink("Manage Downloads") { DownloadsView() }
++                    NavigationLink("Manage Downloads", value: AppScreen.downloads)
++                        .frame(minWidth: 44, minHeight: 44)
++                        .contentShape(Rectangle())
+                 }
+             } else {
+                 List {
+@@ -69,10 +78,10 @@
+             }
+         }
+         .navigationTitle("Downloaded")
+-        .gusSearchable(text: $search, isPresented: $isSearchPresented, isFocused: $isSearchFocused, prompt: Text("Search Downloaded"))
++        .gusSearchable(text: Bindable(rootState).projectedValue.downloadSearch, isPresented: Bindable(rootState).projectedValue.isDownloadSearchPresented, isFocused: $isSearchFocused, prompt: Text("Search Downloaded"))
+         .onChange(of: navigation.searchFocusRequest) { _, request in
+             guard request > 0 else { return }
+-            isSearchPresented = true
++            rootState.isDownloadSearchPresented = true
+             isSearchFocused = true
+         }
+         .safeAreaInset(edge: .top) {
+@@ -87,8 +96,8 @@
+         }
+         .toolbar {
+             ToolbarItem {
+-                NavigationLink { DownloadsView() } label: {
+-                    Label("Manage Downloads", systemImage: "arrow.down.circle")
++                NavigationLink(value: AppScreen.downloads) {
++                    Label("Manage Downloads", systemImage: "arrow.down.circle").frame(minWidth: 44, minHeight: 44)
+                 }
+             }
+         }
+@@ -101,7 +110,7 @@
+     }
+ 
+     private var mediaTypePicker: some View {
+-        Picker("Media Type", selection: $filter) {
++        Picker("Media Type", selection: Bindable(rootState).projectedValue.downloadFilter) {
+             ForEach(DownloadedLibraryFilter.allCases) { value in Text(value.title).tag(value) }
+         }
+     }
+--- initial-checkout/Sources/Features/Home/HomeView.swift
++++ remediated-checkout/Sources/Features/Home/HomeView.swift
+@@ -6,6 +6,7 @@
+ /// Libraries destination, so home content is fetched once per session instead of
+ /// once per consuming screen.
+ struct HomeView: View {
++    @Environment(RootNavigationState.self) private var rootState
+     @Environment(AppNavigationModel.self) private var navigation
+     @Environment(SessionStore.self) private var session
+     @Environment(PlaybackRefreshStore.self) private var playbackRefresh
+@@ -75,22 +76,24 @@
+             ScrollView {
+                 VStack(alignment: .leading, spacing: 32) {
+                     if !store.resumeItems.isEmpty {
+-                        MediaRail(title: String(localized: "Continue Watching", comment: "Home rail title for in-progress media"), items: store.resumeItems)
++                        MediaRail(title: String(localized: "Continue Watching", comment: "Home rail title for in-progress media"), items: store.resumeItems).id("resume")
+                     }
+                     if !store.sharedWithYouItems.isEmpty {
+-                        MediaRail(title: store.sharedWithYouTitle, items: store.sharedWithYouItems)
++                        MediaRail(title: store.sharedWithYouTitle, items: store.sharedWithYouItems).id("shared")
+                     }
+                     if !nextUpItems.isEmpty {
+-                        MediaRail(title: String(localized: "Next Up", comment: "Home rail title for next episodes"), items: nextUpItems, style: .backdrop)
++                        MediaRail(title: String(localized: "Next Up", comment: "Home rail title for next episodes"), items: nextUpItems, style: .backdrop).id("next")
+                     }
+                     ForEach(store.latestSections) { section in
+-                        MediaRail(title: section.title, items: section.items)
+-                    }
+-                }
++                        MediaRail(title: section.title, items: section.items).id(section.id)
++                    }
++                }
++                .scrollTargetLayout()
+                 .padding()
+                 .frame(maxWidth: PageContentMetrics.maxWidth, alignment: .leading)
+                 .frame(maxWidth: .infinity)
+             }
++            .scrollPosition(id: rootState.scrollBinding(for: "home"))
+             .lookToScroll()
+             .refreshable { await store.refresh() }
+         }
+@@ -197,17 +200,9 @@
+ 
+     var body: some View {
+         VStack(alignment: .leading, spacing: 6) {
+-            ZStack {
+-                RoundedRectangle(cornerRadius: 12, style: .continuous)
+-                    .fill(.regularMaterial)
+-
+-                AsyncPoster(url: imageURL, contentMode: .fit, placeholderSymbol: "play.rectangle")
+-                    .aspectRatio(contentMode: .fit)
+-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+-            }
+-            .aspectRatio(MediaRailMetrics.aspectRatio(for: .backdrop), contentMode: .fit)
+-            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+-            .posterHoverEffect()
++            ArtworkTile(url: imageURL, aspectRatio: MediaRailMetrics.aspectRatio(for: .backdrop), contentMode: .fit, placeholderSymbol: "play.rectangle")
++                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
++                .posterHoverEffect()
+ 
+             VStack(alignment: .leading, spacing: 1) {
+                 Text(title)
+--- initial-checkout/Sources/Features/Home/LibraryGridView.swift
++++ remediated-checkout/Sources/Features/Home/LibraryGridView.swift
+@@ -4,6 +4,7 @@
+ ///
+ /// Pattern reference: Swiftfin's library/`getItems` paging.
+ struct LibraryGridView: View {
++    @Environment(RootNavigationState.self) private var navigationState
+     @Environment(SessionStore.self) private var session
+     let scope: LibraryGridScope
+     @State private var store: LibraryStore?
+@@ -34,16 +35,15 @@
+             }
+         }
+         .task(id: scope.storeIdentity) {
+-            let store = LibraryStore(scope: scope, session: session)
++            let store = navigationState.libraryStore(for: scope, session: session)
+             self.store = store
+-            await store.load()
+         }
+     }
+ 
+     private func content(_ store: LibraryStore) -> some View {
+         LoadingStateView(
+             state: store.state,
+-            isEmpty: store.items.isEmpty,
++            isEmpty: store.items.isEmpty && !store.canLoadMore,
+             emptyTitle: "Empty Library",
+             emptySymbol: "rectangle.on.rectangle",
+             retryAction: { Task { await store.load() } }
+@@ -57,12 +57,21 @@
+                                 imageURL: session.mediaProvider.primaryImageURL(for: item, context: .posterGrid)
+                             )
+                         }
++                        .id(item.id)
+                         .posterNavigationStyle()
+                         .task {
+                             await store.loadMoreIfNeeded(currentItem: item)
+                         }
+                     }
+ 
++                    if let error = store.pageError {
++                        Text(error).foregroundStyle(.secondary)
++                    }
++                    if store.canLoadMore {
++                        Button("Continue Searching") { Task { await store.continueSearching() } }
++                            .disabled(store.isLoadingNextPage)
++                            .frame(minHeight: 44)
++                    }
+                     if store.isLoadingNextPage {
+                         ProgressView()
+                             .gridCellColumns(PosterGrid.columns.count)
+@@ -70,11 +79,13 @@
+                             .padding(.vertical)
+                     }
+                 }
++                .scrollTargetLayout()
+                 .padding()
+                 .frame(maxWidth: PageContentMetrics.maxWidth, alignment: .leading)
+                 .frame(maxWidth: .infinity)
+                 .tvFocusSection()
+             }
++            .scrollPosition(id: navigationState.scrollBinding(for: "library:" + scope.storeIdentity))
+             .lookToScroll()
+             .refreshable { await store.load() }
+         }
+--- initial-checkout/Sources/Features/Item/ItemDetailView.swift
++++ remediated-checkout/Sources/Features/Item/ItemDetailView.swift
+@@ -3,6 +3,7 @@
+ /// Item detail surface re-expressed from the Swiftfin visionOS PR layout using A Playa Named Gus's
+ /// native SwiftUI stack: cinematic header, inline actions, metadata rows, and about cards.
+ struct ItemDetailView: View {
++    @Environment(RootNavigationState.self) private var navigationState
+     @Environment(SessionStore.self) private var session
+     @Environment(OfflineDownloadStore.self) private var downloads
+     @Environment(PlaybackRefreshStore.self) private var playbackRefresh
+@@ -23,7 +24,7 @@
+             if isRestricted {
+                 RestrictedContentView()
+             } else if let store {
+-                LoadingStateView(state: store.state) {
++                LoadingStateView(state: store.state, retryAction: { Task { await store.load() } }) {
+                     detailContent(for: store)
+                 }
+             } else {
+@@ -40,9 +41,8 @@
+         #endif
+         .task {
+             if store == nil {
+-                let store = ItemDetailStore(item: item, session: session)
++                let store = navigationState.detailStore(for: item, session: session)
+                 self.store = store
+-                await store.load()
+             }
+         }
+         .playerPresentation(item: $playerItem)
+@@ -61,93 +61,114 @@
+     }
+ 
+     private func detailContent(for store: ItemDetailStore) -> some View {
+-        ScrollView {
+-            VStack(alignment: .leading, spacing: 0) {
+-                CinematicDetailHero(
+-                    item: store.item,
+-                    backdropURL: session.mediaProvider.backdropImageURL(for: store.item, context: .backdrop),
+-                    play: {
+-                        playerItem = ItemRef(item: store.item)
+-                    },
+-                    isInUpNext: upNext.contains(store.item, serverID: session.server.id, userID: session.user.id),
+-                    toggleUpNext: {
+-                        upNext.toggle(store.item, serverID: session.server.id, userID: session.user.id)
+-                        playbackRefresh.markPlaybackProgressChanged()
++        GeometryReader { geometry in
++            ScrollView {
++                VStack(alignment: .leading, spacing: 0) {
++                    CinematicDetailHero(
++                        item: store.item,
++                        backdropURL: session.mediaProvider.backdropImageURL(for: store.item, context: .backdrop),
++                        play: {
++                            playerItem = ItemRef(item: store.item)
++                        },
++                        isInUpNext: upNext.contains(store.item, serverID: session.server.id, userID: session.user.id),
++                        toggleUpNext: {
++                            upNext.toggle(store.item, serverID: session.server.id, userID: session.user.id)
++                            playbackRefresh.markPlaybackProgressChanged()
++                        }
++                    ) {
++                        ItemUserActionButton(
++                            title: store.item.userData?.isWatched == true
++                                ? "Mark as Unwatched"
++                                : "Mark as Watched",
++                            systemImage: store.item.userData?.isWatched == true
++                                ? "checkmark.circle.fill"
++                                : "checkmark.circle",
++                            action: {
++                                Task { await store.toggleWatched() }
++                            }
++                        )
++                        .disabled(store.isUpdatingUserData || store.needsUserDataRefresh)
++                        ItemUserActionButton(
++                            title: store.item.userData?.isFavorite == true
++                                ? "Remove from Favorites"
++                                : "Add to Favorites",
++                            systemImage: store.item.userData?.isFavorite == true
++                                ? "heart.fill"
++                                : "heart",
++                            action: {
++                                Task { await store.toggleFavorite() }
++                            }
++                        )
++                        .disabled(store.isUpdatingUserData || store.needsUserDataRefresh)
++                        #if !os(tvOS)
++                            if SharePlayCoordinator.canShare(store.item) {
++                                ItemUserActionButton(
++                                    title: "SharePlay",
++                                    systemImage: "shareplay",
++                                    action: {
++                                        startSharePlay(for: store.item)
++                                    }
++                                )
++                            }
++                        #endif
++                        if store.item.type == .book {
++                            BookActionButtons(item: store.item)
++                        }
++                        if DownloadsAvailability.isSupported, session.mediaProvider.capabilities.supportsDownloads {
++                            DownloadButton(item: store.item, iconOnly: true)
++                        }
+                     }
+-                ) {
+-                    ItemUserActionButton(
+-                        title: store.item.userData?.isWatched == true
+-                            ? "Mark as Unwatched"
+-                            : "Mark as Watched",
+-                        systemImage: store.item.userData?.isWatched == true
+-                            ? "checkmark.circle.fill"
+-                            : "checkmark.circle",
+-                        action: {
+-                            Task { await store.toggleWatched() }
+-                        }
+-                    )
+-                    ItemUserActionButton(
+-                        title: store.item.userData?.isFavorite == true
+-                            ? "Remove from Favorites"
+-                            : "Add to Favorites",
+-                        systemImage: store.item.userData?.isFavorite == true
+-                            ? "heart.fill"
+-                            : "heart",
+-                        action: {
+-                            Task { await store.toggleFavorite() }
+-                        }
+-                    )
+-                    #if !os(tvOS)
+-                        if SharePlayCoordinator.canShare(store.item) {
+-                            ItemUserActionButton(
+-                                title: "SharePlay",
+-                                systemImage: "shareplay",
+-                                action: {
+-                                    startSharePlay(for: store.item)
++
++                    VStack(alignment: .leading, spacing: 30) {
++                        if store.isUpdatingUserData {
++                            ProgressView("Updating…")
++                        }
++                        if let error = store.actionError {
++                            VStack(alignment: .leading) {
++                                Text(error).foregroundStyle(.secondary)
++                                Button(store.needsUserDataRefresh ? String(localized: "Refresh Status") : String(localized: "Dismiss")) {
++                                    if store.needsUserDataRefresh {
++                                        Task { await store.refreshUserData() }
++                                    } else {
++                                        store.actionError = nil
++                                    }
+                                 }
+-                            )
+-                        }
+-                    #endif
+-                    if store.item.type == .book {
+-                        BookActionButtons(item: store.item)
++                            }
++                        }
++                        if let itemID = store.item.id {
++                            SharedWithYouAttributionView(link: .item(id: itemID))
++                        }
++
++                        if let seriesStore = store.seriesStore {
++                            SeriesEpisodesView(store: seriesStore).id("episodes")
++                        }
++
++                        DetailMetadataRows(item: store.item).id("metadata")
++
++                        if !store.item.people.isEmpty {
++                            CastRail(people: store.item.people).id("cast")
++                        }
++
++                        if !store.specialFeatures.isEmpty {
++                            MediaRail(title: String(localized: "Special Features", comment: "Item detail section header for bonus/extra content"), items: store.specialFeatures, style: .backdrop)
++                        }
++
++                        if !store.similarItems.isEmpty {
++                            MediaRail(title: String(localized: "Recommended", comment: "Item detail section header for similar/recommended items"), items: store.similarItems)
++                        }
++
++                        AboutCardsView(
++                            item: store.item,
++                            posterURL: session.mediaProvider.primaryImageURL(for: store.item, context: .posterRail)
++                        )
+                     }
+-                    if DownloadsAvailability.isSupported, session.mediaProvider.capabilities.supportsDownloads {
+-                        DownloadButton(item: store.item, iconOnly: true)
+-                    }
++                    .scrollTargetLayout()
++                    .padding(sectionPadding)
+                 }
+-
+-                VStack(alignment: .leading, spacing: 30) {
+-                    if let itemID = store.item.id {
+-                        SharedWithYouAttributionView(link: .item(id: itemID))
+-                    }
+-
+-                    if let seriesStore = store.seriesStore {
+-                        SeriesEpisodesView(store: seriesStore)
+-                    }
+-
+-                    DetailMetadataRows(item: store.item)
+-
+-                    if !store.item.people.isEmpty {
+-                        CastRail(people: store.item.people)
+-                    }
+-
+-                    if !store.specialFeatures.isEmpty {
+-                        MediaRail(title: String(localized: "Special Features", comment: "Item detail section header for bonus/extra content"), items: store.specialFeatures, style: .backdrop)
+-                    }
+-
+-                    if !store.similarItems.isEmpty {
+-                        MediaRail(title: String(localized: "Recommended", comment: "Item detail section header for similar/recommended items"), items: store.similarItems)
+-                    }
+-
+-                    AboutCardsView(
+-                        item: store.item,
+-                        posterURL: session.mediaProvider.primaryImageURL(for: store.item, context: .posterRail)
+-                    )
+-                }
+-                .padding(sectionPadding)
+-            }
+-            .frame(maxWidth: PageContentMetrics.maxWidth, alignment: .leading)
+-            .frame(maxWidth: .infinity)
++                .frame(width: min(geometry.size.width, PageContentMetrics.maxWidth), alignment: .leading)
++                .frame(width: geometry.size.width)
++            }
++            .scrollPosition(id: navigationState.scrollBinding(for: "detail:" + ItemRef(item: item).id))
+         }
+         .lookToScroll()
+         .task {
+--- initial-checkout/Sources/Features/Item/SeriesEpisodesView.swift
++++ remediated-checkout/Sources/Features/Item/SeriesEpisodesView.swift
+@@ -18,13 +18,15 @@
+                 state: store.seasonsState,
+                 isEmpty: store.seasons.isEmpty,
+                 emptyTitle: "No Seasons",
+-                emptySymbol: "rectangle.stack"
++                emptySymbol: "rectangle.stack",
++                retryAction: { Task { await store.loadSeasons() } }
+             ) {
+                 LoadingStateView(
+                     state: store.episodesState,
+                     isEmpty: store.episodes.isEmpty,
+                     emptyTitle: "No Episodes",
+-                    emptySymbol: "play.rectangle"
++                    emptySymbol: "play.rectangle",
++                    retryAction: { Task { await store.retryEpisodes() } }
+                 ) {
+                     ScrollView(.horizontal, showsIndicators: false) {
+                         LazyHStack(alignment: .top, spacing: 18) {
+@@ -100,18 +102,13 @@
+ 
+     var body: some View {
+         VStack(alignment: .leading, spacing: 8) {
+-            ZStack {
+-                RoundedRectangle(cornerRadius: 14, style: .continuous)
+-                    .fill(.regularMaterial)
++            ArtworkTile(
++                url: session.mediaProvider.backdropImageURL(for: episode, maxWidth: 420),
++                aspectRatio: 16.0 / 9.0,
++                contentMode: .fit,
++                placeholderSymbol: "play.rectangle"
++            )
+ 
+-                AsyncPoster(
+-                    url: session.mediaProvider.backdropImageURL(for: episode, maxWidth: 420),
+-                    contentMode: .fit,
+-                    placeholderSymbol: "play.rectangle"
+-                )
+-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+-            }
+-            .aspectRatio(16.0 / 9.0, contentMode: .fit)
+             .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+             .posterHoverEffect()
+ 
+--- initial-checkout/Sources/Features/Music/AlbumDetailView.swift
++++ remediated-checkout/Sources/Features/Music/AlbumDetailView.swift
+@@ -3,14 +3,13 @@
+ /// Track list for a music album, playlist, or audiobook container: artwork header,
+ /// Play/Shuffle actions, and tappable track rows that start the audio player queue.
+ struct AlbumDetailView: View {
++    @Environment(AudioPlaybackCoordinator.self) private var audio
+     @Environment(SessionStore.self) private var session
+     @Environment(OfflineDownloadStore.self) private var downloads
+     let album: MediaItem
+ 
+     @State private var tracks: [MediaItem] = []
+     @State private var state: LoadState = .idle
+-    @State private var audioPlayer: AudioPlayerStore?
+-    @State private var isPlayerPresented = false
+ 
+     var body: some View {
+         LoadingStateView(
+@@ -35,60 +34,47 @@
+         .task {
+             await loadTracks()
+         }
+-        .sheet(isPresented: $isPlayerPresented) {
+-            audioPlayer?.teardown()
+-            audioPlayer = nil
+-        } content: {
+-            if let audioPlayer {
+-                AudioPlayerView(store: audioPlayer)
+-                    .task { await audioPlayer.start() }
+-            }
+-        }
+     }
+ 
+     private var header: some View {
+-        HStack(alignment: .top, spacing: 20) {
+-            AsyncPoster(
+-                url: session.mediaProvider.primaryImageURL(for: album, context: .posterGrid),
+-                placeholderSymbol: "music.note"
+-            )
+-            .aspectRatio(1, contentMode: .fit)
++        ViewThatFits(in: .horizontal) {
++            HStack(alignment: .top, spacing: 20) { albumArtwork; albumInfo }
++            VStack(alignment: .leading, spacing: 20) { albumArtwork; albumInfo }
++        }
++    }
++
++    private var albumArtwork: some View {
++        ArtworkTile(url: session.mediaProvider.primaryImageURL(for: album, context: .posterGrid), aspectRatio: 1, placeholderSymbol: "music.note")
+             .frame(width: 180)
+             .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+-
+-            VStack(alignment: .leading, spacing: 8) {
+-                Text(album.displayTitle)
+-                    .font(.title.bold())
+-                if let artist = album.albumArtist ?? album.artists.first {
+-                    Text(artist)
+-                        .font(.title3)
+-                        .foregroundStyle(.secondary)
+-                }
+-                if let year = album.productionYear {
+-                    Text(String(year))
+-                        .font(.callout)
+-                        .foregroundStyle(.secondary)
+-                }
+-
+-                HStack(spacing: 12) {
+-                    Button {
+-                        play(startingAt: 0)
+-                    } label: {
+-                        Label("Play", systemImage: "play.fill")
+-                    }
+-                    .gusProminentGlassButtonStyle()
+-
+-                    Button {
+-                        play(startingAt: 0, shuffled: true)
+-                    } label: {
+-                        Label("Shuffle", systemImage: "shuffle")
+-                    }
+-                    .gusGlassButtonStyle()
+-                }
+-                .padding(.top, 8)
+-            }
+-            Spacer()
+-        }
++    }
++
++    private var albumInfo: some View {
++        VStack(alignment: .leading, spacing: 8) {
++            Text(album.displayTitle).font(.title.bold()).fixedSize(horizontal: false, vertical: true)
++            if let artist = album.albumArtist ?? album.artists.first {
++                Text(artist).font(.title3)
++            }
++            if let year = album.productionYear {
++                Text(String(year)).foregroundStyle(.secondary)
++            }
++            ViewThatFits(in: .horizontal) {
++                HStack(spacing: 12) { albumActions }
++                VStack(alignment: .leading, spacing: 12) { albumActions }
++            }
++        }
++    }
++
++    @ViewBuilder private var albumActions: some View {
++        Button { play(startingAt: 0) } label: {
++            Label("Play", systemImage: "play.fill")
++                .foregroundStyle(Color.gusProminentActionForeground)
++        }
++        .gusProminentGlassButtonStyle()
++        .fixedSize()
++        Button { play(startingAt: 0, shuffled: true) } label: { Label("Shuffle", systemImage: "shuffle") }
++            .gusGlassButtonStyle()
++            .fixedSize()
+     }
+ 
+     private var trackList: some View {
+@@ -131,12 +117,7 @@
+ 
+     private func play(startingAt index: Int, shuffled: Bool = false) {
+         guard !tracks.isEmpty else { return }
+-        let store = AudioPlayerStore(session: session, tracks: tracks, startIndex: index, downloads: downloads)
+-        if shuffled {
+-            store.toggleShuffle()
+-        }
+-        audioPlayer = store
+-        isPlayerPresented = true
++        audio.play(tracks: tracks, startIndex: index, shuffled: shuffled, session: session, downloads: downloads)
+     }
+ }
+ 
+--- initial-checkout/Sources/Features/Music/AudioPlayerView.swift
++++ remediated-checkout/Sources/Features/Music/AudioPlayerView.swift
+@@ -3,7 +3,7 @@
+ /// Now-playing surface for songs and audiobooks: artwork, scrubber, queue transport,
+ /// shuffle/repeat, and — for audiobooks — playback speed and chapter navigation.
+ struct AudioPlayerView: View {
+-    @Environment(\.dismiss) private var dismiss
++    @Environment(AudioPlaybackCoordinator.self) private var audio
+     @Environment(SessionStore.self) private var session
+     let store: AudioPlayerStore
+ 
+@@ -17,28 +17,37 @@
+     }
+ 
+     var body: some View {
+-        VStack(spacing: 24) {
+-            artwork
+-            titleBlock
+-            progressBlock
+-            transportControls
+-            secondaryControls
+-        }
+-        .padding(32)
+-        .frame(maxWidth: 560)
+-        .frame(maxWidth: .infinity, maxHeight: .infinity)
++        LoadingStateView(state: store.state, retryAction: { audio.retry() }) {
++            GeometryReader { geometry in
++                ScrollView {
++                    ViewThatFits(in: .horizontal) {
++                        HStack(alignment: .center, spacing: 24) {
++                            artwork.frame(width: min(geometry.size.height * 0.5, 240))
++                            controls.frame(minWidth: 280, maxWidth: 560)
++                        }
++                        VStack(spacing: 24) { artwork; controls }
++                    }
++                    .padding(24)
++                    .frame(maxWidth: .infinity)
++                }
++            }
++        }
+         .onChange(of: store.currentTime) { _, time in
+             guard !isScrubbing else { return }
+             scrubTime = time
+         }
+     }
+ 
++    private var controls: some View {
++        VStack(spacing: 20) { titleBlock; progressBlock; transportControls; secondaryControls }
++    }
++
+     private var artwork: some View {
+-        AsyncPoster(
++        ArtworkTile(
+             url: track.flatMap { session.mediaProvider.primaryImageURL(for: $0, context: .posterGrid) },
++            aspectRatio: 1,
+             placeholderSymbol: track?.type == .audioBook ? "book" : "music.note"
+         )
+-        .aspectRatio(1, contentMode: .fit)
+         .frame(maxWidth: 320)
+         .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+         .accessibilityHidden(true)
+@@ -91,55 +100,71 @@
+     }
+ 
+     private var transportControls: some View {
+-        HStack(spacing: 36) {
+-            Button {
+-                store.toggleShuffle()
+-            } label: {
+-                Image(systemName: "shuffle")
+-                    .symbolVariant(store.isShuffled ? .circle.fill : .none)
+-            }
+-            .accessibilityLabel(
+-                store.isShuffled
+-                    ? String(localized: "Shuffle On", comment: "Accessibility label for the shuffle button when active")
+-                    : String(localized: "Shuffle Off", comment: "Accessibility label for the shuffle button when inactive")
+-            )
+-
+-            Button {
+-                Task { await store.previous() }
+-            } label: {
+-                Image(systemName: "backward.fill")
+-            }
+-            .accessibilityLabel(String(localized: "Previous Track", comment: "Accessibility label for the previous track button"))
+-
+-            Button {
+-                store.playPause()
+-            } label: {
+-                Image(systemName: store.isPlaying ? "pause.circle.fill" : "play.circle.fill")
+-                    .font(.system(size: playPauseIconSize))
+-            }
+-            .accessibilityLabel(
+-                store.isPlaying
+-                    ? String(localized: "Pause", comment: "Accessibility label for the pause button")
+-                    : String(localized: "Play", comment: "Accessibility label for the play button")
+-            )
+-
+-            Button {
+-                Task { await store.next() }
+-            } label: {
+-                Image(systemName: "forward.fill")
+-            }
+-            .disabled(!store.queue.hasNext)
+-            .accessibilityLabel(String(localized: "Next Track", comment: "Accessibility label for the next track button"))
+-
+-            Button {
+-                store.cycleRepeatMode()
+-            } label: {
+-                Image(systemName: repeatSymbol)
+-            }
+-            .accessibilityLabel(repeatAccessibilityLabel)
++        ViewThatFits(in: .horizontal) {
++            HStack(spacing: 12) { shuffleButton; previousButton; playPauseButton; nextButton; repeatButton }
++            VStack(spacing: 12) {
++                HStack(spacing: 12) { previousButton; playPauseButton; nextButton }
++                HStack(spacing: 24) { shuffleButton; repeatButton }
++            }
+         }
+         .font(.title2)
+-        .buttonStyle(.plain)
++        .buttonStyle(AudioTransportStyle())
++    }
++
++    private var shuffleButton: some View {
++        Button {
++            store.toggleShuffle()
++        } label: {
++            Image(systemName: "shuffle")
++                .symbolVariant(store.isShuffled ? .circle.fill : .none)
++        }
++        .accessibilityLabel(
++            store.isShuffled
++                ? String(localized: "Shuffle On", comment: "Accessibility label for the shuffle button when active")
++                : String(localized: "Shuffle Off", comment: "Accessibility label for the shuffle button when inactive")
++        )
++    }
++
++    private var previousButton: some View {
++        Button {
++            Task { await store.previous() }
++        } label: {
++            Image(systemName: "backward.fill")
++        }
++        .accessibilityLabel(String(localized: "Previous Track", comment: "Accessibility label for the previous track button"))
++    }
++
++    private var playPauseButton: some View {
++        Button {
++            store.playPause()
++        } label: {
++            Image(systemName: store.isPlaying ? "pause.circle.fill" : "play.circle.fill")
++                .font(.system(size: playPauseIconSize))
++        }
++        .accessibilityLabel(
++            store.isPlaying
++                ? String(localized: "Pause", comment: "Accessibility label for the pause button")
++                : String(localized: "Play", comment: "Accessibility label for the play button")
++        )
++    }
++
++    private var nextButton: some View {
++        Button {
++            Task { await store.next() }
++        } label: {
++            Image(systemName: "forward.fill")
++        }
++        .disabled(!store.queue.hasNext)
++        .accessibilityLabel(String(localized: "Next Track", comment: "Accessibility label for the next track button"))
++    }
++
++    private var repeatButton: some View {
++        Button {
++            store.cycleRepeatMode()
++        } label: {
++            Image(systemName: repeatSymbol)
++        }
++        .accessibilityLabel(repeatAccessibilityLabel)
+     }
+ 
+     private var secondaryControls: some View {
+@@ -215,33 +240,34 @@
+     }
+ }
+ 
+-/// Presents the audio player for a single song/audiobook item, creating its own store.
+-/// Used by `playerPresentation` when an audio item is opened from detail/search/rails.
++/// Entry fallback for audio reached through an existing presentation.
+ struct AudioPlayerScreen: View {
++    @Environment(AudioPlaybackCoordinator.self) private var audio
+     @Environment(SessionStore.self) private var session
+     @Environment(OfflineDownloadStore.self) private var downloads
+     let item: MediaItem
+     var localOnly = false
+-
+-    @State private var store: AudioPlayerStore?
+-
+     var body: some View {
+         Group {
+-            if let store {
++            if let store = audio.store {
+                 AudioPlayerView(store: store)
+             } else {
+                 ProgressView()
+             }
+         }
+         .task {
+-            if store == nil {
+-                let store = AudioPlayerStore(session: session, tracks: [item], downloads: downloads, localOnly: localOnly)
+-                self.store = store
+-                await store.start()
+-            }
+-        }
+-        .onDisappear {
+-            store?.teardown()
++            if audio.store == nil {
++                audio.play(tracks: [item], localOnly: localOnly, session: session, downloads: downloads)
++            }
+         }
+     }
+ }
++
++private struct AudioTransportStyle: ButtonStyle {
++    func makeBody(configuration: Configuration) -> some View {
++        configuration.label
++            .frame(minWidth: 44, minHeight: 44)
++            .contentShape(Rectangle())
++            .opacity(configuration.isPressed ? 0.6 : 1)
++    }
++}
+--- initial-checkout/Sources/Features/Photos/PhotoViewerView.swift
++++ remediated-checkout/Sources/Features/Photos/PhotoViewerView.swift
+@@ -82,7 +82,7 @@
+                 sort: .name
+             ))
+             let photos = page.items.filter { $0.type == .photo }
+-            siblings = photos.isEmpty ? [photo] : photos
++            siblings = PhotoSelection.includingOpened(photo, in: photos)
+             selectedID = photo.id
+             state = .loaded
+         } catch {
+@@ -121,3 +121,14 @@
+         AccessibilityNotification.Announcement(siblings[next].displayTitle).post()
+     }
+ }
++
++/// Preserve the item that opened the gallery even when it is outside the sibling page.
++enum PhotoSelection {
++    static func includingOpened(_ photo: MediaItem, in siblings: [MediaItem]) -> [MediaItem] {
++        var seen = Set<String>()
++        return ([photo] + siblings).filter { item in
++            guard let id = item.id else { return false }
++            return seen.insert(id).inserted
++        }
++    }
++}
+--- initial-checkout/Sources/Features/Player/PlayerPresentation.swift
++++ remediated-checkout/Sources/Features/Player/PlayerPresentation.swift
+@@ -13,9 +13,7 @@
+         #if os(macOS)
+             modifier(MacPlayerPresentation(item: item))
+         #else
+-            fullScreenCover(item: item) { ref in
+-                PresentedPlayer(item: ref.item, localOnly: ref.localOnly == true)
+-            }
++            modifier(SessionPlayerRequest(item: item))
+         #endif
+     }
+ }
+@@ -33,13 +31,16 @@
+     }
+ 
+     private struct MacPlayerPresentation: ViewModifier {
++        @Environment(AudioPlaybackCoordinator.self) private var audio
++        @Environment(SessionStore.self) private var session
++        @Environment(OfflineDownloadStore.self) private var downloads
+         @Environment(\.openWindow) private var openWindow
+         @Binding var item: ItemRef?
+ 
+         /// Non-video refs flow through to the sheet; video refs are intercepted below.
+         private var sheetItem: Binding<ItemRef?> {
+             Binding(
+-                get: { item.flatMap { $0.item.opensInPlayerWindow ? nil : $0 } },
++                get: { item.flatMap { $0.item.opensInPlayerWindow || $0.item.isAudioPlayable ? nil : $0 } },
+                 set: { item = $0 }
+             )
+         }
+@@ -51,7 +52,14 @@
+                         .frame(minWidth: 640, minHeight: 360)
+                 }
+                 .onChange(of: item) { _, ref in
+-                    guard let ref, ref.item.opensInPlayerWindow else { return }
++                    guard let ref else { return }
++                    if ref.item.isAudioPlayable, ContentRatingGate.admitsStored(ref.item) {
++                        audio.play(tracks: [ref.item], localOnly: ref.localOnly == true, session: session, downloads: downloads)
++                        item = nil
++                        return
++                    }
++                    guard ref.item.opensInPlayerWindow else { return }
++                    audio.stop()
+                     openWindow(id: GusPlayerWindow.sceneID, value: ref)
+                     item = nil
+                 }
+--- initial-checkout/Sources/Features/Player/VideoPlayerView.swift
++++ remediated-checkout/Sources/Features/Player/VideoPlayerView.swift
+@@ -19,6 +19,8 @@
+     var localOnly = false
+ 
+     @State private var store: PlaybackStore?
++    @State private var preparation: Task<Void, Never>?
++    @State private var retryGeneration = 0
+     @State private var sharePlay = SharePlayCoordinator.shared
+     #if os(visionOS)
+         @State private var openedFramePackedCinema = false
+@@ -29,7 +31,7 @@
+         ZStack {
+             Color.black.ignoresSafeArea()
+ 
+-            if let store, let player = store.player {
++            if let store, store.state == .ready, let player = store.player {
+                 #if os(visionOS)
+                     if store.isFramePackedImmersivePlaybackActive {
+                         Color.black
+@@ -47,6 +49,13 @@
+                     Label("Can't Play This", systemImage: "exclamationmark.triangle")
+                 } description: {
+                     Text(message)
++                } actions: {
++                    Button("Try Again") {
++                        preparation?.cancel()
++                        store?.teardown()
++                        self.store = nil
++                        retryGeneration += 1
++                    }
+                 }
+                 .foregroundStyle(.white)
+             } else {
+@@ -55,81 +64,97 @@
+                     .tint(.white)
+             }
+         }
++        .overlay(alignment: .topLeading) {
++            if store?.state != .ready {
++                Button("Close", systemImage: "xmark") {
++                    preparation?.cancel()
++                    store?.teardown()
++                    dismiss()
++                }
++                .frame(minWidth: 44, minHeight: 44)
++                .padding()
++                .foregroundStyle(.white)
++            }
++        }
++        .accessibilityAction(.escape) { preparation?.cancel(); store?.teardown(); dismiss() }
+         #if os(visionOS)
+-        .overlay(alignment: .topTrailing) {
+-            if let store, store.isSpatialPlaybackActive || store.stereoFallbackNotice != nil {
+-                VStack(alignment: .trailing, spacing: 8) {
+-                    if store.isSpatialPlaybackActive {
+-                        SpatialPlaybackBadge()
+-                    }
+-
+-                    if let notice = store.stereoFallbackNotice {
+-                        StereoFallbackNotice(text: notice)
+-                    }
+-                }
+-                .padding()
+-            }
+-        }
++            .overlay(alignment: .topTrailing) {
++                if let store, store.isSpatialPlaybackActive || store.stereoFallbackNotice != nil {
++                    VStack(alignment: .trailing, spacing: 8) {
++                        if store.isSpatialPlaybackActive {
++                            SpatialPlaybackBadge()
++                        }
++
++                        if let notice = store.stereoFallbackNotice {
++                            StereoFallbackNotice(text: notice)
++                        }
++                    }
++                    .padding()
++                }
++            }
+         #endif
+-        .task {
+-            if store == nil {
+-                let store = PlaybackStore(item: item, session: session, playbackRefresh: playbackRefresh, downloads: downloads, localOnly: localOnly)
+-                self.store = store
+-                await store.prepare()
+-            }
+-        }
+-        .task(id: store?.player.map(ObjectIdentifier.init)) {
+-            attachSharePlayPlayer()
+-        }
+-        .task(id: store?.item.id) {
+-            attachSharePlayPlayer()
+-        }
++            .task(id: retryGeneration) {
++                if store == nil {
++                    let store = PlaybackStore(item: item, session: session, playbackRefresh: playbackRefresh, downloads: downloads, localOnly: localOnly)
++                    self.store = store
++                    let task = Task { await store.prepare() }
++                    preparation = task
++                    await withTaskCancellationHandler { await task.value } onCancel: { task.cancel() }
++                }
++            }
++            .task(id: store?.player.map(ObjectIdentifier.init)) {
++                attachSharePlayPlayer()
++            }
++            .task(id: store?.item.id) {
++                attachSharePlayPlayer()
++            }
+         #if os(visionOS)
+-        .task(id: store?.stereoPresentation) {
+-            guard let store else { return }
+-            await syncFramePackedCinemaIfNeeded(store)
+-        }
++            .task(id: store?.stereoPresentation) {
++                guard let store else { return }
++                await syncFramePackedCinemaIfNeeded(store)
++            }
+         #endif
+-        // Natural end with nothing left to auto-play: close the player instead of
+-        // leaving a spinner over black.
+-        .onChange(of: store?.didFinishPlayback ?? false) { _, finished in
+-            if finished {
+-                dismiss()
+-            }
+-        }
+-        .onDisappear {
+-            #if os(visionOS)
+-                closeFramePackedCinemaIfNeeded()
+-            #endif
+-            store?.teardown()
+-        }
+-        .alert(
+-            "SharePlay Unavailable",
+-            isPresented: Binding(
+-                get: { sharePlay.errorMessage != nil },
+-                set: { isPresented in
+-                    if !isPresented {
+-                        sharePlay.errorMessage = nil
+-                    }
+-                }
+-            )
+-        ) {
+-            Button("OK", role: .cancel) {
+-                sharePlay.errorMessage = nil
+-            }
+-        } message: {
+-            Text(sharePlay.errorMessage ?? "")
+-        }
+-        // Handoff: continue playback on another device. The continuing device resumes
+-        // from the server-side position kept fresh by progress reporting.
+-        .userActivity(GusUserActivity.playback, isActive: item.id != nil) { activity in
+-            GusUserActivity.configure(
+-                activity,
+-                item: item,
+-                serverID: session.server.id,
+-                userID: session.user.id
+-            )
+-        }
++            // Natural end with nothing left to auto-play: close the player instead of
++            // leaving a spinner over black.
++            .onChange(of: store?.didFinishPlayback ?? false) { _, finished in
++                if finished {
++                    dismiss()
++                }
++            }
++            .onDisappear {
++                preparation?.cancel()
++                #if os(visionOS)
++                    closeFramePackedCinemaIfNeeded()
++                #endif
++                store?.teardown()
++            }
++            .alert(
++                "SharePlay Unavailable",
++                isPresented: Binding(
++                    get: { sharePlay.errorMessage != nil },
++                    set: { isPresented in
++                        if !isPresented {
++                            sharePlay.errorMessage = nil
++                        }
++                    }
++                )
++            ) {
++                Button("OK", role: .cancel) {
++                    sharePlay.errorMessage = nil
++                }
++            } message: {
++                Text(sharePlay.errorMessage ?? "")
++            }
++            // Handoff: continue playback on another device. The continuing device resumes
++            // from the server-side position kept fresh by progress reporting.
++            .userActivity(GusUserActivity.playback, isActive: item.id != nil) { activity in
++                GusUserActivity.configure(
++                    activity,
++                    item: item,
++                    serverID: session.server.id,
++                    userID: session.user.id
++                )
++            }
+     }
+ 
+     private func attachSharePlayPlayer() {
+--- initial-checkout/Sources/Features/Search/SearchResultsView.swift
++++ remediated-checkout/Sources/Features/Search/SearchResultsView.swift
+@@ -1,13 +1,14 @@
+ import SwiftUI
+ 
+ struct SearchResultsView: View {
++    @Environment(RootNavigationState.self) private var rootState
+     @Environment(SessionStore.self) private var session
+     let store: SearchStore
+ 
+     var body: some View {
+         LoadingStateView(
+             state: store.state,
+-            isEmpty: store.results.isEmpty,
++            isEmpty: store.results.isEmpty && !store.canLoadMore,
+             emptyTitle: "No Results",
+             emptySymbol: "magnifyingglass",
+             retryAction: { Task { await store.search(store.query) } }
+@@ -21,19 +22,30 @@
+                                 imageURL: session.mediaProvider.primaryImageURL(for: item, context: .posterGrid)
+                             )
+                         }
++                        .id(item.id)
+                         .posterNavigationStyle()
+                         .task {
+                             await store.loadMoreIfNeeded(currentItem: item)
+                         }
+                     }
+ 
++                    if let error = store.pageError {
++                        Text(error).foregroundStyle(.secondary)
++                    }
++                    if store.canLoadMore {
++                        Button("Continue Searching") { Task { await store.continueSearching() } }
++                            .disabled(store.isLoadingNextPage)
++                            .frame(minHeight: 44)
++                    }
+                     if store.isLoadingNextPage {
+                         ProgressView()
+                             .frame(maxWidth: .infinity)
+                     }
+                 }
++                .scrollTargetLayout()
+                 .padding()
+             }
++            .scrollPosition(id: rootState.scrollBinding(for: "search:" + rootState.selectedSectionID + ":" + store.query))
+             .lookToScroll()
+         }
+     }
+@@ -42,22 +54,16 @@
+ struct SearchRootView<Content: View>: View {
+     @Environment(AppNavigationModel.self) private var navigation
+     @Environment(SessionStore.self) private var session
+-    @State private var store: SearchStore?
+-    @State private var searchText = ""
+-    @State private var isSearchPresented = false
++    @Bindable var state: SectionSearchState
+     @FocusState private var isSearchFocused: Bool
+ 
+     @ViewBuilder var content: () -> Content
+ 
+     var body: some View {
+         searchContent
+-            .task {
+-                guard session.mediaProvider.capabilities.supportsSearch, store == nil else { return }
+-                store = SearchStore(session: session)
+-            }
+             .onChange(of: navigation.searchFocusRequest) { _, request in
+                 guard session.mediaProvider.capabilities.supportsSearch, request > 0 else { return }
+-                isSearchPresented = true
++                state.isPresented = true
+                 isSearchFocused = true
+             }
+     }
+@@ -67,63 +73,33 @@
+         if session.mediaProvider.capabilities.supportsSearch {
+             searchSurface
+                 .gusSearchable(
+-                    text: $searchText,
+-                    isPresented: $isSearchPresented,
++                    text: $state.text,
++                    isPresented: $state.isPresented,
+                     isFocused: $isSearchFocused,
+                     prompt: Text("Search Library")
+                 )
+-                .searchDebounce(text: $searchText, store: $store)
++                .onChange(of: state.text, initial: true) { _, _ in state.updateQuery() }
+         } else {
+             content()
+         }
+     }
+ 
++    @ViewBuilder
+     private var searchSurface: some View {
+-        Group {
+-            if isSearching {
+-                if let store {
+-                    SearchResultsView(store: store)
+-                } else {
+-                    ProgressView()
+-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+-                }
++        if isSearching {
++            if let store = state.store {
++                SearchResultsView(store: store)
+             } else {
+-                content()
++                ProgressView()
++                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+             }
++        } else {
++            content()
+         }
+     }
+ 
+     private var isSearching: Bool {
+         session.mediaProvider.capabilities.supportsSearch
+-            && !searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
++            && !state.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+     }
+ }
+-
+-// MARK: - Shared debounce modifier
+-
+-private extension View {
+-    /// Debounces a `.searchable` text field by 300 ms and drives a `SearchStore`.
+-    ///
+-    /// Centralised here so every platform root gets consistent debounce delay,
+-    /// consistent trimming, and no duplicated `catch` branches.
+-    func searchDebounce(text: Binding<String>, store: Binding<SearchStore?>) -> some View {
+-        task(id: text.wrappedValue) {
+-            let trimmed = text.wrappedValue.trimmingCharacters(in: .whitespacesAndNewlines)
+-            guard let store = store.wrappedValue else { return }
+-
+-            guard !trimmed.isEmpty else {
+-                store.reset()
+-                return
+-            }
+-
+-            do {
+-                try await Task.sleep(for: .milliseconds(300))
+-            } catch {
+-                return // cancelled by a new keystroke; nothing to do
+-            }
+-
+-            guard !Task.isCancelled else { return }
+-            await store.search(trimmed)
+-        }
+-    }
+-}
+--- initial-checkout/Sources/Features/Settings/NavigationSettingsView.swift
++++ remediated-checkout/Sources/Features/Settings/NavigationSettingsView.swift
+@@ -32,6 +32,7 @@
+                     Label(message, systemImage: "exclamationmark.triangle")
+                         .foregroundStyle(.red)
+                         .font(.callout)
++                    Button("Try Again") { Task { await loadLibraries() } }
+                 }
+             case .loaded:
+                 Section("Sections") {
+--- initial-checkout/Sources/Features/Settings/SettingsView.swift
++++ remediated-checkout/Sources/Features/Settings/SettingsView.swift
+@@ -6,7 +6,6 @@
+     @Environment(SessionStore.self) private var session
+     @Environment(OfflineDownloadStore.self) private var downloads
+ 
+-    @State private var isShowingNavigationSettings = false
+     @State private var reauthenticationServer: ServerConnection?
+     @State private var switchErrorMessage: String?
+     @AppStorage(ContentRatingGate.limitDefaultsKey) private var contentLimitRawValue = ContentRatingGate.Limit.off.rawValue
+@@ -63,7 +62,7 @@
+                         Text(appearance.title).tag(appearance.rawValue)
+                     }
+                 }
+-                NavigationLink(value: SettingsDestination.navigation) {
++                NavigationLink(value: AppScreen.navigationSettings) {
+                     Label("Navigation", systemImage: "list.bullet")
+                 }
+             } header: {
+@@ -107,19 +106,6 @@
+         }
+         .settingsFormStyle()
+         .navigationTitle("Settings")
+-        .navigationDestination(for: SettingsDestination.self) { destination in
+-            switch destination {
+-            case .navigation:
+-                NavigationSettingsView()
+-                    .onAppear {
+-                        isShowingNavigationSettings = true
+-                    }
+-                    .onDisappear {
+-                        isShowingNavigationSettings = false
+-                    }
+-            }
+-        }
+-        .navigationBarBackButtonHidden(isShowingNavigationSettings)
+         .task {
+             downloads.load(serverID: session.server.id, userID: session.user.id)
+         }
+@@ -196,10 +182,6 @@
+     }
+ }
+ 
+-private enum SettingsDestination: Hashable {
+-    case navigation
+-}
+-
+ private extension View {
+     @ViewBuilder
+     func settingsFormStyle() -> some View {
+@@ -220,9 +202,7 @@
+ 
+     var body: some View {
+         Section {
+-            NavigationLink {
+-                DownloadsView()
+-            } label: {
++            NavigationLink(value: AppScreen.downloads) {
+                 LabeledContent("Downloaded Media", value: formattedByteCount)
+             }
+         } header: {
+--- initial-checkout/Sources/Platform/AppNavigationModel.swift
++++ remediated-checkout/Sources/Platform/AppNavigationModel.swift
+@@ -12,6 +12,8 @@
+     static let shared = AppNavigationModel()
+ 
+     private(set) var route: AppRoute = .home
++    /// Explicit routes must also be handled when they repeat the last routed value.
++    private(set) var routeRequest = 0
+     private(set) var searchFocusRequest = 0
+ 
+     /// Pending content deep link plus a monotonically increasing request token so the
+@@ -28,6 +30,7 @@
+         }
+ 
+         self.route = route
++        routeRequest += 1
+     }
+ 
+     func open(url: URL) {
+--- initial-checkout/Sources/Platform/ContentLinkHandler.swift
++++ remediated-checkout/Sources/Platform/ContentLinkHandler.swift
+@@ -8,19 +8,16 @@
+     }
+ }
+ 
+-/// Resolves a content link's item id through the active session and presents it
+-/// modally — detail links in a sheet (with full push navigation inside), play links
+-/// through the shared `playerPresentation` routing (video/audio/book/photo).
+-///
+-/// Modal presentation keeps deep links independent of which tab/sidebar section is
+-/// selected and of customized navigation, and works identically on every platform.
++/// Resolves content links through the active session. Detail links push into the current
++/// tvOS stack or use a sheet on the other platforms; play links use the session player host.
+ /// Links that arrive while signed out stay pending in `AppNavigationModel` and are
+ /// consumed here once a session exists.
+ private struct ContentLinkHandler: ViewModifier {
+     @Environment(AppNavigationModel.self) private var navigation
++    @Environment(RootNavigationState.self) private var rootState
++    @Environment(AudioPlaybackCoordinator.self) private var audio
+     @Environment(SessionStore.self) private var session
+ 
+-    @State private var detailItem: ItemRef?
+     @State private var playerItem: ItemRef?
+     @State private var errorMessage: String?
+ 
+@@ -30,18 +27,21 @@
+                 guard navigation.contentLinkRequest > 0, let link = navigation.consumeContentLink() else { return }
+                 await resolve(link)
+             }
+-            .sheet(item: $detailItem) { ref in
++            .sheet(item: Bindable(rootState).projectedValue.detailItem) { ref in
+                 NavigationStack {
+                     ItemRouteDestination(item: ref.item)
+                         .gusItemDestinations()
+                         .toolbar {
+                             ToolbarItem(placement: .cancellationAction) {
+                                 Button("Done") {
+-                                    detailItem = nil
++                                    rootState.detailItem = nil
+                                 }
+                             }
+                         }
+                 }
++                .gusSessionPlayerHost(state: rootState)
++                .gusAudioHost(coordinator: audio)
++                .gusNowPlaying(coordinator: audio, usesTabAccessory: false)
+             }
+             .playerPresentation(item: $playerItem)
+             .alert(
+@@ -66,9 +66,14 @@
+     private func resolve(_ link: ContentLink) async {
+         do {
+             let item = try await session.mediaProvider.item(id: link.itemID)
++            try Task.checkCancellation()
+             switch link {
+             case .item:
+-                detailItem = ItemRef(item: item)
++                #if os(tvOS)
++                    rootState.paths[rootState.selectedSectionID, default: NavigationPath()].append(ItemRef(item: item))
++                #else
++                    rootState.detailItem = ItemRef(item: item)
++                #endif
+             case .play:
+                 playerItem = ItemRef(item: item)
+             }
+--- initial-checkout/Sources/Platform/NavigationDestinations.swift
++++ remediated-checkout/Sources/Platform/NavigationDestinations.swift
+@@ -37,5 +37,11 @@
+         .navigationDestination(for: ItemRef.self) { ref in
+             ItemRouteDestination(item: ref.item)
+         }
++        .navigationDestination(for: AppScreen.self) { screen in
++            switch screen {
++            case .downloads: DownloadsView()
++            case .navigationSettings: NavigationSettingsView()
++            }
++        }
+     }
+ }
+--- initial-checkout/Sources/Platform/RootContainer.swift
++++ remediated-checkout/Sources/Platform/RootContainer.swift
+@@ -1,41 +1,60 @@
+ import SwiftUI
+ 
+-/// Signed-in root, with all platform divergence in one place.
+-///
+-/// - iPhone (compact) & tvOS → `TabView` (focus engine on tvOS).
+-/// - iPad / macOS → `NavigationSplitView` (sidebar = sections).
+-/// - visionOS → `.sidebarAdaptable` `TabView` for the native floating sidebar style.
+-///
+-/// Navigation is user-customizable from one ordered section list. Home is fixed first;
+-/// Libraries, Settings, and visible consolidated media categories follow the per-account
+-/// order in `NavigationPreferencesStore`.
++/// Only the visual container changes with width; navigation and players remain session-owned.
+ struct RootContainer: View {
++    @Environment(SessionStore.self) private var session
++    @Environment(OfflineDownloadStore.self) private var downloads
++    @Environment(AppNavigationModel.self) private var navigation
++    @Environment(NavigationPreferencesStore.self) private var preferences
++    @State private var state = RootNavigationState()
++    @Environment(AudioPlaybackCoordinator.self) private var audio
++    @SceneStorage("gus.root.selection") private var storedSelection = NavigationSectionPreference.homeID
++
+     var body: some View {
+         platformRoot
+             .gusContentLinks()
+-    }
+-
+-    @ViewBuilder
+-    private var platformRoot: some View {
+-        #if os(tvOS)
++            .gusSessionPlayerHost(state: state, enabled: state.detailItem == nil)
++            .gusAudioHost(coordinator: audio, enabled: state.detailItem == nil)
++        #if os(iOS) || os(tvOS)
++            .gusNowPlaying(coordinator: audio, enabled: state.detailItem == nil)
++        #endif
++            .task {
++                preferences.load(serverID: session.server.id, userID: session.user.id)
++                if navigation.routeRequest == 0 {
++                    state.selectedSectionID = storedSelection
++                } else {
++                    state.adopt(navigation.route)
++                }
++                if state.home == nil {
++                    let home = HomeStore(session: session)
++                    state.home = home
++                    await home.load()
++                }
++            }
++            .onChange(of: navigation.routeRequest) { _, _ in state.adopt(navigation.route) }
++            .onChange(of: state.selectedSectionID) { _, id in storedSelection = id }
++            .environment(state)
++            .environment(audio)
++    }
++
++    @ViewBuilder private var platformRoot: some View {
++        #if os(iOS)
++            AdaptiveRootView()
++        #elseif os(tvOS)
+             TabRootView()
+         #elseif os(visionOS)
+-            VisionSidebarRootView()
+-        #elseif os(macOS)
++            TabRootView().tabViewStyle(.sidebarAdaptable)
++        #else
+             SplitRootView()
+-        #else
+-            AdaptiveRootView()
+         #endif
+     }
+ }
+ 
+ #if os(iOS)
+-    /// iOS/iPadOS: compact width → tabs; regular width → split view.
+     private struct AdaptiveRootView: View {
+-        @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+-
++        @Environment(\.horizontalSizeClass) private var widthClass
+         var body: some View {
+-            if horizontalSizeClass == .compact {
++            if widthClass == .compact {
+                 TabRootView()
+             } else {
+                 SplitRootView()
+@@ -44,81 +63,130 @@
+     }
+ #endif
+ 
+-/// Selection identity shared by every root: fixed Home/Settings plus dynamic sections.
+-private enum RootSection: Hashable {
+-    case home
+-    case section(String)
+-    case settings
+-
+-    /// String key used with `SceneStorage` to restore selection across launches.
+-    var sceneKey: String {
+-        switch self {
+-        case .home: return "home"
+-        case .settings: return "settings"
+-        case let .section(id): return "section:\(id)"
+-        }
+-    }
+-
+-    init?(sceneKey key: String) {
+-        switch key {
+-        case "home":
+-            self = .home
+-        case "settings":
+-            self = .settings
+-        case "libraries":
+-            // Legacy fixed-sidebar key from before navigation customization.
+-            self = .section(NavigationSectionPreference.librariesID)
+-        default:
+-            if key.hasPrefix("section:") {
+-                self = .section(String(key.dropFirst("section:".count)))
+-            } else if key.hasPrefix("library:") {
+-                self = .section(NavigationSectionPreference.librariesID)
+-            } else {
+-                return nil
+-            }
+-        }
+-    }
+-
+-    /// Maps a fixed app route onto a selection; `.search` has no selection of its own.
+-    init?(route: AppRoute) {
+-        switch route {
+-        case .home:
+-            self = .home
+-        case .downloaded:
+-            self = .section(NavigationSectionPreference.downloadedID)
+-        case .libraries:
+-            self = .section(NavigationSectionPreference.librariesID)
+-        case .settings:
+-            self = .settings
+-        case .search:
+-            return nil
+-        }
+-    }
+-}
+-
+-private extension ResolvedNavigationSection {
+-    var rootSelection: RootSection {
+-        switch id {
+-        case NavigationSectionPreference.homeID:
+-            return .home
+-        case NavigationSectionPreference.settingsID:
+-            return .settings
+-        default:
+-            return .section(id)
+-        }
+-    }
+-}
+-
+-/// Renders one visible navigation section.
++@MainActor private enum RootSections {
++    static func resolve(_ preferences: NavigationPreferencesStore, state: RootNavigationState, session: SessionStore) -> [ResolvedNavigationSection] {
++        preferences.visibleSections(libraries: state.home?.libraries ?? [], serverID: session.server.id, userID: session.user.id)
++    }
++}
++
++private struct TabRootView: View {
++    @Environment(RootNavigationState.self) private var state
++    @Environment(SessionStore.self) private var session
++    @Environment(NavigationPreferencesStore.self) private var preferences
++    private var sections: [ResolvedNavigationSection] {
++        RootSections.resolve(preferences, state: state, session: session)
++    }
++
++    private var direct: [ResolvedNavigationSection] {
++        #if os(iOS)
++            let ids = RootNavigationState.directSectionIDs(sections.map(\.id))
++            return sections.filter { ids.contains($0.id) }
++        #else
++            return sections
++        #endif
++    }
++
++    private var overflow: [ResolvedNavigationSection] {
++        sections.filter { section in !direct.contains { $0.id == section.id } }
++    }
++
++    private var selection: Binding<String> {
++        Binding(get: {
++            direct.contains { $0.id == state.selectedSectionID } ? state.selectedSectionID : RootNavigationState.moreID
++        }, set: { state.selectedSectionID = $0 })
++    }
++
++    var body: some View {
++        TabView(selection: selection) {
++            ForEach(direct) { section in
++                Tab(value: section.id) { SectionStack(sectionID: section.id) } label: { Label(section.title, systemImage: section.systemImage) }
++            }
++            if !overflow.isEmpty {
++                Tab(value: RootNavigationState.moreID) { SectionStack(sectionID: state.selectedSectionID == RootNavigationState.moreID ? RootNavigationState.moreID : state.selectedSectionID, overflow: overflow) } label: {
++                    Label("More", systemImage: "ellipsis")
++                }
++            }
++        }
++    }
++}
++
++private struct SplitRootView: View {
++    @Environment(RootNavigationState.self) private var state
++    @Environment(SessionStore.self) private var session
++    @Environment(NavigationPreferencesStore.self) private var preferences
++    private var sections: [ResolvedNavigationSection] {
++        RootSections.resolve(preferences, state: state, session: session)
++    }
++
++    var body: some View {
++        NavigationSplitView {
++            List(selection: Binding<String?>(get: { state.selectedSectionID }, set: {
++                if let id = $0 {
++                    state.selectedSectionID = id
++                }
++            })) {
++                ForEach(sections) { section in Label(section.title, systemImage: section.systemImage).tag(section.id) }
++            }
++            .navigationTitle("A Playa Named Gus")
++        } detail: {
++            SectionStack(sectionID: state.selectedSectionID)
++        }
++        .navigationSplitViewStyle(.balanced)
++    }
++}
++
++private struct SectionStack: View {
++    @Environment(RootNavigationState.self) private var state
++    @Environment(AudioPlaybackCoordinator.self) private var audio
++    @Environment(SessionStore.self) private var session
++    @Environment(NavigationPreferencesStore.self) private var preferences
++    let sectionID: String
++    var overflow: [ResolvedNavigationSection] = []
++    private var sections: [ResolvedNavigationSection] {
++        RootSections.resolve(preferences, state: state, session: session)
++    }
++
++    var body: some View {
++        NavigationStack(path: state.pathBinding(for: sectionID)) {
++            Group {
++                if sectionID == RootNavigationState.moreID {
++                    List(overflow.isEmpty ? sections : overflow) { section in
++                        Button { state.selectedSectionID = section.id } label: { Label(section.title, systemImage: section.systemImage) }
++                    }
++                    .navigationTitle("More")
++                } else if let section = sections.first(where: { $0.id == sectionID }) {
++                    if section.id == NavigationSectionPreference.downloadedID {
++                        DownloadedLibraryView()
++                    } else {
++                        SearchRootView(state: state.searchState(for: section.id, session: session)) {
++                            RootSectionDestination(section: section, home: state.home)
++                        }
++                    }
++                } else {
++                    HomeView(store: state.home)
++                }
++            }
++            .gusItemDestinations()
++            .toolbar {
++                if !overflow.isEmpty, sectionID != RootNavigationState.moreID, state.paths[sectionID]?.isEmpty != false {
++                    ToolbarItem(placement: .cancellationAction) {
++                        Button("More", systemImage: "chevron.backward") { state.selectedSectionID = RootNavigationState.moreID }
++                    }
++                }
++            }
++        }
++        #if !os(iOS) && !os(tvOS)
++        .gusNowPlaying(coordinator: audio, enabled: state.detailItem == nil)
++        #endif
++    }
++}
++
+ private struct RootSectionDestination: View {
+     let section: ResolvedNavigationSection
+     let home: HomeStore?
+-
+     var body: some View {
+         if section.id == NavigationSectionPreference.homeID {
+             HomeView(store: home)
+-        } else if section.id == NavigationSectionPreference.downloadedID {
+-            DownloadedLibraryView()
+         } else if section.id == NavigationSectionPreference.settingsID {
+             SettingsView()
+         } else if let category = section.category {
+@@ -132,278 +200,3 @@
+         }
+     }
+ }
+-
+-/// The local library owns its search so typing never launches a server search.
+-private struct RootSectionSearchDestination: View {
+-    let section: ResolvedNavigationSection
+-    let home: HomeStore?
+-
+-    var body: some View {
+-        if section.id == NavigationSectionPreference.downloadedID {
+-            DownloadedLibraryView()
+-        } else {
+-            SearchRootView {
+-                RootSectionDestination(section: section, home: home)
+-            }
+-        }
+-    }
+-}
+-
+-/// Tab-based root (compact iPhone, tvOS).
+-private struct TabRootView: View {
+-    @Environment(AppNavigationModel.self) private var navigation
+-    @Environment(SessionStore.self) private var session
+-    @Environment(NavigationPreferencesStore.self) private var navigationPreferences
+-    @State private var home: HomeStore?
+-    @State private var selection: RootSection = .home
+-
+-    private var sections: [ResolvedNavigationSection] {
+-        navigationPreferences.visibleSections(
+-            libraries: home?.libraries ?? [],
+-            serverID: session.server.id,
+-            userID: session.user.id
+-        )
+-    }
+-
+-    var body: some View {
+-        TabView(selection: $selection) {
+-            ForEach(sections) { section in
+-                Tab(value: section.rootSelection) {
+-                    NavigationStack {
+-                        RootSectionSearchDestination(section: section, home: home)
+-                            .gusItemDestinations()
+-                    }
+-                } label: {
+-                    Label(section.title, systemImage: section.systemImage)
+-                }
+-            }
+-        }
+-        .onAppear {
+-            // Adopt a route set before this view mounted (cold-launch deep links,
+-            // Top Shelf actions, --gus-route); onChange alone would miss it.
+-            adopt(route: navigation.route)
+-        }
+-        .onChange(of: selection) { _, newSelection in
+-            // Only fixed destinations round-trip into the navigation model; selecting
+-            // a dynamic library tab is not a route change.
+-            switch newSelection {
+-            case .home where navigation.route != .home:
+-                navigation.open(.home)
+-            case .settings where navigation.route != .settings:
+-                navigation.open(.settings)
+-            case .section(NavigationSectionPreference.downloadedID) where navigation.route != .downloaded:
+-                navigation.open(.downloaded)
+-            case .section(NavigationSectionPreference.librariesID) where navigation.route != .libraries:
+-                navigation.open(.libraries)
+-            default:
+-                break
+-            }
+-        }
+-        .onChange(of: navigation.route) { _, route in
+-            adopt(route: route)
+-        }
+-        .task {
+-            navigationPreferences.load(serverID: session.server.id, userID: session.user.id)
+-            if home == nil {
+-                let store = HomeStore(session: session)
+-                home = store
+-                await store.load()
+-            }
+-        }
+-    }
+-
+-    private func adopt(route: AppRoute) {
+-        guard let routed = RootSection(route: route) else { return }
+-        // A hidden Libraries section falls back to Home rather than a blank tab.
+-        if !sections.contains(where: { $0.rootSelection == routed }) {
+-            selection = .home
+-            return
+-        }
+-        selection = routed
+-    }
+-}
+-
+-#if os(visionOS)
+-    /// visionOS-native root using the system sidebar tab presentation.
+-    private struct VisionSidebarRootView: View {
+-        @Environment(AppNavigationModel.self) private var navigation
+-        @Environment(SessionStore.self) private var session
+-        @Environment(NavigationPreferencesStore.self) private var navigationPreferences
+-        @State private var home: HomeStore?
+-        @State private var selection: RootSection = .home
+-        @SceneStorage("gus.vision.sidebar.selection") private var storedSelectionKey: String = "home"
+-
+-        private var sections: [ResolvedNavigationSection] {
+-            navigationPreferences.visibleSections(
+-                libraries: home?.libraries ?? [],
+-                serverID: session.server.id,
+-                userID: session.user.id
+-            )
+-        }
+-
+-        var body: some View {
+-            TabView(selection: $selection) {
+-                ForEach(sections) { section in
+-                    Tab(value: section.rootSelection) {
+-                        NavigationStack {
+-                            RootSectionSearchDestination(section: section, home: home)
+-                                .gusItemDestinations()
+-                        }
+-                    } label: {
+-                        Label(section.title, systemImage: section.systemImage)
+-                    }
+-                }
+-            }
+-            .tabViewStyle(.sidebarAdaptable)
+-            .ornament(attachmentAnchor: .scene(.leading), contentAlignment: .top) {
+-                if VisionSidebarLayout.environmentControlPlacement == .leadingSceneOrnament {
+-                    VisionEnvironmentSidebarButton()
+-                        .padding(.top, VisionSidebarLayout.environmentControlTopPadding)
+-                        .padding(.trailing, VisionSidebarLayout.environmentControlTrailingPadding)
+-                }
+-            }
+-            .onAppear {
+-                // A route set before mount (cold-launch deep link, --gus-route) wins
+-                // over the restored scene selection.
+-                if navigation.route != .home, let routed = RootSection(route: navigation.route) {
+-                    selection = routed
+-                } else if let restored = RootSection(sceneKey: storedSelectionKey) {
+-                    selection = restored
+-                }
+-            }
+-            .onChange(of: selection) { _, newSelection in
+-                storedSelectionKey = newSelection.sceneKey
+-                switch newSelection {
+-                case .home where navigation.route != .home:
+-                    navigation.open(.home)
+-                case .settings where navigation.route != .settings:
+-                    navigation.open(.settings)
+-                case .section(NavigationSectionPreference.downloadedID) where navigation.route != .downloaded:
+-                    navigation.open(.downloaded)
+-                case .section(NavigationSectionPreference.librariesID) where navigation.route != .libraries:
+-                    navigation.open(.libraries)
+-                default:
+-                    break
+-                }
+-            }
+-            .onChange(of: navigation.route) { _, route in
+-                if let routed = RootSection(route: route),
+-                   sections.contains(where: { $0.rootSelection == routed })
+-                {
+-                    selection = routed
+-                }
+-            }
+-            .task {
+-                navigationPreferences.load(serverID: session.server.id, userID: session.user.id)
+-                if home == nil {
+-                    let store = HomeStore(session: session)
+-                    home = store
+-                    await store.load()
+-                }
+-            }
+-        }
+-    }
+-#endif
+-
+-/// Split-view root (iPad, macOS).
+-private struct SplitRootView: View {
+-    @Environment(AppNavigationModel.self) private var navigation
+-    @Environment(SessionStore.self) private var session
+-    @Environment(NavigationPreferencesStore.self) private var navigationPreferences
+-    @State private var home: HomeStore?
+-    @State private var selection: RootSection? = .home
+-    /// Persists the active sidebar row across app launches via SwiftUI scene restoration.
+-    @SceneStorage("gus.sidebar.selection") private var storedSelectionKey: String = "home"
+-
+-    private var sections: [ResolvedNavigationSection] {
+-        navigationPreferences.visibleSections(
+-            libraries: home?.libraries ?? [],
+-            serverID: session.server.id,
+-            userID: session.user.id
+-        )
+-    }
+-
+-    var body: some View {
+-        NavigationSplitView {
+-            List(selection: $selection) {
+-                ForEach(sections) { section in
+-                    Label(section.title, systemImage: section.systemImage)
+-                        .tag(section.rootSelection)
+-                }
+-            }
+-            .navigationTitle(Text("A Playa Named Gus", comment: "App name"))
+-            #if os(macOS)
+-                .navigationSplitViewColumnWidth(min: 200, ideal: 240)
+-            #endif
+-        } detail: {
+-            NavigationStack {
+-                detail
+-                    .gusItemDestinations()
+-            }
+-        }
+-        .navigationSplitViewStyle(.balanced)
+-        .toolbar {
+-            ToolbarItem {
+-                Button {
+-                    navigation.open(.search)
+-                } label: {
+-                    Label("Search", systemImage: "magnifyingglass")
+-                }
+-            }
+-        }
+-        .onChange(of: selection) { _, item in
+-            guard let item else { return }
+-            storedSelectionKey = item.sceneKey
+-            switch item {
+-            case .home where navigation.route != .home:
+-                navigation.open(.home)
+-            case .settings where navigation.route != .settings:
+-                navigation.open(.settings)
+-            case .section(NavigationSectionPreference.downloadedID) where navigation.route != .downloaded:
+-                navigation.open(.downloaded)
+-            case .section(NavigationSectionPreference.librariesID) where navigation.route != .libraries:
+-                navigation.open(.libraries)
+-            default:
+-                break
+-            }
+-        }
+-        .onChange(of: navigation.route) { _, route in
+-            if let routed = RootSection(route: route) {
+-                selection = routed
+-            }
+-        }
+-        .onAppear {
+-            // A route set before mount (cold-launch deep link, --gus-route) wins over
+-            // the sidebar selection restored from the previous session.
+-            if navigation.route != .home, let routed = RootSection(route: navigation.route) {
+-                selection = routed
+-            } else if let restored = RootSection(sceneKey: storedSelectionKey) {
+-                selection = restored
+-            }
+-        }
+-        .task {
+-            navigationPreferences.load(serverID: session.server.id, userID: session.user.id)
+-            if home == nil {
+-                let store = HomeStore(session: session)
+-                home = store
+-                await store.load()
+-            }
+-        }
+-    }
+-
+-    @ViewBuilder
+-    private var detail: some View {
+-        switch selection {
+-        case let selection?:
+-            if let section = sections.first(where: { $0.rootSelection == selection }) {
+-                RootSectionSearchDestination(section: section, home: home)
+-            } else {
+-                // The stored selection refers to a hidden/removed section; sections may
+-                // also still be loading — Home is the graceful fallback either way.
+-                HomeView(store: home)
+-            }
+-        case .none:
+-            HomeView(store: home)
+-        }
+-    }
+-}
+--- initial-checkout/Sources/SharedUI/AboutCardsView.swift
++++ remediated-checkout/Sources/SharedUI/AboutCardsView.swift
+@@ -4,6 +4,7 @@
+ struct AboutCardsView: View {
+     let item: MediaItem
+     let posterURL: URL?
++    @State private var showsFullSynopsis = false
+ 
+     var body: some View {
+         VStack(alignment: .leading, spacing: 12) {
+@@ -19,6 +20,8 @@
+                         DetailInfoCard(title: LocalizedStringKey(item.displayTitle)) {
+                             Text(overview)
+                                 .lineLimit(5)
++                            Button("Show More") { showsFullSynopsis = true }
++                                .frame(minHeight: 44)
+                         }
+                     }
+ 
+@@ -40,12 +43,27 @@
+             }
+             .lookToScroll(.horizontal)
+         }
++        .sheet(isPresented: $showsFullSynopsis) {
++            NavigationStack {
++                ScrollView {
++                    Text(item.overview ?? "")
++                        .frame(maxWidth: .infinity, alignment: .leading)
++                        .padding()
++                }
++                .navigationTitle(item.displayTitle)
++                .toolbar {
++                    ToolbarItem(placement: .cancellationAction) {
++                        Button("Done") { showsFullSynopsis = false }
++                    }
++                }
++            }
++        }
+     }
+ 
+     private var posterSummaryCard: some View {
+         DetailInfoCard(title: LocalizedStringKey(item.displayTitle)) {
+             HStack(alignment: .top, spacing: 12) {
+-                AsyncPoster(url: posterURL, contentMode: .fill, placeholderSymbol: item.type == .series ? "tv" : "film")
++                ArtworkTile(url: posterURL, placeholderSymbol: item.type == .series ? "tv" : "film")
+                     .frame(width: 74, height: 110)
+                     .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+ 
+@@ -66,7 +84,7 @@
+ 
+ // MARK: - Info card chrome
+ 
+-/// Fixed-size card with a thin-material background used in the About section.
++/// Intrinsically sized card with a thin-material background used in the About section.
+ struct DetailInfoCard<Content: View>: View {
+     let title: LocalizedStringKey
+     @ViewBuilder let content: Content
+@@ -81,7 +99,8 @@
+                 .foregroundStyle(.primary)
+         }
+         .padding(16)
+-        .frame(width: AboutCardMetrics.cardWidth, height: AboutCardMetrics.cardHeight, alignment: .topLeading)
++        .frame(width: AboutCardMetrics.cardWidth, alignment: .topLeading)
++        .frame(minHeight: AboutCardMetrics.cardHeight, alignment: .topLeading)
+         .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+     }
+ }
+--- initial-checkout/Sources/SharedUI/AsyncPoster.swift
++++ remediated-checkout/Sources/SharedUI/AsyncPoster.swift
+@@ -22,7 +22,11 @@
+             case .failure:
+                 placeholder
+             case .empty:
+-                placeholder.overlay { ProgressView() }
++                placeholder.overlay {
++                    if url != nil {
++                        ProgressView()
++                    }
++                }
+             @unknown default:
+                 placeholder
+             }
+--- initial-checkout/Sources/SharedUI/CinematicDetailHero.swift
++++ remediated-checkout/Sources/SharedUI/CinematicDetailHero.swift
+@@ -3,6 +3,7 @@
+ /// Full-bleed backdrop header for an item detail screen: artwork, gradient scrim,
+ /// title block, play/up-next actions, and a caller-supplied accessory slot.
+ struct CinematicDetailHero<Accessory: View>: View {
++    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+     let item: MediaItem
+     let backdropURL: URL?
+     let play: () -> Void
+@@ -10,64 +11,32 @@
+     let toggleUpNext: () -> Void
+     @ViewBuilder let accessory: Accessory
+ 
+-    /// Scales the hero with Dynamic Type (capped — the hero is artwork-led, and text
+-    /// inside it wraps) so accessibility sizes don't clip the title block.
+-    @ScaledMetric(relativeTo: .title) private var heroTypeScale: CGFloat = 1.0
+-
+     var body: some View {
+-        ZStack(alignment: .bottomLeading) {
+-            AsyncPoster(url: backdropURL, contentMode: .fill, placeholderSymbol: item.type == .series ? "tv" : "film")
+-                .frame(maxWidth: .infinity)
+-                .frame(height: heroHeight)
+-                .clipped()
+-
+-            LinearGradient(
+-                colors: [
+-                    .black.opacity(0.82),
+-                    .black.opacity(0.54),
+-                    .black.opacity(0.18),
+-                    .clear,
+-                ],
+-                startPoint: .bottom,
+-                endPoint: .top
+-            )
+-
+-            LinearGradient(
+-                colors: [.black.opacity(0.72), .clear],
+-                startPoint: .leading,
+-                endPoint: .trailing
+-            )
+-
+-            ViewThatFits(in: .horizontal) {
+-                wideOverlay
+-                compactOverlay
+-            }
+-            .foregroundStyle(.white)
+-            .padding(heroPadding)
+-        }
+-        .background(Color.black.opacity(0.22))
+-        .ignoresSafeArea(edges: .top)
++        ViewThatFits(in: .horizontal) {
++            HStack(alignment: .bottom, spacing: 28) {
++                titleBlock
++                    .frame(maxWidth: 760, alignment: .leading)
++                actionStack
++                    .frame(width: 320)
++            }
++            VStack(alignment: .leading, spacing: 18) {
++                titleBlock
++                actionStack
++            }
++        }
++        .padding(heroPadding)
++        .frame(maxWidth: .infinity, minHeight: baseHeroHeight, alignment: .bottomLeading)
++        .background {
++            GeometryReader { geometry in
++                AsyncPoster(url: backdropURL, placeholderSymbol: item.type == .series ? "tv" : "film")
++                    .frame(width: geometry.size.width, height: geometry.size.height)
++                    .clipped()
++                    .overlay {
++                        LinearGradient(colors: [.black.opacity(0.85), .black.opacity(0.6), .black.opacity(0.2)], startPoint: .bottom, endPoint: .top)
++                    }
++            }
++        }
+         .accessibilityElement(children: .contain)
+-    }
+-
+-    private var wideOverlay: some View {
+-        HStack(alignment: .bottom, spacing: 28) {
+-            titleBlock
+-                .frame(maxWidth: 760, alignment: .leading)
+-
+-            Spacer(minLength: 24)
+-
+-            actionStack
+-                .frame(width: actionWidth, alignment: .trailing)
+-        }
+-    }
+-
+-    private var compactOverlay: some View {
+-        VStack(alignment: .leading, spacing: 18) {
+-            titleBlock
+-            actionStack
+-                .frame(maxWidth: 320, alignment: .leading)
+-        }
+     }
+ 
+     private var titleBlock: some View {
+@@ -75,7 +44,6 @@
+             Text(item.displayTitle)
+                 .font(titleFont)
+                 .fontWeight(.bold)
+-                .lineLimit(3)
+                 .fixedSize(horizontal: false, vertical: true)
+ 
+             HeroMetadataRow(item: item)
+@@ -87,19 +55,16 @@
+                     .lineLimit(4)
+             }
+         }
++        .foregroundStyle(.white)
+     }
+ 
+     private var actionStack: some View {
+-        ViewThatFits(in: .horizontal) {
+-            HStack(spacing: 10) {
+-                playButton
+-                upNextButton
+-                accessory
+-            }
+-
+-            VStack(alignment: .trailing, spacing: 10) {
+-                playButton
+-                HStack(spacing: 10) {
++        VStack(alignment: .leading, spacing: 12) {
++            playButton
++            if dynamicTypeSize.isAccessibilitySize {
++                VStack(alignment: .leading, spacing: 12) { upNextButton; accessory }
++            } else {
++                LazyVGrid(columns: [GridItem(.adaptive(minimum: 120), spacing: 12)], alignment: .leading, spacing: 12) {
+                     upNextButton
+                     accessory
+                 }
+@@ -117,6 +82,7 @@
+         if isPlayableItem {
+             Button(action: play) {
+                 Label("Play", systemImage: "play.fill")
++                    .foregroundStyle(Color.gusProminentActionForeground)
+                     .frame(maxWidth: .infinity)
+             }
+             .gusProminentGlassButtonStyle()
+@@ -148,10 +114,6 @@
+         #endif
+     }
+ 
+-    private var heroHeight: CGFloat {
+-        baseHeroHeight * min(max(heroTypeScale, 1.0), 1.5)
+-    }
+-
+     private var baseHeroHeight: CGFloat {
+         #if os(tvOS)
+             return 620
+@@ -171,14 +133,6 @@
+             return 24
+         #endif
+     }
+-
+-    private var actionWidth: CGFloat {
+-        #if os(tvOS) || os(visionOS)
+-            return 220
+-        #else
+-            return 180
+-        #endif
+-    }
+ }
+ 
+ // MARK: - Supporting types
+@@ -239,7 +193,7 @@
+         Button(action: action) {
+             Label(title, systemImage: systemImage)
+                 .labelStyle(.iconOnly)
+-                .frame(width: 44, height: 36)
++                .frame(minWidth: 44, minHeight: 44)
+         }
+         .gusGlassButtonStyle()
+         .visionHoverEffect(cornerRadius: 10)
+--- initial-checkout/Sources/SharedUI/Color+Gus.swift
++++ remediated-checkout/Sources/SharedUI/Color+Gus.swift
+@@ -7,4 +7,7 @@
+ extension Color {
+     /// Ratings use the app accent so score highlights follow the app palette.
+     static let gusRatingStar = Color.accentColor
++
++    /// Filled accent actions use a contrasting foreground in both palette variants.
++    static let gusProminentActionForeground = Color("ProminentActionForeground")
+ }
+--- initial-checkout/Sources/SharedUI/PosterCard.swift
++++ remediated-checkout/Sources/SharedUI/PosterCard.swift
+@@ -13,8 +13,7 @@
+ 
+     var body: some View {
+         VStack(alignment: .leading, spacing: 6) {
+-            AsyncPoster(url: imageURL, placeholderSymbol: placeholderSymbol)
+-                .aspectRatio(aspectRatio, contentMode: .fit)
++            ArtworkTile(url: imageURL, aspectRatio: aspectRatio, placeholderSymbol: placeholderSymbol)
+                 .frame(maxWidth: .infinity)
+                 .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                 .posterHoverEffect()
+--- initial-checkout/Sources/Stores/AppModel.swift
++++ remediated-checkout/Sources/Stores/AppModel.swift
+@@ -304,6 +304,7 @@
+             let client = JellyfinClientFactory.makeClient(url: url)
+             do {
+                 let response = try await client.send(Paths.getPublicSystemInfo)
++                try Task.checkCancellation()
+                 let baseURL = Self.followRedirect(
+                     responseURL: (response.response as? HTTPURLResponse)?.url,
+                     fallback: url
+@@ -351,6 +352,7 @@
+             throw ConnectError.authenticationFailed
+         }
+ 
++        try Task.checkCancellation()
+         try completeSignIn(to: server, client: client, result: result, fallbackName: username)
+     }
+ 
+@@ -367,6 +369,7 @@
+             throw ConnectError.authenticationFailed
+         }
+ 
++        try Task.checkCancellation()
+         try completeSignIn(
+             to: server,
+             client: client,
+--- initial-checkout/Sources/Stores/AudioPlayerStore.swift
++++ remediated-checkout/Sources/Stores/AudioPlayerStore.swift
+@@ -127,6 +127,8 @@
+     private var player: AVPlayer?
+     private var timeObserver: Any?
+     private var endObserver: NSObjectProtocol?
++    private var statusObserver: NSKeyValueObservation?
++    private var preparationGeneration = 0
+     private var reportContext: PlaybackReportContext?
+     private var lastProgressReportTime: Double = 0
+ 
+@@ -232,6 +234,7 @@
+     }
+ 
+     func teardown() {
++        preparationGeneration += 1
+         reportStopped()
+         removeObservers()
+         player?.pause()
+@@ -250,6 +253,11 @@
+             return
+         }
+ 
++        preparationGeneration += 1
++        let generation = preparationGeneration
++        player?.pause()
++        isPlaying = false
++        removeObservers()
+         state = .loading
+         configureAudioSession()
+         let diagnostics = DiagnosticsHub.shared
+@@ -275,6 +283,8 @@
+                 playbackURL = resolution.url
+             }
+ 
++            try Task.checkCancellation()
++            guard generation == preparationGeneration else { return }
+             removeObservers()
+             let playerItem = AVPlayerItem(url: playbackURL)
+             let player = self.player ?? AVPlayer()
+@@ -305,6 +315,8 @@
+                     toleranceAfter: .zero
+                 )
+             }
++            try Task.checkCancellation()
++            guard generation == preparationGeneration else { return }
+             currentTime = initialSeconds
+             lastProgressReportTime = initialSeconds
+ 
+@@ -335,6 +347,7 @@
+             reportStart()
+         } catch {
+             diagnostics.endInterval("PlaybackStartup", startupInterval)
++            guard generation == preparationGeneration else { return }
+             let gusError = GusError(from: error)
+             guard !gusError.isCancellation else { return }
+             diagnostics.record(.playbackFailed)
+@@ -363,6 +376,16 @@
+     // MARK: - Observers
+ 
+     private func addObservers(player: AVPlayer) {
++        statusObserver = player.currentItem?.observe(\.status, options: [.initial, .new]) { [weak self] item, _ in
++            guard item.status == .failed else { return }
++            let message = item.error?.localizedDescription ?? String(localized: "Can't Play This")
++            Task { @MainActor [weak self, weak item] in
++                guard let self, let item, self.player?.currentItem === item else { return }
++                self.player?.pause()
++                self.isPlaying = false
++                self.state = .failed(message)
++            }
++        }
+         let interval = CMTime(seconds: 1, preferredTimescale: 1)
+         timeObserver = player.addPeriodicTimeObserver(forInterval: interval, queue: .main) { [weak self] time in
+             MainActor.assumeIsolated {
+@@ -383,6 +406,8 @@
+     }
+ 
+     private func removeObservers() {
++        statusObserver?.invalidate()
++        statusObserver = nil
+         if let timeObserver {
+             player?.removeTimeObserver(timeObserver)
+         }
+--- initial-checkout/Sources/Stores/ItemDetailStore.swift
++++ remediated-checkout/Sources/Stores/ItemDetailStore.swift
+@@ -16,6 +16,9 @@
+     private(set) var seriesStore: SeriesDetailStore?
+     private(set) var similarItems: [MediaItem] = []
+     private(set) var specialFeatures: [MediaItem] = []
++    private(set) var isUpdatingUserData = false
++    private(set) var needsUserDataRefresh = false
++    var actionError: String?
+ 
+     private let session: SessionStore
+     private let logger = Logger(category: .item)
+@@ -50,33 +53,53 @@
+         }
+     }
+ 
+-    /// Toggles the watched/played state of the item on the server and refreshes local state.
+     func toggleWatched() async {
+-        guard let itemID = item.id else { return }
+-        let wasWatched = item.userData?.isWatched == true
+-        do {
+-            try await session.mediaProvider.toggleWatched(itemID: itemID, currentlyWatched: wasWatched)
+-            // Refresh item so userData reflects the new state.
+-            item = try await session.mediaProvider.item(id: itemID)
+-        } catch {
+-            let gusError = GusError(from: error)
+-            guard !gusError.isCancellation else { return }
+-            logger.error("Toggle watched failed: \(gusError.localizedDescription, privacy: .public)")
+-        }
+-    }
+-
+-    /// Toggles the favourite state of the item on the server and refreshes local state.
++        await updateUserData(watched: true)
++    }
++
+     func toggleFavorite() async {
+-        guard let itemID = item.id else { return }
+-        let wasFavorite = item.userData?.isFavorite == true
+-        do {
+-            try await session.mediaProvider.toggleFavorite(itemID: itemID, currentlyFavorite: wasFavorite)
+-            // Refresh item so userData reflects the new state.
+-            item = try await session.mediaProvider.item(id: itemID)
+-        } catch {
+-            let gusError = GusError(from: error)
+-            guard !gusError.isCancellation else { return }
+-            logger.error("Toggle favourite failed: \(gusError.localizedDescription, privacy: .public)")
++        await updateUserData(watched: false)
++    }
++
++    /// A failed refresh after a successful mutation must be reconciled before toggling again.
++    func refreshUserData() async {
++        guard !isUpdatingUserData, let id = item.id else { return }
++        isUpdatingUserData = true
++        defer { isUpdatingUserData = false }
++        do {
++            item = try await session.mediaProvider.item(id: id)
++            needsUserDataRefresh = false
++            actionError = nil
++        } catch {
++            let failure = GusError(from: error)
++            if !failure.isCancellation {
++                actionError = failure.localizedDescription
++            }
++        }
++    }
++
++    private func updateUserData(watched: Bool) async {
++        guard !isUpdatingUserData, let id = item.id else { return }
++        if needsUserDataRefresh {
++            await refreshUserData(); return
++        }
++        isUpdatingUserData = true
++        actionError = nil
++        defer { isUpdatingUserData = false }
++        do {
++            if watched {
++                try await session.mediaProvider.toggleWatched(itemID: id, currentlyWatched: item.userData?.isWatched == true)
++            } else {
++                try await session.mediaProvider.toggleFavorite(itemID: id, currentlyFavorite: item.userData?.isFavorite == true)
++            }
++            needsUserDataRefresh = true
++            item = try await session.mediaProvider.item(id: id)
++            needsUserDataRefresh = false
++        } catch {
++            let failure = GusError(from: error)
++            if !failure.isCancellation {
++                actionError = failure.localizedDescription
++            }
+         }
+     }
+ 
+@@ -126,6 +149,9 @@
+ 
+     private let session: SessionStore
+     private let logger = Logger(category: .item)
++    private var seasonGeneration = 0
++    private var episodeGeneration = 0
++    private var episodeTask: Task<MediaItemPage, Error>?
+ 
+     init(series: MediaItem, session: SessionStore) {
+         self.series = series
+@@ -134,45 +160,66 @@
+ 
+     func loadSeasons() async {
+         guard seasonsState != .loading, let seriesID = series.id else { return }
++        seasonGeneration += 1
++        let generation = seasonGeneration
+         seasonsState = .loading
+ 
+         do {
+-            seasons = try await session.mediaProvider.seasons(seriesID: seriesID)
+-            selectedSeasonID = SeriesRequest.initialSeasonID(from: seasons)
++            let loaded = try await session.mediaProvider.seasons(seriesID: seriesID)
++            try Task.checkCancellation()
++            guard generation == seasonGeneration else { return }
++            seasons = loaded
++            if !seasons.contains(where: { $0.id == selectedSeasonID }) {
++                selectedSeasonID = SeriesRequest.initialSeasonID(from: seasons)
++            }
+             seasonsState = .loaded
+ 
+             if let selectedSeasonID {
+                 await loadEpisodes(seasonID: selectedSeasonID)
+             }
+         } catch {
+-            let gusError = GusError(from: error)
+-            guard !gusError.isCancellation else { return }
++            guard generation == seasonGeneration else { return }
++            let gusError = GusError(from: error)
++            guard !gusError.isCancellation else { seasonsState = .idle; return }
+             logger.error("Series seasons load failed: \(gusError.localizedDescription, privacy: .public)")
+             seasonsState = .failed(gusError.localizedDescription)
+         }
+     }
+ 
+     func selectSeason(id: String) async {
+-        guard selectedSeasonID != id else { return }
++        guard selectedSeasonID != id || episodesState != .loaded else { return }
+         selectedSeasonID = id
+         await loadEpisodes(seasonID: id)
+     }
+ 
++    func retryEpisodes() async {
++        guard let selectedSeasonID else { return }
++        await loadEpisodes(seasonID: selectedSeasonID)
++    }
++
+     private func loadEpisodes(seasonID: String) async {
+         guard let seriesID = series.id else { return }
++        episodeGeneration += 1
++        let generation = episodeGeneration
++        episodeTask?.cancel()
+         episodesState = .loading
+         episodes = []
+ 
+         do {
+-            let page = try await session.mediaProvider.episodes(seriesID: seriesID, seasonID: seasonID, limit: 1000)
++            let task = Task { try await session.mediaProvider.episodes(seriesID: seriesID, seasonID: seasonID, limit: 1000) }
++            episodeTask = task
++            let page = try await withTaskCancellationHandler { try await task.value } onCancel: { task.cancel() }
++            try Task.checkCancellation()
++            guard generation == episodeGeneration, selectedSeasonID == seasonID else { return }
+             if let totalRecordCount = page.totalRecordCount, totalRecordCount > 1000 {
+                 logger.warning("Episode list truncated: series has \(totalRecordCount) episodes but only 1000 were fetched")
+             }
+             episodes = page.items
+             episodesState = .loaded
+         } catch {
+-            let gusError = GusError(from: error)
+-            guard !gusError.isCancellation else { return }
++            guard generation == episodeGeneration, selectedSeasonID == seasonID else { return }
++            let gusError = GusError(from: error)
++            guard !gusError.isCancellation else { episodesState = .idle; return }
+             logger.error("Series episodes load failed: \(gusError.localizedDescription, privacy: .public)")
+             episodesState = .failed(gusError.localizedDescription)
+         }
+--- initial-checkout/Sources/Stores/LibraryStore.swift
++++ remediated-checkout/Sources/Stores/LibraryStore.swift
+@@ -184,18 +184,22 @@
+     private(set) var filter = LibraryFilterState.default
+ 
+     let scope: LibraryGridScope
++    private let admits: (MediaItem) -> Bool
+     private let session: SessionStore
+     private let logger = Logger(category: .library)
+     private var paging = Paging(pageSize: LibraryRequest.pageSize, prefetchThreshold: 12)
+     private var loadGeneration = 0
++    private var pageTask: Task<MediaItemPage, Error>?
++    private(set) var pageError: String?
+ 
+     convenience init(library: MediaItem, session: SessionStore) {
+         self.init(scope: .library(library), session: session)
+     }
+ 
+-    init(scope: LibraryGridScope, session: SessionStore) {
++    init(scope: LibraryGridScope, session: SessionStore, admits: @escaping (MediaItem) -> Bool = { ContentRatingGate.admitsStored($0) }) {
+         self.scope = scope
+         self.session = session
++        self.admits = admits
+     }
+ 
+     var title: String {
+@@ -209,6 +213,8 @@
+     func load() async {
+         guard state != .loading else { return }
+         loadGeneration += 1
++        pageTask?.cancel()
++        pageError = nil
+         let generation = loadGeneration
+         isLoadingNextPage = false
+         state = .loading
+@@ -217,7 +223,7 @@
+         diagnostics.record(.libraryLoadStarted)
+         let loadInterval = diagnostics.beginInterval("LibraryLoad")
+         do {
+-            try await loadPage(startIndex: 0, replaceResults: true, generation: generation)
++            try await scanPages(replaceResults: true, generation: generation)
+             diagnostics.endInterval("LibraryLoad", loadInterval)
+             diagnostics.record(.libraryLoadFinished(itemCount: items.count))
+         } catch {
+@@ -244,19 +250,41 @@
+               paging.shouldLoadMore(currentIndex: index, loadedCount: items.count)
+         else { return }
+ 
++        await continueSearching()
++    }
++
++    func continueSearching() async {
++        guard canLoadMore, !isLoadingNextPage, state == .loaded else { return }
+         let generation = loadGeneration
+         isLoadingNextPage = true
++        pageError = nil
+         defer {
+             if generation == loadGeneration {
+                 isLoadingNextPage = false
+             }
+         }
+-
+-        do {
+-            try await loadPage(startIndex: paging.nextStartIndex, replaceResults: false, generation: generation)
+-        } catch {
++        do { try await scanPages(replaceResults: false, generation: generation) }
++        catch {
+             guard generation == loadGeneration else { return }
+-            handle(error)
++            let failure = GusError(from: error)
++            if !failure.isCancellation {
++                pageError = failure.localizedDescription
++            }
++        }
++    }
++
++    private func scanPages(replaceResults: Bool, generation: Int) async throws {
++        var replace = replaceResults
++        for _ in 0 ..< 3 {
++            try Task.checkCancellation()
++            guard generation == loadGeneration else { return }
++            let before = replace ? 0 : items.count
++            try await loadPage(startIndex: replace ? 0 : paging.nextStartIndex, replaceResults: replace, generation: generation)
++            guard generation == loadGeneration else { return }
++            replace = false
++            if items.count > before || !canLoadMore {
++                break
++            }
+         }
+     }
+ 
+@@ -267,10 +295,13 @@
+             limit: paging.pageSize,
+             filter: filter
+         )
+-        let page = try await session.mediaProvider.items(query: query)
++        let task = Task { try await session.mediaProvider.items(query: query) }
++        pageTask = task
++        let page = try await withTaskCancellationHandler { try await task.value } onCancel: { task.cancel() }
++        try Task.checkCancellation()
+         guard generation == loadGeneration else { return }
+ 
+-        let admitted = ContentRatingGate.filter(page.items)
++        let admitted = page.items.filter(admits)
+         if replaceResults {
+             items = admitted
+             paging.replaceResults(receivedCount: page.items.count, totalRecordCount: page.totalRecordCount)
+@@ -288,7 +319,11 @@
+ 
+     private func handle(_ error: Error) {
+         let gusError = GusError(from: error)
+-        guard !gusError.isCancellation else { return } // navigated away mid-load
++        guard !gusError.isCancellation else {
++            if state == .loading {
++                state = .idle
++            }; return
++        }
+         logger.error("Library load failed: \(gusError.localizedDescription, privacy: .public)")
+         state = .failed(gusError.localizedDescription)
+     }
+--- initial-checkout/Sources/Stores/Paging.swift
++++ remediated-checkout/Sources/Stores/Paging.swift
+@@ -31,6 +31,7 @@
+     }
+ 
+     private func hasMoreResults(loadedCount: Int, receivedCount: Int, totalRecordCount: Int?) -> Bool {
++        guard receivedCount > 0 else { return false }
+         if let totalRecordCount {
+             return loadedCount < totalRecordCount
+         }
+--- initial-checkout/Sources/Stores/PlaybackStore.swift
++++ remediated-checkout/Sources/Stores/PlaybackStore.swift
+@@ -48,6 +48,7 @@
+     private var didReportStopped = false
+     private var isTranscodedPlayback = false
+     private var streamSelection = PlaybackStreamSelection.none
++    private var preparationGeneration = 0
+ 
+     init(item: MediaItem, session: SessionStore, playbackRefresh: PlaybackRefreshStore, downloads: OfflineDownloadStore? = nil, localOnly: Bool = false, localProgress: OfflinePlaybackProgressStore? = nil) {
+         self.item = item
+@@ -214,6 +215,8 @@
+     }
+ 
+     private func loadPlayback(startTimeTicks: Int?, replacingCurrentItem: Bool) async {
++        preparationGeneration += 1
++        let generation = preparationGeneration
+         state = .loading
+         stereoFallbackNotice = nil
+         configureAudioSession()
+@@ -266,6 +269,8 @@
+                     resolution: remoteResolution
+                 )
+             }
++            try Task.checkCancellation()
++            guard generation == preparationGeneration else { return }
+             logger.info("Playing \(self.item.name ?? "item", privacy: .public) (local: \(localURL != nil, privacy: .public), transcoding: \(resolution?.isTranscoding == true, privacy: .public))")
+ 
+             let playerItem = AVPlayerItem(url: playbackURL)
+@@ -306,6 +311,8 @@
+                 )
+             }
+ 
++            try Task.checkCancellation()
++            guard generation == preparationGeneration else { return }
+             nowPlaying.start(
+                 player: player,
+                 item: item,
+@@ -333,6 +340,7 @@
+             }
+         } catch {
+             diagnostics.endInterval("PlaybackStartup", startupInterval)
++            guard generation == preparationGeneration else { return }
+             let gusError = GusError(from: error)
+             guard !gusError.isCancellation else { return } // dismissed before playback resolved
+             diagnostics.record(.playbackFailed)
+--- initial-checkout/Sources/Stores/SearchStore.swift
++++ remediated-checkout/Sources/Stores/SearchStore.swift
+@@ -11,12 +11,17 @@
+     private(set) var query = ""
+     private(set) var isLoadingNextPage = false
+ 
++    private let admits: (MediaItem) -> Bool
+     private let session: SessionStore
+     private let logger = Logger(category: .search)
++    private var generation = 0
++    private var pageTask: Task<MediaItemPage, Error>?
++    private(set) var pageError: String?
+     private var paging: Paging
+ 
+-    init(session: SessionStore, limit: Int = 50) {
++    init(session: SessionStore, limit: Int = 50, admits: @escaping (MediaItem) -> Bool = { ContentRatingGate.admitsStored($0) }) {
+         self.session = session
++        self.admits = admits
+         self.paging = Paging(pageSize: limit, prefetchThreshold: 1)
+     }
+ 
+@@ -25,6 +30,9 @@
+     }
+ 
+     func reset() {
++        generation += 1
++        pageTask?.cancel()
++        pageError = nil
+         query = ""
+         results = []
+         paging.reset()
+@@ -39,6 +47,10 @@
+             return
+         }
+ 
++        generation += 1
++        pageTask?.cancel()
++        pageError = nil
++        isLoadingNextPage = false
+         query = normalizedQuery
+         paging.reset()
+         results = []
+@@ -47,7 +59,7 @@
+         let diagnostics = DiagnosticsHub.shared
+         diagnostics.record(.searchRequested)
+         let searchInterval = diagnostics.beginInterval("Search")
+-        await loadPage(startIndex: 0, replaceResults: true)
++        await loadPage(replaceResults: true, requestGeneration: generation, requestQuery: query)
+         diagnostics.endInterval("Search", searchInterval)
+     }
+ 
+@@ -57,41 +69,71 @@
+               paging.shouldLoadMore(currentIndex: index, loadedCount: results.count)
+         else { return }
+ 
+-        isLoadingNextPage = true
+-        defer { isLoadingNextPage = false }
+-        await loadPage(startIndex: paging.nextStartIndex, replaceResults: false)
++        await continueSearching()
+     }
+ 
+-    private func loadPage(startIndex: Int, replaceResults shouldReplaceResults: Bool) async {
++    func continueSearching() async {
++        guard canLoadMore, !isLoadingNextPage, state == .loaded else { return }
++        let currentGeneration = generation
++        isLoadingNextPage = true
++        defer {
++            if generation == currentGeneration {
++                isLoadingNextPage = false
++            }
++        }
++        await loadPage(replaceResults: false, requestGeneration: currentGeneration, requestQuery: query)
++    }
++
++    private func loadPage(replaceResults: Bool, requestGeneration: Int, requestQuery: String) async {
++        var replace = replaceResults
++        pageError = nil
+         do {
+-            let query = MediaItemQuery(
+-                searchTerm: query,
+-                startIndex: startIndex,
+-                limit: paging.pageSize,
+-                isRecursive: true,
+-                sort: nil
+-            )
+-            let page = try await session.mediaProvider.items(query: query)
+-
+-            let admitted = ContentRatingGate.filter(page.items)
+-            if shouldReplaceResults {
+-                results = admitted
+-                paging.replaceResults(receivedCount: page.items.count, totalRecordCount: page.totalRecordCount)
+-            } else {
+-                results.append(contentsOf: admitted)
+-                paging.appendResults(receivedCount: page.items.count, totalRecordCount: page.totalRecordCount)
++            // Bound restricted-page scans; the user can explicitly continue a long scan.
++            for _ in 0 ..< 3 {
++                try Task.checkCancellation()
++                guard requestGeneration == generation else { return }
++                let startIndex = replace ? 0 : paging.nextStartIndex
++                let request = MediaItemQuery(
++                    searchTerm: requestQuery,
++                    startIndex: startIndex,
++                    limit: paging.pageSize,
++                    isRecursive: true,
++                    sort: nil
++                )
++                let task = Task { try await session.mediaProvider.items(query: request) }
++                pageTask = task
++                let page = try await withTaskCancellationHandler { try await task.value } onCancel: { task.cancel() }
++                try Task.checkCancellation()
++                guard requestGeneration == generation else { return }
++                let admitted = page.items.filter(admits)
++                if replace {
++                    results = admitted
++                    paging.replaceResults(receivedCount: page.items.count, totalRecordCount: page.totalRecordCount)
++                } else {
++                    results.append(contentsOf: admitted)
++                    paging.appendResults(receivedCount: page.items.count, totalRecordCount: page.totalRecordCount)
++                }
++                replace = false
++                state = .loaded
++                if !admitted.isEmpty || !canLoadMore {
++                    break
++                }
+             }
+-
+-            state = .loaded
+         } catch {
++            guard requestGeneration == generation else { return }
+             let gusError = GusError(from: error)
+-            guard !gusError.isCancellation else { return }
++            if gusError.isCancellation {
++                if state == .loading {
++                    state = .idle
++                }; return
++            }
+             gusError.handleIfUnauthorized(session: session)
+             logger.error("Search failed: \(gusError.localizedDescription, privacy: .public)")
+-            if shouldReplaceResults {
++            if replaceResults, results.isEmpty {
+                 state = .failed(gusError.localizedDescription)
++            } else {
++                pageError = gusError.localizedDescription
+             }
+-            // Pagination errors: keep state = .loaded so the user can retry by scrolling
+         }
+     }
+ }
+--- initial-checkout/Sources/Watch/WatchAudioPlayerView.swift
++++ remediated-checkout/Sources/Watch/WatchAudioPlayerView.swift
+@@ -12,56 +12,10 @@
+     @State private var store: AudioPlayerStore?
+ 
+     var body: some View {
+-        VStack(spacing: 8) {
++        ScrollView {
+             if let store {
+-                Text(store.currentTrack?.displayTitle ?? "")
+-                    .font(.headline)
+-                    .lineLimit(2)
+-                    .multilineTextAlignment(.center)
+-
+-                if store.duration > 0 {
+-                    ProgressView(value: min(store.currentTime, store.duration), total: store.duration)
+-                        .accessibilityLabel(String(localized: "Playback position", comment: "Accessibility label for the audio playback progress bar"))
+-                        .accessibilityValue(
+-                            PlaybackTime.accessibilityProgressValue(
+-                                currentSeconds: min(store.currentTime, store.duration),
+-                                durationSeconds: store.duration
+-                            )
+-                        )
+-                }
+-
+-                HStack(spacing: 14) {
+-                    Button {
+-                        Task { await store.previous() }
+-                    } label: {
+-                        Image(systemName: "backward.fill")
+-                    }
+-                    .accessibilityLabel(String(localized: "Previous Track", comment: "Accessibility label for the previous track button"))
+-
+-                    Button {
+-                        store.playPause()
+-                    } label: {
+-                        Image(systemName: store.isPlaying ? "pause.circle.fill" : "play.circle.fill")
+-                            .font(.title)
+-                    }
+-                    .accessibilityLabel(store.isPlaying ? String(localized: "Pause", comment: "Accessibility label for the pause button") : String(localized: "Play", comment: "Accessibility label for the play button"))
+-
+-                    Button {
+-                        Task { await store.next() }
+-                    } label: {
+-                        Image(systemName: "forward.fill")
+-                    }
+-                    .disabled(!store.queue.hasNext)
+-                    .accessibilityLabel(String(localized: "Next Track", comment: "Accessibility label for the next track button"))
+-                }
+-                .buttonStyle(.plain)
+-
+-                if store.currentTrack?.type == .audioBook {
+-                    Picker("Speed", selection: speedBinding(store)) {
+-                        ForEach([0.75, 1.0, 1.25, 1.5, 2.0], id: \.self) { rate in
+-                            Text("\(rate.formatted(.number.precision(.fractionLength(0 ... 2))))×").tag(rate)
+-                        }
+-                    }
++                LoadingStateView(state: store.state, retryAction: { Task { await store.start() } }) {
++                    playerControls(store)
+                 }
+             } else {
+                 ProgressView()
+@@ -80,6 +34,60 @@
+         }
+     }
+ 
++    private func playerControls(_ store: AudioPlayerStore) -> some View {
++        VStack(spacing: 8) {
++            Text(store.currentTrack?.displayTitle ?? "")
++                .font(.headline)
++                .lineLimit(2)
++                .multilineTextAlignment(.center)
++
++            if store.duration > 0 {
++                ProgressView(value: min(store.currentTime, store.duration), total: store.duration)
++                    .accessibilityLabel(String(localized: "Playback position", comment: "Accessibility label for the audio playback progress bar"))
++                    .accessibilityValue(
++                        PlaybackTime.accessibilityProgressValue(
++                            currentSeconds: min(store.currentTime, store.duration),
++                            durationSeconds: store.duration
++                        )
++                    )
++            }
++
++            HStack(spacing: 14) {
++                Button {
++                    Task { await store.previous() }
++                } label: {
++                    Image(systemName: "backward.fill")
++                }
++                .accessibilityLabel(String(localized: "Previous Track", comment: "Accessibility label for the previous track button"))
++
++                Button {
++                    store.playPause()
++                } label: {
++                    Image(systemName: store.isPlaying ? "pause.circle.fill" : "play.circle.fill")
++                        .font(.title)
++                }
++                .accessibilityLabel(store.isPlaying ? String(localized: "Pause", comment: "Accessibility label for the pause button") : String(localized: "Play", comment: "Accessibility label for the play button"))
++
++                Button {
++                    Task { await store.next() }
++                } label: {
++                    Image(systemName: "forward.fill")
++                }
++                .disabled(!store.queue.hasNext)
++                .accessibilityLabel(String(localized: "Next Track", comment: "Accessibility label for the next track button"))
++            }
++            .buttonStyle(.plain)
++
++            if store.currentTrack?.type == .audioBook {
++                Picker("Speed", selection: speedBinding(store)) {
++                    ForEach([0.75, 1.0, 1.25, 1.5, 2.0], id: \.self) { rate in
++                        Text("\(rate.formatted(.number.precision(.fractionLength(0 ... 2))))×").tag(rate)
++                    }
++                }
++            }
++        }
++    }
++
+     private func speedBinding(_ store: AudioPlayerStore) -> Binding<Double> {
+         Binding {
+             store.playbackRate
+--- initial-checkout/Tests/APlayaNamedGusTests/Mocks/FakeMediaProviderSession.swift
++++ remediated-checkout/Tests/APlayaNamedGusTests/Mocks/FakeMediaProviderSession.swift
+@@ -8,6 +8,14 @@
+ final class FakeMediaProviderSession: MediaProviderSession {
+     let providerKind: MediaProviderKind = .jellyfin
+     let capabilities: ProviderCapabilities
++    var itemsHandler: ((MediaItemQuery) async throws -> MediaItemPage)?
++    var itemHandler: ((String) async throws -> MediaItem)?
++    var episodesHandler: ((String) async throws -> MediaItemPage)?
++    var seasonsHandler: (() async throws -> [MediaItem])?
++    var watchedHandler: (() async throws -> Void)?
++    var favoriteHandler: (() async throws -> Void)?
++    var audioHandler: (() async throws -> PlaybackSourceResolution)?
++    var playbackHandler: (() async throws -> PlaybackSourceResolution)?
+     var downloadSourceCallCount = 0
+     var playbackResolutionCallCount = 0
+     var audioResolutionCallCount = 0
+@@ -37,11 +45,17 @@
+     }
+ 
+     func items(query: MediaItemQuery) async throws -> MediaItemPage {
+-        MediaItemPage(items: [], totalRecordCount: 0)
++        if let itemsHandler {
++            return try await itemsHandler(query)
++        }
++        return MediaItemPage(items: [], totalRecordCount: 0)
+     }
+ 
+     func item(id: String) async throws -> MediaItem {
+-        MediaItem(id: id)
++        if let itemHandler {
++            return try await itemHandler(id)
++        }
++        return MediaItem(id: id)
+     }
+ 
+     func similarItems(itemID: String, limit: Int) async throws -> [MediaItem] {
+@@ -53,11 +67,17 @@
+     }
+ 
+     func seasons(seriesID: String) async throws -> [MediaItem] {
+-        []
++        if let seasonsHandler {
++            return try await seasonsHandler()
++        }
++        return []
+     }
+ 
+     func episodes(seriesID: String, seasonID: String, limit: Int) async throws -> MediaItemPage {
+-        MediaItemPage(items: [], totalRecordCount: 0)
++        if let episodesHandler {
++            return try await episodesHandler(seasonID)
++        }
++        return MediaItemPage(items: [], totalRecordCount: 0)
+     }
+ 
+     func primaryImageURL(for item: MediaItem, context: ImageURLBuilder.ImageContext) -> URL? {
+@@ -89,6 +109,9 @@
+         stereoLayout: Stereo3DLayout
+     ) async throws -> PlaybackSourceResolution {
+         playbackResolutionCallCount += 1
++        if let playbackHandler {
++            return try await playbackHandler()
++        }
+         return PlaybackSourceResolution(
+             url: URL(string: "https://example.com/video.mp4")!,
+             playSessionID: nil,
+@@ -101,6 +124,9 @@
+ 
+     func resolveAudioPlayback(for itemID: String) async throws -> PlaybackSourceResolution {
+         audioResolutionCallCount += 1
++        if let audioHandler {
++            return try await audioHandler()
++        }
+         return PlaybackSourceResolution(
+             url: URL(string: "https://example.com/audio.mp3")!,
+             playSessionID: nil,
+@@ -138,9 +164,13 @@
+         )
+     }
+ 
+-    func toggleWatched(itemID: String, currentlyWatched: Bool) async throws {}
++    func toggleWatched(itemID: String, currentlyWatched: Bool) async throws {
++        try await watchedHandler?()
++    }
+ 
+-    func toggleFavorite(itemID: String, currentlyFavorite: Bool) async throws {}
++    func toggleFavorite(itemID: String, currentlyFavorite: Bool) async throws {
++        try await favoriteHandler?()
++    }
+ 
+     func reportPlaybackStart(context: PlaybackReportContext, positionTicks: Int, isPaused: Bool) async throws {
+         playbackReportCallCount += 1
+--- initial-checkout/Tests/APlayaNamedGusTests/UILayoutMetricsTests.swift
++++ remediated-checkout/Tests/APlayaNamedGusTests/UILayoutMetricsTests.swift
+@@ -52,7 +52,6 @@
+     @Test("navigation appearance row uses aligned list icon")
+     func navigationAppearanceRowUsesAlignedListIcon() throws {
+         let settingsSource = try sourceFile(named: "SettingsView.swift", under: "Sources/Features/Settings")
+-
+         #expect(settingsSource.contains("Label(\"Navigation\", systemImage: \"list.bullet\")"))
+         #expect(!settingsSource.contains("list.bullet.indent"))
+     }
+@@ -60,7 +59,6 @@
+     @Test("navigation editor uses native edit, reorder, and delete list behavior")
+     func navigationEditorUsesNativeEditReorderAndDeleteListBehavior() throws {
+         let source = try sourceFile(named: "NavigationSettingsView.swift", under: "Sources/Features/Settings")
+-        let settingsSource = try sourceFile(named: "SettingsView.swift", under: "Sources/Features/Settings")
+ 
+         #expect(source.contains("EditButton()"))
+         #expect(source.contains(".onMove"))
+@@ -78,10 +76,6 @@
+         #expect(source.contains("private var isEditing"))
+         #expect(source.contains("if isEditing"))
+         #expect(source.contains(".id(navigationPreferences.revision)"))
+-        #expect(settingsSource.contains("@State private var isShowingNavigationSettings = false"))
+-        #expect(settingsSource.contains("NavigationLink(value: SettingsDestination.navigation)"))
+-        #expect(settingsSource.contains(".navigationDestination(for: SettingsDestination.self)"))
+-        #expect(settingsSource.contains(".navigationBarBackButtonHidden(isShowingNavigationSettings)"))
+         #expect(!source.contains("Home is always first."))
+         #expect(!source.contains("Settings is always last."))
+     }
+--- initial-checkout/Resources/Assets.xcassets/ProminentActionForeground.colorset/Contents.json
++++ remediated-checkout/Resources/Assets.xcassets/ProminentActionForeground.colorset/Contents.json
+@@ -0,0 +1,38 @@
++{
++  "colors": [
++    {
++      "color": {
++        "color-space": "srgb",
++        "components": {
++          "alpha": "1.000",
++          "blue": "1.000",
++          "green": "1.000",
++          "red": "1.000"
++        }
++      },
++      "idiom": "universal"
++    },
++    {
++      "appearances": [
++        {
++          "appearance": "luminosity",
++          "value": "dark"
++        }
++      ],
++      "color": {
++        "color-space": "srgb",
++        "components": {
++          "alpha": "1.000",
++          "blue": "0x33",
++          "green": "0x2E",
++          "red": "0x0B"
++        }
++      },
++      "idiom": "universal"
++    }
++  ],
++  "info": {
++    "author": "xcode",
++    "version": 1
++  }
++}
+--- initial-checkout/Sources/Platform/RootNavigationState.swift
++++ remediated-checkout/Sources/Platform/RootNavigationState.swift
+@@ -0,0 +1,107 @@
++import Observation
++import SwiftUI
++
++/// Session-scoped state survives replacement of tab and split-view layouts.
++@MainActor @Observable
++final class RootNavigationState {
++    static let moreID = "gus.more"
++    var selectedSectionID = NavigationSectionPreference.homeID
++    var paths: [String: NavigationPath] = [:]
++    var scrollAnchors: [String: String] = [:]
++    var home: HomeStore?
++    var playerItem: ItemRef?
++    var detailItem: ItemRef?
++    var downloadSearch = ""
++    var downloadFilter = DownloadedLibraryFilter.all
++    var isDownloadSearchPresented = false
++    private var searches: [String: SectionSearchState] = [:]
++    private var libraries: [String: LibraryStore] = [:]
++    private var details: [String: ItemDetailStore] = [:]
++
++    func searchState(for id: String, session: SessionStore) -> SectionSearchState {
++        if let state = searches[id] {
++            return state
++        }
++        let state = SectionSearchState(store: SearchStore(session: session))
++        searches[id] = state
++        return state
++    }
++
++    func libraryStore(for scope: LibraryGridScope, session: SessionStore) -> LibraryStore {
++        if let store = libraries[scope.storeIdentity] {
++            return store
++        }
++        let store = LibraryStore(scope: scope, session: session)
++        libraries[scope.storeIdentity] = store
++        Task { await store.load() }
++        return store
++    }
++
++    func detailStore(for item: MediaItem, session: SessionStore) -> ItemDetailStore {
++        let key = ItemRef(item: item).id
++        if let store = details[key] {
++            return store
++        }
++        let store = ItemDetailStore(item: item, session: session)
++        details[key] = store
++        Task { await store.load() }
++        return store
++    }
++
++    func pathBinding(for id: String) -> Binding<NavigationPath> {
++        Binding(get: { self.paths[id] ?? NavigationPath() }, set: { self.paths[id] = $0 })
++    }
++
++    func scrollBinding(for id: String) -> Binding<String?> {
++        Binding(get: { self.scrollAnchors[id] }, set: { self.scrollAnchors[id] = $0 })
++    }
++
++    static func directSectionIDs(_ ids: [String]) -> [String] {
++        ids.count > 5 ? Array(ids.prefix(4)) : ids
++    }
++
++    func adopt(_ route: AppRoute) {
++        switch route {
++        case .home: selectedSectionID = NavigationSectionPreference.homeID
++        case .libraries: selectedSectionID = NavigationSectionPreference.librariesID
++        case .downloaded: selectedSectionID = NavigationSectionPreference.downloadedID
++        case .settings: selectedSectionID = NavigationSectionPreference.settingsID
++        case .search: break
++        }
++    }
++}
++
++@MainActor @Observable
++final class SectionSearchState {
++    var store: SearchStore?
++    var text = ""
++    var isPresented = false
++    private var searchTask: Task<Void, Never>?
++    private var requestedText: String?
++
++    /// Debounce belongs to the session state, so rotation cannot cancel the current query.
++    func updateQuery() {
++        let query = text.trimmingCharacters(in: .whitespacesAndNewlines)
++        guard query != requestedText, let store else { return }
++        requestedText = query
++        searchTask?.cancel()
++        store.reset()
++        guard !query.isEmpty else { return }
++        searchTask = Task {
++            do { try await Task.sleep(for: .milliseconds(300)) }
++            catch { return }
++            guard !Task.isCancelled else { return }
++            await store.search(query)
++        }
++    }
++
++    init(store: SearchStore) {
++        self.store = store
++    }
++}
++
++/// Typed fixed destinations allow the shared NavigationPath to preserve Settings/Downloads.
++enum AppScreen: Hashable {
++    case downloads
++    case navigationSettings
++}
+--- initial-checkout/Sources/Platform/SessionPlayerHost.swift
++++ remediated-checkout/Sources/Platform/SessionPlayerHost.swift
+@@ -0,0 +1,169 @@
++import SwiftUI
++
++extension View {
++    @ViewBuilder func gusSessionPlayerHost(state: RootNavigationState, enabled: Bool = true) -> some View {
++        #if os(macOS)
++            self
++        #else
++            modifier(SessionPlayerHost(state: state, enabled: enabled))
++        #endif
++    }
++
++    @ViewBuilder func gusAudioHost(coordinator: AudioPlaybackCoordinator, enabled: Bool = true) -> some View {
++        #if os(macOS)
++            sheet(isPresented: audioPresentation(coordinator, enabled: enabled)) { SessionAudioPlayer() }
++        #else
++            fullScreenCover(isPresented: audioPresentation(coordinator, enabled: enabled)) { SessionAudioPlayer() }
++        #endif
++    }
++
++    @ViewBuilder func gusNowPlaying(coordinator: AudioPlaybackCoordinator, usesTabAccessory: Bool = true, enabled: Bool = true) -> some View {
++        #if os(iOS)
++            modifier(IOSNowPlaying(coordinator: coordinator, usesTabAccessory: usesTabAccessory, enabled: enabled))
++        #elseif os(tvOS)
++            safeAreaInset(edge: .bottom) {
++                if enabled, !coordinator.isPresented, let store = coordinator.store {
++                    NowPlayingReturnView(coordinator: coordinator, store: store)
++                        .padding()
++                        .background(.regularMaterial)
++                }
++            }
++        #else
++            toolbar {
++                if enabled, !coordinator.isPresented, let store = coordinator.store {
++                    ToolbarItem { NowPlayingReturnView(coordinator: coordinator, store: store) }
++                }
++            }
++        #endif
++    }
++}
++
++@MainActor private func audioPresentation(_ coordinator: AudioPlaybackCoordinator, enabled: Bool) -> Binding<Bool> {
++    Binding(get: { enabled && coordinator.isPresented }, set: { isPresented in
++        if isPresented {
++            coordinator.isPresented = true
++        } else {
++            coordinator.close()
++        }
++    })
++}
++
++#if !os(macOS)
++    private struct SessionPlayerHost: ViewModifier {
++        @Bindable var state: RootNavigationState
++        let enabled: Bool
++        func body(content: Content) -> some View {
++            content.fullScreenCover(item: Binding(get: { enabled ? state.playerItem : nil }, set: { state.playerItem = $0 })) { ref in
++                PresentedPlayer(item: ref.item, localOnly: ref.localOnly == true)
++            }
++        }
++    }
++#endif
++
++private struct SessionAudioPlayer: View {
++    @Environment(AudioPlaybackCoordinator.self) private var audio
++    var body: some View {
++        NavigationStack {
++            Group {
++                if let store = audio.store {
++                    AudioPlayerView(store: store)
++                } else {
++                    ContentUnavailableView("Nothing Playing", systemImage: "music.note")
++                }
++            }
++            .toolbar {
++                ToolbarItem(placement: .cancellationAction) { Button("Done") { audio.close() } }
++                ToolbarItem { Button("Stop") { audio.stop() } }
++            }
++            .accessibilityAction(.escape) { audio.close() }
++        }
++        .background {
++            #if os(tvOS)
++                Color.black.ignoresSafeArea()
++            #else
++                Rectangle().fill(.background).ignoresSafeArea()
++            #endif
++        }
++        #if os(tvOS)
++        .onExitCommand { audio.close() }
++        #endif
++    }
++}
++
++private struct NowPlayingReturnView: View {
++    let coordinator: AudioPlaybackCoordinator
++    let store: AudioPlayerStore
++    var body: some View {
++        HStack {
++            Button { coordinator.reopen() } label: {
++                Label(store.currentTrack?.displayTitle ?? String(localized: "Now Playing"), systemImage: "music.note")
++                    .lineLimit(1)
++                    .frame(minHeight: 44)
++            }
++            .accessibilityIdentifier("NowPlaying.reopen")
++            .accessibilityHint("Opens Now Playing")
++            Button { store.playPause() } label: {
++                Label(store.isPlaying ? "Pause" : "Play", systemImage: store.isPlaying ? "pause.fill" : "play.fill")
++                    .labelStyle(.iconOnly)
++                    .frame(minWidth: 44, minHeight: 44)
++            }
++            .accessibilityIdentifier("NowPlaying.playPause")
++            .disabled(store.state != .loaded)
++        }
++        .frame(maxWidth: .infinity, minHeight: 44)
++    }
++}
++
++/// Feature bindings express an intent; the session host owns the actual presentation.
++struct SessionPlayerRequest: ViewModifier {
++    @Environment(RootNavigationState.self) private var navigation
++    @Environment(AudioPlaybackCoordinator.self) private var audio
++    @Environment(SessionStore.self) private var session
++    @Environment(OfflineDownloadStore.self) private var downloads
++    @Binding var item: ItemRef?
++
++    func body(content: Content) -> some View {
++        content.onChange(of: item, initial: true) { _, ref in
++            guard let ref else { return }
++            guard ref.serverID == nil || ref.serverID == session.server.id,
++                  ref.userID == nil || ref.userID == session.user.id else { item = nil; return }
++            if ref.item.isAudioPlayable, ContentRatingGate.admitsStored(ref.item) {
++                audio.play(tracks: [ref.item], localOnly: ref.localOnly == true, session: session, downloads: downloads)
++            } else {
++                audio.stop()
++                navigation.playerItem = ref
++            }
++            item = nil
++        }
++    }
++}
++
++#if os(iOS)
++    private struct IOSNowPlaying: ViewModifier {
++        @Environment(\.horizontalSizeClass) private var widthClass
++        let coordinator: AudioPlaybackCoordinator
++        let usesTabAccessory: Bool
++        let enabled: Bool
++        private var isVisible: Bool {
++            enabled && coordinator.store != nil && !coordinator.isPresented
++        }
++
++        func body(content: Content) -> some View {
++            if #available(iOS 26.1, *), widthClass == .compact, usesTabAccessory {
++                content.tabViewBottomAccessory(isEnabled: isVisible) { returnControl }
++            } else {
++                content.safeAreaInset(edge: .bottom) {
++                    if isVisible {
++                        returnControl.background(.bar)
++                    }
++                }
++            }
++        }
++
++        @ViewBuilder private var returnControl: some View {
++            if let store = coordinator.store {
++                NowPlayingReturnView(coordinator: coordinator, store: store).padding(.horizontal)
++            }
++        }
++    }
++#endif
+--- initial-checkout/Sources/SharedUI/ArtworkTile.swift
++++ remediated-checkout/Sources/SharedUI/ArtworkTile.swift
+@@ -0,0 +1,22 @@
++import SwiftUI
++
++/// Artwork takes its size from the tile, never from the loaded image's intrinsic ratio.
++/// Keeping the image in an overlay also makes loading and failure geometry identical.
++struct ArtworkTile: View {
++    let url: URL?
++    var aspectRatio: CGFloat = 2.0 / 3.0
++    var contentMode: ContentMode = .fill
++    var placeholderSymbol = "photo"
++
++    var body: some View {
++        Color.clear
++            .aspectRatio(aspectRatio, contentMode: .fit)
++            .overlay {
++                GeometryReader { geometry in
++                    AsyncPoster(url: url, contentMode: contentMode, placeholderSymbol: placeholderSymbol)
++                        .frame(width: geometry.size.width, height: geometry.size.height)
++                        .clipped()
++                }
++            }
++    }
++}
+--- initial-checkout/Sources/Stores/AudioPlaybackCoordinator.swift
++++ remediated-checkout/Sources/Stores/AudioPlaybackCoordinator.swift
+@@ -0,0 +1,56 @@
++import Observation
++import SwiftUI
++
++/// Owns the audio queue independently of the visible player; closing keeps prepared audio.
++@MainActor @Observable
++final class AudioPlaybackCoordinator {
++    private(set) var store: AudioPlayerStore?
++    var isPresented = false
++    private var preparation: Task<Void, Never>?
++
++    func play(
++        tracks: [MediaItem],
++        startIndex: Int = 0,
++        shuffled: Bool = false,
++        localOnly: Bool = false,
++        session: SessionStore,
++        downloads: OfflineDownloadStore
++    ) {
++        stop()
++        let player = AudioPlayerStore(session: session, tracks: tracks, startIndex: startIndex, downloads: downloads, localOnly: localOnly)
++        if shuffled {
++            player.toggleShuffle()
++        }
++        store = player
++        isPresented = true
++        preparation = Task { await player.start() }
++    }
++
++    func retry() {
++        guard let store else { return }
++        preparation?.cancel()
++        preparation = Task { await store.start() }
++    }
++
++    func close() {
++        if store?.state == .loading || store?.state == .idle {
++            stop()
++        } else {
++            isPresented = false
++        }
++    }
++
++    func reopen() {
++        if store != nil {
++            isPresented = true
++        }
++    }
++
++    func stop() {
++        preparation?.cancel()
++        preparation = nil
++        store?.teardown()
++        store = nil
++        isPresented = false
++    }
++}
+--- initial-checkout/Tests/APlayaNamedGusTests/UIRemediationTests.swift
++++ remediated-checkout/Tests/APlayaNamedGusTests/UIRemediationTests.swift
+@@ -0,0 +1,348 @@
++import Foundation
++@testable import Gus
++import JellyfinAPI
++import SwiftUI
++import Testing
++
++@MainActor @Suite("UI remediation regressions", .serialized)
++struct UIRemediationTests {
++    private func session(_ provider: FakeMediaProviderSession) -> SessionStore {
++        SessionStore(
++            client: JellyfinClient(configuration: .init(
++                url: URL(string: "https://example.invalid")!,
++                accessToken: "test",
++                client: "Tests",
++                deviceName: "Tests",
++                deviceID: "tests",
++                version: "1.0.0"
++            )),
++            user: StoredUser(id: "u", name: "User", serverID: "s"),
++            server: ServerConnection(id: "s", name: "Server", url: URL(string: "https://example.invalid")!),
++            mediaProvider: provider
++        )
++    }
++
++    private func provider() -> FakeMediaProviderSession {
++        FakeMediaProviderSession(capabilities: ProviderCapabilities())
++    }
++
++    private func waitFor(_ condition: () -> Bool) async {
++        for _ in 0 ..< 1000 {
++            if condition() {
++                return
++            }
++            try? await Task.sleep(for: .milliseconds(1))
++        }
++        #expect(condition())
++    }
++
++    @Test("late search pagination cannot append to a replacement query")
++    func staleSearchPage() async {
++        let p = provider()
++        let delayed = PendingPage()
++        p.itemsHandler = { query in
++            if query.searchTerm == "A", query.startIndex > 0 {
++                return try await delayed.value()
++            }
++            return MediaItemPage(items: [MediaItem(id: query.searchTerm, name: query.searchTerm)], totalRecordCount: query.searchTerm == "A" ? 2 : 1)
++        }
++        let store = SearchStore(session: session(p), limit: 1, admits: { _ in true })
++        await store.search("A")
++        let pagination = Task { await store.loadMoreIfNeeded(currentItem: store.results[0]) }
++        await waitFor { delayed.isWaiting }
++        await store.search("B")
++        delayed.succeed([MediaItem(id: "late-A")])
++        await pagination.value
++        #expect(store.results.map(\.id) == ["B"])
++        #expect(store.query == "B")
++        #expect(!store.isLoadingNextPage)
++    }
++
++    @Test("stale search failure cannot fail a replacement query")
++    func staleSearchFailure() async {
++        let p = provider(), delayed = PendingPage()
++        p.itemsHandler = { query in
++            if query.searchTerm == "A" {
++                return try await delayed.value()
++            }
++            return MediaItemPage(items: [MediaItem(id: "B")], totalRecordCount: 1)
++        }
++        let store = SearchStore(session: session(p), admits: { _ in true })
++        let a = Task { await store.search("A") }
++        await waitFor { delayed.isWaiting }
++        await store.search("B")
++        delayed.fail()
++        await a.value
++        #expect(store.state == .loaded)
++        #expect(store.results.first?.id == "B")
++    }
++
++    @Test("filtered search pages use raw offsets and stop after three pages")
++    func filteredSearch() async {
++        let p = provider()
++        var offsets: [Int] = []
++        p.itemsHandler = { query in
++            offsets.append(query.startIndex)
++            return MediaItemPage(items: [MediaItem(id: String(query.startIndex))], totalRecordCount: 5)
++        }
++        let store = SearchStore(session: session(p), limit: 1, admits: { $0.id == "4" })
++        await store.search("test")
++        #expect(offsets == [0, 1, 2])
++        #expect(store.results.isEmpty && store.canLoadMore && store.state == .loaded)
++        await store.continueSearching()
++        #expect(offsets == [0, 1, 2, 3, 4])
++        #expect(store.results.first?.id == "4")
++        #expect(!store.canLoadMore)
++    }
++
++    @Test("filtered library scans later pages without a visible cell")
++    func filteredLibrary() async {
++        let p = provider()
++        var offsets: [Int] = []
++        p.itemsHandler = { query in
++            offsets.append(query.startIndex)
++            return MediaItemPage(items: [MediaItem(id: String(query.startIndex))], totalRecordCount: 4)
++        }
++        let store = LibraryStore(scope: .category(.movies), session: session(p), admits: { $0.id == "3" })
++        await store.load()
++        #expect(offsets == [0, 1, 2])
++        #expect(store.items.isEmpty && store.canLoadMore)
++        await store.continueSearching()
++        #expect(store.items.first?.id == "3")
++        #expect(!store.canLoadMore)
++    }
++
++    @Test("empty server pages terminate even with an inconsistent total")
++    func emptyPagesTerminate() async {
++        let p = provider()
++        var calls = 0
++        p.itemsHandler = { _ in calls += 1; return MediaItemPage(items: [], totalRecordCount: 100) }
++        let store = SearchStore(session: session(p), admits: { _ in true })
++        await store.search("empty")
++        #expect(calls == 1 && !store.canLoadMore)
++    }
++
++    @Test("reversed season responses cannot overwrite selected episodes")
++    func staleSeasons() async {
++        let p = provider(), delayed = PendingPage()
++        p.episodesHandler = { id in
++            if id == "A" {
++                return try await delayed.value()
++            }
++            return MediaItemPage(items: [MediaItem(id: "B-episode")], totalRecordCount: 1)
++        }
++        let store = SeriesDetailStore(series: MediaItem(id: "show"), session: session(p))
++        let a = Task { await store.selectSeason(id: "A") }
++        await waitFor { delayed.isWaiting }
++        await store.selectSeason(id: "B")
++        delayed.succeed([MediaItem(id: "A-episode")])
++        await a.value
++        #expect(store.selectedSeasonID == "B")
++        #expect(store.episodes.map(\.id) == ["B-episode"])
++    }
++
++    @Test("selected season can retry after failure")
++    func retrySeason() async {
++        let p = provider()
++        var calls = 0
++        p.episodesHandler = { _ in
++            calls += 1
++            if calls == 1 {
++                throw URLError(.badServerResponse)
++            }
++            return MediaItemPage(items: [MediaItem(id: "episode")], totalRecordCount: 1)
++        }
++        let store = SeriesDetailStore(series: MediaItem(id: "show"), session: session(p))
++        await store.selectSeason(id: "A")
++        await store.retryEpisodes()
++        #expect(calls == 2 && store.episodesState == .loaded)
++        #expect(store.episodes.first?.id == "episode")
++    }
++
++    @Test("late season failure does not fail the current season")
++    func staleSeasonFailure() async {
++        let p = provider(), delayed = PendingPage()
++        p.episodesHandler = { id in
++            if id == "A" {
++                return try await delayed.value()
++            }
++            return MediaItemPage(items: [MediaItem(id: "B")], totalRecordCount: 1)
++        }
++        let store = SeriesDetailStore(series: MediaItem(id: "show"), session: session(p))
++        let a = Task { await store.selectSeason(id: "A") }
++        await waitFor { delayed.isWaiting }
++        await store.selectSeason(id: "B")
++        delayed.fail()
++        await a.value
++        #expect(store.episodesState == .loaded && store.selectedSeasonID == "B")
++    }
++
++    @Test("successful mutation with failed refresh cannot toggle twice")
++    func reconcileMutation() async {
++        let p = provider()
++        var mutations = 0, refreshes = 0
++        p.watchedHandler = { mutations += 1 }
++        p.itemHandler = { id in
++            refreshes += 1
++            if refreshes == 1 {
++                throw URLError(.badServerResponse)
++            }
++            return MediaItem(id: id)
++        }
++        let store = ItemDetailStore(item: MediaItem(id: "item"), session: session(p))
++        await store.toggleWatched()
++        #expect(store.needsUserDataRefresh && store.actionError != nil)
++        await store.toggleWatched()
++        #expect(mutations == 1 && refreshes == 2)
++        #expect(!store.needsUserDataRefresh && store.actionError == nil)
++    }
++
++    @Test("concurrent detail mutations serialize and failures remain visible")
++    func serializedMutations() async {
++        let p = provider(), delayed = PendingPage()
++        var favorites = 0
++        p.watchedHandler = { _ = try await delayed.value() }
++        p.favoriteHandler = { favorites += 1 }
++        let store = ItemDetailStore(item: MediaItem(id: "item"), session: session(p))
++        let watched = Task { await store.toggleWatched() }
++        await waitFor { delayed.isWaiting }
++        await store.toggleFavorite()
++        delayed.fail()
++        await watched.value
++        #expect(favorites == 0 && store.actionError != nil)
++        #expect(!store.isUpdatingUserData && !store.needsUserDataRefresh)
++    }
++
++    @Test("opened photo survives an unrelated first page and is deduplicated")
++    func selectedPhoto() {
++        let opened = MediaItem(id: "501", name: "Opened", type: .photo)
++        let first = MediaItem(id: "1", name: "First", type: .photo)
++        #expect(PhotoSelection.includingOpened(opened, in: [first, opened, first]).map(\.id) == ["501", "1"])
++    }
++
++    @Test("section navigation, stores, and search survive layout ownership changes")
++    func sharedNavigation() {
++        let activeSession = session(provider())
++        let state = RootNavigationState()
++        state.selectedSectionID = "category.movies"
++        state.paths["category.movies", default: NavigationPath()].append(AppScreen.downloads)
++        let search = state.searchState(for: "category.movies", session: activeSession)
++        search.text = "Psych"
++        let same = state.searchState(for: "category.movies", session: activeSession)
++        #expect(same === search && same.text == "Psych")
++        #expect(state.paths["category.movies"]?.count == 1)
++        #expect(state.libraryStore(for: .category(.movies), session: activeSession) === state.libraryStore(for: .category(.movies), session: activeSession))
++        #expect(RootNavigationState.directSectionIDs(["a", "b", "c", "d", "e", "f"]) == ["a", "b", "c", "d"])
++        #expect(RootNavigationState.directSectionIDs(["a", "b", "c", "d", "e"]).count == 5)
++        let otherAccount = RootNavigationState()
++        #expect(otherAccount.paths.isEmpty && otherAccount !== state)
++    }
++
++    @Test("audio closing and reopening preserve the same queue and local-only intent")
++    func audioCloseReopen() async {
++        let p = provider()
++        let audio = AudioPlaybackCoordinator()
++        // localOnly ensures the fake resolver is never used even without a local file.
++        audio.play(tracks: [MediaItem(id: "audio", type: .audio)], localOnly: true, session: session(p), downloads: .shared)
++        let original = audio.store
++        await waitFor {
++            if case .failed = original?.state {
++                return true
++            }; return false
++        }
++        audio.close()
++        audio.reopen()
++        #expect(audio.store === original && audio.isPresented)
++        #expect(audio.store?.currentTrack?.id == "audio" && p.audioResolutionCallCount == 0)
++        audio.stop()
++        #expect(audio.store == nil && !audio.isPresented)
++    }
++
++    @Test("cancelled video preparation cannot install a late player")
++    func cancelledVideo() async {
++        let p = provider(), delayed = PendingResolution()
++        p.playbackHandler = { try await delayed.value() }
++        let store = PlaybackStore(item: MediaItem(id: "video", type: .movie), session: session(p), playbackRefresh: PlaybackRefreshStore())
++        let task = Task { await store.prepare() }
++        await waitFor { delayed.isWaiting }
++        task.cancel()
++        store.teardown()
++        delayed.succeed()
++        await task.value
++        #expect(store.player == nil && store.state != .ready)
++    }
++
++    @Test("closing audio during preparation prevents a late playback start")
++    func cancelledAudio() async {
++        let p = provider(), delayed = PendingResolution()
++        p.audioHandler = { try await delayed.value() }
++        let audio = AudioPlaybackCoordinator()
++        audio.play(tracks: [MediaItem(id: "audio", type: .audio)], session: session(p), downloads: .shared)
++        await waitFor { delayed.isWaiting }
++        let original = audio.store
++        audio.close()
++        delayed.succeed()
++        await waitFor { original?.state == .idle }
++        #expect(audio.store == nil && !audio.isPresented && original?.isPlaying == false)
++    }
++
++    @Test("an explicit repeated Home route still issues a navigation request")
++    func repeatedFixedRoute() {
++        let navigation = AppNavigationModel()
++        navigation.open(.home)
++        let first = navigation.routeRequest
++        navigation.open(.home)
++        #expect(navigation.route == .home && navigation.routeRequest == first + 1)
++    }
++
++    @Test("a re-mounted search surface does not restart its pending query")
++    func searchRemount() async {
++        let p = provider(), delayed = PendingPage()
++        var calls = 0
++        p.itemsHandler = { _ in calls += 1; return try await delayed.value() }
++        let store = SearchStore(session: session(p), admits: { _ in true })
++        let search = SectionSearchState(store: store)
++        search.text = "Psych"
++        search.updateQuery()
++        await waitFor { delayed.isWaiting }
++        search.updateQuery()
++        delayed.succeed([MediaItem(id: "result")])
++        await waitFor { store.state == .loaded }
++        #expect(calls == 1 && store.results.first?.id == "result")
++    }
++}
++
++@MainActor private final class PendingPage {
++    private var continuation: CheckedContinuation<MediaItemPage, Error>?
++    var isWaiting: Bool {
++        continuation != nil
++    }
++
++    func value() async throws -> MediaItemPage {
++        try await withCheckedThrowingContinuation { continuation = $0 }
++    }
++
++    func succeed(_ items: [MediaItem]) {
++        continuation?.resume(returning: MediaItemPage(items: items, totalRecordCount: items.count)); continuation = nil
++    }
++
++    func fail() {
++        continuation?.resume(throwing: URLError(.badServerResponse)); continuation = nil
++    }
++}
++
++@MainActor private final class PendingResolution {
++    private var continuation: CheckedContinuation<PlaybackSourceResolution, Error>?
++    var isWaiting: Bool {
++        continuation != nil
++    }
++
++    func value() async throws -> PlaybackSourceResolution {
++        try await withCheckedThrowingContinuation { continuation = $0 }
++    }
++
++    func succeed() {
++        continuation?.resume(returning: PlaybackSourceResolution(url: URL(string: "https://example.invalid/video.mp4")!, playSessionID: nil, mediaSourceID: nil, playMethod: .directPlay, stereoLayout: .none, stereoFallbackReason: nil))
++        continuation = nil
++    }
++}

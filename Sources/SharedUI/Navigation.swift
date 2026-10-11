@@ -26,16 +26,23 @@ struct LibraryRef: Hashable, Identifiable {
 /// (`WindowGroup(for:)` round-trips presented values through Codable).
 struct ItemRef: Hashable, Identifiable, Codable {
     let item: MediaItem
+    /// Local playback intent and account identity survive a macOS player window.
+    var localOnly: Bool? = nil
+    var serverID: String? = nil
+    var userID: String? = nil
     /// See LibraryRef.id — must stay stable across accesses.
     var id: String {
         item.id ?? "untitled-\(item.name ?? item.type?.rawValue ?? "item")"
     }
 
     static func == (lhs: ItemRef, rhs: ItemRef) -> Bool {
-        lhs.id == rhs.id
+        lhs.id == rhs.id && lhs.serverID == rhs.serverID && lhs.userID == rhs.userID && lhs.localOnly == rhs.localOnly
     }
 
     func hash(into hasher: inout Hasher) {
         hasher.combine(id)
+        hasher.combine(serverID)
+        hasher.combine(userID)
+        hasher.combine(localOnly)
     }
 }

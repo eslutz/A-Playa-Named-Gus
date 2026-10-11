@@ -1,0 +1,7 @@
+{
+  "candidate": "candidate-11",
+  "inputs": 289,
+  "indexMatchesFinalStaticManifest": true,
+  "mismatches": [],
+  "scope": "Exact staged blob SHA256 comparison; per-phase candidate-10 Debug manifests retained with unchanged-active-DEBUG-token provenance"
+}

@@ -1,0 +1,34 @@
+name: GusSimulatorAudit
+options:
+  bundleIdPrefix: dev.ericslutz.gusaudit
+settings:
+  CODE_SIGNING_ALLOWED: NO
+  SWIFT_VERSION: '5.0'
+targets:
+  TVAudit:
+    type: bundle.ui-testing
+    platform: tvOS
+    deploymentTarget: '26.0'
+    sources: [Tests]
+    settings:
+      GENERATE_INFOPLIST_FILE: YES
+  PadAudit:
+    type: bundle.ui-testing
+    platform: iOS
+    deploymentTarget: '26.0'
+    sources: [Tests]
+    settings:
+      GENERATE_INFOPLIST_FILE: YES
+schemes:
+  TVAudit:
+    build:
+      targets:
+        TVAudit: all
+    test:
+      targets: [TVAudit]
+  PadAudit:
+    build:
+      targets:
+        PadAudit: all
+    test:
+      targets: [PadAudit]

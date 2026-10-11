@@ -86,7 +86,7 @@ final class ServerDiscoveryStore {
                 state = .idle
                 return
             }
-            logger.error("Server discovery failed: \(gusError.localizedDescription, privacy: .public)")
+            logger.error("Server discovery failed: \(gusError.localizedDescription, privacy: .private)")
             state = .failed(gusError.localizedDescription)
         }
     }

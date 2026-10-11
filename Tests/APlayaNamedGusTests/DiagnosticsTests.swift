@@ -4,6 +4,25 @@ import Testing
 
 @Suite("Diagnostics")
 struct DiagnosticsTests {
+    @Test("concurrent MetricKit-style appends preserve all summaries")
+    func concurrentSummaryAppends() async {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let store = DiagnosticSummaryStore(directory: directory)
+        await withTaskGroup(of: Void.self) { group in
+            for index in 0 ..< 40 {
+                group.addTask {
+                    var summary = DiagnosticSummary(capturedAt: Date(timeIntervalSince1970: Double(index)), kind: .diagnostics, platform: "Test")
+                    summary.crashCount = index
+                    store.append([summary])
+                }
+            }
+        }
+        let summaries = store.loadSummaries()
+        #expect(summaries.count == 40)
+        #expect(Set(summaries.map(\.crashCount)) == Set(0 ..< 40))
+    }
+
     @Test("event names are stable and unique")
     func eventNamesAreStableAndUnique() {
         let events: [DiagnosticEvent] = [

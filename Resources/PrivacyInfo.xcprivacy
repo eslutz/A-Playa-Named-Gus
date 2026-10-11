@@ -26,8 +26,8 @@
 		1. Disk space (NSPrivacyAccessedAPICategoryDiskSpace)
 		   volumeAvailableCapacityForImportantUsage is called in
 		   OfflineDownloadStore.ensureDiskBudget to refuse a download when free
-		   space falls below 1 GB. Reason 85F4.1: display to the user the amount
-		   of storage their app is using, and a request to manage that storage.
+		   space falls below 1 GB. Reason E174.1: check sufficient space before writing files; refuse
+		   the download with a visible error when free space is too low.
 
 		2. User defaults (NSPrivacyAccessedAPICategoryUserDefaults)
 		   UserDefaults.standard is written by:
@@ -47,7 +47,7 @@
 			<string>NSPrivacyAccessedAPICategoryDiskSpace</string>
 			<key>NSPrivacyAccessedAPITypeReasons</key>
 			<array>
-				<string>85F4.1</string>
+				<string>E174.1</string>
 			</array>
 		</dict>
 		<dict>

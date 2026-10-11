@@ -1,0 +1,90 @@
+Attributes: Application, 0x10384a8b0, pid: 64494, label: 'Gus'
+Element subtree:
+ →Application, 0x10384a8b0, pid: 64494, label: 'Gus'
+    Window (Main), 0x10384c640, {{0.0, 0.0}, {1920.0, 1080.0}}
+      Other, 0x10384ca00, {{0.0, 0.0}, {1920.0, 1080.0}}
+        Other, 0x10384cb20, {{0.0, 0.0}, {1920.0, 1080.0}}
+          Other, 0x10384c760, {{0.0, 0.0}, {1920.0, 1080.0}}
+            Other, 0x10384c880, {{0.0, 0.0}, {1920.0, 1080.0}}
+              Other, 0x10384cc40, {{0.0, 0.0}, {1920.0, 1080.0}}
+                Other, 0x10384cd60, {{0.0, 0.0}, {1920.0, 1080.0}}
+                  Other, 0x10384ce80, {{0.0, 0.0}, {1920.0, 1080.0}}
+                    Other, 0x10384cfa0, {{0.0, 0.0}, {1920.0, 1080.0}}
+                      Other, 0x10384d0c0, {{0.0, 0.0}, {1920.0, 1080.0}}
+                        Other, 0x10384d1e0, {{0.0, 0.0}, {1920.0, 1080.0}}
+                          Other, 0x10384d300, {{0.0, 0.0}, {1920.0, 1080.0}}
+                            NavigationBar, 0x10384d420, {{0.0, 157.0}, {1920.0, 145.0}}, identifier: 'Edison Kinetoscopic Record of a Sneeze (1894)'
+                              StaticText, 0x10384d540, {{341.0, 221.0}, {1239.0, 67.0}}, label: 'Edison Kinetoscopic Record of a Sneeze (1894)'
+                            Other, 0x10384d660, {{0.0, 0.0}, {1920.0, 1080.0}}
+                              Other, 0x10384d780, {{0.0, 0.0}, {1920.0, 1080.0}}
+                                Other, 0x10384d8a0, {{0.0, 0.0}, {1920.0, 1080.0}}
+                                  Other, 0x10384d9c0, {{0.0, 0.0}, {1920.0, 1080.0}}
+                                    ScrollView, 0x10384dae0, {{0.0, 0.0}, {1920.0, 1080.0}}
+                                      Other, 0x10384dc00, {{0.0, -327.0}, {1840.0, 1634.0}}
+                                        Other, 0x10384dd20, {{300.0, -512.0}, {1320.0, 990.0}}
+                                          Image, 0x10384de40, {{300.0, -512.0}, {1320.0, 990.0}}
+                                          StaticText, 0x10384df60, {{340.0, 56.0}, {755.0, 150.0}}, label: 'Edison Kinetoscopic Record of a Sneeze (1894)'
+                                          StaticText, 0x10384e080, {{340.0, 218.0}, {38.0, 35.0}}, label: '1m'
+                                          Button, 0x10384e1a0, {{1128.0, -4.0}, {320.0, 85.0}}, label: 'Play'
+                                            Image, 0x10384e2c0, {{1242.0, 25.0}, {24.0, 27.0}}, identifier: 'play.fill', label: 'Play'
+                                            StaticText, 0x10384e3e0, {{1128.0, -4.0}, {320.0, 85.0}}, label: 'Play'
+                                          Other, 0x10384e500, {{1128.0, 93.0}, {270.0, 160.0}}
+                                            Button, 0x10384e620, {{1128.0, 93.0}, {104.0, 74.0}}, identifier: 'plus', label: 'Add to Up Next'
+                                            Button, 0x10384e740, {{1294.0, 93.0}, {104.0, 74.0}}, identifier: 'checkmark.circle.fill', label: 'Mark as Unwatched', Selected
+                                            Button, 0x10384e860, {{1128.0, 179.0}, {104.0, 74.0}}, identifier: 'heart', label: 'Add to Favorites'
+                                        StaticText, 0x10384e980, {{336.0, 353.0}, {397.0, 69.0}}, label: 'Recommended'
+                                        ScrollView, 0x10384eaa0, {{336.0, 434.0}, {1248.0, 470.0}}
+                                          Other, 0x10384ebc0, {{336.0, 434.0}, {616.0, 470.0}}
+                                            Other, 0x10384ece0, {{332.0, 434.0}, {620.0, 470.0}}
+                                              Button, 0x10384ee00, {{332.0, 434.0}, {308.0, 470.0}}, label: 'President McKinley Taking the Oath, 1901', Focused
+                                                Image, 0x10384ef20, {{365.0, 451.1}, {242.1, 363.1}}
+                                                StaticText, 0x10384f040, {{365.0, 820.3}, {237.0, 35.3}}, label: 'President McKinley Taking the Oath'
+                                                StaticText, 0x10384f160, {{365.0, 856.6}, {55.5, 30.3}}, label: '1901'
+                                              Button, 0x10384f280, {{652.0, 438.0}, {300.0, 462.0}}, label: 'May Irwin Kiss (1896), 2024'
+                                                Image, 0x10384f3a0, {{481.0, 453.0}, {642.0, 360.0}}
+                                                StaticText, 0x10384f4c0, {{682.0, 819.0}, {233.0, 35.0}}, label: 'May Irwin Kiss (1896)'
+                                                StaticText, 0x10384f5e0, {{682.0, 855.0}, {61.0, 30.0}}, label: '2024'
+                                        StaticText, 0x10384f700, {{336.0, 934.0}, {161.0, 69.0}}, label: 'About'
+                                        ScrollView, 0x10384f820, {{336.0, 1015.0}, {1248.0, 252.0}}
+                                          Other, 0x10384f940, {{336.0, 1015.0}, {536.0, 252.0}}
+                                            Other, 0x10384fa60, {{316.0, 1035.0}, {533.0, 212.0}}
+                                              StaticText, 0x10384fb80, {{352.0, 1035.0}, {222.0, 92.0}}, label: 'Edison Kinetoscopic Record of a Sneeze (1894)'
+                                              Image, 0x10384fca0, {{316.0, 1137.0}, {146.0, 110.0}}
+                                              StaticText, 0x10384fdc0, {{628.0, 1035.0}, {104.0, 46.0}}, label: 'Media'
+                                              StaticText, 0x10384fee0, {{628.0, 1091.0}, {41.0, 37.0}}, label: '1m'
+                                              StaticText, 0x103850000, {{628.0, 1136.0}, {221.0, 75.0}}, label: 'MOV,MP4,M4A,3GP,3G2,MJ2'
+                                      Other, 0x103850120, {{0.0, 0.0}, {0.0, 0.0}}, label: '0 pages', value: 0%
+                                        Other, 0x103850240, {{1834.0, 530.0}, {3.0, 385.0}}
+                                      Other, 0x103850360, {{0.0, 0.0}, {0.0, 0.0}}, label: '0 pages', value: 0%
+                                        Other, 0x103850480, {{1834.0, 530.0}, {3.0, 385.0}}
+                Other, 0x1038505a0, {{0.0, -583.0}, {1920.0, 68.0}}
+                  TabBar, 0x1038506c0, {{0.0, -583.0}, {1920.0, 68.0}}, label: 'Menu'
+                    Other, 0x1038507e0, {{80.0, -583.0}, {200.0, 68.0}}
+                      Other, 0x103850900, {{80.0, -583.0}, {200.0, 68.0}}
+                    Other, 0x103850a20, {{280.0, -583.0}, {1360.0, 68.0}}
+                      Other, 0x103850b40, {{339.0, -574.0}, {185.0, 50.0}}
+                    Other, 0x103850c60, {{330.0, -583.0}, {1260.0, 68.0}}
+                      ScrollView, 0x103850d80, {{330.0, -583.0}, {1260.0, 68.0}}
+                        Button, 0x103850ea0, {{369.0, -567.5}, {125.0, 37.0}}, identifier: 'house', label: 'Home'
+                          Image, 0x103850fc0, {{369.0, -567.5}, {43.0, 37.0}}, identifier: 'house', label: 'home'
+                        Button, 0x1038510e0, {{559.0, -569.5}, {151.0, 41.0}}, identifier: 'rectangle.stack', label: 'Libraries'
+                          Image, 0x103851200, {{559.0, -569.5}, {37.0, 41.0}}, identifier: 'rectangle.stack', label: 'rectangle.stack'
+                        Button, 0x103851320, {{775.0, -565.5}, {138.0, 33.0}}, identifier: 'film', label: 'Movies'
+                          Image, 0x103851440, {{775.0, -565.5}, {42.0, 33.0}}, identifier: 'film', label: 'movie'
+                        Button, 0x103851560, {{978.0, -567.0}, {135.0, 36.0}}, identifier: 'tv', label: 'Shows'
+                          Image, 0x103851680, {{978.0, -567.0}, {44.0, 36.0}}, identifier: 'tv', label: 'tv'
+                        Button, 0x1038517a0, {{1178.0, -566.5}, {108.0, 35.0}}, identifier: 'music.note', label: 'Music'
+                          Image, 0x1038518c0, {{1178.0, -566.5}, {26.0, 35.0}}, identifier: 'music.note', label: 'song'
+                        Button, 0x1038519e0, {{1351.0, -565.5}, {125.0, 33.0}}, identifier: 'book', label: 'Books'
+                          Image, 0x103a0c320, {{1351.0, -565.5}, {40.0, 33.0}}, identifier: 'book', label: 'bookmark'
+                        Button, 0x103a0a6b0, {{1541.0, -567.5}, {147.0, 37.0}}, identifier: 'gearshape', label: 'Settings'
+                          Image, 0x103a0ac90, {{1541.0, -567.5}, {37.0, 37.0}}, identifier: 'gearshape', label: 'gearshape'
+                    Other, 0x103a0adb0, {{1640.0, -583.0}, {200.0, 68.0}}
+                      Other, 0x103a0aed0, {{1640.0, -583.0}, {200.0, 68.0}}
+Path to element:
+ →Application, 0x10384a8b0, pid: 64494, label: 'Gus'
+Query chain:
+ →Find: Application 'dev.ericslutz.gus'
+  Output: {
+    Application, 0x103b22660, pid: 64494, label: 'Gus'
+  }

@@ -5,6 +5,7 @@ import Foundation
 enum AppRoute: String, CaseIterable, Hashable, Identifiable {
     case home
     case libraries
+    case downloaded
     case search
     case settings
 

@@ -1,0 +1,27 @@
+name: GusAudioAX5Validation
+options:
+  deploymentTarget:
+    iOS: "18.0"
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    SWIFT_STRICT_CONCURRENCY: complete
+targets:
+  GusAudioAX5UITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources: [Tests]
+    dependencies:
+      - sdk: AppIntents.framework
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: dev.ericslutz.gus.validation.audioax5
+        GENERATE_INFOPLIST_FILE: YES
+        CODE_SIGN_ENTITLEMENTS: ""
+schemes:
+  GusAudioAX5Validation:
+    build:
+      targets:
+        GusAudioAX5UITests: all
+    test:
+      targets: [GusAudioAX5UITests]

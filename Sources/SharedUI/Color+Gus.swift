@@ -7,4 +7,7 @@ import SwiftUI
 extension Color {
     /// Ratings use the app accent so score highlights follow the app palette.
     static let gusRatingStar = Color.accentColor
+
+    /// Filled accent actions use a contrasting foreground in both palette variants.
+    static let gusProminentActionForeground = Color("ProminentActionForeground")
 }

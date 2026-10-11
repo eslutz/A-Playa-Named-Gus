@@ -82,7 +82,7 @@ struct PhotoViewerView: View {
                 sort: .name
             ))
             let photos = page.items.filter { $0.type == .photo }
-            siblings = photos.isEmpty ? [photo] : photos
+            siblings = PhotoSelection.includingOpened(photo, in: photos)
             selectedID = photo.id
             state = .loaded
         } catch {
@@ -119,5 +119,16 @@ struct PhotoViewerView: View {
         }
         // The slideshow changes content without user interaction; tell VoiceOver.
         AccessibilityNotification.Announcement(siblings[next].displayTitle).post()
+    }
+}
+
+/// Preserve the item that opened the gallery even when it is outside the sibling page.
+enum PhotoSelection {
+    static func includingOpened(_ photo: MediaItem, in siblings: [MediaItem]) -> [MediaItem] {
+        var seen = Set<String>()
+        return ([photo] + siblings).filter { item in
+            guard let id = item.id else { return false }
+            return seen.insert(id).inserted
+        }
     }
 }

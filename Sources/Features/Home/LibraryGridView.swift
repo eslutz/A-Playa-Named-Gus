@@ -4,6 +4,7 @@ import SwiftUI
 ///
 /// Pattern reference: Swiftfin's library/`getItems` paging.
 struct LibraryGridView: View {
+    @Environment(RootNavigationState.self) private var navigationState
     @Environment(SessionStore.self) private var session
     let scope: LibraryGridScope
     @State private var store: LibraryStore?
@@ -34,16 +35,15 @@ struct LibraryGridView: View {
             }
         }
         .task(id: scope.storeIdentity) {
-            let store = LibraryStore(scope: scope, session: session)
+            let store = navigationState.libraryStore(for: scope, session: session)
             self.store = store
-            await store.load()
         }
     }
 
     private func content(_ store: LibraryStore) -> some View {
         LoadingStateView(
             state: store.state,
-            isEmpty: store.items.isEmpty,
+            isEmpty: store.items.isEmpty && !store.canLoadMore,
             emptyTitle: "Empty Library",
             emptySymbol: "rectangle.on.rectangle",
             retryAction: { Task { await store.load() } }
@@ -57,12 +57,21 @@ struct LibraryGridView: View {
                                 imageURL: session.mediaProvider.primaryImageURL(for: item, context: .posterGrid)
                             )
                         }
+                        .id(item.id)
                         .posterNavigationStyle()
                         .task {
                             await store.loadMoreIfNeeded(currentItem: item)
                         }
                     }
 
+                    if let error = store.pageError {
+                        Text(error).foregroundStyle(.secondary)
+                    }
+                    if store.canLoadMore {
+                        Button("Continue Searching") { Task { await store.continueSearching() } }
+                            .disabled(store.isLoadingNextPage)
+                            .frame(minHeight: 44)
+                    }
                     if store.isLoadingNextPage {
                         ProgressView()
                             .gridCellColumns(PosterGrid.columns.count)
@@ -70,11 +79,13 @@ struct LibraryGridView: View {
                             .padding(.vertical)
                     }
                 }
+                .scrollTargetLayout()
                 .padding()
                 .frame(maxWidth: PageContentMetrics.maxWidth, alignment: .leading)
                 .frame(maxWidth: .infinity)
                 .tvFocusSection()
             }
+            .scrollPosition(id: navigationState.scrollBinding(for: "library:" + scope.storeIdentity))
             .lookToScroll()
             .refreshable { await store.load() }
         }

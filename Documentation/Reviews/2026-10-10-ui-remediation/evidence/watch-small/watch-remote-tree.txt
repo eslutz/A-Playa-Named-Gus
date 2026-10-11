@@ -1,0 +1,41 @@
+Attributes: Application, 0x1024e0500, pid: 82069, label: 'Gus'
+Element subtree:
+ →Application, 0x1024e0500, pid: 82069, label: 'Gus'
+    Window, 0x1024e03c0, {{0.0, 0.0}, {162.0, 197.0}}
+      Other, 0x1024e0280, {{0.0, 0.0}, {162.0, 197.0}}
+        Other, 0x1024e0140, {{0.0, 0.0}, {162.0, 197.0}}
+          Other, 0x1024e0000, {{0.0, 0.0}, {162.0, 197.0}}
+            Other, 0x1024c3480, {{0.0, 0.0}, {162.0, 197.0}}
+              Other, 0x1024d8640, {{0.0, 0.0}, {162.0, 197.0}}
+              Other, 0x1024db5c0, {{0.0, 0.0}, {162.0, 197.0}}
+              CollectionView, 0x1024d9180, {{0.0, 0.0}, {162.0, 197.0}}, identifier: 'PUICPageViewController_collectionView'
+                Cell, 0x1024e8000, {{0.0, 0.0}, {162.0, 197.0}}
+                  Other, 0x1024e8140, {{0.0, 0.0}, {162.0, 197.0}}
+                    Other, 0x1024e8280, {{0.0, 0.0}, {162.0, 197.0}}
+                      Other, 0x1024e83c0, {{0.0, 0.0}, {162.0, 197.0}}
+                        Other, 0x1024e8500, {{0.0, 0.0}, {162.0, 197.0}}
+                          Other, 0x1024e8640, {{0.0, 0.0}, {162.0, 197.0}}
+                            NavigationBar, 0x1024e8780, {{0.0, 0.0}, {162.0, 47.5}}, identifier: 'Remote'
+                              StaticText, 0x1024e88c0, {{9.5, 16.0}, {83.5, 30.0}}, label: 'Remote'
+                            Other, 0x1024e8a00, {{0.0, 0.0}, {162.0, 197.0}}
+                              Other, 0x1024e8b40, {{0.0, 0.0}, {162.0, 197.0}}
+                                Other, 0x1024e8c80, {{0.0, 0.0}, {162.0, 197.0}}
+                                  Other, 0x1024e8dc0, {{0.0, 0.0}, {162.0, 197.0}}
+                                    ScrollView, 0x1024e8f00, {{7.5, 0.0}, {147.5, 197.0}}
+                                      Other, 0x1024e9040, {{7.5, 0.0}, {147.5, 197.0}}
+                                        Other, 0x1024e9180, {{7.5, 0.0}, {147.5, 79.6}}
+                                      Other, 0x1024e92c0, {{7.5, 0.0}, {147.5, 197.0}}
+                                      Other, 0x1024e9400, {{7.5, 47.5}, {147.5, 79.0}}
+                                        StaticText, 0x1024e9540, {{15.5, 57.0}, {131.5, 58.5}}, label: 'No Active Players'
+    Window (Main), 0x1024e9680, {{154.0, 33.5}, {6.0, 32.0}}
+    Window, 0x1024e97c0, {{0.0, 0.0}, {162.0, 197.0}}
+      StatusBar, 0x1024e9900, {{0.0, 0.0}, {162.0, 28.0}}
+        Other, 0x1024e9a40, {{0.0, 0.0}, {162.0, 28.0}}
+        Other, 0x1024e9b80, {{0.0, 0.0}, {162.0, 28.0}}
+Path to element:
+ →Application, 0x1024e0500, pid: 82069, label: 'Gus'
+Query chain:
+ →Find: Application 'dev.ericslutz.gus.watchkitapp'
+  Output: {
+    Application, 0x1024e9e00, pid: 82069, label: 'Gus'
+  }

@@ -1,0 +1,46 @@
+{
+  "image": "rated-movie-before.png",
+  "imageSHA256": "8b0e2f1b9143a8ec0fd4c1ded83d1d42485bc3c0ed254898292dbaf26f5eea9e",
+  "dimensions": [
+    1170,
+    2532
+  ],
+  "ratingSampleBoxPixels": [
+    298,
+    645,
+    491,
+    721
+  ],
+  "foregroundRGB": [
+    79,
+    124,
+    130
+  ],
+  "foregroundPixels": 1438,
+  "nearbyDominantBackgroundRGB": [
+    128,
+    128,
+    122
+  ],
+  "backgroundPixels": 660,
+  "sampleContrast": 1.165,
+  "scope": "One native rendered metadata region; not a full-screen or all-artwork contrast claim",
+  "intermediateSurfaceWorstCaseRGB": [
+    38,
+    38,
+    38
+  ],
+  "intermediateRatingWorstCaseContrast": 15.134,
+  "finalSurfaceRGB": [
+    0,
+    0,
+    0
+  ],
+  "finalRatingRGB": [
+    255,
+    255,
+    255
+  ],
+  "finalSpecifiedContrast": 21,
+  "finalAcceptance": "Opaque semantic text pane; strict native rated-movie audit and fresh native control pixel guards, results in VALIDATION.md"
+}

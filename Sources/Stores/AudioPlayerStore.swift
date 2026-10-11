@@ -118,18 +118,32 @@ final class AudioPlayerStore {
 
     private let session: SessionStore
     private let downloads: OfflineDownloadStore?
+    private let localOnly: Bool
+    private let localProgress: OfflinePlaybackProgressStore
+    private let progressWriterToken: UUID
+    private var isLocalPlayback = false
     private let nowPlaying = NowPlayingController()
     private let logger = Logger(category: .playback)
     private var player: AVPlayer?
     private var timeObserver: Any?
     private var endObserver: NSObjectProtocol?
+    private var statusObserver: NSKeyValueObservation?
+    private var preparationGeneration = 0
     private var reportContext: PlaybackReportContext?
     private var lastProgressReportTime: Double = 0
 
-    init(session: SessionStore, tracks: [MediaItem], startIndex: Int = 0, downloads: OfflineDownloadStore? = nil) {
+    init(session: SessionStore, tracks: [MediaItem], startIndex: Int = 0, downloads: OfflineDownloadStore? = nil, localOnly: Bool = false, localProgress: OfflinePlaybackProgressStore? = nil) {
         self.session = session
         self.downloads = downloads
+        self.localOnly = localOnly
+        let progress = localProgress ?? .shared
+        self.localProgress = progress
+        progressWriterToken = progress.writerToken(for: AccountScope(serverID: session.server.id, userID: session.user.id))
         queue = AudioQueue(tracks: tracks, startIndex: startIndex)
+    }
+
+    private var accountScope: AccountScope {
+        AccountScope(serverID: session.server.id, userID: session.user.id)
     }
 
     nonisolated static func initialReportSeconds(for item: MediaItem, resume: Bool) -> Double {
@@ -220,6 +234,7 @@ final class AudioPlayerStore {
     }
 
     func teardown() {
+        preparationGeneration += 1
         reportStopped()
         removeObservers()
         player?.pause()
@@ -238,14 +253,28 @@ final class AudioPlayerStore {
             return
         }
 
+        preparationGeneration += 1
+        let generation = preparationGeneration
+        player?.pause()
+        isPlaying = false
+        removeObservers()
         state = .loading
-        configureAudioSession()
         let diagnostics = DiagnosticsHub.shared
         diagnostics.record(.playbackStartRequested)
         let startupInterval = diagnostics.beginInterval("PlaybackStartup")
 
         do {
+            await PlaybackAudioSession.activate(video: false)
+            try Task.checkCancellation()
+            guard generation == preparationGeneration else { return }
             let localURL = downloads?.localFileURL(for: track, serverID: session.server.id, userID: session.user.id)
+            guard ContentRatingGate.admitsStored(track) else {
+                throw GusError.server(String(localized: "This item is restricted.", comment: "Restricted playback"))
+            }
+            if localURL == nil, localOnly || downloads?.record(for: track, serverID: session.server.id, userID: session.user.id)?.status.isComplete == true {
+                throw GusError.server(String(localized: "The downloaded file is missing. Download it again to play it offline.", comment: "Missing offline file"))
+            }
+            isLocalPlayback = localURL != nil
             let playbackURL: URL
             if let localURL {
                 playbackURL = localURL
@@ -256,6 +285,8 @@ final class AudioPlayerStore {
                 playbackURL = resolution.url
             }
 
+            try Task.checkCancellation()
+            guard generation == preparationGeneration else { return }
             removeObservers()
             let playerItem = AVPlayerItem(url: playbackURL)
             let player = self.player ?? AVPlayer()
@@ -274,7 +305,11 @@ final class AudioPlayerStore {
             )
             reportContext = context
 
-            let initialSeconds = Self.initialReportSeconds(for: track, resume: resume)
+            let localTicks = resume && isLocalPlayback ? localProgress.positionTicks(forItemID: trackID, scope: accountScope) : nil
+            let initialSeconds = localTicks.map { ticks in
+                PlaybackTime.seconds(fromTicks: track.runTimeTicks.map { $0 > 0 && ticks >= $0 ? 0 : ticks } ?? ticks)
+            }
+                ?? Self.initialReportSeconds(for: track, resume: resume)
             if initialSeconds > 0 {
                 await player.seek(
                     to: CMTime(seconds: initialSeconds, preferredTimescale: 600),
@@ -282,6 +317,8 @@ final class AudioPlayerStore {
                     toleranceAfter: .zero
                 )
             }
+            try Task.checkCancellation()
+            guard generation == preparationGeneration else { return }
             currentTime = initialSeconds
             lastProgressReportTime = initialSeconds
 
@@ -289,7 +326,9 @@ final class AudioPlayerStore {
             nowPlaying.start(
                 player: player,
                 item: track,
-                artworkURL: session.mediaProvider.primaryImageURL(for: track, context: .nowPlayingArtwork),
+                artworkURL: isLocalPlayback
+                    ? downloads?.localArtworkURL(for: track, serverID: session.server.id, userID: session.user.id)
+                    : session.mediaProvider.primaryImageURL(for: track, context: .nowPlayingArtwork),
                 onNextTrack: { [weak self] in
                     Task { @MainActor in
                         await self?.next()
@@ -310,10 +349,11 @@ final class AudioPlayerStore {
             reportStart()
         } catch {
             diagnostics.endInterval("PlaybackStartup", startupInterval)
+            guard generation == preparationGeneration else { return }
             let gusError = GusError(from: error)
             guard !gusError.isCancellation else { return }
             diagnostics.record(.playbackFailed)
-            logger.error("Audio playback prepare failed: \(gusError.localizedDescription, privacy: .public)")
+            logger.error("Audio playback prepare failed: \(gusError.localizedDescription, privacy: .private)")
             state = .failed(gusError.localizedDescription)
         }
     }
@@ -338,6 +378,16 @@ final class AudioPlayerStore {
     // MARK: - Observers
 
     private func addObservers(player: AVPlayer) {
+        statusObserver = player.currentItem?.observe(\.status, options: [.initial, .new]) { [weak self] item, _ in
+            guard item.status == .failed else { return }
+            let message = item.error?.localizedDescription ?? String(localized: "Can't Play This")
+            Task { @MainActor [weak self, weak item] in
+                guard let self, let item, self.player?.currentItem === item else { return }
+                self.player?.pause()
+                self.isPlaying = false
+                self.state = .failed(message)
+            }
+        }
         let interval = CMTime(seconds: 1, preferredTimescale: 1)
         timeObserver = player.addPeriodicTimeObserver(forInterval: interval, queue: .main) { [weak self] time in
             MainActor.assumeIsolated {
@@ -358,6 +408,8 @@ final class AudioPlayerStore {
     }
 
     private func removeObservers() {
+        statusObserver?.invalidate()
+        statusObserver = nil
         if let timeObserver {
             player?.removeTimeObserver(timeObserver)
         }
@@ -373,6 +425,10 @@ final class AudioPlayerStore {
     private func reportStart() {
         guard let context = reportContext else { return }
         let ticks = PlaybackTime.ticks(fromSeconds: currentTime)
+        if isLocalPlayback {
+            localProgress.checkpoint(itemID: context.itemID, positionTicks: ticks, scope: accountScope, writerToken: progressWriterToken)
+            return
+        }
         Task {
             try? await session.mediaProvider.reportPlaybackStart(context: context, positionTicks: ticks, isPaused: false)
         }
@@ -384,6 +440,10 @@ final class AudioPlayerStore {
         lastProgressReportTime = currentTime
         let ticks = PlaybackTime.ticks(fromSeconds: currentTime)
         let paused = !isPlaying
+        if isLocalPlayback {
+            localProgress.checkpoint(itemID: context.itemID, positionTicks: ticks, scope: accountScope, writerToken: progressWriterToken)
+            return
+        }
         Task {
             try? await session.mediaProvider.reportPlaybackProgress(context: context, positionTicks: ticks, isPaused: paused)
         }
@@ -394,6 +454,10 @@ final class AudioPlayerStore {
         reportContext = nil
         lastProgressReportTime = 0
         let ticks = PlaybackTime.ticks(fromSeconds: currentTime)
+        if isLocalPlayback {
+            localProgress.checkpoint(itemID: context.itemID, positionTicks: ticks, scope: accountScope, writerToken: progressWriterToken)
+            return
+        }
         Task {
             try? await session.mediaProvider.reportPlaybackStopped(context: context, positionTicks: ticks)
         }
@@ -401,23 +465,7 @@ final class AudioPlayerStore {
 
     // MARK: - Audio session
 
-    private func configureAudioSession() {
-        #if os(watchOS)
-            // watchOS long-form audio routes through the system route picker (AirPods,
-            // speaker); activation is asynchronous and may prompt the user. Playback
-            // starts once the route resolves.
-            let session = AVAudioSession.sharedInstance()
-            try? session.setCategory(.playback, mode: .default, policy: .longFormAudio)
-            session.activate(options: []) { _, _ in }
-        #elseif os(iOS) || os(tvOS) || os(visionOS)
-            try? AVAudioSession.sharedInstance().setCategory(.playback, mode: .default)
-            try? AVAudioSession.sharedInstance().setActive(true)
-        #endif
-    }
-
     private func deactivateAudioSession() {
-        #if os(iOS) || os(tvOS) || os(visionOS) || os(watchOS)
-            try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
-        #endif
+        PlaybackAudioSession.deactivate()
     }
 }

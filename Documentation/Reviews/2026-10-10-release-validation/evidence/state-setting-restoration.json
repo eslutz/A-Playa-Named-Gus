@@ -1,0 +1,15 @@
+{
+  "baseline": {
+    "REDUCE_TRANSPARENCY": "0",
+    "ENHANCE_TEXT_LEGIBILITY": "0",
+    "REDUCE_MOTION": "0",
+    "DIFFERENTIATE_WITHOUT_COLOR": "0"
+  },
+  "restored": {
+    "REDUCE_TRANSPARENCY": "0",
+    "ENHANCE_TEXT_LEGIBILITY": "0",
+    "REDUCE_MOTION": "0",
+    "DIFFERENTIATE_WITHOUT_COLOR": "0"
+  },
+  "equal": true
+}

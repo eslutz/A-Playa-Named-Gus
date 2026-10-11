@@ -1,0 +1,402 @@
+Command line invocation:
+    /Applications/Development/Xcode.app/Contents/Developer/usr/bin/xcodebuild test -project /tmp/gus-multiplatform-audit/GusSimulatorAudit.xcodeproj -scheme PadAudit -destination "platform=iOS Simulator,id=970067FA-918D-40D6-8EFC-550A862F64A2" -derivedDataPath /tmp/gus-multiplatform-audit/build "-only-testing:PadAudit/Audit/testPadScreens" -resultBundlePath /tmp/gus-multiplatform-audit/ipad-screens.xcresult
+
+Writing result bundle at path:
+	/tmp/gus-multiplatform-audit/ipad-screens.xcresult
+
+ComputePackagePrebuildTargetDependencyGraph
+
+Prepare packages
+
+CreateBuildRequest
+
+SendProjectDescription
+
+CreateBuildOperation
+
+ComputeTargetDependencyGraph
+note: Building targets in dependency order
+note: Target dependency graph (1 target)
+    Target 'PadAudit' in project 'GusSimulatorAudit' (no dependencies)
+
+GatherProvisioningInputs
+
+CreateBuildDescription
+
+ExecuteExternalTool /Applications/Development/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -v -E -dM -isysroot /Applications/Development/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.0.sdk -x c -c /dev/null
+
+ExecuteExternalTool /Applications/Development/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc --version
+
+ExecuteExternalTool /Applications/Development/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ld -version_details
+
+Build description signature: 937930962fe7cad7961ca5d976f46c56
+Build description path: /tmp/gus-multiplatform-audit/build/Build/Intermediates.noindex/XCBuildData/937930962fe7cad7961ca5d976f46c56.xcbuilddata
+ClangStatCache /Applications/Development/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang-stat-cache /Applications/Development/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.0.sdk /tmp/gus-multiplatform-audit/build/SDKStatCaches.noindex/iphonesimulator27.0-24A430-8b98ade55cdca77b755c004ede0894fd.sdkstatcache
+    cd /tmp/gus-multiplatform-audit/GusSimulatorAudit.xcodeproj
+    /Applications/Development/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang-stat-cache /Applications/Development/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.0.sdk -o /tmp/gus-multiplatform-audit/build/SDKStatCaches.noindex/iphonesimulator27.0-24A430-8b98ade55cdca77b755c004ede0894fd.sdkstatcache
+
+SwiftDriver PadAudit normal arm64 com.apple.xcode.tools.swift.compiler (in target 'PadAudit' from project 'GusSimulatorAudit')
+    cd /tmp/gus-multiplatform-audit
+    builtin-SwiftDriver -- /Applications/Development/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc -module-name PadAudit -Onone @/tmp/gus-multiplatform-audit/build/Build/Intermediates.noindex/GusSimulatorAudit.build/Debug-iphonesimulator/PadAudit.build/Objects-normal/arm64/PadAudit.SwiftFileList -DDEBUG -module-alias Testing\=_Testing_Unavailable -plugin-path /Applications/Development/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing -enable-bare-slash-regex -enable-experimental-feature DebugDescriptionMacro -sdk /Applications/Development/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.0.sdk -target arm64-apple-ios26.0-simulator -g -module-cache-path /tmp/gus-multiplatform-audit/build/ModuleCache.noindex -Xfrontend -serialize-debugging-options -enable-testing -index-store-path /tmp/gus-multiplatform-audit/build/Index.noindex/DataStore -Xcc -D_LIBCPP_HARDENING_MODE\=_LIBCPP_HARDENING_MODE_DEBUG -swift-version 5 -I /tmp/gus-multiplatform-audit/build/Build/Products/Debug-iphonesimulator -Isystem /Applications/Development/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/usr/lib -F /tmp/gus-multiplatform-audit/build/Build/Products/Debug-iphonesimulator -F /Applications/Development/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/Library/Frameworks -F /Applications/Development/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.0.sdk/Developer/Library/Frameworks -parse-as-library -c -j10 -enable-batch-mode -incremental -Xcc -ivfsstatcache -Xcc /tmp/gus-multiplatform-audit/build/SDKStatCaches.noindex/iphonesimulator27.0-24A430-8b98ade55cdca77b755c004ede0894fd.sdkstatcache -output-file-map /tmp/gus-multiplatform-audit/build/Build/Intermediates.noindex/GusSimulatorAudit.build/Debug-iphonesimulator/PadAudit.build/Objects-normal/arm64/PadAudit-OutputFileMap.json -save-temps -no-color-diagnostics -explicit-module-build -module-cache-path /tmp/gus-multiplatform-audit/build/Build/Intermediates.noindex/SwiftExplicitPrecompiledModules -clang-scanner-module-cache-path /tmp/gus-multiplatform-audit/build/ModuleCache.noindex -sdk-module-cache-path /tmp/gus-multiplatform-audit/build/SDKExplicitPrecompiledModules -emit-dependencies -emit-module -emit-module-path /tmp/gus-multiplatform-audit/build/Build/Intermediates.noindex/GusSimulatorAudit.build/Debug-iphonesimulator/PadAudit.build/Objects-normal/arm64/PadAudit.swiftmodule -serialize-diagnostics -dependency-scan-serialize-diagnostics-path /tmp/gus-multiplatform-audit/build/Build/Intermediates.noindex/GusSimulatorAudit.build/Debug-iphonesimulator/PadAudit.build/Objects-normal/arm64/PadAudit-dependency-scan.dia -validate-clang-modules-once -clang-build-session-file /tmp/gus-multiplatform-audit/build/ModuleCache.noindex/Session.modulevalidation -Xcc -fmodules-prune-interval\=86400 -Xcc -fmodules-prune-after\=345600 -emit-const-values -const-gather-protocols-list /tmp/gus-multiplatform-audit/build/Build/Intermediates.noindex/GusSimulatorAudit.build/Debug-iphonesimulator/PadAudit.build/Objects-normal/arm64/PadAudit_const_extract_protocols.json -Xcc -iquote -Xcc /tmp/gus-multiplatform-audit/build/Build/Intermediates.noindex/GusSimulatorAudit.build/Debug-iphonesimulator/PadAudit.build/PadAudit-generated-files.hmap -Xcc -I/tmp/gus-multiplatform-audit/build/Build/Intermediates.noindex/GusSimulatorAudit.build/Debug-iphonesimulator/PadAudit.build/PadAudit-own-target-headers.hmap -Xcc -I/tmp/gus-multiplatform-audit/build/Build/Intermediates.noindex/GusSimulatorAudit.build/Debug-iphonesimulator/PadAudit.build/PadAudit-all-target-headers.hmap -Xcc -iquote -Xcc /tmp/gus-multiplatform-audit/build/Build/Intermediates.noindex/GusSimulatorAudit.build/Debug-iphonesimulator/PadAudit.build/PadAudit-project-headers.hmap -Xcc -I/tmp/gus-multiplatform-audit/build/Build/Products/Debug-iphonesimulator/include -Xcc -I/tmp/gus-multiplatform-audit/build/Build/Intermediates.noindex/GusSimulatorAudit.build/Debug-iphonesimulator/PadAudit.build/DerivedSources-normal/arm64 -Xcc -I/tmp/gus-multiplatform-audit/build/Build/Intermediates.noindex/GusSimulatorAudit.build/Debug-iphonesimulator/PadAudit.build/DerivedSources/arm64 -Xcc -I/tmp/gus-multiplatform-audit/build/Build/Intermediates.noindex/GusSimulatorAudit.build/Debug-iphonesimulator/PadAudit.build/DerivedSources -Xcc -DDEBUG\=1 -emit-objc-header -emit-objc-header-path /tmp/gus-multiplatform-audit/build/Build/Intermediates.noindex/GusSimulatorAudit.build/Debug-iphonesimulator/PadAudit.build/Objects-normal/arm64/PadAudit-Swift.h -working-directory /tmp/gus-multiplatform-audit -experimental-emit-module-separately -disable-cmo
+
+SwiftCompile normal arm64 Compiling\ Audit.swift /tmp/gus-multiplatform-audit/Tests/Audit.swift (in target 'PadAudit' from project 'GusSimulatorAudit')
+
+SwiftCompile normal arm64 /tmp/gus-multiplatform-audit/Tests/Audit.swift (in target 'PadAudit' from project 'GusSimulatorAudit')
+    cd /tmp/gus-multiplatform-audit
+    builtin-SwiftPerFileCompile Audit.swift
+
+SwiftEmitModule normal arm64 Emitting\ module\ for\ PadAudit (in target 'PadAudit' from project 'GusSimulatorAudit')
+
+SwiftCompile normal arm64 (in target 'PadAudit' from project 'GusSimulatorAudit')
+    cd /tmp/gus-multiplatform-audit
+    
+
+SwiftDriverJobDiscovery normal arm64 Compiling Audit.swift (in target 'PadAudit' from project 'GusSimulatorAudit')
+
+SwiftDriver\ Compilation PadAudit normal arm64 com.apple.xcode.tools.swift.compiler (in target 'PadAudit' from project 'GusSimulatorAudit')
+    cd /tmp/gus-multiplatform-audit
+    builtin-Swift-Compilation -- /Applications/Development/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc -module-name PadAudit -Onone @/tmp/gus-multiplatform-audit/build/Build/Intermediates.noindex/GusSimulatorAudit.build/Debug-iphonesimulator/PadAudit.build/Objects-normal/arm64/PadAudit.SwiftFileList -DDEBUG -module-alias Testing\=_Testing_Unavailable -plugin-path /Applications/Development/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing -enable-bare-slash-regex -enable-experimental-feature DebugDescriptionMacro -sdk /Applications/Development/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.0.sdk -target arm64-apple-ios26.0-simulator -g -module-cache-path /tmp/gus-multiplatform-audit/build/ModuleCache.noindex -Xfrontend -serialize-debugging-options -enable-testing -index-store-path /tmp/gus-multiplatform-audit/build/Index.noindex/DataStore -Xcc -D_LIBCPP_HARDENING_MODE\=_LIBCPP_HARDENING_MODE_DEBUG -swift-version 5 -I /tmp/gus-multiplatform-audit/build/Build/Products/Debug-iphonesimulator -Isystem /Applications/Development/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/usr/lib -F /tmp/gus-multiplatform-audit/build/Build/Products/Debug-iphonesimulator -F /Applications/Development/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/Library/Frameworks -F /Applications/Development/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.0.sdk/Developer/Library/Frameworks -parse-as-library -c -j10 -enable-batch-mode -incremental -Xcc -ivfsstatcache -Xcc /tmp/gus-multiplatform-audit/build/SDKStatCaches.noindex/iphonesimulator27.0-24A430-8b98ade55cdca77b755c004ede0894fd.sdkstatcache -output-file-map /tmp/gus-multiplatform-audit/build/Build/Intermediates.noindex/GusSimulatorAudit.build/Debug-iphonesimulator/PadAudit.build/Objects-normal/arm64/PadAudit-OutputFileMap.json -save-temps -no-color-diagnostics -explicit-module-build -module-cache-path /tmp/gus-multiplatform-audit/build/Build/Intermediates.noindex/SwiftExplicitPrecompiledModules -clang-scanner-module-cache-path /tmp/gus-multiplatform-audit/build/ModuleCache.noindex -sdk-module-cache-path /tmp/gus-multiplatform-audit/build/SDKExplicitPrecompiledModules -emit-dependencies -emit-module -emit-module-path /tmp/gus-multiplatform-audit/build/Build/Intermediates.noindex/GusSimulatorAudit.build/Debug-iphonesimulator/PadAudit.build/Objects-normal/arm64/PadAudit.swiftmodule -serialize-diagnostics -dependency-scan-serialize-diagnostics-path /tmp/gus-multiplatform-audit/build/Build/Intermediates.noindex/GusSimulatorAudit.build/Debug-iphonesimulator/PadAudit.build/Objects-normal/arm64/PadAudit-dependency-scan.dia -validate-clang-modules-once -clang-build-session-file /tmp/gus-multiplatform-audit/build/ModuleCache.noindex/Session.modulevalidation -Xcc -fmodules-prune-interval\=86400 -Xcc -fmodules-prune-after\=345600 -emit-const-values -const-gather-protocols-list /tmp/gus-multiplatform-audit/build/Build/Intermediates.noindex/GusSimulatorAudit.build/Debug-iphonesimulator/PadAudit.build/Objects-normal/arm64/PadAudit_const_extract_protocols.json -Xcc -iquote -Xcc /tmp/gus-multiplatform-audit/build/Build/Intermediates.noindex/GusSimulatorAudit.build/Debug-iphonesimulator/PadAudit.build/PadAudit-generated-files.hmap -Xcc -I/tmp/gus-multiplatform-audit/build/Build/Intermediates.noindex/GusSimulatorAudit.build/Debug-iphonesimulator/PadAudit.build/PadAudit-own-target-headers.hmap -Xcc -I/tmp/gus-multiplatform-audit/build/Build/Intermediates.noindex/GusSimulatorAudit.build/Debug-iphonesimulator/PadAudit.build/PadAudit-all-target-headers.hmap -Xcc -iquote -Xcc /tmp/gus-multiplatform-audit/build/Build/Intermediates.noindex/GusSimulatorAudit.build/Debug-iphonesimulator/PadAudit.build/PadAudit-project-headers.hmap -Xcc -I/tmp/gus-multiplatform-audit/build/Build/Products/Debug-iphonesimulator/include -Xcc -I/tmp/gus-multiplatform-audit/build/Build/Intermediates.noindex/GusSimulatorAudit.build/Debug-iphonesimulator/PadAudit.build/DerivedSources-normal/arm64 -Xcc -I/tmp/gus-multiplatform-audit/build/Build/Intermediates.noindex/GusSimulatorAudit.build/Debug-iphonesimulator/PadAudit.build/DerivedSources/arm64 -Xcc -I/tmp/gus-multiplatform-audit/build/Build/Intermediates.noindex/GusSimulatorAudit.build/Debug-iphonesimulator/PadAudit.build/DerivedSources -Xcc -DDEBUG\=1 -emit-objc-header -emit-objc-header-path /tmp/gus-multiplatform-audit/build/Build/Intermediates.noindex/GusSimulatorAudit.build/Debug-iphonesimulator/PadAudit.build/Objects-normal/arm64/PadAudit-Swift.h -working-directory /tmp/gus-multiplatform-audit -experimental-emit-module-separately -disable-cmo
+
+SwiftDriverJobDiscovery normal arm64 Emitting module for PadAudit (in target 'PadAudit' from project 'GusSimulatorAudit')
+
+SwiftDriver\ Compilation\ Requirements PadAudit normal arm64 com.apple.xcode.tools.swift.compiler (in target 'PadAudit' from project 'GusSimulatorAudit')
+    cd /tmp/gus-multiplatform-audit
+    builtin-Swift-Compilation-Requirements -- /Applications/Development/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc -module-name PadAudit -Onone @/tmp/gus-multiplatform-audit/build/Build/Intermediates.noindex/GusSimulatorAudit.build/Debug-iphonesimulator/PadAudit.build/Objects-normal/arm64/PadAudit.SwiftFileList -DDEBUG -module-alias Testing\=_Testing_Unavailable -plugin-path /Applications/Development/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing -enable-bare-slash-regex -enable-experimental-feature DebugDescriptionMacro -sdk /Applications/Development/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.0.sdk -target arm64-apple-ios26.0-simulator -g -module-cache-path /tmp/gus-multiplatform-audit/build/ModuleCache.noindex -Xfrontend -serialize-debugging-options -enable-testing -index-store-path /tmp/gus-multiplatform-audit/build/Index.noindex/DataStore -Xcc -D_LIBCPP_HARDENING_MODE\=_LIBCPP_HARDENING_MODE_DEBUG -swift-version 5 -I /tmp/gus-multiplatform-audit/build/Build/Products/Debug-iphonesimulator -Isystem /Applications/Development/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/usr/lib -F /tmp/gus-multiplatform-audit/build/Build/Products/Debug-iphonesimulator -F /Applications/Development/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/Library/Frameworks -F /Applications/Development/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.0.sdk/Developer/Library/Frameworks -parse-as-library -c -j10 -enable-batch-mode -incremental -Xcc -ivfsstatcache -Xcc /tmp/gus-multiplatform-audit/build/SDKStatCaches.noindex/iphonesimulator27.0-24A430-8b98ade55cdca77b755c004ede0894fd.sdkstatcache -output-file-map /tmp/gus-multiplatform-audit/build/Build/Intermediates.noindex/GusSimulatorAudit.build/Debug-iphonesimulator/PadAudit.build/Objects-normal/arm64/PadAudit-OutputFileMap.json -save-temps -no-color-diagnostics -explicit-module-build -module-cache-path /tmp/gus-multiplatform-audit/build/Build/Intermediates.noindex/SwiftExplicitPrecompiledModules -clang-scanner-module-cache-path /tmp/gus-multiplatform-audit/build/ModuleCache.noindex -sdk-module-cache-path /tmp/gus-multiplatform-audit/build/SDKExplicitPrecompiledModules -emit-dependencies -emit-module -emit-module-path /tmp/gus-multiplatform-audit/build/Build/Intermediates.noindex/GusSimulatorAudit.build/Debug-iphonesimulator/PadAudit.build/Objects-normal/arm64/PadAudit.swiftmodule -serialize-diagnostics -dependency-scan-serialize-diagnostics-path /tmp/gus-multiplatform-audit/build/Build/Intermediates.noindex/GusSimulatorAudit.build/Debug-iphonesimulator/PadAudit.build/Objects-normal/arm64/PadAudit-dependency-scan.dia -validate-clang-modules-once -clang-build-session-file /tmp/gus-multiplatform-audit/build/ModuleCache.noindex/Session.modulevalidation -Xcc -fmodules-prune-interval\=86400 -Xcc -fmodules-prune-after\=345600 -emit-const-values -const-gather-protocols-list /tmp/gus-multiplatform-audit/build/Build/Intermediates.noindex/GusSimulatorAudit.build/Debug-iphonesimulator/PadAudit.build/Objects-normal/arm64/PadAudit_const_extract_protocols.json -Xcc -iquote -Xcc /tmp/gus-multiplatform-audit/build/Build/Intermediates.noindex/GusSimulatorAudit.build/Debug-iphonesimulator/PadAudit.build/PadAudit-generated-files.hmap -Xcc -I/tmp/gus-multiplatform-audit/build/Build/Intermediates.noindex/GusSimulatorAudit.build/Debug-iphonesimulator/PadAudit.build/PadAudit-own-target-headers.hmap -Xcc -I/tmp/gus-multiplatform-audit/build/Build/Intermediates.noindex/GusSimulatorAudit.build/Debug-iphonesimulator/PadAudit.build/PadAudit-all-target-headers.hmap -Xcc -iquote -Xcc /tmp/gus-multiplatform-audit/build/Build/Intermediates.noindex/GusSimulatorAudit.build/Debug-iphonesimulator/PadAudit.build/PadAudit-project-headers.hmap -Xcc -I/tmp/gus-multiplatform-audit/build/Build/Products/Debug-iphonesimulator/include -Xcc -I/tmp/gus-multiplatform-audit/build/Build/Intermediates.noindex/GusSimulatorAudit.build/Debug-iphonesimulator/PadAudit.build/DerivedSources-normal/arm64 -Xcc -I/tmp/gus-multiplatform-audit/build/Build/Intermediates.noindex/GusSimulatorAudit.build/Debug-iphonesimulator/PadAudit.build/DerivedSources/arm64 -Xcc -I/tmp/gus-multiplatform-audit/build/Build/Intermediates.noindex/GusSimulatorAudit.build/Debug-iphonesimulator/PadAudit.build/DerivedSources -Xcc -DDEBUG\=1 -emit-objc-header -emit-objc-header-path /tmp/gus-multiplatform-audit/build/Build/Intermediates.noindex/GusSimulatorAudit.build/Debug-iphonesimulator/PadAudit.build/Objects-normal/arm64/PadAudit-Swift.h -working-directory /tmp/gus-multiplatform-audit -experimental-emit-module-separately -disable-cmo
+
+Copy /tmp/gus-multiplatform-audit/build/Build/Products/Debug-iphonesimulator/PadAudit.swiftmodule/Project/arm64-apple-ios-simulator.swiftsourceinfo /tmp/gus-multiplatform-audit/build/Build/Intermediates.noindex/GusSimulatorAudit.build/Debug-iphonesimulator/PadAudit.build/Objects-normal/arm64/PadAudit.swiftsourceinfo (in target 'PadAudit' from project 'GusSimulatorAudit')
+    cd /tmp/gus-multiplatform-audit
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks -rename /tmp/gus-multiplatform-audit/build/Build/Intermediates.noindex/GusSimulatorAudit.build/Debug-iphonesimulator/PadAudit.build/Objects-normal/arm64/PadAudit.swiftsourceinfo /tmp/gus-multiplatform-audit/build/Build/Products/Debug-iphonesimulator/PadAudit.swiftmodule/Project/arm64-apple-ios-simulator.swiftsourceinfo
+
+Copy /tmp/gus-multiplatform-audit/build/Build/Products/Debug-iphonesimulator/PadAudit.swiftmodule/arm64-apple-ios-simulator.abi.json /tmp/gus-multiplatform-audit/build/Build/Intermediates.noindex/GusSimulatorAudit.build/Debug-iphonesimulator/PadAudit.build/Objects-normal/arm64/PadAudit.abi.json (in target 'PadAudit' from project 'GusSimulatorAudit')
+    cd /tmp/gus-multiplatform-audit
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks -rename /tmp/gus-multiplatform-audit/build/Build/Intermediates.noindex/GusSimulatorAudit.build/Debug-iphonesimulator/PadAudit.build/Objects-normal/arm64/PadAudit.abi.json /tmp/gus-multiplatform-audit/build/Build/Products/Debug-iphonesimulator/PadAudit.swiftmodule/arm64-apple-ios-simulator.abi.json
+
+Ld /tmp/gus-multiplatform-audit/build/Build/Products/Debug-iphonesimulator/PadAudit-Runner.app/PlugIns/PadAudit.xctest/PadAudit normal (in target 'PadAudit' from project 'GusSimulatorAudit')
+    cd /tmp/gus-multiplatform-audit
+    /Applications/Development/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -Xlinker -reproducible -target arm64-apple-ios26.0-simulator -bundle -isysroot /Applications/Development/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.0.sdk -O0 -Xlinker -no_warn_duplicate_libraries -L/tmp/gus-multiplatform-audit/build/Build/Intermediates.noindex/EagerLinkingTBDs/Debug-iphonesimulator -L/tmp/gus-multiplatform-audit/build/Build/Products/Debug-iphonesimulator -L/Applications/Development/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/usr/lib -F/tmp/gus-multiplatform-audit/build/Build/Intermediates.noindex/EagerLinkingTBDs/Debug-iphonesimulator -F/tmp/gus-multiplatform-audit/build/Build/Products/Debug-iphonesimulator -iframework /Applications/Development/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/Library/Frameworks -iframework /Applications/Development/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.0.sdk/Developer/Library/Frameworks -filelist /tmp/gus-multiplatform-audit/build/Build/Intermediates.noindex/GusSimulatorAudit.build/Debug-iphonesimulator/PadAudit.build/Objects-normal/arm64/PadAudit.LinkFileList -Xlinker -rpath -Xlinker @loader_path/Frameworks -Xlinker -rpath -Xlinker @executable_path/Frameworks -Xlinker -dead_strip -Xlinker -object_path_lto -Xlinker /tmp/gus-multiplatform-audit/build/Build/Intermediates.noindex/GusSimulatorAudit.build/Debug-iphonesimulator/PadAudit.build/Objects-normal/arm64/PadAudit_lto.o -rdynamic -Xlinker -no_deduplicate -Xlinker -objc_abi_version -Xlinker 2 -Xlinker -dependency_info -Xlinker /tmp/gus-multiplatform-audit/build/Build/Intermediates.noindex/GusSimulatorAudit.build/Debug-iphonesimulator/PadAudit.build/Objects-normal/arm64/PadAudit_dependency_info.dat -fobjc-link-runtime -L/Applications/Development/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphonesimulator -L/usr/lib/swift -Xlinker -add_ast_path -Xlinker /tmp/gus-multiplatform-audit/build/Build/Intermediates.noindex/GusSimulatorAudit.build/Debug-iphonesimulator/PadAudit.build/Objects-normal/arm64/PadAudit.swiftmodule -Xlinker -needed_framework -Xlinker XCTest -framework XCTest -Xlinker -needed-lXCTestSwiftSupport -lXCTestSwiftSupport -o /tmp/gus-multiplatform-audit/build/Build/Products/Debug-iphonesimulator/PadAudit-Runner.app/PlugIns/PadAudit.xctest/PadAudit
+
+ExtractAppIntentsMetadata (in target 'PadAudit' from project 'GusSimulatorAudit')
+    cd /tmp/gus-multiplatform-audit
+    /Applications/Development/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/appintentsmetadataprocessor --toolchain-dir /Applications/Development/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain --module-name PadAudit --sdk-root /Applications/Development/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.0.sdk --xcode-version 27A266a --platform-family iOS --deployment-target 26.0 --bundle-identifier dev.ericslutz.gusaudit.PadAudit --output /tmp/gus-multiplatform-audit/build/Build/Products/Debug-iphonesimulator/PadAudit-Runner.app/PlugIns/PadAudit.xctest --target-triple arm64-apple-ios26.0-simulator --binary-file /tmp/gus-multiplatform-audit/build/Build/Products/Debug-iphonesimulator/PadAudit-Runner.app/PlugIns/PadAudit.xctest/PadAudit --dependency-file /tmp/gus-multiplatform-audit/build/Build/Intermediates.noindex/GusSimulatorAudit.build/Debug-iphonesimulator/PadAudit.build/Objects-normal/arm64/PadAudit_dependency_info.dat --stringsdata-file /tmp/gus-multiplatform-audit/build/Build/Intermediates.noindex/GusSimulatorAudit.build/Debug-iphonesimulator/PadAudit.build/Objects-normal/arm64/ExtractedAppShortcutsMetadata.stringsdata --source-file-list /tmp/gus-multiplatform-audit/build/Build/Intermediates.noindex/GusSimulatorAudit.build/Debug-iphonesimulator/PadAudit.build/Objects-normal/arm64/PadAudit.SwiftFileList --metadata-file-list /tmp/gus-multiplatform-audit/build/Build/Intermediates.noindex/GusSimulatorAudit.build/Debug-iphonesimulator/PadAudit.build/PadAudit.DependencyMetadataFileList --static-metadata-file-list /tmp/gus-multiplatform-audit/build/Build/Intermediates.noindex/GusSimulatorAudit.build/Debug-iphonesimulator/PadAudit.build/PadAudit.DependencyStaticMetadataFileList --swift-const-vals-list /tmp/gus-multiplatform-audit/build/Build/Intermediates.noindex/GusSimulatorAudit.build/Debug-iphonesimulator/PadAudit.build/Objects-normal/arm64/PadAudit.SwiftConstValuesFileList --compile-time-extraction --deployment-aware-processing --no-app-shortcuts-localization
+2026-10-10 13:33:45.325 appintentsmetadataprocessor[22050:109518] Starting appintentsmetadataprocessor export
+2026-10-10 13:33:45.342 appintentsmetadataprocessor[22050:109518] warning: Metadata extraction skipped, no AppIntents.framework dependency found
+
+ProcessInfoPlistFile /tmp/gus-multiplatform-audit/build/Build/Products/Debug-iphonesimulator/PadAudit-Runner.app/PlugIns/PadAudit.xctest/Info.plist /tmp/gus-multiplatform-audit/build/Build/Intermediates.noindex/GusSimulatorAudit.build/Debug-iphonesimulator/PadAudit.build/empty-PadAudit.plist (in target 'PadAudit' from project 'GusSimulatorAudit')
+    cd /tmp/gus-multiplatform-audit
+    builtin-infoPlistUtility /tmp/gus-multiplatform-audit/build/Build/Intermediates.noindex/GusSimulatorAudit.build/Debug-iphonesimulator/PadAudit.build/empty-PadAudit.plist -producttype com.apple.product-type.bundle.ui-testing -expandbuildsettings -format binary -platform iphonesimulator -additionalcontentfile /tmp/gus-multiplatform-audit/build/Build/Intermediates.noindex/GusSimulatorAudit.build/Debug-iphonesimulator/PadAudit.build/ProductTypeInfoPlistAdditions.plist -o /tmp/gus-multiplatform-audit/build/Build/Products/Debug-iphonesimulator/PadAudit-Runner.app/PlugIns/PadAudit.xctest/Info.plist
+
+CopySwiftLibs /tmp/gus-multiplatform-audit/build/Build/Products/Debug-iphonesimulator/PadAudit-Runner.app/PlugIns/PadAudit.xctest (in target 'PadAudit' from project 'GusSimulatorAudit')
+    cd /tmp/gus-multiplatform-audit
+    builtin-swiftStdLibTool --copy --verbose --scan-executable /tmp/gus-multiplatform-audit/build/Build/Products/Debug-iphonesimulator/PadAudit-Runner.app/PlugIns/PadAudit.xctest/PadAudit --scan-folder /tmp/gus-multiplatform-audit/build/Build/Products/Debug-iphonesimulator/PadAudit-Runner.app/PlugIns/PadAudit.xctest/Frameworks --scan-folder /tmp/gus-multiplatform-audit/build/Build/Products/Debug-iphonesimulator/PadAudit-Runner.app/PlugIns/PadAudit.xctest/PlugIns --scan-folder /tmp/gus-multiplatform-audit/build/Build/Products/Debug-iphonesimulator/PadAudit-Runner.app/PlugIns/PadAudit.xctest/SystemExtensions --scan-folder /tmp/gus-multiplatform-audit/build/Build/Products/Debug-iphonesimulator/PadAudit-Runner.app/PlugIns/PadAudit.xctest/Extensions --platform iphonesimulator --toolchain /Applications/Development/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain --destination /tmp/gus-multiplatform-audit/build/Build/Products/Debug-iphonesimulator/PadAudit-Runner.app/PlugIns/PadAudit.xctest/Frameworks --strip-bitcode --scan-executable /Applications/Development/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/usr/lib/libXCTestSwiftSupport.dylib --strip-bitcode-tool /Applications/Development/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/bitcode_strip --emit-dependency-info /tmp/gus-multiplatform-audit/build/Build/Intermediates.noindex/GusSimulatorAudit.build/Debug-iphonesimulator/PadAudit.build/SwiftStdLibToolInputDependencies.dep --filter-for-swift-os
+Ignoring --strip-bitcode because --sign was not passed
+
+PruneExplicitPrecompiledModules /tmp/gus-multiplatform-audit/build/Build/Intermediates.noindex/SwiftExplicitPrecompiledModules
+
+PruneExplicitPrecompiledModules /tmp/gus-multiplatform-audit/build/Build/Intermediates.noindex/ExplicitPrecompiledModules
+
+PruneExplicitPrecompiledModules /tmp/gus-multiplatform-audit/build/SDKExplicitPrecompiledModules
+
+2026-10-10 13:33:50.485210-0400 PadAudit-Runner[22059:109752] [Default] Running tests...
+2026-10-10 13:33:50.550121-0400 PadAudit-Runner[22059:109752] [UIKit App Config] Update the Info.plist: Launch screens will soon be required.
+    t =      nans Interface orientation changed to Portrait
+Test Suite 'Selected tests' started at 2026-10-10 13:34:00.405.
+Test Suite 'PadAudit.xctest' started at 2026-10-10 13:34:00.406.
+Test Suite 'Audit' started at 2026-10-10 13:34:00.406.
+Test Case '-[PadAudit.Audit testPadScreens]' started.
+    t =     0.00s Start Test at 2026-10-10 13:34:00.408
+    t =     0.41s Set Up
+    t =     0.41s Setting device orientation to Portrait
+    t =     0.43s     Device orientation changed to Portrait
+objc[22059]: Class UIAccessibilityLoaderWebShared is implemented in both /private/var/run/com.apple.security.cryptexd/mnt/com.apple.iPhoneOS.SimulatorRuntime-v24.1.434.0.nBOtcw/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 27.0.simruntime/Contents/Resources/RuntimeRoot/System/Library/AccessibilityBundles/WebKit.axbundle/WebKit (0x1069f4398) and /private/var/run/com.apple.security.cryptexd/mnt/com.apple.iPhoneOS.SimulatorRuntime-v24.1.434.0.nBOtcw/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 27.0.simruntime/Contents/Resources/RuntimeRoot/System/Library/AccessibilityBundles/WebCore.axbundle/WebCore (0x107344310). This may cause spurious casting failures and mysterious crashes. One of the duplicates must be removed or renamed.
+    t =     0.59s     Wait for com.apple.springboard to idle
+    t =     0.66s Open dev.ericslutz.gus
+    t =     0.66s     Launch dev.ericslutz.gus
+    t =     0.96s         Setting up automation session
+    t =     3.83s         Wait for dev.ericslutz.gus to idle
+    t =    13.51s Find the Application 'dev.ericslutz.gus'
+    t =    13.99s Added attachment named 'pad-connect-portrait'
+    t =    13.99s Requesting snapshot of accessibility hierarchy for app with pid 22100
+    t =    14.19s Requesting snapshot of accessibility hierarchy for app with pid 22100
+    t =    14.22s Added attachment named 'pad-connect-portrait-tree'
+    t =    14.22s Setting device orientation to Landscape Left
+    t =    14.23s     Device orientation changed to Landscape Left
+    t =    14.39s     Interface orientation changed to Landscape Right
+    t =    15.29s     Wait for dev.ericslutz.gus to idle
+    t =    15.29s     Wait for com.apple.springboard to idle
+    t =    17.59s Find the Application 'dev.ericslutz.gus'
+    t =    17.85s Added attachment named 'pad-connect-landscape'
+    t =    17.85s Requesting snapshot of accessibility hierarchy for app with pid 22100
+    t =    18.04s Requesting snapshot of accessibility hierarchy for app with pid 22100
+    t =    18.08s Added attachment named 'pad-connect-landscape-tree'
+    t =    18.08s Terminate dev.ericslutz.gus:22100
+    t =    19.15s Setting device orientation to Portrait
+    t =    19.15s     Device orientation changed to Portrait
+    t =    19.21s     Interface orientation changed to Portrait
+    t =    19.25s     Wait for com.apple.springboard to idle
+    t =    19.65s Open dev.ericslutz.gus
+    t =    19.65s     Launch dev.ericslutz.gus
+    t =    19.85s         Setting up automation session
+    t =    23.75s         Wait for dev.ericslutz.gus to idle
+    t =    33.85s Find the Application 'dev.ericslutz.gus'
+    t =    34.32s Added attachment named 'pad-home-portrait'
+    t =    34.32s Requesting snapshot of accessibility hierarchy for app with pid 22278
+    t =    34.70s Requesting snapshot of accessibility hierarchy for app with pid 22278
+    t =    34.79s Added attachment named 'pad-home-portrait-tree'
+    t =    34.79s Setting device orientation to Landscape Left
+    t =    34.79s     Device orientation changed to Landscape Left
+    t =    35.06s     Interface orientation changed to Landscape Right
+    t =    35.08s     Wait for dev.ericslutz.gus to idle
+    t =    35.16s     Wait for com.apple.springboard to idle
+    t =    37.80s Find the Application 'dev.ericslutz.gus'
+    t =    38.10s Added attachment named 'pad-home-landscape'
+    t =    38.10s Requesting snapshot of accessibility hierarchy for app with pid 22278
+    t =    38.47s Requesting snapshot of accessibility hierarchy for app with pid 22278
+    t =    38.58s Added attachment named 'pad-home-landscape-tree'
+    t =    38.58s Terminate dev.ericslutz.gus:22278
+    t =    39.65s Setting device orientation to Portrait
+    t =    39.66s     Device orientation changed to Portrait
+    t =    39.67s     Interface orientation changed to Portrait
+    t =    39.73s     Wait for com.apple.springboard to idle
+    t =    40.16s Open dev.ericslutz.gus
+    t =    40.16s     Launch dev.ericslutz.gus
+    t =    40.20s         Setting up automation session
+    t =    43.36s         Wait for dev.ericslutz.gus to idle
+    t =    53.97s Find the Application 'dev.ericslutz.gus'
+    t =    55.88s Added attachment named 'pad-libraries-portrait'
+    t =    55.89s Requesting snapshot of accessibility hierarchy for app with pid 22303
+    t =    56.56s Requesting snapshot of accessibility hierarchy for app with pid 22303
+    t =    56.66s Added attachment named 'pad-libraries-portrait-tree'
+    t =    56.66s Setting device orientation to Landscape Left
+    t =    56.68s     Device orientation changed to Landscape Left
+    t =    56.99s     Interface orientation changed to Landscape Right
+    t =    57.70s     Wait for dev.ericslutz.gus to idle
+    t =    58.66s     Wait for com.apple.springboard to idle
+    t =    60.66s Find the Application 'dev.ericslutz.gus'
+    t =    61.00s Added attachment named 'pad-libraries-landscape'
+    t =    61.00s Requesting snapshot of accessibility hierarchy for app with pid 22303
+    t =    61.28s Requesting snapshot of accessibility hierarchy for app with pid 22303
+    t =    61.35s Added attachment named 'pad-libraries-landscape-tree'
+    t =    61.35s Terminate dev.ericslutz.gus:22303
+    t =    62.42s Setting device orientation to Portrait
+    t =    62.42s     Device orientation changed to Portrait
+    t =    62.48s     Interface orientation changed to Portrait
+    t =    62.48s     Wait for com.apple.springboard to idle
+    t =    62.88s Open dev.ericslutz.gus
+    t =    62.89s     Launch dev.ericslutz.gus
+    t =    62.94s         Setting up automation session
+    t =    67.40s         Wait for dev.ericslutz.gus to idle
+    t =    77.95s Find the Application 'dev.ericslutz.gus'
+    t =    78.33s Added attachment named 'pad-settings-portrait'
+    t =    78.33s Requesting snapshot of accessibility hierarchy for app with pid 22347
+    t =    78.94s Requesting snapshot of accessibility hierarchy for app with pid 22347
+    t =    79.06s Added attachment named 'pad-settings-portrait-tree'
+    t =    79.06s Setting device orientation to Landscape Left
+    t =    79.06s     Device orientation changed to Landscape Left
+    t =    79.12s     Interface orientation changed to Landscape Right
+    t =    79.19s     Wait for dev.ericslutz.gus to idle
+    t =    79.76s     Wait for com.apple.springboard to idle
+    t =    81.98s Find the Application 'dev.ericslutz.gus'
+    t =    82.24s Added attachment named 'pad-settings-landscape'
+    t =    82.24s Requesting snapshot of accessibility hierarchy for app with pid 22347
+    t =    82.86s Requesting snapshot of accessibility hierarchy for app with pid 22347
+    t =    82.98s Added attachment named 'pad-settings-landscape-tree'
+    t =    82.98s Terminate dev.ericslutz.gus:22347
+    t =    84.04s Setting device orientation to Portrait
+    t =    84.04s     Device orientation changed to Portrait
+    t =    84.06s     Interface orientation changed to Portrait
+    t =    84.12s     Wait for com.apple.springboard to idle
+    t =    84.51s Open dev.ericslutz.gus
+    t =    84.51s     Launch dev.ericslutz.gus
+    t =    84.56s         Setting up automation session
+    t =    87.12s         Wait for dev.ericslutz.gus to idle
+    t =    96.72s Find the Application 'dev.ericslutz.gus'
+    t =    97.02s Added attachment named 'pad-downloaded-portrait'
+    t =    97.02s Requesting snapshot of accessibility hierarchy for app with pid 22385
+    t =    97.30s Requesting snapshot of accessibility hierarchy for app with pid 22385
+    t =    97.37s Added attachment named 'pad-downloaded-portrait-tree'
+    t =    97.37s Setting device orientation to Landscape Left
+    t =    97.38s     Device orientation changed to Landscape Left
+    t =    97.39s     Interface orientation changed to Landscape Right
+    t =    97.50s     Wait for dev.ericslutz.gus to idle
+    t =    98.09s     Wait for com.apple.springboard to idle
+    t =   100.24s Find the Application 'dev.ericslutz.gus'
+    t =   100.47s Added attachment named 'pad-downloaded-landscape'
+    t =   100.47s Requesting snapshot of accessibility hierarchy for app with pid 22385
+    t =   100.71s Requesting snapshot of accessibility hierarchy for app with pid 22385
+    t =   100.79s Added attachment named 'pad-downloaded-landscape-tree'
+    t =   100.79s Terminate dev.ericslutz.gus:22385
+    t =   101.85s Setting device orientation to Portrait
+    t =   101.86s     Device orientation changed to Portrait
+    t =   101.90s     Interface orientation changed to Portrait
+    t =   101.93s     Wait for com.apple.springboard to idle
+    t =   102.33s Open dev.ericslutz.gus
+    t =   102.33s     Launch dev.ericslutz.gus
+    t =   102.37s         Setting up automation session
+    t =   104.84s         Wait for dev.ericslutz.gus to idle
+    t =   113.63s Find the Application 'dev.ericslutz.gus'
+    t =   114.08s Added attachment named 'pad-movie-portrait'
+    t =   114.08s Requesting snapshot of accessibility hierarchy for app with pid 22400
+    t =   114.55s Requesting snapshot of accessibility hierarchy for app with pid 22400
+    t =   114.67s Added attachment named 'pad-movie-portrait-tree'
+    t =   114.67s Setting device orientation to Landscape Left
+    t =   114.67s     Device orientation changed to Landscape Left
+    t =   114.69s     Interface orientation changed to Landscape Right
+    t =   114.79s     Wait for dev.ericslutz.gus to idle
+    t =   114.90s     Wait for com.apple.springboard to idle
+    t =   117.51s Find the Application 'dev.ericslutz.gus'
+    t =   117.80s Added attachment named 'pad-movie-landscape'
+    t =   117.80s Requesting snapshot of accessibility hierarchy for app with pid 22400
+    t =   118.35s Requesting snapshot of accessibility hierarchy for app with pid 22400
+    t =   118.46s Added attachment named 'pad-movie-landscape-tree'
+    t =   118.46s Terminate dev.ericslutz.gus:22400
+    t =   119.51s Setting device orientation to Portrait
+    t =   119.51s     Device orientation changed to Portrait
+    t =   119.53s     Interface orientation changed to Portrait
+    t =   119.55s     Wait for com.apple.springboard to idle
+    t =   119.58s Open dev.ericslutz.gus
+    t =   119.58s     Launch dev.ericslutz.gus
+    t =   119.62s         Setting up automation session
+    t =   122.99s         Wait for dev.ericslutz.gus to idle
+    t =   134.06s Find the Application 'dev.ericslutz.gus'
+    t =   134.55s Added attachment named 'pad-album-portrait'
+    t =   134.55s Requesting snapshot of accessibility hierarchy for app with pid 22437
+    t =   135.07s Requesting snapshot of accessibility hierarchy for app with pid 22437
+    t =   135.17s Added attachment named 'pad-album-portrait-tree'
+    t =   135.17s Setting device orientation to Landscape Left
+    t =   135.17s     Device orientation changed to Landscape Left
+    t =   135.22s     Interface orientation changed to Landscape Right
+    t =   135.52s     Wait for dev.ericslutz.gus to idle
+    t =   135.95s     Wait for com.apple.springboard to idle
+    t =   138.20s Find the Application 'dev.ericslutz.gus'
+    t =   138.46s Added attachment named 'pad-album-landscape'
+    t =   138.46s Requesting snapshot of accessibility hierarchy for app with pid 22437
+    t =   138.89s Requesting snapshot of accessibility hierarchy for app with pid 22437
+    t =   138.99s Added attachment named 'pad-album-landscape-tree'
+    t =   138.99s Terminate dev.ericslutz.gus:22437
+    t =   140.05s Setting device orientation to Portrait
+    t =   140.06s     Device orientation changed to Portrait
+    t =   140.10s     Interface orientation changed to Portrait
+    t =   140.13s     Wait for com.apple.springboard to idle
+    t =   140.56s Open dev.ericslutz.gus
+    t =   140.56s     Launch dev.ericslutz.gus
+    t =   140.63s         Setting up automation session
+    t =   145.06s         Wait for dev.ericslutz.gus to idle
+    t =   155.35s Find the Application 'dev.ericslutz.gus'
+    t =   155.80s Added attachment named 'pad-photo-portrait'
+    t =   155.81s Requesting snapshot of accessibility hierarchy for app with pid 22713
+    t =   156.25s Requesting snapshot of accessibility hierarchy for app with pid 22713
+    t =   156.36s Added attachment named 'pad-photo-portrait-tree'
+    t =   156.37s Setting device orientation to Landscape Left
+    t =   156.37s     Device orientation changed to Landscape Left
+    t =   156.42s     Interface orientation changed to Landscape Right
+    t =   156.44s     Wait for dev.ericslutz.gus to idle
+    t =   157.00s     Wait for com.apple.springboard to idle
+    t =   159.19s Find the Application 'dev.ericslutz.gus'
+    t =   159.54s Added attachment named 'pad-photo-landscape'
+    t =   159.54s Requesting snapshot of accessibility hierarchy for app with pid 22713
+    t =   159.97s Requesting snapshot of accessibility hierarchy for app with pid 22713
+    t =   160.08s Added attachment named 'pad-photo-landscape-tree'
+    t =   160.08s Terminate dev.ericslutz.gus:22713
+    t =   161.14s Setting device orientation to Portrait
+    t =   161.15s     Device orientation changed to Portrait
+    t =   161.16s     Interface orientation changed to Portrait
+    t =   161.22s     Wait for com.apple.springboard to idle
+    t =   161.61s Open dev.ericslutz.gus
+    t =   161.61s     Launch dev.ericslutz.gus
+    t =   161.65s         Setting up automation session
+    t =   164.56s         Wait for dev.ericslutz.gus to idle
+    t =   174.84s Find the Application 'dev.ericslutz.gus'
+    t =   175.25s Added attachment named 'pad-book-portrait'
+    t =   175.25s Requesting snapshot of accessibility hierarchy for app with pid 22737
+    t =   175.74s Requesting snapshot of accessibility hierarchy for app with pid 22737
+    t =   175.85s Added attachment named 'pad-book-portrait-tree'
+    t =   175.85s Setting device orientation to Landscape Left
+    t =   175.85s     Device orientation changed to Landscape Left
+    t =   175.96s     Interface orientation changed to Landscape Right
+    t =   175.99s     Wait for dev.ericslutz.gus to idle
+    t =   176.56s     Wait for com.apple.springboard to idle
+    t =   178.77s Find the Application 'dev.ericslutz.gus'
+    t =   179.08s Added attachment named 'pad-book-landscape'
+    t =   179.08s Requesting snapshot of accessibility hierarchy for app with pid 22737
+    t =   179.60s Requesting snapshot of accessibility hierarchy for app with pid 22737
+    t =   179.71s Added attachment named 'pad-book-landscape-tree'
+    t =   179.71s Terminate dev.ericslutz.gus:22737
+    t =   181.72s Setting device orientation to Portrait
+    t =   181.73s     Device orientation changed to Portrait
+    t =   181.78s     Interface orientation changed to Portrait
+    t =   181.80s     Wait for com.apple.springboard to idle
+    t =   182.21s Open dev.ericslutz.gus
+    t =   182.21s     Launch dev.ericslutz.gus
+    t =   182.96s         Setting up automation session
+    t =   186.22s         Wait for dev.ericslutz.gus to idle
+    t =   193.12s Checking existence of `"Pause" Button`
+    t =   193.33s Tap "Pause" Button
+    t =   193.33s     Wait for dev.ericslutz.gus to idle
+    t =   193.33s     Find the "Pause" Button
+    t =   193.38s     Check for interrupting elements affecting "pause.circle.fill" Button
+    t =   193.44s         Wait for com.apple.springboard to idle
+    t =   193.82s     Synthesize event
+    t =   194.48s     Wait for dev.ericslutz.gus to idle
+    t =   196.79s Find the Application 'dev.ericslutz.gus'
+    t =   197.04s Added attachment named 'pad-audio-portrait'
+    t =   197.04s Requesting snapshot of accessibility hierarchy for app with pid 22853
+    t =   197.44s Requesting snapshot of accessibility hierarchy for app with pid 22853
+    t =   197.53s Added attachment named 'pad-audio-portrait-tree'
+    t =   197.53s Setting device orientation to Landscape Left
+    t =   197.53s     Device orientation changed to Landscape Left
+    t =   197.63s     Interface orientation changed to Landscape Right
+    t =   197.64s     Wait for dev.ericslutz.gus to idle
+    t =   198.24s     Wait for com.apple.springboard to idle
+    t =   200.37s Find the Application 'dev.ericslutz.gus'
+    t =   200.59s Added attachment named 'pad-audio-landscape'
+    t =   200.59s Requesting snapshot of accessibility hierarchy for app with pid 22853
+    t =   200.98s Requesting snapshot of accessibility hierarchy for app with pid 22853
+    t =   201.07s Added attachment named 'pad-audio-landscape-tree'
+    t =   201.07s Terminate dev.ericslutz.gus:22853
+    t =   202.17s Setting device orientation to Portrait
+    t =   202.17s     Device orientation changed to Portrait
+    t =   202.25s     Interface orientation changed to Portrait
+    t =   202.25s     Wait for com.apple.springboard to idle
+    t =   202.28s Open dev.ericslutz.gus
+    t =   202.28s     Launch dev.ericslutz.gus
+    t =   202.35s         Setting up automation session
+    t =   208.39s         Wait for dev.ericslutz.gus to idle
+    t =   217.38s Checking existence of `"Play/Pause" Button`
+    t =   221.03s Find the Application 'dev.ericslutz.gus'
+    t =   221.42s Added attachment named 'pad-video-portrait'
+    t =   221.42s Requesting snapshot of accessibility hierarchy for app with pid 22886
+    t =   221.91s Requesting snapshot of accessibility hierarchy for app with pid 22886
+    t =   222.00s Added attachment named 'pad-video-portrait-tree'
+    t =   222.00s Setting device orientation to Landscape Left
+    t =   222.01s     Device orientation changed to Landscape Left
+    t =   222.62s     Interface orientation changed to Landscape Right
+    t =   222.75s     Wait for dev.ericslutz.gus to idle
+    t =   223.29s     Wait for com.apple.springboard to idle
+    t =   225.41s Find the Application 'dev.ericslutz.gus'
+    t =   225.66s Added attachment named 'pad-video-landscape'
+    t =   225.66s Requesting snapshot of accessibility hierarchy for app with pid 22886
+    t =   226.10s Requesting snapshot of accessibility hierarchy for app with pid 22886
+    t =   226.19s Added attachment named 'pad-video-landscape-tree'
+    t =   226.19s Terminate dev.ericslutz.gus:22886
+    t =   227.27s Setting device orientation to Portrait
+    t =   227.27s     Device orientation changed to Portrait
+    t =   227.33s     Interface orientation changed to Portrait
+    t =   227.34s     Wait for com.apple.springboard to idle
+    t =   227.75s Tear Down
+Test Case '-[PadAudit.Audit testPadScreens]' passed (228.904 seconds).
+Test Suite 'Audit' passed at 2026-10-10 13:37:49.312.
+	 Executed 1 test, with 0 failures (0 unexpected) in 228.904 (228.907) seconds
+Test Suite 'PadAudit.xctest' passed at 2026-10-10 13:37:49.317.
+	 Executed 1 test, with 0 failures (0 unexpected) in 228.904 (228.911) seconds
+Test Suite 'Selected tests' passed at 2026-10-10 13:37:49.317.
+	 Executed 1 test, with 0 failures (0 unexpected) in 228.904 (228.912) seconds
+2026-10-10 13:37:49.722 xcodebuild[22012:108677] [MT] IDETestOperationsObserverDebug: 244.251 elapsed -- Testing started completed.
+2026-10-10 13:37:49.723 xcodebuild[22012:108677] [MT] IDETestOperationsObserverDebug: 0.000 sec, +0.000 sec -- start
+2026-10-10 13:37:49.723 xcodebuild[22012:108677] [MT] IDETestOperationsObserverDebug: 244.251 sec, +244.251 sec -- end
+
+Test session results, code coverage, and logs:
+	/tmp/gus-multiplatform-audit/ipad-screens.xcresult
+
+** TEST SUCCEEDED **
+
+Testing started

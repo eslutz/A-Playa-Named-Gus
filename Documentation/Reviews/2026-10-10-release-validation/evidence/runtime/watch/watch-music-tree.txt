@@ -1,0 +1,58 @@
+Attributes: Application, 0x102cbbac0, pid: 52685, label: 'Gus'
+Element subtree:
+ →Application, 0x102cbbac0, pid: 52685, label: 'Gus'
+    Window, 0x102cb83c0, {{0.0, 0.0}, {162.0, 197.0}}
+      Other, 0x102cbbc00, {{0.0, 0.0}, {162.0, 197.0}}
+        Other, 0x102cbbd40, {{0.0, 0.0}, {162.0, 197.0}}
+          Other, 0x102cbbe80, {{0.0, 0.0}, {162.0, 197.0}}
+            Other, 0x102cbf0c0, {{0.0, 0.0}, {162.0, 197.0}}
+              Other, 0x102cbf340, {{0.0, 0.0}, {162.0, 197.0}}
+              Other, 0x102cbf480, {{0.0, 0.0}, {162.0, 197.0}}
+              CollectionView, 0x102cbf5c0, {{0.0, 0.0}, {162.0, 197.0}}, identifier: 'PUICPageViewController_collectionView'
+                Cell, 0x102cbf700, {{0.0, 0.0}, {162.0, 197.0}}
+                  Other, 0x102cbfc00, {{0.0, 0.0}, {162.0, 197.0}}
+                    Other, 0x102cbfac0, {{0.0, 0.0}, {162.0, 197.0}}
+                      Other, 0x102cbfd40, {{0.0, 0.0}, {162.0, 197.0}}
+                        Other, 0x102cbfe80, {{0.0, 0.0}, {162.0, 197.0}}
+                          Other, 0x102cbf840, {{0.0, 0.0}, {162.0, 197.0}}
+                            NavigationBar, 0x102cbf980, {{0.0, 0.0}, {162.0, 47.5}}, identifier: 'Music'
+                              Button, 0x102cbf200, {{9.5, 10.0}, {30.0, 30.0}}, identifier: 'BackButton', label: 'Back'
+                              StaticText, 0x102ce9e00, {{45.5, 25.0}, {107.0, 19.5}}, label: 'Music'
+                            Other, 0x102ce9b80, {{0.0, 0.0}, {162.0, 197.0}}
+                              Other, 0x102cea300, {{0.0, 0.0}, {162.0, 197.0}}
+                                Other, 0x102ce9900, {{0.0, 0.0}, {162.0, 197.0}}
+                                  Other, 0x102ce97c0, {{0.0, 0.0}, {162.0, 197.0}}
+                                    CollectionView, 0x102ce8140, {{0.0, 0.0}, {162.0, 197.0}}
+                                      Other, 0x102ce8280, {{0.0, 0.0}, {162.0, 197.0}}
+                                        Other, 0x102ce8000, {{0.0, 0.0}, {162.0, 79.6}}
+                                      Other, 0x102ce83c0, {{0.0, 0.0}, {162.0, 197.0}}
+                                      Cell, 0x102ce8500, {{2.0, 47.5}, {158.0, 63.0}}, label: 'Public Domain Lofi'
+                                        Other, 0x102ce8640, {{2.0, 47.5}, {158.0, 63.0}}
+                                          Other, 0x102ce8780, {{2.0, 47.5}, {158.0, 63.0}}
+                                        Other, 0x102ce8b40, {{2.0, 47.5}, {158.0, 63.0}}
+                                          Other, 0x102ce8c80, {{2.0, 47.5}, {158.0, 63.0}}
+                                            Other, 0x102ce8dc0, {{2.0, 47.5}, {158.0, 63.0}}
+                                              Button, 0x102ce8f00, {{2.0, 47.5}, {158.0, 63.0}}, label: 'Public Domain Lofi'
+                                                Image, 0x102ce9040, {{9.5, 52.0}, {36.0, 54.0}}, identifier: 'photo', label: 'Photo'
+                                                StaticText, 0x102ce9540, {{53.5, 60.0}, {91.0, 38.0}}, label: 'Public Domain Lofi'
+                                      Cell, 0x102ce9680, {{2.0, 114.5}, {158.0, 63.0}}, label: 'PUBLIC DOMAIN'
+                                        Other, 0x102ce9400, {{2.0, 114.5}, {158.0, 63.0}}
+                                          Other, 0x102ce9180, {{2.0, 114.5}, {158.0, 63.0}}
+                                        Other, 0x102ce92c0, {{2.0, 114.5}, {158.0, 63.0}}
+                                          Other, 0x102ce88c0, {{2.0, 114.5}, {158.0, 63.0}}
+                                            Other, 0x102ce8a00, {{2.0, 114.5}, {158.0, 63.0}}
+                                              Button, 0x102cb4000, {{2.0, 114.5}, {158.0, 63.0}}, label: 'PUBLIC DOMAIN'
+                                                Image, 0x102cb4140, {{0.5, 119.0}, {54.0, 54.0}}
+                                                StaticText, 0x102cb4280, {{53.5, 127.0}, {61.5, 38.0}}, label: 'PUBLIC DOMAIN'
+    Window (Main), 0x102cb43c0, {{154.0, 33.5}, {6.0, 32.0}}
+    Window, 0x102cb4500, {{0.0, 0.0}, {162.0, 197.0}}
+      StatusBar, 0x102cb4640, {{0.0, 0.0}, {162.0, 28.0}}
+        Other, 0x102cb4780, {{0.0, 0.0}, {162.0, 28.0}}
+        Other, 0x102cb48c0, {{0.0, 0.0}, {162.0, 28.0}}
+Path to element:
+ →Application, 0x102cbbac0, pid: 52685, label: 'Gus'
+Query chain:
+ →Find: Application 'dev.ericslutz.gus.watchkitapp'
+  Output: {
+    Application, 0x102cb4b40, pid: 52685, label: 'Gus'
+  }

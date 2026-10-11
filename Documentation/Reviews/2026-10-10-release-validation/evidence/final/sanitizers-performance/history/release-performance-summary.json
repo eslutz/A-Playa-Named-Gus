@@ -1,0 +1,17 @@
+{
+  "devicesAndConfigurations": [],
+  "environmentDescription": "Gus macOS Unit Tests \u00b7 Built with macOS 27.0.1",
+  "expectedFailures": 0,
+  "failedTests": 0,
+  "finishTime": 1791693219.031,
+  "passedTests": 0,
+  "result": "unknown",
+  "runtimeWarnings": [],
+  "skippedTests": 0,
+  "startTime": 1791693122.856,
+  "statistics": [],
+  "testFailures": [],
+  "title": "Test - Gus macOS Unit Tests",
+  "topInsights": [],
+  "totalTestCount": 0
+}

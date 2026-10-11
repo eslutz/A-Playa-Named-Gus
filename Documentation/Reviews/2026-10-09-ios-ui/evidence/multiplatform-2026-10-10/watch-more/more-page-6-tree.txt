@@ -1,0 +1,69 @@
+Attributes: Application, 0x106cbcb40, pid: 27247, label: 'Gus'
+Element subtree:
+ →Application, 0x106cbcb40, pid: 27247, label: 'Gus'
+    Window, 0x106cbf980, {{0.0, 0.0}, {211.0, 257.0}}
+      Other, 0x106cbd180, {{0.0, 0.0}, {211.0, 257.0}}
+        Other, 0x106cbd900, {{0.0, 0.0}, {211.0, 257.0}}
+          Other, 0x106cbd680, {{0.0, 0.0}, {211.0, 257.0}}
+            Other, 0x106cbc500, {{0.0, 0.0}, {211.0, 257.0}}
+              Other, 0x106cbc3c0, {{0.0, 0.0}, {211.0, 257.0}}
+              Other, 0x106cbfc00, {{0.0, 0.0}, {211.0, 257.0}}
+              CollectionView, 0x106cbdb80, {{0.0, 0.0}, {211.0, 257.0}}, identifier: 'PUICPageViewController_collectionView'
+                Cell, 0x106cbd540, {{0.0, 0.0}, {211.0, 257.0}}
+                  Other, 0x106cbda40, {{0.0, 0.0}, {211.0, 257.0}}
+                    Other, 0x106cbfac0, {{0.0, 0.0}, {211.0, 257.0}}
+                      Other, 0x106cbd400, {{0.0, 0.0}, {211.0, 257.0}}
+                        Other, 0x106cbc8c0, {{0.0, 0.0}, {211.0, 257.0}}
+                          Other, 0x106cbef80, {{0.0, 0.0}, {211.0, 257.0}}
+                            NavigationBar, 0x106cbf340, {{0.0, 0.0}, {211.0, 66.0}}, identifier: 'Settings'
+                              StaticText, 0x106cbf480, {{16.5, 29.0}, {93.5, 31.5}}, label: 'Settings'
+                            Other, 0x106cbf5c0, {{0.0, 0.0}, {211.0, 257.0}}
+                              Other, 0x106cbf700, {{0.0, 0.0}, {211.0, 257.0}}
+                                Other, 0x106cbf840, {{0.0, 0.0}, {211.0, 257.0}}
+                                  Other, 0x106cbf0c0, {{0.0, 0.0}, {211.0, 257.0}}
+                                    CollectionView, 0x106cbf200, {{0.0, 0.0}, {211.0, 257.0}}
+                                      Other, 0x106cbe580, {{0.0, 0.0}, {211.0, 257.0}}
+                                        Other, 0x106cbe940, {{0.0, 0.0}, {211.0, 93.6}}
+                                      Other, 0x106cbea80, {{0.0, 0.0}, {211.0, 257.0}}
+                                      Other, 0x106cbebc0, {{0.0, 66.0}, {211.0, 18.5}}
+                                        Other, 0x106cbee40, {{0.0, 66.0}, {211.0, 18.5}}
+                                          Other, 0x106cbed00, {{0.0, 66.0}, {211.0, 18.5}}
+                                            StaticText, 0x106cbe6c0, {{16.5, 66.0}, {53.0, 17.0}}, label: 'Session'
+                                      Cell, 0x106cbe800, {{2.0, 84.5}, {207.0, 59.0}}, label: 'Server, e7903da3b422'
+                                        Other, 0x106cbcf00, {{2.0, 84.5}, {207.0, 59.0}}
+                                          Other, 0x106cbe080, {{2.0, 84.5}, {207.0, 59.0}}
+                                        Other, 0x106cbde00, {{2.0, 84.5}, {207.0, 59.0}}
+                                          Other, 0x106cbe1c0, {{2.0, 84.5}, {207.0, 59.0}}
+                                            Other, 0x106cbe440, {{2.0, 84.5}, {207.0, 59.0}}
+                                              StaticText, 0x106cbe300, {{16.5, 103.8}, {50.5, 20.5}}, label: 'Server'
+                                              StaticText, 0x106cbdcc0, {{2.0, 84.5}, {207.0, 59.0}}, label: 'Server, e7903da3b422'
+                                      Cell, 0x106cbdf40, {{2.0, 148.5}, {207.0, 59.0}}, label: 'User, gus'
+                                        Other, 0x106cbcc80, {{2.0, 148.5}, {207.0, 59.0}}
+                                          Other, 0x106cbc640, {{2.0, 148.5}, {207.0, 59.0}}
+                                        Other, 0x106cbcdc0, {{2.0, 148.5}, {207.0, 59.0}}
+                                          Other, 0x106cbfd40, {{2.0, 148.5}, {207.0, 59.0}}
+                                            Other, 0x106cbd040, {{2.0, 148.5}, {207.0, 59.0}}
+                                              StaticText, 0x106cbc780, {{16.5, 167.8}, {36.0, 20.5}}, label: 'User'
+                                              StaticText, 0x106cbd2c0, {{2.0, 148.5}, {207.0, 59.0}}, label: 'User, gus'
+                                      Cell, 0x106cd8500, {{2.0, 212.5}, {207.0, 59.0}}, label: 'Connection, Online'
+                                        Other, 0x106cd92c0, {{10.5, 212.5}, {190.0, 54.2}}
+                                          Other, 0x106cdf980, {{10.5, 212.5}, {190.0, 54.2}}
+                                        Other, 0x106cdfc00, {{10.5, 212.5}, {190.0, 54.2}}
+                                          Other, 0x106cdf700, {{10.5, 212.5}, {190.0, 54.2}}
+                                            Other, 0x106cdfe80, {{10.5, 212.5}, {190.0, 54.2}}
+                                              StaticText, 0x106ce97c0, {{23.8, 230.2}, {82.1, 18.8}}, label: 'Connection'
+                                              Image, 0x106ce83c0, {{120.2, 232.2}, {15.1, 15.1}}, identifier: 'checkmark.circle.fill', label: 'Selected', Selected
+                                              StaticText, 0x106ce8000, {{120.2, 230.2}, {67.0, 18.8}}, label: 'Online'
+    Window (Main), 0x106ce8280, {{203.0, 61.5}, {6.0, 48.0}}
+      Other, 0x106ce8140, {{203.0, 61.5}, {6.0, 48.0}}, value: page 5 of 5
+    Window, 0x106cecf00, {{0.0, 0.0}, {211.0, 257.0}}
+      StatusBar, 0x106cec780, {{0.0, 0.0}, {211.0, 40.0}}
+        Other, 0x106cd7840, {{0.0, 0.0}, {211.0, 40.0}}
+        Other, 0x106cd6580, {{0.0, 0.0}, {211.0, 40.0}}
+Path to element:
+ →Application, 0x106cbcb40, pid: 27247, label: 'Gus'
+Query chain:
+ →Find: Application 'dev.ericslutz.gus.watchkitapp'
+  Output: {
+    Application, 0x106ce30c0, pid: 27247, label: 'Gus'
+  }

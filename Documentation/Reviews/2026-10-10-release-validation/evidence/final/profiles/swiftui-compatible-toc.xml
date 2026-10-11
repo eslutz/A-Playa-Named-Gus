@@ -1,0 +1,79 @@
+<?xml version="1.0"?>
+
+<trace-toc>
+    <run number="1">
+        <info>
+            <target>
+                <device platform="iOS Simulator" model="Simulated iPhone 17e" memory-size="17179869184" name="iPhone 17e" os-version="27.0 (24A434)" uuid="0091C2E3-7B8A-4452-B708-095D613AEB3A"/>
+                <host-device platform="macOS" model="MacBook Pro" name="Eric’s MacBook Pro" os-version="27.0.1 (26A434)" uuid="B9DF7556-F06A-5132-82AE-6D1B4622A7DD"/>
+                <process type="attached" return-exit-status="0" name="Gus" pid="6222" termination-reason="exit(0)"/>
+            </target>
+            <summary>
+                <start-date>2026-10-11T01:19:34.787-04:00</start-date>
+                <end-date>2026-10-11T01:19:55.540-04:00</end-date>
+                <duration>20.753117</duration>
+                <end-reason>Time limit reached</end-reason>
+                <instruments-version>27.0 (27A266a)</instruments-version>
+                <template-name>Time Profiler</template-name>
+                <recording-mode>Deferred</recording-mode>
+                <time-limit>20 seconds</time-limit>
+                <intruments-recording-settings>
+                    <instrument name="Hangs">
+                        <options>
+                            <option key="Reporting Threshold" value="Include Microhangs (&gt;250ms)"/>
+                        </options>
+                    </instrument>
+                    <instrument name="SwiftUI">
+                        <options>
+                            <option key="Layout Updates" value="Not Included"/>
+                        </options>
+                    </instrument>
+                </intruments-recording-settings>
+            </summary>
+        </info>
+        <processes>
+            <process name="Gus" pid="6222" path="/Users/ericslutz/Library/Developer/CoreSimulator/Devices/0091C2E3-7B8A-4452-B708-095D613AEB3A/data/Containers/Bundle/Application/F0AEF06B-B063-41CB-8D35-C92895748473/A Playa Named Gus.app/A Playa Named Gus"/>
+            <process name="kernel" pid="0" path="/System/Library/Kernels/kernel.release.t6000"/>
+        </processes>
+        <data>
+            <table schema="tick" frequency="1" documentation="Provides modelers with a regular reference time for modeling fixed time-based statistics. The ticks are evenly spaced with a configurable frequency specifying the number of events to generate per second, so a tick schema with a frequency of 10 will generate a row every 100ms."/>
+            <table schema="life-cycle-period" target-pid="SINGLE" documentation="Identifies where an application is in its lifecycle."/>
+            <table schema="swiftui-updates"/>
+            <table schema="swiftui-full-causes"/>
+            <table swift-table="&quot;StateReportingIntervals()&quot;" schema="StateReportingIntervals" documentation="Tracks named application states, volatile updates, and rate-limit windows reported via the State Reporting API, per process and domain"/>
+            <table schema="device-thermal-state-intervals" documentation="Denotes the current thermal state of the device."/>
+            <table enable-priority-inversion-detection="0" target-pid="SINGLE" message-type="Fault" schema="os-log" category="&quot;Hang Risk&quot; &quot;Severe Hang Risk&quot; CFNetwork Contacts CoreML" subsystem="&quot;com.apple.runtime-issues&quot;" documentation="Holds a message from the OS's Unified Logging and Tracing component."/>
+            <table schema="os-log" category="PointsOfInterest" target-pid="SINGLE" documentation="Holds a message from the OS's Unified Logging and Tracing component."/>
+            <table schema="os-signpost" subsystem="&quot;com.apple.StateReporting.Volatile&quot; &quot;com.apple.StateReporting.Transition&quot; &quot;com.apple.StateReporting.Heartbeat&quot;" target-pid="ALL" documentation="Holds a signpost event from the OS's Unified Logging and Tracing component."/>
+            <table schema="os-signpost" category="PointsOfInterest" target-pid="SINGLE" documentation="Holds a signpost event from the OS's Unified Logging and Tracing component."/>
+            <table target-pid="SINGLE" dynamic-tracing-enabled-subsystems="&quot;com.apple.neappprivacy&quot;" category="PointsOfInterest" schema="os-signpost" documentation="Holds a signpost event from the OS's Unified Logging and Tracing component."/>
+            <table schema="os-signpost" category="InduceCondition" subsystem="&quot;com.apple.ConditionInducer.LowSeverity&quot;" documentation="Holds a signpost event from the OS's Unified Logging and Tracing component."/>
+            <table schema="hang-risks" detect-priority-inversions="0" target-pid="SINGLE"/>
+            <table schema="swiftui-causes"/>
+            <table hangs-threshold="250" schema="potential-hangs" target-pid="SINGLE"/>
+            <table target-pid="SINGLE" context-switch-sampling="0" high-frequency-sampling="0" schema="time-profile" record-waiting-threads="0" needs-kernel-callstack="0" documentation="When combined with other time-profile samples, creates a statistical picture of where your application is spending its time."/>
+            <table swift-table="&quot;PointsOfInterestEvents(excludeOSLogs: false, mustTargetAllProcesses: false)&quot;" schema="PointsOfInterestEvents"/>
+            <table codes="&quot;33,0x11&quot;" target="SINGLE" schema="kdebug-strings" documentation="Associates numeric arguments with strings in kdebug trace points."/>
+            <table schema="process-info" documentation="Associates processes with their process names."/>
+            <table codes="&quot;0x1f,0x7&quot;" target="SINGLE" schema="kdebug" documentation="Tracing the kernel and some system frameworks."/>
+            <table codes="&quot;33,0x11&quot;" target="SINGLE" schema="kdebug" documentation="Tracing the kernel and some system frameworks."/>
+            <table codes="&quot;0x2b,0x65&quot;" schema="kdebug" documentation="Tracing the kernel and some system frameworks."/>
+            <table codes="&quot;0x2b,0x87&quot;" target="SINGLE" schema="kdebug" documentation="Tracing the kernel and some system frameworks."/>
+            <table codes="&quot;0x31,0xca&quot;" target="SINGLE" schema="kdebug" documentation="Tracing the kernel and some system frameworks."/>
+            <table codes="&quot;0x2b,0xd8&quot;" target="SINGLE" schema="kdebug" documentation="Tracing the kernel and some system frameworks."/>
+            <table schema="swiftui-changes"/>
+            <table schema="swiftui-update-groups"/>
+            <table schema="swiftui-layout-updates"/>
+            <table swift-table="&quot;SwiftUILayoutUpdates2()&quot;" schema="SwiftUILayoutUpdates2"/>
+            <table swift-table="&quot;OSSignpostIntervals(layoutScope: InstrumentsPlugIn.OSSignpostLayoutScope.name, categories: Set([\&quot;PointsOfInterest\&quot;]), mustTargetAllProcesses: false)&quot;" schema="OSSignpostIntervals"/>
+            <table schema="thread-info" documentation="Associates threads with their owning process."/>
+            <table schema="runloop-events" target-pid="SINGLE"/>
+            <table swift-table="&quot;SwiftUIFilteredUpdates(including: Optional(Set([DVTInstrumentsAnalysisCore.SwiftUIUpdate(storedValue: \&quot;View Body Updates\&quot;)])), excluding: nil)&quot;" schema="SwiftUIFilteredUpdates"/>
+            <table swift-table="&quot;SwiftUIFilteredUpdates(including: nil, excluding: Optional(Set([DVTInstrumentsAnalysisCore.SwiftUIUpdate(storedValue: \&quot;View Body Updates\&quot;), DVTInstrumentsAnalysisCore.SwiftUIUpdate(storedValue: \&quot;Representable Updates\&quot;)])))&quot;" schema="SwiftUIFilteredUpdates"/>
+            <table swift-table="&quot;SwiftUIFilteredUpdates(including: Optional(Set([DVTInstrumentsAnalysisCore.SwiftUIUpdate(storedValue: \&quot;Representable Updates\&quot;)])), excluding: nil)&quot;" schema="SwiftUIFilteredUpdates"/>
+            <table schema="os-signpost-arg" category="PointsOfInterest" target-pid="SINGLE" documentation="Holds a signpost metadata argument from the OS's Unified Logging and Tracing component."/>
+            <table sample-rate-micro-seconds="1000" target="SINGLE" schema="time-sample" callstack="user" all-thread-states="NO" documentation="Holds a raw CPU profiling sample."/>
+        </data>
+        <tracks/>
+    </run>
+</trace-toc>

@@ -7,24 +7,31 @@ struct WatchPoster: View {
     let item: MediaItem
 
     var body: some View {
-        AsyncImage(url: session.mediaProvider.primaryImageURL(for: item, maxWidth: 120)) { phase in
-            switch phase {
-            case let .success(image):
-                image
-                    .resizable()
-                    .aspectRatio(contentMode: .fill)
-            default:
-                Rectangle()
-                    .fill(.quaternary)
-                    .overlay {
-                        Image(systemName: "photo")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
+        // The row owns the thumbnail's geometry, including loaded artwork. Keep the
+        // image inside the same size proposal as its placeholder.
+        Color.clear
+            .frame(width: 36, height: 54)
+            .overlay {
+                AsyncImage(url: session.mediaProvider.primaryImageURL(for: item, maxWidth: 120)) { phase in
+                    switch phase {
+                    case let .success(image):
+                        image
+                            .resizable()
+                            .aspectRatio(contentMode: .fill)
+                    default:
+                        Rectangle()
+                            .fill(.quaternary)
+                            .overlay {
+                                Image(systemName: "photo")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
                     }
+                }
+                .frame(width: 36, height: 54)
+                .clipped()
             }
-        }
-        .frame(width: 36, height: 54)
-        .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
-        .accessibilityHidden(true)
+            .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+            .accessibilityHidden(true)
     }
 }

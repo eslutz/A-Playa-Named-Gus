@@ -13,8 +13,7 @@ struct PosterCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            AsyncPoster(url: imageURL, placeholderSymbol: placeholderSymbol)
-                .aspectRatio(aspectRatio, contentMode: .fit)
+            ArtworkTile(url: imageURL, aspectRatio: aspectRatio, placeholderSymbol: placeholderSymbol)
                 .frame(maxWidth: .infinity)
                 .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                 .posterHoverEffect()

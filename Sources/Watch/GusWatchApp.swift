@@ -8,7 +8,7 @@ import SwiftUI
 @main
 struct GusWatchApp: App {
     @State private var appModel = AppModel.shared
-    @State private var offlineDownloads = OfflineDownloadStore()
+    @State private var offlineDownloads = OfflineDownloadStore.shared
     private let shouldConnectToDemoServer: Bool
 
     init() {
@@ -44,11 +44,25 @@ struct GusWatchApp: App {
 /// Signed-out → connect flow; signed-in → the paged watch experience.
 struct WatchRootView: View {
     @Environment(AppModel.self) private var appModel
+    @Environment(OfflineDownloadStore.self) private var downloads
+    @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
         if let session = appModel.currentSession {
             WatchSignedInView()
+                .id(SessionCredential(user: session.user).account)
                 .environment(session)
+                .task(id: scenePhase) {
+                    downloads.load(serverID: session.server.id, userID: session.user.id)
+                    guard scenePhase == .active else { return }
+                    while !Task.isCancelled {
+                        await OfflinePlaybackProgressStore.shared.sync(session: session) {
+                            appModel.currentSession?.server.id == session.server.id &&
+                                appModel.currentSession?.user.id == session.user.id
+                        }
+                        try? await Task.sleep(for: .seconds(30))
+                    }
+                }
         } else {
             NavigationStack {
                 WatchConnectView()

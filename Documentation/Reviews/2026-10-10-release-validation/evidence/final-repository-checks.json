@@ -1,0 +1,37 @@
+{
+  "app": {
+    "stagedWhitespacePassed": true,
+    "trackedFiles": 1294,
+    "trackedBytes": 671850953,
+    "privateOrGeneratedArtifacts": [],
+    "filesOver100MiB": [],
+    "privateKeyJwtProviderTokenPatternHits": [],
+    "unexplainedUnstagedOrUntracked": [],
+    "scope": "Pattern and artifact scan of staged Git blobs; no secret values emitted"
+  },
+  "wiki": {
+    "stagedWhitespacePassed": true,
+    "trackedFiles": 12,
+    "trackedBytes": 90980,
+    "privateOrGeneratedArtifacts": [],
+    "filesOver100MiB": [],
+    "privateKeyJwtProviderTokenPatternHits": [],
+    "unexplainedUnstagedOrUntracked": [],
+    "scope": "Pattern and artifact scan of staged Git blobs; no secret values emitted"
+  },
+  "website": {
+    "stagedWhitespacePassed": true,
+    "trackedFiles": 27,
+    "trackedBytes": 421719,
+    "privateOrGeneratedArtifacts": [],
+    "filesOver100MiB": [],
+    "privateKeyJwtProviderTokenPatternHits": [],
+    "unexplainedUnstagedOrUntracked": [],
+    "scope": "Pattern and artifact scan of staged Git blobs; no secret values emitted"
+  },
+  "candidate": {
+    "inputs": 289,
+    "stagedMatchesFrozenFinal": true,
+    "mismatches": []
+  }
+}

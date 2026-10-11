@@ -23,7 +23,9 @@ struct NetworkRetryPolicy {
         self.sleep = sleep
     }
 
-    func run<Value>(_ operation: () async throws -> Value) async throws -> Value {
+    /// Keep both the operation and its result in the caller's isolation domain. A
+    /// retry delay must not send a main-actor provider closure to a generic executor.
+    func run<Value>(isolation: isolated (any Actor)? = #isolation, _ operation: () async throws -> Value) async throws -> Value {
         var attempt = 0
 
         while true {

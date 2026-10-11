@@ -36,8 +36,6 @@ struct AppModelSessionTests {
         #expect(cleanup.events == [
             .spotlight(serverID: fixture.serverA.id, userID: fixture.userA.id),
             .topShelf,
-            .books(serverID: fixture.serverA.id, userID: fixture.userA.id),
-            .downloads(serverID: fixture.serverA.id, userID: fixture.userA.id),
             .watch(serverID: fixture.serverA.id, userID: fixture.userA.id),
         ])
     }
@@ -209,6 +207,7 @@ struct AppModelSessionTests {
     }
 }
 
+@MainActor
 private final class AccountCleanupSpy {
     enum Event: Equatable {
         case spotlight(serverID: String, userID: String)

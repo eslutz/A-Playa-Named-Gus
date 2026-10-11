@@ -183,7 +183,7 @@
             do {
                 try await body(interfaceController)
             } catch {
-                logger.error("CarPlay template operation failed: \(operation, privacy: .public), \(error.localizedDescription, privacy: .public)")
+                logger.error("CarPlay template operation failed: \(operation, privacy: .public), \(error.localizedDescription, privacy: .private)")
             }
         }
     }
