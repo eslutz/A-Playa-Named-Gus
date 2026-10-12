@@ -283,23 +283,6 @@ struct DownloadActivityTests {
         #expect(handler.events == ["failed", "failure"])
         #expect(handler.resumeData == nil)
     }
-
-    @MainActor
-    @Test("byte delegate reporting remains compatible with legacy progress handlers")
-    func legacyProgressCompatibility() async throws {
-        let coordinator = DownloadSessionCoordinator()
-        let handler = LegacyActivityProgressHandler()
-        let task = try URLSession.shared.downloadTask(with: #require(URL(string: "https://example.com/media")))
-        task.taskDescription = "record-1"
-        await withCheckedContinuation { continuation in
-            handler.onProgress = { progress in
-                #expect(progress == 0.5)
-                continuation.resume()
-            }
-            coordinator.setEventHandler(handler)
-            coordinator.urlSession(.shared, downloadTask: task, didWriteData: 50, totalBytesWritten: 50, totalBytesExpectedToWrite: 100)
-        }
-    }
 }
 
 @MainActor
@@ -338,14 +321,5 @@ private final class ActivityEventTestHandler: DownloadSessionCoordinatorEventHan
     func downloadSessionCoordinatorDidFinishBackgroundEvents(_ coordinator: DownloadSessionCoordinating) async {
         events.append("backgroundFinished")
         onBackgroundFinished?()
-    }
-}
-
-@MainActor
-private final class LegacyActivityProgressHandler: DownloadSessionCoordinatorEventHandler {
-    var onProgress: ((Double) -> Void)?
-
-    func downloadSessionCoordinator(_ coordinator: DownloadSessionCoordinating, didUpdateProgress progress: Double, recordID: String) {
-        onProgress?(progress)
     }
 }

@@ -5,18 +5,18 @@ import Testing
 
 @Suite("Provider architecture")
 struct ProviderArchitectureTests {
-    @Test("session credential accounts are provider qualified and expose the legacy Jellyfin account")
+    @Test("session credential accounts are provider qualified")
     func sessionCredentialProviderQualifiedAccount() {
         let credential = SessionCredential(providerKind: .jellyfin, serverID: "server-1", userID: "user-1")
 
         #expect(credential.account == "jellyfin:server-1:user-1")
-        #expect(credential.legacyAccount == "server-1:user-1")
     }
 
-    @Test("stored servers and users decode legacy records as Jellyfin")
-    func legacyServerAndUserRecordsDecodeAsJellyfin() throws {
+    @Test("stored servers and users round-trip their provider")
+    func serverAndUserRecordsDecodeProvider() throws {
         let serverJSON = """
         {
+          "providerKind": "jellyfin",
           "id": "server-1",
           "name": "Psych Office",
           "url": "https://jellyfin.example.com"
@@ -24,6 +24,7 @@ struct ProviderArchitectureTests {
         """
         let userJSON = """
         {
+          "providerKind": "jellyfin",
           "id": "user-1",
           "name": "Gus",
           "serverID": "server-1",
@@ -37,7 +38,24 @@ struct ProviderArchitectureTests {
         #expect(server.providerKind == .jellyfin)
         #expect(user.providerKind == .jellyfin)
         #expect(SessionCredential(user: user).account == "jellyfin:server-1:user-1")
-        #expect(SessionCredential(user: user).legacyAccount == "server-1:user-1")
+    }
+
+    @Test("current media records round-trip provider and playback metadata")
+    func mediaRecordRoundTrip() throws {
+        let item = MediaItem(id: "item-1", name: "Gus", type: .movie, userData: MediaUserData(playbackPositionTicks: 123, isWatched: false))
+        let decoded = try JSONDecoder().decode(MediaItem.self, from: JSONEncoder().encode(item))
+        #expect(decoded == item)
+    }
+
+    @Test("persisted provider records reject missing provider identity")
+    func missingProviderIsRejected() {
+        let data = Data(#"{"id":"server-1","name":"Gus","url":"https://example.com"}"#.utf8)
+        #expect(throws: DecodingError.self) {
+            try JSONDecoder().decode(ServerConnection.self, from: data)
+        }
+        #expect(throws: DecodingError.self) {
+            try JSONDecoder().decode(MediaItem.self, from: Data(#"{"id":"item-1"}"#.utf8))
+        }
     }
 
     @Test("Jellyfin mapper preserves display playback image and download fields")

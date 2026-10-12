@@ -81,7 +81,6 @@ final class AppModel {
     }
 
     private static let lastSessionAccountDefaultsKey = "dev.ericslutz.gus.lastSignedInSessionAccount"
-    private static let legacyLastUserIDDefaultsKey = "dev.ericslutz.gus.lastSignedInUserID"
     #if DEBUG
         private static let debugPreviewServerID = "debug-preview-server"
         private static let debugPreviewUserID = "debug-preview-user"
@@ -109,27 +108,12 @@ final class AppModel {
         } else {
             userDefaults.removeObject(forKey: Self.lastSessionAccountDefaultsKey)
         }
-        userDefaults.removeObject(forKey: Self.legacyLastUserIDDefaultsKey)
     }
 
     private static func loadLastSessionAccount(
-        from userDefaults: UserDefaults,
-        users: [StoredUser]
+        from userDefaults: UserDefaults
     ) -> String? {
-        if let account = userDefaults.string(forKey: lastSessionAccountDefaultsKey) {
-            return account
-        }
-
-        guard let legacyUserID = userDefaults.string(forKey: legacyLastUserIDDefaultsKey) else {
-            return nil
-        }
-
-        let matches = users.filter { $0.id == legacyUserID }
-        guard matches.count == 1, let user = matches.first else {
-            return nil
-        }
-
-        return SessionCredential(user: user).account
+        userDefaults.string(forKey: lastSessionAccountDefaultsKey)
     }
 
     init(
@@ -144,7 +128,7 @@ final class AppModel {
         self.accountCleanup = accountCleanup
         servers = serverStore.loadServers()
         users = serverStore.loadUsers()
-        lastSessionAccount = Self.loadLastSessionAccount(from: userDefaults, users: users)
+        lastSessionAccount = Self.loadLastSessionAccount(from: userDefaults)
         persistLastSessionAccount()
     }
 
@@ -171,7 +155,7 @@ final class AppModel {
 
     private func restoreSavedSession(for user: StoredUser, clearingCurrentAccount: Bool) throws {
         guard let server = server(for: user) else { throw SessionSwitchError.missingServer }
-        guard let token = tokenMigratingLegacyAccountIfNeeded(for: user) else {
+        guard let token = storedToken(for: user) else {
             throw SessionSwitchError.missingToken
         }
 
@@ -216,13 +200,11 @@ final class AppModel {
         guard let user = users.first(where: { $0.id == userID && $0.serverID == serverID }) else {
             let credential = SessionCredential(serverID: serverID, userID: userID)
             tokenStore.deleteToken(for: credential)
-            tokenStore.deleteToken(account: credential.legacyAccount)
             return
         }
 
         let credential = SessionCredential(user: user)
         tokenStore.deleteToken(for: credential)
-        tokenStore.deleteToken(account: credential.legacyAccount)
         users.removeAll { $0.id == userID && $0.serverID == serverID }
         serverStore.saveUsers(users)
 
@@ -238,7 +220,7 @@ final class AppModel {
     }
 
     func hasStoredToken(for user: StoredUser) -> Bool {
-        tokenMigratingLegacyAccountIfNeeded(for: user) != nil
+        storedToken(for: user) != nil
     }
 
     func server(for user: StoredUser) -> ServerConnection? {
@@ -411,7 +393,6 @@ final class AppModel {
         Task { try? await client.signOut() } // best-effort server-side revoke
         clearAccountData(server: session.server, user: session.user)
         tokenStore.deleteToken(for: credential)
-        tokenStore.deleteToken(account: credential.legacyAccount)
         users.removeAll { $0.id == session.user.id && $0.serverID == session.user.serverID }
         serverStore.saveUsers(users)
         lastSessionAccount = nil
@@ -497,21 +478,8 @@ final class AppModel {
         logger.info("Signed in user \(user.name, privacy: .private)")
     }
 
-    private func tokenMigratingLegacyAccountIfNeeded(for user: StoredUser) -> String? {
-        let credential = SessionCredential(user: user)
-        if let token = tokenStore.token(for: credential) {
-            return token
-        }
-
-        guard credential.providerKind == .jellyfin,
-              let legacyToken = tokenStore.token(account: credential.legacyAccount)
-        else {
-            return nil
-        }
-
-        tokenStore.setToken(legacyToken, for: credential)
-        tokenStore.deleteToken(account: credential.legacyAccount)
-        return legacyToken
+    private func storedToken(for user: StoredUser) -> String? {
+        tokenStore.token(for: SessionCredential(user: user))
     }
 
     // MARK: - URL helpers

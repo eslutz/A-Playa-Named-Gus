@@ -149,12 +149,34 @@ struct UILayoutMetricsTests {
     func platformAppIconsUseCurrentPrimaryArtwork() throws {
         let primaryIcon = try resourceData("Resources/Assets.xcassets/AppIcon.appiconset/icon-ios-1024.png")
         let watchIcon = try resourceData("Resources/Watch/Assets.xcassets/AppIcon.appiconset/icon-watch-1024.png")
-        let visionMiddle = try resourceData("Resources/Assets.xcassets/AppIcon.solidimagestack/Middle.solidimagestacklayer/Content.imageset/middle.png")
-
         #expect(watchIcon == primaryIcon)
-        // Layered visionOS keeps transparency; the default iOS store icon must
-        // be opaque. Compare their artwork on the same canvas, not PNG encoding.
-        #expect(try renderedIconPixels(visionMiddle) == renderedIconPixels(primaryIcon))
+
+        // Native depth layers deliberately differ from the flattened store icon.
+        // Validate each full-bleed background and separate, nonempty foreground.
+        let stacks: [(String, String, [(String, Int, Int)])] = [
+            ("AppIcon.solidimagestack", "solidimagestacklayer", [("", 1024, 1024)]),
+            ("AppIcon.brandassets/App Icon.imagestack", "imagestacklayer", [("-400", 400, 240), ("-800", 800, 480)]),
+            ("AppIcon.brandassets/App Icon - App Store.imagestack", "imagestacklayer", [("-1280", 1280, 768)]),
+        ]
+        for (stack, layerExtension, sizes) in stacks {
+            for (suffix, width, height) in sizes {
+                var foregrounds: [[UInt8]] = []
+                for layer in ["Back", "Middle", "Front"] {
+                    let prefix = suffix == "-1280" ? "store-" : ""
+                    let path = "Resources/Assets.xcassets/\(stack)/\(layer).\(layerExtension)/Content.imageset/\(prefix)\(layer.lowercased())\(suffix).png"
+                    let pixels = try iconLayerPixels(resourceData(path), width: width, height: height)
+                    let alpha = stride(from: 3, to: pixels.count, by: 4).map { pixels[$0] }
+                    if layer == "Back" {
+                        #expect(alpha.allSatisfy { $0 == 255 })
+                    } else {
+                        #expect(alpha.contains { $0 > 0 })
+                        #expect(alpha.contains { $0 == 0 })
+                        foregrounds.append(pixels)
+                    }
+                }
+                #expect(foregrounds[0] != foregrounds[1])
+            }
+        }
 
         let staleIconHashes: Set<String> = [
             "a20498f1e9e809ce53de5d761733c7abb43bb1e1f9e70c4d20d09c59902d01e6",
@@ -321,10 +343,10 @@ struct UILayoutMetricsTests {
         #expect(homeStoreSource.contains("TopShelfSnapshot(items: Array(shelfItems)).save()"))
     }
 
-    private func renderedIconPixels(_ data: Data) throws -> [UInt8] {
+    private func iconLayerPixels(_ data: Data, width: Int, height: Int) throws -> [UInt8] {
         let source = try #require(CGImageSourceCreateWithData(data as CFData, nil))
         let image = try #require(CGImageSourceCreateImageAtIndex(source, 0, nil))
-        #expect(image.width == 1024 && image.height == 1024)
+        #expect(image.width == width && image.height == height)
         let space = try #require(CGColorSpace(name: CGColorSpace.sRGB))
         var pixels = [UInt8](repeating: 0, count: image.width * image.height * 4)
         try pixels.withUnsafeMutableBytes { bytes in
@@ -334,8 +356,7 @@ struct UILayoutMetricsTests {
                 space: space, bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
             ))
             let rect = CGRect(x: 0, y: 0, width: image.width, height: image.height)
-            try context.setFillColor(#require(CGColor(colorSpace: space, components: [11 / 255, 46 / 255, 51 / 255, 1])))
-            context.fill(rect)
+            context.clear(rect)
             context.draw(image, in: rect)
         }
         return pixels

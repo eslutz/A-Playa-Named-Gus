@@ -95,13 +95,6 @@ struct MediaUserData: Codable, Hashable {
         case isFavorite
     }
 
-    private enum LegacyCodingKeys: String, CodingKey {
-        case playbackPositionTicks = "PlaybackPositionTicks"
-        case playedPercentage = "PlayedPercentage"
-        case isWatched = "Played"
-        case isFavorite = "IsFavorite"
-    }
-
     init(playbackPositionTicks: Int? = nil, playedPercentage: Double? = nil, isWatched: Bool? = nil, isFavorite: Bool? = nil) {
         self.playbackPositionTicks = playbackPositionTicks
         self.playedPercentage = playedPercentage
@@ -111,15 +104,10 @@ struct MediaUserData: Codable, Hashable {
 
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        let legacyContainer = try decoder.container(keyedBy: LegacyCodingKeys.self)
         playbackPositionTicks = try container.decodeIfPresent(Int.self, forKey: .playbackPositionTicks)
-            ?? legacyContainer.decodeIfPresent(Int.self, forKey: .playbackPositionTicks)
         playedPercentage = try container.decodeIfPresent(Double.self, forKey: .playedPercentage)
-            ?? legacyContainer.decodeIfPresent(Double.self, forKey: .playedPercentage)
         isWatched = try container.decodeIfPresent(Bool.self, forKey: .isWatched)
-            ?? legacyContainer.decodeIfPresent(Bool.self, forKey: .isWatched)
         isFavorite = try container.decodeIfPresent(Bool.self, forKey: .isFavorite)
-            ?? legacyContainer.decodeIfPresent(Bool.self, forKey: .isFavorite)
     }
 }
 
@@ -310,38 +298,6 @@ struct MediaItem: Codable, Hashable, Identifiable {
         case video3DFormat
     }
 
-    private enum LegacyCodingKeys: String, CodingKey {
-        case album = "Album"
-        case albumArtist = "AlbumArtist"
-        case artists = "Artists"
-        case backdropImageTags = "BackdropImageTags"
-        case canDownload = "CanDownload"
-        case collectionType = "CollectionType"
-        case communityRating = "CommunityRating"
-        case container = "Container"
-        case criticRating = "CriticRating"
-        case genres = "Genres"
-        case id = "Id"
-        case imageTags = "ImageTags"
-        case indexNumber = "IndexNumber"
-        case name = "Name"
-        case officialRating = "OfficialRating"
-        case overview = "Overview"
-        case parentBackdropImageTags = "ParentBackdropImageTags"
-        case parentID = "ParentId"
-        case parentIndexNumber = "ParentIndexNumber"
-        case primaryImageAspectRatio = "PrimaryImageAspectRatio"
-        case productionYear = "ProductionYear"
-        case runTimeTicks = "RunTimeTicks"
-        case seriesID = "SeriesId"
-        case seriesName = "SeriesName"
-        case seriesPrimaryImageTag = "SeriesPrimaryImageTag"
-        case taglines = "Taglines"
-        case type = "Type"
-        case userData = "UserData"
-        case video3DFormat = "Video3DFormat"
-    }
-
     init(
         providerKind: MediaProviderKind = .jellyfin,
         album: String? = nil,
@@ -418,114 +374,42 @@ struct MediaItem: Codable, Hashable, Identifiable {
 
     init(from decoder: Decoder) throws {
         let values = try decoder.container(keyedBy: CodingKeys.self)
-        let legacyValues = try decoder.container(keyedBy: LegacyCodingKeys.self)
 
-        providerKind = try values.decodeIfPresent(MediaProviderKind.self, forKey: .providerKind) ?? .jellyfin
+        providerKind = try values.decode(MediaProviderKind.self, forKey: .providerKind)
         album = try values.decodeIfPresent(String.self, forKey: .album)
-            ?? legacyValues.decodeIfPresent(String.self, forKey: .album)
         albumArtist = try values.decodeIfPresent(String.self, forKey: .albumArtist)
-            ?? legacyValues.decodeIfPresent(String.self, forKey: .albumArtist)
-        artists = try values.decodeIfPresent([String].self, forKey: .artists)
-            ?? legacyValues.decodeIfPresent([String].self, forKey: .artists) ?? []
-        backdropImageTags = try values.decodeIfPresent([String].self, forKey: .backdropImageTags)
-            ?? legacyValues.decodeIfPresent([String].self, forKey: .backdropImageTags) ?? []
+        artists = try values.decodeIfPresent([String].self, forKey: .artists) ?? []
+        backdropImageTags = try values.decodeIfPresent([String].self, forKey: .backdropImageTags) ?? []
         canDownload = try values.decodeIfPresent(Bool.self, forKey: .canDownload)
-            ?? legacyValues.decodeIfPresent(Bool.self, forKey: .canDownload)
         chapters = try values.decodeIfPresent([MediaChapterInfo].self, forKey: .chapters) ?? []
         collectionType = try values.decodeIfPresent(MediaCollectionType.self, forKey: .collectionType)
-            ?? Self.decodeLegacyCollectionType(from: legacyValues)
         communityRating = try values.decodeIfPresent(Double.self, forKey: .communityRating)
-            ?? legacyValues.decodeIfPresent(Double.self, forKey: .communityRating)
         container = try values.decodeIfPresent(String.self, forKey: .container)
-            ?? legacyValues.decodeIfPresent(String.self, forKey: .container)
         criticRating = try values.decodeIfPresent(Double.self, forKey: .criticRating)
-            ?? legacyValues.decodeIfPresent(Double.self, forKey: .criticRating)
         currentProgramName = try values.decodeIfPresent(String.self, forKey: .currentProgramName)
-        genres = try values.decodeIfPresent([String].self, forKey: .genres)
-            ?? legacyValues.decodeIfPresent([String].self, forKey: .genres) ?? []
+        genres = try values.decodeIfPresent([String].self, forKey: .genres) ?? []
         id = try values.decodeIfPresent(String.self, forKey: .id)
-            ?? legacyValues.decodeIfPresent(String.self, forKey: .id)
-        imageTags = try values.decodeIfPresent([String: String].self, forKey: .imageTags)
-            ?? legacyValues.decodeIfPresent([String: String].self, forKey: .imageTags) ?? [:]
+        imageTags = try values.decodeIfPresent([String: String].self, forKey: .imageTags) ?? [:]
         indexNumber = try values.decodeIfPresent(Int.self, forKey: .indexNumber)
-            ?? legacyValues.decodeIfPresent(Int.self, forKey: .indexNumber)
         mediaSources = try values.decodeIfPresent([MediaSource].self, forKey: .mediaSources) ?? []
         name = try values.decodeIfPresent(String.self, forKey: .name)
-            ?? legacyValues.decodeIfPresent(String.self, forKey: .name)
         officialRating = try values.decodeIfPresent(String.self, forKey: .officialRating)
-            ?? legacyValues.decodeIfPresent(String.self, forKey: .officialRating)
         overview = try values.decodeIfPresent(String.self, forKey: .overview)
-            ?? legacyValues.decodeIfPresent(String.self, forKey: .overview)
-        parentBackdropImageTags = try values.decodeIfPresent([String].self, forKey: .parentBackdropImageTags)
-            ?? legacyValues.decodeIfPresent([String].self, forKey: .parentBackdropImageTags) ?? []
+        parentBackdropImageTags = try values.decodeIfPresent([String].self, forKey: .parentBackdropImageTags) ?? []
         parentID = try values.decodeIfPresent(String.self, forKey: .parentID)
-            ?? legacyValues.decodeIfPresent(String.self, forKey: .parentID)
         parentIndexNumber = try values.decodeIfPresent(Int.self, forKey: .parentIndexNumber)
-            ?? legacyValues.decodeIfPresent(Int.self, forKey: .parentIndexNumber)
         people = try values.decodeIfPresent([MediaPerson].self, forKey: .people) ?? []
         primaryImageAspectRatio = try values.decodeIfPresent(Double.self, forKey: .primaryImageAspectRatio)
-            ?? legacyValues.decodeIfPresent(Double.self, forKey: .primaryImageAspectRatio)
         productionYear = try values.decodeIfPresent(Int.self, forKey: .productionYear)
-            ?? legacyValues.decodeIfPresent(Int.self, forKey: .productionYear)
         runTimeTicks = try values.decodeIfPresent(Int.self, forKey: .runTimeTicks)
-            ?? legacyValues.decodeIfPresent(Int.self, forKey: .runTimeTicks)
         seriesID = try values.decodeIfPresent(String.self, forKey: .seriesID)
-            ?? legacyValues.decodeIfPresent(String.self, forKey: .seriesID)
         seriesName = try values.decodeIfPresent(String.self, forKey: .seriesName)
-            ?? legacyValues.decodeIfPresent(String.self, forKey: .seriesName)
         seriesPrimaryImageTag = try values.decodeIfPresent(String.self, forKey: .seriesPrimaryImageTag)
-            ?? legacyValues.decodeIfPresent(String.self, forKey: .seriesPrimaryImageTag)
         studios = try values.decodeIfPresent([MediaStudio].self, forKey: .studios) ?? []
-        taglines = try values.decodeIfPresent([String].self, forKey: .taglines)
-            ?? legacyValues.decodeIfPresent([String].self, forKey: .taglines) ?? []
+        taglines = try values.decodeIfPresent([String].self, forKey: .taglines) ?? []
         type = try values.decodeIfPresent(MediaItemType.self, forKey: .type)
-            ?? Self.decodeLegacyItemType(from: legacyValues)
         userData = try values.decodeIfPresent(MediaUserData.self, forKey: .userData)
-            ?? legacyValues.decodeIfPresent(MediaUserData.self, forKey: .userData)
         video3DFormat = try values.decodeIfPresent(Media3DFormat.self, forKey: .video3DFormat)
-            ?? Self.decodeLegacy3DFormat(from: legacyValues)
-    }
-
-    private static func decodeLegacyItemType(from container: KeyedDecodingContainer<LegacyCodingKeys>) -> MediaItemType? {
-        guard let rawValue = try? container.decodeIfPresent(String.self, forKey: .type) else { return nil }
-        switch rawValue.lowercased() {
-        case "movie": return .movie
-        case "episode": return .episode
-        case "series": return .series
-        case "season": return .season
-        case "collectionfolder": return .collectionFolder
-        case "folder": return .folder
-        case "trailer": return .trailer
-        case "video": return .video
-        case "audio": return .audio
-        case "musicartist": return .musicArtist
-        case "musicalbum": return .musicAlbum
-        case "playlist": return .playlist
-        case "book": return .book
-        case "audiobook": return .audioBook
-        case "photo": return .photo
-        case "tvchannel", "livetvchannel", "livechannel": return .liveChannel
-        case "tvprogram", "livetvprogram", "liveprogram": return .liveProgram
-        case "recording": return .recording
-        default: return .unknown
-        }
-    }
-
-    private static func decodeLegacyCollectionType(from container: KeyedDecodingContainer<LegacyCodingKeys>) -> MediaCollectionType? {
-        guard let rawValue = try? container.decodeIfPresent(String.self, forKey: .collectionType) else { return nil }
-        return MediaCollectionType(rawValue: rawValue.lowercased()) ?? .unknown
-    }
-
-    private static func decodeLegacy3DFormat(from container: KeyedDecodingContainer<LegacyCodingKeys>) -> Media3DFormat? {
-        guard let rawValue = try? container.decodeIfPresent(String.self, forKey: .video3DFormat) else { return nil }
-        switch rawValue.lowercased() {
-        case "halfsidebyside": return .halfSideBySide
-        case "fullsidebyside": return .fullSideBySide
-        case "halftopandbottom": return .halfTopAndBottom
-        case "fulltopandbottom": return .fullTopAndBottom
-        case "mvc": return .mvc
-        default: return nil
-        }
     }
 }
 

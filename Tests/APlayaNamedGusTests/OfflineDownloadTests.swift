@@ -266,12 +266,12 @@ struct OfflineDownloadTests {
         #expect(source.request.query?.value(for: "allowVideoStreamCopy") == "true")
     }
 
-    @Test("download records decode existing completed records without status fields")
-    func recordDecodesLegacyCompletedRecord() throws {
+    @Test("download records require current status fields")
+    func recordRejectsMissingStatus() throws {
         let json = """
         {
           "id": "server-1:user-1:item-1",
-          "item": { "Id": "item-1", "Name": "Office Space" },
+          "item": { "providerKind": "jellyfin", "id": "item-1", "name": "Office Space" },
           "filePath": "/tmp/item-1.mp4",
           "byteCount": 5,
           "serverID": "server-1",
@@ -282,11 +282,9 @@ struct OfflineDownloadTests {
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601
 
-        let record = try decoder.decode(OfflineDownloadRecord.self, from: Data(json.utf8))
-
-        #expect(record.status == .complete)
-        #expect(record.progress == 1)
-        #expect(record.resumeData == nil)
+        #expect(throws: DecodingError.self) {
+            try decoder.decode(OfflineDownloadRecord.self, from: Data(json.utf8))
+        }
     }
 
     @Test("file store persists resolves and deletes downloaded media records")
@@ -355,35 +353,6 @@ struct OfflineDownloadTests {
         #expect(store.localFileURL(for: accountRecord) == nil)
         #expect(store.record(forItemID: "item-1", serverID: "server-2", userID: "user-2") == otherRecord)
         #expect(store.localFileURL(for: otherRecord) != nil)
-    }
-
-    @Test("default application support location migrates legacy download records")
-    func defaultLocationMigratesLegacyDownloadRecords() throws {
-        let baseDirectory = FileManager.default.temporaryDirectory
-            .appendingPathComponent(UUID().uuidString, isDirectory: true)
-        let legacyDirectory = baseDirectory
-            .appendingPathComponent("Gus", isDirectory: true)
-            .appendingPathComponent("Downloads", isDirectory: true)
-        let migratedDirectory = baseDirectory
-            .appendingPathComponent("A Playa Named Gus", isDirectory: true)
-            .appendingPathComponent("Downloads", isDirectory: true)
-        let legacyStore = OfflineDownloadFileStore(directory: legacyDirectory)
-        let source = legacyDirectory.appendingPathComponent("source.mp4")
-        try FileManager.default.createDirectory(at: legacyDirectory, withIntermediateDirectories: true)
-        try Data("video".utf8).write(to: source)
-        let record = try legacyStore.persistDownloadedFile(
-            source,
-            item: MediaItem(id: "item-1", name: "Office Space"),
-            serverID: "server-1",
-            userID: "user-1",
-            downloadedAt: Date(timeIntervalSince1970: 100)
-        )
-
-        let store = OfflineDownloadFileStore(applicationSupportDirectory: baseDirectory)
-
-        #expect(store.record(forItemID: "item-1", serverID: "server-1", userID: "user-1")?.id == record.id)
-        #expect(FileManager.default.fileExists(atPath: migratedDirectory.path))
-        #expect(!FileManager.default.fileExists(atPath: legacyDirectory.path))
     }
 
     @MainActor

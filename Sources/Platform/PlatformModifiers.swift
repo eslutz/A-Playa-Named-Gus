@@ -209,7 +209,7 @@ enum DetailActionMetrics {
         @Environment(\.verticalSizeClass) private var heightClass
 
         func body(content: Content) -> some View {
-            if #available(iOS 26.0, *), heightClass == .compact {
+            if heightClass == .compact {
                 content.toolbar {
                     DefaultToolbarItem(kind: .search, placement: .topBarTrailing)
                 }

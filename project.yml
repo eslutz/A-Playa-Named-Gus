@@ -11,11 +11,11 @@ options:
   xcodeVersion: "27.0"
   bundleIdPrefix: dev.ericslutz
   deploymentTarget:
-    iOS: "18.0"
-    tvOS: "18.0"
-    visionOS: "2.0"
-    macOS: "15.0"
-    watchOS: "11.0"
+    iOS: "27.0"
+    tvOS: "27.0"
+    visionOS: "27.0"
+    macOS: "27.0"
+    watchOS: "27.0"
   createIntermediateGroups: true
   groupSortPosition: top
   generateEmptyDirectories: true

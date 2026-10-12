@@ -1,6 +1,6 @@
 #if canImport(DeclaredAgeRange) && (os(iOS) || os(macOS))
     // The SDK's SwiftUI action has no Sendable/isolation annotation. Keep this
-    // compatibility boundary limited to that framework; app state and the
+    // SDK concurrency boundary limited to that framework; app state and the
     // single outstanding request remain on the main actor.
     @preconcurrency import DeclaredAgeRange
     import SwiftUI
@@ -13,7 +13,6 @@
     /// Requires the `com.apple.developer.declared-age-range` entitlement at runtime; the
     /// request fails gracefully (status message, manual picker untouched) until the
     /// entitlement is granted and wired — the same staging used for CarPlay audio.
-    @available(iOS 26.0, macOS 26.0, *)
     @MainActor
     struct AgeRangeDefaultsButton: View {
         @Environment(\.requestAgeRange) private var requestAgeRange

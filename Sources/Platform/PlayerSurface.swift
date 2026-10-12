@@ -128,12 +128,8 @@ import SwiftUI
             controller.updatesNowPlayingInfoCenter = false
             controller.appliesPreferredDisplayCriteriaAutomatically = true
 
-            if #available(visionOS 26.0, *) {
-                controller.experienceController.allowedExperiences = .recommended(including: [.expanded, .immersive])
-                controller.experienceController.configuration.expanded.automaticTransitionToImmersive = .default
-            } else {
-                controller.experienceController.allowedExperiences = .recommended(including: [.expanded])
-            }
+            controller.experienceController.allowedExperiences = .recommended(including: [.expanded, .immersive])
+            controller.experienceController.configuration.expanded.automaticTransitionToImmersive = .default
 
             return controller
         }

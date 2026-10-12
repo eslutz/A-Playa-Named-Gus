@@ -169,8 +169,8 @@ struct DownloadedNavigationTests {
         #expect(Set([a, b]).count == 2)
         let restored = try JSONDecoder().decode(ItemRef.self, from: JSONEncoder().encode(a))
         #expect(restored == a)
-        let legacy = try JSONDecoder().decode(ItemRef.self, from: JSONEncoder().encode(ItemRef(item: item)))
-        #expect(legacy.localOnly == nil)
+        let decoded = try JSONDecoder().decode(ItemRef.self, from: JSONEncoder().encode(ItemRef(item: item)))
+        #expect(decoded.localOnly == nil)
     }
 
     @Test("Downloaded defaults after Home on supported platforms, can move and cannot hide")

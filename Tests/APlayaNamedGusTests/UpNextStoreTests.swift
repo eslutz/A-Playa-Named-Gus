@@ -37,27 +37,6 @@ struct UpNextStoreTests {
         #expect(merged.first?.name == "Manual")
     }
 
-    @Test("default application support location migrates legacy Up Next items")
-    func defaultLocationMigratesLegacyItems() {
-        let baseDirectory = temporaryDirectory()
-        let legacyDirectory = baseDirectory
-            .appendingPathComponent("Gus", isDirectory: true)
-            .appendingPathComponent("UpNext", isDirectory: true)
-        let legacyPersistence = UpNextPersistence(directory: legacyDirectory)
-        let item = MediaItem(id: "movie-1", name: "Manual", type: .movie)
-        let scope = AccountScope(serverID: "server-1", userID: "user-1")
-        legacyPersistence.save([item], scope: scope)
-
-        let persistence = UpNextPersistence(applicationSupportDirectory: baseDirectory)
-        let migratedDirectory = baseDirectory
-            .appendingPathComponent("A Playa Named Gus", isDirectory: true)
-            .appendingPathComponent("UpNext", isDirectory: true)
-
-        #expect(persistence.load(scope: scope).map(\.id) == ["movie-1"])
-        #expect(FileManager.default.fileExists(atPath: migratedDirectory.path))
-        #expect(!FileManager.default.fileExists(atPath: legacyDirectory.path))
-    }
-
     private func temporaryDirectory() -> URL {
         FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
     }

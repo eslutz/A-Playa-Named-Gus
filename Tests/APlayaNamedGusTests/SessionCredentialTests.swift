@@ -8,7 +8,6 @@ struct SessionCredentialTests {
         let credential = SessionCredential(serverID: "server-1", userID: "user-7")
 
         #expect(credential.account == "jellyfin:server-1:user-7")
-        #expect(credential.legacyAccount == "server-1:user-7")
     }
 
     @Test("derives the keychain account from a stored user")
@@ -18,6 +17,5 @@ struct SessionCredentialTests {
         let credential = SessionCredential(user: user)
 
         #expect(credential.account == "jellyfin:server-1:user-7")
-        #expect(credential.legacyAccount == "server-1:user-7")
     }
 }

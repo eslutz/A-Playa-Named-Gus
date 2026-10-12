@@ -27,26 +27,4 @@ struct ServerStoreTests {
         #expect(store.loadServers() == [server])
         #expect(store.loadUsers() == [user])
     }
-
-    @Test("default application support location migrates legacy Gus folder")
-    func defaultLocationMigratesLegacyFolder() throws {
-        let baseDirectory = FileManager.default.temporaryDirectory
-            .appendingPathComponent(UUID().uuidString, isDirectory: true)
-        let legacyDirectory = baseDirectory.appendingPathComponent("Gus", isDirectory: true)
-        let migratedDirectory = baseDirectory.appendingPathComponent("A Playa Named Gus", isDirectory: true)
-        let legacyStore = ServerStore(directory: legacyDirectory)
-        let server = try ServerConnection(
-            id: "server-1",
-            name: "Psych Office",
-            url: #require(URL(string: "https://jellyfin.example.com"))
-        )
-
-        legacyStore.saveServers([server])
-
-        let store = ServerStore(applicationSupportDirectory: baseDirectory)
-
-        #expect(store.loadServers() == [server])
-        #expect(FileManager.default.fileExists(atPath: migratedDirectory.path))
-        #expect(!FileManager.default.fileExists(atPath: legacyDirectory.path))
-    }
 }
