@@ -263,13 +263,17 @@ extension PlaybackIntegrationTests {
             #expect(notifications.snapshot(for: ObjectIdentifier(finishedItem)).failureCount == 0)
 
             store.playPause()
-            try #require(await waitUntil { player.currentItem !== finishedItem && store.isPlaying }, timeoutComment(store: store, player: player, notifications: notifications, startupElapsed: startupElapsed))
-            let replayedItem = try #require(player.currentItem)
+            try #require(await waitUntil {
+                createdPlayer !== player && createdPlayer?.currentItem !== finishedItem && store.isPlaying
+            }, timeoutComment(store: store, player: createdPlayer ?? player, notifications: notifications, startupElapsed: startupElapsed))
+            let replayedPlayer = try #require(createdPlayer)
+            let replayedItem = try #require(replayedPlayer.currentItem)
             #expect(provider.audioResolutionCallCount == 2)
-            // The second completion proves replay reinstalls its end observer.
+            // The second completion proves replay reinstalls its end observer
+            // on the newly constructed player used by production after completion.
             try #require(await waitUntil {
                 !store.isPlaying && store.state == .loaded && notifications.snapshot(for: ObjectIdentifier(replayedItem)).endCount >= 1
-            }, timeoutComment(store: store, player: player, notifications: notifications, startupElapsed: startupElapsed))
+            }, timeoutComment(store: store, player: replayedPlayer, notifications: notifications, startupElapsed: startupElapsed))
             #expect(notifications.snapshot(for: ObjectIdentifier(replayedItem)).endCount == 1)
             #expect(notifications.snapshot(for: ObjectIdentifier(replayedItem)).failureCount == 0)
         }
