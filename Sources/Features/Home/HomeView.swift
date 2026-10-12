@@ -39,9 +39,16 @@ struct HomeView: View {
                 ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
+        .alert("Queue Could Not Be Updated", isPresented: Binding(get: { upNext.errorMessage != nil }, set: {
+            if !$0 {
+                upNext.clearError()
+            }
+        })) {
+            Button("OK", role: .cancel) { upNext.clearError() }
+        } message: { Text(upNext.errorMessage ?? "") }
         .navigationTitle("Home")
         .task {
-            upNext.load(serverID: session.server.id, userID: session.user.id)
+            await upNext.refresh(session: session)
         }
         .task(id: playbackRefresh.revision) {
             guard playbackRefresh.revision > 0, let store else { return }
@@ -84,6 +91,8 @@ struct HomeView: View {
                     if !nextUpItems.isEmpty {
                         MediaRail(title: String(localized: "Next Up", comment: "Home rail title for next episodes"), items: nextUpItems, style: .backdrop).id("next")
                     }
+                    SavedQueueRecoveryRail()
+                    ProgressTransferView()
                     ForEach(store.latestSections) { section in
                         MediaRail(title: section.title, items: section.items).id(section.id)
                     }
@@ -95,13 +104,17 @@ struct HomeView: View {
             }
             .scrollPosition(id: rootState.scrollBinding(for: "home"))
             .lookToScroll()
-            .refreshable { await store.refresh() }
+            .refreshable {
+                await upNext.refresh(session: session, force: true)
+                await store.refresh()
+            }
         }
     }
 }
 
 /// Horizontal rail of media items.
 struct MediaRail: View {
+    @Environment(UpNextStore.self) private var upNext
     @Environment(SessionStore.self) private var session
     let title: String
     let items: [MediaItem]
@@ -115,19 +128,27 @@ struct MediaRail: View {
 
             ScrollView(.horizontal, showsIndicators: false) {
                 LazyHStack(alignment: .top, spacing: style.spacing) {
-                    ForEach(items, id: \.id) { item in
+                    ForEach(items, id: \.id) { saved in
+                        let item = saved.id.flatMap { session.references.updates[$0] } ?? saved
                         NavigationLink(value: ItemRef(item: item)) {
                             switch style {
                             case .poster:
                                 PosterCard(
                                     item: item,
-                                    imageURL: session.mediaProvider.primaryImageURL(for: item, context: .posterRail)
+                                    imageURL: session.mediaProvider.primaryImageURL(for: item, context: .posterRail),
+                                    fallbackURLs: session.mediaProvider.artworkURLs(for: item, maxWidth: 260),
+                                    onExhausted: { _ = try? await session.references.currentItem(item) }
                                 )
                                 .frame(width: style.itemWidth)
                             case .backdrop:
                                 BackdropCard(
                                     item: item,
-                                    imageURL: session.mediaProvider.backdropImageURL(for: item, maxWidth: 560)
+                                    imageURL: session.mediaProvider.backdropImageURL(for: item, maxWidth: 560),
+                                    fallbackURLs: session.mediaProvider.artworkURLs(for: item, maxWidth: 560),
+                                    onExhausted: {
+                                        _ = try? await session.references.currentItem(item)
+                                        await upNext.refresh(session: session)
+                                    }
                                 )
                                 .frame(width: style.itemWidth)
                             }
@@ -197,10 +218,12 @@ enum MediaRailMetrics {
 private struct BackdropCard: View {
     let item: MediaItem
     let imageURL: URL?
+    var fallbackURLs: [URL] = []
+    var onExhausted: (() async -> Void)?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            ArtworkTile(url: imageURL, aspectRatio: MediaRailMetrics.aspectRatio(for: .backdrop), contentMode: .fit, placeholderSymbol: "play.rectangle")
+            ArtworkTile(url: imageURL, aspectRatio: MediaRailMetrics.aspectRatio(for: .backdrop), contentMode: .fit, placeholderSymbol: "play.rectangle", fallbackURLs: fallbackURLs, onExhausted: onExhausted)
                 .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                 .posterHoverEffect()
 

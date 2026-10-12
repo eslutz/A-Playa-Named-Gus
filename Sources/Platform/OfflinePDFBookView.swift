@@ -68,6 +68,7 @@ struct OfflinePDFBookView: View {
                     LocalPDFSurface(
                         fileURL: fileURL,
                         itemID: item.id,
+                        mediaItem: item,
                         scope: AccountScope(serverID: session.server.id, userID: session.user.id),
                         onCompletion: { [record = downloads.record(for: item, serverID: session.server.id, userID: session.user.id)] in
                             downloads.deleteAfterCompletion(record)
@@ -98,14 +99,16 @@ struct OfflinePDFBookView: View {
     @MainActor
     private final class PDFReadingCoordinator: NSObject {
         private let itemID: String?
+        private let mediaItem: MediaItem?
         private let scope: AccountScope
         private let writerToken: UUID
         private var pageObserver: NSObjectProtocol?
         private let onCompletion: () -> Void
 
-        init(itemID: String?, scope: AccountScope, onCompletion: @escaping () -> Void) {
+        init(itemID: String?, scope: AccountScope, onCompletion: @escaping () -> Void, item: MediaItem? = nil) {
             self.onCompletion = onCompletion
             self.itemID = itemID
+            self.mediaItem = item
             self.scope = scope
             writerToken = OfflinePlaybackProgressStore.shared.writerToken(for: scope)
         }
@@ -138,7 +141,7 @@ struct OfflinePDFBookView: View {
             let fraction = Double(index + 1) / Double(document.pageCount)
             OfflinePlaybackProgressStore.shared.checkpoint(
                 itemID: itemID, positionTicks: JellyfinBookProgress.ticks(forFraction: fraction),
-                scope: scope, writerToken: writerToken
+                scope: scope, writerToken: writerToken, item: mediaItem
             )
         }
 
@@ -164,10 +167,11 @@ struct OfflinePDFBookView: View {
     private struct LocalPDFSurface: NSViewRepresentable {
         let fileURL: URL
         let itemID: String?
+        let mediaItem: MediaItem
         let scope: AccountScope
         let onCompletion: () -> Void
         func makeCoordinator() -> PDFReadingCoordinator {
-            PDFReadingCoordinator(itemID: itemID, scope: scope, onCompletion: onCompletion)
+            PDFReadingCoordinator(itemID: itemID, scope: scope, onCompletion: onCompletion, item: mediaItem)
         }
 
         func makeNSView(context: Context) -> PDFView {
@@ -187,10 +191,11 @@ struct OfflinePDFBookView: View {
     private struct LocalPDFSurface: UIViewRepresentable {
         let fileURL: URL
         let itemID: String?
+        let mediaItem: MediaItem
         let scope: AccountScope
         let onCompletion: () -> Void
         func makeCoordinator() -> PDFReadingCoordinator {
-            PDFReadingCoordinator(itemID: itemID, scope: scope, onCompletion: onCompletion)
+            PDFReadingCoordinator(itemID: itemID, scope: scope, onCompletion: onCompletion, item: mediaItem)
         }
 
         func makeUIView(context: Context) -> PDFView {

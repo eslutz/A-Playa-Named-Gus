@@ -10,10 +10,12 @@ struct PosterCard: View {
     let imageURL: URL?
     var aspectRatio: CGFloat = 2.0 / 3.0
     var placeholderSymbol: String = "film"
+    var fallbackURLs: [URL] = []
+    var onExhausted: (() async -> Void)?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            ArtworkTile(url: imageURL, aspectRatio: aspectRatio, placeholderSymbol: placeholderSymbol)
+            ArtworkTile(url: imageURL, aspectRatio: aspectRatio, placeholderSymbol: placeholderSymbol, fallbackURLs: fallbackURLs, onExhausted: onExhausted)
                 .frame(maxWidth: .infinity)
                 .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                 .posterHoverEffect()
@@ -46,7 +48,7 @@ struct PosterCard: View {
 
 extension PosterCard {
     /// Convenience initializer from a media item, choosing a sensible title/subtitle.
-    init(item: MediaItem, imageURL: URL?, aspectRatio: CGFloat = 2.0 / 3.0) {
+    init(item: MediaItem, imageURL: URL?, aspectRatio: CGFloat = 2.0 / 3.0, fallbackURLs: [URL] = [], onExhausted: (() async -> Void)? = nil) {
         let title: String
         let subtitle: String?
 
@@ -62,7 +64,9 @@ extension PosterCard {
             title: title,
             subtitle: subtitle,
             imageURL: imageURL,
-            aspectRatio: aspectRatio
+            aspectRatio: aspectRatio,
+            fallbackURLs: fallbackURLs,
+            onExhausted: onExhausted
         )
     }
 }

@@ -2,6 +2,7 @@ import SwiftUI
 
 /// Only the visual container changes with width; navigation and players remain session-owned.
 struct RootContainer: View {
+    @Environment(\.scenePhase) private var scenePhase
     @Environment(SessionStore.self) private var session
     @Environment(OfflineDownloadStore.self) private var downloads
     @Environment(AppNavigationModel.self) private var navigation
@@ -32,6 +33,11 @@ struct RootContainer: View {
                     state.home = home
                     await home.load()
                 }
+            }
+            .task(id: scenePhase) {
+                guard scenePhase == .active else { return }
+                session.references.beginRefresh()
+                await state.refreshCachedContent()
             }
             .onChange(of: navigation.routeRequest) { _, _ in state.adopt(navigation.route) }
             .onChange(of: state.selectedSectionID) { _, id in storedSelection = id }

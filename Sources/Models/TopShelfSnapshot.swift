@@ -16,12 +16,15 @@ struct TopShelfSnapshot: Codable, Equatable {
         let imageURL: URL?
         /// 0...1 watched fraction for the Top Shelf progress bar.
         let playbackProgress: Double?
+        var contentURL: URL? = nil
     }
 
     static let appGroupIdentifier = "group.dev.ericslutz.gus"
     private static let fileName = "topshelf-snapshot.json"
 
     var items: [Item]
+    var serverID: String? = nil
+    var userID: String? = nil
 
     // MARK: - App Group persistence
 

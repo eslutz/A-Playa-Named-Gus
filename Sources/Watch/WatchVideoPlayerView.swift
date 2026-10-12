@@ -52,15 +52,18 @@ struct WatchVideoPlayerView: View {
     }
 
     private func prepare() async {
-        guard player == nil, let itemID = item.id else { return }
+        guard player == nil, item.id != nil else { return }
         do {
+            let current = try await session.references.currentItem(item)
+            guard let itemID = current.id, ContentRatingGate.admitsStored(current) else { throw GusError.notFound }
             let resolution = try await session.mediaProvider.resolvePlayback(
                 for: itemID,
                 maxStreamingBitrate: Self.maxStreamingBitrate,
                 streamSelection: .none,
-                startTimeTicks: PlaybackTime.resumePositionTicks(for: item),
+                startTimeTicks: PlaybackTime.resumePositionTicks(for: current),
                 stereoLayout: .none
             )
+            try Task.checkCancellation()
             let player = AVPlayer(url: resolution.url)
             self.player = player
             player.play()

@@ -48,6 +48,24 @@ final class RootNavigationState {
         return store
     }
 
+    func refreshCachedContent() async {
+        await home?.refresh()
+        for store in libraries.values {
+            guard !Task.isCancelled else { return }
+            await store.load()
+        }
+        for search in searches.values {
+            guard !Task.isCancelled else { return }
+            if !search.text.isEmpty {
+                await search.store?.search(search.text)
+            }
+        }
+        for store in details.values {
+            guard !Task.isCancelled else { return }
+            await store.load()
+        }
+    }
+
     func pathBinding(for id: String) -> Binding<NavigationPath> {
         Binding(get: { self.paths[id] ?? NavigationPath() }, set: { self.paths[id] = $0 })
     }

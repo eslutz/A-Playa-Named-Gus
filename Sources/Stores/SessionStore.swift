@@ -12,6 +12,7 @@ import Observation
 final class SessionStore {
     let client: JellyfinClient
     let mediaProvider: any MediaProviderSession
+    let references: MediaReferenceResolver
     let user: StoredUser
     let server: ServerConnection
     /// Called when any request in this session receives a 401; navigates back to sign-in.
@@ -26,6 +27,8 @@ final class SessionStore {
         self.client = client
         self.user = user
         self.server = server
-        self.mediaProvider = mediaProvider ?? JellyfinMediaProviderSession(client: client, userID: user.id)
+        let provider = mediaProvider ?? JellyfinMediaProviderSession(client: client, userID: user.id)
+        self.mediaProvider = provider
+        self.references = MediaReferenceResolver(provider: provider, scope: AccountScope(serverID: server.id, userID: user.id))
     }
 }

@@ -58,9 +58,9 @@ enum GusUserActivity {
 
         switch activity.activityType {
         case playback:
-            return .play(id: itemID)
+            return .play(id: itemID, serverID: userInfo[serverIDKey] as? String, provider: .jellyfin)
         case itemDetail:
-            return .item(id: itemID)
+            return .item(id: itemID, serverID: userInfo[serverIDKey] as? String, provider: .jellyfin)
         default:
             return nil
         }

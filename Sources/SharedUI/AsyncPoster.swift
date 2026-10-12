@@ -11,25 +11,49 @@ struct AsyncPoster: View {
     let url: URL?
     var contentMode: ContentMode = .fill
     var placeholderSymbol: String = "photo"
+    var fallbackURLs: [URL] = []
+    var onExhausted: (() async -> Void)?
+    @State private var candidateIndex = 0
+    @State private var exhaustedURLs: [URL]?
+
+    private var urls: [URL] {
+        ArtworkRequestSequence.unique([url].compactMap { $0 } + fallbackURLs)
+    }
+
+    private var selectedURL: URL? {
+        urls.indices.contains(candidateIndex) ? urls[candidateIndex] : urls.first
+    }
 
     var body: some View {
-        AsyncImage(url: url, transaction: Transaction(animation: animation)) { phase in
+        AsyncImage(url: selectedURL, transaction: Transaction(animation: animation)) { phase in
             switch phase {
             case let .success(image):
                 image
                     .resizable()
                     .aspectRatio(contentMode: contentMode)
             case .failure:
-                placeholder
+                placeholder.task(id: selectedURL) {
+                    if candidateIndex + 1 < urls.count {
+                        DiagnosticsHub.shared.record(.artworkFallback)
+                        candidateIndex += 1
+                    } else if exhaustedURLs != urls {
+                        exhaustedURLs = urls
+                        await onExhausted?()
+                    }
+                }
             case .empty:
                 placeholder.overlay {
-                    if url != nil {
+                    if selectedURL != nil {
                         ProgressView()
                     }
                 }
             @unknown default:
                 placeholder
             }
+        }
+        .onChange(of: urls) { _, _ in
+            candidateIndex = 0
+            exhaustedURLs = nil
         }
     }
 

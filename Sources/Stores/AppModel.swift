@@ -94,7 +94,13 @@ final class AppModel {
 
     private(set) var servers: [ServerConnection] = []
     private(set) var users: [StoredUser] = []
-    var currentSession: SessionStore?
+    var currentSession: SessionStore? {
+        didSet {
+            if oldValue !== currentSession {
+                oldValue?.references.invalidate()
+            }
+        }
+    }
 
     private(set) var lastSessionAccount: String? {
         didSet {

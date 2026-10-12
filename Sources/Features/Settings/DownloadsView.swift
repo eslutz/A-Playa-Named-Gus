@@ -7,6 +7,7 @@ struct DownloadsView: View {
     @State private var selecting = false
     @State private var selection: Set<String> = []
     @State private var pendingDeletion: [OfflineDownloadRecord] = []
+    @State private var replacementRecord: OfflineDownloadRecord?
     @State private var confirmingDeletion = false
 
     private var records: [OfflineDownloadRecord] {
@@ -15,6 +16,7 @@ struct DownloadsView: View {
 
     var body: some View {
         List {
+            ProgressTransferView()
             Section {
                 LabeledContent("Storage Used", value: ByteCountFormatter.string(fromByteCount: downloads.totalByteCount(serverID: session.server.id, userID: session.user.id), countStyle: .file))
                 LabeledContent("Soft Cap", value: ByteCountFormatter.string(fromByteCount: OfflineDownloadStore.softCapBytes, countStyle: .file))
@@ -85,6 +87,11 @@ struct DownloadsView: View {
                 Text("Remove \(pendingDeletion.count) downloads from this device? Server copies will remain available. Active transfers will be canceled.")
             }
         }
+        .sheet(item: $replacementRecord) { record in
+            MediaReplacementPicker(item: record.item, candidates: []) { candidate in
+                await downloads.replaceRemoteReference(record, with: candidate, session: session)
+            }
+        }
         .downloadErrorAlert(downloads)
     }
 
@@ -111,6 +118,12 @@ struct DownloadsView: View {
                             .buttonStyle(.borderless)
                             .accessibilityLabel("Select \(record.item.displayTitle)")
                             .accessibilityValue(selection.contains(record.id) ? "Selected" : "Not Selected")
+                        }
+                        if record.remoteUnavailable == true {
+                            VStack(alignment: .leading) {
+                                Text("Unavailable on this server").font(.caption)
+                                Button("Choose Replacement") { replacementRecord = record }.buttonStyle(.borderless)
+                            }
                         }
                         switch record.status {
                         case .queued, .downloading:

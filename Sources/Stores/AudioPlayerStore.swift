@@ -267,7 +267,7 @@ final class AudioPlayerStore {
     // MARK: - Track lifecycle
 
     private func playCurrentTrack(resume: Bool) async {
-        guard let track = queue.currentTrack, let trackID = track.id else {
+        guard var track = queue.currentTrack, var trackID = track.id else {
             state = .failed(String(localized: "This item can't be played.", comment: "Playback error: item has no playable identifier"))
             return
         }
@@ -297,8 +297,17 @@ final class AudioPlayerStore {
             isLocalPlayback = localURL != nil
             let playbackURL: URL
             if let localURL {
+                if let downloaded = downloads?.record(for: track, serverID: session.server.id, userID: session.user.id) {
+                    track = downloaded.item; trackID = downloaded.item.id ?? trackID
+                }
                 playbackURL = localURL
             } else {
+                let current = try await session.references.currentItem(track)
+                try Task.checkCancellation()
+                guard generation == preparationGeneration, let currentID = current.id else { return }
+                track = current
+                trackID = currentID
+                guard ContentRatingGate.admitsStored(track) else { throw GusError.notFound }
                 let resolution = try await NetworkRetryPolicy.idempotent.run {
                     try await self.session.mediaProvider.resolveAudioPlayback(for: trackID)
                 }
@@ -471,7 +480,7 @@ final class AudioPlayerStore {
         guard let context = reportContext else { return }
         let ticks = PlaybackTime.ticks(fromSeconds: currentTime)
         if isLocalPlayback {
-            localProgress.checkpoint(itemID: context.itemID, positionTicks: ticks, scope: accountScope, writerToken: progressWriterToken)
+            localProgress.checkpoint(itemID: context.itemID, positionTicks: ticks, scope: accountScope, writerToken: progressWriterToken, item: queue.currentTrack)
             return
         }
         Task {
@@ -486,7 +495,7 @@ final class AudioPlayerStore {
         let ticks = PlaybackTime.ticks(fromSeconds: currentTime)
         let paused = !isPlaying
         if isLocalPlayback {
-            localProgress.checkpoint(itemID: context.itemID, positionTicks: ticks, scope: accountScope, writerToken: progressWriterToken)
+            localProgress.checkpoint(itemID: context.itemID, positionTicks: ticks, scope: accountScope, writerToken: progressWriterToken, item: queue.currentTrack)
             return
         }
         Task {
@@ -500,7 +509,7 @@ final class AudioPlayerStore {
         lastProgressReportTime = 0
         let ticks = PlaybackTime.ticks(fromSeconds: currentTime)
         if isLocalPlayback {
-            localProgress.checkpoint(itemID: context.itemID, positionTicks: ticks, scope: accountScope, writerToken: progressWriterToken)
+            localProgress.checkpoint(itemID: context.itemID, positionTicks: ticks, scope: accountScope, writerToken: progressWriterToken, item: queue.currentTrack)
             return
         }
         Task {

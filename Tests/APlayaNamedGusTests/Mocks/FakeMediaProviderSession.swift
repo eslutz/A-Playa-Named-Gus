@@ -12,6 +12,7 @@ final class FakeMediaProviderSession: MediaProviderSession {
     var itemHandler: ((String) async throws -> MediaItem)?
     var episodesHandler: ((String) async throws -> MediaItemPage)?
     var seasonsHandler: (() async throws -> [MediaItem])?
+    var progressHandler: ((String, Int) async throws -> Void)?
     var watchedHandler: (() async throws -> Void)?
     var favoriteHandler: (() async throws -> Void)?
     var audioHandler: (() async throws -> PlaybackSourceResolution)?
@@ -25,6 +26,10 @@ final class FakeMediaProviderSession: MediaProviderSession {
 
     init(capabilities: ProviderCapabilities) {
         self.capabilities = capabilities
+    }
+
+    func updatePlaybackPosition(itemID: String, positionTicks: Int) async throws {
+        try await progressHandler?(itemID, positionTicks)
     }
 
     func userViews() async throws -> [MediaItem] {

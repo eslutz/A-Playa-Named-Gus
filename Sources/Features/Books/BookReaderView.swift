@@ -293,9 +293,9 @@
             if let json = try? locator.jsonString() {
                 progressStore.save(locatorJSON: json, forItemID: itemID, scope: accountScope)
             }
-            if provider == nil, let fraction = locator.locations.totalProgression {
+            if provider == nil || syncEnabled, let fraction = locator.locations.totalProgression {
                 OfflinePlaybackProgressStore.shared.checkpoint(
-                    itemID: itemID, positionTicks: JellyfinBookProgress.ticks(forFraction: fraction), scope: accountScope, writerToken: progressWriterToken
+                    itemID: itemID, positionTicks: JellyfinBookProgress.ticks(forFraction: fraction), scope: accountScope, writerToken: progressWriterToken, item: item
                 )
             }
             scheduleRemoteReport(fraction: locator.locations.totalProgression)
@@ -321,10 +321,10 @@
         }
 
         private func sendReport() async {
-            guard syncEnabled, let provider, let itemID = item.id,
-                  let fraction = pendingFraction else { return }
+            // The session-owned checkpoint synchronizer validates identity and account
+            // before every remote write. Readers only persist local positions.
             pendingFraction = nil
-            try? await provider.reportBookProgress(itemID: itemID, fraction: fraction)
+            progressStore.flush()
         }
 
         func go(to link: ReadiumShared.Link) {
