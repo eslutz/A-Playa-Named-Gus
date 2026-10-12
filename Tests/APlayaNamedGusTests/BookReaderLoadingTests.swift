@@ -33,7 +33,7 @@
             let initial = BookReaderModel(item: item, fileURL: url, provider: nil, accountScope: scope)
             await initial.open()
             let publication = try #require(initial.publication)
-            let href = try #require(publication.readingOrder.last?.href)
+            let href = try #require(publication.readingOrder.last?.url())
             let saved = Locator(
                 href: href, mediaType: .xhtml,
                 locations: .init(progression: 0.75, totalProgression: 0.875)
