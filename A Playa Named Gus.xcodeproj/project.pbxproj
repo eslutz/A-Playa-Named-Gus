@@ -240,6 +240,7 @@
 		85219E1186F15D8859372A59 /* TopShelfSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47993D483BC650FAFA81EB6B /* TopShelfSnapshot.swift */; };
 		85322B2A5C367A1537C40ACE /* ProviderArchitectureTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 106B65B3D739D99308357F51 /* ProviderArchitectureTests.swift */; };
 		85C1429CFC38E0914EF694CF /* SessionCredential.swift in Sources */ = {isa = PBXBuildFile; fileRef = 377EC81CA9801B8CA67BC57C /* SessionCredential.swift */; };
+		85EA3DC931E15F5E2367F752 /* AppIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = 496F330F70EFA250B647270B /* AppIcon.icon */; platformFilters = (ios, macos, ); };
 		88962FBE727800DDF3BD304C /* WatchItemActionsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1DCE6A3D3EC357A28F49AFB /* WatchItemActionsView.swift */; };
 		889735B6303E1FC90959B313 /* DownloadStoreIntegrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7226792EC3856A4E2D39A3F7 /* DownloadStoreIntegrationTests.swift */; };
 		88D9554AA37B7EA0168835A6 /* GusErrorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 70EF7D7FDA97A20F580B7792 /* GusErrorTests.swift */; };
@@ -269,6 +270,7 @@
 		986B5DCA5713BD11FEE2D579 /* SharePlayCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7235838E5900B0E8618E89E1 /* SharePlayCoordinator.swift */; };
 		9884F118DA5062F54BE0FDC8 /* SeriesDetailStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA760C937184D7FECC8A4C78 /* SeriesDetailStoreTests.swift */; };
 		98E0AED8CDE4A6117B98DEA7 /* GusTopShelf.appex in Embed Dependencies */ = {isa = PBXBuildFile; fileRef = 900574CB1AB51B19393E858D /* GusTopShelf.appex */; platformFilters = (tvos, ); settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		995568A4CEA8281F852590BF /* AppIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = 496F330F70EFA250B647270B /* AppIcon.icon */; };
 		9969D5311963372436788199 /* UIRemediationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72EBD224FA02DF9B30663178 /* UIRemediationTests.swift */; };
 		998E35ED462B14ADF49E9BC0 /* OfflineDownloadStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCCA88200B7485633CA3DEBB /* OfflineDownloadStore.swift */; };
 		99DC0F8978178ACFD76BE13E /* AppRouteTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E7CBBC68183E5DF5625EECE /* AppRouteTests.swift */; };
@@ -622,6 +624,7 @@
 		47993D483BC650FAFA81EB6B /* TopShelfSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TopShelfSnapshot.swift; sourceTree = "<group>"; };
 		47E88B26C30A706009EEEBE1 /* DiagnosticsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiagnosticsTests.swift; sourceTree = "<group>"; };
 		488D6B204FA09F63A1FAC50A /* FakeMediaProviderSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FakeMediaProviderSession.swift; sourceTree = "<group>"; };
+		496F330F70EFA250B647270B /* AppIcon.icon */ = {isa = PBXFileReference; lastKnownFileType = wrapper.icon; path = AppIcon.icon; sourceTree = "<group>"; };
 		499E8F1DE6DB4DDEE12858C3 /* SessionsSocket.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionsSocket.swift; sourceTree = "<group>"; };
 		4A9012279A9D5E7007909D53 /* DownloadedLibrary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownloadedLibrary.swift; sourceTree = "<group>"; };
 		4BA2B47FB8AFC9D94ABDC04E /* Logger+Gus.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Logger+Gus.swift"; sourceTree = "<group>"; };
@@ -1029,6 +1032,7 @@
 			isa = PBXGroup;
 			children = (
 				47AE530EA69D8C4409E817B0 /* Watch */,
+				496F330F70EFA250B647270B /* AppIcon.icon */,
 				3FED6DCC30F90DD039276ECF /* Assets.xcassets */,
 				D76EB12DFBE0217F00F4102C /* InfoPlist.xcstrings */,
 				C62272DA5ADC43F343713511 /* Localizable.xcstrings */,
@@ -1738,6 +1742,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				995568A4CEA8281F852590BF /* AppIcon.icon in Resources */,
 				31E3A4B57C38F5716159EF85 /* Assets.xcassets in Resources */,
 				0416654D66F00BEEE381D96F /* InfoPlist.xcstrings in Resources */,
 				9CE4624EEBEB4EDC79458E00 /* Localizable.xcstrings in Resources */,
@@ -1749,6 +1754,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				85EA3DC931E15F5E2367F752 /* AppIcon.icon in Resources */,
 				6AEE34EE369B06B9CBAD69ED /* Assets.xcassets in Resources */,
 				0565EA538333758389DDDCE4 /* InfoPlist.xcstrings in Resources */,
 				45BA8E68F051890F0DAB7DF7 /* Localizable.xcstrings in Resources */,

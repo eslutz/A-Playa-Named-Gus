@@ -55,6 +55,11 @@ targets:
         excludes:
           - "Info.plist"
           - "Watch/**"
+          - "AppIcon.icon/**"
+      - path: Resources/AppIcon.icon
+        type: file
+        buildPhase: resources
+        destinationFilters: [iOS, macOS]
     dependencies:
       - sdk: AppIntents.framework
       - sdk: GroupActivities.framework
@@ -121,6 +126,9 @@ targets:
       - path: Resources/Localizable.xcstrings
       - path: Resources/Watch/InfoPlist.xcstrings
       - path: Resources/Watch/Assets.xcassets
+      - path: Resources/AppIcon.icon
+        type: file
+        buildPhase: resources
       # The watch binary uses required-reason APIs (UserDefaults via DeviceIdentity,
       # DiskSpace via downloads), so it carries the same privacy manifest as the app.
       - path: Resources/PrivacyInfo.xcprivacy
