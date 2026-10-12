@@ -183,10 +183,6 @@
         private var finalPageVisible = false
         private var reportTask: Task<Void, Never>?
 
-        // Shared Readium plumbing for opening local publication assets.
-        private static let httpClient = DefaultHTTPClient()
-        private static let assetRetriever = AssetRetriever(httpClient: httpClient)
-
         init(
             item: MediaItem,
             fileURL: URL,
@@ -219,52 +215,76 @@
                 return
             }
 
+            let locatorJSON = item.id.flatMap {
+                progressStore.locatorJSON(forItemID: $0, scope: accountScope)
+            }
+            switch await Self.openPublication(
+                at: url,
+                locatorJSON: locatorJSON,
+                provider: syncEnabled ? provider : nil,
+                itemID: item.id
+            ) {
+            case let .loaded(publication, tableOfContents, initialLocation):
+                self.publication = publication
+                self.tableOfContents = tableOfContents
+                self.initialLocation = initialLocation
+                state = .loaded
+            case let .failed(message):
+                state = .failed(message)
+            }
+        }
+
+        /// Build and query the legacy Readium objects in one nonisolated loading
+        /// operation, before any navigator can access them. Each load owns its
+        /// retriever/parser. `sending` transfers the completed publication once
+        /// to the main-actor reader without asserting that it is Sendable.
+        @concurrent
+        private nonisolated static func openPublication(
+            at url: FileURL,
+            locatorJSON: String?,
+            provider: (any MediaProviderSession)?,
+            itemID: String?
+        ) async -> sending BookPublicationOpenResult {
+            let httpClient = DefaultHTTPClient()
+            let assetRetriever = AssetRetriever(httpClient: httpClient)
             let opener = PublicationOpener(
                 parser: DefaultPublicationParser(
-                    httpClient: Self.httpClient,
-                    assetRetriever: Self.assetRetriever,
+                    httpClient: httpClient,
+                    assetRetriever: assetRetriever,
                     pdfFactory: DefaultPDFDocumentFactory()
                 ),
                 contentProtections: []
             )
 
-            switch await Self.assetRetriever.retrieve(url: url) {
+            switch await assetRetriever.retrieve(url: url) {
             case let .success(asset):
                 switch await opener.open(asset: asset, allowUserInteraction: false, sender: nil) {
                 case let .success(publication):
-                    self.publication = publication
-                    tableOfContents = (try? await publication.tableOfContents().get()) ?? []
-                    initialLocation = await resolveInitialLocation(in: publication)
-                    state = .loaded
+                    let tableOfContents = (try? await publication.tableOfContents().get()) ?? []
+                    let initialLocation: Locator?
+                    if let locatorJSON, let locator = try? Locator(jsonString: locatorJSON) {
+                        initialLocation = locator
+                    } else if let itemID, let provider,
+                              let fraction = try? await provider.bookProgress(itemID: itemID)
+                    {
+                        initialLocation = await publication.locate(progression: fraction)
+                    } else {
+                        initialLocation = nil
+                    }
+                    return .loaded(publication, tableOfContents, initialLocation)
                 case let .failure(error):
-                    state = .failed(error.localizedDescription)
+                    return .failed(error.localizedDescription)
                 }
             case let .failure(error):
-                state = .failed(error.localizedDescription)
+                return .failed(error.localizedDescription)
             }
-        }
-
-        /// Prefers the exact local locator (same device); otherwise restores from the
-        /// server's coarse fraction so a book resumes across devices.
-        private func resolveInitialLocation(in publication: Publication) async -> Locator? {
-            guard let itemID = item.id else { return nil }
-            if let json = progressStore.locatorJSON(forItemID: itemID, scope: accountScope),
-               let locator = try? Locator(jsonString: json)
-            {
-                return locator
-            }
-            // `try?` flattens bookProgress's optional, so a single bind yields the fraction.
-            guard syncEnabled, let provider,
-                  let fraction = try? await provider.bookProgress(itemID: itemID)
-            else { return nil }
-            return await publication.locate(progression: fraction)
         }
 
         func saveLocation(_ locator: Locator) {
             if let last = publication?.readingOrder.last?.url(),
                let visible = navigator?.viewport?.resources.last
             {
-                finalPageVisible = visible.href == last && visible.progression.upperBound >= 1
+                finalPageVisible = visible.href.isEquivalentTo(last) && visible.progression.upperBound >= 1
             } else {
                 finalPageVisible = false
             }
@@ -313,6 +333,11 @@
                 await navigator.go(to: link, options: NavigatorGoOptions(animated: true))
             }
         }
+    }
+
+    private enum BookPublicationOpenResult {
+        case loaded(Publication, [ReadiumShared.Link], Locator?)
+        case failed(String)
     }
 
     private struct EPUBNavigatorRepresentable: UIViewControllerRepresentable {

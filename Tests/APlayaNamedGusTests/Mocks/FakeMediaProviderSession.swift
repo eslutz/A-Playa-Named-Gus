@@ -186,12 +186,14 @@ final class FakeMediaProviderSession: MediaProviderSession {
 
     var reportedBookProgress: (itemID: String, fraction: Double)?
     var storedBookProgress: Double?
+    var bookProgressCallCount = 0
 
     func reportBookProgress(itemID: String, fraction: Double) async throws {
         reportedBookProgress = (itemID, fraction)
     }
 
     func bookProgress(itemID: String) async throws -> Double? {
-        storedBookProgress
+        bookProgressCallCount += 1
+        return storedBookProgress
     }
 }

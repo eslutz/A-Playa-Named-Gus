@@ -35,6 +35,14 @@ Readium 3.9 serves EPUB resources through WebKit `WKURLSchemeHandler`; its legac
 HTTP-server initializer is deprecated. The unused `ReadiumAdapterGCDWebServer`
 product was removed from Gus on October 11, 2026.
 
+Readium 3.9's publication/retriever/opener classes do not declare Sendable
+conformance. Each EPUB load now constructs its own object graph in an explicitly
+concurrent, nonisolated operation, resolves chapters and the initial locator there,
+then transfers the completed result once with Swift's `sending` ownership boundary
+to the main-actor reader. The graph is not shared with a navigator while loading;
+Gus does not add unchecked Sendable conformances or relax its concurrency checks.
+Reading-order resource comparisons use Readium's normalized `isEquivalentTo` API.
+
 The reader retains and binds Readium's `DirectionalNavigationAdapter` for edge taps
 and hardware-key page navigation. Its chapter browser uses a native SwiftUI sheet,
 `List`, and recursive `DisclosureGroup` entries, including separate parent-link

@@ -1,5 +1,8 @@
 #if canImport(DeclaredAgeRange) && (os(iOS) || os(macOS))
-    import DeclaredAgeRange
+    // The SDK's SwiftUI action has no Sendable/isolation annotation. Keep this
+    // compatibility boundary limited to that framework; app state and the
+    // single outstanding request remain on the main actor.
+    @preconcurrency import DeclaredAgeRange
     import SwiftUI
 
     /// Settings action that suggests a content-rating limit from Apple's Declared Age
@@ -11,6 +14,7 @@
     /// request fails gracefully (status message, manual picker untouched) until the
     /// entitlement is granted and wired — the same staging used for CarPlay audio.
     @available(iOS 26.0, macOS 26.0, *)
+    @MainActor
     struct AgeRangeDefaultsButton: View {
         @Environment(\.requestAgeRange) private var requestAgeRange
         @AppStorage(ContentRatingGate.limitDefaultsKey) private var contentLimitRawValue = ContentRatingGate.Limit.off.rawValue
@@ -45,7 +49,7 @@
             guard !isRequesting else { return }
             isRequesting = true
             statusMessage = nil
-            Task {
+            Task { @MainActor in
                 defer { isRequesting = false }
                 do {
                     let response = try await requestAgeRange(ageGates: 13, 16, 18)

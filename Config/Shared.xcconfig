@@ -12,8 +12,9 @@ CURRENT_PROJECT_VERSION = 1
 // MARK: - Swift
 
 // Complete checking applies to every target. project.yml opts Watch, Top Shelf,
-// and the tvOS/visionOS app into Swift 6. iOS/macOS retain Swift 5 while the
-// documented Readium/Declared Age Range isolation boundaries are resolved.
+// and the tvOS/visionOS app into Swift 6. iOS/macOS retain Swift 5 until the
+// separate language-mode migration; their framework boundaries still use
+// complete concurrency checking and explicit ownership/isolation.
 // Language mode is independent of availability-gated platform APIs.
 SWIFT_VERSION = 5
 SWIFT_STRICT_CONCURRENCY = complete
