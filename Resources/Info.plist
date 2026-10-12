@@ -21,6 +21,12 @@
 	<key>CFBundleVersion</key>
 	<string>$(CURRENT_PROJECT_VERSION)</string>
 
+	<!-- Mac App Store distribution metadata. Ignored by the other platforms. -->
+	<key>LSApplicationCategoryType</key>
+	<string>public.app-category.entertainment</string>
+	<key>NSHumanReadableCopyright</key>
+	<string>Copyright © 2026 Eric Slutz</string>
+
 	<!-- gus:// deep links: fixed app destinations used by the tvOS Top Shelf
 	     extension, menu commands, and screenshot automation (see AppRoute). -->
 	<key>CFBundleURLTypes</key>
