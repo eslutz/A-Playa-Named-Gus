@@ -1,6 +1,8 @@
+import CoreGraphics
 import CryptoKit
 import Foundation
 @testable import Gus
+import ImageIO
 import Testing
 
 @Suite("UI layout metrics")
@@ -150,7 +152,9 @@ struct UILayoutMetricsTests {
         let visionMiddle = try resourceData("Resources/Assets.xcassets/AppIcon.solidimagestack/Middle.solidimagestacklayer/Content.imageset/middle.png")
 
         #expect(watchIcon == primaryIcon)
-        #expect(visionMiddle == primaryIcon)
+        // Layered visionOS keeps transparency; the default iOS store icon must
+        // be opaque. Compare their artwork on the same canvas, not PNG encoding.
+        #expect(try renderedIconPixels(visionMiddle) == renderedIconPixels(primaryIcon))
 
         let staleIconHashes: Set<String> = [
             "a20498f1e9e809ce53de5d761733c7abb43bb1e1f9e70c4d20d09c59902d01e6",
@@ -315,6 +319,26 @@ struct UILayoutMetricsTests {
         #expect(projectSource.contains("CODE_SIGN_ENTITLEMENTS: Config/GusTopShelf.entitlements"))
         #expect(snapshotSource.contains("containerURL(forSecurityApplicationGroupIdentifier"))
         #expect(homeStoreSource.contains("TopShelfSnapshot(items: Array(shelfItems)).save()"))
+    }
+
+    private func renderedIconPixels(_ data: Data) throws -> [UInt8] {
+        let source = try #require(CGImageSourceCreateWithData(data as CFData, nil))
+        let image = try #require(CGImageSourceCreateImageAtIndex(source, 0, nil))
+        #expect(image.width == 1024 && image.height == 1024)
+        let space = try #require(CGColorSpace(name: CGColorSpace.sRGB))
+        var pixels = [UInt8](repeating: 0, count: image.width * image.height * 4)
+        try pixels.withUnsafeMutableBytes { bytes in
+            let context = try #require(CGContext(
+                data: bytes.baseAddress, width: image.width, height: image.height,
+                bitsPerComponent: 8, bytesPerRow: image.width * 4,
+                space: space, bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+            ))
+            let rect = CGRect(x: 0, y: 0, width: image.width, height: image.height)
+            try context.setFillColor(#require(CGColor(colorSpace: space, components: [11 / 255, 46 / 255, 51 / 255, 1])))
+            context.fill(rect)
+            context.draw(image, in: rect)
+        }
+        return pixels
     }
 
     private func sourceFile(named fileName: String, under relativePath: String) throws -> String {
