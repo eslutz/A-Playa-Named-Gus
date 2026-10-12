@@ -305,10 +305,15 @@ via `WatchSessionRelay` / `WatchCredentialReceiver`.
 
 ## App icon
 
-The icon is the official **Gus brand mark** from
-`Gus.website/assets/gus-mark.svg` — a deep teal rounded square with an icy G and mist
-play symbol — rendered across all platforms using `NSBitmapImageRep` at exact pixel sizes.
-The **Winter Chill** palette drives the mark and all color assets:
+The modern icon adapts the **Gus brand mark** from
+`Gus.website/assets/gus-mark.svg` into a connected icy G and a smaller mist play
+symbol on deep teal. Its editable native source is `Resources/AppIcon.icon`.
+The G curve and arm form one continuous SVG stroke in the rear depth group;
+the smaller play symbol sits in a separate foreground group. The G uses 30%
+translucency, the play uses 20%, and play refraction is restrained to 0.12.
+Keep these as editable SVG layers and make Icon Composer the source of truth for
+modern iOS/iPadOS, macOS, and watchOS icons. The **Winter Chill** palette drives
+the mark and all color assets:
 
 | Role | Hex |
 |---|---|
@@ -320,13 +325,12 @@ The **Winter Chill** palette drives the mark and all color assets:
 `AccentColor` (light `#4F7C82` / dark `#B8E3E9`), `LaunchBackground` (light `#B8E3E9` /
 dark `#0B2E33`), and cinema colorsets all share this palette.
 
-Asset catalogs: `Resources/Assets.xcassets/AppIcon.appiconset` (iOS universal with
-default + dark + tinted appearances, plus macOS sizes), `AppIcon.brandassets` (tvOS),
-`AppIcon.solidimagestack` (visionOS), and `Resources/Watch/Assets.xcassets` for watchOS.
-`Scripts/generate-app-icon.swift` exists but draws an older pineapple design — it is
-**not** the source of the current assets. To regenerate icons from the SVG, rasterize
-`Gus.website/assets/gus-mark.svg` using `NSBitmapImageRep` (see commit history for the
-Swift snippet).
+`Resources/Assets.xcassets/AppIcon.appiconset` retains opaque raster fallbacks.
+`AppIcon.brandassets` (tvOS) and `AppIcon.solidimagestack` (visionOS) remain
+platform-specific layered assets. `Scripts/generate-app-icon.swift` draws an older
+pineapple design and is **not** a source for the current icon. For the modern icon, edit
+`Resources/AppIcon.icon` in Icon Composer and preserve the Gus palette and G/play identity. The modern geometry is an intentional
+adaptation of the website mark.
 
 ---
 

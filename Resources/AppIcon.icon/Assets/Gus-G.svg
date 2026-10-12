@@ -1,10 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="1024" height="1024"><defs>
-    <linearGradient id="field" x1="30" y1="28" x2="224" y2="230" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#0B2E33" />
-      <stop offset="1" stop-color="#061A1E" />
-    </linearGradient>
-    <linearGradient id="stroke" x1="58" y1="50" x2="206" y2="212" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#B8E3E9" />
-      <stop offset="1" stop-color="#4F7C82" />
-    </linearGradient>
-  </defs><path d="M186 75a77 77 0 1 0 7 99" fill="none" stroke="url(#stroke)" stroke-width="26" stroke-linecap="round" /><path d="M124 128h68" fill="none" stroke="#B8E3E9" stroke-width="26" stroke-linecap="round" /></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="1024" height="1024">
+  <defs><linearGradient id="stroke" x1="58" y1="50" x2="206" y2="212" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#B8E3E9"/><stop offset="1" stop-color="#4F7C82"/></linearGradient></defs>
+  <path d="M184 76 C165 55 138 47 112 53 C74 61 48 91 48 128 C48 171 81 204 124 204 C164 204 196 175 196 139 H145" fill="none" stroke="url(#stroke)" stroke-width="24" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

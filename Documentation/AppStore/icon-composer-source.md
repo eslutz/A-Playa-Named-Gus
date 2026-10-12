@@ -1,8 +1,10 @@
 # Editable Icon Composer source
 
-Recreated on 2026-10-12 in Apple Icon Composer from the canonical Gus website SVG. The G and play triangle are separate editable vector layers; the original geometry and foreground colors are retained. The native automatic gradient uses brand teal #0B2E33, with system-generated glass, dark, and monochrome appearances. This is a reconstruction, not recovery of the missing original document.
+Recreated on 2026-10-12 in Apple Icon Composer from the Gus website mark, then redesigned with a connected G silhouette and a smaller foreground play symbol. This is a reconstruction, not recovery of the missing original document.
 
-Open `Resources/AppIcon.icon` directly in Icon Composer. Its package contains `icon.json` and the two SVG layers under `Assets/`. Default, dark, monochrome, and circular watchOS previews were inspected and captured in `icon-composer-evidence/`.
+Open `Resources/AppIcon.icon` directly in Icon Composer. Its package contains `icon.json` and two editable SVG assets. `Gus-G.svg` combines the curve and arm into one continuous rounded stroke; `Gus-Play.svg` overlaps the right shoulder in a separate foreground depth group. The detached arm asset has been removed. The G uses 30% translucency, the play uses 20%, both use neutral shadows at 25% opacity, and play refraction strength is 0.12. The deep teal background and icy blue palette remain.
+
+The play symbol was enlarged a further 18% and moved 3 SVG units right while retaining its vertical center. Its translucency was reduced to 20% to strengthen its outline. Default iOS/macOS at 60pt @1x and circular watchOS at 30pt @2x were inspected at 100% zoom in Icon Composer. The user approved this revision on 2026-10-12. Earlier screenshots in `icon-composer-evidence/` predate this redesign; dark and monochrome appearances and on-device rendering require a fresh review.
 
 `project.yml` includes the native package for iOS/macOS and GusWatch, with an explicit `wrapper.icon` reference in the generated Xcode project. tvOS and visionOS retain their existing platform-specific asset catalogs. Existing opaque iOS/Watch PNGs remain as fallback artwork for older systems.
 
@@ -10,7 +12,7 @@ The preceding PNG-only commit f354c7a passed all 13 GitHub CI jobs. Cloud Build 
 
 ## Apple app icon guideline review — 2026-10-12
 
-Reviewed the current [Apple app icon HIG](https://developer.apple.com/design/human-interface-guidelines/app-icons), including its June 2026 Liquid Glass guidance, against the native package and saved previews.
+The earlier source was reviewed against the [Apple app icon HIG](https://developer.apple.com/design/human-interface-guidelines/app-icons), including its June 2026 Liquid Glass guidance, using the native package and saved previews.
 
 - The recognizable G/play mark uses two simple SVG foreground layers, with rounded endpoints and no nonessential words, photos, interface screenshots, or Apple hardware imagery.
 - Foreground edges are crisp; the centered artwork leaves space for rounded-square and circular system masks. The SVG canvases are square and do not bake in an outer mask.
