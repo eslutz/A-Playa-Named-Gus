@@ -328,6 +328,53 @@ extension PlaybackIntegrationTests {
             #expect(provider.audioResolutionCallCount == 0)
         }
 
+        #if NATIVE_AUDIO_DIAGNOSTIC
+            @Test("Native unmuted completion with asynchronous activation, without the store")
+            func nativeAsyncCompletionBaseline() async throws {
+                try await nativeCompletionBaseline(legacyActivation: false)
+            }
+
+            @Test("Native unmuted completion with synchronous activation, without the store")
+            func nativeLegacyCompletionBaseline() async throws {
+                try await nativeCompletionBaseline(legacyActivation: true)
+            }
+
+            private func nativeCompletionBaseline(legacyActivation: Bool) async throws {
+                let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+                defer { try? FileManager.default.removeItem(at: directory) }
+                let url = try silentAudio(in: directory)
+                let notifications = AudioReplayNotificationProbe()
+                if legacyActivation {
+                    #if os(iOS) || os(tvOS) || os(visionOS)
+                        try await Task.detached {
+                            let session = AVAudioSession.sharedInstance()
+                            try session.setCategory(.playback, mode: .default)
+                            try session.setActive(true)
+                        }.value
+                    #endif
+                } else {
+                    await PlaybackAudioSession.activate(video: false)
+                }
+                defer { PlaybackAudioSession.deactivate() }
+                let item = AVPlayerItem(url: url)
+                let player = AVPlayer()
+                player.isMuted = false
+                player.replaceCurrentItem(with: item)
+                defer {
+                    player.pause()
+                    player.replaceCurrentItem(with: nil)
+                }
+                player.rate = 1
+                let finished = try await waitUntil {
+                    notifications.snapshot(for: ObjectIdentifier(item)).endCount >= 1
+                }
+                let native = notifications.snapshot(for: ObjectIdentifier(item))
+                try #require(finished, Comment(rawValue: "Native baseline: legacyActivation=\(legacyActivation), status=\(item.status.rawValue), timeControl=\(player.timeControlStatus.rawValue), rate=\(player.rate), time=\(player.currentTime().seconds), duration=\(item.duration.seconds), nativeEndCount=\(native.endCount), nativeFailureCount=\(native.failureCount)."))
+                #expect(native.endCount == 1)
+                #expect(native.failureCount == 0)
+            }
+        #endif
+
         private var track: MediaItem {
             MediaItem(id: "replay", name: "Replay", runTimeTicks: PlaybackTime.ticksPerSecond, type: .audio)
         }
