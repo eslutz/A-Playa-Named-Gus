@@ -164,11 +164,12 @@ automated build verification. (Covers priority: *polish & testing*.)
   *Acceptance:* available for local/manual launch validation. *(Done: `GusLaunchUITests`
   verifies the Connect screen renders through native iOS, tvOS, visionOS, and macOS UI
   test bundles; CI keeps these UI smoke tests out of the required PR pipeline.)*
-- [x] **CI pipeline.** GitHub Actions (macOS runner): `xcodegen generate` → resolve →
-  build all five destinations → run tests → lint. *Acceptance:* green check required on
-  every PR; matrix covers all platforms. *(Done: CI selects the `xcode-27` runner with Xcode
-  27.0, and requires SwiftFormat/string-catalog lint, an iPhone/iPad/macOS/tvOS/visionOS
-  build matrix, plus native unit tests on each platform.)*
+- [~] **CI pipeline.** GitHub Actions: validate the shared project/pins → resolve →
+  build the iPhone/iPad/macOS/tvOS/visionOS/Watch matrix → run native unit tests → lint.
+  *Acceptance:* successful required checks on the complete current source. *(Configured
+  on the hosted `xcode-27` runner. The post-Duo matrix exposed the obsolete Xcode 27.0
+  selection; CI now requires an iOS simulator SDK of at least 27.1. Acceptance of that
+  GitHub matrix is pending separately from the successful 4/4 Xcode Cloud BUILD actions.)*
 - [x] **Update `project.yml` for the test target & schemes.** *Acceptance:* generated
   project includes the test targets; the per-platform `Gus <platform> Unit Tests` test
   actions work (the `A Playa Named Gus` scheme is build-only). *(Done: platform-native
@@ -449,7 +450,8 @@ validation, TestFlight, and submission work are actually done.
   string). *Acceptance:* Xcode Cloud Release archives sign for each platform. *(Code side
   complete per `Documentation/AppStore/signing-capabilities.md` — entitlements, capability
   declarations, committed Team ID, and the Optic ID/Face ID no-usage-string rationale;
-  remaining work is Xcode Cloud archive validation,
+  Cloud Build 2 passed all four iOS/macOS/tvOS/visionOS BUILD actions for code commit
+  `084a470`; remaining work is signed Release archive validation,
   CarPlay audio (`com.apple.developer.carplay-audio`, manual Apple grant), and device
   verification for the portal-backed App Groups, Associated Domains, Shared with You, and
   Declared Age Range capabilities.)*
@@ -514,8 +516,9 @@ validation, TestFlight, and submission work are actually done.
 - [x] **Local API/Cloud preparation.** Secure key location, ignored configuration, native
   read-only API client, offline signing/bootstrap tests, shared project snapshot and
   dependency pins prepared. Account-wide API authentication and Cloud onboarding are
-  verified; publication and signed archive acceptance of the complete candidate remain
-  pending; see `AppStore/api-access.md` and `AppStore/xcode-cloud-dependency-onboarding.md`.
+  verified; the complete candidate is published to `origin/main` and passed all four
+  Cloud BUILD actions. Signed archive acceptance remains pending; see `AppStore/api-access.md`
+  and `AppStore/xcode-cloud-dependency-onboarding.md`.
 - [ ] **TestFlight beta.** Upload through Xcode Cloud, internal/external testing, gather
   crash/feedback.
   *Acceptance:* a clean build runs from TestFlight on each platform.
@@ -913,6 +916,6 @@ The phone's three requested final flows completed on build 11: Downloads managem
 
 Xcode 27.1 RC is installed. SDK-backed Duo audio arrangement and closed, flat-open, and partially folded simulator flows passed individually. Continuous playback through live display transitions remains unverified. Exact minimum-OS execution remains blocked by unavailable compatible runtimes and the lack of a macOS 15 host/VM; deployment-target builds are not minimum-OS execution. Manual VoiceOver speech, rotor, and focus-order acceptance remains open.
 
-Final source review repaired Vision Pro capsule hover shapes, video preparation/autoplay teardown, independent artwork backfill/progress synchronization, nested EPUB chapter navigation, and audio replay after natural queue completion. The focused playback run passed 23/23, including real WAV replay, local-only behavior after automatic deletion, and all three video lifecycle regressions. Full source/test lint passes for 193 files; shared project validation covers 12 schemes and 16 pins, and six bootstrap tests pass. The final native EPUB chapter sheet acceptance passed 1/1, zero skipped, with inspected portrait/landscape prose, forward/backward paging, and return-to-detail captures. Readium’s directional navigation adapter is retained and bound to the navigator; hardware-key input and completion deletion specifically while opening Chapters at the final page were source-reviewed rather than runtime-tested. Tests are serialized with two build jobs after measured host memory pressure was relieved. Detailed evidence and test scope live in [the repair report](Reviews/2026-10-11-auth-device-repair/REPORT.md).
+Final source review repaired Vision Pro capsule hover shapes, video preparation/autoplay teardown, independent artwork backfill/progress synchronization, nested EPUB chapter navigation, and audio replay after natural queue completion. The focused playback run passed 23/23, including real WAV replay, local-only behavior after automatic deletion, and all three video lifecycle regressions. Full source/test lint passes for 193 files; shared project validation covers 12 schemes and 16 pins, and **9/9 Cloud bootstrap tests pass**. The final native EPUB chapter sheet acceptance passed 1/1, zero skipped, with inspected portrait/landscape prose, forward/backward paging, and return-to-detail captures. Readium’s directional navigation adapter is retained and bound to the navigator; hardware-key input and completion deletion specifically while opening Chapters at the final page were source-reviewed rather than runtime-tested. Tests are serialized with two build jobs after measured host memory pressure was relieved. Detailed evidence and test scope live in [the repair report](Reviews/2026-10-11-auth-device-repair/REPORT.md).
 
-The unused ReadiumAdapterGCDWebServer product is removed; the 16 validated pins, including Readium 3.9.0, remain. Account-wide App Store Connect API authentication and initial Cloud onboarding are verified. The manual-only Gus Multiplatform Validation workflow has four BUILD actions (iOS/macOS/tvOS/visionOS), Xcode 27.1 RC, and a compatible macOS host, without distribution. The complete reviewed local candidate, shared snapshot/pins, and root-safe bootstrap await publication to origin/main. The first real Cloud build has not started; signed archives, upload, and TestFlight acceptance remain pending. See [API setup](AppStore/api-access.md) and [Cloud diagnosis](AppStore/xcode-cloud-dependency-onboarding.md).
+The unused ReadiumAdapterGCDWebServer product is removed; the 16 validated pins, including Readium 3.9.0, remain. Account-wide App Store Connect API authentication and initial Cloud onboarding are verified. The manual-only Gus Multiplatform Validation workflow has four BUILD actions (iOS/macOS/tvOS/visionOS), Xcode 27.1 RC, and a compatible macOS host, without distribution. The reviewed app repairs, shared snapshot/pins, and bootstrap repair are published to `origin/main`. Cloud Build 1 failed its post-clone identity check because the runtime reported the verified account UUID instead of the 10-character signing Team ID. Build 2 completed successfully for all four required BUILD actions and resolved all 16 pinned repositories, validating code commit `084a470683a78256e939bd63b416bc2fb0150bb2`. Later documentation and CI configuration changes retain that app-source build provenance. Signed Release archive validation, upload, and TestFlight acceptance remain pending. See [API setup](AppStore/api-access.md) and [Cloud diagnosis](AppStore/xcode-cloud-dependency-onboarding.md).

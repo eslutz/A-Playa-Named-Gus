@@ -1,0 +1,49 @@
+{
+  "acceptanceReached": {
+    "buildStart": true,
+    "compilation": true,
+    "dependencyResolution": true,
+    "distribution": false,
+    "postClone": true,
+    "signedArchive": false,
+    "sourceCommit": true
+  },
+  "artifactDownloadURLsExcluded": true,
+  "completionStatus": "SUCCEEDED",
+  "executionProgress": "COMPLETE",
+  "failedBuildActions": 0,
+  "issueTypesByPlatform": {
+    "ios": {
+      "ANALYZER_WARNING": 0,
+      "ERROR": 0,
+      "TEST_FAILURE": 0,
+      "WARNING": 6
+    },
+    "macos": {
+      "ANALYZER_WARNING": 0,
+      "ERROR": 0,
+      "TEST_FAILURE": 0,
+      "WARNING": 1
+    },
+    "tvos": {
+      "ANALYZER_WARNING": 0,
+      "ERROR": 0,
+      "TEST_FAILURE": 0,
+      "WARNING": 0
+    },
+    "visionos": {
+      "ANALYZER_WARNING": 0,
+      "ERROR": 0,
+      "TEST_FAILURE": 0,
+      "WARNING": 0
+    }
+  },
+  "number": 2,
+  "paginationComplete": true,
+  "passedBuildActions": 4,
+  "requiredBuildActions": 4,
+  "runID": "635600e9-4fa2-4d68-8369-05e1bf1a0dc0",
+  "sourceCommitSHA": "084a470683a78256e939bd63b416bc2fb0150bb2",
+  "sourceVerified": true,
+  "testActionsConfigured": false
+}

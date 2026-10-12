@@ -1,0 +1,64 @@
+# Existing Watch simulator build excerpt; no new build was run.
+# Source full log: /tmp/gus-epub-audit/committed-nested-chapters-arm64.log
+# Context: Xcode 27.1 RC, sole EPUB UI-test command on isolated iPhone simulator.
+# The iOS scheme embeds/builds GusWatch. This excerpt proves Watch compilation/signing, not Watch UI runtime coverage.
+# Watch AppIntents metadata processing timestamps the successful build phase at 2026-10-11 18:43:26 local.
+# Original full-log line numbers are retained below.
+
+# Original log lines 1-7
+1: Command line invocation:
+2:     /Applications/Development/Xcode-27.1-RC.app/Contents/Developer/usr/bin/xcodebuild test -project "A Playa Named Gus.xcodeproj" -scheme "Gus iOS Tests" -destination "platform=iOS Simulator,id=10600E96-BB18-4F1C-A1A9-5A0F0118300F" -derivedDataPath build/duo-validation "-only-testing:GusUITests/GusAuthenticatedUITests/testBookReaderNestedChapters" -resultBundlePath /tmp/gus-epub-audit/committed-nested-chapters-arm64.xcresult -jobs 2 -parallel-testing-enabled NO -disableAutomaticPackageResolution -onlyUsePackageVersionsFromResolvedFile ARCHS=arm64 ONLY_ACTIVE_ARCH=YES
+3: 
+4: Build settings from command line:
+5:     ARCHS = arm64
+6:     ONLY_ACTIVE_ARCH = YES
+7: 
+
+# Original log lines 5719-5723
+5719: SwiftEmitModule normal arm64 Emitting\ module\ for\ GusWatch (in target 'GusWatch' from project 'A Playa Named Gus')
+5720: 
+5721: SwiftCompile normal arm64 (in target 'GusWatch' from project 'A Playa Named Gus')
+5722:     cd /Users/ericslutz/Developer/Code/Side\ Projects/A\ Playa\ Named\ Gus/Gus
+5723:     
+
+# Original log lines 6093-6096
+6093: SwiftCompile normal arm64 /Users/ericslutz/Developer/Code/Side\ Projects/A\ Playa\ Named\ Gus/Gus/Sources/Stores/AudioPlayerStore.swift (in target 'GusWatch' from project 'A Playa Named Gus')
+6094:     cd /Users/ericslutz/Developer/Code/Side\ Projects/A\ Playa\ Named\ Gus/Gus
+6095:     builtin-SwiftPerFileCompile AudioPlayerStore.swift
+6096: 
+
+# Original log lines 6146-6172
+6146: CodeSign /Users/ericslutz/Developer/Code/Side\ Projects/A\ Playa\ Named\ Gus/Gus/build/duo-validation/Build/Products/Debug-watchsimulator/GusWatch.app/GusWatch.debug.dylib (in target 'GusWatch' from project 'A Playa Named Gus')
+6147:     cd /Users/ericslutz/Developer/Code/Side\ Projects/A\ Playa\ Named\ Gus/Gus
+6148:     
+6149:     Signing Identity:     "Sign to Run Locally"
+6150:     
+6151:     /usr/bin/codesign --force --sign - --timestamp\=none --generate-entitlement-der /Users/ericslutz/Developer/Code/Side\ Projects/A\ Playa\ Named\ Gus/Gus/build/duo-validation/Build/Products/Debug-watchsimulator/GusWatch.app/GusWatch.debug.dylib
+6152: 
+6153: CodeSign /Users/ericslutz/Developer/Code/Side\ Projects/A\ Playa\ Named\ Gus/Gus/build/duo-validation/Build/Products/Debug-watchsimulator/GusWatch.app/__preview.dylib (in target 'GusWatch' from project 'A Playa Named Gus')
+6154:     cd /Users/ericslutz/Developer/Code/Side\ Projects/A\ Playa\ Named\ Gus/Gus
+6155:     
+6156:     Signing Identity:     "Sign to Run Locally"
+6157:     
+6158:     /usr/bin/codesign --force --sign - --timestamp\=none --generate-entitlement-der /Users/ericslutz/Developer/Code/Side\ Projects/A\ Playa\ Named\ Gus/Gus/build/duo-validation/Build/Products/Debug-watchsimulator/GusWatch.app/__preview.dylib
+6159: 
+6160: CodeSign /Users/ericslutz/Developer/Code/Side\ Projects/A\ Playa\ Named\ Gus/Gus/build/duo-validation/Build/Products/Debug-watchsimulator/GusWatch.app (in target 'GusWatch' from project 'A Playa Named Gus')
+6161:     cd /Users/ericslutz/Developer/Code/Side\ Projects/A\ Playa\ Named\ Gus/Gus
+6162:     
+6163:     Signing Identity:     "Sign to Run Locally"
+6164:     
+6165:     /usr/bin/codesign --force --sign - --timestamp\=none --generate-entitlement-der /Users/ericslutz/Developer/Code/Side\ Projects/A\ Playa\ Named\ Gus/Gus/build/duo-validation/Build/Products/Debug-watchsimulator/GusWatch.app
+6166: 
+6167: Validate /Users/ericslutz/Developer/Code/Side\ Projects/A\ Playa\ Named\ Gus/Gus/build/duo-validation/Build/Products/Debug-watchsimulator/GusWatch.app (in target 'GusWatch' from project 'A Playa Named Gus')
+6168:     cd /Users/ericslutz/Developer/Code/Side\ Projects/A\ Playa\ Named\ Gus/Gus
+6169:     builtin-validationUtility /Users/ericslutz/Developer/Code/Side\ Projects/A\ Playa\ Named\ Gus/Gus/build/duo-validation/Build/Products/Debug-watchsimulator/GusWatch.app -shallow-bundle -infoplist-subpath Info.plist
+6170: 
+6171: Ld /Users/ericslutz/Developer/Code/Side\ Projects/A\ Playa\ Named\ Gus/Gus/build/duo-validation/Build/Products/Debug-iphonesimulator/A\ Playa\ Named\ Gus.app/__preview.dylib normal (in target 'Gus' from project 'A Playa Named Gus')
+6172:     cd /Users/ericslutz/Developer/Code/Side\ Projects/A\ Playa\ Named\ Gus/Gus
+
+# Original log lines 6500-6504
+6500: 
+6501: Test session results, code coverage, and logs:
+6502: 	/tmp/gus-epub-audit/committed-nested-chapters-arm64.xcresult
+6503: 
+6504: ** TEST SUCCEEDED **

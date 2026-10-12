@@ -1,0 +1,82 @@
+{
+  "actions": {
+    "ios": [
+      {
+        "category": "Xcodebuild",
+        "fileSource": {
+          "lineNumber": 51,
+          "path": "Sources/Features/Settings/AgeRangeDefaults.swift"
+        },
+        "id": "7c01637d-451e-3937-aa7b-55eba58ac2ce",
+        "issueType": "WARNING",
+        "message": "Sending value of non-Sendable type 'DeclaredAgeRangeAction' risks causing data races; this is an error in the Swift 6 language mode"
+      },
+      {
+        "category": "Xcodebuild",
+        "fileSource": {
+          "lineNumber": 267,
+          "path": "Sources/Features/Books/BookReaderView.swift"
+        },
+        "id": "42a99715-8212-32ba-a934-fb5ace70474f",
+        "issueType": "WARNING",
+        "message": "'==' is deprecated: Strict URL comparisons can be a source of bug. Use isEquivalent() instead."
+      },
+      {
+        "category": "Xcodebuild",
+        "fileSource": {
+          "lineNumber": 231,
+          "path": "Sources/Features/Books/BookReaderView.swift"
+        },
+        "id": "c99afaf7-94fc-38fb-9b95-b75c8b1f90cf",
+        "issueType": "WARNING",
+        "message": "Sending value of non-Sendable type 'AssetRetriever' risks causing data races; this is an error in the Swift 6 language mode"
+      },
+      {
+        "category": "Xcodebuild",
+        "fileSource": {
+          "lineNumber": 233,
+          "path": "Sources/Features/Books/BookReaderView.swift"
+        },
+        "id": "4bbca88d-e92b-3b95-84fc-fa49040acca5",
+        "issueType": "WARNING",
+        "message": "Sending 'opener' risks causing data races; this is an error in the Swift 6 language mode"
+      },
+      {
+        "category": "Xcodebuild",
+        "fileSource": {
+          "lineNumber": 236,
+          "path": "Sources/Features/Books/BookReaderView.swift"
+        },
+        "id": "f4a17b38-3276-3253-b236-0a35395478fe",
+        "issueType": "WARNING",
+        "message": "Sending 'publication' risks causing data races; this is an error in the Swift 6 language mode"
+      },
+      {
+        "category": "Xcodebuild",
+        "fileSource": {
+          "lineNumber": 260,
+          "path": "Sources/Features/Books/BookReaderView.swift"
+        },
+        "id": "066b8d11-82d0-3ea9-afea-e8bac4588b93",
+        "issueType": "WARNING",
+        "message": "Sending 'publication' risks causing data races; this is an error in the Swift 6 language mode"
+      }
+    ],
+    "macos": [
+      {
+        "category": "Xcodebuild",
+        "fileSource": {
+          "lineNumber": 51,
+          "path": "Sources/Features/Settings/AgeRangeDefaults.swift"
+        },
+        "id": "327e3836-69e8-3e27-9fcb-77edaf9a6fa9",
+        "issueType": "WARNING",
+        "message": "Sending value of non-Sendable type 'DeclaredAgeRangeAction' risks causing data races; this is an error in the Swift 6 language mode"
+      }
+    ],
+    "tvos": [],
+    "visionos": []
+  },
+  "observedAt": "2026-10-11T23:55:24+00:00",
+  "paginationComplete": true
+}

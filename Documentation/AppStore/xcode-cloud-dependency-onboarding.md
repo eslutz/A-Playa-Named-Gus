@@ -7,8 +7,8 @@ references subsequently completed onboarding against Gus's existing app and prim
 repository. This bypasses the failing dependency-connection step; the internal Apple cause is
 **not confirmed**. The complete repairs were published directly on `origin/main`;
 Cloud Build 1 verified the source commit but stopped at a bootstrap identity comparison.
-That comparison is being repaired before a second validation run. Final build acceptance
-is pending.
+The repaired bootstrap and full pinned project passed all four required Cloud BUILD
+actions in Build 2. Runtime and distribution acceptance remain separate.
 
 ## Observed failure and expected behavior
 
@@ -88,7 +88,7 @@ full package graph. The authenticated API subsequently confirmed Gus product
 `f2e5bb18-7cd2-44ab-b88c-9d54ac63b512`, primary repository
 `af9d4248-65b2-413a-a7bd-25a8885ff13e`, and workflow
 `A15758DF-3577-4ED3-99F5-4B549E19BD8F` with four BUILD actions: iOS, macOS, tvOS,
-and visionOS. The real project’s saved workflow configuration is verified by the API: manual starts only, Xcode 27.1 RC (27A9275), and compatible macOS GoldenGate 27.2 beta 2 (26B5091g). It has no distribution audience or post-actions. The real remote build reached the bootstrap; its repair and a successful build remain the acceptance check.
+and visionOS. The real project’s saved workflow configuration is verified by the API: manual starts only, Xcode 27.1 RC (27A9275), and compatible macOS GoldenGate 27.2 beta 2 (26B5091g). It has no distribution audience or post-actions. The repaired real project passed all four required BUILD actions in Build 2.
 
 ## Main publication and first remote build
 
@@ -129,20 +129,87 @@ writing signing configuration. `DEVELOPMENT_TEAM` remains `QS3GC3CT43`.
 [Build 1 summary](cloud-onboarding-evidence/run-1/summary.json), and
 [failed overview](cloud-onboarding-evidence/build-1-failed-overview.jpg) preserve the
 failure. Source fetching and project configuration checks passed in the sampled iOS
-log; a successful complete build is still required.
+log; complete build acceptance was still pending at that stage and was subsequently
+established by Build 2 below.
+
+### Build 2 real package-fetch acceptance
+
+The tested bootstrap repair was pushed directly to `main` as
+`084a470683a78256e939bd63b416bc2fb0150bb2`. App Store Connect started a new manual
+Build 2, run `635600e9-4fa2-4d68-8369-05e1bf1a0dc0`; authenticated API verification
+matches that complete source SHA.
+
+The inspected iOS log confirms the bootstrap passed in 0.9 seconds and dependency
+resolution passed in 24 seconds. Cloud fetched all 16 original package repositories
+and checked out the committed versions, including `apple/swift-collections` 1.5.1
+and `readium/Fuzi` 4.0.0. Public dependencies are usable by the real Cloud build
+without upstream administrator connections. The initial wizard's internal cause
+remains unconfirmed. Build 2 finished `COMPLETE/SUCCEEDED`, with all four required
+BUILD actions successful and no build errors.
+
+[Inspected resolution log](cloud-onboarding-evidence/build-2-package-resolution.txt),
+[resolution proof](cloud-onboarding-evidence/build-2-dependencies-passed.jpg), and
+[authenticated run](cloud-onboarding-evidence/run-2/run.json) record this stage.
+
+### Final validation result and limits
+
+Cloud Build 2 passed **4/4** required actions: iOS, macOS, tvOS, and visionOS, using
+source commit `084a470683a78256e939bd63b416bc2fb0150bb2` on Xcode 27.1 RC. The built
+source SHA is recorded independently of later documentation/evidence and CI
+configuration changes, which do not change the app source.
+[Final authenticated summary](cloud-onboarding-evidence/run-2/summary.json),
+[action results](cloud-onboarding-evidence/run-2/actions.json), and
+[completed-build proof](cloud-onboarding-evidence/build-2-succeeded.jpg) confirm the result.
+
+There are zero errors. iOS reports six warnings and macOS one: the previously
+recorded DeclaredAgeRange/Readium Swift 6 isolation boundaries and deprecated
+Readium URL equality. tvOS and visionOS report none. These warnings are preserved
+in the [issue list](cloud-onboarding-evidence/run-2/issues.json); build success does
+not erase the documented migration work.
+
+The workflow contains BUILD actions, no Cloud TEST, archive, distribution, or
+TestFlight action. Local unit/UI acceptance is recorded in the repair report.
+Minimum-OS runtime, manual VoiceOver, live Duo transitions, signed archives, and
+TestFlight acceptance remain separate gates. No further physical-phone automation
+was started. Website and wiki updates remain local to their sibling repositories.
+
+### Separate GitHub toolchain compatibility
+
+GitHub run [38185709518](https://github.com/eslutz/A-Playa-Named-Gus/actions/runs/38185709518)
+selected Xcode 27.0 (`27A266a`) and its iOS/iPadOS builds failed because that SDK has
+neither `ArrangementView` nor `GeometryProxy.reservedRegions`. Runtime availability
+checks cannot hide missing compile-time SDK declarations. The hosted
+[`xcode-27` software manifest](https://github.com/actions/runner-images/blob/main/images/macos/xcode-27-arm64-Readme.md)
+provides the `/Applications/Xcode_27.1.app` alias and iOS 27.1 SDK. At this inspection
+it resolves to build `27A9269`; the
+[RC rollout](https://github.com/actions/runner-images/issues/14850) remains pending.
+
+CI's selection is repaired to use that 27.1 SDK and reject an older iOS simulator
+SDK explicitly, preserving every matrix job. Actual GitHub compilation/test
+acceptance remains pending for the subsequent run; availability in the software
+manifest alone does not prove compatibility. Cloud's four successful RC BUILD
+actions above remain separately verified.
+
+[Sanitized failure excerpts](cloud-onboarding-evidence/github-ci/run-38185709518-failures.txt)
+and [runner manifest](cloud-onboarding-evidence/github-ci/runner-manifest.json)
+record this diagnosis. The same run's macOS unit test job failed while launching
+its test runner (`IDELaunchErrorDomain 20`, `RBSRequestErrorDomain 5`,
+`NSPOSIXErrorDomain 162`), before an app assertion could execute. Its underlying
+host launch failure is unconfirmed and must be distinguished from a failed app
+test. The repeated matrix will verify both compilation and test-runner acceptance.
 
 ## Recovery and acceptance
 
-Keep the isolated project local and discard it after the experiment. Configure the workflow against the real
-repository, real shared scheme, and appropriate Xcode version. Cloud must build the
-complete committed Gus project with its original package declarations and pins.
+Keep the isolated project local and discard it after the experiment. The workflow is configured against the real repository, real shared scheme, and
+appropriate Xcode version. Cloud successfully built the complete committed Gus
+project with its original package declarations and pins.
 Do not publish a package-free project, force automatic package resolution, or add
 unnecessary upstream repository permissions to make the setup appear complete.
 
 If isolation still fails, capture the precise failing step and use Apple's supported
-Cloud connection recovery/support path. Completion requires an authenticated API/UI
-check that Gus has a Cloud product and workflow, followed by a build using the real
-repository. A connected primary repository alone is not acceptance.
+Cloud connection recovery/support path. This acceptance requirement is now met: an authenticated API/UI check confirms
+Gus's product/workflow and a successful build of the real repository. A connected
+primary repository alone would not have established it.
 
 ## Evidence and status caveat
 

@@ -279,3 +279,37 @@ A [static graph audit](evidence/memory-pressure/source-graph-audit.json) found n
 The original queue replay failed both tests after actual natural completion of a muted 400 ms PCM WAV. The repaired path releases the finished player and prepares a fresh item from zero when Play is pressed, restoring completion/reporting observers. Generation checks prevent obsolete queued work from restarting playback after Stop. Replay after opt-in deletion still reports a missing local file and makes no stream request. The repaired combined run passed **23/23**, zero skipped: two audio replay checks and 21 UI regressions including all three video cancellation/teardown/autoplay cases. [Red summary](evidence/audio-replay/audio-replay-red-summary.json), [green summary](evidence/audio-replay/audio-replay-green-summary.json), [executed tests](evidence/audio-replay/audio-replay-green-tests.json). Full source/test lint passes for all 193 files and the shared 12-scheme/16-pin project matches XcodeGen.
 
 At 19:39 local, after the accepted EPUB run and shutdown of its simulator/demo server, swap fell to 8.2 GiB. macOS reported 40% system-wide memory free, CPU had 76% idle time, and the sampled one-second interval showed 12 swap-in pages and no swap-out pages. These are point-in-time host readings, not a guarantee against recurrence. The three idle indexing services remain temporarily paused until normal native save/quit can be completed on the unlocked Mac.
+
+At 19:51 local, while validation ran remotely, swap held at 8.1 GiB, CPU had 60% idle time, and the one-second sample had 24 swap-in pages and no swap-out pages. The local heavy Gus jobs remained stopped; the three idle Xcode indexing services were still paused because macOS remained locked.
+
+### Final main publication and Xcode Cloud validation
+
+The completed app/download/adaptive-UI/playback/chapter repairs and evidence were
+published directly on `origin/main` as `755ff09`. The first Cloud run exposed a
+bootstrap comparison between the Cloud account UUID and Developer signing Team ID.
+The focused repair, retaining the wrong-account guard and original signing identity,
+passed nine bootstrap tests and was published as `084a470`.
+
+Cloud Build 2 is `COMPLETE/SUCCEEDED` against exact source SHA
+`084a470683a78256e939bd63b416bc2fb0150bb2`, with **4/4** required BUILD actions passed
+for iOS, macOS, tvOS, and visionOS. It fetched all 16 pinned package repositories.
+The current reader UI test also compiled the embedded Watch module; its local Watch
+compile/sign/validation evidence is retained in the [scoped build excerpt](evidence/epub-chapters/watch-build-excerpt.log).
+This is compilation evidence, not another Watch runtime test. The final playback regressions
+remain 23/23 and native EPUB acceptance 1/1. Later documentation/evidence and CI
+configuration changes contain no app source changes.
+
+[Cloud result and diagnostic report](../../AppStore/xcode-cloud-dependency-onboarding.md)
+records zero errors, six iOS/one macOS pre-existing SDK migration warnings, and the
+build-only scope. Minimum-OS runtime, manual VoiceOver, live Duo transitions, signed
+archives and TestFlight remain unverified. The physical phone remains released.
+
+### GitHub CI SDK mismatch
+
+The separate post-publication GitHub iOS/iPadOS build jobs selected Xcode 27.0 and
+failed on `ArrangementView` and `GeometryProxy.reservedRegions`, which require the
+27.1 SDK. CI is updated to select the hosted 27.1 toolchain and explicitly reject
+an older iOS simulator SDK. Its subsequent full matrix result remains a separate
+acceptance check; the all-platform Cloud RC build result above stands. The
+[Cloud diagnostic report](../../AppStore/xcode-cloud-dependency-onboarding.md)
+records the runner manifest, toolchain versions, and scope.

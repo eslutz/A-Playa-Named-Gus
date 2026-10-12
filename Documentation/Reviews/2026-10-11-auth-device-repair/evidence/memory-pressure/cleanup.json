@@ -101,5 +101,17 @@
     "ownDemoServerStopped": true,
     "idleIndexServicesRemainPaused": true,
     "nativeCleanupBlockedByLockedMac": true
+  },
+  "latestWhileCloudRuns": {
+    "measuredAt": "2026-10-11 19:51 local",
+    "swapUsedMB": 8276.31,
+    "memoryPressureReportedFreePercent": 33,
+    "cpuIdlePercent": 60.0,
+    "oneSecondSwapinsPages": 24,
+    "oneSecondSwapoutsPages": 0,
+    "oneMinuteLoadAverage": 7.84,
+    "idleIndexServicesRemainPaused": true,
+    "macLocked": true,
+    "localHeavyGusJobsRunning": false
   }
 }

@@ -7,7 +7,7 @@ on:
       - main
 
 env:
-  XCODE_APP: /Applications/Xcode_27.0.app
+  XCODE_APP: /Applications/Xcode_27.1.app
 
 jobs:
   lint:
@@ -115,7 +115,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
-      - name: Select Xcode 27.0
+      - name: Select Xcode 27.1 and verify iOS SDK
         run: |
           set -euo pipefail
           if [ ! -d "$XCODE_APP" ]; then
@@ -125,6 +125,11 @@ jobs:
           fi
           sudo xcode-select -s "$XCODE_APP/Contents/Developer"
           xcodebuild -version
+          ios_sdk_version="$(xcrun --sdk iphonesimulator --show-sdk-version)"
+          if ! printf '%s\n' "$ios_sdk_version" | awk -F. '/^[0-9]+\.[0-9]+(\.[0-9]+)?$/ { ok = ($1 > 27 || ($1 == 27 && $2 >= 1)) } END { exit !ok }'; then
+            echo "iOS Simulator SDK $ios_sdk_version is too old; Duo ArrangementView requires 27.1 or later."
+            exit 1
+          fi
 
       - name: Install build tools
         run: command -v xcodegen >/dev/null || brew install xcodegen
@@ -166,7 +171,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
-      - name: Select Xcode 27.0
+      - name: Select Xcode 27.1 and verify iOS SDK
         run: |
           set -euo pipefail
           if [ ! -d "$XCODE_APP" ]; then
@@ -176,6 +181,11 @@ jobs:
           fi
           sudo xcode-select -s "$XCODE_APP/Contents/Developer"
           xcodebuild -version
+          ios_sdk_version="$(xcrun --sdk iphonesimulator --show-sdk-version)"
+          if ! printf '%s\n' "$ios_sdk_version" | awk -F. '/^[0-9]+\.[0-9]+(\.[0-9]+)?$/ { ok = ($1 > 27 || ($1 == 27 && $2 >= 1)) } END { exit !ok }'; then
+            echo "iOS Simulator SDK $ios_sdk_version is too old; Duo ArrangementView requires 27.1 or later."
+            exit 1
+          fi
 
       - name: Install build tools
         run: command -v xcodegen >/dev/null || brew install xcodegen
