@@ -288,6 +288,8 @@ At 20:30 local, swap fell to 7.7 GiB (7,915 MiB), memory-pressure reporting show
 
 The 20:41 local follow-up held at 7.7 GiB swap (7,867 MiB), with 87% CPU idle, one-minute load 2.46, and zero interval swap-ins/swap-outs. Memory-pressure reporting showed 39% system-wide memory free. This confirms sustained relief over the observed interval while hosted testing ran; the temporary idle-service mitigation still requires normal native cleanup.
 
+At 21:15 local, swap was 7.5 GiB (7,698 MiB), with zero interval swap-ins/swap-outs. CPU was 40% idle in that sample, one-minute load was 3.87, and memory-pressure reporting showed 32% system-wide memory free. All three paused service executable/parent identities were reverified; parent Xcode processes were running. These are point-in-time host observations, not a guarantee of future pressure or an app memory-leak diagnosis. The normal native cleanup remains pending.
+
 ### Final main publication and Xcode Cloud validation
 
 The completed app/download/adaptive-UI/playback/chapter repairs and evidence were
@@ -351,3 +353,33 @@ No app source or production signing changes are made for this test repair. The
 test identifiers now include `PlaybackIntegrationTests`; future focused selectors
 must use that parent. Formatting, syntax and shared-project checks pass. Its remote
 validation remains pending.
+
+
+Hosted isolation run `38190182036` at exact commit
+`deeedcac0136fa538e4985b2b0b765643c491020` finished **12/13 jobs** successfully.
+All six builds, Mac/iPad/tvOS/visionOS unit tests, lint and documentation checks passed.
+The iPhone again failed its first natural-completion wait: the added diagnostic
+reported `state=loaded`, `isPlaying=true`, native item status ready, native time-control
+status playing, rate 1.0 and item time 0.4 seconds. The following local-only deletion
+replay test passed. Each lane executed 288 Swift Testing cases in 49 suites and three
+separate XCTest performance cases; only the iPhone lane recorded an issue.
+[Run summary](../../AppStore/cloud-onboarding-evidence/github-ci/run-38190182036-summary.json),
+[exact failure](../../AppStore/cloud-onboarding-evidence/github-ci/run-38190182036-iphone-test-failure.json).
+
+Serialization did not resolve this outcome. The observer is registered before playback
+with the exact item and generation, and the native player still reported playing at
+its fixture endpoint. These observations do not establish a lost app callback or prove
+a simulator-only cause. Native log buffering prevents subtracting CI arrival timestamps
+to reconstruct an exact startup/deadline duration. The next focused investigation uses
+a valid one-second 48 kHz PCM fixture with matching metadata and records actual native
+end/failed-end notifications. It retains the eight-second completion deadline, real
+playback and replay/deletion assertions; no synthetic completion or app workaround is
+introduced. Hosted acceptance of that fixture/diagnostic change remains pending.
+
+
+After the user unlocked macOS, all three paused service identities/parents were
+reverified and resumed. Both idle GUI Xcode sessions (27.0 and 27.1 RC) were quit
+normally; process verification confirms both GUI PIDs and their two support services
+exited. No save/discard prompt appeared, and no document was force-killed. The small
+running background tool service remains preserved. No services remain intentionally
+paused; the normal native memory-cleanup gate is complete.

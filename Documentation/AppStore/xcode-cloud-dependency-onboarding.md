@@ -245,6 +245,26 @@ is unchanged. The nested test identifiers change, so future focused selectors mu
 include `PlaybackIntegrationTests`. Formatting, syntax and shared-project checks pass;
 acceptance of this isolation repair remains pending.
 
+
+### Repeated iPhone completion failure after isolation
+
+The isolation run [38190182036](https://github.com/eslutz/A-Playa-Named-Gus/actions/runs/38190182036)
+at exact commit `deeedcac0136fa538e4985b2b0b765643c491020` also finished **12/13**.
+All six platform builds and Mac/iPad/tvOS/visionOS test lanes passed. Each test lane
+executed 288 Swift Testing cases in 49 suites and three XCTest measurement cases;
+the iPhone recorded one issue in its first natural-completion wait. The player
+remained ready/playing, rate 1.0, item time 0.4 seconds; the following deletion replay
+case passed. [Summary](cloud-onboarding-evidence/github-ci/run-38190182036-summary.json),
+[failure with native state](cloud-onboarding-evidence/github-ci/run-38190182036-iphone-test-failure.json).
+
+The suite isolation hazard is repaired, but it did not resolve this observed failure.
+No completion-observer defect is established. A focused test-only investigation uses
+a one-second 48 kHz PCM fixture with matching metadata and captures actual native
+end/failed-end events. Real playback, completion/replay/deletion assertions and the
+eight-second deadline are retained. There is no forced completion, skipped case or
+production workaround. That next hosted acceptance remains pending; the earlier
+four successful Cloud RC BUILD actions are unaffected.
+
 ## Recovery and acceptance
 
 Keep the isolated project local and discard it after the experiment. The workflow is configured against the real repository, real shared scheme, and

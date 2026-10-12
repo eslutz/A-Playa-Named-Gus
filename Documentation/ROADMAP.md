@@ -168,11 +168,12 @@ automated build verification. (Covers priority: *polish & testing*.)
   build the iPhone/iPad/macOS/tvOS/visionOS/Watch matrix → run native unit tests → lint.
   *Acceptance:* successful required checks on the complete current source. *(Configured
   on the hosted `xcode-27` runner. The post-Duo matrix exposed the obsolete Xcode 27.0
-  selection; CI now requires an iOS simulator SDK of at least 27.1. Run `38187673465`
-  passed all six builds and cleared the Mac unit-host signing/launch gate, but one
-  iPhone audio replay completion assertion failed. Stateful playback suites now share
-  a native serialized parent; full acceptance of this test-isolation repair is pending
-  separately from the successful 4/4 Xcode Cloud BUILD actions.)*
+  selection; CI now requires an iOS simulator SDK of at least 27.1. Run `38190182036`
+  passed all six builds and Mac/iPad/tvOS/visionOS tests, but the iPhone audio replay
+  completion assertion failed again after native suite isolation. A focused standard-rate
+  audio fixture and native-event diagnostic investigation retains the real completion
+  assertions and eight-second deadline; acceptance remains pending separately from
+  the successful 4/4 Xcode Cloud BUILD actions.)*
 - [x] **Update `project.yml` for the test target & schemes.** *Acceptance:* generated
   project includes the test targets; the per-platform `Gus <platform> Unit Tests` test
   actions work (the `A Playa Named Gus` scheme is build-only). *(Done: platform-native

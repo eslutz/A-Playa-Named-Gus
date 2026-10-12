@@ -55,15 +55,13 @@
       1806,
       51923
     ],
-    "pausedIdleIndexServices": [
-      40509,
-      40767,
-      40787
-    ],
+    "pausedIdleIndexServices": [],
     "reason": "Suspending parent Xcode windows blocked CLI project reads in NSFileCoordinator; resuming them released the lock. Idle support services are paused separately to stop indexing growth.",
     "activeCLIServicePreserved": 40902,
     "reversibleResume": "SIGCONT the surviving idle services before native quit/save or further UI indexing",
-    "nativeWindowCleanupBlockedByLockedMac": true
+    "nativeWindowCleanupBlockedByLockedMac": false,
+    "normalGUIXcodeQuitCompleted": true,
+    "allPreviouslyPausedServicesResumedBeforeQuit": true
   },
   "latestDuringSerialValidation": {
     "swapUsedMB": 9789.75,
@@ -87,8 +85,31 @@
   "normalWorkspaceCleanup": {
     "closedViaXcodeAPI": "workspace-cpYxOubmCb",
     "remainingNativeWindow": "windowtab-Tr3jUVfuvl",
-    "remainingWindowCloseStatus": "API reports no matching workspace; native close requires unlocked Mac",
-    "documentsDiscarded": false
+    "remainingWindowCloseStatus": "Both idle GUI Xcode sessions quit normally; no save/discard prompt appeared.",
+    "documentsDiscarded": false,
+    "completedAt": "2026-10-11 21:31 local",
+    "normalQuitVersions": [
+      "Xcode 27.0",
+      "Xcode 27.1 RC"
+    ],
+    "quitVerifiedGUIProcessesGone": [
+      157,
+      51923
+    ],
+    "pausedServicesResumedAfterExecutableAndParentVerification": [
+      40509,
+      40767,
+      40787
+    ],
+    "servicesGoneAfterQuit": [
+      40509,
+      40787
+    ],
+    "smallBackgroundToolServicePreserved": {
+      "parentPID": 1806,
+      "servicePID": 40767,
+      "serviceRSSKB": 214544
+    }
   },
   "latestAfterTestCleanup": {
     "measuredAt": "2026-10-11 19:39 local",
@@ -141,13 +162,16 @@
     "localHeavyGusJobsRunning": false
   },
   "latestReadOnlyCheck": {
-    "measuredAt": "2026-10-11 20:41 local",
-    "swapUsedMB": 7867.38,
-    "memoryPressureReportedFreePercent": 39,
-    "cpuIdlePercent": 86.60,
+    "measuredAt": "2026-10-11 21:15 local",
+    "swapUsedMB": 7697.62,
+    "memoryPressureReportedFreePercent": 32,
+    "cpuIdlePercent": 39.77,
     "oneSecondSwapinsPages": 0,
     "oneSecondSwapoutsPages": 0,
-    "oneMinuteLoadAverage": 2.46,
+    "oneMinuteLoadAverage": 3.87,
+    "idleIndexServicesRemainPaused": true,
+    "serviceIdentityAndParentVerified": true,
+    "parentXcodeProcessesRunning": true,
     "localHeavyGusJobsRunning": false,
     "normalNativeCleanupStillPending": true
   }

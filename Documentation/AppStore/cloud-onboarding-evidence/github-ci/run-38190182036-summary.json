@@ -1,0 +1,110 @@
+{
+  "conclusion": "failure",
+  "jobs": [
+    {
+      "conclusion": "success",
+      "failedSteps": [],
+      "id": 114621053363,
+      "name": "Docs and Config",
+      "status": "completed"
+    },
+    {
+      "conclusion": "success",
+      "failedSteps": [],
+      "id": 114621053498,
+      "name": "Lint",
+      "status": "completed"
+    },
+    {
+      "conclusion": "failure",
+      "failedSteps": [
+        "Test iPhone"
+      ],
+      "id": 114621053499,
+      "name": "Test iPhone",
+      "status": "completed"
+    },
+    {
+      "conclusion": "success",
+      "failedSteps": [],
+      "id": 114621053542,
+      "name": "Build tvOS",
+      "status": "completed"
+    },
+    {
+      "conclusion": "success",
+      "failedSteps": [],
+      "id": 114621053563,
+      "name": "Test visionOS",
+      "status": "completed"
+    },
+    {
+      "conclusion": "success",
+      "failedSteps": [],
+      "id": 114621053577,
+      "name": "Test iPad",
+      "status": "completed"
+    },
+    {
+      "conclusion": "success",
+      "failedSteps": [],
+      "id": 114621053583,
+      "name": "Test tvOS",
+      "status": "completed"
+    },
+    {
+      "conclusion": "success",
+      "failedSteps": [],
+      "id": 114621053587,
+      "name": "Build macOS",
+      "status": "completed"
+    },
+    {
+      "conclusion": "success",
+      "failedSteps": [],
+      "id": 114621053604,
+      "name": "Build visionOS",
+      "status": "completed"
+    },
+    {
+      "conclusion": "success",
+      "failedSteps": [],
+      "id": 114621053627,
+      "name": "Build watchOS",
+      "status": "completed"
+    },
+    {
+      "conclusion": "success",
+      "failedSteps": [],
+      "id": 114621053634,
+      "name": "Build iPadOS",
+      "status": "completed"
+    },
+    {
+      "conclusion": "success",
+      "failedSteps": [],
+      "id": 114621053636,
+      "name": "Build iOS",
+      "status": "completed"
+    },
+    {
+      "conclusion": "success",
+      "failedSteps": [],
+      "id": 114621053729,
+      "name": "Test macOS",
+      "status": "completed"
+    }
+  ],
+  "status": "completed",
+  "captured_at_utc": "2026-10-12T01:25:14.780539+00:00",
+  "run_id": 38190182036,
+  "source_sha": "deeedcac0136fa538e4985b2b0b765643c491020",
+  "passed_jobs": 12,
+  "total_jobs": 13,
+  "acceptance_limits": [
+    "All six build lanes and four non-iPhone test lanes passed.",
+    "The retained iPhone audio replay expectation remains unresolved after test serialization.",
+    "No follow-on run was triggered.",
+    "Hosted unit/build acceptance remains distinct from Duo live transitions, minimum-OS runtime, manual VoiceOver and physical acceptance."
+  ]
+}

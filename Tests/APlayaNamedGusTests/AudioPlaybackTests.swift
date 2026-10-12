@@ -242,16 +242,28 @@ extension PlaybackIntegrationTests {
             let store = try AudioPlayerStore(session: session(provider: provider), tracks: [track], playerFactory: { player })
             defer { store.teardown() }
 
+            let notifications = AudioReplayNotificationProbe()
+            let startupStarted = ContinuousClock.now
             await store.start()
+            let startupElapsed = ContinuousClock.now - startupStarted
             let finishedItem = try #require(player.currentItem)
-            try #require(await waitUntil { !store.isPlaying && store.state == .loaded }, timeoutComment(store: store, player: player))
+            try #require(await waitUntil {
+                !store.isPlaying && store.state == .loaded && notifications.snapshot(for: ObjectIdentifier(finishedItem)).endCount >= 1
+            }, timeoutComment(store: store, player: player, notifications: notifications, startupElapsed: startupElapsed))
             #expect(store.currentTime == 0)
+            #expect(notifications.snapshot(for: ObjectIdentifier(finishedItem)).endCount == 1)
+            #expect(notifications.snapshot(for: ObjectIdentifier(finishedItem)).failureCount == 0)
 
             store.playPause()
-            try #require(await waitUntil { player.currentItem !== finishedItem && store.isPlaying }, timeoutComment(store: store, player: player))
+            try #require(await waitUntil { player.currentItem !== finishedItem && store.isPlaying }, timeoutComment(store: store, player: player, notifications: notifications, startupElapsed: startupElapsed))
+            let replayedItem = try #require(player.currentItem)
             #expect(provider.audioResolutionCallCount == 2)
             // The second completion proves replay reinstalls its end observer.
-            try #require(await waitUntil { !store.isPlaying && store.state == .loaded }, timeoutComment(store: store, player: player))
+            try #require(await waitUntil {
+                !store.isPlaying && store.state == .loaded && notifications.snapshot(for: ObjectIdentifier(replayedItem)).endCount >= 1
+            }, timeoutComment(store: store, player: player, notifications: notifications, startupElapsed: startupElapsed))
+            #expect(notifications.snapshot(for: ObjectIdentifier(replayedItem)).endCount == 1)
+            #expect(notifications.snapshot(for: ObjectIdentifier(replayedItem)).failureCount == 0)
         }
 
         @Test("Replay after automatic deletion respects local-only playback and does not stream")
@@ -280,21 +292,29 @@ extension PlaybackIntegrationTests {
             )
             defer { store.teardown() }
 
+            let notifications = AudioReplayNotificationProbe()
+            let startupStarted = ContinuousClock.now
             await store.start()
-            try #require(await waitUntil { !store.isPlaying && files.record(forRecordID: record.id) == nil }, timeoutComment(store: store, player: player))
+            let startupElapsed = ContinuousClock.now - startupStarted
+            let finishedItem = try #require(player.currentItem)
+            try #require(await waitUntil {
+                !store.isPlaying && files.record(forRecordID: record.id) == nil && notifications.snapshot(for: ObjectIdentifier(finishedItem)).endCount >= 1
+            }, timeoutComment(store: store, player: player, notifications: notifications, startupElapsed: startupElapsed))
+            #expect(notifications.snapshot(for: ObjectIdentifier(finishedItem)).endCount == 1)
+            #expect(notifications.snapshot(for: ObjectIdentifier(finishedItem)).failureCount == 0)
             store.playPause()
             try #require(await waitUntil {
                 if case .failed = store.state {
                     return true
                 }
                 return false
-            }, timeoutComment(store: store, player: player))
+            }, timeoutComment(store: store, player: player, notifications: notifications, startupElapsed: startupElapsed))
             #expect(!store.isPlaying)
             #expect(provider.audioResolutionCallCount == 0)
         }
 
         private var track: MediaItem {
-            MediaItem(id: "replay", name: "Replay", runTimeTicks: 4_000_000, type: .audio)
+            MediaItem(id: "replay", name: "Replay", runTimeTicks: PlaybackTime.ticksPerSecond, type: .audio)
         }
 
         private func session(provider: FakeMediaProviderSession) throws -> SessionStore {
@@ -308,9 +328,11 @@ extension PlaybackIntegrationTests {
         }
 
         /// Attach state to the existing failed expectation without adding a second issue.
-        private func timeoutComment(store: AudioPlayerStore, player: AVPlayer) -> Comment {
-            let itemStatus = player.currentItem?.status.rawValue ?? -1
-            return Comment(rawValue: "Audio wait expired: state=\(String(describing: store.state)), isPlaying=\(store.isPlaying), itemStatus=\(itemStatus), timeControlStatus=\(player.timeControlStatus.rawValue), rate=\(player.rate), itemTime=\(player.currentTime().seconds).")
+        private func timeoutComment(store: AudioPlayerStore, player: AVPlayer, notifications: AudioReplayNotificationProbe, startupElapsed: Duration) -> Comment {
+            let item = player.currentItem
+            let itemStatus = item?.status.rawValue ?? -1
+            let native = notifications.snapshot(for: item.map(ObjectIdentifier.init))
+            return Comment(rawValue: "Audio wait expired: state=\(String(describing: store.state)), isPlaying=\(store.isPlaying), itemStatus=\(itemStatus), timeControlStatus=\(player.timeControlStatus.rawValue), rate=\(player.rate), itemTime=\(player.currentTime().seconds), itemDuration=\(item?.duration.seconds ?? .nan), actionAtItemEnd=\(player.actionAtItemEnd.rawValue), nativeEndCount=\(native.endCount), nativeFailureCount=\(native.failureCount), failedEndErrorDomain=\(native.errorDomain ?? "none"), failedEndErrorCode=\(native.errorCode.map(String.init) ?? "none"), startupElapsed=\(startupElapsed).")
         }
 
         private func waitUntil(_ condition: () -> Bool) async throws -> Bool {
@@ -321,10 +343,11 @@ extension PlaybackIntegrationTests {
             return condition()
         }
 
-        /// A valid 400 ms PCM file exercises AVPlayer's actual completion notification.
+        /// One second of 48 kHz, mono, 16-bit PCM exercises native completion.
         private func silentAudio(in directory: URL) throws -> URL {
             try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-            let byteCount: UInt32 = 6400
+            let sampleRate: UInt32 = 48000
+            let byteCount = sampleRate * 2
             var data = Data("RIFF".utf8)
             func append<T: FixedWidthInteger>(_ value: T) {
                 var value = value.littleEndian
@@ -335,8 +358,8 @@ extension PlaybackIntegrationTests {
             append(UInt32(16))
             append(UInt16(1))
             append(UInt16(1))
-            append(UInt32(8000))
-            append(UInt32(16000))
+            append(sampleRate)
+            append(sampleRate * 2)
             append(UInt16(2))
             append(UInt16(16))
             data.append(Data("data".utf8))
@@ -346,6 +369,63 @@ extension PlaybackIntegrationTests {
             try data.write(to: url)
             return url
         }
+    }
+}
+
+/// Captures native events on their posting thread without reading player state.
+/// The lock protects every mutable count; observer closures capture the probe weakly.
+private final class AudioReplayNotificationProbe: @unchecked Sendable {
+    struct Snapshot {
+        var endCount = 0
+        var failureCount = 0
+        var errorDomain: String?
+        var errorCode: Int?
+    }
+
+    private let lock = NSLock()
+    private var events: [ObjectIdentifier: Snapshot] = [:]
+    private var endObserver: NSObjectProtocol?
+    private var failureObserver: NSObjectProtocol?
+
+    init() {
+        endObserver = NotificationCenter.default.addObserver(forName: AVPlayerItem.didPlayToEndTimeNotification, object: nil, queue: nil) { [weak self] notification in
+            self?.record(notification, failed: false)
+        }
+        failureObserver = NotificationCenter.default.addObserver(forName: AVPlayerItem.failedToPlayToEndTimeNotification, object: nil, queue: nil) { [weak self] notification in
+            self?.record(notification, failed: true)
+        }
+    }
+
+    deinit {
+        if let endObserver {
+            NotificationCenter.default.removeObserver(endObserver)
+        }
+        if let failureObserver {
+            NotificationCenter.default.removeObserver(failureObserver)
+        }
+    }
+
+    func snapshot(for itemID: ObjectIdentifier?) -> Snapshot {
+        lock.lock()
+        defer { lock.unlock() }
+        return itemID.flatMap { events[$0] } ?? Snapshot()
+    }
+
+    private func record(_ notification: Notification, failed: Bool) {
+        guard let item = notification.object as? AVPlayerItem else { return }
+        let itemID = ObjectIdentifier(item)
+        let error = notification.userInfo?[AVPlayerItemFailedToPlayToEndTimeErrorKey] as? NSError
+        lock.lock()
+        defer { lock.unlock() }
+        var snapshot = events[itemID] ?? Snapshot()
+        if failed {
+            snapshot.failureCount += 1
+            snapshot.errorDomain = error?.domain
+            snapshot.errorCode = error?.code
+        } else {
+            snapshot.endCount += 1
+        }
+        events[itemID] = snapshot
     }
 }
 

@@ -1,0 +1,68 @@
+{
+  "captured_at_utc": "2026-10-12T01:25:14.780539+00:00",
+  "run_id": 38190182036,
+  "source_sha": "deeedcac0136fa538e4985b2b0b765643c491020",
+  "job_id": 114621053499,
+  "name": "Test iPhone",
+  "status": "completed",
+  "conclusion": "failure",
+  "started_at": "2026-10-12T01:00:23Z",
+  "completed_at": "2026-10-12T01:18:35Z",
+  "duration_seconds": 1092.0,
+  "test_step_duration_seconds": 1018.0,
+  "compilation_and_test_runner_launch_succeeded": true,
+  "test_counts": {
+    "lane": "iPhone",
+    "job_id": 114621053499,
+    "conclusion": "failure",
+    "swift_testing": {
+      "cases": 288,
+      "suites": 49,
+      "outcome": "failed",
+      "duration_seconds": 42.254,
+      "issue_count": 1
+    },
+    "xctest_performance_measurements": {
+      "cases": 3,
+      "failures": 0
+    },
+    "xctest_performance_case_names": [
+      "GusTests.PerformanceMeasurementTests testHistogramMathMeasurement",
+      "GusTests.PerformanceMeasurementTests testMediaItemMapperThroughputMeasurement",
+      "GusTests.PerformanceMeasurementTests testServerURLNormalizationMeasurement"
+    ],
+    "observed_skipped_test_case_lines": 0,
+    "individual_assertion_count": null
+  },
+  "failed_test": {
+    "name": "Play after natural queue completion restarts playback and tracks the next completion",
+    "file": "Tests/APlayaNamedGusTests/AudioPlaybackTests.swift",
+    "line": 247,
+    "column": 17,
+    "expectation": "await waitUntil { !store.isPlaying && store.state == .loaded }",
+    "reported_duration_seconds": 32.065,
+    "log_arrival_start": "2026-10-12T01:07:48.8278930Z",
+    "log_arrival_first_issue": "2026-10-12T01:08:09.8396920Z",
+    "log_arrival_failed_result": "2026-10-12T01:08:10.2402010Z",
+    "timeout_telemetry": {
+      "state": "loaded",
+      "isPlaying": true,
+      "itemStatus": 1,
+      "timeControlStatus": 2,
+      "rate": 1.0,
+      "itemTime": 0.4
+    }
+  },
+  "deleted_download_replay_case": {
+    "outcome": "passed",
+    "reported_duration_seconds": 0.614
+  },
+  "swift_testing_phase_duration_seconds": 42.254,
+  "simulator_diagnostics_collection_timeout_seconds": 600,
+  "timing_caveat": "Log arrival timestamps are buffered; native embedded timestamps show approximately 11 seconds of output delay. Reported test durations remain separate evidence.",
+  "classification": "Retained iPhone native audio replay expectation still fails after suite isolation; cause not established",
+  "limits": [
+    "Serialization did not clear the iPhone failure.",
+    "Native player error context and other-lane passes do not prove an environment-only fault."
+  ]
+}

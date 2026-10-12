@@ -1,0 +1,31 @@
+Run 38190182036; source deeedcac0136fa538e4985b2b0b765643c491020
+Job 114621053499: Test iPhone
+Compilation and test-runner launch succeeded; three XCTest performance cases passed; 288 Swift Testing cases/49 suites completed with one issue.
+The retained queue replay expectation failed after native audio test serialization.
+CI log arrival timestamps are buffered: nearby embedded app timestamps precede arrival by about 11 seconds; reported test elapsed duration is not obtained by subtracting arrival timestamps.
+The subsequent deleted-download replay case passed; native player error context does not independently establish the underlying cause.
+2026-10-12T01:00:56.0414710Z Xcode 27.1
+2026-10-12T01:00:56.0417220Z Build version 27A9269
+2026-10-12T01:07:36.6302120Z 	 Executed 3 tests, with 0 failures (0 unexpected) in 3.823 (3.992) seconds
+2026-10-12T01:07:48.6327290Z ✔ Suite "Audio playback" passed after 0.743 seconds.
+2026-10-12T01:07:48.7127060Z ◇ Suite "Playback integration" started.
+2026-10-12T01:07:48.7128270Z ◇ Suite "Audio queue replay" started.
+2026-10-12T01:07:48.8278930Z ◇ Test "Play after natural queue completion restarts playback and tracks the next completion" started.
+2026-10-12T01:07:49.9003490Z 2026-10-12 01:07:38.781090+0000 A Playa Named Gus[45839:125435] [player] <<<< FigFilePlayer >>>> signalled err=-12864 at <>:10684
+2026-10-12T01:07:49.9004890Z 2026-10-12 01:07:38.787378+0000 A Playa Named Gus[45839:125435] [player] <<<< FigFilePlayer >>>> signalled err=-12864 at <>:10684
+2026-10-12T01:07:49.9005620Z 2026-10-12 01:07:38.821521+0000 A Playa Named Gus[45839:125433] [player] <<<< FigFilePlayer >>>> signalled err=-12864 at <>:10684
+2026-10-12T01:07:50.0228570Z 2026-10-12 01:07:39.262352+0000 A Playa Named Gus[45839:125433] [player] <<<< FigFilePlayer >>>> signalled err=-12864 at <>:10684
+2026-10-12T01:08:09.8396920Z ✘ Test "Play after natural queue completion restarts playback and tracks the next completion" recorded an issue at AudioPlaybackTests.swift:247:17: Expectation failed: await waitUntil { !store.isPlaying && store.state == .loaded }
+2026-10-12T01:08:09.9689060Z ↳ Audio wait expired: state=loaded, isPlaying=true, itemStatus=1, timeControlStatus=2, rate=1.0, itemTime=0.4.
+2026-10-12T01:08:10.2402010Z ✘ Test "Play after natural queue completion restarts playback and tracks the next completion" failed after 32.065 seconds with 1 issue.
+2026-10-12T01:08:10.3220290Z ◇ Test "Replay after automatic deletion respects local-only playback and does not stream" started.
+2026-10-12T01:08:10.4836740Z 2026-10-12 01:08:09.712212+0000 A Playa Named Gus[45839:126671] [player] <<<< FigFilePlayer >>>> signalled err=-12864 at <>:10684
+2026-10-12T01:08:10.5647550Z 2026-10-12 01:08:09.716943+0000 A Playa Named Gus[45839:126671] [player] <<<< FigFilePlayer >>>> signalled err=-12864 at <>:10684
+2026-10-12T01:08:11.2054110Z 2026-10-12 01:08:09.763547+0000 A Playa Named Gus[45839:126672] [player] <<<< FigFilePlayer >>>> signalled err=-12864 at <>:10684
+2026-10-12T01:08:11.2857860Z 2026-10-12 01:08:09.764676+0000 A Playa Named Gus[45839:126672] [player] <<<< FigFilePlayer >>>> signalled err=-12864 at <>:10684
+2026-10-12T01:08:12.5573360Z ✔ Test "Replay after automatic deletion respects local-only playback and does not stream" passed after 0.614 seconds.
+2026-10-12T01:08:12.6774240Z ✘ Suite "Audio queue replay" failed after 32.680 seconds with 1 issue.
+2026-10-12T01:08:16.2210380Z ✘ Suite "Playback integration" failed after 33.891 seconds with 1 issue.
+2026-10-12T01:08:26.1577210Z ✘ Test run with 288 tests in 49 suites failed after 42.254 seconds with 1 issue.
+2026-10-12T01:18:24.3526310Z 2026-10-12 01:18:24.349 xcodebuild[37018:122826]  IDETestOperationsObserverDebug: Failure collecting diagnostics from simulator: Timed out after 600.0 seconds while waiting for a response from the invoked process
+2026-10-12T01:18:30.6069620Z ** TEST FAILED **

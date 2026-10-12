@@ -1,0 +1,7 @@
+Run 38190182036; source deeedcac0136fa538e4985b2b0b765643c491020
+Prepare Mac unit test signing: completed/success (completed-job metadata)
+2026-10-12T01:06:38.1563720Z Xcode 27.1
+2026-10-12T01:06:38.1564810Z Build version 27A9269
+2026-10-12T01:09:15.0852600Z ✔ Test "Play after natural queue completion restarts playback and tracks the next completion" passed after 1.667 seconds.
+2026-10-12T01:09:16.5482710Z ✔ Test run with 288 tests in 49 suites passed after 3.389 seconds.
+2026-10-12T01:09:22.9461040Z ** TEST SUCCEEDED **
