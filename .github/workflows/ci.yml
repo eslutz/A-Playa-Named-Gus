@@ -193,6 +193,31 @@ jobs:
       - name: Verify shared Xcode project
         run: python3 Scripts/check-cloud-project.py
 
+      - name: Prepare Mac unit test signing
+        if: matrix.name == 'macOS'
+        run: |
+          set -euo pipefail
+          if [ -e Config/Local.xcconfig ] || [ -L Config/Local.xcconfig ]; then
+            echo "Refusing to overwrite an existing local signing configuration."
+            exit 1
+          fi
+          python3 <<'PY'
+          import os
+          from pathlib import Path
+          import plistlib
+          entitlements = {
+              "com.apple.security.app-sandbox": True,
+              "com.apple.security.network.client": True,
+              "com.apple.security.network.server": True,
+          }
+          path = Path(os.environ["RUNNER_TEMP"]) / "gus-macos-unit.entitlements"
+          path.write_bytes(plistlib.dumps(entitlements))
+          PY
+          plutil -lint "$RUNNER_TEMP/gus-macos-unit.entitlements"
+          # Restricted production capabilities need provisioned signing; this
+          # credential-free unit host keeps the sandbox and networking permissions.
+          printf 'CODE_SIGN_ENTITLEMENTS[sdk=macosx*] = %s\n' "$RUNNER_TEMP/gus-macos-unit.entitlements" > Config/Local.xcconfig
+
       - name: Resolve packages
         run: xcodebuild -onlyUsePackageVersionsFromResolvedFile -resolvePackageDependencies -project 'A Playa Named Gus.xcodeproj' -scheme '${{ matrix.scheme }}'
 
@@ -219,3 +244,28 @@ jobs:
             destination='${{ steps.vision-sim.outputs.destination }}'
           fi
           xcodebuild test -project 'A Playa Named Gus.xcodeproj' -scheme '${{ matrix.scheme }}' -destination "$destination"
+
+      - name: Diagnose Mac unit test launch failure
+        if: failure() && matrix.name == 'macOS'
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          for app in "$HOME"/Library/Developer/Xcode/DerivedData/A_Playa_Named_Gus-*/Build/Products/Debug/"A Playa Named Gus.app"; do
+            [ -d "$app" ] || continue
+            if [ -f "$app/Contents/embedded.provisionprofile" ]; then
+              echo "Mac unit host provisioning profile: present"
+            else
+              echo "Mac unit host provisioning profile: absent"
+            fi
+            if codesign --verify --strict "$app" >/dev/null 2>&1; then
+              echo "Mac unit host signature verification: passed"
+            else
+              echo "Mac unit host signature verification: failed"
+            fi
+            codesign --display --verbose=2 "$app" 2>&1 | awk '/^(Signature=|TeamIdentifier=)/' || true
+            break
+          done
+          # Query only this app's signing rejection messages, never the whole log.
+          /usr/bin/log show --last 10m --style compact --predicate '(process == "taskgated-helper" OR process == "amfid") AND (eventMessage CONTAINS "dev.ericslutz.gus" OR eventMessage CONTAINS "A Playa Named Gus")' 2>/dev/null |
+            sed -E 's#https?://[^[:space:]]+\?[^[:space:]]+#[URL query redacted]#g; s#Bearer[[:space:]]+[^[:space:]]+#Bearer [redacted]#g; s#eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+#[JWT redacted]#g; s#[[:alnum:]_.+-]+@[[:alnum:].-]+#[email redacted]#g' |
+            head -n 40 || true

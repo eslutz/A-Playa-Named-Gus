@@ -185,10 +185,9 @@ it resolves to build `27A9269`; the
 [RC rollout](https://github.com/actions/runner-images/issues/14850) remains pending.
 
 CI's selection is repaired to use that 27.1 SDK and reject an older iOS simulator
-SDK explicitly, preserving every matrix job. Actual GitHub compilation/test
-acceptance remains pending for the subsequent run; availability in the software
-manifest alone does not prove compatibility. Cloud's four successful RC BUILD
-actions above remain separately verified.
+SDK explicitly, preserving every matrix job. Availability in the software manifest
+alone did not prove compatibility; the subsequent compilation result is recorded
+below. Cloud's four successful RC BUILD actions above remain separately verified.
 
 [Sanitized failure excerpts](cloud-onboarding-evidence/github-ci/run-38185709518-failures.txt)
 and [runner manifest](cloud-onboarding-evidence/github-ci/runner-manifest.json)
@@ -197,6 +196,28 @@ its test runner (`IDELaunchErrorDomain 20`, `RBSRequestErrorDomain 5`,
 `NSPOSIXErrorDomain 162`), before an app assertion could execute. Its underlying
 host launch failure is unconfirmed and must be distinguished from a failed app
 test. The repeated matrix will verify both compilation and test-runner acceptance.
+
+GitHub run `38186826599` subsequently passed both iOS/iPadOS builds with Xcode 27.1
+`27A9269`, including actual compilation of `SessionPlayerHost.swift`; the previously
+missing Duo symbols now compile. Its iPhone unit tests and Watch build also passed:
+**288 Swift Testing tests across 48 suites and three XCTest tests**, with
+[test evidence](cloud-onboarding-evidence/github-ci/run-38186826599-iphone-test-success.json).
+[iPadOS compilation evidence](cloud-onboarding-evidence/github-ci/run-38186826599-ipados-sdk-build-success.json)
+distinguishes this source acceptance from live Duo runtime acceptance.
+
+The Mac unit host still failed before assertions. Its log packages the restricted
+production capabilities but signs ad hoc, while the successful local tests used
+development signing. [Apple TN3125](https://developer.apple.com/documentation/technotes/tn3125-inside-code-signing-provisioning-profiles)
+explains the provisioning requirement for restricted Mac entitlements. The launch
+error alone does not prove that this mismatch is its cause.
+
+The Mac unit job now creates temporary entitlements with exactly sandbox, network
+client, and the approved network server permissions. An ignored local configuration
+selects them only for that hosted Mac unit job; production entitlements, other
+jobs, and Cloud signing remain intact. It refuses to overwrite existing local
+configuration. If launch still fails, a non-gating diagnostic collects signature/
+profile presence and limited app-specific signing messages with redaction.
+Remote launch/assertion acceptance of this focused configuration is pending.
 
 ## Recovery and acceptance
 

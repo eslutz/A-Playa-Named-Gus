@@ -1,0 +1,7 @@
+Run 38186826599; source e43afc5ee192e71a2457ae7d482188698978cca2
+Job 114610836782: Test iPhone
+2026-10-12T00:08:05.0887150Z Xcode 27.1
+2026-10-12T00:08:05.0887710Z Build version 27A9269
+2026-10-12T00:16:23.1038490Z ✔ Test run with 288 tests in 48 suites passed after 46.118 seconds.
+2026-10-12T00:16:37.1458210Z ** TEST SUCCEEDED **
+2026-10-12T00:15:42.1494540Z 	 Executed 3 tests, with 0 failures (0 unexpected) in 2.100 (13.093) seconds

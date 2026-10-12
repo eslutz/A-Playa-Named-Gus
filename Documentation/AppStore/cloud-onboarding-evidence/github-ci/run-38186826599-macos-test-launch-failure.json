@@ -1,0 +1,23 @@
+{
+  "captured_at_utc": "2026-10-12T00:13:12.141731+00:00",
+  "run_id": 38186826599,
+  "source_sha": "e43afc5ee192e71a2457ae7d482188698978cca2",
+  "job_id": 114610836808,
+  "name": "Test macOS",
+  "status": "completed",
+  "conclusion": "failure",
+  "selected_xcode": "27.1",
+  "selected_xcode_build": "27A9269",
+  "runner_image": "xcode-27-arm64",
+  "runner_image_version": "20261006.0244.1",
+  "classification": "Test runner launch gate; assertions did not execute",
+  "error_domains": {
+    "IDELaunchErrorDomain": 20,
+    "RBSRequestErrorDomain": 5,
+    "NSPOSIXErrorDomain": 162
+  },
+  "limits": [
+    "Underlying launch rejection cause is not established by this log.",
+    "This job failure does not prove a functional application test failure."
+  ]
+}

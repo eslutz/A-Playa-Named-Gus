@@ -282,6 +282,8 @@ At 19:39 local, after the accepted EPUB run and shutdown of its simulator/demo s
 
 At 19:51 local, while validation ran remotely, swap held at 8.1 GiB, CPU had 60% idle time, and the one-second sample had 24 swap-in pages and no swap-out pages. The local heavy Gus jobs remained stopped; the three idle Xcode indexing services were still paused because macOS remained locked.
 
+At 20:08 local, swap was 8.8 GiB, memory-pressure reporting showed 44% system-wide memory free, and CPU had 77% idle time. The one-second sample recorded four swap-in pages and zero swap-out pages. Retained swap remains above zero, but this interval does not show active swap-out pressure. Idle Xcode services remain temporarily paused; native cleanup still needs the Mac unlocked.
+
 ### Final main publication and Xcode Cloud validation
 
 The completed app/download/adaptive-UI/playback/chapter repairs and evidence were
@@ -313,3 +315,13 @@ an older iOS simulator SDK. Its subsequent full matrix result remains a separate
 acceptance check; the all-platform Cloud RC build result above stands. The
 [Cloud diagnostic report](../../AppStore/xcode-cloud-dependency-onboarding.md)
 records the runner manifest, toolchain versions, and scope.
+
+The hosted iOS/iPadOS builds and iPhone unit tests passed with Xcode 27.1 at `e43afc5`.
+The iPadOS log confirms `SessionPlayerHost.swift` compiled, closing the missing-SDK
+symbol defect. The iPhone run passed 288 Swift Testing tests in 48 suites plus
+three XCTest tests. The separate Mac unit runner still failed before assertions. Its
+ad-hoc test host carries restricted production capabilities without provisioned
+signing; the local passing runs used development signing. A focused Mac-unit-only
+temporary entitlement fixture retains sandbox/client/server access while keeping
+production and Cloud configuration intact. Its remote retest remains pending;
+the launch error is not classified as an app assertion failure.

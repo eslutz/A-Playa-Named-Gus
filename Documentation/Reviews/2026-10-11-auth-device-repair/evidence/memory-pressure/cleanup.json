@@ -113,5 +113,17 @@
     "idleIndexServicesRemainPaused": true,
     "macLocked": true,
     "localHeavyGusJobsRunning": false
+  },
+  "latestWhileGitHubRuns": {
+    "measuredAt": "2026-10-11 20:08 local",
+    "swapUsedMB": 9054.38,
+    "memoryPressureReportedFreePercent": 44,
+    "cpuIdlePercent": 76.88,
+    "oneSecondSwapinsPages": 4,
+    "oneSecondSwapoutsPages": 0,
+    "oneMinuteLoadAverage": 6.77,
+    "idleIndexServicesRemainPaused": true,
+    "nativeCleanupBlockedByLockedMac": true,
+    "localHeavyGusJobsRunning": false
   }
 }

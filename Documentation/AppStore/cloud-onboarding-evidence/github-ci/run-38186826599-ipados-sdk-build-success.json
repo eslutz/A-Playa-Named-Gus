@@ -1,0 +1,23 @@
+{
+  "captured_at_utc": "2026-10-12T00:15:50.936330+00:00",
+  "run_id": 38186826599,
+  "source_sha": "e43afc5ee192e71a2457ae7d482188698978cca2",
+  "job_id": 114610836670,
+  "name": "Build iPadOS",
+  "status": "completed",
+  "conclusion": "success",
+  "xcode_path": "/Applications/Xcode_27.1.app",
+  "xcode_version": "27.1",
+  "xcode_build": "27A9269",
+  "runner_image": "xcode-27-arm64",
+  "runner_image_version": "20261006.0244.1",
+  "session_player_host_compile_marker": true,
+  "classification": "Remote iOS source compile acceptance for ArrangementView/reservedRegions path",
+  "limits": [
+    "Build acceptance does not establish iOS 27.1/Duo runtime behavior.",
+    "Full CI matrix result remains pending."
+  ],
+  "sdk_preflight_minimum_ios_27_1_passed": true,
+  "manifest_iphoneos_sdk_version": "27.1",
+  "sdk_version_evidence": "Runner image manifest plus passed minimum-SDK preflight; xcpretty log does not print resolved compiler SDK version."
+}
