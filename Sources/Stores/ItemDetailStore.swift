@@ -63,6 +63,15 @@ final class ItemDetailStore {
 
     func acceptResolvedMetadata(_ current: MediaItem) {
         guard !isUpdatingUserData else { return }
+        if item.id != current.id {
+            loadGeneration += 1
+            similarItems = []
+            specialFeatures = []
+            seriesStore = nil
+            state = .loaded
+        } else if case .failed = state {
+            state = .loaded
+        }
         item = current
     }
 

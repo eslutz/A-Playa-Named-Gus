@@ -103,6 +103,7 @@ struct PlaybackMediaSelectionTests {
     }
 }
 
+@MainActor
 @Suite("Playback quality")
 struct PlaybackQualityTests {
     @Test("bitrates descend from maximum to low")
@@ -115,7 +116,10 @@ struct PlaybackQualityTests {
 
     @Test("stored quality defaults to maximum for unknown raw values")
     func storedDefaultsToMaximum() {
+        let previous = UserDefaults.standard.object(forKey: PlaybackQuality.defaultsKey)
+        defer { UserDefaults.standard.set(previous, forKey: PlaybackQuality.defaultsKey) }
+        UserDefaults.standard.set("nonsense", forKey: PlaybackQuality.defaultsKey)
         #expect(PlaybackQuality(rawValue: "nonsense") == nil)
-        #expect(PlaybackQuality.stored.maxStreamingBitrate >= PlaybackQuality.high.maxStreamingBitrate)
+        #expect(PlaybackQuality.stored == .maximum)
     }
 }

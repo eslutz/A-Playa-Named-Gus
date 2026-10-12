@@ -71,6 +71,9 @@ struct MediaReplacementPicker: View {
                             if let year = candidate.productionYear {
                                 Text(String(year)).foregroundStyle(.secondary)
                             }
+                            if let series = candidate.seriesName {
+                                Text(series).foregroundStyle(.secondary)
+                            }
                             if let locator = candidate.episodeLocator {
                                 Text(locator).foregroundStyle(.secondary)
                             }

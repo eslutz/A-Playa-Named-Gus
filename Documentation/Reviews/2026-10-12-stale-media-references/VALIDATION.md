@@ -13,10 +13,13 @@ The independent review identified and prompted repairs for replacement seeking, 
 ## Verification
 
 - The pinned-metadata regression failed against the original implementation, then passed after the repair.
+- A final cached-detail regression failed before the repair, then passed: authoritative replacement metadata clears a previous not-found state and canonical detail-cache keys retire obsolete IDs. The full 305-test macOS suite passed afterward.
 - The inherited-artwork regression failed against the original image builder, then passed after using ParentBackdropItemId.
-- macOS: final Xcode 27.1 RC run passed 304 tests in 51 suites.
-- iOS 27 simulator: 307 tests in 52 suites passed with Xcode 27.1 RC.
+- macOS: final Xcode 27.1 RC run passed 305 tests in 51 suites.
+- iOS 27 simulator: 308 tests in 52 suites passed with Xcode 27.1 RC.
 - iPhone, iPad, tvOS, visionOS, and watchOS builds passed with Xcode 27.1 RC. Compatible OS 27 tvOS/visionOS/watchOS simulator runtimes are unavailable, so their unit suites were not executed locally.
+- The initial committed candidate passed all 13 GitHub CI checks, including all six builds and five platform test lanes. The final cached-detail/preference-test follow-up is awaiting its own CI rerun.
+- A rerun exposed an existing shared-UserDefaults race between playback-quality suites. Those synchronous preference tests now run on MainActor, and the invalid-value test explicitly sets/restores its fixture; the complete 308-test iOS suite passed afterward.
 - Shared project/scheme/dependency checks, SwiftFormat lint (0/201 files requiring formatting), whitespace checks, string-catalog JSON validation, and companion website tests passed.
 - Physical iPhone: installed and launched the local signed candidate **1.0.0 (1)**. The live legacy queue migrated to schema 1 without losing its single entry; its backup SHA-256 matches the original file byte for byte.
 - The first physical automation attempt timed out enabling automation mode. After confirming the phone was unlocked and launching the candidate normally, the isolated native UI recovery test passed **1/1** in 19.781 seconds. It opened Choose Replacement, verified the candidate label included Trespass and 1992, selected it, and returned to Home.
@@ -28,4 +31,4 @@ The independent review identified and prompted repairs for replacement seeking, 
 
 Jellyfin item IDs can change at any time. A server mutation between validation and an action may still return 404; Gus must recover safely rather than claim IDs never become stale. SDK 2.1 lacks ID sorting and external-ID filters, so replacement scans use supported name ordering, detect repeated IDs/changed totals/incomplete pages, and refuse to establish uniqueness from an incomplete scan. Automatic episode recovery currently requires the same series ID and season/episode locator; replacing both series and episode requires selection.
 
-No Jellyfin configuration, library metadata, media, or watch history was changed during diagnosis. No TestFlight build has been published by this task.
+No Jellyfin configuration, library metadata, media, or watch history was changed during diagnosis. No TestFlight build has been published by this task. The temporary UI-runner cleanup could not complete after the phone disconnected; the helper app may remain installed.
