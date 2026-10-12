@@ -1,0 +1,81 @@
+{
+  "buildNumber": 4,
+  "distributionPostActions": {
+    "apiActionType": "TEST",
+    "count": 4,
+    "isRequiredToPass": true,
+    "note": "Cloud distribution post-actions, not tests.",
+    "status": "SKIPPED"
+  },
+  "groupBuildCount": 0,
+  "groupID": "cc95594c-6adf-4f5b-82b1-85cb92a8165f",
+  "mutationsPerformedByMonitor": false,
+  "observedAt": "2026-10-12T03:12:28.609855Z",
+  "releaseAcceptance": "NOT_MET: failed required iOS/Mac archives; all distribution post-actions skipped; group has no builds.",
+  "requiredArchives": [
+    {
+      "errorCount": 1,
+      "id": "67150df6-1732-4b0e-a5f6-aa9632d080c9",
+      "platform": "ios",
+      "progress": "COMPLETE",
+      "status": "FAILED",
+      "warningCount": 8
+    },
+    {
+      "errorCount": 1,
+      "id": "f3e960c7-1028-45f9-8f37-fad40a7035fc",
+      "platform": "macos",
+      "progress": "COMPLETE",
+      "status": "FAILED",
+      "warningCount": 2
+    },
+    {
+      "errorCount": 0,
+      "id": "b8c378fb-6ec7-4c9a-b084-651c5f7032c2",
+      "platform": "tvos",
+      "progress": "COMPLETE",
+      "status": "SUCCEEDED",
+      "warningCount": 0
+    },
+    {
+      "errorCount": 0,
+      "id": "f7d398fc-a7b2-46ac-951b-cf734909a815",
+      "platform": "visionos",
+      "progress": "COMPLETE",
+      "status": "SUCCEEDED",
+      "warningCount": 0
+    }
+  ],
+  "runID": "33eae093-33a9-4dd9-a12e-b8b9a306054a",
+  "sourceCommit": "64505d9dfd337c90f390c7c66503912eac252d3f",
+  "status": "FAILED",
+  "testers": [
+    {
+      "id": "78117b07-fd8b-4ab7-b6c9-51dfbc02ea10",
+      "state": "NOT_INVITED"
+    }
+  ],
+  "uploadedBuilds": [
+    {
+      "audience": "INTERNAL_ONLY",
+      "betaGroupIDs": [],
+      "buildNumber": "4",
+      "id": "b9351253-cfc3-4428-b080-f825a7e8e1b9",
+      "internalBuildState": "READY_FOR_BETA_TESTING",
+      "marketingVersion": "1.0.0",
+      "platform": "VISION_OS",
+      "processingState": "VALID"
+    },
+    {
+      "audience": "INTERNAL_ONLY",
+      "betaGroupIDs": [],
+      "buildNumber": "4",
+      "id": "352e0ad1-902e-4bcc-85e5-cd5b40344997",
+      "internalBuildState": "READY_FOR_BETA_TESTING",
+      "marketingVersion": "1.0.0",
+      "platform": "TV_OS",
+      "processingState": "VALID"
+    }
+  ],
+  "workflowID": "559f9de9-14d5-4b85-a091-8c3598fa346f"
+}

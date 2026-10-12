@@ -1,0 +1,110 @@
+Browser tab: 4, Title: "App Store Connect", URL: "https://appstoreconnect.apple.com/teams/1f3fb703-e0b0-42fc-bc0b-d00a3bfdf58e/apps/6778382140/testflight/groups/cc95594c-6adf-4f5b-82b1-85cb92a8165f/builds".
+0 AXWebArea App Store Connect, URL: appstoreconnect.apple.com/teams/1f3fb703-e0b0-42fc-bc0b-d00a3bfdf58e/apps/6778382140/testflight/groups/cc95594c-6adf-4f5b-82b1-85cb92a8165f/builds
+	1 container
+		2 container App Store Connect
+			3 container
+				4 heading App Store Connect, Value: 1
+					5 link Description: App Store Connect, Value: appstoreconnect.apple.com/, ID: logo
+				6 container Global
+					7 content list
+						8 link Description: Apps, Value: appstoreconnect.apple.com/apps
+						9 link Description: Xcode Cloud, Value: appstoreconnect.apple.com/teams/1f3fb703-e0b0-42fc-bc0b-d00a3bfdf58e/xcode-cloud
+						10 link Description: Trends, Value: appstoreconnect.apple.com/trends
+						11 link Description: Reports, Value: appstoreconnect.apple.com/itc/payments_and_financial_reports
+						12 link Description: Business, Value: appstoreconnect.apple.com/business
+				13 button Eric Slutz Eric Slutz Account name menu
+					14 text Eric Slutz
+					15 text Eric Slutz
+					16 image
+		17 container
+			18 pop up button (collapsed) Description: Apps menu, A Playa Named Gus, selected, Secondary Actions: Expand
+				19 container
+					20 image A Playa Named Gus
+					21 text A Playa Named Gus
+				22 image
+			23 container Apps
+				24 content list
+					25 link Description: Distribution, Value: appstoreconnect.apple.com/apps/6778382140/distribution
+					26 link Description: Analytics, Value: appstoreconnect.apple.com/apps/6778382140/analytics
+					27 link Description: TestFlight, Value: appstoreconnect.apple.com/teams/1f3fb703-e0b0-42fc-bc0b-d00a3bfdf58e/apps/6778382140/testflight
+		28 container
+			29 container
+				30 container TestFlight
+					31 content list
+						32 container
+							33 heading Builds, Value: 2
+								34 text Builds
+							35 content list
+								36 link Description: No Builds, Value: appstoreconnect.apple.com/teams/1f3fb703-e0b0-42fc-bc0b-d00a3bfdf58e/apps/6778382140/testflight/
+						37 container
+							38 heading Feedback, Value: 2
+								39 text Feedback
+							40 content list
+								41 link Description: Crashes, Value: appstoreconnect.apple.com/teams/1f3fb703-e0b0-42fc-bc0b-d00a3bfdf58e/apps/6778382140/testflight/crashes
+								42 link Description: Screenshots, Value: appstoreconnect.apple.com/teams/1f3fb703-e0b0-42fc-bc0b-d00a3bfdf58e/apps/6778382140/testflight/screenshots
+						43 container
+							44 heading Testers, Value: 2
+								45 text Testers
+							46 content list
+								47 link Description: All, Value: appstoreconnect.apple.com/teams/1f3fb703-e0b0-42fc-bc0b-d00a3bfdf58e/apps/6778382140/testflight/testers
+							48 heading INTERNAL TESTING, Value: 3
+								49 text INTERNAL TESTING
+							50 button New Group
+								51 image
+							52 content list
+								53 container
+									54 link Description: GI Gus Internal, Value: appstoreconnect.apple.com/teams/1f3fb703-e0b0-42fc-bc0b-d00a3bfdf58e/apps/6778382140/testflight/groups/cc95594c-6adf-4f5b-82b1-85cb92a8165f
+									55 button Delete
+						56 container
+							57 heading Additional, Value: 2
+								58 text Additional
+							59 content list
+								60 link Description: Test Information, Value: appstoreconnect.apple.com/teams/1f3fb703-e0b0-42fc-bc0b-d00a3bfdf58e/apps/6778382140/testflight/test-info
+								61 text About TestFlight Data
+				62 text Gus Internal
+				63 heading Gus Internal, Value: 2
+					64 text Gus Internal
+				65 text Internal Group ∙ 1 Tester ∙ 0 Builds
+				66 container
+					129 link Testers
+						130 text Testers
+					68 link Builds
+						69 text Builds
+					70 link Settings
+						71 text Settings
+				72 image
+				73 text 1 tester has been added to this group.
+				74 button
+					75 image
+				131 heading Builds (0), Value: 3
+					132 text Builds (0)
+				133 table Description: Builds, ID: react-aria6724820049-270
+					134 row BUILD STATUS PLATFORM SESSIONS CRASHES Actions
+						135 cell react-aria6724820049-270-version
+							136 text BUILD
+						137 cell react-aria6724820049-270-internalBuildState
+							138 text STATUS
+						139 cell react-aria6724820049-270-preReleaseVersion.platform
+							140 text PLATFORM
+						141 cell react-aria6724820049-270-betaBuildUsages.sevenDaySessionCount
+							142 text SESSIONS
+						143 cell react-aria6724820049-270-betaBuildUsages.crashCount
+							144 text CRASHES
+						145 cell Description: Actions, ID: react-aria6724820049-270-column-key-delete
+					146 row No builds have been added to this group.
+						147 cell
+							148 text No builds have been added to this group.
+		116 content list
+			117 link Description: App Store Connect, Value: appstoreconnect.apple.com/apps
+		118 content list
+			119 container
+				120 text Copyright © 2026 Apple Inc. All rights reserved. |
+			121 container
+				122 link Description: Terms of Service, Value: appstoreconnect.apple.com/WebObjects/iTunesConnect.woa/wa/termsOfService
+				123 text |
+			124 container
+				125 link Description: Privacy Policy, Value: apple.com/legal/privacy
+				126 text |
+			127 link Description: Contact Us, Value: appstoreconnect.apple.com/contact-us
+
+The focused UI element is 0 AXWebArea App Store Connect, URL: appstoreconnect.apple.com/teams/1f3fb703-e0b0-42fc-bc0b-d00a3bfdf58e/apps/6778382140/testflight/groups/cc95594c-6adf-4f5b-82b1-85cb92a8165f/builds

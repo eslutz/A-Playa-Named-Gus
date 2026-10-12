@@ -1,0 +1,31 @@
+{
+  "data": {
+    "attributes": {
+      "actionType": "ARCHIVE",
+      "completionStatus": "SUCCEEDED",
+      "executionProgress": "COMPLETE",
+      "finishedDate": "2026-10-12T03:04:49.831Z",
+      "isRequiredToPass": true,
+      "issueCounts": null,
+      "name": "Archive - tvOS",
+      "startedDate": "2026-10-12T02:59:51.929Z"
+    },
+    "id": "b8c378fb-6ec7-4c9a-b084-651c5f7032c2",
+    "relationships": {
+      "artifacts": {
+        "data": null
+      },
+      "buildRun": {
+        "data": null
+      },
+      "issues": {
+        "data": null
+      },
+      "testResults": {
+        "data": null
+      }
+    },
+    "type": "ciBuildActions"
+  },
+  "observedAt": "2026-10-12T03:12:28.609855Z"
+}

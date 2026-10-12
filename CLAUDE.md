@@ -28,6 +28,13 @@ their look**.
 
 ---
 
+## Delivery policy
+
+Changes to protected `main` require a pull request and all required GitHub CI checks;
+do not push directly or bypass protection. GitHub runs CI on PRs targeting `main`.
+Xcode Cloud tests merged `main` before internal TestFlight distribution; see
+`Documentation/AppStore/pipeline-policy.md` for the saved release gates.
+
 ## Commands
 
 The Xcode project is **generated** from `project.yml` by XcodeGen;

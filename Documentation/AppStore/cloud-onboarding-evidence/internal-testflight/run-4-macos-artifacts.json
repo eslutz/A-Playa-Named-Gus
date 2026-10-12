@@ -1,0 +1,51 @@
+{
+  "data": [
+    {
+      "attributes": {
+        "fileName": "Gus 1.0.0 app-store.zip",
+        "fileSize": 16889823,
+        "fileType": "ARCHIVE_EXPORT"
+      },
+      "id": "ba40a1a0-5743-4355-9897-e3b8651cfd04",
+      "type": "ciArtifacts"
+    },
+    {
+      "attributes": {
+        "fileName": "Gus Build 4 Logs for A Playa Named Gus archive.zip",
+        "fileSize": 630388,
+        "fileType": "LOG_BUNDLE"
+      },
+      "id": "5d08cc31-806d-4901-80c3-3937e6fa672a",
+      "type": "ciArtifacts"
+    },
+    {
+      "attributes": {
+        "fileName": "Gus Build 4 XCResult for A Playa Named Gus archive.xcresult.zip",
+        "fileSize": 185401,
+        "fileType": "RESULT_BUNDLE"
+      },
+      "id": "9567b0a2-d805-4de5-b8ae-52085f028fb3",
+      "type": "ciArtifacts"
+    },
+    {
+      "attributes": {
+        "fileName": "Gus 1.0.0 development.zip",
+        "fileSize": 8906948,
+        "fileType": "ARCHIVE_EXPORT"
+      },
+      "id": "7b088a1a-e796-45bd-bab6-fba3b0e279b9",
+      "type": "ciArtifacts"
+    },
+    {
+      "attributes": {
+        "fileName": "Gus Build 4 Archive for A Playa Named Gus on macOS.xcarchive.zip",
+        "fileSize": 30199374,
+        "fileType": "ARCHIVE"
+      },
+      "id": "556a0b92-d764-4670-97f0-29084af00565",
+      "type": "ciArtifacts"
+    }
+  ],
+  "observedAt": "2026-10-12T03:12:28.609855Z",
+  "scope": "Artifact metadata only; signed URLs and downloads excluded."
+}

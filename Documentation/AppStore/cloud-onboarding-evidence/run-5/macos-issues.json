@@ -1,0 +1,18 @@
+{
+  "data": [
+    {
+      "attributes": {
+        "category": "Xcodebuild",
+        "fileSource": {
+          "lineNumber": 51,
+          "path": "file:///Volumes/workspace/repository/Sources/Features/Settings/AgeRangeDefaults.swift"
+        },
+        "issueType": "WARNING",
+        "message": "Sending value of non-Sendable type 'DeclaredAgeRangeAction' risks causing data races; this is an error in the Swift 6 language mode"
+      },
+      "id": "69310449-99b6-3ad8-b5bc-f4bac944f0b8",
+      "type": "ciIssues"
+    }
+  ],
+  "observedAt": "2026-10-12T08:34:37.996049Z"
+}

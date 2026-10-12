@@ -1,0 +1,93 @@
+{
+  "attributes": {
+    "actions": [
+      {
+        "actionType": "ARCHIVE",
+        "buildDistributionAudience": "INTERNAL_ONLY",
+        "destination": null,
+        "isRequiredToPass": true,
+        "name": "Archive - visionOS",
+        "platform": "VISIONOS",
+        "scheme": "A Playa Named Gus",
+        "testConfiguration": null
+      },
+      {
+        "actionType": "ARCHIVE",
+        "buildDistributionAudience": "INTERNAL_ONLY",
+        "destination": null,
+        "isRequiredToPass": true,
+        "name": "Archive - tvOS",
+        "platform": "TVOS",
+        "scheme": "A Playa Named Gus",
+        "testConfiguration": null
+      },
+      {
+        "actionType": "ARCHIVE",
+        "buildDistributionAudience": "INTERNAL_ONLY",
+        "destination": "ANY_MAC",
+        "isRequiredToPass": true,
+        "name": "Archive - macOS",
+        "platform": "MACOS",
+        "scheme": "A Playa Named Gus",
+        "testConfiguration": null
+      },
+      {
+        "actionType": "ARCHIVE",
+        "buildDistributionAudience": "INTERNAL_ONLY",
+        "destination": null,
+        "isRequiredToPass": true,
+        "name": "Archive - iOS",
+        "platform": "IOS",
+        "scheme": "A Playa Named Gus",
+        "testConfiguration": null
+      }
+    ],
+    "branchStartCondition": null,
+    "clean": true,
+    "containerFilePath": "A Playa Named Gus.xcodeproj",
+    "description": "Manual signed Release archives for internal TestFlight testing after main CI and multiplatform validation pass.",
+    "isEnabled": true,
+    "isLockedForEditing": false,
+    "lastModifiedDate": "2026-10-12T02:56:19.931Z",
+    "manualBranchStartCondition": {
+      "source": {
+        "isAllMatch": false,
+        "patterns": [
+          {
+            "isPrefix": false,
+            "pattern": "main"
+          }
+        ]
+      }
+    },
+    "manualPullRequestStartCondition": null,
+    "manualTagStartCondition": null,
+    "name": "Gus Internal TestFlight",
+    "pullRequestStartCondition": null,
+    "scheduledStartCondition": null,
+    "tagStartCondition": null
+  },
+  "id": "559f9de9-14d5-4b85-a091-8c3598fa346f",
+  "nativeUIEvidence": "Documentation/AppStore/testflight-internal-evidence/workflow-saved.*",
+  "observedAt": "2026-10-12T03:06:12.650745Z",
+  "postActionEvidence": "Public ciWorkflow resource omits postActions. Root verified all four Gus Internal TestFlight post-actions in saved native UI; Build 4 API actions independently expose four named distribution post-actions.",
+  "toolchains": [
+    {
+      "attributes": {
+        "name": "macOS Golden Gate 27.2 beta 2",
+        "version": "26B5091g"
+      },
+      "id": "28564437-d89b-4d10-94a4-eb2f433c1a06",
+      "type": "ciMacOsVersions"
+    },
+    {
+      "attributes": {
+        "name": "Xcode 27.1 RC",
+        "version": "27A9275"
+      },
+      "id": "b58a2915-f652-4460-a360-3c7412b03e89",
+      "type": "ciXcodeVersions"
+    }
+  ],
+  "type": "ciWorkflows"
+}

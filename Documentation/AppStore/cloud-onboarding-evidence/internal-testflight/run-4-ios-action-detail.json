@@ -1,0 +1,31 @@
+{
+  "data": {
+    "attributes": {
+      "actionType": "ARCHIVE",
+      "completionStatus": "FAILED",
+      "executionProgress": "COMPLETE",
+      "finishedDate": "2026-10-12T03:03:39.913Z",
+      "isRequiredToPass": true,
+      "issueCounts": null,
+      "name": "Archive - iOS",
+      "startedDate": "2026-10-12T02:59:52.994Z"
+    },
+    "id": "67150df6-1732-4b0e-a5f6-aa9632d080c9",
+    "relationships": {
+      "artifacts": {
+        "data": null
+      },
+      "buildRun": {
+        "data": null
+      },
+      "issues": {
+        "data": null
+      },
+      "testResults": {
+        "data": null
+      }
+    },
+    "type": "ciBuildActions"
+  },
+  "observedAt": "2026-10-12T03:12:28.609855Z"
+}

@@ -1,0 +1,36 @@
+{
+  "artifactID": "c57446b3-c3f1-4c5a-87c4-3d981781e62f",
+  "scope": "Read-only signed App Store export verification with normal system trust access; no installation or runtime acceptance.",
+  "products": [
+    {
+      "bundleID": "dev.ericslutz.gus",
+      "version": "1.0.0",
+      "build": "7",
+      "signatureVerified": true,
+      "applicationIdentifier": "QS3GC3CT43.dev.ericslutz.gus",
+      "teamIdentifier": "QS3GC3CT43",
+      "appGroups": [
+        "group.dev.ericslutz.gus"
+      ],
+      "getTaskAllow": false,
+      "betaReportsActive": true,
+      "profileMatchesApplicationIdentifier": true,
+      "profileMatchesAppGroups": true
+    },
+    {
+      "bundleID": "dev.ericslutz.gus.topshelf",
+      "version": "1.0.0",
+      "build": "7",
+      "signatureVerified": true,
+      "applicationIdentifier": "QS3GC3CT43.dev.ericslutz.gus.topshelf",
+      "teamIdentifier": "QS3GC3CT43",
+      "appGroups": [
+        "group.dev.ericslutz.gus"
+      ],
+      "getTaskAllow": false,
+      "betaReportsActive": true,
+      "profileMatchesApplicationIdentifier": true,
+      "profileMatchesAppGroups": true
+    }
+  ]
+}

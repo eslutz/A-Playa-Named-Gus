@@ -1,0 +1,34 @@
+{
+  "id": "6985488d-e72e-477b-9161-5397e037650a",
+  "number": 8,
+  "sourceSha": "f1a387f3f07d045dc445593b04fc7958e32dd4d9",
+  "executionProgress": "COMPLETE",
+  "completionStatus": "SUCCEEDED",
+  "finishedDate": "2026-10-12T11:25:08.634Z",
+  "actions": [
+    {
+      "id": "4a0a0a5c-3d47-4dfa-b93b-2be6608f7142",
+      "name": "Build - macOS",
+      "executionProgress": "COMPLETE",
+      "completionStatus": "SUCCEEDED"
+    },
+    {
+      "id": "1dcbd05f-8e35-4d1f-86ca-f9789dfd1c8a",
+      "name": "Build - iOS",
+      "executionProgress": "COMPLETE",
+      "completionStatus": "SUCCEEDED"
+    },
+    {
+      "id": "eb712786-cab4-4c89-acd9-5bc4ea22cdb3",
+      "name": "Build - visionOS",
+      "executionProgress": "COMPLETE",
+      "completionStatus": "SUCCEEDED"
+    },
+    {
+      "id": "36b774f9-3105-42e9-bad7-738cb6ba0c87",
+      "name": "Build - tvOS",
+      "executionProgress": "COMPLETE",
+      "completionStatus": "SUCCEEDED"
+    }
+  ]
+}

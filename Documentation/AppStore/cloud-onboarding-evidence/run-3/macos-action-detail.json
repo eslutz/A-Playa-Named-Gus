@@ -1,0 +1,17 @@
+{
+  "data": {
+    "attributes": {
+      "actionType": "BUILD",
+      "completionStatus": "SUCCEEDED",
+      "executionProgress": "COMPLETE",
+      "finishedDate": "2026-10-12T02:08:13.941Z",
+      "isRequiredToPass": true,
+      "issueCounts": null,
+      "name": "Build - macOS",
+      "startedDate": "2026-10-12T02:06:07.686Z"
+    },
+    "id": "e04467f4-3678-4378-ab9f-6fac08966e17",
+    "type": "ciBuildActions"
+  },
+  "observedAt": "2026-10-12T02:13:09.541909+00:00"
+}

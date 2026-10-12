@@ -1,0 +1,77 @@
+{
+  "runID": "7d7435a0-677a-4c25-b35b-209a24d53af6",
+  "number": 7,
+  "sourceCommit": "bd01514072a575cb5153f2729ab7c96ebbf573eb",
+  "progress": "COMPLETE",
+  "status": "FAILED",
+  "startedDate": "2026-10-12T09:59:17.306Z",
+  "finishedDate": "2026-10-12T10:13:46.098Z",
+  "actions": [
+    {
+      "id": "b23626c0-4048-459f-95d7-476503548308",
+      "name": "Archive - macOS",
+      "actionType": "ARCHIVE",
+      "progress": "COMPLETE",
+      "status": "SUCCEEDED",
+      "isRequiredToPass": true
+    },
+    {
+      "id": "0a3e4ee1-dcfd-4122-947f-975569e70947",
+      "name": "TestFlight Internal Testing - macOS",
+      "actionType": "TEST",
+      "progress": "COMPLETE",
+      "status": "SKIPPED",
+      "isRequiredToPass": true
+    },
+    {
+      "id": "10e69dee-bed2-4b6a-847d-69f7f36683b3",
+      "name": "Archive - iOS",
+      "actionType": "ARCHIVE",
+      "progress": "COMPLETE",
+      "status": "FAILED",
+      "isRequiredToPass": true
+    },
+    {
+      "id": "d87b4bad-a90b-4b3b-9c88-760dda1b01b9",
+      "name": "TestFlight Internal Testing - tvOS",
+      "actionType": "TEST",
+      "progress": "COMPLETE",
+      "status": "SKIPPED",
+      "isRequiredToPass": true
+    },
+    {
+      "id": "e2e58a7d-7983-4e89-80be-e4b45268be90",
+      "name": "TestFlight Internal Testing - iOS",
+      "actionType": "TEST",
+      "progress": "COMPLETE",
+      "status": "SKIPPED",
+      "isRequiredToPass": true
+    },
+    {
+      "id": "19333347-ea25-422e-bc47-a46e79a21d3c",
+      "name": "Archive - tvOS",
+      "actionType": "ARCHIVE",
+      "progress": "COMPLETE",
+      "status": "SUCCEEDED",
+      "isRequiredToPass": true
+    },
+    {
+      "id": "f69b1008-a031-4611-9af9-ade8e5106a89",
+      "name": "TestFlight Internal Testing - visionOS",
+      "actionType": "TEST",
+      "progress": "COMPLETE",
+      "status": "SKIPPED",
+      "isRequiredToPass": true
+    },
+    {
+      "id": "0d34094c-2b96-41ba-860f-23c0e50848c1",
+      "name": "Archive - visionOS",
+      "actionType": "ARCHIVE",
+      "progress": "COMPLETE",
+      "status": "SUCCEEDED",
+      "isRequiredToPass": true
+    }
+  ],
+  "observedAt": "2026-10-12T10:20:08.999408+00:00",
+  "scope": "Signed products exported, iOS preparation failed, all four group distribution post-actions skipped. No tester install access claimed."
+}

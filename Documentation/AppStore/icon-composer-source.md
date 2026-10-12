@@ -6,4 +6,4 @@ Open `Resources/AppIcon.icon` directly in Icon Composer. Its package contains `i
 
 `project.yml` includes the native package for iOS/macOS and GusWatch, with an explicit `wrapper.icon` reference in the generated Xcode project. tvOS and visionOS retain their existing platform-specific asset catalogs. Existing opaque iOS/Watch PNGs remain as fallback artwork for older systems.
 
-The preceding PNG-only commit f354c7a passed all 13 GitHub CI jobs. This new resource integration still requires its own CI and signed Cloud archive/upload validation before internal TestFlight availability can be confirmed.
+The preceding PNG-only commit f354c7a passed all 13 GitHub CI jobs. Cloud Build 8 compiled the new resource integration on all four platforms with zero issues. CI run 38242041231 completed with 12/13 jobs successful; the iPad native audio completion case failed without a native end notification. The full diagnostic is retained. The protected PR and new test-gated Cloud release must pass before internal TestFlight availability can be confirmed.

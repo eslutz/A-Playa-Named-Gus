@@ -1,0 +1,7 @@
+2026-10-12T09:45:27.4577120Z 	 Executed 3 tests, with 0 failures (0 unexpected) in 1.441 (1.444) seconds
+2026-10-12T09:45:27.4902700Z 	 Executed 3 tests, with 0 failures (0 unexpected) in 1.441 (1.445) seconds
+2026-10-12T09:45:27.5290210Z 	 Executed 3 tests, with 0 failures (0 unexpected) in 1.441 (2.938) seconds
+2026-10-12T09:45:33.4155060Z ◇ Test "completed downloads survive URLSession temporary-file cleanup before the main actor saves them" started.
+2026-10-12T09:45:33.4155920Z ✔ Test "completed downloads survive URLSession temporary-file cleanup before the main actor saves them" passed after 0.005 seconds.
+2026-10-12T09:45:34.9005850Z ✔ Test run with 288 tests in 49 suites passed after 7.311 seconds.
+2026-10-12T09:45:39.5319910Z ** TEST SUCCEEDED **

@@ -1,0 +1,27 @@
+{
+  "observedAt": "2026-10-12T10:30:16.252838+00:00",
+  "tool": "Apple altool from Xcode 27.1 RC",
+  "commandScope": "Validate existing signed iOS App Store export; no upload/distribution write performed.",
+  "artifactID": "0a95c0ba-1d0c-4255-960e-c6a46d63159d",
+  "ipaSHA256": "a325fc408e6eb9ae241b654bc863b501312ed060c1a3549855ec30baf15a23ec",
+  "validationSucceeded": false,
+  "errors": [
+    {
+      "code": 90396,
+      "component": "dev.ericslutz.gus.watchkitapp",
+      "message": "Watch app icon contains an alpha channel."
+    },
+    {
+      "code": 90717,
+      "component": "dev.ericslutz.gus.watchkitapp",
+      "message": "Watch large app icon cannot contain transparency or an alpha channel."
+    },
+    {
+      "code": 90717,
+      "component": "dev.ericslutz.gus",
+      "message": "iOS large app icon cannot contain transparency or an alpha channel."
+    }
+  ],
+  "sourceRepair": "64b9de644255a9483e63df166a1cd1dc5ada9d6a",
+  "credentialsAndPrivateUploadIdentifiersExcluded": true
+}

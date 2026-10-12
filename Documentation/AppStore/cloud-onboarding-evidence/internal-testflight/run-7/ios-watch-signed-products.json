@@ -1,0 +1,32 @@
+{
+  "artifactID": "0a95c0ba-1d0c-4255-960e-c6a46d63159d",
+  "scope": "Signed App Store export and embedded Watch provisioning verified. No TestFlight processing, installation or runtime acceptance inferred.",
+  "products": [
+    {
+      "bundleID": "dev.ericslutz.gus",
+      "version": "1.0.0",
+      "build": "7",
+      "signatureVerified": true,
+      "applicationIdentifier": "QS3GC3CT43.dev.ericslutz.gus",
+      "teamIdentifier": "QS3GC3CT43",
+      "getTaskAllow": false,
+      "betaReportsActive": true,
+      "profileMatchesApplicationIdentifier": true,
+      "profileHasDistributionDeviceList": false,
+      "profileExpiration": "2027-08-11 19:07:43"
+    },
+    {
+      "bundleID": "dev.ericslutz.gus.watchkitapp",
+      "version": "1.0.0",
+      "build": "7",
+      "signatureVerified": true,
+      "applicationIdentifier": "QS3GC3CT43.dev.ericslutz.gus.watchkitapp",
+      "teamIdentifier": "QS3GC3CT43",
+      "getTaskAllow": false,
+      "betaReportsActive": true,
+      "profileMatchesApplicationIdentifier": true,
+      "profileHasDistributionDeviceList": false,
+      "profileExpiration": "2027-08-11 19:07:43"
+    }
+  ]
+}

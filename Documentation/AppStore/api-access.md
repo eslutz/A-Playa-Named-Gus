@@ -1,6 +1,28 @@
 # App Store Connect API preparation
 
-API authentication verified on 2026-10-11; Xcode Cloud onboarding is complete; the repaired complete project passed Cloud Build 2 on all four configured platforms. Marketing version is **1.0.0**, with a separate numeric build number.
+**Current policy (October 12):** protected main requires PRs and all GitHub checks. The saved main-only Cloud release tests iPhone/iPad/Duo, Mac, TV and Vision before internal distribution. Native Icon Composer source is restored and Cloud Build 8 passed without issues; CI run 38242041231 retained one iPad native audio completion failure. Tester availability remains unconfirmed until the new gates pass. [Pipeline policy](pipeline-policy.md), [release status](internal-testflight-release.md).
+
+
+API authentication is configured account-wide for the authorized App Manager
+team key; management writes remain deliberate task operations. Cloud onboarding
+and four-platform warning-free BUILD validation are complete. Marketing version
+is **1.0.0**, with a separate integer build number managed by Cloud.
+
+The user authorized internal TestFlight distribution and access for their existing
+account. The manual internal-only workflow and `Gus Internal` group are configured.
+Current runtime code passed CI `38230709289` **13/13**; Cloud Build 6 reported zero
+issues on all platforms. Build 7 successfully exported signed products, but iOS
+preparation failed and all group post-actions were skipped. Independent Apple
+upload-tool validation identified default iOS/Watch icon alpha channels as the
+rejection. Repair `64b9de6` and its CI preflight guard await hosted acceptance and
+a signed retry. No completed tester access or external/public release is claimed.
+
+The previously missing embedded Watch identifier is registered as `X7N8FKWCC6`
+(`UNIVERSAL`, Team `QS3GC3CT43`). Build 7's App Store export now contains a correctly
+signed Watch companion with a matching distribution profile and version/build.
+Mac category/copyright metadata is included and its Build 7 upload is
+`VALID`/`READY_FOR_BETA_TESTING`. [Signing proof](cloud-onboarding-evidence/internal-testflight/run-7/ios-watch-signed-products.json),
+[icon diagnosis](icon-upload-repair.md), [release status](internal-testflight-release.md).
 
 - `.env.asc.example` is the safe template; `.env.asc.local` is ignored and mode 600.
 - The account-wide team key is installed in `~/.appstoreconnect/private_keys/` (directory 700, key 600). Shared configuration lives in `~/.appstoreconnect/config.env` (600), outside all repositories.
@@ -11,9 +33,15 @@ API authentication verified on 2026-10-11; Xcode Cloud onboarding is complete; t
 - The complete repairs, shared generated project, schemes, and 16 dependency pins were
   published directly to `origin/main` at `755ff09`. Cloud Build 1 verified that source commit. Bootstrap repair `084a470` subsequently
   passed all four required BUILD actions, with its full source SHA verified by the API.
+  Build 3 also verified the later placeholder/accessibility repair source at `64505d9`.
 - `api-templates/` contains disabled archive-workflow drafts for iOS, tvOS, visionOS,
   and macOS, plus build-trigger and internal TestFlight group requests. All seven
   templates were checked against Apple's OpenAPI 4.5.1 schema; IDs remain placeholders.
+  The archive drafts are disabled and use `APP_STORE_ELIGIBLE`; they must be adapted
+  to the current internal-only request and verified IDs/start conditions before use.
+  The published workflow schema has no TestFlight post-action field, so configure
+  post-actions through Apple's workflow editor or manually assign processed builds
+  to the intended group. The API helper does not perform these management writes.
 
 ```sh
 swift Scripts/app-store-connect.swift preflight
@@ -33,5 +61,9 @@ assigning builds to tester groups require deliberate write requests using the te
 Apple supports starting builds through
 [`POST /v1/ciBuildRuns`](https://developer.apple.com/documentation/appstoreconnectapi/post-v1-cibuildruns).
 The API does not replace initial Xcode Cloud onboarding or GitHub repository authorization.
+The first authenticated start request for this account returned HTTP 405 without
+creating a run; the App Store Connect Start Build UI succeeded. Use the proven UI
+start path rather than blindly retrying that failed write. See the
+[Cloud diagnosis](xcode-cloud-dependency-onboarding.md).
 
 Configuration precedence: account-wide config, `.env.local`, `.env.asc.local`, then `ASC_*` environment variables. The helper issues short-lived, per-request GET tokens with the complete query in their scope; API management writes remain deliberate operations, not a restriction on the installed key. No key contents or bearer tokens are logged.

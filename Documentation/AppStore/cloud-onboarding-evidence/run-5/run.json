@@ -1,0 +1,24 @@
+{
+  "data": {
+    "attributes": {
+      "cancelReason": null,
+      "completionStatus": "SUCCEEDED",
+      "createdDate": "2026-10-12T08:30:05.982Z",
+      "destinationCommit": null,
+      "executionProgress": "COMPLETE",
+      "finishedDate": "2026-10-12T08:32:50.403Z",
+      "isPullRequestBuild": false,
+      "issueCounts": null,
+      "number": 5,
+      "sourceCommit": {
+        "commitSha": "25465635293467394cc829f23caa2208b9c489cb",
+        "message": "Add Mac App Store distribution metadata"
+      },
+      "startReason": "MANUAL",
+      "startedDate": "2026-10-12T08:30:15.438Z"
+    },
+    "id": "0f0892cc-dcc6-4229-972b-72335a6550e5",
+    "type": "ciBuildRuns"
+  },
+  "observedAt": "2026-10-12T08:33:32.119464Z"
+}

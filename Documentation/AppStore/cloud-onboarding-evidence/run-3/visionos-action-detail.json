@@ -1,0 +1,17 @@
+{
+  "data": {
+    "attributes": {
+      "actionType": "BUILD",
+      "completionStatus": "SUCCEEDED",
+      "executionProgress": "COMPLETE",
+      "finishedDate": "2026-10-12T02:07:47.476Z",
+      "isRequiredToPass": true,
+      "issueCounts": null,
+      "name": "Build - visionOS",
+      "startedDate": "2026-10-12T02:06:09.502Z"
+    },
+    "id": "a773eab1-9657-4a65-bf72-16e606af1e69",
+    "type": "ciBuildActions"
+  },
+  "observedAt": "2026-10-12T02:13:09.541909+00:00"
+}

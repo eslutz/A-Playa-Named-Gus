@@ -1,0 +1,70 @@
+[
+  {
+    "actions": [
+      {
+        "completionStatus": null,
+        "executionProgress": "RUNNING",
+        "id": "e04467f4-3678-4378-ab9f-6fac08966e17",
+        "name": "Build - macOS"
+      },
+      {
+        "completionStatus": null,
+        "executionProgress": "RUNNING",
+        "id": "a773eab1-9657-4a65-bf72-16e606af1e69",
+        "name": "Build - visionOS"
+      },
+      {
+        "completionStatus": null,
+        "executionProgress": "RUNNING",
+        "id": "9722775d-b1f6-4a60-863f-e3783dbe67f2",
+        "name": "Build - tvOS"
+      },
+      {
+        "completionStatus": null,
+        "executionProgress": "RUNNING",
+        "id": "1b8a8f43-0781-43b8-ad7d-066e97f11a5a",
+        "name": "Build - iOS"
+      }
+    ],
+    "completionStatus": null,
+    "executionProgress": "RUNNING",
+    "number": 3,
+    "observedAt": "2026-10-12T02:08:58.979187+00:00",
+    "runID": "db702224-7ba1-4c39-964c-0e1796b8a0d4",
+    "sourceCommitSHA": "64505d9dfd337c90f390c7c66503912eac252d3f"
+  },
+  {
+    "actions": [
+      {
+        "completionStatus": "SUCCEEDED",
+        "executionProgress": "COMPLETE",
+        "id": "e04467f4-3678-4378-ab9f-6fac08966e17",
+        "name": "Build - macOS"
+      },
+      {
+        "completionStatus": "SUCCEEDED",
+        "executionProgress": "COMPLETE",
+        "id": "a773eab1-9657-4a65-bf72-16e606af1e69",
+        "name": "Build - visionOS"
+      },
+      {
+        "completionStatus": "SUCCEEDED",
+        "executionProgress": "COMPLETE",
+        "id": "9722775d-b1f6-4a60-863f-e3783dbe67f2",
+        "name": "Build - tvOS"
+      },
+      {
+        "completionStatus": "SUCCEEDED",
+        "executionProgress": "COMPLETE",
+        "id": "1b8a8f43-0781-43b8-ad7d-066e97f11a5a",
+        "name": "Build - iOS"
+      }
+    ],
+    "completionStatus": "SUCCEEDED",
+    "executionProgress": "COMPLETE",
+    "number": 3,
+    "observedAt": "2026-10-12T02:09:29.609296+00:00",
+    "runID": "db702224-7ba1-4c39-964c-0e1796b8a0d4",
+    "sourceCommitSHA": "64505d9dfd337c90f390c7c66503912eac252d3f"
+  }
+]

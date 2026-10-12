@@ -2,9 +2,15 @@ name: CI
 
 on:
   pull_request:
-  push:
     branches:
       - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pr-ci-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
 
 env:
   XCODE_APP: /Applications/Xcode_27.1.app

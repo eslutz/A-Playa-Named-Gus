@@ -1,0 +1,36 @@
+{
+  "appID" : "6778382140",
+  "appVerified" : true,
+  "eligibleASCUserSelectedByNativePicker" : "0421b3d4-d064-471f-a521-427af136efaf",
+  "emailsAndUsernamesExcluded" : true,
+  "group" : {
+    "attributes" : {
+      "createdDate" : "2026-10-12T02:47:52.258Z",
+      "feedbackEnabled" : true,
+      "hasAccessToAllBuilds" : false,
+      "isInternalGroup" : true,
+      "name" : "Gus Internal",
+      "publicLinkEnabled" : null
+    },
+    "id" : "cc95594c-6adf-4f5b-82b1-85cb92a8165f",
+    "type" : "betaGroups"
+  },
+  "identityProvenance" : "The native picker selected the existing eligible ASC account; API independently verifies the resulting group membership. The public betaTester resource has no ASC-user relationship.",
+  "observedAt" : "2026-10-12T02:51:55Z",
+  "paginationComplete" : true,
+  "readOnly" : true,
+  "scope" : "Group and membership verification only; no uploaded build, invitation delivery or installation acceptance is inferred.",
+  "testerCount" : 1,
+  "testers" : [
+    {
+      "attributes" : {
+        "firstName" : "Eric",
+        "inviteType" : "EMAIL",
+        "lastName" : "Slutz",
+        "state" : "NOT_INVITED"
+      },
+      "id" : "78117b07-fd8b-4ab7-b6c9-51dfbc02ea10",
+      "type" : "betaTesters"
+    }
+  ]
+}

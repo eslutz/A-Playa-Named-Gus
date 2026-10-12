@@ -1,0 +1,15 @@
+2026-10-12T09:49:37.2024940Z 	 Executed 3 tests, with 0 failures (0 unexpected) in 1.635 (1.637) seconds
+2026-10-12T09:49:37.3395990Z 	 Executed 3 tests, with 0 failures (0 unexpected) in 1.635 (1.640) seconds
+2026-10-12T09:49:37.3632180Z 	 Executed 3 tests, with 0 failures (0 unexpected) in 1.635 (1.657) seconds
+2026-10-12T09:49:46.7030080Z ◇ Suite "EPUB loading and resume" started.
+2026-10-12T09:49:46.7184740Z ◇ Test "concurrent readers own separate publications and load chapters" started.
+2026-10-12T09:49:46.7499520Z ✔ Test "concurrent readers own separate publications and load chapters" passed after 0.153 seconds.
+2026-10-12T09:49:46.7617270Z ◇ Test "exact local resume takes precedence without querying the server" started.
+2026-10-12T09:49:46.7742760Z ✔ Test "exact local resume takes precedence without querying the server" passed after 0.024 seconds.
+2026-10-12T09:49:46.7885420Z ◇ Test "invalid local EPUB becomes a readable failure" started.
+2026-10-12T09:49:46.8098300Z ✔ Test "invalid local EPUB becomes a readable failure" passed after 0.011 seconds.
+2026-10-12T09:49:46.8219810Z ✔ Suite "EPUB loading and resume" passed after 0.190 seconds.
+2026-10-12T09:49:51.3799570Z ◇ Test "completed downloads survive URLSession temporary-file cleanup before the main actor saves them" started.
+2026-10-12T09:49:51.3901220Z ✔ Test "completed downloads survive URLSession temporary-file cleanup before the main actor saves them" passed after 0.010 seconds.
+2026-10-12T09:49:55.3903080Z ✔ Test run with 291 tests in 50 suites passed after 14.155 seconds.
+2026-10-12T09:50:09.8594100Z ** TEST SUCCEEDED **

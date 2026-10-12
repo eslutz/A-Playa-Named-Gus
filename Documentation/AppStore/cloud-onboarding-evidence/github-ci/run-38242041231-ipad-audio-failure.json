@@ -1,0 +1,15 @@
+{
+  "sourceSha": "f1a387f3f07d045dc445593b04fc7958e32dd4d9",
+  "runID": 38242041231,
+  "failedLane": "Test iPad",
+  "failedCase": "Play after natural queue completion restarts playback and tracks the next completion",
+  "location": "AudioPlaybackTests.swift:250",
+  "rootCause": "Unconfirmed; AVPlayer reached duration with no native end/failure notification recorded within the test wait.",
+  "diagnostics": [
+    "2026-10-12T11:35:26.7393830Z \u25c7 Test \"Play after natural queue completion restarts playback and tracks the next completion\" started.",
+    "2026-10-12T11:35:38.9091600Z \u2718 Test \"Play after natural queue completion restarts playback and tracks the next completion\" recorded an issue at AudioPlaybackTests.swift:250:17: Expectation failed: await waitUntil {",
+    "2026-10-12T11:35:39.2745110Z \u21b3 Audio wait expired: state=loaded, isPlaying=true, itemStatus=1, timeControlStatus=2, rate=1.0, itemTime=1.0, itemDuration=1.0, actionAtItemEnd=1, nativeEndCount=0, nativeFailureCount=0, failedEndErrorDomain=none, failedEndErrorCode=none, startupElapsed=0.991746209 seconds.",
+    "2026-10-12T11:35:39.7965270Z \u2718 Test \"Play after natural queue completion restarts playback and tracks the next completion\" failed after 17.305 seconds with 1 issue.",
+    "2026-10-12T11:38:01.2730880Z \u2718 Test run with 291 tests in 50 suites failed after 167.091 seconds with 1 issue."
+  ]
+}

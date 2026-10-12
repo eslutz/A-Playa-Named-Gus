@@ -1,0 +1,104 @@
+{
+  "data": [
+    {
+      "attributes": {
+        "buildAudienceType": "INTERNAL_ONLY",
+        "expirationDate": "2027-01-09T19:03:54-08:00",
+        "expired": false,
+        "minOsVersion": "2.0",
+        "processingState": "VALID",
+        "uploadedDate": "2026-10-11T20:03:54-07:00",
+        "usesNonExemptEncryption": false,
+        "version": "4"
+      },
+      "id": "b9351253-cfc3-4428-b080-f825a7e8e1b9",
+      "relationships": {
+        "betaGroups": {
+          "data": []
+        },
+        "buildBetaDetail": {
+          "data": {
+            "id": "b9351253-cfc3-4428-b080-f825a7e8e1b9",
+            "type": "buildBetaDetails"
+          }
+        },
+        "preReleaseVersion": {
+          "data": {
+            "id": "0e203615-922c-41af-b8d1-34ad6ce928c0",
+            "type": "preReleaseVersions"
+          }
+        }
+      },
+      "type": "builds"
+    },
+    {
+      "attributes": {
+        "buildAudienceType": "INTERNAL_ONLY",
+        "expirationDate": "2027-01-09T19:03:53-08:00",
+        "expired": false,
+        "minOsVersion": "18.0",
+        "processingState": "VALID",
+        "uploadedDate": "2026-10-11T20:03:53-07:00",
+        "usesNonExemptEncryption": false,
+        "version": "4"
+      },
+      "id": "352e0ad1-902e-4bcc-85e5-cd5b40344997",
+      "relationships": {
+        "betaGroups": {
+          "data": []
+        },
+        "buildBetaDetail": {
+          "data": {
+            "id": "352e0ad1-902e-4bcc-85e5-cd5b40344997",
+            "type": "buildBetaDetails"
+          }
+        },
+        "preReleaseVersion": {
+          "data": {
+            "id": "fa6de4bc-1f15-4742-be4a-24857066d12f",
+            "type": "preReleaseVersions"
+          }
+        }
+      },
+      "type": "builds"
+    }
+  ],
+  "included": [
+    {
+      "attributes": {
+        "platform": "VISION_OS",
+        "version": "1.0.0"
+      },
+      "id": "0e203615-922c-41af-b8d1-34ad6ce928c0",
+      "type": "preReleaseVersions"
+    },
+    {
+      "attributes": {
+        "autoNotifyEnabled": true,
+        "externalBuildState": "NOT_APPLICABLE",
+        "internalBuildState": "READY_FOR_BETA_TESTING"
+      },
+      "id": "b9351253-cfc3-4428-b080-f825a7e8e1b9",
+      "type": "buildBetaDetails"
+    },
+    {
+      "attributes": {
+        "platform": "TV_OS",
+        "version": "1.0.0"
+      },
+      "id": "fa6de4bc-1f15-4742-be4a-24857066d12f",
+      "type": "preReleaseVersions"
+    },
+    {
+      "attributes": {
+        "autoNotifyEnabled": true,
+        "externalBuildState": "NOT_APPLICABLE",
+        "internalBuildState": "READY_FOR_BETA_TESTING"
+      },
+      "id": "352e0ad1-902e-4bcc-85e5-cd5b40344997",
+      "type": "buildBetaDetails"
+    }
+  ],
+  "observedAt": "2026-10-12T03:12:28.609855Z",
+  "scope": "Metadata and association only; no invitation receipt, installation or playback acceptance."
+}

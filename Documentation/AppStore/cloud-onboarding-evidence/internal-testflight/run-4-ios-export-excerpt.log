@@ -1,0 +1,8 @@
+Source: /tmp/gus-device-repair/cloud-build4-ios-logs/Gus Build 4 Logs for A Playa Named Gus archive/app-store-export-archive-logs/xcodebuild-export-archive.log
+Sanitized selected diagnostic/result lines only. Raw distribution/provisioning logs remain temporary and may contain private account/provisioning metadata.
+
+27594: 2026-10-12T03:03:34.667709032Z	error: exportArchive Automatic signing cannot register bundle identifier "dev.ericslutz.gus.watchkitapp".
+27595: 2026-10-12T03:03:34.667719009Z	  Automatic signing cannot register bundle identifiers with Apple. Register your bundle identifier on [URL redacted] and then try again.
+27597: 2026-10-12T03:03:34.667725836Z	error: exportArchive No profiles for 'dev.ericslutz.gus.watchkitapp' were found
+27598: 2026-10-12T03:03:34.667731166Z	  Xcode couldn't find any iOS App Store provisioning profiles matching 'dev.ericslutz.gus.watchkitapp'.
+27600: 2026-10-12T03:03:34.667736235Z	** EXPORT FAILED **

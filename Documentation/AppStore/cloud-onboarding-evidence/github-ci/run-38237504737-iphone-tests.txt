@@ -1,0 +1,17 @@
+2026-10-12T10:51:28.3672910Z 	 Executed 3 tests, with 0 failures (0 unexpected) in 1.830 (1.835) seconds
+2026-10-12T10:51:28.5249770Z 	 Executed 3 tests, with 0 failures (0 unexpected) in 1.830 (1.837) seconds
+2026-10-12T10:51:28.5516160Z 	 Executed 3 tests, with 0 failures (0 unexpected) in 1.830 (11.814) seconds
+2026-10-12T10:51:36.4436390Z ◇ Suite "EPUB loading and resume" started.
+2026-10-12T10:51:36.4621270Z ◇ Test "concurrent readers own separate publications and load chapters" started.
+2026-10-12T10:51:36.5707840Z ✔ Test "concurrent readers own separate publications and load chapters" passed after 0.154 seconds.
+2026-10-12T10:51:36.5963860Z ◇ Test "exact local resume takes precedence without querying the server" started.
+2026-10-12T10:51:36.6137870Z ✔ Test "exact local resume takes precedence without querying the server" passed after 0.019 seconds.
+2026-10-12T10:51:36.6261860Z ◇ Test "invalid local EPUB becomes a readable failure" started.
+2026-10-12T10:51:36.6425740Z ✔ Test "invalid local EPUB becomes a readable failure" passed after 0.009 seconds.
+2026-10-12T10:51:36.6562420Z ✔ Suite "EPUB loading and resume" passed after 0.207 seconds.
+2026-10-12T10:51:41.1407280Z ◇ Test "completed downloads survive URLSession temporary-file cleanup before the main actor saves them" started.
+2026-10-12T10:51:41.1638880Z ✔ Test "completed downloads survive URLSession temporary-file cleanup before the main actor saves them" passed after 0.005 seconds.
+2026-10-12T10:51:43.2170370Z ◇ Test "platform app icons use the current primary artwork" started.
+2026-10-12T10:51:43.2170810Z ✔ Test "platform app icons use the current primary artwork" passed after 0.148 seconds.
+2026-10-12T10:51:43.2378970Z ✔ Test run with 291 tests in 50 suites passed after 29.327 seconds.
+2026-10-12T10:51:55.6681890Z ** TEST SUCCEEDED **
