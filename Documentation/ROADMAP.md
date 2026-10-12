@@ -580,7 +580,7 @@ milestone once it becomes the active focus and is ready to carry a hard acceptan
 
 | Feature | Status |
 |---|---|
-| Disney+ catalog/progress integration, mixed video playlists, and unified Next Up | `[ ]` Draft plan — authenticated Disney+ validation and product choices pending; [implementation plan](Plans/2026-10-11-disney-plus-playlists-next-up.md) |
+| Disney+ catalog/progress integration, mixed video playlists, and unified Next Up | `[ ]` Not started — authenticated Disney+ validation and product choices pending |
 | Customizable main navigation | `[x]` Done |
 | Content deep links & system integration (Universal Links, Shared with You, Handoff, Spotlight, Siri, Top Shelf) | `[x]` Done |
 | Music library support | `[~]` In app; genre browse + live-library validation remain |
