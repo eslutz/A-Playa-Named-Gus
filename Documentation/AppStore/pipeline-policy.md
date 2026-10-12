@@ -13,3 +13,17 @@ Saved configuration does not establish successful execution or tester eligibilit
 The old compile-only Gus Multiplatform Validation workflow was permanently deleted after explicit confirmation; Apple says associated builds are no longer shown by default. Saved diagnostic evidence remains in this repository. Superseded main release builds are automatically cancelled when a newer main update starts.
 
 The retained iPad audio failure message now captures the native asynchronous audio-session activation result (success and error domain/code) in Debug builds. Release behavior and the native end-event requirement are unchanged; this gathers root-cause evidence without treating a retry as a fix.
+
+## Automatic start file filters — 2026-10-12
+
+The live main-only branch-change condition uses `START_IF_ANY_FILE_MATCHES` with ten matchers: `Sources/`, `Tests/`, `Resources/`, `Config/`, `ci_scripts/`, `Scripts/`, `A Playa Named Gus.xcodeproj/`, plus filenames `project.yml`, `Package.resolved`, and `Package.swift`. Documentation and unrelated file-only changes do not match. A mixed code/documentation commit still starts a run. New build-input locations must be added to this allowlist. Manual main-only starts remain available.
+
+The four TestFlight post-actions associate each platform archive with Gus Internal after the required workflow actions succeed; they are the distribution stage, not additional tests or public App Store submission.
+
+Saved UI proof: `pipeline-policy-evidence/cloud-path-filters.jpg`. Independent Apple API proof: `pipeline-policy-evidence/cloud-path-filters.json`.
+
+## iPad native completion investigation — run 38251008247
+
+The unmuted audio replay case failed its first natural completion: audio activation succeeded, item status was ready, time reached 1.0 seconds (duration 1.0), and neither a native end nor failure notification arrived. Core Audio reported an I/O overload during the failing playback. The muted case and subsequent offline completion case passed. This rules out activation failure for this occurrence, but does not establish why native rendering stalled.
+
+The next controlled CI experiment isolates PlaybackIntegrationTests from unrelated concurrent Swift Testing suites and executes it three times without failure retries, then runs the remaining tests separately. A result-count assertion rejects a filter that accidentally runs zero tests. Runtime playback behavior and completion assertions remain unchanged. This is an investigation, not a confirmed fix; the experiment must pass and its executed test identities must be inspected before acceptance.

@@ -1,0 +1,269 @@
+{
+  "data" : [
+    {
+      "attributes" : {
+        "actions" : [
+          {
+            "actionType" : "TEST",
+            "buildDistributionAudience" : null,
+            "destination" : null,
+            "isRequiredToPass" : true,
+            "name" : "Test - iOS",
+            "platform" : "IOS",
+            "scheme" : "Gus iOS Unit Tests",
+            "testConfiguration" : {
+              "kind" : "USE_SCHEME_SETTINGS",
+              "testDestinations" : [
+                {
+                  "deviceTypeIdentifier" : "com.apple.CoreSimulator.SimDeviceType.iPhone-17",
+                  "deviceTypeName" : "iPhone 17",
+                  "kind" : "SIMULATOR",
+                  "runtimeIdentifier" : "default",
+                  "runtimeName" : "Latest from Selected Xcode (iOS 27.1)"
+                },
+                {
+                  "deviceTypeIdentifier" : "com.apple.CoreSimulator.SimDeviceType.iPad-Pro-11-inch-M5-12GB",
+                  "deviceTypeName" : "iPad Pro 11-inch (M5)",
+                  "kind" : "SIMULATOR",
+                  "runtimeIdentifier" : "default",
+                  "runtimeName" : "Latest from Selected Xcode (iOS 27.1)"
+                },
+                {
+                  "deviceTypeIdentifier" : "com.apple.CoreSimulator.SimDeviceType.iPhone-Duo",
+                  "deviceTypeName" : "iPhone Duo",
+                  "kind" : "SIMULATOR",
+                  "runtimeIdentifier" : "default",
+                  "runtimeName" : "Latest from Selected Xcode (iOS 27.1)"
+                }
+              ],
+              "testPlanName" : ""
+            }
+          },
+          {
+            "actionType" : "TEST",
+            "buildDistributionAudience" : null,
+            "destination" : null,
+            "isRequiredToPass" : true,
+            "name" : "Test - macOS",
+            "platform" : "MACOS",
+            "scheme" : "Gus macOS Unit Tests",
+            "testConfiguration" : {
+              "kind" : "USE_SCHEME_SETTINGS",
+              "testDestinations" : [
+                {
+                  "deviceTypeIdentifier" : "mac",
+                  "deviceTypeName" : "Mac",
+                  "kind" : "MAC",
+                  "runtimeIdentifier" : "builder",
+                  "runtimeName" : "Same As Selected macOS Version"
+                }
+              ],
+              "testPlanName" : ""
+            }
+          },
+          {
+            "actionType" : "TEST",
+            "buildDistributionAudience" : null,
+            "destination" : null,
+            "isRequiredToPass" : true,
+            "name" : "Test - tvOS",
+            "platform" : "TVOS",
+            "scheme" : "Gus tvOS Unit Tests",
+            "testConfiguration" : {
+              "kind" : "USE_SCHEME_SETTINGS",
+              "testDestinations" : [
+                {
+                  "deviceTypeIdentifier" : "recommended_apple_tvs",
+                  "deviceTypeName" : "Recommended Apple TVs",
+                  "kind" : "SIMULATOR",
+                  "runtimeIdentifier" : "default",
+                  "runtimeName" : "Latest from Selected Xcode (tvOS 27.0)"
+                }
+              ],
+              "testPlanName" : ""
+            }
+          },
+          {
+            "actionType" : "TEST",
+            "buildDistributionAudience" : null,
+            "destination" : null,
+            "isRequiredToPass" : true,
+            "name" : "Test - visionOS",
+            "platform" : "VISIONOS",
+            "scheme" : "Gus visionOS Unit Tests",
+            "testConfiguration" : {
+              "kind" : "USE_SCHEME_SETTINGS",
+              "testDestinations" : [
+                {
+                  "deviceTypeIdentifier" : "com.apple.CoreSimulator.SimDeviceType.Apple-Vision-Pro",
+                  "deviceTypeName" : "Apple Vision Pro (at 2732x2048)",
+                  "kind" : "SIMULATOR",
+                  "runtimeIdentifier" : "default",
+                  "runtimeName" : "Latest from Selected Xcode (visionOS 27.0)"
+                }
+              ],
+              "testPlanName" : ""
+            }
+          },
+          {
+            "actionType" : "ARCHIVE",
+            "buildDistributionAudience" : "INTERNAL_ONLY",
+            "destination" : null,
+            "isRequiredToPass" : true,
+            "name" : "Archive - visionOS",
+            "platform" : "VISIONOS",
+            "scheme" : "A Playa Named Gus",
+            "testConfiguration" : null
+          },
+          {
+            "actionType" : "ARCHIVE",
+            "buildDistributionAudience" : "INTERNAL_ONLY",
+            "destination" : null,
+            "isRequiredToPass" : true,
+            "name" : "Archive - tvOS",
+            "platform" : "TVOS",
+            "scheme" : "A Playa Named Gus",
+            "testConfiguration" : null
+          },
+          {
+            "actionType" : "ARCHIVE",
+            "buildDistributionAudience" : "INTERNAL_ONLY",
+            "destination" : "ANY_MAC",
+            "isRequiredToPass" : true,
+            "name" : "Archive - macOS",
+            "platform" : "MACOS",
+            "scheme" : "A Playa Named Gus",
+            "testConfiguration" : null
+          },
+          {
+            "actionType" : "ARCHIVE",
+            "buildDistributionAudience" : "INTERNAL_ONLY",
+            "destination" : null,
+            "isRequiredToPass" : true,
+            "name" : "Archive - iOS",
+            "platform" : "IOS",
+            "scheme" : "A Playa Named Gus",
+            "testConfiguration" : null
+          }
+        ],
+        "branchStartCondition" : {
+          "autoCancel" : true,
+          "filesAndFoldersRule" : {
+            "matchers" : [
+              {
+                "directory" : "Sources",
+                "fileExtension" : null,
+                "fileName" : null
+              },
+              {
+                "directory" : "Tests",
+                "fileExtension" : null,
+                "fileName" : null
+              },
+              {
+                "directory" : "Resources",
+                "fileExtension" : null,
+                "fileName" : null
+              },
+              {
+                "directory" : "Config",
+                "fileExtension" : null,
+                "fileName" : null
+              },
+              {
+                "directory" : "ci_scripts",
+                "fileExtension" : null,
+                "fileName" : null
+              },
+              {
+                "directory" : "Scripts",
+                "fileExtension" : null,
+                "fileName" : null
+              },
+              {
+                "directory" : "A Playa Named Gus.xcodeproj",
+                "fileExtension" : null,
+                "fileName" : null
+              },
+              {
+                "directory" : "",
+                "fileExtension" : null,
+                "fileName" : "project.yml"
+              },
+              {
+                "directory" : "",
+                "fileExtension" : null,
+                "fileName" : "Package.resolved"
+              },
+              {
+                "directory" : "",
+                "fileExtension" : null,
+                "fileName" : "Package.swift"
+              }
+            ],
+            "mode" : "START_IF_ANY_FILE_MATCHES"
+          },
+          "source" : {
+            "isAllMatch" : false,
+            "patterns" : [
+              {
+                "isPrefix" : false,
+                "pattern" : "main"
+              }
+            ]
+          }
+        },
+        "clean" : true,
+        "containerFilePath" : "A Playa Named Gus.xcodeproj",
+        "description" : "Tests merged main on iPhone, iPad, Duo, Mac, Apple TV and Vision before internal TestFlight distribution. Only main is eligible for automatic or manual builds.",
+        "isEnabled" : true,
+        "isLockedForEditing" : false,
+        "lastModifiedDate" : "2026-10-12T13:06:13.044Z",
+        "manualBranchStartCondition" : {
+          "source" : {
+            "isAllMatch" : false,
+            "patterns" : [
+              {
+                "isPrefix" : false,
+                "pattern" : "main"
+              }
+            ]
+          }
+        },
+        "manualPullRequestStartCondition" : null,
+        "manualTagStartCondition" : null,
+        "name" : "Gus Internal TestFlight",
+        "pullRequestStartCondition" : null,
+        "scheduledStartCondition" : null,
+        "tagStartCondition" : null
+      },
+      "id" : "559f9de9-14d5-4b85-a091-8c3598fa346f",
+      "links" : {
+        "self" : "https:\/\/api.appstoreconnect.apple.com\/v1\/ciWorkflows\/559f9de9-14d5-4b85-a091-8c3598fa346f"
+      },
+      "relationships" : {
+        "buildRuns" : {
+          "links" : {
+            "related" : "https:\/\/api.appstoreconnect.apple.com\/v1\/ciWorkflows\/559f9de9-14d5-4b85-a091-8c3598fa346f\/buildRuns",
+            "self" : "https:\/\/api.appstoreconnect.apple.com\/v1\/ciWorkflows\/559f9de9-14d5-4b85-a091-8c3598fa346f\/relationships\/buildRuns"
+          }
+        },
+        "repository" : {
+          "links" : {
+            "related" : "https:\/\/api.appstoreconnect.apple.com\/v1\/ciWorkflows\/559f9de9-14d5-4b85-a091-8c3598fa346f\/repository",
+            "self" : "https:\/\/api.appstoreconnect.apple.com\/v1\/ciWorkflows\/559f9de9-14d5-4b85-a091-8c3598fa346f\/relationships\/repository"
+          }
+        }
+      },
+      "type" : "ciWorkflows"
+    }
+  ],
+  "links" : {
+    "self" : "https:\/\/api.appstoreconnect.apple.com\/v1\/ciProducts\/f2e5bb18-7cd2-44ab-b88c-9d54ac63b512\/workflows"
+  },
+  "meta" : {
+    "paging" : {
+      "limit" : 50
+    }
+  }
+}

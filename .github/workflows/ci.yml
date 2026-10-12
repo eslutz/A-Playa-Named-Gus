@@ -250,7 +250,26 @@ jobs:
           if [ '${{ matrix.name }}' = 'visionOS' ]; then
             destination='${{ steps.vision-sim.outputs.destination }}'
           fi
-          xcodebuild test -project 'A Playa Named Gus.xcodeproj' -scheme '${{ matrix.scheme }}' -destination "$destination"
+          if [ '${{ matrix.name }}' = 'iPad' ]; then
+            # Suite serialization only orders descendants; unrelated Swift Testing
+            # suites still compete with the simulator's real-time audio renderer.
+            # Keep native lifecycle coverage in its own process, without retries.
+            playback_result="$RUNNER_TEMP/gus-ipad-playback.xcresult"
+            xcodebuild test -project 'A Playa Named Gus.xcodeproj' -scheme '${{ matrix.scheme }}' -destination "$destination" \
+              -only-testing:GusTests/PlaybackIntegrationTests -test-iterations 3 -resultBundlePath "$playback_result"
+            xcrun xcresulttool get test-results summary --path "$playback_result" --compact > "$RUNNER_TEMP/gus-ipad-playback-summary.json"
+            python3 - "$RUNNER_TEMP/gus-ipad-playback-summary.json" <<'PYTHON'
+          import json, sys
+          summary = json.load(open(sys.argv[1]))
+          if summary.get("totalTestCount", 0) == 0:
+              raise SystemExit("Playback integration filter matched no tests")
+          print("Isolated playback integration test count:", summary["totalTestCount"])
+          PYTHON
+            xcodebuild test -project 'A Playa Named Gus.xcodeproj' -scheme '${{ matrix.scheme }}' -destination "$destination" \
+              -skip-testing:GusTests/PlaybackIntegrationTests
+          else
+            xcodebuild test -project 'A Playa Named Gus.xcodeproj' -scheme '${{ matrix.scheme }}' -destination "$destination"
+          fi
 
       - name: Diagnose Mac unit test launch failure
         if: failure() && matrix.name == 'macOS'
