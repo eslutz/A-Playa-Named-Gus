@@ -332,7 +332,12 @@ extension PlaybackIntegrationTests {
             let item = player.currentItem
             let itemStatus = item?.status.rawValue ?? -1
             let native = notifications.snapshot(for: item.map(ObjectIdentifier.init))
-            return Comment(rawValue: "Audio wait expired: state=\(String(describing: store.state)), isPlaying=\(store.isPlaying), itemStatus=\(itemStatus), timeControlStatus=\(player.timeControlStatus.rawValue), rate=\(player.rate), itemTime=\(player.currentTime().seconds), itemDuration=\(item?.duration.seconds ?? .nan), actionAtItemEnd=\(player.actionAtItemEnd.rawValue), nativeEndCount=\(native.endCount), nativeFailureCount=\(native.failureCount), failedEndErrorDomain=\(native.errorDomain ?? "none"), failedEndErrorCode=\(native.errorCode.map(String.init) ?? "none"), startupElapsed=\(startupElapsed).")
+            #if DEBUG
+                let activation = String(describing: PlaybackAudioSession.lastActivationResult)
+            #else
+                let activation = "unavailable"
+            #endif
+            return Comment(rawValue: "Audio wait expired: state=\(String(describing: store.state)), isPlaying=\(store.isPlaying), itemStatus=\(itemStatus), timeControlStatus=\(player.timeControlStatus.rawValue), rate=\(player.rate), itemTime=\(player.currentTime().seconds), itemDuration=\(item?.duration.seconds ?? .nan), actionAtItemEnd=\(player.actionAtItemEnd.rawValue), nativeEndCount=\(native.endCount), nativeFailureCount=\(native.failureCount), failedEndErrorDomain=\(native.errorDomain ?? "none"), failedEndErrorCode=\(native.errorCode.map(String.init) ?? "none"), activation=\(activation), startupElapsed=\(startupElapsed).")
         }
 
         private func waitUntil(_ condition: () -> Bool) async throws -> Bool {

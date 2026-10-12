@@ -30,7 +30,7 @@ source and resource files.
 Changes now require a pull request into protected `main`, with all 13 GitHub
 checks passing. Xcode Cloud tests merged `main` on iPhone, iPad, Duo, Mac, Apple TV
 and Vision before internal TestFlight distribution. The old compile-only Cloud
-workflow is deactivated. [Pipeline policy](Documentation/AppStore/pipeline-policy.md).
+workflow is deleted. [Pipeline policy](Documentation/AppStore/pipeline-policy.md).
 
 The native Icon Composer source is restored at `Resources/AppIcon.icon` and
 passed four-platform Cloud Build 8 with zero issues. Its GitHub matrix passed

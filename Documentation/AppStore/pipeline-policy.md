@@ -10,4 +10,6 @@ Cloud's available iOS runtime menu showed 27.1, 17.5, and 16.4. It offered no iO
 
 Saved configuration does not establish successful execution or tester eligibility. The PR matrix, subsequent merged-main Cloud run, and group association must pass before availability is claimed.
 
-The old compile-only Gus Multiplatform Validation workflow is deactivated; its recorded builds remain available. Superseded main release builds are automatically cancelled when a newer main update starts.
+The old compile-only Gus Multiplatform Validation workflow was permanently deleted after explicit confirmation; Apple says associated builds are no longer shown by default. Saved diagnostic evidence remains in this repository. Superseded main release builds are automatically cancelled when a newer main update starts.
+
+The retained iPad audio failure message now captures the native asynchronous audio-session activation result (success and error domain/code) in Debug builds. Release behavior and the native end-event requirement are unchanged; this gathers root-cause evidence without treating a retry as a fix.

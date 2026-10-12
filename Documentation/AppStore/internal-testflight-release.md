@@ -2,7 +2,7 @@
 
 The internal release is not yet available to the tester. The native Icon Composer source at `f1a387f` passed Cloud Build 8 without issues, but its GitHub matrix passed 12/13: the iPad audio completion test received no native end notification within its wait. The icon/EPUB tests passed. No failed attempt is counted as acceptance.
 
-The October 12 policy now requires PRs into protected main. GitHub runs the full PR matrix; the saved main-only Cloud workflow has four required unit-test actions (six device types) plus four internal-only archives. All required actions must pass before group post-actions distribute. The separate compile-only workflow is deactivated. [Policy and saved proof](pipeline-policy.md).
+The October 12 policy now requires PRs into protected main. GitHub runs the full PR matrix; the saved main-only Cloud workflow has four required unit-test actions (six device types) plus four internal-only archives. All required actions must pass before group post-actions distribute. The separate compile-only workflow is deleted. [Policy and saved proof](pipeline-policy.md).
 
 
 Historical Xcode Cloud Build 4 (`33eae093-33a9-4dd9-a12e-b8b9a306054a`) completed **FAILED** at `2026-10-12T03:10:29Z` for exact source `64505d9dfd337c90f390c7c66503912eac252d3f`. iOS export and Mac App Store Connect preparation failed; tvOS and visionOS uploads are valid, but all four distribution post-actions were skipped and `Gus Internal` has no builds. Group access, invitation delivery, and installation remain unaccepted. [Final release summary](cloud-onboarding-evidence/internal-testflight/run-4-summary.json).
