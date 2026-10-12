@@ -237,17 +237,23 @@ extension PlaybackIntegrationTests {
                     stereoFallbackReason: nil
                 )
             }
-            let player = AVPlayer()
-            // Silence is in the PCM fixture itself. Exercise production's unmuted
-            // renderer as well as the previously tested muted renderer.
-            player.isMuted = muted
-            let store = try AudioPlayerStore(session: session(provider: provider), tracks: [track], playerFactory: { player })
+            var createdPlayer: AVPlayer?
+            // Match production: construct the player inside its factory, after
+            // AudioPlayerStore has awaited audio-session activation. Silence is
+            // in the PCM fixture, so both renderer modes remain covered.
+            let store = try AudioPlayerStore(session: session(provider: provider), tracks: [track], playerFactory: {
+                let player = AVPlayer()
+                player.isMuted = muted
+                createdPlayer = player
+                return player
+            })
             defer { store.teardown() }
 
             let notifications = AudioReplayNotificationProbe()
             let startupStarted = ContinuousClock.now
             await store.start()
             let startupElapsed = ContinuousClock.now - startupStarted
+            let player = try #require(createdPlayer)
             let finishedItem = try #require(player.currentItem)
             try #require(await waitUntil {
                 !store.isPlaying && store.state == .loaded && notifications.snapshot(for: ObjectIdentifier(finishedItem)).endCount >= 1
