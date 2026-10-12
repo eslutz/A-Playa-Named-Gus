@@ -92,6 +92,7 @@
 		2B6AC8C77AA7605B15996795 /* WatchSessionRelay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5881AA486EE125FFBE3D5FDD /* WatchSessionRelay.swift */; };
 		2BDA9F44464DC0FDD71FF5F3 /* LoadingStateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1CF4990187717417BC1A5C02 /* LoadingStateView.swift */; };
 		2C2B3DCB6926429FCB2C8C82 /* SeriesDetailStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA760C937184D7FECC8A4C78 /* SeriesDetailStoreTests.swift */; };
+		2CBAF7504A30428423A18C0B /* RepositoryTestFixtures.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C13687937754F2E115A7426 /* RepositoryTestFixtures.swift */; };
 		2CC76047583D7C20F6BABF8E /* NowPlayingController.swift in Sources */ = {isa = PBXBuildFile; fileRef = E22C846E3AC3963F2F4FCCD7 /* NowPlayingController.swift */; };
 		2D7F479D76CFB6FD174612AB /* WatchRemoteView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00A7313ADB59795261B2EBC1 /* WatchRemoteView.swift */; };
 		2DD5CFD12ABC5A14D56D7869 /* LibraryStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 653E69388440AEF2AAFA6779 /* LibraryStoreTests.swift */; };
@@ -235,8 +236,10 @@
 		8177F0DFCAB8014B529FE0E6 /* GusAuthenticatedUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52D003882AAC413D53961C9C /* GusAuthenticatedUITests.swift */; };
 		81C8512E722675B4221D800B /* CinematicDetailHero.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8E6BE6FC65C46A9319391702 /* CinematicDetailHero.swift */; };
 		8204CD85F4F55829FFEFDE2B /* AppModelSessionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 78465CC995BB125D6A86ABD9 /* AppModelSessionTests.swift */; };
+		820FE3DE10751752756555FF /* RepositoryTestFixtures.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C13687937754F2E115A7426 /* RepositoryTestFixtures.swift */; };
 		82733BC779CC456B0A07173A /* AudioPlayerStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5F4732CB82B82AC3DD023832 /* AudioPlayerStore.swift */; };
 		83FF6E59008406ABD027A4B5 /* DeviceIdentity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9843B80AB6ABFBC3E61A35DD /* DeviceIdentity.swift */; };
+		844C57B57D6D98512A101417 /* RepositoryTestFixtures.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C13687937754F2E115A7426 /* RepositoryTestFixtures.swift */; };
 		85219E1186F15D8859372A59 /* TopShelfSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47993D483BC650FAFA81EB6B /* TopShelfSnapshot.swift */; };
 		85322B2A5C367A1537C40ACE /* ProviderArchitectureTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 106B65B3D739D99308357F51 /* ProviderArchitectureTests.swift */; };
 		85C1429CFC38E0914EF694CF /* SessionCredential.swift in Sources */ = {isa = PBXBuildFile; fileRef = 377EC81CA9801B8CA67BC57C /* SessionCredential.swift */; };
@@ -309,6 +312,7 @@
 		AD5AF85F2C042389A77365BC /* DetailMetadataRows.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2647E156C7AAEBF48877381 /* DetailMetadataRows.swift */; };
 		ADBC71F631588E412EEB1D91 /* DownloadedLibraryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 207889BAF04E56E5F772BB9F /* DownloadedLibraryTests.swift */; };
 		AE143128BF3E53BE76011857 /* MediaItem+Display.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C14EFD32954410E2207CA68 /* MediaItem+Display.swift */; };
+		AE59BFAF632B1D02D0FFA437 /* RepositoryTestFixtures.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C13687937754F2E115A7426 /* RepositoryTestFixtures.swift */; };
 		AE7442F2DFAE49F72FAFF8E6 /* StreamURLBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 728D3BD7C85F5803BFF0718F /* StreamURLBuilder.swift */; };
 		AF015DB75DE5CE8A8A147D4D /* SessionCredentialTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E4364553D86D2189BFC0E5A /* SessionCredentialTests.swift */; };
 		AFBA97016EF8547248030E4D /* PlaybackMediaSelectionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4491A0D017A755F50DB502D5 /* PlaybackMediaSelectionTests.swift */; };
@@ -564,6 +568,7 @@
 		09DBF2E14FEB69CD088B1AB9 /* SearchStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchStore.swift; sourceTree = "<group>"; };
 		0A4B9365AB3BFE8565B7BCBF /* WatchConnectView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchConnectView.swift; sourceTree = "<group>"; };
 		0B98273903FCB414A62CFEC3 /* DownloadsAvailability.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownloadsAvailability.swift; sourceTree = "<group>"; };
+		0C13687937754F2E115A7426 /* RepositoryTestFixtures.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RepositoryTestFixtures.swift; sourceTree = "<group>"; };
 		0F4CA0C7AE68B9B53B796222 /* GusWatchUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = GusWatchUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		106B65B3D739D99308357F51 /* ProviderArchitectureTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProviderArchitectureTests.swift; sourceTree = "<group>"; };
 		1356AE76BE5D8AF966B1CE25 /* DownloadsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownloadsView.swift; sourceTree = "<group>"; };
@@ -1125,6 +1130,7 @@
 				C3E0BCD632A405A6A1264091 /* PublicUserProfileTests.swift */,
 				159E6C345663551455487A91 /* QuickConnectStoreTests.swift */,
 				823BFAB076E0F78C8BE8066C /* RemoteSessionsTests.swift */,
+				0C13687937754F2E115A7426 /* RepositoryTestFixtures.swift */,
 				FD1EF6596BB837F09E73915C /* SearchStoreTests.swift */,
 				CA760C937184D7FECC8A4C78 /* SeriesDetailStoreTests.swift */,
 				920DE85C0AFAACDCAFE10ABC /* ServerDiscoveryStoreTests.swift */,
@@ -1409,6 +1415,7 @@
 				1706CC186AE291E7ED667D5E /* Sources */,
 				26D90389740EDA5F2E2D58B5 /* Resources */,
 				8E53F73FC05EC80630006542 /* Frameworks */,
+				E6D2C4CA1631B87D796AF4D7 /* Package repository test fixtures */,
 			);
 			buildRules = (
 			);
@@ -1485,6 +1492,7 @@
 				27C621D8B5B168381A28A4B1 /* Sources */,
 				2BE6FB7D3AB6391E6339CE4D /* Resources */,
 				2C35586E18BD55B2996F3DFF /* Frameworks */,
+				67EF65B50BFADEF26CE65F69 /* Package repository test fixtures */,
 			);
 			buildRules = (
 			);
@@ -1551,6 +1559,7 @@
 				E99CCDB4B5E79FE7895ABEF2 /* Sources */,
 				6231FD656EBAB355C94F5AB5 /* Resources */,
 				445DE71FBA9E3C3D5A43ED8C /* Frameworks */,
+				F3BF4238489533762F46031A /* Package repository test fixtures */,
 			);
 			buildRules = (
 			);
@@ -1571,6 +1580,7 @@
 				78169465F6344828BBAD2A5A /* Sources */,
 				B6FDF760818C6431E9322BB0 /* Resources */,
 				1B6B2017725176AC79F2E9DC /* Frameworks */,
+				913A539108B549AD3BD630A6 /* Package repository test fixtures */,
 			);
 			buildRules = (
 			);
@@ -1788,6 +1798,85 @@
 		};
 /* End PBXResourcesBuildPhase section */
 
+/* Begin PBXShellScriptBuildPhase section */
+		67EF65B50BFADEF26CE65F69 /* Package repository test fixtures */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Package repository test fixtures";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"$SRCROOT/Scripts/package-test-fixtures.sh\"";
+		};
+		913A539108B549AD3BD630A6 /* Package repository test fixtures */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Package repository test fixtures";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"$SRCROOT/Scripts/package-test-fixtures.sh\"";
+		};
+		E6D2C4CA1631B87D796AF4D7 /* Package repository test fixtures */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Package repository test fixtures";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"$SRCROOT/Scripts/package-test-fixtures.sh\"";
+		};
+		F3BF4238489533762F46031A /* Package repository test fixtures */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Package repository test fixtures";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"$SRCROOT/Scripts/package-test-fixtures.sh\"";
+		};
+/* End PBXShellScriptBuildPhase section */
+
 /* Begin PBXSourcesBuildPhase section */
 		1706CC186AE291E7ED667D5E /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
@@ -1827,6 +1916,7 @@
 				B1320159D5F3A2C23A06AF32 /* PublicUserProfileTests.swift in Sources */,
 				1DE6C3BD233A7461D268D280 /* QuickConnectStoreTests.swift in Sources */,
 				C53C5A8960F33EC7751D538A /* RemoteSessionsTests.swift in Sources */,
+				2CBAF7504A30428423A18C0B /* RepositoryTestFixtures.swift in Sources */,
 				949FBFC27E5B6A0BCDEF7E61 /* SearchStoreTests.swift in Sources */,
 				CA59E593D61FDB2FF0A5DD03 /* SeriesDetailStoreTests.swift in Sources */,
 				01F5303A9D4C3859BA1D0E94 /* ServerDiscoveryStoreTests.swift in Sources */,
@@ -1879,6 +1969,7 @@
 				663866F388DE81DBE7DF99F6 /* PublicUserProfileTests.swift in Sources */,
 				D4CF59978511B9C5BFAD5E34 /* QuickConnectStoreTests.swift in Sources */,
 				560CB32AC28B60E253048378 /* RemoteSessionsTests.swift in Sources */,
+				844C57B57D6D98512A101417 /* RepositoryTestFixtures.swift in Sources */,
 				8F0B1FFF090DFA260BBA4FFE /* SearchStoreTests.swift in Sources */,
 				2C2B3DCB6926429FCB2C8C82 /* SeriesDetailStoreTests.swift in Sources */,
 				A2AC66F616F49264B2D93FFA /* ServerDiscoveryStoreTests.swift in Sources */,
@@ -2032,6 +2123,7 @@
 				223C4B584C26CEC7A1AD2E1E /* PublicUserProfileTests.swift in Sources */,
 				C3ED4CF169DDF16A8E1432C6 /* QuickConnectStoreTests.swift in Sources */,
 				B456C98F600E6FE861695E32 /* RemoteSessionsTests.swift in Sources */,
+				820FE3DE10751752756555FF /* RepositoryTestFixtures.swift in Sources */,
 				007CD7B922D416DD92864E39 /* SearchStoreTests.swift in Sources */,
 				9884F118DA5062F54BE0FDC8 /* SeriesDetailStoreTests.swift in Sources */,
 				2311CD44A1EACD19F8DBA5C1 /* ServerDiscoveryStoreTests.swift in Sources */,
@@ -2251,6 +2343,7 @@
 				EB3088DAA97348BC191C7AF0 /* PublicUserProfileTests.swift in Sources */,
 				F6311C9A71334C84C7CA025A /* QuickConnectStoreTests.swift in Sources */,
 				CBA95FF97057EDD5EBDF3ACC /* RemoteSessionsTests.swift in Sources */,
+				AE59BFAF632B1D02D0FFA437 /* RepositoryTestFixtures.swift in Sources */,
 				28A5DAA950FD2427E9F0B1B9 /* SearchStoreTests.swift in Sources */,
 				94E0B16066ACF7FC5BCF902B /* SeriesDetailStoreTests.swift in Sources */,
 				14675297E8496862515BEE9F /* ServerDiscoveryStoreTests.swift in Sources */,

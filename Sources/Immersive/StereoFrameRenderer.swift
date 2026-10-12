@@ -152,7 +152,15 @@
             guard let packed = frame.pixelBuffer else { return }
             let pts = frame.itemTimeForDisplay.isValid ? frame.itemTimeForDisplay : itemTime
 
-            guard let (leftBuffer, rightBuffer) = packed.withUnsafeBuffer({ split($0) }) else { return }
+            // Consume the borrowed buffer on the current actor; do not return
+            // pool-owned eye buffers through Core Video's sending-result boundary.
+            packed.withUnsafeBuffer { buffer in
+                processPackedFrame(buffer, presentationTime: pts)
+            }
+        }
+
+        private func processPackedFrame(_ packed: CVPixelBuffer, presentationTime pts: CMTime) {
+            guard let (leftBuffer, rightBuffer) = split(packed) else { return }
 
             let leftTagged = CMTaggedBuffer(tags: [CMTag.stereoView(.leftEye)], pixelBuffer: leftBuffer)
             let rightTagged = CMTaggedBuffer(tags: [CMTag.stereoView(.rightEye)], pixelBuffer: rightBuffer)

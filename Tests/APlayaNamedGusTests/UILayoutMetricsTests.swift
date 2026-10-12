@@ -363,24 +363,12 @@ struct UILayoutMetricsTests {
     }
 
     private func sourceFile(named fileName: String, under relativePath: String) throws -> String {
-        let sourceURL = URL(fileURLWithPath: #filePath)
-            .deletingLastPathComponent()
-            .deletingLastPathComponent()
-            .deletingLastPathComponent()
-            .appending(path: relativePath.isEmpty ? "." : relativePath)
-            .appending(path: fileName)
-
-        return try String(contentsOf: sourceURL, encoding: .utf8)
+        let path = relativePath.isEmpty ? fileName : "\(relativePath)/\(fileName)"
+        return try String(contentsOf: RepositoryTestFixtures.url(for: path), encoding: .utf8)
     }
 
     private func resourceData(_ relativePath: String) throws -> Data {
-        let sourceURL = URL(fileURLWithPath: #filePath)
-            .deletingLastPathComponent()
-            .deletingLastPathComponent()
-            .deletingLastPathComponent()
-            .appending(path: relativePath)
-
-        return try Data(contentsOf: sourceURL)
+        try Data(contentsOf: RepositoryTestFixtures.url(for: relativePath))
     }
 
     private func sha256Hex(_ data: Data) -> String {

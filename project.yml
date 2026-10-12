@@ -179,6 +179,10 @@ targets:
     dependencies:
       - sdk: AppIntents.framework
       - target: Gus
+    postBuildScripts:
+      - name: Package repository test fixtures
+        script: '"$SRCROOT/Scripts/package-test-fixtures.sh"'
+        basedOnDependencyAnalysis: false
     settings:
       base:
         PRODUCT_NAME: GusTests
@@ -197,6 +201,10 @@ targets:
     dependencies:
       - sdk: AppIntents.framework
       - target: Gus
+    postBuildScripts:
+      - name: Package repository test fixtures
+        script: '"$SRCROOT/Scripts/package-test-fixtures.sh"'
+        basedOnDependencyAnalysis: false
     settings:
       base:
         PRODUCT_NAME: GusTVOSTests
@@ -215,6 +223,10 @@ targets:
     dependencies:
       - sdk: AppIntents.framework
       - target: Gus
+    postBuildScripts:
+      - name: Package repository test fixtures
+        script: '"$SRCROOT/Scripts/package-test-fixtures.sh"'
+        basedOnDependencyAnalysis: false
     settings:
       base:
         PRODUCT_NAME: GusVisionOSTests
@@ -233,6 +245,10 @@ targets:
     dependencies:
       - sdk: AppIntents.framework
       - target: Gus
+    postBuildScripts:
+      - name: Package repository test fixtures
+        script: '"$SRCROOT/Scripts/package-test-fixtures.sh"'
+        basedOnDependencyAnalysis: false
     settings:
       base:
         PRODUCT_NAME: GusMacOSTests

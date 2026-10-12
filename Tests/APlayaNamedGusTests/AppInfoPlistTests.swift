@@ -21,17 +21,9 @@ struct AppInfoPlistTests {
     }
 
     private func sourceInfoPlist() throws -> [String: Any] {
-        let data = try Data(contentsOf: sourceInfoPlistURL)
+        let data = try Data(contentsOf: RepositoryTestFixtures.url(for: "Resources/Info.plist"))
         let plist = try PropertyListSerialization.propertyList(from: data, format: nil)
 
         return try #require(plist as? [String: Any])
-    }
-
-    private var sourceInfoPlistURL: URL {
-        URL(fileURLWithPath: #filePath)
-            .deletingLastPathComponent()
-            .deletingLastPathComponent()
-            .deletingLastPathComponent()
-            .appending(path: "Resources/Info.plist")
     }
 }
