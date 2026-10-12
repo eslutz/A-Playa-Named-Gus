@@ -91,5 +91,40 @@ class BootstrapTests(unittest.TestCase):
         self.assertEqual(Path((self.root / "invoked-tool").read_text()).resolve(), self.root.resolve())
 
 
+    def run_pre_build(self, platform="macOS", action="build-for-testing"):
+        scripts = SOURCE.parent
+        for name in ("ci_pre_xcodebuild.sh", "gus-macos-unit.entitlements"):
+            shutil.copy2(scripts / name, self.root / "ci_scripts" / name)
+        env = {**self.env, "CI_PRODUCT_PLATFORM": platform, "CI_XCODEBUILD_ACTION": action}
+        return subprocess.run(["/bin/sh", "ci_pre_xcodebuild.sh"], cwd=self.root / "ci_scripts",
+                              env=env, capture_output=True, text=True)
+
+    def test_cloud_mac_unit_host_uses_unrestricted_sandbox_entitlements(self):
+        self.assertEqual(self.run_script().returncode, 0)
+        self.assertEqual(self.run_pre_build().returncode, 0)
+        config = (self.root / "Config/Local.xcconfig").read_text()
+        self.assertIn("gus-macos-unit.entitlements", config)
+        import plistlib
+        values = plistlib.loads((self.root / "ci_scripts/gus-macos-unit.entitlements").read_bytes())
+        self.assertEqual(values, {"com.apple.security.app-sandbox": True,
+                                 "com.apple.security.network.client": True,
+                                 "com.apple.security.network.server": True})
+
+    def test_cloud_archives_keep_production_signing(self):
+        self.assertEqual(self.run_script().returncode, 0)
+        before = (self.root / "Config/Local.xcconfig").read_bytes()
+        self.assertEqual(self.run_pre_build(action="archive").returncode, 0)
+        self.assertEqual((self.root / "Config/Local.xcconfig").read_bytes(), before)
+
+    def test_cloud_ios_tests_keep_platform_signing(self):
+        self.assertEqual(self.run_script().returncode, 0)
+        before = (self.root / "Config/Local.xcconfig").read_bytes()
+        self.assertEqual(self.run_pre_build(platform="iOS").returncode, 0)
+        self.assertEqual((self.root / "Config/Local.xcconfig").read_bytes(), before)
+
+    def test_cloud_mac_test_preparation_requires_bootstrap(self):
+        self.assertEqual(self.run_pre_build().returncode, 66)
+
+
 if __name__ == "__main__":
     unittest.main()

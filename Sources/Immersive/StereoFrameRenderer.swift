@@ -31,6 +31,9 @@
     @MainActor
     final class StereoFrameRenderer {
         let videoRenderer = AVSampleBufferVideoRenderer()
+        private let synchronizer = AVSampleBufferRenderSynchronizer()
+        private var receiver: AVSampleBufferVideoRenderer.Receiver!
+        private var renderingRate: Float?
 
         private let player: AVPlayer
         private let layout: Stereo3DLayout
@@ -48,6 +51,7 @@
         init(player: AVPlayer, layout: Stereo3DLayout) {
             self.player = player
             self.layout = layout
+            receiver = synchronizer.sampleBufferReceiver(adding: videoRenderer)
             setupOutput()
             startDisplayLink()
             observeSeek()
@@ -70,14 +74,16 @@
             currentItemObservation?.invalidate()
             currentItemObservation = nil
             bufferPool = nil
+            receiver.flush()
+            synchronizer.setRate(0, time: .invalid)
         }
 
         // MARK: - Setup
 
         private func setupOutput() {
-            let output = AVPlayerItemVideoOutput(pixelBufferAttributes: [
-                kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_32BGRA as NSNumber,
-            ])
+            let output = AVPlayerItemVideoOutput(pixelBufferAttributes: CVPixelBufferAttributes(
+                pixelFormatTypes: [CVPixelFormatType(rawValue: kCVPixelFormatType_32BGRA)]
+            ))
             player.currentItem?.add(output)
             playerItemOutput = output
         }
@@ -110,7 +116,8 @@
                         oldItem.remove(output)
                     }
                     self.setupOutput()
-                    self.videoRenderer.flush()
+                    self.receiver.flush()
+                    self.renderingRate = nil
                     self.cachedFormatDescription = nil
 
                     if let observer = self.seekObserver {
@@ -122,7 +129,8 @@
         }
 
         private func handleSeek() {
-            videoRenderer.flush()
+            receiver.flush()
+            renderingRate = nil
             cachedFormatDescription = nil
         }
 
@@ -132,13 +140,19 @@
             guard let output = playerItemOutput else { return }
 
             let itemTime = output.itemTime(forHostTime: targetTimestamp)
-            guard itemTime.isValid, output.hasNewPixelBuffer(forItemTime: itemTime) else { return }
+            guard itemTime.isValid else { return }
+            // Update the render clock even while paused, when no new frame arrives.
+            if renderingRate != player.rate {
+                synchronizer.setRate(player.rate, time: itemTime)
+                renderingRate = player.rate
+            }
+            guard output.hasNewPixelBuffer(forItemTime: itemTime) else { return }
 
-            var displayTime = CMTime.invalid
-            guard let packed = output.copyPixelBuffer(forItemTime: itemTime, itemTimeForDisplay: &displayTime) else { return }
-            let pts = displayTime.isValid ? displayTime : itemTime
+            let frame = output.pixelBufferAndDisplayTime(forItemTime: itemTime)
+            guard let packed = frame.pixelBuffer else { return }
+            let pts = frame.itemTimeForDisplay.isValid ? frame.itemTimeForDisplay : itemTime
 
-            guard let (leftBuffer, rightBuffer) = split(packed) else { return }
+            guard let (leftBuffer, rightBuffer) = packed.withUnsafeBuffer({ split($0) }) else { return }
 
             let leftTagged = CMTaggedBuffer(tags: [CMTag.stereoView(.leftEye)], pixelBuffer: leftBuffer)
             let rightTagged = CMTaggedBuffer(tags: [CMTag.stereoView(.rightEye)], pixelBuffer: rightBuffer)
@@ -157,7 +171,7 @@
                 formatDescription: formatDesc
             )
 
-            videoRenderer.enqueue(sampleBuffer)
+            _ = receiver.enqueueImmediately(CMReadySampleBuffer<CMSampleBuffer.DynamicContent>(unsafeBuffer: sampleBuffer))
         }
 
         // MARK: - Frame splitting

@@ -142,14 +142,14 @@ struct NavigationSettingsView: View {
                     .deleteDisabled(!section.canHide)
                     .draggable(section.id)
                     .dropDestination(for: String.self) { draggedIDs, _ in
-                        moveDraggedSection(draggedIDs.first, before: section.id, in: sections)
+                        _ = moveDraggedSection(draggedIDs.first, before: section.id, in: sections)
                     }
             } else {
                 navigationRow(section)
                     .moveDisabled(!section.canMove)
                     .deleteDisabled(!section.canHide)
                     .dropDestination(for: String.self) { draggedIDs, _ in
-                        moveDraggedSection(draggedIDs.first, before: section.id, in: sections)
+                        _ = moveDraggedSection(draggedIDs.first, before: section.id, in: sections)
                     }
             }
         #endif

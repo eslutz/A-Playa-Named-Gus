@@ -336,7 +336,7 @@ extension PlaybackIntegrationTests {
             for item in [first, second] {
                 let source = directory.appendingPathComponent(UUID().uuidString)
                 try Data("playback lifecycle fixture".utf8).write(to: source)
-                try files.persistDownloadedFile(source, item: item, serverID: "s", userID: "u", fileExtension: "mp4")
+                _ = try files.persistDownloadedFile(source, item: item, serverID: "s", userID: "u", fileExtension: "mp4")
             }
             downloads.load(serverID: "s", userID: "u")
             let defaults = UserDefaults.standard

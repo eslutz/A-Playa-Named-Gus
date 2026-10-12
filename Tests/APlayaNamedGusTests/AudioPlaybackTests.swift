@@ -334,7 +334,7 @@ extension PlaybackIntegrationTests {
 
         private func session(provider: FakeMediaProviderSession) throws -> SessionStore {
             let url = try #require(URL(string: "https://example.com"))
-            return try SessionStore(
+            return SessionStore(
                 client: JellyfinClientFactory.makeClient(url: url),
                 user: StoredUser(id: "u", name: "User", serverID: "s"),
                 server: ServerConnection(id: "s", name: "Server", url: url),
@@ -460,7 +460,6 @@ private final class AudioReplayNotificationProbe: @unchecked Sendable {
 }
 
 /// No background transfers are involved in the completed-file replay regression.
-@MainActor
 private final class AudioReplayDownloadCoordinator: DownloadSessionCoordinating {
     func setEventHandler(_ eventHandler: DownloadSessionCoordinatorEventHandler?) {}
     func startDownload(from url: URL, recordID: String) {}
