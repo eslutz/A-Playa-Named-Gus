@@ -1,0 +1,17 @@
+{
+  "data": [
+    {
+      "attributes": {
+        "category": "PrepareBuildForAppStoreConnect",
+        "fileSource": null,
+        "issueType": "ERROR",
+        "message": "Preparing build for App Store Connect failed"
+      },
+      "id": "6f79a353-2f0c-3749-a209-9887ca3f4ce5",
+      "links": {
+        "self": "https://api.appstoreconnect.apple.com/v1/ciIssues/6f79a353-2f0c-3749-a209-9887ca3f4ce5"
+      },
+      "type": "ciIssues"
+    }
+  ]
+}

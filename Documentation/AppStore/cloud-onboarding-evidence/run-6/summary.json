@@ -1,0 +1,49 @@
+{
+  "runID": "f62c41a1-6948-4d38-bdba-c158e05c66b5",
+  "buildNumber": 6,
+  "sourceCommit": "8d09dcc99a41ff9c04d404c4d6dac23c7a5225fe",
+  "status": "SUCCEEDED",
+  "progress": "COMPLETE",
+  "startedDate": "2026-10-12T09:27:28.863Z",
+  "finishedDate": "2026-10-12T09:30:04.872Z",
+  "actions": [
+    {
+      "id": "25a2dd7c-b0e3-4a14-8091-732b26de53ac",
+      "name": "Build - visionOS",
+      "actionType": "BUILD",
+      "status": "SUCCEEDED",
+      "progress": "COMPLETE",
+      "isRequiredToPass": true,
+      "issueCount": 0
+    },
+    {
+      "id": "6e6c03ae-d0d1-488c-a13a-2f4accabaa7a",
+      "name": "Build - macOS",
+      "actionType": "BUILD",
+      "status": "SUCCEEDED",
+      "progress": "COMPLETE",
+      "isRequiredToPass": true,
+      "issueCount": 0
+    },
+    {
+      "id": "e9c1c23d-734e-4726-8104-faeee159f89e",
+      "name": "Build - tvOS",
+      "actionType": "BUILD",
+      "status": "SUCCEEDED",
+      "progress": "COMPLETE",
+      "isRequiredToPass": true,
+      "issueCount": 0
+    },
+    {
+      "id": "6e4ae7da-5488-476d-87f5-06b7f246cff1",
+      "name": "Build - iOS",
+      "actionType": "BUILD",
+      "status": "SUCCEEDED",
+      "progress": "COMPLETE",
+      "isRequiredToPass": true,
+      "issueCount": 0
+    }
+  ],
+  "observedAt": "2026-10-12T09:32:16.947916+00:00",
+  "scope": "Four required BUILD actions. No runtime, signed archive, upload or TestFlight acceptance claimed."
+}

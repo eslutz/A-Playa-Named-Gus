@@ -1,0 +1,5 @@
+Source: /tmp/gus-device-repair/cloud-build4-macos-logs/Gus Build 4 Logs for A Playa Named Gus archive/app-store-export-archive-logs/xcodebuild-export-archive.log
+Sanitized selected diagnostic/result lines only. Raw distribution/provisioning logs remain temporary and may contain private account/provisioning metadata.
+
+16068: 2026-10-12T03:02:44.134152359Z	Exported A Playa Named Gus to: /Volumes/workspace/appstoreexport
+16069: 2026-10-12T03:02:44.134167477Z	** EXPORT SUCCEEDED **

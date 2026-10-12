@@ -1,0 +1,29 @@
+{
+  "appID": "6778382140",
+  "betaAppLocalizations": [
+    {
+      "descriptionCharacterCount": 298,
+      "descriptionPresent": true,
+      "feedbackEmailPresent": true,
+      "id": "6064bce8-8f31-484a-8807-c0dbb9b11bf7",
+      "locale": "en-US",
+      "marketingUrlPresent": true,
+      "privacyPolicyUrlPresent": true,
+      "tvOsPrivacyPolicyPresent": false,
+      "type": "betaAppLocalizations"
+    }
+  ],
+  "betaAppReviewDetail": [
+    {
+      "contactEmailPresent": false,
+      "contactFirstNamePresent": false,
+      "contactLastNamePresent": false,
+      "contactPhonePresent": false,
+      "demoAccountRequired": null,
+      "id": "6778382140",
+      "type": "betaAppReviewDetails"
+    }
+  ],
+  "observedAt": "2026-10-12T02:57:13Z",
+  "readOnly": true
+}

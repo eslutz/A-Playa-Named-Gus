@@ -164,7 +164,7 @@ automated build verification. (Covers priority: *polish & testing*.)
   *Acceptance:* available for local/manual launch validation. *(Done: `GusLaunchUITests`
   verifies the Connect screen renders through native iOS, tvOS, visionOS, and macOS UI
   test bundles; CI keeps these UI smoke tests out of the required PR pipeline.)*
-- [~] **CI pipeline.** GitHub Actions: validate the shared project/pins → resolve →
+- [x] **CI pipeline.** GitHub Actions: validate the shared project/pins → resolve →
   build the iPhone/iPad/macOS/tvOS/visionOS/Watch matrix → run native unit tests → lint.
   *Acceptance:* successful required checks on the complete current source. *(Configured
   on the hosted `xcode-27` runner with a minimum iOS simulator SDK of 27.1. Final
@@ -176,8 +176,13 @@ automated build verification. (Covers priority: *polish & testing*.)
   recorded with their cause unresolved; no production workaround was added. See
   [full hosted evidence](AppStore/cloud-onboarding-evidence/github-ci/run-38192282611-summary.json).
   This is separate from successful 4/4 Xcode Cloud BUILD and device/release acceptance.
-  The later GUS-UI-040 decorative placeholder source edit awaits a new hosted compile;
-  the 13/13 result applies to the preceding accepted candidate.)*
+  Current GUS-UI-040 source `64505d9dfd337c90f390c7c66503912eac252d3f` passed Cloud Build 3 4/4 BUILD
+  actions and [GitHub run `38194318738`, attempt 2](https://github.com/eslutz/A-Playa-Named-Gus/actions/runs/38194318738/attempts/2)
+  completed **13/13 successful checks**. iPad alone reran unchanged; the other 12 successes
+  were carried forward from attempt 1. Each accepted unit lane passed 288 cases/49 suites
+  plus three separate XCTest measurements, including both actual native audio cases.
+  The initial iPad completion failure remains recorded with its cause unresolved; retry
+  acceptance does not establish a reliable fix. [Current proof](AppStore/cloud-onboarding-evidence/github-ci/run-38194318738-attempt-2-summary.json).)*
 - [x] **Update `project.yml` for the test target & schemes.** *Acceptance:* generated
   project includes the test targets; the per-platform `Gus <platform> Unit Tests` test
   actions work (the `A Playa Named Gus` scheme is build-only). *(Done: platform-native
@@ -575,6 +580,7 @@ milestone once it becomes the active focus and is ready to carry a hard acceptan
 
 | Feature | Status |
 |---|---|
+| Disney+ catalog/progress integration, mixed video playlists, and unified Next Up | `[ ]` Not started — authenticated Disney+ validation and product choices pending |
 | Customizable main navigation | `[x]` Done |
 | Content deep links & system integration (Universal Links, Shared with You, Handoff, Spotlight, Siri, Top Shelf) | `[x]` Done |
 | Music library support | `[~]` In app; genre browse + live-library validation remain |
@@ -930,4 +936,21 @@ Final source review repaired Vision Pro capsule hover shapes, video preparation/
 
 The unused ReadiumAdapterGCDWebServer product is removed; the 16 validated pins, including Readium 3.9.0, remain. Account-wide App Store Connect API authentication and initial Cloud onboarding are verified. The manual-only Gus Multiplatform Validation workflow has four BUILD actions (iOS/macOS/tvOS/visionOS), Xcode 27.1 RC, and a compatible macOS host, without distribution. The reviewed app repairs, shared snapshot/pins, and bootstrap repair are published to `origin/main`. Cloud Build 1 failed its post-clone identity check because the runtime reported the verified account UUID instead of the 10-character signing Team ID. Build 2 completed successfully for all four required BUILD actions and resolved all 16 pinned repositories, validating code commit `084a470683a78256e939bd63b416bc2fb0150bb2`. Later documentation and CI configuration changes retain that app-source build provenance. Signed Release archive validation, upload, and TestFlight acceptance remain pending. See [API setup](AppStore/api-access.md) and [Cloud diagnosis](AppStore/xcode-cloud-dependency-onboarding.md).
 
-The preceding candidate passed **13/13 GitHub jobs** in run `38192282611` at exact commit `edd06e6636cd32b877622dbcb4ccb34524a1b3c1`: all six builds, five unit lanes, lint and docs. Each lane passed 288 Swift Testing cases in 49 suites and three separate XCTest measurements, including the strengthened native audio completion/replay and automatic-deletion/no-stream cases. The one-second 48 kHz PCM fixture retains the eight-second wait limit; the earlier 400 ms/8 kHz failure cause remains unproven. [Lane evidence](AppStore/cloud-onboarding-evidence/github-ci/run-38192282611-test-lanes.json). That tested app source matches Cloud-verified `084a470`. A subsequent low-impact GUS-UI-040 edit gives hero/About artwork media-appropriate fallback symbols and hides decorative artwork from accessibility; formatting/syntax pass, with hosted compilation pending. Saved Cloud, CI and Duo acceptance predates this final source edit. The remaining physical, minimum-OS, assistive, full Mac and release gates remain open.
+The preceding candidate passed **13/13 GitHub jobs** in run `38192282611` at exact commit `edd06e6636cd32b877622dbcb4ccb34524a1b3c1`: all six builds, five unit lanes, lint and docs. Each lane passed 288 Swift Testing cases in 49 suites and three separate XCTest measurements, including the strengthened native audio completion/replay and automatic-deletion/no-stream cases. The one-second 48 kHz PCM fixture retains the eight-second wait limit; the earlier 400 ms/8 kHz failure cause remains unproven. [Lane evidence](AppStore/cloud-onboarding-evidence/github-ci/run-38192282611-test-lanes.json). That tested app source matches Cloud-verified `084a470`. Current GUS-UI-040 source `64505d9dfd337c90f390c7c66503912eac252d3f` gives hero/About artwork media-appropriate fallback symbols and hides decorative artwork from accessibility. [Cloud Build 3](AppStore/cloud-onboarding-evidence/run-3/summary.json) accepted all four BUILD actions with zero errors and seven unchanged warnings. [GitHub run 38194318738, attempt 1](https://github.com/eslutz/A-Playa-Named-Gus/actions/runs/38194318738/attempts/1) passed 12/13 jobs, including all six builds; iPad recorded one native first-completion issue. [Failure proof](AppStore/cloud-onboarding-evidence/github-ci/run-38194318738-attempt-1-ipad-test-failure.json). [Attempt 2](https://github.com/eslutz/A-Playa-Named-Gus/actions/runs/38194318738/attempts/2) subsequently accepted **13/13 checks** after an unchanged-source iPad-only retry, carrying forward the other 12 successes. Every accepted unit lane passed 288 Swift Testing cases/49 suites plus three separate XCTest measurements and both native audio cases; iPad replay/deletion passed in 5.097/1.278 seconds. [Current lane proof](AppStore/cloud-onboarding-evidence/github-ci/run-38194318738-current-test-lanes.json). The first failure’s cause remains unresolved, and a reliable fixture/platform fix is not claimed. Build 2 retains its historical source/package-resolution evidence; sampled Duo runtime acceptance predates this edit. Internal-only TestFlight is authorized and the all-pipelines-pass prerequisite is met, while signed archive/upload/distribution acceptance remains pending. The remaining physical, minimum-OS, assistive, full Mac and release gates remain open.
+
+
+### Internal TestFlight release status
+
+Required current-source CI is accepted after the unchanged iPad retry; the internal release attempt is a separate unmet gate. Cloud Build 4 failed iOS export and Mac preparation for App Store Connect at `64505d9`; tvOS/visionOS `1.0.0 (4)` uploads are valid/ready, but all four distribution post-actions were skipped and `Gus Internal` has no builds with the tester still `NOT_INVITED`. The generic errors do not establish a cause. Signed distribution, account access and installation acceptance remain open. [Release report](AppStore/internal-testflight-release.md), [final proof](AppStore/cloud-onboarding-evidence/internal-testflight/run-4-summary.json).
+
+### Build warning repair — October 12, 2026
+
+Cloud Build 6 accepted all four required BUILD actions with zero errors and zero warnings after the six iOS/one Mac diagnostics were repaired. Readium loading now owns each publication graph until its one-time transfer to the main actor; normalized URL comparison replaces the deprecated operator. Declared Age Range interoperability is scoped to the SDK annotation gap with the existing main-actor request guard retained. Complete checking remains enabled. A test-only URL correction is published on `main`; its full regression matrix is pending. [Repair and proof](AppStore/build-warning-repairs.md).
+
+The internal release gate exposed default iOS/Watch PNG alpha channels after signed export. Independent Apple validation supplied concrete rejection codes `90396`/`90717`; opaque store-canvas repair and a platform-aware artwork assertion are published at `64b9de6`/`f354c7a`. The earlier failed assertion is retained, and corrected CI plus signed retry/group install eligibility remain pending. [Icon repair](AppStore/icon-upload-repair.md), [release status](AppStore/internal-testflight-release.md).
+
+
+Native Icon Composer source recreation is published at `f1a387f`. The existing Gus vector G/play mark remains editable, with default/dark/monochrome and round Watch previews captured. Four-platform Cloud Build 8 passed without issues. The preceding PNG repair CI passed 13/13; the separate native-source CI and subsequent signed release/group eligibility remain pending. [Source](AppStore/icon-composer-source.md).
+
+
+October 12 pipeline policy supersedes direct-main publication: main now requires PRs, all 13 GitHub checks, resolved conversations, and administrator enforcement. Cloud accepts only exact main and requires unit tests before internal distribution. The compile-only workflow is deleted. Native icon source passed Cloud Build 8 without issues; CI 38242041231 passed 12/13, with the existing audio end-notification failure on iPad retained as an unresolved diagnostic. No icon failure or successful tester access is inferred from that attempt.

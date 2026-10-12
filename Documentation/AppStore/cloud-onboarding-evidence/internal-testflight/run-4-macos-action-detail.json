@@ -1,0 +1,31 @@
+{
+  "data": {
+    "attributes": {
+      "actionType": "ARCHIVE",
+      "completionStatus": "FAILED",
+      "executionProgress": "COMPLETE",
+      "finishedDate": "2026-10-12T03:10:29.622Z",
+      "isRequiredToPass": true,
+      "issueCounts": null,
+      "name": "Archive - macOS",
+      "startedDate": "2026-10-12T02:59:52.331Z"
+    },
+    "id": "f3e960c7-1028-45f9-8f37-fad40a7035fc",
+    "relationships": {
+      "artifacts": {
+        "data": null
+      },
+      "buildRun": {
+        "data": null
+      },
+      "issues": {
+        "data": null
+      },
+      "testResults": {
+        "data": null
+      }
+    },
+    "type": "ciBuildActions"
+  },
+  "observedAt": "2026-10-12T03:12:28.609855Z"
+}

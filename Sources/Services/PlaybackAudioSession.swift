@@ -1,6 +1,14 @@
 import AVFoundation
 import Foundation
 
+#if DEBUG
+    struct PlaybackAudioSessionActivationResult: Sendable {
+        let succeeded: Bool
+        let errorDomain: String?
+        let errorCode: Int?
+    }
+#endif
+
 /// Serialize activation and teardown across audio/video owners. An asynchronous
 /// activation that finishes after dismissal must precede that owner's deactivation.
 @MainActor
@@ -25,7 +33,14 @@ final class PlaybackAudioSessionQueue {
 enum PlaybackAudioSession {
     private static let queue = PlaybackAudioSessionQueue()
 
+    #if DEBUG
+        private(set) static var lastActivationResult: PlaybackAudioSessionActivationResult?
+    #endif
+
     static func activate(video: Bool) async {
+        #if DEBUG
+            lastActivationResult = nil
+        #endif
         let operation = queue.enqueue {
             #if os(iOS) || os(tvOS) || os(visionOS) || os(watchOS)
                 let session = AVAudioSession.sharedInstance()
@@ -35,9 +50,23 @@ enum PlaybackAudioSession {
                     try? session.setCategory(.playback, mode: video ? .moviePlayback : .default)
                 #endif
                 if #available(iOS 27, tvOS 27, visionOS 27, watchOS 5, *) {
-                    await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
-                        session.activate(options: []) { _, _ in continuation.resume() }
-                    }
+                    #if DEBUG
+                        let result = await withCheckedContinuation { (continuation: CheckedContinuation<PlaybackAudioSessionActivationResult, Never>) in
+                            session.activate(options: []) { succeeded, error in
+                                let error = error as NSError?
+                                continuation.resume(returning: PlaybackAudioSessionActivationResult(
+                                    succeeded: succeeded,
+                                    errorDomain: error?.domain,
+                                    errorCode: error?.code
+                                ))
+                            }
+                        }
+                        await MainActor.run { lastActivationResult = result }
+                    #else
+                        await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
+                            session.activate(options: []) { _, _ in continuation.resume() }
+                        }
+                    #endif
                 } else {
                     try? session.setActive(true)
                 }

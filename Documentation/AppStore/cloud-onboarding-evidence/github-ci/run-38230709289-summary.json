@@ -1,0 +1,87 @@
+{
+  "status": "completed",
+  "conclusion": "success",
+  "headSha": "bd01514072a575cb5153f2729ab7c96ebbf573eb",
+  "runID": "38230709289",
+  "observedAt": "2026-10-12T09:58:52.337959+00:00",
+  "jobs": [
+    {
+      "databaseId": 114749194393,
+      "name": "Lint",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "databaseId": 114749194555,
+      "name": "Build tvOS",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "databaseId": 114749194590,
+      "name": "Test iPhone",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "databaseId": 114749194622,
+      "name": "Test macOS",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "databaseId": 114749194645,
+      "name": "Build iPadOS",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "databaseId": 114749194676,
+      "name": "Test iPad",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "databaseId": 114749194707,
+      "name": "Docs and Config",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "databaseId": 114749194713,
+      "name": "Build macOS",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "databaseId": 114749194727,
+      "name": "Test tvOS",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "databaseId": 114749194795,
+      "name": "Build visionOS",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "databaseId": 114749194833,
+      "name": "Test visionOS",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "databaseId": 114749194920,
+      "name": "Build watchOS",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "databaseId": 114749195019,
+      "name": "Build iOS",
+      "status": "completed",
+      "conclusion": "success"
+    }
+  ]
+}

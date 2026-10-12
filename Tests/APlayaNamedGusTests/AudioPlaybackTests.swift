@@ -221,8 +221,8 @@ extension PlaybackIntegrationTests {
     @MainActor
     @Suite("Audio queue replay")
     struct AudioReplayTests {
-        @Test("Play after natural queue completion restarts playback and tracks the next completion")
-        func replaysAfterNaturalCompletion() async throws {
+        @Test("Play after natural queue completion restarts playback and tracks the next completion", arguments: [false, true])
+        func replaysAfterNaturalCompletion(muted: Bool) async throws {
             let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
             defer { try? FileManager.default.removeItem(at: directory) }
             let url = try silentAudio(in: directory)
@@ -237,15 +237,23 @@ extension PlaybackIntegrationTests {
                     stereoFallbackReason: nil
                 )
             }
-            let player = AVPlayer()
-            player.isMuted = true
-            let store = try AudioPlayerStore(session: session(provider: provider), tracks: [track], playerFactory: { player })
+            var createdPlayer: AVPlayer?
+            // Match production: construct the player inside its factory, after
+            // AudioPlayerStore has awaited audio-session activation. Silence is
+            // in the PCM fixture, so both renderer modes remain covered.
+            let store = try AudioPlayerStore(session: session(provider: provider), tracks: [track], playerFactory: {
+                let player = AVPlayer()
+                player.isMuted = muted
+                createdPlayer = player
+                return player
+            })
             defer { store.teardown() }
 
             let notifications = AudioReplayNotificationProbe()
             let startupStarted = ContinuousClock.now
             await store.start()
             let startupElapsed = ContinuousClock.now - startupStarted
+            let player = try #require(createdPlayer)
             let finishedItem = try #require(player.currentItem)
             try #require(await waitUntil {
                 !store.isPlaying && store.state == .loaded && notifications.snapshot(for: ObjectIdentifier(finishedItem)).endCount >= 1
@@ -255,13 +263,17 @@ extension PlaybackIntegrationTests {
             #expect(notifications.snapshot(for: ObjectIdentifier(finishedItem)).failureCount == 0)
 
             store.playPause()
-            try #require(await waitUntil { player.currentItem !== finishedItem && store.isPlaying }, timeoutComment(store: store, player: player, notifications: notifications, startupElapsed: startupElapsed))
-            let replayedItem = try #require(player.currentItem)
+            try #require(await waitUntil {
+                createdPlayer !== player && createdPlayer?.currentItem !== finishedItem && store.isPlaying
+            }, timeoutComment(store: store, player: createdPlayer ?? player, notifications: notifications, startupElapsed: startupElapsed))
+            let replayedPlayer = try #require(createdPlayer)
+            let replayedItem = try #require(replayedPlayer.currentItem)
             #expect(provider.audioResolutionCallCount == 2)
-            // The second completion proves replay reinstalls its end observer.
+            // The second completion proves replay reinstalls its end observer
+            // on the newly constructed player used by production after completion.
             try #require(await waitUntil {
                 !store.isPlaying && store.state == .loaded && notifications.snapshot(for: ObjectIdentifier(replayedItem)).endCount >= 1
-            }, timeoutComment(store: store, player: player, notifications: notifications, startupElapsed: startupElapsed))
+            }, timeoutComment(store: store, player: replayedPlayer, notifications: notifications, startupElapsed: startupElapsed))
             #expect(notifications.snapshot(for: ObjectIdentifier(replayedItem)).endCount == 1)
             #expect(notifications.snapshot(for: ObjectIdentifier(replayedItem)).failureCount == 0)
         }
@@ -313,6 +325,53 @@ extension PlaybackIntegrationTests {
             #expect(provider.audioResolutionCallCount == 0)
         }
 
+        #if NATIVE_AUDIO_DIAGNOSTIC
+            @Test("Native unmuted completion with asynchronous activation, without the store")
+            func nativeAsyncCompletionBaseline() async throws {
+                try await nativeCompletionBaseline(legacyActivation: false)
+            }
+
+            @Test("Native unmuted completion with synchronous activation, without the store")
+            func nativeLegacyCompletionBaseline() async throws {
+                try await nativeCompletionBaseline(legacyActivation: true)
+            }
+
+            private func nativeCompletionBaseline(legacyActivation: Bool) async throws {
+                let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+                defer { try? FileManager.default.removeItem(at: directory) }
+                let url = try silentAudio(in: directory)
+                let notifications = AudioReplayNotificationProbe()
+                if legacyActivation {
+                    #if os(iOS) || os(tvOS) || os(visionOS)
+                        try await Task.detached {
+                            let session = AVAudioSession.sharedInstance()
+                            try session.setCategory(.playback, mode: .default)
+                            try session.setActive(true)
+                        }.value
+                    #endif
+                } else {
+                    await PlaybackAudioSession.activate(video: false)
+                }
+                defer { PlaybackAudioSession.deactivate() }
+                let item = AVPlayerItem(url: url)
+                let player = AVPlayer()
+                player.isMuted = false
+                player.replaceCurrentItem(with: item)
+                defer {
+                    player.pause()
+                    player.replaceCurrentItem(with: nil)
+                }
+                player.rate = 1
+                let finished = try await waitUntil {
+                    notifications.snapshot(for: ObjectIdentifier(item)).endCount >= 1
+                }
+                let native = notifications.snapshot(for: ObjectIdentifier(item))
+                try #require(finished, Comment(rawValue: "Native baseline: legacyActivation=\(legacyActivation), status=\(item.status.rawValue), timeControl=\(player.timeControlStatus.rawValue), rate=\(player.rate), time=\(player.currentTime().seconds), duration=\(item.duration.seconds), nativeEndCount=\(native.endCount), nativeFailureCount=\(native.failureCount)."))
+                #expect(native.endCount == 1)
+                #expect(native.failureCount == 0)
+            }
+        #endif
+
         private var track: MediaItem {
             MediaItem(id: "replay", name: "Replay", runTimeTicks: PlaybackTime.ticksPerSecond, type: .audio)
         }
@@ -332,7 +391,12 @@ extension PlaybackIntegrationTests {
             let item = player.currentItem
             let itemStatus = item?.status.rawValue ?? -1
             let native = notifications.snapshot(for: item.map(ObjectIdentifier.init))
-            return Comment(rawValue: "Audio wait expired: state=\(String(describing: store.state)), isPlaying=\(store.isPlaying), itemStatus=\(itemStatus), timeControlStatus=\(player.timeControlStatus.rawValue), rate=\(player.rate), itemTime=\(player.currentTime().seconds), itemDuration=\(item?.duration.seconds ?? .nan), actionAtItemEnd=\(player.actionAtItemEnd.rawValue), nativeEndCount=\(native.endCount), nativeFailureCount=\(native.failureCount), failedEndErrorDomain=\(native.errorDomain ?? "none"), failedEndErrorCode=\(native.errorCode.map(String.init) ?? "none"), startupElapsed=\(startupElapsed).")
+            #if DEBUG
+                let activation = String(describing: PlaybackAudioSession.lastActivationResult)
+            #else
+                let activation = "unavailable"
+            #endif
+            return Comment(rawValue: "Audio wait expired: state=\(String(describing: store.state)), isPlaying=\(store.isPlaying), muted=\(player.isMuted), itemStatus=\(itemStatus), timeControlStatus=\(player.timeControlStatus.rawValue), rate=\(player.rate), itemTime=\(player.currentTime().seconds), itemDuration=\(item?.duration.seconds ?? .nan), actionAtItemEnd=\(player.actionAtItemEnd.rawValue), nativeEndCount=\(native.endCount), nativeFailureCount=\(native.failureCount), failedEndErrorDomain=\(native.errorDomain ?? "none"), failedEndErrorCode=\(native.errorCode.map(String.init) ?? "none"), activation=\(activation), startupElapsed=\(startupElapsed).")
         }
 
         private func waitUntil(_ condition: () -> Bool) async throws -> Bool {

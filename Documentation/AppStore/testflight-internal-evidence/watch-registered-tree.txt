@@ -1,0 +1,621 @@
+Browser tab: 7, Title: "Certificates, Identifiers & Profiles - Apple Developer", URL: "https://developer.apple.com/account/resources/identifiers/bundleId/edit/X7N8FKWCC6".
+0 AXWebArea Certificates, Identifiers & Profiles - Apple Developer, URL: developer.apple.com/account/resources/identifiers/bundleId/edit/X7N8FKWCC6
+	1 container
+		2 link Description: Apple Developer, Value: developer.apple.com/
+		3 container
+			4 text Eric Slutz  Eric Slutz  - QS3GC3CT43
+		5 heading Certificates, Identifiers & Profiles, Value: 1
+			6 text Certificates, Identifiers & Profiles
+		12 container
+			13 link Description:  All Identifiers, Value: developer.apple.com/account/resources/identifiers/list
+			14 container
+				15 heading Edit your App ID Configuration, Value: 2
+					16 text Edit your App ID Configuration
+				17 button Remove, ID: action-remove
+				18 button (disabled) Save, ID: action-save
+			19 container
+				20 text Platform iOS, iPadOS , macOS , tvOS, watchOS, visionOS App ID Prefix QS3GC3CT43 (Team ID)
+			21 container
+				22 text Description
+				23 text field (settable) Description, Value: Gus Watch, ID: description
+				24 text You cannot use special characters such as @, &, *, " Bundle ID
+				25 text dev.ericslutz.gus.watchkitapp (explicit)
+			26 text Capabilities
+			27 text App Services
+			28 text Capability Requests
+			29 button Show search
+			30 content list
+				31 container
+					32 text ENABLE
+					33 button NAME
+					34 text NOTES
+				35 container
+					36 checkbox (settable, integer) Description: 5G Network Slicing, Value: 0, ID: NETWORK_SLICING
+					37 text 5G Network Slicing
+					38 image NETWORK_SLICING
+				39 container
+					40 checkbox (settable, integer) Description: Access Wi-Fi Information, Value: 0, ID: ACCESS_WIFI_INFORMATION
+					41 text Access Wi-Fi Information
+					42 image ACCESS_WIFI_INFORMATION
+				43 container
+					44 checkbox (settable, integer) Description: Accessibility Merchant API Control, Value: 0, ID: MERCHANT_ACCESSIBILITY_CONTROL
+					45 text Accessibility Merchant API Control
+					46 image MERCHANT_ACCESSIBILITY_CONTROL
+				47 container
+					48 checkbox (settable, integer) Description: Accessory Data Provider, Value: 0, ID: ACCESSORY_DATA_PROVIDER
+					49 text Accessory Data Provider
+					50 image ACCESSORY_DATA_PROVIDER
+				51 container
+					52 checkbox (settable, integer) Description: Accessory Setup Extension, Value: 0, ID: ACCESSORY_SETUP_KIT
+					53 text Accessory Setup Extension
+					54 image ACCESSORY_SETUP_KIT
+				55 container
+					56 checkbox (settable, integer) Description: Accessory Transport Extension, Value: 0, ID: ACCESSORY_TRANSPORT_EXTENSION
+					57 text Accessory Transport Extension
+					58 image ACCESSORY_TRANSPORT_EXTENSION
+				59 container
+					60 checkbox (settable, integer) Description: Accessory Transport Security, Value: 0, ID: ACCESSORY_TRANSPORT_SECURITY
+					61 text Accessory Transport Security
+					62 image ACCESSORY_TRANSPORT_SECURITY
+				63 container
+					64 checkbox Description: Account Creation Requires Phone Number, Value: 0
+					65 text Account Creation Requires Phone Number
+					66 image ACCOUNT_CREATION_PHONE_NUMBER
+				67 container
+					68 checkbox (settable, integer) Description: App Attest, Value: 0, ID: APP_ATTEST
+					69 text App Attest
+					70 image APP_ATTEST
+				71 container
+					72 checkbox (settable, integer) Description: App Attest Opt-In, Value: 0, ID: APP_ATTEST_OPT_IN
+					73 text App Attest Opt-In
+					74 image APP_ATTEST_OPT_IN
+				75 container
+					76 checkbox (settable, integer) Description: App Groups, Value: 0, ID: APP_GROUPS
+					77 text App Groups
+					78 image APP_GROUPS
+					79 button (disabled) Configure
+				80 container
+					81 checkbox (settable, integer) Description: App Identifier for OS Data Transfer, Value: 0, ID: DATA_CONTAINER_ACCESS
+					82 text App Identifier for OS Data Transfer
+					83 image DATA_CONTAINER_ACCESS
+					84 button (disabled) Configure
+				85 container
+					86 checkbox (settable, integer) Description: Apple Pay Payment Processing, Value: 0, ID: APPLE_PAY
+					87 text Apple Pay Payment Processing
+					88 image APPLE_PAY
+					89 button (disabled) Configure
+				90 container
+					91 checkbox (settable, integer) Description: Associated Domains, Value: 0, ID: ASSOCIATED_DOMAINS
+					92 text Associated Domains
+					93 image ASSOCIATED_DOMAINS
+				94 container
+					95 checkbox (settable, integer) Description: AutoFill Credential Provider, Value: 0, ID: AUTOFILL_CREDENTIAL_PROVIDER
+					96 text AutoFill Credential Provider
+					97 image AUTOFILL_CREDENTIAL_PROVIDER
+				98 container
+					99 checkbox (settable, integer) Description: Background GPU Access, Value: 0, ID: BACKGROUND_GPU_ACCESS
+					100 text Background GPU Access
+					101 image BACKGROUND_GPU_ACCESS
+				102 container
+					103 checkbox (settable, integer) Description: Background Inference, Value: 0, ID: BACKGROUND_PROCESSING_INFERENCE
+					104 text Background Inference
+					105 image BACKGROUND_PROCESSING_INFERENCE
+				106 container
+					107 checkbox (settable, integer) Description: Carrier-Constrained Network Category and Optimized, Value: 0, ID: CARRIER_CONSTRAINED_NETWORK_CAT_OPT
+					108 text Carrier-Constrained Network Category and Optimized
+					109 image CARRIER_CONSTRAINED_NETWORK_CAT_OPT
+				110 container
+					111 checkbox (settable, integer) Description: Claim USB Accessory, Value: 0, ID: ACCESSORY_ACCESS_USB
+					112 text Claim USB Accessory
+					113 image ACCESSORY_ACCESS_USB
+				114 container
+					115 checkbox (settable, integer) Description: ClassKit, Value: 0, ID: CLASSKIT
+					116 text ClassKit
+					117 image CLASSKIT
+				118 container
+					119 checkbox (settable, integer) Description: Communication Notifications, Value: 0, ID: USERNOTIFICATIONS_COMMUNICATION
+					120 text Communication Notifications
+					121 image USERNOTIFICATIONS_COMMUNICATION
+				122 container
+					123 checkbox (settable, integer) Description: Critical Messaging, Value: 0, ID: CRITICAL_MESSAGING
+					124 text Critical Messaging
+					125 image CRITICAL_MESSAGING
+				126 container
+					127 checkbox (settable, integer) Description: Cross-architecture Compatibility Framework, Value: 0, ID: CROSS_ARCHITECTURE_COMPATIBILITY_FRAMEWORK
+					128 text Cross-architecture Compatibility Framework
+					129 image CROSS_ARCHITECTURE_COMPATIBILITY_FRAMEWORK
+				130 container
+					131 checkbox (settable, integer) Description: Custom Network Protocol, Value: 0, ID: NETWORK_CUSTOM_PROTOCOL
+					132 text Custom Network Protocol
+					133 image NETWORK_CUSTOM_PROTOCOL
+				134 container
+					135 checkbox (settable, integer) Description: Data Protection, Value: 0, ID: DATA_PROTECTION
+					136 text Data Protection
+					137 image DATA_PROTECTION
+					138 content list
+						139 radio button (disabled, settable, integer) Description: Complete Protection, Value: 0, ID: COMPLETE_PROTECTION
+						140 radio button (disabled, settable, integer) Description: Protected Unless Open, Value: 0, ID: PROTECTED_UNLESS_OPEN
+						141 radio button (disabled, settable, integer) Description: Protected Until First User Authentication, Value: 0, ID: PROTECTED_UNTIL_FIRST_USER_AUTH
+				142 container
+					143 checkbox (settable, integer) Description: Declared Age Range, Value: 0, ID: DECLARED_AGE_RANGE
+					144 text Declared Age Range
+					145 image DECLARED_AGE_RANGE
+				146 container
+					147 checkbox (settable, integer) Description: Default Calling App, Value: 0, ID: DEFAULT_CALLING_APP
+					148 text Default Calling App
+					149 image DEFAULT_CALLING_APP
+				150 container
+					151 checkbox (settable, integer) Description: Default Carrier Messaging App, Value: 0, ID: DEFAULT_CARRIER_MESSAGING_APP
+					152 text Default Carrier Messaging App
+					153 image DEFAULT_CARRIER_MESSAGING_APP
+				154 container
+					155 checkbox (settable, integer) Description: Default Dialer App, Value: 0, ID: DIALING_APP
+					156 text Default Dialer App
+					157 image DIALING_APP
+				158 container
+					159 checkbox (settable, integer) Description: Default Messaging App, Value: 0, ID: DEFAULT_MESSAGING_APP
+					160 text Default Messaging App
+					161 image DEFAULT_MESSAGING_APP
+				162 container
+					163 checkbox (settable, integer) Description: Default Navigation App, Value: 0, ID: DEFAULT_NAVIGATION_APP
+					164 text Default Navigation App
+					165 image DEFAULT_NAVIGATION_APP
+				166 container
+					167 checkbox (settable, integer) Description: Default Translation App, Value: 0, ID: DEFAULT_TRANSLATION_APP
+					168 text Default Translation App
+					169 image DEFAULT_TRANSLATION_APP
+				170 container
+					171 checkbox (settable, integer) Description: Device Discovery Pairing Access, Value: 0, ID: DEVICE_DISCOVERY_PAIRING
+					172 text Device Discovery Pairing Access
+					173 image DEVICE_DISCOVERY_PAIRING
+				174 container
+					175 checkbox Description: Digital Credentials API - Mobile Document Provider, Value: 0
+					176 text Digital Credentials API - Mobile Document Provider
+					177 image MOBILE_DOCUMENT_PROVIDER
+				178 container
+					179 checkbox (settable, integer) Description: DriverKit (development), Value: 0, ID: DRIVERKIT_PUBLIC
+					180 text DriverKit (development)
+					181 image DRIVERKIT_PUBLIC
+					182 container notes
+						183 text Development only.
+						184 link Description: Learn more , Value: developer.apple.com/system-extensions/
+						185 container
+							186 text Provisioning support  required .
+				187 container
+					188 checkbox (settable, integer) Description: DriverKit Allow Any UserClient (development), Value: 0, ID: DRIVERKIT_ANYUSERCLIENTACCESS_PUB
+					189 text DriverKit Allow Any UserClient (development)
+					190 image DRIVERKIT_ANYUSERCLIENTACCESS_PUB
+					191 container notes
+						192 text Development only.
+						193 link Description: Learn more , Value: developer.apple.com/documentation/bundleresources/entitlements/com.apple.developer.driverkit.allow-any-userclient-access
+						194 container
+							195 text Provisioning support  required .
+				196 container
+					197 checkbox (settable, integer) Description: DriverKit Allow Third Party UserClients, Value: 0, ID: DRIVERKIT_ALLOWTHIRDPARTY_USERCLIENTS
+					198 text DriverKit Allow Third Party UserClients
+					199 image DRIVERKIT_ALLOWTHIRDPARTY_USERCLIENTS
+				200 container
+					201 checkbox (settable, integer) Description: DriverKit Communicates with Drivers, Value: 0, ID: DRIVERKIT_COMMUNICATESWITHDRIVERS
+					202 text DriverKit Communicates with Drivers
+					203 image DRIVERKIT_COMMUNICATESWITHDRIVERS
+				204 container
+					205 checkbox (settable, integer) Description: DriverKit Family Audio (development), Value: 0, ID: DRIVERKIT_FAMILY_AUDIO_PUB
+					206 text DriverKit Family Audio (development)
+					207 image DRIVERKIT_FAMILY_AUDIO_PUB
+					208 container notes
+						209 text Development only.
+						210 link Description: Learn more , Value: developer.apple.com/documentation/audiodriverkit
+						211 container
+							212 text Provisioning support  required .
+				213 container
+					214 checkbox (settable, integer) Description: DriverKit Family HID Device (development), Value: 0, ID: DRIVERKIT_FAMILY_HIDDEVICE_PUB
+					215 text DriverKit Family HID Device (development)
+					216 image DRIVERKIT_FAMILY_HIDDEVICE_PUB
+					217 container notes
+						218 text Development only.
+						219 link Description: Learn more , Value: developer.apple.com/system-extensions/
+						220 container
+							221 text Provisioning support  required .
+				222 container
+					223 checkbox (settable, integer) Description: DriverKit Family HID EventService (development), Value: 0, ID: DRIVERKIT_FAMILY_HIDEVENTSERVICE_PUB
+					224 text DriverKit Family HID EventService (development)
+					225 image DRIVERKIT_FAMILY_HIDEVENTSERVICE_PUB
+					226 container notes
+						227 text Development only.
+						228 link Description: Learn more , Value: developer.apple.com/system-extensions/
+						229 container
+							230 text Provisioning support  required .
+				231 container
+					232 checkbox (settable, integer) Description: DriverKit Family MIDI (development), Value: 0, ID: DRIVERKIT_FAMILY_MIDI_DEV
+					233 text DriverKit Family MIDI (development)
+					234 image DRIVERKIT_FAMILY_MIDI_DEV
+					235 container notes
+						236 text Development only.
+						237 link Description: Learn more , Value: developer.apple.com/documentation/driverkit/
+						238 container
+							239 text Provisioning support  required .
+				240 container
+					241 checkbox (settable, integer) Description: DriverKit Family Networking (development), Value: 0, ID: DRIVERKIT_FAMILY_NETWORKING_PUB
+					242 text DriverKit Family Networking (development)
+					243 image DRIVERKIT_FAMILY_NETWORKING_PUB
+					244 container notes
+						245 text Development only.
+						246 link Description: Learn more , Value: developer.apple.com/system-extensions/
+						247 container
+							248 text Provisioning support  required .
+				249 container
+					250 checkbox (settable, integer) Description: DriverKit Family SCSIController (development), Value: 0, ID: DRIVERKIT_FAMILY_SCSICONTROLLER_PUB
+					251 text DriverKit Family SCSIController (development)
+					252 image DRIVERKIT_FAMILY_SCSICONTROLLER_PUB
+					253 container notes
+						254 text Development only.
+						255 link Description: Learn more , Value: developer.apple.com/documentation/scsicontrollerdriverkit/
+						256 container
+							257 text Provisioning support  required .
+				258 container
+					259 checkbox (settable, integer) Description: DriverKit Family Serial (development), Value: 0, ID: DRIVERKIT_FAMILY_SERIAL_PUB
+					260 text DriverKit Family Serial (development)
+					261 image DRIVERKIT_FAMILY_SERIAL_PUB
+					262 container notes
+						263 text Development only.
+						264 link Description: Learn more , Value: developer.apple.com/system-extensions/
+						265 container
+							266 text Provisioning support  required .
+				267 container
+					268 checkbox (settable, integer) DriverKit PCI (development), Value: 0, ID: DRIVERKIT_PCIPRIMARYMATCH_PUB
+					269 text DriverKit PCI (development)
+					270 image DRIVERKIT_PCIPRIMARYMATCH_PUB
+				271 container
+					272 checkbox (settable, integer) Description: DriverKit Transport HID (development), Value: 0, ID: DRIVERKIT_TRANSPORT_HID_PUB
+					273 text DriverKit Transport HID (development)
+					274 image DRIVERKIT_TRANSPORT_HID_PUB
+					275 container notes
+						276 text Development only.
+						277 link Description: Learn more , Value: developer.apple.com/system-extensions/
+						278 container
+							279 text Provisioning support  required .
+				280 container
+					281 checkbox (settable, integer) Description: DriverKit USB Transport (development), Value: 0, ID: DRIVERKIT_USBTRANSPORT_PUB
+					282 text DriverKit USB Transport (development)
+					283 image DRIVERKIT_USBTRANSPORT_PUB
+					284 container notes
+						285 text Development only.
+						286 link Description: Learn more , Value: developer.apple.com/system-extensions/
+						287 container
+							288 text Provisioning support  required .
+				289 container
+					290 checkbox (settable, integer) Description: EnergyKit, Value: 0, ID: ENERGYKIT
+					291 text EnergyKit
+					292 image ENERGYKIT
+				293 container
+					294 checkbox (settable, integer) Description: EnergyKit LoadEvents, Value: 0, ID: ENERGY_KIT_LOAD_EVENTS
+					295 text EnergyKit LoadEvents
+					296 image ENERGY_KIT_LOAD_EVENTS
+				297 container
+					298 checkbox (settable, integer) Description: Enhanced Security, Value: 0, ID: ENHANCED_SECURITY
+					299 text Enhanced Security
+					300 image ENHANCED_SECURITY
+				301 container
+					302 checkbox (settable, integer) Description: Extended Virtual Addressing, Value: 0, ID: EXTENDED_VIRTUAL_ADDRESSING
+					303 text Extended Virtual Addressing
+					304 image EXTENDED_VIRTUAL_ADDRESSING
+				305 container
+					306 checkbox (settable, integer) Description: Family Controls (Development), Value: 0, ID: FAMILY_CONTROLS
+					307 text Family Controls (Development)
+					308 image FAMILY_CONTROLS
+					309 text Development only.
+				310 container
+					311 checkbox (settable, integer) Description: Family Controls App and Website Usage, Value: 0, ID: FAMILY_CONTROLS_WEBSITE_USAGE
+					312 text Family Controls App and Website Usage
+					313 image FAMILY_CONTROLS_WEBSITE_USAGE
+				314 container
+					315 checkbox (settable, integer) Description: FileProvider Testing Mode, Value: 0, ID: FILEPROVIDER_TESTINGMODE
+					316 text FileProvider Testing Mode
+					317 image FILEPROVIDER_TESTINGMODE
+				318 container
+					319 checkbox (settable, integer) Description: FinanceKit Transaction Picker UI, Value: 0, ID: FINANCEKIT_TRANSACTION_PICKER
+					320 text FinanceKit Transaction Picker UI
+					321 image FINANCEKIT_TRANSACTION_PICKER
+				322 container
+					323 checkbox (settable, integer) Description: Fonts, Value: 0, ID: FONT_INSTALLATION
+					324 text Fonts
+					325 image FONT_INSTALLATION
+				326 container
+					327 checkbox (settable, integer) Description: Foveated Streaming Session, Value: 0, ID: FOVEATED_STREAMING_SESSION
+					328 text Foveated Streaming Session
+					329 image FOVEATED_STREAMING_SESSION
+				330 container
+					331 checkbox (settable, integer) Description: FSKit Module, Value: 0, ID: FSKIT_MODULE
+					332 text FSKit Module
+					333 image FSKIT_MODULE
+				334 container
+					335 checkbox (settable, integer) Description: FSKit Mounter, Value: 0, ID: FSKIT_MOUNTER
+					336 text FSKit Mounter
+					337 image FSKIT_MOUNTER
+				338 container
+					339 checkbox (settable, integer) Description: Game Center, Value: 0, ID: GAME_CENTER
+					340 text Game Center
+					341 image GAME_CENTER
+				342 container
+					343 checkbox (settable, integer) Description: Group Activities, Value: 0, ID: GROUP_ACTIVITIES
+					344 text Group Activities
+					345 image GROUP_ACTIVITIES
+				346 container
+					347 checkbox (settable, integer) Description: Head Pose, Value: 0, ID: COREMOTION_HEAD_POSE
+					348 text Head Pose
+					349 image COREMOTION_HEAD_POSE
+				350 container
+					351 checkbox (settable, integer) Description: HealthKit, Value: 0, ID: HEALTHKIT
+					352 text HealthKit
+					353 image HEALTHKIT
+				354 container
+					355 checkbox (settable, integer) Description: HealthKit Estimate Recalibration, Value: 0, ID: HEALTHKIT_RECALIBRATE_ESTIMATES
+					356 text HealthKit Estimate Recalibration
+					357 image HEALTHKIT_RECALIBRATE_ESTIMATES
+				358 container
+					359 checkbox (settable, integer) Description: HLS Interstitial Previews, Value: 0, ID: HLS_INTERSTITIAL_PREVIEW
+					360 text HLS Interstitial Previews
+					361 image HLS_INTERSTITIAL_PREVIEW
+				362 container
+					363 checkbox (settable, integer) Description: HomeKit, Value: 0, ID: HOMEKIT
+					364 text HomeKit
+					365 image HOMEKIT
+				366 container
+					367 checkbox (settable, integer) Description: Hotspot, Value: 0, ID: HOT_SPOT
+					368 text Hotspot
+					369 image HOT_SPOT
+				370 container
+					371 checkbox (settable, integer) Description: iCloud, Value: 0, ID: ICLOUD
+					372 text iCloud
+					373 image ICLOUD
+					374 content list
+						375 radio button (disabled, settable, integer) Description: Include CloudKit support (requires Xcode 6), Value: 0, ID: XCODE_6
+						376 radio button (disabled, settable, integer) Description: Compatible with Xcode 5, Value: 0, ID: XCODE_5
+					377 button (disabled) Configure
+				378 container
+					379 checkbox (settable, integer) Description: iCloud Extended Share Access, Value: 0, ID: ICLOUD_EXTENDED_SHARE_ACCESS
+					380 text iCloud Extended Share Access
+					381 image ICLOUD_EXTENDED_SHARE_ACCESS
+				382 container
+					383 checkbox (settable, integer) Description: ID Verifier - Display Only, Value: 0, ID: TAP_TO_DISPLAY_ID
+					384 text ID Verifier - Display Only
+					385 image TAP_TO_DISPLAY_ID
+				386 container
+					387 checkbox (disabled, settable, integer) Description: In-App Purchase, Value: 1, ID: IN_APP_PURCHASE
+					388 text In-App Purchase
+					389 image IN_APP_PURCHASE
+				390 container
+					391 checkbox (settable, integer) Description: Increased Debugging Memory Limit, Value: 0, ID: INCREASED_MEMORY_LIMIT_DEBUGGING
+					392 text Increased Debugging Memory Limit
+					393 image INCREASED_MEMORY_LIMIT_DEBUGGING
+				394 container
+					395 checkbox (settable, integer) Description: Increased Memory Limit, Value: 0, ID: INCREASED_MEMORY_LIMIT
+					396 text Increased Memory Limit
+					397 image INCREASED_MEMORY_LIMIT
+				398 container
+					399 checkbox (settable, integer) Description: Inter-App Audio, Value: 0, ID: INTER_APP_AUDIO
+					400 text Inter-App Audio
+					401 image INTER_APP_AUDIO
+				402 container
+					403 checkbox (settable, integer) Description: Journaling Suggestions, Value: 0, ID: JOURNALING_SUGGESTIONS
+					404 text Journaling Suggestions
+					405 image JOURNALING_SUGGESTIONS
+				406 container
+					407 checkbox (settable, integer) Description: Live Assistance, Value: 0, ID: LIVE_COMMUNICATION_KIT_FRAMEWORK
+					408 text Live Assistance
+					409 image LIVE_COMMUNICATION_KIT_FRAMEWORK
+				410 container
+					411 checkbox (settable, integer) Description: Location Push Service Extension, Value: 0, ID: LOCATION_PUSH_SERVICE_EXT
+					412 text Location Push Service Extension
+					413 image LOCATION_PUSH_SERVICE_EXT
+				414 container
+					415 checkbox (settable, integer) Description: Low Latency HLS, Value: 0, ID: COREMEDIA_HLS_LOW_LATENCY
+					416 text Low Latency HLS
+					417 image COREMEDIA_HLS_LOW_LATENCY
+				418 container
+					419 checkbox (settable, integer) Description: Low-Latency Streaming, Value: 0, ID: LOW_LATENCY_STREAMING
+					420 text Low-Latency Streaming
+					421 image LOW_LATENCY_STREAMING
+				422 container
+					423 checkbox (settable, integer) Description: Manage Thread Network Credentials (development), Value: 0, ID: DEV_MANAGE_THREAD_NETWORK_CREDENTIALS
+					424 text Manage Thread Network Credentials (development)
+					425 image DEV_MANAGE_THREAD_NETWORK_CREDENTIALS
+					426 container notes
+						427 text Development only.
+						428 link Description: Learn more , Value: developer.apple.com/documentation/threadnetwork/managing-thread-network-credentials/
+						429 container
+							430 text Provisioning support  required .
+				431 container
+					432 checkbox (settable, integer) Description: Managed App Installation UI, Value: 0, ID: MANAGED_APP_INSTALLATION_UI
+					433 text Managed App Installation UI
+					434 image MANAGED_APP_INSTALLATION_UI
+				435 container
+					436 checkbox (settable, integer) Description: Maps, Value: 0, ID: MAPS
+					437 text Maps
+					438 image MAPS
+				439 container
+					440 checkbox (settable, integer) Description: Matter Allow Setup Payload, Value: 0, ID: MATTER_ALLOW_SETUP_PAYLOAD
+					441 text Matter Allow Setup Payload
+					442 image MATTER_ALLOW_SETUP_PAYLOAD
+				443 container
+					444 checkbox (settable, integer) Description: MDM Managed Associated Domains, Value: 0, ID: MDM_MANAGED_ASSOCIATED_DOMAINS
+					445 text MDM Managed Associated Domains
+					446 image MDM_MANAGED_ASSOCIATED_DOMAINS
+				447 container
+					448 checkbox (settable, integer) Description: Media Device Discovery, Value: 0, ID: MEDIA_DEVICE_DISCOVERY
+					449 text Media Device Discovery
+					450 image MEDIA_DEVICE_DISCOVERY
+				451 container
+					452 checkbox (settable, integer) Description: Media Extension Format Reader, Value: 0, ID: MEDIAEXTENSION_FORMATREADER
+					453 text Media Extension Format Reader
+					454 image MEDIAEXTENSION_FORMATREADER
+				455 container
+					456 checkbox (settable, integer) Description: Media Extension Video Decoder, Value: 0, ID: MEDIAEXTENSION_VIDEODECODER
+					457 text Media Extension Video Decoder
+					458 image MEDIAEXTENSION_VIDEODECODER
+				459 container
+					460 checkbox (settable, integer) Description: Media Sharing Extension, Value: 0, ID: MEDIA_SHARING_EXTENSION
+					461 text Media Sharing Extension
+					462 image MEDIA_SHARING_EXTENSION
+					463 button (disabled) Configure
+				464 container
+					465 checkbox (settable, integer) Description: Messages Collaboration, Value: 0, ID: MESSAGES_COLLABORATION
+					466 text Messages Collaboration
+					467 image MESSAGES_COLLABORATION
+				468 container
+					469 checkbox (settable, integer) Description: Multipath, Value: 0, ID: MULTIPATH
+					470 text Multipath
+					471 image MULTIPATH
+				472 container
+					473 checkbox (settable, integer) Description: Multitasking Camera Access, Value: 0, ID: IPAD_CAMERA_MULTITASKING
+					474 text Multitasking Camera Access
+					475 image IPAD_CAMERA_MULTITASKING
+				476 container
+					477 checkbox (settable, integer) Description: Nearby Interaction DL-TDoA (development), Value: 0, ID: NEARBY_INTERACTION_DL_TDOA
+					478 text Nearby Interaction DL-TDoA (development)
+					479 image NEARBY_INTERACTION_DL_TDOA
+				480 container
+					481 checkbox (settable, integer) Description: Network Extensions, Value: 0, ID: NETWORK_EXTENSIONS
+					482 text Network Extensions
+					483 image NETWORK_EXTENSIONS
+				484 container
+					485 checkbox (settable, integer) Description: Network Topology Observation, Value: 0, ID: NETWORK_TOPOLOGY_OBSERVATION
+					486 text Network Topology Observation
+					487 image NETWORK_TOPOLOGY_OBSERVATION
+				488 container
+					489 checkbox (settable, integer) Description: NFC Tag Reading, Value: 0, ID: NFC_TAG_READING
+					490 text NFC Tag Reading
+					491 image NFC_TAG_READING
+				492 container
+					493 checkbox (settable, integer) Description: On Demand Install Capable for App Clip Extensions, Value: 0, ID: ONDEMANDINSTALL_EXTENSIONS
+					494 text On Demand Install Capable for App Clip Extensions
+					495 image ONDEMANDINSTALL_EXTENSIONS
+				496 container
+					497 checkbox (settable, integer) Description: Personal VPN, Value: 0, ID: PERSONAL_VPN
+					498 text Personal VPN
+					499 image PERSONAL_VPN
+				500 container
+					501 checkbox (settable, integer) Description: Push Notifications, Value: 0, ID: PUSH_NOTIFICATIONS
+					502 text Push Notifications
+					503 image PUSH_NOTIFICATIONS
+					504 content list
+						505 checkbox (disabled, settable, integer) Description: Broadcast Capability, Value: 0, ID: PUSH_NOTIFICATION_FEATURE_BROADCAST
+					506 button (disabled) Configure, ID: action-configure
+				507 container
+					508 checkbox (settable, integer) Description: Push to Talk, Value: 0, ID: PUSH_TO_TALK
+					509 text Push to Talk
+					510 image PUSH_TO_TALK
+				511 container
+					512 checkbox (settable, integer) Description: Sensitive Content Analysis, Value: 0, ID: SENSITIVE_CONTENT_ANALYSIS
+					513 text Sensitive Content Analysis
+					514 image SENSITIVE_CONTENT_ANALYSIS
+				515 container
+					516 checkbox (settable, integer) Description: Shallow Depth and Pressure, Value: 0, ID: SHALLOW_DEPTH_PRESSURE
+					517 text Shallow Depth and Pressure
+					518 image SHALLOW_DEPTH_PRESSURE
+				519 container
+					520 checkbox (settable, integer) Description: Shared with You, Value: 0, ID: SHARED_WITH_YOU
+					521 text Shared with You
+					522 image SHARED_WITH_YOU
+				523 container
+					524 checkbox (settable, integer) Description: Side Button Access, Value: 0, ID: SIDE_BUTTON_INVOCATION
+					525 text Side Button Access
+					526 image SIDE_BUTTON_INVOCATION
+				527 container
+					528 checkbox (settable, integer) Description: Sign In with Apple, Value: 0, ID: APPLE_ID_AUTH
+					529 text Sign In with Apple
+					530 image APPLE_ID_AUTH
+					531 button (disabled) Configure
+				532 container
+					533 checkbox (settable, integer) Description: SIM Inserted for Wireless Carriers, Value: 0, ID: CORETELEPONY_SIMINSERTED
+					534 text SIM Inserted for Wireless Carriers
+					535 image CORETELEPONY_SIMINSERTED
+				536 container
+					537 checkbox (settable, integer) Description: Siri, Value: 0, ID: SIRIKIT
+					538 text Siri
+					539 image SIRIKIT
+				540 container
+					541 checkbox (settable, integer) Description: Spatial Audio Profile, Value: 0, ID: SPATIAL_AUDIO_PROFILE
+					542 text Spatial Audio Profile
+					543 image SPATIAL_AUDIO_PROFILE
+				544 container
+					545 checkbox (settable, integer) Description: StoreKit External Purchases or Offers, Value: 0, ID: SK_EXT_PURCHASE_OR_OFFERS_REGIONS
+					546 text StoreKit External Purchases or Offers
+					547 image SK_EXT_PURCHASE_OR_OFFERS_REGIONS
+				548 container
+					549 checkbox (settable, integer) Description: StoreKit External Purchases or Offers (EU), Value: 0, ID: SK_EXT_PURCHASE_OR_OFFERS_EU
+					550 text StoreKit External Purchases or Offers (EU)
+					551 image SK_EXT_PURCHASE_OR_OFFERS_EU
+				552 container
+					553 checkbox (settable, integer) Description: Suggested Actions, Value: 0, ID: SUGGESTED_ACTIONS
+					554 text Suggested Actions
+					555 image SUGGESTED_ACTIONS
+				556 container
+					557 checkbox (settable, integer) Description: Sustained Execution, Value: 0, ID: SUSTAINED_EXECUTION
+					558 text Sustained Execution
+					559 image SUSTAINED_EXECUTION
+				560 container
+					561 checkbox (settable, integer) Description: System Extension, Value: 0, ID: SYSTEM_EXTENSION_INSTALL
+					562 text System Extension
+					563 image SYSTEM_EXTENSION_INSTALL
+				564 container
+					565 checkbox (settable, integer) Description: Tap to Share, Value: 0, ID: CONNECTED_SHOPPING
+					566 text Tap to Share
+					567 image CONNECTED_SHOPPING
+				568 container
+					569 checkbox (settable, integer) Description: Time Sensitive Notifications, Value: 0, ID: USERNOTIFICATIONS_TIMESENSITIVE
+					570 text Time Sensitive Notifications
+					571 image USERNOTIFICATIONS_TIMESENSITIVE
+				572 container
+					573 checkbox (settable, integer) Description: Trust Insights, Value: 0, ID: TRUST_INSIGHTS_BASE
+					574 text Trust Insights
+					575 image TRUST_INSIGHTS_BASE
+				576 container
+					577 checkbox (settable, integer) Description: User Management, Value: 0, ID: USER_MANAGEMENT
+					578 text User Management
+					579 image USER_MANAGEMENT
+				580 container
+					581 checkbox (settable, integer) Description: Virtualization, Value: 0, ID: 9A63CFE5BEE0
+					582 text Virtualization
+					583 image 9A63CFE5BEE0
+				584 container
+					585 checkbox (settable, integer) Description: VMNet, Value: 0, ID: VMNET
+					586 text VMNet
+					587 image VMNET
+				588 container
+					589 checkbox (settable, integer) Description: Wallet, Value: 0, ID: WALLET
+					590 text Wallet
+					591 image WALLET
+				592 container
+					593 checkbox (settable, integer) Description: WeatherKit, Value: 0, ID: WEATHERKIT
+					594 text WeatherKit
+					595 image WEATHERKIT
+				596 container
+					597 checkbox (settable, integer) Description: Wi-Fi Aware, Value: 0, ID: WIFI_AWARE
+					598 text Wi-Fi Aware
+					599 image WIFI_AWARE
+				600 container
+					601 checkbox (settable, integer) Description: Wi-Fi Network Sharing, Value: 0, ID: WIFI_NETWORK_SHARING
+					602 text Wi-Fi Network Sharing
+					603 image WIFI_NETWORK_SHARING
+				604 container
+					605 checkbox (settable, integer) Description: Wireless Accessory Configuration, Value: 0, ID: WIRELESS_ACCESSORY_CONFIGURATION
+					606 text Wireless Accessory Configuration
+					607 image WIRELESS_ACCESSORY_CONFIGURATION
+				608 container
+					609 checkbox (settable, integer) Description: Wireless Insights Service Predictions, Value: 0, ID: WIRELESS_INSIGHTS_SERVICE_PREDICTIONS
+					610 text Wireless Insights Service Predictions
+					611 image WIRELESS_INSIGHTS_SERVICE_PREDICTIONS
+				612 container
+					613 checkbox (settable, integer) Description: Mac Catalyst (Existing Apps Only), Value: 0, ID: ENABLED_FOR_MAC
+					614 text Mac Catalyst
+					615 text (Existing Apps Only)
+					616 image ENABLED_FOR_MAC
+					617 button (disabled) Configure
+		7 container
+			8 text Copyright ©  2026  Apple Inc. All rights reserved.
+		9 content list
+			10 link Description: Terms of Use, Value: apple.com/legal/terms/site.html
+			11 link Description: Privacy Policy, Value: apple.com/privacy/
+
+The focused UI element is 0 AXWebArea Certificates, Identifiers & Profiles - Apple Developer, URL: developer.apple.com/account/resources/identifiers/bundleId/edit/X7N8FKWCC6

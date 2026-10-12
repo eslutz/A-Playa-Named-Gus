@@ -1,5 +1,24 @@
 # Screenshots and TestFlight
 
+**Current policy (October 12):** protected main requires PRs and all GitHub checks. The saved main-only Cloud release tests iPhone/iPad/Duo, Mac, TV and Vision before internal distribution. Native Icon Composer source is restored and Cloud Build 8 passed without issues; CI run 38242041231 retained one iPad native audio completion failure. Tester availability remains unconfirmed until the new gates pass. [Pipeline policy](pipeline-policy.md), [release status](internal-testflight-release.md).
+
+
+## Current internal beta preparation
+
+Internal distribution and access for the existing account are authorized. The
+manual workflow archives iOS/macOS/tvOS/visionOS for internal-only testing, with
+Watch embedded in iOS and four `Gus Internal` group post-actions. Runtime code
+passed CI `38230709289` **13/13** and warning-free Cloud BUILD validation.
+
+Build 7 produced signed exports but iOS preparation rejected alpha-bearing
+icons, so all distribution post-actions were skipped. The default iOS/Watch
+catalog repair is published at `64b9de6`; its new pipeline and signed retry are
+pending. Watch provisioning/export and Mac/tvOS/visionOS upload processing passed
+in Build 7. Membership remains distinct from build/install access: the latest
+pre-retry group snapshot has one account tester, `NOT_INVITED`, and no builds.
+[Icon diagnosis](icon-upload-repair.md), [release report](internal-testflight-release.md).
+Marketing version remains **1.0.0**; Cloud assigns the integer build number.
+
 ## Automated Capture
 
 `Scripts/screenshots.sh` captures App Store screenshots from simulators. The script
@@ -42,8 +61,9 @@ The script targets these automatically:
 | Mac | Manual (see below) | 1280×800 or 2560×1600 | `mac` |
 
 > **Note:** The script resolves UDIDs from the simulators installed on the current
-> machine. If Xcode is updated or simulators are re-created, update the UDIDs at
-> the top of `Scripts/screenshots.sh`. Confirm with:
+> machine by device name, preferring the newest runtime. If Xcode is updated or
+> simulators are re-created, verify the configured device names and resolved
+> destinations rather than editing hardcoded UDIDs. Confirm with:
 > `xcodebuild -showdestinations -project 'A Playa Named Gus.xcodeproj' -scheme 'A Playa Named Gus'`
 
 ## Required Scenes
@@ -63,8 +83,8 @@ requires capturing by hand.
 | TV-series / Live TV scenes | — | — | — | — | — | — | Blocked on demo data (no series/tuner) |
 | Gus Cinema | — | — | — | Manual | — | — | visionOS immersive highlight |
 
-> Avoid personal server URLs, real usernames, or copyrighted artwork. Seed a
-> demo server with non-sensitive or rights-cleared sample media before capture.
+> Avoid personal server URLs and real usernames. Use non-sensitive media and
+> artwork authorized for the intended publication in the demo server.
 
 ## macOS Screenshots (Manual)
 
@@ -89,16 +109,48 @@ accepts for the 2560×1600 slot.
 
 ## TestFlight Checklist
 
-Before uploading to TestFlight:
-- [ ] Local device signing works with the real Apple Developer Team in
-      `Config/Local.xcconfig`.
-- [x] Local API tooling and Cloud bootstrap prepared and tested without Apple credentials.
-- [ ] Shared project, dependency pins, and complete candidate published to the release branch.
-- [ ] Xcode Cloud workflow exists and runs `ci_scripts/ci_post_clone.sh` against the
-      committed project with an automatic-signing override for Team ID `QS3GC3CT43`.
+For the requested internal beta:
+
+- [x] App record, account-wide API authentication, and initial Cloud onboarding verified.
+- [x] Shared project, 16 dependency pins, and reviewed source published on `main`
+      through `64505d9`.
+- [x] The BUILD-validation workflow runs the committed Cloud bootstrap with automatic
+      signing Team ID `QS3GC3CT43`; Build 3 passed all four actions.
+- [x] Main app `ITSAppUsesNonExemptEncryption = false` is present in `Resources/Info.plist`.
+- [x] Required pipelines passed for published `64505d9` before Build 4; the later Mac
+      metadata revision `2546563` awaits hosted acceptance.
+- [x] Configure the separate manual Release ARCHIVE actions with an internal-only
+      audience and the intended internal group/post-action; preserve validation-only CI.
+- [x] Register exact embedded Watch bundle `dev.ericslutz.gus.watchkitapp`
+      (`X7N8FKWCC6`); this does not establish its generated distribution profile.
+- [x] Add the existing eligible App Store Connect account to `Gus Internal`.
+- [ ] Verify required pipelines for the corrected release candidate.
 - [ ] Xcode Cloud signed archives build for iOS/iPadOS, tvOS, visionOS, and macOS.
 - [ ] Xcode Cloud validation passes for the archives intended for TestFlight upload.
-- [ ] `ITSAppUsesNonExemptEncryption = false` confirmed in `Info.plist`.
+- [ ] Confirm main app and embedded Watch/Top Shelf signatures, profiles, entitlements,
+      and matching marketing/build versions. No ad-hoc Mac-unit signing fixture belongs
+      in a distribution archive.
+- [ ] Confirm uploads finish processing and export compliance permits internal testing.
+- [ ] Verify each processed build is accessible to the internal group and the
+      tester receives access; the last snapshot remained `NOT_INVITED`.
+- [ ] Verify the actual TestFlight build installs and launches on supported devices.
+
+Earlier development signing/physical checks used **1.0.0 (11)**; they do not establish
+the later candidate's TestFlight installation. Cloud automatic signing does not require
+a new local device build. `Scripts/validate-release.py` deliberately produces unsigned
+local archives and cannot validate distribution signing or upload a beta.
+
+Create the internal group before configuring a Cloud internal TestFlight post-action.
+The group must contain eligible App Store Connect users; selecting the user's existing
+account avoids assuming an email-only external tester is an internal team member.
+Cloud builds do not automatically join every group's automatic-distribution feed:
+configure the explicit post-action or add the processed builds to the group manually.
+See [Apple's Cloud distribution guide](https://developer.apple.com/documentation/xcode/distributing-your-xcode-cloud-builds-through-testflight)
+and [internal tester instructions](https://developer.apple.com/help/app-store-connect/test-a-beta-version/add-internal-testers).
+
+The following public/external release preparation remains separate from the current
+internal-only request; internal testing does not require Beta App Review:
+
 - [ ] App Privacy answers complete in App Store Connect (source: `privacy-labels.md`).
 - [ ] Privacy policy URL added for iOS/iPadOS/macOS/visionOS.
 - [ ] tvOS privacy policy text added.

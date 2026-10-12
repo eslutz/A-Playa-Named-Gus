@@ -1,0 +1,25 @@
+First attempt framework summaries; pending unchanged-source rerun is not included.
+iPhone: job 114633546525
+2026-10-12T02:21:16.0567340Z ✔ Test run with 288 tests in 49 suites passed after 41.777 seconds.
+2026-10-12T02:21:27.2252860Z ** TEST SUCCEEDED **
+2026-10-12T02:20:36.2237960Z 	 Executed 3 tests, with 0 failures (0 unexpected) in 4.811 (9.755) seconds
+
+iPad: job 114633546542
+2026-10-12T02:22:13.4600490Z ✘ Test run with 288 tests in 49 suites failed after 169.437 seconds with 1 issue.
+2026-10-12T02:32:25.6680310Z ** TEST FAILED **
+2026-10-12T02:21:34.9990300Z 	 Executed 3 tests, with 0 failures (0 unexpected) in 6.948 (21.398) seconds
+
+macOS: job 114633546463
+2026-10-12T02:11:54.3136070Z ✔ Test run with 288 tests in 49 suites passed after 5.420 seconds.
+2026-10-12T02:12:01.8413230Z ** TEST SUCCEEDED **
+2026-10-12T02:11:48.8720500Z 	 Executed 3 tests, with 0 failures (0 unexpected) in 1.579 (1.583) seconds
+
+tvOS: job 114633546460
+2026-10-12T02:08:49.0556430Z ✔ Test run with 288 tests in 49 suites passed after 8.016 seconds.
+2026-10-12T02:08:52.9692510Z ** TEST SUCCEEDED **
+2026-10-12T02:08:39.3944050Z 	 Executed 3 tests, with 0 failures (0 unexpected) in 2.295 (2.315) seconds
+
+visionOS: job 114633546543
+2026-10-12T02:24:19.3500280Z ✔ Test run with 288 tests in 49 suites passed after 14.457 seconds.
+2026-10-12T02:24:28.2571030Z ** TEST SUCCEEDED **
+2026-10-12T02:24:02.3278460Z 	 Executed 3 tests, with 0 failures (0 unexpected) in 2.518 (2.641) seconds

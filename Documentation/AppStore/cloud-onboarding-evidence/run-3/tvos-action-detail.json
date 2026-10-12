@@ -1,0 +1,17 @@
+{
+  "data": {
+    "attributes": {
+      "actionType": "BUILD",
+      "completionStatus": "SUCCEEDED",
+      "executionProgress": "COMPLETE",
+      "finishedDate": "2026-10-12T02:07:45.554Z",
+      "isRequiredToPass": true,
+      "issueCounts": null,
+      "name": "Build - tvOS",
+      "startedDate": "2026-10-12T02:06:09.414Z"
+    },
+    "id": "9722775d-b1f6-4a60-863f-e3783dbe67f2",
+    "type": "ciBuildActions"
+  },
+  "observedAt": "2026-10-12T02:13:09.541909+00:00"
+}

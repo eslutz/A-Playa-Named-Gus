@@ -1,5 +1,8 @@
 # Signing and Capabilities
 
+**Current policy (October 12):** protected main requires PRs and all GitHub checks. The saved main-only Cloud release tests iPhone/iPad/Duo, Mac, TV and Vision before internal distribution. Native Icon Composer source is restored and Cloud Build 8 passed without issues; CI run 38242041231 retained one iPad native audio completion failure. Tester availability remains unconfirmed until the new gates pass. [Pipeline policy](pipeline-policy.md), [release status](internal-testflight-release.md).
+
+
 ## Current State
 
 Simulator and local macOS builds use ad-hoc signing (`CODE_SIGN_IDENTITY = -`,
@@ -10,21 +13,49 @@ declarations cover the currently wired release surface; CarPlay audio remains pe
 manual Apple grant and is intentionally not advertised in App Store metadata until it is
 granted and wired.
 
-Gus is configured for Xcode 27.0 (final validation recorded in the release review) while retaining older deployment targets
-(`iOS 18`, `tvOS 18`, `visionOS 2`, `macOS 15`, and `watchOS 11`). OS 26-specific
-features are guarded with availability checks or fail closed when the required framework
-or entitlement is absent.
+The current Cloud toolchain is **Xcode 27.1 RC (`27A9275`)**; GitHub uses the hosted
+27.1 toolchain and rejects an iOS simulator SDK below 27.1. Duo arrangement APIs
+require that SDK even though runtime use is availability-guarded. Deployment targets
+remain `iOS 18`, `tvOS 18`, `visionOS 2`, `macOS 15`, and `watchOS 11`. Newer features
+use availability checks or fail closed when the required framework/entitlement is
+absent. Exact minimum-OS execution remains a separate acceptance gate.
 
 Local device builds use the git-ignored `Config/Local.xcconfig` override to switch to
 automatic signing. Distributable build signing, provisioning, TestFlight upload, and
 App Store archives belong in Xcode Cloud, not GitHub Actions.
 
-## Capabilities — Confirmed Ready
+Cloud Build 6 accepted all four required BUILD actions with zero issues after the
+six iOS/one Mac compiler warnings were repaired. Runtime code passed required CI
+`38230709289` **13/13**. The separate `Gus Internal TestFlight` workflow has four
+required internal-only Release ARCHIVE actions and four group post-actions; the
+existing account is its one selected tester.
+
+Build 7 produced signed App Store exports. iOS main/Watch and tvOS main/Top Shelf
+versions, signatures and matching distribution profiles were verified. The Mac
+signed app/package passed inspection with its sandbox and approved inbound/outbound
+network entitlements, and required category/copyright metadata is present. Mac,
+tvOS and visionOS uploads processed as VALID/READY_FOR_BETA_TESTING. iOS failed
+later App Store preparation; independent Apple validation identified default
+iOS/Watch icon alpha channels as the concrete rejection. All post-actions were
+skipped; the group still had zero builds and tester state NOT_INVITED.
+
+Opaque default-icon repair `64b9de6` and its semantic artwork assertion correction
+`f354c7a` are published. Corrected CI `38237504737`, the signed retry and group
+availability remain pending. [Signing proof and release status](internal-testflight-release.md),
+[icon diagnosis](icon-upload-repair.md), [warning repair](build-warning-repairs.md).
+
+## Capabilities — Declared Implementation
+
+The table records source configuration, not proof that distribution provisioning
+profiles include every entitlement. Verify the signed archives, embedded Watch/Top
+Shelf components, and App Store Connect processing before claiming distribution
+acceptance. CarPlay remains unwired and is outside the requested internal beta.
 
 | Capability | Platform | Declared in | Status |
 |---|---|---|---|
 | Background audio | iOS / iPadOS / tvOS / visionOS | `UIBackgroundModes: [audio]` in `Info.plist` | ✓ |
 | Outbound network | macOS | `com.apple.security.network.client` in `Config/Gus.entitlements` | ✓ |
+| Discovery replies | macOS | Approved `com.apple.security.network.server` in `Config/Gus.entitlements` permits the ephemeral UDP receive socket | ✓ |
 | App Sandbox | macOS | `com.apple.security.app-sandbox` in `Config/Gus.entitlements` | ✓ |
 | User Management | tvOS | `com.apple.developer.user-management` in `Config/Gus-tvOS.entitlements` | ✓ |
 | SharePlay / Group Activities | iOS / iPadOS / tvOS / visionOS / macOS | `com.apple.developer.group-session` in the app entitlements | ✓ |
@@ -34,11 +65,11 @@ App Store archives belong in Xcode Cloud, not GitHub Actions.
 | tvOS App Group / Top Shelf snapshot | tvOS app + Top Shelf extension | `com.apple.security.application-groups: group.dev.ericslutz.gus` in tvOS app and extension entitlements | ✓ |
 | Local network usage | iOS / iPadOS / visionOS | `NSLocalNetworkUsageDescription` in `Info.plist` | ✓ |
 | Keychain | All | Keychain Services via `SecItem*` — no capability entry required | ✓ |
-| No-exempt encryption | All | `ITSAppUsesNonExemptEncryption = false` in `Info.plist` | ✓ |
+| Non-exempt encryption declaration | Main app, all primary platforms | `ITSAppUsesNonExemptEncryption = false` in `Resources/Info.plist`; confirm processed-build compliance | ✓ |
 | Offline downloads | iOS / iPadOS / macOS / visionOS / watchOS (audio) | Application Support storage — no extra capability required | ✓ |
 | Watch companion | watchOS | `GusWatch` target embedded in the iOS archive — no extra capability required | ✓ |
 
-Do not move CarPlay into the "Confirmed Ready" table, release metadata, or wired
+Do not move CarPlay into this table, release metadata, or wired
 entitlements until Apple grants it and an archive has been validated with the granted
 capability.
 
@@ -55,9 +86,13 @@ flag; the key has been removed. The same reasoning covers visionOS Optic ID
 prompt can occur and no usage string is required. Add the string only if
 biometry-protected Keychain access or `LocalAuthentication` is introduced.
 
-**Not needed:** `NSBonjourServices` — Jellyfin discovery uses UDP broadcast on port 7359
-via swift-nio sockets, not Bonjour/mDNS. `NSLocalNetworkUsageDescription` (already
-present) is sufficient for the iOS 14+ local-network prompt.
+**Not needed for the current discovery implementation:** `NSBonjourServices`.
+`ServerDiscoveryStore` calls `JellyfinClient.discover`; the pinned Jellyfin SDK's
+`ServerDiscovery.swift` uses SwiftNIO `DatagramBootstrap`, UDP broadcast on port
+7359, and an ephemeral receive socket. SwiftNIO remains a transitive SDK dependency;
+this is not Bonjour/mDNS discovery. `NSLocalNetworkUsageDescription` is already
+present for the native local-network prompt; permission/network reachability and
+sandbox receive access are separate runtime concerns.
 
 **tvOS profile isolation:** A Playa Named Gus declares User Management with
 `runs-as-current-user-with-user-independent-keychain`, but does not store Jellyfin tokens
@@ -75,12 +110,14 @@ tokens without an extra capability.
 `Info.plist` and `Sources/CarPlay/CarPlaySceneDelegate.swift` is compiled into the iOS
 target, but `com.apple.developer.carplay-audio` has **not** been granted by Apple and is
 **not** wired into signing. The scene declaration is inert without the entitlement — iOS
-will not activate it at runtime. Archives pass validation in this state.
+will not activate it at runtime. Earlier local archives were unsigned; signed
+archive/upload acceptance remains unverified.
 
 The CarPlay audio companion (`Sources/CarPlay/`) is implemented and its template scene
 is declared in `Info.plist`, but `com.apple.developer.carplay-audio` requires an Apple
-entitlement grant. Until granted, `Config/Gus-CarPlay.entitlements` stays **unwired** so
-archives keep validating; the CarPlay scene never activates without the entitlement.
+entitlement grant. Until granted, `Config/Gus-CarPlay.entitlements` stays **unwired**;
+the CarPlay scene never activates without the entitlement. The internal TestFlight
+request does not enable CarPlay.
 
 Steps to enable (none are code work — the implementation is complete):
 
@@ -90,11 +127,11 @@ Steps to enable (none are code work — the implementation is complete):
   and is the long pole — it can take weeks.
 - [ ] Once granted, **add `com.apple.developer.carplay-audio` to the App ID /
   provisioning profile** in the Developer portal.
-- [ ] **Wire the entitlements file** in `Config/Shared.xcconfig`:
-  ```
-  CODE_SIGN_ENTITLEMENTS[sdk=iphoneos*] = Config/Gus-CarPlay.entitlements
-  CODE_SIGN_ENTITLEMENTS[sdk=iphonesimulator*] = Config/Gus-CarPlay.entitlements
-  ```
+- [ ] **Merge the granted CarPlay entitlement** into the iOS signing entitlements,
+  preserving Associated Domains, Declared Age Range, and Group Activities. Do not
+  replace `Config/Gus-iOS.entitlements` with the standalone CarPlay draft and silently
+  drop those existing capabilities. Regenerate/validate the shared project if its
+  signing-file references change.
 - [ ] **Verify** in the CarPlay simulator (Simulator app → I/O → External Displays →
   CarPlay) and on real CarPlay hardware.
 
@@ -126,6 +163,16 @@ Xcode Cloud signs/provisions it as part of the iOS app; confirm the watch app an
 provisioning are included when the iOS archive is validated. Scope:
 `Documentation/watchos-brief.md`.
 
+Build 4's App Store export failed because Cloud could not auto-register
+`dev.ericslutz.gus.watchkitapp` or find its matching App Store provisioning profile.
+The exact identifier is now registered through Apple's Developer UI as `Gus Watch`,
+resource `X7N8FKWCC6`, platform `UNIVERSAL`, Team `QS3GC3CT43`. The API snapshot
+returns only the default `IN_APP_PURCHASE` capability; no extra Watch entitlement
+or in-app purchase implementation was added. Build 7 now verifies matching App Store profile generation, signed export, and
+embedded Watch signatures/version. iOS upload still awaits the repaired default
+icons; profile/export acceptance does not establish tester installation. [Registration proof](cloud-onboarding-evidence/internal-testflight/watch-registration.json),
+[confirmed failure](cloud-onboarding-evidence/internal-testflight/run-4-export-diagnosis.json).
+
 ## Setting Your Team ID (Local Override)
 
 `DEVELOPMENT_TEAM = QS3GC3CT43` is committed in `Config/Shared.xcconfig`; the Team ID is
@@ -143,30 +190,41 @@ not a signing secret. To build locally for a device:
 
 ## CI Signing Ownership
 
-GitHub Actions builds and tests unsigned simulator/macOS outputs to protect the codebase.
+GitHub Actions builds and tests simulator/ad-hoc macOS outputs to protect the codebase.
 It should not hold Apple Distribution certificates or provisioning profiles for Gus.
 
-Xcode Cloud owns signed iOS, iPadOS, tvOS, visionOS, and macOS archives, provisioning,
-TestFlight builds, App Store release archives, notarized Mac app builds, UI/device
-matrix testing, and release-candidate validation. `ci_scripts/ci_post_clone.sh` validates
-that Xcode Cloud is running under Team ID `QS3GC3CT43`, writes a temporary automatic
-signing `Config/Local.xcconfig`, and requires the committed shared Xcode project and
+Xcode Cloud is the distribution signing/provisioning owner for iOS/iPadOS, tvOS,
+visionOS, and macOS archives and TestFlight uploads. The existing validation workflow
+is build-only; the separate internal archive/distribution workflow is configured,
+with corrected-run acceptance pending. Native
+UI/device acceptance and public release validation remain separate work.
+`ci_scripts/ci_post_clone.sh` accepts
+only the verified Cloud account UUID or legacy Developer Team ID and always writes
+signing Team ID `QS3GC3CT43` into a temporary automatic-signing `Config/Local.xcconfig`.
+The account UUID never becomes a signing Team ID. It requires the committed shared Xcode project and
 `Package.resolved`. Generate the project locally from `project.yml`; Cloud does not
 regenerate it. See [API preparation](api-access.md).
 
-## Remaining Submission Steps (Account-Blocked)
+## Remaining Distribution and Submission Steps
 
-- **CarPlay audio entitlement** — request, grant-wait, wire, and verify (see the CarPlay
-  section above).
+- **Optional future CarPlay audio entitlement** — request, grant-wait, wire, and verify
+  (see the CarPlay section above); it is not a prerequisite for the current unwired
+  internal beta.
 - **Declared Age Range device verification** — verify on an OS 26 device that the system
   sheet presents and maps back to Gus's content limit.
-- Create/configure the Xcode Cloud workflow for `dev.ericslutz.gus`, the tvOS Top
-  Shelf extension, and the `GusWatch` watch app.
-- Let Xcode Cloud manage App Store provisioning profiles for the app plus the tvOS Top
-  Shelf extension.
+- Complete a corrected run of the configured manual internal-only archive/distribution
+  workflow. Keep the successful BUILD-validation workflow intact.
+  Watch ships inside the iOS archive and Top Shelf inside the tvOS archive; they do
+  not require separate store records/distribution workflows.
+- Let Xcode Cloud manage App Store provisioning profiles for the main app, registered
+  Watch companion, and tvOS Top Shelf extension; verify the resulting signed products.
 - Review per-platform capabilities in Xcode Signing & Capabilities and App Store Connect
   for any provisioning-profile additions (e.g. Push Notifications if added later).
 - Archive and validate Release builds for iOS/iPadOS, tvOS, visionOS, and macOS in
   Xcode Cloud.
 - Confirm macOS App Sandbox entitlements pass the archive-validation step (no unexpected
   file/network access).
+- Confirm each uploaded build is processed/eligible for internal testing and assigned
+  to `Gus Internal`, whose existing-account membership is already verified. Account
+  membership, build access, and actual
+  TestFlight installation are distinct results.

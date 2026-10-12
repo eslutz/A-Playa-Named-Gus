@@ -1,0 +1,64 @@
+[
+  {
+    "actions": [
+      {
+        "id": "d4e5dbf4-43c3-41ac-aaa1-301c9408b904",
+        "name": "Build - tvOS",
+        "progress": "RUNNING",
+        "status": null
+      },
+      {
+        "id": "7596e077-9d2a-40ad-b8ec-e00e167201f7",
+        "name": "Build - iOS",
+        "progress": "RUNNING",
+        "status": null
+      },
+      {
+        "id": "521936fc-c518-4ec4-a54a-5ebef3030ee6",
+        "name": "Build - visionOS",
+        "progress": "RUNNING",
+        "status": null
+      },
+      {
+        "id": "7a70c949-97d2-4669-8b88-ba8ccd8b9014",
+        "name": "Build - macOS",
+        "progress": "RUNNING",
+        "status": null
+      }
+    ],
+    "observedAt": "2026-10-12T08:31:33.649224Z",
+    "progress": "RUNNING",
+    "status": null
+  },
+  {
+    "actions": [
+      {
+        "id": "d4e5dbf4-43c3-41ac-aaa1-301c9408b904",
+        "name": "Build - tvOS",
+        "progress": "COMPLETE",
+        "status": "SUCCEEDED"
+      },
+      {
+        "id": "7596e077-9d2a-40ad-b8ec-e00e167201f7",
+        "name": "Build - iOS",
+        "progress": "COMPLETE",
+        "status": "SUCCEEDED"
+      },
+      {
+        "id": "521936fc-c518-4ec4-a54a-5ebef3030ee6",
+        "name": "Build - visionOS",
+        "progress": "COMPLETE",
+        "status": "SUCCEEDED"
+      },
+      {
+        "id": "7a70c949-97d2-4669-8b88-ba8ccd8b9014",
+        "name": "Build - macOS",
+        "progress": "COMPLETE",
+        "status": "SUCCEEDED"
+      }
+    ],
+    "observedAt": "2026-10-12T08:33:32.119464Z",
+    "progress": "COMPLETE",
+    "status": "SUCCEEDED"
+  }
+]

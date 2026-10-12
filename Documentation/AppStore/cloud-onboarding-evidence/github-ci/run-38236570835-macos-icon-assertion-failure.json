@@ -1,0 +1,16 @@
+{
+  "runID": "38236570835",
+  "sourceCommit": "64b9de644255a9483e63df166a1cd1dc5ada9d6a",
+  "jobID": "114768603125",
+  "lane": "Test macOS",
+  "status": "failure",
+  "diagnosis": "The existing test required byte-identical iOS and visionOS PNGs; their store-required alpha formats intentionally differ. No runtime test failure was reported by this issue.",
+  "correction": "f354c7a compares the decoded artwork on the same opaque native canvas; stale-artwork hash and Watch equality coverage retained.",
+  "diagnosticLines": [
+    "2026-10-12T10:32:23.6993960Z \u25c7 Test \"platform app icons use the current primary artwork\" started.",
+    "2026-10-12T10:32:23.6995740Z \u2718 Test \"platform app icons use the current primary artwork\" recorded an issue at UILayoutMetricsTests.swift:153:9: Expectation failed: visionMiddle == primaryIcon",
+    "2026-10-12T10:32:23.7029230Z \u2718 Test \"platform app icons use the current primary artwork\" failed after 0.018 seconds with 1 issue.",
+    "2026-10-12T10:32:23.7471450Z \u2718 Test run with 288 tests in 49 suites failed after 5.697 seconds with 1 issue.",
+    "2026-10-12T10:32:32.2854810Z ** TEST FAILED **"
+  ]
+}

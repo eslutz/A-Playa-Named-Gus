@@ -1,0 +1,9 @@
+2026-10-12T11:24:52.3434710Z 	 Executed 3 tests, with 0 failures (0 unexpected) in 1.702 (1.705) seconds
+2026-10-12T11:24:52.3443230Z 	 Executed 3 tests, with 0 failures (0 unexpected) in 1.702 (1.706) seconds
+2026-10-12T11:24:52.3510650Z 	 Executed 3 tests, with 0 failures (0 unexpected) in 1.702 (1.708) seconds
+2026-10-12T11:24:57.8975040Z ◇ Test "completed downloads survive URLSession temporary-file cleanup before the main actor saves them" started.
+2026-10-12T11:24:57.8976700Z ✔ Test "completed downloads survive URLSession temporary-file cleanup before the main actor saves them" passed after 0.004 seconds.
+2026-10-12T11:24:58.1695210Z ◇ Test "platform app icons use the current primary artwork" started.
+2026-10-12T11:24:58.2752760Z ✔ Test "platform app icons use the current primary artwork" passed after 0.105 seconds.
+2026-10-12T11:24:58.8421460Z ✔ Test run with 288 tests in 49 suites passed after 5.934 seconds.
+2026-10-12T11:25:06.9897990Z ** TEST SUCCEEDED **

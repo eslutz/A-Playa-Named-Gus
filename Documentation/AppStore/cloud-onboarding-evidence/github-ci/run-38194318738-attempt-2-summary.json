@@ -1,0 +1,142 @@
+{
+  "captured_at_utc": "2026-10-12T02:51:38.134650+00:00",
+  "run_id": 38194318738,
+  "run_attempt": 2,
+  "source_sha": "64505d9dfd337c90f390c7c66503912eac252d3f",
+  "status": "completed",
+  "conclusion": "success",
+  "passed_jobs": 13,
+  "total_jobs": 13,
+  "execution_scope": {
+    "rerun_jobs": [
+      "Test iPad"
+    ],
+    "carried_forward_successful_jobs": 12,
+    "source_changed_between_attempts": false
+  },
+  "jobs": [
+    {
+      "id": 114639806315,
+      "name": "Test iPad",
+      "status": "completed",
+      "conclusion": "success",
+      "evidence_run_attempt": 2,
+      "rerun_in_attempt_2": true,
+      "original_evidence_job_id": 114639806315
+    },
+    {
+      "id": 114639806889,
+      "name": "Build tvOS",
+      "status": "completed",
+      "conclusion": "success",
+      "evidence_run_attempt": 1,
+      "rerun_in_attempt_2": false,
+      "original_evidence_job_id": 114633546379
+    },
+    {
+      "id": 114639807061,
+      "name": "Lint",
+      "status": "completed",
+      "conclusion": "success",
+      "evidence_run_attempt": 1,
+      "rerun_in_attempt_2": false,
+      "original_evidence_job_id": 114633546445
+    },
+    {
+      "id": 114639807388,
+      "name": "Build visionOS",
+      "status": "completed",
+      "conclusion": "success",
+      "evidence_run_attempt": 1,
+      "rerun_in_attempt_2": false,
+      "original_evidence_job_id": 114633546512
+    },
+    {
+      "id": 114639827476,
+      "name": "Test iPhone",
+      "status": "completed",
+      "conclusion": "success",
+      "evidence_run_attempt": 1,
+      "rerun_in_attempt_2": false,
+      "original_evidence_job_id": 114633546525
+    },
+    {
+      "id": 114639827560,
+      "name": "Test tvOS",
+      "status": "completed",
+      "conclusion": "success",
+      "evidence_run_attempt": 1,
+      "rerun_in_attempt_2": false,
+      "original_evidence_job_id": 114633546460
+    },
+    {
+      "id": 114639828124,
+      "name": "Test macOS",
+      "status": "completed",
+      "conclusion": "success",
+      "evidence_run_attempt": 1,
+      "rerun_in_attempt_2": false,
+      "original_evidence_job_id": 114633546463
+    },
+    {
+      "id": 114639829928,
+      "name": "Build watchOS",
+      "status": "completed",
+      "conclusion": "success",
+      "evidence_run_attempt": 1,
+      "rerun_in_attempt_2": false,
+      "original_evidence_job_id": 114633546554
+    },
+    {
+      "id": 114639831436,
+      "name": "Docs and Config",
+      "status": "completed",
+      "conclusion": "success",
+      "evidence_run_attempt": 1,
+      "rerun_in_attempt_2": false,
+      "original_evidence_job_id": 114633546333
+    },
+    {
+      "id": 114639833570,
+      "name": "Build iPadOS",
+      "status": "completed",
+      "conclusion": "success",
+      "evidence_run_attempt": 1,
+      "rerun_in_attempt_2": false,
+      "original_evidence_job_id": 114633546435
+    },
+    {
+      "id": 114639835042,
+      "name": "Build macOS",
+      "status": "completed",
+      "conclusion": "success",
+      "evidence_run_attempt": 1,
+      "rerun_in_attempt_2": false,
+      "original_evidence_job_id": 114633546458
+    },
+    {
+      "id": 114639839120,
+      "name": "Build iOS",
+      "status": "completed",
+      "conclusion": "success",
+      "evidence_run_attempt": 1,
+      "rerun_in_attempt_2": false,
+      "original_evidence_job_id": 114633546510
+    },
+    {
+      "id": 114639839906,
+      "name": "Test visionOS",
+      "status": "completed",
+      "conclusion": "success",
+      "evidence_run_attempt": 1,
+      "rerun_in_attempt_2": false,
+      "original_evidence_job_id": 114633546543
+    }
+  ],
+  "acceptance_limits": [
+    "Current required GitHub CI accepted after one unchanged-source targeted iPad rerun; the other 12 successes were carried forward from attempt 1.",
+    "Initial iPad native first-completion failure remains recorded and its cause is unresolved; a subsequent pass does not establish a reliable fixture or platform fix.",
+    "Cloud Build 3 independently accepted four BUILD actions for this exact source.",
+    "Build/unit acceptance does not establish signed archive/upload/TestFlight, manual VoiceOver, newer Duo or physical runtime acceptance."
+  ]
+}

@@ -1,0 +1,248 @@
+Browser tab: 1, Title: "App Store Connect", URL: "https://appstoreconnect.apple.com/teams/1f3fb703-e0b0-42fc-bc0b-d00a3bfdf58e/xcode-cloud/products/f2e5bb18-7cd2-44ab-b88c-9d54ac63b512/workflows/559f9de9-14d5-4b85-a091-8c3598fa346f".
+0 AXWebArea App Store Connect, URL: appstoreconnect.apple.com/teams/1f3fb703-e0b0-42fc-bc0b-d00a3bfdf58e/xcode-cloud/products/f2e5bb18-7cd2-44ab-b88c-9d54ac63b512/workflows/559f9de9-14d5-4b85-a091-8c3598fa346f
+	1 container
+		2 container App Store Connect
+			3 container
+				4 heading App Store Connect, Value: 1
+					5 link Description: App Store Connect, Value: appstoreconnect.apple.com/, ID: logo
+				6 container Global
+					7 content list
+						8 link Description: Apps, Value: appstoreconnect.apple.com/apps
+						9 link Description: Xcode Cloud, Value: appstoreconnect.apple.com/teams/1f3fb703-e0b0-42fc-bc0b-d00a3bfdf58e/xcode-cloud
+						10 link Description: Trends, Value: appstoreconnect.apple.com/trends
+						11 link Description: Reports, Value: appstoreconnect.apple.com/itc/payments_and_financial_reports
+						12 link Description: Business, Value: appstoreconnect.apple.com/business
+						13 link Description: Users and Access, Value: appstoreconnect.apple.com/access/users
+				14 button Eric Slutz Eric Slutz Account name menu
+		15 container
+			16 container ci_v2
+				17 container
+					18 button Application Gus
+						19 image Application
+						20 heading Gus, Value: 1
+							21 text Gus
+						22 image
+					23 button Workflows
+						24 text Workflows
+						25 image
+					26 link Description: View App, Value: appstoreconnect.apple.com/apps/6778382140/distribution
+				27 container
+					28 link Description: Manage Workflows, Value: appstoreconnect.apple.com/teams/1f3fb703-e0b0-42fc-bc0b-d00a3bfdf58e/xcode-cloud/products/f2e5bb18-7cd2-44ab-b88c-9d54ac63b512/workflows
+					29 container
+						30 text field (settable) Value: Gus Internal TestFlight, ID: input-354
+						31 container
+							32 checkbox (settable, integer) Value: 1, ID: checkbox-:r2:
+						244 text Last modified Today at 10:56 PM by Eric Slutz
+						33 button (disabled) Save
+						34 button More
+							35 image More
+					36 container
+						37 container general
+							38 heading General, Value: 3
+								39 text General
+							40 container
+								41 text Name
+								42 text field (settable) Value: Gus Internal TestFlight, ID: input-355
+							43 container
+								44 text Description
+								45 text entry area (settable) ID: input-356, Value: Manual signed Release archives for internal TestFlight testing after main CI and multiplatform validation pass.
+							46 container
+								47 text Restrict Editing
+								48 checkbox (settable, integer) Description: Only Admins and App Managers on your team will be able to make changes., Value: 0, ID: checkbox-:r3:
+								49 text Only Admins and App Managers on your team will be able to make changes.
+							50 container
+								51 text Primary Repository
+								52 button https://github.com/eslutz/A-Playa-Named-Gus.git
+									53 text https://github.com/eslutz/A-Playa-Named-Gus.git
+							54 container
+								55 text Project or Workspace
+								56 button A Playa Named Gus.xcodeproj
+									57 text A Playa Named Gus.xcodeproj
+						58 container environment
+							59 heading Environment, Value: 3
+								60 text Environment
+							61 container
+								62 text Xcode Version
+								63 button Xcode 27.1 RC (27A9275)
+									64 text Xcode 27.1 RC (27A9275)
+									65 image
+							66 container
+								67 text macOS Version
+								68 button macOS Golden Gate 27.2 beta 2 (26B5091g)
+									69 text macOS Golden Gate 27.2 beta 2 (26B5091g)
+									70 image
+							71 container workflow-edit-clean
+								72 text Clean
+								73 checkbox (settable, integer) Value: 1, ID: checkbox-:r4:, Description: Xcode Cloud will not restore derived data or caches for your builds, which may take significantly longer as a result.
+							74 container
+								75 text Environment Variables None
+								76 button Add
+									77 text Add
+									78 image
+								79 link Description: Manage Shared Environment Variables, Value: appstoreconnect.apple.com/teams/1f3fb703-e0b0-42fc-bc0b-d00a3bfdf58e/xcode-cloud/products/f2e5bb18-7cd2-44ab-b88c-9d54ac63b512/settings/shared-environment-variables
+						80 container startConditions
+							81 heading Start Conditions, Value: 3
+								82 text Start Conditions
+							83 button
+								84 image
+							85 container manual
+								86 image Manual Start
+								87 heading Manual Start - Branch, Value: 4
+									88 text Manual Start - Branch
+								89 button More
+									90 image More
+								91 container
+									92 text Branch
+									93 image Branch
+									94 text main
+									95 button Edit
+								96 container
+									97 text Pull Request Not Enabled
+									98 button Configure
+								99 container
+									100 text Tag Not Enabled
+									101 button Configure
+						102 container actions
+							103 heading Actions, Value: 3
+								104 text Actions
+								105 button
+									106 image
+							107 container ad272ea2-e4cd-4f45-bb64-324193f1a353
+								108 image Action
+								109 heading Archive - visionOS, Value: 4
+									110 text Archive - visionOS
+								111 button More
+									112 image More
+								113 container
+									114 text Platform
+									115 button visionOS
+								116 container
+									117 text Scheme
+									118 button A Playa Named Gus
+										119 text A Playa Named Gus
+								120 container
+									121 text Distribution Preparation
+									122 button TestFlight (Internal Testing Only)
+							123 container 7cb597de-b44c-4337-a8e5-248282115a5d
+								124 image Action
+								125 heading Archive - tvOS, Value: 4
+									126 text Archive - tvOS
+								127 button More
+									128 image More
+								129 container
+									130 text Platform
+									131 button tvOS
+								132 container
+									133 text Scheme
+									134 button A Playa Named Gus
+										135 text A Playa Named Gus
+								136 container
+									137 text Distribution Preparation
+									138 button TestFlight (Internal Testing Only)
+							139 container 4fa532e9-cd39-41a5-88ec-0580b20614d1
+								140 image Action
+								141 heading Archive - macOS, Value: 4
+									142 text Archive - macOS
+								143 button More
+									144 image More
+								145 container
+									146 text Platform
+									147 button macOS
+								148 container
+									149 text Scheme
+									150 button A Playa Named Gus
+										151 text A Playa Named Gus
+								152 container
+									153 text Build For
+									154 button Any Mac
+										155 text Any Mac
+								156 container
+									157 text Distribution Preparation
+									158 button TestFlight (Internal Testing Only)
+							159 container 471ed7cb-4aaa-4b4c-878c-2f743122a099
+								160 image Action
+								161 heading Archive - iOS, Value: 4
+									162 text Archive - iOS
+								163 button More
+									164 image More
+								165 container
+									166 text Platform
+									167 button iOS
+								168 container
+									169 text Scheme
+									170 button A Playa Named Gus
+										171 text A Playa Named Gus
+								172 container
+									173 text Distribution Preparation
+									174 button TestFlight (Internal Testing Only)
+						175 container postActions
+							176 heading Post-Actions, Value: 3
+								177 text Post-Actions
+							178 button
+								179 image
+							180 container
+								181 image Deployment Action
+								182 heading TestFlight Internal Testing - visionOS, Value: 4
+									183 text TestFlight Internal Testing - visionOS
+								184 button More
+									185 image More
+								186 text Artifact
+								187 button Archive - visionOS
+									188 text Archive - visionOS
+								189 text Groups
+								190 link Description: Gus Internal, Value: appstoreconnect.apple.com/apps/6778382140/testflight/groups/cc95594c-6adf-4f5b-82b1-85cb92a8165f
+								191 text 1 Member
+								192 button Edit
+							193 container
+								194 image Deployment Action
+								195 heading TestFlight Internal Testing - tvOS, Value: 4
+									196 text TestFlight Internal Testing - tvOS
+								197 button More
+									198 image More
+								199 text Artifact
+								200 button Archive - tvOS
+									201 text Archive - tvOS
+								202 text Groups
+								203 link Description: Gus Internal, Value: appstoreconnect.apple.com/apps/6778382140/testflight/groups/cc95594c-6adf-4f5b-82b1-85cb92a8165f
+								204 text 1 Member
+								205 button Edit
+							206 container
+								207 image Deployment Action
+								208 heading TestFlight Internal Testing - macOS, Value: 4
+									209 text TestFlight Internal Testing - macOS
+								210 button More
+									211 image More
+								212 text Artifact
+								213 button Archive - macOS
+									214 text Archive - macOS
+								215 text Groups
+								216 link Description: Gus Internal, Value: appstoreconnect.apple.com/apps/6778382140/testflight/groups/cc95594c-6adf-4f5b-82b1-85cb92a8165f
+								217 text 1 Member
+								218 button Edit
+							219 container
+								220 image Deployment Action
+								221 heading TestFlight Internal Testing - iOS, Value: 4
+									222 text TestFlight Internal Testing - iOS
+								223 button More
+									224 image More
+								225 text Artifact
+								226 button Archive - iOS
+									227 text Archive - iOS
+								228 text Groups
+								229 link Description: Gus Internal, Value: appstoreconnect.apple.com/apps/6778382140/testflight/groups/cc95594c-6adf-4f5b-82b1-85cb92a8165f
+								230 text 1 Member
+								231 button Edit
+		232 content list
+			233 link Description: App Store Connect, Value: appstoreconnect.apple.com/apps
+		234 content list
+			235 container
+				236 text Copyright © 2026 Apple Inc. All rights reserved. |
+			237 container
+				238 link Description: Terms of Service, Value: appstoreconnect.apple.com/WebObjects/iTunesConnect.woa/wa/termsOfService
+				239 text |
+			240 container
+				241 link Description: Privacy Policy, Value: apple.com/legal/privacy
+				242 text |
+			243 link Description: Contact Us, Value: appstoreconnect.apple.com/contact-us
+
+The focused UI element is 0 AXWebArea App Store Connect, URL: appstoreconnect.apple.com/teams/1f3fb703-e0b0-42fc-bc0b-d00a3bfdf58e/xcode-cloud/products/f2e5bb18-7cd2-44ab-b88c-9d54ac63b512/workflows/559f9de9-14d5-4b85-a091-8c3598fa346f

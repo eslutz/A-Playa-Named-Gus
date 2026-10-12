@@ -1,0 +1,113 @@
+{
+  "data": [
+    {
+      "attributes": {
+        "category": "ExportArchiveStep",
+        "fileSource": null,
+        "issueType": "WARNING",
+        "message": "Exporting for Development Distribution failed. Please download the logs artifact for more information."
+      },
+      "id": "211424a2-1842-35c6-ab7a-42bc4f7a65ee",
+      "type": "ciIssues"
+    },
+    {
+      "attributes": {
+        "category": "ExportArchiveStep",
+        "fileSource": null,
+        "issueType": "WARNING",
+        "message": "Exporting for Ad Hoc Distribution failed. Please download the logs artifact for more information."
+      },
+      "id": "cc0c32d9-8a66-36b2-9547-66f24d3f6cae",
+      "type": "ciIssues"
+    },
+    {
+      "attributes": {
+        "category": "Xcodebuild",
+        "fileSource": {
+          "lineNumber": 51,
+          "path": "file:///Volumes/workspace/repository/Sources/Features/Settings/AgeRangeDefaults.swift"
+        },
+        "issueType": "WARNING",
+        "message": "Sending value of non-Sendable type 'DeclaredAgeRangeAction' risks causing data races; this is an error in the Swift 6 language mode"
+      },
+      "id": "eae807f5-e16e-398c-a6ce-c34d3857fbc9",
+      "type": "ciIssues"
+    },
+    {
+      "attributes": {
+        "category": "Xcodebuild",
+        "fileSource": {
+          "lineNumber": 233,
+          "path": "file:///Volumes/workspace/repository/Sources/Features/Books/BookReaderView.swift"
+        },
+        "issueType": "WARNING",
+        "message": "Sending 'opener' risks causing data races; this is an error in the Swift 6 language mode"
+      },
+      "id": "04725db3-e600-3689-9e46-3e1cbad5292a",
+      "type": "ciIssues"
+    },
+    {
+      "attributes": {
+        "category": "Xcodebuild",
+        "fileSource": {
+          "lineNumber": 231,
+          "path": "file:///Volumes/workspace/repository/Sources/Features/Books/BookReaderView.swift"
+        },
+        "issueType": "WARNING",
+        "message": "Sending value of non-Sendable type 'AssetRetriever' risks causing data races; this is an error in the Swift 6 language mode"
+      },
+      "id": "b2fc61c4-6dd9-3ca9-95ae-4231fcee3947",
+      "type": "ciIssues"
+    },
+    {
+      "attributes": {
+        "category": "Xcodebuild",
+        "fileSource": {
+          "lineNumber": 236,
+          "path": "file:///Volumes/workspace/repository/Sources/Features/Books/BookReaderView.swift"
+        },
+        "issueType": "WARNING",
+        "message": "Sending 'publication' risks causing data races; this is an error in the Swift 6 language mode"
+      },
+      "id": "ae5ce6b1-84c0-372a-acd8-d5de8dcb32e6",
+      "type": "ciIssues"
+    },
+    {
+      "attributes": {
+        "category": "Xcodebuild",
+        "fileSource": {
+          "lineNumber": 260,
+          "path": "file:///Volumes/workspace/repository/Sources/Features/Books/BookReaderView.swift"
+        },
+        "issueType": "WARNING",
+        "message": "Sending 'publication' risks causing data races; this is an error in the Swift 6 language mode"
+      },
+      "id": "25d191d3-21ac-31a1-bc87-9ba586298dbc",
+      "type": "ciIssues"
+    },
+    {
+      "attributes": {
+        "category": "Xcodebuild",
+        "fileSource": {
+          "lineNumber": 267,
+          "path": "file:///Volumes/workspace/repository/Sources/Features/Books/BookReaderView.swift"
+        },
+        "issueType": "WARNING",
+        "message": "'==' is deprecated: Strict URL comparisons can be a source of bug. Use isEquivalent() instead."
+      },
+      "id": "0f1bb2d5-11dd-39f6-ade0-6c4aad5ea265",
+      "type": "ciIssues"
+    },
+    {
+      "attributes": {
+        "category": "ExportArchiveStep",
+        "fileSource": null,
+        "issueType": "ERROR",
+        "message": "Exporting for App Store Distribution failed. Please download the logs artifact for more information."
+      },
+      "id": "44c4a0c6-1493-3646-abdc-922456ca38cc",
+      "type": "ciIssues"
+    }
+  ],
+  "observedAt": "2026-10-12T03:12:28.609855Z"
+}

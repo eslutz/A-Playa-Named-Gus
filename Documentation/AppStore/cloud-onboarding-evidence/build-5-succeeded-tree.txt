@@ -1,0 +1,106 @@
+Browser tab: 1, Title: "App Store Connect", URL: "https://appstoreconnect.apple.com/teams/1f3fb703-e0b0-42fc-bc0b-d00a3bfdf58e/xcode-cloud/products/f2e5bb18-7cd2-44ab-b88c-9d54ac63b512/builds/0f0892cc-dcc6-4229-972b-72335a6550e5/summary".
+1 AXWebArea App Store Connect, URL: appstoreconnect.apple.com/teams/1f3fb703-e0b0-42fc-bc0b-d00a3bfdf58e/xcode-cloud/products/f2e5bb18-7cd2-44ab-b88c-9d54ac63b512/builds/0f0892cc-dcc6-4229-972b-72335a6550e5/summary
+	2 container
+		3 container App Store Connect
+			4 container
+				5 heading App Store Connect, Value: 1
+					6 link Description: App Store Connect, Value: appstoreconnect.apple.com/, ID: logo
+				7 container Global
+					8 content list
+						9 link Description: Apps, Value: appstoreconnect.apple.com/apps
+						10 link Description: Xcode Cloud, Value: appstoreconnect.apple.com/teams/1f3fb703-e0b0-42fc-bc0b-d00a3bfdf58e/xcode-cloud
+						11 link Description: Trends, Value: appstoreconnect.apple.com/trends
+						12 link Description: Reports, Value: appstoreconnect.apple.com/itc/payments_and_financial_reports
+						13 link Description: Business, Value: appstoreconnect.apple.com/business
+						14 link Description: Users and Access, Value: appstoreconnect.apple.com/access/users
+				15 button Eric Slutz Eric Slutz Account name menu
+		16 container
+			17 container ci_v2
+				18 container
+					19 button Application Gus
+						20 image Application
+						21 heading Gus, Value: 1
+							22 text Gus
+						23 image
+					24 button Builds
+						25 text Builds
+						26 image
+					27 link Description: View App, Value: appstoreconnect.apple.com/apps/6778382140/distribution
+				28 container
+					29 link Description: Builds, Value: appstoreconnect.apple.com/teams/1f3fb703-e0b0-42fc-bc0b-d00a3bfdf58e/xcode-cloud/products/f2e5bb18-7cd2-44ab-b88c-9d54ac63b512/groups
+					30 link Description: main, Value: appstoreconnect.apple.com/teams/1f3fb703-e0b0-42fc-bc0b-d00a3bfdf58e/xcode-cloud/products/f2e5bb18-7cd2-44ab-b88c-9d54ac63b512/groups/3d7a348c-c2f2-4240-8b64-ebec62847e11
+					31 container
+						32 image
+						33 text Build 5
+					34 container
+						35 button Succeeded Build 5 - Overview
+							65 image Succeeded
+							37 text Build 5 - Overview
+							38 image
+						39 button Rebuild
+					40 container
+						41 heading Details, Value: 5
+							42 text Details
+						43 text START CONDITION
+						44 text Manual build
+						45 text STARTED
+						46 text Today at 4:30 AM
+						47 text QUEUED FOR 9s DURATION 2m USAGE 8m
+						66 button View Distribution
+						67 text LAST COMMIT
+						68 image Avatar
+						69 button Add Mac App Store distribution metadata
+							70 text Add Mac App Store distribution metadata
+						71 link Description: 2546563, Value: github.com/eslutz/A-Playa-Named-Gus/commit/25465635293467394cc829f23caa2208b9c489cb
+						72 text WORKFLOW
+						48 link Description: Gus Multiplatform Validation, Value: appstoreconnect.apple.com/teams/1f3fb703-e0b0-42fc-bc0b-d00a3bfdf58e/xcode-cloud/products/f2e5bb18-7cd2-44ab-b88c-9d54ac63b512/workflows/A15758DF-3577-4ED3-99F5-4B549E19BD8F
+						49 text XCODE VERSION
+						50 text Xcode 27.1 RC (27A9275)
+						51 text MACOS VERSION
+						52 text macOS Golden Gate 27.2 beta 2 (26B5091g)
+						73 heading Results, Value: 5
+							74 text Results
+						75 table
+							76 row
+								77 cell
+									78 text ACTIONS
+							79 row
+								80 cell
+									81 image Succeeded
+									82 link Description: Build - iOS, Value: appstoreconnect.apple.com/teams/1f3fb703-e0b0-42fc-bc0b-d00a3bfdf58e/xcode-cloud/products/f2e5bb18-7cd2-44ab-b88c-9d54ac63b512/builds/0f0892cc-dcc6-4229-972b-72335a6550e5/action/7596e077-9d2a-40ad-b8ec-e00e167201f7
+									83 text Succeeded
+								84 cell
+									85 image Warning
+									86 text 6
+							87 row
+								88 cell
+									89 image Succeeded
+									90 link Description: Build - macOS, Value: appstoreconnect.apple.com/teams/1f3fb703-e0b0-42fc-bc0b-d00a3bfdf58e/xcode-cloud/products/f2e5bb18-7cd2-44ab-b88c-9d54ac63b512/builds/0f0892cc-dcc6-4229-972b-72335a6550e5/action/7a70c949-97d2-4669-8b88-ba8ccd8b9014
+									91 text Succeeded
+								92 cell
+									93 image Warning
+									94 text 1
+							95 row
+								96 cell
+									97 image Succeeded
+									98 link Description: Build - tvOS, Value: appstoreconnect.apple.com/teams/1f3fb703-e0b0-42fc-bc0b-d00a3bfdf58e/xcode-cloud/products/f2e5bb18-7cd2-44ab-b88c-9d54ac63b512/builds/0f0892cc-dcc6-4229-972b-72335a6550e5/action/d4e5dbf4-43c3-41ac-aaa1-301c9408b904
+									99 text Succeeded
+							100 row
+								101 cell
+									102 image Succeeded
+									103 link Description: Build - visionOS, Value: appstoreconnect.apple.com/teams/1f3fb703-e0b0-42fc-bc0b-d00a3bfdf58e/xcode-cloud/products/f2e5bb18-7cd2-44ab-b88c-9d54ac63b512/builds/0f0892cc-dcc6-4229-972b-72335a6550e5/action/521936fc-c518-4ec4-a54a-5ebef3030ee6
+									104 text Succeeded
+		53 content list
+			54 link Description: App Store Connect, Value: appstoreconnect.apple.com/apps
+		55 content list
+			56 container
+				57 text Copyright © 2026 Apple Inc. All rights reserved. |
+			58 container
+				59 link Description: Terms of Service, Value: appstoreconnect.apple.com/WebObjects/iTunesConnect.woa/wa/termsOfService
+				60 text |
+			61 container
+				62 link Description: Privacy Policy, Value: apple.com/legal/privacy
+				63 text |
+			64 link Description: Contact Us, Value: appstoreconnect.apple.com/contact-us
+
+The focused UI element is 1 AXWebArea App Store Connect, URL: appstoreconnect.apple.com/teams/1f3fb703-e0b0-42fc-bc0b-d00a3bfdf58e/xcode-cloud/products/f2e5bb18-7cd2-44ab-b88c-9d54ac63b512/builds/0f0892cc-dcc6-4229-972b-72335a6550e5/summary

@@ -1,0 +1,43 @@
+Run 38194318738; attempt 1; source 64505d9dfd337c90f390c7c66503912eac252d3f
+Job 114633546542: Test iPad
+Compilation and test-runner launch succeeded. First natural completion failed before later replay assertions could execute.
+Native telemetry: itemTime=1.0, duration=1.0, ready/playing/rate1, zero native end/failure events; underlying cause remains unresolved.
+The subsequent deleted-download/no-stream case passed; nearby native errors or HAL overload do not independently establish the cause.
+A separate 600-second diagnostics collection timeout followed the failed test run.
+2026-10-12T02:09:31.3958500Z Xcode 27.1
+2026-10-12T02:09:31.3959290Z Build version 27A9269
+2026-10-12T02:19:24.9614780Z 	 Executed 3 tests, with 0 failures (0 unexpected) in 6.948 (6.951) seconds
+2026-10-12T02:19:28.1608400Z 	 Executed 3 tests, with 0 failures (0 unexpected) in 6.948 (6.952) seconds
+2026-10-12T02:21:34.9990300Z 	 Executed 3 tests, with 0 failures (0 unexpected) in 6.948 (21.398) seconds
+2026-10-12T02:21:50.5505360Z ◇ Suite "Playback integration" started.
+2026-10-12T02:21:50.6364620Z ◇ Suite "Audio queue replay" started.
+2026-10-12T02:21:50.7444620Z ◇ Test "Play after natural queue completion restarts playback and tracks the next completion" started.
+2026-10-12T02:21:52.0744240Z 2026-10-12 02:21:49.595650+0000 A Playa Named Gus[25799:81760] [player] <<<< FigFilePlayer >>>> signalled err=-12864 at <>:10684
+2026-10-12T02:21:52.0745060Z 2026-10-12 02:21:49.607991+0000 A Playa Named Gus[25799:81760] [player] <<<< FigFilePlayer >>>> signalled err=-12864 at <>:10684
+2026-10-12T02:21:52.0745750Z 2026-10-12 02:21:50.519058+0000 A Playa Named Gus[25799:81759] [player] <<<< FigFilePlayer >>>> signalled err=-12864 at <>:10684
+2026-10-12T02:21:52.1581720Z 2026-10-12 02:21:51.555718+0000 A Playa Named Gus[25799:81760] [player] <<<< FigFilePlayer >>>> signalled err=-12864 at <>:10684
+2026-10-12T02:21:56.7007740Z 2026-10-12 02:21:55.072637+0000 A Playa Named Gus[25799:78772] [AMCP]          HALC_ProxyIOContext.cpp:1676  HALC_ProxyIOContext::IOWorkLoop: skipping cycle due to overload
+2026-10-12T02:22:05.1067260Z ✘ Test "Play after natural queue completion restarts playback and tracks the next completion" recorded an issue at AudioPlaybackTests.swift:250:17: Expectation failed: await waitUntil {
+2026-10-12T02:22:05.1170880Z                 !store.isPlaying && store.state == .loaded && notifications.snapshot(for: ObjectIdentifier(finishedItem)).endCount >= 1
+2026-10-12T02:22:05.1184470Z             }
+2026-10-12T02:22:05.1186200Z ↳ Audio wait expired: state=loaded, isPlaying=true, itemStatus=1, timeControlStatus=2, rate=1.0, itemTime=1.0, itemDuration=1.0, actionAtItemEnd=1, nativeEndCount=0, nativeFailureCount=0, failedEndErrorDomain=none, failedEndErrorCode=none, startupElapsed=0.506526083 seconds.
+2026-10-12T02:22:05.1187310Z ↳ await waitUntil {
+2026-10-12T02:22:05.1190170Z                   !store.isPlaying && store.state == .loaded && notifications.snapshot(for: ObjectIdentifier(finishedItem)).endCount >= 1
+2026-10-12T02:22:05.1192260Z ✘ Test "Play after natural queue completion restarts playback and tracks the next completion" failed after 17.801 seconds with 1 issue.
+2026-10-12T02:22:05.1193240Z ◇ Test "Replay after automatic del2026-10-12 02:22:04.997153+0000 A Playa Named Gus[25799:82746] [player] <<<< FigFilePlayer >>>> signalled err=-12864 at <>:10684
+2026-10-12T02:22:05.1194700Z 2026-10-12 02:22:05.025325+0000 A Playa Named Gus[25799:82746] [player] <<<< FigFilePlayer >>>> signalled err=-12864 at <>:10684
+2026-10-12T02:22:05.1224550Z 2026-10-12 02:22:05.094872+0000 A Playa Named Gus[25799:82762] [player] <<<< FigFilePlayer >>>> signalled err=-12864 at <>:10684
+2026-10-12T02:22:05.1225420Z 2026-10-12 02:22:05.095825+0000 A Playa Named Gus[25799:82762] [player] <<<< FigFilePlayer >>>> signalled err=-12864 at <>:10684
+2026-10-12T02:22:05.1227750Z 2026-10-12 02:22:05.121762+0000 A Playa Named Gus[25799:82761] [player] <<<< FigFilePlayer >>>> signalled err=-12864 at <>:10684
+2026-10-12T02:22:06.1819040Z 2026-10-12 02:22:06.157727+0000 A Playa Named Gus[25799:82760] [player] <<<< FigFilePlayer >>>> signalled err=-12864 at <>:10684
+2026-10-12T02:22:06.3367530Z 2026-10-12 02:22:06.221256+0000 A Playa Named Gus[25799:82746] [player] <<<< FigFilePlayer >>>> signalled err=-12864 at <>:10684
+2026-10-12T02:22:06.3701570Z ✔ Test "Replay after automatic deletion respects local-only playback and does not stream" passed after 1.226 seconds.
+2026-10-12T02:22:06.3703970Z ✘ Suite "Audio queue replay" failed after 19.028 seconds with 1 issue.
+2026-10-12T02:22:06.4807080Z 2026-10-12 02:22:06.230927+0000 A Playa Named Gus[25799:82746] [player] <<<< FigFilePlayer >>>> signalled err=-12864 at <>:10684
+2026-10-12T02:22:06.6591220Z 2026-10-12 02:22:06.351827+0000 A Playa Named Gus[25799:82746] [player] <<<< FigFilePlayer >>>> signalled err=-12864 at <>:10684
+2026-10-12T02:22:07.4304600Z ◇ Test "an explicit repeated Home route still issues a navigat2026-10-12 02:22:07.242119+0000 A Playa Named Gus[25799:82746] [player] <<<< FigFilePlayer >>>> signalled err=-12864 at <>:10684
+2026-10-12T02:22:07.4888720Z 2026-10-12 02:22:07.266562+0000 A Playa Named Gus[25799:82746] [player] <<<< FigFilePlayer >>>> signalled err=-12864 at <>:10684
+2026-10-12T02:22:07.7363380Z ✘ Suite "Playback integration" failed after 21.310 seconds with 1 issue.
+2026-10-12T02:22:13.4600490Z ✘ Test run with 288 tests in 49 suites failed after 169.437 seconds with 1 issue.
+2026-10-12T02:32:20.4781020Z 2026-10-12 02:32:20.476 xcodebuild[13806:80923]  IDETestOperationsObserverDebug: Failure collecting diagnostics from simulator: Timed out after 600.0 seconds while waiting for a response from the invoked process
+2026-10-12T02:32:25.6680310Z ** TEST FAILED **
