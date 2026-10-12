@@ -6,7 +6,6 @@ import Testing
 @Suite("App model session switching")
 struct AppModelSessionTests {
     private static let lastSessionAccountKey = "dev.ericslutz.gus.lastSignedInSessionAccount"
-    private static let legacyLastUserIDKey = "dev.ericslutz.gus.lastSignedInUserID"
 
     @Test("switching stored users preserves all saved tokens")
     func switchingStoredUsersPreservesTokens() throws {
@@ -93,52 +92,6 @@ struct AppModelSessionTests {
 
         #expect(appModel.currentSession?.user == duplicateIDUser)
         #expect(appModel.lastSessionAccount == SessionCredential(user: duplicateIDUser).account)
-    }
-
-    @Test("legacy bare user id migrates only when it uniquely identifies a stored user")
-    func legacyBareUserIDMigratesWhenUnique() throws {
-        let fixture = try Fixture()
-        fixture.userDefaults.set(fixture.userA.id, forKey: Self.legacyLastUserIDKey)
-
-        let appModel = AppModel(serverStore: fixture.store, tokenStore: fixture.tokens, userDefaults: fixture.userDefaults)
-        appModel.restoreLastSession()
-
-        #expect(appModel.currentSession?.user == fixture.userA)
-        #expect(appModel.lastSessionAccount == SessionCredential(user: fixture.userA).account)
-        #expect(fixture.userDefaults.string(forKey: Self.lastSessionAccountKey) == SessionCredential(user: fixture.userA).account)
-        #expect(fixture.userDefaults.string(forKey: Self.legacyLastUserIDKey) == nil)
-    }
-
-    @Test("legacy Jellyfin keychain account migrates to provider-qualified account")
-    func legacyJellyfinKeychainAccountMigrates() throws {
-        let fixture = try Fixture(seedTokenA: false)
-        let credential = SessionCredential(user: fixture.userA)
-        fixture.tokens.setToken("legacy-token-a", account: credential.legacyAccount)
-        fixture.userDefaults.set(credential.account, forKey: Self.lastSessionAccountKey)
-
-        let appModel = AppModel(serverStore: fixture.store, tokenStore: fixture.tokens, userDefaults: fixture.userDefaults)
-        appModel.restoreLastSession()
-
-        #expect(appModel.currentSession?.user == fixture.userA)
-        #expect(fixture.tokens.token(for: credential) == "legacy-token-a")
-        #expect(fixture.tokens.token(account: credential.legacyAccount) == nil)
-    }
-
-    @Test("legacy bare user id is discarded when multiple stored users match")
-    func duplicateLegacyBareUserIDDoesNotRestoreWrongAccount() throws {
-        let fixture = try Fixture()
-        let duplicateIDUser = StoredUser(id: fixture.userA.id, name: "Burton", serverID: fixture.serverB.id)
-        fixture.store.saveUsers([fixture.userA, duplicateIDUser])
-        fixture.tokens.setToken("token-duplicate", for: SessionCredential(user: duplicateIDUser))
-        fixture.userDefaults.set(fixture.userA.id, forKey: Self.legacyLastUserIDKey)
-
-        let appModel = AppModel(serverStore: fixture.store, tokenStore: fixture.tokens, userDefaults: fixture.userDefaults)
-        appModel.restoreLastSession()
-
-        #expect(appModel.currentSession == nil)
-        #expect(appModel.lastSessionAccount == nil)
-        #expect(fixture.userDefaults.string(forKey: Self.lastSessionAccountKey) == nil)
-        #expect(fixture.userDefaults.string(forKey: Self.legacyLastUserIDKey) == nil)
     }
 
     @Test("debug preview session installs a signed-in session without persistence")

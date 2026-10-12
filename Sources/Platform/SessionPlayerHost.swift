@@ -204,23 +204,15 @@ struct SessionPlayerRequest: ViewModifier {
         }
 
         func body(content: Content) -> some View {
-            if #available(iOS 26.1, *) {
-                // Size-class changes must not replace the content subtree: doing so
-                // tears down its sheets and navigation while a player is presented.
-                content
-                    .tabViewBottomAccessory(isEnabled: isVisible && widthClass == .compact && usesTabAccessory) { returnControl }
-                    .safeAreaInset(edge: .bottom) {
-                        if isVisible, widthClass != .compact || !usesTabAccessory {
-                            returnControl.background(.bar)
-                        }
-                    }
-            } else {
-                content.safeAreaInset(edge: .bottom) {
-                    if isVisible {
+            // Size-class changes must not replace the content subtree: doing so
+            // tears down its sheets and navigation while a player is presented.
+            content
+                .tabViewBottomAccessory(isEnabled: isVisible && widthClass == .compact && usesTabAccessory) { returnControl }
+                .safeAreaInset(edge: .bottom) {
+                    if isVisible, widthClass != .compact || !usesTabAccessory {
                         returnControl.background(.bar)
                     }
                 }
-            }
         }
 
         @ViewBuilder private var returnControl: some View {

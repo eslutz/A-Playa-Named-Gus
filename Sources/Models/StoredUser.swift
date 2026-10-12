@@ -3,7 +3,7 @@ import Foundation
 /// A signed-in user, persisted **without** the access token (the token lives in the
 /// Keychain, keyed by `SessionCredential.account`).
 struct StoredUser: Codable, Identifiable, Hashable {
-    /// Backend provider that owns this user. Legacy records decode as Jellyfin.
+    /// Backend provider that owns this user.
     var providerKind: MediaProviderKind
 
     /// User id (`UserDto.id`).
@@ -42,7 +42,7 @@ struct StoredUser: Codable, Identifiable, Hashable {
 
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        providerKind = try container.decodeIfPresent(MediaProviderKind.self, forKey: .providerKind) ?? .jellyfin
+        providerKind = try container.decode(MediaProviderKind.self, forKey: .providerKind)
         id = try container.decode(String.self, forKey: .id)
         name = try container.decode(String.self, forKey: .name)
         serverID = try container.decode(String.self, forKey: .serverID)

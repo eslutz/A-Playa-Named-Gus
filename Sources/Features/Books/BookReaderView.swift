@@ -234,7 +234,7 @@
             }
         }
 
-        /// Build and query the legacy Readium objects in one nonisolated loading
+        /// Build and query the Readium objects in one nonisolated loading
         /// operation, before any navigator can access them. Each load owns its
         /// retriever/parser. `sending` transfers the completed publication once
         /// to the main-actor reader without asserting that it is Sendable.

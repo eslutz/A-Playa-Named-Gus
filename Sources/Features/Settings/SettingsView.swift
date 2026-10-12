@@ -81,9 +81,8 @@ struct SettingsView: View {
                     Toggle("Hide Unrated Media", isOn: $hideUnratedContent)
                 }
                 #if canImport(DeclaredAgeRange) && (os(iOS) || os(macOS))
-                    if #available(iOS 26.0, macOS 26.0, *) {
-                        AgeRangeDefaultsButton()
-                    }
+                    AgeRangeDefaultsButton()
+
                 #endif
             } header: {
                 Text("Content Restrictions")

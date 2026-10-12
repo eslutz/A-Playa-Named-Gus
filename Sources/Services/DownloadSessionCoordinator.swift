@@ -13,7 +13,6 @@ protocol DownloadSessionCoordinating: AnyObject {
 @MainActor
 protocol DownloadSessionCoordinatorEventHandler: AnyObject {
     func downloadSessionCoordinator(_ coordinator: DownloadSessionCoordinating, didReconnectActiveRecordIDs recordIDs: Set<String>)
-    func downloadSessionCoordinator(_ coordinator: DownloadSessionCoordinating, didUpdateProgress progress: Double, recordID: String)
     func downloadSessionCoordinator(_ coordinator: DownloadSessionCoordinating, didUpdateActivity activity: DownloadActivity, recordID: String)
     func downloadSessionCoordinatorDidFinishBackgroundEvents(_ coordinator: DownloadSessionCoordinating) async
     func downloadSessionCoordinator(_ coordinator: DownloadSessionCoordinating, didFinishDownloadingTo location: URL, recordID: String)
@@ -23,10 +22,7 @@ protocol DownloadSessionCoordinatorEventHandler: AnyObject {
 
 extension DownloadSessionCoordinatorEventHandler {
     func downloadSessionCoordinator(_ coordinator: DownloadSessionCoordinating, didReconnectActiveRecordIDs recordIDs: Set<String>) {}
-    func downloadSessionCoordinator(_ coordinator: DownloadSessionCoordinating, didUpdateProgress progress: Double, recordID: String) {}
-    func downloadSessionCoordinator(_ coordinator: DownloadSessionCoordinating, didUpdateActivity activity: DownloadActivity, recordID: String) {
-        downloadSessionCoordinator(coordinator, didUpdateProgress: activity.progress ?? 0, recordID: recordID)
-    }
+    func downloadSessionCoordinator(_ coordinator: DownloadSessionCoordinating, didUpdateActivity activity: DownloadActivity, recordID: String) {}
 
     func downloadSessionCoordinatorDidFinishBackgroundEvents(_ coordinator: DownloadSessionCoordinating) async {}
     func downloadSessionCoordinator(_ coordinator: DownloadSessionCoordinating, didFinishDownloadingTo location: URL, recordID: String) {}

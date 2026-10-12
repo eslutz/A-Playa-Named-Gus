@@ -15,11 +15,6 @@ struct SessionCredential: Codable, Hashable {
         "\(providerKind.rawValue):\(serverID):\(userID)"
     }
 
-    /// Legacy pre-provider account string. Used only to migrate existing Jellyfin tokens.
-    var legacyAccount: String {
-        "\(serverID):\(userID)"
-    }
-
     init(providerKind: MediaProviderKind = .jellyfin, serverID: String, userID: String) {
         self.providerKind = providerKind
         self.serverID = serverID
@@ -40,7 +35,7 @@ struct SessionCredential: Codable, Hashable {
 
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        providerKind = try container.decodeIfPresent(MediaProviderKind.self, forKey: .providerKind) ?? .jellyfin
+        providerKind = try container.decode(MediaProviderKind.self, forKey: .providerKind)
         serverID = try container.decode(String.self, forKey: .serverID)
         userID = try container.decode(String.self, forKey: .userID)
     }

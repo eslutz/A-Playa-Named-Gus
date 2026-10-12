@@ -134,8 +134,8 @@ struct OfflineDownloadRecord: Codable, Equatable, Identifiable {
         serverID = try container.decode(String.self, forKey: .serverID)
         userID = try container.decode(String.self, forKey: .userID)
         downloadedAt = try container.decode(Date.self, forKey: .downloadedAt)
-        status = try container.decodeIfPresent(DownloadStatus.self, forKey: .status) ?? .complete
-        progress = try container.decodeIfPresent(Double.self, forKey: .progress) ?? (status.isComplete ? 1 : 0)
+        status = try container.decode(DownloadStatus.self, forKey: .status)
+        progress = try container.decode(Double.self, forKey: .progress)
         resumeData = try container.decodeIfPresent(Data.self, forKey: .resumeData)
         activity = try container.decodeIfPresent(DownloadActivity.self, forKey: .activity)
     }
@@ -775,19 +775,6 @@ final class OfflineDownloadStore: DownloadSessionCoordinatorEventHandler {
 
     func downloadSessionCoordinatorDidFinishBackgroundEvents(_ coordinator: DownloadSessionCoordinating) async {
         DownloadBackgroundEvents.shared.finish()
-    }
-
-    func downloadSessionCoordinator(
-        _ coordinator: DownloadSessionCoordinating,
-        didUpdateProgress progress: Double,
-        recordID: String
-    ) {
-        // Live progress stays in memory — these callbacks arrive many times per second
-        // and rewriting the records file per tick thrashes the disk. The record is
-        // persisted on queue, pause, completion, and failure.
-        guard let index = records.firstIndex(where: { $0.id == recordID }) else { return }
-        records[index].status = .downloading(progress)
-        records[index].progress = progress
     }
 
     func downloadSessionCoordinator(

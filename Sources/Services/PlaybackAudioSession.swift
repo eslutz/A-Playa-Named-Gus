@@ -27,8 +27,8 @@ final class PlaybackAudioSessionQueue {
     }
 }
 
-/// AVAudioSession category changes and legacy activation can block. Run them away
-/// from MainActor; use the native asynchronous activation APIs on OS 27 and newer.
+/// Run audio-session category changes away from MainActor and use native
+/// asynchronous activation and deactivation.
 @MainActor
 enum PlaybackAudioSession {
     private static let queue = PlaybackAudioSessionQueue()
@@ -49,27 +49,24 @@ enum PlaybackAudioSession {
                 #else
                     try? session.setCategory(.playback, mode: video ? .moviePlayback : .default)
                 #endif
-                if #available(iOS 27, tvOS 27, visionOS 27, watchOS 5, *) {
-                    #if DEBUG
-                        let result = await withCheckedContinuation { (continuation: CheckedContinuation<PlaybackAudioSessionActivationResult, Never>) in
-                            session.activate(options: []) { succeeded, error in
-                                let error = error as NSError?
-                                continuation.resume(returning: PlaybackAudioSessionActivationResult(
-                                    succeeded: succeeded,
-                                    errorDomain: error?.domain,
-                                    errorCode: error?.code
-                                ))
-                            }
+                #if DEBUG
+                    let result = await withCheckedContinuation { (continuation: CheckedContinuation<PlaybackAudioSessionActivationResult, Never>) in
+                        session.activate(options: []) { succeeded, error in
+                            let error = error as NSError?
+                            continuation.resume(returning: PlaybackAudioSessionActivationResult(
+                                succeeded: succeeded,
+                                errorDomain: error?.domain,
+                                errorCode: error?.code
+                            ))
                         }
-                        await MainActor.run { lastActivationResult = result }
-                    #else
-                        await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
-                            session.activate(options: []) { _, _ in continuation.resume() }
-                        }
-                    #endif
-                } else {
-                    try? session.setActive(true)
-                }
+                    }
+                    await MainActor.run { lastActivationResult = result }
+                #else
+                    await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
+                        session.activate(options: []) { _, _ in continuation.resume() }
+                    }
+                #endif
+
             #endif
         }
         await operation.value
@@ -79,13 +76,10 @@ enum PlaybackAudioSession {
         queue.enqueue {
             #if os(iOS) || os(tvOS) || os(visionOS) || os(watchOS)
                 let session = AVAudioSession.sharedInstance()
-                if #available(iOS 27, tvOS 27, visionOS 27, watchOS 27, *) {
-                    await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
-                        session.deactivate(options: .notifyOthersOnDeactivation) { _, _ in continuation.resume() }
-                    }
-                } else {
-                    try? session.setActive(false, options: .notifyOthersOnDeactivation)
+                await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
+                    session.deactivate(options: .notifyOthersOnDeactivation) { _, _ in continuation.resume() }
                 }
+
             #endif
         }
     }
