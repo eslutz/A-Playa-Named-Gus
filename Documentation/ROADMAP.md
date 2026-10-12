@@ -22,7 +22,7 @@ constrain *how* each item is built.
 
 - [~] October 11 repairs cover sign-in/error feedback, Mac discovery, persistent download artwork, confirmed/selective/bulk management deletion, native swipe deletion, completion cleanup, adaptive hero/actions/sidebar, audio return controls, and playback lifecycle/replay. Physical phone checks finished on **1.0.0 (11)**; management scrolling/Cancel and compact actions passed, and the phone is released with no automation pending. Later source changes have not been installed on it. The landscape Home search repair passed 1/1; full narrow-screen portrait/landscape checks passed 2/2 in light/dark at accessibility XXXL. The final focused playback run passed **23/23** (two real natural-completion/replay checks and 21 UI/lifecycle regressions). Nested EPUB chapter navigation now uses a native sheet/list with recursive disclosure groups and retains Readium’s directional navigation adapter. Its isolated iOS simulator acceptance passed **1/1**, covering chapter selection, readable portrait/landscape pages, forward/backward paging, keyboard absence, and return to book details. See [current repair evidence](Reviews/2026-10-11-auth-device-repair/REPORT.md).
 - [x] Implement remediation for the 24 findings in the October 9–10 review and both addenda: bounded artwork/detail layouts, adaptive actions/audio, persistent audio dismissal/reopening, shared navigation across width changes, explicit iPhone More, tvOS link navigation, cancellation/retry, request identity, filtered paging, and localized accessibility fixes. The earlier candidate passed all six platform builds and four 274-test suites; see [the remediation report](Reviews/2026-10-10-ui-remediation/REPORT.md) for scoped runtime and contrast evidence.
-- [~] Complete release acceptance: physical acceptance of later source changes, Mac window/keyboard checks, assistive technology and platform input, remaining appearance/metadata/error variants, full iPad contrast acceptance (native Xcode 27 sampler blocked), exact minimum-OS execution, live Duo display transitions, and signed TestFlight acceptance. The Watch stall was fixed and retested locally on 40 mm and 46 mm. Simulator checks do not close these gates.
+- [~] Complete release acceptance: physical acceptance of later source changes, Mac window/keyboard checks, assistive technology and platform input, remaining appearance/metadata/error variants, full iPad contrast acceptance (native Xcode 27 sampler blocked), exact minimum-OS execution, broader Duo video/navigation/sheet transition flows, and signed TestFlight acceptance. The sampled live Duo audio transition/control check passed; see the repair report for its limits. The Watch stall was fixed and retested locally on 40 mm and 46 mm. Simulator checks do not close the remaining gates.
 
 ## Global Definition of Done (applies to every milestone)
 
@@ -167,13 +167,17 @@ automated build verification. (Covers priority: *polish & testing*.)
 - [~] **CI pipeline.** GitHub Actions: validate the shared project/pins → resolve →
   build the iPhone/iPad/macOS/tvOS/visionOS/Watch matrix → run native unit tests → lint.
   *Acceptance:* successful required checks on the complete current source. *(Configured
-  on the hosted `xcode-27` runner. The post-Duo matrix exposed the obsolete Xcode 27.0
-  selection; CI now requires an iOS simulator SDK of at least 27.1. Run `38190182036`
-  passed all six builds and Mac/iPad/tvOS/visionOS tests, but the iPhone audio replay
-  completion assertion failed again after native suite isolation. A focused standard-rate
-  audio fixture and native-event diagnostic investigation retains the real completion
-  assertions and eight-second deadline; acceptance remains pending separately from
-  the successful 4/4 Xcode Cloud BUILD actions.)*
+  on the hosted `xcode-27` runner with a minimum iOS simulator SDK of 27.1. Final
+  run `38192282611` at `edd06e6636cd32b877622dbcb4ccb34524a1b3c1` passed **13/13 jobs**:
+  six builds, five unit lanes, lint and docs. Each unit lane passed 288 Swift Testing
+  cases in 49 suites and three separate XCTest measurements. Native audio completion,
+  replay and deletion/no-stream assertions passed with the one-second 48 kHz fixture
+  and unchanged eight-second deadline. The earlier 400 ms fixture failures remain
+  recorded with their cause unresolved; no production workaround was added. See
+  [full hosted evidence](AppStore/cloud-onboarding-evidence/github-ci/run-38192282611-summary.json).
+  This is separate from successful 4/4 Xcode Cloud BUILD and device/release acceptance.
+  The later GUS-UI-040 decorative placeholder source edit awaits a new hosted compile;
+  the 13/13 result applies to the preceding accepted candidate.)*
 - [x] **Update `project.yml` for the test target & schemes.** *Acceptance:* generated
   project includes the test targets; the per-platform `Gus <platform> Unit Tests` test
   actions work (the `A Playa Named Gus` scheme is build-only). *(Done: platform-native
@@ -323,9 +327,11 @@ automated build verification. (Covers priority: *polish & testing*.)
   split-view tuning. *Acceptance:* usable with keyboard/trackpad; adapts to all size
   classes. *(Done: hover affordances remain system-native, keyboard route shortcuts are
   available on keyboard platforms, and the split view uses fixed route toolbar actions.)*
-- [x] **Accessibility audit.** VoiceOver across every screen, Dynamic Type to the largest
+- [~] **Accessibility audit.** VoiceOver across every screen, Dynamic Type to the largest
   sizes, contrast, Reduce Motion/Transparency. *Acceptance:* a representative VoiceOver
-  pass completes each core flow; no clipping at AX5. *(Done: poster cards expose combined
+  pass completes each core flow; no clipping at AX5. *(Source implementation and scoped
+  native audits are complete; manual VoiceOver speech/rotor/focus acceptance remains open.
+  Poster cards expose combined
   accessibility labels, playback controls have labels/hints, section headers are marked
   `.isHeader` for VoiceOver rotor navigation, episode rows emit combined locator/title/
   runtime labels, the metadata row is combined into one focus stop, and Reduce
@@ -918,8 +924,10 @@ milestone once it becomes the active focus and is ready to carry a hard acceptan
 
 The phone's three requested final flows completed on build 11: Downloads management landscape scrolling/Cancel, compact portrait/landscape actions, and Home capture. No physical automation or new install is pending. The Home capture exposed GUS-UI-038, subsequently repaired with native top-toolbar search in compact-height iOS 26+ layouts and verified on the simulator. GUS-UI-037's largest-text action separation and full narrow-screen bounds are verified in light/dark portrait/landscape. Both later repairs remain source/simulator acceptance rather than build-11 physical acceptance.
 
-Xcode 27.1 RC is installed. SDK-backed Duo audio arrangement and closed, flat-open, and partially folded simulator flows passed individually. Continuous playback through live display transitions remains unverified. Exact minimum-OS execution remains blocked by unavailable compatible runtimes and the lack of a macOS 15 host/VM; deployment-target builds are not minimum-OS execution. Manual VoiceOver speech, rotor, and focus-order acceptance remains open.
+Xcode 27.1 RC is installed. SDK-backed Duo audio arrangement and closed, flat-open, and partially folded simulator flows passed individually. A native Device Hub check also passed sampled audio continuity through closed → open → partially open → closed, then Pause, resume, and Stop, retaining the same demo title with intentional Repeat One wraps. [Scoped transition evidence](Reviews/2026-10-11-auth-device-repair/evidence/duo-transitions/acceptance.json) does not measure audible gaps/black-frame duration or cover every video/navigation/sheet flow. Exact minimum-OS execution remains blocked by unavailable compatible runtimes and the lack of a macOS 15 host/VM; deployment-target builds are not minimum-OS execution. Manual VoiceOver speech, rotor, and focus-order acceptance remains open.
 
 Final source review repaired Vision Pro capsule hover shapes, video preparation/autoplay teardown, independent artwork backfill/progress synchronization, nested EPUB chapter navigation, and audio replay after natural queue completion. The focused playback run passed 23/23, including real WAV replay, local-only behavior after automatic deletion, and all three video lifecycle regressions. Full source/test lint passes for 193 files; shared project validation covers 12 schemes and 16 pins, and **9/9 Cloud bootstrap tests pass**. The final native EPUB chapter sheet acceptance passed 1/1, zero skipped, with inspected portrait/landscape prose, forward/backward paging, and return-to-detail captures. Readium’s directional navigation adapter is retained and bound to the navigator; hardware-key input and completion deletion specifically while opening Chapters at the final page were source-reviewed rather than runtime-tested. Tests are serialized with two build jobs after measured host memory pressure was relieved. Detailed evidence and test scope live in [the repair report](Reviews/2026-10-11-auth-device-repair/REPORT.md).
 
 The unused ReadiumAdapterGCDWebServer product is removed; the 16 validated pins, including Readium 3.9.0, remain. Account-wide App Store Connect API authentication and initial Cloud onboarding are verified. The manual-only Gus Multiplatform Validation workflow has four BUILD actions (iOS/macOS/tvOS/visionOS), Xcode 27.1 RC, and a compatible macOS host, without distribution. The reviewed app repairs, shared snapshot/pins, and bootstrap repair are published to `origin/main`. Cloud Build 1 failed its post-clone identity check because the runtime reported the verified account UUID instead of the 10-character signing Team ID. Build 2 completed successfully for all four required BUILD actions and resolved all 16 pinned repositories, validating code commit `084a470683a78256e939bd63b416bc2fb0150bb2`. Later documentation and CI configuration changes retain that app-source build provenance. Signed Release archive validation, upload, and TestFlight acceptance remain pending. See [API setup](AppStore/api-access.md) and [Cloud diagnosis](AppStore/xcode-cloud-dependency-onboarding.md).
+
+The preceding candidate passed **13/13 GitHub jobs** in run `38192282611` at exact commit `edd06e6636cd32b877622dbcb4ccb34524a1b3c1`: all six builds, five unit lanes, lint and docs. Each lane passed 288 Swift Testing cases in 49 suites and three separate XCTest measurements, including the strengthened native audio completion/replay and automatic-deletion/no-stream cases. The one-second 48 kHz PCM fixture retains the eight-second wait limit; the earlier 400 ms/8 kHz failure cause remains unproven. [Lane evidence](AppStore/cloud-onboarding-evidence/github-ci/run-38192282611-test-lanes.json). That tested app source matches Cloud-verified `084a470`. A subsequent low-impact GUS-UI-040 edit gives hero/About artwork media-appropriate fallback symbols and hides decorative artwork from accessibility; formatting/syntax pass, with hosted compilation pending. Saved Cloud, CI and Duo acceptance predates this final source edit. The remaining physical, minimum-OS, assistive, full Mac and release gates remain open.

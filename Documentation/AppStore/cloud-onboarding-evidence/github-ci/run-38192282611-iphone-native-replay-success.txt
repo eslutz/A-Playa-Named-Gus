@@ -1,0 +1,10 @@
+Run 38192282611; source edd06e6636cd32b877622dbcb4ccb34524a1b3c1
+Job114627398061: Test iPhone
+Both retained native completion/replay and automatic-deletion/no-stream cases passed; native event expectations are defined in the published test source.
+2026-10-12T01:32:47.8225860Z Xcode 27.1
+2026-10-12T01:32:47.8226440Z Build version 27A9269
+2026-10-12T01:42:19.0074130Z ✔ Test "Play after natural queue completion restarts playback and tracks the next completion" passed after 4.338 seconds.
+2026-10-12T01:42:24.4933870Z ✔ Test "Replay after automatic deletion respects local-only playback and does not stream" passed after 1.303 seconds.
+2026-10-12T01:42:48.9811680Z ✔ Test run with 288 tests in 49 suites passed after 34.088 seconds.
+2026-10-12T01:43:02.3680830Z ** TEST SUCCEEDED **
+2026-10-12T01:42:09.9175010Z 	 Executed 3 tests, with 0 failures (0 unexpected) in 3.035 (5.713) seconds

@@ -1,0 +1,56 @@
+{
+  "captured_at_utc": "2026-10-12T01:46:42.633985+00:00",
+  "run_id": 38192282611,
+  "source_sha": "edd06e6636cd32b877622dbcb4ccb34524a1b3c1",
+  "job_id": 114627398061,
+  "name": "Test iPhone",
+  "status": "completed",
+  "conclusion": "success",
+  "started_at": "2026-10-12T01:32:32Z",
+  "completed_at": "2026-10-12T01:43:08Z",
+  "duration_seconds": 636.0,
+  "test_step_duration_seconds": 578.0,
+  "swift_testing": {
+    "cases": 288,
+    "suites": 49,
+    "duration_seconds": 34.088,
+    "failures": 0
+  },
+  "xctest_performance_measurements": {
+    "cases": 3,
+    "failures": 0
+  },
+  "xctest_performance_case_names": [
+    "GusTests.PerformanceMeasurementTests testHistogramMathMeasurement",
+    "GusTests.PerformanceMeasurementTests testMediaItemMapperThroughputMeasurement",
+    "GusTests.PerformanceMeasurementTests testServerURLNormalizationMeasurement"
+  ],
+  "native_replay_cases": [
+    {
+      "name": "Play after natural queue completion restarts playback and tracks the next completion",
+      "outcome": "passed",
+      "duration_seconds": 4.338
+    },
+    {
+      "name": "Replay after automatic deletion respects local-only playback and does not stream",
+      "outcome": "passed",
+      "duration_seconds": 1.303
+    }
+  ],
+  "retained_native_assertions_proven_by_passed_cases": {
+    "initial_item_end_notifications": 1,
+    "replayed_item_end_notifications": 1,
+    "native_failure_notifications_each_item": 0,
+    "replay_replaces_item": true,
+    "streamed_replay_source_resolution_calls": 2,
+    "deleted_download_item_end_notifications": 1,
+    "deleted_download_server_resolution_calls": 0
+  },
+  "native_assertion_provenance": "Published AudioPlaybackTests.swift at source_sha; these are passed expectations, not separately printed raw success telemetry.",
+  "individual_assertion_count": null,
+  "acceptance_limits": [
+    "Native callback tests use a synthetic standard 48 kHz one-second PCM fixture and retain the eight-second wait deadline.",
+    "This success is separate from physical-device testing and Duo live transition acceptance.",
+    "Full matrix result remains pending."
+  ]
+}

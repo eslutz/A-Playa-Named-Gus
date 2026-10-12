@@ -230,7 +230,7 @@ The user requested completion of the remaining local app repairs before publicat
 - Video teardown could leave an asynchronous preparation or queued next-episode task able to recreate playback after dismissal. Teardown now invalidates the generation; callbacks and next-up results reject obsolete generations. Regression tests cover uncanceled late preparation and queued autoplay after teardown.
 - Download artwork backfill previously ran before offline progress reconciliation. Several slow or unavailable image endpoints could delay resume-position syncing. The two operations now use independent view-scoped tasks with foreground and account cancellation.
 
-Duo’s closed, flat-open, and partially folded simulator flows each passed earlier. Continuous playback across live display transitions remains under verification; the initial check queried Pause during a short-track boundary, and subsequent Device Hub control attempts timed out. Neither failure is counted as successful transition acceptance. The exact minimum-OS runtime and manual VoiceOver acceptance limits remain open. No further automation has been started on the physical phone.
+Duo’s closed, flat-open, and partially folded simulator flows each passed earlier. A subsequent native Device Hub check passed scoped audio continuity through closed → open → partially open → closed, followed by Pause, resume, and Stop. The initial short-track boundary failure and timed-out control attempts remain historical failures; the later check has [separate evidence](evidence/duo-transitions/acceptance.json). The exact minimum-OS runtime and manual VoiceOver acceptance limits remain open. No further automation has been started on the physical phone.
 
 Xcode Cloud onboarding succeeded against the existing app and repository using a disposable local copy to bypass the erroneous public-package connection step. The real project retains its dependencies. Gus Multiplatform Validation is manual-only, with iOS/macOS/tvOS/visionOS BUILD actions, Xcode 27.1 RC, a compatible macOS host, and no distribution. See [Cloud diagnosis](../../AppStore/xcode-cloud-dependency-onboarding.md) for evidence and final build status.
 
@@ -257,7 +257,15 @@ At 19:30 local, after the serial reader check, swap was 9.6 GiB and CPU had 64% 
 
 ### Duo SDK-backed per-state acceptance
 
-Xcode 27.1 RC is installed. The audio surface now uses native `ArrangementView` split placement when a division reserved region intersects it, while the playback/scrubbing state remains owned outside adaptive view replacement. iOS 18 fallbacks remain. The local SDK builds for iOS, Mac, Apple TV, Vision Pro, and Watch passed before the final playback/chapter edits. The real Duo simulator passed one combined Home/detail/audio portrait/landscape flow in each of [closed](evidence/duo/closed-final-summary.json), [flat-open](evidence/duo/open-summary.json), and [partially folded](evidence/duo/folded-summary.json) states. XCTest screenshots can capture the inactive display and are not used alone as visual evidence. Live transition testing remains a separate pending check.
+Xcode 27.1 RC is installed. The audio surface now uses native `ArrangementView` split placement when a division reserved region intersects it, while the playback/scrubbing state remains owned outside adaptive view replacement. iOS 18 fallbacks remain. The local SDK builds for iOS, Mac, Apple TV, Vision Pro, and Watch passed before the final playback/chapter edits. The real Duo simulator passed one combined Home/detail/audio portrait/landscape flow in each of [closed](evidence/duo/closed-final-summary.json), [flat-open](evidence/duo/open-summary.json), and [partially folded](evidence/duo/folded-summary.json) states. XCTest screenshots can capture the inactive display and are not used alone as visual evidence. The subsequent live audio display-transition check below closes that sampled continuity/control gate.
+
+### Duo live audio display-transition acceptance
+
+On the owned iOS 27.1 Duo simulator, native Device Hub controls changed the same running audio player through closed → open → partially open → closed. The demo title, **02 - Whispers of the Glen**, remained selected with Repeat One intentionally enabled. Accessibility snapshots show Pause and Stop in every settled state and progressing playback: closed 0:58, open 2:38, open before the partial transition 0:59, partially open 1:12, and closed again 2:12. The wraps are expected repeats of the 2:42 track, not a claim of globally monotonic elapsed time. Pause then displayed Play at 2:29; resume restored Pause at 2:32; Stop returned to the same item's detail screen with `Detail.play` and no playback-position, Pause, or Stop controls. [Acceptance metadata and exact capture list](evidence/duo-transitions/acceptance.json).
+
+The initial [open capture](evidence/duo-transitions/open-playing.png) was transient and blank; the later [settled open capture](evidence/duo-transitions/open-settled.png) shows the player. The inspected [closed return](evidence/duo-transitions/closed-return.png) and [stopped result](evidence/duo-transitions/closed-stopped.png) support the final controls and return flow. These sampled screenshots and element trees do not measure audible gaps or black-frame duration, or establish transition acceptance for native video, every navigation/sheet flow, or physical Duo hardware.
+
+This check reused the RC-built arm64 simulator app last linked after the final EPUB source edit and used by the accepted EPUB test. At that accepted candidate, app source, configuration, resources, and shared project matched the published `755ff09`/Cloud-verified `084a470` app source; the binary has no embedded commit identifier. The subsequent GUS-UI-040 decorative placeholder edit below is not included in this saved simulator acceptance. Native Mac window/keyboard checks, exact minimum-OS execution, manual VoiceOver, later physical-phone acceptance, signed archives, and TestFlight remain separate gates. The Mac was unlocked for this later Device Hub check, superseding the earlier locked-Mac interaction blocker without changing the recorded host-resource measurements.
 
 
 ### Audio replay lifecycle — source-supported defect
@@ -305,12 +313,15 @@ The current reader UI test also compiled the embedded Watch module; its local Wa
 compile/sign/validation evidence is retained in the [scoped build excerpt](evidence/epub-chapters/watch-build-excerpt.log).
 This is compilation evidence, not another Watch runtime test. The final playback regressions
 remain 23/23 and native EPUB acceptance 1/1. Later documentation/evidence and CI
-configuration changes contain no app source changes.
+configuration changes through CI candidate `edd06e` contain no app source changes;
+the later GUS-UI-040 edit is recorded separately below.
 
 [Cloud result and diagnostic report](../../AppStore/xcode-cloud-dependency-onboarding.md)
 records zero errors, six iOS/one macOS pre-existing SDK migration warnings, and the
-build-only scope. Minimum-OS runtime, manual VoiceOver, live Duo transitions, signed
-archives and TestFlight remain unverified. The physical phone remains released.
+build-only scope. The sampled live Duo audio transition/control check now has
+[separate runtime evidence](evidence/duo-transitions/acceptance.json). Minimum-OS
+runtime, manual VoiceOver, broader Duo flows, signed archives and TestFlight remain
+unverified. The physical phone remains released.
 
 ### GitHub CI SDK mismatch
 
@@ -351,8 +362,8 @@ failure diagnostics. This repairs a test isolation hazard; it does not establish
 that the observed CI failure was a product defect or prove its precise cause.
 No app source or production signing changes are made for this test repair. The
 test identifiers now include `PlaybackIntegrationTests`; future focused selectors
-must use that parent. Formatting, syntax and shared-project checks pass. Its remote
-validation remains pending.
+must use that parent. Formatting, syntax and shared-project checks pass. The
+isolation run's result and subsequent final hosted acceptance are recorded below.
 
 
 Hosted isolation run `38190182036` at exact commit
@@ -374,7 +385,7 @@ to reconstruct an exact startup/deadline duration. The next focused investigatio
 a valid one-second 48 kHz PCM fixture with matching metadata and records actual native
 end/failed-end notifications. It retains the eight-second completion deadline, real
 playback and replay/deletion assertions; no synthetic completion or app workaround is
-introduced. Hosted acceptance of that fixture/diagnostic change remains pending.
+introduced. The subsequent final hosted acceptance is recorded below.
 
 
 After the user unlocked macOS, all three paused service identities/parents were
@@ -383,3 +394,19 @@ normally; process verification confirms both GUI PIDs and their two support serv
 exited. No save/discard prompt appeared, and no document was force-killed. The small
 running background tool service remains preserved. No services remain intentionally
 paused; the normal native memory-cleanup gate is complete.
+
+### Final hosted CI acceptance
+
+[GitHub run 38192282611](https://github.com/eslutz/A-Playa-Named-Gus/actions/runs/38192282611) at exact commit `edd06e6636cd32b877622dbcb4ccb34524a1b3c1` completed **13/13 jobs successfully**: all six iOS/iPadOS/macOS/tvOS/visionOS/watchOS builds, all five iPhone/iPad/macOS/tvOS/visionOS unit lanes, lint, and docs. Each test lane passed **288 Swift Testing cases in 49 suites** and **three separate XCTest performance measurements**, with no failures or observed skipped test-case lines. These repeated platform executions are not additional unique tests; no individual assertion total is reported. [Run summary](../../AppStore/cloud-onboarding-evidence/github-ci/run-38192282611-summary.json), [per-lane evidence](../../AppStore/cloud-onboarding-evidence/github-ci/run-38192282611-test-lanes.json), [log excerpts](../../AppStore/cloud-onboarding-evidence/github-ci/run-38192282611-test-lanes.txt).
+
+The iPhone's strengthened native replay case passed in **4.338 seconds** and its automatic-deletion/local-only no-stream case in **1.303 seconds**. Passed expectations establish exactly one actual native end notification and zero failed-end notifications per original/replayed/deleted item, item replacement on replay, two provider resolutions for replay, and zero server resolutions after the downloaded file's deletion. The other four lanes also passed both cases. [iPhone evidence](../../AppStore/cloud-onboarding-evidence/github-ci/run-38192282611-iphone-native-replay-success.json), [native cases across lanes](../../AppStore/cloud-onboarding-evidence/github-ci/run-38192282611-native-audio-cases.json). These are enforced assertions proven by passing test cases, not separately printed raw success telemetry. The test-only one-second 48 kHz PCM fixture retained actual natural playback and the eight-second deadline; no synthetic completion, skipped case, longer timeout, or production workaround was introduced. The cause of the earlier 400 ms/8 kHz fixture failure remains unresolved. That tested production app source/configuration matches successful Cloud `084a470`; the later GUS-UI-040 source edit awaits hosted compilation. Full interactive Mac, physical later-source, minimum-OS, manual VoiceOver, broader Duo and signed Release/TestFlight gates remain separate.
+
+### GUS-UI-040 — decorative artwork uses incorrect media fallback
+
+**Low impact; source-fixed, hosted compilation pending.** Source review found that the hero backdrop and About poster selected `tv` only for series and otherwise selected `film`, so book/audio placeholders could show a movie symbol and expose an irrelevant decorative symbol label. A media-type helper now returns `book` for books/audiobooks, `music.note` for audio/albums/artists/playlists, `tv` for series/seasons/episodes, and `photo` for photos, preserving `film` for video/default types. Only these two existing artwork calls use the helper. Both artwork wrappers are hidden from accessibility; adjacent title, metadata and controls remain available. The existing audio player already hides its decorative artwork.
+
+Changed sources: [media display helper](../../../Sources/Providers/MediaItem+Display.swift), [hero](../../../Sources/SharedUI/CinematicDetailHero.swift), [About cards](../../../Sources/SharedUI/AboutCardsView.swift). Focused SwiftFormat lint and Swift syntax parsing passed, with no local build/runtime retest or mirrored implementation test added. The saved Cloud `084a470`, CI `edd06e` 13/13, and Duo captures establish the preceding source candidate. They do not validate this subsequent glyph/accessibility edit; the next hosted compile is pending. Manual VoiceOver acceptance remains open.
+
+### Final host-resource sample and cleanup
+
+At **21:51 local**, after native cleanup and the scoped Duo check, swap use was **7.65 GiB** and `memory_pressure` reported **43% free**; that metric is not unused physical RAM. The one-second sample recorded 94 swap-in pages and zero swap-out pages. Both GUI Xcode sessions had exited normally and the owned Device Hub frontend had exited; the owned Duo simulator and demo server were stopped, and no service remained intentionally paused. The largest observed resident process was about 1 GiB; the preserved small background indexing service used 2,032 KiB RSS. The unrelated active simulator/test runner and protected endpoint software were preserved. CPU idle was **15.82%** with a one-minute load of **129.68**, so this sample does not establish low CPU load or restored responsiveness. The reduced swap/idle-service footprints and absence of sampled swap-out do not alone identify a Gus memory leak or prove absence of all memory pressure. Historical measurements above remain recorded. [Final cleanup measurements](evidence/memory-pressure/cleanup.json).

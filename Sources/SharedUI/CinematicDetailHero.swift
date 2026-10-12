@@ -29,7 +29,7 @@ struct CinematicDetailHero<Accessory: View>: View {
         .frame(maxWidth: .infinity, minHeight: baseHeroHeight, alignment: .bottomLeading)
         .background {
             GeometryReader { geometry in
-                AsyncPoster(url: backdropURL, placeholderSymbol: item.type == .series ? "tv" : "film")
+                AsyncPoster(url: backdropURL, placeholderSymbol: item.artworkPlaceholderSymbol)
                     .frame(width: geometry.size.width, height: geometry.size.height)
                     .clipped()
                     .overlay {
@@ -39,6 +39,7 @@ struct CinematicDetailHero<Accessory: View>: View {
             // Extend artwork to the pane edge in landscape while keeping the
             // foreground controls inside the container's safe area.
             .ignoresSafeArea(.container, edges: .horizontal)
+            .accessibilityHidden(true)
         }
         .accessibilityElement(children: .contain)
     }

@@ -169,9 +169,12 @@ not erase the documented migration work.
 
 The workflow contains BUILD actions, no Cloud TEST, archive, distribution, or
 TestFlight action. Local unit/UI acceptance is recorded in the repair report.
-Minimum-OS runtime, manual VoiceOver, live Duo transitions, signed archives, and
-TestFlight acceptance remain separate gates. No further physical-phone automation
-was started. Website and wiki updates remain local to their sibling repositories.
+The sampled live Duo audio transition/control check has [separate simulator
+evidence](../Reviews/2026-10-11-auth-device-repair/evidence/duo-transitions/acceptance.json).
+Minimum-OS runtime, manual VoiceOver, broader Duo video/navigation/sheet flows,
+signed archives, and TestFlight acceptance remain separate gates. No further
+physical-phone automation was started. Website and wiki updates remain local to
+their sibling repositories.
 
 ### Separate GitHub toolchain compatibility
 
@@ -243,7 +246,7 @@ serialized parent and adds completion-failure diagnostics. Actual WAV completion
 assertions and their deadlines remain; no tests are skipped and app playback behavior
 is unchanged. The nested test identifiers change, so future focused selectors must
 include `PlaybackIntegrationTests`. Formatting, syntax and shared-project checks pass;
-acceptance of this isolation repair remains pending.
+its isolation-run result and final hosted acceptance are recorded below.
 
 
 ### Repeated iPhone completion failure after isolation
@@ -262,8 +265,14 @@ No completion-observer defect is established. A focused test-only investigation 
 a one-second 48 kHz PCM fixture with matching metadata and captures actual native
 end/failed-end events. Real playback, completion/replay/deletion assertions and the
 eight-second deadline are retained. There is no forced completion, skipped case or
-production workaround. That next hosted acceptance remains pending; the earlier
+production workaround. The subsequent hosted result is recorded below; the earlier
 four successful Cloud RC BUILD actions are unaffected.
+
+### Final required GitHub CI acceptance
+
+[Run 38192282611](https://github.com/eslutz/A-Playa-Named-Gus/actions/runs/38192282611) completed **13/13 jobs successfully** at exact commit `edd06e6636cd32b877622dbcb4ccb34524a1b3c1`: six platform builds, five native unit lanes, lint, and docs. Every iPhone/iPad/macOS/tvOS/visionOS lane passed **288 Swift Testing cases in 49 suites** and **three separate XCTest measurements**, with no failures or observed skipped test-case lines. [Summary](cloud-onboarding-evidence/github-ci/run-38192282611-summary.json), [lane metadata](cloud-onboarding-evidence/github-ci/run-38192282611-test-lanes.json), [completed log excerpts](cloud-onboarding-evidence/github-ci/run-38192282611-test-lanes.txt).
+
+Both strengthened native audio cases passed in all five lanes. On iPhone, natural completion/replay passed in 4.338 seconds and automatic-deletion/local-only no-stream in 1.303 seconds. Enforced expectations verify exactly one actual end event and zero failed-end events per completed item, replay item replacement/two provider resolutions, and zero server resolution after local deletion. [iPhone proof](cloud-onboarding-evidence/github-ci/run-38192282611-iphone-native-replay-success.json), [all native cases](cloud-onboarding-evidence/github-ci/run-38192282611-native-audio-cases.json). The test-only one-second 48 kHz PCM fixture retains the eight-second deadline and actual natural completions. The earlier 400 ms/8 kHz failure's cause is still unproven; no product workaround was added. That tested app source and production configuration match the successful Cloud `084a470` build. Required CI acceptance is complete for `edd06e`; the subsequent GUS-UI-040 hero/About decorative placeholder and accessibility edit has formatting/syntax checks, with hosted compilation pending. Saved Duo/Cloud/CI results predate that edit. Physical, minimum-OS, manual VoiceOver, full Mac UI, broader Duo, signed archive, and TestFlight acceptance remain separate.
 
 ## Recovery and acceptance
 

@@ -1,0 +1,13 @@
+Run 38192282611; source edd06e6636cd32b877622dbcb4ccb34524a1b3c1
+Both retained native completion/replay and deleted-download/no-stream cases passed in all five lanes.
+Published source asserts real native end notifications, zero native failed-end notifications, item replacement, and source-resolution counts; success counters are not separately printed.
+2026-10-12T01:37:41.3078010Z ✔ Test "Play after natural queue completion restarts playback and tracks the next completion" passed after 3.459 seconds.
+2026-10-12T01:37:42.6229820Z ✔ Test "Replay after automatic deletion respects local-only playback and does not stream" passed after 1.253 seconds.
+2026-10-12T01:42:16.6545240Z ✔ Test "Play after natural queue completion restarts playback and tracks the next completion" passed after 3.421 seconds.
+2026-10-12T01:42:17.7451340Z ✔ Test "Replay after automatic deletion respects local-only playback and does not stream" passed after 1.170 seconds.
+2026-10-12T01:42:19.0074130Z ✔ Test "Play after natural queue completion restarts playback and tracks the next completion" passed after 4.338 seconds.
+2026-10-12T01:42:24.4933870Z ✔ Test "Replay after automatic deletion respects local-only playback and does not stream" passed after 1.303 seconds.
+2026-10-12T01:43:54.1579340Z ✔ Test "Play after natural queue completion restarts playback and tracks the next completion" passed after 3.862 seconds.
+2026-10-12T01:43:55.4104540Z ✔ Test "Replay after automatic deletion respects local-only playback and does not stream" passed after 1.245 seconds.
+2026-10-12T01:46:52.8319760Z ✔ Test "Play after natural queue completion restarts playback and tracks the next completion" passed after 3.325 seconds.
+2026-10-12T01:46:53.9779290Z ✔ Test "Replay after automatic deletion respects local-only playback and does not stream" passed after 1.164 seconds.

@@ -56,9 +56,9 @@
       51923
     ],
     "pausedIdleIndexServices": [],
-    "reason": "Suspending parent Xcode windows blocked CLI project reads in NSFileCoordinator; resuming them released the lock. Idle support services are paused separately to stop indexing growth.",
+    "reason": "Temporary idle-service pausing has ended. Each service was resumed after executable/parent verification, then both idle GUI Xcode sessions were quit normally without discarding documents.",
     "activeCLIServicePreserved": 40902,
-    "reversibleResume": "SIGCONT the surviving idle services before native quit/save or further UI indexing",
+    "reversibleResume": "No intentionally paused Xcode service remains.",
     "nativeWindowCleanupBlockedByLockedMac": false,
     "normalGUIXcodeQuitCompleted": true,
     "allPreviouslyPausedServicesResumedBeforeQuit": true
@@ -108,7 +108,8 @@
     "smallBackgroundToolServicePreserved": {
       "parentPID": 1806,
       "servicePID": 40767,
-      "serviceRSSKB": 214544
+      "serviceRSSKB": 214544,
+      "latestServiceRSSKB": 2032
     }
   },
   "latestAfterTestCleanup": {
@@ -174,5 +175,26 @@
     "parentXcodeProcessesRunning": true,
     "localHeavyGusJobsRunning": false,
     "normalNativeCleanupStillPending": true
+  },
+  "finalAfterNativeCleanup": {
+    "measuredAt": "2026-10-11 21:51 local",
+    "swapUsedMB": 7833.06,
+    "swapUsedGiB": 7.65,
+    "memoryPressureReportedFreePercent": 43,
+    "cpuIdlePercent": 15.82,
+    "oneMinuteLoadAverage": 129.68,
+    "oneSecondSwapinsPages": 94,
+    "oneSecondSwapoutsPages": 0,
+    "pageSizeBytes": 16384,
+    "ownDuoSimulatorStopped": true,
+    "ownDemoServerStopped": true,
+    "ownDeviceHubFrontendExited": true,
+    "bothGUIXcodeSessionsExited": true,
+    "idleIndexServicesRemainPaused": false,
+    "localHeavyGusJobsRunning": false,
+    "unrelatedActiveSimulatorAndTestRunnerPreserved": true,
+    "largestObservedResidentProcessMB": 1011.56,
+    "remainingCPUObservation": "An unrelated simulator app and its test runner were active; no unrelated process or protected endpoint service was stopped.",
+    "scope": "A point-in-time read-only sample. Reported free percentage is memory-pressure output rather than unused physical RAM. Retained swap and high CPU load are not proof of an active swap-out bottleneck or a Gus leak."
   }
 }

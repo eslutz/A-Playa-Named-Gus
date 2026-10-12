@@ -73,9 +73,10 @@ struct AboutCardsView: View {
     private var posterSummaryCard: some View {
         DetailInfoCard(title: LocalizedStringKey(item.displayTitle)) {
             HStack(alignment: .top, spacing: 12) {
-                ArtworkTile(url: posterURL, placeholderSymbol: item.type == .series ? "tv" : "film")
+                ArtworkTile(url: posterURL, placeholderSymbol: item.artworkPlaceholderSymbol)
                     .frame(width: 74, height: 110)
                     .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                    .accessibilityHidden(true)
 
                 VStack(alignment: .leading, spacing: 6) {
                     if let tagline = item.primaryTagline {

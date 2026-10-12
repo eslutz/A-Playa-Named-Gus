@@ -1,0 +1,118 @@
+{
+  "status": "passed_scoped",
+  "date": "2026-10-11",
+  "execution_method": "Native Device Hub controls and sampled screenshots/accessibility trees; reused preexisting simulator app without a new local build",
+  "device": {
+    "name": "Gus Duo Acceptance",
+    "udid": "2297D23D-DAD0-4FEB-8C2F-6AFCFCB2AAF9",
+    "device_type": "com.apple.CoreSimulator.SimDeviceType.iPhone-Duo",
+    "runtime": "iOS 27.1",
+    "runtime_build": "24A94232"
+  },
+  "toolchain": {
+    "xcode": "27.1 RC",
+    "xcode_build": "27A9275",
+    "sdk": "iphonesimulator27.1",
+    "device_hub": "/Applications/Development/Xcode-27.1-RC.app/Contents/Applications/DeviceHub.app"
+  },
+  "app_provenance": {
+    "bundle_identifier": "dev.ericslutz.gus",
+    "marketing_version": "1.0.0",
+    "build_number": "1",
+    "architecture": "arm64",
+    "cached_bundle": "build/duo-validation/Build/Products/Debug-iphonesimulator/A Playa Named Gus.app",
+    "executable_sha256": "813242291f58fc2155648bce2fee5cfb7daab932d80519aa012f16682147b870",
+    "executable_modified_local": "2026-10-11 19:21:49",
+    "latest_source": "Sources/Features/Books/BookReaderView.swift",
+    "latest_source_modified_local": "2026-10-11 19:21:20",
+    "local_time_zone": "America/New_York",
+    "published_app_source_commit": "755ff09c9d69872a945fcd1f464aa7a7ea701153",
+    "cloud_verified_app_source_commit": "084a470683a78256e939bd63b416bc2fb0150bb2",
+    "verification": "At capture, the cached executable postdated all source-file modification times and was used by the accepted EPUB test in /tmp/gus-epub-audit/committed-native-chapters-waits.log. Read-only Git comparison found no Sources, Config, Resources, project.yml or shared-project differences from published 755ff09 through accepted CI candidate edd06e6636cd32b877622dbcb4ccb34524a1b3c1. CI/test-only edits through that candidate did not change app source.",
+    "limitation": "No embedded commit identifier establishes the binary's exact Git commit; provenance relies on the recorded build log, timestamps and the app source unchanged through the accepted candidate.",
+    "later_source_edit": "GUS-UI-040 changes hero/About decorative artwork symbols and accessibility after these captures. It is not included in this cached binary or the saved Cloud084a470/CIedd06e acceptance; hosted compilation of that edit is pending."
+  },
+  "media": {
+    "title": "02 - Whispers of the Glen",
+    "duration": "2:42",
+    "repeat_mode": "Repeat One",
+    "repeat_intentionally_enabled": true
+  },
+  "display_sequence": [
+    {
+      "state": "closed",
+      "position": "0:58",
+      "controls": ["Pause", "Stop"],
+      "tree": "closed-before-tree.txt",
+      "screenshot": "closed-before.png"
+    },
+    {
+      "state": "open_settled",
+      "position": "2:38",
+      "controls": ["Pause", "Stop"],
+      "tree": "open-settled-tree.txt",
+      "screenshot": "open-settled.png"
+    },
+    {
+      "state": "open_before_partial_transition",
+      "position": "0:59",
+      "controls": ["Pause", "Stop"],
+      "tree": "open-before-partial-tree.txt"
+    },
+    {
+      "state": "partially_open",
+      "position": "1:12",
+      "controls": ["Pause", "Stop"],
+      "tree": "partial-playing-tree.txt",
+      "screenshot": "partial-playing.png"
+    },
+    {
+      "state": "closed_return",
+      "position": "2:12",
+      "controls": ["Pause", "Stop"],
+      "tree": "closed-return-tree.txt",
+      "screenshot": "closed-return.png"
+    }
+  ],
+  "transport_checks": [
+    {
+      "action": "Pause after returning closed",
+      "position": "2:29",
+      "controls": ["Play", "Stop"],
+      "tree": "closed-paused-tree.txt"
+    },
+    {
+      "action": "Resume",
+      "position": "2:32",
+      "controls": ["Pause", "Stop"],
+      "tree": "closed-resumed-tree.txt"
+    },
+    {
+      "action": "Stop",
+      "result": "Returned to the same item detail with Detail.play; playback-position, Pause and Stop controls absent",
+      "tree": "closed-stopped-tree.txt",
+      "screenshot": "closed-stopped.png"
+    }
+  ],
+  "transient_capture": {
+    "tree": "open-playing-tree.txt",
+    "screenshot": "open-playing.png",
+    "result": "Initial open-state capture was blank/transient; the later open-settled capture shows the player",
+    "limitation": "Capture timestamps do not measure black-frame duration or establish its cause."
+  },
+  "scope": {
+    "accepted": [
+      "Same title and playback controls retained at sampled settled closed/open/partially-open/closed states",
+      "Playback-position snapshots advance within each cycle; wraps are expected because Repeat One is enabled",
+      "Pause changes the control to Play, resume restores Pause, and Stop returns to details"
+    ],
+    "not_established": [
+      "Audible output or audible-gap measurement",
+      "Timed black-frame duration or frame-by-frame transition behavior",
+      "Globally monotonic elapsed time across intentional Repeat One wraps",
+      "Every native video, navigation, sheet, reader or interrupted-playback transition flow",
+      "Physical Duo hardware acceptance",
+      "Exact minimum-OS execution, manual VoiceOver, full Mac window/keyboard coverage, later physical-phone acceptance, production signing, signed archives or TestFlight"
+    ]
+  }
+}

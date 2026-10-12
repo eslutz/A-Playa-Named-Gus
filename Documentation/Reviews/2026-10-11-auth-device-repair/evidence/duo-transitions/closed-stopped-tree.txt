@@ -1,0 +1,206 @@
+Window: "Gus Duo Acceptance", App: Device Hub.
+0 unknown Secondary Actions: Raise
+	1 split group
+		2 split group com.apple.dt.DeviceKit.DeviceManagementWindow-AppWindow-1, SidebarNavigationSplitView
+			3 scroll area Secondary Actions: Scroll Up, Scroll Down
+				4 list Sidebar
+					5 row (selectable) Expanded
+					6 row (selected) Gus Duo Acceptance
+27.1
+Simulator
+					7 row (selectable) iPhone 18 Pro Max
+27.0
+Simulator
+					8 row (selectable) Living Room Apple TV
+27.0
+--
+					9 row (selectable) Eric’s iPhone 18 Pro Max
+27.0.1
+iPhone 18 Pro Max
+					10 row (selectable) Main Bedroom Apple TV
+26.6
+Apple TV 4K
+					11 row (selectable) Gus EPUB Acceptance
+27.0
+Simulator
+					12 row (selectable) Gus Narrow Acceptance
+27.0
+Simulator
+					13 row (selectable) iPad Air 13-inch (M4)
+27.0
+Simulator
+					14 row (selectable) iPad mini (A17 Pro)
+27.0
+Simulator
+					15 row (selectable) iPad Pro 11-inch (M5)
+27.0
+Simulator
+					16 row (selectable) iPhone 17
+27.0
+Simulator
+					17 row (selectable) iPhone 17
+26.5
+Simulator
+					18 row (selectable) iPhone 17 Pro Max
+26.5
+Simulator
+					19 row (selectable) iPhone 17e
+27.0
+Simulator
+					20 row (selectable) iPhone 18 Pro
+27.0
+Simulator
+					21 row (selectable) PumpSync Isolated Audit Large 2026-10-05
+26.5
+Simulator
+					22 row (selectable) Apple TV 4K (3rd generation)
+26.5
+Simulator
+					23 row (selectable) Apple TV 4K (3rd generation) (at 1080p)
+26.5
+Simulator
+					24 row (selectable) Apple Watch Series 11 (46mm)
+26.5
+Simulator
+					25 row (selectable) Apple Vision Pro
+26.5
+Simulator
+					26 row (selectable) iPad Pro 13-inch (M5)
+27.0
+Simulator
+					27 row (selectable) Apple Watch SE 3 (40mm)
+26.5
+Simulator
+					28 row (selectable) Apple Watch Ultra 3 (49mm)
+26.5
+Simulator
+					29 row (selectable) PumpSync iOS 27 SE Validation
+27.0
+Simulator
+					30 row (selectable) iPad Pro 13-inch (M5)
+26.5
+Simulator
+					31 row (selectable) PumpSync Isolated Audit Small 2026-10-05
+27.0
+Simulator
+					32 row (selectable) SpamHole Accessibility Isolated
+27.0
+Simulator
+					33 row (selectable) Observer Compatibility Audit
+26.5
+Simulator
+					34 row (selectable) PumpSync UI Audit 2026-10-01
+26.5
+Simulator
+					35 row (selectable) iPhone 17 Pro
+26.5
+Simulator
+					36 row (selectable) iPad Air 13-inch (M4)
+26.5
+Simulator
+					37 row (selectable) iPad Pro 13-inch (M4)
+17.5
+Simulator
+					38 row (selectable) PumpSync App Store iPhone
+26.5
+Simulator
+					39 row (selectable) PumpSync Fresh iPad Capture
+26.5
+Simulator
+					40 row (selectable) iPad Air 11-inch (M4)
+26.5
+Simulator
+					41 row (selectable) iPhone 15 Pro
+17.5
+Simulator
+					42 row (selectable) iPad Pro 11-inch (M5)
+26.5
+Simulator
+				43 scroll bar (settable, float) 0
+					44 value indicator (settable, float) 0
+					45 increment arrow button
+					46 decrement arrow button
+					47 increment page button
+					48 decrement page button
+			49 search text field (settable) Search
+				50 button Search
+			51 splitter (settable, float) 300
+			52 container
+				53 button app.grid.3x3
+				54 button camera.viewfinder
+				55 button record.circle
+				56 button Rotate Right
+				57 button Closed
+				58 button Partially Open
+				59 button Open
+				60 container
+					61 container
+						62 container Description: dismiss popup, Help: Activate to dismiss pop-up window., ID: PopoverDismissRegion, Secondary Actions: Cancel
+						63 heading Description: 02 - Whispers of the Glen, Secondary Actions: Cancel
+						64 text Description: 02 - Whispers of the Glen, Secondary Actions: Cancel
+						65 image Description: Movie, ID: film, Secondary Actions: Cancel
+						66 text Description: 2m, Secondary Actions: Cancel
+						67 button Description: Play, ID: Detail.play, Secondary Actions: Cancel
+						68 button Description: Add to Up Next, ID: plus, Secondary Actions: Cancel
+						69 button (selected) Description: Mark as Unwatched, ID: checkmark.circle.fill, Secondary Actions: Cancel
+						70 button Description: Add to Favorites, ID: heart, Secondary Actions: Cancel
+						71 button Description: SharePlay, ID: shareplay, Secondary Actions: Cancel
+						72 button Description: Download, ID: arrow.down.circle, Secondary Actions: Cancel
+						73 heading Description: Recommended, Secondary Actions: Cancel
+						74 button Description: Repeat QA 1, Secondary Actions: Cancel
+						75 button Description: Sax and Piano (free track), Secondary Actions: Cancel
+						76 button Description: 01 - Tranquil Mindscape, Secondary Actions: Cancel
+						77 button Description: Repeat QA 2, Secondary Actions: Cancel
+						78 heading Description: About, Secondary Actions: Cancel
+						79 text Description: 02 - Whispers of the Glen, Secondary Actions: Cancel
+						80 text Description: Media, Secondary Actions: Cancel
+						81 text Description: 2m, Secondary Actions: Cancel
+						82 text Description: MP3, Secondary Actions: Cancel
+						83 image Description: Movie, ID: film, Secondary Actions: Cancel
+						84 button Description: Done, ID: ContentLink.detailDone, Secondary Actions: Cancel
+		85 splitter (settable, float) 819.5
+		86 container
+			87 tab group Inspector Subcategory
+				88 tab Description: Info, Value: 1, ID: InspectorButton.com.apple.devicekit.inspector.info
+				89 tab Description: Apps, Value: 0, ID: InspectorButton.com.apple.devicekit.inspector.apps
+				90 tab Description: Profiles, Value: 0, ID: InspectorButton.com.apple.devicekit.inspector.profiles
+			91 scroll area Description: Info, ID: Inspector.com.apple.devicekit.inspector.info
+				92 container
+					93 text Name, Help: Gus Duo Acceptance, Value: Gus Duo Acceptance iOS 27.1, ID: info.inspector.item.name.value
+				94 container
+					95 text Model, Help: iPhone Duo, Value: iPhone Duo 2297D23D-DAD0-4FEB-8C2F-6AFCFCB2AAF9
+				96 container
+					97 scroll area
+						98 list
+							99 row (selectable) No Paired Watch Simulators
+					100 menu button Add, Help: Pair Apple Watch, ID: plus
+				101 button
+	102 toolbar
+		103 menu button Add Device, ID: plus
+		104 toggle button Help: Sort and Filter, Value: off
+		105 button Description: Hide Sidebar, Secondary Actions: Increment, Decrement, Delete, Cancel
+		106 toggle button Description: Capture Keyboard, Value: off
+		107 toggle button Description: Resize mode, Help: Enter resize mode, Value: off
+		108 Zoom
+			109 radio button Description: Zoom Out, Value: 0, ID: minus.magnifyingglass
+			110 radio button Description: Up, Right, Down, And Left Triangles In A Magnifying Glass, Help: Zoom to Fit, Value: 1, ID: arrowtriangles.up.right.down.left.magnifyingglass
+			111 radio button Description: Zoom To Actual Size, Help: Physical Size, Value: 0, ID: 1.magnifyingglass
+			112 radio button Description: Zoom In, Value: 0, ID: plus.magnifyingglass
+		113 button Description: Switch to compact window, Secondary Actions: Increment, Decrement, Delete, Cancel, Move previous, Move next, Remove from toolbar
+		114 menu button More Actions, ID: ellipsis
+		115 radio button Description: Edit, Help: Settings, Value: 0, ID: slider.horizontal.3
+		116 radio button Description: Text Document, Help: Reports, Value: 0, ID: text.document
+		117 radio button Description: Info, Value: 1, ID: info
+	118 close button
+	119 full screen button Help: this button also has an action to zoom the window, Secondary Actions: zoom the window
+	120 minimize button
+	121 text Gus Duo Acceptance iOS 27.1
+122 menu bar
+	123 Device Hub
+	124 File
+	125 Edit
+	126 View
+	127 Device
+	128 Controls
+	129 Window
+	130 Help

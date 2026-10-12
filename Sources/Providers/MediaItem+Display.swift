@@ -77,6 +77,17 @@ extension MediaItem {
         return percentage / 100.0
     }
 
+    /// Decorative artwork fallback for the item's media type.
+    var artworkPlaceholderSymbol: String {
+        switch type {
+        case .book, .audioBook: return "book"
+        case .audio, .musicAlbum, .musicArtist, .playlist: return "music.note"
+        case .series, .season, .episode: return "tv"
+        case .photo: return "photo"
+        default: return "film"
+        }
+    }
+
     /// SF Symbol representing a library's collection type.
     var librarySymbol: String {
         switch collectionType {

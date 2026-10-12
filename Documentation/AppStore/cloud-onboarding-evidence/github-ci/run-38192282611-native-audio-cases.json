@@ -1,0 +1,109 @@
+{
+  "captured_at_utc": "2026-10-12T01:52:13.597417+00:00",
+  "run_id": 38192282611,
+  "source_sha": "edd06e6636cd32b877622dbcb4ccb34524a1b3c1",
+  "lanes": [
+    {
+      "lane": "iPhone",
+      "job_id": 114627398061,
+      "cases": [
+        {
+          "name": "Play after natural queue completion restarts playback and tracks the next completion",
+          "outcome": "passed",
+          "duration_seconds": 4.338
+        },
+        {
+          "name": "Replay after automatic deletion respects local-only playback and does not stream",
+          "outcome": "passed",
+          "duration_seconds": 1.303
+        }
+      ]
+    },
+    {
+      "lane": "iPad",
+      "job_id": 114627398122,
+      "cases": [
+        {
+          "name": "Play after natural queue completion restarts playback and tracks the next completion",
+          "outcome": "passed",
+          "duration_seconds": 3.325
+        },
+        {
+          "name": "Replay after automatic deletion respects local-only playback and does not stream",
+          "outcome": "passed",
+          "duration_seconds": 1.164
+        }
+      ]
+    },
+    {
+      "lane": "macOS",
+      "job_id": 114627398155,
+      "cases": [
+        {
+          "name": "Play after natural queue completion restarts playback and tracks the next completion",
+          "outcome": "passed",
+          "duration_seconds": 3.421
+        },
+        {
+          "name": "Replay after automatic deletion respects local-only playback and does not stream",
+          "outcome": "passed",
+          "duration_seconds": 1.17
+        }
+      ]
+    },
+    {
+      "lane": "tvOS",
+      "job_id": 114627398173,
+      "cases": [
+        {
+          "name": "Play after natural queue completion restarts playback and tracks the next completion",
+          "outcome": "passed",
+          "duration_seconds": 3.459
+        },
+        {
+          "name": "Replay after automatic deletion respects local-only playback and does not stream",
+          "outcome": "passed",
+          "duration_seconds": 1.253
+        }
+      ]
+    },
+    {
+      "lane": "visionOS",
+      "job_id": 114627398088,
+      "cases": [
+        {
+          "name": "Play after natural queue completion restarts playback and tracks the next completion",
+          "outcome": "passed",
+          "duration_seconds": 3.862
+        },
+        {
+          "name": "Replay after automatic deletion respects local-only playback and does not stream",
+          "outcome": "passed",
+          "duration_seconds": 1.245
+        }
+      ]
+    }
+  ],
+  "fixture": {
+    "format": "PCM WAV",
+    "sample_rate_hz": 48000,
+    "channels": 1,
+    "bits_per_sample": 16,
+    "duration_seconds": 1
+  },
+  "wait_deadline_seconds": 8,
+  "retained_native_expectations_proven_by_passed_cases": {
+    "initial_item_end_notifications": 1,
+    "replayed_item_end_notifications": 1,
+    "native_failure_notifications_each_item": 0,
+    "replay_replaces_item": true,
+    "streamed_replay_source_resolution_calls": 2,
+    "deleted_download_item_end_notifications": 1,
+    "deleted_download_server_resolution_calls": 0
+  },
+  "assertion_provenance": "Published AudioPlaybackTests.swift at source_sha, inspected together with each completed native-case pass; these are passed expectations, not separately printed raw success counters.",
+  "limits": [
+    "Synthetic native callback tests remain separate from physical-device media acceptance.",
+    "No manual VoiceOver, minimum-OS runtime or Duo live transition acceptance is inferred from this CI run."
+  ]
+}
