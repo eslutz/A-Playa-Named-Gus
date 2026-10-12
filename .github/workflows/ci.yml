@@ -304,7 +304,7 @@ jobs:
           result="$RUNNER_TEMP/gus-native-audio-${{ matrix.activation }}.xcresult"
           xcodebuild test -project 'A Playa Named Gus.xcodeproj' -scheme 'Gus iOS Unit Tests' \
             -destination 'platform=iOS Simulator,name=iPhone 17' \
-            '-only-testing:GusTests/PlaybackIntegrationTests/AudioReplayTests/${{ matrix.method }}' \
+            '-only-testing:GusTests/PlaybackIntegrationTests/AudioReplayTests/${{ matrix.method }}()' \
             'OTHER_SWIFT_FLAGS=$(inherited) -D NATIVE_AUDIO_DIAGNOSTIC' \
             -collect-test-diagnostics never -resultBundlePath "$result"
           xcrun xcresulttool get test-results summary --path "$result" --compact > "$RUNNER_TEMP/gus-native-audio-summary.json"
