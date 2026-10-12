@@ -327,7 +327,10 @@ dark `#0B2E33`), and cinema colorsets all share this palette.
 
 `Resources/Assets.xcassets/AppIcon.appiconset` retains opaque raster fallbacks.
 `AppIcon.brandassets` (tvOS) and `AppIcon.solidimagestack` (visionOS) remain
-platform-specific layered assets. `Scripts/generate-app-icon.swift` draws an older
+platform-specific background/G/play stacks generated from the approved SVGs by
+`swift Scripts/generate-platform-icons.swift`. This also refreshes static tvOS Top Shelf
+artwork and the review page in `Documentation/AppStore/platform-icon-review/`.
+`Scripts/generate-app-icon.swift` draws an older
 pineapple design and is **not** a source for the current icon. For the modern icon, edit
 `Resources/AppIcon.icon` in Icon Composer and preserve the Gus palette and G/play identity. The modern geometry is an intentional
 adaptation of the website mark.

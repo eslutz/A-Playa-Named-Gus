@@ -4,7 +4,14 @@
     "version" : 1
   },
   "layers" : [
-    { "filename" : "Front.imagestacklayer" },
-    { "filename" : "Back.imagestacklayer" }
+    {
+      "filename" : "Front.imagestacklayer"
+    },
+    {
+      "filename" : "Middle.imagestacklayer"
+    },
+    {
+      "filename" : "Back.imagestacklayer"
+    }
   ]
 }
