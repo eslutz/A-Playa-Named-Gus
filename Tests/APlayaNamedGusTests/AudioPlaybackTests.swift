@@ -221,8 +221,8 @@ extension PlaybackIntegrationTests {
     @MainActor
     @Suite("Audio queue replay")
     struct AudioReplayTests {
-        @Test("Play after natural queue completion restarts playback and tracks the next completion")
-        func replaysAfterNaturalCompletion() async throws {
+        @Test("Play after natural queue completion restarts playback and tracks the next completion", arguments: [false, true])
+        func replaysAfterNaturalCompletion(muted: Bool) async throws {
             let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
             defer { try? FileManager.default.removeItem(at: directory) }
             let url = try silentAudio(in: directory)
@@ -238,7 +238,9 @@ extension PlaybackIntegrationTests {
                 )
             }
             let player = AVPlayer()
-            player.isMuted = true
+            // Silence is in the PCM fixture itself. Exercise production's unmuted
+            // renderer as well as the previously tested muted renderer.
+            player.isMuted = muted
             let store = try AudioPlayerStore(session: session(provider: provider), tracks: [track], playerFactory: { player })
             defer { store.teardown() }
 
@@ -337,7 +339,7 @@ extension PlaybackIntegrationTests {
             #else
                 let activation = "unavailable"
             #endif
-            return Comment(rawValue: "Audio wait expired: state=\(String(describing: store.state)), isPlaying=\(store.isPlaying), itemStatus=\(itemStatus), timeControlStatus=\(player.timeControlStatus.rawValue), rate=\(player.rate), itemTime=\(player.currentTime().seconds), itemDuration=\(item?.duration.seconds ?? .nan), actionAtItemEnd=\(player.actionAtItemEnd.rawValue), nativeEndCount=\(native.endCount), nativeFailureCount=\(native.failureCount), failedEndErrorDomain=\(native.errorDomain ?? "none"), failedEndErrorCode=\(native.errorCode.map(String.init) ?? "none"), activation=\(activation), startupElapsed=\(startupElapsed).")
+            return Comment(rawValue: "Audio wait expired: state=\(String(describing: store.state)), isPlaying=\(store.isPlaying), muted=\(player.isMuted), itemStatus=\(itemStatus), timeControlStatus=\(player.timeControlStatus.rawValue), rate=\(player.rate), itemTime=\(player.currentTime().seconds), itemDuration=\(item?.duration.seconds ?? .nan), actionAtItemEnd=\(player.actionAtItemEnd.rawValue), nativeEndCount=\(native.endCount), nativeFailureCount=\(native.failureCount), failedEndErrorDomain=\(native.errorDomain ?? "none"), failedEndErrorCode=\(native.errorCode.map(String.init) ?? "none"), activation=\(activation), startupElapsed=\(startupElapsed).")
         }
 
         private func waitUntil(_ condition: () -> Bool) async throws -> Bool {
