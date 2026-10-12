@@ -3,7 +3,7 @@ import JellyfinAPI
 
 enum JellyfinMediaItemMapper {
     static func mediaItem(from item: BaseItemDto) -> MediaItem {
-        MediaItem(
+        var mapped = MediaItem(
             providerKind: .jellyfin,
             album: item.album,
             albumArtist: item.albumArtist,
@@ -25,6 +25,7 @@ enum JellyfinMediaItemMapper {
             officialRating: item.officialRating,
             overview: item.overview,
             parentBackdropImageTags: item.parentBackdropImageTags ?? [],
+            parentBackdropItemID: item.parentBackdropItemID,
             parentID: item.parentID,
             parentIndexNumber: item.parentIndexNumber,
             people: (item.people ?? []).map(mediaPerson),
@@ -40,6 +41,8 @@ enum JellyfinMediaItemMapper {
             userData: item.userData.map(mediaUserData),
             video3DFormat: media3DFormat(from: item.video3DFormat)
         )
+        mapped.externalIDs = item.providerIDs ?? [:]
+        return mapped
     }
 
     static func mediaItems(from items: [BaseItemDto]) -> [MediaItem] {

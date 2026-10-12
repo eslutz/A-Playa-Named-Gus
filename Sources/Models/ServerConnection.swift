@@ -4,7 +4,7 @@ import Foundation
 ///
 /// Mirrors the identity Swiftfin reads from `Paths.getPublicSystemInfo`
 /// (`serverName` / `id`) — see `ConnectToServerViewModel` in the reference repo.
-struct ServerConnection: Codable, Identifiable, Hashable {
+struct ServerConnection: Codable, Identifiable, Hashable, Sendable {
     /// Backend provider that owns this server.
     var providerKind: MediaProviderKind
 

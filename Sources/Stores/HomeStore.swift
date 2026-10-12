@@ -67,12 +67,15 @@ final class HomeStore {
             return
         }
 
-        let provider = session.mediaProvider
+        let server = session.server
+        let resolver = session.references
         let indexedItems = await withTaskGroup(of: (Int, MediaItem?).self) { group in
             for (index, link) in links.enumerated() {
                 group.addTask {
                     do {
-                        return try (index, await provider.item(id: link.itemID))
+                        guard link.accepts(server: server) else { return (index, nil) }
+                        let current = try await resolver.currentItem(MediaItem(providerKind: server.providerKind, id: link.itemID))
+                        return (index, current)
                     } catch {
                         return (index, nil)
                     }
@@ -130,10 +133,11 @@ final class HomeStore {
                     id: id,
                     title: item.displayTitle,
                     imageURL: provider.backdropImageURL(for: item, maxWidth: 1280),
-                    playbackProgress: item.playbackProgress
+                    playbackProgress: item.playbackProgress,
+                    contentURL: ContentLink.item(id: id, serverID: session.server.id, provider: session.server.providerKind).url
                 )
             }
-            TopShelfSnapshot(items: Array(shelfItems)).save()
+            TopShelfSnapshot(items: Array(shelfItems), serverID: session.server.id, userID: session.user.id).save()
         #endif
     }
 

@@ -195,10 +195,12 @@ final class RemoteSessionsStore {
     /// Starts playback of an item on a remote client (quick resume / play-on).
     func play(itemID: String, on sessionID: String, startPositionTicks: Int? = nil) async {
         do {
+            let current = try await session.references.currentItem(MediaItem(id: itemID))
+            guard let resolvedID = current.id, ContentRatingGate.admitsStored(current) else { throw GusError.notFound }
             try await session.client.send(Paths.play(sessionID: sessionID, parameters: Paths.PlayParameters(
                 playCommand: .playNow,
-                itemIDs: [itemID],
-                startPositionTicks: startPositionTicks
+                itemIDs: [resolvedID],
+                startPositionTicks: resolvedID == itemID ? startPositionTicks : current.userData?.playbackPositionTicks
             )))
         } catch {
             logger.error("Remote play failed: \(GusError(from: error).localizedDescription, privacy: .private)")

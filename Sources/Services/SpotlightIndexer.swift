@@ -48,7 +48,7 @@ enum SpotlightIndexer {
         {
             return nil
         }
-        return .item(id: decoded.itemID)
+        return .item(id: decoded.itemID, serverID: decoded.serverID, provider: .jellyfin)
     }
 
     #if canImport(CoreSpotlight) && !os(tvOS)
@@ -84,6 +84,10 @@ enum SpotlightIndexer {
             }
         }
 
+        static func deleteItem(itemID: String, serverID: String, userID: String) {
+            CSSearchableIndex.default().deleteSearchableItems(withIdentifiers: [Identifier.encode(serverID: serverID, userID: userID, itemID: itemID)])
+        }
+
         /// Removes an account's donations (sign-out).
         static func deleteIndex(serverID: String, userID: String) {
             CSSearchableIndex.default().deleteSearchableItems(
@@ -110,6 +114,7 @@ enum SpotlightIndexer {
             }
         }
     #else
+        static func deleteItem(itemID: String, serverID: String, userID: String) {}
         static func index(_ items: [MediaItem], serverID: String, userID: String) {}
         static func deleteIndex(serverID: String, userID: String) {}
     #endif

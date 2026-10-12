@@ -80,6 +80,8 @@ struct OfflineDownloadRecord: Codable, Equatable, Identifiable {
     let serverID: String
     let userID: String
     let downloadedAt: Date
+    var remoteReference: MediaReference? = nil
+    var remoteUnavailable: Bool? = nil
     var status: DownloadStatus
     var progress: Double
     var resumeData: Data?
@@ -93,6 +95,8 @@ struct OfflineDownloadRecord: Codable, Equatable, Identifiable {
         case serverID
         case userID
         case downloadedAt
+        case remoteUnavailable
+        case remoteReference
         case status
         case progress
         case resumeData
@@ -134,6 +138,8 @@ struct OfflineDownloadRecord: Codable, Equatable, Identifiable {
         serverID = try container.decode(String.self, forKey: .serverID)
         userID = try container.decode(String.self, forKey: .userID)
         downloadedAt = try container.decode(Date.self, forKey: .downloadedAt)
+        remoteReference = try container.decodeIfPresent(MediaReference.self, forKey: .remoteReference)
+        remoteUnavailable = try container.decodeIfPresent(Bool.self, forKey: .remoteUnavailable)
         status = try container.decode(DownloadStatus.self, forKey: .status)
         progress = try container.decode(Double.self, forKey: .progress)
         resumeData = try container.decodeIfPresent(Data.self, forKey: .resumeData)
@@ -550,7 +556,16 @@ final class OfflineDownloadStore: DownloadSessionCoordinatorEventHandler {
         errorMessage = nil
     }
 
-    func download(_ item: MediaItem, session: SessionStore) async {
+    func download(_ saved: MediaItem, session: SessionStore) async {
+        let item: MediaItem
+        do {
+            item = try await session.references.currentItem(saved)
+            try Task.checkCancellation()
+            guard ContentRatingGate.admitsStored(item) else { throw GusError.notFound }
+        } catch {
+            errorMessage = GusError(from: error).localizedDescription
+            return
+        }
         guard DownloadsAvailability.isSupported else { return }
         guard session.mediaProvider.capabilities.supportsDownloads else { return }
         guard let itemID = item.id, OfflineDownloadEligibility.canDownload(item) else {
@@ -858,6 +873,56 @@ final class OfflineDownloadStore: DownloadSessionCoordinatorEventHandler {
 
     /// Retry missing artwork for existing downloads on foreground entry, including
     /// records created before artwork caching existed. Local browsing stays file-only.
+    func replaceRemoteReference(_ snapshot: OfflineDownloadRecord, with candidate: MediaItem, session: SessionStore) async -> Bool {
+        let scope = session.references.scope
+        guard snapshot.serverID == scope.serverID, snapshot.userID == scope.userID else { return false }
+        do {
+            let item = try await session.references.selectedReplacement(candidate)
+            try Task.checkCancellation()
+            guard session.references.isActive else { return false }
+            guard var record = fileStore.record(forRecordID: snapshot.id), record.downloadedAt == snapshot.downloadedAt,
+                  loadedServerID == scope.serverID, loadedUserID == scope.userID else { return false }
+            record.remoteReference = MediaReference(item: item, scope: scope)
+            record.remoteUnavailable = false
+            try fileStore.persist(record)
+            session.references.recordReplacement(from: snapshot.remoteReference ?? MediaReference(item: snapshot.item, scope: scope), to: item)
+            OfflinePlaybackProgressStore.shared.offerTransfer(from: record.item.id, to: item, scope: scope)
+            refreshDisplayedRecords()
+            return true
+        } catch { errorMessage = GusError(from: error).localizedDescription; return false }
+    }
+
+    func refreshRemoteReferences(session: SessionStore) async {
+        let scope = session.references.scope
+        for snapshot in completedRecords(serverID: scope.serverID, userID: scope.userID) {
+            guard !Task.isCancelled else { return }
+            do {
+                let reference = snapshot.remoteReference ?? MediaReference(item: snapshot.item, scope: scope)
+                let result = try await session.references.resolve(reference)
+                try Task.checkCancellation()
+                guard var record = fileStore.record(forRecordID: snapshot.id),
+                      record.downloadedAt == snapshot.downloadedAt,
+                      loadedServerID == scope.serverID, loadedUserID == scope.userID else { continue }
+                guard case let .resolved(item) = result else {
+                    record.remoteUnavailable = true
+                    try fileStore.persist(record)
+                    continue
+                }
+                record.remoteReference = MediaReference(item: item, scope: scope)
+                record.remoteUnavailable = false
+                try fileStore.persist(record)
+                if item.id != snapshot.item.id {
+                    OfflinePlaybackProgressStore.shared.offerTransfer(from: snapshot.item.id, to: item, scope: scope)
+                }
+            } catch {
+                if GusError(from: error) == .unauthorized {
+                    session.onUnauthorized(); return
+                }
+            }
+        }
+        refreshDisplayedRecords()
+    }
+
     func repairMissingArtwork(session: SessionStore) async {
         let pending = fileStore.records(serverID: session.server.id, userID: session.user.id)
         for record in pending where record.status.isComplete {
@@ -871,7 +936,7 @@ final class OfflineDownloadStore: DownloadSessionCoordinatorEventHandler {
         guard fileStore.localArtworkURL(for: record) == nil,
               fileStore.record(forRecordID: record.id)?.downloadedAt == record.downloadedAt,
               !artworkRequests.contains(record.id),
-              let url = session.mediaProvider.primaryImageURL(for: record.item, context: .posterRail) else { return }
+              let url = session.mediaProvider.primaryImageURL(for: record.remoteReference?.item ?? record.item, context: .posterRail) else { return }
         artworkRequests.insert(record.id)
         defer { artworkRequests.remove(record.id) }
         do {

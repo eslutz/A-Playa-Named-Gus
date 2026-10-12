@@ -47,7 +47,7 @@ struct ContentLinkTests {
 
         #expect(SpotlightIndexer.contentLink(
             forSearchableItemIdentifier: id, currentServerID: "s1", currentUserID: "u1"
-        ) == .item(id: "item-1"))
+        ) == .item(id: "item-1", serverID: "s1", provider: .jellyfin))
         // A result donated by another account is refused.
         #expect(SpotlightIndexer.contentLink(
             forSearchableItemIdentifier: id, currentServerID: "s2", currentUserID: "u1"
@@ -55,7 +55,7 @@ struct ContentLinkTests {
         // Signed out: the link is allowed through and resolves (or soft-fails) later.
         #expect(SpotlightIndexer.contentLink(
             forSearchableItemIdentifier: id, currentServerID: nil, currentUserID: nil
-        ) == .item(id: "item-1"))
+        ) == .item(id: "item-1", serverID: "s1", provider: .jellyfin))
     }
 
     @Test("navigation model stores, fires, and consumes content links once")

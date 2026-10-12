@@ -1,6 +1,6 @@
 import Foundation
 
-enum MediaItemType: String, Codable, Hashable {
+enum MediaItemType: String, Codable, Hashable, Sendable {
     case movie
     case episode
     case series
@@ -22,7 +22,7 @@ enum MediaItemType: String, Codable, Hashable {
     case unknown
 }
 
-enum MediaCollectionType: String, Codable, Hashable {
+enum MediaCollectionType: String, Codable, Hashable, Sendable {
     case movies
     case tvshows
     case music
@@ -32,24 +32,24 @@ enum MediaCollectionType: String, Codable, Hashable {
     case unknown
 }
 
-enum MediaImageKind: String, Codable, Hashable {
+enum MediaImageKind: String, Codable, Hashable, Sendable {
     case primary = "Primary"
     case backdrop = "Backdrop"
 }
 
-enum MediaStreamKind: String, Codable, Hashable {
+enum MediaStreamKind: String, Codable, Hashable, Sendable {
     case audio
     case subtitle
     case video
     case unknown
 }
 
-enum MediaVideoType: String, Codable, Hashable {
+enum MediaVideoType: String, Codable, Hashable, Sendable {
     case videoFile
     case unknown
 }
 
-enum Media3DFormat: String, Codable, Hashable {
+enum Media3DFormat: String, Codable, Hashable, Sendable {
     case halfSideBySide
     case fullSideBySide
     case halfTopAndBottom
@@ -57,7 +57,7 @@ enum Media3DFormat: String, Codable, Hashable {
     case mvc
 }
 
-enum MediaItemSort: String, Codable, Hashable {
+enum MediaItemSort: String, Codable, Hashable, Sendable {
     case name
     case recentlyAdded
     case releaseDate
@@ -67,20 +67,20 @@ enum MediaItemSort: String, Codable, Hashable {
     case trackOrder
 }
 
-enum MediaItemStatusFilter: String, Codable, Hashable {
+enum MediaItemStatusFilter: String, Codable, Hashable, Sendable {
     case all
     case unplayed
     case played
     case resumable
 }
 
-enum MediaPlaybackMethod: String, Codable, Hashable {
+enum MediaPlaybackMethod: String, Codable, Hashable, Sendable {
     case directPlay
     case directStream
     case transcode
 }
 
-struct MediaUserData: Codable, Hashable {
+struct MediaUserData: Codable, Hashable, Sendable {
     var playbackPositionTicks: Int?
     var playedPercentage: Double?
     /// Whether the user has fully watched/played this item on the server.
@@ -111,7 +111,7 @@ struct MediaUserData: Codable, Hashable {
     }
 }
 
-struct MediaStudio: Codable, Hashable, Identifiable {
+struct MediaStudio: Codable, Hashable, Identifiable, Sendable {
     var id: String?
     var name: String?
 
@@ -121,7 +121,7 @@ struct MediaStudio: Codable, Hashable, Identifiable {
     }
 }
 
-struct MediaPerson: Codable, Hashable, Identifiable {
+struct MediaPerson: Codable, Hashable, Identifiable, Sendable {
     var id: String?
     var name: String?
     var primaryImageTag: String?
@@ -135,7 +135,7 @@ struct MediaPerson: Codable, Hashable, Identifiable {
     }
 }
 
-struct MediaStreamInfo: Codable, Hashable {
+struct MediaStreamInfo: Codable, Hashable, Sendable {
     var bitDepth: Int?
     var channels: Int?
     var codecTag: String?
@@ -184,7 +184,7 @@ struct MediaStreamInfo: Codable, Hashable {
     }
 }
 
-struct MediaSource: Codable, Hashable, Identifiable {
+struct MediaSource: Codable, Hashable, Identifiable, Sendable {
     var container: String?
     var id: String?
     var mediaStreams: [MediaStreamInfo]
@@ -212,7 +212,7 @@ struct MediaSource: Codable, Hashable, Identifiable {
     }
 }
 
-struct MediaChapterInfo: Codable, Hashable {
+struct MediaChapterInfo: Codable, Hashable, Sendable {
     var name: String?
     var startPositionTicks: Int?
 
@@ -222,7 +222,7 @@ struct MediaChapterInfo: Codable, Hashable {
     }
 }
 
-struct MediaItem: Codable, Hashable, Identifiable {
+struct MediaItem: Codable, Hashable, Identifiable, Sendable {
     var providerKind: MediaProviderKind
     var album: String?
     var albumArtist: String?
@@ -245,7 +245,9 @@ struct MediaItem: Codable, Hashable, Identifiable {
     var officialRating: String?
     var overview: String?
     var parentBackdropImageTags: [String]
+    var parentBackdropItemID: String?
     var parentID: String?
+    var externalIDs: [String: String] = [:]
     var parentIndexNumber: Int?
     var people: [MediaPerson]
     var primaryImageAspectRatio: Double?
@@ -282,6 +284,8 @@ struct MediaItem: Codable, Hashable, Identifiable {
         case officialRating
         case overview
         case parentBackdropImageTags
+        case parentBackdropItemID
+        case externalIDs
         case parentID
         case parentIndexNumber
         case people
@@ -320,6 +324,7 @@ struct MediaItem: Codable, Hashable, Identifiable {
         officialRating: String? = nil,
         overview: String? = nil,
         parentBackdropImageTags: [String] = [],
+        parentBackdropItemID: String? = nil,
         parentID: String? = nil,
         parentIndexNumber: Int? = nil,
         people: [MediaPerson] = [],
@@ -356,6 +361,7 @@ struct MediaItem: Codable, Hashable, Identifiable {
         self.officialRating = officialRating
         self.overview = overview
         self.parentBackdropImageTags = parentBackdropImageTags
+        self.parentBackdropItemID = parentBackdropItemID
         self.parentID = parentID
         self.parentIndexNumber = parentIndexNumber
         self.people = people
@@ -396,6 +402,8 @@ struct MediaItem: Codable, Hashable, Identifiable {
         officialRating = try values.decodeIfPresent(String.self, forKey: .officialRating)
         overview = try values.decodeIfPresent(String.self, forKey: .overview)
         parentBackdropImageTags = try values.decodeIfPresent([String].self, forKey: .parentBackdropImageTags) ?? []
+        parentBackdropItemID = try values.decodeIfPresent(String.self, forKey: .parentBackdropItemID)
+        externalIDs = try values.decodeIfPresent([String: String].self, forKey: .externalIDs) ?? [:]
         parentID = try values.decodeIfPresent(String.self, forKey: .parentID)
         parentIndexNumber = try values.decodeIfPresent(Int.self, forKey: .parentIndexNumber)
         people = try values.decodeIfPresent([MediaPerson].self, forKey: .people) ?? []
@@ -416,7 +424,7 @@ struct MediaItem: Codable, Hashable, Identifiable {
 /// Feature gates a provider exposes to the UI. Only flags that gate real behavior
 /// belong here — speculative capabilities accumulate as unread dead weight, and the
 /// `true` defaults describe Jellyfin (a new provider must opt out explicitly).
-struct ProviderCapabilities: Codable, Equatable {
+struct ProviderCapabilities: Codable, Equatable, Sendable {
     var supportsSearch = true
     var supportsDownloads = true
     /// Whether the server round-trips EPUB reading position (Jellyfin stores it on

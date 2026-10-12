@@ -340,7 +340,7 @@ struct UILayoutMetricsTests {
         #expect(!topShelfEntitlements.contains("com.apple.developer.associated-domains"))
         #expect(projectSource.contains("CODE_SIGN_ENTITLEMENTS: Config/GusTopShelf.entitlements"))
         #expect(snapshotSource.contains("containerURL(forSecurityApplicationGroupIdentifier"))
-        #expect(homeStoreSource.contains("TopShelfSnapshot(items: Array(shelfItems)).save()"))
+        #expect(homeStoreSource.contains("TopShelfSnapshot(items: Array(shelfItems), serverID: session.server.id, userID: session.user.id).save()"))
     }
 
     private func iconLayerPixels(_ data: Data, width: Int, height: Int) throws -> [UInt8] {

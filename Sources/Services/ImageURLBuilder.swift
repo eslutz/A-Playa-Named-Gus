@@ -58,13 +58,32 @@ struct ImageURLBuilder {
     }
 
     func backdropImageURL(for item: MediaItem, maxWidth: Int = 1280) -> URL? {
-        if let id = item.id, let tag = item.backdropImageTags.first {
-            return imageURL(itemID: id, type: .backdrop, tag: tag, maxWidth: maxWidth)
+        artworkURLs(for: item, maxWidth: maxWidth).first
+    }
+
+    /// Ordered public image candidates. A parent backdrop belongs to the ID
+    /// Jellyfin explicitly identifies, which may be a series above the season.
+    func artworkURLs(for item: MediaItem, maxWidth: Int) -> [URL] {
+        var urls: [URL] = []
+        if let id = item.id, let tag = item.backdropImageTags.first,
+           let url = imageURL(itemID: id, type: .backdrop, tag: tag, maxWidth: maxWidth)
+        {
+            urls.append(url)
         }
-        if let parentID = item.parentID, let tag = item.parentBackdropImageTags.first {
-            return imageURL(itemID: parentID, type: .backdrop, tag: tag, maxWidth: maxWidth)
+        if let owner = item.parentBackdropItemID, let tag = item.parentBackdropImageTags.first,
+           let url = imageURL(itemID: owner, type: .backdrop, tag: tag, maxWidth: maxWidth)
+        {
+            urls.append(url)
         }
-        return primaryImageURL(for: item, maxWidth: maxWidth)
+        if let id = item.id, let tag = item.imageTags["Thumb"],
+           let url = imageURL(itemID: id, type: .thumb, tag: tag, maxWidth: maxWidth)
+        {
+            urls.append(url)
+        }
+        if let url = primaryImageURL(for: item, maxWidth: maxWidth) {
+            urls.append(url)
+        }
+        return ArtworkRequestSequence.unique(urls)
     }
 
     func personImageURL(for person: MediaPerson, maxWidth: Int = 240) -> URL? {

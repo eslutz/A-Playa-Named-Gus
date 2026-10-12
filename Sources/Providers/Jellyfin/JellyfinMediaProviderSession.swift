@@ -177,6 +177,10 @@ final class JellyfinMediaProviderSession: MediaProviderSession {
         imageBuilder.backdropImageURL(for: item, maxWidth: maxWidth)
     }
 
+    func artworkURLs(for item: MediaItem, maxWidth: Int) -> [URL] {
+        imageBuilder.artworkURLs(for: item, maxWidth: maxWidth)
+    }
+
     func personImageURL(for person: MediaPerson, maxWidth: Int) -> URL? {
         imageBuilder.personImageURL(for: person, maxWidth: maxWidth)
     }
@@ -373,6 +377,7 @@ final class JellyfinMediaProviderSession: MediaProviderSession {
     }
 
     private static let metadataFields: [ItemFields] = [
+        .providerIDs,
         .primaryImageAspectRatio,
         .overview,
         .genres,

@@ -224,13 +224,14 @@ final class PlaybackStore {
         diagnostics.record(.playbackStartRequested)
         let startupInterval = diagnostics.beginInterval("PlaybackStartup")
 
-        guard let itemID = item.id else {
+        guard var itemID = item.id else {
             diagnostics.endInterval("PlaybackStartup", startupInterval)
             diagnostics.record(.playbackFailed)
             state = .failed(String(localized: "This item can't be played.", comment: "Playback error: item has no playable identifier"))
             return
         }
 
+        var effectiveStartTicks = startTimeTicks
         do {
             await PlaybackAudioSession.activate(video: true)
             try Task.checkCancellation()
@@ -247,10 +248,20 @@ final class PlaybackStore {
             let resolution: PlaybackSourceResolution?
             let playbackURL: URL
             if let localURL {
+                if let downloaded = playingDownload {
+                    item = downloaded.item; itemID = downloaded.item.id ?? itemID
+                }
                 resolution = nil
                 playbackURL = localURL
                 stereoPresentation = .native2D
             } else {
+                let current = try await session.references.currentItem(item)
+                try Task.checkCancellation()
+                guard generation == preparationGeneration, let currentID = current.id else { return }
+                effectiveStartTicks = MediaPlaybackIdentity.resumeTicks(requested: startTimeTicks, originalID: itemID, current: current)
+                item = current
+                itemID = currentID
+                guard ContentRatingGate.admitsStored(item) else { throw GusError.notFound }
                 let requestedPresentation = Media3DDetector.presentation(for: item, viewingMode: viewingMode)
                 let maxStreamingBitrate = PlaybackQuality.stored.maxStreamingBitrate
                 let remoteResolution = try await NetworkRetryPolicy.idempotent.run {
@@ -258,7 +269,7 @@ final class PlaybackStore {
                         for: itemID,
                         maxStreamingBitrate: maxStreamingBitrate,
                         streamSelection: self.streamSelection,
-                        startTimeTicks: startTimeTicks,
+                        startTimeTicks: effectiveStartTicks,
                         stereoLayout: requestedPresentation.resolutionStereoLayout
                     )
                 }
@@ -307,7 +318,7 @@ final class PlaybackStore {
             )
             reportContext = context
 
-            if let resumeTicks = startTimeTicks {
+            if let resumeTicks = effectiveStartTicks {
                 await player.seek(
                     to: CMTime(seconds: PlaybackTime.seconds(fromTicks: resumeTicks), preferredTimescale: 600),
                     toleranceBefore: .zero,
@@ -502,7 +513,7 @@ final class PlaybackStore {
 
     private func reportPlaybackStart(context: PlaybackReportContext, player: AVPlayer) {
         if isLocalPlayback {
-            localProgress.checkpoint(itemID: context.itemID, positionTicks: currentPositionTicks(), scope: accountScope, writerToken: progressWriterToken)
+            localProgress.checkpoint(itemID: context.itemID, positionTicks: currentPositionTicks(), scope: accountScope, writerToken: progressWriterToken, item: item)
             return
         }
         sendReport("start") { [self] in
@@ -517,7 +528,7 @@ final class PlaybackStore {
     private func reportPlaybackProgress(positionTicks: Int, isPaused: Bool) {
         guard let reportContext else { return }
         if isLocalPlayback {
-            localProgress.checkpoint(itemID: reportContext.itemID, positionTicks: positionTicks, scope: accountScope, writerToken: progressWriterToken)
+            localProgress.checkpoint(itemID: reportContext.itemID, positionTicks: positionTicks, scope: accountScope, writerToken: progressWriterToken, item: item)
             return
         }
         sendReport("progress") { [self] in
@@ -531,7 +542,7 @@ final class PlaybackStore {
 
     private func reportPlaybackStopped(context: PlaybackReportContext, positionTicks: Int) {
         if isLocalPlayback {
-            localProgress.checkpoint(itemID: context.itemID, positionTicks: positionTicks, scope: accountScope, writerToken: progressWriterToken)
+            localProgress.checkpoint(itemID: context.itemID, positionTicks: positionTicks, scope: accountScope, writerToken: progressWriterToken, item: item)
             playbackRefresh.markPlaybackProgressChanged()
             return
         }

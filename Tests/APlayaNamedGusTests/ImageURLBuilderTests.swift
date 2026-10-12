@@ -22,6 +22,15 @@ struct ImageURLBuilderTests {
         #expect(try #require(builder.backdropImageURL(for: backdrop, context: .backdrop)).absoluteString.contains("maxWidth=1280"))
     }
 
+    @Test("inherited backdrop requests use the artwork owner, not the immediate parent")
+    func inheritedBackdropOwner() throws {
+        let client = try JellyfinClientFactory.makeClient(url: #require(URL(string: "https://jellyfin.example.com")))
+        let builder = ImageURLBuilder(client: client)
+        let item = MediaItem(id: "episode", parentBackdropImageTags: ["tag"], parentBackdropItemID: "series", parentID: "season")
+        let url = try #require(builder.backdropImageURL(for: item))
+        #expect(url.path.contains("/Items/series/Images/Backdrop"))
+    }
+
     @Test("builds public user avatar URLs")
     func buildsPublicUserAvatarURLs() throws {
         let client = try JellyfinClientFactory.makeClient(url: #require(URL(string: "https://jellyfin.example.com")))

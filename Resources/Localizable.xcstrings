@@ -1,6 +1,54 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "Queue Could Not Be Updated" : {
+      "comment" : "Alert title for preserved queue read or write failures."
+    },
+    "Your saved queue couldn't be read. It has been preserved." : {
+      "comment" : "Unreadable saved queue; do not overwrite its file."
+    },
+    "Your queue change couldn't be saved. Try again." : {
+      "comment" : "Queue persistence failure."
+    },
+    "Unavailable in Next Up" : {
+      "comment" : "Section for saved queue entries with missing remote references."
+    },
+    "Unavailable on this server" : {
+      "comment" : "A saved item could not be resolved on its account server."
+    },
+    "Choose Replacement" : {
+      "comment" : "Search for and explicitly select a current library item."
+    },
+    "The replacement could not be saved. Try again." : {
+      "comment" : "Replacement picker save failure."
+    },
+    "Saved Progress Needs Review" : {
+      "comment" : "Section for progress awaiting replacement or confirmation."
+    },
+    "Review Progress" : {
+      "comment" : "Action to review a proposed progress transfer."
+    },
+    "Saved Playback Progress" : {
+      "comment" : "Display label when a legacy checkpoint has no cached media title."
+    },
+    "Transfer saved progress to the replacement item?" : {
+      "comment" : "Confirmation title; a remote reference alone does not authorize position transfer."
+    },
+    "Transfer Progress" : {
+      "comment" : "Explicitly authorize progress transfer to a replacement."
+    },
+    "Keep Progress Local" : {
+      "comment" : "Keep original progress without uploading it to a replacement."
+    },
+    "Local files and their reading locations will be preserved. Only the saved playback position or reading percentage will be transferred." : {
+      "comment" : "Progress transfer explanation."
+    },
+    "This item already has local progress." : {
+      "comment" : "Reject transfer rather than overwrite existing destination progress."
+    },
+    "The library changed. Try again." : {
+      "comment" : "A complete, stable candidate scan could not be established."
+    },
     "%@ of %@" : {
       "comment" : "Accessibility value for elapsed media playback time\nVoiceOver value for the playback scrubber, e.g. 1:30 of 4:05",
       "localizations" : {

@@ -97,6 +97,7 @@ protocol MediaProviderSession: AnyObject, Sendable {
     func primaryImageURL(for item: MediaItem, maxWidth: Int) -> URL?
     func backdropImageURL(for item: MediaItem, context: ImageURLBuilder.ImageContext) -> URL?
     func backdropImageURL(for item: MediaItem, maxWidth: Int) -> URL?
+    func artworkURLs(for item: MediaItem, maxWidth: Int) -> [URL]
     func personImageURL(for person: MediaPerson, maxWidth: Int) -> URL?
 
     func resolvePlayback(
@@ -144,6 +145,10 @@ protocol MediaProviderSession: AnyObject, Sendable {
 }
 
 extension MediaProviderSession {
+    func artworkURLs(for item: MediaItem, maxWidth: Int) -> [URL] {
+        ArtworkRequestSequence.unique([backdropImageURL(for: item, maxWidth: maxWidth), primaryImageURL(for: item, maxWidth: maxWidth)].compactMap { $0 })
+    }
+
     func updatePlaybackPosition(itemID: String, positionTicks: Int) async throws {
         throw GusError.server(String(localized: "This server does not support saved playback progress.", comment: "Unsupported offline progress sync"))
     }

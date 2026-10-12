@@ -11,38 +11,61 @@ import Foundation
 /// results, Siri/App Intents, Shared with You, and screenshot automation. Item ids are
 /// Jellyfin item ids on the active server; links to items the current session can't
 /// resolve fail softly.
-enum ContentLink: Hashable {
+enum ContentLink: Hashable, Sendable {
     static let universalLinkHost = "gus.ericslutz.dev"
 
-    case item(id: String)
-    case play(id: String)
+    case item(id: String, serverID: String? = nil, provider: MediaProviderKind? = nil)
+    case play(id: String, serverID: String? = nil, provider: MediaProviderKind? = nil)
 
     var url: URL {
-        switch self {
-        case let .item(id):
-            return URL(string: "gus://item/\(id)")!
-        case let .play(id):
-            return URL(string: "gus://play/\(id)")!
-        }
+        makeURL(universal: false)
     }
 
     var universalURL: URL {
-        switch self {
-        case let .item(id):
-            return URL(string: "https://\(Self.universalLinkHost)/item/\(id)")!
-        case let .play(id):
-            return URL(string: "https://\(Self.universalLinkHost)/play/\(id)")!
-        }
+        makeURL(universal: true)
     }
 
     var itemID: String {
         switch self {
-        case let .item(id), let .play(id):
-            return id
+        case let .item(id, _, _), let .play(id, _, _): return id
         }
     }
 
+    var serverID: String? {
+        switch self {
+        case let .item(_, serverID, _), let .play(_, serverID, _): return serverID
+        }
+    }
+
+    var provider: MediaProviderKind? {
+        switch self {
+        case let .item(_, _, provider), let .play(_, _, provider): return provider
+        }
+    }
+
+    func accepts(server: ServerConnection) -> Bool {
+        (serverID == nil || serverID == server.id) && (provider == nil || provider == server.providerKind)
+    }
+
+    private func makeURL(universal: Bool) -> URL {
+        let action: String
+        switch self { case .item: action = "item"; case .play: action = "play" }
+        var components = URLComponents()
+        components.scheme = universal ? "https" : "gus"
+        components.host = universal ? Self.universalLinkHost : action
+        components.path = universal ? "/\(action)/\(itemID)" : "/\(itemID)"
+        if let serverID, let provider {
+            components.queryItems = [URLQueryItem(name: "server", value: serverID), URLQueryItem(name: "provider", value: provider.rawValue)]
+        }
+        return components.url!
+    }
+
     init?(url: URL) {
+        let query = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems ?? []
+        let serverID = query.first { $0.name == "server" }?.value
+        let providerText = query.first { $0.name == "provider" }?.value
+        let provider = providerText.flatMap(MediaProviderKind.init(rawValue:))
+        guard (serverID == nil && providerText == nil) || (serverID?.isEmpty == false && provider != nil) else { return nil }
         if url.scheme == "gus" {
             guard let host = url.host(percentEncoded: false) else { return nil }
 
@@ -51,9 +74,9 @@ enum ContentLink: Hashable {
 
             switch host {
             case "item":
-                self = .item(id: id)
+                self = .item(id: id, serverID: serverID, provider: provider)
             case "play":
-                self = .play(id: id)
+                self = .play(id: id, serverID: serverID, provider: provider)
             default:
                 return nil
             }
@@ -69,9 +92,9 @@ enum ContentLink: Hashable {
 
         switch components[0] {
         case "item":
-            self = .item(id: components[1])
+            self = .item(id: components[1], serverID: serverID, provider: provider)
         case "play":
-            self = .play(id: components[1])
+            self = .play(id: components[1], serverID: serverID, provider: provider)
         default:
             return nil
         }

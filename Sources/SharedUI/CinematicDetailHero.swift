@@ -3,6 +3,7 @@ import SwiftUI
 /// Full-bleed backdrop header for an item detail screen: artwork, gradient scrim,
 /// title block, play/up-next actions, and a caller-supplied accessory slot.
 struct CinematicDetailHero<Accessory: View>: View {
+    @Environment(SessionStore.self) private var session
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     let item: MediaItem
     let backdropURL: URL?
@@ -29,7 +30,7 @@ struct CinematicDetailHero<Accessory: View>: View {
         .frame(maxWidth: .infinity, minHeight: baseHeroHeight, alignment: .bottomLeading)
         .background {
             GeometryReader { geometry in
-                AsyncPoster(url: backdropURL, placeholderSymbol: item.artworkPlaceholderSymbol)
+                AsyncPoster(url: backdropURL, placeholderSymbol: item.artworkPlaceholderSymbol, fallbackURLs: session.mediaProvider.artworkURLs(for: item, maxWidth: 1280), onExhausted: { _ = try? await session.references.currentItem(item) })
                     .frame(width: geometry.size.width, height: geometry.size.height)
                     .clipped()
                     .overlay {

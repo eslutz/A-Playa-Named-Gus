@@ -9,6 +9,9 @@ import OSLog
 /// Keep new cases to that contract; it is what satisfies the redaction requirement in
 /// `Documentation/AppStore/diagnostics-reliability.md`.
 enum DiagnosticEvent: Equatable {
+    case referenceUnavailable
+    case referenceReplaced
+    case artworkFallback
     case appLaunched
     case sessionRestored
     case serverConnectStarted
@@ -29,6 +32,9 @@ enum DiagnosticEvent: Equatable {
     /// Stable event identifier used in logs and recent-event records.
     var name: String {
         switch self {
+        case .referenceUnavailable: return "reference.unavailable"
+        case .referenceReplaced: return "reference.replaced"
+        case .artworkFallback: return "artwork.fallback"
         case .appLaunched: return "app.launched"
         case .sessionRestored: return "session.restored"
         case .serverConnectStarted: return "server.connect.started"

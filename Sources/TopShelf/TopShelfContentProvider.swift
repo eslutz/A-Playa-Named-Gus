@@ -26,8 +26,11 @@ final class TopShelfContentProvider: TVTopShelfContentProvider {
             if let progress = entry.playbackProgress {
                 item.playbackProgress = progress
             }
-            item.playAction = URL(string: "gus://play/\(entry.id)").map(TVTopShelfAction.init(url:))
-            item.displayAction = URL(string: "gus://item/\(entry.id)").map(TVTopShelfAction.init(url:))
+            let displayURL = entry.contentURL ?? URL(string: "gus://item/\(entry.id)")
+            var playURL = displayURL.flatMap { URLComponents(url: $0, resolvingAgainstBaseURL: false) }
+            playURL?.host = "play"
+            item.playAction = playURL?.url.map(TVTopShelfAction.init(url:))
+            item.displayAction = displayURL.map(TVTopShelfAction.init(url:))
             return item
         }
 

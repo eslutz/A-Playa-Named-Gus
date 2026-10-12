@@ -5,6 +5,7 @@ import Testing
 /// Note: PlaybackStore requires AVFoundation and a live SessionStore, which makes
 /// full unit testing complex. These tests cover the pure-logic portions.
 /// Full state-machine tests require integration-level setup with a mock session.
+@MainActor
 @Suite("Playback store — pure logic")
 struct PlaybackStoreTests {
     @Test("PlaybackQuality ordering: cases run from highest to lowest bitrate")

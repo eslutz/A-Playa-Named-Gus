@@ -223,7 +223,7 @@ extension PlaybackIntegrationTests {
             p.watchedHandler = { mutations += 1 }
             p.itemHandler = { id in
                 refreshes += 1
-                if refreshes == 1 {
+                if refreshes == 2 {
                     throw URLError(.badServerResponse)
                 }
                 return MediaItem(id: id)
@@ -232,7 +232,7 @@ extension PlaybackIntegrationTests {
             await store.toggleWatched()
             #expect(store.needsUserDataRefresh && store.actionError != nil)
             await store.toggleWatched()
-            #expect(mutations == 1 && refreshes == 2)
+            #expect(mutations == 1 && refreshes == 3)
             #expect(!store.needsUserDataRefresh && store.actionError == nil)
         }
 

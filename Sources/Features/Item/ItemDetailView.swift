@@ -45,6 +45,11 @@ struct ItemDetailView: View {
                 self.store = store
             }
         }
+        .onChange(of: session.references.revision) { _, _ in
+            if let store, let id = store.item.id, let current = session.references.updates[id] {
+                store.acceptResolvedMetadata(current)
+            }
+        }
         .playerPresentation(item: $playerItem)
         .sharePlaySharingPresentation(presentation: $sharePlayPresentation, errorMessage: $sharePlayErrorMessage)
         .downloadErrorAlert(downloads)

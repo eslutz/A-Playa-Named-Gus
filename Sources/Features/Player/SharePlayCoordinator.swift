@@ -36,7 +36,7 @@ struct GusPlaybackActivity: Codable, GroupActivity, Hashable {
             metadata.title = title
             metadata.subtitle = subtitle ?? String(localized: "A Playa Named Gus", comment: "SharePlay activity subtitle fallback")
             metadata.supportsContinuationOnTV = true
-            metadata.fallbackURL = ContentLink.play(id: itemID).url
+            metadata.fallbackURL = ContentLink.play(id: itemID, serverID: serverID, provider: .jellyfin).url
             metadata.lifetimePolicy = .endsWhenInitiatorLeaves
             return metadata
         }
@@ -167,7 +167,7 @@ final class SharePlayCoordinator {
         }
 
         session.join()
-        navigation.open(.play(id: activity.itemID))
+        navigation.open(.play(id: activity.itemID, serverID: activity.serverID, provider: .jellyfin))
     }
 
     private func clearCurrentSession() {

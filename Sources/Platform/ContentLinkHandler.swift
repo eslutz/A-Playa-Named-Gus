@@ -67,7 +67,9 @@ private struct ContentLinkHandler: ViewModifier {
 
     private func resolve(_ link: ContentLink) async {
         do {
-            let item = try await session.mediaProvider.item(id: link.itemID)
+            guard link.accepts(server: session.server) else { throw GusError.notFound }
+            let item = try await session.references.currentItem(MediaItem(providerKind: session.server.providerKind, id: link.itemID))
+            guard ContentRatingGate.admitsStored(item) else { throw GusError.notFound }
             try Task.checkCancellation()
             switch link {
             case .item:

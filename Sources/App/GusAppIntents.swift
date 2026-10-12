@@ -51,7 +51,7 @@ struct PlayMediaIntent: AppIntent {
         }
 
         if let playable, let id = playable.id {
-            AppNavigationModel.shared.open(.play(id: id))
+            AppNavigationModel.shared.open(.play(id: id, serverID: session.server.id, provider: session.server.providerKind))
             return .result(dialog: IntentDialog(stringLiteral: String(
                 localized: "Playing \(playable.displayTitle).",
                 comment: "Siri/Shortcuts response when playback starts"
@@ -59,7 +59,7 @@ struct PlayMediaIntent: AppIntent {
         }
 
         if let container = candidates.first, let id = container.id {
-            AppNavigationModel.shared.open(.item(id: id))
+            AppNavigationModel.shared.open(.item(id: id, serverID: session.server.id, provider: session.server.providerKind))
             return .result(dialog: IntentDialog(stringLiteral: String(
                 localized: "Opening \(container.displayTitle).",
                 comment: "Siri/Shortcuts response when a container opens instead of playing"

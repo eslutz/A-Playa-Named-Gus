@@ -36,8 +36,8 @@ final class ItemDetailStore {
         state = .loading
 
         do {
-            if let id = item.id {
-                let loaded = try await session.mediaProvider.item(id: id)
+            if item.id != nil {
+                let loaded = try await session.references.currentItem(item)
                 try Task.checkCancellation()
                 guard generation == loadGeneration else { return }
                 item = loaded
@@ -61,6 +61,20 @@ final class ItemDetailStore {
         }
     }
 
+    func acceptResolvedMetadata(_ current: MediaItem) {
+        guard !isUpdatingUserData else { return }
+        if item.id != current.id {
+            loadGeneration += 1
+            similarItems = []
+            specialFeatures = []
+            seriesStore = nil
+            state = .loaded
+        } else if case .failed = state {
+            state = .loaded
+        }
+        item = current
+    }
+
     func toggleWatched() async {
         await updateUserData(watched: true)
     }
@@ -71,11 +85,11 @@ final class ItemDetailStore {
 
     /// A failed refresh after a successful mutation must be reconciled before toggling again.
     func refreshUserData() async {
-        guard !isUpdatingUserData, let id = item.id else { return }
+        guard !isUpdatingUserData, item.id != nil else { return }
         isUpdatingUserData = true
         defer { isUpdatingUserData = false }
         do {
-            item = try await session.mediaProvider.item(id: id)
+            item = try await session.references.currentItem(item)
             needsUserDataRefresh = false
             actionError = nil
         } catch {
@@ -87,7 +101,7 @@ final class ItemDetailStore {
     }
 
     private func updateUserData(watched: Bool) async {
-        guard !isUpdatingUserData, let id = item.id else { return }
+        guard !isUpdatingUserData, item.id != nil else { return }
         if needsUserDataRefresh {
             await refreshUserData(); return
         }
@@ -95,13 +109,15 @@ final class ItemDetailStore {
         actionError = nil
         defer { isUpdatingUserData = false }
         do {
+            item = try await session.references.currentItem(item)
+            guard let id = item.id else { throw GusError.notFound }
             if watched {
                 try await session.mediaProvider.toggleWatched(itemID: id, currentlyWatched: item.userData?.isWatched == true)
             } else {
                 try await session.mediaProvider.toggleFavorite(itemID: id, currentlyFavorite: item.userData?.isFavorite == true)
             }
             needsUserDataRefresh = true
-            item = try await session.mediaProvider.item(id: id)
+            item = try await session.references.currentItem(item)
             needsUserDataRefresh = false
         } catch {
             let failure = GusError(from: error)

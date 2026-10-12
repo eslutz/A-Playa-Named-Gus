@@ -38,14 +38,36 @@ final class RootNavigationState {
     }
 
     func detailStore(for item: MediaItem, session: SessionStore) -> ItemDetailStore {
-        let key = ItemRef(item: item).id
+        let current = item.id.flatMap { session.references.updates[$0] } ?? item
+        let key = ItemRef(item: current).id
+        if current.id != item.id {
+            details.removeValue(forKey: ItemRef(item: item).id)
+        }
         if let store = details[key] {
             return store
         }
-        let store = ItemDetailStore(item: item, session: session)
+        let store = ItemDetailStore(item: current, session: session)
         details[key] = store
         Task { await store.load() }
         return store
+    }
+
+    func refreshCachedContent() async {
+        await home?.refresh()
+        for store in libraries.values {
+            guard !Task.isCancelled else { return }
+            await store.load()
+        }
+        for search in searches.values {
+            guard !Task.isCancelled else { return }
+            if !search.text.isEmpty {
+                await search.store?.search(search.text)
+            }
+        }
+        for store in details.values {
+            guard !Task.isCancelled else { return }
+            await store.load()
+        }
     }
 
     func pathBinding(for id: String) -> Binding<NavigationPath> {
