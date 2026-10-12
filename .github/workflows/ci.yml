@@ -43,6 +43,7 @@ jobs:
       - name: Verify release tooling offline
         run: |
           python3 Scripts/test-cloud-bootstrap.py
+          python3 Scripts/check-app-icons.py
           swift Scripts/app-store-connect.swift self-test
 
       - name: Validate Markdown encoding
