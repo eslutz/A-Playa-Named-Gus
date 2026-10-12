@@ -1,0 +1,40 @@
+{
+  "captured_at_utc": "2026-10-12T00:51:22.596513+00:00",
+  "run_id": 38187673465,
+  "source_sha": "aaebc323be81f391f9e9436b00f6c86d21a7b10e",
+  "job_id": 114613438035,
+  "name": "Test iPhone",
+  "status": "completed",
+  "conclusion": "failure",
+  "started_at": "2026-10-12T00:22:25Z",
+  "completed_at": "2026-10-12T00:47:37Z",
+  "duration_seconds": 1512.0,
+  "test_step_duration_seconds": 1431.0,
+  "xcode_version": "27.1",
+  "xcode_build": "27A9269",
+  "compilation_and_runner_launch_succeeded": true,
+  "xctest_performance_cases": 3,
+  "xctest_failures": 0,
+  "swift_testing": {
+    "test_cases": 288,
+    "suites": 48,
+    "duration_seconds": 131.809,
+    "issue_count": 1
+  },
+  "failed_test": {
+    "name": "Play after natural queue completion restarts playback and tracks the next completion",
+    "file": "Tests/APlayaNamedGusTests/AudioPlaybackTests.swift",
+    "line": 242,
+    "column": 13,
+    "expectation": "await waitUntil { !store.isPlaying && store.state == .loaded }",
+    "duration_seconds": 33.156
+  },
+  "simulator_diagnostics_collection_timeout_seconds": 600,
+  "classification": "Actual test expectation failure after successful compilation and test-runner launch; underlying cause not established",
+  "individual_expectation_or_assertion_count": null,
+  "limits": [
+    "Nearby native player err=-12864 and audio IO overload messages do not independently prove a hosted environment fault.",
+    "The prior iPhone pass and current other-lane passes do not establish the underlying cause.",
+    "XCTest measurement cases are distinct from Swift Testing cases; nested XCTest summary totals were deduplicated."
+  ]
+}

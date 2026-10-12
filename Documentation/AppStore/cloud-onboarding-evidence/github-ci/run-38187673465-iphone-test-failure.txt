@@ -1,0 +1,17 @@
+Run 38187673465; source aaebc323be81f391f9e9436b00f6c86d21a7b10e
+Job 114613438035: Test iPhone
+Compilation and test-runner launch succeeded: all three XCTest performance cases passed; Swift Testing executed 288 cases/48 suites and recorded one issue.
+The failed expectation is AudioPlaybackTests.swift:242:13. Nearby native player/audio messages are included as context; their causal role is unproven.
+The long tail after the test failure was a separate 600-second simulator diagnostics collection timeout.
+2026-10-12T00:22:47.0344520Z Xcode 27.1
+2026-10-12T00:22:47.0345730Z Build version 27A9269
+2026-10-12T00:36:05.0716410Z ✘ Test "Play after natural queue completion restarts playback and tracks the next completion" recorded an issue at AudioPlaybackTests.swift:242:13: Expectation failed: await waitUntil { !store.isPlaying && store.state == .loaded }
+2026-10-12T00:36:05.0722640Z ↳ await waitUntil { !store.isPlaying && store.state == .loaded } → <not evaluated>
+2026-10-12T00:36:05.1956880Z ✘ Test "Play after natural queue completion restarts playback and tracks the next completion" failed after 33.156 seconds with 1 issue.
+2026-10-12T00:36:07.0036700Z ✔ Test "Replay after automatic deletion respects local-only playback and does not stream" passed after 1.060 seconds.
+2026-10-12T00:37:18.5664340Z ✘ Test run with 288 tests in 48 suites failed after 131.809 seconds with 1 issue.
+2026-10-12T00:47:20.4628650Z 2026-10-12 00:47:20.460 xcodebuild[14746:84339]  IDETestOperationsObserverDebug: Failure collecting diagnostics from simulator: Timed out after 600.0 seconds while waiting for a response from the invoked process
+2026-10-12T00:47:29.2498040Z ** TEST FAILED **
+2026-10-12T00:35:04.3341100Z 	 Executed 3 tests, with 0 failures (0 unexpected) in 14.130 (45.644) seconds
+2026-10-12T00:35:54.7419730Z 2026-10-12 00:35:47.732593+0000 A Playa Named Gus[28089:86433] [player] <<<< FigFilePlayer >>>> signalled err=-12864 at <>:10684
+2026-10-12T00:36:01.4432810Z 2026-10-12 00:35:58.566851+0000 A Playa Named Gus[28089:85558] [AMCP]          HALC_ProxyIOContext.cpp:1676  HALC_ProxyIOContext::IOWorkLoop: skipping cycle due to overload

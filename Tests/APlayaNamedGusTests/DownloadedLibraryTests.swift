@@ -193,86 +193,88 @@ struct DownloadedNavigationTests {
     }
 }
 
-@MainActor
-@Suite("Local playback routing")
-struct LocalPlaybackRoutingTests {
-    @Test("Missing local-only files fail without resolving a server URL")
-    func missingFileNeverStreams() async {
-        let provider = FakeMediaProviderSession(capabilities: ProviderCapabilities())
-        let session = makeSession(provider: provider)
-        let video = PlaybackStore(
-            item: MediaItem(id: "missing-video", type: .movie),
-            session: session,
-            playbackRefresh: PlaybackRefreshStore(),
-            localOnly: true
-        )
-        await video.prepare()
-        if case .failed = video.state {} else {
-            Issue.record("Missing file must fail")
+extension PlaybackIntegrationTests {
+    @MainActor
+    @Suite("Local playback routing")
+    struct LocalPlaybackRoutingTests {
+        @Test("Missing local-only files fail without resolving a server URL")
+        func missingFileNeverStreams() async {
+            let provider = FakeMediaProviderSession(capabilities: ProviderCapabilities())
+            let session = makeSession(provider: provider)
+            let video = PlaybackStore(
+                item: MediaItem(id: "missing-video", type: .movie),
+                session: session,
+                playbackRefresh: PlaybackRefreshStore(),
+                localOnly: true
+            )
+            await video.prepare()
+            if case .failed = video.state {} else {
+                Issue.record("Missing file must fail")
+            }
+            let audio = AudioPlayerStore(session: session, tracks: [MediaItem(id: "missing-audio", type: .audio)], localOnly: true)
+            await audio.start()
+            if case .failed = audio.state {} else {
+                Issue.record("Missing file must fail")
+            }
+            #expect(provider.playbackResolutionCallCount == 0)
+            #expect(provider.audioResolutionCallCount == 0)
+            #expect(provider.playbackReportCallCount == 0)
+            video.teardown()
+            audio.teardown()
         }
-        let audio = AudioPlayerStore(session: session, tracks: [MediaItem(id: "missing-audio", type: .audio)], localOnly: true)
-        await audio.start()
-        if case .failed = audio.state {} else {
-            Issue.record("Missing file must fail")
+
+        @Test("Local prepare and teardown do not resolve, fetch next-up, request artwork or report sessions")
+        func localPlaybackDoesNotUseServer() async throws {
+            let directory = FileManager.default.temporaryDirectory.appendingPathComponent("gus-local-player-\(UUID().uuidString)")
+            defer { try? FileManager.default.removeItem(at: directory) }
+            let fileStore = OfflineDownloadFileStore(directory: directory)
+            let item = MediaItem(id: "local", indexNumber: 1, name: "Local episode", officialRating: "G", parentIndexNumber: 1, seriesID: "show", type: .episode)
+            let source = directory.appendingPathComponent("source.mp4")
+            try Data("local-routing-fixture".utf8).write(to: source)
+            _ = try fileStore.persistDownloadedFile(source, item: item, serverID: "s", userID: "u")
+            let downloads = OfflineDownloadStore(fileStore: fileStore, coordinator: LocalRoutingDownloadCoordinator())
+            downloads.load(serverID: "s", userID: "u")
+            let progress = OfflinePlaybackProgressStore(directory: directory)
+            let provider = FakeMediaProviderSession(capabilities: ProviderCapabilities())
+            let store = PlaybackStore(
+                item: item,
+                session: makeSession(provider: provider),
+                playbackRefresh: PlaybackRefreshStore(),
+                downloads: downloads,
+                localOnly: true,
+                localProgress: progress
+            )
+            await store.prepare()
+            // This fixture exercises source selection only. Codec decoding belongs to device acceptance.
+            #expect(store.player != nil)
+            #expect(provider.playbackResolutionCallCount == 0)
+            #expect(provider.nextUpCallCount == 0)
+            #expect(provider.artworkCallCount == 0)
+            let scope = AccountScope(serverID: "s", userID: "u")
+            #expect(progress.positionTicks(forItemID: "local", scope: scope) != nil)
+            // Explicit sign-out purges before SwiftUI dismisses the old player.
+            progress.deleteCheckpoints(scope: scope)
+            store.teardown()
+            await Task.yield()
+            #expect(provider.playbackReportCallCount == 0)
+            #expect(progress.positionTicks(forItemID: "local", scope: scope) == nil)
         }
-        #expect(provider.playbackResolutionCallCount == 0)
-        #expect(provider.audioResolutionCallCount == 0)
-        #expect(provider.playbackReportCallCount == 0)
-        video.teardown()
-        audio.teardown()
-    }
 
-    @Test("Local prepare and teardown do not resolve, fetch next-up, request artwork or report sessions")
-    func localPlaybackDoesNotUseServer() async throws {
-        let directory = FileManager.default.temporaryDirectory.appendingPathComponent("gus-local-player-\(UUID().uuidString)")
-        defer { try? FileManager.default.removeItem(at: directory) }
-        let fileStore = OfflineDownloadFileStore(directory: directory)
-        let item = MediaItem(id: "local", indexNumber: 1, name: "Local episode", officialRating: "G", parentIndexNumber: 1, seriesID: "show", type: .episode)
-        let source = directory.appendingPathComponent("source.mp4")
-        try Data("local-routing-fixture".utf8).write(to: source)
-        _ = try fileStore.persistDownloadedFile(source, item: item, serverID: "s", userID: "u")
-        let downloads = OfflineDownloadStore(fileStore: fileStore, coordinator: LocalRoutingDownloadCoordinator())
-        downloads.load(serverID: "s", userID: "u")
-        let progress = OfflinePlaybackProgressStore(directory: directory)
-        let provider = FakeMediaProviderSession(capabilities: ProviderCapabilities())
-        let store = PlaybackStore(
-            item: item,
-            session: makeSession(provider: provider),
-            playbackRefresh: PlaybackRefreshStore(),
-            downloads: downloads,
-            localOnly: true,
-            localProgress: progress
-        )
-        await store.prepare()
-        // This fixture exercises source selection only. Codec decoding belongs to device acceptance.
-        #expect(store.player != nil)
-        #expect(provider.playbackResolutionCallCount == 0)
-        #expect(provider.nextUpCallCount == 0)
-        #expect(provider.artworkCallCount == 0)
-        let scope = AccountScope(serverID: "s", userID: "u")
-        #expect(progress.positionTicks(forItemID: "local", scope: scope) != nil)
-        // Explicit sign-out purges before SwiftUI dismisses the old player.
-        progress.deleteCheckpoints(scope: scope)
-        store.teardown()
-        await Task.yield()
-        #expect(provider.playbackReportCallCount == 0)
-        #expect(progress.positionTicks(forItemID: "local", scope: scope) == nil)
-    }
-
-    private func makeSession(provider: any MediaProviderSession) -> SessionStore {
-        SessionStore(
-            client: JellyfinClient(configuration: .init(
-                url: URL(string: "https://example.invalid")!,
-                accessToken: "test",
-                client: "GusTests",
-                deviceName: "Tests",
-                deviceID: "test",
-                version: "1"
-            )),
-            user: StoredUser(id: "u", name: "User", serverID: "s"),
-            server: ServerConnection(id: "s", name: "Server", url: URL(string: "https://example.invalid")!),
-            mediaProvider: provider
-        )
+        private func makeSession(provider: any MediaProviderSession) -> SessionStore {
+            SessionStore(
+                client: JellyfinClient(configuration: .init(
+                    url: URL(string: "https://example.invalid")!,
+                    accessToken: "test",
+                    client: "GusTests",
+                    deviceName: "Tests",
+                    deviceID: "test",
+                    version: "1"
+                )),
+                user: StoredUser(id: "u", name: "User", serverID: "s"),
+                server: ServerConnection(id: "s", name: "Server", url: URL(string: "https://example.invalid")!),
+                mediaProvider: provider
+            )
+        }
     }
 }
 

@@ -284,6 +284,10 @@ At 19:51 local, while validation ran remotely, swap held at 8.1 GiB, CPU had 60%
 
 At 20:08 local, swap was 8.8 GiB, memory-pressure reporting showed 44% system-wide memory free, and CPU had 77% idle time. The one-second sample recorded four swap-in pages and zero swap-out pages. Retained swap remains above zero, but this interval does not show active swap-out pressure. Idle Xcode services remain temporarily paused; native cleanup still needs the Mac unlocked.
 
+At 20:30 local, swap fell to 7.7 GiB (7,915 MiB), memory-pressure reporting showed 41% system-wide memory free, and CPU had 78% idle time. The one-second sample recorded zero swap-in and zero swap-out pages, with one-minute load 3.65. The three paused services were verified by executable and parent identity; all parent Xcode processes were running. Native cleanup remains blocked by the locked Mac. Heavy Gus validation continues remotely.
+
+The 20:41 local follow-up held at 7.7 GiB swap (7,867 MiB), with 87% CPU idle, one-minute load 2.46, and zero interval swap-ins/swap-outs. Memory-pressure reporting showed 39% system-wide memory free. This confirms sustained relief over the observed interval while hosted testing ran; the temporary idle-service mitigation still requires normal native cleanup.
+
 ### Final main publication and Xcode Cloud validation
 
 The completed app/download/adaptive-UI/playback/chapter repairs and evidence were
@@ -323,5 +327,27 @@ three XCTest tests. The separate Mac unit runner still failed before assertions.
 ad-hoc test host carries restricted production capabilities without provisioned
 signing; the local passing runs used development signing. A focused Mac-unit-only
 temporary entitlement fixture retains sandbox/client/server access while keeping
-production and Cloud configuration intact. Its remote retest remains pending;
-the launch error is not classified as an app assertion failure.
+production and Cloud configuration intact. The launch error is not classified as
+an app assertion failure. The focused configuration passed in hosted run `38187673465`
+at exact commit `aaebc323be81f391f9e9436b00f6c86d21a7b10e`: fixture preparation,
+test-host launch, **288 Swift Testing cases in 48 suites**, and **three separate
+XCTest performance cases** all passed. [Mac evidence](../../AppStore/cloud-onboarding-evidence/github-ci/run-38187673465-macos-test-success.json).
+Interactive Mac UI and production signing remain separate gates.
+
+Hosted run `38187673465` completed **12/13 jobs** successfully: all six builds,
+Mac/iPad/tvOS/visionOS unit lanes, lint and documentation checks. The iPhone lane
+ran all 288 Swift Testing cases and three XCTest performance cases, but recorded
+one real completion-wait failure at `AudioPlaybackTests.swift:242`.
+[Exact failure](../../AppStore/cloud-onboarding-evidence/github-ci/run-38187673465-iphone-test-failure.json).
+Compilation and launch succeeded; native audio overload messages do not prove its
+cause. Simulator diagnostic collection then timed out after 600 seconds.
+
+The stateful playback tests activate/deactivate one process-wide audio session
+from independently scheduled suites. They are now grouped under a common native
+serialized suite, preserving real WAV completion assertions and adding bounded
+failure diagnostics. This repairs a test isolation hazard; it does not establish
+that the observed CI failure was a product defect or prove its precise cause.
+No app source or production signing changes are made for this test repair. The
+test identifiers now include `PlaybackIntegrationTests`; future focused selectors
+must use that parent. Formatting, syntax and shared-project checks pass. Its remote
+validation remains pending.

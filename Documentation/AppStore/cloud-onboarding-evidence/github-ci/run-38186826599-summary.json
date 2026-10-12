@@ -1,0 +1,107 @@
+{
+  "conclusion": "failure",
+  "jobs": [
+    {
+      "conclusion": "success",
+      "failedSteps": [],
+      "id": 114610836560,
+      "name": "Lint",
+      "status": "completed"
+    },
+    {
+      "conclusion": "success",
+      "failedSteps": [],
+      "id": 114610836670,
+      "name": "Build iPadOS",
+      "status": "completed"
+    },
+    {
+      "conclusion": "success",
+      "failedSteps": [],
+      "id": 114610836717,
+      "name": "Docs and Config",
+      "status": "completed"
+    },
+    {
+      "conclusion": "success",
+      "failedSteps": [],
+      "id": 114610836729,
+      "name": "Build macOS",
+      "status": "completed"
+    },
+    {
+      "conclusion": "success",
+      "failedSteps": [],
+      "id": 114610836782,
+      "name": "Test iPhone",
+      "status": "completed"
+    },
+    {
+      "conclusion": "failure",
+      "failedSteps": [
+        "Test macOS"
+      ],
+      "id": 114610836808,
+      "name": "Test macOS",
+      "status": "completed"
+    },
+    {
+      "conclusion": "success",
+      "failedSteps": [],
+      "id": 114610836845,
+      "name": "Build tvOS",
+      "status": "completed"
+    },
+    {
+      "conclusion": "success",
+      "failedSteps": [],
+      "id": 114610836850,
+      "name": "Build iOS",
+      "status": "completed"
+    },
+    {
+      "conclusion": "success",
+      "failedSteps": [],
+      "id": 114610836874,
+      "name": "Test tvOS",
+      "status": "completed"
+    },
+    {
+      "conclusion": "success",
+      "failedSteps": [],
+      "id": 114610836881,
+      "name": "Build watchOS",
+      "status": "completed"
+    },
+    {
+      "conclusion": "success",
+      "failedSteps": [],
+      "id": 114610836887,
+      "name": "Test iPad",
+      "status": "completed"
+    },
+    {
+      "conclusion": "success",
+      "failedSteps": [],
+      "id": 114610836889,
+      "name": "Test visionOS",
+      "status": "completed"
+    },
+    {
+      "conclusion": "success",
+      "failedSteps": [],
+      "id": 114610836904,
+      "name": "Build visionOS",
+      "status": "completed"
+    }
+  ],
+  "status": "completed",
+  "captured_at_utc": "2026-10-12T00:28:23.405760+00:00",
+  "run_id": 38186826599,
+  "source_sha": "e43afc5ee192e71a2457ae7d482188698978cca2",
+  "purpose": "Xcode 27.1 SDK selection repair verification",
+  "acceptance_limits": [
+    "Mac test runner failed before assertions; see scoped launch failure evidence.",
+    "Passing builds do not establish Duo live runtime transitions or minimum-OS runtime acceptance."
+  ]
+}

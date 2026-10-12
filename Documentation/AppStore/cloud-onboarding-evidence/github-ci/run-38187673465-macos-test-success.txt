@@ -1,0 +1,15 @@
+Run 38187673465; source aaebc323be81f391f9e9436b00f6c86d21a7b10e
+Job 114613438079: Test macOS
+Prepare Mac unit test signing: completed/success (GitHub completed-job metadata)
+288 Swift Testing test cases in 48 suites passed; 3 separate XCTest performance-measurement cases passed.
+Individual expectation/assertion totals are not reported by this log.
+2026-10-12T00:28:50.3588960Z Image: xcode-27-arm64
+2026-10-12T00:28:50.3589380Z Version: 20261006.0244.1
+2026-10-12T00:29:17.9731290Z Xcode 27.1
+2026-10-12T00:29:17.9732850Z Build version 27A9269
+2026-10-12T00:32:59.7076670Z ✔ Test run with 288 tests in 48 suites passed after 3.873 seconds.
+2026-10-12T00:33:08.8891950Z ** TEST SUCCEEDED **
+2026-10-12T00:32:55.8189830Z 	 Executed 3 tests, with 0 failures (0 unexpected) in 1.623 (1.628) seconds
+2026-10-12T00:32:55.1054540Z Test Case '-[GusMacOSTests.PerformanceMeasurementTests testHistogramMathMeasurement]' passed (0.927 seconds).
+2026-10-12T00:32:55.5042620Z Test Case '-[GusMacOSTests.PerformanceMeasurementTests testMediaItemMapperThroughputMeasurement]' passed (0.388 seconds).
+2026-10-12T00:32:55.8170920Z Test Case '-[GusMacOSTests.PerformanceMeasurementTests testServerURLNormalizationMeasurement]' passed (0.308 seconds).

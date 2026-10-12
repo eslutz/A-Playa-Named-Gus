@@ -1,0 +1,35 @@
+{
+  "captured_at_utc": "2026-10-12T00:35:32.229906+00:00",
+  "run_id": 38187673465,
+  "source_sha": "aaebc323be81f391f9e9436b00f6c86d21a7b10e",
+  "job_id": 114613438079,
+  "name": "Test macOS",
+  "status": "completed",
+  "conclusion": "success",
+  "signing_fixture_step": {
+    "conclusion": "success",
+    "name": "Prepare Mac unit test signing",
+    "status": "completed"
+  },
+  "xcode_version": "27.1",
+  "xcode_build": "27A9269",
+  "runner_image": "xcode-27-arm64",
+  "runner_image_version": "20261006.0244.1",
+  "swift_testing_test_cases": 288,
+  "swift_testing_suites": 48,
+  "swift_testing_failures": 0,
+  "xctest_performance_measurement_cases": 3,
+  "xctest_performance_case_names": [
+    "testHistogramMathMeasurement",
+    "testMediaItemMapperThroughputMeasurement",
+    "testServerURLNormalizationMeasurement"
+  ],
+  "xctest_failures": 0,
+  "individual_expectation_or_assertion_count": null,
+  "classification": "Mac test-host launch and test execution accepted after CI signing fixture repair",
+  "acceptance_limits": [
+    "The 3 XCTest measurement cases are distinct from the 288 Swift Testing cases and are not repeated totals from nested XCTest suites.",
+    "Individual assertion counts are unavailable; recorded counts are test cases and suites.",
+    "Hosted Mac unit-test acceptance is separate from interactive Mac UI acceptance and physical device testing."
+  ]
+}

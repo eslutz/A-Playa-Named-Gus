@@ -125,5 +125,30 @@
     "idleIndexServicesRemainPaused": true,
     "nativeCleanupBlockedByLockedMac": true,
     "localHeavyGusJobsRunning": false
+  },
+  "latestRemoteValidationCheck": {
+    "measuredAt": "2026-10-11 20:30 local",
+    "swapUsedMB": 7915.38,
+    "memoryPressureReportedFreePercent": 41,
+    "cpuIdlePercent": 77.51,
+    "oneSecondSwapinsPages": 0,
+    "oneSecondSwapoutsPages": 0,
+    "oneMinuteLoadAverage": 3.65,
+    "idleIndexServicesRemainPaused": true,
+    "serviceIdentityAndParentVerified": true,
+    "parentXcodeProcessesRunning": true,
+    "nativeCleanupBlockedByLockedMac": true,
+    "localHeavyGusJobsRunning": false
+  },
+  "latestReadOnlyCheck": {
+    "measuredAt": "2026-10-11 20:41 local",
+    "swapUsedMB": 7867.38,
+    "memoryPressureReportedFreePercent": 39,
+    "cpuIdlePercent": 86.60,
+    "oneSecondSwapinsPages": 0,
+    "oneSecondSwapoutsPages": 0,
+    "oneMinuteLoadAverage": 2.46,
+    "localHeavyGusJobsRunning": false,
+    "normalNativeCleanupStillPending": true
   }
 }

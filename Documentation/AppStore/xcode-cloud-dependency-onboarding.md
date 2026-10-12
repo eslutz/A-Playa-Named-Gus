@@ -83,7 +83,7 @@ workflow. No Git commits or pushes were made. The package-free project was not p
 This confirms that primary-repository authorization can complete and that bypassing
 the package-connection step permits onboarding. Because the copy also has fresh local
 workspace state, this experiment does not distinguish a local discovery-state defect
-from a server visibility defect. It does not yet prove that Cloud can resolve/build the
+from a server visibility defect. At that stage it did not prove that Cloud could resolve/build the
 full package graph. The authenticated API subsequently confirmed Gus product
 `f2e5bb18-7cd2-44ab-b88c-9d54ac63b512`, primary repository
 `af9d4248-65b2-413a-a7bd-25a8885ff13e`, and workflow
@@ -217,7 +217,33 @@ selects them only for that hosted Mac unit job; production entitlements, other
 jobs, and Cloud signing remain intact. It refuses to overwrite existing local
 configuration. If launch still fails, a non-gating diagnostic collects signature/
 profile presence and limited app-specific signing messages with redaction.
-Remote launch/assertion acceptance of this focused configuration is pending.
+Remote acceptance passed in [run 38187673465](https://github.com/eslutz/A-Playa-Named-Gus/actions/runs/38187673465)
+at exact commit `aaebc323be81f391f9e9436b00f6c86d21a7b10e`. The signing fixture step
+succeeded, the Mac host launched, and **288 Swift Testing cases in 48 suites plus
+three separate XCTest performance-measurement cases passed**, with no failures.
+[Mac success evidence](cloud-onboarding-evidence/github-ci/run-38187673465-macos-test-success.json)
+clears the hosted launch/execution gate. This does not establish interactive Mac
+UI acceptance or provisioned production/archive signing.
+
+The completed run passed **12/13 jobs**: all six platform builds, Mac/iPad/tvOS/visionOS
+unit lanes, lint, and documentation checks. The iPhone lane compiled and launched,
+passed its three XCTest measurement cases, and ran all 288 Swift Testing cases,
+but recorded one completion-wait issue in the audio replay regression. A separate
+600-second simulator diagnostics timeout accounts for the long finish.
+[Run summary](cloud-onboarding-evidence/github-ci/run-38187673465-summary.json),
+[exact iPhone failure](cloud-onboarding-evidence/github-ci/run-38187673465-iphone-test-failure.json).
+Native player/audio overload messages are context, not proof of the underlying cause.
+
+Source inspection found independent playback suites activating/deactivating the same
+process-wide audio session while Swift Testing runs sibling suites concurrently.
+The replay suite's existing serialization does not serialize its unrelated peers;
+[Apple documents this scope](https://developer.apple.com/documentation/Testing/Parallelization).
+A focused test-only repair groups the stateful playback suites under one native
+serialized parent and adds completion-failure diagnostics. Actual WAV completion
+assertions and their deadlines remain; no tests are skipped and app playback behavior
+is unchanged. The nested test identifiers change, so future focused selectors must
+include `PlaybackIntegrationTests`. Formatting, syntax and shared-project checks pass;
+acceptance of this isolation repair remains pending.
 
 ## Recovery and acceptance
 
