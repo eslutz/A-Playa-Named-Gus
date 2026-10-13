@@ -88,7 +88,7 @@ struct ItemDetailView: View {
                     CinematicDetailHero(
                         item: store.item,
                         playbackItem: target,
-                        primaryPlayEnabled: target != nil,
+                        primaryPlayEnabled: target.map { ContentRatingGate.admitsStored($0) } ?? false,
                         backdropURL: session.mediaProvider.backdropImageURL(for: store.item, context: .backdrop),
                         play: {
                             if let target, ContentRatingGate.admitsStored(target) {

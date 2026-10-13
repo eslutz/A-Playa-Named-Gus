@@ -110,7 +110,7 @@ jobs:
           - name: iPadOS
             destination: platform=iOS Simulator,name=iPad Pro 11-inch (M5)
           - name: macOS
-            destination: platform=macOS
+            destination: platform=macOS,arch=arm64
           - name: tvOS
             destination: generic/platform=tvOS Simulator
           - name: visionOS
@@ -175,7 +175,7 @@ jobs:
             destination: ""
           - name: macOS
             scheme: Gus macOS Unit Tests
-            destination: platform=macOS
+            destination: platform=macOS,arch=arm64
 
     steps:
       - name: Checkout

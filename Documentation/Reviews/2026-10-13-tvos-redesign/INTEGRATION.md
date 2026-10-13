@@ -8,7 +8,7 @@ main c847a27 and warning-fix commit a9fd578. The TV branch was merged locally,
 including all three commits: 16a5080, 68df54c, and 53d8451. The generated project
 was regenerated from the complete source tree. Compiler warning gates, the Watch
 AppIntents dependency, and the LibraryStoreTests concurrency repair are retained.
-All production Sources match the reviewed final TV branch; its Home closure
+At initial integration, production Sources matched the reviewed final TV branch; its Home closure
 correction is identical to the warning fix. Original pipeline/research/planning
 edits and the TV owner's three source worktrees are preserved.
 
@@ -34,7 +34,15 @@ Test bundles: `/tmp/gus-integrated-mac-tests.xcresult` and
 The donor branch's four native TV UI cases and screenshot/metadata checks are
 recorded in RUNTIME.md; this integration did not rerun its runtime harness.
 Signed-device account/iCloud and physical remote/VoiceOver/HDR/audio acceptance
-remain the existing release gates. No Cloud run, push, PR or publication occurred.
+remain the existing release gates. These checks preceded publication through PR #22.
+
+## PR review follow-up
+
+PR #22 review identified two additional fixes: macOS CI destinations now specify
+`arch=arm64`, and tvOS detail Play/Resume is disabled when the resolved episode
+fails the stored content-rating policy. The action still checks admission before
+starting playback. This is the sole production-source change after donor integration.
+GitHub CI and the post-merge Xcode Cloud run must validate the final commit.
 
 ## Local companion integrations
 
