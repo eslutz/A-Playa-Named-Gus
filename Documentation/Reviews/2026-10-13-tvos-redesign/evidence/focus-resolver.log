@@ -1,0 +1,2 @@
+Initial identity restoration harness: FAIL: restoration must follow identity across reorder
+Corrected production resolver: PASS: 5 identity/removal/empty/clamping focus cases

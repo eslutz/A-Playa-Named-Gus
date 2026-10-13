@@ -1,0 +1,5 @@
+􀢄 Test "background preparation cannot start playback when it finishes" recorded an issue at TVPlaybackLifecycleTests.swift:34:9: Expectation failed: store.player?.rate == 0
+􀢄 Test "background preparation cannot start playback when it finishes" recorded an issue at TVPlaybackLifecycleTests.swift:36:9: Expectation failed: store.player?.rate == 0
+􀢄 Test "server track rebuild retains paused state" recorded an issue at TVPlaybackLifecycleTests.swift:48:9: Expectation failed: store.player?.rate == 0
+􀢄 Test run with 2 tests in 1 suite failed after 0.247 seconds with 3 issues.
+** TEST FAILED **

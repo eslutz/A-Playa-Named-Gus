@@ -35,6 +35,7 @@ struct ItemDetailView: View {
             }
         }
         .navigationTitle(store?.item.displayTitle ?? item.displayTitle)
+        .gusTVDetailTitle()
         #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
         #endif
@@ -80,14 +81,19 @@ struct ItemDetailView: View {
     }
 
     private func detailContent(for store: ItemDetailStore) -> some View {
-        GeometryReader { geometry in
+        let target = store.item.gusTVPlaybackTarget(nextUp: navigationState.home?.unifiedNextUp ?? [], episodes: store.seriesStore?.episodes ?? [])
+        return GeometryReader { geometry in
             ScrollView {
                 VStack(alignment: .leading, spacing: 0) {
                     CinematicDetailHero(
                         item: store.item,
+                        playbackItem: target,
+                        primaryPlayEnabled: target != nil,
                         backdropURL: session.mediaProvider.backdropImageURL(for: store.item, context: .backdrop),
                         play: {
-                            playerItem = ItemRef(item: store.item)
+                            if let target, ContentRatingGate.admitsStored(target) {
+                                playerItem = ItemRef(item: target)
+                            }
                         },
                         isInUpNext: upNext.contains(store.item, serverID: session.server.id, userID: session.user.id),
                         toggleUpNext: {
@@ -166,11 +172,11 @@ struct ItemDetailView: View {
                         }
 
                         if !store.specialFeatures.isEmpty {
-                            MediaRail(title: String(localized: "Special Features", comment: "Item detail section header for bonus/extra content"), items: store.specialFeatures, style: .backdrop)
+                            MediaRail(title: String(localized: "Special Features", comment: "Item detail section header for bonus/extra content"), items: store.specialFeatures, style: .backdrop, focusKey: "detail:" + ItemRef(item: item).id + ":extras", focusContext: "detail:" + ItemRef(item: item).id)
                         }
 
                         if !store.similarItems.isEmpty {
-                            MediaRail(title: String(localized: "Recommended", comment: "Item detail section header for similar/recommended items"), items: store.similarItems)
+                            MediaRail(title: String(localized: "Recommended", comment: "Item detail section header for similar/recommended items"), items: store.similarItems, focusKey: "detail:" + ItemRef(item: item).id + ":recommended", focusContext: "detail:" + ItemRef(item: item).id)
                         }
 
                         AboutCardsView(

@@ -1,0 +1,10 @@
+Test Case '-[TVInspect.TVInspect testAccessibilityAudit]' started.
+Test Case '-[TVInspect.TVInspect testAccessibilityAudit]' passed (10.497 seconds).
+Test Case '-[TVInspect.TVInspect testAccountAndRemote]' started.
+Test Case '-[TVInspect.TVInspect testAccountAndRemote]' passed (36.745 seconds).
+Test Case '-[TVInspect.TVInspect testDetailPlaybackAndSidebar]' started.
+Test Case '-[TVInspect.TVInspect testDetailPlaybackAndSidebar]' passed (65.987 seconds).
+	 Executed 3 tests, with 0 failures (0 unexpected) in 113.229 (113.240) seconds
+	 Executed 3 tests, with 0 failures (0 unexpected) in 113.229 (113.247) seconds
+	 Executed 3 tests, with 0 failures (0 unexpected) in 113.229 (113.248) seconds
+** TEST SUCCEEDED **

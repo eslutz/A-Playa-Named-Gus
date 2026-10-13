@@ -49,7 +49,7 @@ struct HomeView: View {
         })) {
             Button("OK", role: .cancel) { upNext.clearError() }
         } message: { Text(upNext.errorMessage ?? "") }
-        .navigationTitle("Home")
+        .gusTVHomeTitle()
         .task {
             await upNext.refresh(session: session)
         }
@@ -116,18 +116,20 @@ struct HomeView: View {
                         }
                     }
                     if !store.unifiedNextUp.isEmpty {
-                        NextUpRail(store: store).id("next")
+                        NextUpRail(store: store).gusTVNextUpHero(entries: store.unifiedNextUp).id("next")
                     }
                     if !store.sharedWithYouItems.isEmpty {
                         MediaRail(title: store.sharedWithYouTitle, items: store.sharedWithYouItems).id("shared")
                     }
                     ProgressTransferView()
                     ForEach(store.latestSections) { section in
-                        MediaRail(title: section.title, items: section.items).id(section.id)
+                        MediaRail(title: section.title, items: section.items, requestsInitialFocus: store.unifiedNextUp.isEmpty && section.id == store.latestSections.first?.id)
+                            .gusTVFallbackHero(items: section.items, enabled: store.unifiedNextUp.isEmpty && section.id == store.latestSections.first?.id)
+                            .id(section.id)
                     }
                 }
                 .scrollTargetLayout()
-                .padding()
+                .gusTVPagePadding()
                 .frame(maxWidth: PageContentMetrics.maxWidth, alignment: .leading)
                 .frame(maxWidth: .infinity)
             }
@@ -144,6 +146,7 @@ struct HomeView: View {
 
 /// The first twenty cards and full list share the same builder output and IDs.
 private struct NextUpRail: View {
+    @Environment(RootNavigationState.self) private var root
     let store: HomeStore
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -151,17 +154,21 @@ private struct NextUpRail: View {
                 Text("Next Up").font(.title2.bold()).accessibilityAddTraits(.isHeader)
                 Spacer()
                 NavigationLink("Show All") { NextUpListView(store: store) }
+                    .gusTVFocus(id: "all", section: "home.next.control", ids: ["all"], context: root.selectedSectionID)
             }
             ScrollView(.horizontal, showsIndicators: false) {
                 LazyHStack(alignment: .top, spacing: MediaRailMetrics.spacing(for: .backdrop)) {
                     ForEach(Array(store.unifiedNextUp.prefix(20))) { entry in
                         NextUpDestination(entry: entry, usesArtwork: true)
                             .frame(width: MediaRailMetrics.itemWidth(for: .backdrop))
+                            .gusTVFocus(id: entry.id, section: "home.next", ids: store.unifiedNextUp.prefix(20).map(\.id), initial: entry.id == store.unifiedNextUp.first?.id, item: entry.item, entry: entry, context: root.selectedSectionID)
                     }
                 }
-                .padding(.vertical, 4)
+                .scrollTargetLayout()
+                .gusTVRailPadding()
                 .tvFocusSection()
             }
+            .scrollPosition(id: root.scrollBinding(for: "home.next"))
             .lookToScroll(.horizontal)
         }
     }
@@ -276,6 +283,10 @@ struct MediaRail: View {
     let title: String
     let items: [MediaItem]
     var style: MediaRailStyle = .poster
+    var focusKey: String? = nil
+    var focusContext: String? = nil
+    var requestsInitialFocus = false
+    @Environment(RootNavigationState.self) private var root
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -310,12 +321,16 @@ struct MediaRail: View {
                                 .frame(width: style.itemWidth)
                             }
                         }
+                        .id(ItemRef(item: item).id)
                         .posterNavigationStyle()
+                        .gusTVFocus(id: ItemRef(item: item).id, section: focusKey ?? (root.selectedSectionID + ":rail:" + title), ids: items.map { ItemRef(item: $0).id }, initial: requestsInitialFocus && item.id == items.first?.id, item: item, context: focusContext ?? root.selectedSectionID)
                     }
                 }
-                .padding(.vertical, 4)
+                .scrollTargetLayout()
+                .gusTVRailPadding()
                 .tvFocusSection()
             }
+            .scrollPosition(id: root.scrollBinding(for: focusKey ?? (root.selectedSectionID + ":rail:" + title)))
             .lookToScroll(.horizontal)
         }
     }

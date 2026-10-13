@@ -1,0 +1,14 @@
+{
+  "date": "2026-10-13",
+  "minimumTVOS": "27.0",
+  "installedTVOS": [
+    "17.5",
+    "26.5"
+  ],
+  "listedPhysicalTVOS": "26.6",
+  "compatibleTVRuntime": false,
+  "liveTVScreenshots": false,
+  "remoteAndVoiceOverAcceptance": "blocked, not run",
+  "signingSettingsChanged": false,
+  "releaseExportWork": "separate task, not touched"
+}

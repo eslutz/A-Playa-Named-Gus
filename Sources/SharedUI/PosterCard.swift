@@ -7,6 +7,7 @@ import SwiftUI
 struct PosterCard: View {
     let title: String
     var subtitle: String?
+    var statusItem: MediaItem? = nil
     let imageURL: URL?
     var aspectRatio: CGFloat = 2.0 / 3.0
     var placeholderSymbol: String = "film"
@@ -19,11 +20,12 @@ struct PosterCard: View {
                 .frame(maxWidth: .infinity)
                 .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                 .posterHoverEffect()
+                .gusTVArtworkStatus(item: statusItem)
 
             VStack(alignment: .leading, spacing: 1) {
                 Text(title)
                     .font(.subheadline.weight(.medium))
-                    .lineLimit(1)
+                    .gusTVPosterTitle()
                 if let subtitle {
                     Text(subtitle)
                         .font(.caption)
@@ -35,6 +37,7 @@ struct PosterCard: View {
         .contentShape(Rectangle())
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(accessibilityLabel)
+        .gusTVPosterStatusValue(item: statusItem)
     }
 
     private var accessibilityLabel: Text {
@@ -68,5 +71,6 @@ extension PosterCard {
             fallbackURLs: fallbackURLs,
             onExhausted: onExhausted
         )
+        statusItem = item
     }
 }

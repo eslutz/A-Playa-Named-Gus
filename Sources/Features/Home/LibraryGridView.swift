@@ -57,8 +57,9 @@ struct LibraryGridView: View {
                                 imageURL: session.mediaProvider.primaryImageURL(for: item, context: .posterGrid)
                             )
                         }
-                        .id(item.id)
+                        .id(ItemRef(item: item).id)
                         .posterNavigationStyle()
+                        .gusTVFocus(id: ItemRef(item: item).id, section: "library:" + scope.storeIdentity, ids: store.items.map { ItemRef(item: $0).id }, initial: item.id == store.items.first?.id, item: item)
                         .task {
                             await store.loadMoreIfNeeded(currentItem: item)
                         }
@@ -80,7 +81,7 @@ struct LibraryGridView: View {
                     }
                 }
                 .scrollTargetLayout()
-                .padding()
+                .gusTVPagePadding()
                 .frame(maxWidth: PageContentMetrics.maxWidth, alignment: .leading)
                 .frame(maxWidth: .infinity)
                 .tvFocusSection()

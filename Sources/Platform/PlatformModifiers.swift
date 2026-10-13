@@ -145,7 +145,7 @@ extension View {
 enum PosterGrid {
     static var columns: [GridItem] {
         #if os(tvOS)
-            return Array(repeating: GridItem(.flexible(), spacing: 40), count: 6)
+            return [GridItem(.adaptive(minimum: 220, maximum: 280), spacing: 40)]
         #else
             return [GridItem(.adaptive(minimum: minimumItemWidth, maximum: maximumItemWidth), spacing: spacing)]
         #endif

@@ -1,0 +1,9 @@
+/tmp/gus-tvos-cinematic-native/Tests/APlayaNamedGusTests/LibraryStoreTests.swift:223:70: warning: 'LibraryItemsURLProtocol' inherits an unavailable 'Sendable' conformance; conforming here risks data races [#UnavailableSendableConformance]
+    |                     |                                                `- warning: 'LibraryItemsURLProtocol' inherits an unavailable 'Sendable' conformance; conforming here risks data races [#UnavailableSendableConformance]
+	 Executed 0 tests, with 0 failures (0 unexpected) in 0.000 (0.000) seconds
+	 Executed 0 tests, with 0 failures (0 unexpected) in 0.000 (0.003) seconds
+◇ Test "retained parent preserves its rail through native fallback after a pop" started.
+✘ Test "retained parent preserves its rail through native fallback after a pop" recorded an issue at TVFocusRestorationTests.swift:56:13: Expectation failed: root.tvFocus.restoredID(section: "latest", context: "home", ids: ["a", "c"], initial: false) == "c"
+✘ Test "retained parent preserves its rail through native fallback after a pop" failed after 0.009 seconds with 1 issue.
+✘ Test run with 7 tests in 1 suite failed after 0.014 seconds with 1 issue.
+** TEST FAILED **
