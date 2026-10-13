@@ -1,5 +1,4 @@
 import AVFoundation
-import CoreVideo
 import Foundation
 @testable import Gus
 import Testing
@@ -152,7 +151,8 @@ struct VideoPlaylistPreparationTests {
 
         let fileStore = OfflineDownloadFileStore(directory: folder.appendingPathComponent("downloads"))
         let source = folder.appendingPathComponent("offline-fixture.mov")
-        try await makePlaylistVideoFixture(at: source)
+        let fixture = try RepositoryTestFixtures.url(for: "Tests/Fixtures/OfflinePlaylist.mov")
+        try FileManager.default.copyItem(at: fixture, to: source)
         _ = try fileStore.persistDownloadedFile(source, item: item, serverID: scope.serverID, userID: scope.userID)
         let downloads = OfflineDownloadStore(fileStore: fileStore, coordinator: PlaylistFixtureDownloadCoordinator())
         downloads.load(serverID: scope.serverID, userID: scope.userID)
@@ -255,62 +255,6 @@ struct VideoPlaylistPreparationTests {
         #expect(provider.playbackResolutionCallCount == 0)
         coordinator.stop(player)
     }
-}
-
-/// Valid H.264 media exercises AVPlayer's local asset path, not just URL routing.
-@MainActor
-private func makePlaylistVideoFixture(at url: URL) async throws {
-    let writer = try AVAssetWriter(outputURL: url, fileType: .mov)
-    let input = AVAssetWriterInput(mediaType: .video, outputSettings: [
-        AVVideoCodecKey: AVVideoCodecType.h264,
-        AVVideoWidthKey: 32,
-        AVVideoHeightKey: 32,
-    ])
-    let adaptor = AVAssetWriterInputPixelBufferAdaptor(assetWriterInput: input, sourcePixelBufferAttributes: [
-        kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_32BGRA,
-        kCVPixelBufferWidthKey as String: 32,
-        kCVPixelBufferHeightKey as String: 32,
-    ])
-    try #require(writer.canAdd(input))
-    writer.add(input)
-    try #require(writer.startWriting())
-    defer {
-        if writer.status == .writing {
-            writer.cancelWriting()
-        }
-    }
-    writer.startSession(atSourceTime: .zero)
-    var buffer: CVPixelBuffer?
-    try #require(CVPixelBufferCreate(kCFAllocatorDefault, 32, 32, kCVPixelFormatType_32BGRA, nil, &buffer) == kCVReturnSuccess)
-    let pixelBuffer = try #require(buffer)
-    CVPixelBufferLockBaseAddress(pixelBuffer, [])
-    let address = try #require(CVPixelBufferGetBaseAddress(pixelBuffer))
-    address.initializeMemory(as: UInt8.self, repeating: 0, count: CVPixelBufferGetBytesPerRow(pixelBuffer) * 32)
-    CVPixelBufferUnlockBaseAddress(pixelBuffer, [])
-    for frame in 0 ..< 16 {
-        for _ in 0 ..< 500 {
-            if input.isReadyForMoreMediaData || writer.status != .writing {
-                break
-            }
-            try await Task.sleep(for: .milliseconds(10))
-        }
-        try #require(input.isReadyForMoreMediaData && writer.status == .writing)
-        try #require(adaptor.append(pixelBuffer, withPresentationTime: CMTime(value: Int64(frame), timescale: 4)))
-    }
-    writer.endSession(atSourceTime: CMTime(seconds: 4, preferredTimescale: 600))
-    input.markAsFinished()
-    let (completion, continuation) = AsyncStream<Void>.makeStream()
-    writer.finishWriting { continuation.yield(()); continuation.finish() }
-    let completed = await withTaskGroup(of: Bool.self) { group in
-        group.addTask { for await _ in completion {
-            return true
-        }; return false }
-        group.addTask { try? await Task.sleep(for: .seconds(10)); return false }
-        let result = await group.next() ?? false
-        group.cancelAll()
-        return result
-    }
-    try #require(completed && writer.status == .completed)
 }
 
 private final class PlaylistFixtureDownloadCoordinator: DownloadSessionCoordinating {
