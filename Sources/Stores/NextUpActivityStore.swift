@@ -12,9 +12,16 @@ struct NextUpActivityPersistence {
         var firstSeenIDs: [String] = []
     }
 
-    func load(scope: AccountScope, identityKey: String) throws -> Snapshot {
+    func load(scope: AccountScope, identityKey: String, migrateLocalData: Bool = false) throws -> Snapshot {
         let url = fileURL(scope: scope, identityKey: identityKey)
-        guard FileManager.default.fileExists(atPath: url.path) else { return Snapshot() }
+        guard FileManager.default.fileExists(atPath: url.path) else {
+            if migrateLocalData, identityKey != "local" {
+                let local = try load(scope: scope, identityKey: "local")
+                try save(local, scope: scope, identityKey: identityKey)
+                return local
+            }
+            return Snapshot()
+        }
         return try JSONDecoder().decode(Snapshot.self, from: Data(contentsOf: url))
     }
 
@@ -121,7 +128,7 @@ final class NextUpActivityStore {
             revision += 1
         }
         guard snapshots[scope] == nil, !blockedScopes.contains(scope) else { return }
-        do { snapshots[scope] = try persistence.load(scope: scope, identityKey: identityKey) }
+        do { snapshots[scope] = try persistence.load(scope: scope, identityKey: identityKey, migrateLocalData: syncStore?.canMigrateLocalData == true) }
         catch {
             blockedScopes.insert(scope)
             errorMessage = String(localized: "Recent activity couldn't be read. It has been preserved.", comment: "Next Up activity read failure")

@@ -58,3 +58,12 @@ The re-added-GUID regression executed 27 store cases and failed five assertions 
 Final static release checks passed all seven lanes: SwiftFormat, release-script formatting, nine bootstrap regressions, shared project and 16 dependency pins, keyless ASC self-test, whitespace and YAML. No signed capability or production schema operation occurred. Required CI must be observed on the pushed commit; prior PR CI success is not evidence for this native-list amendment.
 
 Final iPhone verification passed 394 cases/62 suites (17.590s). The task-owned native demo container was stopped after UI/server evidence was captured. Unrelated simulator and local work remain preserved. See [local matrix](evidence/local-validation.json) and [static checks](evidence/static-checks.json).
+
+## PR review 5499151311
+
+- Both P2 findings were reproduced before fixes: the targeted two-suite run executed 22 tests and failed 30 assertions (18 disabled-sync notification assertions, 12 first-identity ordering assertions).
+- Cloud account notifications and transport account changes now return early when synchronization is disabled. Local and previously verified namespaces retain legacy playlists, native cursors, saved Next Up entries and pending changes. Enabled-sync notifications still isolate visible data.
+- The first verified identity durably claims the pre-sync local namespace. Up Next persistence copies that namespace's canonical queue order before reconciling intents; activity persistence preserves discovery ranks and real activity dates. Existing destination caches are preserved. The claim survives relaunch and cannot be reused by another account, including a switch before the queue observes the first identity. No new CloudKit record schema is introduced.
+- Full local verification: macOS 395 tests/61 suites passed (10.154s); iPhone 398 tests/62 suites passed (16.088s). All seven static release checks passed. No new source files or user-facing strings were added.
+- Required companion guidance is committed locally: wiki `98df296`, website `5d0bcd8`. Website production build and 3/3 tests passed. Unrelated app, wiki and website work remains unstaged.
+- Review replies and resolution follow the pushed fix commit. Final CI status is recorded in PR #21's description; earlier native-list CI is not evidence for this amendment. Signed two-device/physical acceptance remains separate.

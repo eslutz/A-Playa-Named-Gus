@@ -27,10 +27,19 @@ struct UpNextPersistence {
         self.init(directory: Self.defaultDirectory(applicationSupportDirectory: applicationSupportDirectory))
     }
 
-    func loadEntries(scope: AccountScope, identityKey: String? = nil) throws -> [UpNextEntry] {
+    func loadEntries(scope: AccountScope, identityKey: String? = nil, migrateLocalData: Bool = false) throws -> [UpNextEntry] {
         let url = fileURL(for: scope, identityKey: identityKey)
         if let identityKey, !FileManager.default.fileExists(atPath: url.path) {
             let marker = directory.appendingPathComponent("\(scope.storageKey).identity-migrated")
+            // The initial local load already consumed the unscoped migration.
+            // Preserve its canonical IDs and order for the account that claimed
+            // it, without allowing later accounts to repeat that migration.
+            if migrateLocalData, identityKey != "local", FileManager.default.fileExists(atPath: fileURL(for: scope, identityKey: "local").path) {
+                let local = try loadEntries(scope: scope, identityKey: "local")
+                try saveEntries(local, scope: scope, identityKey: identityKey)
+                try Data(identityKey.utf8).write(to: marker, options: .atomic)
+                return local
+            }
             if !FileManager.default.fileExists(atPath: marker.path) {
                 let legacy = try loadEntries(scope: scope)
                 try saveEntries(legacy, scope: scope, identityKey: identityKey)
@@ -104,7 +113,7 @@ final class UpNextStore {
         updateIdentity()
         guard !loadedScopes.contains(scope) else { return }
         do {
-            let restored = try persistence.loadEntries(scope: scope, identityKey: identityKey)
+            let restored = try persistence.loadEntries(scope: scope, identityKey: identityKey, migrateLocalData: syncStore?.canMigrateLocalData == true)
             let entries = canonicalEntries(restored)
             entriesByScope[scope] = entries
             if entries != restored {

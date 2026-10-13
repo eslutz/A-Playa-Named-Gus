@@ -12,6 +12,13 @@ final class VideoPlaylistsStore {
     private(set) var revision = 0
     private(set) var identityRevision = 0
     private(set) var identityKey = "local"
+    /// Binds pre-sync local caches to the first verified account only, including
+    /// lazy loads after relaunch. Later accounts must never claim those caches.
+    private(set) var localMigrationIdentityKey: String?
+    var canMigrateLocalData: Bool {
+        localMigrationIdentityKey == identityKey
+    }
+
     private(set) var errorMessage: String?
     private(set) var syncStatus = String(localized: "Saved on this device")
     var syncEnabled: Bool {
@@ -76,6 +83,11 @@ final class VideoPlaylistsStore {
            let identity = try? JSONDecoder().decode(String.self, from: data)
         {
             identityKey = identity
+        }
+        if let data = try? Data(contentsOf: localMigrationIdentityURL()),
+           let identity = try? JSONDecoder().decode(String.self, from: data)
+        {
+            localMigrationIdentityKey = identity
         }
         accountObserver = NotificationCenter.default.addObserver(forName: .CKAccountChanged, object: nil, queue: .main) { [weak self] _ in
             Task { @MainActor [weak self] in self?.cloudAccountNotification() }
@@ -491,7 +503,7 @@ final class VideoPlaylistsStore {
     }
 
     func accountChanged(_ engine: SavedMediaSyncEngine) {
-        guard owns(engine) else { return }
+        guard syncEnabled, owns(engine) else { return }
         isolateAccount()
         if let activeScope {
             Task { await activate(scope: activeScope) }
@@ -499,8 +511,9 @@ final class VideoPlaylistsStore {
     }
 
     private func cloudAccountNotification() {
+        guard syncEnabled else { return }
         isolateAccount()
-        if syncEnabled, let activeScope {
+        if let activeScope {
             Task { await activate(scope: activeScope) }
         }
     }
@@ -545,6 +558,10 @@ final class VideoPlaylistsStore {
             merged.clock = max(merged.clock, local.clock)
             try persist(merged)
             envelope = merged
+            if localMigrationIdentityKey == nil {
+                try JSONEncoder().encode(key).write(to: localMigrationIdentityURL(), options: .atomic)
+                localMigrationIdentityKey = key
+            }
         }
         try persistIdentity()
         identityRevision += 1; revision += 1
@@ -629,6 +646,10 @@ final class VideoPlaylistsStore {
     private func persistIdentity() throws {
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         try JSONEncoder().encode(identityKey).write(to: directory.appendingPathComponent("identity.json"), options: .atomic)
+    }
+
+    private func localMigrationIdentityURL() -> URL {
+        directory.appendingPathComponent("local-migration-identity.json")
     }
 
     private func fileURL() -> URL {

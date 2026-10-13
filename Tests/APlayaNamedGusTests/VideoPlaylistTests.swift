@@ -1,8 +1,54 @@
+import CloudKit
 import Foundation
 @testable import Gus
 import Testing
 
 struct VideoPlaylistTests {
+    @MainActor @Test(arguments: ["local", "account-a"])
+    func disabledSyncIgnoresCloudAccountNotification(identity: String) async throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let scope = AccountScope(serverID: "s", userID: "u")
+        let store = VideoPlaylistsStore(directory: directory, syncEnabled: false)
+        if identity != "local" {
+            try store.selectIdentity(identity, scope: scope)
+        }
+        let id = try #require(store.create(name: "Local legacy list", scope: scope))
+        let nativeID = UUID(), entryID = UUID()
+        #expect(store.setServerPlaylistState(id: nativeID, cursor: PlaylistCursor(entryID: entryID, positionTicks: 123, finished: false), queued: true, activityAt: nil, scope: scope))
+        let queue = UpNextStore(persistence: UpNextPersistence(directory: directory.appendingPathComponent("queue")), syncStore: store)
+        queue.toggle(MediaItem(id: "saved", type: .movie), serverID: "s", userID: "u")
+        let before = store.envelope, revision = store.identityRevision
+        let entries = queue.entries(serverID: "s", userID: "u")
+        NotificationCenter.default.post(name: .CKAccountChanged, object: nil)
+        try await Task.sleep(for: .milliseconds(50))
+        #expect(store.identityKey == identity)
+        #expect(store.identityRevision == revision)
+        #expect(store.envelope.records == before.records)
+        #expect(store.envelope.pending == before.pending)
+        #expect(store.playlist(id: id, scope: scope) != nil)
+        #expect(store.serverPlaylistState(id: nativeID, scope: scope).cursor?.positionTicks == 123)
+        #expect(queue.entries(serverID: "s", userID: "u") == entries)
+        let restored = VideoPlaylistsStore(directory: directory, syncEnabled: false)
+        restored.load(scope: scope)
+        #expect(restored.identityKey == identity)
+        #expect(restored.envelope.records == before.records)
+    }
+
+    @MainActor @Test func enabledSyncStillIsolatesCloudAccountNotification() async throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let scope = AccountScope(serverID: "s", userID: "u")
+        let store = VideoPlaylistsStore(directory: directory, syncEnabled: true)
+        _ = try #require(store.create(name: "Original account", scope: scope))
+        NotificationCenter.default.post(name: .CKAccountChanged, object: nil)
+        try await Task.sleep(for: .milliseconds(50))
+        #expect(store.identityKey.hasPrefix("signed-out-"))
+        #expect(store.identityRevision > 0)
+        #expect(store.playlists(scope: scope).isEmpty)
+        #expect(store.envelope.pending.isEmpty)
+    }
+
     @Test func concurrentFieldsAndEntriesMergeIndependently() throws {
         let scope = AccountScope(serverID: "server", userID: "user")
         var first = SavedMediaRecord(id: "playlist", scope: scope, kind: .playlist)
