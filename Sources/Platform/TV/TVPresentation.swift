@@ -190,7 +190,7 @@ extension View {
             VStack(alignment: .leading, spacing: 24) {
                 if let entry = selected {
                     VStack(alignment: .leading, spacing: 16) {
-                        Text(entry.playlist?.name ?? entry.item?.seriesName ?? entry.item?.displayTitle ?? String(localized: "Next Up"))
+                        Text(entry.playlist?.name.trimmedNilIfEmpty ?? entry.item?.seriesName?.trimmedNilIfEmpty ?? entry.item?.displayTitle ?? String(localized: "Next Up"))
                             .font(.largeTitle.bold()).lineLimit(2)
                         if let item = entry.item {
                             if item.type == .episode {

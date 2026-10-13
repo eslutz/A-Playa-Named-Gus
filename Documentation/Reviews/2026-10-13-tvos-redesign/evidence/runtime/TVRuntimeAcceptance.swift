@@ -118,4 +118,10 @@ import XCTest
         }
     }
 
+    func testHomeHeroCapture() {
+        launch()
+        XCTAssertTrue(app.buttons.matching(NSPredicate(format:"label BEGINSWITH %@","Peter and Wendy")).firstMatch.waitForExistence(timeout:30))
+        capture("homeHero")
+    }
+
 }
