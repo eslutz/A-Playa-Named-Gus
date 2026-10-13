@@ -102,10 +102,15 @@ struct NavigationPreferencesTests {
     }
 
     @Test("hiding and reordering persist and round-trip through resolution")
-    func hideAndReorder() {
+    func hideAndReorder() throws {
         let store = Self.makeStore()
         store.setVisibility(false, forSectionID: "category.tvshows", libraries: Self.libraries, serverID: "s", userID: "u")
-        store.move(sectionID: "category.music", by: DownloadsAvailability.isSupported ? -3 : -2, libraries: Self.libraries, serverID: "s", userID: "u")
+        // Required sections vary by platform and now include Playlists. Move
+        // Music before Libraries without assuming their numeric positions.
+        let movable = store.visibleSections(libraries: Self.libraries, serverID: "s", userID: "u").filter(\.canMove)
+        let musicIndex = try #require(movable.firstIndex { $0.id == "category.music" })
+        let librariesIndex = try #require(movable.firstIndex { $0.id == "libraries" })
+        store.move(sectionID: "category.music", by: librariesIndex - musicIndex, libraries: Self.libraries, serverID: "s", userID: "u")
         store.move(sectionID: "settings", by: -1, libraries: Self.libraries, serverID: "s", userID: "u")
 
         let sections = store.resolvedSections(libraries: Self.libraries, serverID: "s", userID: "u")

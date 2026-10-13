@@ -71,3 +71,9 @@ CI compile jobs now explicitly use unsigned builds so compilation is independent
 A fresh read-only review of the #20 fixes and CI signing separation found no remaining findings.
 
 Final same-code UI rerun passed both cases: ordered duplicate-entry natural completion (155.387s) and create/rename/relaunch/delete (51.623s), with no failures. Inspected screenshots: [entries](evidence/playlist-duplicate-entries.png), [natural completion](evidence/playlist-natural-completion.png), and [native name form](evidence/rename-native-form.png). All final platform checks exited zero; counts and timings are retained in [the local matrix](evidence/local-matrix.json).
+
+## tvOS CI follow-up
+
+[Initial PR CI](https://github.com/eslutz/A-Playa-Named-Gus/actions/runs/38350387524/job/115141212262) passed 12/13 jobs, but tvOS failed two assertions in `NavigationPreferencesTests.hideAndReorder`. The test's hardcoded move offset omitted the newly required Playlists section on platforms without Downloaded, leaving Music after Libraries. The production move correctly followed that requested offset.
+
+The test now derives the offset between Music and Libraries from the current visible movable sections; its exact expected order assertions remain unchanged. No production source changed. The seven-test navigation suite passed on macOS (Xcode 27.1 RC); SwiftFormat and diff checks passed. The CI log establishes the original tvOS failure. Compatible tvOS 27 runtime execution is unavailable locally, so actual tvOS verification runs on the updated PR's CI.
