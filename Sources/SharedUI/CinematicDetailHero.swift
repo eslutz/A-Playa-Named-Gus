@@ -19,6 +19,8 @@ struct CinematicDetailHero<Accessory: View>: View {
             HStack(spacing: 24) {
                 playButton
                 Menu { upNextButton; accessory } label: { Label("More", systemImage: "ellipsis") }
+                    .accessibilityLabel("More")
+                    .accessibilityIdentifier("Detail.more")
                     .gusTVFocus(id: "more", section: "detail:" + ItemRef(item: item).id, ids: ["play", "more", "synopsis"], item: item)
             }
         }

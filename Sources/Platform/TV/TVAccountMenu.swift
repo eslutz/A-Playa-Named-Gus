@@ -3,7 +3,11 @@ import SwiftUI
 extension View {
     @ViewBuilder func gusTVAccountMenu() -> some View {
         #if os(tvOS)
-            toolbar { ToolbarItem(placement: .primaryAction) { TVAccountMenu() } }
+            safeAreaInset(edge: .top, spacing: 0) {
+                HStack { Spacer(); TVAccountMenu() }
+                    .padding(.horizontal, 64).padding(.vertical, 12)
+                    .focusSection()
+            }
         #else
             self
         #endif

@@ -1,0 +1,8 @@
+/tmp/gus-tvos-cinematic-native/Tests/APlayaNamedGusTests/LibraryStoreTests.swift:223:70: warning: 'LibraryItemsURLProtocol' inherits an unavailable 'Sendable' conformance; conforming here risks data races [#UnavailableSendableConformance]
+    |                     |                                                `- warning: 'LibraryItemsURLProtocol' inherits an unavailable 'Sendable' conformance; conforming here risks data races [#UnavailableSendableConformance]
+	 Executed 0 tests, with 0 failures (0 unexpected) in 0.000 (0.000) seconds
+	 Executed 0 tests, with 0 failures (0 unexpected) in 0.000 (0.004) seconds
+◇ Test "retained parent preserves its rail through native fallback after a pop" started.
+✔ Test "retained parent preserves its rail through native fallback after a pop" passed after 0.001 seconds.
+✔ Test run with 7 tests in 1 suite passed after 0.004 seconds.
+** TEST SUCCEEDED **

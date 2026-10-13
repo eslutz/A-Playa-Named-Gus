@@ -6,7 +6,16 @@ import SwiftUI
 final class RootNavigationState {
     static let moreID = "gus.more"
     var selectedSectionID = NavigationSectionPreference.homeID
-    var paths: [String: NavigationPath] = [:]
+    var paths: [String: NavigationPath] = [:] {
+        didSet {
+            #if os(tvOS)
+                for section in Set(oldValue.keys).union(paths.keys) {
+                    tvFocus.navigationChanged(section: section, from: oldValue[section]?.count ?? 0, to: paths[section]?.count ?? 0)
+                }
+            #endif
+        }
+    }
+
     var scrollAnchors: [String: String] = [:]
     /// Owned by this signed-in tree, so another account never inherits focus.
     var tvFocus = TVFocusMemory()

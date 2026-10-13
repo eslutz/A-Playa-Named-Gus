@@ -1,6 +1,14 @@
 import SwiftUI
 
 extension View {
+    @ViewBuilder func gusTVHomeTitle() -> some View {
+        #if os(tvOS)
+            navigationTitle("")
+        #else
+            navigationTitle("Home")
+        #endif
+    }
+
     /// Keep TV presentation and focus divergence outside the shared feature views.
     @ViewBuilder func gusTVFocus(id: String, section: String, ids: [String], initial: Bool = false, item: MediaItem? = nil, entry: NextUpEntry? = nil, context: String? = nil) -> some View {
         #if os(tvOS)
@@ -144,7 +152,7 @@ extension View {
                 .focused($focused)
                 .focusedValue(\.gusTVMedia, item)
                 .focusedValue(\.gusTVEntry, entry)
-                .task {
+                .task(id: root.tvFocus.restorationRequest(context: context)) {
                     // Realize the native link before requesting a saved focus target.
                     await Task.yield()
                     guard !Task.isCancelled else { return }
@@ -154,8 +162,9 @@ extension View {
                 }
                 .onChange(of: focused) { _, value in
                     guard value, let index = ids.firstIndex(of: id) else { return }
-                    root.tvFocus.remember(id: id, index: index, section: section, context: context)
-                    root.scrollAnchors[section] = id
+                    if root.tvFocus.remember(id: id, index: index, section: section, context: context, ids: ids) {
+                        root.scrollAnchors[section] = id
+                    }
                 }
         }
     }

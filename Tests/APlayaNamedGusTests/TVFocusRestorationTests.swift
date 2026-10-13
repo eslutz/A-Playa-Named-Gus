@@ -1,4 +1,5 @@
 @testable import Gus
+import SwiftUI
 import Testing
 
 @Suite("TV focus restoration")
@@ -42,4 +43,18 @@ struct TVFocusRestorationTests {
     func clamped() {
         #expect(TVFocusBookmark(id: "missing", index: -1).restoredID(in: ["a", "b"]) == "a")
     }
+
+    #if os(tvOS)
+        @MainActor
+        @Test("retained parent preserves its rail through native fallback after a pop")
+        func retainedParentPop() {
+            let root = RootNavigationState()
+            root.tvFocus.remember(id: "b", index: 1, section: "latest", context: "home")
+            root.paths["home", default: NavigationPath()].append("child")
+            root.tvFocus.remember(id: "play", index: 0, section: "actions", context: "detail")
+            root.paths["home"] = NavigationPath()
+            root.tvFocus.remember(id: "book", index: 0, section: "books", context: "home")
+            #expect(root.tvFocus.restoredID(section: "latest", context: "home", ids: ["a", "c"], initial: false) == "c")
+        }
+    #endif
 }

@@ -49,7 +49,7 @@ struct HomeView: View {
         })) {
             Button("OK", role: .cancel) { upNext.clearError() }
         } message: { Text(upNext.errorMessage ?? "") }
-        .navigationTitle("Home")
+        .gusTVHomeTitle()
         .task {
             await upNext.refresh(session: session)
         }
