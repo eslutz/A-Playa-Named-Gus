@@ -12,6 +12,7 @@ struct ItemDetailView: View {
 
     @State private var playerItem: ItemRef?
     @State private var sharePlay = SharePlayCoordinator.shared
+    @State private var addingToPlaylist = false
     @State private var sharePlayPresentation: SharePlayPresentation?
     @State private var sharePlayErrorMessage: String?
     @State private var store: ItemDetailStore?
@@ -51,6 +52,14 @@ struct ItemDetailView: View {
             }
         }
         .playerPresentation(item: $playerItem)
+        .sheet(isPresented: $addingToPlaylist) {
+            NavigationStack { AddToVideoPlaylistView(item: store?.item ?? item) }
+        }
+        .toolbar {
+            if (store?.item ?? item).type == .movie || (store?.item ?? item).type == .episode {
+                ToolbarItem { Button("Add to Playlist", systemImage: "text.badge.plus") { addingToPlaylist = true }.disabled(isRestricted) }
+            }
+        }
         .sharePlaySharingPresentation(presentation: $sharePlayPresentation, errorMessage: $sharePlayErrorMessage)
         .downloadErrorAlert(downloads)
         // Handoff: continue browsing this item on another device. Restricted items

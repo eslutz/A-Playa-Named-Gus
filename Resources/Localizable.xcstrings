@@ -1,6 +1,180 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "%@ · %@": {
+      "comment": "Next Up and video playlist interface."
+    },
+    "Recent Activity Unavailable": {
+      "comment": "Next Up and video playlist interface."
+    },
+    "Playlist Finished" : {
+      "comment" : "An ordered video playlist reached the end of its final entry."
+    },
+    "%lld": {
+      "comment": "Next Up and video playlist interface."
+    },
+    "%lld items": {
+      "comment": "Next Up and video playlist interface."
+    },
+    "Add Media": {
+      "comment": "Next Up and video playlist interface."
+    },
+    "Add movies or individual episodes to get started.": {
+      "comment": "Next Up and video playlist interface."
+    },
+    "Add to Next Up": {
+      "comment": "Next Up and video playlist interface."
+    },
+    "Add to Playlist": {
+      "comment": "Next Up and video playlist interface."
+    },
+    "Changes waiting to sync": {
+      "comment": "Next Up and video playlist interface."
+    },
+    "Choose Playlist": {
+      "comment": "Next Up and video playlist interface."
+    },
+    "Continue Playlist": {
+      "comment": "Next Up and video playlist interface."
+    },
+    "Create": {
+      "comment": "Next Up and video playlist interface."
+    },
+    "Create a playlist to watch movies and episodes in your own order.": {
+      "comment": "Next Up and video playlist interface."
+    },
+    "Create and Add": {
+      "comment": "Next Up and video playlist interface."
+    },
+    "Delete Playlist": {
+      "comment": "Next Up and video playlist interface."
+    },
+    "Delete Playlist?": {
+      "comment": "Next Up and video playlist interface."
+    },
+    "Entries": {
+      "comment": "Next Up and video playlist interface."
+    },
+    "It may have been deleted or belong to another account.": {
+      "comment": "Next Up and video playlist interface."
+    },
+    "Load More": {
+      "comment": "Next Up and video playlist interface."
+    },
+    "Move Down": {
+      "comment": "Next Up and video playlist interface."
+    },
+    "Move Up": {
+      "comment": "Next Up and video playlist interface."
+    },
+    "Movies and Episodes": {
+      "comment": "Next Up and video playlist interface."
+    },
+    "New Playlist": {
+      "comment": "Next Up and video playlist interface."
+    },
+    "Next Episode": {
+      "comment": "Next Up reason"
+    },
+    "No Playlists": {
+      "comment": "Next Up and video playlist interface."
+    },
+    "Nothing in Next Up": {
+      "comment": "Next Up and video playlist interface."
+    },
+    "Play from Beginning": {
+      "comment": "Next Up and video playlist interface."
+    },
+    "Play from Here": {
+      "comment": "Next Up and video playlist interface."
+    },
+    "Playback progress": {
+      "comment": "Next Up and video playlist interface."
+    },
+    "Playlist %lld of %lld": {
+      "comment": "Next Up playlist position"
+    },
+    "Playlist Could Not Be Updated": {
+      "comment": "Next Up and video playlist interface."
+    },
+    "Playlist Paused": {
+      "comment": "Next Up and video playlist interface."
+    },
+    "Playlist Unavailable": {
+      "comment": "Next Up and video playlist interface."
+    },
+    "Playlists": {
+      "comment": "Next Up and video playlist interface."
+    },
+    "Recent activity couldn't be read. It has been preserved.": {
+      "comment": "Next Up activity read failure"
+    },
+    "Recent activity couldn't be saved.": {
+      "comment": "Next Up activity write failure"
+    },
+    "Remove": {
+      "comment": "Next Up and video playlist interface."
+    },
+    "Remove from Next Up": {
+      "comment": "Next Up and video playlist interface."
+    },
+    "Rename": {
+      "comment": "Next Up and video playlist interface."
+    },
+    "Rename Playlist": {
+      "comment": "Next Up and video playlist interface."
+    },
+    "Retry": {
+      "comment": "Next Up and video playlist interface."
+    },
+    "Save": {
+      "comment": "Next Up and video playlist interface."
+    },
+    "Saved": {
+      "comment": "Next Up reason"
+    },
+    "Saved on this device": {
+      "comment": "Next Up and video playlist interface."
+    },
+    "Show All": {
+      "comment": "Next Up and video playlist interface."
+    },
+    "Skip": {
+      "comment": "Next Up and video playlist interface."
+    },
+    "Some Content Could Not Be Refreshed": {
+      "comment": "Next Up and video playlist interface."
+    },
+    "Sync Playlists and Next Up": {
+      "comment": "Next Up and video playlist interface."
+    },
+    "Synced with iCloud": {
+      "comment": "Next Up and video playlist interface."
+    },
+    "Syncing with iCloud": {
+      "comment": "Next Up and video playlist interface."
+    },
+    "This deletes the playlist on your synced devices. Your media and watched history are preserved.": {
+      "comment": "Next Up and video playlist interface."
+    },
+    "This playlist entry is no longer available.": {
+      "comment": "Next Up and video playlist interface."
+    },
+    "Your changes couldn't be saved. Try again.": {
+      "comment": "Next Up and video playlist interface."
+    },
+    "Your saved playlists couldn't be read. The original file has been preserved.": {
+      "comment": "Next Up and video playlist interface."
+    },
+    "iCloud Sync": {
+      "comment": "Next Up and video playlist interface."
+    },
+    "iCloud unavailable · changes waiting to sync": {
+      "comment": "Next Up and video playlist interface."
+    },
+    "iCloud unavailable · saved on this device": {
+      "comment": "Next Up and video playlist interface."
+    },
     "Queue Could Not Be Updated" : {
       "comment" : "Alert title for preserved queue read or write failures."
     },

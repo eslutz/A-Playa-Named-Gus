@@ -62,6 +62,7 @@ targets:
         destinationFilters: [iOS, macOS]
     dependencies:
       - sdk: AppIntents.framework
+      - sdk: CloudKit.framework
       - sdk: GroupActivities.framework
       - sdk: SharedWithYou.framework
         destinationFilters: [iOS, tvOS, macOS]

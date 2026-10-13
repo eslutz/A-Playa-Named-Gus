@@ -228,3 +228,32 @@ regenerate it. See [API preparation](api-access.md).
   to `Gus Internal`, whose existing-account membership is already verified. Account
   membership, build access, and actual
   TestFlight installation are distinct results.
+
+## Playlist and Next Up iCloud synchronization
+
+The unified Next Up branch adds CloudKit private-database synchronization through
+`iCloud.dev.ericslutz.gus`. All four main-app platform entitlement files declare
+CloudKit, silent remote notifications and that container; `project.yml` explicitly links the system framework.
+Watch and Top Shelf do not independently activate playlist sync.
+
+Register the container with team `QS3GC3CT43`, enable iCloud/CloudKit and Push Notifications for the main
+`dev.ericslutz.gus` App ID, associate the container, and regenerate the main app's
+development/distribution profiles. Deploy the `SavedMedia-v1` private zone's
+`SavedMediaRecord` schema (Data field `payload`) from Development to Production
+before testing TestFlight. Xcode Cloud remains the distribution signing owner.
+
+Existing local macOS profiles were checked during implementation and do **not**
+include this capability. An unsigned build/unit run does not prove signing,
+container availability, production schema deployment, or cross-device sync.
+Record independent signed iPhone/Apple TV acceptance before release claims.
+
+Silent CloudKit change notifications keep CKSyncEngine current; no user-facing APNs event product from issue #12 is added. Development push environment is declared in source; distribution signing must resolve the production push environment.
+
+Automatic provisioning was attempted on Xcode 27.1 RC. Its first attempt reported
+`No Accounts`; the configured team API-key attempt reported authentication failure.
+The same key still succeeds for App Store Connect reads. Provisioning authority is
+therefore not established by that read access. Sign into the selected Xcode's
+Accounts settings (or provide working provisioning authentication), enable the
+listed capabilities/container, then regenerate profiles and run signed acceptance.
+No successful capability grant, profile refresh, production schema deployment or
+physical sync is claimed by these attempts.

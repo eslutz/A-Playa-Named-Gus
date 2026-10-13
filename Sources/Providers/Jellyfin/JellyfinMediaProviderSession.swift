@@ -27,24 +27,39 @@ final class JellyfinMediaProviderSession: MediaProviderSession {
     }
 
     func resumeItems(limit: Int) async throws -> [MediaItem] {
+        try await resumeItemsPage(startIndex: 0, limit: limit).items
+    }
+
+    func resumeItemsPage(startIndex: Int, limit: Int) async throws -> MediaItemPage {
         let parameters = Paths.GetResumeItemsParameters(
             userID: userID,
+            startIndex: startIndex,
             limit: limit,
-            fields: Self.metadataFields,
+            fields: Self.playbackMetadataFields,
+            mediaTypes: [.video],
             enableUserData: true,
             includeItemTypes: [.movie, .episode],
+            enableTotalRecordCount: true,
             enableImages: true
         )
         let response = try await NetworkRetryPolicy.idempotent.run {
             try await client.send(Paths.getResumeItems(parameters: parameters))
         }
-        return JellyfinMediaItemMapper.mediaItems(from: response.value.items ?? [])
+        return MediaItemPage(items: JellyfinMediaItemMapper.mediaItems(from: response.value.items ?? []), totalRecordCount: response.value.totalRecordCount)
+    }
+
+    func nextUpItemsPage(startIndex: Int, limit: Int) async throws -> MediaItemPage {
+        try await nextUpPage(seriesID: nil, startIndex: startIndex, limit: limit)
     }
 
     func nextUpItems(seriesID: String? = nil, limit: Int) async throws -> [MediaItem] {
+        try await nextUpPage(seriesID: seriesID, startIndex: 0, limit: limit).items
+    }
+
+    private func nextUpPage(seriesID: String?, startIndex: Int, limit: Int) async throws -> MediaItemPage {
         let parameters = Paths.GetNextUpParameters(
             userID: userID,
-            startIndex: 0,
+            startIndex: startIndex,
             limit: limit,
             fields: Self.playbackMetadataFields,
             seriesID: seriesID,
@@ -56,7 +71,7 @@ final class JellyfinMediaProviderSession: MediaProviderSession {
         let response = try await NetworkRetryPolicy.idempotent.run {
             try await client.send(Paths.getNextUp(parameters: parameters))
         }
-        return JellyfinMediaItemMapper.mediaItems(from: response.value.items ?? [])
+        return MediaItemPage(items: JellyfinMediaItemMapper.mediaItems(from: response.value.items ?? []), totalRecordCount: response.value.totalRecordCount)
     }
 
     func latestMedia(in library: MediaItem, limit: Int) async throws -> [MediaItem] {

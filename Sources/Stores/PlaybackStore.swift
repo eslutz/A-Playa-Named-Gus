@@ -27,6 +27,11 @@ final class PlaybackStore {
     /// Set when playback reaches its natural end with nothing left to auto-play;
     /// the player view observes it to dismiss itself.
     private(set) var didFinishPlayback = false
+    private(set) var naturalCompletionRevision = 0
+    var usesPlaylistOrder = false
+    var positionTicks: Int {
+        currentPositionTicks()
+    }
 
     private(set) var item: MediaItem
     private let session: SessionStore
@@ -101,13 +106,13 @@ final class PlaybackStore {
         }
     }
 
-    func prepare() async {
+    func prepare(startTimeTicks: Int? = nil) async {
         guard player == nil else { return }
         didReportStopped = false
         didFinishPlayback = false
         let hasLocalFile = downloads?.localFileURL(for: item, serverID: session.server.id, userID: session.user.id) != nil
         let localTicks = hasLocalFile ? item.id.flatMap { localProgress.positionTicks(forItemID: $0, scope: accountScope) } : nil
-        let resumeTicks = localTicks ?? PlaybackTime.resumePositionTicks(for: item)
+        let resumeTicks = startTimeTicks ?? localTicks ?? PlaybackTime.resumePositionTicks(for: item)
         let initialTicks = resumeTicks.map { ticks in
             item.runTimeTicks.map { $0 > 0 && ticks >= $0 ? 0 : ticks } ?? ticks
         }
@@ -202,6 +207,15 @@ final class PlaybackStore {
         isNextUpPromptVisible = false
         streamSelection = .none
         await prepare()
+    }
+
+    /// Explicit playlist order bypasses the server's normal next-episode choice.
+    func playPlaylistItem(_ next: MediaItem, startTimeTicks: Int?) async {
+        teardown(reportStopped: true)
+        item = next
+        streamSelection = .none
+        usesPlaylistOrder = true
+        await prepare(startTimeTicks: startTimeTicks)
     }
 
     private func rebuildCurrentItemPreservingPosition() async {
@@ -345,8 +359,11 @@ final class PlaybackStore {
                 usingLocalFile: localURL != nil
             ))
             reportPlaybackStart(context: context, player: player)
+            NextUpActivityStore.shared.recordPlayback(item: item, scope: accountScope)
             player.play()
-            if isLocalPlayback {
+            if usesPlaylistOrder {
+                nextUpItem = nil
+            } else if isLocalPlayback {
                 nextUpItem = DownloadedLibrary.nextEpisode(after: item, records: downloads?.completedRecords(
                     serverID: session.server.id, userID: session.user.id
                 ) ?? [])
@@ -394,6 +411,7 @@ final class PlaybackStore {
         deactivateAudioSession()
 
         if reportStopped, let context, !didReportStopped {
+            NextUpActivityStore.shared.recordPlayback(item: item, scope: accountScope)
             didReportStopped = true
             reportPlaybackStopped(context: context, positionTicks: finalTicks)
         }
@@ -446,8 +464,14 @@ final class PlaybackStore {
     }
 
     private func handlePlaybackEnded() {
+        // Retire the observer before dispatching an asynchronous queue transition.
+        removeEndObserver()
         downloads?.deleteAfterCompletion(playingDownload)
         playingDownload = nil
+        if usesPlaylistOrder {
+            naturalCompletionRevision += 1
+            return
+        }
         if PlaybackPreferences.autoPlaysNextEpisode, nextUpItem != nil {
             let generation = preparationGeneration
             Task {
@@ -476,6 +500,7 @@ final class PlaybackStore {
                     self.didReportPause = true
                     self.reportPlaybackProgress(positionTicks: self.currentPositionTicks(), isPaused: true)
                 case .playing where self.didReportPause:
+                    NextUpActivityStore.shared.recordPlayback(item: self.item, scope: self.accountScope)
                     self.didReportPause = false
                     self.reportPlaybackProgress(positionTicks: self.currentPositionTicks(), isPaused: false)
                 default:

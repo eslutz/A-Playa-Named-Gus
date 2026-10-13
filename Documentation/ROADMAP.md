@@ -956,3 +956,10 @@ Native Icon Composer source recreation is published at `f1a387f`. The existing G
 
 
 October 12 pipeline policy supersedes direct-main publication: main now requires PRs, all 13 GitHub checks, resolved conversations, and administrator enforcement. Cloud accepts only exact main and requires unit tests before internal distribution. The compile-only workflow is deleted. Native icon source passed Cloud Build 8 without issues; CI 38242041231 passed 12/13, with the existing audio end-notification failure on iPad retained as an unresolved diagnostic. No icon failure or successful tester access is inferred from that attempt.
+
+## Unified Next Up and video playlists — feature branch
+
+- [~] Combine Continue Watching and saved/automatic next episodes into one Next Up list ordered by genuine viewing/list activity; preserve undated legacy order and missing saved references.
+- [~] Native Jellyfin movie/episode playlist editing, repeated entries, ordered playback and persistent cursor. Explicit playlists are independent of normal episode-autoplay preferences.
+- [~] Private CloudKit sync for playlists, saved intent and Gus activity. Credentials, server URLs, signed artwork and downloaded files remain excluded.
+- [ ] Signed iCloud container/provisioning and physical iPhone → Apple TV sync, offline/reconnect, playback/cursor and accessibility acceptance. Source/tests are tracked in [the implementation ledger](Reviews/2026-10-12-next-up-playlists/IMPLEMENTATION.md); no release acceptance is claimed.

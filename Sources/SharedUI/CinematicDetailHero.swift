@@ -116,7 +116,7 @@ struct CinematicDetailHero<Accessory: View>: View {
 
     private var upNextButton: some View {
         ItemUserActionButton(
-            title: isInUpNext ? "Remove from Up Next" : "Add to Up Next",
+            title: isInUpNext ? "Remove from Next Up" : "Add to Next Up",
             systemImage: isInUpNext ? "checkmark" : "plus",
             action: toggleUpNext
         )

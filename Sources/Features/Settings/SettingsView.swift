@@ -5,6 +5,7 @@ struct SettingsView: View {
     @Environment(AppModel.self) private var appModel
     @Environment(SessionStore.self) private var session
     @Environment(OfflineDownloadStore.self) private var downloads
+    @Environment(VideoPlaylistsStore.self) private var videoPlaylists
 
     @State private var reauthenticationServer: ServerConnection?
     @State private var switchErrorMessage: String?
@@ -54,6 +55,11 @@ struct SettingsView: View {
                 Text("Playback")
             } footer: {
                 Text("Maximum lets compatible files play at original quality. Lower settings cap the streaming bitrate for constrained networks.")
+            }
+
+            Section("iCloud Sync") {
+                Toggle("Sync Playlists and Next Up", isOn: Binding(get: { videoPlaylists.syncEnabled }, set: { videoPlaylists.syncEnabled = $0 }))
+                Text(videoPlaylists.syncStatus).foregroundStyle(.secondary)
             }
 
             Section {

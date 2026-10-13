@@ -13,5 +13,13 @@
 	     item identifiers and display metadata only, never Jellyfin tokens or stream URLs. -->
 	<key>com.apple.developer.group-session</key>
 	<true/>
+
+	<key>com.apple.developer.icloud-container-identifiers</key>
+	<array><string>iCloud.dev.ericslutz.gus</string></array>
+	<key>com.apple.developer.icloud-services</key>
+	<array><string>CloudKit</string></array>
+
+	<key>aps-environment</key>
+	<string>development</string>
 </dict>
 </plist>

@@ -101,6 +101,7 @@ struct NavigationSectionPreference: Codable, Equatable {
     static let homeID = "home"
     static let downloadedID = "downloaded"
     static let librariesID = "libraries"
+    static let playlistsID = "playlists"
     static let settingsID = "settings"
 
     var id: String
@@ -284,6 +285,7 @@ final class NavigationPreferencesStore {
         id == NavigationSectionPreference.homeID ||
             (id == NavigationSectionPreference.downloadedID && DownloadsAvailability.isSupported) ||
             id == NavigationSectionPreference.librariesID ||
+            id == NavigationSectionPreference.playlistsID ||
             id == NavigationSectionPreference.settingsID ||
             NavigationCategory(id: id) != nil
     }
@@ -294,7 +296,7 @@ final class NavigationPreferencesStore {
 
         let required = [NavigationSectionPreference.homeID] +
             (DownloadsAvailability.isSupported ? [NavigationSectionPreference.downloadedID] : []) +
-            [NavigationSectionPreference.librariesID]
+            [NavigationSectionPreference.librariesID, NavigationSectionPreference.playlistsID]
         return required +
             visibleCategories +
             [NavigationSectionPreference.settingsID] +
@@ -339,6 +341,8 @@ final class NavigationPreferencesStore {
                 canMove: true,
                 canHide: false
             )
+        case NavigationSectionPreference.playlistsID:
+            return ResolvedNavigationSection(id: id, title: String(localized: "Playlists"), systemImage: "list.and.film", isVisible: true, category: nil, libraries: [], canMove: true, canHide: false)
         case NavigationSectionPreference.settingsID:
             return ResolvedNavigationSection(
                 id: id,

@@ -55,7 +55,9 @@ struct MediaReferencePersistenceTests {
         var continuation: CheckedContinuation<MediaItem, Never>?
         provider.itemHandler = { _ in await withCheckedContinuation { continuation = $0 } }
         let session = session(provider)
-        let store = UpNextStore(persistence: UpNextPersistence(directory: directory()))
+        let progress = OfflinePlaybackProgressStore(directory: directory())
+        progress.checkpoint(itemID: "old", positionTicks: 200, scope: scope)
+        let store = UpNextStore(persistence: UpNextPersistence(directory: directory()), progressStore: progress)
         store.toggle(MediaItem(id: "old"), serverID: "s", userID: "u")
         let entry = store.entries(serverID: "s", userID: "u")[0]
         let refresh = Task { await store.refresh(session: session) }
@@ -66,9 +68,31 @@ struct MediaReferencePersistenceTests {
         }
         #expect(continuation != nil)
         store.remove(entry)
-        continuation?.resume(returning: MediaItem(id: "old", name: "Fresh"))
+        continuation?.resume(returning: MediaItem(id: "new", name: "Fresh"))
         await refresh.value
         #expect(store.items(serverID: "s", userID: "u").isEmpty)
+        #expect(progress.transfers(scope: scope).isEmpty)
+    }
+
+    @Test("only a committed replacement stages progress transfer", arguments: [false, true])
+    func replacementTransferRequiresCommit(staleVersion: Bool) async {
+        let provider = FakeMediaProviderSession(capabilities: ProviderCapabilities())
+        provider.itemHandler = { id in MediaItem(id: id, type: .movie) }
+        let session = session(provider)
+        let progress = OfflinePlaybackProgressStore(directory: directory())
+        progress.checkpoint(itemID: "old", positionTicks: 200, scope: scope)
+        let store = UpNextStore(persistence: UpNextPersistence(directory: directory()), progressStore: progress)
+        store.toggle(MediaItem(id: "old", type: .movie), serverID: "s", userID: "u")
+        let entry = store.entries(serverID: "s", userID: "u")[0]
+        if staleVersion {
+            await store.refresh(session: session)
+            #expect(store.entries(serverID: "s", userID: "u")[0].version != entry.version)
+        }
+        let accepted = await store.replace(entry, with: MediaItem(id: "new", type: .movie), session: session)
+        #expect(accepted == !staleVersion)
+        #expect(store.items(serverID: "s", userID: "u").first?.id == (staleVersion ? "old" : "new"))
+        #expect(progress.transfers(scope: scope).map(\.replacement?.id) == (staleVersion ? [] : ["new"]))
+        #expect(progress.positionTicks(forItemID: "old", scope: scope) == 200)
     }
 
     @Test("offline queue remains intact while confirmed missing entries become manageable")

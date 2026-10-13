@@ -185,7 +185,7 @@ struct DownloadedNavigationTests {
             #expect(!sections[1].canHide)
             store.setVisibility(false, forSectionID: "downloaded", libraries: [], serverID: "s", userID: "u")
             store.move(sectionID: "downloaded", by: 1, libraries: [], serverID: "s", userID: "u")
-            #expect(store.visibleSections(libraries: [], serverID: "s", userID: "u").map(\.id) == ["home", "libraries", "downloaded", "settings"])
+            #expect(store.visibleSections(libraries: [], serverID: "s", userID: "u").filter { $0.id != "playlists" }.map(\.id) == ["home", "libraries", "downloaded", "settings"])
         } else {
             #expect(!sections.contains { $0.id == "downloaded" })
         }

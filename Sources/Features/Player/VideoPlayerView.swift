@@ -9,6 +9,7 @@ struct VideoPlayerView: View {
     @Environment(SessionStore.self) private var session
     @Environment(PlaybackRefreshStore.self) private var playbackRefresh
     @Environment(OfflineDownloadStore.self) private var downloads
+    @Environment(VideoPlaylistsStore.self) private var playlists
     @Environment(\.dismiss) private var dismiss
     #if os(visionOS)
         @Environment(CinemaModel.self) private var cinema
@@ -17,8 +18,12 @@ struct VideoPlayerView: View {
     #endif
     let item: MediaItem
     var localOnly = false
+    var playlistID: UUID? = nil
+    var playlistEntryID: UUID? = nil
+    var playlistFromBeginning = false
 
     @State private var store: PlaybackStore?
+    @State private var playlist: VideoPlaylistPlaybackCoordinator?
     @State private var preparation: Task<Void, Never>?
     @State private var retryGeneration = 0
     @State private var sharePlay = SharePlayCoordinator.shared
@@ -44,17 +49,28 @@ struct VideoPlayerView: View {
                     PlayerSurface(player: player, store: store)
                         .ignoresSafeArea()
                 #endif
+            } else if let message = playlist?.errorMessage {
+                ContentUnavailableView {
+                    Label("Playlist Paused", systemImage: "exclamationmark.triangle")
+                } description: { Text(message) } actions: {
+                    playlistRecoveryActions
+                }
+                .foregroundStyle(.white)
             } else if case let .failed(message)? = store?.state {
                 ContentUnavailableView {
                     Label("Can't Play This", systemImage: "exclamationmark.triangle")
                 } description: {
                     Text(message)
                 } actions: {
-                    Button("Try Again") {
-                        preparation?.cancel()
-                        store?.teardown()
-                        self.store = nil
-                        retryGeneration += 1
+                    if playlist != nil {
+                        playlistRecoveryActions
+                    } else {
+                        Button("Try Again") {
+                            preparation?.cancel()
+                            store?.teardown()
+                            self.store = nil
+                            retryGeneration += 1
+                        }
                     }
                 }
                 .foregroundStyle(.white)
@@ -68,6 +84,9 @@ struct VideoPlayerView: View {
             if store?.state != .ready {
                 Button("Close", systemImage: "xmark") {
                     preparation?.cancel()
+                    if let store {
+                        playlist?.stop(store)
+                    }
                     store?.teardown()
                     dismiss()
                 }
@@ -76,90 +95,156 @@ struct VideoPlayerView: View {
                 .foregroundStyle(.white)
             }
         }
-        .accessibilityAction(.escape) { preparation?.cancel(); store?.teardown(); dismiss() }
+        .accessibilityAction(.escape) {
+            preparation?.cancel()
+            if let store {
+                playlist?.stop(store)
+            }
+            store?.teardown()
+            dismiss()
+        }
         #if os(visionOS)
-            .overlay(alignment: .topTrailing) {
-                if let store, store.isSpatialPlaybackActive || store.stereoFallbackNotice != nil {
-                    VStack(alignment: .trailing, spacing: 8) {
-                        if store.isSpatialPlaybackActive {
-                            SpatialPlaybackBadge()
-                        }
+        .overlay(alignment: .topTrailing) {
+            if let store, store.isSpatialPlaybackActive || store.stereoFallbackNotice != nil {
+                VStack(alignment: .trailing, spacing: 8) {
+                    if store.isSpatialPlaybackActive {
+                        SpatialPlaybackBadge()
+                    }
 
-                        if let notice = store.stereoFallbackNotice {
-                            StereoFallbackNotice(text: notice)
-                        }
+                    if let notice = store.stereoFallbackNotice {
+                        StereoFallbackNotice(text: notice)
                     }
-                    .padding()
                 }
+                .padding()
             }
+        }
         #endif
-            .task(id: retryGeneration) {
-                if store == nil {
-                    let store = PlaybackStore(item: item, session: session, playbackRefresh: playbackRefresh, downloads: downloads, localOnly: localOnly)
-                    self.store = store
-                    let task = Task { await store.prepare() }
-                    preparation = task
-                    await withTaskCancellationHandler { await task.value } onCancel: { task.cancel() }
+        .task(id: retryGeneration) {
+            if store == nil {
+                let store = PlaybackStore(item: item, session: session, playbackRefresh: playbackRefresh, downloads: downloads, localOnly: localOnly)
+                self.store = store
+                if let playlistID {
+                    playlist = VideoPlaylistPlaybackCoordinator(playlistID: playlistID, entryID: playlistEntryID, fromBeginning: playlistFromBeginning, playlists: playlists, session: session, downloads: downloads)
+                }
+                let task = Task {
+                    if let playlist {
+                        await playlist.start(store)
+                    } else {
+                        await store.prepare()
+                    }
+                }
+                preparation = task
+                await withTaskCancellationHandler { await task.value } onCancel: { task.cancel() }
+            }
+        }
+        .task(id: store?.naturalCompletionRevision) {
+            guard let store, store.naturalCompletionRevision > 0, let playlist else { return }
+            await playlist.completed(store)
+            if playlist.finished {
+                dismiss()
+            }
+        }
+        .task(id: playlistID) {
+            guard playlistID != nil else { return }
+            while !Task.isCancelled {
+                do { try await Task.sleep(for: .seconds(10)) } catch { return }
+                if let store, store.state == .ready {
+                    playlist?.checkpoint(store)
                 }
             }
-            .task(id: store?.player.map(ObjectIdentifier.init)) {
-                attachSharePlayPlayer()
-            }
-            .task(id: store?.item.id) {
-                attachSharePlayPlayer()
-            }
+        }
+        .task(id: store?.player.map(ObjectIdentifier.init)) {
+            attachSharePlayPlayer()
+        }
+        .task(id: store?.item.id) {
+            attachSharePlayPlayer()
+        }
         #if os(visionOS)
-            .task(id: store?.stereoPresentation) {
-                guard let store else { return }
-                await syncFramePackedCinemaIfNeeded(store)
-            }
+        .task(id: store?.stereoPresentation) {
+            guard let store else { return }
+            await syncFramePackedCinemaIfNeeded(store)
+        }
         #endif
-            // Natural end with nothing left to auto-play: close the player instead of
-            // leaving a spinner over black.
-            .onChange(of: store?.didFinishPlayback ?? false) { _, finished in
-                if finished {
-                    dismiss()
-                }
+        // Natural end with nothing left to auto-play: close the player instead of
+        // leaving a spinner over black.
+        .onChange(of: store?.didFinishPlayback ?? false) { _, finished in
+            if finished {
+                dismiss()
             }
-            .onDisappear {
+        }
+        .onChange(of: playlists.identityRevision) { _, _ in
+            if playlistID != nil {
                 preparation?.cancel()
-                #if os(visionOS)
-                    closeFramePackedCinemaIfNeeded()
-                #endif
-                store?.teardown()
-            }
-            .alert(
-                "SharePlay Unavailable",
-                isPresented: Binding(
-                    get: { sharePlay.errorMessage != nil },
-                    set: { isPresented in
-                        if !isPresented {
-                            sharePlay.errorMessage = nil
-                        }
-                    }
-                )
-            ) {
-                Button("OK", role: .cancel) {
-                    sharePlay.errorMessage = nil
+                if let store {
+                    playlist?.stop(store)
                 }
-            } message: {
-                Text(sharePlay.errorMessage ?? "")
+                dismiss()
             }
-            // Handoff: continue playback on another device. The continuing device resumes
-            // from the server-side position kept fresh by progress reporting.
-            .userActivity(GusUserActivity.playback, isActive: item.id != nil) { activity in
-                GusUserActivity.configure(
-                    activity,
-                    item: item,
-                    serverID: session.server.id,
-                    userID: session.user.id
-                )
+        }
+        .onDisappear {
+            preparation?.cancel()
+            if let store {
+                playlist?.stop(store)
             }
+            #if os(visionOS)
+                closeFramePackedCinemaIfNeeded()
+            #endif
+            store?.teardown()
+        }
+        .alert(
+            "SharePlay Unavailable",
+            isPresented: Binding(
+                get: { sharePlay.errorMessage != nil },
+                set: { isPresented in
+                    if !isPresented {
+                        sharePlay.errorMessage = nil
+                    }
+                }
+            )
+        ) {
+            Button("OK", role: .cancel) {
+                sharePlay.errorMessage = nil
+            }
+        } message: {
+            Text(sharePlay.errorMessage ?? "")
+        }
+        // Handoff: continue playback on another device. The continuing device resumes
+        // from the server-side position kept fresh by progress reporting.
+        .userActivity(GusUserActivity.playback, isActive: item.id != nil) { activity in
+            GusUserActivity.configure(
+                activity,
+                item: store?.item ?? item,
+                serverID: session.server.id,
+                userID: session.user.id
+            )
+        }
     }
 
     private func attachSharePlayPlayer() {
         guard let store else { return }
         sharePlay.attachPlayer(store.player, item: store.item)
+    }
+
+    @ViewBuilder private var playlistRecoveryActions: some View {
+        Button("Retry") {
+            if let store {
+                Task { await playlist?.retry(store) }
+            }
+        }
+        Button("Skip") {
+            if let store {
+                Task {
+                    await playlist?.skip(store); if playlist?.finished == true {
+                        dismiss()
+                    }
+                }
+            }
+        }
+        Button("Stop") {
+            if let store {
+                playlist?.stop(store)
+            }; dismiss()
+        }
     }
 }
 
@@ -178,7 +263,7 @@ struct VideoPlayerView: View {
             stereoRenderer?.invalidate()
             let renderer = StereoFrameRenderer(player: player, layout: layout)
             stereoRenderer = renderer
-            cinema.present(player: player, title: item.displayTitle, stereoLayout: layout, stereoRenderer: renderer)
+            cinema.present(player: player, title: store.item.displayTitle, stereoLayout: layout, stereoRenderer: renderer)
 
             guard !openedFramePackedCinema else { return }
             openedFramePackedCinema = true

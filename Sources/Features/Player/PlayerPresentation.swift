@@ -48,7 +48,7 @@ extension View {
         func body(content: Content) -> some View {
             content
                 .sheet(item: sheetItem) { ref in
-                    PresentedPlayer(item: ref.item, localOnly: ref.localOnly == true)
+                    PresentedPlayer(item: ref.item, localOnly: ref.localOnly == true, playlistID: ref.playlistID, playlistEntryID: ref.playlistEntryID, playlistFromBeginning: ref.playlistFromBeginning == true)
                         .frame(minWidth: 640, minHeight: 360)
                 }
                 .onChange(of: item) { _, ref in
@@ -77,7 +77,7 @@ extension View {
                ref.serverID == nil || ref.serverID == session.server.id,
                ref.userID == nil || ref.userID == session.user.id
             {
-                PresentedPlayer(item: ref.item, localOnly: ref.localOnly == true)
+                PresentedPlayer(item: ref.item, localOnly: ref.localOnly == true, playlistID: ref.playlistID, playlistEntryID: ref.playlistEntryID, playlistFromBeginning: ref.playlistFromBeginning == true)
                     .environment(session)
                     .id(AccountScope(serverID: session.server.id, userID: session.user.id))
                     .frame(minWidth: 640, minHeight: 360)
@@ -97,12 +97,15 @@ struct PresentedPlayer: View {
     @Environment(\.dismiss) private var dismiss
     let item: MediaItem
     var localOnly = false
+    var playlistID: UUID? = nil
+    var playlistEntryID: UUID? = nil
+    var playlistFromBeginning = false
     var close: (() -> Void)?
 
     var body: some View {
         // Second-layer family-safety gate: list filtering hides restricted items, but
         // playback can be reached via downloads, deep links, or stale navigation.
-        if !ContentRatingGate.admitsStored(item) {
+        if playlistID == nil, !ContentRatingGate.admitsStored(item) {
             NavigationStack {
                 RestrictedContentView()
                     .toolbar {
@@ -138,7 +141,7 @@ struct PresentedPlayer: View {
             if item.isAudioPlayable {
                 AudioPlayerScreen(item: item, localOnly: localOnly)
             } else {
-                VideoPlayerView(item: item, localOnly: localOnly)
+                VideoPlayerView(item: item, localOnly: localOnly, playlistID: playlistID, playlistEntryID: playlistEntryID, playlistFromBeginning: playlistFromBeginning)
             }
         }
     }

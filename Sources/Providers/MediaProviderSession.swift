@@ -1,6 +1,6 @@
 import Foundation
 
-struct MediaItemPage {
+struct MediaItemPage: Sendable {
     var items: [MediaItem]
     var totalRecordCount: Int?
 }
@@ -84,7 +84,9 @@ protocol MediaProviderSession: AnyObject, Sendable {
 
     func userViews() async throws -> [MediaItem]
     func resumeItems(limit: Int) async throws -> [MediaItem]
+    func resumeItemsPage(startIndex: Int, limit: Int) async throws -> MediaItemPage
     func nextUpItems(seriesID: String?, limit: Int) async throws -> [MediaItem]
+    func nextUpItemsPage(startIndex: Int, limit: Int) async throws -> MediaItemPage
     func latestMedia(in library: MediaItem, limit: Int) async throws -> [MediaItem]
     func items(query: MediaItemQuery) async throws -> MediaItemPage
     func item(id: String) async throws -> MediaItem
@@ -145,6 +147,18 @@ protocol MediaProviderSession: AnyObject, Sendable {
 }
 
 extension MediaProviderSession {
+    /// Fallback for providers without server pagination. Request the prefix needed
+    /// by this page so compatibility does not introduce a hidden fixed ceiling.
+    func resumeItemsPage(startIndex: Int, limit: Int) async throws -> MediaItemPage {
+        let items = try await resumeItems(limit: startIndex + limit)
+        return MediaItemPage(items: Array(items.dropFirst(startIndex).prefix(limit)), totalRecordCount: items.count < startIndex + limit ? items.count : nil)
+    }
+
+    func nextUpItemsPage(startIndex: Int, limit: Int) async throws -> MediaItemPage {
+        let items = try await nextUpItems(seriesID: nil, limit: startIndex + limit)
+        return MediaItemPage(items: Array(items.dropFirst(startIndex).prefix(limit)), totalRecordCount: items.count < startIndex + limit ? items.count : nil)
+    }
+
     func artworkURLs(for item: MediaItem, maxWidth: Int) -> [URL] {
         ArtworkRequestSequence.unique([backdropImageURL(for: item, maxWidth: maxWidth), primaryImageURL(for: item, maxWidth: maxWidth)].compactMap { $0 })
     }

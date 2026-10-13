@@ -37,6 +37,9 @@ extension View {
         .navigationDestination(for: ItemRef.self) { ref in
             ItemRouteDestination(item: ref.item)
         }
+        .navigationDestination(for: VideoPlaylistRef.self) { ref in
+            VideoPlaylistDetailView(id: ref.id)
+        }
         .navigationDestination(for: AppScreen.self) { screen in
             switch screen {
             case .downloads: DownloadsView()

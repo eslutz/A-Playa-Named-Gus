@@ -109,7 +109,7 @@ extension View {
         let enabled: Bool
         func body(content: Content) -> some View {
             content.fullScreenCover(item: Binding(get: { enabled ? state.playerItem : nil }, set: { state.playerItem = $0 })) { ref in
-                PresentedPlayer(item: ref.item, localOnly: ref.localOnly == true, close: { state.playerItem = nil })
+                PresentedPlayer(item: ref.item, localOnly: ref.localOnly == true, playlistID: ref.playlistID, playlistEntryID: ref.playlistEntryID, playlistFromBeginning: ref.playlistFromBeginning == true, close: { state.playerItem = nil })
             }
         }
     }

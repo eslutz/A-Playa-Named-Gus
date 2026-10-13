@@ -8,8 +8,14 @@ import Foundation
 final class FakeMediaProviderSession: MediaProviderSession {
     let providerKind: MediaProviderKind = .jellyfin
     let capabilities: ProviderCapabilities
+    var userViewsHandler: (() async throws -> [MediaItem])?
+    var resumePageHandler: ((Int, Int) async throws -> MediaItemPage)?
+    var nextPageHandler: ((Int, Int) async throws -> MediaItemPage)?
+    var latestHandler: ((MediaItem) async throws -> [MediaItem])?
     var itemsHandler: ((MediaItemQuery) async throws -> MediaItemPage)?
     var itemHandler: ((String) async throws -> MediaItem)?
+    var similarItemsHandler: ((String) async throws -> [MediaItem])?
+    var specialFeaturesHandler: ((String) async throws -> [MediaItem])?
     var episodesHandler: ((String) async throws -> MediaItemPage)?
     var seasonsHandler: (() async throws -> [MediaItem])?
     var progressHandler: ((String, Int) async throws -> Void)?
@@ -33,7 +39,7 @@ final class FakeMediaProviderSession: MediaProviderSession {
     }
 
     func userViews() async throws -> [MediaItem] {
-        []
+        try await userViewsHandler?() ?? []
     }
 
     func resumeItems(limit: Int) async throws -> [MediaItem] {
@@ -45,8 +51,23 @@ final class FakeMediaProviderSession: MediaProviderSession {
         return []
     }
 
+    func resumeItemsPage(startIndex: Int, limit: Int) async throws -> MediaItemPage {
+        if let resumePageHandler {
+            return try await resumePageHandler(startIndex, limit)
+        }
+        return MediaItemPage(items: [], totalRecordCount: 0)
+    }
+
+    func nextUpItemsPage(startIndex: Int, limit: Int) async throws -> MediaItemPage {
+        if let nextPageHandler {
+            return try await nextPageHandler(startIndex, limit)
+        }
+        nextUpCallCount += 1
+        return MediaItemPage(items: [], totalRecordCount: 0)
+    }
+
     func latestMedia(in library: MediaItem, limit: Int) async throws -> [MediaItem] {
-        []
+        try await latestHandler?(library) ?? []
     }
 
     func items(query: MediaItemQuery) async throws -> MediaItemPage {
@@ -64,11 +85,11 @@ final class FakeMediaProviderSession: MediaProviderSession {
     }
 
     func similarItems(itemID: String, limit: Int) async throws -> [MediaItem] {
-        []
+        try await similarItemsHandler?(itemID) ?? []
     }
 
     func specialFeatures(itemID: String) async throws -> [MediaItem] {
-        []
+        try await specialFeaturesHandler?(itemID) ?? []
     }
 
     func seasons(seriesID: String) async throws -> [MediaItem] {

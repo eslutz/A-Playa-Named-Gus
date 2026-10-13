@@ -131,7 +131,8 @@ enum JellyfinMediaItemMapper {
             playbackPositionTicks: userData.playbackPositionTicks,
             playedPercentage: userData.playedPercentage,
             isWatched: userData.isPlayed,
-            isFavorite: userData.isFavorite
+            isFavorite: userData.isFavorite,
+            lastPlayedAt: userData.lastPlayedDate
         )
     }
 
