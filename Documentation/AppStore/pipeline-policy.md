@@ -4,13 +4,13 @@ Requested October 12, 2026. Main is protected, including administrators: changes
 
 GitHub CI runs only on pull requests targeting main, with read-only repository permissions and cancellation of superseded runs for the same PR. It keeps six builds, five unit-test lanes, lint, and configuration checks.
 
-The saved Gus Internal TestFlight Cloud workflow accepts only exact main for automatic branch changes and manual starts. It requires unit tests using dedicated iOS, macOS, tvOS, and visionOS schemes before its internal TestFlight post-actions can distribute. iOS runs on iPhone 17, iPad Pro 11-inch (M5), and Duo; Mac, recommended Apple TVs, and Apple Vision Pro complete the device matrix. Four required internal-only archives produce the app products; Watch is embedded in iOS.
+The saved Gus Internal TestFlight Cloud workflow accepts only exact main for automatic branch changes and manual starts. It requires unit tests using dedicated iOS, macOS, tvOS, and visionOS schemes before its internal TestFlight post-actions can distribute. iOS runs on iPhone 17 and iPad Pro 11-inch (M5); Mac, recommended Apple TVs, and Apple Vision Pro complete the device matrix. Four required internal-only archives produce the app products; Watch is embedded in iOS.
 
-Cloud's available iOS runtime menu showed 27.1, 17.5, and 16.4. It offered no iOS 18 runtime, so minimum-OS execution remains unverified. The known iPad native audio end-notification failure is retained in run 38242041231 evidence and is not counted as a passing gate.
+At the original October 12 configuration check, Cloud's iOS runtime menu showed 27.1, 17.5, and 16.4 with no iOS 18 option. That observation is historical; OS 27 is now the deployment floor. The later saved Duo-deferral screenshot shows iOS 27.2 selected for iPhone and iPad. Earlier iPad native audio failures remain in the investigation history below; final merged-main acceptance is recorded separately.
 
 Saved configuration does not establish successful execution or tester eligibility. The PR matrix, subsequent merged-main Cloud run, and group association must pass before availability is claimed.
 
-The old compile-only Gus Multiplatform Validation workflow was permanently deleted after explicit confirmation; Apple says associated builds are no longer shown by default. Saved diagnostic evidence remains in this repository. Superseded main release builds are automatically cancelled when a newer main update starts.
+The old compile-only Gus Multiplatform Validation workflow was permanently deleted after explicit confirmation (see [confirmation dialog](pipeline-policy-evidence/delete-validation-confirmation.jpg)); Apple says associated builds are no longer shown by default. Saved diagnostic evidence remains in this repository. Superseded main release builds are automatically cancelled when a newer main update starts.
 
 The retained iPad audio failure message now captures the native asynchronous audio-session activation result (success and error domain/code) in Debug builds. Release behavior and the native end-event requirement are unchanged; this gathers root-cause evidence without treating a retry as a fix.
 
@@ -45,3 +45,11 @@ The temporary activation comparison jobs and conditional test methods have been 
 ## OS 27 deployment policy
 
 All supported Apple platforms require OS 27.0. Older-OS UI/audio fallback branches and development-era storage/credential/DTO migrations are removed. Existing development installs are not migrated: users may need to sign in again and recreate their local downloads and queues. The iOS 27.1 availability check remains for the Duo division API because 27.0 is supported and that API is introduced in 27.1. Platform-specific styles and SDK concurrency boundaries remain necessary for current APIs.
+
+On 2026-10-12, the user deferred required Duo simulator testing until the device is released and compatible runtimes are available. Duo functionality and its SDK compilation requirements remain in the app. [Saved destination evidence](pipeline-policy-evidence/duo-testing-deferred.png) shows the retained iPhone and iPad selections. All other required platform tests, archives, and main triggers are retained.
+
+## Verified merged-main acceptance — 2026-10-13
+
+[PR #22](https://github.com/eslutz/A-Playa-Named-Gus/pull/22) merged as `a794a7f308c3c4281e6b98a5f2f908f3a684207b` after all 13 GitHub checks passed and both review conversations were resolved. The source tree matches the final checked branch commit `3c631386a154b099d8376facc938913e2ee483a5`.
+
+[Xcode Cloud Build 17](https://appstoreconnect.apple.com/teams/1f3fb703-e0b0-42fc-bc0b-d00a3bfdf58e/xcode-cloud/products/f2e5bb18-7cd2-44ab-b88c-9d54ac63b512/builds/af959737-7e61-4452-bfcc-4c59dec0013b/summary) ran that exact merge SHA. All four tests, four archives/signing/export paths and four internal TestFlight actions succeeded. Apple's API returned empty issue lists for all 12 actions: zero warnings and zero errors. This verifies the hosted build/distribution gates; it does not establish physical playback, VoiceOver or multi-device CloudKit acceptance. Future changes must satisfy the same [warning-free policy](warning-policy.md).
