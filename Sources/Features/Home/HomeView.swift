@@ -13,6 +13,7 @@ struct HomeView: View {
     @Environment(SharedWithYouStore.self) private var sharedWithYou
     @Environment(UpNextStore.self) private var upNext
     @Environment(VideoPlaylistsStore.self) private var playlists
+    @Environment(ServerMediaListsStore.self) private var serverLists
     private let activity = NextUpActivityStore.shared
     let store: HomeStore?
 
@@ -52,7 +53,7 @@ struct HomeView: View {
         .task {
             await upNext.refresh(session: session)
         }
-        .task(id: "\(upNext.revision)-\(playlists.revision)-\(activity.revision)") {
+        .task(id: "\(upNext.revision)-\(playlists.revision)-\(serverLists.revision)-\(activity.revision)") {
             updateNextUp()
         }
         .task(id: playbackRefresh.revision) {
@@ -74,11 +75,13 @@ struct HomeView: View {
     }
 
     private func updateNextUp() {
+        guard !Task.isCancelled else { return }
         let scope = session.references.scope
         upNext.load(serverID: scope.serverID, userID: scope.userID)
         upNext.reconcileSyncedIntents(scope: scope)
         activity.reconcile(scope: scope)
-        let candidates = playlists.playlists(scope: scope).compactMap { playlist -> NextUpPlaylistCandidate? in
+        serverLists.load(scope: scope)
+        let candidates = serverLists.videoPlaylists(scope: scope, supplemental: playlists).compactMap { playlist -> NextUpPlaylistCandidate? in
             guard playlist.queued || (playlist.cursor != nil && playlist.cursor?.finished != true) else { return nil }
             let index = playlist.entries.firstIndex { $0.id == playlist.cursor?.entryID } ?? 0
             let item = playlist.entries.indices.contains(index) ? playlist.entries[index].reference.item : nil

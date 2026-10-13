@@ -364,6 +364,225 @@ final class JellyfinMediaProviderSession: MediaProviderSession {
         )
     }
 
+    // MARK: - Native server lists
+
+    func mediaLists(kind: ServerMediaListKind) async throws -> [ServerMediaList] {
+        do {
+            let headers = try await allListItems(kind: kind, parentID: nil)
+            let collectionPermission = kind == .collection ? await canManageCollections() : false
+            var lists: [ServerMediaList] = []
+            for header in headers {
+                let id = try nativeListID(header.id)
+                let canEdit = kind == .playlist ? await canEditPlaylist(id: id) : collectionPermission
+                lists.append(ServerMediaList(id: id, name: header.name ?? String(localized: "Untitled", comment: "Fallback item title"), kind: kind, entries: [], canEdit: canEdit, entriesLoaded: false))
+            }
+            return lists
+        } catch {
+            throw mediaListError(error)
+        }
+    }
+
+    func mediaList(id: UUID, kind: ServerMediaListKind) async throws -> ServerMediaList {
+        do {
+            let header = try await listHeader(id: id, kind: kind)
+            let canEdit = kind == .playlist ? await canEditPlaylist(id: id) : await canManageCollections()
+            let members: [BaseItemDto]
+            if kind == .playlist {
+                var results: [BaseItemDto] = []
+                var startIndex = 0
+                while true {
+                    try Task.checkCancellation()
+                    let parameters = Paths.GetPlaylistItemsParameters(userID: userID, startIndex: startIndex, limit: Self.listPageSize, fields: Self.playbackMetadataFields, enableImages: true, enableUserData: true)
+                    let page = try await NetworkRetryPolicy.idempotent.run {
+                        try await client.send(Paths.getPlaylistItems(playlistID: ServerMediaListID.string(id), parameters: parameters))
+                    }.value
+                    let items = page.items ?? []
+                    results.append(contentsOf: items)
+                    startIndex += items.count
+                    if items.isEmpty || page.totalRecordCount.map({ startIndex >= $0 }) == true {
+                        break
+                    }
+                    // A server may cap each response below our requested size. Continue
+                    // until the advertised total or an empty page, rather than truncate.
+                }
+                members = results
+            } else {
+                members = try await allListItems(kind: kind, parentID: ServerMediaListID.string(id))
+            }
+            return try ServerMediaList(id: id, name: header.name ?? String(localized: "Untitled", comment: "Fallback item title"), kind: kind, entries: JellyfinMediaItemMapper.mediaListEntries(from: members, kind: kind), canEdit: canEdit, entriesLoaded: true)
+        } catch {
+            throw mediaListError(error)
+        }
+    }
+
+    func createMediaList(name: String, kind: ServerMediaListKind, itemIDs: [String]) async throws -> UUID {
+        do {
+            if kind == .playlist {
+                try validateUniquePlaylistItems(itemIDs)
+            }
+            let rawID: String?
+            switch kind {
+            case .playlist:
+                // An explicit video type keeps empty Gus playlists usable for movies and
+                // episodes. Existing mixed server playlists are read without filtering.
+                rawID = try await client.send(Paths.createPlaylist(CreatePlaylistDto(ids: itemIDs, isPublic: false, mediaType: .video, name: name, userID: userID))).value.id
+            case .collection:
+                rawID = try await client.send(Paths.createCollection(parameters: .init(name: name, ids: itemIDs))).value.id
+            }
+            return try nativeListID(rawID)
+        } catch {
+            throw mediaListError(error)
+        }
+    }
+
+    func renameMediaList(id: UUID, kind: ServerMediaListKind, name: String) async throws {
+        do {
+            switch kind {
+            case .playlist:
+                _ = try await client.send(Paths.updatePlaylist(playlistID: ServerMediaListID.string(id), UpdatePlaylistDto(name: name)))
+            case .collection:
+                // Preserve existing metadata: UpdateItem is a full item update.
+                var header = try await listHeader(id: id, kind: kind)
+                header.name = name
+                _ = try await client.send(Paths.updateItem(itemID: ServerMediaListID.string(id), header))
+            }
+        } catch {
+            throw mediaListError(error)
+        }
+    }
+
+    func deleteMediaList(id: UUID, kind: ServerMediaListKind) async throws {
+        do {
+            // DeleteItem is also a media deletion endpoint. Verify the list type before
+            // sending it, so a mismatched identifier cannot delete a movie or episode.
+            _ = try await listHeader(id: id, kind: kind)
+            _ = try await client.send(Paths.deleteItem(itemID: ServerMediaListID.string(id)))
+        } catch {
+            throw mediaListError(error)
+        }
+    }
+
+    func addToMediaList(id: UUID, kind: ServerMediaListKind, itemIDs: [String]) async throws {
+        do {
+            guard !itemIDs.isEmpty else { return }
+            switch kind {
+            case .playlist:
+                try validateUniquePlaylistItems(itemIDs)
+                // The store checks its snapshot before journaling. Re-read here to
+                // catch another client's edit before Jellyfin silently ignores an add.
+                let current = try await mediaList(id: id, kind: kind)
+                let existing = Set(current.entries.compactMap(\.item.id).map(normalizedMediaID))
+                guard existing.isDisjoint(with: itemIDs.map(normalizedMediaID)) else { throw repeatedPlaylistItemsError() }
+                _ = try await client.send(Paths.addItemToPlaylist(playlistID: ServerMediaListID.string(id), ids: itemIDs, userID: userID))
+            case .collection:
+                _ = try await client.send(Paths.addToCollection(collectionID: ServerMediaListID.string(id), ids: itemIDs))
+            }
+        } catch {
+            throw mediaListError(error)
+        }
+    }
+
+    func removeFromMediaList(id: UUID, kind: ServerMediaListKind, entryIDs: [UUID]) async throws {
+        do {
+            guard !entryIDs.isEmpty else { return }
+            let ids = entryIDs.map(ServerMediaListID.string)
+            switch kind {
+            case .playlist:
+                _ = try await client.send(Paths.removeItemFromPlaylist(playlistID: ServerMediaListID.string(id), entryIDs: ids))
+            case .collection:
+                _ = try await client.send(Paths.removeFromCollection(collectionID: ServerMediaListID.string(id), ids: ids))
+            }
+        } catch {
+            throw mediaListError(error)
+        }
+    }
+
+    func moveMediaListEntry(id: UUID, entryID: UUID, to index: Int) async throws {
+        do {
+            guard index >= 0 else { throw GusError.server(String(localized: "The playlist position is invalid.", comment: "Invalid native playlist move position")) }
+            _ = try await client.send(Paths.moveItem(playlistID: ServerMediaListID.string(id), itemID: ServerMediaListID.string(entryID), newIndex: index))
+        } catch {
+            throw mediaListError(error)
+        }
+    }
+
+    private func normalizedMediaID(_ id: String) -> String {
+        ServerMediaListID.uuid(id).map(ServerMediaListID.string) ?? id.lowercased()
+    }
+
+    private func validateUniquePlaylistItems(_ itemIDs: [String]) throws {
+        guard Set(itemIDs.map(normalizedMediaID)).count == itemIDs.count else { throw repeatedPlaylistItemsError() }
+    }
+
+    private func repeatedPlaylistItemsError() -> GusError {
+        GusError.server(String(localized: "Jellyfin playlists require unique items. Repeated items have not been sent to the server.", comment: "Jellyfin native playlist duplicate limitation"))
+    }
+
+    /// A list ACL rejection is not an expired session. Keep this mapping scoped
+    /// to native lists so read-only sharing never signs a valid user out.
+    private func mediaListError(_ error: any Error) -> any Error {
+        if String(reflecting: type(of: error)) == "Get.APIError",
+           Mirror(reflecting: error).children.compactMap({ $0.value as? Int }).first == 403
+        {
+            return GusError.server(String(localized: "You do not have permission to edit this server list.", comment: "Native server media list permission denied"))
+        }
+        return error
+    }
+
+    private static let listPageSize = 200
+
+    private func allListItems(kind: ServerMediaListKind, parentID: String?) async throws -> [BaseItemDto] {
+        var results: [BaseItemDto] = []
+        var startIndex = 0
+        while true {
+            try Task.checkCancellation()
+            let parameters = Paths.GetItemsParameters(userID: userID, startIndex: startIndex, limit: Self.listPageSize, isRecursive: parentID == nil, parentID: parentID, fields: Self.playbackMetadataFields, includeItemTypes: parentID == nil ? [kind == .playlist ? .playlist : .boxSet] : nil, sortBy: parentID == nil ? [.sortName] : nil, enableUserData: true, enableTotalRecordCount: true, enableImages: true)
+            let page = try await NetworkRetryPolicy.idempotent.run {
+                try await client.send(Paths.getItems(parameters: parameters))
+            }.value
+            let items = page.items ?? []
+            results.append(contentsOf: items)
+            startIndex += items.count
+            if items.isEmpty || page.totalRecordCount.map({ startIndex >= $0 }) == true {
+                break
+            }
+        }
+        return results
+    }
+
+    private func listHeader(id: UUID, kind: ServerMediaListKind) async throws -> BaseItemDto {
+        let header = try await NetworkRetryPolicy.idempotent.run {
+            try await client.send(Paths.getItem(itemID: ServerMediaListID.string(id), userID: userID))
+        }.value
+        guard header.type == (kind == .playlist ? .playlist : .boxSet),
+              try nativeListID(header.id) == id
+        else { throw GusError.notFound }
+        return header
+    }
+
+    private func canEditPlaylist(id: UUID) async -> Bool {
+        // Publicly readable playlists can have no current-user share (a null body).
+        // Unknown permissions are conservative; mutation endpoints remain authoritative.
+        let permission = try? await NetworkRetryPolicy.idempotent.run {
+            try await client.send(Paths.getPlaylistUser(playlistID: ServerMediaListID.string(id), userID: userID))
+        }.value
+        return permission?.canEdit == true
+    }
+
+    private func canManageCollections() async -> Bool {
+        let user = try? await NetworkRetryPolicy.idempotent.run {
+            try await client.send(Paths.getUserByID(userID: userID))
+        }.value
+        return user?.policy?.isAdministrator == true || user?.policy?.enableCollectionManagement == true
+    }
+
+    private func nativeListID(_ rawID: String?) throws -> UUID {
+        guard let rawID, let id = ServerMediaListID.uuid(rawID) else {
+            throw GusError.server(String(localized: "The server returned an invalid list identifier.", comment: "Invalid native media list identifier"))
+        }
+        return id
+    }
+
     // MARK: - Book reading progress
 
     func reportBookProgress(itemID: String, fraction: Double) async throws {
@@ -454,6 +673,7 @@ final class JellyfinMediaProviderSession: MediaProviderSession {
         case .episode: return .episode
         case .series: return .series
         case .season: return .season
+        case .boxSet: return .boxSet
         case .collectionFolder: return .collectionFolder
         case .folder: return .folder
         case .trailer: return .trailer

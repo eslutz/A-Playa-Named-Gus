@@ -21,6 +21,7 @@ struct GusApp: App {
     @State private var offlineDownloads = OfflineDownloadStore.shared
     @State private var upNext = UpNextStore(syncStore: .shared)
     @State private var videoPlaylists = VideoPlaylistsStore.shared
+    @State private var serverLists = ServerMediaListsStore.shared
     @State private var navigationPreferences = NavigationPreferencesStore()
     @State private var sharedWithYou = SharedWithYouStore()
     @AppStorage(AppearanceSetting.defaultsKey) private var appearanceRawValue = AppearanceSetting.system.rawValue
@@ -98,6 +99,7 @@ struct GusApp: App {
                 .environment(offlineDownloads)
                 .environment(upNext)
                 .environment(videoPlaylists)
+                .environment(serverLists)
                 .environment(navigationPreferences)
                 .environment(sharedWithYou)
             #if os(visionOS)
@@ -164,6 +166,7 @@ struct GusApp: App {
                         .environment(offlineDownloads)
                         .environment(upNext)
                         .environment(videoPlaylists)
+                        .environment(serverLists)
                         .environment(navigationPreferences)
                         .environment(sharedWithYou)
                         .preferredColorScheme(appearance.colorScheme)

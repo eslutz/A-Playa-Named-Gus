@@ -5,6 +5,7 @@ enum MediaItemType: String, Codable, Hashable, Sendable {
     case episode
     case series
     case season
+    case boxSet
     case collectionFolder
     case folder
     case trailer

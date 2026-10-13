@@ -13,6 +13,7 @@ struct ItemDetailView: View {
     @State private var playerItem: ItemRef?
     @State private var sharePlay = SharePlayCoordinator.shared
     @State private var addingToPlaylist = false
+    @State private var addingToCollection = false
     @State private var sharePlayPresentation: SharePlayPresentation?
     @State private var sharePlayErrorMessage: String?
     @State private var store: ItemDetailStore?
@@ -52,10 +53,14 @@ struct ItemDetailView: View {
             }
         }
         .playerPresentation(item: $playerItem)
+        .sheet(isPresented: $addingToCollection) { NavigationStack { AddToMediaCollectionView(item: store?.item ?? item) } }
         .sheet(isPresented: $addingToPlaylist) {
             NavigationStack { AddToVideoPlaylistView(item: store?.item ?? item) }
         }
         .toolbar {
+            if item.id != nil && !isRestricted {
+                ToolbarItem { Button("Add to Collection", systemImage: "rectangle.stack.badge.plus") { addingToCollection = true } }
+            }
             if (store?.item ?? item).type == .movie || (store?.item ?? item).type == .episode {
                 ToolbarItem { Button("Add to Playlist", systemImage: "text.badge.plus") { addingToPlaylist = true }.disabled(isRestricted) }
             }

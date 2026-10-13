@@ -58,8 +58,9 @@ struct SettingsView: View {
             }
 
             Section("iCloud Sync") {
-                Toggle("Sync Playlists and Next Up", isOn: Binding(get: { videoPlaylists.syncEnabled }, set: { videoPlaylists.syncEnabled = $0 }))
+                Toggle("Sync Gus Resume and Next Up", isOn: Binding(get: { videoPlaylists.syncEnabled }, set: { videoPlaylists.syncEnabled = $0 }))
                 Text(videoPlaylists.syncStatus).foregroundStyle(.secondary)
+                Text("Jellyfin stores playlists and collections. iCloud synchronizes Gus resume positions and Next Up state.").font(.caption).foregroundStyle(.secondary)
             }
 
             Section {

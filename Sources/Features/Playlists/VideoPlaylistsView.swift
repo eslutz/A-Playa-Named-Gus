@@ -1,269 +1,478 @@
 import SwiftUI
 
+/// Lists are owned by Jellyfin; the local cache permits browsing without a server.
 struct VideoPlaylistsView: View {
     @Environment(SessionStore.self) private var session
-    @Environment(VideoPlaylistsStore.self) private var store
-    @State private var creating = false
-    @State private var deleting: UUID?
+    @Environment(ServerMediaListsStore.self) private var lists
+    @Environment(VideoPlaylistsStore.self) private var supplemental
+    @State private var creating: ServerMediaListKind?
+    @State private var deleting: ServerMediaList?
+    @State private var retrying: UUID?
     private var scope: AccountScope {
         session.references.scope
     }
 
     var body: some View {
         List {
-            if store.playlists(scope: scope).isEmpty {
-                ContentUnavailableView("No Playlists", systemImage: "list.and.film", description: Text("Create a playlist to watch movies and episodes in your own order."))
-            }
-            ForEach(store.playlists(scope: scope)) { playlist in
-                NavigationLink(value: VideoPlaylistRef(id: playlist.id)) {
-                    VStack(alignment: .leading) {
-                        Text(playlist.name)
-                        Text("\(playlist.entries.count) items").font(.caption).foregroundStyle(.secondary)
+            Section("Playlists") { rows(.playlist) }
+            Section("Collections") { rows(.collection) }
+            let pending = lists.pendingEdits(scope: scope).filter(\.needsReview)
+            if !pending.isEmpty {
+                Section("Changes Need Review") {
+                    ForEach(pending) { edit in
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text(lists.list(id: edit.listID, kind: edit.kind, scope: scope)?.name ?? String(localized: "Pending List Change")).font(.headline)
+                            Text(edit.message ?? String(localized: "Check this change in Jellyfin before retrying.")).foregroundStyle(.secondary)
+                            HStack {
+                                Button("Refresh") { Task { await lists.refresh(session: session) } }
+                                Button("Retry") { retrying = edit.id }
+                                Button("Discard Change", role: .destructive) { _ = lists.discardPendingEdit(id: edit.id, scope: scope) }
+                            }
+                        }
                     }
                 }
-                .contextMenu {
-                    Button("Delete Playlist", role: .destructive) { deleting = playlist.id }
+            }
+            let legacy = supplemental.playlists(scope: scope).filter { lists.legacyImportID(for: $0.id, scope: scope) == nil }
+            if !legacy.isEmpty {
+                Section("Import Gus Playlists") {
+                    Text("Copy your previous Gus playlists to Jellyfin. Originals remain available until import succeeds.").foregroundStyle(.secondary)
+                    ForEach(legacy) { playlist in
+                        Button { Task { _ = await lists.importLegacy(playlist, session: session) } } label: {
+                            Label(playlist.name, systemImage: "square.and.arrow.up")
+                        }
+                    }
                 }
             }
-            .onDelete { offsets in
-                if let offset = offsets.first {
-                    deleting = store.playlists(scope: scope)[offset].id
-                }
+            if let message = lists.statusMessage, !message.isEmpty {
+                Section { Text(message).foregroundStyle(.secondary) }
             }
-            Section("iCloud Sync") { Text(store.syncStatus).foregroundStyle(.secondary) }
         }
-        .navigationTitle("Playlists")
-        .toolbar { ToolbarItem(placement: .primaryAction) { Button("New Playlist", systemImage: "plus") { creating = true } } }
-        .sheet(isPresented: $creating) {
+        .navigationTitle("Playlists & Collections")
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                Menu {
+                    Button("New Playlist", systemImage: "list.and.film") { creating = .playlist }
+                    Button("New Collection", systemImage: "rectangle.stack") { creating = .collection }
+                } label: { Label("New List", systemImage: "plus") }
+            }
+        }
+        .sheet(isPresented: Binding(get: { creating != nil }, set: {
+            if !$0 {
+                creating = nil
+            }
+        })) {
             NavigationStack {
-                VideoPlaylistNameEditor(initialName: "", title: "New Playlist", saveTitle: "Create") { name in
-                    store.clearError()
-                    return store.create(name: name, scope: scope) != nil
+                ServerListNameEditor(initialName: "", title: creating == .collection ? "New Collection" : "New Playlist", saveTitle: "Create") { name in
+                    await lists.create(name: name, kind: creating ?? .playlist, session: session) != nil
                 }
             }
         }
-        .confirmationDialog("Delete Playlist?", isPresented: Binding(get: { deleting != nil }, set: {
+        .confirmationDialog("Delete List?", isPresented: Binding(get: { deleting != nil }, set: {
             if !$0 {
                 deleting = nil
             }
         })) {
-            Button("Delete Playlist", role: .destructive) {
+            Button("Delete", role: .destructive) {
                 if let deleting {
-                    store.delete(id: deleting, scope: scope)
-                }; deleting = nil
+                    Task { _ = await lists.delete(id: deleting.id, kind: deleting.kind, session: session) }
+                }
+                deleting = nil
             }
-        } message: { Text("This deletes the playlist on your synced devices. Your media and watched history are preserved.") }
-        .playlistErrorAlert(store)
-        .task { store.load(scope: scope) }
+        } message: { Text("This removes the list from Jellyfin. Your media files and watched history are preserved.") }
+        .confirmationDialog("Retry This Change?", isPresented: Binding(get: { retrying != nil }, set: {
+            if !$0 {
+                retrying = nil
+            }
+        })) {
+            Button("Retry After Checking Jellyfin") {
+                if let retrying {
+                    Task { await lists.retryPendingEdit(id: retrying, session: session) }
+                }; retrying = nil
+            }
+        } message: { Text("The previous request may have succeeded. Check Jellyfin first to avoid creating a duplicate playlist or entry.") }
+        .serverListErrorAlert(lists)
+        .safeAreaInset(edge: .top) { SavedPlaylistErrorBanner() }
+        .task { supplemental.load(scope: scope); lists.load(scope: scope); await lists.refresh(session: session) }
+        .refreshable { await lists.refresh(session: session) }
+    }
+
+    @ViewBuilder private func rows(_ kind: ServerMediaListKind) -> some View {
+        let values = lists.lists(kind: kind, scope: scope)
+        if values.isEmpty {
+            Text(kind == .playlist ? String(localized: "No Playlists") : String(localized: "No Collections")).foregroundStyle(.secondary)
+        }
+        ForEach(values) { list in
+            Group {
+                if kind == .playlist {
+                    NavigationLink(value: VideoPlaylistRef(id: list.id)) { label(list) }
+                } else {
+                    NavigationLink(value: MediaCollectionRef(id: list.id)) { label(list) }
+                }
+            }
+            .contextMenu { Button("Delete", role: .destructive) { deleting = list }.disabled(!list.canEdit) }
+        }
+    }
+
+    private func label(_ list: ServerMediaList) -> some View {
+        VStack(alignment: .leading) {
+            Text(list.name)
+            if list.entriesLoaded {
+                Text("\(list.entries.count) items").font(.caption).foregroundStyle(.secondary)
+            }
+        }
     }
 }
 
 struct VideoPlaylistDetailView: View {
     @Environment(SessionStore.self) private var session
-    @Environment(VideoPlaylistsStore.self) private var store
+    @Environment(ServerMediaListsStore.self) private var lists
+    @Environment(VideoPlaylistsStore.self) private var supplemental
     let id: UUID
     @State private var renaming = false
     @State private var adding = false
     @State private var replacing: VideoPlaylistEntry?
     @State private var player: ItemRef?
+    @State private var loadingEntries = false
     private var scope: AccountScope {
         session.references.scope
     }
 
     private var playlist: VideoPlaylist? {
-        store.playlist(id: id, scope: scope)
+        lists.videoPlaylist(id: id, scope: scope, supplemental: supplemental)
+    }
+
+    private var serverList: ServerMediaList? {
+        lists.list(id: id, kind: .playlist, scope: scope)
     }
 
     var body: some View {
         Group {
-            if let playlist {
+            if let playlist, let serverList {
                 List {
-                    Section {
-                        if playlist.cursor?.finished == true {
-                            Label("Playlist Finished", systemImage: "checkmark.circle")
-                        } else if let current = playlist.entries.firstIndex(where: { $0.id == playlist.cursor?.entryID }) {
-                            Text("Playlist \(current + 1) of \(playlist.entries.count)")
-                        }
-                        Button("Play from Beginning", systemImage: "play.fill") { play(playlist.entries.first, fromBeginning: true) }.disabled(playlist.entries.isEmpty)
-                        Button("Continue Playlist", systemImage: "play.circle") {
-                            play(playlist.entries.first(where: { $0.id == playlist.cursor?.entryID }) ?? playlist.entries.first, fromBeginning: playlist.cursor?.finished == true)
-                        }.disabled(playlist.entries.isEmpty)
-                        Toggle("Add to Next Up", isOn: Binding(get: { playlist.queued }, set: { store.setQueued(id: id, queued: $0, scope: scope) }))
-                    }
-                    Section("Entries") {
-                        if playlist.entries.isEmpty {
-                            Text("Add movies or individual episodes to get started.").foregroundStyle(.secondary)
-                        }
-                        ForEach(Array(playlist.entries.enumerated()), id: \.element.id) { index, entry in
-                            let admitted = ContentRatingGate.admitsStored(entry.reference.item)
-                            HStack {
-                                Text("\(index + 1)").foregroundStyle(.secondary)
-                                if admitted {
-                                    NavigationLink(value: ItemRef(item: entry.reference.item)) {
-                                        VStack(alignment: .leading) {
-                                            Text(entry.reference.item.displayTitle)
-                                            if let series = entry.reference.item.seriesName {
-                                                Text([series, entry.reference.item.episodeLocator].compactMap { $0 }.joined(separator: " · ")).font(.caption).foregroundStyle(.secondary)
-                                            }
-                                        }
-                                    }
-                                } else {
-                                    Label("Restricted Content", systemImage: "lock")
+                    if serverList.entriesLoaded {
+                        if serverList.entries.allSatisfy({ $0.item.isAudioPlayable }) && !serverList.entries.isEmpty {
+                            Section {
+                                NavigationLink("Open Audio Playlist") {
+                                    AlbumDetailView(album: MediaItem(id: ServerMediaListID.string(serverList.id), name: serverList.name, type: .playlist))
                                 }
                             }
-                            .contextMenu {
-                                Button("Play from Here") { play(entry, fromBeginning: true) }.disabled(!admitted)
-                                Button("Move Up") { move(index, by: -1, in: playlist) }.disabled(index == 0)
-                                Button("Move Down") { move(index, by: 1, in: playlist) }.disabled(index == playlist.entries.count - 1)
-                                Button("Choose Replacement") { replacing = entry }.disabled(!admitted)
-                                Button("Remove", role: .destructive) { store.remove(entryID: entry.id, from: id, scope: scope) }
+                        } else {
+                            playbackControls(playlist)
+                        }
+                        Section("Entries") {
+                            if playlist.entries.isEmpty {
+                                Text("Add movies or individual episodes to get started.").foregroundStyle(.secondary)
+                            }
+                            ForEach(Array(playlist.entries.enumerated()), id: \.element.id) { index, entry in
+                                entryRow(entry, index: index, playlist: playlist, canEdit: serverList.canEdit)
+                            }
+                            .onDelete { offsets in
+                                guard serverList.canEdit else { return }
+                                for index in offsets {
+                                    Task { _ = await lists.remove(entryID: playlist.entries[index].id, from: id, kind: .playlist, session: session) }
+                                }
+                            }
+                            .onMove { offsets, destination in
+                                guard serverList.canEdit, let index = offsets.first else { return }
+                                var entries = playlist.entries
+                                let moved = entries.remove(at: index)
+                                let target = min(max(destination > index ? destination - 1 : destination, 0), entries.count)
+                                Task { _ = await lists.move(entryID: moved.id, in: id, before: target < entries.count ? entries[target].id : nil, session: session) }
                             }
                         }
-                        .onDelete { offsets in
-                            for index in offsets {
-                                store.remove(entryID: playlist.entries[index].id, from: id, scope: scope)
-                            }
-                        }
-                        .onMove { offsets, destination in
-                            guard let index = offsets.first else { return }
-                            var entries = playlist.entries
-                            let moved = entries.remove(at: index)
-                            let target = min(max(destination > index ? destination - 1 : destination, 0), entries.count)
-                            store.move(entryID: moved.id, in: id, before: target < entries.count ? entries[target].id : nil, scope: scope)
-                        }
+                    } else if loadingEntries {
+                        ProgressView()
+                    } else {
+                        ContentUnavailableView("Playlist Entries Unavailable", systemImage: "wifi.slash", description: Text("Connect to Jellyfin to load the entries for this playlist."))
+                        Button("Try Again") { Task { loadingEntries = true; await lists.refresh(id: id, kind: .playlist, session: session); loadingEntries = false } }
+                    }
+                    if let message = lists.statusMessage, !message.isEmpty {
+                        Text(message).foregroundStyle(.secondary)
                     }
                 }
                 .navigationTitle(playlist.name)
                 .toolbar {
-                    ToolbarItem { Button("Add Media", systemImage: "plus") { adding = true } }
-                    ToolbarItem { Button("Rename") { renaming = true } }
+                    ToolbarItem { Button("Add Media", systemImage: "plus") { adding = true }.disabled(!serverList.canEdit) }
+                    ToolbarItem { Button("Rename") { renaming = true }.disabled(!serverList.canEdit) }
                 }
             } else {
-                ContentUnavailableView("Playlist Unavailable", systemImage: "list.and.film", description: Text("It may have been deleted or belong to another account."))
+                ContentUnavailableView("Playlist Unavailable", systemImage: "list.and.film", description: Text("Refresh while connected to Jellyfin to load this playlist."))
             }
         }
         .sheet(isPresented: $renaming) {
             NavigationStack {
-                VideoPlaylistNameEditor(initialName: playlist?.name ?? "", title: "Rename Playlist", saveTitle: "Save") { name in
-                    store.clearError()
-                    store.rename(id: id, name: name, scope: scope)
-                    return store.errorMessage == nil
+                ServerListNameEditor(initialName: playlist?.name ?? "", title: "Rename Playlist", saveTitle: "Save") { name in
+                    await lists.rename(id: id, kind: .playlist, name: name, session: session)
                 }
             }
         }
-        .sheet(isPresented: $adding) { NavigationStack { VideoPlaylistSearchView(playlistID: id) } }
+        .sheet(isPresented: $adding) { NavigationStack { ServerListSearchView(listID: id, kind: .playlist) } }
         .sheet(item: $replacing) { entry in
             MediaReplacementPicker(item: entry.reference.item, candidates: []) { replacement in
                 guard let current = try? await session.references.selectedReplacement(replacement) else { return false }
-                return store.replace(entryID: entry.id, in: id, with: current, scope: scope)
+                return await lists.replace(entryID: entry.id, in: id, with: current, session: session)
             }
         }
-        .playlistErrorAlert(store)
+        .serverListErrorAlert(lists)
+        .safeAreaInset(edge: .top) { SavedPlaylistErrorBanner() }
         .playerPresentation(item: $player)
+        .task {
+            loadingEntries = true
+            supplemental.load(scope: scope); lists.load(scope: scope)
+            supplemental.registerServerPlaylist(id: lists.resolvedID(id, scope: scope), scope: scope)
+            await lists.refresh(id: id, kind: .playlist, session: session)
+            loadingEntries = false
+        }
+        .refreshable { await lists.refresh(id: id, kind: .playlist, session: session) }
+    }
+
+    private func playbackControls(_ playlist: VideoPlaylist) -> some View {
+        let unresolvedResume = playlist.cursor?.finished != true && playlist.cursor?.entryID.map { current in !playlist.entries.contains { $0.id == current } } == true
+        let isVideo = !playlist.entries.isEmpty && playlist.entries.allSatisfy { [.movie, .episode, .video].contains($0.reference.item.type) }
+        return Section {
+            if unresolvedResume {
+                Label("Resume Entry Unavailable", systemImage: "exclamationmark.triangle"); Text("Choose an entry to play from, or start this playlist again.").foregroundStyle(.secondary)
+            }
+            if playlist.cursor?.finished == true {
+                Label("Playlist Finished", systemImage: "checkmark.circle")
+            } else if let current = playlist.entries.firstIndex(where: { $0.id == playlist.cursor?.entryID }) {
+                Text("Playlist \(current + 1) of \(playlist.entries.count)")
+            }
+            Button("Play from Beginning", systemImage: "play.fill") { play(playlist.entries.first, fromBeginning: true) }.disabled(!isVideo)
+            Button("Continue Playlist", systemImage: "play.circle") {
+                play(playlist.entries.first(where: { $0.id == playlist.cursor?.entryID }) ?? playlist.entries.first, fromBeginning: playlist.cursor?.finished == true)
+            }.disabled(!isVideo || unresolvedResume)
+            if !isVideo && !playlist.entries.isEmpty {
+                Text("Play mixed media individually. Ordered video playback supports movies and episodes.").foregroundStyle(.secondary)
+            }
+            Toggle("Add to Next Up", isOn: Binding(get: { playlist.queued }, set: { supplemental.setQueued(id: lists.resolvedID(id, scope: scope), queued: $0, scope: scope) }))
+        }
+    }
+
+    private func entryRow(_ entry: VideoPlaylistEntry, index: Int, playlist: VideoPlaylist, canEdit: Bool) -> some View {
+        let admitted = ContentRatingGate.admitsStored(entry.reference.item)
+        let isVideo = playlist.entries.allSatisfy { [.movie, .episode, .video].contains($0.reference.item.type) }
+        return HStack {
+            Text("\(index + 1)").foregroundStyle(.secondary)
+            if admitted {
+                NavigationLink(value: ItemRef(item: entry.reference.item)) {
+                    VStack(alignment: .leading) {
+                        Text(entry.reference.item.displayTitle)
+                        if let series = entry.reference.item.seriesName {
+                            Text([series, entry.reference.item.episodeLocator].compactMap { $0 }.joined(separator: " · ")).font(.caption).foregroundStyle(.secondary)
+                        }
+                    }
+                }
+            } else {
+                Label("Restricted Content", systemImage: "lock")
+            }
+        }
+        .contextMenu {
+            Button("Play from Here") { play(entry, fromBeginning: true) }.disabled(!admitted || !isVideo)
+            Button("Move Up") { move(index, by: -1, in: playlist) }.disabled(!canEdit || index == 0)
+            Button("Move Down") { move(index, by: 1, in: playlist) }.disabled(!canEdit || index == playlist.entries.count - 1)
+            Button("Choose Replacement") { replacing = entry }.disabled(!admitted || !canEdit)
+            Button("Remove", role: .destructive) { Task { _ = await lists.remove(entryID: entry.id, from: id, kind: .playlist, session: session) } }.disabled(!canEdit)
+        }
     }
 
     private func play(_ entry: VideoPlaylistEntry?, fromBeginning: Bool) {
         guard let entry else { return }
-        player = ItemRef(item: entry.reference.item, serverID: scope.serverID, userID: scope.userID, playlistID: id, playlistEntryID: entry.id, playlistFromBeginning: fromBeginning)
+        player = ItemRef(item: entry.reference.item, serverID: scope.serverID, userID: scope.userID, playlistID: lists.resolvedID(id, scope: scope), playlistEntryID: entry.id, playlistFromBeginning: fromBeginning)
     }
 
     private func move(_ index: Int, by offset: Int, in playlist: VideoPlaylist) {
         var entries = playlist.entries
         let entry = entries.remove(at: index)
         let destination = min(max(index + offset, 0), entries.count)
-        store.move(entryID: entry.id, in: id, before: destination < entries.count ? entries[destination].id : nil, scope: scope)
+        Task { _ = await lists.move(entryID: entry.id, in: id, before: destination < entries.count ? entries[destination].id : nil, session: session) }
+    }
+}
+
+/// Supplemental queue and cursor failures remain independent of native list errors.
+struct SavedPlaylistErrorBanner: View {
+    @Environment(VideoPlaylistsStore.self) private var store
+
+    var body: some View {
+        if let message = store.errorMessage {
+            VStack(alignment: .leading, spacing: 8) {
+                Label("Saved Changes Unavailable", systemImage: "exclamationmark.triangle").font(.headline)
+                Text(message).foregroundStyle(.secondary)
+                Button("Dismiss") { store.clearError() }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding()
+            .background(.regularMaterial)
+        }
+    }
+}
+
+struct MediaCollectionDetailView: View {
+    @Environment(SessionStore.self) private var session
+    @Environment(ServerMediaListsStore.self) private var lists
+    let id: UUID
+    @State private var adding = false
+    @State private var renaming = false
+    @State private var loadingEntries = false
+    private var scope: AccountScope {
+        session.references.scope
+    }
+
+    private var collection: ServerMediaList? {
+        lists.list(id: id, kind: .collection, scope: scope)
+    }
+
+    var body: some View {
+        Group {
+            if let collection {
+                List {
+                    if !collection.entriesLoaded {
+                        if loadingEntries {
+                            ProgressView()
+                        } else {
+                            ContentUnavailableView("Collection Entries Unavailable", systemImage: "wifi.slash", description: Text("Connect to Jellyfin to load the titles in this collection."))
+                        }
+                    }
+                    ForEach(collection.entries) { entry in
+                        if ContentRatingGate.admitsStored(entry.item) {
+                            NavigationLink(value: ItemRef(item: entry.item)) { Text(entry.item.displayTitle) }
+                                .contextMenu { Button("Remove", role: .destructive) { Task { _ = await lists.remove(entryID: entry.id, from: id, kind: .collection, session: session) } }.disabled(!collection.canEdit) }
+                        } else {
+                            Label("Restricted Content", systemImage: "lock")
+                        }
+                    }
+                    if collection.entriesLoaded && collection.entries.isEmpty {
+                        Text("Add titles to this collection.").foregroundStyle(.secondary)
+                    }
+                    if let message = lists.statusMessage, !message.isEmpty {
+                        Text(message).foregroundStyle(.secondary)
+                    }
+                }
+                .navigationTitle(collection.name)
+                .toolbar {
+                    ToolbarItem { Button("Add Media", systemImage: "plus") { adding = true }.disabled(!collection.canEdit) }
+                    ToolbarItem { Button("Rename") { renaming = true }.disabled(!collection.canEdit) }
+                }
+            } else {
+                ContentUnavailableView("Collection Unavailable", systemImage: "rectangle.stack", description: Text("Refresh while connected to Jellyfin to load this collection."))
+            }
+        }
+        .sheet(isPresented: $adding) { NavigationStack { ServerListSearchView(listID: id, kind: .collection) } }
+        .sheet(isPresented: $renaming) {
+            NavigationStack { ServerListNameEditor(initialName: collection?.name ?? "", title: "Rename Collection", saveTitle: "Save") { name in await lists.rename(id: id, kind: .collection, name: name, session: session) } }
+        }
+        .serverListErrorAlert(lists)
+        .task { loadingEntries = true; lists.load(scope: scope); await lists.refresh(id: id, kind: .collection, session: session); loadingEntries = false }
+        .refreshable { await lists.refresh(id: id, kind: .collection, session: session) }
     }
 }
 
 struct AddToVideoPlaylistView: View {
+    let item: MediaItem
+    var body: some View {
+        AddToServerMediaListView(item: item, kind: .playlist)
+    }
+}
+
+struct AddToMediaCollectionView: View {
+    let item: MediaItem
+    var body: some View {
+        AddToServerMediaListView(item: item, kind: .collection)
+    }
+}
+
+private struct AddToServerMediaListView: View {
     @Environment(SessionStore.self) private var session
-    @Environment(VideoPlaylistsStore.self) private var store
+    @Environment(ServerMediaListsStore.self) private var lists
     @Environment(\.dismiss) private var dismiss
     let item: MediaItem
+    let kind: ServerMediaListKind
     @State private var name = ""
 
     var body: some View {
         List {
-            Section("Choose Playlist") {
-                ForEach(store.playlists(scope: session.references.scope)) { playlist in
-                    Button(playlist.name) {
-                        if store.add(item: item, to: playlist.id, scope: session.references.scope) {
+            Section(kind == .playlist ? String(localized: "Choose Playlist") : String(localized: "Choose Collection")) {
+                ForEach(lists.lists(kind: kind, scope: session.references.scope)) { list in
+                    Button(list.name) { Task {
+                        if await lists.add(item: item, to: list.id, kind: kind, session: session) {
                             dismiss()
                         }
-                    }
+                    } }.disabled(!list.canEdit)
                 }
             }
-            Section("New Playlist") {
+            Section(kind == .playlist ? String(localized: "New Playlist") : String(localized: "New Collection")) {
                 TextField("Name", text: $name)
                 Button("Create and Add") {
-                    if let id = store.create(name: name, scope: session.references.scope), store.add(item: item, to: id, scope: session.references.scope) {
-                        dismiss()
+                    guard item.id != nil else { return }
+                    Task {
+                        if await lists.create(name: name, kind: kind, session: session, items: [item]) != nil {
+                            dismiss()
+                        }
                     }
                 }.disabled(name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
             }
         }
-        .navigationTitle("Add to Playlist")
+        .navigationTitle(kind == .playlist ? String(localized: "Add to Playlist") : String(localized: "Add to Collection"))
         .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } } }
-        .playlistErrorAlert(store)
-        .task { store.load(scope: session.references.scope) }
+        .serverListErrorAlert(lists)
+        .task { lists.load(scope: session.references.scope); await lists.refresh(session: session) }
     }
 }
 
-private struct VideoPlaylistSearchView: View {
+private struct ServerListSearchView: View {
     @Environment(SessionStore.self) private var session
-    @Environment(VideoPlaylistsStore.self) private var playlists
+    @Environment(ServerMediaListsStore.self) private var lists
     @Environment(\.dismiss) private var dismiss
-    let playlistID: UUID
+    let listID: UUID
+    let kind: ServerMediaListKind
     @State private var query = ""
-    @State private var store: SearchStore?
+    @State private var search: SearchStore?
 
     var body: some View {
         List {
-            if let store {
-                if case let .failed(message) = store.state {
-                    Text(message); Button("Retry") { Task { await store.search(query) } }
+            if let search {
+                if case let .failed(message) = search.state {
+                    Text(message); Button("Retry") { Task { await search.search(query) } }
                 }
-                ForEach(store.results.filter { $0.type == .movie || $0.type == .episode }) { item in
-                    Button {
-                        if playlists.add(item: item, to: playlistID, scope: session.references.scope) {
+                ForEach(search.results.filter { kind == .playlist ? [.movie, .episode, .video].contains($0.type) : [.movie, .series, .episode, .musicAlbum, .audioBook, .audio].contains($0.type) }) { item in
+                    Button { Task {
+                        if await lists.add(item: item, to: listID, kind: kind, session: session) {
                             dismiss()
                         }
-                    } label: {
+                    } } label: {
                         VStack(alignment: .leading) {
-                            Text(item.displayTitle); if let series = item.seriesName {
+                            Text(item.displayTitle)
+                            if let series = item.seriesName {
                                 Text(series).font(.caption).foregroundStyle(.secondary)
                             }
                         }
                     }
                 }
-                if store.canLoadMore {
-                    Button("Load More") { Task { await store.continueSearching() } }
+                if search.canLoadMore {
+                    Button("Load More") { Task { await search.continueSearching() } }
                 }
-                if store.state == .loading {
+                if search.state == .loading {
                     ProgressView()
                 }
-                if store.state == .loaded, store.results.filter({ $0.type == .movie || $0.type == .episode }).isEmpty {
+                if search.state == .loaded && search.results.isEmpty {
                     ContentUnavailableView("No Results", systemImage: "magnifyingglass")
                 }
             } else {
                 ProgressView()
             }
         }
-        .searchable(text: $query, prompt: "Movies and Episodes")
+        .searchable(text: $query, prompt: kind == .playlist ? String(localized: "Movies and Episodes") : String(localized: "Titles"))
         .navigationTitle("Add Media")
         .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } } }
-        .task { store = SearchStore(session: session) }
-        .task(id: query) {
-            do { try await Task.sleep(for: .milliseconds(300)) } catch { return }
-            await store?.search(query)
-        }
-        .playlistErrorAlert(playlists)
+        .task { search = SearchStore(session: session) }
+        .task(id: query) { do { try await Task.sleep(for: .milliseconds(300)) } catch { return }; await search?.search(query) }
+        .serverListErrorAlert(lists)
     }
 }
 
 extension View {
-    func playlistErrorAlert(_ store: VideoPlaylistsStore) -> some View {
-        alert("Playlist Could Not Be Updated", isPresented: Binding(get: { store.errorMessage != nil }, set: {
+    func serverListErrorAlert(_ store: ServerMediaListsStore) -> some View {
+        alert("List Could Not Be Updated", isPresented: Binding(get: { store.errorMessage != nil }, set: {
             if !$0 {
                 store.clearError()
             }
@@ -273,20 +482,18 @@ extension View {
     }
 }
 
-/// Name entry owns its state in a native form rather than a UIKit alert action.
-private struct VideoPlaylistNameEditor: View {
-    @Environment(VideoPlaylistsStore.self) private var store
+/// Editor-owned state avoids the native alert's stale field value on Save.
+private struct ServerListNameEditor: View {
+    @Environment(ServerMediaListsStore.self) private var lists
     @Environment(\.dismiss) private var dismiss
     @State private var name: String
+    @State private var saving = false
     let title: LocalizedStringKey
     let saveTitle: LocalizedStringKey
-    let save: (String) -> Bool
+    let save: @MainActor (String) async -> Bool
 
-    init(initialName: String, title: LocalizedStringKey, saveTitle: LocalizedStringKey, save: @escaping (String) -> Bool) {
-        _name = State(initialValue: initialName)
-        self.title = title
-        self.saveTitle = saveTitle
-        self.save = save
+    init(initialName: String, title: LocalizedStringKey, saveTitle: LocalizedStringKey, save: @escaping @MainActor (String) async -> Bool) {
+        _name = State(initialValue: initialName); self.title = title; self.saveTitle = saveTitle; self.save = save
     }
 
     var body: some View {
@@ -296,13 +503,15 @@ private struct VideoPlaylistNameEditor: View {
                 ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
                 ToolbarItem(placement: .confirmationAction) {
                     Button(saveTitle) {
-                        if save(name) {
-                            dismiss()
+                        guard !saving else { return }; saving = true
+                        Task {
+                            let saved = await save(name); saving = false; if saved {
+                                dismiss()
+                            }
                         }
-                    }
-                    .disabled(name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                    }.disabled(saving || name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                 }
             }
-            .playlistErrorAlert(store)
+            .serverListErrorAlert(lists)
     }
 }

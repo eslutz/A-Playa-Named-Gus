@@ -57,3 +57,7 @@ struct ItemRef: Hashable, Identifiable, Codable {
 struct VideoPlaylistRef: Hashable {
     let id: UUID
 }
+
+struct MediaCollectionRef: Hashable {
+    let id: UUID
+}

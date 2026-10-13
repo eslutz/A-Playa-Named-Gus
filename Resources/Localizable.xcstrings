@@ -1,6 +1,567 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "Saved Changes Unavailable" : {
+      "comment" : "A local playlist queue or playback checkpoint could not be saved.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Saved Changes Unavailable"
+          }
+        }
+      }
+    },
+    "Jellyfin playlists cannot contain the same item more than once. This playlist has not been created.": {
+      "comment": "Native Jellyfin playlist and collection interface.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jellyfin playlists cannot contain the same item more than once. This playlist has not been created."
+          }
+        }
+      }
+    },
+    "Jellyfin playlists require unique items. Repeated items have not been sent to the server.": {
+      "comment": "Jellyfin native playlist duplicate limitation",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jellyfin playlists require unique items. Repeated items have not been sent to the server."
+          }
+        }
+      }
+    },
+    "This Gus playlist contains repeated items. Jellyfin playlists require unique items, so the original Gus playlist has been kept for editing.": {
+      "comment": "Native Jellyfin playlist and collection interface.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This Gus playlist contains repeated items. Jellyfin playlists require unique items, so the original Gus playlist has been kept for editing."
+          }
+        }
+      }
+    },
+    "This item is already in this Jellyfin playlist. Repeated items are not supported.": {
+      "comment": "Native Jellyfin playlist and collection interface.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This item is already in this Jellyfin playlist. Repeated items are not supported."
+          }
+        }
+      }
+    },
+    "This item is already in this collection.": {
+      "comment": "Native Jellyfin playlist and collection interface.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This item is already in this collection."
+          }
+        }
+      }
+    },
+    "A server edit needs review. Refresh and inspect Jellyfin before retrying to avoid duplicates.": {
+      "comment": "Native Jellyfin playlist and collection interface.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A server edit needs review. Refresh and inspect Jellyfin before retrying to avoid duplicates."
+          }
+        }
+      }
+    },
+    "Add titles to this collection.": {
+      "comment": "Native Jellyfin playlist and collection interface.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add titles to this collection."
+          }
+        }
+      }
+    },
+    "Add to Collection": {
+      "comment": "Native Jellyfin playlist and collection interface.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add to Collection"
+          }
+        }
+      }
+    },
+    "Changes Need Review": {
+      "comment": "Native Jellyfin playlist and collection interface.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Changes Need Review"
+          }
+        }
+      }
+    },
+    "Changes saved on this device · waiting for the server": {
+      "comment": "Native Jellyfin playlist and collection interface.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Changes saved on this device · waiting for the server"
+          }
+        }
+      }
+    },
+    "Check this change in Jellyfin before retrying.": {
+      "comment": "Native Jellyfin playlist and collection interface.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Check this change in Jellyfin before retrying."
+          }
+        }
+      }
+    },
+    "Choose Collection": {
+      "comment": "Native Jellyfin playlist and collection interface.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose Collection"
+          }
+        }
+      }
+    },
+    "Choose an entry to play from, or start this playlist again.": {
+      "comment": "Native Jellyfin playlist and collection interface.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose an entry to play from, or start this playlist again."
+          }
+        }
+      }
+    },
+    "Collection Entries Unavailable": {
+      "comment": "Native Jellyfin playlist and collection interface.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Collection Entries Unavailable"
+          }
+        }
+      }
+    },
+    "Collection Unavailable": {
+      "comment": "Native Jellyfin playlist and collection interface.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Collection Unavailable"
+          }
+        }
+      }
+    },
+    "Collections": {
+      "comment": "Native Jellyfin playlist and collection interface.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Collections"
+          }
+        }
+      }
+    },
+    "Connect to Jellyfin to load the entries for this playlist.": {
+      "comment": "Native Jellyfin playlist and collection interface.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connect to Jellyfin to load the entries for this playlist."
+          }
+        }
+      }
+    },
+    "Connect to Jellyfin to load the titles in this collection.": {
+      "comment": "Native Jellyfin playlist and collection interface.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connect to Jellyfin to load the titles in this collection."
+          }
+        }
+      }
+    },
+    "Copy your previous Gus playlists to Jellyfin. Originals remain available until import succeeds.": {
+      "comment": "Native Jellyfin playlist and collection interface.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copy your previous Gus playlists to Jellyfin. Originals remain available until import succeeds."
+          }
+        }
+      }
+    },
+    "Delete List?": {
+      "comment": "Native Jellyfin playlist and collection interface.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete List?"
+          }
+        }
+      }
+    },
+    "Discard Change": {
+      "comment": "Native Jellyfin playlist and collection interface.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Discard Change"
+          }
+        }
+      }
+    },
+    "Import Gus Playlists": {
+      "comment": "Native Jellyfin playlist and collection interface.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Import Gus Playlists"
+          }
+        }
+      }
+    },
+    "Jellyfin stores playlists and collections. iCloud synchronizes Gus resume positions and Next Up state.": {
+      "comment": "Native Jellyfin playlist and collection interface.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jellyfin stores playlists and collections. iCloud synchronizes Gus resume positions and Next Up state."
+          }
+        }
+      }
+    },
+    "List Could Not Be Updated": {
+      "comment": "Native Jellyfin playlist and collection interface.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "List Could Not Be Updated"
+          }
+        }
+      }
+    },
+    "New Collection": {
+      "comment": "Native Jellyfin playlist and collection interface.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New Collection"
+          }
+        }
+      }
+    },
+    "New List": {
+      "comment": "Native Jellyfin playlist and collection interface.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New List"
+          }
+        }
+      }
+    },
+    "No Collections": {
+      "comment": "Native Jellyfin playlist and collection interface.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No Collections"
+          }
+        }
+      }
+    },
+    "Open Audio Playlist": {
+      "comment": "Native Jellyfin playlist and collection interface.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open Audio Playlist"
+          }
+        }
+      }
+    },
+    "Pending List Change": {
+      "comment": "Native Jellyfin playlist and collection interface.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pending List Change"
+          }
+        }
+      }
+    },
+    "Play mixed media individually. Ordered video playback supports movies and episodes.": {
+      "comment": "Native Jellyfin playlist and collection interface.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Play mixed media individually. Ordered video playback supports movies and episodes."
+          }
+        }
+      }
+    },
+    "Playlist Entries Unavailable": {
+      "comment": "Native Jellyfin playlist and collection interface.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Playlist Entries Unavailable"
+          }
+        }
+      }
+    },
+    "Playlists & Collections": {
+      "comment": "Native Jellyfin playlist and collection interface.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Playlists & Collections"
+          }
+        }
+      }
+    },
+    "Refresh while connected to Jellyfin to load this collection.": {
+      "comment": "Native Jellyfin playlist and collection interface.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Refresh while connected to Jellyfin to load this collection."
+          }
+        }
+      }
+    },
+    "Refresh while connected to Jellyfin to load this playlist.": {
+      "comment": "Native Jellyfin playlist and collection interface.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Refresh while connected to Jellyfin to load this playlist."
+          }
+        }
+      }
+    },
+    "Rename Collection": {
+      "comment": "Native Jellyfin playlist and collection interface.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rename Collection"
+          }
+        }
+      }
+    },
+    "Resume Entry Unavailable": {
+      "comment": "Native Jellyfin playlist and collection interface.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Resume Entry Unavailable"
+          }
+        }
+      }
+    },
+    "Retry After Checking Jellyfin": {
+      "comment": "Native Jellyfin playlist and collection interface.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Retry After Checking Jellyfin"
+          }
+        }
+      }
+    },
+    "Retry This Change?": {
+      "comment": "Native Jellyfin playlist and collection interface.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Retry This Change?"
+          }
+        }
+      }
+    },
+    "Sync Gus Resume and Next Up": {
+      "comment": "Native Jellyfin playlist and collection interface.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sync Gus Resume and Next Up"
+          }
+        }
+      }
+    },
+    "The cached server lists couldn't be read. The original file has been preserved.": {
+      "comment": "Native Jellyfin playlist and collection interface.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The cached server lists couldn't be read. The original file has been preserved."
+          }
+        }
+      }
+    },
+    "The playlist position is invalid.": {
+      "comment": "Invalid native playlist move position",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The playlist position is invalid."
+          }
+        }
+      }
+    },
+    "The previous request may have succeeded. Check Jellyfin first to avoid creating a duplicate playlist or entry.": {
+      "comment": "Native Jellyfin playlist and collection interface.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The previous request may have succeeded. Check Jellyfin first to avoid creating a duplicate playlist or entry."
+          }
+        }
+      }
+    },
+    "The replacement was added, but its server entry could not be identified. Refresh and review this list.": {
+      "comment": "Native Jellyfin playlist and collection interface.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The replacement was added, but its server entry could not be identified. Refresh and review this list."
+          }
+        }
+      }
+    },
+    "The server list changes couldn't be saved on this device.": {
+      "comment": "Native Jellyfin playlist and collection interface.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The server list changes couldn't be saved on this device."
+          }
+        }
+      }
+    },
+    "The server returned an invalid list identifier.": {
+      "comment": "Invalid native media list identifier",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The server returned an invalid list identifier."
+          }
+        }
+      }
+    },
+    "This edit refers to a saved occurrence that could not be identified on the server. Review the playlist and select the intended entry.": {
+      "comment": "Native Jellyfin playlist and collection interface.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This edit refers to a saved occurrence that could not be identified on the server. Review the playlist and select the intended entry."
+          }
+        }
+      }
+    },
+    "This playlist contains entries that cannot be imported into this Jellyfin account.": {
+      "comment": "Native Jellyfin playlist and collection interface.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This playlist contains entries that cannot be imported into this Jellyfin account."
+          }
+        }
+      }
+    },
+    "This removes the list from Jellyfin. Your media files and watched history are preserved.": {
+      "comment": "Native Jellyfin playlist and collection interface.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This removes the list from Jellyfin. Your media files and watched history are preserved."
+          }
+        }
+      }
+    },
+    "Titles": {
+      "comment": "Native Jellyfin playlist and collection interface.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Titles"
+          }
+        }
+      }
+    },
+    "You do not have permission to edit this server list.": {
+      "comment": "Native server media list permission denied",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You do not have permission to edit this server list."
+          }
+        }
+      }
+    },
     "%@ · %@": {
       "comment": "Next Up and video playlist interface."
     },

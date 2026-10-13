@@ -23,6 +23,14 @@ final class FakeMediaProviderSession: MediaProviderSession {
     var favoriteHandler: (() async throws -> Void)?
     var audioHandler: (() async throws -> PlaybackSourceResolution)?
     var playbackHandler: (() async throws -> PlaybackSourceResolution)?
+    var mediaListsHandler: ((ServerMediaListKind) async throws -> [ServerMediaList])?
+    var mediaListHandler: ((UUID, ServerMediaListKind) async throws -> ServerMediaList)?
+    var createMediaListHandler: ((String, ServerMediaListKind, [String]) async throws -> UUID)?
+    var renameMediaListHandler: ((UUID, ServerMediaListKind, String) async throws -> Void)?
+    var deleteMediaListHandler: ((UUID, ServerMediaListKind) async throws -> Void)?
+    var addToMediaListHandler: ((UUID, ServerMediaListKind, [String]) async throws -> Void)?
+    var removeFromMediaListHandler: ((UUID, ServerMediaListKind, [UUID]) async throws -> Void)?
+    var moveMediaListEntryHandler: ((UUID, UUID, Int) async throws -> Void)?
     var downloadSourceCallCount = 0
     var playbackResolutionCallCount = 0
     var audioResolutionCallCount = 0
@@ -32,6 +40,40 @@ final class FakeMediaProviderSession: MediaProviderSession {
 
     init(capabilities: ProviderCapabilities) {
         self.capabilities = capabilities
+    }
+
+    func mediaLists(kind: ServerMediaListKind) async throws -> [ServerMediaList] {
+        try await mediaListsHandler?(kind) ?? []
+    }
+
+    func mediaList(id: UUID, kind: ServerMediaListKind) async throws -> ServerMediaList {
+        guard let mediaListHandler else { throw GusError.notFound }
+        return try await mediaListHandler(id, kind)
+    }
+
+    func createMediaList(name: String, kind: ServerMediaListKind, itemIDs: [String]) async throws -> UUID {
+        guard let createMediaListHandler else { throw GusError.notFound }
+        return try await createMediaListHandler(name, kind, itemIDs)
+    }
+
+    func renameMediaList(id: UUID, kind: ServerMediaListKind, name: String) async throws {
+        try await renameMediaListHandler?(id, kind, name)
+    }
+
+    func deleteMediaList(id: UUID, kind: ServerMediaListKind) async throws {
+        try await deleteMediaListHandler?(id, kind)
+    }
+
+    func addToMediaList(id: UUID, kind: ServerMediaListKind, itemIDs: [String]) async throws {
+        try await addToMediaListHandler?(id, kind, itemIDs)
+    }
+
+    func removeFromMediaList(id: UUID, kind: ServerMediaListKind, entryIDs: [UUID]) async throws {
+        try await removeFromMediaListHandler?(id, kind, entryIDs)
+    }
+
+    func moveMediaListEntry(id: UUID, entryID: UUID, to index: Int) async throws {
+        try await moveMediaListEntryHandler?(id, entryID, index)
     }
 
     func updatePlaybackPosition(itemID: String, positionTicks: Int) async throws {

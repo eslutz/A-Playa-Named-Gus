@@ -13,6 +13,10 @@ struct PlaylistPlaybackSequence {
         remainingIDs = Array(entryIDs.dropFirst(start))
     }
 
+    mutating func remap(using transform: (UUID) -> UUID) {
+        remainingIDs = remainingIDs.map(transform)
+    }
+
     /// A late completion for an earlier entry cannot consume the current entry.
     mutating func advance(after completedID: UUID, surviving: Set<UUID>) -> UUID? {
         guard currentID == completedID else { return currentID }
@@ -29,6 +33,7 @@ final class VideoPlaylistPlaybackCoordinator {
     private let playlistID: UUID
     private let scope: AccountScope
     private let playlists: VideoPlaylistsStore
+    private let serverLists: ServerMediaListsStore
     private let session: SessionStore
     private let downloads: OfflineDownloadStore
     private var sequence: PlaylistPlaybackSequence
@@ -36,30 +41,43 @@ final class VideoPlaylistPlaybackCoordinator {
     private var active = true
     private let startsFromBeginning: Bool
 
-    init(playlistID: UUID, entryID: UUID?, fromBeginning: Bool, playlists: VideoPlaylistsStore, session: SessionStore, downloads: OfflineDownloadStore) {
+    init(playlistID: UUID, entryID: UUID?, fromBeginning: Bool, playlists: VideoPlaylistsStore, session: SessionStore, downloads: OfflineDownloadStore, serverLists: ServerMediaListsStore = .shared) {
         self.playlistID = playlistID
         self.playlists = playlists
+        self.serverLists = serverLists
         self.session = session
         self.downloads = downloads
         scope = session.references.scope
-        let entries = playlists.playlist(id: playlistID, scope: scope)?.entries ?? []
+        serverLists.load(scope: scope)
+        playlists.registerServerPlaylist(id: serverLists.resolvedID(playlistID, scope: scope), scope: scope)
+        let entries = serverLists.videoPlaylist(id: playlistID, scope: scope, supplemental: playlists)?.entries ?? []
         sequence = PlaylistPlaybackSequence(entryIDs: entries.map(\.id), startID: entryID)
         startsFromBeginning = fromBeginning
     }
 
+    private var stateID: UUID {
+        serverLists.resolvedID(playlistID, scope: scope)
+    }
+
+    private func normalizeEntryIDs() {
+        sequence.remap { serverLists.resolvedEntryID($0, inList: playlistID, scope: scope) }
+    }
+
     func start(_ player: PlaybackStore) async {
-        let cursor = playlists.playlist(id: playlistID, scope: scope)?.cursor
+        normalizeEntryIDs()
+        let cursor = serverLists.videoPlaylist(id: playlistID, scope: scope, supplemental: playlists)?.cursor
         let ticks = startsFromBeginning ? 0 : (cursor?.entryID == sequence.currentID ? cursor?.positionTicks : nil)
         await prepareCurrent(player, ticks: ticks)
     }
 
     func completed(_ player: PlaybackStore) async {
+        normalizeEntryIDs()
         guard active, !pending, let current = sequence.currentID else { return }
-        let surviving = Set(playlists.playlist(id: playlistID, scope: scope)?.entries.map(\.id) ?? [])
+        let surviving = Set(serverLists.videoPlaylist(id: playlistID, scope: scope, supplemental: playlists)?.entries.map(\.id) ?? [])
         _ = sequence.advance(after: current, surviving: surviving)
         if sequence.currentID == nil {
             finished = true
-            playlists.setCursor(id: playlistID, entryID: nil, positionTicks: nil, finished: true, scope: scope)
+            playlists.setCursor(id: stateID, entryID: nil, positionTicks: nil, finished: true, scope: scope)
             player.teardown()
         } else {
             await prepareCurrent(player, ticks: 0)
@@ -74,13 +92,14 @@ final class VideoPlaylistPlaybackCoordinator {
 
     func retry(_ player: PlaybackStore) async {
         errorMessage = nil
-        await prepareCurrent(player, ticks: playlists.playlist(id: playlistID, scope: scope)?.cursor?.positionTicks)
+        await prepareCurrent(player, ticks: serverLists.videoPlaylist(id: playlistID, scope: scope, supplemental: playlists)?.cursor?.positionTicks)
     }
 
     func checkpoint(_ player: PlaybackStore, activity: Bool = false) {
+        normalizeEntryIDs()
         guard active, player.player != nil, let id = sequence.currentID,
-              playlists.playlist(id: playlistID, scope: scope)?.entries.contains(where: { $0.id == id }) == true else { return }
-        playlists.setCursor(id: playlistID, entryID: id, positionTicks: player.positionTicks, finished: false, scope: scope, activity: activity)
+              serverLists.videoPlaylist(id: playlistID, scope: scope, supplemental: playlists)?.entries.contains(where: { $0.id == id }) == true else { return }
+        playlists.setCursor(id: stateID, entryID: id, positionTicks: player.positionTicks, finished: false, scope: scope, activity: activity)
     }
 
     func stop(_ player: PlaybackStore) {
@@ -90,18 +109,27 @@ final class VideoPlaylistPlaybackCoordinator {
     }
 
     private func prepareCurrent(_ player: PlaybackStore, ticks: Int?) async {
+        normalizeEntryIDs()
         guard active, !pending else { return }
         pending = true
         player.teardown()
         defer { pending = false }
         guard let current = sequence.currentID,
-              let entry = playlists.playlist(id: playlistID, scope: scope)?.entries.first(where: { $0.id == current })
+              let playlist = serverLists.videoPlaylist(id: playlistID, scope: scope, supplemental: playlists),
+              let entry = playlist.entries.first(where: { $0.id == current })
         else {
             errorMessage = String(localized: "This playlist entry is no longer available.")
             return
         }
+        guard playlist.entries.allSatisfy({ [.movie, .episode, .video].contains($0.reference.item.type) }) else {
+            errorMessage = String(localized: "Play mixed media individually. Ordered video playback supports movies and episodes.")
+            return
+        }
         // Commit the selected instance before resolving or starting playback.
-        playlists.setCursor(id: playlistID, entryID: current, positionTicks: ticks, finished: false, scope: scope)
+        guard playlists.setCursor(id: stateID, entryID: current, positionTicks: ticks, finished: false, scope: scope) else {
+            errorMessage = playlists.errorMessage ?? String(localized: "Your changes couldn't be saved. Try again.")
+            return
+        }
         do {
             var item = entry.reference.item
             if downloads.localFileURL(for: item, serverID: scope.serverID, userID: scope.userID) == nil {
@@ -109,7 +137,9 @@ final class VideoPlaylistPlaybackCoordinator {
             }
             try Task.checkCancellation()
             guard active else { return }
-            guard playlists.playlist(id: playlistID, scope: scope)?.entries.contains(where: { $0.id == current }) == true else {
+            normalizeEntryIDs()
+            let resolvedCurrent = serverLists.resolvedEntryID(current, inList: playlistID, scope: scope)
+            guard sequence.currentID == resolvedCurrent, serverLists.videoPlaylist(id: playlistID, scope: scope, supplemental: playlists)?.entries.contains(where: { $0.id == resolvedCurrent }) == true else {
                 errorMessage = String(localized: "This playlist entry is no longer available.")
                 return
             }

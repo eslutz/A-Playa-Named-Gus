@@ -77,3 +77,7 @@ Final same-code UI rerun passed both cases: ordered duplicate-entry natural comp
 [Initial PR CI](https://github.com/eslutz/A-Playa-Named-Gus/actions/runs/38350387524/job/115141212262) passed 12/13 jobs, but tvOS failed two assertions in `NavigationPreferencesTests.hideAndReorder`. The test's hardcoded move offset omitted the newly required Playlists section on platforms without Downloaded, leaving Music after Libraries. The production move correctly followed that requested offset.
 
 The test now derives the offset between Music and Libraries from the current visible movable sections; its exact expected order assertions remain unchanged. No production source changed. The seven-test navigation suite passed on macOS (Xcode 27.1 RC); SwiftFormat and diff checks passed. The CI log establishes the original tvOS failure. Compatible tvOS 27 runtime execution is unavailable locally, so actual tvOS verification runs on the updated PR's CI.
+
+## October 13 native-list architecture change
+
+The custom Gus list implementation and duplicate-entry acceptance above are historical. PR #21 now moves list ownership to Jellyfin, retaining supplemental Gus resume/Next Up state and offline cache/journal. The verified native server deduplicates repeated titles; unchanged duplicate imports are blocked with originals preserved. Current source and acceptance are recorded in [the Jellyfin-backed implementation ledger](../2026-10-13-jellyfin-lists/IMPLEMENTATION.md).

@@ -115,12 +115,99 @@ final class VideoPlaylistsStore {
     }
 
     func playlists(scope: AccountScope) -> [VideoPlaylist] {
-        envelope.records.values.filter { $0.scope == scope && $0.kind == .playlist }
+        envelope.records.values.filter { $0.scope == scope && $0.kind == .playlist && $0.value("serverBacked", as: Bool.self) != true }
             .compactMap { record in UUID(uuidString: record.id).flatMap { playlist(id: $0, scope: scope) } }
             .sorted { $0.name == $1.name ? $0.id.uuidString < $1.id.uuidString : $0.name.localizedStandardCompare($1.name) == .orderedAscending }
     }
 
+    /// Server lists synchronize only Gus playback intent. Jellyfin remains the
+    /// sole authority for names, membership and ordering.
+    @discardableResult
+    func registerServerPlaylist(id: UUID, scope: AccountScope) -> Bool {
+        load(scope: scope)
+        let key = serverPlaylistKey(id: id, scope: scope)
+        if envelope.records[key]?.scope == scope {
+            return true
+        }
+        return mutate(scope: scope) { state, stamp in
+            var record = SavedMediaRecord(id: key, scope: scope, kind: .playlist)
+            try record.set("serverBacked", value: true, revision: stamp)
+            try record.set("queued", value: false, revision: stamp)
+            Self.put(record, in: &state)
+        }
+    }
+
+    func serverPlaylistState(id: UUID, scope: AccountScope) -> (cursor: PlaylistCursor?, queued: Bool, activityAt: Date?) {
+        load(scope: scope)
+        let key = serverPlaylistKey(id: id, scope: scope)
+        guard let record = envelope.records[key], record.scope == scope else { return (nil, false, nil) }
+        return (envelope.records["cursor-" + key]?.value("cursor"), record.value("queued") ?? false, record.value("activity"))
+    }
+
+    /// Atomically restores imported playback intent without inventing activity.
+    @discardableResult
+    func setServerPlaylistState(id: UUID, cursor: PlaylistCursor?, queued: Bool, activityAt: Date?, scope: AccountScope) -> Bool {
+        load(scope: scope)
+        let key = serverPlaylistKey(id: id, scope: scope)
+        return mutate(scope: scope) { state, stamp in
+            var record = state.records[key] ?? SavedMediaRecord(id: key, scope: scope, kind: .playlist)
+            guard record.scope == scope else { return }
+            try record.set("serverBacked", value: true, revision: stamp)
+            try record.set("queued", value: queued, revision: stamp)
+            try record.set("activity", value: activityAt, revision: stamp)
+            Self.put(record, in: &state)
+            var progress = state.records["cursor-" + key] ?? SavedMediaRecord(id: "cursor-" + key, scope: scope, kind: .cursor)
+            try progress.set("cursor", value: cursor, revision: stamp)
+            Self.put(progress, in: &state)
+        }
+    }
+
+    /// A local offline draft is assigned a Jellyfin identity after reconnecting.
+    /// Copy only its Gus intent; names and entries are never written here.
+    @discardableResult
+    func migrateServerPlaylistState(from oldID: UUID, to newID: UUID, scope: AccountScope) -> Bool {
+        guard oldID != newID else { return true }
+        load(scope: scope)
+        let oldKey = serverPlaylistKey(id: oldID, scope: scope)
+        let newKey = serverPlaylistKey(id: newID, scope: scope)
+        guard let old = envelope.records[oldKey], old.scope == scope else { return true }
+        if let destination = envelope.records[newKey], destination.value("migratedFrom", as: UUID.self) != nil || destination.value("queued", as: Bool.self) == true || destination.value("activity", as: Date.self) != nil || envelope.records["cursor-" + newKey] != nil {
+            return true
+        }
+        return mutate(scope: scope) { state, stamp in
+            var new = state.records[newKey] ?? SavedMediaRecord(id: newKey, scope: scope, kind: .playlist)
+            try new.set("migratedFrom", value: oldID, revision: stamp)
+            for key in ["serverBacked", "queued", "activity"] {
+                if let field = old.fields[key] {
+                    // Migration expresses this intent under its native identity;
+                    // a delayed registration default must not undo the copy.
+                    new.fields[key] = SavedMediaField(revision: stamp, data: field.data)
+                }
+            }
+            Self.put(new, in: &state)
+            if let cursor: PlaylistCursor = state.records["cursor-" + oldKey]?.value("cursor") {
+                var record = SavedMediaRecord(id: "cursor-" + newKey, scope: scope, kind: .cursor)
+                try record.set("cursor", value: cursor, revision: stamp)
+                Self.put(record, in: &state)
+            }
+        }
+    }
+
+    private func serverPlaylistKey(id: UUID, scope: AccountScope) -> String {
+        "server-" + Self.digest(scope.serverID + "\u{0}" + scope.userID) + "-" + id.uuidString
+    }
+
+    private func playlistRecordKey(id: UUID, scope: AccountScope) -> String {
+        let native = serverPlaylistKey(id: id, scope: scope)
+        return envelope.records[native]?.scope == scope ? native : id.uuidString
+    }
+
     func playlist(id: UUID, scope: AccountScope) -> VideoPlaylist? {
+        let nativeKey = serverPlaylistKey(id: id, scope: scope)
+        if envelope.records[nativeKey]?.scope == scope {
+            let state = serverPlaylistState(id: id, scope: scope)
+            return VideoPlaylist(id: id, name: "", scope: scope, entries: [], cursor: state.cursor, queued: state.queued, activityAt: state.activityAt)
+        }
         guard let record = envelope.records[id.uuidString], record.scope == scope,
               record.kind == .playlist, record.value("deleted", as: Bool.self) != true else { return nil }
         let entries = entryRecords(id: id, scope: scope).compactMap { entry -> VideoPlaylistEntry? in
@@ -239,14 +326,16 @@ final class VideoPlaylistsStore {
         editPlaylist(id: id, scope: scope, key: "queued", value: queued, activity: queued)
     }
 
-    func setCursor(id: UUID, entryID: UUID?, positionTicks: Int?, finished: Bool, scope: AccountScope, activity: Bool = true) {
-        guard playlist(id: id, scope: scope) != nil else { return }
-        mutate(scope: scope) { state, stamp in
-            let key = "cursor-\(id)"
+    @discardableResult
+    func setCursor(id: UUID, entryID: UUID?, positionTicks: Int?, finished: Bool, scope: AccountScope, activity: Bool = true) -> Bool {
+        guard playlist(id: id, scope: scope) != nil else { return false }
+        return mutate(scope: scope) { state, stamp in
+            let playlistKey = playlistRecordKey(id: id, scope: scope)
+            let key = "cursor-" + playlistKey
             var record = state.records[key] ?? SavedMediaRecord(id: key, scope: scope, kind: .cursor)
             try record.set("cursor", value: PlaylistCursor(entryID: entryID, positionTicks: positionTicks.map { max(0, $0) }, finished: finished), revision: stamp)
             Self.put(record, in: &state)
-            if activity, var playlist = state.records[id.uuidString] {
+            if activity, var playlist = state.records[playlistKey] {
                 try playlist.set("activity", value: Date(), revision: stamp)
                 Self.put(playlist, in: &state)
             }
@@ -502,8 +591,9 @@ final class VideoPlaylistsStore {
     private func editPlaylist<T: Encodable>(id: UUID, scope: AccountScope, key: String, value: T, activity: Bool = false) {
         load(scope: scope)
         guard playlist(id: id, scope: scope) != nil else { return }
+        let recordKey = playlistRecordKey(id: id, scope: scope)
         mutate(scope: scope) { state, stamp in
-            guard var record = state.records[id.uuidString] else { return }
+            guard var record = state.records[recordKey] else { return }
             try record.set(key, value: value, revision: stamp)
             if activity {
                 try record.set("activity", value: Date(), revision: stamp)

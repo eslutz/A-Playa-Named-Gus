@@ -9,8 +9,20 @@ struct ItemRouteDestination: View {
 
     var body: some View {
         switch item.type {
-        case .musicAlbum, .playlist:
+        case .musicAlbum:
             AlbumDetailView(album: item)
+        case .playlist:
+            if let id = item.id.flatMap(ServerMediaListID.uuid) {
+                VideoPlaylistDetailView(id: id)
+            } else {
+                AlbumDetailView(album: item)
+            }
+        case .boxSet:
+            if let id = item.id.flatMap(ServerMediaListID.uuid) {
+                MediaCollectionDetailView(id: id)
+            } else {
+                ItemDetailView(item: item)
+            }
         case .musicArtist:
             ArtistAlbumsView(artist: item)
         case .photo:
@@ -39,6 +51,9 @@ extension View {
         }
         .navigationDestination(for: VideoPlaylistRef.self) { ref in
             VideoPlaylistDetailView(id: ref.id)
+        }
+        .navigationDestination(for: MediaCollectionRef.self) { ref in
+            MediaCollectionDetailView(id: ref.id)
         }
         .navigationDestination(for: AppScreen.self) { screen in
             switch screen {

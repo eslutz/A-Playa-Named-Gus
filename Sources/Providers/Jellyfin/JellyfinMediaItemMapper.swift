@@ -49,6 +49,23 @@ enum JellyfinMediaItemMapper {
         items.map(mediaItem)
     }
 
+    /// Preserve the server's entry identity. Jellyfin 10.11 uses the member GUID;
+    /// older servers may supply a separate occurrence GUID. Collisions cannot be
+    /// safely edited or resumed, so never substitute a random UUID to hide them.
+    static func mediaListEntries(from items: [BaseItemDto], kind: ServerMediaListKind) throws -> [ServerMediaListEntry] {
+        var seen: Set<UUID> = []
+        return try items.map { item in
+            let rawID = kind == .playlist ? item.playlistItemID : item.id
+            guard let rawID, let id = ServerMediaListID.uuid(rawID) else {
+                throw GusError.server(String(localized: "The server returned an invalid list entry identifier.", comment: "Invalid native media list entry"))
+            }
+            guard seen.insert(id).inserted else {
+                throw GusError.server(String(localized: "The server returned repeated list entry identifiers. Gus cannot safely edit or resume this list.", comment: "Ambiguous native media list membership"))
+            }
+            return ServerMediaListEntry(id: id, item: mediaItem(from: item))
+        }
+    }
+
     private static func mediaItemType(from type: BaseItemKind?) -> MediaItemType? {
         guard let type else { return nil }
         switch type {
@@ -60,6 +77,8 @@ enum JellyfinMediaItemMapper {
             return .series
         case .season:
             return .season
+        case .boxSet:
+            return .boxSet
         case .collectionFolder:
             return .collectionFolder
         case .folder:

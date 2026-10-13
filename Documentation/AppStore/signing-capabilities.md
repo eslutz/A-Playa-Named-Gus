@@ -231,9 +231,17 @@ regenerate it. See [API preparation](api-access.md).
 
 ## Playlist and Next Up iCloud synchronization
 
-The unified Next Up branch adds CloudKit private-database synchronization through
-`iCloud.dev.ericslutz.gus`. All four main-app platform entitlement files declare
-CloudKit, silent remote notifications and that container; `project.yml` explicitly links the system framework.
+The unified Next Up branch adds supplemental CloudKit private-database synchronization
+through `iCloud.dev.ericslutz.gus`. Jellyfin owns playlist and Collection/BoxSet names,
+IDs, membership, playlist order and permissions. Native list definitions and queued
+server edits stay with Jellyfin and the account-scoped device cache; CloudKit carries
+Gus resume cursors, saved Next Up intent and activity. Legacy Gus-owned playlist records
+remain preserved for explicit import into Jellyfin; they are not silently migrated.
+Legacy lists with repeated media items cannot be imported until duplicates are
+explicitly removed, because Jellyfin 10.11.11 deduplicates native playlist membership.
+
+All four main-app platform entitlement files declare CloudKit, silent remote
+notifications and that container; `project.yml` explicitly links the system framework.
 Watch and Top Shelf do not independently activate playlist sync.
 
 Register the container with team `QS3GC3CT43`, enable iCloud/CloudKit and Push Notifications for the main
@@ -257,3 +265,5 @@ Accounts settings (or provide working provisioning authentication), enable the
 listed capabilities/container, then regenerate profiles and run signed acceptance.
 No successful capability grant, profile refresh, production schema deployment or
 physical sync is claimed by these attempts.
+
+Native-list ownership and current validation are tracked in [the implementation ledger](../Reviews/2026-10-13-jellyfin-lists/IMPLEMENTATION.md). The signed provisioning and physical sync gates above remain open.

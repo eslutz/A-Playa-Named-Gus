@@ -10,6 +10,7 @@ struct VideoPlayerView: View {
     @Environment(PlaybackRefreshStore.self) private var playbackRefresh
     @Environment(OfflineDownloadStore.self) private var downloads
     @Environment(VideoPlaylistsStore.self) private var playlists
+    @Environment(ServerMediaListsStore.self) private var serverLists
     @Environment(\.dismiss) private var dismiss
     #if os(visionOS)
         @Environment(CinemaModel.self) private var cinema
@@ -95,6 +96,11 @@ struct VideoPlayerView: View {
                 .foregroundStyle(.white)
             }
         }
+        .safeAreaInset(edge: .top) {
+            if playlistID != nil {
+                SavedPlaylistErrorBanner()
+            }
+        }
         .accessibilityAction(.escape) {
             preparation?.cancel()
             if let store {
@@ -124,7 +130,7 @@ struct VideoPlayerView: View {
                 let store = PlaybackStore(item: item, session: session, playbackRefresh: playbackRefresh, downloads: downloads, localOnly: localOnly)
                 self.store = store
                 if let playlistID {
-                    playlist = VideoPlaylistPlaybackCoordinator(playlistID: playlistID, entryID: playlistEntryID, fromBeginning: playlistFromBeginning, playlists: playlists, session: session, downloads: downloads)
+                    playlist = VideoPlaylistPlaybackCoordinator(playlistID: playlistID, entryID: playlistEntryID, fromBeginning: playlistFromBeginning, playlists: playlists, session: session, downloads: downloads, serverLists: serverLists)
                 }
                 let task = Task {
                     if let playlist {

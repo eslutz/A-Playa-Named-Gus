@@ -136,6 +136,17 @@ protocol MediaProviderSession: AnyObject, Sendable {
     /// Updates saved item progress without inventing a live playback session.
     func updatePlaybackPosition(itemID: String, positionTicks: Int) async throws
 
+    // MARK: Native server playlists and collections
+
+    func mediaLists(kind: ServerMediaListKind) async throws -> [ServerMediaList]
+    func mediaList(id: UUID, kind: ServerMediaListKind) async throws -> ServerMediaList
+    func createMediaList(name: String, kind: ServerMediaListKind, itemIDs: [String]) async throws -> UUID
+    func renameMediaList(id: UUID, kind: ServerMediaListKind, name: String) async throws
+    func deleteMediaList(id: UUID, kind: ServerMediaListKind) async throws
+    func addToMediaList(id: UUID, kind: ServerMediaListKind, itemIDs: [String]) async throws
+    func removeFromMediaList(id: UUID, kind: ServerMediaListKind, entryIDs: [UUID]) async throws
+    func moveMediaListEntry(id: UUID, entryID: UUID, to index: Int) async throws
+
     // MARK: Book reading progress (gated by `capabilities.supportsBookProgressSync`)
 
     /// Reports EPUB reading position as a 0...1 fraction through the book, so it surfaces
@@ -147,6 +158,42 @@ protocol MediaProviderSession: AnyObject, Sendable {
 }
 
 extension MediaProviderSession {
+    func mediaLists(kind: ServerMediaListKind) async throws -> [ServerMediaList] {
+        throw unsupportedMediaLists()
+    }
+
+    func mediaList(id: UUID, kind: ServerMediaListKind) async throws -> ServerMediaList {
+        throw unsupportedMediaLists()
+    }
+
+    func createMediaList(name: String, kind: ServerMediaListKind, itemIDs: [String]) async throws -> UUID {
+        throw unsupportedMediaLists()
+    }
+
+    func renameMediaList(id: UUID, kind: ServerMediaListKind, name: String) async throws {
+        throw unsupportedMediaLists()
+    }
+
+    func deleteMediaList(id: UUID, kind: ServerMediaListKind) async throws {
+        throw unsupportedMediaLists()
+    }
+
+    func addToMediaList(id: UUID, kind: ServerMediaListKind, itemIDs: [String]) async throws {
+        throw unsupportedMediaLists()
+    }
+
+    func removeFromMediaList(id: UUID, kind: ServerMediaListKind, entryIDs: [UUID]) async throws {
+        throw unsupportedMediaLists()
+    }
+
+    func moveMediaListEntry(id: UUID, entryID: UUID, to index: Int) async throws {
+        throw unsupportedMediaLists()
+    }
+
+    private func unsupportedMediaLists() -> GusError {
+        GusError.server(String(localized: "This server does not support playlists and collections.", comment: "Unsupported native media lists"))
+    }
+
     /// Fallback for providers without server pagination. Request the prefix needed
     /// by this page so compatibility does not introduce a hidden fixed ceiling.
     func resumeItemsPage(startIndex: Int, limit: Int) async throws -> MediaItemPage {
