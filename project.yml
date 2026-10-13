@@ -20,6 +20,11 @@ options:
   groupSortPosition: top
   generateEmptyDirectories: true
 
+settings:
+  base:
+    SWIFT_TREAT_WARNINGS_AS_ERRORS: YES
+    GCC_TREAT_WARNINGS_AS_ERRORS: YES
+
 configs:
   Debug: debug
   Release: release
@@ -134,6 +139,7 @@ targets:
       # DiskSpace via downloads), so it carries the same privacy manifest as the app.
       - path: Resources/PrivacyInfo.xcprivacy
     dependencies:
+      - sdk: AppIntents.framework
       - package: JellyfinSDK
         product: JellyfinAPI
     settings:

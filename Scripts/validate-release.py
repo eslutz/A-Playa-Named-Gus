@@ -18,6 +18,13 @@ import sys
 import time
 
 
+def diagnostic_lines(text):
+    """Match build diagnostics while excluding timestamped runtime service logs."""
+    pattern = (r"^(?:.+:\d+(?::\d+)?:\s*|[^:\n]+:\s*)?(?:warning|error):|"
+               r"(?:appintentsmetadataprocessor|appintentsnltraining).*\b(?:warning|error):")
+    return [line for line in text.splitlines() if re.search(pattern, line, re.IGNORECASE)]
+
+
 def run(command, root, output, name, results, env=None, timeout=3600):
     print(f"Starting {name}", flush=True)
     started = time.monotonic()
@@ -45,6 +52,10 @@ def run(command, root, output, name, results, env=None, timeout=3600):
             if code == 0 and (summary.get("skippedTests", 0) or summary.get("expectedFailures", 0)
                               or summary.get("failedTests", 0) or not summary.get("totalTestCount", 0)):
                 code = entry["exitCode"] = 1
+    diagnostics = diagnostic_lines(log.read_text(errors="replace"))
+    entry["diagnostics"] = diagnostics
+    if diagnostics:
+        code = entry["exitCode"] = 1
     results.append(entry)
     (output / "results.json").write_text(json.dumps(results, indent=2) + "\n")
     print(f"{name}: {'PASS' if code == 0 else 'FAIL'} ({entry['seconds']} s)", flush=True)
@@ -90,6 +101,7 @@ def static_checks(root, output, results):
         ("api-format", ["swiftformat", "Scripts/app-store-connect.swift", "--lint", "--cache", "ignore"]),
         ("cloud-bootstrap", ["python3", "Scripts/test-cloud-bootstrap.py"]),
         ("project-pins", ["python3", "Scripts/check-cloud-project.py"]),
+        ("warning-gate-tests", [sys.executable, "Scripts/test-release-warning-gate.py"]),
         ("asc-self-test", ["swift", "Scripts/app-store-connect.swift", "self-test"]),
         ("whitespace", ["git", "diff", "--check"]),
         ("yaml", ["ruby", "-ryaml", "-e", "(Dir['.github/workflows/*.yml'] + ['project.yml']).each { |p| YAML.load_file(p) }"]),

@@ -49,6 +49,7 @@ jobs:
       - name: Verify release tooling offline
         run: |
           python3 Scripts/test-cloud-bootstrap.py
+          python3 Scripts/test-release-warning-gate.py
           python3 Scripts/check-app-icons.py
           swift Scripts/app-store-connect.swift self-test
 
@@ -145,12 +146,12 @@ jobs:
         run: python3 Scripts/check-cloud-project.py
 
       - name: Resolve packages
-        run: xcodebuild -onlyUsePackageVersionsFromResolvedFile -resolvePackageDependencies -project 'A Playa Named Gus.xcodeproj' -scheme 'A Playa Named Gus'
+        run: python3 Scripts/run-warning-free.py xcodebuild -onlyUsePackageVersionsFromResolvedFile -resolvePackageDependencies -project 'A Playa Named Gus.xcodeproj' -scheme 'A Playa Named Gus'
 
       - name: Build ${{ matrix.name }}
         # Compile validation does not require production capability profiles.
         # Xcode Cloud owns provisioned distribution signing and release tests.
-        run: xcodebuild -project 'A Playa Named Gus.xcodeproj' -scheme '${{ matrix.scheme || 'A Playa Named Gus' }}' -destination '${{ matrix.destination }}' CODE_SIGNING_ALLOWED=NO build
+        run: python3 Scripts/run-warning-free.py xcodebuild -project 'A Playa Named Gus.xcodeproj' -scheme '${{ matrix.scheme || 'A Playa Named Gus' }}' -destination '${{ matrix.destination }}' CODE_SIGNING_ALLOWED=NO build
 
   test:
     name: Test ${{ matrix.name }}
@@ -228,7 +229,7 @@ jobs:
           printf 'CODE_SIGN_ENTITLEMENTS[sdk=macosx*] = %s\n' "$RUNNER_TEMP/gus-macos-unit.entitlements" > Config/Local.xcconfig
 
       - name: Resolve packages
-        run: xcodebuild -onlyUsePackageVersionsFromResolvedFile -resolvePackageDependencies -project 'A Playa Named Gus.xcodeproj' -scheme '${{ matrix.scheme }}'
+        run: python3 Scripts/run-warning-free.py xcodebuild -onlyUsePackageVersionsFromResolvedFile -resolvePackageDependencies -project 'A Playa Named Gus.xcodeproj' -scheme '${{ matrix.scheme }}'
 
       - name: Pick visionOS simulator
         id: vision-sim
@@ -252,7 +253,7 @@ jobs:
           if [ '${{ matrix.name }}' = 'visionOS' ]; then
             destination='${{ steps.vision-sim.outputs.destination }}'
           fi
-          xcodebuild test -project 'A Playa Named Gus.xcodeproj' -scheme '${{ matrix.scheme }}' -destination "$destination"
+          python3 Scripts/run-warning-free.py xcodebuild test -project 'A Playa Named Gus.xcodeproj' -scheme '${{ matrix.scheme }}' -destination "$destination"
 
       - name: Diagnose Mac unit test launch failure
         if: failure() && matrix.name == 'macOS'
