@@ -964,3 +964,12 @@ October 12 pipeline policy supersedes direct-main publication: main now requires
 - [~] Ordered movie/episode/video playback and persistent cursors apply only to all-video playlists, independently of normal episode autoplay. Existing audio playlists remain visible and open the audio player; mixed-media entries open individually. Collections group titles and do not form autoplay queues.
 - [~] Private CloudKit synchronizes supplemental Gus playlist cursors, saved Next Up intent and activity, rather than native list definitions. Previous Gus-owned playlists remain preserved and can be explicitly imported into Jellyfin; import refuses legacy lists with repeated items rather than silently collapsing them. Credentials, server URLs, signed artwork and downloaded files remain excluded.
 - [ ] Signed iCloud container/provisioning and physical iPhone → Apple TV sync, offline/reconnect, playback/cursor and accessibility acceptance. Native list implementation and validation are tracked in [the implementation ledger](Reviews/2026-10-13-jellyfin-lists/IMPLEMENTATION.md); no release acceptance is claimed.
+
+## Native tvOS presentation — local feature candidate
+
+- [~] Native sidebar and dedicated Search; cinematic focus-driven unified Next Up and recently-added fallback, adaptive TV grids, TV detail composition and direct Account menu.
+- [~] Session-owned identity/index focus bookmarks plus horizontal scroll restoration; poster progress/watched accessibility values and full-synopsis sheet.
+- [~] Native AVKit display matching, Playback Info/Next Episode, single TV video Now Playing owner, background pause and pause/rate-preserving server track rebuilds.
+- [ ] Compatible tvOS 27 runtime capture and remote-only focus, Back/Menu, repeated/cancelled account/playback flows; physical VoiceOver/HDR/audio and signed private-sync acceptance remain open.
+
+Based on merged PR #21 (`c847a27`): Jellyfin owns playlists and collections; unique native membership, permissions and explicit legacy import remain unchanged. No duplicate-entry queue product is introduced. Local implementation and evidence: [TV redesign](Reviews/2026-10-13-tvos-redesign/IMPLEMENTATION.md). No publication or release acceptance is claimed.

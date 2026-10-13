@@ -39,6 +39,13 @@ struct RootContainer: View {
                 session.references.beginRefresh()
                 await state.refreshCachedContent()
             }
+            .onChange(of: navigation.searchFocusRequest, initial: true) { _, request in
+                #if os(tvOS)
+                    if request > 0 {
+                        state.selectedSectionID = "gus.tv.search"
+                    }
+                #endif
+            }
             .onChange(of: navigation.routeRequest) { _, _ in state.adopt(navigation.route) }
             .onChange(of: state.selectedSectionID) { _, id in storedSelection = id }
             .environment(state)
@@ -58,7 +65,7 @@ struct RootContainer: View {
         #if os(iOS)
             AdaptiveRootView()
         #elseif os(tvOS)
-            TabRootView()
+            TabRootView().tabViewStyle(.sidebarAdaptable).gusTVBrowsingBackdrop()
         #elseif os(visionOS)
             TabRootView().tabViewStyle(.sidebarAdaptable)
         #else
@@ -109,12 +116,15 @@ private struct TabRootView: View {
 
     private var selection: Binding<String> {
         Binding(get: {
-            direct.contains { $0.id == state.selectedSectionID } ? state.selectedSectionID : RootNavigationState.moreID
+            (direct.contains { $0.id == state.selectedSectionID } || state.selectedSectionID == "gus.tv.search") ? state.selectedSectionID : RootNavigationState.moreID
         }, set: { state.selectedSectionID = $0 })
     }
 
     var body: some View {
         TabView(selection: selection) {
+            #if os(tvOS)
+                Tab("Search", systemImage: "magnifyingglass", value: "gus.tv.search", role: .search) { SectionStack(sectionID: "gus.tv.search") }
+            #endif
             ForEach(direct) { section in
                 Tab(value: section.id) { SectionStack(sectionID: section.id) } label: { Label(section.title, systemImage: section.systemImage) }
             }
@@ -169,7 +179,11 @@ private struct SectionStack: View {
         let home = state.home
         NavigationStack(path: state.pathBinding(for: sectionID)) {
             Group {
-                if sectionID == RootNavigationState.moreID {
+                if sectionID == "gus.tv.search" {
+                    SearchRootView(state: state.searchState(for: sectionID, session: session)) {
+                        ContentUnavailableView("Search Library", systemImage: "magnifyingglass")
+                    }
+                } else if sectionID == RootNavigationState.moreID {
                     List(overflow.isEmpty ? sections : overflow) { section in
                         Button { state.selectedSectionID = section.id } label: { Label(section.title, systemImage: section.systemImage) }
                     }
@@ -178,15 +192,20 @@ private struct SectionStack: View {
                     if section.id == NavigationSectionPreference.downloadedID {
                         DownloadedLibraryView()
                     } else {
-                        SearchRootView(state: state.searchState(for: section.id, session: session)) {
+                        #if os(tvOS)
                             RootSectionDestination(section: section, home: home)
-                        }
+                        #else
+                            SearchRootView(state: state.searchState(for: section.id, session: session)) {
+                                RootSectionDestination(section: section, home: home)
+                            }
+                        #endif
                     }
                 } else {
                     HomeView(store: home)
                 }
             }
             .gusItemDestinations()
+            .gusTVAccountMenu()
             .toolbar {
                 if !overflow.isEmpty, sectionID != RootNavigationState.moreID, state.paths[sectionID]?.isEmpty != false {
                     ToolbarItem(placement: .cancellationAction) {

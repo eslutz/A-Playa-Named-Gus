@@ -1,0 +1,52 @@
+[
+  {
+    "lane": "mac-tests",
+    "scheme": "Gus macOS Unit Tests",
+    "destination": "platform=macOS",
+    "action": "test",
+    "developer": "/Applications/Development/Xcode.app/Contents/Developer",
+    "exitCode": 0,
+    "log": "/tmp/gus-tv-accepted-mac-tests.log",
+    "excerpt": "mac-tests.log"
+  },
+  {
+    "lane": "tv-tests-compile",
+    "scheme": "Gus tvOS Tests",
+    "destination": "generic/platform=tvOS Simulator",
+    "action": "build-for-testing",
+    "developer": "/Applications/Development/Xcode-27.1-RC.app/Contents/Developer",
+    "exitCode": 0,
+    "log": "/tmp/gus-tv-accepted-tv-tests-compile.log",
+    "excerpt": "tv-tests-compile.log"
+  },
+  {
+    "lane": "ios",
+    "scheme": "A Playa Named Gus",
+    "destination": "generic/platform=iOS Simulator",
+    "action": "build",
+    "developer": "/Applications/Development/Xcode-27.1-RC.app/Contents/Developer",
+    "exitCode": 0,
+    "log": "/tmp/gus-tv-accepted-ios.log",
+    "excerpt": "ios.log"
+  },
+  {
+    "lane": "vision",
+    "scheme": "A Playa Named Gus",
+    "destination": "generic/platform=visionOS Simulator",
+    "action": "build",
+    "developer": "/Applications/Development/Xcode-27.1-RC.app/Contents/Developer",
+    "exitCode": 0,
+    "log": "/tmp/gus-tv-accepted-vision.log",
+    "excerpt": "vision.log"
+  },
+  {
+    "lane": "watch",
+    "scheme": "Gus watchOS",
+    "destination": "generic/platform=watchOS Simulator",
+    "action": "build",
+    "developer": "/Applications/Development/Xcode-27.1-RC.app/Contents/Developer",
+    "exitCode": 0,
+    "log": "/tmp/gus-tv-accepted-watch.log",
+    "excerpt": "watch.log"
+  }
+]

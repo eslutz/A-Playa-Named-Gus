@@ -8,6 +8,8 @@ final class RootNavigationState {
     var selectedSectionID = NavigationSectionPreference.homeID
     var paths: [String: NavigationPath] = [:]
     var scrollAnchors: [String: String] = [:]
+    /// Owned by this signed-in tree, so another account never inherits focus.
+    var tvFocus = TVFocusMemory()
     var home: HomeStore?
     var playerItem: ItemRef?
     var detailItem: ItemRef?

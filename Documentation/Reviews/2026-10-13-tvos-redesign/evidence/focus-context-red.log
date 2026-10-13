@@ -1,0 +1,2 @@
+Standalone production resolver harness: FAIL: child detail focus must not overwrite parent Home restoration
+After per-context memory correction: exit 0. Covered by TVFocusRestorationTests.screenContexts.

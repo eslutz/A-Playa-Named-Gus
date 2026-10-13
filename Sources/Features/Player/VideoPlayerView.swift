@@ -12,6 +12,7 @@ struct VideoPlayerView: View {
     @Environment(VideoPlaylistsStore.self) private var playlists
     @Environment(ServerMediaListsStore.self) private var serverLists
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.scenePhase) private var scenePhase
     #if os(visionOS)
         @Environment(CinemaModel.self) private var cinema
         @Environment(\.openImmersiveSpace) private var openImmersiveSpace
@@ -101,6 +102,7 @@ struct VideoPlayerView: View {
                 SavedPlaylistErrorBanner()
             }
         }
+        .gusTVVideoLifecycle(store: store)
         .accessibilityAction(.escape) {
             preparation?.cancel()
             if let store {
@@ -128,6 +130,7 @@ struct VideoPlayerView: View {
         .task(id: retryGeneration) {
             if store == nil {
                 let store = PlaybackStore(item: item, session: session, playbackRefresh: playbackRefresh, downloads: downloads, localOnly: localOnly)
+                store.gusSetTVPresentationActive(scenePhase == .active)
                 self.store = store
                 if let playlistID {
                     playlist = VideoPlaylistPlaybackCoordinator(playlistID: playlistID, entryID: playlistEntryID, fromBeginning: playlistFromBeginning, playlists: playlists, session: session, downloads: downloads, serverLists: serverLists)

@@ -1,7 +1,13 @@
 import CoreGraphics
 
 enum PageContentMetrics {
-    static let maxWidth: CGFloat = 1320
+    static var maxWidth: CGFloat {
+        #if os(tvOS)
+            .infinity
+        #else
+            1320
+        #endif
+    }
 }
 
 enum AboutCardMetrics {

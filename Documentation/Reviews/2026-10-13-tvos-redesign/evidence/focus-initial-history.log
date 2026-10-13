@@ -1,0 +1,2 @@
+Before correction: FAIL: newly loaded rail must not steal focus from existing screen history
+After correction: standalone production harness exits 0; covered by TVFocusRestorationTests.screenContexts.
