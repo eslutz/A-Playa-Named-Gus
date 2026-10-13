@@ -123,7 +123,7 @@ enum ContentRatingGate {
 
         // Library containers and folders stay visible so navigation keeps working.
         switch item.type {
-        case .collectionFolder, .folder, .musicArtist, .musicAlbum, .playlist, .photo, nil:
+        case .boxSet, .collectionFolder, .folder, .musicArtist, .musicAlbum, .playlist, .photo, nil:
             return true
         default:
             break

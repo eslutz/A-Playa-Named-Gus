@@ -7,6 +7,8 @@ import SwiftUI
 struct RootView: View {
     @Environment(AppModel.self) private var appModel
     @Environment(UpNextStore.self) private var upNext
+    @Environment(VideoPlaylistsStore.self) private var videoPlaylists
+    @Environment(ServerMediaListsStore.self) private var serverLists
     @Environment(OfflineDownloadStore.self) private var downloads
     @State private var audio = AudioPlaybackCoordinator()
     @Environment(\.scenePhase) private var scenePhase
@@ -14,7 +16,7 @@ struct RootView: View {
     var body: some View {
         content
             .environment(audio)
-            .onChange(of: activeAccount) { _, _ in audio.stop() }
+            .onChange(of: activeAccount) { _, _ in audio.stop(); videoPlaylists.deactivate(); serverLists.deactivate() }
     }
 
     private var activeAccount: AccountScope? {
@@ -24,11 +26,21 @@ struct RootView: View {
     @ViewBuilder private var content: some View {
         if let session = appModel.currentSession {
             RootContainer()
+                .task(id: videoPlaylists.revision) {
+                    upNext.reconcileSyncedIntents(scope: session.references.scope)
+                    NextUpActivityStore.shared.reconcile(scope: session.references.scope)
+                }
                 .id(SessionCredential(user: session.user).account)
                 .environment(session)
                 .task(id: scenePhase) {
                     guard scenePhase == .active else { return }
+                    await videoPlaylists.activate(scope: session.references.scope)
+                    upNext.reconcileSyncedIntents(scope: session.references.scope)
+                    NextUpActivityStore.shared.reconcile(scope: session.references.scope)
                     await upNext.refresh(session: session)
+                    guard !Task.isCancelled, activeAccount == session.references.scope else { return }
+                    serverLists.load(scope: session.references.scope)
+                    await serverLists.refresh(session: session)
                 }
                 .task(id: scenePhase) {
                     downloads.load(serverID: session.server.id, userID: session.user.id)

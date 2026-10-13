@@ -148,7 +148,9 @@ jobs:
         run: xcodebuild -onlyUsePackageVersionsFromResolvedFile -resolvePackageDependencies -project 'A Playa Named Gus.xcodeproj' -scheme 'A Playa Named Gus'
 
       - name: Build ${{ matrix.name }}
-        run: xcodebuild -project 'A Playa Named Gus.xcodeproj' -scheme '${{ matrix.scheme || 'A Playa Named Gus' }}' -destination '${{ matrix.destination }}' build
+        # Compile validation does not require production capability profiles.
+        # Xcode Cloud owns provisioned distribution signing and release tests.
+        run: xcodebuild -project 'A Playa Named Gus.xcodeproj' -scheme '${{ matrix.scheme || 'A Playa Named Gus' }}' -destination '${{ matrix.destination }}' CODE_SIGNING_ALLOWED=NO build
 
   test:
     name: Test ${{ matrix.name }}

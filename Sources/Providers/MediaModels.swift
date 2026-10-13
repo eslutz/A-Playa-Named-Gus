@@ -5,6 +5,7 @@ enum MediaItemType: String, Codable, Hashable, Sendable {
     case episode
     case series
     case season
+    case boxSet
     case collectionFolder
     case folder
     case trailer
@@ -87,19 +88,23 @@ struct MediaUserData: Codable, Hashable, Sendable {
     var isWatched: Bool?
     /// Whether the user has marked this item as a favourite on the server.
     var isFavorite: Bool?
+    /// Genuine server playback activity; absent for older or unplayed records.
+    var lastPlayedAt: Date?
 
     private enum CodingKeys: String, CodingKey {
         case playbackPositionTicks
         case playedPercentage
         case isWatched
         case isFavorite
+        case lastPlayedAt
     }
 
-    init(playbackPositionTicks: Int? = nil, playedPercentage: Double? = nil, isWatched: Bool? = nil, isFavorite: Bool? = nil) {
+    init(playbackPositionTicks: Int? = nil, playedPercentage: Double? = nil, isWatched: Bool? = nil, isFavorite: Bool? = nil, lastPlayedAt: Date? = nil) {
         self.playbackPositionTicks = playbackPositionTicks
         self.playedPercentage = playedPercentage
         self.isWatched = isWatched
         self.isFavorite = isFavorite
+        self.lastPlayedAt = lastPlayedAt
     }
 
     init(from decoder: Decoder) throws {
@@ -108,6 +113,7 @@ struct MediaUserData: Codable, Hashable, Sendable {
         playedPercentage = try container.decodeIfPresent(Double.self, forKey: .playedPercentage)
         isWatched = try container.decodeIfPresent(Bool.self, forKey: .isWatched)
         isFavorite = try container.decodeIfPresent(Bool.self, forKey: .isFavorite)
+        lastPlayedAt = try container.decodeIfPresent(Date.self, forKey: .lastPlayedAt)
     }
 }
 

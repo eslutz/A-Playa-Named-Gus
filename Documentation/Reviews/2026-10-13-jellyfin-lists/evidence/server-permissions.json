@@ -1,0 +1,23 @@
+{
+  "version": "10.11.11",
+  "ownerSeesShare": [
+    {
+      "UserId": "1cd39cf97f3b4ffc9c9c7caffa887e2d",
+      "CanEdit": false
+    }
+  ],
+  "readonlyPermission": false,
+  "readonlyCount": 2,
+  "readonlyRename": 403,
+  "readonlyAdd": 403,
+  "readonlyMove": 403,
+  "readonlyRemove": 403,
+  "collectionRename": 200,
+  "collectionName": "Codex ACL Collection Renamed",
+  "collectionAdd": 200,
+  "collectionCount": 2,
+  "collectionRemove": 200,
+  "collectionRemaining": 1,
+  "blockedCollectionAdd": 403,
+  "blockedCollectionRemove": 403
+}

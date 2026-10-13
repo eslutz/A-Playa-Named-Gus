@@ -8,8 +8,14 @@ import Foundation
 final class FakeMediaProviderSession: MediaProviderSession {
     let providerKind: MediaProviderKind = .jellyfin
     let capabilities: ProviderCapabilities
+    var userViewsHandler: (() async throws -> [MediaItem])?
+    var resumePageHandler: ((Int, Int) async throws -> MediaItemPage)?
+    var nextPageHandler: ((Int, Int) async throws -> MediaItemPage)?
+    var latestHandler: ((MediaItem) async throws -> [MediaItem])?
     var itemsHandler: ((MediaItemQuery) async throws -> MediaItemPage)?
     var itemHandler: ((String) async throws -> MediaItem)?
+    var similarItemsHandler: ((String) async throws -> [MediaItem])?
+    var specialFeaturesHandler: ((String) async throws -> [MediaItem])?
     var episodesHandler: ((String) async throws -> MediaItemPage)?
     var seasonsHandler: (() async throws -> [MediaItem])?
     var progressHandler: ((String, Int) async throws -> Void)?
@@ -17,6 +23,14 @@ final class FakeMediaProviderSession: MediaProviderSession {
     var favoriteHandler: (() async throws -> Void)?
     var audioHandler: (() async throws -> PlaybackSourceResolution)?
     var playbackHandler: (() async throws -> PlaybackSourceResolution)?
+    var mediaListsHandler: ((ServerMediaListKind) async throws -> [ServerMediaList])?
+    var mediaListHandler: ((UUID, ServerMediaListKind) async throws -> ServerMediaList)?
+    var createMediaListHandler: ((String, ServerMediaListKind, [String]) async throws -> UUID)?
+    var renameMediaListHandler: ((UUID, ServerMediaListKind, String) async throws -> Void)?
+    var deleteMediaListHandler: ((UUID, ServerMediaListKind) async throws -> Void)?
+    var addToMediaListHandler: ((UUID, ServerMediaListKind, [String]) async throws -> Void)?
+    var removeFromMediaListHandler: ((UUID, ServerMediaListKind, [UUID]) async throws -> Void)?
+    var moveMediaListEntryHandler: ((UUID, UUID, Int) async throws -> Void)?
     var downloadSourceCallCount = 0
     var playbackResolutionCallCount = 0
     var audioResolutionCallCount = 0
@@ -28,12 +42,46 @@ final class FakeMediaProviderSession: MediaProviderSession {
         self.capabilities = capabilities
     }
 
+    func mediaLists(kind: ServerMediaListKind) async throws -> [ServerMediaList] {
+        try await mediaListsHandler?(kind) ?? []
+    }
+
+    func mediaList(id: UUID, kind: ServerMediaListKind) async throws -> ServerMediaList {
+        guard let mediaListHandler else { throw GusError.notFound }
+        return try await mediaListHandler(id, kind)
+    }
+
+    func createMediaList(name: String, kind: ServerMediaListKind, itemIDs: [String]) async throws -> UUID {
+        guard let createMediaListHandler else { throw GusError.notFound }
+        return try await createMediaListHandler(name, kind, itemIDs)
+    }
+
+    func renameMediaList(id: UUID, kind: ServerMediaListKind, name: String) async throws {
+        try await renameMediaListHandler?(id, kind, name)
+    }
+
+    func deleteMediaList(id: UUID, kind: ServerMediaListKind) async throws {
+        try await deleteMediaListHandler?(id, kind)
+    }
+
+    func addToMediaList(id: UUID, kind: ServerMediaListKind, itemIDs: [String]) async throws {
+        try await addToMediaListHandler?(id, kind, itemIDs)
+    }
+
+    func removeFromMediaList(id: UUID, kind: ServerMediaListKind, entryIDs: [UUID]) async throws {
+        try await removeFromMediaListHandler?(id, kind, entryIDs)
+    }
+
+    func moveMediaListEntry(id: UUID, entryID: UUID, to index: Int) async throws {
+        try await moveMediaListEntryHandler?(id, entryID, index)
+    }
+
     func updatePlaybackPosition(itemID: String, positionTicks: Int) async throws {
         try await progressHandler?(itemID, positionTicks)
     }
 
     func userViews() async throws -> [MediaItem] {
-        []
+        try await userViewsHandler?() ?? []
     }
 
     func resumeItems(limit: Int) async throws -> [MediaItem] {
@@ -45,8 +93,23 @@ final class FakeMediaProviderSession: MediaProviderSession {
         return []
     }
 
+    func resumeItemsPage(startIndex: Int, limit: Int) async throws -> MediaItemPage {
+        if let resumePageHandler {
+            return try await resumePageHandler(startIndex, limit)
+        }
+        return MediaItemPage(items: [], totalRecordCount: 0)
+    }
+
+    func nextUpItemsPage(startIndex: Int, limit: Int) async throws -> MediaItemPage {
+        if let nextPageHandler {
+            return try await nextPageHandler(startIndex, limit)
+        }
+        nextUpCallCount += 1
+        return MediaItemPage(items: [], totalRecordCount: 0)
+    }
+
     func latestMedia(in library: MediaItem, limit: Int) async throws -> [MediaItem] {
-        []
+        try await latestHandler?(library) ?? []
     }
 
     func items(query: MediaItemQuery) async throws -> MediaItemPage {
@@ -64,11 +127,11 @@ final class FakeMediaProviderSession: MediaProviderSession {
     }
 
     func similarItems(itemID: String, limit: Int) async throws -> [MediaItem] {
-        []
+        try await similarItemsHandler?(itemID) ?? []
     }
 
     func specialFeatures(itemID: String) async throws -> [MediaItem] {
-        []
+        try await specialFeaturesHandler?(itemID) ?? []
     }
 
     func seasons(seriesID: String) async throws -> [MediaItem] {

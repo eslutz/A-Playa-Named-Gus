@@ -23,6 +23,7 @@ final class ItemDetailStore {
     private let session: SessionStore
     private let logger = Logger(category: .item)
     private var loadGeneration = 0
+    @ObservationIgnored private var relatedContentTask: Task<Void, Never>?
 
     init(item: MediaItem, session: SessionStore) {
         self.item = item
@@ -31,6 +32,7 @@ final class ItemDetailStore {
 
     func load() async {
         guard state != .loading else { return }
+        relatedContentTask?.cancel()
         loadGeneration += 1
         let generation = loadGeneration
         state = .loading
@@ -45,13 +47,6 @@ final class ItemDetailStore {
 
             state = .loaded
             await loadRelatedContent(for: item, generation: generation)
-            guard generation == loadGeneration, !Task.isCancelled else { return }
-
-            if item.type == .series {
-                let store = SeriesDetailStore(series: item, session: session)
-                seriesStore = store
-                await store.loadSeasons()
-            }
         } catch {
             guard generation == loadGeneration else { return }
             let gusError = GusError(from: error)
@@ -64,11 +59,17 @@ final class ItemDetailStore {
     func acceptResolvedMetadata(_ current: MediaItem) {
         guard !isUpdatingUserData else { return }
         if item.id != current.id {
+            relatedContentTask?.cancel()
             loadGeneration += 1
             similarItems = []
             specialFeatures = []
             seriesStore = nil
             state = .loaded
+            item = current
+            let generation = loadGeneration
+            relatedContentTask = Task { [weak self] in
+                await self?.loadRelatedContent(for: current, generation: generation)
+            }
         } else if case .failed = state {
             state = .loaded
         }
@@ -132,9 +133,14 @@ final class ItemDetailStore {
         async let special = loadSpecialFeatures(for: item)
 
         let (loadedSimilar, loadedSpecial) = await(similar, special)
-        guard generation == loadGeneration, !Task.isCancelled else { return }
+        guard generation == loadGeneration, !Task.isCancelled, session.references.isActive else { return }
         similarItems = ContentRatingGate.filter(loadedSimilar)
         specialFeatures = ContentRatingGate.filter(loadedSpecial)
+        if item.type == .series {
+            let store = SeriesDetailStore(series: item, session: session)
+            seriesStore = store
+            await store.loadSeasons()
+        }
     }
 
     private func loadSimilarItems(for item: MediaItem) async -> [MediaItem] {

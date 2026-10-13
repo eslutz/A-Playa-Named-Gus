@@ -122,7 +122,9 @@ final class MediaReferenceResolver {
                 throw GusError.notFound
             }
             let a = Self.identities(saved), b = Self.identities(current)
-            if a.contains(where: { b[$0.key] != nil && b[$0.key] != $0.value }) {
+            // An old locator can be reused. Missing or unrelated namespaces do
+            // not prove that this is still the saved title.
+            if !a.isEmpty, !a.contains(where: { b[$0.key] == $0.value }) || a.contains(where: { b[$0.key] != nil && b[$0.key] != $0.value }) {
                 throw GusError.notFound
             }
             return .resolved(current)

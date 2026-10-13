@@ -24,7 +24,7 @@ struct NavigationPreferencesTests {
         let store = Self.makeStore()
         let sections = store.resolvedSections(libraries: Self.libraries, serverID: "s", userID: "u")
 
-        #expect(sections.filter { $0.id != "downloaded" }.map(\.id) == [
+        #expect(sections.filter { $0.id != "downloaded" && $0.id != "playlists" }.map(\.id) == [
             "home",
             "libraries",
             "category.movies",
@@ -35,7 +35,7 @@ struct NavigationPreferencesTests {
             "category.photos",
             "category.livetv",
         ])
-        #expect(store.visibleSections(libraries: Self.libraries, serverID: "s", userID: "u").filter { $0.id != "downloaded" }.map(\.id) == [
+        #expect(store.visibleSections(libraries: Self.libraries, serverID: "s", userID: "u").filter { $0.id != "downloaded" && $0.id != "playlists" }.map(\.id) == [
             "home",
             "libraries",
             "category.movies",
@@ -43,7 +43,7 @@ struct NavigationPreferencesTests {
             "category.music",
             "settings",
         ])
-        #expect(store.hiddenSections(libraries: Self.libraries, serverID: "s", userID: "u").filter { $0.id != "downloaded" }.map(\.id) == [
+        #expect(store.hiddenSections(libraries: Self.libraries, serverID: "s", userID: "u").filter { $0.id != "downloaded" && $0.id != "playlists" }.map(\.id) == [
             "category.books",
             "category.photos",
             "category.livetv",
@@ -88,11 +88,11 @@ struct NavigationPreferencesTests {
         store.setVisibility(true, forSectionID: "category.books", libraries: Self.libraries, serverID: "s", userID: "u")
 
         #expect(
-            store.visibleSections(libraries: Self.libraries, serverID: "s", userID: "u").filter { $0.id != "downloaded" }.map(\.id)
+            store.visibleSections(libraries: Self.libraries, serverID: "s", userID: "u").filter { $0.id != "downloaded" && $0.id != "playlists" }.map(\.id)
                 == ["home", "libraries", "category.movies", "category.music", "settings", "category.books"]
         )
         #expect(
-            store.hiddenSections(libraries: Self.libraries, serverID: "s", userID: "u").filter { $0.id != "downloaded" }.map(\.id)
+            store.hiddenSections(libraries: Self.libraries, serverID: "s", userID: "u").filter { $0.id != "downloaded" && $0.id != "playlists" }.map(\.id)
                 == ["category.tvshows", "category.photos", "category.livetv"]
         )
         #expect(
@@ -102,14 +102,19 @@ struct NavigationPreferencesTests {
     }
 
     @Test("hiding and reordering persist and round-trip through resolution")
-    func hideAndReorder() {
+    func hideAndReorder() throws {
         let store = Self.makeStore()
         store.setVisibility(false, forSectionID: "category.tvshows", libraries: Self.libraries, serverID: "s", userID: "u")
-        store.move(sectionID: "category.music", by: DownloadsAvailability.isSupported ? -3 : -2, libraries: Self.libraries, serverID: "s", userID: "u")
+        // Required sections vary by platform and now include Playlists. Move
+        // Music before Libraries without assuming their numeric positions.
+        let movable = store.visibleSections(libraries: Self.libraries, serverID: "s", userID: "u").filter(\.canMove)
+        let musicIndex = try #require(movable.firstIndex { $0.id == "category.music" })
+        let librariesIndex = try #require(movable.firstIndex { $0.id == "libraries" })
+        store.move(sectionID: "category.music", by: librariesIndex - musicIndex, libraries: Self.libraries, serverID: "s", userID: "u")
         store.move(sectionID: "settings", by: -1, libraries: Self.libraries, serverID: "s", userID: "u")
 
         let sections = store.resolvedSections(libraries: Self.libraries, serverID: "s", userID: "u")
-        #expect(sections.filter { $0.id != "downloaded" }.map(\.id) == [
+        #expect(sections.filter { $0.id != "downloaded" && $0.id != "playlists" }.map(\.id) == [
             "home",
             "category.music",
             "libraries",
@@ -121,7 +126,7 @@ struct NavigationPreferencesTests {
             "category.livetv",
         ])
         #expect(
-            store.visibleSections(libraries: Self.libraries, serverID: "s", userID: "u").filter { $0.id != "downloaded" }.map(\.id)
+            store.visibleSections(libraries: Self.libraries, serverID: "s", userID: "u").filter { $0.id != "downloaded" && $0.id != "playlists" }.map(\.id)
                 == ["home", "category.music", "libraries", "settings", "category.movies"]
         )
     }

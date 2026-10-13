@@ -14,6 +14,13 @@
 		A Playa Named Gus collects no data on behalf of the developer. Jellyfin credentials,
 		server URLs, tokens, media metadata, playback progress, and downloaded
 		files remain on-device or are sent to the user-selected Jellyfin server.
+        Jellyfin owns native playlist and collection names, IDs, membership,
+        playlist order and permissions. Gus caches these by server/account and
+        keeps durable offline edits locally until sent to that Jellyfin server.
+        When iCloud sync is enabled, supplemental Gus playlist cursors, saved
+        Next Up intent and activity synchronize to the user’s private CloudKit
+        database. Legacy Gus-owned playlist records remain preserved for explicit
+        import. Credentials, endpoints and downloaded files are excluded.
 	-->
 	<key>NSPrivacyCollectedDataTypes</key>
 	<array/>

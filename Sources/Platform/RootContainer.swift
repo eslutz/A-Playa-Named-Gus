@@ -207,6 +207,8 @@ private struct RootSectionDestination: View {
     var body: some View {
         if section.id == NavigationSectionPreference.homeID {
             HomeView(store: home)
+        } else if section.id == NavigationSectionPreference.playlistsID {
+            VideoPlaylistsView()
         } else if section.id == NavigationSectionPreference.settingsID {
             SettingsView()
         } else if let category = section.category {

@@ -106,6 +106,37 @@ struct MediaReferenceTests {
         guard case .unavailable = result else { Issue.record("A cached locator cannot change the saved identity"); return }
     }
 
+    @Test("a reused locator requires a positive saved identity match", arguments: [[:], ["Tvdb": "123"], ["Imdb": "tt456"], ["Imdb": "tt123", "Tmdb": "456"]])
+    func reusedLocatorWithoutIdentityMatch(externalIDs: [String: String]) async throws {
+        let provider = FakeMediaProviderSession(capabilities: ProviderCapabilities())
+        var saved = MediaItem(id: "old", type: .movie)
+        saved.externalIDs = ["Imdb": "tt123", "Tmdb": "123"]
+        var unrelated = saved
+        unrelated.externalIDs = externalIDs
+        // A different, matching locator is available after the old ID is rejected.
+        var replacement = saved
+        replacement.id = "new"
+        provider.itemHandler = { id in id == "old" ? unrelated : replacement }
+        provider.itemsHandler = { _ in MediaItemPage(items: [replacement], totalRecordCount: 1) }
+        let result = try await MediaReferenceResolver(provider: provider, scope: scope).resolve(MediaReference(item: saved, scope: scope))
+        guard case let .resolved(item) = result else { Issue.record("Expected identity recovery"); return }
+        #expect(item.id == "new")
+    }
+
+    @Test("matching saved identity still accepts the existing locator")
+    func matchingLocatorIdentity() async throws {
+        let provider = FakeMediaProviderSession(capabilities: ProviderCapabilities())
+        var saved = MediaItem(id: "old", type: .movie)
+        saved.externalIDs = ["Imdb": "tt123", "Tmdb": "123"]
+        var current = saved
+        current.externalIDs = ["imdb": " TT123 "]
+        provider.itemHandler = { _ in current }
+        provider.itemsHandler = { _ in Issue.record("A proven locator must not scan the catalog"); return MediaItemPage(items: [], totalRecordCount: 0) }
+        let result = try await MediaReferenceResolver(provider: provider, scope: scope).resolve(MediaReference(item: saved, scope: scope))
+        guard case let .resolved(item) = result else { Issue.record("Expected existing locator"); return }
+        #expect(item.id == "old")
+    }
+
     @Test("remote replacement resume never adopts original progress")
     func replacementResume() {
         let current = MediaItem(id: "new", type: .movie, userData: MediaUserData(playbackPositionTicks: 30))

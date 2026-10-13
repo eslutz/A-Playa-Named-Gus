@@ -30,13 +30,19 @@ struct ItemRef: Hashable, Identifiable, Codable {
     var localOnly: Bool? = nil
     var serverID: String? = nil
     var userID: String? = nil
+    var playlistID: UUID? = nil
+    var playlistEntryID: UUID? = nil
+    var playlistFromBeginning: Bool? = nil
     /// See LibraryRef.id — must stay stable across accesses.
     var id: String {
-        item.id ?? "untitled-\(item.name ?? item.type?.rawValue ?? "item")"
+        if let playlistID, let playlistEntryID {
+            return "playlist-\(playlistID)-\(playlistEntryID)"
+        }
+        return item.id ?? "untitled-\(item.name ?? item.type?.rawValue ?? "item")"
     }
 
     static func == (lhs: ItemRef, rhs: ItemRef) -> Bool {
-        lhs.id == rhs.id && lhs.serverID == rhs.serverID && lhs.userID == rhs.userID && lhs.localOnly == rhs.localOnly
+        lhs.id == rhs.id && lhs.serverID == rhs.serverID && lhs.userID == rhs.userID && lhs.localOnly == rhs.localOnly && lhs.playlistFromBeginning == rhs.playlistFromBeginning
     }
 
     func hash(into hasher: inout Hasher) {
@@ -44,5 +50,14 @@ struct ItemRef: Hashable, Identifiable, Codable {
         hasher.combine(serverID)
         hasher.combine(userID)
         hasher.combine(localOnly)
+        hasher.combine(playlistFromBeginning)
     }
+}
+
+struct VideoPlaylistRef: Hashable {
+    let id: UUID
+}
+
+struct MediaCollectionRef: Hashable {
+    let id: UUID
 }
