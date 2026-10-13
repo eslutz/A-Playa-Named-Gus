@@ -2,6 +2,7 @@ import SwiftUI
 
 /// Horizontal episode rail with a season picker, used in the series item detail screen.
 struct SeriesEpisodesView: View {
+    @Environment(RootNavigationState.self) private var root
     let store: SeriesDetailStore
 
     var body: some View {
@@ -35,12 +36,16 @@ struct SeriesEpisodesView: View {
                                     EpisodeCard(episode: episode)
                                         .frame(width: episodeCardWidth)
                                 }
+                                .id(ItemRef(item: episode).id)
                                 .posterNavigationStyle()
+                                .gusTVFocus(id: ItemRef(item: episode).id, section: "episodes:" + (store.selectedSeasonID ?? ""), ids: store.episodes.map { ItemRef(item: $0).id }, item: episode, context: "detail:" + ItemRef(item: store.series).id)
                             }
                         }
-                        .padding(.vertical, 4)
+                        .scrollTargetLayout()
+                        .gusTVRailPadding()
                         .tvFocusSection()
                     }
+                    .scrollPosition(id: root.scrollBinding(for: "episodes:" + (store.selectedSeasonID ?? "")))
                     .lookToScroll(.horizontal)
                 }
             }

@@ -1,6 +1,204 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+  "Codec": {
+    "comment": "Native tvOS presentation and playback interface.",
+    "localizations": {
+      "en": {
+        "stringUnit": {
+          "state": "translated",
+          "value": "Codec"
+        }
+      }
+    }
+  },
+  "Delivery": {
+    "comment": "Native tvOS presentation and playback interface.",
+    "localizations": {
+      "en": {
+        "stringUnit": {
+          "state": "translated",
+          "value": "Delivery"
+        }
+      }
+    }
+  },
+  "Direct Play": {
+    "comment": "Native tvOS presentation and playback interface.",
+    "localizations": {
+      "en": {
+        "stringUnit": {
+          "state": "translated",
+          "value": "Direct Play"
+        }
+      }
+    }
+  },
+  "Dynamic Range": {
+    "comment": "Native tvOS presentation and playback interface.",
+    "localizations": {
+      "en": {
+        "stringUnit": {
+          "state": "translated",
+          "value": "Dynamic Range"
+        }
+      }
+    }
+  },
+  "Manage Accounts": {
+    "comment": "Native tvOS presentation and playback interface.",
+    "localizations": {
+      "en": {
+        "stringUnit": {
+          "state": "translated",
+          "value": "Manage Accounts"
+        }
+      }
+    }
+  },
+  "Playback Info": {
+    "comment": "Native tvOS presentation and playback interface.",
+    "localizations": {
+      "en": {
+        "stringUnit": {
+          "state": "translated",
+          "value": "Playback Info"
+        }
+      }
+    }
+  },
+  "Playback progress %lld%%": {
+    "comment": "Native tvOS presentation and playback interface.",
+    "localizations": {
+      "en": {
+        "stringUnit": {
+          "state": "translated",
+          "value": "Playback progress %lld%%"
+        }
+      }
+    }
+  },
+  "Preparing": {
+    "comment": "Native tvOS presentation and playback interface.",
+    "localizations": {
+      "en": {
+        "stringUnit": {
+          "state": "translated",
+          "value": "Preparing"
+        }
+      }
+    }
+  },
+  "Read the full description": {
+    "comment": "Native tvOS presentation and playback interface.",
+    "localizations": {
+      "en": {
+        "stringUnit": {
+          "state": "translated",
+          "value": "Read the full description"
+        }
+      }
+    }
+  },
+  "Remux": {
+    "comment": "Native tvOS presentation and playback interface.",
+    "localizations": {
+      "en": {
+        "stringUnit": {
+          "state": "translated",
+          "value": "Remux"
+        }
+      }
+    }
+  },
+  "Resolution": {
+    "comment": "Native tvOS presentation and playback interface.",
+    "localizations": {
+      "en": {
+        "stringUnit": {
+          "state": "translated",
+          "value": "Resolution"
+        }
+      }
+    }
+  },
+  "Source Video": {
+    "comment": "Native tvOS presentation and playback interface.",
+    "localizations": {
+      "en": {
+        "stringUnit": {
+          "state": "translated",
+          "value": "Source Video"
+        }
+      }
+    }
+  },
+  "Source metadata does not confirm the display or audio output format.": {
+    "comment": "Native tvOS presentation and playback interface.",
+    "localizations": {
+      "en": {
+        "stringUnit": {
+          "state": "translated",
+          "value": "Source metadata does not confirm the display or audio output format."
+        }
+      }
+    }
+  },
+  "Synopsis": {
+    "comment": "Native tvOS presentation and playback interface.",
+    "localizations": {
+      "en": {
+        "stringUnit": {
+          "state": "translated",
+          "value": "Synopsis"
+        }
+      }
+    }
+  },
+  "Tracks": {
+    "comment": "Native tvOS presentation and playback interface.",
+    "localizations": {
+      "en": {
+        "stringUnit": {
+          "state": "translated",
+          "value": "Tracks"
+        }
+      }
+    }
+  },
+  "Transcode": {
+    "comment": "Native tvOS presentation and playback interface.",
+    "localizations": {
+      "en": {
+        "stringUnit": {
+          "state": "translated",
+          "value": "Transcode"
+        }
+      }
+    }
+  },
+  "Unwatched": {
+    "comment": "Native tvOS presentation and playback interface.",
+    "localizations": {
+      "en": {
+        "stringUnit": {
+          "state": "translated",
+          "value": "Unwatched"
+        }
+      }
+    }
+  },
+  "Watched": {
+    "comment": "Native tvOS presentation and playback interface.",
+    "localizations": {
+      "en": {
+        "stringUnit": {
+          "state": "translated",
+          "value": "Watched"
+        }
+      }
+    }
+  },
     "Saved Changes Unavailable" : {
       "comment" : "A local playlist queue or playback checkpoint could not be saved.",
       "localizations" : {

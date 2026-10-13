@@ -218,11 +218,16 @@ private struct RecordedLibraryItemsRequest: Equatable {
     var sortOrder: String?
 }
 
-/// Foundation delivers protocol/client callbacks across queues. The only owned
-/// mutable lifecycle value is lock-protected; response state has its own lock.
-private final class LibraryItemsURLProtocol: URLProtocol, @unchecked Sendable {
+/// Keep Foundation's non-Sendable protocol on its callback boundary; delayed
+/// responses use a separately synchronized delivery object.
+private final class LibraryItemsURLProtocol: URLProtocol {
     private static let state = LibraryItemsURLProtocolState()
-    private let taskStorage = OSAllocatedUnfairLock<Task<Void, Never>?>(initialState: nil)
+    private struct LoadingState {
+        var task: Task<Void, Never>?
+        var delivery: LibraryItemsResponseDelivery?
+    }
+
+    private let taskStorage = OSAllocatedUnfairLock(initialState: LoadingState())
 
     static var recordedRequests: [RecordedLibraryItemsRequest] {
         state.recordedRequests
@@ -254,15 +259,17 @@ private final class LibraryItemsURLProtocol: URLProtocol, @unchecked Sendable {
     override func startLoading() {
         do {
             let response = try Self.state.response(for: request)
-            let task = Task { @Sendable [weak self] in
-                guard let self else { return }
+            let delivery = LibraryItemsResponseDelivery(owner: self)
+            let url = request.url
+            taskStorage.withLock { $0.delivery = delivery }
+            let task = Task { @Sendable in
                 do {
                     if response.delayNanoseconds > 0 {
                         try await Task.sleep(nanoseconds: response.delayNanoseconds)
                     }
-
+                    try Task.checkCancellation()
                     let data = try JSONEncoder().encode(response.result)
-                    guard let url = request.url,
+                    guard let url,
                           let httpResponse = HTTPURLResponse(
                               url: url,
                               statusCode: 200,
@@ -272,22 +279,62 @@ private final class LibraryItemsURLProtocol: URLProtocol, @unchecked Sendable {
                     else {
                         throw URLError(.badURL)
                     }
-
-                    client?.urlProtocol(self, didReceive: httpResponse, cacheStoragePolicy: .notAllowed)
-                    client?.urlProtocol(self, didLoad: data)
-                    client?.urlProtocolDidFinishLoading(self)
+                    delivery.withOwner { owner in
+                        owner.client?.urlProtocol(owner, didReceive: httpResponse, cacheStoragePolicy: .notAllowed)
+                        owner.client?.urlProtocol(owner, didLoad: data)
+                        owner.client?.urlProtocolDidFinishLoading(owner)
+                    }
                 } catch {
-                    client?.urlProtocol(self, didFailWithError: error)
+                    delivery.withOwner { owner in
+                        owner.client?.urlProtocol(owner, didFailWithError: error)
+                    }
                 }
             }
-            taskStorage.withLock { $0 = task }
+            taskStorage.withLock {
+                if $0.delivery === delivery {
+                    $0.task = task
+                } else {
+                    task.cancel()
+                }
+            }
         } catch {
             client?.urlProtocol(self, didFailWithError: error)
         }
     }
 
     override func stopLoading() {
-        taskStorage.withLock { $0?.cancel() }
+        let loading = taskStorage.withLock { state in
+            let loading = state
+            state = LoadingState()
+            return loading
+        }
+        loading.delivery?.cancel()
+        loading.task?.cancel()
+    }
+}
+
+/// The weak Foundation handle is accessed only while holding this lock. Delivery
+/// and cancellation are serialized; recursive locking permits synchronous client
+/// callbacks to cancel their own request without deadlocking.
+private final class LibraryItemsResponseDelivery: @unchecked Sendable {
+    private let lock = NSRecursiveLock()
+    private weak var owner: LibraryItemsURLProtocol?
+
+    init(owner: LibraryItemsURLProtocol) {
+        self.owner = owner
+    }
+
+    func withOwner(_ body: (LibraryItemsURLProtocol) -> Void) {
+        lock.lock()
+        defer { lock.unlock() }
+        guard let owner else { return }
+        body(owner)
+    }
+
+    func cancel() {
+        lock.lock()
+        defer { lock.unlock() }
+        owner = nil
     }
 }
 

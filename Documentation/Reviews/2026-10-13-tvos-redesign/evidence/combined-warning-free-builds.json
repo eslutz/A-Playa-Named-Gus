@@ -1,0 +1,22 @@
+[
+  {
+    "platform": "macOS",
+    "exitCode": 0,
+    "diagnostics": []
+  },
+  {
+    "platform": "iOS",
+    "exitCode": 0,
+    "diagnostics": []
+  },
+  {
+    "platform": "tvOS",
+    "exitCode": 0,
+    "diagnostics": []
+  },
+  {
+    "platform": "visionOS",
+    "exitCode": 0,
+    "diagnostics": []
+  }
+]

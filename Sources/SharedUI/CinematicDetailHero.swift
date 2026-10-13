@@ -6,6 +6,8 @@ struct CinematicDetailHero<Accessory: View>: View {
     @Environment(SessionStore.self) private var session
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     let item: MediaItem
+    var playbackItem: MediaItem? = nil
+    var primaryPlayEnabled = true
     let backdropURL: URL?
     let play: () -> Void
     let isInUpNext: Bool
@@ -13,6 +15,18 @@ struct CinematicDetailHero<Accessory: View>: View {
     @ViewBuilder let accessory: Accessory
 
     var body: some View {
+        standardHero.gusTVDetailHero(item: item, backdropURL: backdropURL) {
+            HStack(spacing: 24) {
+                playButton
+                Menu { upNextButton; accessory } label: { Label("More", systemImage: "ellipsis") }
+                    .accessibilityLabel("More")
+                    .accessibilityIdentifier("Detail.more")
+                    .gusTVFocus(id: "more", section: "detail:" + ItemRef(item: item).id, ids: ["play", "more", "synopsis"], item: item)
+            }
+        }
+    }
+
+    private var standardHero: some View {
         ViewThatFits(in: .horizontal) {
             HStack(alignment: .bottom, spacing: 28) {
                 titleBlock
@@ -91,14 +105,14 @@ struct CinematicDetailHero<Accessory: View>: View {
 
     /// Books (epub/text) have no AVKit playback surface; show metadata without Play.
     private var isPlayableItem: Bool {
-        item.type != .book
+        item.type != .book && primaryPlayEnabled
     }
 
     @ViewBuilder
     private var playButton: some View {
         if isPlayableItem {
             Button(action: play) {
-                Label("Play", systemImage: "play.fill")
+                Label(((playbackItem ?? item).userData?.playbackPositionTicks ?? 0) > 0 ? String(localized: "Resume") : String(localized: "Play"), systemImage: "play.fill")
                     .foregroundStyle(Color.gusProminentActionForeground)
                     .frame(maxWidth: .infinity)
                     .accessibilityIdentifier("Detail.play")
@@ -110,6 +124,7 @@ struct CinematicDetailHero<Accessory: View>: View {
             .frame(maxWidth: min(320, DetailActionMetrics.maximumRowWidth))
             .tint(.accentColor)
             .gusDefaultActionShortcut()
+            .gusTVFocus(id: "play", section: "detail:" + ItemRef(item: item).id, ids: ["play", "more", "synopsis"], initial: true, item: item)
             .visionHoverEffect(Capsule())
         }
     }
@@ -213,7 +228,7 @@ struct ItemUserActionButton: View {
     var body: some View {
         Button(action: action) {
             Label(title, systemImage: systemImage)
-                .labelStyle(.iconOnly)
+                .gusTVActionLabel()
                 .frame(maxWidth: .infinity, minHeight: 28)
         }
         .gusGlassButtonStyle()

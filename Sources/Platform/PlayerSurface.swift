@@ -14,6 +14,11 @@ import SwiftUI
             let controller = AVPlayerViewController()
             controller.player = player
             controller.allowsPictureInPicturePlayback = false
+            // tvOS AVKit always owns system video transport; its publishing toggle is unavailable.
+            controller.appliesPreferredDisplayCriteriaAutomatically = true
+            let info = UIHostingController(rootView: TVPlaybackInfo(store: store))
+            info.title = String(localized: "Playback Info")
+            controller.customInfoViewControllers = [info]
             controller.transportBarCustomMenuItems = transportMenuItems()
             return controller
         }
@@ -23,6 +28,16 @@ import SwiftUI
                 controller.player = player
             }
             controller.transportBarCustomMenuItems = transportMenuItems()
+            if let info = controller.customInfoViewControllers.first as? UIHostingController<TVPlaybackInfo> {
+                info.rootView = TVPlaybackInfo(store: store)
+            }
+        }
+
+        static func dismantleUIViewController(_ controller: AVPlayerViewController, coordinator: ()) {
+            controller.player?.pause()
+            controller.player = nil
+            controller.customInfoViewControllers = []
+            controller.transportBarCustomMenuItems = []
         }
 
         private func transportMenuItems() -> [UIMenuElement] {
@@ -83,6 +98,11 @@ import SwiftUI
                 ))
             }
 
+            if store.nextUpItem != nil, !store.usesPlaylistOrder {
+                menus.append(UIAction(title: String(localized: "Next Episode"), image: UIImage(systemName: "forward.end")) { _ in
+                    Task { await store.playNextUp() }
+                })
+            }
             return menus
         }
     }
@@ -161,3 +181,13 @@ import SwiftUI
         }
     }
 #endif
+
+/// tvOS exposes no AVKit publishing toggle. Avoid a second app-owned video writer;
+/// other platforms keep the existing single NowPlayingController owner.
+extension NowPlayingController {
+    func startVideo(player: AVPlayer, item: MediaItem, artworkURL: URL?) {
+        #if !os(tvOS)
+            start(player: player, item: item, artworkURL: artworkURL)
+        #endif
+    }
+}

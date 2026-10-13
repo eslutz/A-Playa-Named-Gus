@@ -35,6 +35,18 @@ do not push directly or bypass protection. GitHub runs CI on PRs targeting `main
 Xcode Cloud tests merged `main` before internal TestFlight distribution; see
 `Documentation/AppStore/pipeline-policy.md` for the saved release gates.
 
+## Warning-free build policy
+
+Treat every warning as an error. App, extension, Watch, and test targets must
+compile, test, archive, and export with zero warnings and zero errors across all
+supported platforms. Swift and C-family warnings are errors in project.yml.
+Do not disable diagnostics, lower concurrency checking, or override these gates
+to obtain a green build. Fix the underlying cause, including test fixtures.
+Build-tool, linker, asset, and dependency warnings also block acceptance even when
+compiler flags do not promote them. Inspect raw logs and Xcode Cloud issues for
+the exact validated commit; a successful build with warnings is not accepted.
+See `Documentation/AppStore/warning-policy.md` for the release gates and Build 16 findings.
+
 ## Commands
 
 The Xcode project is **generated** from `project.yml` by XcodeGen;

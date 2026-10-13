@@ -55,6 +55,7 @@ final class PlaybackStore {
     private var isTranscodedPlayback = false
     private var streamSelection = PlaybackStreamSelection.none
     private var preparationGeneration = 0
+    private var presentationIsActive = true
 
     init(item: MediaItem, session: SessionStore, playbackRefresh: PlaybackRefreshStore, downloads: OfflineDownloadStore? = nil, localOnly: Bool = false, localProgress: OfflinePlaybackProgressStore? = nil) {
         self.item = item
@@ -77,6 +78,25 @@ final class PlaybackStore {
 
     var subtitleOptions: [PlaybackStreamOption] {
         PlaybackStreamCatalog.subtitleOptions(for: item)
+    }
+
+    /// Selected source metadata does not establish actual display/audio output.
+    var sourceVideoStream: MediaStreamInfo? {
+        let source = item.mediaSources.first(where: { $0.id == reportContext?.mediaSourceID }) ?? item.mediaSources.first
+        return source?.mediaStreams.first(where: { $0.type == .video })
+    }
+
+    /// Delivery is negotiated separately from the original source format.
+    var playbackDeliveryTitle: String {
+        if isLocalPlayback {
+            return String(localized: "Downloaded")
+        }
+        switch reportContext?.playMethod {
+        case .directPlay: return String(localized: "Direct Play")
+        case .directStream: return String(localized: "Remux")
+        case .transcode: return String(localized: "Transcode")
+        case nil: return String(localized: "Preparing")
+        }
     }
 
     var chapterTargets: [PlaybackChapter] {
@@ -104,6 +124,15 @@ final class PlaybackStore {
         if let notice {
             stereoFallbackNotice = notice
         }
+    }
+
+    /// TV presentation activity is separate from the user’s paused playback intent.
+    func setPresentationActive(_ active: Bool) {
+        presentationIsActive = active
+        if !active {
+            player?.pause()
+        }
+        // Returning to the foreground does not override a user’s paused state.
     }
 
     func prepare(startTimeTicks: Int? = nil) async {
@@ -220,16 +249,17 @@ final class PlaybackStore {
 
     private func rebuildCurrentItemPreservingPosition() async {
         let ticks = currentPositionTicks()
+        let rate = player?.rate ?? 0
         // Close the server-side play session for the outgoing stream before the rebuild
         // reports a fresh start, so stream switches don't leak stale sessions.
         if let context = reportContext {
             reportContext = nil
             reportPlaybackStopped(context: context, positionTicks: ticks)
         }
-        await loadPlayback(startTimeTicks: ticks, replacingCurrentItem: true)
+        await loadPlayback(startTimeTicks: ticks, replacingCurrentItem: true, resumeRate: rate)
     }
 
-    private func loadPlayback(startTimeTicks: Int?, replacingCurrentItem: Bool) async {
+    private func loadPlayback(startTimeTicks: Int?, replacingCurrentItem: Bool, resumeRate: Float = 1) async {
         preparationGeneration += 1
         let generation = preparationGeneration
         state = .loading
@@ -342,7 +372,7 @@ final class PlaybackStore {
 
             try Task.checkCancellation()
             guard generation == preparationGeneration else { return }
-            nowPlaying.start(
+            nowPlaying.startVideo(
                 player: player,
                 item: item,
                 artworkURL: isLocalPlayback
@@ -358,9 +388,9 @@ final class PlaybackStore {
                 usingTranscoding: resolution?.isTranscoding == true,
                 usingLocalFile: localURL != nil
             ))
+            player.rate = presentationIsActive ? resumeRate : 0
             reportPlaybackStart(context: context, player: player)
             NextUpActivityStore.shared.recordPlayback(item: item, scope: accountScope)
-            player.play()
             if usesPlaylistOrder {
                 nextUpItem = nil
             } else if isLocalPlayback {
@@ -541,11 +571,12 @@ final class PlaybackStore {
             localProgress.checkpoint(itemID: context.itemID, positionTicks: currentPositionTicks(), scope: accountScope, writerToken: progressWriterToken, item: item)
             return
         }
+        let paused = player.rate == 0
         sendReport("start") { [self] in
             try await self.session.mediaProvider.reportPlaybackStart(
                 context: context,
                 positionTicks: PlaybackTime.ticks(fromSeconds: player.currentTime().seconds),
-                isPaused: false
+                isPaused: paused
             )
         }
     }
