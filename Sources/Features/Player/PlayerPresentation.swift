@@ -48,13 +48,13 @@ extension View {
         func body(content: Content) -> some View {
             content
                 .sheet(item: sheetItem) { ref in
-                    PresentedPlayer(item: ref.item, localOnly: ref.localOnly == true, playlistID: ref.playlistID, playlistEntryID: ref.playlistEntryID, playlistFromBeginning: ref.playlistFromBeginning == true)
+                    PresentedPlayer(item: ref.item, localOnly: ref.localOnly == true, playlistID: ref.playlistID, playlistEntryID: ref.playlistEntryID, playlistFromBeginning: ref.playlistFromBeginning == true, playbackStart: ref.playbackStart)
                         .frame(minWidth: 640, minHeight: 360)
                 }
                 .onChange(of: item) { _, ref in
                     guard let ref else { return }
                     if ref.item.isAudioPlayable, ContentRatingGate.admitsStored(ref.item) {
-                        audio.play(tracks: [ref.item], localOnly: ref.localOnly == true, session: session, downloads: downloads)
+                        audio.play(tracks: [ref.item], localOnly: ref.localOnly == true, playbackStart: ref.playbackStart, session: session, downloads: downloads)
                         item = nil
                         return
                     }
@@ -77,7 +77,7 @@ extension View {
                ref.serverID == nil || ref.serverID == session.server.id,
                ref.userID == nil || ref.userID == session.user.id
             {
-                PresentedPlayer(item: ref.item, localOnly: ref.localOnly == true, playlistID: ref.playlistID, playlistEntryID: ref.playlistEntryID, playlistFromBeginning: ref.playlistFromBeginning == true)
+                PresentedPlayer(item: ref.item, localOnly: ref.localOnly == true, playlistID: ref.playlistID, playlistEntryID: ref.playlistEntryID, playlistFromBeginning: ref.playlistFromBeginning == true, playbackStart: ref.playbackStart)
                     .environment(session)
                     .id(AccountScope(serverID: session.server.id, userID: session.user.id))
                     .frame(minWidth: 640, minHeight: 360)
@@ -100,6 +100,7 @@ struct PresentedPlayer: View {
     var playlistID: UUID? = nil
     var playlistEntryID: UUID? = nil
     var playlistFromBeginning = false
+    var playbackStart: PlaybackStartIntent = .automatic
     var close: (() -> Void)?
 
     var body: some View {
@@ -139,9 +140,9 @@ struct PresentedPlayer: View {
             bookSurface
         default:
             if item.isAudioPlayable {
-                AudioPlayerScreen(item: item, localOnly: localOnly)
+                AudioPlayerScreen(item: item, localOnly: localOnly, playbackStart: playbackStart)
             } else {
-                VideoPlayerView(item: item, localOnly: localOnly, playlistID: playlistID, playlistEntryID: playlistEntryID, playlistFromBeginning: playlistFromBeginning)
+                VideoPlayerView(item: item, localOnly: localOnly, playlistID: playlistID, playlistEntryID: playlistEntryID, playlistFromBeginning: playlistFromBeginning, playbackStart: playbackStart)
             }
         }
     }

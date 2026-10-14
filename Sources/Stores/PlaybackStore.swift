@@ -141,10 +141,7 @@ final class PlaybackStore {
         didFinishPlayback = false
         let hasLocalFile = downloads?.localFileURL(for: item, serverID: session.server.id, userID: session.user.id) != nil
         let localTicks = hasLocalFile ? item.id.flatMap { localProgress.positionTicks(forItemID: $0, scope: accountScope) } : nil
-        let resumeTicks = startTimeTicks ?? localTicks ?? PlaybackTime.resumePositionTicks(for: item)
-        let initialTicks = resumeTicks.map { ticks in
-            item.runTimeTicks.map { $0 > 0 && ticks >= $0 ? 0 : ticks } ?? ticks
-        }
+        let initialTicks = PlaybackActionPosition.ticks(for: item, localTicks: startTimeTicks ?? localTicks)
         await loadPlayback(startTimeTicks: initialTicks, replacingCurrentItem: false)
     }
 

@@ -129,6 +129,10 @@ struct VideoPlaylistDetailView: View {
     @State private var replacing: VideoPlaylistEntry?
     @State private var player: ItemRef?
     @State private var loadingEntries = false
+    @State private var editing = false
+    @State private var deletingPlaylist = false
+    @State private var mutating = false
+    @Environment(\.dismiss) private var dismiss
     private var scope: AccountScope {
         session.references.scope
     }
@@ -144,57 +148,80 @@ struct VideoPlaylistDetailView: View {
     var body: some View {
         Group {
             if let playlist, let serverList {
-                List {
-                    if serverList.entriesLoaded {
-                        if serverList.entries.allSatisfy({ $0.item.isAudioPlayable }) && !serverList.entries.isEmpty {
-                            Section {
-                                NavigationLink("Open Audio Playlist") {
-                                    AlbumDetailView(album: MediaItem(id: ServerMediaListID.string(serverList.id), name: serverList.name, type: .playlist))
-                                }
-                            }
-                        } else {
-                            playbackControls(playlist)
-                        }
-                        Section("Entries") {
-                            if playlist.entries.isEmpty {
-                                Text("Add movies or individual episodes to get started.").foregroundStyle(.secondary)
-                            }
-                            ForEach(Array(playlist.entries.enumerated()), id: \.element.id) { index, entry in
-                                entryRow(entry, index: index, playlist: playlist, canEdit: serverList.canEdit)
-                            }
-                            .onDelete { offsets in
-                                guard serverList.canEdit else { return }
-                                for index in offsets {
-                                    Task { _ = await lists.remove(entryID: playlist.entries[index].id, from: id, kind: .playlist, session: session) }
-                                }
-                            }
-                            .onMove { offsets, destination in
-                                guard serverList.canEdit, let index = offsets.first else { return }
-                                var entries = playlist.entries
-                                let moved = entries.remove(at: index)
-                                let target = min(max(destination > index ? destination - 1 : destination, 0), entries.count)
-                                Task { _ = await lists.move(entryID: moved.id, in: id, before: target < entries.count ? entries[target].id : nil, session: session) }
-                            }
-                        }
-                    } else if loadingEntries {
-                        ProgressView()
+                Group {
+                    if editing {
+                        editingContents(playlist, serverList: serverList)
                     } else {
-                        ContentUnavailableView("Playlist Entries Unavailable", systemImage: "wifi.slash", description: Text("Connect to Jellyfin to load the entries for this playlist."))
-                        Button("Try Again") { Task { loadingEntries = true; await lists.refresh(id: id, kind: .playlist, session: session); loadingEntries = false } }
-                    }
-                    if let message = lists.statusMessage, !message.isEmpty {
-                        Text(message).foregroundStyle(.secondary)
+                        List {
+                            if serverList.entriesLoaded {
+                                if serverList.entries.allSatisfy({ $0.item.isAudioPlayable }) && !serverList.entries.isEmpty {
+                                    Section {
+                                        Text("\(playlist.entries.count) items").font(.subheadline).foregroundStyle(.secondary)
+                                        NavigationLink("Open Audio Playlist") {
+                                            AlbumDetailView(album: MediaItem(id: ServerMediaListID.string(serverList.id), name: serverList.name, type: .playlist))
+                                        }
+                                    }
+                                } else {
+                                    playbackControls(playlist)
+                                }
+                                Section {
+                                    HStack {
+                                        Spacer()
+                                        Button("Add Items", systemImage: "text.badge.plus") { adding = true }
+                                            .disabled(!serverList.canEdit || mutating)
+                                    }
+                                    if playlist.entries.isEmpty {
+                                        Text("Add movies or individual episodes to get started.").foregroundStyle(.secondary)
+                                    }
+                                    ForEach(Array(playlist.entries.enumerated()), id: \.element.id) { index, entry in
+                                        entryRow(entry, index: index, playlist: playlist, canEdit: serverList.canEdit)
+                                    }
+                                }
+                            } else if loadingEntries {
+                                ProgressView()
+                            } else {
+                                ContentUnavailableView("Playlist Entries Unavailable", systemImage: "wifi.slash", description: Text("Connect to Jellyfin to load the entries for this playlist."))
+                                Button("Try Again") { Task { loadingEntries = true; await lists.refresh(id: id, kind: .playlist, session: session); loadingEntries = false } }
+                            }
+                            if let message = lists.statusMessage, !message.isEmpty {
+                                Text(message).foregroundStyle(.secondary)
+                            }
+                        }
                     }
                 }
                 .navigationTitle(playlist.name)
                 .toolbar {
-                    ToolbarItem { Button("Add Media", systemImage: "plus") { adding = true }.disabled(!serverList.canEdit) }
-                    ToolbarItem { Button("Rename") { renaming = true }.disabled(!serverList.canEdit) }
+                    ToolbarItem(placement: .primaryAction) {
+                        if editing {
+                            Button("Done") { editing = false }
+                                .disabled(mutating)
+                                .accessibilityIdentifier("Playlist.done")
+                        } else {
+                            Menu {
+                                Button("Rename", systemImage: "pencil") { renaming = true }.disabled(!serverList.canEdit)
+                                Button("Edit Items", systemImage: "line.3.horizontal") { editing = true }.disabled(!serverList.canEdit || !serverList.entriesLoaded)
+                                Divider()
+                                Button("Delete Playlist", systemImage: "trash", role: .destructive) { deletingPlaylist = true }.disabled(!serverList.canEdit)
+                            } label: { Label("More", systemImage: "ellipsis") }
+                                .disabled(mutating)
+                                .accessibilityIdentifier("Playlist.more")
+                        }
+                    }
                 }
             } else {
                 ContentUnavailableView("Playlist Unavailable", systemImage: "list.and.film", description: Text("Refresh while connected to Jellyfin to load this playlist."))
             }
         }
+        .alert("Delete Playlist?", isPresented: $deletingPlaylist) {
+            Button("Cancel", role: .cancel) {}
+            Button("Delete", role: .destructive) {
+                mutate {
+                    if await lists.delete(id: id, kind: .playlist, session: session) {
+                        dismiss()
+                    }
+                }
+            }
+        } message: { Text("Delete “\(playlist?.name ?? "")”? The media will remain in your library.") }
         .sheet(isPresented: $renaming) {
             NavigationStack {
                 ServerListNameEditor(initialName: playlist?.name ?? "", title: "Rename Playlist", saveTitle: "Save") { name in
@@ -223,30 +250,118 @@ struct VideoPlaylistDetailView: View {
     }
 
     private func playbackControls(_ playlist: VideoPlaylist) -> some View {
-        let unresolvedResume = playlist.cursor?.finished != true && playlist.cursor?.entryID.map { current in !playlist.entries.contains { $0.id == current } } == true
+        let selection = playlist.playbackAction
         let isVideo = !playlist.entries.isEmpty && playlist.entries.allSatisfy { [.movie, .episode, .video].contains($0.reference.item.type) }
         return Section {
-            if unresolvedResume {
-                Label("Resume Entry Unavailable", systemImage: "exclamationmark.triangle"); Text("Choose an entry to play from, or start this playlist again.").foregroundStyle(.secondary)
+            VStack(alignment: .leading, spacing: 12) {
+                Text("\(playlist.entries.count) items").font(.subheadline).foregroundStyle(.secondary)
+                if selection.isUnavailable {
+                    Label("Resume Entry Unavailable", systemImage: "exclamationmark.triangle")
+                    Text("Choose an entry to play from, or start this playlist again.").foregroundStyle(.secondary)
+                }
+                if playlist.cursor?.finished == true {
+                    Label("Playlist Finished", systemImage: "checkmark.circle")
+                } else if let current = playlist.entries.firstIndex(where: { $0.id == playlist.cursor?.entryID }) {
+                    Text("Playlist \(current + 1) of \(playlist.entries.count)").font(.caption).foregroundStyle(.secondary)
+                }
+                Button {
+                    play(playlist.entries.first(where: { $0.id == selection.entryID }), fromBeginning: !selection.hasProgress)
+                } label: {
+                    Label(selection.hasProgress ? "Resume" : "Play", systemImage: "play.fill")
+                        .foregroundStyle(Color.gusProminentActionForeground)
+                        .frame(maxWidth: .infinity)
+                }
+                .gusProminentGlassButtonStyle().controlSize(.large).tint(.accentColor)
+                .frame(maxWidth: DetailActionMetrics.maximumRowWidth)
+                .disabled(!isVideo || selection.isUnavailable || editing || mutating)
+                .accessibilityIdentifier("Playlist.play")
+                HStack(spacing: 8) {
+                    ItemUserActionButton(title: "Start from Beginning", systemImage: "arrow.counterclockwise") { play(playlist.entries.first, fromBeginning: true) }
+                        .disabled(!isVideo || editing || mutating)
+                        .accessibilityIdentifier("Playlist.restart")
+                    ItemUserActionButton(title: playlist.queued ? "Remove from Next Up" : "Add to Next Up", systemImage: playlist.queued ? "checkmark" : "plus") {
+                        let resolved = lists.resolvedID(id, scope: scope)
+                        supplemental.setQueued(id: resolved, queued: !playlist.queued, scope: scope)
+                        NextUpActivityStore.shared.setDismissed("playlist:" + resolved.uuidString, dismissed: playlist.queued, scope: scope)
+                    }
+                    .disabled(editing || mutating)
+                    .accessibilityIdentifier("Playlist.nextUp")
+                }
+                .frame(maxWidth: DetailActionMetrics.maximumRowWidth)
+                if !isVideo && !playlist.entries.isEmpty {
+                    Text("Play mixed media individually. Ordered video playback supports movies and episodes.").foregroundStyle(.secondary)
+                }
             }
-            if playlist.cursor?.finished == true {
-                Label("Playlist Finished", systemImage: "checkmark.circle")
-            } else if let current = playlist.entries.firstIndex(where: { $0.id == playlist.cursor?.entryID }) {
-                Text("Playlist \(current + 1) of \(playlist.entries.count)")
-            }
-            Button("Play from Beginning", systemImage: "play.fill") { play(playlist.entries.first, fromBeginning: true) }.disabled(!isVideo)
-            Button("Continue Playlist", systemImage: "play.circle") {
-                play(playlist.entries.first(where: { $0.id == playlist.cursor?.entryID }) ?? playlist.entries.first, fromBeginning: playlist.cursor?.finished == true)
-            }.disabled(!isVideo || unresolvedResume)
-            if !isVideo && !playlist.entries.isEmpty {
-                Text("Play mixed media individually. Ordered video playback supports movies and episodes.").foregroundStyle(.secondary)
-            }
-            Toggle("Add to Next Up", isOn: Binding(get: { playlist.queued }, set: {
-                let resolved = lists.resolvedID(id, scope: scope)
-                supplemental.setQueued(id: resolved, queued: $0, scope: scope)
-                NextUpActivityStore.shared.setDismissed("playlist:" + resolved.uuidString, dismissed: !$0, scope: scope)
-            }))
         }
+    }
+
+    /// Edit mode isolates left-handle drag/drop from List's cell-level interactions.
+    private func editingContents(_ playlist: VideoPlaylist, serverList: ServerMediaList) -> some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 16) {
+                playbackControls(playlist)
+                HStack {
+                    Spacer()
+                    Button("Add Items", systemImage: "text.badge.plus") { adding = true }
+                        .disabled(!serverList.canEdit || mutating)
+                }
+                PlaylistEditingGroup {
+                    VStack(spacing: 0) {
+                        ForEach(Array(playlist.entries.enumerated()), id: \.element.id) { index, entry in
+                            editingRow(entry, index: index, playlist: playlist)
+                                .padding(.vertical, 8)
+                                .contentShape(Rectangle())
+                                .playlistDropTarget(enabled: serverList.canEdit && !mutating) { payload in drop(payload, before: entry.id, playlist: playlist) }
+                            if index + 1 < playlist.entries.count {
+                                Divider()
+                            }
+                        }
+                        Color.clear.frame(height: 24)
+                            .playlistDropTarget(enabled: serverList.canEdit && !mutating) { payload in drop(payload, before: nil, playlist: playlist) }
+                            .accessibilityHidden(true)
+                    }
+                }
+                if let message = lists.statusMessage, !message.isEmpty {
+                    Text(message).foregroundStyle(.secondary)
+                }
+            }
+            .padding()
+        }
+    }
+
+    private func editingRow(_ entry: VideoPlaylistEntry, index: Int, playlist: VideoPlaylist) -> some View {
+        let title = ContentRatingGate.admitsStored(entry.reference.item) ? entry.reference.item.displayTitle : String(localized: "Restricted Content")
+        return HStack {
+            PlaylistReorderHandle(payload: PlaylistItemDrag(scope: scope, playlistID: lists.resolvedID(id, scope: scope), entryID: entry.id), title: title, moveUp: { move(index, by: -1, in: playlist) }, moveDown: { move(index, by: 1, in: playlist) }, canMoveUp: index > 0, canMoveDown: index + 1 < playlist.entries.count)
+                .accessibilityIdentifier("Playlist.drag." + entry.id.uuidString)
+            Text("\(index + 1)").foregroundStyle(.secondary)
+            VStack(alignment: .leading) {
+                Text(title)
+                if ContentRatingGate.admitsStored(entry.reference.item), let series = entry.reference.item.seriesName {
+                    Text([series, entry.reference.item.episodeLocator].compactMap { $0 }.joined(separator: " · ")).font(.caption).foregroundStyle(.secondary)
+                }
+            }
+            Spacer(minLength: 8)
+            Button(role: .destructive) {
+                mutate { _ = await lists.remove(entryID: entry.id, from: id, kind: .playlist, session: session) }
+            } label: { Label("Remove \(title)", systemImage: "trash").labelStyle(.iconOnly).frame(minWidth: 44, minHeight: 44) }
+                .buttonStyle(.borderless)
+                .accessibilityIdentifier("Playlist.remove." + entry.id.uuidString)
+        }
+        .disabled(mutating)
+    }
+
+    private func mutate(_ action: @escaping @MainActor () async -> Void) {
+        guard !mutating, serverList?.canEdit == true else { return }
+        mutating = true
+        Task { await action(); mutating = false }
+    }
+
+    private func drop(_ payload: PlaylistItemDrag, before: UUID?, playlist: VideoPlaylist) -> Bool {
+        guard editing, !mutating, serverList?.canEdit == true,
+              let move = payload.destination(in: playlist.entries.map(\.id), scope: scope, playlistID: lists.resolvedID(id, scope: scope), before: before) else { return false }
+        mutate { _ = await lists.move(entryID: move.entryID, in: id, before: move.before, session: session) }
+        return true
     }
 
     private func entryRow(_ entry: VideoPlaylistEntry, index: Int, playlist: VideoPlaylist, canEdit: Bool) -> some View {
@@ -270,7 +385,7 @@ struct VideoPlaylistDetailView: View {
         .mediaItemContextMenu(item: admitted ? entry.reference.item : nil, groupName: playlist.name, canRemove: canEdit, remove: {
             _ = await lists.remove(entryID: entry.id, from: id, kind: .playlist, session: session)
         }) {
-            Button("Play from Here") { play(entry, fromBeginning: true) }.disabled(!admitted || !isVideo)
+            Button("Play from Here") { play(entry, fromBeginning: true) }.disabled(!admitted || !isVideo || editing || mutating)
             Button("Move Up") { move(index, by: -1, in: playlist) }.disabled(!canEdit || index == 0)
             Button("Move Down") { move(index, by: 1, in: playlist) }.disabled(!canEdit || index == playlist.entries.count - 1)
             Button("Choose Replacement") { replacing = entry }.disabled(!admitted || !canEdit)
@@ -286,7 +401,7 @@ struct VideoPlaylistDetailView: View {
         var entries = playlist.entries
         let entry = entries.remove(at: index)
         let destination = min(max(index + offset, 0), entries.count)
-        Task { _ = await lists.move(entryID: entry.id, in: id, before: destination < entries.count ? entries[destination].id : nil, session: session) }
+        mutate { _ = await lists.move(entryID: entry.id, in: id, before: destination < entries.count ? entries[destination].id : nil, session: session) }
     }
 }
 
