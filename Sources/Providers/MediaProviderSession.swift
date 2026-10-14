@@ -136,7 +136,7 @@ protocol MediaProviderSession: AnyObject, Sendable {
     /// Updates saved item progress without inventing a live playback session.
     func updatePlaybackPosition(itemID: String, positionTicks: Int) async throws
 
-    // MARK: Native server playlists and collections
+    // MARK: Native server playlists
 
     func mediaLists(kind: ServerMediaListKind) async throws -> [ServerMediaList]
     func mediaList(id: UUID, kind: ServerMediaListKind) async throws -> ServerMediaList
@@ -146,6 +146,19 @@ protocol MediaProviderSession: AnyObject, Sendable {
     func addToMediaList(id: UUID, kind: ServerMediaListKind, itemIDs: [String]) async throws
     func removeFromMediaList(id: UUID, kind: ServerMediaListKind, entryIDs: [UUID]) async throws
     func moveMediaListEntry(id: UUID, entryID: UUID, to index: Int) async throws
+
+    // MARK: Library collections
+
+    func collectionCapabilities(id: String?) async throws -> CollectionCapabilities
+    func collectionPage(startIndex: Int, limit: Int) async throws -> MediaItemPage
+    func collectionItem(id: String) async throws -> MediaItem
+    func collectionMembers(id: String, startIndex: Int, limit: Int) async throws -> MediaItemPage
+    func createCollection(name: String, itemIDs: [String]) async throws -> String
+    func updateCollection(id: String, name: String, overview: String) async throws
+    func deleteCollection(id: String) async throws
+    func addCollectionMembers(id: String, itemIDs: [String]) async throws
+    func removeCollectionMembers(id: String, itemIDs: [String]) async throws
+    func setCollectionArtwork(id: String, jpeg: Data) async throws
 
     // MARK: Book reading progress (gated by `capabilities.supportsBookProgressSync`)
 
@@ -158,6 +171,50 @@ protocol MediaProviderSession: AnyObject, Sendable {
 }
 
 extension MediaProviderSession {
+    func collectionCapabilities(id: String?) async throws -> CollectionCapabilities {
+        throw unsupportedCollections()
+    }
+
+    func collectionPage(startIndex: Int, limit: Int) async throws -> MediaItemPage {
+        throw unsupportedCollections()
+    }
+
+    func collectionItem(id: String) async throws -> MediaItem {
+        throw unsupportedCollections()
+    }
+
+    func collectionMembers(id: String, startIndex: Int, limit: Int) async throws -> MediaItemPage {
+        throw unsupportedCollections()
+    }
+
+    func createCollection(name: String, itemIDs: [String]) async throws -> String {
+        throw unsupportedCollections()
+    }
+
+    func updateCollection(id: String, name: String, overview: String) async throws {
+        throw unsupportedCollections()
+    }
+
+    func deleteCollection(id: String) async throws {
+        throw unsupportedCollections()
+    }
+
+    func addCollectionMembers(id: String, itemIDs: [String]) async throws {
+        throw unsupportedCollections()
+    }
+
+    func removeCollectionMembers(id: String, itemIDs: [String]) async throws {
+        throw unsupportedCollections()
+    }
+
+    func setCollectionArtwork(id: String, jpeg: Data) async throws {
+        throw unsupportedCollections()
+    }
+
+    private func unsupportedCollections() -> GusError {
+        GusError.server(String(localized: "This server does not support collections."))
+    }
+
     func mediaLists(kind: ServerMediaListKind) async throws -> [ServerMediaList] {
         throw unsupportedMediaLists()
     }
@@ -191,7 +248,7 @@ extension MediaProviderSession {
     }
 
     private func unsupportedMediaLists() -> GusError {
-        GusError.server(String(localized: "This server does not support playlists and collections.", comment: "Unsupported native media lists"))
+        GusError.server(String(localized: "This server does not support playlists.", comment: "Unsupported native media lists"))
     }
 
     /// Fallback for providers without server pagination. Request the prefix needed

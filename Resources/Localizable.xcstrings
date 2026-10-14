@@ -1,269 +1,129 @@
 {
-  "sourceLanguage" : "en",
-  "strings" : {
-  "Codec": {
-    "comment": "Native tvOS presentation and playback interface.",
-    "localizations": {
-      "en": {
-        "stringUnit": {
-          "state": "translated",
-          "value": "Codec"
-        }
-      }
-    }
-  },
-  "Delivery": {
-    "comment": "Native tvOS presentation and playback interface.",
-    "localizations": {
-      "en": {
-        "stringUnit": {
-          "state": "translated",
-          "value": "Delivery"
-        }
-      }
-    }
-  },
-  "Direct Play": {
-    "comment": "Native tvOS presentation and playback interface.",
-    "localizations": {
-      "en": {
-        "stringUnit": {
-          "state": "translated",
-          "value": "Direct Play"
-        }
-      }
-    }
-  },
-  "Dynamic Range": {
-    "comment": "Native tvOS presentation and playback interface.",
-    "localizations": {
-      "en": {
-        "stringUnit": {
-          "state": "translated",
-          "value": "Dynamic Range"
-        }
-      }
-    }
-  },
-  "Manage Accounts": {
-    "comment": "Native tvOS presentation and playback interface.",
-    "localizations": {
-      "en": {
-        "stringUnit": {
-          "state": "translated",
-          "value": "Manage Accounts"
-        }
-      }
-    }
-  },
-  "Playback Info": {
-    "comment": "Native tvOS presentation and playback interface.",
-    "localizations": {
-      "en": {
-        "stringUnit": {
-          "state": "translated",
-          "value": "Playback Info"
-        }
-      }
-    }
-  },
-  "Playback progress %lld%%": {
-    "comment": "Native tvOS presentation and playback interface.",
-    "localizations": {
-      "en": {
-        "stringUnit": {
-          "state": "translated",
-          "value": "Playback progress %lld%%"
-        }
-      }
-    }
-  },
-  "Preparing": {
-    "comment": "Native tvOS presentation and playback interface.",
-    "localizations": {
-      "en": {
-        "stringUnit": {
-          "state": "translated",
-          "value": "Preparing"
-        }
-      }
-    }
-  },
-  "Read the full description": {
-    "comment": "Native tvOS presentation and playback interface.",
-    "localizations": {
-      "en": {
-        "stringUnit": {
-          "state": "translated",
-          "value": "Read the full description"
-        }
-      }
-    }
-  },
-  "Remux": {
-    "comment": "Native tvOS presentation and playback interface.",
-    "localizations": {
-      "en": {
-        "stringUnit": {
-          "state": "translated",
-          "value": "Remux"
-        }
-      }
-    }
-  },
-  "Resolution": {
-    "comment": "Native tvOS presentation and playback interface.",
-    "localizations": {
-      "en": {
-        "stringUnit": {
-          "state": "translated",
-          "value": "Resolution"
-        }
-      }
-    }
-  },
-  "Source Video": {
-    "comment": "Native tvOS presentation and playback interface.",
-    "localizations": {
-      "en": {
-        "stringUnit": {
-          "state": "translated",
-          "value": "Source Video"
-        }
-      }
-    }
-  },
-  "Source metadata does not confirm the display or audio output format.": {
-    "comment": "Native tvOS presentation and playback interface.",
-    "localizations": {
-      "en": {
-        "stringUnit": {
-          "state": "translated",
-          "value": "Source metadata does not confirm the display or audio output format."
-        }
-      }
-    }
-  },
-  "Synopsis": {
-    "comment": "Native tvOS presentation and playback interface.",
-    "localizations": {
-      "en": {
-        "stringUnit": {
-          "state": "translated",
-          "value": "Synopsis"
-        }
-      }
-    }
-  },
-  "Tracks": {
-    "comment": "Native tvOS presentation and playback interface.",
-    "localizations": {
-      "en": {
-        "stringUnit": {
-          "state": "translated",
-          "value": "Tracks"
-        }
-      }
-    }
-  },
-  "Transcode": {
-    "comment": "Native tvOS presentation and playback interface.",
-    "localizations": {
-      "en": {
-        "stringUnit": {
-          "state": "translated",
-          "value": "Transcode"
-        }
-      }
-    }
-  },
-  "Unwatched": {
-    "comment": "Native tvOS presentation and playback interface.",
-    "localizations": {
-      "en": {
-        "stringUnit": {
-          "state": "translated",
-          "value": "Unwatched"
-        }
-      }
-    }
-  },
-  "Watched": {
-    "comment": "Native tvOS presentation and playback interface.",
-    "localizations": {
-      "en": {
-        "stringUnit": {
-          "state": "translated",
-          "value": "Watched"
-        }
-      }
-    }
-  },
-    "Saved Changes Unavailable" : {
-      "comment" : "A local playlist queue or playback checkpoint could not be saved.",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Saved Changes Unavailable"
+  "sourceLanguage": "en",
+  "strings": {
+    "%@ of %@": {
+      "comment": "Accessibility value for elapsed media playback time\nVoiceOver value for the playback scrubber, e.g. 1:30 of 4:05",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "%1$@ of %2$@"
           }
         }
       }
     },
-    "Jellyfin playlists cannot contain the same item more than once. This playlist has not been created.": {
-      "comment": "Native Jellyfin playlist and collection interface.",
+    "%@ received · Total size unknown": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Jellyfin playlists cannot contain the same item more than once. This playlist has not been created."
+            "value": "%@ received · Total size unknown"
           }
         }
       }
     },
-    "Jellyfin playlists require unique items. Repeated items have not been sent to the server.": {
-      "comment": "Jellyfin native playlist duplicate limitation",
+    "%@ · %@": {
+      "comment": "Next Up and video playlist interface."
+    },
+    "%@ — Season %lld": {
+      "comment": "Downloaded series season heading",
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Jellyfin playlists require unique items. Repeated items have not been sent to the server."
+            "value": "%@ — Season %lld"
           }
         }
       }
     },
-    "This Gus playlist contains repeated items. Jellyfin playlists require unique items, so the original Gus playlist has been kept for editing.": {
-      "comment": "Native Jellyfin playlist and collection interface.",
+    "%@, %@": {
+      "comment": "A combined title and subtitle for an accessibility label. The first argument is the title. The second argument is the subtitle.",
+      "isCommentAutoGenerated": true,
       "localizations": {
         "en": {
           "stringUnit": {
-            "state": "translated",
-            "value": "This Gus playlist contains repeated items. Jellyfin playlists require unique items, so the original Gus playlist has been kept for editing."
+            "state": "new",
+            "value": "%1$@, %2$@"
           }
         }
       }
     },
-    "This item is already in this Jellyfin playlist. Repeated items are not supported.": {
-      "comment": "Native Jellyfin playlist and collection interface.",
+    "%@, now playing %@": {
+      "comment": "A label for a channel that includes the channel name and the name of the currently playing program.",
+      "isCommentAutoGenerated": true,
       "localizations": {
         "en": {
           "stringUnit": {
-            "state": "translated",
-            "value": "This item is already in this Jellyfin playlist. Repeated items are not supported."
+            "state": "new",
+            "value": "%1$@, now playing %2$@"
           }
         }
       }
     },
-    "This item is already in this collection.": {
-      "comment": "Native Jellyfin playlist and collection interface.",
+    "%@/s": {
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "This item is already in this collection."
+            "value": "%@/s"
           }
         }
       }
+    },
+    "%@×": {
+      "comment": "A speed option in an audio book player. The value is formatted to show the playback rate as a fraction.",
+      "isCommentAutoGenerated": true
+    },
+    "%lld": {
+      "comment": "Next Up and video playlist interface."
+    },
+    "%lld items": {
+      "comment": "Next Up and video playlist interface."
+    },
+    "%lld titles": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld title"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld titles"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "0 seconds": {
+      "comment": "Zero duration fallback"
+    },
+    "2D": {
+      "comment": "visionOS playback viewing mode option for monoscopic video",
+      "extractionState": "manual"
+    },
+    "3D not supported for this format - playing in 2D": {
+      "comment": "Playback notice for unsupported stereoscopic video formats such as MVC",
+      "extractionState": "manual"
+    },
+    "3D unavailable - playing in 2D": {
+      "comment": "Playback notice when 3D direct play is unavailable and playback falls back to 2D",
+      "extractionState": "manual"
+    },
+    "A Playa Named Gus": {
+      "comment": "App name",
+      "extractionState": "manual"
     },
     "A server edit needs review. Refresh and inspect Jellyfin before retrying to avoid duplicates.": {
       "comment": "Native Jellyfin playlist and collection interface.",
@@ -275,6 +135,54 @@
           }
         }
       }
+    },
+    "About": {
+      "comment": "Settings section title",
+      "extractionState": "manual"
+    },
+    "Account": {
+      "comment": "Settings section title",
+      "extractionState": "manual"
+    },
+    "Account Switch Failed": {
+      "comment": "Settings alert title for failed account switching",
+      "extractionState": "manual"
+    },
+    "Active": {
+      "comment": "Settings stored-account status for the current account",
+      "extractionState": "manual"
+    },
+    "Active Downloads": {
+      "comment": "Downloads view active and paused download count label",
+      "extractionState": "manual"
+    },
+    "Add": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add"
+          }
+        }
+      }
+    },
+    "Add Media": {
+      "comment": "Next Up and video playlist interface."
+    },
+    "Add Movies": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add Movies"
+          }
+        }
+      }
+    },
+    "Add movies or individual episodes to get started.": {
+      "comment": "Next Up and video playlist interface."
     },
     "Add titles to this collection.": {
       "comment": "Native Jellyfin playlist and collection interface.",
@@ -294,6 +202,143 @@
           "stringUnit": {
             "state": "translated",
             "value": "Add to Collection"
+          }
+        }
+      }
+    },
+    "Add to Favorites": {
+      "comment": "Button title for adding an item to the user's favorites.",
+      "isCommentAutoGenerated": true
+    },
+    "Add to Next Up": {
+      "comment": "Next Up and video playlist interface."
+    },
+    "Add to Playlist": {
+      "comment": "Next Up and video playlist interface."
+    },
+    "Add to Up Next": {
+      "comment": "Label for a button that adds an item to the user's Up Next list.",
+      "isCommentAutoGenerated": true
+    },
+    "Address": {
+      "comment": "Server address label",
+      "extractionState": "manual"
+    },
+    "Age range isn't available right now. Choose a limit manually instead.": {
+      "comment": "Status when the Declared Age Range request fails"
+    },
+    "Albums": {
+      "comment": "CarPlay albums tab"
+    },
+    "All": {
+      "comment": "Library filter option that includes every item",
+      "extractionState": "manual"
+    },
+    "All Ages": {
+      "comment": "Content limit tier"
+    },
+    "Appearance": {
+      "comment": "Settings section header for appearance preferences (color scheme)",
+      "extractionState": "manual"
+    },
+    "Approve this code in Jellyfin on another device.": {
+      "comment": "Quick Connect instructions shown with a polling code",
+      "extractionState": "manual"
+    },
+    "Approximately %@ of server preparation remaining": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Approximately %@ of server preparation remaining"
+          }
+        }
+      }
+    },
+    "Approximately %@ remaining": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Approximately %@ remaining"
+          }
+        }
+      }
+    },
+    "Audio": {
+      "comment": "Downloaded filter"
+    },
+    "Audiobooks": {
+      "comment": "CarPlay audiobooks tab"
+    },
+    "Auto": {
+      "comment": "visionOS playback viewing mode option for automatic 3D detection",
+      "extractionState": "manual"
+    },
+    "Auto-Play Next Episode": {
+      "comment": "Settings toggle: automatically play the next episode when one ends."
+    },
+    "Automatically remove finished downloads from this device without asking. Video and audio are removed after playback ends; books are removed when you close the reader at the end. Repeated audio is kept until playback stops. Books opened in other apps are not removed automatically.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Automatically remove finished downloads from this device without asking. Video and audio are removed after playback ends; books are removed when you close the reader at the end. Repeated audio is kept until playback stops. Books opened in other apps are not removed automatically."
+          }
+        }
+      }
+    },
+    "Back 15 seconds": {
+      "comment": "Accessibility label for the seek-back 15 seconds button"
+    },
+    "Books": {
+      "comment": "Downloaded filter\nNavigation category: books"
+    },
+    "Browse": {
+      "comment": "A title for the watchOS library browsing screen.",
+      "isCommentAutoGenerated": true
+    },
+    "Can't Open That": {
+      "comment": "A title for an alert that can't open a content link.",
+      "isCommentAutoGenerated": true
+    },
+    "Can't Open This Book": {
+      "comment": "A title for a view that indicates that a book can't be opened.",
+      "isCommentAutoGenerated": true
+    },
+    "Can't Play This": {
+      "comment": "Playback error title",
+      "extractionState": "manual"
+    },
+    "Can't Play on Watch": {
+      "comment": "A title for a screen that indicates that a video can't be played on a watch.",
+      "isCommentAutoGenerated": true
+    },
+    "Cancel": {
+      "comment": "Cancel button title",
+      "extractionState": "manual"
+    },
+    "Cancel recording %@": {
+      "comment": "A button that cancels a scheduled recording. The argument is the name of the recording.",
+      "isCommentAutoGenerated": true
+    },
+    "CarPlay plays music and audiobooks from your active Jellyfin session.": {
+      "comment": "CarPlay signed-out detail"
+    },
+    "Cast & Crew": {
+      "comment": "Item detail people metadata section title",
+      "extractionState": "manual"
+    },
+    "Change Artwork": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change Artwork"
           }
         }
       }
@@ -320,6 +365,23 @@
         }
       }
     },
+    "Changes waiting to sync": {
+      "comment": "Next Up and video playlist interface."
+    },
+    "Channels": {
+      "comment": "Live TV section"
+    },
+    "Chapter %lld": {
+      "comment": "Fallback chapter title"
+    },
+    "Chapters": {
+      "comment": "A label for a menu that lists chapters in a media item.",
+      "isCommentAutoGenerated": true
+    },
+    "Check that your Jellyfin server and this device are on the same network.": {
+      "comment": "Local server discovery empty-state guidance",
+      "extractionState": "manual"
+    },
     "Check this change in Jellyfin before retrying.": {
       "comment": "Native Jellyfin playlist and collection interface.",
       "localizations": {
@@ -331,6 +393,7 @@
         }
       }
     },
+    "Checking Age Range…": {},
     "Choose Collection": {
       "comment": "Native Jellyfin playlist and collection interface.",
       "localizations": {
@@ -342,6 +405,12 @@
         }
       }
     },
+    "Choose Playlist": {
+      "comment": "Next Up and video playlist interface."
+    },
+    "Choose Replacement": {
+      "comment": "Search for and explicitly select a current library item."
+    },
     "Choose an entry to play from, or start this playlist again.": {
       "comment": "Native Jellyfin playlist and collection interface.",
       "localizations": {
@@ -349,6 +418,66 @@
           "stringUnit": {
             "state": "translated",
             "value": "Choose an entry to play from, or start this playlist again."
+          }
+        }
+      }
+    },
+    "Choose an image smaller than 20 MB.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose an image smaller than 20 MB."
+          }
+        }
+      }
+    },
+    "Client": {
+      "comment": "App client name label",
+      "extractionState": "manual"
+    },
+    "Close": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Close"
+          }
+        }
+      }
+    },
+    "Close Player": {
+      "comment": "Playback close button accessibility label",
+      "extractionState": "manual"
+    },
+    "Closes the current environment.": {
+      "comment": "A hint for closing the current environment.",
+      "isCommentAutoGenerated": true
+    },
+    "Code": {
+      "comment": "Quick Connect polling code label",
+      "extractionState": "manual"
+    },
+    "Codec": {
+      "comment": "Native tvOS presentation and playback interface.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Codec"
+          }
+        }
+      }
+    },
+    "Collection": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Collection"
           }
         }
       }
@@ -386,6 +515,25 @@
         }
       }
     },
+    "Completed downloads available on this device appear here.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Completed downloads available on this device appear here."
+          }
+        }
+      }
+    },
+    "Connect": {
+      "comment": "Connect button title",
+      "extractionState": "manual"
+    },
+    "Connect to Jellyfin": {
+      "comment": "Connect screen navigation title",
+      "extractionState": "manual"
+    },
     "Connect to Jellyfin to load the entries for this playlist.": {
       "comment": "Native Jellyfin playlist and collection interface.",
       "localizations": {
@@ -408,6 +556,39 @@
         }
       }
     },
+    "Connecting to %@": {
+      "comment": "Sign-in footer; argument is the server URL",
+      "extractionState": "manual"
+    },
+    "Connection": {
+      "comment": "A label for the connection status of the user's device.",
+      "isCommentAutoGenerated": true
+    },
+    "Content Restrictions": {
+      "comment": "Settings section header for content rating/parental controls",
+      "extractionState": "manual"
+    },
+    "Content limit set to %@.": {
+      "comment": "Status after Declared Age Range sets a content limit tier"
+    },
+    "Continue Playlist": {
+      "comment": "Next Up and video playlist interface."
+    },
+    "Continue Searching": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Continue Searching"
+          }
+        }
+      }
+    },
+    "Continue Watching": {
+      "comment": "Home rail title for in-progress media",
+      "extractionState": "manual"
+    },
     "Copy your previous Gus playlists to Jellyfin. Originals remain available until import succeeds.": {
       "comment": "Native Jellyfin playlist and collection interface.",
       "localizations": {
@@ -415,6 +596,160 @@
           "stringUnit": {
             "state": "translated",
             "value": "Copy your previous Gus playlists to Jellyfin. Originals remain available until import succeeds."
+          }
+        }
+      }
+    },
+    "Could not build a playable URL for this item.": {
+      "comment": "Playback error: URL build failed",
+      "extractionState": "manual"
+    },
+    "Couldn't Cancel Recording": {
+      "comment": "Live TV alert title when cancelling a scheduled recording fails",
+      "extractionState": "manual"
+    },
+    "Couldn't Prepare Book": {
+      "comment": "A title for an alert that can't prepare a book.",
+      "isCommentAutoGenerated": true
+    },
+    "Couldn't reach that server. %@": {
+      "comment": "Connect error: server unreachable, with detail",
+      "extractionState": "manual"
+    },
+    "Couldn't reach the server. %@": {
+      "comment": "Network error with detail",
+      "extractionState": "manual"
+    },
+    "Create": {
+      "comment": "Next Up and video playlist interface."
+    },
+    "Create a collection or add a movie to one.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Create a collection or add a movie to one."
+          }
+        }
+      }
+    },
+    "Create a playlist to watch movies and episodes in your own order.": {
+      "comment": "Next Up and video playlist interface."
+    },
+    "Create and Add": {
+      "comment": "Next Up and video playlist interface."
+    },
+    "Critic %@": {
+      "comment": "Critic rating label; argument is the percentage text",
+      "extractionState": "manual"
+    },
+    "Dark": {
+      "comment": "Appearance option: always dark mode"
+    },
+    "Debug builds only. Start it with Scripts/demo-server.sh.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Debug builds only. Start it with Scripts/demo-server.sh."
+          }
+        }
+      }
+    },
+    "Default Order": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Default Order"
+          }
+        }
+      }
+    },
+    "Delete": {
+      "comment": "Delete button title",
+      "extractionState": "manual"
+    },
+    "Delete %@": {
+      "comment": "A button that deletes a record. The argument is the title of the record.",
+      "isCommentAutoGenerated": true
+    },
+    "Delete %lld Downloads": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete %lld Downloads"
+          }
+        }
+      }
+    },
+    "Delete After Finishing": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete After Finishing"
+          }
+        }
+      }
+    },
+    "Delete All Downloads": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete All Downloads"
+          }
+        }
+      }
+    },
+    "Delete Collection": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete Collection"
+          }
+        }
+      }
+    },
+    "Delete Collection?": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete Collection?"
+          }
+        }
+      }
+    },
+    "Delete Download": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete Download"
+          }
+        }
+      }
+    },
+    "Delete Downloads?": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete Downloads?"
           }
         }
       }
@@ -430,6 +765,71 @@
         }
       }
     },
+    "Delete Playlist": {
+      "comment": "Next Up and video playlist interface."
+    },
+    "Delete Playlist?": {
+      "comment": "Next Up and video playlist interface."
+    },
+    "Delete Selected (%lld)": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete Selected (%lld)"
+          }
+        }
+      }
+    },
+    "Delivery": {
+      "comment": "Native tvOS presentation and playback interface.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delivery"
+          }
+        }
+      }
+    },
+    "Description": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Description"
+          }
+        }
+      }
+    },
+    "Deselect All": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deselect All"
+          }
+        }
+      }
+    },
+    "Device": {
+      "comment": "Device name label",
+      "extractionState": "manual"
+    },
+    "Direct Play": {
+      "comment": "Native tvOS presentation and playback interface.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Direct Play"
+          }
+        }
+      }
+    },
     "Discard Change": {
       "comment": "Native Jellyfin playlist and collection interface.",
       "localizations": {
@@ -441,6 +841,276 @@
         }
       }
     },
+    "Discovery Failed": {
+      "comment": "Local server discovery error-state title",
+      "extractionState": "manual"
+    },
+    "Dismiss": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dismiss"
+          }
+        }
+      }
+    },
+    "Dismiss Error": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dismiss Error"
+          }
+        }
+      }
+    },
+    "Done": {
+      "comment": "A button that dismisses the current view.",
+      "isCommentAutoGenerated": true
+    },
+    "Download": {
+      "comment": "Item detail download button title",
+      "extractionState": "manual"
+    },
+    "Download Failed": {
+      "comment": "Download failure alert title and failed download status label",
+      "extractionState": "manual"
+    },
+    "Download Unavailable": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Download Unavailable"
+          }
+        }
+      }
+    },
+    "Download music and audiobooks from Browse for offline listening.": {
+      "comment": "A description of the content of the watch download view.",
+      "isCommentAutoGenerated": true
+    },
+    "Download progress for %@": {
+      "comment": "A progress bar that shows the download progress of a file.",
+      "isCommentAutoGenerated": true
+    },
+    "Downloaded": {
+      "comment": "Item detail downloaded status label",
+      "extractionState": "manual"
+    },
+    "Downloaded Media": {
+      "comment": "Downloads view completed downloads section title",
+      "extractionState": "manual"
+    },
+    "Downloaded items from this server and user will appear here.": {
+      "comment": "Downloads empty-state description",
+      "extractionState": "manual"
+    },
+    "Downloaded on %@": {
+      "comment": "Downloaded status accessibility hint; argument is the downloaded date",
+      "extractionState": "manual"
+    },
+    "Downloading": {
+      "comment": "Download in-progress status label",
+      "extractionState": "manual"
+    },
+    "Downloading · %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Downloading · %@"
+          }
+        }
+      }
+    },
+    "Downloading · Total size unknown": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Downloading · Total size unknown"
+          }
+        }
+      }
+    },
+    "Downloads": {
+      "comment": "Settings downloads navigation title",
+      "extractionState": "manual"
+    },
+    "Downloads are available on iOS, iPadOS, macOS, and visionOS. tvOS is excluded because its app storage is system-purgeable.": {
+      "comment": "A description of the format of the footer of the Downloads section.",
+      "isCommentAutoGenerated": true
+    },
+    "Downloads are using the 20 GB soft cap. Delete a download before adding more.": {
+      "comment": "Downloads soft cap error",
+      "extractionState": "manual"
+    },
+    "Downloads the book, then offers the share sheet — use it to open this book in Apple Books.": {
+      "comment": "A hint for the share button.",
+      "isCommentAutoGenerated": true
+    },
+    "Downloads use background transfers from your Jellyfin server, are stored in Application Support, and are excluded from device backup.": {
+      "comment": "Downloads storage and backup footer",
+      "extractionState": "manual"
+    },
+    "Downloads use system background transfers. Avoid force-quitting Gus while downloading. Saved media stays on this device and is excluded from backup.": {
+      "comment": "Download background behavior and local storage explanation",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Downloads use system background transfers. Avoid force-quitting Gus while downloading. Saved media stays on this device and is excluded from backup."
+          }
+        }
+      }
+    },
+    "Dynamic Range": {
+      "comment": "Native tvOS presentation and playback interface.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dynamic Range"
+          }
+        }
+      }
+    },
+    "Edit": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Edit"
+          }
+        }
+      }
+    },
+    "Edit Collection": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Edit Collection"
+          }
+        }
+      }
+    },
+    "Empty Library": {
+      "comment": "Empty-state title when a library contains no items",
+      "extractionState": "manual"
+    },
+    "Enter a valid server address.": {
+      "comment": "Connect error: malformed URL",
+      "extractionState": "manual"
+    },
+    "Enter your Jellyfin server's address, including the port (default 8096).": {
+      "comment": "Connect screen server address help text",
+      "extractionState": "manual"
+    },
+    "Entries": {
+      "comment": "Next Up and video playlist interface."
+    },
+    "Environment": {
+      "comment": "A button that opens a popover to select an environment.",
+      "isCommentAutoGenerated": true
+    },
+    "Episode %lld": {
+      "comment": "Downloaded episode number",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Episode %lld"
+          }
+        }
+      }
+    },
+    "Episodes": {
+      "comment": "Series detail episodes section title",
+      "extractionState": "manual"
+    },
+    "Failed": {
+      "comment": "Downloads view failed downloads section title",
+      "extractionState": "manual"
+    },
+    "Filter": {
+      "comment": "Library toolbar menu and picker label for filtering items",
+      "extractionState": "manual"
+    },
+    "Find Local Servers": {
+      "comment": "Connect screen local server discovery action",
+      "extractionState": "manual"
+    },
+    "Finding download source": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Finding download source"
+          }
+        }
+      }
+    },
+    "Forward 15 seconds": {
+      "comment": "Accessibility label for the seek-forward 15 seconds button"
+    },
+    "Genres": {
+      "comment": "Item detail genre metadata label",
+      "extractionState": "manual"
+    },
+    "Get Code": {
+      "comment": "A button that requests a code to sign in to Jellyfin.",
+      "isCommentAutoGenerated": true
+    },
+    "Gus": {
+      "comment": "CarPlay root title"
+    },
+    "Gus Cinema": {
+      "comment": "visionOS immersive cinema button title",
+      "extractionState": "manual"
+    },
+    "Hidden": {
+      "comment": "A section title for hidden sections.",
+      "isCommentAutoGenerated": true
+    },
+    "Hidden sections stay available in Settings.": {
+      "comment": "Navigation settings footer explaining that hidden sections remain accessible via Settings",
+      "extractionState": "manual"
+    },
+    "Hide Unrated Media": {
+      "comment": "A toggle that hides unrated media.",
+      "isCommentAutoGenerated": true
+    },
+    "Hides and gates media rated above the limit. Pair with Jellyfin user permissions and Apple Screen Time for enforced parental controls.": {
+      "comment": "A description of the content restrictions section.",
+      "isCommentAutoGenerated": true
+    },
+    "High (20 Mbps)": {
+      "comment": "Streaming quality option"
+    },
+    "Home": {
+      "comment": "Home navigation label",
+      "extractionState": "manual"
+    },
+    "Home is always first.": {
+      "comment": "Navigation settings footer explaining Home is pinned to the first position",
+      "extractionState": "manual"
+    },
+    "I couldn't find \"%@\" in your library.": {
+      "comment": "Siri/Shortcuts response when search finds nothing"
+    },
     "Import Gus Playlists": {
       "comment": "Native Jellyfin playlist and collection interface.",
       "localizations": {
@@ -448,6 +1118,50 @@
           "stringUnit": {
             "state": "translated",
             "value": "Import Gus Playlists"
+          }
+        }
+      }
+    },
+    "In Progress": {
+      "comment": "Downloads view active downloads section title and library filter option for in-progress media",
+      "extractionState": "manual"
+    },
+    "It may have been deleted or belong to another account.": {
+      "comment": "Next Up and video playlist interface."
+    },
+    "Item Could Not Be Updated": {
+      "comment": "Media item context menu action or error.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Item Could Not Be Updated"
+          }
+        }
+      }
+    },
+    "Jellyfin User": {
+      "comment": "Fallback display name for a signed-in Jellyfin user",
+      "extractionState": "manual"
+    },
+    "Jellyfin playlists cannot contain the same item more than once. This playlist has not been created.": {
+      "comment": "Native Jellyfin playlist and collection interface.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jellyfin playlists cannot contain the same item more than once. This playlist has not been created."
+          }
+        }
+      }
+    },
+    "Jellyfin playlists require unique items. Repeated items have not been sent to the server.": {
+      "comment": "Jellyfin native playlist duplicate limitation",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jellyfin playlists require unique items. Repeated items have not been sent to the server."
           }
         }
       }
@@ -463,6 +1177,32 @@
         }
       }
     },
+    "Keep Progress Local": {
+      "comment": "Keep original progress without uploading it to a replacement."
+    },
+    "Known Servers": {
+      "comment": "Settings section title",
+      "extractionState": "manual"
+    },
+    "Libraries": {
+      "comment": "Libraries section title",
+      "extractionState": "manual"
+    },
+    "Library": {
+      "comment": "Fallback library title",
+      "extractionState": "manual"
+    },
+    "Light": {
+      "comment": "Appearance option: always light mode"
+    },
+    "Limit": {
+      "comment": "A label for the amount of storage used in the watch.",
+      "isCommentAutoGenerated": true
+    },
+    "Limit Content Ratings": {
+      "comment": "A label for the content rating limit setting.",
+      "isCommentAutoGenerated": true
+    },
     "List Could Not Be Updated": {
       "comment": "Native Jellyfin playlist and collection interface.",
       "localizations": {
@@ -473,6 +1213,170 @@
           }
         }
       }
+    },
+    "Live TV": {
+      "comment": "Live TV section/destination label",
+      "extractionState": "manual"
+    },
+    "Live TV Not Configured": {
+      "comment": "A title for a view that shows when a server has no tuner/DVR configured.",
+      "isCommentAutoGenerated": true
+    },
+    "Load More": {
+      "comment": "Next Up and video playlist interface."
+    },
+    "Loading Profiles": {
+      "comment": "Sign-in status while public profiles are loading",
+      "extractionState": "manual"
+    },
+    "Loading Sections": {
+      "comment": "Navigation settings loading state while sections are being fetched",
+      "extractionState": "manual"
+    },
+    "Local Server Discovery": {
+      "comment": "Connect screen local server discovery status label",
+      "extractionState": "manual"
+    },
+    "Local Servers": {
+      "comment": "Connect screen local server discovery section title",
+      "extractionState": "manual"
+    },
+    "Local files and their reading locations will be preserved. Only the saved playback position or reading percentage will be transferred.": {
+      "comment": "Progress transfer explanation."
+    },
+    "Low (3 Mbps)": {
+      "comment": "Streaming quality option"
+    },
+    "Manage Accounts": {
+      "comment": "Native tvOS presentation and playback interface.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Manage Accounts"
+          }
+        }
+      }
+    },
+    "Manage Downloads": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Manage Downloads"
+          }
+        }
+      }
+    },
+    "Mark Unwatched": {
+      "comment": "Media item context menu action or error.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mark Unwatched"
+          }
+        }
+      }
+    },
+    "Mark Watched": {
+      "comment": "Media item context menu action or error.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mark Watched"
+          }
+        }
+      }
+    },
+    "Mark as Unwatched": {
+      "comment": "Button title to mark an item as unwatched.",
+      "isCommentAutoGenerated": true
+    },
+    "Mark as Watched": {
+      "comment": "Button title to mark an item as watched.",
+      "isCommentAutoGenerated": true
+    },
+    "Mature": {
+      "comment": "Content limit tier"
+    },
+    "Maximum (Original)": {
+      "comment": "Streaming quality option: no practical bitrate cap"
+    },
+    "Maximum lets compatible files play at original quality. Lower settings cap the streaming bitrate for constrained networks.": {
+      "comment": "Settings footer explaining the streaming quality options."
+    },
+    "Media": {
+      "comment": "Section title for media information in the about screen.",
+      "isCommentAutoGenerated": true
+    },
+    "Media Type": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Media Type"
+          }
+        }
+      }
+    },
+    "Medium (8 Mbps)": {
+      "comment": "Streaming quality option"
+    },
+    "More": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "More"
+          }
+        }
+      }
+    },
+    "Move Down": {
+      "comment": "Next Up and video playlist interface."
+    },
+    "Move Up": {
+      "comment": "Next Up and video playlist interface."
+    },
+    "Movies": {
+      "comment": "Downloaded filter\nNavigation category: movies"
+    },
+    "Movies and Episodes": {
+      "comment": "Next Up and video playlist interface."
+    },
+    "Music": {
+      "comment": "Navigation category: music"
+    },
+    "Mute": {
+      "comment": "Accessibility label for the mute button"
+    },
+    "Name": {
+      "comment": "Library sort option by title/name",
+      "extractionState": "manual"
+    },
+    "Name and description saved. Check artwork in Jellyfin before retrying.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Name and description saved. Check artwork in Jellyfin before retrying."
+          }
+        }
+      }
+    },
+    "Navigate": {
+      "comment": "Menu title for navigation commands",
+      "extractionState": "manual"
+    },
+    "Navigation": {
+      "comment": "Navigation settings screen title and Settings link label",
+      "extractionState": "manual"
     },
     "New Collection": {
       "comment": "Native Jellyfin playlist and collection interface.",
@@ -496,6 +1400,35 @@
         }
       }
     },
+    "New Playlist": {
+      "comment": "Next Up and video playlist interface."
+    },
+    "New artwork selected": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New artwork selected"
+          }
+        }
+      }
+    },
+    "Next Episode": {
+      "comment": "Next Up reason"
+    },
+    "Next Track": {
+      "comment": "Accessibility label for the next track button in the audio player",
+      "extractionState": "manual"
+    },
+    "Next Up": {
+      "comment": "Home rail title for next episodes",
+      "extractionState": "manual"
+    },
+    "No Active Players": {
+      "comment": "Watch remote control empty-state title when no Jellyfin sessions are playing",
+      "extractionState": "manual"
+    },
     "No Collections": {
       "comment": "Native Jellyfin playlist and collection interface.",
       "localizations": {
@@ -506,6 +1439,151 @@
           }
         }
       }
+    },
+    "No Downloaded Media": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No Downloaded Media"
+          }
+        }
+      }
+    },
+    "No Downloads": {
+      "comment": "Downloads empty-state title",
+      "extractionState": "manual"
+    },
+    "No Episodes": {
+      "comment": "Series detail empty-state title when a season has no episodes",
+      "extractionState": "manual"
+    },
+    "No Libraries": {
+      "comment": "Empty state title when no libraries are available",
+      "extractionState": "manual"
+    },
+    "No Live TV Content": {
+      "comment": "Live TV empty-state title when there are no channels or recordings to display",
+      "extractionState": "manual"
+    },
+    "No Photos": {
+      "comment": "Photo viewer empty-state title when no photos are available",
+      "extractionState": "manual"
+    },
+    "No Playlists": {
+      "comment": "Next Up and video playlist interface."
+    },
+    "No Recent Media": {
+      "comment": "Home empty-state title when no media has been watched recently",
+      "extractionState": "manual"
+    },
+    "No Recordings": {
+      "comment": "Live TV recordings tab empty-state label",
+      "extractionState": "manual"
+    },
+    "No Results": {
+      "comment": "Search empty-state title",
+      "extractionState": "manual"
+    },
+    "No Scheduled Recordings": {
+      "comment": "Live TV scheduled recordings tab empty-state label",
+      "extractionState": "manual"
+    },
+    "No Seasons": {
+      "comment": "Series detail empty-state title when a show has no seasons",
+      "extractionState": "manual"
+    },
+    "No Servers Found": {
+      "comment": "Local server discovery empty-state title",
+      "extractionState": "manual"
+    },
+    "No Titles": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No Titles"
+          }
+        }
+      }
+    },
+    "No age range was shared. The limit is unchanged.": {
+      "comment": "Status after the user declines Declared Age Range sharing"
+    },
+    "No password required": {
+      "comment": "Public profile hint when the Jellyfin profile has no password",
+      "extractionState": "manual"
+    },
+    "No restriction needed for the shared age range.": {
+      "comment": "Status when a declared adult age range leaves the limit unchanged"
+    },
+    "Not Selected": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not Selected"
+          }
+        }
+      }
+    },
+    "Not Signed In": {
+      "comment": "Title shown in the macOS player window when no session is active."
+    },
+    "Not enough free space to start another download.": {
+      "comment": "Low disk space download error",
+      "extractionState": "manual"
+    },
+    "Not enough resume data — restarting download.": {
+      "comment": "Download resume fallback message",
+      "extractionState": "manual"
+    },
+    "Nothing Here Yet": {
+      "comment": "Default empty state title",
+      "extractionState": "manual"
+    },
+    "Nothing Playing": {
+      "comment": "Remote session idle state"
+    },
+    "Nothing in Next Up": {
+      "comment": "Next Up and video playlist interface."
+    },
+    "Now Playing": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Now Playing"
+          }
+        }
+      }
+    },
+    "OK": {
+      "comment": "Alert confirmation button title",
+      "extractionState": "manual"
+    },
+    "Off": {
+      "comment": "Content limit: no filtering"
+    },
+    "Offline": {
+      "comment": "watchOS connection status label when the server is unreachable",
+      "extractionState": "manual"
+    },
+    "Online": {
+      "comment": "watchOS connection status label when the server is reachable",
+      "extractionState": "manual"
+    },
+    "Open %@": {
+      "comment": "Open the EPUB entry named by the argument; shown beneath a chapter group",
+      "extractionState": "manual"
+    },
+    "Open A Playa Named Gus": {
+      "comment": "Top Shelf action that opens the app home screen",
+      "extractionState": "manual"
     },
     "Open Audio Playlist": {
       "comment": "Native Jellyfin playlist and collection interface.",
@@ -518,6 +1596,112 @@
         }
       }
     },
+    "Open Gus on iPhone to sign in": {
+      "comment": "CarPlay signed-out title"
+    },
+    "Open in Another App": {
+      "comment": "Open a downloaded book using a compatible external reader",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open in Another App"
+          }
+        }
+      }
+    },
+    "Open in Books": {
+      "comment": "Open a downloaded book using the system sharing sheet",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open in Books"
+          }
+        }
+      }
+    },
+    "Open this book's detail page and use Share to read it in Apple Books.": {
+      "comment": "A description of how to read a book on a device without Readium.",
+      "isCommentAutoGenerated": true
+    },
+    "Opening %@.": {
+      "comment": "Siri/Shortcuts response when a container opens instead of playing"
+    },
+    "Opens Now Playing": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opens Now Playing"
+          }
+        }
+      }
+    },
+    "Opens the downloaded book": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opens the downloaded book"
+          }
+        }
+      }
+    },
+    "Opens the share sheet — use it to open this book in Apple Books.": {
+      "comment": "A hint for the share button.",
+      "isCommentAutoGenerated": true
+    },
+    "Opens this environment.": {
+      "comment": "A hint that describes the action of opening an environment.",
+      "isCommentAutoGenerated": true
+    },
+    "Or open A Playa Named Gus on your iPhone — the watch signs in automatically.": {
+      "comment": "A description of how to sign in to Jellyfin on an iPhone.",
+      "isCommentAutoGenerated": true
+    },
+    "Parental Guidance": {
+      "comment": "Content limit tier"
+    },
+    "Password": {
+      "comment": "Password field placeholder",
+      "extractionState": "manual"
+    },
+    "Pause": {
+      "comment": "Pause download button title",
+      "extractionState": "manual"
+    },
+    "Pause %@": {
+      "comment": "A button that pauses a download. The argument is the name of the item being downloaded.",
+      "isCommentAutoGenerated": true
+    },
+    "Pause Slideshow": {
+      "comment": "Play or pause button for a slideshow of photos.",
+      "isCommentAutoGenerated": true
+    },
+    "Paused": {
+      "comment": "Paused download status label and section title",
+      "extractionState": "manual"
+    },
+    "Paused Downloads": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paused Downloads"
+          }
+        }
+      }
+    },
+    "Pausing...": {
+      "comment": "Download pause in-progress button state",
+      "extractionState": "manual"
+    },
     "Pending List Change": {
       "comment": "Native Jellyfin playlist and collection interface.",
       "localizations": {
@@ -528,6 +1712,41 @@
           }
         }
       }
+    },
+    "Photos": {
+      "comment": "Navigation category: photos"
+    },
+    "Pineapple": {},
+    "Play": {
+      "comment": "Playback button title",
+      "extractionState": "manual"
+    },
+    "Play ${title}": {},
+    "Play %@": {
+      "comment": "A button that plays a downloaded record. The argument is the title of the record.",
+      "isCommentAutoGenerated": true
+    },
+    "Play Media": {
+      "comment": "Siri/Shortcuts intent to play media.",
+      "isCommentAutoGenerated": true
+    },
+    "Play On": {
+      "comment": "A screen that lets the user choose which remote client should play an item.",
+      "isCommentAutoGenerated": true
+    },
+    "Play On…": {
+      "comment": "A button that displays a sheet for choosing a target for playing a media item.",
+      "isCommentAutoGenerated": true
+    },
+    "Play Slideshow": {
+      "comment": "Play or pause button for a slideshow of photos.",
+      "isCommentAutoGenerated": true
+    },
+    "Play from Beginning": {
+      "comment": "Next Up and video playlist interface."
+    },
+    "Play from Here": {
+      "comment": "Next Up and video playlist interface."
     },
     "Play mixed media individually. Ordered video playback supports movies and episodes.": {
       "comment": "Native Jellyfin playlist and collection interface.",
@@ -540,6 +1759,65 @@
         }
       }
     },
+    "Play on Watch": {},
+    "Playback": {
+      "comment": "Settings section header for playback preferences."
+    },
+    "Playback Info": {
+      "comment": "Native tvOS presentation and playback interface.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Playback Info"
+          }
+        }
+      }
+    },
+    "Playback Speed": {
+      "comment": "A label for the playback speed menu.",
+      "isCommentAutoGenerated": true
+    },
+    "Playback position": {
+      "comment": "Accessibility label for the audio playback progress bar\nAccessibility label for the remote session progress bar"
+    },
+    "Playback progress": {
+      "comment": "Next Up and video playlist interface."
+    },
+    "Playback progress %lld%%": {
+      "comment": "Native tvOS presentation and playback interface.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Playback progress %lld%%"
+          }
+        }
+      }
+    },
+    "Playback progress for %@": {
+      "comment": "Accessibility label for the resume progress bar; parameter is the item title"
+    },
+    "Playback stopped unexpectedly.": {
+      "comment": "Generic playback failure message"
+    },
+    "Played": {
+      "comment": "Library filter option for played items",
+      "extractionState": "manual"
+    },
+    "Player Gone": {
+      "comment": "Watch remote detail error state title when the controlled session has ended",
+      "extractionState": "manual"
+    },
+    "Playing %@.": {
+      "comment": "Siri/Shortcuts response when playback starts"
+    },
+    "Playlist %lld of %lld": {
+      "comment": "Next Up playlist position"
+    },
+    "Playlist Could Not Be Updated": {
+      "comment": "Next Up and video playlist interface."
+    },
     "Playlist Entries Unavailable": {
       "comment": "Native Jellyfin playlist and collection interface.",
       "localizations": {
@@ -551,6 +1829,18 @@
         }
       }
     },
+    "Playlist Finished": {
+      "comment": "An ordered video playlist reached the end of its final entry."
+    },
+    "Playlist Paused": {
+      "comment": "Next Up and video playlist interface."
+    },
+    "Playlist Unavailable": {
+      "comment": "Next Up and video playlist interface."
+    },
+    "Playlists": {
+      "comment": "Next Up and video playlist interface."
+    },
     "Playlists & Collections": {
       "comment": "Native Jellyfin playlist and collection interface.",
       "localizations": {
@@ -558,6 +1848,140 @@
           "stringUnit": {
             "state": "translated",
             "value": "Playlists & Collections"
+          }
+        }
+      }
+    },
+    "Plays the downloaded file": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plays the downloaded file"
+          }
+        }
+      }
+    },
+    "Preparing": {
+      "comment": "Native tvOS presentation and playback interface.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Preparing"
+          }
+        }
+      }
+    },
+    "Preparing Book…": {
+      "comment": "Books loading state while the EPUB file is being fetched or prepared",
+      "extractionState": "manual"
+    },
+    "Preparing download...": {
+      "comment": "Download status while server remuxes or converts media",
+      "extractionState": "manual"
+    },
+    "Preparing…": {
+      "comment": "A placeholder for a button that is loading.",
+      "isCommentAutoGenerated": true
+    },
+    "Previous Track": {
+      "comment": "Accessibility label for the previous track button in the audio player",
+      "extractionState": "manual"
+    },
+    "Public Profiles": {
+      "comment": "Sign-in section title for public Jellyfin user profiles",
+      "extractionState": "manual"
+    },
+    "Queue Could Not Be Updated": {
+      "comment": "Alert title for preserved queue read or write failures."
+    },
+    "Queued": {
+      "comment": "Download queued status label",
+      "extractionState": "manual"
+    },
+    "Quick Connect": {
+      "comment": "Quick Connect section title",
+      "extractionState": "manual"
+    },
+    "Random": {
+      "comment": "Library sort option for random ordering",
+      "extractionState": "manual"
+    },
+    "Rating": {
+      "comment": "Library sort option by community rating",
+      "extractionState": "manual"
+    },
+    "Read": {
+      "comment": "A button that opens a book.",
+      "isCommentAutoGenerated": true
+    },
+    "Read the full description": {
+      "comment": "Native tvOS presentation and playback interface.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Read the full description"
+          }
+        }
+      }
+    },
+    "Read this book in A Playa Named Gus on iPhone or iPad.": {},
+    "Reading Isn't Available Here": {
+      "comment": "A label that describes a book that can't be read.",
+      "isCommentAutoGenerated": true
+    },
+    "Recent Activity Unavailable": {
+      "comment": "Next Up and video playlist interface."
+    },
+    "Recent activity couldn't be read. It has been preserved.": {
+      "comment": "Next Up activity read failure"
+    },
+    "Recent activity couldn't be saved.": {
+      "comment": "Next Up activity write failure"
+    },
+    "Recently Added": {
+      "comment": "Library sort option by newest added item",
+      "extractionState": "manual"
+    },
+    "Recently Added %@": {
+      "comment": "Home latest media section title; argument is the library name",
+      "extractionState": "manual"
+    },
+    "Recommended": {
+      "comment": "Item detail section header for similar/recommended items",
+      "extractionState": "manual"
+    },
+    "Recording": {
+      "comment": "Fallback scheduled recording name"
+    },
+    "Recordings": {
+      "comment": "Live TV section"
+    },
+    "Refresh": {
+      "comment": "Refresh action for local server discovery",
+      "extractionState": "manual"
+    },
+    "Refresh Collections": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Refresh Collections"
+          }
+        }
+      }
+    },
+    "Refresh Status": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Refresh Status"
           }
         }
       }
@@ -584,6 +2008,75 @@
         }
       }
     },
+    "Release Date": {
+      "comment": "Library sort option by release date",
+      "extractionState": "manual"
+    },
+    "Remote": {
+      "comment": "Watch remote control tab/navigation title",
+      "extractionState": "manual"
+    },
+    "Remove": {
+      "comment": "Next Up and video playlist interface."
+    },
+    "Remove %@ from this device? The server copy will remain available.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove %@ from this device? The server copy will remain available."
+          }
+        }
+      }
+    },
+    "Remove %lld downloads from this device? Server copies will remain available. Active transfers will be canceled.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove %lld downloads from this device? Server copies will remain available. Active transfers will be canceled."
+          }
+        }
+      }
+    },
+    "Remove from %@": {
+      "comment": "Media item context menu action or error.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove from %@"
+          }
+        }
+      }
+    },
+    "Remove from Favorites": {
+      "comment": "Text for a button that removes an item from the user's favorites.",
+      "isCommentAutoGenerated": true
+    },
+    "Remove from Next Up": {
+      "comment": "Next Up and video playlist interface."
+    },
+    "Remove from Up Next": {
+      "comment": "Text for a button that removes an item from the user's Up Next list.",
+      "isCommentAutoGenerated": true
+    },
+    "Remux": {
+      "comment": "Native tvOS presentation and playback interface.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remux"
+          }
+        }
+      }
+    },
+    "Rename": {
+      "comment": "Next Up and video playlist interface."
+    },
     "Rename Collection": {
       "comment": "Native Jellyfin playlist and collection interface.",
       "localizations": {
@@ -594,6 +2087,41 @@
           }
         }
       }
+    },
+    "Rename Playlist": {
+      "comment": "Next Up and video playlist interface."
+    },
+    "Repeat All": {
+      "comment": "Repeat mode accessibility label"
+    },
+    "Repeat Off": {
+      "comment": "Repeat mode accessibility label"
+    },
+    "Repeat One": {
+      "comment": "Repeat mode accessibility label"
+    },
+    "Resolution": {
+      "comment": "Native tvOS presentation and playback interface.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Resolution"
+          }
+        }
+      }
+    },
+    "Restricted Content": {
+      "comment": "A title for a view that indicates that content is unavailable.",
+      "isCommentAutoGenerated": true
+    },
+    "Resume": {
+      "comment": "Resume download button title",
+      "extractionState": "manual"
+    },
+    "Resume %@": {
+      "comment": "A button that resumes a download. The argument is the name of the item being downloaded.",
+      "isCommentAutoGenerated": true
     },
     "Resume Entry Unavailable": {
       "comment": "Native Jellyfin playlist and collection interface.",
@@ -606,6 +2134,13 @@
         }
       }
     },
+    "Resuming...": {
+      "comment": "Download resume in-progress button state",
+      "extractionState": "manual"
+    },
+    "Retry": {
+      "comment": "Next Up and video playlist interface."
+    },
     "Retry After Checking Jellyfin": {
       "comment": "Native Jellyfin playlist and collection interface.",
       "localizations": {
@@ -613,6 +2148,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Retry After Checking Jellyfin"
+          }
+        }
+      }
+    },
+    "Retry Collections": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Retry Collections"
           }
         }
       }
@@ -628,6 +2174,418 @@
         }
       }
     },
+    "Review Progress": {
+      "comment": "Action to review a proposed progress transfer."
+    },
+    "S%02d E%02d": {
+      "comment": "Downloaded season and episode number",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "S%02d E%02d"
+          }
+        }
+      }
+    },
+    "Save": {
+      "comment": "Next Up and video playlist interface."
+    },
+    "Saved": {
+      "comment": "Next Up reason"
+    },
+    "Saved Changes Unavailable": {
+      "comment": "A local playlist queue or playback checkpoint could not be saved.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Saved Changes Unavailable"
+          }
+        }
+      }
+    },
+    "Saved Playback Progress": {
+      "comment": "Display label when a legacy checkpoint has no cached media title."
+    },
+    "Saved Progress Needs Review": {
+      "comment": "Section for progress awaiting replacement or confirmation."
+    },
+    "Saved on this device": {
+      "comment": "Next Up and video playlist interface."
+    },
+    "Saved; refresh unavailable. Pull to refresh before making another change.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Saved; refresh unavailable. Pull to refresh before making another change."
+          }
+        }
+      }
+    },
+    "Saving download": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Saving download"
+          }
+        }
+      }
+    },
+    "Scheduled": {
+      "comment": "Live TV section"
+    },
+    "Search": {
+      "comment": "Search navigation title and tab label",
+      "extractionState": "manual"
+    },
+    "Search Downloaded": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Search Downloaded"
+          }
+        }
+      }
+    },
+    "Search Jellyfin": {
+      "comment": "Search prompt and empty-state title",
+      "extractionState": "manual"
+    },
+    "Search Library": {},
+    "Search Movies": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Search Movies"
+          }
+        }
+      }
+    },
+    "Searches your Jellyfin library and starts playback.": {
+      "comment": "Siri/Shortcuts intent description.",
+      "isCommentAutoGenerated": true
+    },
+    "Searching for Local Servers": {
+      "comment": "Connect screen status while local server discovery is running",
+      "extractionState": "manual"
+    },
+    "Season": {
+      "comment": "Series detail season picker label",
+      "extractionState": "manual"
+    },
+    "Section": {
+      "comment": "A label for a picker that lets the user select a section of a Live TV view.",
+      "isCommentAutoGenerated": true
+    },
+    "Sections": {
+      "comment": "Navigation settings list section header for customizable navigation sections",
+      "extractionState": "manual"
+    },
+    "Select": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Select"
+          }
+        }
+      }
+    },
+    "Select %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Select %@"
+          }
+        }
+      }
+    },
+    "Select All": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Select All"
+          }
+        }
+      }
+    },
+    "Select a Library": {
+      "comment": "Split-view placeholder title",
+      "extractionState": "manual"
+    },
+    "Select an Environment": {
+      "comment": "A title for a screen that lets the user select an immersive cinema environment.",
+      "isCommentAutoGenerated": true
+    },
+    "Selected": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Selected"
+          }
+        }
+      }
+    },
+    "Server": {
+      "comment": "Server name label",
+      "extractionState": "manual"
+    },
+    "Server Address": {
+      "comment": "Connect screen section title",
+      "extractionState": "manual"
+    },
+    "Server Notice": {
+      "comment": "Sign-in section title for a Jellyfin server login disclaimer",
+      "extractionState": "manual"
+    },
+    "Server Unavailable": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Server Unavailable"
+          }
+        }
+      }
+    },
+    "Server preparation: %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Server preparation: %@"
+          }
+        }
+      }
+    },
+    "Session": {
+      "comment": "A section that shows the user's session information.",
+      "isCommentAutoGenerated": true
+    },
+    "Set from Age Range": {
+      "comment": "A button that sets a content rating limit from Apple's Declared",
+      "isCommentAutoGenerated": true
+    },
+    "Settings": {
+      "comment": "Settings navigation label",
+      "extractionState": "manual"
+    },
+    "Settings is always last.": {
+      "comment": "Navigation settings footer explaining Settings is pinned to the last position",
+      "extractionState": "manual"
+    },
+    "Share": {
+      "comment": "A button that opens a share sheet.",
+      "isCommentAutoGenerated": true
+    },
+    "Share this downloaded book to read it in Apple Books.": {
+      "comment": "Offline book sharing fallback explanation",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Share this downloaded book to read it in Apple Books."
+          }
+        }
+      }
+    },
+    "Share this downloaded book with a compatible reader.": {
+      "comment": "Offline book sharing fallback explanation",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Share this downloaded book with a compatible reader."
+          }
+        }
+      }
+    },
+    "SharePlay": {
+      "comment": "Item detail action for starting SharePlay with the selected media",
+      "extractionState": "manual"
+    },
+    "SharePlay Unavailable": {
+      "comment": "Alert title when SharePlay cannot be started",
+      "extractionState": "manual"
+    },
+    "Shared with You": {
+      "comment": "Fallback title for Apple's Shared with You highlight collection"
+    },
+    "Show All": {
+      "comment": "Next Up and video playlist interface."
+    },
+    "Show More": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show More"
+          }
+        }
+      }
+    },
+    "Shows": {
+      "comment": "Downloaded filter\nNavigation category: TV shows\nUnknown downloaded series"
+    },
+    "Shuffle": {
+      "comment": "A button that shuffles the audio player queue.",
+      "isCommentAutoGenerated": true
+    },
+    "Shuffle Off": {
+      "comment": "Accessibility label for the shuffle button when inactive"
+    },
+    "Shuffle On": {
+      "comment": "Accessibility label for the shuffle button when active"
+    },
+    "Sign In": {
+      "comment": "Sign-in screen title and button title",
+      "extractionState": "manual"
+    },
+    "Sign In Again": {
+      "comment": "Settings action for stored users without a saved token",
+      "extractionState": "manual"
+    },
+    "Sign Out": {
+      "comment": "Destructive sign-out button title",
+      "extractionState": "manual"
+    },
+    "Sign in again to use that account.": {
+      "comment": "Stored-user switch error: missing saved token",
+      "extractionState": "manual"
+    },
+    "Sign in failed. Check your username and password.": {
+      "comment": "Sign-in error: bad credentials",
+      "extractionState": "manual"
+    },
+    "Sign in to a Jellyfin server in A Playa Named Gus first.": {
+      "comment": "Siri/Shortcuts response when no session exists"
+    },
+    "Sign in to play media.": {
+      "comment": "Description shown in the macOS player window when no session is active."
+    },
+    "Signed In": {
+      "comment": "Quick Connect signed-in success status",
+      "extractionState": "manual"
+    },
+    "Signing In": {
+      "comment": "Quick Connect sign-in progress status",
+      "extractionState": "manual"
+    },
+    "Skip": {
+      "comment": "Next Up and video playlist interface."
+    },
+    "Soft Cap": {
+      "comment": "Downloads view soft cap label",
+      "extractionState": "manual"
+    },
+    "Some Content Could Not Be Refreshed": {
+      "comment": "Next Up and video playlist interface."
+    },
+    "Some collection memberships could not be loaded. Refresh to retry.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Some collection memberships could not be loaded. Refresh to retry."
+          }
+        }
+      }
+    },
+    "Something Went Wrong": {
+      "comment": "Generic loading failure title",
+      "extractionState": "manual"
+    },
+    "Sort": {
+      "comment": "Library picker label for sort order",
+      "extractionState": "manual"
+    },
+    "Source Video": {
+      "comment": "Native tvOS presentation and playback interface.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Source Video"
+          }
+        }
+      }
+    },
+    "Source metadata does not confirm the display or audio output format.": {
+      "comment": "Native tvOS presentation and playback interface.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Source metadata does not confirm the display or audio output format."
+          }
+        }
+      }
+    },
+    "Spatial": {
+      "comment": "visionOS player badge for native spatial video playback",
+      "extractionState": "manual"
+    },
+    "Special Features": {
+      "comment": "Item detail section header for bonus/extra content",
+      "extractionState": "manual"
+    },
+    "Speed": {
+      "comment": "A label for the playback speed menu.",
+      "isCommentAutoGenerated": true
+    },
+    "Starting Quick Connect": {
+      "comment": "Quick Connect startup progress status",
+      "extractionState": "manual"
+    },
+    "Starts playback for this item.": {
+      "comment": "Play button accessibility hint",
+      "extractionState": "manual"
+    },
+    "Stop": {
+      "comment": "Accessibility label for the stop playback button"
+    },
+    "Storage Used": {
+      "comment": "Downloads view storage usage label",
+      "extractionState": "manual"
+    },
+    "Streaming Quality": {
+      "comment": "Settings picker: maximum playback bitrate."
+    },
+    "Studios": {
+      "comment": "Item detail studio metadata label",
+      "extractionState": "manual"
+    },
+    "Subtitles": {
+      "comment": "A label for the subtitle options.",
+      "isCommentAutoGenerated": true
+    },
+    "Switch": {
+      "comment": "Settings action to switch to another stored account",
+      "extractionState": "manual"
+    },
     "Sync Gus Resume and Next Up": {
       "comment": "Native Jellyfin playlist and collection interface.",
       "localizations": {
@@ -639,6 +2597,50 @@
         }
       }
     },
+    "Sync Playlists and Next Up": {
+      "comment": "Next Up and video playlist interface."
+    },
+    "Synced with iCloud": {
+      "comment": "Next Up and video playlist interface."
+    },
+    "Syncing with iCloud": {
+      "comment": "Next Up and video playlist interface."
+    },
+    "Synopsis": {
+      "comment": "Native tvOS presentation and playback interface.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Synopsis"
+          }
+        }
+      }
+    },
+    "System": {
+      "comment": "Appearance option: follow the system setting"
+    },
+    "System follows your device's light and dark setting. Navigation customizes which sections appear in the main menu.": {
+      "comment": "A description of the navigation settings.",
+      "isCommentAutoGenerated": true
+    },
+    "Teen": {
+      "comment": "Content limit tier"
+    },
+    "That content couldn't be found.": {
+      "comment": "404 / not found error",
+      "extractionState": "manual"
+    },
+    "That server is no longer available.": {
+      "comment": "Stored-user switch error: missing server",
+      "extractionState": "manual"
+    },
+    "The Quick Connect code expired. Try again.": {
+      "comment": "Quick Connect stream ended without authentication"
+    },
+    "The book file is missing.": {
+      "comment": "Book reader error"
+    },
     "The cached server lists couldn't be read. The original file has been preserved.": {
       "comment": "Native Jellyfin playlist and collection interface.",
       "localizations": {
@@ -649,6 +2651,47 @@
           }
         }
       }
+    },
+    "The downloaded PDF could not be opened.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The downloaded PDF could not be opened."
+          }
+        }
+      }
+    },
+    "The downloaded file is missing. Download it again to play it offline.": {
+      "comment": "Missing offline file",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The downloaded file is missing. Download it again to play it offline."
+          }
+        }
+      }
+    },
+    "The downloaded file is missing. Manage Downloads to download it again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The downloaded file is missing. Manage Downloads to download it again."
+          }
+        }
+      }
+    },
+    "The library changed. Try again.": {
+      "comment": "A complete, stable candidate scan could not be established."
+    },
+    "The movie, show, song, or audiobook to play": {
+      "comment": "The parameter name for the title of the media to play.",
+      "isCommentAutoGenerated": true
     },
     "The playlist position is invalid.": {
       "comment": "Invalid native playlist move position",
@@ -672,6 +2715,9 @@
         }
       }
     },
+    "The replacement could not be saved. Try again.": {
+      "comment": "Replacement picker save failure."
+    },
     "The replacement was added, but its server entry could not be identified. Refresh and review this list.": {
       "comment": "Native Jellyfin playlist and collection interface.",
       "localizations": {
@@ -682,6 +2728,16 @@
           }
         }
       }
+    },
+    "The request was cancelled.": {
+      "comment": "Cancelled request",
+      "extractionState": "manual"
+    },
+    "The server appears to be offline. Check your connection and try again.": {
+      "comment": "Offline network error"
+    },
+    "The server could not provide this book.": {
+      "comment": "Book fetch error"
     },
     "The server list changes couldn't be saved on this device.": {
       "comment": "Native Jellyfin playlist and collection interface.",
@@ -694,6 +2750,27 @@
         }
       }
     },
+    "The server rejected the request (%lld).": {
+      "comment": "Generic non-success HTTP status error"
+    },
+    "The server reported an error (%lld). Try again in a moment.": {
+      "comment": "Generic 5xx server error with status code"
+    },
+    "The server response was unavailable. Check the collection in Jellyfin and refresh before retrying; the change may have succeeded.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The server response was unavailable. Check the collection in Jellyfin and refresh before retrying; the change may have succeeded."
+          }
+        }
+      }
+    },
+    "The server returned a media source that cannot be downloaded.": {
+      "comment": "Download source resolver missing media source id",
+      "extractionState": "manual"
+    },
     "The server returned an invalid list identifier.": {
       "comment": "Invalid native media list identifier",
       "localizations": {
@@ -704,6 +2781,46 @@
           }
         }
       }
+    },
+    "The server returned no downloadable media source.": {
+      "comment": "Download source resolver no media source",
+      "extractionState": "manual"
+    },
+    "The server returned no playable media source.": {
+      "comment": "Playback error: no media source",
+      "extractionState": "manual"
+    },
+    "The server took too long to respond. Try again in a moment.": {
+      "comment": "Timeout network error"
+    },
+    "This Gus playlist contains repeated items. Jellyfin playlists require unique items, so the original Gus playlist has been kept for editing.": {
+      "comment": "Native Jellyfin playlist and collection interface.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This Gus playlist contains repeated items. Jellyfin playlists require unique items, so the original Gus playlist has been kept for editing."
+          }
+        }
+      }
+    },
+    "This Jellyfin server has no Live TV tuner or guide configured.": {},
+    "This SharePlay session is for a different server.": {
+      "comment": "SharePlay error when the current server does not match the activity"
+    },
+    "This deletes the collection from Jellyfin. Its movies and watched history remain.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This deletes the collection from Jellyfin. Its movies and watched history remain."
+          }
+        }
+      }
+    },
+    "This deletes the playlist on your synced devices. Your media and watched history are preserved.": {
+      "comment": "Next Up and video playlist interface."
     },
     "This edit refers to a saved occurrence that could not be identified on the server. Review the playlist and select the intended entry.": {
       "comment": "Native Jellyfin playlist and collection interface.",
@@ -716,6 +2833,89 @@
         }
       }
     },
+    "This image could not be encoded.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This image could not be encoded."
+          }
+        }
+      }
+    },
+    "This image could not be opened.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This image could not be opened."
+          }
+        }
+      }
+    },
+    "This item already has local progress.": {
+      "comment": "Reject transfer rather than overwrite existing destination progress."
+    },
+    "This item can't be played.": {
+      "comment": "Playback error: item has no playable identifier",
+      "extractionState": "manual"
+    },
+    "This item can't be shared with SharePlay.": {
+      "comment": "SharePlay error when an item cannot create a Group Activity",
+      "extractionState": "manual"
+    },
+    "This item cannot be downloaded because it is missing a media id.": {
+      "comment": "Download source resolver missing item id",
+      "extractionState": "manual"
+    },
+    "This item is above the content rating limit. A household member can change the limit in Settings under Content Restrictions.": {
+      "comment": "A description of why a restricted item is unavailable.",
+      "isCommentAutoGenerated": true
+    },
+    "This item is already in this Jellyfin playlist. Repeated items are not supported.": {
+      "comment": "Native Jellyfin playlist and collection interface.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This item is already in this Jellyfin playlist. Repeated items are not supported."
+          }
+        }
+      }
+    },
+    "This item is already in this collection.": {
+      "comment": "Native Jellyfin playlist and collection interface.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This item is already in this collection."
+          }
+        }
+      }
+    },
+    "This item is not available for download.": {
+      "comment": "Download unavailable message",
+      "extractionState": "manual"
+    },
+    "This item is restricted.": {
+      "comment": "Restricted playback",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This item is restricted."
+          }
+        }
+      }
+    },
+    "This player is no longer active.": {
+      "comment": "Watch remote detail error description when the controlled session has ended",
+      "extractionState": "manual"
+    },
     "This playlist contains entries that cannot be imported into this Jellyfin account.": {
       "comment": "Native Jellyfin playlist and collection interface.",
       "localizations": {
@@ -726,6 +2926,9 @@
           }
         }
       }
+    },
+    "This playlist entry is no longer available.": {
+      "comment": "Next Up and video playlist interface."
     },
     "This removes the list from Jellyfin. Your media files and watched history are preserved.": {
       "comment": "Native Jellyfin playlist and collection interface.",
@@ -738,6 +2941,55 @@
         }
       }
     },
+    "This server does not support collections.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This server does not support collections."
+          }
+        }
+      }
+    },
+    "This server does not support playlists.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This server does not support playlists."
+          }
+        }
+      }
+    },
+    "This server does not support saved playback progress.": {
+      "comment": "Unsupported offline progress sync",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This server does not support saved playback progress."
+          }
+        }
+      }
+    },
+    "Time remaining unavailable": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Time remaining unavailable"
+          }
+        }
+      }
+    },
+    "Title": {
+      "comment": "The name of the parameter for the title of the media to play.",
+      "isCommentAutoGenerated": true
+    },
     "Titles": {
       "comment": "Native Jellyfin playlist and collection interface.",
       "localizations": {
@@ -745,6 +2997,247 @@
           "stringUnit": {
             "state": "translated",
             "value": "Titles"
+          }
+        }
+      }
+    },
+    "Tracks": {
+      "comment": "Native tvOS presentation and playback interface.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tracks"
+          }
+        }
+      }
+    },
+    "Transcode": {
+      "comment": "Native tvOS presentation and playback interface.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Transcode"
+          }
+        }
+      }
+    },
+    "Transcoding for download...": {
+      "comment": "Download status while server prepares a transcoded file",
+      "extractionState": "manual"
+    },
+    "Transfer Progress": {
+      "comment": "Explicitly authorize progress transfer to a replacement."
+    },
+    "Transfer interrupted. Resume or restart the download.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Transfer interrupted. Resume or restart the download."
+          }
+        }
+      }
+    },
+    "Transfer saved progress to the replacement item?": {
+      "comment": "Confirmation title; a remote reference alone does not authorize position transfer."
+    },
+    "Try Again": {
+      "comment": "A button that triggers a retry action.",
+      "isCommentAutoGenerated": true
+    },
+    "Try Quick Connect Again": {
+      "comment": "Quick Connect retry action",
+      "extractionState": "manual"
+    },
+    "Try another title, series, or artist.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Try another title, series, or artist."
+          }
+        }
+      }
+    },
+    "Unavailable in Next Up": {
+      "comment": "Section for saved queue entries with missing remote references."
+    },
+    "Unavailable on this server": {
+      "comment": "A saved item could not be resolved on its account server."
+    },
+    "Unknown Device": {
+      "comment": "Fallback remote session device name"
+    },
+    "Unmute": {
+      "comment": "Accessibility label for the unmute button"
+    },
+    "Unplayed": {
+      "comment": "Library filter option for unplayed items",
+      "extractionState": "manual"
+    },
+    "Untitled": {
+      "comment": "Fallback item title",
+      "extractionState": "manual"
+    },
+    "Unwatched": {
+      "comment": "Native tvOS presentation and playback interface.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unwatched"
+          }
+        }
+      }
+    },
+    "Updating…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Updating…"
+          }
+        }
+      }
+    },
+    "Use Local Demo Server": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Use Local Demo Server"
+          }
+        }
+      }
+    },
+    "Use Quick Connect": {
+      "comment": "Quick Connect start action",
+      "extractionState": "manual"
+    },
+    "Use Refresh to search for Jellyfin servers on this network.": {
+      "comment": "Connect screen local server discovery idle help text",
+      "extractionState": "manual"
+    },
+    "Used": {
+      "comment": "A label that describes the amount of storage used.",
+      "isCommentAutoGenerated": true
+    },
+    "User": {
+      "comment": "User name label",
+      "extractionState": "manual"
+    },
+    "Username": {
+      "comment": "Username field placeholder",
+      "extractionState": "manual"
+    },
+    "Version": {
+      "comment": "App version label",
+      "extractionState": "manual"
+    },
+    "Viewing Mode": {
+      "comment": "visionOS playback menu for choosing Auto, 2D, or Spatial video presentation",
+      "extractionState": "manual"
+    },
+    "Volume down": {
+      "comment": "Accessibility label for the volume-down button"
+    },
+    "Volume up": {
+      "comment": "Accessibility label for the volume-up button"
+    },
+    "Waiting for connection": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Waiting for connection"
+          }
+        }
+      }
+    },
+    "Waiting for connection · %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Waiting for connection · %@"
+          }
+        }
+      }
+    },
+    "Waiting for more data": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Waiting for more data"
+          }
+        }
+      }
+    },
+    "Waiting for server": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Waiting for server"
+          }
+        }
+      }
+    },
+    "Waiting for server · %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Waiting for server · %@"
+          }
+        }
+      }
+    },
+    "Watch %@ in Gus Cinema": {
+      "comment": "visionOS immersive cinema open accessibility label; argument is the item title",
+      "extractionState": "manual"
+    },
+    "Watched": {
+      "comment": "Native tvOS presentation and playback interface.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Watched"
+          }
+        }
+      }
+    },
+    "You do not have permission to delete this collection.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You do not have permission to delete this collection."
+          }
+        }
+      }
+    },
+    "You do not have permission to edit this collection.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You do not have permission to edit this collection."
           }
         }
       }
@@ -760,170 +3253,26 @@
         }
       }
     },
-    "%@ · %@": {
-      "comment": "Next Up and video playlist interface."
-    },
-    "Recent Activity Unavailable": {
-      "comment": "Next Up and video playlist interface."
-    },
-    "Playlist Finished" : {
-      "comment" : "An ordered video playlist reached the end of its final entry."
-    },
-    "%lld": {
-      "comment": "Next Up and video playlist interface."
-    },
-    "%lld items": {
-      "comment": "Next Up and video playlist interface."
-    },
-    "Add Media": {
-      "comment": "Next Up and video playlist interface."
-    },
-    "Add movies or individual episodes to get started.": {
-      "comment": "Next Up and video playlist interface."
-    },
-    "Add to Next Up": {
-      "comment": "Next Up and video playlist interface."
-    },
-    "Add to Playlist": {
-      "comment": "Next Up and video playlist interface."
-    },
-    "Changes waiting to sync": {
-      "comment": "Next Up and video playlist interface."
-    },
-    "Choose Playlist": {
-      "comment": "Next Up and video playlist interface."
-    },
-    "Continue Playlist": {
-      "comment": "Next Up and video playlist interface."
-    },
-    "Create": {
-      "comment": "Next Up and video playlist interface."
-    },
-    "Create a playlist to watch movies and episodes in your own order.": {
-      "comment": "Next Up and video playlist interface."
-    },
-    "Create and Add": {
-      "comment": "Next Up and video playlist interface."
-    },
-    "Delete Playlist": {
-      "comment": "Next Up and video playlist interface."
-    },
-    "Delete Playlist?": {
-      "comment": "Next Up and video playlist interface."
-    },
-    "Entries": {
-      "comment": "Next Up and video playlist interface."
-    },
-    "It may have been deleted or belong to another account.": {
-      "comment": "Next Up and video playlist interface."
-    },
-    "Load More": {
-      "comment": "Next Up and video playlist interface."
-    },
-    "Move Down": {
-      "comment": "Next Up and video playlist interface."
-    },
-    "Move Up": {
-      "comment": "Next Up and video playlist interface."
-    },
-    "Movies and Episodes": {
-      "comment": "Next Up and video playlist interface."
-    },
-    "New Playlist": {
-      "comment": "Next Up and video playlist interface."
-    },
-    "Next Episode": {
-      "comment": "Next Up reason"
-    },
-    "No Playlists": {
-      "comment": "Next Up and video playlist interface."
-    },
-    "Nothing in Next Up": {
-      "comment": "Next Up and video playlist interface."
-    },
-    "Play from Beginning": {
-      "comment": "Next Up and video playlist interface."
-    },
-    "Play from Here": {
-      "comment": "Next Up and video playlist interface."
-    },
-    "Playback progress": {
-      "comment": "Next Up and video playlist interface."
-    },
-    "Playlist %lld of %lld": {
-      "comment": "Next Up playlist position"
-    },
-    "Playlist Could Not Be Updated": {
-      "comment": "Next Up and video playlist interface."
-    },
-    "Playlist Paused": {
-      "comment": "Next Up and video playlist interface."
-    },
-    "Playlist Unavailable": {
-      "comment": "Next Up and video playlist interface."
-    },
-    "Playlists": {
-      "comment": "Next Up and video playlist interface."
-    },
-    "Recent activity couldn't be read. It has been preserved.": {
-      "comment": "Next Up activity read failure"
-    },
-    "Recent activity couldn't be saved.": {
-      "comment": "Next Up activity write failure"
-    },
-    "Remove": {
-      "comment": "Next Up and video playlist interface."
-    },
-    "Remove from Next Up": {
-      "comment": "Next Up and video playlist interface."
-    },
-    "Rename": {
-      "comment": "Next Up and video playlist interface."
-    },
-    "Rename Playlist": {
-      "comment": "Next Up and video playlist interface."
-    },
-    "Retry": {
-      "comment": "Next Up and video playlist interface."
-    },
-    "Save": {
-      "comment": "Next Up and video playlist interface."
-    },
-    "Saved": {
-      "comment": "Next Up reason"
-    },
-    "Saved on this device": {
-      "comment": "Next Up and video playlist interface."
-    },
-    "Show All": {
-      "comment": "Next Up and video playlist interface."
-    },
-    "Skip": {
-      "comment": "Next Up and video playlist interface."
-    },
-    "Some Content Could Not Be Refreshed": {
-      "comment": "Next Up and video playlist interface."
-    },
-    "Sync Playlists and Next Up": {
-      "comment": "Next Up and video playlist interface."
-    },
-    "Synced with iCloud": {
-      "comment": "Next Up and video playlist interface."
-    },
-    "Syncing with iCloud": {
-      "comment": "Next Up and video playlist interface."
-    },
-    "This deletes the playlist on your synced devices. Your media and watched history are preserved.": {
-      "comment": "Next Up and video playlist interface."
-    },
-    "This playlist entry is no longer available.": {
-      "comment": "Next Up and video playlist interface."
-    },
     "Your changes couldn't be saved. Try again.": {
       "comment": "Next Up and video playlist interface."
     },
+    "Your queue change couldn't be saved. Try again.": {
+      "comment": "Queue persistence failure."
+    },
     "Your saved playlists couldn't be read. The original file has been preserved.": {
       "comment": "Next Up and video playlist interface."
+    },
+    "Your saved queue couldn't be read. It has been preserved.": {
+      "comment": "Unreadable saved queue; do not overwrite its file."
+    },
+    "Your session has expired. Please sign in again.": {
+      "comment": "401 / unauthorized error",
+      "extractionState": "manual"
+    },
+    "http://192.168.1.50:8096": {
+      "comment": "Example Jellyfin server address placeholder",
+      "extractionState": "manual",
+      "shouldTranslate": false
     },
     "iCloud Sync": {
       "comment": "Next Up and video playlist interface."
@@ -933,1970 +3282,7 @@
     },
     "iCloud unavailable · saved on this device": {
       "comment": "Next Up and video playlist interface."
-    },
-    "Queue Could Not Be Updated" : {
-      "comment" : "Alert title for preserved queue read or write failures."
-    },
-    "Your saved queue couldn't be read. It has been preserved." : {
-      "comment" : "Unreadable saved queue; do not overwrite its file."
-    },
-    "Your queue change couldn't be saved. Try again." : {
-      "comment" : "Queue persistence failure."
-    },
-    "Unavailable in Next Up" : {
-      "comment" : "Section for saved queue entries with missing remote references."
-    },
-    "Unavailable on this server" : {
-      "comment" : "A saved item could not be resolved on its account server."
-    },
-    "Choose Replacement" : {
-      "comment" : "Search for and explicitly select a current library item."
-    },
-    "The replacement could not be saved. Try again." : {
-      "comment" : "Replacement picker save failure."
-    },
-    "Saved Progress Needs Review" : {
-      "comment" : "Section for progress awaiting replacement or confirmation."
-    },
-    "Review Progress" : {
-      "comment" : "Action to review a proposed progress transfer."
-    },
-    "Saved Playback Progress" : {
-      "comment" : "Display label when a legacy checkpoint has no cached media title."
-    },
-    "Transfer saved progress to the replacement item?" : {
-      "comment" : "Confirmation title; a remote reference alone does not authorize position transfer."
-    },
-    "Transfer Progress" : {
-      "comment" : "Explicitly authorize progress transfer to a replacement."
-    },
-    "Keep Progress Local" : {
-      "comment" : "Keep original progress without uploading it to a replacement."
-    },
-    "Local files and their reading locations will be preserved. Only the saved playback position or reading percentage will be transferred." : {
-      "comment" : "Progress transfer explanation."
-    },
-    "This item already has local progress." : {
-      "comment" : "Reject transfer rather than overwrite existing destination progress."
-    },
-    "The library changed. Try again." : {
-      "comment" : "A complete, stable candidate scan could not be established."
-    },
-    "%@ of %@" : {
-      "comment" : "Accessibility value for elapsed media playback time\nVoiceOver value for the playback scrubber, e.g. 1:30 of 4:05",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "%1$@ of %2$@"
-          }
-        }
-      }
-    },
-    "%@ received · Total size unknown" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@ received · Total size unknown"
-          }
-        }
-      }
-    },
-    "%@ — Season %lld" : {
-      "comment" : "Downloaded series season heading",
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@ — Season %lld"
-          }
-        }
-      }
-    },
-    "%@, %@" : {
-      "comment" : "A combined title and subtitle for an accessibility label. The first argument is the title. The second argument is the subtitle.",
-      "isCommentAutoGenerated" : true,
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "%1$@, %2$@"
-          }
-        }
-      }
-    },
-    "%@, now playing %@" : {
-      "comment" : "A label for a channel that includes the channel name and the name of the currently playing program.",
-      "isCommentAutoGenerated" : true,
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "%1$@, now playing %2$@"
-          }
-        }
-      }
-    },
-    "%@/s" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@/s"
-          }
-        }
-      }
-    },
-    "%@×" : {
-      "comment" : "A speed option in an audio book player. The value is formatted to show the playback rate as a fraction.",
-      "isCommentAutoGenerated" : true
-    },
-    "0 seconds" : {
-      "comment" : "Zero duration fallback"
-    },
-    "2D" : {
-      "comment" : "visionOS playback viewing mode option for monoscopic video",
-      "extractionState" : "manual"
-    },
-    "3D not supported for this format - playing in 2D" : {
-      "comment" : "Playback notice for unsupported stereoscopic video formats such as MVC",
-      "extractionState" : "manual"
-    },
-    "3D unavailable - playing in 2D" : {
-      "comment" : "Playback notice when 3D direct play is unavailable and playback falls back to 2D",
-      "extractionState" : "manual"
-    },
-    "A Playa Named Gus" : {
-      "comment" : "App name",
-      "extractionState" : "manual"
-    },
-    "About" : {
-      "comment" : "Settings section title",
-      "extractionState" : "manual"
-    },
-    "Account" : {
-      "comment" : "Settings section title",
-      "extractionState" : "manual"
-    },
-    "Account Switch Failed" : {
-      "comment" : "Settings alert title for failed account switching",
-      "extractionState" : "manual"
-    },
-    "Active" : {
-      "comment" : "Settings stored-account status for the current account",
-      "extractionState" : "manual"
-    },
-    "Active Downloads" : {
-      "comment" : "Downloads view active and paused download count label",
-      "extractionState" : "manual"
-    },
-    "Add to Favorites" : {
-      "comment" : "Button title for adding an item to the user's favorites.",
-      "isCommentAutoGenerated" : true
-    },
-    "Add to Up Next" : {
-      "comment" : "Label for a button that adds an item to the user's Up Next list.",
-      "isCommentAutoGenerated" : true
-    },
-    "Address" : {
-      "comment" : "Server address label",
-      "extractionState" : "manual"
-    },
-    "Age range isn't available right now. Choose a limit manually instead." : {
-      "comment" : "Status when the Declared Age Range request fails"
-    },
-    "Albums" : {
-      "comment" : "CarPlay albums tab"
-    },
-    "All" : {
-      "comment" : "Library filter option that includes every item",
-      "extractionState" : "manual"
-    },
-    "All Ages" : {
-      "comment" : "Content limit tier"
-    },
-    "Appearance" : {
-      "comment" : "Settings section header for appearance preferences (color scheme)",
-      "extractionState" : "manual"
-    },
-    "Approve this code in Jellyfin on another device." : {
-      "comment" : "Quick Connect instructions shown with a polling code",
-      "extractionState" : "manual"
-    },
-    "Approximately %@ of server preparation remaining" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Approximately %@ of server preparation remaining"
-          }
-        }
-      }
-    },
-    "Approximately %@ remaining" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Approximately %@ remaining"
-          }
-        }
-      }
-    },
-    "Audio" : {
-      "comment" : "Downloaded filter"
-    },
-    "Audiobooks" : {
-      "comment" : "CarPlay audiobooks tab"
-    },
-    "Auto" : {
-      "comment" : "visionOS playback viewing mode option for automatic 3D detection",
-      "extractionState" : "manual"
-    },
-    "Auto-Play Next Episode" : {
-      "comment" : "Settings toggle: automatically play the next episode when one ends."
-    },
-    "Back 15 seconds" : {
-      "comment" : "Accessibility label for the seek-back 15 seconds button"
-    },
-    "Books" : {
-      "comment" : "Downloaded filter\nNavigation category: books"
-    },
-    "Browse" : {
-      "comment" : "A title for the watchOS library browsing screen.",
-      "isCommentAutoGenerated" : true
-    },
-    "Can't Open That" : {
-      "comment" : "A title for an alert that can't open a content link.",
-      "isCommentAutoGenerated" : true
-    },
-    "Can't Open This Book" : {
-      "comment" : "A title for a view that indicates that a book can't be opened.",
-      "isCommentAutoGenerated" : true
-    },
-    "Can't Play This" : {
-      "comment" : "Playback error title",
-      "extractionState" : "manual"
-    },
-    "Can't Play on Watch" : {
-      "comment" : "A title for a screen that indicates that a video can't be played on a watch.",
-      "isCommentAutoGenerated" : true
-    },
-    "Cancel" : {
-      "comment" : "Cancel button title",
-      "extractionState" : "manual"
-    },
-    "Cancel recording %@" : {
-      "comment" : "A button that cancels a scheduled recording. The argument is the name of the recording.",
-      "isCommentAutoGenerated" : true
-    },
-    "CarPlay plays music and audiobooks from your active Jellyfin session." : {
-      "comment" : "CarPlay signed-out detail"
-    },
-    "Cast & Crew" : {
-      "comment" : "Item detail people metadata section title",
-      "extractionState" : "manual"
-    },
-    "Channels" : {
-      "comment" : "Live TV section"
-    },
-    "Chapter %lld" : {
-      "comment" : "Fallback chapter title"
-    },
-    "Chapters" : {
-      "comment" : "A label for a menu that lists chapters in a media item.",
-      "isCommentAutoGenerated" : true
-    },
-    "Check that your Jellyfin server and this device are on the same network." : {
-      "comment" : "Local server discovery empty-state guidance",
-      "extractionState" : "manual"
-    },
-    "Checking Age Range…" : {},
-    "Client" : {
-      "comment" : "App client name label",
-      "extractionState" : "manual"
-    },
-    "Close Player" : {
-      "comment" : "Playback close button accessibility label",
-      "extractionState" : "manual"
-    },
-    "Closes the current environment." : {
-      "comment" : "A hint for closing the current environment.",
-      "isCommentAutoGenerated" : true
-    },
-    "Code" : {
-      "comment" : "Quick Connect polling code label",
-      "extractionState" : "manual"
-    },
-    "Completed downloads available on this device appear here." : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Completed downloads available on this device appear here."
-          }
-        }
-      }
-    },
-    "Connect" : {
-      "comment" : "Connect button title",
-      "extractionState" : "manual"
-    },
-    "Connect to Jellyfin" : {
-      "comment" : "Connect screen navigation title",
-      "extractionState" : "manual"
-    },
-    "Connecting to %@" : {
-      "comment" : "Sign-in footer; argument is the server URL",
-      "extractionState" : "manual"
-    },
-    "Connection" : {
-      "comment" : "A label for the connection status of the user's device.",
-      "isCommentAutoGenerated" : true
-    },
-    "Content Restrictions" : {
-      "comment" : "Settings section header for content rating/parental controls",
-      "extractionState" : "manual"
-    },
-    "Content limit set to %@." : {
-      "comment" : "Status after Declared Age Range sets a content limit tier"
-    },
-    "Continue Watching" : {
-      "comment" : "Home rail title for in-progress media",
-      "extractionState" : "manual"
-    },
-    "Could not build a playable URL for this item." : {
-      "comment" : "Playback error: URL build failed",
-      "extractionState" : "manual"
-    },
-    "Couldn't Cancel Recording" : {
-      "comment" : "Live TV alert title when cancelling a scheduled recording fails",
-      "extractionState" : "manual"
-    },
-    "Couldn't Prepare Book" : {
-      "comment" : "A title for an alert that can't prepare a book.",
-      "isCommentAutoGenerated" : true
-    },
-    "Couldn't reach that server. %@" : {
-      "comment" : "Connect error: server unreachable, with detail",
-      "extractionState" : "manual"
-    },
-    "Couldn't reach the server. %@" : {
-      "comment" : "Network error with detail",
-      "extractionState" : "manual"
-    },
-    "Critic %@" : {
-      "comment" : "Critic rating label; argument is the percentage text",
-      "extractionState" : "manual"
-    },
-    "Dark" : {
-      "comment" : "Appearance option: always dark mode"
-    },
-    "Debug builds only. Start it with Scripts/demo-server.sh." : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Debug builds only. Start it with Scripts/demo-server.sh."
-          }
-        }
-      }
-    },
-    "Delete" : {
-      "comment" : "Delete button title",
-      "extractionState" : "manual"
-    },
-    "Delete %@" : {
-      "comment" : "A button that deletes a record. The argument is the title of the record.",
-      "isCommentAutoGenerated" : true
-    },
-    "Device" : {
-      "comment" : "Device name label",
-      "extractionState" : "manual"
-    },
-    "Discovery Failed" : {
-      "comment" : "Local server discovery error-state title",
-      "extractionState" : "manual"
-    },
-    "Done" : {
-      "comment" : "A button that dismisses the current view.",
-      "isCommentAutoGenerated" : true
-    },
-    "Download" : {
-      "comment" : "Item detail download button title",
-      "extractionState" : "manual"
-    },
-    "Download Failed" : {
-      "comment" : "Download failure alert title and failed download status label",
-      "extractionState" : "manual"
-    },
-    "Download Unavailable" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Download Unavailable"
-          }
-        }
-      }
-    },
-    "Download music and audiobooks from Browse for offline listening." : {
-      "comment" : "A description of the content of the watch download view.",
-      "isCommentAutoGenerated" : true
-    },
-    "Download progress for %@" : {
-      "comment" : "A progress bar that shows the download progress of a file.",
-      "isCommentAutoGenerated" : true
-    },
-    "Downloaded" : {
-      "comment" : "Item detail downloaded status label",
-      "extractionState" : "manual"
-    },
-    "Downloaded Media" : {
-      "comment" : "Downloads view completed downloads section title",
-      "extractionState" : "manual"
-    },
-    "Downloaded items from this server and user will appear here." : {
-      "comment" : "Downloads empty-state description",
-      "extractionState" : "manual"
-    },
-    "Downloaded on %@" : {
-      "comment" : "Downloaded status accessibility hint; argument is the downloaded date",
-      "extractionState" : "manual"
-    },
-    "Downloading" : {
-      "comment" : "Download in-progress status label",
-      "extractionState" : "manual"
-    },
-    "Downloading · %@" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Downloading · %@"
-          }
-        }
-      }
-    },
-    "Downloading · Total size unknown" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Downloading · Total size unknown"
-          }
-        }
-      }
-    },
-    "Downloads" : {
-      "comment" : "Settings downloads navigation title",
-      "extractionState" : "manual"
-    },
-    "Downloads are available on iOS, iPadOS, macOS, and visionOS. tvOS is excluded because its app storage is system-purgeable." : {
-      "comment" : "A description of the format of the footer of the Downloads section.",
-      "isCommentAutoGenerated" : true
-    },
-    "Downloads are using the 20 GB soft cap. Delete a download before adding more." : {
-      "comment" : "Downloads soft cap error",
-      "extractionState" : "manual"
-    },
-    "Downloads the book, then offers the share sheet — use it to open this book in Apple Books." : {
-      "comment" : "A hint for the share button.",
-      "isCommentAutoGenerated" : true
-    },
-    "Downloads use background transfers from your Jellyfin server, are stored in Application Support, and are excluded from device backup." : {
-      "comment" : "Downloads storage and backup footer",
-      "extractionState" : "manual"
-    },
-    "Downloads use system background transfers. Avoid force-quitting Gus while downloading. Saved media stays on this device and is excluded from backup." : {
-      "comment" : "Download background behavior and local storage explanation",
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Downloads use system background transfers. Avoid force-quitting Gus while downloading. Saved media stays on this device and is excluded from backup."
-          }
-        }
-      }
-    },
-    "Empty Library" : {
-      "comment" : "Empty-state title when a library contains no items",
-      "extractionState" : "manual"
-    },
-    "Enter a valid server address." : {
-      "comment" : "Connect error: malformed URL",
-      "extractionState" : "manual"
-    },
-    "Enter your Jellyfin server's address, including the port (default 8096)." : {
-      "comment" : "Connect screen server address help text",
-      "extractionState" : "manual"
-    },
-    "Environment" : {
-      "comment" : "A button that opens a popover to select an environment.",
-      "isCommentAutoGenerated" : true
-    },
-    "Episode %lld" : {
-      "comment" : "Downloaded episode number",
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Episode %lld"
-          }
-        }
-      }
-    },
-    "Episodes" : {
-      "comment" : "Series detail episodes section title",
-      "extractionState" : "manual"
-    },
-    "Failed" : {
-      "comment" : "Downloads view failed downloads section title",
-      "extractionState" : "manual"
-    },
-    "Filter" : {
-      "comment" : "Library toolbar menu and picker label for filtering items",
-      "extractionState" : "manual"
-    },
-    "Find Local Servers" : {
-      "comment" : "Connect screen local server discovery action",
-      "extractionState" : "manual"
-    },
-    "Finding download source" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Finding download source"
-          }
-        }
-      }
-    },
-    "Forward 15 seconds" : {
-      "comment" : "Accessibility label for the seek-forward 15 seconds button"
-    },
-    "Genres" : {
-      "comment" : "Item detail genre metadata label",
-      "extractionState" : "manual"
-    },
-    "Get Code" : {
-      "comment" : "A button that requests a code to sign in to Jellyfin.",
-      "isCommentAutoGenerated" : true
-    },
-    "Gus" : {
-      "comment" : "CarPlay root title"
-    },
-    "Gus Cinema" : {
-      "comment" : "visionOS immersive cinema button title",
-      "extractionState" : "manual"
-    },
-    "Hidden" : {
-      "comment" : "A section title for hidden sections.",
-      "isCommentAutoGenerated" : true
-    },
-    "Hidden sections stay available in Settings." : {
-      "comment" : "Navigation settings footer explaining that hidden sections remain accessible via Settings",
-      "extractionState" : "manual"
-    },
-    "Hide Unrated Media" : {
-      "comment" : "A toggle that hides unrated media.",
-      "isCommentAutoGenerated" : true
-    },
-    "Hides and gates media rated above the limit. Pair with Jellyfin user permissions and Apple Screen Time for enforced parental controls." : {
-      "comment" : "A description of the content restrictions section.",
-      "isCommentAutoGenerated" : true
-    },
-    "High (20 Mbps)" : {
-      "comment" : "Streaming quality option"
-    },
-    "Home" : {
-      "comment" : "Home navigation label",
-      "extractionState" : "manual"
-    },
-    "Home is always first." : {
-      "comment" : "Navigation settings footer explaining Home is pinned to the first position",
-      "extractionState" : "manual"
-    },
-    "I couldn't find \"%@\" in your library." : {
-      "comment" : "Siri/Shortcuts response when search finds nothing"
-    },
-    "In Progress" : {
-      "comment" : "Downloads view active downloads section title and library filter option for in-progress media",
-      "extractionState" : "manual"
-    },
-    "Jellyfin User" : {
-      "comment" : "Fallback display name for a signed-in Jellyfin user",
-      "extractionState" : "manual"
-    },
-    "Known Servers" : {
-      "comment" : "Settings section title",
-      "extractionState" : "manual"
-    },
-    "Libraries" : {
-      "comment" : "Libraries section title",
-      "extractionState" : "manual"
-    },
-    "Library" : {
-      "comment" : "Fallback library title",
-      "extractionState" : "manual"
-    },
-    "Light" : {
-      "comment" : "Appearance option: always light mode"
-    },
-    "Limit" : {
-      "comment" : "A label for the amount of storage used in the watch.",
-      "isCommentAutoGenerated" : true
-    },
-    "Limit Content Ratings" : {
-      "comment" : "A label for the content rating limit setting.",
-      "isCommentAutoGenerated" : true
-    },
-    "Live TV" : {
-      "comment" : "Live TV section/destination label",
-      "extractionState" : "manual"
-    },
-    "Live TV Not Configured" : {
-      "comment" : "A title for a view that shows when a server has no tuner/DVR configured.",
-      "isCommentAutoGenerated" : true
-    },
-    "Loading Profiles" : {
-      "comment" : "Sign-in status while public profiles are loading",
-      "extractionState" : "manual"
-    },
-    "Loading Sections" : {
-      "comment" : "Navigation settings loading state while sections are being fetched",
-      "extractionState" : "manual"
-    },
-    "Local Server Discovery" : {
-      "comment" : "Connect screen local server discovery status label",
-      "extractionState" : "manual"
-    },
-    "Local Servers" : {
-      "comment" : "Connect screen local server discovery section title",
-      "extractionState" : "manual"
-    },
-    "Low (3 Mbps)" : {
-      "comment" : "Streaming quality option"
-    },
-    "Manage Downloads" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Manage Downloads"
-          }
-        }
-      }
-    },
-    "Mark as Unwatched" : {
-      "comment" : "Button title to mark an item as unwatched.",
-      "isCommentAutoGenerated" : true
-    },
-    "Mark as Watched" : {
-      "comment" : "Button title to mark an item as watched.",
-      "isCommentAutoGenerated" : true
-    },
-    "Mature" : {
-      "comment" : "Content limit tier"
-    },
-    "Maximum (Original)" : {
-      "comment" : "Streaming quality option: no practical bitrate cap"
-    },
-    "Maximum lets compatible files play at original quality. Lower settings cap the streaming bitrate for constrained networks." : {
-      "comment" : "Settings footer explaining the streaming quality options."
-    },
-    "Media" : {
-      "comment" : "Section title for media information in the about screen.",
-      "isCommentAutoGenerated" : true
-    },
-    "Media Type" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Media Type"
-          }
-        }
-      }
-    },
-    "Medium (8 Mbps)" : {
-      "comment" : "Streaming quality option"
-    },
-    "Movies" : {
-      "comment" : "Downloaded filter\nNavigation category: movies"
-    },
-    "Music" : {
-      "comment" : "Navigation category: music"
-    },
-    "Mute" : {
-      "comment" : "Accessibility label for the mute button"
-    },
-    "Name" : {
-      "comment" : "Library sort option by title/name",
-      "extractionState" : "manual"
-    },
-    "Navigate" : {
-      "comment" : "Menu title for navigation commands",
-      "extractionState" : "manual"
-    },
-    "Navigation" : {
-      "comment" : "Navigation settings screen title and Settings link label",
-      "extractionState" : "manual"
-    },
-    "Next Track" : {
-      "comment" : "Accessibility label for the next track button in the audio player",
-      "extractionState" : "manual"
-    },
-    "Next Up" : {
-      "comment" : "Home rail title for next episodes",
-      "extractionState" : "manual"
-    },
-    "No Active Players" : {
-      "comment" : "Watch remote control empty-state title when no Jellyfin sessions are playing",
-      "extractionState" : "manual"
-    },
-    "No Downloaded Media" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No Downloaded Media"
-          }
-        }
-      }
-    },
-    "No Downloads" : {
-      "comment" : "Downloads empty-state title",
-      "extractionState" : "manual"
-    },
-    "No Episodes" : {
-      "comment" : "Series detail empty-state title when a season has no episodes",
-      "extractionState" : "manual"
-    },
-    "No Libraries" : {
-      "comment" : "Empty state title when no libraries are available",
-      "extractionState" : "manual"
-    },
-    "No Live TV Content" : {
-      "comment" : "Live TV empty-state title when there are no channels or recordings to display",
-      "extractionState" : "manual"
-    },
-    "No Photos" : {
-      "comment" : "Photo viewer empty-state title when no photos are available",
-      "extractionState" : "manual"
-    },
-    "No Recent Media" : {
-      "comment" : "Home empty-state title when no media has been watched recently",
-      "extractionState" : "manual"
-    },
-    "No Recordings" : {
-      "comment" : "Live TV recordings tab empty-state label",
-      "extractionState" : "manual"
-    },
-    "No Results" : {
-      "comment" : "Search empty-state title",
-      "extractionState" : "manual"
-    },
-    "No Scheduled Recordings" : {
-      "comment" : "Live TV scheduled recordings tab empty-state label",
-      "extractionState" : "manual"
-    },
-    "No Seasons" : {
-      "comment" : "Series detail empty-state title when a show has no seasons",
-      "extractionState" : "manual"
-    },
-    "No Servers Found" : {
-      "comment" : "Local server discovery empty-state title",
-      "extractionState" : "manual"
-    },
-    "No age range was shared. The limit is unchanged." : {
-      "comment" : "Status after the user declines Declared Age Range sharing"
-    },
-    "No password required" : {
-      "comment" : "Public profile hint when the Jellyfin profile has no password",
-      "extractionState" : "manual"
-    },
-    "No restriction needed for the shared age range." : {
-      "comment" : "Status when a declared adult age range leaves the limit unchanged"
-    },
-    "Not Signed In" : {
-      "comment" : "Title shown in the macOS player window when no session is active."
-    },
-    "Not enough free space to start another download." : {
-      "comment" : "Low disk space download error",
-      "extractionState" : "manual"
-    },
-    "Not enough resume data — restarting download." : {
-      "comment" : "Download resume fallback message",
-      "extractionState" : "manual"
-    },
-    "Nothing Here Yet" : {
-      "comment" : "Default empty state title",
-      "extractionState" : "manual"
-    },
-    "Nothing Playing" : {
-      "comment" : "Remote session idle state"
-    },
-    "OK" : {
-      "comment" : "Alert confirmation button title",
-      "extractionState" : "manual"
-    },
-    "Off" : {
-      "comment" : "Content limit: no filtering"
-    },
-    "Offline" : {
-      "comment" : "watchOS connection status label when the server is unreachable",
-      "extractionState" : "manual"
-    },
-    "Online" : {
-      "comment" : "watchOS connection status label when the server is reachable",
-      "extractionState" : "manual"
-    },
-    "Open %@" : {
-      "comment" : "Open the EPUB entry named by the argument; shown beneath a chapter group",
-      "extractionState" : "manual"
-    },
-    "Open A Playa Named Gus" : {
-      "comment" : "Top Shelf action that opens the app home screen",
-      "extractionState" : "manual"
-    },
-    "Open Gus on iPhone to sign in" : {
-      "comment" : "CarPlay signed-out title"
-    },
-    "Open in Another App" : {
-      "comment" : "Open a downloaded book using a compatible external reader",
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Open in Another App"
-          }
-        }
-      }
-    },
-    "Open in Books" : {
-      "comment" : "Open a downloaded book using the system sharing sheet",
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Open in Books"
-          }
-        }
-      }
-    },
-    "Open this book's detail page and use Share to read it in Apple Books." : {
-      "comment" : "A description of how to read a book on a device without Readium.",
-      "isCommentAutoGenerated" : true
-    },
-    "Opening %@." : {
-      "comment" : "Siri/Shortcuts response when a container opens instead of playing"
-    },
-    "Opens the downloaded book" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Opens the downloaded book"
-          }
-        }
-      }
-    },
-    "Opens the share sheet — use it to open this book in Apple Books." : {
-      "comment" : "A hint for the share button.",
-      "isCommentAutoGenerated" : true
-    },
-    "Opens this environment." : {
-      "comment" : "A hint that describes the action of opening an environment.",
-      "isCommentAutoGenerated" : true
-    },
-    "Or open A Playa Named Gus on your iPhone — the watch signs in automatically." : {
-      "comment" : "A description of how to sign in to Jellyfin on an iPhone.",
-      "isCommentAutoGenerated" : true
-    },
-    "Parental Guidance" : {
-      "comment" : "Content limit tier"
-    },
-    "Password" : {
-      "comment" : "Password field placeholder",
-      "extractionState" : "manual"
-    },
-    "Pause" : {
-      "comment" : "Pause download button title",
-      "extractionState" : "manual"
-    },
-    "Pause %@" : {
-      "comment" : "A button that pauses a download. The argument is the name of the item being downloaded.",
-      "isCommentAutoGenerated" : true
-    },
-    "Pause Slideshow" : {
-      "comment" : "Play or pause button for a slideshow of photos.",
-      "isCommentAutoGenerated" : true
-    },
-    "Paused" : {
-      "comment" : "Paused download status label and section title",
-      "extractionState" : "manual"
-    },
-    "Paused Downloads" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Paused Downloads"
-          }
-        }
-      }
-    },
-    "Pausing..." : {
-      "comment" : "Download pause in-progress button state",
-      "extractionState" : "manual"
-    },
-    "Photos" : {
-      "comment" : "Navigation category: photos"
-    },
-    "Pineapple" : {},
-    "Play" : {
-      "comment" : "Playback button title",
-      "extractionState" : "manual"
-    },
-    "Play ${title}" : {},
-    "Play %@" : {
-      "comment" : "A button that plays a downloaded record. The argument is the title of the record.",
-      "isCommentAutoGenerated" : true
-    },
-    "Play Media" : {
-      "comment" : "Siri/Shortcuts intent to play media.",
-      "isCommentAutoGenerated" : true
-    },
-    "Play On" : {
-      "comment" : "A screen that lets the user choose which remote client should play an item.",
-      "isCommentAutoGenerated" : true
-    },
-    "Play On…" : {
-      "comment" : "A button that displays a sheet for choosing a target for playing a media item.",
-      "isCommentAutoGenerated" : true
-    },
-    "Play Slideshow" : {
-      "comment" : "Play or pause button for a slideshow of photos.",
-      "isCommentAutoGenerated" : true
-    },
-    "Play on Watch" : {},
-    "Playback" : {
-      "comment" : "Settings section header for playback preferences."
-    },
-    "Playback Speed" : {
-      "comment" : "A label for the playback speed menu.",
-      "isCommentAutoGenerated" : true
-    },
-    "Playback position" : {
-      "comment" : "Accessibility label for the audio playback progress bar\nAccessibility label for the remote session progress bar"
-    },
-    "Playback progress for %@" : {
-      "comment" : "Accessibility label for the resume progress bar; parameter is the item title"
-    },
-    "Playback stopped unexpectedly." : {
-      "comment" : "Generic playback failure message"
-    },
-    "Played" : {
-      "comment" : "Library filter option for played items",
-      "extractionState" : "manual"
-    },
-    "Player Gone" : {
-      "comment" : "Watch remote detail error state title when the controlled session has ended",
-      "extractionState" : "manual"
-    },
-    "Playing %@." : {
-      "comment" : "Siri/Shortcuts response when playback starts"
-    },
-    "Plays the downloaded file" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Plays the downloaded file"
-          }
-        }
-      }
-    },
-    "Preparing Book…" : {
-      "comment" : "Books loading state while the EPUB file is being fetched or prepared",
-      "extractionState" : "manual"
-    },
-    "Preparing download..." : {
-      "comment" : "Download status while server remuxes or converts media",
-      "extractionState" : "manual"
-    },
-    "Preparing…" : {
-      "comment" : "A placeholder for a button that is loading.",
-      "isCommentAutoGenerated" : true
-    },
-    "Previous Track" : {
-      "comment" : "Accessibility label for the previous track button in the audio player",
-      "extractionState" : "manual"
-    },
-    "Public Profiles" : {
-      "comment" : "Sign-in section title for public Jellyfin user profiles",
-      "extractionState" : "manual"
-    },
-    "Queued" : {
-      "comment" : "Download queued status label",
-      "extractionState" : "manual"
-    },
-    "Quick Connect" : {
-      "comment" : "Quick Connect section title",
-      "extractionState" : "manual"
-    },
-    "Random" : {
-      "comment" : "Library sort option for random ordering",
-      "extractionState" : "manual"
-    },
-    "Rating" : {
-      "comment" : "Library sort option by community rating",
-      "extractionState" : "manual"
-    },
-    "Read" : {
-      "comment" : "A button that opens a book.",
-      "isCommentAutoGenerated" : true
-    },
-    "Read this book in A Playa Named Gus on iPhone or iPad." : {},
-    "Reading Isn't Available Here" : {
-      "comment" : "A label that describes a book that can't be read.",
-      "isCommentAutoGenerated" : true
-    },
-    "Recently Added" : {
-      "comment" : "Library sort option by newest added item",
-      "extractionState" : "manual"
-    },
-    "Recently Added %@" : {
-      "comment" : "Home latest media section title; argument is the library name",
-      "extractionState" : "manual"
-    },
-    "Recommended" : {
-      "comment" : "Item detail section header for similar/recommended items",
-      "extractionState" : "manual"
-    },
-    "Recording" : {
-      "comment" : "Fallback scheduled recording name"
-    },
-    "Recordings" : {
-      "comment" : "Live TV section"
-    },
-    "Refresh" : {
-      "comment" : "Refresh action for local server discovery",
-      "extractionState" : "manual"
-    },
-    "Release Date" : {
-      "comment" : "Library sort option by release date",
-      "extractionState" : "manual"
-    },
-    "Remote" : {
-      "comment" : "Watch remote control tab/navigation title",
-      "extractionState" : "manual"
-    },
-    "Remove from Favorites" : {
-      "comment" : "Text for a button that removes an item from the user's favorites.",
-      "isCommentAutoGenerated" : true
-    },
-    "Remove from Up Next" : {
-      "comment" : "Text for a button that removes an item from the user's Up Next list.",
-      "isCommentAutoGenerated" : true
-    },
-    "Repeat All" : {
-      "comment" : "Repeat mode accessibility label"
-    },
-    "Repeat Off" : {
-      "comment" : "Repeat mode accessibility label"
-    },
-    "Repeat One" : {
-      "comment" : "Repeat mode accessibility label"
-    },
-    "Restricted Content" : {
-      "comment" : "A title for a view that indicates that content is unavailable.",
-      "isCommentAutoGenerated" : true
-    },
-    "Resume" : {
-      "comment" : "Resume download button title",
-      "extractionState" : "manual"
-    },
-    "Resume %@" : {
-      "comment" : "A button that resumes a download. The argument is the name of the item being downloaded.",
-      "isCommentAutoGenerated" : true
-    },
-    "Resuming..." : {
-      "comment" : "Download resume in-progress button state",
-      "extractionState" : "manual"
-    },
-    "S%02d E%02d" : {
-      "comment" : "Downloaded season and episode number",
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "S%02d E%02d"
-          }
-        }
-      }
-    },
-    "Saving download" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Saving download"
-          }
-        }
-      }
-    },
-    "Scheduled" : {
-      "comment" : "Live TV section"
-    },
-    "Search" : {
-      "comment" : "Search navigation title and tab label",
-      "extractionState" : "manual"
-    },
-    "Search Downloaded" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Search Downloaded"
-          }
-        }
-      }
-    },
-    "Search Jellyfin" : {
-      "comment" : "Search prompt and empty-state title",
-      "extractionState" : "manual"
-    },
-    "Search Library" : {},
-    "Searches your Jellyfin library and starts playback." : {
-      "comment" : "Siri/Shortcuts intent description.",
-      "isCommentAutoGenerated" : true
-    },
-    "Searching for Local Servers" : {
-      "comment" : "Connect screen status while local server discovery is running",
-      "extractionState" : "manual"
-    },
-    "Season" : {
-      "comment" : "Series detail season picker label",
-      "extractionState" : "manual"
-    },
-    "Section" : {
-      "comment" : "A label for a picker that lets the user select a section of a Live TV view.",
-      "isCommentAutoGenerated" : true
-    },
-    "Sections" : {
-      "comment" : "Navigation settings list section header for customizable navigation sections",
-      "extractionState" : "manual"
-    },
-    "Select a Library" : {
-      "comment" : "Split-view placeholder title",
-      "extractionState" : "manual"
-    },
-    "Select an Environment" : {
-      "comment" : "A title for a screen that lets the user select an immersive cinema environment.",
-      "isCommentAutoGenerated" : true
-    },
-    "Server" : {
-      "comment" : "Server name label",
-      "extractionState" : "manual"
-    },
-    "Server Address" : {
-      "comment" : "Connect screen section title",
-      "extractionState" : "manual"
-    },
-    "Server Notice" : {
-      "comment" : "Sign-in section title for a Jellyfin server login disclaimer",
-      "extractionState" : "manual"
-    },
-    "Server Unavailable" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Server Unavailable"
-          }
-        }
-      }
-    },
-    "Server preparation: %@" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Server preparation: %@"
-          }
-        }
-      }
-    },
-    "Session" : {
-      "comment" : "A section that shows the user's session information.",
-      "isCommentAutoGenerated" : true
-    },
-    "Set from Age Range" : {
-      "comment" : "A button that sets a content rating limit from Apple's Declared",
-      "isCommentAutoGenerated" : true
-    },
-    "Settings" : {
-      "comment" : "Settings navigation label",
-      "extractionState" : "manual"
-    },
-    "Settings is always last." : {
-      "comment" : "Navigation settings footer explaining Settings is pinned to the last position",
-      "extractionState" : "manual"
-    },
-    "Share" : {
-      "comment" : "A button that opens a share sheet.",
-      "isCommentAutoGenerated" : true
-    },
-    "Share this downloaded book to read it in Apple Books." : {
-      "comment" : "Offline book sharing fallback explanation",
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Share this downloaded book to read it in Apple Books."
-          }
-        }
-      }
-    },
-    "Share this downloaded book with a compatible reader." : {
-      "comment" : "Offline book sharing fallback explanation",
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Share this downloaded book with a compatible reader."
-          }
-        }
-      }
-    },
-    "SharePlay" : {
-      "comment" : "Item detail action for starting SharePlay with the selected media",
-      "extractionState" : "manual"
-    },
-    "SharePlay Unavailable" : {
-      "comment" : "Alert title when SharePlay cannot be started",
-      "extractionState" : "manual"
-    },
-    "Shared with You" : {
-      "comment" : "Fallback title for Apple's Shared with You highlight collection"
-    },
-    "Shows" : {
-      "comment" : "Downloaded filter\nNavigation category: TV shows\nUnknown downloaded series"
-    },
-    "Shuffle" : {
-      "comment" : "A button that shuffles the audio player queue.",
-      "isCommentAutoGenerated" : true
-    },
-    "Shuffle Off" : {
-      "comment" : "Accessibility label for the shuffle button when inactive"
-    },
-    "Shuffle On" : {
-      "comment" : "Accessibility label for the shuffle button when active"
-    },
-    "Sign In" : {
-      "comment" : "Sign-in screen title and button title",
-      "extractionState" : "manual"
-    },
-    "Sign In Again" : {
-      "comment" : "Settings action for stored users without a saved token",
-      "extractionState" : "manual"
-    },
-    "Sign Out" : {
-      "comment" : "Destructive sign-out button title",
-      "extractionState" : "manual"
-    },
-    "Sign in again to use that account." : {
-      "comment" : "Stored-user switch error: missing saved token",
-      "extractionState" : "manual"
-    },
-    "Sign in failed. Check your username and password." : {
-      "comment" : "Sign-in error: bad credentials",
-      "extractionState" : "manual"
-    },
-    "Sign in to a Jellyfin server in A Playa Named Gus first." : {
-      "comment" : "Siri/Shortcuts response when no session exists"
-    },
-    "Sign in to play media." : {
-      "comment" : "Description shown in the macOS player window when no session is active."
-    },
-    "Signed In" : {
-      "comment" : "Quick Connect signed-in success status",
-      "extractionState" : "manual"
-    },
-    "Signing In" : {
-      "comment" : "Quick Connect sign-in progress status",
-      "extractionState" : "manual"
-    },
-    "Soft Cap" : {
-      "comment" : "Downloads view soft cap label",
-      "extractionState" : "manual"
-    },
-    "Something Went Wrong" : {
-      "comment" : "Generic loading failure title",
-      "extractionState" : "manual"
-    },
-    "Sort" : {
-      "comment" : "Library picker label for sort order",
-      "extractionState" : "manual"
-    },
-    "Spatial" : {
-      "comment" : "visionOS player badge for native spatial video playback",
-      "extractionState" : "manual"
-    },
-    "Special Features" : {
-      "comment" : "Item detail section header for bonus/extra content",
-      "extractionState" : "manual"
-    },
-    "Speed" : {
-      "comment" : "A label for the playback speed menu.",
-      "isCommentAutoGenerated" : true
-    },
-    "Starting Quick Connect" : {
-      "comment" : "Quick Connect startup progress status",
-      "extractionState" : "manual"
-    },
-    "Starts playback for this item." : {
-      "comment" : "Play button accessibility hint",
-      "extractionState" : "manual"
-    },
-    "Stop" : {
-      "comment" : "Accessibility label for the stop playback button"
-    },
-    "Storage Used" : {
-      "comment" : "Downloads view storage usage label",
-      "extractionState" : "manual"
-    },
-    "Streaming Quality" : {
-      "comment" : "Settings picker: maximum playback bitrate."
-    },
-    "Studios" : {
-      "comment" : "Item detail studio metadata label",
-      "extractionState" : "manual"
-    },
-    "Subtitles" : {
-      "comment" : "A label for the subtitle options.",
-      "isCommentAutoGenerated" : true
-    },
-    "Switch" : {
-      "comment" : "Settings action to switch to another stored account",
-      "extractionState" : "manual"
-    },
-    "System" : {
-      "comment" : "Appearance option: follow the system setting"
-    },
-    "System follows your device's light and dark setting. Navigation customizes which sections appear in the main menu." : {
-      "comment" : "A description of the navigation settings.",
-      "isCommentAutoGenerated" : true
-    },
-    "Teen" : {
-      "comment" : "Content limit tier"
-    },
-    "That content couldn't be found." : {
-      "comment" : "404 / not found error",
-      "extractionState" : "manual"
-    },
-    "That server is no longer available." : {
-      "comment" : "Stored-user switch error: missing server",
-      "extractionState" : "manual"
-    },
-    "The Quick Connect code expired. Try again." : {
-      "comment" : "Quick Connect stream ended without authentication"
-    },
-    "The book file is missing." : {
-      "comment" : "Book reader error"
-    },
-    "The downloaded PDF could not be opened." : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "The downloaded PDF could not be opened."
-          }
-        }
-      }
-    },
-    "The downloaded file is missing. Download it again to play it offline." : {
-      "comment" : "Missing offline file",
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "The downloaded file is missing. Download it again to play it offline."
-          }
-        }
-      }
-    },
-    "The downloaded file is missing. Manage Downloads to download it again." : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "The downloaded file is missing. Manage Downloads to download it again."
-          }
-        }
-      }
-    },
-    "The movie, show, song, or audiobook to play" : {
-      "comment" : "The parameter name for the title of the media to play.",
-      "isCommentAutoGenerated" : true
-    },
-    "The request was cancelled." : {
-      "comment" : "Cancelled request",
-      "extractionState" : "manual"
-    },
-    "The server appears to be offline. Check your connection and try again." : {
-      "comment" : "Offline network error"
-    },
-    "The server could not provide this book." : {
-      "comment" : "Book fetch error"
-    },
-    "The server rejected the request (%lld)." : {
-      "comment" : "Generic non-success HTTP status error"
-    },
-    "The server reported an error (%lld). Try again in a moment." : {
-      "comment" : "Generic 5xx server error with status code"
-    },
-    "The server returned a media source that cannot be downloaded." : {
-      "comment" : "Download source resolver missing media source id",
-      "extractionState" : "manual"
-    },
-    "The server returned no downloadable media source." : {
-      "comment" : "Download source resolver no media source",
-      "extractionState" : "manual"
-    },
-    "The server returned no playable media source." : {
-      "comment" : "Playback error: no media source",
-      "extractionState" : "manual"
-    },
-    "The server took too long to respond. Try again in a moment." : {
-      "comment" : "Timeout network error"
-    },
-    "This Jellyfin server has no Live TV tuner or guide configured." : {},
-    "This SharePlay session is for a different server." : {
-      "comment" : "SharePlay error when the current server does not match the activity"
-    },
-    "This item can't be played." : {
-      "comment" : "Playback error: item has no playable identifier",
-      "extractionState" : "manual"
-    },
-    "This item can't be shared with SharePlay." : {
-      "comment" : "SharePlay error when an item cannot create a Group Activity",
-      "extractionState" : "manual"
-    },
-    "This item cannot be downloaded because it is missing a media id." : {
-      "comment" : "Download source resolver missing item id",
-      "extractionState" : "manual"
-    },
-    "This item is above the content rating limit. A household member can change the limit in Settings under Content Restrictions." : {
-      "comment" : "A description of why a restricted item is unavailable.",
-      "isCommentAutoGenerated" : true
-    },
-    "This item is not available for download." : {
-      "comment" : "Download unavailable message",
-      "extractionState" : "manual"
-    },
-    "This item is restricted." : {
-      "comment" : "Restricted playback",
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "This item is restricted."
-          }
-        }
-      }
-    },
-    "This player is no longer active." : {
-      "comment" : "Watch remote detail error description when the controlled session has ended",
-      "extractionState" : "manual"
-    },
-    "This server does not support saved playback progress." : {
-      "comment" : "Unsupported offline progress sync",
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "This server does not support saved playback progress."
-          }
-        }
-      }
-    },
-    "Time remaining unavailable" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Time remaining unavailable"
-          }
-        }
-      }
-    },
-    "Title" : {
-      "comment" : "The name of the parameter for the title of the media to play.",
-      "isCommentAutoGenerated" : true
-    },
-    "Transcoding for download..." : {
-      "comment" : "Download status while server prepares a transcoded file",
-      "extractionState" : "manual"
-    },
-    "Transfer interrupted. Resume or restart the download." : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Transfer interrupted. Resume or restart the download."
-          }
-        }
-      }
-    },
-    "Try Again" : {
-      "comment" : "A button that triggers a retry action.",
-      "isCommentAutoGenerated" : true
-    },
-    "Try Quick Connect Again" : {
-      "comment" : "Quick Connect retry action",
-      "extractionState" : "manual"
-    },
-    "Try another title, series, or artist." : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Try another title, series, or artist."
-          }
-        }
-      }
-    },
-    "Unknown Device" : {
-      "comment" : "Fallback remote session device name"
-    },
-    "Unmute" : {
-      "comment" : "Accessibility label for the unmute button"
-    },
-    "Unplayed" : {
-      "comment" : "Library filter option for unplayed items",
-      "extractionState" : "manual"
-    },
-    "Untitled" : {
-      "comment" : "Fallback item title",
-      "extractionState" : "manual"
-    },
-    "Use Local Demo Server" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Use Local Demo Server"
-          }
-        }
-      }
-    },
-    "Use Quick Connect" : {
-      "comment" : "Quick Connect start action",
-      "extractionState" : "manual"
-    },
-    "Use Refresh to search for Jellyfin servers on this network." : {
-      "comment" : "Connect screen local server discovery idle help text",
-      "extractionState" : "manual"
-    },
-    "Used" : {
-      "comment" : "A label that describes the amount of storage used.",
-      "isCommentAutoGenerated" : true
-    },
-    "User" : {
-      "comment" : "User name label",
-      "extractionState" : "manual"
-    },
-    "Username" : {
-      "comment" : "Username field placeholder",
-      "extractionState" : "manual"
-    },
-    "Version" : {
-      "comment" : "App version label",
-      "extractionState" : "manual"
-    },
-    "Viewing Mode" : {
-      "comment" : "visionOS playback menu for choosing Auto, 2D, or Spatial video presentation",
-      "extractionState" : "manual"
-    },
-    "Volume down" : {
-      "comment" : "Accessibility label for the volume-down button"
-    },
-    "Volume up" : {
-      "comment" : "Accessibility label for the volume-up button"
-    },
-    "Waiting for connection" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Waiting for connection"
-          }
-        }
-      }
-    },
-    "Waiting for connection · %@" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Waiting for connection · %@"
-          }
-        }
-      }
-    },
-    "Waiting for more data" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Waiting for more data"
-          }
-        }
-      }
-    },
-    "Waiting for server" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Waiting for server"
-          }
-        }
-      }
-    },
-    "Waiting for server · %@" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Waiting for server · %@"
-          }
-        }
-      }
-    },
-    "Watch %@ in Gus Cinema" : {
-      "comment" : "visionOS immersive cinema open accessibility label; argument is the item title",
-      "extractionState" : "manual"
-    },
-    "Your session has expired. Please sign in again." : {
-      "comment" : "401 / unauthorized error",
-      "extractionState" : "manual"
-    },
-    "http://192.168.1.50:8096" : {
-      "comment" : "Example Jellyfin server address placeholder",
-      "extractionState" : "manual",
-      "shouldTranslate" : false
-    },
-    "Now Playing" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Now Playing"
-          }
-        }
-      }
-    },
-    "Opens Now Playing" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Opens Now Playing"
-          }
-        }
-      }
-    },
-    "Updating…" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Updating…"
-          }
-        }
-      }
-    },
-    "Refresh Status" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Refresh Status"
-          }
-        }
-      }
-    },
-    "Dismiss" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Dismiss"
-          }
-        }
-      }
-    },
-    "Continue Searching" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Continue Searching"
-          }
-        }
-      }
-    },
-    "Show More" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Show More"
-          }
-        }
-      }
-    },
-    "More" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "More"
-          }
-        }
-      }
-    },
-    "Close" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Close"
-          }
-        }
-      }
-    },
-    "Delete After Finishing" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Delete After Finishing"
-          }
-        }
-      }
-    },
-    "Automatically remove finished downloads from this device without asking. Video and audio are removed after playback ends; books are removed when you close the reader at the end. Repeated audio is kept until playback stops. Books opened in other apps are not removed automatically." : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Automatically remove finished downloads from this device without asking. Video and audio are removed after playback ends; books are removed when you close the reader at the end. Repeated audio is kept until playback stops. Books opened in other apps are not removed automatically."
-          }
-        }
-      }
-    },
-    "Select" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Select"
-          }
-        }
-      }
-    },
-    "Select All" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Select All"
-          }
-        }
-      }
-    },
-    "Deselect All" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Deselect All"
-          }
-        }
-      }
-    },
-    "Delete Selected (%lld)" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Delete Selected (%lld)"
-          }
-        }
-      }
-    },
-    "Delete All Downloads" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Delete All Downloads"
-          }
-        }
-      }
-    },
-    "Delete Downloads?" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Delete Downloads?"
-          }
-        }
-      }
-    },
-    "Delete %lld Downloads" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Delete %lld Downloads"
-          }
-        }
-      }
-    },
-    "Remove %@ from this device? The server copy will remain available." : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Remove %@ from this device? The server copy will remain available."
-          }
-        }
-      }
-    },
-    "Remove %lld downloads from this device? Server copies will remain available. Active transfers will be canceled." : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Remove %lld downloads from this device? Server copies will remain available. Active transfers will be canceled."
-          }
-        }
-      }
-    },
-    "Select %@" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Select %@"
-          }
-        }
-      }
-    },
-    "Selected" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Selected"
-          }
-        }
-      }
-    },
-    "Not Selected" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Not Selected"
-          }
-        }
-      }
-    },
-    "Delete Download" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Delete Download"
-          }
-        }
-      }
     }
   },
-  "version" : "1.1"
+  "version": "1.1"
 }

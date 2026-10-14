@@ -1,14 +1,11 @@
 import SwiftUI
 
-/// Grid of the items inside a single library.
-///
-/// Pattern reference: Swiftfin's library/`getItems` paging.
+/// Movie discovery and its paginated grid keep independent load states.
 struct LibraryGridView: View {
     @Environment(RootNavigationState.self) private var navigationState
     @Environment(SessionStore.self) private var session
     let scope: LibraryGridScope
     @State private var store: LibraryStore?
-
     init(library: MediaItem) {
         scope = .library(library)
     }
@@ -17,79 +14,70 @@ struct LibraryGridView: View {
         self.scope = scope
     }
 
+    private var isMovies: Bool {
+        switch scope {
+        case let .library(item): item.collectionType == .movies
+        case let .category(category): category == .movies
+        }
+    }
+
     var body: some View {
-        Group {
-            if let store {
-                content(store)
-            } else {
-                ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity)
+        ScrollView {
+            VStack(alignment: .leading, spacing: 24) {
+                if isMovies {
+                    MovieCollectionsShelf(libraryID: scope.parentID)
+                }
+                if let store {
+                    LoadingStateView(state: store.state, isEmpty: store.items.isEmpty && !store.canLoadMore, emptyTitle: "Empty Library", emptySymbol: "rectangle.on.rectangle", retryAction: { Task { await store.load() } }) {
+                        grid(store)
+                    }
+                } else {
+                    ProgressView().frame(maxWidth: .infinity)
+                }
             }
+            .gusTVPagePadding()
+            .frame(maxWidth: PageContentMetrics.maxWidth, alignment: .leading)
+            .frame(maxWidth: .infinity)
         }
         .navigationTitle(scope.title)
         .toolbar {
             if let store {
-                ToolbarItem {
-                    LibraryFilterMenu(store: store)
-                        .disabled(store.isLoading)
-                }
+                ToolbarItem { LibraryFilterMenu(store: store).disabled(store.isLoading) }
             }
         }
-        .task(id: scope.storeIdentity) {
-            let store = navigationState.libraryStore(for: scope, session: session)
-            self.store = store
+        .task(id: scope.storeIdentity) { store = navigationState.libraryStore(for: scope, session: session) }
+        .scrollPosition(id: navigationState.scrollBinding(for: "library:" + scope.storeIdentity))
+        .lookToScroll()
+        .refreshable {
+            await store?.load()
+            if isMovies {
+                await navigationState.collectionStore(session: session).load(force: true); await navigationState.collectionStore(session: session).loadLibrary(scope.parentID)
+            }
         }
     }
 
-    private func content(_ store: LibraryStore) -> some View {
-        LoadingStateView(
-            state: store.state,
-            isEmpty: store.items.isEmpty && !store.canLoadMore,
-            emptyTitle: "Empty Library",
-            emptySymbol: "rectangle.on.rectangle",
-            retryAction: { Task { await store.load() } }
-        ) {
-            ScrollView {
-                LazyVGrid(columns: PosterGrid.columns, alignment: .leading, spacing: PosterGrid.spacing) {
-                    ForEach(store.items, id: \.id) { item in
-                        NavigationLink(value: ItemRef(item: item)) {
-                            PosterCard(
-                                item: item,
-                                imageURL: session.mediaProvider.primaryImageURL(for: item, context: .posterGrid)
-                            )
-                        }
-                        .id(ItemRef(item: item).id)
-                        .posterNavigationStyle()
-                        .gusTVFocus(id: ItemRef(item: item).id, section: "library:" + scope.storeIdentity, ids: store.items.map { ItemRef(item: $0).id }, initial: item.id == store.items.first?.id, item: item)
-                        .task {
-                            await store.loadMoreIfNeeded(currentItem: item)
-                        }
-                    }
-
-                    if let error = store.pageError {
-                        Text(error).foregroundStyle(.secondary)
-                    }
-                    if store.canLoadMore {
-                        Button("Continue Searching") { Task { await store.continueSearching() } }
-                            .disabled(store.isLoadingNextPage)
-                            .frame(minHeight: 44)
-                    }
-                    if store.isLoadingNextPage {
-                        ProgressView()
-                            .gridCellColumns(PosterGrid.columns.count)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical)
-                    }
-                }
-                .scrollTargetLayout()
-                .gusTVPagePadding()
-                .frame(maxWidth: PageContentMetrics.maxWidth, alignment: .leading)
-                .frame(maxWidth: .infinity)
-                .tvFocusSection()
+    private func grid(_ store: LibraryStore) -> some View {
+        LazyVGrid(columns: PosterGrid.columns, alignment: .leading, spacing: PosterGrid.spacing) {
+            ForEach(store.items, id: \.id) { item in
+                NavigationLink(value: ItemRef(item: item)) { PosterCard(item: item, imageURL: session.mediaProvider.primaryImageURL(for: item, context: .posterGrid)) }
+                    .id(ItemRef(item: item).id)
+                    .posterNavigationStyle()
+                    .mediaItemContextMenu(item: item)
+                    .gusTVFocus(id: ItemRef(item: item).id, section: "library:" + scope.storeIdentity, ids: store.items.map { ItemRef(item: $0).id }, initial: item.id == store.items.first?.id, item: item)
+                    .task { await store.loadMoreIfNeeded(currentItem: item) }
             }
-            .scrollPosition(id: navigationState.scrollBinding(for: "library:" + scope.storeIdentity))
-            .lookToScroll()
-            .refreshable { await store.load() }
+            if let error = store.pageError {
+                Text(error).foregroundStyle(.secondary)
+            }
+            if store.canLoadMore {
+                Button("Continue Searching") { Task { await store.continueSearching() } }.disabled(store.isLoadingNextPage).frame(minHeight: 44)
+            }
+            if store.isLoadingNextPage {
+                ProgressView().gridCellColumns(PosterGrid.columns.count).frame(maxWidth: .infinity).padding(.vertical)
+            }
         }
+        .scrollTargetLayout()
+        .tvFocusSection()
     }
 }
 

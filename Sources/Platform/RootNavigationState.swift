@@ -25,6 +25,19 @@ final class RootNavigationState {
     var downloadSearch = ""
     var downloadFilter = DownloadedLibraryFilter.all
     var isDownloadSearchPresented = false
+    private var collections: CollectionStore?
+
+    func collectionStore(session: SessionStore) -> CollectionStore {
+        if let collections, collections.session === session {
+            return collections
+        }
+        collections?.invalidate()
+        let store = CollectionStore(session: session)
+        collections = store
+        session.registerCollectionStore(store)
+        return store
+    }
+
     private var searches: [String: SectionSearchState] = [:]
     private var libraries: [String: LibraryStore] = [:]
     private var details: [String: ItemDetailStore] = [:]
@@ -64,6 +77,9 @@ final class RootNavigationState {
     }
 
     func refreshCachedContent() async {
+        if let collections {
+            await collections.load(force: true)
+        }
         await home?.refresh()
         for store in libraries.values {
             guard !Task.isCancelled else { return }

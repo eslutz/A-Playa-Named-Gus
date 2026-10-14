@@ -38,6 +38,7 @@ struct SeriesEpisodesView: View {
                                 }
                                 .id(ItemRef(item: episode).id)
                                 .posterNavigationStyle()
+                                .mediaItemContextMenu(item: episode)
                                 .gusTVFocus(id: ItemRef(item: episode).id, section: "episodes:" + (store.selectedSeasonID ?? ""), ids: store.episodes.map { ItemRef(item: $0).id }, item: episode, context: "detail:" + ItemRef(item: store.series).id)
                             }
                         }

@@ -58,6 +58,9 @@ extension PosterCard {
         if item.type == .episode, let series = item.seriesName {
             title = series
             subtitle = item.episodeLocator ?? item.name
+        } else if item.type == .boxSet {
+            title = item.displayTitle
+            subtitle = String(localized: "Collection")
         } else {
             title = item.name ?? "Untitled"
             subtitle = item.productionYear.map(String.init)

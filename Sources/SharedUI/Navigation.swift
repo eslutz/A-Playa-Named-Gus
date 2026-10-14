@@ -59,5 +59,10 @@ struct VideoPlaylistRef: Hashable {
 }
 
 struct MediaCollectionRef: Hashable {
-    let id: UUID
+    let id: String
+    let scope: AccountScope
+}
+
+struct CollectionsRef: Hashable {
+    let scope: AccountScope
 }

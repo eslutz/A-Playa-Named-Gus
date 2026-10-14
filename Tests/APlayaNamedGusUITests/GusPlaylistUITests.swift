@@ -5,6 +5,84 @@
     /// These cases establish server-backed CRUD, not physical/iCloud acceptance.
     @MainActor
     final class GusPlaylistUITests: XCTestCase {
+        func testNextUpAlignmentAndContextActions() async throws {
+            continueAfterFailure = false
+            executionTimeAllowance = 180
+            let auth = try await demoRequest("/Users/AuthenticateByName", body: ["Username": "gus", "Pw": "playa-demo"])
+            let token = try XCTUnwrap(auth["AccessToken"] as? String)
+            let user = try XCTUnwrap(auth["User"] as? [String: Any])
+            let userID = try XCTUnwrap(user["Id"] as? String)
+            let result = try await demoRequest("/Items?recursive=true&includeItemTypes=Movie,Episode&userId=" + userID, token: token)
+            let items = try XCTUnwrap(result["Items"] as? [[String: Any]])
+            let movie = try XCTUnwrap(items.first { $0["Type"] as? String == "Movie" })
+            let episode = try XCTUnwrap(items.first { $0["Type"] as? String == "Episode" })
+            let movieID = try XCTUnwrap(movie["Id"] as? String)
+            let episodeID = try XCTUnwrap(episode["Id"] as? String)
+            let episodeTicks = max(1, (episode["RunTimeTicks"] as? Int ?? 50_000_000) / 5)
+            for item in [movie, episode] {
+                let id = try XCTUnwrap(item["Id"] as? String)
+                let ticks = max(1, (item["RunTimeTicks"] as? Int ?? 50_000_000) / 5)
+                _ = try await demoRequest(
+                    "/UserItems/" + id + "/UserData?userId=" + userID,
+                    token: token,
+                    body: ["Played": false, "PlaybackPositionTicks": ticks, "PlayedPercentage": 20, "LastPlayedDate": ISO8601DateFormatter().string(from: Date())]
+                )
+            }
+            XCUIDevice.shared.orientation = .landscapeLeft
+            defer { XCUIDevice.shared.orientation = .portrait }
+            let app = XCUIApplication()
+            let arguments = ["--gus-skip-session-restore", "--gus-demo-server", "--gus-disable-cloud-sync"]
+            // Explicit saving also restores a dismissal left by an earlier run.
+            for id in [movieID, episodeID] {
+                app.launchArguments = arguments + ["--gus-route", "item/" + id]
+                app.launch()
+                XCTAssertTrue(app.buttons["ContentLink.detailDone"].waitForExistence(timeout: 30))
+                let nextUpAction = app.buttons.matching(NSPredicate(format: "label == %@ OR label == %@", "Remove from Next Up", "Add to Next Up")).firstMatch
+                XCTAssertTrue(nextUpAction.waitForExistence(timeout: 30))
+                if app.buttons["Remove from Next Up"].exists {
+                    app.buttons["Remove from Next Up"].tap()
+                }
+                XCTAssertTrue(app.buttons["Add to Next Up"].waitForExistence(timeout: 10))
+                app.buttons["Add to Next Up"].tap()
+                app.terminate()
+            }
+            app.launchArguments = arguments
+            app.launch()
+            defer { app.terminate() }
+            let movieCard = app.buttons["NextUp.card.media:jellyfin:" + movieID]
+            let episodeCard = app.buttons["NextUp.card.media:jellyfin:" + episodeID]
+            XCTAssertTrue(movieCard.waitForExistence(timeout: 30))
+            XCTAssertTrue(episodeCard.waitForExistence(timeout: 10))
+            let movieProgress = app.progressIndicators["NextUp.progress.media:jellyfin:" + movieID]
+            let episodeProgress = app.progressIndicators["NextUp.progress.media:jellyfin:" + episodeID]
+            XCTAssertTrue(movieProgress.exists)
+            XCTAssertTrue(episodeProgress.exists)
+            XCTAssertEqual(movieProgress.frame.midY, episodeProgress.frame.midY, accuracy: 1)
+            let screenshot = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+            screenshot.name = "next-up-aligned-progress"; screenshot.lifetime = .keepAlways; add(screenshot)
+            episodeCard.press(forDuration: 1)
+            let menuHierarchy = XCTAttachment(string: app.debugDescription)
+            menuHierarchy.name = "next-up-context-menu-hierarchy"; menuHierarchy.lifetime = .keepAlways; add(menuHierarchy)
+            for label in ["Remove from Next Up", "Mark Watched", "Mark Unwatched", "Add to Playlist", "Add to Collection"] {
+                XCTAssertTrue(app.buttons[label].waitForExistence(timeout: 5), label)
+            }
+            app.buttons["Remove from Next Up"].tap()
+            let removed = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in !episodeCard.exists }, object: nil)
+            XCTAssertEqual(XCTWaiter.wait(for: [removed], timeout: 10), .completed)
+            let unchanged = try await demoRequest("/Items/" + episodeID + "?userId=" + userID, token: token)
+            let unchangedData = try XCTUnwrap(unchanged["UserData"] as? [String: Any])
+            XCTAssertEqual(unchangedData["PlaybackPositionTicks"] as? Int, episodeTicks)
+            XCTAssertEqual(unchangedData["Played"] as? Bool, false)
+            movieCard.press(forDuration: 1)
+            app.buttons["Mark Watched"].tap()
+            let marked = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in !movieProgress.exists }, object: nil)
+            XCTAssertEqual(XCTWaiter.wait(for: [marked], timeout: 15), .completed)
+            let watched = try await demoRequest("/Items/" + movieID + "?userId=" + userID, token: token)
+            let watchedData = try XCTUnwrap(watched["UserData"] as? [String: Any])
+            XCTAssertEqual(watchedData["PlaybackPositionTicks"] as? Int, 0)
+            XCTAssertEqual(watchedData["Played"] as? Bool, true)
+        }
+
         func testPlaylistCreateRenamePersistAndDelete() async throws {
             continueAfterFailure = false
             let app = XCUIApplication()
@@ -102,46 +180,64 @@
 
         func testNativeCollectionCreateAddRemoveAndDelete() async throws {
             continueAfterFailure = false
+            XCUIDevice.shared.orientation = .portrait
             let app = XCUIApplication()
             app.launchArguments = ["--gus-skip-session-restore", "--gus-demo-server", "--gus-disable-cloud-sync"]
             let name = "Collection Acceptance " + UUID().uuidString.prefix(8)
-            app.launch(); openPlaylists(app)
-            app.buttons["New List"].tap(); app.buttons["New Collection"].tap()
+            app.launch()
+            let movies = app.buttons["Movies"].firstMatch
+            if !movies.exists {
+                let more = app.buttons["More"].firstMatch
+                XCTAssertTrue(more.waitForExistence(timeout: 20)); more.tap()
+            }
+            XCTAssertTrue(movies.waitForExistence(timeout: 20)); movies.tap()
+            let seeAll = app.buttons["See All"].firstMatch
+            XCTAssertTrue(seeAll.waitForExistence(timeout: 10)); seeAll.tap()
+            XCTAssertTrue(app.buttons["New Collection"].waitForExistence(timeout: 10))
+            app.buttons["New Collection"].tap()
             let field = app.textFields["Name"].firstMatch
             XCTAssertTrue(field.waitForExistence(timeout: 5))
-            field.tap(); field.typeText(name); app.buttons["Create"].tap()
-            let row = app.staticTexts[name]
+            field.tap(); field.typeText(name); app.buttons["Save"].tap()
+            let row = app.staticTexts[name].firstMatch
             XCTAssertTrue(row.waitForExistence(timeout: 10)); row.tap()
-            XCTAssertTrue(app.buttons["Add Media"].waitForExistence(timeout: 10))
-            app.buttons["Add Media"].tap()
+            app.navigationBars.buttons["More"].firstMatch.tap(); app.buttons["Add Movies"].tap()
             let search = app.searchFields.firstMatch
             XCTAssertTrue(search.waitForExistence(timeout: 10))
             search.tap(); search.typeText("Sneeze")
             let title = "Edison Kinetoscopic Record of a Sneeze (1894)"
             let result = app.buttons[title].firstMatch
             XCTAssertTrue(result.waitForExistence(timeout: 20)); result.tap()
+            let addMovies = app.navigationBars.buttons["Add"].firstMatch
+            if !addMovies.exists {
+                let closeSearch = app.buttons["close"].firstMatch
+                XCTAssertTrue(closeSearch.waitForExistence(timeout: 5)); closeSearch.tap()
+            }
+            XCTAssertTrue(addMovies.waitForExistence(timeout: 10)); addMovies.tap()
             XCTAssertTrue(app.staticTexts[title].waitForExistence(timeout: 10))
+            XCTAssertTrue(app.staticTexts["1 title"].exists)
             let collection = try await nativeList(named: name, kind: "BoxSet")
             let id = try XCTUnwrap(collection?["Id"] as? String)
             let before = try await nativeEntries(listID: id, playlist: false)
             XCTAssertEqual(before.count, 1)
+            app.staticTexts[title].firstMatch.tap()
+            let membership = app.staticTexts[name].firstMatch
+            XCTAssertTrue(membership.waitForExistence(timeout: 10)); membership.tap()
+            XCTAssertTrue(app.staticTexts[title].waitForExistence(timeout: 10))
             let capture = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
             capture.name = "native-collection-membership"; capture.lifetime = .keepAlways; add(capture)
             app.staticTexts[title].press(forDuration: 1)
-            app.buttons["Remove"].firstMatch.tap()
-            XCTAssertTrue(app.staticTexts["Add titles to this collection."].waitForExistence(timeout: 10))
+            app.buttons["Remove from " + name].firstMatch.tap()
+            XCTAssertTrue(app.staticTexts["No Titles"].waitForExistence(timeout: 10))
             let after = try await nativeEntries(listID: id, playlist: false)
             XCTAssertTrue(after.isEmpty)
-            app.navigationBars.buttons.firstMatch.tap()
-            row.press(forDuration: 1); app.buttons["Delete"].firstMatch.tap(); app.buttons["Delete"].firstMatch.tap()
-            XCTAssertFalse(row.waitForExistence(timeout: 2))
+            app.navigationBars.buttons["More"].firstMatch.tap(); app.buttons["Delete Collection"].tap()
+            app.buttons["Delete Collection"].firstMatch.tap()
+            XCTAssertTrue(app.navigationBars[title].waitForExistence(timeout: 10))
             let deleted = try await nativeList(named: name, kind: "BoxSet")
             XCTAssertNil(deleted)
-            app.terminate()
         }
 
-        /// Read back the task-owned demo server independently of Gus's cache.
-        private func demoRequest(_ path: String, token: String? = nil, body: [String: String]? = nil) async throws -> [String: Any] {
+        private func demoRequest(_ path: String, token: String? = nil, body: [String: Any]? = nil) async throws -> [String: Any] {
             var request = try URLRequest(url: XCTUnwrap(URL(string: "http://localhost:8096" + path)))
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")
             request.setValue("MediaBrowser Client=\"Gus UI Acceptance\", Device=\"Simulator\", DeviceId=\"gus-native-lists-test\", Version=\"1.0.0\"", forHTTPHeaderField: "X-Emby-Authorization")

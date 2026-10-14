@@ -15,7 +15,6 @@ struct VideoPlaylistsView: View {
     var body: some View {
         List {
             Section("Playlists") { rows(.playlist) }
-            Section("Collections") { rows(.collection) }
             let pending = lists.pendingEdits(scope: scope).filter(\.needsReview)
             if !pending.isEmpty {
                 Section("Changes Need Review") {
@@ -47,12 +46,11 @@ struct VideoPlaylistsView: View {
                 Section { Text(message).foregroundStyle(.secondary) }
             }
         }
-        .navigationTitle("Playlists & Collections")
+        .navigationTitle("Playlists")
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Menu {
                     Button("New Playlist", systemImage: "list.and.film") { creating = .playlist }
-                    Button("New Collection", systemImage: "rectangle.stack") { creating = .collection }
                 } label: { Label("New List", systemImage: "plus") }
             }
         }
@@ -62,7 +60,7 @@ struct VideoPlaylistsView: View {
             }
         })) {
             NavigationStack {
-                ServerListNameEditor(initialName: "", title: creating == .collection ? "New Collection" : "New Playlist", saveTitle: "Create") { name in
+                ServerListNameEditor(initialName: "", title: "New Playlist", saveTitle: "Create") { name in
                     await lists.create(name: name, kind: creating ?? .playlist, session: session) != nil
                 }
             }
@@ -99,14 +97,12 @@ struct VideoPlaylistsView: View {
     @ViewBuilder private func rows(_ kind: ServerMediaListKind) -> some View {
         let values = lists.lists(kind: kind, scope: scope)
         if values.isEmpty {
-            Text(kind == .playlist ? String(localized: "No Playlists") : String(localized: "No Collections")).foregroundStyle(.secondary)
+            Text(String(localized: "No Playlists")).foregroundStyle(.secondary)
         }
         ForEach(values) { list in
             Group {
                 if kind == .playlist {
                     NavigationLink(value: VideoPlaylistRef(id: list.id)) { label(list) }
-                } else {
-                    NavigationLink(value: MediaCollectionRef(id: list.id)) { label(list) }
                 }
             }
             .contextMenu { Button("Delete", role: .destructive) { deleting = list }.disabled(!list.canEdit) }
@@ -245,7 +241,11 @@ struct VideoPlaylistDetailView: View {
             if !isVideo && !playlist.entries.isEmpty {
                 Text("Play mixed media individually. Ordered video playback supports movies and episodes.").foregroundStyle(.secondary)
             }
-            Toggle("Add to Next Up", isOn: Binding(get: { playlist.queued }, set: { supplemental.setQueued(id: lists.resolvedID(id, scope: scope), queued: $0, scope: scope) }))
+            Toggle("Add to Next Up", isOn: Binding(get: { playlist.queued }, set: {
+                let resolved = lists.resolvedID(id, scope: scope)
+                supplemental.setQueued(id: resolved, queued: $0, scope: scope)
+                NextUpActivityStore.shared.setDismissed("playlist:" + resolved.uuidString, dismissed: !$0, scope: scope)
+            }))
         }
     }
 
@@ -267,12 +267,13 @@ struct VideoPlaylistDetailView: View {
                 Label("Restricted Content", systemImage: "lock")
             }
         }
-        .contextMenu {
+        .mediaItemContextMenu(item: admitted ? entry.reference.item : nil, groupName: playlist.name, canRemove: canEdit, remove: {
+            _ = await lists.remove(entryID: entry.id, from: id, kind: .playlist, session: session)
+        }) {
             Button("Play from Here") { play(entry, fromBeginning: true) }.disabled(!admitted || !isVideo)
             Button("Move Up") { move(index, by: -1, in: playlist) }.disabled(!canEdit || index == 0)
             Button("Move Down") { move(index, by: 1, in: playlist) }.disabled(!canEdit || index == playlist.entries.count - 1)
             Button("Choose Replacement") { replacing = entry }.disabled(!admitted || !canEdit)
-            Button("Remove", role: .destructive) { Task { _ = await lists.remove(entryID: entry.id, from: id, kind: .playlist, session: session) } }.disabled(!canEdit)
         }
     }
 
@@ -307,77 +308,10 @@ struct SavedPlaylistErrorBanner: View {
     }
 }
 
-struct MediaCollectionDetailView: View {
-    @Environment(SessionStore.self) private var session
-    @Environment(ServerMediaListsStore.self) private var lists
-    let id: UUID
-    @State private var adding = false
-    @State private var renaming = false
-    @State private var loadingEntries = false
-    private var scope: AccountScope {
-        session.references.scope
-    }
-
-    private var collection: ServerMediaList? {
-        lists.list(id: id, kind: .collection, scope: scope)
-    }
-
-    var body: some View {
-        Group {
-            if let collection {
-                List {
-                    if !collection.entriesLoaded {
-                        if loadingEntries {
-                            ProgressView()
-                        } else {
-                            ContentUnavailableView("Collection Entries Unavailable", systemImage: "wifi.slash", description: Text("Connect to Jellyfin to load the titles in this collection."))
-                        }
-                    }
-                    ForEach(collection.entries) { entry in
-                        if ContentRatingGate.admitsStored(entry.item) {
-                            NavigationLink(value: ItemRef(item: entry.item)) { Text(entry.item.displayTitle) }
-                                .contextMenu { Button("Remove", role: .destructive) { Task { _ = await lists.remove(entryID: entry.id, from: id, kind: .collection, session: session) } }.disabled(!collection.canEdit) }
-                        } else {
-                            Label("Restricted Content", systemImage: "lock")
-                        }
-                    }
-                    if collection.entriesLoaded && collection.entries.isEmpty {
-                        Text("Add titles to this collection.").foregroundStyle(.secondary)
-                    }
-                    if let message = lists.statusMessage, !message.isEmpty {
-                        Text(message).foregroundStyle(.secondary)
-                    }
-                }
-                .navigationTitle(collection.name)
-                .toolbar {
-                    ToolbarItem { Button("Add Media", systemImage: "plus") { adding = true }.disabled(!collection.canEdit) }
-                    ToolbarItem { Button("Rename") { renaming = true }.disabled(!collection.canEdit) }
-                }
-            } else {
-                ContentUnavailableView("Collection Unavailable", systemImage: "rectangle.stack", description: Text("Refresh while connected to Jellyfin to load this collection."))
-            }
-        }
-        .sheet(isPresented: $adding) { NavigationStack { ServerListSearchView(listID: id, kind: .collection) } }
-        .sheet(isPresented: $renaming) {
-            NavigationStack { ServerListNameEditor(initialName: collection?.name ?? "", title: "Rename Collection", saveTitle: "Save") { name in await lists.rename(id: id, kind: .collection, name: name, session: session) } }
-        }
-        .serverListErrorAlert(lists)
-        .task { loadingEntries = true; lists.load(scope: scope); await lists.refresh(id: id, kind: .collection, session: session); loadingEntries = false }
-        .refreshable { await lists.refresh(id: id, kind: .collection, session: session) }
-    }
-}
-
 struct AddToVideoPlaylistView: View {
     let item: MediaItem
     var body: some View {
         AddToServerMediaListView(item: item, kind: .playlist)
-    }
-}
-
-struct AddToMediaCollectionView: View {
-    let item: MediaItem
-    var body: some View {
-        AddToServerMediaListView(item: item, kind: .collection)
     }
 }
 
@@ -391,7 +325,7 @@ private struct AddToServerMediaListView: View {
 
     var body: some View {
         List {
-            Section(kind == .playlist ? String(localized: "Choose Playlist") : String(localized: "Choose Collection")) {
+            Section(String(localized: "Choose Playlist")) {
                 ForEach(lists.lists(kind: kind, scope: session.references.scope)) { list in
                     Button(list.name) { Task {
                         if await lists.add(item: item, to: list.id, kind: kind, session: session) {
@@ -400,7 +334,7 @@ private struct AddToServerMediaListView: View {
                     } }.disabled(!list.canEdit)
                 }
             }
-            Section(kind == .playlist ? String(localized: "New Playlist") : String(localized: "New Collection")) {
+            Section(String(localized: "New Playlist")) {
                 TextField("Name", text: $name)
                 Button("Create and Add") {
                     guard item.id != nil else { return }
@@ -412,7 +346,7 @@ private struct AddToServerMediaListView: View {
                 }.disabled(name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
             }
         }
-        .navigationTitle(kind == .playlist ? String(localized: "Add to Playlist") : String(localized: "Add to Collection"))
+        .navigationTitle(String(localized: "Add to Playlist"))
         .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } } }
         .serverListErrorAlert(lists)
         .task { lists.load(scope: session.references.scope); await lists.refresh(session: session) }
@@ -434,7 +368,7 @@ private struct ServerListSearchView: View {
                 if case let .failed(message) = search.state {
                     Text(message); Button("Retry") { Task { await search.search(query) } }
                 }
-                ForEach(search.results.filter { kind == .playlist ? [.movie, .episode, .video].contains($0.type) : [.movie, .series, .episode, .musicAlbum, .audioBook, .audio].contains($0.type) }) { item in
+                ForEach(search.results.filter { [.movie, .episode, .video].contains($0.type) }) { item in
                     Button { Task {
                         if await lists.add(item: item, to: listID, kind: kind, session: session) {
                             dismiss()
@@ -461,7 +395,7 @@ private struct ServerListSearchView: View {
                 ProgressView()
             }
         }
-        .searchable(text: $query, prompt: kind == .playlist ? String(localized: "Movies and Episodes") : String(localized: "Titles"))
+        .searchable(text: $query, prompt: String(localized: "Movies and Episodes"))
         .navigationTitle("Add Media")
         .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } } }
         .task { search = SearchStore(session: session) }

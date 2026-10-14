@@ -18,7 +18,7 @@ struct ItemRouteDestination: View {
                 AlbumDetailView(album: item)
             }
         case .boxSet:
-            if let id = item.id.flatMap(ServerMediaListID.uuid) {
+            if let id = item.id {
                 MediaCollectionDetailView(id: id)
             } else {
                 ItemDetailView(item: item)
@@ -42,6 +42,8 @@ extension View {
         navigationDestination(for: LibraryRef.self) { ref in
             if ref.item.collectionType == .livetv {
                 LiveTVView()
+            } else if ref.item.collectionType == .boxsets {
+                CollectionsView()
             } else {
                 LibraryGridView(library: ref.item)
             }
@@ -53,13 +55,40 @@ extension View {
             VideoPlaylistDetailView(id: ref.id)
         }
         .navigationDestination(for: MediaCollectionRef.self) { ref in
-            MediaCollectionDetailView(id: ref.id)
+            ScopedCollectionDestination(ref: ref)
+        }
+        .navigationDestination(for: CollectionsRef.self) { ref in
+            ScopedCollectionsDestination(ref: ref)
         }
         .navigationDestination(for: AppScreen.self) { screen in
             switch screen {
             case .downloads: DownloadsView()
             case .navigationSettings: NavigationSettingsView()
             }
+        }
+    }
+}
+
+private struct ScopedCollectionDestination: View {
+    @Environment(SessionStore.self) private var session
+    let ref: MediaCollectionRef
+    var body: some View {
+        if ref.scope == session.references.scope {
+            MediaCollectionDetailView(id: ref.id)
+        } else {
+            ContentUnavailableView("Collection Unavailable", systemImage: "rectangle.stack")
+        }
+    }
+}
+
+private struct ScopedCollectionsDestination: View {
+    @Environment(SessionStore.self) private var session
+    let ref: CollectionsRef
+    var body: some View {
+        if ref.scope == session.references.scope {
+            CollectionsView()
+        } else {
+            ContentUnavailableView("Collections Unavailable", systemImage: "rectangle.stack")
         }
     }
 }

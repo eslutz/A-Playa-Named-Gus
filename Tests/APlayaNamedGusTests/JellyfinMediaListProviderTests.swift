@@ -63,18 +63,57 @@ struct JellyfinMediaListProviderTests {
         #expect(body?["IsPublic"] == nil)
     }
 
-    @Test("Collections use BoxSet and current user policy rather than playlist ACL")
+    @Test("Collection-management permission does not grant metadata or artwork editing")
     func collectionPolicy() async throws {
         let fixture = try NativeListFixture(responses: [
-            BaseItemDto(id: ServerMediaListID.string(listID), name: "Collection", type: .boxSet),
-            UserDto(policy: UserPolicy(authenticationProviderID: "provider", enableCollectionManagement: false, isAdministrator: false, passwordResetProviderID: "reset")),
-            BaseItemDtoQueryResult(items: [BaseItemDto(id: itemID, type: .movie)], totalRecordCount: 1),
+            UserDto(policy: UserPolicy(authenticationProviderID: "provider", enableCollectionManagement: true, isAdministrator: false, passwordResetProviderID: "reset")),
+            BaseItemDto(canDelete: false, id: ServerMediaListID.string(listID), name: "Collection", type: .boxSet),
         ])
-        let result = try await fixture.provider.mediaList(id: listID, kind: .collection)
-        #expect(!result.canEdit)
-        #expect(result.entries.first?.id == ServerMediaListID.uuid(itemID))
-        #expect(fixture.state.requests[1].url?.path == "/Users/user")
-        #expect(query(fixture.state.requests[2])["parentId"] == ServerMediaListID.string(listID))
+        let result = try await fixture.provider.collectionCapabilities(id: ServerMediaListID.string(listID))
+        #expect(result.create && result.addMembers && result.removeMembers)
+        #expect(!result.editMetadata && !result.editArtwork && !result.delete)
+        #expect(fixture.state.requests[0].url?.path == "/Users/user")
+        #expect(fixture.state.requests[1].url?.path == "/Items/\(ServerMediaListID.string(listID))")
+    }
+
+    @Test("Collection metadata updates preserve unedited fields")
+    func collectionMetadataPreservation() async throws {
+        let fixture = try NativeListFixture(responses: [BaseItemDto(genres: ["Fantasy"], id: ServerMediaListID.string(listID), name: "Old", overview: "Old description", taglines: ["Preserved"], type: .boxSet)], emptyResponses: 1)
+        try await fixture.provider.updateCollection(id: ServerMediaListID.string(listID), name: "New", overview: "New description")
+        let body = try JSONSerialization.jsonObject(with: bodyData(fixture.state.requests[1])) as? [String: Any]
+        #expect(body?["Name"] as? String == "New")
+        #expect(body?["Overview"] as? String == "New description")
+        #expect(body?["Genres"] as? [String] == ["Fantasy"])
+        #expect(body?["Taglines"] as? [String] == ["Preserved"])
+    }
+
+    @Test("Artwork uses base64 JPEG through the SDK transport")
+    func collectionArtworkRequest() async throws {
+        let fixture = try NativeListFixture(responses: [BaseItemDto(id: ServerMediaListID.string(listID), type: .boxSet)], emptyResponses: 1)
+        let jpeg = Data([0xFF, 0xD8, 0xFF, 0xD9])
+        try await fixture.provider.setCollectionArtwork(id: ServerMediaListID.string(listID), jpeg: jpeg)
+        let request = fixture.state.requests[1]
+        #expect(request.url?.path == "/Items/\(ServerMediaListID.string(listID))/Images/Primary")
+        #expect(request.value(forHTTPHeaderField: "Content-Type") == "image/jpeg")
+        #expect(try bodyData(request) == jpeg.base64EncodedData())
+    }
+
+    @Test("A collection deletion cannot target a movie")
+    func collectionDeletionRejectsMovie() async throws {
+        let fixture = try NativeListFixture(responses: [BaseItemDto(canDelete: true, id: ServerMediaListID.string(listID), type: .movie)])
+        await #expect(throws: GusError.notFound) { try await fixture.provider.deleteCollection(id: ServerMediaListID.string(listID)) }
+        #expect(fixture.state.requests.count == 1)
+        #expect(fixture.state.requests[0].httpMethod == "GET")
+    }
+
+    @Test("Collection members use media IDs rather than playlist occurrence IDs")
+    func collectionMemberRequest() async throws {
+        let id = ServerMediaListID.string(listID)
+        let fixture = try NativeListFixture(responses: [BaseItemDto(id: id, type: .boxSet)], emptyResponses: 1)
+        try await fixture.provider.removeCollectionMembers(id: id, itemIDs: [itemID])
+        #expect(fixture.state.requests[1].url?.path == "/Collections/\(id)/Items")
+        #expect(query(fixture.state.requests[1])["ids"] == itemID)
+        #expect(query(fixture.state.requests[1])["entryIds"] == nil)
     }
 
     @Test("A rejected edit is a permission error rather than an expired session")
@@ -129,8 +168,8 @@ private struct NativeListFixture {
     let state: NativeListResponseState
     let stateID: String
 
-    init(responses: [any Encodable]) throws {
-        try self.init(data: responses.map { try JSONEncoder().encode($0) })
+    init(responses: [any Encodable], emptyResponses: Int = 0) throws {
+        try self.init(data: responses.map { try JSONEncoder().encode($0) } + Array(repeating: Data(), count: emptyResponses))
     }
 
     init(emptyResponses: Int) throws {

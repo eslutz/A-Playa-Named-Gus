@@ -10,6 +10,8 @@ struct NextUpActivityPersistence {
     struct Snapshot: Codable, Equatable {
         var activity: [String: Date] = [:]
         var firstSeenIDs: [String] = []
+        /// Optional for compatibility with snapshots written before dismissals existed.
+        var dismissedIDs: Set<String>? = nil
     }
 
     func load(scope: AccountScope, identityKey: String, migrateLocalData: Bool = false) throws -> Snapshot {
@@ -69,11 +71,31 @@ final class NextUpActivityStore {
         return snapshots[scope]?.firstSeenIDs ?? []
     }
 
+    func isDismissed(_ id: String, scope: AccountScope) -> Bool {
+        load(scope: scope)
+        return snapshots[scope]?.dismissedIDs?.contains(id) == true
+    }
+
+    @discardableResult
+    func setDismissed(_ id: String, dismissed: Bool, scope: AccountScope) -> Bool {
+        load(scope: scope)
+        var current = snapshots[scope] ?? .init()
+        var ids = current.dismissedIDs ?? []
+        if dismissed {
+            ids.insert(id)
+        } else {
+            ids.remove(id)
+        }
+        current.dismissedIDs = ids
+        return commit(current, scope: scope)
+    }
+
     func recordPlayback(item: MediaItem, scope: AccountScope, at date: Date = Date()) {
         guard let id = NextUpBuilder.mediaID(item) else { return }
         load(scope: scope)
         guard !blockedScopes.contains(scope) else { return }
         var current = snapshots[scope] ?? .init()
+        current.dismissedIDs?.remove(id)
         current.activity[id] = max(current.activity[id] ?? .distantPast, date)
         let series = item.type == .episode ? item.seriesID.map { MediaItem(providerKind: item.providerKind, id: $0, type: .series) } : nil
         if let series, let seriesKey = NextUpBuilder.mediaID(series) {

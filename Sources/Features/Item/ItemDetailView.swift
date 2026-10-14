@@ -59,7 +59,7 @@ struct ItemDetailView: View {
             NavigationStack { AddToVideoPlaylistView(item: store?.item ?? item) }
         }
         .toolbar {
-            if item.id != nil && !isRestricted {
+            if item.id != nil && !isRestricted && CollectionPlatform.canManage && (navigationState.collectionStore(session: session).capabilities.create || navigationState.collectionStore(session: session).capabilities.addMembers) {
                 ToolbarItem { Button("Add to Collection", systemImage: "rectangle.stack.badge.plus") { addingToCollection = true } }
             }
             if (store?.item ?? item).type == .movie || (store?.item ?? item).type == .episode {
@@ -98,6 +98,9 @@ struct ItemDetailView: View {
                         isInUpNext: upNext.contains(store.item, serverID: session.server.id, userID: session.user.id),
                         toggleUpNext: {
                             upNext.toggle(store.item, serverID: session.server.id, userID: session.user.id)
+                            if upNext.contains(store.item, serverID: session.server.id, userID: session.user.id), let id = NextUpBuilder.mediaID(store.item) {
+                                NextUpActivityStore.shared.setDismissed(id, dismissed: false, scope: session.references.scope)
+                            }
                             playbackRefresh.markPlaybackProgressChanged()
                         }
                     ) {
@@ -165,6 +168,9 @@ struct ItemDetailView: View {
                             SeriesEpisodesView(store: seriesStore).id("episodes")
                         }
 
+                        if store.item.type == .movie, let id = store.item.id {
+                            MovieCollectionMemberships(movieID: id).padding(.vertical)
+                        }
                         DetailMetadataRows(item: store.item).id("metadata")
 
                         if !store.item.people.isEmpty {

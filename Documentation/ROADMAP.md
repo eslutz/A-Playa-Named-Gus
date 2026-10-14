@@ -959,11 +959,20 @@ October 12 pipeline policy supersedes direct-main publication: main now requires
 
 ## Unified Next Up and Jellyfin lists — feature branch
 
+- [~] Shared media context menus add titles to Next Up, native playlists and collections; remove only from the named group; explicitly mark movies/episodes watched or unwatched and reset their resume positions. Next Up cards reserve episode metadata height. Automatic Next Up dismissals are persisted per device/account and can be restored by explicitly adding or playing the item; platform/runtime validation is in progress.
+
 - [~] Combine Continue Watching and saved/automatic next episodes into one Next Up list ordered by genuine viewing/list activity; preserve undated legacy order and missing saved references.
-- [~] Jellyfin owns native playlist and Collection/BoxSet names, IDs, membership, playlist order and permissions. Gus keeps an account-scoped cache and durable per-operation offline edits. Jellyfin 10.11.11 deduplicates playlist items, so native lists contain each media item once; an uncertain create/add outcome requires review before an explicit retry.
+- [~] Jellyfin owns native playlist and Collection/BoxSet names, IDs, membership, playlist order and permissions. Gus keeps an account-scoped playlist cache and durable per-operation playlist edits. Collections use a separate session store and online-only management. Jellyfin 10.11.11 deduplicates playlist items, so native lists contain each media item once; an uncertain create/add outcome requires review before an explicit retry.
 - [~] Ordered movie/episode/video playback and persistent cursors apply only to all-video playlists, independently of normal episode autoplay. Existing audio playlists remain visible and open the audio player; mixed-media entries open individually. Collections group titles and do not form autoplay queues.
 - [~] Private CloudKit synchronizes supplemental Gus playlist cursors, saved Next Up intent and activity, rather than native list definitions. Previous Gus-owned playlists remain preserved and can be explicitly imported into Jellyfin; import refuses legacy lists with repeated items rather than silently collapsing them. Credentials, server URLs, signed artwork and downloaded files remain excluded.
 - [ ] Signed iCloud container/provisioning and physical iPhone → Apple TV sync, offline/reconnect, playback/cursor and accessibility acceptance. Native list implementation and validation are tracked in [the implementation ledger](Reviews/2026-10-13-jellyfin-lists/IMPLEMENTATION.md); no release acceptance is claimed.
+
+## Native collections — implementation candidate
+
+- [~] Collections are independent library objects with Movies shelves, all-collections browsing, poster details, mixed-media sections, movie membership links, labeled search results and default/title/release-date sorting.
+- [~] Online creation, metadata/artwork edits, movie multi-select and membership removal respect separate capabilities; television browsing has no management controls. Collection code has no migration or offline-edit queue.
+- [x] Authenticated collection create/edit/membership/artwork/delete readbacks passed against the isolated Jellyfin demo, including multiple memberships and preservation of member playback state.
+- [ ] Cross-platform UI/accessibility and physical-device acceptance. See [collection implementation evidence](Reviews/2026-10-13-collections/IMPLEMENTATION.md) and the [Collections wiki guide](https://github.com/eslutz/A-Playa-Named-Gus/wiki/Collections).
 
 ## Native tvOS presentation — local feature candidate
 

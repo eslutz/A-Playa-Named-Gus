@@ -80,6 +80,30 @@ final class ItemDetailStore {
         await updateUserData(watched: true)
     }
 
+    /// Explicit menu actions do not toggle against potentially stale displayed metadata.
+    func setWatched(_ watched: Bool, localProgress: OfflinePlaybackProgressStore = .shared) async {
+        guard !isUpdatingUserData, item.id != nil else { return }
+        isUpdatingUserData = true
+        actionError = nil
+        defer { isUpdatingUserData = false }
+        do {
+            item = try await session.references.currentItem(item)
+            guard let id = item.id, ContentRatingGate.admitsStored(item) else { throw GusError.notFound }
+            needsUserDataRefresh = true
+            try await session.mediaProvider.updatePlaybackPosition(itemID: id, positionTicks: 0)
+            localProgress.resetCheckpoint(itemID: id, scope: session.references.scope)
+            // This provider API selects an endpoint; the inverse requests the desired status.
+            try await session.mediaProvider.toggleWatched(itemID: id, currentlyWatched: !watched)
+            item = try await session.references.currentItem(item)
+            needsUserDataRefresh = false
+        } catch {
+            let failure = GusError(from: error)
+            if !failure.isCancellation {
+                actionError = failure.localizedDescription
+            }
+        }
+    }
+
     func toggleFavorite() async {
         await updateUserData(watched: false)
     }

@@ -110,11 +110,8 @@ struct ServerMediaListsStoreTests {
         let id = UUID()
         let remote = ServerMediaList(id: id, name: "Private", kind: .playlist, entries: [], canEdit: true, entriesLoaded: true)
         var continuation: CheckedContinuation<[ServerMediaList], Never>?
-        provider.mediaListsHandler = { kind in
-            if kind == .collection {
-                return []
-            }
-            return await withCheckedContinuation { continuation = $0 }
+        provider.mediaListsHandler = { _ in
+            await withCheckedContinuation { continuation = $0 }
         }
         let store = ServerMediaListsStore(directory: directory)
         let task = Task { await store.refresh(session: session(provider)) }
@@ -532,11 +529,11 @@ struct ServerMediaListsStoreTests {
         #expect(store.pendingEdits(scope: scope).isEmpty)
         store.load(scope: scope)
         await store.refresh(session: session(provider))
-        #expect(reads == 2)
+        #expect(reads == 1)
         store.load(scope: AccountScope(serverID: "s", userID: "other"))
         await store.refresh(session: session(provider))
         #expect(await store.create(name: "Old account", kind: .playlist, session: session(provider)) == nil)
-        #expect(reads == 2)
+        #expect(reads == 1)
     }
 
     @Test func repeatedNativeCreateInputIsRejectedBeforeJournalOrNetwork() async {

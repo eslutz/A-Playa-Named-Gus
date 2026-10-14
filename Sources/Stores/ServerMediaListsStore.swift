@@ -328,7 +328,7 @@ final class ServerMediaListsStore {
     func add(item: MediaItem, to id: UUID, kind: ServerMediaListKind, session: SessionStore) async -> Bool {
         guard let itemID = item.id, prepare(scope: session.references.scope) else { return false }
         if list(id: id, kind: kind, scope: session.references.scope)?.entries.contains(where: { $0.item.id.map(Self.mediaIdentity) == Self.mediaIdentity(itemID) }) == true {
-            errorMessage = kind == .playlist ? String(localized: "This item is already in this Jellyfin playlist. Repeated items are not supported.") : String(localized: "This item is already in this collection.")
+            errorMessage = String(localized: "This item is already in this Jellyfin playlist. Repeated items are not supported.")
             return false
         }
         return await enqueue(PendingEdit(id: UUID(), listID: id, kind: kind, action: .add, items: [item]), session: session)
@@ -728,10 +728,7 @@ final class ServerMediaListsStore {
         case .delete: lists.remove(at: index)
         case .add:
             for (offset, item) in edit.items.enumerated() {
-                if edit.kind == .collection, lists[index].entries.contains(where: { $0.item.id == item.id }) {
-                    continue
-                }
-                let id = edit.kind == .collection ? item.id.flatMap(ServerMediaListID.uuid) ?? occurrenceID(editID: edit.id, index: offset) : occurrenceID(editID: edit.id, index: offset)
+                let id = occurrenceID(editID: edit.id, index: offset)
                 lists[index].entries.append(ServerMediaListEntry(id: id, item: item))
             }
         case .remove: lists[index].entries.removeAll { $0.id == edit.entryID }
