@@ -71,6 +71,13 @@ CODE_SIGN_ENTITLEMENTS[sdk=appletvsimulator*] = Config/Gus-tvOS.entitlements
 
 // MARK: - Local overrides
 //
-// Keep this last so local and Xcode Cloud generated overrides can opt into
+// Local and Xcode Cloud generated overrides can opt into
 // automatic signing without changing the source-controlled PR-build defaults.
 #include? "Local.xcconfig"
+
+// Architecture policy follows signing overrides so they cannot enable Intel builds.
+// Apple Silicon only, including Release archives and all test/extension targets.
+ARCHS = arm64
+EXCLUDED_ARCHS = x86_64 i386
+// Physical Watch devices use the SDK's ARM variants (including arm64_32).
+ARCHS[sdk=watchos*] = $(ARCHS_STANDARD)

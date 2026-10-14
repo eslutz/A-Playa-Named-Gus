@@ -340,6 +340,8 @@
             }
             let capture = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
             capture.name = "item-detail-management-menu"; capture.lifetime = .keepAlways; add(capture)
+            // Another client marks it watched after this menu captured its action.
+            _ = try await demoRequest("/UserItems/" + movieID + "/UserData?userId=" + userID, token: token, body: ["Played": true, "PlaybackPositionTicks": ticks])
             app.buttons["Mark as Watched"].tap()
             XCTAssertTrue(app.buttons["Detail.play"].waitForExistence(timeout: 10))
             let play = XCTNSPredicateExpectation(predicate: NSPredicate(format: "label == %@", "Play"), object: app.buttons["Detail.play"])

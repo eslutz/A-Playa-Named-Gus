@@ -32,6 +32,7 @@ extension View {
 
     private struct MacPlayerPresentation: ViewModifier {
         @Environment(AudioPlaybackCoordinator.self) private var audio
+        @Environment(AppNavigationModel.self) private var navigation
         @Environment(SessionStore.self) private var session
         @Environment(OfflineDownloadStore.self) private var downloads
         @Environment(\.openWindow) private var openWindow
@@ -60,7 +61,11 @@ extension View {
                     }
                     guard ref.item.opensInPlayerWindow else { return }
                     audio.stop()
-                    openWindow(id: GusPlayerWindow.sceneID, value: ref)
+                    var request = ref
+                    request.serverID = request.serverID ?? session.server.id
+                    request.userID = request.userID ?? session.user.id
+                    let window = navigation.playerWindows.request(request)
+                    openWindow(id: GusPlayerWindow.sceneID, value: window)
                     item = nil
                 }
         }
@@ -70,27 +75,36 @@ extension View {
     /// signed-in tree, so the active session is re-derived from `AppModel` here.
     struct GusPlayerWindowContent: View {
         @Environment(AppModel.self) private var appModel
-        let ref: ItemRef
+        @Environment(AppNavigationModel.self) private var navigation
+        let window: PlayerWindowRef
 
         var body: some View {
-            if let session = appModel.currentSession,
-               ref.serverID == nil || ref.serverID == session.server.id,
-               ref.userID == nil || ref.userID == session.user.id
-            {
-                PresentedPlayer(item: ref.item, localOnly: ref.localOnly == true, playlistID: ref.playlistID, playlistEntryID: ref.playlistEntryID, playlistFromBeginning: ref.playlistFromBeginning == true, playbackStart: ref.playbackStart)
-                    .environment(session)
-                    .id(AccountScope(serverID: session.server.id, userID: session.user.id))
+            ZStack {
+                let command = navigation.playerWindows.requests[window]
+                let ref = command?.ref ?? window.fallback
+                if let session = appModel.currentSession,
+                   ref.serverID == nil || ref.serverID == session.server.id,
+                   ref.userID == nil || ref.userID == session.user.id
+                {
+                    PresentedPlayer(item: ref.item, localOnly: ref.localOnly == true, playlistID: ref.playlistID, playlistEntryID: ref.playlistEntryID, playlistFromBeginning: ref.playlistFromBeginning == true, playbackStart: ref.playbackStart)
+                        .environment(session)
+                        .id(AccountScope(serverID: session.server.id, userID: session.user.id))
+                        .id(command?.id)
+                        .frame(minWidth: 640, minHeight: 360)
+                } else {
+                    ContentUnavailableView(
+                        "Not Signed In",
+                        systemImage: "play.slash",
+                        description: Text("Sign in to play media.")
+                    )
                     .frame(minWidth: 640, minHeight: 360)
-            } else {
-                ContentUnavailableView(
-                    "Not Signed In",
-                    systemImage: "play.slash",
-                    description: Text("Sign in to play media.")
-                )
-                .frame(minWidth: 640, minHeight: 360)
+                }
             }
+            .onAppear { navigation.playerWindows.activate(window) }
+            .onDisappear { navigation.playerWindows.deactivate(window) }
         }
     }
+
 #endif
 
 struct PresentedPlayer: View {

@@ -37,6 +37,28 @@ struct PlaybackActionTests {
         #expect(playlist.playbackAction.entryID == nil)
     }
 
+    @Test func nativeWindowIdentityIgnoresRestartAndOccurrenceCommands() throws {
+        let normal = ItemRef(item: MediaItem(id: "movie", type: .movie), serverID: "server", userID: "user")
+        var restart = normal
+        restart.playbackStart = .fromBeginning
+        #expect(PlayerWindowRef(normal) == PlayerWindowRef(restart))
+        let playlist = UUID()
+        var first = normal
+        first.playlistID = playlist; first.playlistEntryID = UUID(); first.playlistFromBeginning = true
+        var later = first
+        later.playlistEntryID = UUID()
+        #expect(PlayerWindowRef(first) == PlayerWindowRef(later))
+        var other = restart
+        other.serverID = "another-server"
+        #expect(PlayerWindowRef(other) != PlayerWindowRef(normal))
+        other = restart; other.localOnly = true
+        #expect(PlayerWindowRef(other) != PlayerWindowRef(normal))
+        let restored = try JSONDecoder().decode(PlayerWindowRef.self, from: JSONEncoder().encode(PlayerWindowRef(first)))
+        #expect(restored.fallback.playbackStart == .automatic)
+        #expect(restored.fallback.playlistEntryID == nil)
+        #expect(restored.fallback.playlistFromBeginning == nil)
+    }
+
     @Test func restartWindowIntentRoundTripsAndIsNotEqualToResume() throws {
         let item = MediaItem(id: "movie", type: .movie)
         let normal = ItemRef(item: item)
@@ -85,5 +107,27 @@ struct ItemRestartPreparationTests {
         #expect(progress.pendingCheckpoints(scope: scope) == checkpoint)
         #expect(player.item.userData?.isWatched == localOnly)
         #expect(player.item.userData?.playbackPositionTicks == 40_000_000)
+    }
+}
+
+@MainActor struct PlayerWindowRequestTests {
+    @Test func repeatedRestartIssuesFreshCommandsWhileNormalOpenFocusesActiveWindow() throws {
+        let requests = PlayerWindowRequests()
+        var ref = ItemRef(item: MediaItem(id: "movie", type: .movie), serverID: "s", userID: "u")
+        ref.playbackStart = .fromBeginning
+        let window = requests.request(ref)
+        let first = try #require(requests.requests[window])
+        requests.activate(window)
+        #expect(requests.request(ref) == window)
+        let second = try #require(requests.requests[window])
+        #expect(first.id != second.id)
+        #expect(second.ref.playbackStart == .fromBeginning)
+        ref.playbackStart = .automatic
+        #expect(requests.request(ref) == window)
+        #expect(requests.requests[window]?.id == second.id)
+        requests.deactivate(window)
+        #expect(requests.requests[window] == nil)
+        _ = requests.request(ref)
+        #expect(requests.requests[window]?.id != second.id)
     }
 }

@@ -129,5 +129,7 @@
     "maximumSwapMB": 4096,
     "demoRuntimeStopped": true
   },
-  "hostedAcceptance": "pending PR and merged Cloud run"
+  "hostedAcceptance": "pending PR and merged Cloud run",
+  "validatedRevision": "44718250216066c84823b4bf2891e859829ad2ab",
+  "scope": "Initial implementation only; final review fixes and architecture policy have separate evidence."
 }

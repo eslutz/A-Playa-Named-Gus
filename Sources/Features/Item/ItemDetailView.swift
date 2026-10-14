@@ -63,6 +63,7 @@ struct ItemDetailView: View {
             if !isRestricted, let store, store.item.id != nil {
                 ToolbarItem(placement: .primaryAction) {
                     Menu {
+                        let markWatched = store.item.userData?.isWatched != true
                         if store.item.type == .movie || store.item.type == .episode {
                             Button("Add to Playlist", systemImage: "text.badge.plus") { addingToPlaylist = true }
                         }
@@ -70,8 +71,8 @@ struct ItemDetailView: View {
                             Button("Add to Collection", systemImage: "rectangle.stack.badge.plus") { addingToCollection = true }
                         }
                         Divider()
-                        Button(store.item.userData?.isWatched == true ? "Mark as Unwatched" : "Mark as Watched", systemImage: store.item.userData?.isWatched == true ? "checkmark.circle.fill" : "checkmark.circle") {
-                            Task { await store.toggleWatched() }
+                        Button(markWatched ? "Mark as Watched" : "Mark as Unwatched", systemImage: markWatched ? "checkmark.circle" : "checkmark.circle.fill") {
+                            Task { await store.setWatched(markWatched) }
                         }
                         .disabled(store.isUpdatingUserData || store.needsUserDataRefresh)
                     } label: { Label("More", systemImage: "ellipsis") }

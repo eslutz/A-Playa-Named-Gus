@@ -3,6 +3,13 @@ import Testing
 
 @Suite("TV detail playback targets")
 struct TVDetailPlaybackTargetTests {
+    @Test func sharedDetailActionResolvesSeriesOnEveryPlatform() {
+        let show = MediaItem(id: "show", type: .series)
+        let episode = MediaItem(id: "episode", seriesID: "show", type: .episode)
+        #expect(show.gusTVPlaybackTarget(nextUp: [], episodes: [episode])?.id == "episode")
+        #expect(show.gusTVPlaybackTarget(nextUp: [], episodes: []) == nil)
+    }
+
     @Test("series plays its existing Next Up episode rather than the series container")
     func nextEpisode() {
         let show = MediaItem(id: "show", type: .series)
