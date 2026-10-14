@@ -1,16 +1,26 @@
 #!/bin/sh
 set -eu
 
-# Cloud builds unit hosts ad hoc. Provisioned production capabilities cannot be
-# used by that host; preserve its sandbox and network permissions, as in GitHub CI.
-if [ "${CI_XCODE_CLOUD:-}" != TRUE ] ||
-   [ "${CI_PRODUCT_PLATFORM:-}" != macOS ] ||
-   [ "${CI_XCODEBUILD_ACTION:-}" != build-for-testing ]; then
+if [ "${CI_XCODE_CLOUD:-}" != TRUE ]; then
   exit 0
 fi
 script_dir="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
 repository_dir="${CI_PRIMARY_REPOSITORY_PATH:-$(dirname "$script_dir")}"
 cd "$repository_dir"
+# A shell export here cannot affect Apple's parent xcodebuild invocation.
+# The workflow must supply this global configuration before launching any action.
+expected_architecture_config="$repository_dir/Config/Architecture.xcconfig"
+if [ "${XCODE_XCCONFIG_FILE:-}" != "$expected_architecture_config" ] ||
+   [ ! -f "$expected_architecture_config" ]; then
+  echo "Apple Silicon enforcement missing: set workflow XCODE_XCCONFIG_FILE to $expected_architecture_config." >&2
+  exit 65
+fi
+
+# Cloud builds unit hosts ad hoc. Preserve sandbox/network permissions.
+if [ "${CI_PRODUCT_PLATFORM:-}" != macOS ] ||
+   [ "${CI_XCODEBUILD_ACTION:-}" != build-for-testing ]; then
+  exit 0
+fi
 test_entitlements="$script_dir/gus-macos-unit.entitlements"
 /usr/bin/plutil -lint "$test_entitlements"
 if [ ! -f Config/Local.xcconfig ]; then

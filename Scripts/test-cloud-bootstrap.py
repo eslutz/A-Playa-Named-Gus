@@ -33,6 +33,8 @@ class BootstrapTests(unittest.TestCase):
         self.env = {**os.environ, "CI_XCODE_CLOUD": "TRUE", "CI_TEAM_ID": "QS3GC3CT43",
                     "PATH": f"{tools}:/usr/bin:/bin"}
         self.env.pop("CI_PRIMARY_REPOSITORY_PATH", None)
+        shutil.copy2(SOURCE.parent.parent / "Config/Architecture.xcconfig", self.root / "Config/Architecture.xcconfig")
+        self.env["XCODE_XCCONFIG_FILE"] = str(self.root / "Config/Architecture.xcconfig")
 
     def run_script(self):
         return subprocess.run(["/bin/sh", "ci_post_clone.sh"], cwd=self.root / "ci_scripts",
@@ -98,6 +100,24 @@ class BootstrapTests(unittest.TestCase):
         env = {**self.env, "CI_PRODUCT_PLATFORM": platform, "CI_XCODEBUILD_ACTION": action}
         return subprocess.run(["/bin/sh", "ci_pre_xcodebuild.sh"], cwd=self.root / "ci_scripts",
                               env=env, capture_output=True, text=True)
+
+    def test_cloud_rejects_wrong_global_configuration(self):
+        self.env["XCODE_XCCONFIG_FILE"] = "/tmp/other.xcconfig"
+        self.assertEqual(self.run_pre_build(platform="iOS").returncode, 65)
+
+    def test_cloud_rejects_missing_architecture_file(self):
+        (self.root / "Config/Architecture.xcconfig").unlink()
+        self.assertEqual(self.run_pre_build(action="archive").returncode, 65)
+
+    def test_global_configuration_excludes_intel_and_preserves_watch_arm(self):
+        config = (self.root / "Config/Architecture.xcconfig").read_text()
+        self.assertIn("ARCHS = arm64", config)
+        self.assertIn("EXCLUDED_ARCHS = x86_64 x86_64h i386", config)
+        self.assertIn("ARCHS[sdk=watchos*] = $(ARCHS_STANDARD)", config)
+
+    def test_cloud_rejects_missing_global_architecture_configuration(self):
+        self.env.pop("XCODE_XCCONFIG_FILE")
+        self.assertEqual(self.run_pre_build(platform="iOS").returncode, 65)
 
     def test_cloud_mac_unit_host_uses_unrestricted_sandbox_entitlements(self):
         self.assertEqual(self.run_script().returncode, 0)
