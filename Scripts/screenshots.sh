@@ -96,14 +96,14 @@ list_destinations() {
 build_app() {
   local platform="$1" udid="$2" derived_data="$3"
   log "Building for $platform …"
-  xcodebuild \
+  python3 "$REPO_ROOT/Scripts/run-warning-free.py" xcodebuild \
     -project "$PROJECT" \
     -scheme "$SCHEME" \
     -destination "platform=$platform,id=$udid" \
     -derivedDataPath "$derived_data" \
     -configuration Debug \
     build \
-    SWIFT_TREAT_WARNINGS_AS_ERRORS=NO \
+    SWIFT_TREAT_WARNINGS_AS_ERRORS=YES \
     2>&1 | grep -E "error:|BUILD SUCCEEDED|BUILD FAILED" | tail -5
 }
 
@@ -359,14 +359,14 @@ capture_watch() {
   fi
   local dd="$REPO_ROOT/build-screenshots-watch"
   log "Building watch companion ($WATCH_SCHEME) …"
-  xcodebuild \
+  python3 "$REPO_ROOT/Scripts/run-warning-free.py" xcodebuild \
     -project "$PROJECT" \
     -scheme "$WATCH_SCHEME" \
     -destination "platform=watchOS Simulator,id=$WATCH_UDID" \
     -derivedDataPath "$dd" \
     -configuration Debug \
     build \
-    SWIFT_TREAT_WARNINGS_AS_ERRORS=NO \
+    SWIFT_TREAT_WARNINGS_AS_ERRORS=YES \
     2>&1 | grep -E "error:|BUILD SUCCEEDED|BUILD FAILED" | tail -5
   local app
   app=$(find "$dd/Build/Products" -maxdepth 3 -name "GusWatch.app" -path "*watchsimulator*" | head -1)

@@ -23,6 +23,7 @@ struct VideoPlayerView: View {
     var playlistID: UUID? = nil
     var playlistEntryID: UUID? = nil
     var playlistFromBeginning = false
+    var playbackStart: PlaybackStartIntent = .automatic
 
     @State private var store: PlaybackStore?
     @State private var playlist: VideoPlaylistPlaybackCoordinator?
@@ -139,7 +140,7 @@ struct VideoPlayerView: View {
                     if let playlist {
                         await playlist.start(store)
                     } else {
-                        await store.prepare()
+                        await store.prepare(startTimeTicks: playbackStart.startTimeTicks)
                     }
                 }
                 preparation = task

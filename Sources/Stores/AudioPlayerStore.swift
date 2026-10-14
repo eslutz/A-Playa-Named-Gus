@@ -155,7 +155,7 @@ final class AudioPlayerStore {
     }
 
     nonisolated static func initialReportSeconds(for item: MediaItem, resume: Bool) -> Double {
-        guard resume, let resumeTicks = PlaybackTime.resumePositionTicks(for: item) else { return 0 }
+        guard resume, let resumeTicks = PlaybackActionPosition.ticks(for: item, localTicks: nil) else { return 0 }
         return PlaybackTime.seconds(fromTicks: resumeTicks)
     }
 
@@ -171,8 +171,8 @@ final class AudioPlayerStore {
         queue.isShuffled
     }
 
-    func start() async {
-        await playCurrentTrack(resume: true)
+    func start(resume: Bool = true) async {
+        await playCurrentTrack(resume: resume)
     }
 
     func playPause() {

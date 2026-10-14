@@ -47,6 +47,15 @@ compiler flags do not promote them. Inspect raw logs and Xcode Cloud issues for
 the exact validated commit; a successful build with warnings is not accepted.
 See `Documentation/AppStore/warning-policy.md` for the release gates and Build 16 findings.
 
+## Architecture policy
+
+Build only Apple Silicon versions. `Config/Shared.xcconfig` sets `ARCHS = arm64`
+and excludes Intel architectures for Debug, Release, app, extension, and test
+builds. Physical Watch builds retain the SDK's ARM device variants. Do not add
+Intel or universal Mac builds. Build scripts and GitHub CI use the shared
+warning-free wrapper, which rejects explicit Intel architecture requests and
+excludes Intel from package and embedded-target builds.
+
 ## Commands
 
 The Xcode project is **generated** from `project.yml` by XcodeGen;

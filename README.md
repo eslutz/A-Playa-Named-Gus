@@ -23,6 +23,10 @@ xcodebuild -onlyUsePackageVersionsFromResolvedFile -resolvePackageDependencies -
 xcodebuild -showdestinations -project 'A Playa Named Gus.xcodeproj' -scheme 'A Playa Named Gus'
 ```
 
+Mac builds support Apple Silicon only. Intel compilation is excluded for all
+app, extension, simulator, and test targets; physical Watch builds retain their
+SDK-supported ARM variants.
+
 `project.yml` is the source of truth for the generated Xcode project.
 Regenerate `A Playa Named Gus.xcodeproj` after adding, renaming, or deleting
 source and resource files.

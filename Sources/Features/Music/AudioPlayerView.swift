@@ -235,6 +235,7 @@ struct AudioPlayerScreen: View {
     @Environment(OfflineDownloadStore.self) private var downloads
     let item: MediaItem
     var localOnly = false
+    var playbackStart: PlaybackStartIntent = .automatic
     var body: some View {
         Group {
             if let store = audio.store {
@@ -245,7 +246,7 @@ struct AudioPlayerScreen: View {
         }
         .task {
             if audio.store == nil {
-                audio.play(tracks: [item], localOnly: localOnly, session: session, downloads: downloads)
+                audio.play(tracks: [item], localOnly: localOnly, playbackStart: playbackStart, session: session, downloads: downloads)
             }
         }
     }

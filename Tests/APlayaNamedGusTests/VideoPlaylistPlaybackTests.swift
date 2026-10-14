@@ -55,6 +55,80 @@ struct VideoPlaylistNavigationTests {
 
 @MainActor
 struct VideoPlaylistPreparationTests {
+    @Test(arguments: [false, true]) func cancelledInitialSeekPreservesPriorProgress(localOnly: Bool) async throws {
+        let folder = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: folder) }
+        let scope = AccountScope(serverID: "seek-cancellation", userID: "user")
+        let item = MediaItem(id: "movie", officialRating: "G", type: .movie, userData: MediaUserData(playbackPositionTicks: 10_000_000, isWatched: true))
+        let fixture = try RepositoryTestFixtures.url(for: "Tests/Fixtures/OfflinePlaylist.mov")
+        let provider = FakeMediaProviderSession(capabilities: ProviderCapabilities())
+        provider.itemHandler = { _ in item }
+        provider.playbackHandler = { PlaybackSourceResolution(url: fixture, playSessionID: nil, mediaSourceID: nil, playMethod: .directPlay, stereoLayout: .none, stereoFallbackReason: nil) }
+        let url = try #require(URL(string: "https://example.invalid"))
+        let session = SessionStore(client: JellyfinClientFactory.makeClient(url: url), user: StoredUser(id: scope.userID, name: "User", serverID: scope.serverID), server: ServerConnection(id: scope.serverID, name: "Server", url: url), mediaProvider: provider)
+        let files = OfflineDownloadFileStore(directory: folder.appendingPathComponent("downloads"))
+        if localOnly {
+            let source = folder.appendingPathComponent("fixture.mov")
+            try FileManager.default.copyItem(at: fixture, to: source)
+            _ = try files.persistDownloadedFile(source, item: item, serverID: scope.serverID, userID: scope.userID)
+        }
+        let downloads = OfflineDownloadStore(fileStore: files, coordinator: PlaylistFixtureDownloadCoordinator())
+        downloads.load(serverID: scope.serverID, userID: scope.userID)
+        let progress = OfflinePlaybackProgressStore(directory: folder.appendingPathComponent("progress"))
+        progress.checkpoint(itemID: "movie", positionTicks: 10_000_000, scope: scope, item: item)
+        let previous = progress.pendingCheckpoints(scope: scope)
+        var seek: CheckedContinuation<Void, Never>?
+        let player = PlaybackStore(item: item, session: session, playbackRefresh: PlaybackRefreshStore(), downloads: downloads, localOnly: localOnly, localProgress: progress, initialSeek: { _, _ in await withCheckedContinuation { seek = $0 } })
+        let preparation = Task { await player.prepare(startTimeTicks: 0) }
+        for _ in 0 ..< 1000 {
+            if seek != nil {
+                break
+            }; await Task.yield()
+        }
+        #expect(seek != nil)
+        #expect(player.player != nil)
+        preparation.cancel()
+        player.teardown()
+        seek?.resume()
+        await preparation.value
+        for _ in 0 ..< 10 {
+            await Task.yield()
+        }
+        #expect(progress.pendingCheckpoints(scope: scope) == previous)
+        #expect(provider.playbackReportCallCount == 0)
+        #expect(player.item.userData?.isWatched == true)
+    }
+
+    @Test func failedPlaylistRestartKeepsCursorAndRetryIntent() async throws {
+        let folder = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: folder) }
+        let scope = AccountScope(serverID: "failed-playlist-restart", userID: "user")
+        let id = UUID(), first = UUID(), later = UUID()
+        let item = MediaItem(id: "movie", officialRating: "G", type: .movie)
+        let native = ServerMediaList(id: id, name: "Duplicates", kind: .playlist, entries: [ServerMediaListEntry(id: first, item: item), ServerMediaListEntry(id: later, item: item)], canEdit: true, entriesLoaded: true)
+        let provider = FakeMediaProviderSession(capabilities: ProviderCapabilities())
+        provider.mediaListHandler = { _, _ in native }
+        provider.itemHandler = { _ in item }
+        provider.playbackHandler = { throw GusError.notFound }
+        let url = try #require(URL(string: "https://example.invalid"))
+        let session = SessionStore(client: JellyfinClientFactory.makeClient(url: url), user: StoredUser(id: scope.userID, name: "User", serverID: scope.serverID), server: ServerConnection(id: scope.serverID, name: "Server", url: url), mediaProvider: provider)
+        let lists = ServerMediaListsStore(directory: folder.appendingPathComponent("native"))
+        await lists.refresh(id: id, kind: .playlist, session: session)
+        let supplemental = VideoPlaylistsStore(directory: folder.appendingPathComponent("supplemental"), syncEnabled: false)
+        supplemental.registerServerPlaylist(id: id, scope: scope)
+        supplemental.setCursor(id: id, entryID: later, positionTicks: 50_000_000, finished: false, scope: scope)
+        let old = supplemental.serverPlaylistState(id: id, scope: scope).cursor
+        let downloads = OfflineDownloadStore(fileStore: OfflineDownloadFileStore(directory: folder.appendingPathComponent("downloads")), coordinator: PlaylistFixtureDownloadCoordinator())
+        let player = PlaybackStore(item: item, session: session, playbackRefresh: PlaybackRefreshStore())
+        let coordinator = VideoPlaylistPlaybackCoordinator(playlistID: id, entryID: first, fromBeginning: true, playlists: supplemental, session: session, downloads: downloads, serverLists: lists)
+        await coordinator.start(player)
+        #expect(supplemental.serverPlaylistState(id: id, scope: scope).cursor == old)
+        await coordinator.retry(player)
+        #expect(provider.playbackRequestedStartTicks == [0, 0])
+        coordinator.stop(player)
+        #expect(supplemental.serverPlaylistState(id: id, scope: scope).cursor == old)
+    }
+
     @Test func mixedCachedPlaylistRejectsOrderedVideoBeforeProviderRequests() async throws {
         let folder = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: folder) }

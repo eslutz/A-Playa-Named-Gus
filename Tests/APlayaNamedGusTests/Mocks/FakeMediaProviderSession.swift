@@ -44,6 +44,7 @@ final class FakeMediaProviderSession: MediaProviderSession {
     var moveMediaListEntryHandler: ((UUID, UUID, Int) async throws -> Void)?
     var downloadSourceCallCount = 0
     var playbackResolutionCallCount = 0
+    var playbackRequestedStartTicks: [Int?] = []
     var audioResolutionCallCount = 0
     var nextUpCallCount = 0
     var playbackReportCallCount = 0
@@ -228,6 +229,7 @@ final class FakeMediaProviderSession: MediaProviderSession {
         stereoLayout: Stereo3DLayout
     ) async throws -> PlaybackSourceResolution {
         playbackResolutionCallCount += 1
+        playbackRequestedStartTicks.append(startTimeTicks)
         if let playbackHandler {
             return try await playbackHandler()
         }

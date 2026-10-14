@@ -959,6 +959,8 @@ October 12 pipeline policy supersedes direct-main publication: main now requires
 
 ## Unified Next Up and Jellyfin lists — feature branch
 
+- [~] Playlist and item-detail actions use shared playback styling, explicit restart, contextual management menus, and occurrence-scoped editing with left drag handles and right removal controls. Local authenticated UI and the platform matrix pass; fresh review and hosted gates remain pending. See [implementation and evidence](Reviews/2026-10-14-playlist-actions/IMPLEMENTATION.md).
+
 - [~] Shared media context menus add titles to Next Up, native playlists and collections; remove only from the named group; explicitly mark movies/episodes watched or unwatched and reset their resume positions. Next Up cards reserve episode metadata height. Automatic Next Up dismissals are persisted per device/account and can be restored by explicitly adding or playing the item; platform/runtime validation is in progress.
 
 - [~] Combine Continue Watching and saved/automatic next episodes into one Next Up list ordered by genuine viewing/list activity; preserve undated legacy order and missing saved references.

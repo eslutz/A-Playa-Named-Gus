@@ -40,7 +40,7 @@ xcrun simctl bootstatus "$DEVICE" -b >/dev/null
 
 APP_PATH="${GUS_LAUNCH_APP_PATH:-}"
 if [[ -z "$APP_PATH" ]]; then
-  xcodebuild -project 'A Playa Named Gus.xcodeproj' -scheme 'A Playa Named Gus' \
+  python3 Scripts/run-warning-free.py xcodebuild -project 'A Playa Named Gus.xcodeproj' -scheme 'A Playa Named Gus' \
     -destination "platform=iOS Simulator,id=$DEVICE" -derivedDataPath build build -quiet
   APP_PATH="build/Build/Products/Debug-iphonesimulator/A Playa Named Gus.app"
 fi
