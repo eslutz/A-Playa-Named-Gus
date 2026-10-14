@@ -24,6 +24,7 @@ struct SearchResultsView: View {
                         }
                         .id(ItemRef(item: item).id)
                         .posterNavigationStyle()
+                        .mediaItemContextMenu(item: item)
                         .gusTVFocus(id: ItemRef(item: item).id, section: "search:" + rootState.selectedSectionID + ":" + store.query, ids: store.results.map { ItemRef(item: $0).id }, item: item)
                         .task {
                             await store.loadMoreIfNeeded(currentItem: item)

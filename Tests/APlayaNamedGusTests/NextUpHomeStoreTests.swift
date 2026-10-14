@@ -19,6 +19,46 @@ struct NextUpHomeStoreTests {
         return HomeStore(session: session, activity: activity)
     }
 
+    @Test("dismissed Next Up identities survive persistence without changing playback data")
+    func dismissalPersistence() throws {
+        let data = Data(#"{"activity":{},"firstSeenIDs":[],"dismissedIDs":["media:jellyfin:movie"]}"#.utf8)
+        let snapshot = try JSONDecoder().decode(NextUpActivityPersistence.Snapshot.self, from: data)
+        let encoded = try JSONEncoder().encode(snapshot)
+        let object = try #require(JSONSerialization.jsonObject(with: encoded) as? [String: Any])
+        #expect(object["dismissedIDs"] as? [String] == ["media:jellyfin:movie"])
+    }
+
+    @Test("dismissal survives reload and refresh, stays account scoped, and playback restores the item")
+    func dismissedAutomaticItem() async {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let persistence = NextUpActivityPersistence(directory: directory)
+        let first = NextUpActivityStore(persistence: persistence)
+        let scope = AccountScope(serverID: "s", userID: "u")
+        let item = MediaItem(id: "movie", type: .movie, userData: MediaUserData(playbackPositionTicks: 30))
+        #expect(first.setDismissed("media:jellyfin:movie", dismissed: true, scope: scope))
+        let reloaded = NextUpActivityStore(persistence: persistence)
+        #expect(!reloaded.isDismissed("media:jellyfin:movie", scope: AccountScope(serverID: "s", userID: "other")))
+        let provider = FakeMediaProviderSession(capabilities: ProviderCapabilities())
+        provider.resumePageHandler = { _, _ in MediaItemPage(items: [item], totalRecordCount: 1) }
+        let store = home(provider, activity: reloaded)
+        await store.load()
+        #expect(store.unifiedNextUp.isEmpty)
+        await store.refresh()
+        #expect(store.unifiedNextUp.isEmpty)
+        #expect(store.resumeItems.first?.userData?.playbackPositionTicks == 30)
+        reloaded.recordPlayback(item: item, scope: scope)
+        await store.refresh()
+        #expect(store.unifiedNextUp.map(\.id) == ["media:jellyfin:movie"])
+    }
+
+    @Test("legacy activity snapshots remain readable after adding dismissals")
+    func legacyActivitySnapshot() throws {
+        let snapshot = try JSONDecoder().decode(NextUpActivityPersistence.Snapshot.self, from: Data(#"{"activity":{},"firstSeenIDs":["media:jellyfin:legacy"]}"#.utf8))
+        #expect(snapshot.firstSeenIDs == ["media:jellyfin:legacy"])
+        #expect(snapshot.dismissedIDs == nil)
+    }
+
     @Test("a failed automatic source preserves successful and local saved content")
     func partialSourceFailure() async {
         let provider = FakeMediaProviderSession(capabilities: ProviderCapabilities())

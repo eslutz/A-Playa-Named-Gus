@@ -18,6 +18,25 @@ final class SessionStore {
     /// Called when any request in this session receives a 401; navigates back to sign-in.
     var onUnauthorized: () -> Void = {}
 
+    private final class CollectionRegistration {
+        weak var store: CollectionStore?
+        init(_ store: CollectionStore) {
+            self.store = store
+        }
+    }
+
+    private var collectionRegistrations: [CollectionRegistration] = []
+
+    func registerCollectionStore(_ store: CollectionStore) {
+        collectionRegistrations.removeAll { $0.store == nil }
+        collectionRegistrations.append(CollectionRegistration(store))
+    }
+
+    func invalidateCollections() {
+        collectionRegistrations.forEach { $0.store?.invalidate() }
+        collectionRegistrations = []
+    }
+
     init(
         client: JellyfinClient,
         user: StoredUser,

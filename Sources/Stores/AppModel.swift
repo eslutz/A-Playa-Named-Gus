@@ -98,6 +98,7 @@ final class AppModel {
         didSet {
             if oldValue !== currentSession {
                 oldValue?.references.invalidate()
+                oldValue?.invalidateCollections()
             }
         }
     }

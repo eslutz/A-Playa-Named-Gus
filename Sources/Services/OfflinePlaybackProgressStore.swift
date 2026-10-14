@@ -224,6 +224,19 @@ final class OfflinePlaybackProgressStore {
         }
     }
 
+    /// Keep an acknowledged zero position so an older downloaded metadata snapshot
+    /// cannot become the fallback resume position after a watched-status action.
+    func resetCheckpoint(itemID: String, scope: AccountScope) {
+        let checkpointKey = key(itemID: itemID, scope: scope)
+        let reference = checkpoints[checkpointKey]?.reference
+        checkpoints[checkpointKey] = Checkpoint(
+            serverID: scope.serverID, userID: scope.userID, itemID: itemID,
+            positionTicks: 0, version: UUID(), needsSync: false, reference: reference
+        )
+        persist()
+        revision += 1
+    }
+
     func deleteCheckpoints(scope: AccountScope) {
         writerTokens[scope] = UUID()
         checkpoints = checkpoints.filter { _, value in

@@ -24,6 +24,7 @@ enum MediaItemType: String, Codable, Hashable, Sendable {
 }
 
 enum MediaCollectionType: String, Codable, Hashable, Sendable {
+    case boxsets
     case movies
     case tvshows
     case music
@@ -257,6 +258,7 @@ struct MediaItem: Codable, Hashable, Identifiable, Sendable {
     var parentIndexNumber: Int?
     var people: [MediaPerson]
     var primaryImageAspectRatio: Double?
+    var premiereDate: Date?
     var productionYear: Int?
     var runTimeTicks: Int?
     var seriesID: String?
@@ -296,6 +298,7 @@ struct MediaItem: Codable, Hashable, Identifiable, Sendable {
         case parentIndexNumber
         case people
         case primaryImageAspectRatio
+        case premiereDate
         case productionYear
         case runTimeTicks
         case seriesID
@@ -335,6 +338,7 @@ struct MediaItem: Codable, Hashable, Identifiable, Sendable {
         parentIndexNumber: Int? = nil,
         people: [MediaPerson] = [],
         primaryImageAspectRatio: Double? = nil,
+        premiereDate: Date? = nil,
         productionYear: Int? = nil,
         runTimeTicks: Int? = nil,
         seriesID: String? = nil,
@@ -372,6 +376,7 @@ struct MediaItem: Codable, Hashable, Identifiable, Sendable {
         self.parentIndexNumber = parentIndexNumber
         self.people = people
         self.primaryImageAspectRatio = primaryImageAspectRatio
+        self.premiereDate = premiereDate
         self.productionYear = productionYear
         self.runTimeTicks = runTimeTicks
         self.seriesID = seriesID
@@ -414,6 +419,7 @@ struct MediaItem: Codable, Hashable, Identifiable, Sendable {
         parentIndexNumber = try values.decodeIfPresent(Int.self, forKey: .parentIndexNumber)
         people = try values.decodeIfPresent([MediaPerson].self, forKey: .people) ?? []
         primaryImageAspectRatio = try values.decodeIfPresent(Double.self, forKey: .primaryImageAspectRatio)
+        premiereDate = try values.decodeIfPresent(Date.self, forKey: .premiereDate)
         productionYear = try values.decodeIfPresent(Int.self, forKey: .productionYear)
         runTimeTicks = try values.decodeIfPresent(Int.self, forKey: .runTimeTicks)
         seriesID = try values.decodeIfPresent(String.self, forKey: .seriesID)

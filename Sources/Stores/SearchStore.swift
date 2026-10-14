@@ -12,6 +12,7 @@ final class SearchStore {
     private(set) var isLoadingNextPage = false
 
     private let admits: (MediaItem) -> Bool
+    private let includeTypes: [MediaItemType]?
     private let session: SessionStore
     private let logger = Logger(category: .search)
     private var generation = 0
@@ -19,7 +20,8 @@ final class SearchStore {
     private(set) var pageError: String?
     private var paging: Paging
 
-    init(session: SessionStore, limit: Int = 50, admits: @escaping (MediaItem) -> Bool = { ContentRatingGate.admitsStored($0) }) {
+    init(session: SessionStore, limit: Int = 50, includeTypes: [MediaItemType]? = nil, admits: @escaping (MediaItem) -> Bool = { ContentRatingGate.admitsStored($0) }) {
+        self.includeTypes = includeTypes
         self.session = session
         self.admits = admits
         self.paging = Paging(pageSize: limit, prefetchThreshold: 1)
@@ -95,6 +97,7 @@ final class SearchStore {
                 let startIndex = replace ? 0 : paging.nextStartIndex
                 let request = MediaItemQuery(
                     searchTerm: requestQuery,
+                    includeTypes: includeTypes,
                     startIndex: startIndex,
                     limit: paging.pageSize,
                     isRecursive: true,
