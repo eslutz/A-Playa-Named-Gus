@@ -34,7 +34,7 @@ class BootstrapTests(unittest.TestCase):
                     "PATH": f"{tools}:/usr/bin:/bin"}
         self.env.pop("CI_PRIMARY_REPOSITORY_PATH", None)
         shutil.copy2(SOURCE.parent.parent / "Config/Architecture.xcconfig", self.root / "Config/Architecture.xcconfig")
-        self.env["XCODE_XCCONFIG_FILE"] = str(self.root / "Config/Architecture.xcconfig")
+        self.env["XCODE_XCCONFIG_FILE"] = str((self.root / "Config/Architecture.xcconfig").resolve())
 
     def run_script(self):
         return subprocess.run(["/bin/sh", "ci_post_clone.sh"], cwd=self.root / "ci_scripts",
