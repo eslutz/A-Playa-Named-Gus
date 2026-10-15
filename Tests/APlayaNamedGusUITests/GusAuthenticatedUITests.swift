@@ -1,6 +1,6 @@
 import os
 import XCTest
-#if os(iOS)
+#if os(iOS) || os(tvOS)
     import CoreGraphics
     import ImageIO
     import UIKit
@@ -106,6 +106,164 @@ final class GusAuthenticatedUITests: XCTestCase {
             app.terminate()
         }
     }
+
+    #if os(tvOS)
+        /// Sample actual Settings rendering so a descendant color-scheme override cannot hide behind a saved preference.
+        func testTVAppearancePreference() throws {
+            try prepare()
+            defer { finish() }
+            let app = XCUIApplication()
+            for appearance in ["light", "dark", "system"] {
+                app.launchArguments = [
+                    "--gus-demo-server",
+                    "--gus-disable-cloud-sync",
+                    "--gus-route",
+                    "settings",
+                    "-dev.ericslutz.gus.appearance",
+                    appearance,
+                ]
+                app.launch()
+                XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label ==[c] %@", "Account")).firstMatch.waitForExistence(timeout: 30))
+                capture(app, "tv-settings-" + appearance)
+                if appearance != "system" {
+                    let screenshot = XCUIScreen.main.screenshot()
+                    let source = try XCTUnwrap(CGImageSourceCreateWithData(screenshot.pngRepresentation as CFData, nil))
+                    let image = try XCTUnwrap(CGImageSourceCreateImageAtIndex(source, 0, nil))
+                    var pixel = [UInt8](repeating: 0, count: 4)
+                    try pixel.withUnsafeMutableBytes { storage in
+                        let context = try XCTUnwrap(CGContext(
+                            data: storage.baseAddress,
+                            width: 1,
+                            height: 1,
+                            bitsPerComponent: 8,
+                            bytesPerRow: 4,
+                            space: CGColorSpaceCreateDeviceRGB(),
+                            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+                        ))
+                        context.interpolationQuality = .high
+                        context.draw(image, in: CGRect(x: 0, y: 0, width: 1, height: 1))
+                    }
+                    let brightness = pixel.prefix(3).map(Double.init).reduce(0, +) / 3
+                    if appearance == "light" {
+                        XCTAssertGreaterThan(brightness, 128, "Light must render a light Settings screen")
+                    } else {
+                        XCTAssertLessThan(brightness, 128, "Dark must render a dark Settings screen")
+                    }
+                }
+                app.terminate()
+            }
+            for (route, landmark, name) in try [("home", "Next Up", "tv-home-light"), ("item/" + required("SynopsisMovie"), "Play", "tv-detail-light")] {
+                app.launchArguments = [
+                    "--gus-demo-server",
+                    "--gus-disable-cloud-sync",
+                    "--gus-route",
+                    route,
+                    "-dev.ericslutz.gus.appearance",
+                    "light",
+                ]
+                app.launch()
+                XCTAssertTrue(app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", landmark)).firstMatch.waitForExistence(timeout: 30))
+                capture(app, name)
+                app.terminate()
+            }
+        }
+
+        /// Exercise the native remote through the hero and the lower detail content.
+        func testTVDetailFocusAndAboutLayout() throws {
+            try prepare()
+            defer { finish() }
+            let app = try launch("item/" + required("SynopsisMovie"))
+            let play = app.buttons["Play"].firstMatch
+            XCTAssertTrue(play.waitForExistence(timeout: 30))
+            let focused = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in play.hasFocus }, object: nil)
+            XCTAssertEqual(XCTWaiter.wait(for: [focused], timeout: 10), .completed)
+            capture(app, "tv-detail-play-focused")
+
+            let common = ["Detail.nextUp", "Detail.favorite", "Detail.watched", "Detail.playlist"].map { app.buttons[$0] }
+            for button in common {
+                XCTAssertTrue(button.exists)
+                XCTAssertGreaterThan(button.frame.minY, play.frame.maxY)
+                XCTAssertEqual(button.frame.midY, common[0].frame.midY, accuracy: 4)
+            }
+            XCUIRemote.shared.press(.down)
+            for _ in 0 ..< 5 {
+                if common[0].hasFocus {
+                    break
+                }
+                XCUIRemote.shared.press(.left)
+            }
+            for (index, button) in common.enumerated() {
+                let reached = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in button.hasFocus }, object: nil)
+                XCTAssertEqual(XCTWaiter.wait(for: [reached], timeout: 5), .completed, button.identifier)
+                if index == 1 || index == 2 {
+                    let originalLabel = button.label
+                    XCUIRemote.shared.press(.select)
+                    let changed = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in button.label != originalLabel && button.isEnabled }, object: nil)
+                    XCTAssertEqual(XCTWaiter.wait(for: [changed], timeout: 10), .completed)
+                    XCUIRemote.shared.press(.select)
+                    let restored = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in button.label == originalLabel && button.isEnabled }, object: nil)
+                    XCTAssertEqual(XCTWaiter.wait(for: [restored], timeout: 10), .completed)
+                }
+                if index == 3 {
+                    XCUIRemote.shared.press(.select)
+                    XCTAssertTrue(app.buttons["Cancel"].waitForExistence(timeout: 5))
+                    XCUIRemote.shared.press(.menu)
+                    let returned = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in button.hasFocus }, object: nil)
+                    XCTAssertEqual(XCTWaiter.wait(for: [returned], timeout: 5), .completed)
+                }
+                XCUIRemote.shared.press(.right)
+            }
+            let more = app.buttons["Detail.more"]
+            let moreFocused = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+                more.hasFocus || more.descendants(matching: .any).allElementsBoundByIndex.contains(where: \.hasFocus)
+            }, object: nil)
+            XCTAssertEqual(XCTWaiter.wait(for: [moreFocused], timeout: 5), .completed, app.debugDescription)
+            capture(app, "tv-detail-more-focused")
+            XCUIRemote.shared.press(.select)
+            // Native tvOS menu entries are exposed as Other elements inside focused cells.
+            let restart = app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", "Start from Beginning")).firstMatch
+            XCTAssertTrue(restart.waitForExistence(timeout: 5), app.debugDescription)
+            capture(app, "tv-detail-overflow")
+            XCUIRemote.shared.press(.menu)
+            XCUIRemote.shared.press(.down)
+            let synopsis = app.buttons["Synopsis"]
+            let synopsisFocused = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in synopsis.hasFocus }, object: nil)
+            XCTAssertEqual(XCTWaiter.wait(for: [synopsisFocused], timeout: 5), .completed, app.debugDescription)
+            XCUIRemote.shared.press(.select)
+            XCTAssertTrue(app.buttons["Done"].waitForExistence(timeout: 5))
+            capture(app, "tv-full-synopsis")
+            XCUIRemote.shared.press(.menu)
+
+            let fullSynopsis = app.buttons["Detail.fullSynopsis"]
+            for _ in 0 ..< 24 {
+                if fullSynopsis.exists, fullSynopsis.hasFocus {
+                    break
+                }
+                XCUIRemote.shared.press(.down)
+            }
+            // The first About card is a readable focus target to the left of Show More.
+            if !fullSynopsis.hasFocus {
+                XCUIRemote.shared.press(.right)
+            }
+            let aboutFocused = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in fullSynopsis.hasFocus }, object: nil)
+            let aboutResult = XCTWaiter.wait(for: [aboutFocused], timeout: 5)
+            capture(app, "tv-about-focus-result")
+            XCTAssertEqual(aboutResult, .completed, app.debugDescription)
+            let window = app.windows.firstMatch.frame
+            XCTAssertTrue(window.contains(fullSynopsis.frame))
+            capture(app, "tv-about-focused")
+
+            app.terminate()
+            app.launchArguments = ["--gus-demo-server", "--gus-disable-cloud-sync"]
+            app.launch()
+            XCTAssertTrue(app.staticTexts["Next Up"].firstMatch.waitForExistence(timeout: 30))
+            let nextUp = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@", "NextUp.card.")).firstMatch
+            XCTAssertTrue(nextUp.waitForExistence(timeout: 10))
+            let homeFocused = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in nextUp.hasFocus }, object: nil)
+            XCTAssertEqual(XCTWaiter.wait(for: [homeFocused], timeout: 10), .completed, app.debugDescription)
+            capture(app, "tv-home-cards")
+        }
+    #endif
 
     #if os(iOS)
         func testRightToLeftLoadedDetails() throws {
@@ -482,7 +640,7 @@ final class GusAuthenticatedUITests: XCTestCase {
 
     private func launch(_ route: String) -> XCUIApplication {
         let app = XCUIApplication()
-        app.launchArguments = ["--gus-demo-server", "--gus-route", route]
+        app.launchArguments = ["--gus-demo-server", "--gus-disable-cloud-sync", "--gus-route", route]
         app.launch()
         return app
     }

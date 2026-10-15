@@ -42,7 +42,26 @@ extension View {
 
     @ViewBuilder func gusTVBrowsingBackdrop() -> some View {
         #if os(tvOS)
-            background { TVBrowsingBackdrop() }
+            background { TVBrowsingBackdrop().ignoresSafeArea() }
+        #else
+            self
+        #endif
+    }
+
+    /// Read-only rails still need native focus targets so the remote can scroll to them.
+    @ViewBuilder func gusTVFocusableInfo() -> some View {
+        #if os(tvOS)
+            accessibilityElement(children: .combine)
+                .hoverEffect(.highlight)
+                .focusable()
+        #else
+            self
+        #endif
+    }
+
+    @ViewBuilder func gusTVDetailCanvas() -> some View {
+        #if os(tvOS)
+            background { Rectangle().fill(.background).ignoresSafeArea() }
         #else
             self
         #endif
@@ -72,9 +91,19 @@ extension View {
         #endif
     }
 
+    /// Inset labels within native artwork cards without adding a bezel around the image.
+    @ViewBuilder func gusTVCardCaption() -> some View {
+        #if os(tvOS)
+            padding(.horizontal, 16).padding(.bottom, 16)
+        #else
+            self
+        #endif
+    }
+
     @ViewBuilder func gusTVPosterTitle() -> some View {
         #if os(tvOS)
-            lineLimit(2)
+            lineLimit(2, reservesSpace: true)
+                .multilineTextAlignment(.leading)
         #else
             lineLimit(1)
         #endif
@@ -90,7 +119,12 @@ extension View {
             }
             .overlay(alignment: .bottom) {
                 if let progress = item?.playbackProgress, progress > 0, progress < 1 {
-                    ProgressView(value: progress).padding(12).background(.black.opacity(0.75)).accessibilityHidden(true)
+                    ProgressView(value: progress)
+                        .tint(.white)
+                        .padding(8)
+                        .background(.black.opacity(0.65), in: Capsule())
+                        .padding(12)
+                        .accessibilityHidden(true)
                 }
             }
         #else
@@ -112,12 +146,14 @@ extension View {
         #endif
     }
 
-    @ViewBuilder func gusTVActionLabel() -> some View {
-        #if os(tvOS)
-            labelStyle(.titleAndIcon)
-        #else
-            labelStyle(.iconOnly)
-        #endif
+    /// Share focus order across the primary action, common icons, overflow and synopsis.
+    func gusTVDetailActionFocus(id: String, item: MediaItem, initial: Bool = false) -> some View {
+        var ids = ["play", "nextUp", "favorite", "watched"]
+        if item.type == .movie || item.type == .episode {
+            ids.append("playlist")
+        }
+        ids += ["more", "synopsis"]
+        return gusTVFocus(id: id, section: "detail:" + ItemRef(item: item).id, ids: ids, initial: initial, item: item)
     }
 }
 
@@ -171,13 +207,10 @@ extension View {
 
     /// Focus changes drive decoration only; ordering and navigation remain in HomeStore.
     private struct TVNextUpHero<Content: View>: View {
-        @Environment(SessionStore.self) private var session
         @Environment(RootNavigationState.self) private var root
-        @Environment(\.accessibilityReduceMotion) private var reduceMotion
         @FocusedValue(\.gusTVEntry) private var focusedEntry
         @FocusedValue(\.gusTVMedia) private var focusedMedia
         @State private var selectedID: String?
-        @State private var backgroundItem: MediaItem?
         let entries: [NextUpEntry]
         @ViewBuilder let content: () -> Content
 
@@ -197,15 +230,14 @@ extension View {
                                 Text([item.episodeLocator, item.displayTitle].compactMap { $0 }.joined(separator: " · "))
                                     .font(.title3).lineLimit(2)
                             }
-                            HeroMetadataRow(item: item)
+                            HeroMetadataRow(item: item, foreground: .primary)
                             if let overview = item.overview?.trimmedNilIfEmpty {
                                 Text(overview).font(.body).lineLimit(3)
                             }
                         }
                     }
-                    .foregroundStyle(.white)
-                    .padding(24)
-                    .background(.black.opacity(0.85), in: RoundedRectangle(cornerRadius: 16))
+                    .foregroundStyle(.primary)
+                    .padding(.vertical, 24)
                     .frame(maxWidth: 900, minHeight: 260, alignment: .bottomLeading)
                     // Cards carry the same title/state; decoration must not repeat speech.
                     .accessibilityHidden(true)
@@ -213,17 +245,6 @@ extension View {
                 content()
             }
             .padding(.top, 48)
-            .background {
-                GeometryReader { geometry in
-                    AsyncPoster(url: backgroundItem.flatMap { session.mediaProvider.backdropImageURL(for: $0, maxWidth: 1920) }, placeholderSymbol: "play.rectangle")
-                        .frame(width: geometry.size.width, height: geometry.size.height)
-                        .clipped()
-                        .overlay {
-                            LinearGradient(colors: [.black.opacity(0.2), .black.opacity(0.7), .black], startPoint: .top, endPoint: .bottom)
-                        }
-                        .accessibilityHidden(true)
-                }
-            }
             .onChange(of: focusedEntry) { _, entry in
                 if let entry, entries.contains(where: { $0.id == entry.id }) {
                     selectedID = entry.id
@@ -234,28 +255,39 @@ extension View {
                     selectedID = id
                 }
             }
-            .task(id: selected?.item?.id) {
-                do { try await Task.sleep(for: .milliseconds(300)) } catch { return }
-                guard !Task.isCancelled else { return }
-                withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.25)) { backgroundItem = selected?.item }
-            }
         }
     }
 
     private struct TVBrowsingBackdrop: View {
+        @Environment(\.colorScheme) private var colorScheme
         @Environment(SessionStore.self) private var session
         @FocusedValue(\.gusTVMedia) private var focusedItem
         @State private var item: MediaItem?
 
+        private var canvas: Color {
+            colorScheme == .dark ? .black : .white
+        }
+
         var body: some View {
             GeometryReader { geometry in
-                AsyncPoster(url: item.flatMap { session.mediaProvider.backdropImageURL(for: $0, maxWidth: 1920) }, placeholderSymbol: "play.rectangle")
-                    .frame(width: geometry.size.width, height: geometry.size.height).clipped()
-                    .blur(radius: 30)
-                    .overlay(.black.opacity(0.8))
-                    .ignoresSafeArea()
-                    .accessibilityHidden(true)
+                ZStack {
+                    canvas
+                    if let item {
+                        AsyncPoster(url: session.mediaProvider.backdropImageURL(for: item, maxWidth: 1920), placeholderSymbol: "play.rectangle")
+                            .frame(width: geometry.size.width, height: geometry.size.height)
+                            .clipped()
+                            .overlay {
+                                LinearGradient(colors: [canvas.opacity(0.8), canvas.opacity(0.5)], startPoint: .leading, endPoint: .trailing)
+                            }
+                            .overlay {
+                                LinearGradient(colors: [.clear, canvas.opacity(0.85), canvas], startPoint: .top, endPoint: .bottom)
+                            }
+                    }
+                }
+                .frame(width: geometry.size.width, height: geometry.size.height)
+                .clipped()
             }
+            .accessibilityHidden(true)
             .task(id: focusedItem?.id) {
                 guard let focusedItem else { return }
                 do { try await Task.sleep(for: .milliseconds(300)) } catch { return }

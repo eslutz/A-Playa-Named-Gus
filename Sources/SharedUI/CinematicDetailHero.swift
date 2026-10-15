@@ -18,12 +18,28 @@ struct CinematicDetailHero<Accessory: View>: View {
 
     var body: some View {
         standardHero.gusTVDetailHero(item: item, backdropURL: backdropURL) {
-            HStack(spacing: 24) {
+            VStack(alignment: .leading, spacing: 24) {
                 playButton
-                Menu { upNextButton; restartButton; accessory } label: { Label("More", systemImage: "ellipsis") }
-                    .accessibilityLabel("More")
-                    .accessibilityIdentifier("Detail.more")
-                    .gusTVFocus(id: "more", section: "detail:" + ItemRef(item: item).id, ids: ["play", "more", "synopsis"], item: item)
+                HStack(spacing: 24) {
+                    upNextButton
+                        .frame(width: 80)
+                        .gusTVDetailActionFocus(id: "nextUp", item: item)
+                    Group(subviews: accessory) { actions in
+                        ForEach(actions) { action in action.frame(width: 80) }
+                    }
+                    if isPlayableItem, let startFromBeginning {
+                        Menu {
+                            Button("Start from Beginning", systemImage: "arrow.counterclockwise", action: startFromBeginning)
+                        } label: {
+                            Label("More", systemImage: "ellipsis").labelStyle(.iconOnly)
+                        }
+                        .frame(width: 80)
+                        .accessibilityLabel("More")
+                        .accessibilityIdentifier("Detail.more")
+                        .gusTVDetailActionFocus(id: "more", item: item)
+                    }
+                }
+                .tvFocusSection()
             }
         }
     }
@@ -116,7 +132,7 @@ struct CinematicDetailHero<Accessory: View>: View {
         if isPlayableItem {
             Button(action: play) {
                 Label(playbackHasProgress ? String(localized: "Resume") : String(localized: "Play"), systemImage: "play.fill")
-                    .foregroundStyle(Color.gusProminentActionForeground)
+                    .gusProminentActionForeground()
                     .frame(maxWidth: .infinity)
                     .accessibilityIdentifier("Detail.play")
             }
@@ -125,9 +141,9 @@ struct CinematicDetailHero<Accessory: View>: View {
             // Keep the primary action prominent without turning wide panes into
             // a full-width button. Narrow panes can still shrink naturally.
             .frame(maxWidth: min(320, DetailActionMetrics.maximumRowWidth))
-            .tint(.accentColor)
+            .gusProminentActionTint()
             .gusDefaultActionShortcut()
-            .gusTVFocus(id: "play", section: "detail:" + ItemRef(item: item).id, ids: ["play", "more", "synopsis"], initial: true, item: item)
+            .gusTVDetailActionFocus(id: "play", item: item, initial: true)
             .visionHoverEffect(Capsule())
         }
     }
@@ -187,6 +203,7 @@ struct CinematicDetailHero<Accessory: View>: View {
 /// Compact inline row of metadata tokens (year, runtime, rating, scores) shown in the hero.
 struct HeroMetadataRow: View {
     let item: MediaItem
+    var foreground: Color = .white
 
     var body: some View {
         ViewThatFits(in: .horizontal) {
@@ -199,7 +216,7 @@ struct HeroMetadataRow: View {
             }
         }
         .font(.subheadline.weight(.medium))
-        .foregroundStyle(.white)
+        .foregroundStyle(foreground)
         .accessibilityElement(children: .combine)
     }
 
@@ -218,11 +235,11 @@ struct HeroMetadataRow: View {
             Text(rating)
                 .padding(.horizontal, 6)
                 .padding(.vertical, 2)
-                .overlay(RoundedRectangle(cornerRadius: 4).stroke(.white.opacity(0.5)))
+                .overlay(RoundedRectangle(cornerRadius: 4).stroke(foreground.opacity(0.5)))
         }
         if let community = item.communityRatingText {
             Text(community)
-                .foregroundStyle(.white)
+                .foregroundStyle(foreground)
         }
         if let critic = item.criticRatingText {
             Text(String(localized: "Critic \(critic)", comment: "Critic score label, e.g. 'Critic 74%'"))
@@ -239,7 +256,7 @@ struct ItemUserActionButton: View {
     var body: some View {
         Button(action: action) {
             Label(title, systemImage: systemImage)
-                .gusTVActionLabel()
+                .labelStyle(.iconOnly)
                 .frame(maxWidth: .infinity, minHeight: 44)
         }
         .gusGlassButtonStyle()

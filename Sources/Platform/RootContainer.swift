@@ -65,7 +65,9 @@ struct RootContainer: View {
         #if os(iOS)
             AdaptiveRootView()
         #elseif os(tvOS)
-            TabRootView().tabViewStyle(.sidebarAdaptable).gusTVBrowsingBackdrop()
+            TabRootView()
+                .tabViewStyle(.sidebarAdaptable)
+                .gusTVBrowsingBackdrop()
         #elseif os(visionOS)
             TabRootView().tabViewStyle(.sidebarAdaptable)
         #else

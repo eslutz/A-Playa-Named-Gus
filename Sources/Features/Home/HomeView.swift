@@ -254,22 +254,25 @@ private struct NextUpDestination: View {
                     .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                     .posterHoverEffect()
             }
-            Text(entry.playlist?.name ?? entry.item?.seriesName ?? entry.item?.displayTitle ?? "Video")
-                .font(.headline).lineLimit(1)
-            if let item = entry.item, item.type == .episode {
-                if let locator = item.episodeLocator {
-                    Text("\(locator) · \(item.displayTitle)").font(.caption).foregroundStyle(.secondary).lineLimit(1)
+            VStack(alignment: .leading, spacing: 6) {
+                Text(entry.playlist?.name ?? entry.item?.seriesName ?? entry.item?.displayTitle ?? "Video")
+                    .font(.headline).lineLimit(1)
+                if let item = entry.item, item.type == .episode {
+                    if let locator = item.episodeLocator {
+                        Text("\(locator) · \(item.displayTitle)").font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                    } else {
+                        Text(item.displayTitle).font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                    }
                 } else {
-                    Text(item.displayTitle).font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                    Text(" ").font(.caption).accessibilityHidden(true)
                 }
-            } else {
-                Text(" ").font(.caption).accessibilityHidden(true)
+                Text(reasonText).font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                if let progress = entry.item?.playbackProgress, entry.reasons.contains(.resume) {
+                    ProgressView(value: progress).accessibilityLabel("Playback progress")
+                        .accessibilityIdentifier("NextUp.progress." + entry.id)
+                }
             }
-            Text(reasonText).font(.caption).foregroundStyle(.secondary).lineLimit(1)
-            if let progress = entry.item?.playbackProgress, entry.reasons.contains(.resume) {
-                ProgressView(value: progress).accessibilityLabel("Playback progress")
-                    .accessibilityIdentifier("NextUp.progress." + entry.id)
-            }
+            .gusTVCardCaption()
         }
         .contentShape(Rectangle())
     }
@@ -422,6 +425,7 @@ private struct BackdropCard: View {
                         .lineLimit(1)
                 }
             }
+            .gusTVCardCaption()
         }
         .contentShape(Rectangle())
         .accessibilityElement(children: .ignore)

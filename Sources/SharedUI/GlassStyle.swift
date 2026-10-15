@@ -22,14 +22,36 @@ extension View {
         gusGlassSurface(in: Capsule())
     }
 
-    /// Prominent action over artwork, using the platform’s native glass style.
+    /// Prominent action over artwork, using the platform’s native button style.
     @ViewBuilder
     func gusProminentGlassButtonStyle() -> some View {
-        #if os(visionOS)
+        #if os(tvOS)
+            buttonStyle(.bordered)
+        #elseif os(visionOS)
             buttonStyle(.borderedProminent)
         #else
             buttonStyle(.glassProminent)
 
+        #endif
+    }
+
+    /// Let TV focus choose the foreground; a fixed accent foreground disappears on white focus.
+    @ViewBuilder
+    func gusProminentActionForeground() -> some View {
+        #if os(tvOS)
+            self
+        #else
+            foregroundStyle(Color.gusProminentActionForeground)
+        #endif
+    }
+
+    /// TV buttons use the system's untinted focus treatment for readable white focus plates.
+    @ViewBuilder
+    func gusProminentActionTint() -> some View {
+        #if os(tvOS)
+            self
+        #else
+            tint(.accentColor)
         #endif
     }
 

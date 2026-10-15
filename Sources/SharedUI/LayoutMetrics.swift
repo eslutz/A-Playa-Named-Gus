@@ -11,8 +11,15 @@ enum PageContentMetrics {
 }
 
 enum AboutCardMetrics {
-    static let cardWidth: CGFloat = 260
-    static let cardHeight: CGFloat = 150
+    #if os(tvOS)
+        static let cardWidth: CGFloat = 480
+        static let cardHeight: CGFloat = 360
+        static let posterSize = CGSize(width: 120, height: 180)
+    #else
+        static let cardWidth: CGFloat = 260
+        static let cardHeight: CGFloat = 150
+        static let posterSize = CGSize(width: 74, height: 110)
+    #endif
 
     static var tileSize: CGSize {
         CGSize(width: cardWidth, height: cardHeight)
@@ -29,4 +36,15 @@ enum VisionSidebarLayout {
     static let environmentControlTopPadding: CGFloat = 116
     static let environmentControlTrailingPadding: CGFloat = 116
     static let environmentControlDiameter: CGFloat = 56
+}
+
+/// Portraits must remain legible at television viewing distance.
+enum CastCardMetrics {
+    #if os(tvOS)
+        static let width: CGFloat = 200
+        static let height: CGFloat = 250
+    #else
+        static let width: CGFloat = 120
+        static let height: CGFloat = 150
+    #endif
 }

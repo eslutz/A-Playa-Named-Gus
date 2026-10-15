@@ -142,6 +142,23 @@ struct ItemDetailView: View {
                             }
                         )
                         .disabled(store.isUpdatingUserData || store.needsUserDataRefresh)
+                        .accessibilityIdentifier("Detail.favorite")
+                        .gusTVDetailActionFocus(id: "favorite", item: store.item)
+                        #if os(tvOS)
+                            ItemUserActionButton(
+                                title: store.item.userData?.isWatched == true ? "Mark as Unwatched" : "Mark as Watched",
+                                systemImage: store.item.userData?.isWatched == true ? "checkmark.circle.fill" : "checkmark.circle",
+                                action: { Task { await store.setWatched(store.item.userData?.isWatched != true) } }
+                            )
+                            .disabled(store.isUpdatingUserData || store.needsUserDataRefresh)
+                            .accessibilityIdentifier("Detail.watched")
+                            .gusTVDetailActionFocus(id: "watched", item: store.item)
+                            if store.item.type == .movie || store.item.type == .episode {
+                                ItemUserActionButton(title: "Add to Playlist", systemImage: "list.bullet.rectangle", action: { addingToPlaylist = true })
+                                    .accessibilityIdentifier("Detail.playlist")
+                                    .gusTVDetailActionFocus(id: "playlist", item: store.item)
+                            }
+                        #endif
                         #if !os(tvOS)
                             if SharePlayCoordinator.canShare(store.item) {
                                 ItemUserActionButton(
@@ -213,6 +230,7 @@ struct ItemDetailView: View {
             }
             .scrollPosition(id: navigationState.scrollBinding(for: "detail:" + ItemRef(item: item).id))
         }
+        .gusTVDetailCanvas()
         .lookToScroll()
         .task {
             downloads.load(serverID: session.server.id, userID: session.user.id)
@@ -229,7 +247,9 @@ struct ItemDetailView: View {
     }
 
     private var sectionPadding: EdgeInsets {
-        #if os(visionOS) || os(tvOS)
+        #if os(tvOS)
+            return EdgeInsets(top: 48, leading: 64, bottom: 64, trailing: 64)
+        #elseif os(visionOS)
             return EdgeInsets(top: 30, leading: 36, bottom: 40, trailing: 36)
         #else
             return EdgeInsets(top: 24, leading: 20, bottom: 32, trailing: 20)
