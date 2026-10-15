@@ -80,10 +80,11 @@ struct VideoPlaylistPreparationTests {
         var seek: CheckedContinuation<Void, Never>?
         let player = PlaybackStore(item: item, session: session, playbackRefresh: PlaybackRefreshStore(), downloads: downloads, localOnly: localOnly, localProgress: progress, initialSeek: { _, _ in await withCheckedContinuation { seek = $0 } })
         let preparation = Task { await player.prepare(startTimeTicks: 0) }
-        for _ in 0 ..< 1000 {
-            if seek != nil {
-                break
-            }; await Task.yield()
+        // Offline preparation loads AVFoundation metadata asynchronously. A fixed
+        // number of executor yields can expire before file I/O finishes on CI.
+        let seekDeadline = ContinuousClock.now + .seconds(10)
+        while seek == nil, ContinuousClock.now < seekDeadline {
+            try await Task.sleep(for: .milliseconds(10))
         }
         #expect(seek != nil)
         #expect(player.player != nil)
