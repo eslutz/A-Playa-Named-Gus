@@ -4,6 +4,13 @@ set -eu
 if [ "${CI_XCODE_CLOUD:-}" != TRUE ]; then
   exit 0
 fi
+# Test runners execute the already-built products in a separate environment.
+# Only ci_scripts is guaranteed there; the source checkout and its build-time
+# xcconfig may be absent. Architecture enforcement belongs to compilation.
+if [ "${CI_XCODEBUILD_ACTION:-}" = test-without-building ]; then
+  exit 0
+fi
+
 script_dir="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
 repository_dir="${CI_PRIMARY_REPOSITORY_PATH:-$(dirname "$script_dir")}"
 cd "$repository_dir"
