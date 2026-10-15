@@ -213,6 +213,7 @@ struct ItemDetailView: View {
             }
             .scrollPosition(id: navigationState.scrollBinding(for: "detail:" + ItemRef(item: item).id))
         }
+        .gusTVDetailCanvas()
         .lookToScroll()
         .task {
             downloads.load(serverID: session.server.id, userID: session.user.id)
@@ -229,7 +230,9 @@ struct ItemDetailView: View {
     }
 
     private var sectionPadding: EdgeInsets {
-        #if os(visionOS) || os(tvOS)
+        #if os(tvOS)
+            return EdgeInsets(top: 48, leading: 64, bottom: 64, trailing: 64)
+        #elseif os(visionOS)
             return EdgeInsets(top: 30, leading: 36, bottom: 40, trailing: 36)
         #else
             return EdgeInsets(top: 24, leading: 20, bottom: 32, trailing: 20)

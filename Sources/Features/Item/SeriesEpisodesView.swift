@@ -133,6 +133,7 @@ private struct EpisodeCard: View {
                         .lineLimit(2)
                 }
             }
+            .gusTVCardCaption()
         }
         .contentShape(Rectangle())
         .accessibilityElement(children: .ignore)

@@ -57,12 +57,11 @@ extension View {
         #endif
     }
 
-    /// Preserve native focus styling on tvOS while keeping poster links visually plain on
-    /// pointer/touch platforms.
+    /// Native TV cards lift artwork without the default button's padded, opaque bezel.
     @ViewBuilder
     func posterNavigationStyle() -> some View {
         #if os(tvOS)
-            self
+            buttonStyle(.card)
         #else
             buttonStyle(.plain)
         #endif

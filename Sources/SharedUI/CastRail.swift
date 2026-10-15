@@ -22,7 +22,7 @@ struct CastRail: View {
                                 Rectangle()
                                     .fill(.thinMaterial)
 
-                                if let imageURL = session.mediaProvider.personImageURL(for: person.source, maxWidth: 240) {
+                                if let imageURL = session.mediaProvider.personImageURL(for: person.source, maxWidth: Int(CastCardMetrics.width * 2)) {
                                     AsyncPoster(url: imageURL, contentMode: .fill, placeholderSymbol: "person")
                                 } else {
                                     Image(systemName: "person.fill")
@@ -30,25 +30,29 @@ struct CastRail: View {
                                         .foregroundStyle(.secondary)
                                 }
                             }
-                            .frame(width: 120, height: 150)
+                            .frame(width: CastCardMetrics.width, height: CastCardMetrics.height)
                             .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
                             .posterHoverEffect()
 
                             Text(person.name)
                                 .font(.caption.weight(.medium))
-                                .lineLimit(1)
+                                .gusTVPosterTitle()
+                                .fixedSize(horizontal: false, vertical: true)
                             if let role = person.role {
                                 Text(role)
                                     .font(.caption2)
                                     .foregroundStyle(.secondary)
-                                    .lineLimit(1)
+                                    .gusTVPosterTitle()
+                                    .fixedSize(horizontal: false, vertical: true)
                             }
                         }
-                        .frame(width: 120, alignment: .leading)
+                        .frame(width: CastCardMetrics.width, alignment: .leading)
                         .accessibilityElement(children: .combine)
+                        .gusTVFocusableInfo()
                     }
                 }
-                .padding(.vertical, 4)
+                .gusTVRailPadding()
+                .tvFocusSection()
             }
             .lookToScroll(.horizontal)
         }

@@ -33,6 +33,7 @@ struct PosterCard: View {
                         .lineLimit(1)
                 }
             }
+            .gusTVCardCaption()
         }
         .contentShape(Rectangle())
         .accessibilityElement(children: .ignore)

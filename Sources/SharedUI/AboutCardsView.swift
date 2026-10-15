@@ -14,7 +14,7 @@ struct AboutCardsView: View {
 
             ScrollView(.horizontal, showsIndicators: false) {
                 LazyHStack(alignment: .top, spacing: 16) {
-                    posterSummaryCard
+                    posterSummaryCard.gusTVFocusableInfo()
 
                     if let overview = item.overview?.trimmedNilIfEmpty {
                         DetailInfoCard(title: LocalizedStringKey(item.displayTitle)) {
@@ -40,7 +40,8 @@ struct AboutCardsView: View {
                         }
                     }
                 }
-                .padding(.vertical, 4)
+                .gusTVRailPadding()
+                .tvFocusSection()
             }
             .accessibilityIdentifier("Detail.aboutCards")
             .lookToScroll(.horizontal)
@@ -74,7 +75,7 @@ struct AboutCardsView: View {
         DetailInfoCard(title: LocalizedStringKey(item.displayTitle)) {
             HStack(alignment: .top, spacing: 12) {
                 ArtworkTile(url: posterURL, placeholderSymbol: item.artworkPlaceholderSymbol)
-                    .frame(width: 74, height: 110)
+                    .frame(width: AboutCardMetrics.posterSize.width, height: AboutCardMetrics.posterSize.height)
                     .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
                     .accessibilityHidden(true)
 

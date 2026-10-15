@@ -1,0 +1,94 @@
+[
+  {
+    "name": "ios",
+    "command": [
+      "xcodebuild",
+      "-project",
+      "A Playa Named Gus.xcodeproj",
+      "-derivedDataPath",
+      "/Users/ericslutz/Developer/Code/Side Projects/A Playa Named Gus/Gus/build",
+      "-jobs",
+      "2",
+      "CODE_SIGNING_ALLOWED=NO",
+      "-scheme",
+      "A Playa Named Gus",
+      "-destination",
+      "generic/platform=iOS Simulator",
+      "build",
+      "EXCLUDED_ARCHS=x86_64 i386"
+    ],
+    "exitCode": 0,
+    "seconds": 181.47,
+    "log": "ios.log",
+    "diagnostics": []
+  },
+  {
+    "name": "mac",
+    "command": [
+      "xcodebuild",
+      "-project",
+      "A Playa Named Gus.xcodeproj",
+      "-derivedDataPath",
+      "/Users/ericslutz/Developer/Code/Side Projects/A Playa Named Gus/Gus/build",
+      "-jobs",
+      "2",
+      "CODE_SIGNING_ALLOWED=NO",
+      "-scheme",
+      "A Playa Named Gus",
+      "-destination",
+      "platform=macOS,arch=arm64",
+      "build",
+      "EXCLUDED_ARCHS=x86_64 i386"
+    ],
+    "exitCode": 0,
+    "seconds": 14.85,
+    "log": "mac.log",
+    "diagnostics": []
+  },
+  {
+    "name": "vision",
+    "command": [
+      "xcodebuild",
+      "-project",
+      "A Playa Named Gus.xcodeproj",
+      "-derivedDataPath",
+      "/Users/ericslutz/Developer/Code/Side Projects/A Playa Named Gus/Gus/build",
+      "-jobs",
+      "2",
+      "CODE_SIGNING_ALLOWED=NO",
+      "-scheme",
+      "A Playa Named Gus",
+      "-destination",
+      "generic/platform=visionOS Simulator",
+      "build",
+      "EXCLUDED_ARCHS=x86_64 i386"
+    ],
+    "exitCode": 0,
+    "seconds": 97.57,
+    "log": "vision.log",
+    "diagnostics": []
+  },
+  {
+    "name": "watch",
+    "command": [
+      "xcodebuild",
+      "-project",
+      "A Playa Named Gus.xcodeproj",
+      "-derivedDataPath",
+      "/Users/ericslutz/Developer/Code/Side Projects/A Playa Named Gus/Gus/build",
+      "-jobs",
+      "2",
+      "CODE_SIGNING_ALLOWED=NO",
+      "-scheme",
+      "Gus watchOS",
+      "-destination",
+      "generic/platform=watchOS Simulator",
+      "build",
+      "EXCLUDED_ARCHS=x86_64 i386"
+    ],
+    "exitCode": 0,
+    "seconds": 72.54,
+    "log": "watch.log",
+    "diagnostics": []
+  }
+]

@@ -116,7 +116,7 @@ struct CinematicDetailHero<Accessory: View>: View {
         if isPlayableItem {
             Button(action: play) {
                 Label(playbackHasProgress ? String(localized: "Resume") : String(localized: "Play"), systemImage: "play.fill")
-                    .foregroundStyle(Color.gusProminentActionForeground)
+                    .gusProminentActionForeground()
                     .frame(maxWidth: .infinity)
                     .accessibilityIdentifier("Detail.play")
             }
@@ -125,7 +125,7 @@ struct CinematicDetailHero<Accessory: View>: View {
             // Keep the primary action prominent without turning wide panes into
             // a full-width button. Narrow panes can still shrink naturally.
             .frame(maxWidth: min(320, DetailActionMetrics.maximumRowWidth))
-            .tint(.accentColor)
+            .gusProminentActionTint()
             .gusDefaultActionShortcut()
             .gusTVFocus(id: "play", section: "detail:" + ItemRef(item: item).id, ids: ["play", "more", "synopsis"], initial: true, item: item)
             .visionHoverEffect(Capsule())

@@ -24,6 +24,7 @@ extension View {
                 Spacer(minLength: 180)
                 VStack(alignment: .leading, spacing: 20) {
                     Text(item.displayTitle).font(.largeTitle.bold()).lineLimit(3)
+                        .foregroundStyle(.white)
                         .accessibilityAddTraits(.isHeader)
                     HeroMetadataRow(item: item)
                     controls().focusSection()
@@ -37,10 +38,7 @@ extension View {
                         .gusTVFocus(id: "synopsis", section: "detail:" + ItemRef(item: item).id, ids: ["play", "more", "synopsis"], item: item)
                     }
                 }
-                .foregroundStyle(.white)
-                .padding(32)
-                .background(.black.opacity(0.88), in: RoundedRectangle(cornerRadius: 20))
-                .frame(maxWidth: 1100, alignment: .leading)
+                .frame(maxWidth: 1000, alignment: .leading)
             }
             .padding(.horizontal, 64).padding(.vertical, 48)
             .frame(maxWidth: .infinity, minHeight: 720, alignment: .bottomLeading)
@@ -49,10 +47,14 @@ extension View {
                     AsyncPoster(url: backdropURL, placeholderSymbol: item.artworkPlaceholderSymbol, fallbackURLs: session.mediaProvider.artworkURLs(for: item, maxWidth: 1920))
                         .frame(width: geometry.size.width, height: geometry.size.height).clipped()
                         .overlay {
-                            LinearGradient(colors: [.black.opacity(0.1), .black.opacity(0.35), .black], startPoint: .top, endPoint: .bottom)
+                            LinearGradient(colors: [.black.opacity(0.8), .black.opacity(0.35), .clear], startPoint: .leading, endPoint: .trailing)
+                        }
+                        .overlay {
+                            LinearGradient(colors: [.clear, .black], startPoint: .center, endPoint: .bottom)
                         }
                         .accessibilityHidden(true)
                 }
+                .ignoresSafeArea(.container, edges: [.top, .horizontal])
             }
             .sheet(isPresented: $showingOverview) {
                 NavigationStack {

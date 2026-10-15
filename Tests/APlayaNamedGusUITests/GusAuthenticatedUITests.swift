@@ -107,6 +107,66 @@ final class GusAuthenticatedUITests: XCTestCase {
         }
     }
 
+    #if os(tvOS)
+        /// Exercise the native remote through the hero and the lower detail content.
+        func testTVDetailFocusAndAboutLayout() throws {
+            try prepare()
+            defer { finish() }
+            let app = try launch("item/" + required("SynopsisMovie"))
+            let play = app.buttons["Play"].firstMatch
+            XCTAssertTrue(play.waitForExistence(timeout: 30))
+            let focused = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in play.hasFocus }, object: nil)
+            XCTAssertEqual(XCTWaiter.wait(for: [focused], timeout: 10), .completed)
+            capture(app, "tv-detail-play-focused")
+
+            XCUIRemote.shared.press(.right)
+            let more = app.buttons["Detail.more"]
+            let moreFocused = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+                more.hasFocus || more.descendants(matching: .any).allElementsBoundByIndex.contains(where: \.hasFocus)
+            }, object: nil)
+            let moreResult = XCTWaiter.wait(for: [moreFocused], timeout: 5)
+            capture(app, "tv-detail-more-focused")
+            XCTAssertEqual(moreResult, .completed, app.debugDescription)
+            XCUIRemote.shared.press(.down)
+            let synopsis = app.buttons["Synopsis"]
+            let synopsisFocused = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in synopsis.hasFocus }, object: nil)
+            XCTAssertEqual(XCTWaiter.wait(for: [synopsisFocused], timeout: 5), .completed, app.debugDescription)
+            XCUIRemote.shared.press(.select)
+            XCTAssertTrue(app.buttons["Done"].waitForExistence(timeout: 5))
+            capture(app, "tv-full-synopsis")
+            XCUIRemote.shared.press(.menu)
+
+            let fullSynopsis = app.buttons["Detail.fullSynopsis"]
+            for _ in 0 ..< 24 {
+                if fullSynopsis.exists, fullSynopsis.hasFocus {
+                    break
+                }
+                XCUIRemote.shared.press(.down)
+            }
+            // The first About card is a readable focus target to the left of Show More.
+            if !fullSynopsis.hasFocus {
+                XCUIRemote.shared.press(.right)
+            }
+            let aboutFocused = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in fullSynopsis.hasFocus }, object: nil)
+            let aboutResult = XCTWaiter.wait(for: [aboutFocused], timeout: 5)
+            capture(app, "tv-about-focus-result")
+            XCTAssertEqual(aboutResult, .completed, app.debugDescription)
+            let window = app.windows.firstMatch.frame
+            XCTAssertTrue(window.contains(fullSynopsis.frame))
+            capture(app, "tv-about-focused")
+
+            app.terminate()
+            app.launchArguments = ["--gus-demo-server", "--gus-disable-cloud-sync"]
+            app.launch()
+            XCTAssertTrue(app.staticTexts["Next Up"].firstMatch.waitForExistence(timeout: 30))
+            let nextUp = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@", "NextUp.card.")).firstMatch
+            XCTAssertTrue(nextUp.waitForExistence(timeout: 10))
+            let homeFocused = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in nextUp.hasFocus }, object: nil)
+            XCTAssertEqual(XCTWaiter.wait(for: [homeFocused], timeout: 10), .completed, app.debugDescription)
+            capture(app, "tv-home-cards")
+        }
+    #endif
+
     #if os(iOS)
         func testRightToLeftLoadedDetails() throws {
             try prepare()
@@ -482,7 +542,7 @@ final class GusAuthenticatedUITests: XCTestCase {
 
     private func launch(_ route: String) -> XCUIApplication {
         let app = XCUIApplication()
-        app.launchArguments = ["--gus-demo-server", "--gus-route", route]
+        app.launchArguments = ["--gus-demo-server", "--gus-disable-cloud-sync", "--gus-route", route]
         app.launch()
         return app
     }
