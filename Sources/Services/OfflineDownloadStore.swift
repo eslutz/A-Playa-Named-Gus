@@ -186,7 +186,7 @@ enum OfflineDownloadEligibility {
         let videoStreams = streams.filter { $0.type == .video }
         let audioStreams = streams.filter { $0.type == .audio }
         let videoPlayable = videoStreams.isEmpty || videoStreams.allSatisfy {
-            isVideoStreamPlayable($0, capabilities: capabilities) && $0.codecTag?.lowercased() != "hev1"
+            isVideoStreamPlayable($0, capabilities: capabilities) && !AVPlayerContainerCompatibility.requiresHEVCRemux(codecTag: $0.codecTag)
         }
         let audioPlayable = audioStreams.isEmpty || audioStreams.allSatisfy { codec in
             guard let codec = codec.codec?.lowercased() else { return false }
