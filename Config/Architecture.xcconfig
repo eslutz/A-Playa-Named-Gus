@@ -1,0 +1,5 @@
+// Loaded globally by XCODE_XCCONFIG_FILE, including Swift package targets.
+ARCHS = arm64
+EXCLUDED_ARCHS = x86_64 x86_64h i386
+// Physical Watch SDK variants remain ARM-only.
+ARCHS[sdk=watchos*] = $(ARCHS_STANDARD)
