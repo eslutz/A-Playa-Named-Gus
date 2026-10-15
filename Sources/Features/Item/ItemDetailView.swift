@@ -142,6 +142,23 @@ struct ItemDetailView: View {
                             }
                         )
                         .disabled(store.isUpdatingUserData || store.needsUserDataRefresh)
+                        .accessibilityIdentifier("Detail.favorite")
+                        .gusTVDetailActionFocus(id: "favorite", item: store.item)
+                        #if os(tvOS)
+                            ItemUserActionButton(
+                                title: store.item.userData?.isWatched == true ? "Mark as Unwatched" : "Mark as Watched",
+                                systemImage: store.item.userData?.isWatched == true ? "checkmark.circle.fill" : "checkmark.circle",
+                                action: { Task { await store.setWatched(store.item.userData?.isWatched != true) } }
+                            )
+                            .disabled(store.isUpdatingUserData || store.needsUserDataRefresh)
+                            .accessibilityIdentifier("Detail.watched")
+                            .gusTVDetailActionFocus(id: "watched", item: store.item)
+                            if store.item.type == .movie || store.item.type == .episode {
+                                ItemUserActionButton(title: "Add to Playlist", systemImage: "list.bullet.rectangle", action: { addingToPlaylist = true })
+                                    .accessibilityIdentifier("Detail.playlist")
+                                    .gusTVDetailActionFocus(id: "playlist", item: store.item)
+                            }
+                        #endif
                         #if !os(tvOS)
                             if SharePlayCoordinator.canShare(store.item) {
                                 ItemUserActionButton(

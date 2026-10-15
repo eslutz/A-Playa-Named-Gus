@@ -18,7 +18,7 @@
       "EXCLUDED_ARCHS=x86_64 i386"
     ],
     "exitCode": 0,
-    "seconds": 181.47,
+    "seconds": 199.42,
     "log": "ios.log",
     "diagnostics": []
   },
@@ -41,7 +41,7 @@
       "EXCLUDED_ARCHS=x86_64 i386"
     ],
     "exitCode": 0,
-    "seconds": 14.85,
+    "seconds": 77.83,
     "log": "mac.log",
     "diagnostics": []
   },
@@ -64,7 +64,7 @@
       "EXCLUDED_ARCHS=x86_64 i386"
     ],
     "exitCode": 0,
-    "seconds": 97.57,
+    "seconds": 75.16,
     "log": "vision.log",
     "diagnostics": []
   },
@@ -87,7 +87,7 @@
       "EXCLUDED_ARCHS=x86_64 i386"
     ],
     "exitCode": 0,
-    "seconds": 72.54,
+    "seconds": 64.1,
     "log": "watch.log",
     "diagnostics": []
   }

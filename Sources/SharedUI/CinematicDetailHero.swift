@@ -18,12 +18,28 @@ struct CinematicDetailHero<Accessory: View>: View {
 
     var body: some View {
         standardHero.gusTVDetailHero(item: item, backdropURL: backdropURL) {
-            HStack(spacing: 24) {
+            VStack(alignment: .leading, spacing: 24) {
                 playButton
-                Menu { upNextButton; restartButton; accessory } label: { Label("More", systemImage: "ellipsis") }
-                    .accessibilityLabel("More")
-                    .accessibilityIdentifier("Detail.more")
-                    .gusTVFocus(id: "more", section: "detail:" + ItemRef(item: item).id, ids: ["play", "more", "synopsis"], item: item)
+                HStack(spacing: 24) {
+                    upNextButton
+                        .frame(width: 80)
+                        .gusTVDetailActionFocus(id: "nextUp", item: item)
+                    Group(subviews: accessory) { actions in
+                        ForEach(actions) { action in action.frame(width: 80) }
+                    }
+                    if isPlayableItem, let startFromBeginning {
+                        Menu {
+                            Button("Start from Beginning", systemImage: "arrow.counterclockwise", action: startFromBeginning)
+                        } label: {
+                            Label("More", systemImage: "ellipsis").labelStyle(.iconOnly)
+                        }
+                        .frame(width: 80)
+                        .accessibilityLabel("More")
+                        .accessibilityIdentifier("Detail.more")
+                        .gusTVDetailActionFocus(id: "more", item: item)
+                    }
+                }
+                .tvFocusSection()
             }
         }
     }
@@ -127,7 +143,7 @@ struct CinematicDetailHero<Accessory: View>: View {
             .frame(maxWidth: min(320, DetailActionMetrics.maximumRowWidth))
             .gusProminentActionTint()
             .gusDefaultActionShortcut()
-            .gusTVFocus(id: "play", section: "detail:" + ItemRef(item: item).id, ids: ["play", "more", "synopsis"], initial: true, item: item)
+            .gusTVDetailActionFocus(id: "play", item: item, initial: true)
             .visionHoverEffect(Capsule())
         }
     }
@@ -239,7 +255,7 @@ struct ItemUserActionButton: View {
     var body: some View {
         Button(action: action) {
             Label(title, systemImage: systemImage)
-                .gusTVActionLabel()
+                .labelStyle(.iconOnly)
                 .frame(maxWidth: .infinity, minHeight: 44)
         }
         .gusGlassButtonStyle()

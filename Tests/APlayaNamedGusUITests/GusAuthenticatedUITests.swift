@@ -119,14 +119,52 @@ final class GusAuthenticatedUITests: XCTestCase {
             XCTAssertEqual(XCTWaiter.wait(for: [focused], timeout: 10), .completed)
             capture(app, "tv-detail-play-focused")
 
-            XCUIRemote.shared.press(.right)
+            let common = ["Detail.nextUp", "Detail.favorite", "Detail.watched", "Detail.playlist"].map { app.buttons[$0] }
+            for button in common {
+                XCTAssertTrue(button.exists)
+                XCTAssertGreaterThan(button.frame.minY, play.frame.maxY)
+                XCTAssertEqual(button.frame.midY, common[0].frame.midY, accuracy: 4)
+            }
+            XCUIRemote.shared.press(.down)
+            for _ in 0 ..< 5 {
+                if common[0].hasFocus {
+                    break
+                }
+                XCUIRemote.shared.press(.left)
+            }
+            for (index, button) in common.enumerated() {
+                let reached = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in button.hasFocus }, object: nil)
+                XCTAssertEqual(XCTWaiter.wait(for: [reached], timeout: 5), .completed, button.identifier)
+                if index == 1 || index == 2 {
+                    let originalLabel = button.label
+                    XCUIRemote.shared.press(.select)
+                    let changed = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in button.label != originalLabel && button.isEnabled }, object: nil)
+                    XCTAssertEqual(XCTWaiter.wait(for: [changed], timeout: 10), .completed)
+                    XCUIRemote.shared.press(.select)
+                    let restored = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in button.label == originalLabel && button.isEnabled }, object: nil)
+                    XCTAssertEqual(XCTWaiter.wait(for: [restored], timeout: 10), .completed)
+                }
+                if index == 3 {
+                    XCUIRemote.shared.press(.select)
+                    XCTAssertTrue(app.buttons["Cancel"].waitForExistence(timeout: 5))
+                    XCUIRemote.shared.press(.menu)
+                    let returned = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in button.hasFocus }, object: nil)
+                    XCTAssertEqual(XCTWaiter.wait(for: [returned], timeout: 5), .completed)
+                }
+                XCUIRemote.shared.press(.right)
+            }
             let more = app.buttons["Detail.more"]
             let moreFocused = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
                 more.hasFocus || more.descendants(matching: .any).allElementsBoundByIndex.contains(where: \.hasFocus)
             }, object: nil)
-            let moreResult = XCTWaiter.wait(for: [moreFocused], timeout: 5)
+            XCTAssertEqual(XCTWaiter.wait(for: [moreFocused], timeout: 5), .completed, app.debugDescription)
             capture(app, "tv-detail-more-focused")
-            XCTAssertEqual(moreResult, .completed, app.debugDescription)
+            XCUIRemote.shared.press(.select)
+            // Native tvOS menu entries are exposed as Other elements inside focused cells.
+            let restart = app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", "Start from Beginning")).firstMatch
+            XCTAssertTrue(restart.waitForExistence(timeout: 5), app.debugDescription)
+            capture(app, "tv-detail-overflow")
+            XCUIRemote.shared.press(.menu)
             XCUIRemote.shared.press(.down)
             let synopsis = app.buttons["Synopsis"]
             let synopsisFocused = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in synopsis.hasFocus }, object: nil)

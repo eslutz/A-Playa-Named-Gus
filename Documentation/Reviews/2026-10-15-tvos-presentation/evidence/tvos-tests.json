@@ -4,6 +4,6 @@
   "passedTests": 453,
   "failedTests": 0,
   "skippedTests": 0,
-  "buildDiagnostics": [],
-  "resultBundle": "/tmp/gus-branch-cleanup-20261015/tvos-integrated.xcresult"
+  "resultBundle": "/tmp/gus-tvos-common-actions/tvos-final.xcresult",
+  "buildDiagnostics": []
 }

@@ -4,17 +4,17 @@
     "Sources/SharedUI/AboutCardsView.swift": "16149ad2b6f5a6472fe01cee2be17f568af2a34c5936666524c2f4247ae9167e",
     "Sources/SharedUI/PosterCard.swift": "17277bfb7e7048d6e97c172699cb6ec084d878e53633206913fcb4ff5c2e2dd7",
     "Sources/SharedUI/GlassStyle.swift": "9f70430ff9a20da88f0aded3cf07f66106867a7a2b45706e6b8928d9b02ff6d3",
-    "Sources/SharedUI/CinematicDetailHero.swift": "c49ea4f4bbee502651cfecec98d5fa31eb24c19e88d468cb01236829757fd6e4",
+    "Sources/SharedUI/CinematicDetailHero.swift": "b04d89da48e7a584818c0be6150d441a166bf23b48e17af426fab8f2e8436ee1",
     "Sources/SharedUI/CastRail.swift": "fbfc72536a029bc706fb172279bc4f9da5d6657653b410d0a0901c1252996465",
     "Sources/SharedUI/LayoutMetrics.swift": "a7b328e32ee2f23c0544b7f2708701af6bff514799377167e147e06bd672be22",
     "Sources/Platform/RootContainer.swift": "6c116d9c30b38487cde61a614de66e210d6414cd41f80bd08baef1c34386e319",
     "Sources/Platform/PlatformModifiers.swift": "37bd930024bf5dc4abcd45e57a926dc83edfbb37aa8f62cdc13e19ff06ab8b81",
     "Sources/Features/Home/HomeView.swift": "43f237a49b5f6eeb6f2259597ebbe47d5dc6e7a48bd39dcb69a237805f1fa7bc",
     "Sources/Features/Item/SeriesEpisodesView.swift": "5de614b465b1449b999e29b4cc86df3b693c1b85d9a5e37e23410cde2b23b7f1",
-    "Sources/Features/Item/ItemDetailView.swift": "32791cf5c01054d5d530c4a573203bdeb53a62b86066594432bebdd17784a3f2",
-    "Sources/Platform/TV/TVDetailHero.swift": "45588770dca2127fdbce6e94a678aab38700653ea06d0d675c949181d7f582c4",
-    "Sources/Platform/TV/TVPresentation.swift": "d9290cc14270f2dbb4e514277aaa8d700fd95298e0ebb7a7a68a3f4b5861bf0e",
-    "Tests/APlayaNamedGusUITests/GusAuthenticatedUITests.swift": "04c32f2932d18b5d0fbd72deff6d4ae0ae844ed132bd58906522be45f4943970"
+    "Sources/Features/Item/ItemDetailView.swift": "88e17d858abc18754db1812e24e82edc2fe730b29397de3f563e4e4a856336ef",
+    "Sources/Platform/TV/TVDetailHero.swift": "9a5bdaea6e53956308c1ebd3aa1dd0d317cc5d45ffd8e6fd81744e7708050e4f",
+    "Sources/Platform/TV/TVPresentation.swift": "b5f0bb15b2dbed0a09cff633b127451267d0f6c6ec70e8afab67560e5011a899",
+    "Tests/APlayaNamedGusUITests/GusAuthenticatedUITests.swift": "b7ece695221a57dc1f6dba4215f0fed539983b949654e09fe1b9d5fbe2235bfc"
   },
   "integratedCommits": {
     "playbackRemux": "24a7165b6734587dff3f4e8226c0ee166a4ea70c",
@@ -24,5 +24,5 @@
   "unchangedBuildInputsVerified": 353,
   "initialBaseCommit": "98d363a4c0a1a993a4b0d24ef8847f4401c78c8d",
   "mergedMainBuildInputCount": 367,
-  "workingTreeMatchesValidatedCandidate": true
+  "validationSource": "PR #28 working tree after adding common action icons"
 }

@@ -35,7 +35,7 @@ extension View {
                         }
                         .accessibilityLabel("Synopsis")
                         .accessibilityHint("Read the full description")
-                        .gusTVFocus(id: "synopsis", section: "detail:" + ItemRef(item: item).id, ids: ["play", "more", "synopsis"], item: item)
+                        .gusTVDetailActionFocus(id: "synopsis", item: item)
                     }
                 }
                 .frame(maxWidth: 1000, alignment: .leading)

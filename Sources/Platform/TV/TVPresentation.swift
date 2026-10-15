@@ -146,12 +146,14 @@ extension View {
         #endif
     }
 
-    @ViewBuilder func gusTVActionLabel() -> some View {
-        #if os(tvOS)
-            labelStyle(.titleAndIcon)
-        #else
-            labelStyle(.iconOnly)
-        #endif
+    /// Share focus order across the primary action, common icons, overflow and synopsis.
+    func gusTVDetailActionFocus(id: String, item: MediaItem, initial: Bool = false) -> some View {
+        var ids = ["play", "nextUp", "favorite", "watched"]
+        if item.type == .movie || item.type == .episode {
+            ids.append("playlist")
+        }
+        ids += ["more", "synopsis"]
+        return gusTVFocus(id: id, section: "detail:" + ItemRef(item: item).id, ids: ids, initial: initial, item: item)
     }
 }
 
