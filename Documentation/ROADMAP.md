@@ -308,6 +308,8 @@ automated build verification. (Covers priority: *polish & testing*.)
 
 ---
 
+Build 23 release follow-up: correct the Cloud test-only preflight so transferred test products can run without a source checkout; retain ARM-only checks for compilation. Local bootstrap regressions pass; fresh hosted recovery remains pending. See [pipeline evidence](AppStore/pipeline-policy.md#build-23-test-runner-preflight-failure--2026-10-15).
+
 ## M5 — Platform Polish & Accessibility (HIG pass)
 
 **Goal:** each platform feels first-party; the app is fully accessible and localized.

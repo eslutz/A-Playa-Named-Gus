@@ -101,6 +101,31 @@ class BootstrapTests(unittest.TestCase):
         return subprocess.run(["/bin/sh", "ci_pre_xcodebuild.sh"], cwd=self.root / "ci_scripts",
                               env=env, capture_output=True, text=True)
 
+    def test_cloud_test_execution_does_not_require_checkout_or_build_configuration(self):
+        # Cloud distributes compiled products and ci_scripts to separate test runners.
+        # Neither the repository nor its global build configuration is needed there.
+        shutil.rmtree(self.root / "Config")
+        self.env["CI_PRIMARY_REPOSITORY_PATH"] = str(self.root / "absent-checkout")
+        for platform in ("iOS", "macOS", "tvOS", "visionOS"):
+            for configuration in (None, str(self.root / "Config/Architecture.xcconfig")):
+                with self.subTest(platform=platform, configuration=configuration):
+                    if configuration is None:
+                        self.env.pop("XCODE_XCCONFIG_FILE", None)
+                    else:
+                        self.env["XCODE_XCCONFIG_FILE"] = configuration
+                    result = self.run_pre_build(platform=platform, action="test-without-building")
+                    self.assertEqual(result.returncode, 0, result.stderr)
+                    self.assertFalse((self.root / "Config/Local.xcconfig").exists())
+
+    def test_cloud_compilation_actions_still_require_architecture_configuration(self):
+        self.env.pop("XCODE_XCCONFIG_FILE")
+        for platform in ("iOS", "macOS", "tvOS", "visionOS"):
+            for action in ("build", "build-for-testing", "archive", "analyze"):
+                with self.subTest(platform=platform, action=action):
+                    result = self.run_pre_build(platform=platform, action=action)
+                    self.assertEqual(result.returncode, 65)
+                    self.assertIn("Apple Silicon enforcement missing", result.stderr)
+
     def test_cloud_rejects_wrong_global_configuration(self):
         self.env["XCODE_XCCONFIG_FILE"] = "/tmp/other.xcconfig"
         self.assertEqual(self.run_pre_build(platform="iOS").returncode, 65)

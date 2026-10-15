@@ -53,3 +53,26 @@ On 2026-10-12, the user deferred required Duo simulator testing until the device
 [PR #22](https://github.com/eslutz/A-Playa-Named-Gus/pull/22) merged as `a794a7f308c3c4281e6b98a5f2f908f3a684207b` after all 13 GitHub checks passed and both review conversations were resolved. The source tree matches the final checked branch commit `3c631386a154b099d8376facc938913e2ee483a5`.
 
 [Xcode Cloud Build 17](https://appstoreconnect.apple.com/teams/1f3fb703-e0b0-42fc-bc0b-d00a3bfdf58e/xcode-cloud/products/f2e5bb18-7cd2-44ab-b88c-9d54ac63b512/builds/af959737-7e61-4452-bfcc-4c59dec0013b/summary) ran that exact merge SHA. All four tests, four archives/signing/export paths and four internal TestFlight actions succeeded. Apple's API returned empty issue lists for all 12 actions. This confirms the reported action results, but does not establish that their raw logs were warning-free. Build 17's raw test/archive log inspection is not recorded here, so strict warning-free acceptance remains unresolved. [Build 18's raw-log review](../Reviews/2026-10-13-collections/CLOUD-BUILD18.md) subsequently demonstrated why empty issue lists are insufficient. Physical playback, VoiceOver and multi-device CloudKit acceptance also remain separate. Future changes must satisfy the same [warning-free policy](warning-policy.md).
+
+## Build 23 test-runner preflight failure — 2026-10-15
+
+[Build 23](https://appstoreconnect.apple.com/teams/1f3fb703-e0b0-42fc-bc0b-d00a3bfdf58e/xcode-cloud/products/f2e5bb18-7cd2-44ab-b88c-9d54ac63b512/builds/b5294752-1328-42e1-a75f-9d441a8bfa99/summary)
+ran merged main `97a4eeb`. All six test-runner logs (iPhone, iPad, two Apple TV
+destinations, Mac, and Vision Pro) reported `Apple Silicon enforcement missing`
+from `ci_pre_xcodebuild.sh` during `test-without-building`. The inspected tvOS
+`build-for-testing` log succeeded with zero build diagnostics and no Intel actions.
+This was a shared preflight failure, not a failing test assertion or tvOS UI compiler error.
+
+Cloud transfers built test products and custom scripts to separate execution
+runners; source files may be unavailable there. The preflight now exits before
+accessing the checkout only for `test-without-building`. Compilation, analysis,
+`build-for-testing`, and archives still require the global architecture xcconfig;
+Mac test-host signing remains confined to `build-for-testing`. This follows
+[Apple's custom script lifecycle](https://developer.apple.com/documentation/xcode/writing-custom-build-scripts).
+
+The regression reproduced eight failures before the fix, then passed all 19
+bootstrap tests, including all four platform runners without a checkout and
+16 compilation/platform combinations that still reject missing architecture
+configuration. All 11 warning-gate tests and generated-project checks also passed.
+A fresh merged-main Cloud run remains required to establish hosted recovery and
+TestFlight distribution; Build 23 is not accepted.
