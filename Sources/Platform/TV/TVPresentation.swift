@@ -61,7 +61,7 @@ extension View {
 
     @ViewBuilder func gusTVDetailCanvas() -> some View {
         #if os(tvOS)
-            background { Color.black.ignoresSafeArea() }
+            background { Rectangle().fill(.background).ignoresSafeArea() }
         #else
             self
         #endif
@@ -230,13 +230,13 @@ extension View {
                                 Text([item.episodeLocator, item.displayTitle].compactMap { $0 }.joined(separator: " · "))
                                     .font(.title3).lineLimit(2)
                             }
-                            HeroMetadataRow(item: item)
+                            HeroMetadataRow(item: item, foreground: .primary)
                             if let overview = item.overview?.trimmedNilIfEmpty {
                                 Text(overview).font(.body).lineLimit(3)
                             }
                         }
                     }
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.primary)
                     .padding(.vertical, 24)
                     .frame(maxWidth: 900, minHeight: 260, alignment: .bottomLeading)
                     // Cards carry the same title/state; decoration must not repeat speech.
@@ -259,23 +259,28 @@ extension View {
     }
 
     private struct TVBrowsingBackdrop: View {
+        @Environment(\.colorScheme) private var colorScheme
         @Environment(SessionStore.self) private var session
         @FocusedValue(\.gusTVMedia) private var focusedItem
         @State private var item: MediaItem?
 
+        private var canvas: Color {
+            colorScheme == .dark ? .black : .white
+        }
+
         var body: some View {
             GeometryReader { geometry in
                 ZStack {
-                    Color.black
+                    canvas
                     if let item {
                         AsyncPoster(url: session.mediaProvider.backdropImageURL(for: item, maxWidth: 1920), placeholderSymbol: "play.rectangle")
                             .frame(width: geometry.size.width, height: geometry.size.height)
                             .clipped()
                             .overlay {
-                                LinearGradient(colors: [.black.opacity(0.8), .black.opacity(0.5)], startPoint: .leading, endPoint: .trailing)
+                                LinearGradient(colors: [canvas.opacity(0.8), canvas.opacity(0.5)], startPoint: .leading, endPoint: .trailing)
                             }
                             .overlay {
-                                LinearGradient(colors: [.clear, .black.opacity(0.85), .black], startPoint: .top, endPoint: .bottom)
+                                LinearGradient(colors: [.clear, canvas.opacity(0.85), canvas], startPoint: .top, endPoint: .bottom)
                             }
                     }
                 }

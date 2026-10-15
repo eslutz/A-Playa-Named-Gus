@@ -38,6 +38,9 @@ extension View {
                         .gusTVDetailActionFocus(id: "synopsis", item: item)
                     }
                 }
+                // Only controls over dark artwork need a dark appearance.
+                // Sheets and the rest of the detail screen inherit the app preference.
+                .environment(\.colorScheme, .dark)
                 .frame(maxWidth: 1000, alignment: .leading)
             }
             .padding(.horizontal, 64).padding(.vertical, 48)

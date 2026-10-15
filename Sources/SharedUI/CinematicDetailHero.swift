@@ -203,6 +203,7 @@ struct CinematicDetailHero<Accessory: View>: View {
 /// Compact inline row of metadata tokens (year, runtime, rating, scores) shown in the hero.
 struct HeroMetadataRow: View {
     let item: MediaItem
+    var foreground: Color = .white
 
     var body: some View {
         ViewThatFits(in: .horizontal) {
@@ -215,7 +216,7 @@ struct HeroMetadataRow: View {
             }
         }
         .font(.subheadline.weight(.medium))
-        .foregroundStyle(.white)
+        .foregroundStyle(foreground)
         .accessibilityElement(children: .combine)
     }
 
@@ -234,11 +235,11 @@ struct HeroMetadataRow: View {
             Text(rating)
                 .padding(.horizontal, 6)
                 .padding(.vertical, 2)
-                .overlay(RoundedRectangle(cornerRadius: 4).stroke(.white.opacity(0.5)))
+                .overlay(RoundedRectangle(cornerRadius: 4).stroke(foreground.opacity(0.5)))
         }
         if let community = item.communityRatingText {
             Text(community)
-                .foregroundStyle(.white)
+                .foregroundStyle(foreground)
         }
         if let critic = item.criticRatingText {
             Text(String(localized: "Critic \(critic)", comment: "Critic score label, e.g. 'Critic 74%'"))

@@ -312,7 +312,7 @@ automated build verification. (Covers priority: *polish & testing*.)
 
 **Goal:** each platform feels first-party; the app is fully accessible and localized.
 
-- [x] **tvOS.** Photo-driven presentation repair adds a full-screen dark canvas, native artwork card focus, system-controlled Play contrast, a second icon row for common actions (Next Up, Favorite, Watched, and Add to Playlist), and larger cast/About sections; More retains Start from Beginning; physical-TV acceptance remains pending. Focus engine polish (poster focus scaling, sensible focus order), Top Shelf
+- [x] **tvOS.** Photo-driven presentation repair adds a full-screen appearance-aware canvas, native artwork card focus, system-controlled Play contrast, a second icon row for common actions (Next Up, Favorite, Watched, and Add to Playlist), and larger cast/About sections; More retains Start from Beginning. Light, Dark, and System preferences remain effective outside the dark artwork hero; physical-TV acceptance remains pending. Focus engine polish (poster focus scaling, sensible focus order), Top Shelf
   content, large-canvas layout. *Acceptance:* navigable entirely by remote; focus never
   trapped/lost. *(Done: poster navigation preserves native focus styling, related rails
   and grids are grouped for focus, and the `GusTopShelf` extension is content-aware — it

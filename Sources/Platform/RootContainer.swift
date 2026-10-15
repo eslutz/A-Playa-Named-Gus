@@ -68,8 +68,6 @@ struct RootContainer: View {
             TabRootView()
                 .tabViewStyle(.sidebarAdaptable)
                 .gusTVBrowsingBackdrop()
-                // Cinematic artwork uses a dark canvas, including native focus controls.
-                .environment(\.colorScheme, .dark)
         #elseif os(visionOS)
             TabRootView().tabViewStyle(.sidebarAdaptable)
         #else

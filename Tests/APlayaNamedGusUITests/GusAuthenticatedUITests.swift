@@ -1,6 +1,6 @@
 import os
 import XCTest
-#if os(iOS)
+#if os(iOS) || os(tvOS)
     import CoreGraphics
     import ImageIO
     import UIKit
@@ -108,6 +108,66 @@ final class GusAuthenticatedUITests: XCTestCase {
     }
 
     #if os(tvOS)
+        /// Sample actual Settings rendering so a descendant color-scheme override cannot hide behind a saved preference.
+        func testTVAppearancePreference() throws {
+            try prepare()
+            defer { finish() }
+            let app = XCUIApplication()
+            for appearance in ["light", "dark", "system"] {
+                app.launchArguments = [
+                    "--gus-demo-server",
+                    "--gus-disable-cloud-sync",
+                    "--gus-route",
+                    "settings",
+                    "-dev.ericslutz.gus.appearance",
+                    appearance,
+                ]
+                app.launch()
+                XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label ==[c] %@", "Account")).firstMatch.waitForExistence(timeout: 30))
+                capture(app, "tv-settings-" + appearance)
+                if appearance != "system" {
+                    let screenshot = XCUIScreen.main.screenshot()
+                    let source = try XCTUnwrap(CGImageSourceCreateWithData(screenshot.pngRepresentation as CFData, nil))
+                    let image = try XCTUnwrap(CGImageSourceCreateImageAtIndex(source, 0, nil))
+                    var pixel = [UInt8](repeating: 0, count: 4)
+                    try pixel.withUnsafeMutableBytes { storage in
+                        let context = try XCTUnwrap(CGContext(
+                            data: storage.baseAddress,
+                            width: 1,
+                            height: 1,
+                            bitsPerComponent: 8,
+                            bytesPerRow: 4,
+                            space: CGColorSpaceCreateDeviceRGB(),
+                            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+                        ))
+                        context.interpolationQuality = .high
+                        context.draw(image, in: CGRect(x: 0, y: 0, width: 1, height: 1))
+                    }
+                    let brightness = pixel.prefix(3).map(Double.init).reduce(0, +) / 3
+                    if appearance == "light" {
+                        XCTAssertGreaterThan(brightness, 128, "Light must render a light Settings screen")
+                    } else {
+                        XCTAssertLessThan(brightness, 128, "Dark must render a dark Settings screen")
+                    }
+                }
+                app.terminate()
+            }
+            for (route, landmark, name) in try [("home", "Next Up", "tv-home-light"), ("item/" + required("SynopsisMovie"), "Play", "tv-detail-light")] {
+                app.launchArguments = [
+                    "--gus-demo-server",
+                    "--gus-disable-cloud-sync",
+                    "--gus-route",
+                    route,
+                    "-dev.ericslutz.gus.appearance",
+                    "light",
+                ]
+                app.launch()
+                XCTAssertTrue(app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", landmark)).firstMatch.waitForExistence(timeout: 30))
+                capture(app, name)
+                app.terminate()
+            }
+        }
+
         /// Exercise the native remote through the hero and the lower detail content.
         func testTVDetailFocusAndAboutLayout() throws {
             try prepare()
