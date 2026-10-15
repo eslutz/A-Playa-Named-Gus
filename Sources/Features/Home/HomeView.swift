@@ -206,6 +206,7 @@ private struct NextUpDestination: View {
     @Environment(UpNextStore.self) private var upNext
     let entry: NextUpEntry
     var usesArtwork = false
+    @Environment(VideoPlaylistsStore.self) private var playlists
     @State private var replacement: UpNextEntry?
 
     var body: some View {
@@ -226,13 +227,19 @@ private struct NextUpDestination: View {
             } else if let item = entry.item {
                 NavigationLink(value: ItemRef(item: item)) { label }
                     .posterNavigationStyle()
-                    .contextMenu {
-                        if let saved = entry.savedEntry {
-                            Button("Remove from Next Up", systemImage: "minus.circle", role: .destructive) { upNext.remove(saved) }
-                        }
-                    }
             }
         }
+        .accessibilityIdentifier("NextUp.card." + entry.id)
+        .mediaItemContextMenu(item: entry.playlist == nil ? entry.item : nil, groupName: String(localized: "Next Up"), allowsAddingToNextUp: false, remove: {
+            let scope = session.references.scope
+            guard NextUpActivityStore.shared.setDismissed(entry.id, dismissed: true, scope: scope) else { return }
+            if let saved = entry.savedEntry {
+                upNext.remove(saved)
+            }
+            if let playlist = entry.playlist {
+                playlists.setQueued(id: playlist.id, queued: false, scope: scope)
+            }
+        })
         .sheet(item: $replacement) { saved in
             MediaReplacementPicker(item: saved.reference.item, candidates: upNext.candidates(for: saved)) { candidate in
                 await upNext.replace(saved, with: candidate, session: session)
@@ -255,10 +262,13 @@ private struct NextUpDestination: View {
                 } else {
                     Text(item.displayTitle).font(.caption).foregroundStyle(.secondary).lineLimit(1)
                 }
+            } else {
+                Text(" ").font(.caption).accessibilityHidden(true)
             }
-            Text(reasonText).font(.caption).foregroundStyle(.secondary)
+            Text(reasonText).font(.caption).foregroundStyle(.secondary).lineLimit(1)
             if let progress = entry.item?.playbackProgress, entry.reasons.contains(.resume) {
                 ProgressView(value: progress).accessibilityLabel("Playback progress")
+                    .accessibilityIdentifier("NextUp.progress." + entry.id)
             }
         }
         .contentShape(Rectangle())
@@ -323,6 +333,7 @@ struct MediaRail: View {
                         }
                         .id(ItemRef(item: item).id)
                         .posterNavigationStyle()
+                        .mediaItemContextMenu(item: item)
                         .gusTVFocus(id: ItemRef(item: item).id, section: focusKey ?? (root.selectedSectionID + ":rail:" + title), ids: items.map { ItemRef(item: $0).id }, initial: requestsInitialFocus && item.id == items.first?.id, item: item, context: focusContext ?? root.selectedSectionID)
                     }
                 }

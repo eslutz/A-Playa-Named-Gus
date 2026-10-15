@@ -30,6 +30,7 @@ enum JellyfinMediaItemMapper {
             parentIndexNumber: item.parentIndexNumber,
             people: (item.people ?? []).map(mediaPerson),
             primaryImageAspectRatio: item.primaryImageAspectRatio.map { Double($0) },
+            premiereDate: item.premiereDate,
             productionYear: item.productionYear,
             runTimeTicks: item.runTimeTicks,
             seriesID: item.seriesID,
@@ -55,7 +56,7 @@ enum JellyfinMediaItemMapper {
     static func mediaListEntries(from items: [BaseItemDto], kind: ServerMediaListKind) throws -> [ServerMediaListEntry] {
         var seen: Set<UUID> = []
         return try items.map { item in
-            let rawID = kind == .playlist ? item.playlistItemID : item.id
+            let rawID = item.playlistItemID
             guard let rawID, let id = ServerMediaListID.uuid(rawID) else {
                 throw GusError.server(String(localized: "The server returned an invalid list entry identifier.", comment: "Invalid native media list entry"))
             }
@@ -125,6 +126,8 @@ enum JellyfinMediaItemMapper {
             return .books
         case .photos:
             return .photos
+        case .boxsets:
+            return .boxsets
         case .livetv:
             return .livetv
         default:

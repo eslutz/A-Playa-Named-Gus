@@ -17,6 +17,7 @@ struct ItemDetailView: View {
     @State private var sharePlayPresentation: SharePlayPresentation?
     @State private var sharePlayErrorMessage: String?
     @State private var store: ItemDetailStore?
+    @State private var localProgress = OfflinePlaybackProgressStore.shared
     // Read via @AppStorage so a changed household limit re-gates already-pushed screens.
     @AppStorage(ContentRatingGate.limitDefaultsKey) private var contentLimitRawValue = ContentRatingGate.Limit.off.rawValue
     @AppStorage(ContentRatingGate.hideUnratedDefaultsKey) private var hideUnratedContent = false
@@ -59,11 +60,24 @@ struct ItemDetailView: View {
             NavigationStack { AddToVideoPlaylistView(item: store?.item ?? item) }
         }
         .toolbar {
-            if item.id != nil && !isRestricted {
-                ToolbarItem { Button("Add to Collection", systemImage: "rectangle.stack.badge.plus") { addingToCollection = true } }
-            }
-            if (store?.item ?? item).type == .movie || (store?.item ?? item).type == .episode {
-                ToolbarItem { Button("Add to Playlist", systemImage: "text.badge.plus") { addingToPlaylist = true }.disabled(isRestricted) }
+            if !isRestricted, let store, store.item.id != nil {
+                ToolbarItem(placement: .primaryAction) {
+                    Menu {
+                        let markWatched = store.item.userData?.isWatched != true
+                        if store.item.type == .movie || store.item.type == .episode {
+                            Button("Add to Playlist", systemImage: "text.badge.plus") { addingToPlaylist = true }
+                        }
+                        if CollectionPlatform.canManage && (navigationState.collectionStore(session: session).capabilities.create || navigationState.collectionStore(session: session).capabilities.addMembers) {
+                            Button("Add to Collection", systemImage: "rectangle.stack.badge.plus") { addingToCollection = true }
+                        }
+                        Divider()
+                        Button(markWatched ? "Mark as Watched" : "Mark as Unwatched", systemImage: markWatched ? "checkmark.circle" : "checkmark.circle.fill") {
+                            Task { await store.setWatched(markWatched) }
+                        }
+                        .disabled(store.isUpdatingUserData || store.needsUserDataRefresh)
+                    } label: { Label("More", systemImage: "ellipsis") }
+                        .accessibilityIdentifier("Detail.actions")
+                }
             }
         }
         .sharePlaySharingPresentation(presentation: $sharePlayPresentation, errorMessage: $sharePlayErrorMessage)
@@ -80,6 +94,12 @@ struct ItemDetailView: View {
         }
     }
 
+    private func resumeTicks(for item: MediaItem) -> Int? {
+        let hasDownload = downloads.localFileURL(for: item, serverID: session.server.id, userID: session.user.id) != nil
+        let localTicks = hasDownload ? item.id.flatMap { localProgress.positionTicks(forItemID: $0, scope: session.references.scope) } : nil
+        return PlaybackActionPosition.ticks(for: item, localTicks: localTicks)
+    }
+
     private func detailContent(for store: ItemDetailStore) -> some View {
         let target = store.item.gusTVPlaybackTarget(nextUp: navigationState.home?.unifiedNextUp ?? [], episodes: store.seriesStore?.episodes ?? [])
         return GeometryReader { geometry in
@@ -89,30 +109,27 @@ struct ItemDetailView: View {
                         item: store.item,
                         playbackItem: target,
                         primaryPlayEnabled: target.map { ContentRatingGate.admitsStored($0) } ?? false,
+                        playbackHasProgress: target.map { (resumeTicks(for: $0) ?? 0) > 0 } ?? false,
+                        startFromBeginning: {
+                            if let target, ContentRatingGate.admitsStored(target) {
+                                playerItem = ItemRef(item: target, serverID: session.server.id, userID: session.user.id, playbackStart: .fromBeginning)
+                            }
+                        },
                         backdropURL: session.mediaProvider.backdropImageURL(for: store.item, context: .backdrop),
                         play: {
                             if let target, ContentRatingGate.admitsStored(target) {
-                                playerItem = ItemRef(item: target)
+                                playerItem = ItemRef(item: target, serverID: session.server.id, userID: session.user.id)
                             }
                         },
                         isInUpNext: upNext.contains(store.item, serverID: session.server.id, userID: session.user.id),
                         toggleUpNext: {
                             upNext.toggle(store.item, serverID: session.server.id, userID: session.user.id)
+                            if upNext.contains(store.item, serverID: session.server.id, userID: session.user.id), let id = NextUpBuilder.mediaID(store.item) {
+                                NextUpActivityStore.shared.setDismissed(id, dismissed: false, scope: session.references.scope)
+                            }
                             playbackRefresh.markPlaybackProgressChanged()
                         }
                     ) {
-                        ItemUserActionButton(
-                            title: store.item.userData?.isWatched == true
-                                ? "Mark as Unwatched"
-                                : "Mark as Watched",
-                            systemImage: store.item.userData?.isWatched == true
-                                ? "checkmark.circle.fill"
-                                : "checkmark.circle",
-                            action: {
-                                Task { await store.toggleWatched() }
-                            }
-                        )
-                        .disabled(store.isUpdatingUserData || store.needsUserDataRefresh)
                         ItemUserActionButton(
                             title: store.item.userData?.isFavorite == true
                                 ? "Remove from Favorites"
@@ -165,6 +182,9 @@ struct ItemDetailView: View {
                             SeriesEpisodesView(store: seriesStore).id("episodes")
                         }
 
+                        if store.item.type == .movie, let id = store.item.id {
+                            MovieCollectionMemberships(movieID: id).padding(.vertical)
+                        }
                         DetailMetadataRows(item: store.item).id("metadata")
 
                         if !store.item.people.isEmpty {

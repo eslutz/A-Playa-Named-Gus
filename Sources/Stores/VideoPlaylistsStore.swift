@@ -338,6 +338,11 @@ final class VideoPlaylistsStore {
         editPlaylist(id: id, scope: scope, key: "queued", value: queued, activity: queued)
     }
 
+    /// Verify durable storage before preparation without changing the saved cursor.
+    func canSavePlaybackState() -> Bool {
+        saveSyncState { _ in }
+    }
+
     @discardableResult
     func setCursor(id: UUID, entryID: UUID?, positionTicks: Int?, finished: Bool, scope: AccountScope, activity: Bool = true) -> Bool {
         guard playlist(id: id, scope: scope) != nil else { return false }

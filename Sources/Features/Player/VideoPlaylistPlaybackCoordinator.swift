@@ -38,6 +38,7 @@ final class VideoPlaylistPlaybackCoordinator {
     private let downloads: OfflineDownloadStore
     private var sequence: PlaylistPlaybackSequence
     private var pending = false
+    private var requestedTicks: Int?
     private var active = true
     private let startsFromBeginning: Bool
 
@@ -50,8 +51,10 @@ final class VideoPlaylistPlaybackCoordinator {
         scope = session.references.scope
         serverLists.load(scope: scope)
         playlists.registerServerPlaylist(id: serverLists.resolvedID(playlistID, scope: scope), scope: scope)
-        let entries = serverLists.videoPlaylist(id: playlistID, scope: scope, supplemental: playlists)?.entries ?? []
-        sequence = PlaylistPlaybackSequence(entryIDs: entries.map(\.id), startID: entryID)
+        let playlist = serverLists.videoPlaylist(id: playlistID, scope: scope, supplemental: playlists)
+        let entries = playlist?.entries ?? []
+        let startID = entryID ?? (fromBeginning ? nil : playlist?.playbackAction.entryID)
+        sequence = PlaylistPlaybackSequence(entryIDs: entries.map(\.id), startID: startID)
         startsFromBeginning = fromBeginning
     }
 
@@ -92,12 +95,12 @@ final class VideoPlaylistPlaybackCoordinator {
 
     func retry(_ player: PlaybackStore) async {
         errorMessage = nil
-        await prepareCurrent(player, ticks: serverLists.videoPlaylist(id: playlistID, scope: scope, supplemental: playlists)?.cursor?.positionTicks)
+        await prepareCurrent(player, ticks: player.hasStartedPlayback ? player.positionTicks : requestedTicks)
     }
 
     func checkpoint(_ player: PlaybackStore, activity: Bool = false) {
         normalizeEntryIDs()
-        guard active, player.player != nil, let id = sequence.currentID,
+        guard active, !pending, player.hasStartedPlayback, let id = sequence.currentID,
               serverLists.videoPlaylist(id: playlistID, scope: scope, supplemental: playlists)?.entries.contains(where: { $0.id == id }) == true else { return }
         playlists.setCursor(id: stateID, entryID: id, positionTicks: player.positionTicks, finished: false, scope: scope, activity: activity)
     }
@@ -112,6 +115,7 @@ final class VideoPlaylistPlaybackCoordinator {
         normalizeEntryIDs()
         guard active, !pending else { return }
         pending = true
+        requestedTicks = ticks
         player.teardown()
         defer { pending = false }
         guard let current = sequence.currentID,
@@ -125,8 +129,8 @@ final class VideoPlaylistPlaybackCoordinator {
             errorMessage = String(localized: "Play mixed media individually. Ordered video playback supports movies and episodes.")
             return
         }
-        // Commit the selected instance before resolving or starting playback.
-        guard playlists.setCursor(id: stateID, entryID: current, positionTicks: ticks, finished: false, scope: scope) else {
+        // Fail closed on unwritable storage, while keeping playback intent transient.
+        guard playlists.canSavePlaybackState() else {
             errorMessage = playlists.errorMessage ?? String(localized: "Your changes couldn't be saved. Try again.")
             return
         }
@@ -145,6 +149,13 @@ final class VideoPlaylistPlaybackCoordinator {
             }
             guard ContentRatingGate.admitsStored(item) else { throw GusError.server(String(localized: "This item is restricted.")) }
             await player.playPlaylistItem(item, startTimeTicks: ticks)
+            try Task.checkCancellation()
+            guard active, player.hasStartedPlayback else { return }
+            guard playlists.setCursor(id: stateID, entryID: resolvedCurrent, positionTicks: ticks, finished: false, scope: scope) else {
+                errorMessage = playlists.errorMessage
+                player.teardown()
+                return
+            }
         } catch {
             guard active, !GusError(from: error).isCancellation else { return }
             errorMessage = GusError(from: error).localizedDescription

@@ -126,7 +126,7 @@ final class HomeStore {
             resume: resumeItems, nextEpisodes: nextUpItems, saved: savedIntents,
             playlists: playlistCandidates, activity: activity.snapshot(scope: scope),
             firstSeenIDs: activity.firstSeenIDs(scope: scope)
-        )
+        ).filter { !activity.isDismissed($0.id, scope: scope) }
         activity.remember(unifiedNextUp.map(\.id), scope: scope)
     }
 

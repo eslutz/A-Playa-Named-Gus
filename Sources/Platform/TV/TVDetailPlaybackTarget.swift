@@ -18,10 +18,6 @@ enum TVDetailPlaybackTarget {
 
 extension MediaItem {
     func gusTVPlaybackTarget(nextUp: [NextUpEntry], episodes: [MediaItem]) -> MediaItem? {
-        #if os(tvOS)
-            TVDetailPlaybackTarget.resolve(item: self, nextUp: nextUp, episodes: episodes)
-        #else
-            self
-        #endif
+        TVDetailPlaybackTarget.resolve(item: self, nextUp: nextUp, episodes: episodes)
     }
 }

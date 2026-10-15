@@ -18,6 +18,8 @@ final class PlaybackStore {
     }
 
     private(set) var state: State = .idle
+    /// Preparation alone must never replace saved progress.
+    private(set) var hasStartedPlayback = false
     private(set) var player: AVPlayer?
     private(set) var nextUpItem: MediaItem?
     private(set) var isNextUpPromptVisible = false
@@ -40,6 +42,7 @@ final class PlaybackStore {
     private let localOnly: Bool
     private let localProgress: OfflinePlaybackProgressStore
     private let progressWriterToken: UUID
+    private let initialSeek: @MainActor (AVPlayer, Int) async -> Void
     private var isLocalPlayback = false
     private var playingDownload: OfflineDownloadRecord?
     private let nowPlaying = NowPlayingController()
@@ -57,8 +60,11 @@ final class PlaybackStore {
     private var preparationGeneration = 0
     private var presentationIsActive = true
 
-    init(item: MediaItem, session: SessionStore, playbackRefresh: PlaybackRefreshStore, downloads: OfflineDownloadStore? = nil, localOnly: Bool = false, localProgress: OfflinePlaybackProgressStore? = nil) {
+    init(item: MediaItem, session: SessionStore, playbackRefresh: PlaybackRefreshStore, downloads: OfflineDownloadStore? = nil, localOnly: Bool = false, localProgress: OfflinePlaybackProgressStore? = nil, initialSeek: @escaping @MainActor (AVPlayer, Int) async -> Void = { player, ticks in
+        await player.seek(to: CMTime(seconds: PlaybackTime.seconds(fromTicks: ticks), preferredTimescale: 600), toleranceBefore: .zero, toleranceAfter: .zero)
+    }) {
         self.item = item
+        self.initialSeek = initialSeek
         self.session = session
         self.playbackRefresh = playbackRefresh
         self.downloads = downloads
@@ -141,10 +147,7 @@ final class PlaybackStore {
         didFinishPlayback = false
         let hasLocalFile = downloads?.localFileURL(for: item, serverID: session.server.id, userID: session.user.id) != nil
         let localTicks = hasLocalFile ? item.id.flatMap { localProgress.positionTicks(forItemID: $0, scope: accountScope) } : nil
-        let resumeTicks = startTimeTicks ?? localTicks ?? PlaybackTime.resumePositionTicks(for: item)
-        let initialTicks = resumeTicks.map { ticks in
-            item.runTimeTicks.map { $0 > 0 && ticks >= $0 ? 0 : ticks } ?? ticks
-        }
+        let initialTicks = PlaybackActionPosition.ticks(for: item, localTicks: startTimeTicks ?? localTicks)
         await loadPlayback(startTimeTicks: initialTicks, replacingCurrentItem: false)
     }
 
@@ -252,10 +255,10 @@ final class PlaybackStore {
         let rate = player?.rate ?? 0
         // Close the server-side play session for the outgoing stream before the rebuild
         // reports a fresh start, so stream switches don't leak stale sessions.
-        if let context = reportContext {
-            reportContext = nil
+        if hasStartedPlayback, let context = reportContext {
             reportPlaybackStopped(context: context, positionTicks: ticks)
         }
+        reportContext = nil
         await loadPlayback(startTimeTicks: ticks, replacingCurrentItem: true, resumeRate: rate)
     }
 
@@ -263,6 +266,7 @@ final class PlaybackStore {
         preparationGeneration += 1
         let generation = preparationGeneration
         state = .loading
+        hasStartedPlayback = false
         stereoFallbackNotice = nil
         let diagnostics = DiagnosticsHub.shared
         diagnostics.record(.playbackStartRequested)
@@ -363,11 +367,7 @@ final class PlaybackStore {
             reportContext = context
 
             if let resumeTicks = effectiveStartTicks {
-                await player.seek(
-                    to: CMTime(seconds: PlaybackTime.seconds(fromTicks: resumeTicks), preferredTimescale: 600),
-                    toleranceBefore: .zero,
-                    toleranceAfter: .zero
-                )
+                await initialSeek(player, resumeTicks)
             }
 
             try Task.checkCancellation()
@@ -383,6 +383,7 @@ final class PlaybackStore {
                 addProgressObserver(player: player)
             }
             state = .ready
+            hasStartedPlayback = true
             diagnostics.endInterval("PlaybackStartup", startupInterval)
             diagnostics.record(.playbackStarted(
                 usingTranscoding: resolution?.isTranscoding == true,
@@ -421,7 +422,8 @@ final class PlaybackStore {
         preparationGeneration += 1
         lastReportTask?.cancel()
         let finalTicks = currentPositionTicks()
-        let context = reportContext
+        let context = hasStartedPlayback ? reportContext : nil
+        hasStartedPlayback = false
         removeProgressObserver()
         removeEndObserver()
         pauseStateObservation?.invalidate()
@@ -582,7 +584,7 @@ final class PlaybackStore {
     }
 
     private func reportPlaybackProgress(positionTicks: Int, isPaused: Bool) {
-        guard let reportContext else { return }
+        guard hasStartedPlayback, let reportContext else { return }
         if isLocalPlayback {
             localProgress.checkpoint(itemID: reportContext.itemID, positionTicks: positionTicks, scope: accountScope, writerToken: progressWriterToken, item: item)
             return

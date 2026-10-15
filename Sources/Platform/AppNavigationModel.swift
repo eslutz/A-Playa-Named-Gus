@@ -11,6 +11,7 @@ final class AppNavigationModel {
     /// invocation drives the foregrounded app's navigation.
     static let shared = AppNavigationModel()
 
+    let playerWindows = PlayerWindowRequests()
     private(set) var route: AppRoute = .home
     /// Explicit routes must also be handled when they repeat the last routed value.
     private(set) var routeRequest = 0

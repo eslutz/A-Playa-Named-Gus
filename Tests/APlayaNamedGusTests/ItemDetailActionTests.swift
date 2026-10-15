@@ -5,6 +5,68 @@ import Testing
 
 @Suite("Item detail actions")
 struct ItemDetailActionTests {
+    @Test("explicit watched actions reset resume data and select the requested endpoint despite stale metadata", arguments: [true, false])
+    @MainActor
+    func explicitWatchedAction(watched: Bool) async throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let progress = OfflinePlaybackProgressStore(directory: directory)
+        let scope = AccountScope(serverID: "s", userID: "u")
+        progress.checkpoint(itemID: "movie", positionTicks: 99, scope: scope)
+        progress.checkpoint(itemID: "other", positionTicks: 50, scope: scope)
+        var remote = MediaItem(id: "movie", type: .movie, userData: MediaUserData(playbackPositionTicks: 99, isWatched: watched))
+        let provider = FakeMediaProviderSession(capabilities: ProviderCapabilities())
+        provider.itemHandler = { _ in remote }
+        provider.progressHandler = { id, ticks in
+            #expect(id == "movie")
+            #expect(ticks == 0)
+            remote.userData?.playbackPositionTicks = ticks
+        }
+        provider.watchedHandler = {
+            remote.userData?.isWatched = !(provider.watchedRequests.last?.currentlyWatched ?? watched)
+        }
+        let session = try SessionStore(
+            client: JellyfinClientFactory.makeClient(url: #require(URL(string: "https://example.invalid"))),
+            user: StoredUser(id: "u", name: "User", serverID: "s"),
+            server: ServerConnection(id: "s", name: "Server", url: #require(URL(string: "https://example.invalid"))),
+            mediaProvider: provider
+        )
+        let store = ItemDetailStore(item: MediaItem(id: "movie", type: .movie, userData: MediaUserData(isWatched: !watched)), session: session)
+        await store.setWatched(watched, localProgress: progress)
+        #expect(store.actionError == nil)
+        #expect(store.item.userData?.isWatched == watched)
+        #expect(store.item.userData?.playbackPositionTicks == 0)
+        #expect(provider.watchedRequests.count == 1)
+        #expect(provider.watchedRequests.first?.currentlyWatched == !watched)
+        #expect(progress.positionTicks(forItemID: "movie", scope: scope) == 0)
+        #expect(!progress.pendingCheckpoints(scope: scope).contains { $0.itemID == "movie" })
+        #expect(progress.positionTicks(forItemID: "other", scope: scope) == 50)
+    }
+
+    @Test("failed progress reset preserves offline progress and never marks the item")
+    @MainActor
+    func failedWatchedAction() async throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let progress = OfflinePlaybackProgressStore(directory: directory)
+        let scope = AccountScope(serverID: "s", userID: "u")
+        progress.checkpoint(itemID: "movie", positionTicks: 99, scope: scope)
+        let provider = FakeMediaProviderSession(capabilities: ProviderCapabilities())
+        provider.itemHandler = { id in MediaItem(id: id, type: .movie) }
+        provider.progressHandler = { _, _ in throw GusError.offline }
+        let session = try SessionStore(
+            client: JellyfinClientFactory.makeClient(url: #require(URL(string: "https://example.invalid"))),
+            user: StoredUser(id: "u", name: "User", serverID: "s"),
+            server: ServerConnection(id: "s", name: "Server", url: #require(URL(string: "https://example.invalid"))),
+            mediaProvider: provider
+        )
+        let store = ItemDetailStore(item: MediaItem(id: "movie", type: .movie), session: session)
+        await store.setWatched(true, localProgress: progress)
+        #expect(store.actionError != nil)
+        #expect(provider.watchedRequests.isEmpty)
+        #expect(progress.positionTicks(forItemID: "movie", scope: scope) == 99)
+    }
+
     @Test("authoritative replacement metadata clears a cached missing-item failure")
     @MainActor
     func replacementClearsCachedFailure() async throws {

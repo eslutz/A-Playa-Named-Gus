@@ -1,9 +1,8 @@
 import Foundation
 
-/// Native server lists own their membership; Gus stores only account-scoped cursors and snapshots.
+/// Native server playlists own their membership; Gus stores only account-scoped cursors and snapshots.
 enum ServerMediaListKind: String, CaseIterable, Codable, Sendable {
     case playlist
-    case collection
 }
 
 /// The server's member identity. Recent Jellyfin versions use the media GUID for

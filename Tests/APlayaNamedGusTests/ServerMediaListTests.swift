@@ -38,13 +38,6 @@ struct ServerMediaListTests {
         #expect(entries.map(\.item.type) == [.audio, .episode])
     }
 
-    @Test("Collection entries use the member identity and BoxSet is a collection")
-    func collectionIdentity() throws {
-        let entries = try JellyfinMediaItemMapper.mediaListEntries(from: [BaseItemDto(id: mediaID, type: .movie)], kind: .collection)
-        #expect(entries.first?.id == ServerMediaListID.uuid(mediaID))
-        #expect(JellyfinMediaItemMapper.mediaItem(from: BaseItemDto(type: .boxSet)).type == .boxSet)
-    }
-
     @Test("Missing occurrence IDs fail instead of inventing identities or dropping content")
     func invalidOccurrenceIDFails() {
         #expect(throws: (any Error).self) {

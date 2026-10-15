@@ -119,5 +119,16 @@
 	<!-- macOS minimum system version (empty/ignored on other SDKs). -->
 	<key>LSMinimumSystemVersion</key>
 	<string>$(MACOSX_DEPLOYMENT_TARGET)</string>
+    <key>UTExportedTypeDeclarations</key>
+    <array>
+        <dict>
+            <key>UTTypeIdentifier</key>
+            <string>dev.ericslutz.gus.playlist-item</string>
+            <key>UTTypeDescription</key>
+            <string>Gus Playlist Item</string>
+            <key>UTTypeConformsTo</key>
+            <array><string>public.data</string></array>
+        </dict>
+    </array>
 </dict>
 </plist>

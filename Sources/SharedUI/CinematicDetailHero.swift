@@ -8,6 +8,8 @@ struct CinematicDetailHero<Accessory: View>: View {
     let item: MediaItem
     var playbackItem: MediaItem? = nil
     var primaryPlayEnabled = true
+    var playbackHasProgress = false
+    var startFromBeginning: (() -> Void)? = nil
     let backdropURL: URL?
     let play: () -> Void
     let isInUpNext: Bool
@@ -18,7 +20,7 @@ struct CinematicDetailHero<Accessory: View>: View {
         standardHero.gusTVDetailHero(item: item, backdropURL: backdropURL) {
             HStack(spacing: 24) {
                 playButton
-                Menu { upNextButton; accessory } label: { Label("More", systemImage: "ellipsis") }
+                Menu { upNextButton; restartButton; accessory } label: { Label("More", systemImage: "ellipsis") }
                     .accessibilityLabel("More")
                     .accessibilityIdentifier("Detail.more")
                     .gusTVFocus(id: "more", section: "detail:" + ItemRef(item: item).id, ids: ["play", "more", "synopsis"], item: item)
@@ -91,8 +93,9 @@ struct CinematicDetailHero<Accessory: View>: View {
                 // viewport scrolls the secondary lazy grid in and out of view.
                 BookActionButtons(item: item)
             }
-            HStack(spacing: 8) {
+            DetailActionRow {
                 upNextButton
+                restartButton
                 accessory
             }
             // These controls have spoken labels rather than visible text. Keep
@@ -112,7 +115,7 @@ struct CinematicDetailHero<Accessory: View>: View {
     private var playButton: some View {
         if isPlayableItem {
             Button(action: play) {
-                Label(((playbackItem ?? item).userData?.playbackPositionTicks ?? 0) > 0 ? String(localized: "Resume") : String(localized: "Play"), systemImage: "play.fill")
+                Label(playbackHasProgress ? String(localized: "Resume") : String(localized: "Play"), systemImage: "play.fill")
                     .foregroundStyle(Color.gusProminentActionForeground)
                     .frame(maxWidth: .infinity)
                     .accessibilityIdentifier("Detail.play")
@@ -135,6 +138,14 @@ struct CinematicDetailHero<Accessory: View>: View {
             systemImage: isInUpNext ? "checkmark" : "plus",
             action: toggleUpNext
         )
+        .accessibilityIdentifier("Detail.nextUp")
+    }
+
+    @ViewBuilder private var restartButton: some View {
+        if isPlayableItem, let startFromBeginning {
+            ItemUserActionButton(title: "Start from Beginning", systemImage: "arrow.counterclockwise", action: startFromBeginning)
+                .accessibilityIdentifier("Detail.restart")
+        }
     }
 
     /// Text styles (not fixed sizes) so the title participates in Dynamic Type.
@@ -229,12 +240,33 @@ struct ItemUserActionButton: View {
         Button(action: action) {
             Label(title, systemImage: systemImage)
                 .gusTVActionLabel()
-                .frame(maxWidth: .infinity, minHeight: 28)
+                .frame(maxWidth: .infinity, minHeight: 44)
         }
         .gusGlassButtonStyle()
         .controlSize(.regular)
         .frame(minWidth: 44, minHeight: 44)
         .visionHoverEffect(Capsule())
         .accessibilityLabel(title)
+    }
+}
+
+/// Essential actions stay realized even below a short or enlarged-text viewport.
+/// A native grid is the narrow-pane alternative to the single horizontal row.
+struct DetailActionRow<Content: View>: View {
+    @ViewBuilder let content: Content
+
+    var body: some View {
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: 8) { content }
+            Grid(alignment: .leading, horizontalSpacing: 8, verticalSpacing: 8) {
+                Group(subviews: content) { actions in
+                    ForEach(Array(stride(from: 0, to: actions.count, by: 2)), id: \.self) { start in
+                        GridRow {
+                            ForEach(actions[start ..< min(start + 2, actions.count)]) { action in action }
+                        }
+                    }
+                }
+            }
+        }
     }
 }

@@ -8,6 +8,16 @@ import Foundation
 final class FakeMediaProviderSession: MediaProviderSession {
     let providerKind: MediaProviderKind = .jellyfin
     let capabilities: ProviderCapabilities
+    var collectionCapabilitiesHandler: ((String?) async throws -> CollectionCapabilities)?
+    var collectionPageHandler: ((Int, Int) async throws -> MediaItemPage)?
+    var collectionItemHandler: ((String) async throws -> MediaItem)?
+    var collectionMembersHandler: ((String, Int, Int) async throws -> MediaItemPage)?
+    var createCollectionHandler: ((String, [String]) async throws -> String)?
+    var updateCollectionHandler: ((String, String, String) async throws -> Void)?
+    var deleteCollectionHandler: ((String) async throws -> Void)?
+    var addCollectionMembersHandler: ((String, [String]) async throws -> Void)?
+    var removeCollectionMembersHandler: ((String, [String]) async throws -> Void)?
+    var setCollectionArtworkHandler: ((String, Data) async throws -> Void)?
     var userViewsHandler: (() async throws -> [MediaItem])?
     var resumePageHandler: ((Int, Int) async throws -> MediaItemPage)?
     var nextPageHandler: ((Int, Int) async throws -> MediaItemPage)?
@@ -19,6 +29,7 @@ final class FakeMediaProviderSession: MediaProviderSession {
     var episodesHandler: ((String) async throws -> MediaItemPage)?
     var seasonsHandler: (() async throws -> [MediaItem])?
     var progressHandler: ((String, Int) async throws -> Void)?
+    private(set) var watchedRequests: [(itemID: String, currentlyWatched: Bool)] = []
     var watchedHandler: (() async throws -> Void)?
     var favoriteHandler: (() async throws -> Void)?
     var audioHandler: (() async throws -> PlaybackSourceResolution)?
@@ -33,6 +44,7 @@ final class FakeMediaProviderSession: MediaProviderSession {
     var moveMediaListEntryHandler: ((UUID, UUID, Int) async throws -> Void)?
     var downloadSourceCallCount = 0
     var playbackResolutionCallCount = 0
+    var playbackRequestedStartTicks: [Int?] = []
     var audioResolutionCallCount = 0
     var nextUpCallCount = 0
     var playbackReportCallCount = 0
@@ -78,6 +90,46 @@ final class FakeMediaProviderSession: MediaProviderSession {
 
     func updatePlaybackPosition(itemID: String, positionTicks: Int) async throws {
         try await progressHandler?(itemID, positionTicks)
+    }
+
+    func collectionCapabilities(id: String?) async throws -> CollectionCapabilities {
+        try await collectionCapabilitiesHandler?(id) ?? .init()
+    }
+
+    func collectionPage(startIndex: Int, limit: Int) async throws -> MediaItemPage {
+        try await collectionPageHandler?(startIndex, limit) ?? .init(items: [], totalRecordCount: 0)
+    }
+
+    func collectionItem(id: String) async throws -> MediaItem {
+        guard let collectionItemHandler else { throw GusError.notFound }; return try await collectionItemHandler(id)
+    }
+
+    func collectionMembers(id: String, startIndex: Int, limit: Int) async throws -> MediaItemPage {
+        try await collectionMembersHandler?(id, startIndex, limit) ?? .init(items: [], totalRecordCount: 0)
+    }
+
+    func createCollection(name: String, itemIDs: [String]) async throws -> String {
+        guard let createCollectionHandler else { throw GusError.notFound }; return try await createCollectionHandler(name, itemIDs)
+    }
+
+    func updateCollection(id: String, name: String, overview: String) async throws {
+        try await updateCollectionHandler?(id, name, overview)
+    }
+
+    func deleteCollection(id: String) async throws {
+        try await deleteCollectionHandler?(id)
+    }
+
+    func addCollectionMembers(id: String, itemIDs: [String]) async throws {
+        try await addCollectionMembersHandler?(id, itemIDs)
+    }
+
+    func removeCollectionMembers(id: String, itemIDs: [String]) async throws {
+        try await removeCollectionMembersHandler?(id, itemIDs)
+    }
+
+    func setCollectionArtwork(id: String, jpeg: Data) async throws {
+        try await setCollectionArtworkHandler?(id, jpeg)
     }
 
     func userViews() async throws -> [MediaItem] {
@@ -177,6 +229,7 @@ final class FakeMediaProviderSession: MediaProviderSession {
         stereoLayout: Stereo3DLayout
     ) async throws -> PlaybackSourceResolution {
         playbackResolutionCallCount += 1
+        playbackRequestedStartTicks.append(startTimeTicks)
         if let playbackHandler {
             return try await playbackHandler()
         }
@@ -233,6 +286,7 @@ final class FakeMediaProviderSession: MediaProviderSession {
     }
 
     func toggleWatched(itemID: String, currentlyWatched: Bool) async throws {
+        watchedRequests.append((itemID, currentlyWatched))
         try await watchedHandler?()
     }
 

@@ -157,9 +157,9 @@ struct GusApp: App {
         #if os(macOS)
             // Dedicated cinematic player window: video opens here (QuickTime-style,
             // user-resizable, green-button fullscreen) instead of a sheet.
-            WindowGroup(id: GusPlayerWindow.sceneID, for: ItemRef.self) { $ref in
+            WindowGroup(id: GusPlayerWindow.sceneID, for: PlayerWindowRef.self) { $ref in
                 if let ref {
-                    GusPlayerWindowContent(ref: ref)
+                    GusPlayerWindowContent(window: ref)
                         .environment(appModel)
                         .environment(appNavigation)
                         .environment(playbackRefresh)

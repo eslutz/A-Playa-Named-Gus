@@ -11,21 +11,39 @@ import json
 import os
 from pathlib import Path
 import plistlib
-import platform as host_platform
 import re
 import subprocess
 import sys
 import time
 
 
+def intel_build_line(line):
+    return bool(re.search(r"^(?:SwiftCompile|SwiftEmitModule|SwiftDriver|CompileSwift|CompileC|Ld|Libtool)\b.*\bnormal\s+(?:x86_64h?|i386)\b", line.strip()))
+
+
 def diagnostic_lines(text):
     """Match build diagnostics while excluding timestamped runtime service logs."""
     pattern = (r"^(?:.+:\d+(?::\d+)?:\s*|[^:\n]+:\s*)?(?:warning|error):|"
                r"(?:appintentsmetadataprocessor|appintentsnltraining).*\b(?:warning|error):")
-    return [line for line in text.splitlines() if re.search(pattern, line, re.IGNORECASE)]
+    return [line for line in text.splitlines() if re.search(pattern, line, re.IGNORECASE) or intel_build_line(line)]
+
+
+def apple_silicon_command(command):
+    """Apply the architecture policy to Xcode and its package/embedded targets."""
+    if not command or Path(command[0]).name != "xcodebuild":
+        return command
+    intel = {"x86_64", "i386", "x86_64h"}
+    for index, argument in enumerate(command):
+        architectures = argument.removeprefix("ARCHS=").split() if argument.startswith("ARCHS=") else []
+        if argument == "-arch" and index + 1 < len(command):
+            architectures = [command[index + 1]]
+        if intel.intersection(architectures):
+            raise RuntimeError("Intel builds are unsupported; use Apple Silicon architectures")
+    return command + ["EXCLUDED_ARCHS=x86_64 i386"]
 
 
 def run(command, root, output, name, results, env=None, timeout=3600):
+    command = apple_silicon_command(command)
     print(f"Starting {name}", flush=True)
     started = time.monotonic()
     log = output / f"{name}.log"
@@ -215,16 +233,16 @@ def main():
                   "-onlyUsePackageVersionsFromResolvedFile", "ONLY_ACTIVE_ARCH=YES",
                   "-collect-test-diagnostics", "never"]
         generic = {"ios": "generic/platform=iOS Simulator", "ipad": "platform=iOS Simulator,id=" + devices["ipad"]["udid"] if 'devices' in locals() else "",
-                   "mac": "platform=macOS", "tv": "generic/platform=tvOS Simulator",
+                   "mac": "platform=macOS,arch=arm64", "tv": "generic/platform=tvOS Simulator",
                    "vision": "generic/platform=visionOS Simulator", "watch": "generic/platform=watchOS Simulator"}
         concrete = {k: "platform=" + {"ios": "iOS", "ipad": "iOS", "tv": "tvOS", "watch": "watchOS", "vision": "visionOS"}[k]
                     + " Simulator,id=" + v["udid"] for k, v in devices.items()} if 'devices' in locals() else {}
-        concrete["mac"] = "platform=macOS"
+        concrete["mac"] = "platform=macOS,arch=arm64"
         if "builds" in phases:
             for lane, destination in generic.items():
                 scheme = "Gus watchOS" if lane == "watch" else "A Playa Named Gus"
                 signing = ["CODE_SIGNING_ALLOWED=NO", "CODE_SIGNING_REQUIRED=NO"] if lane == "mac" else []
-                run(common + ["-scheme", scheme, "-destination", destination, "ARCHS=" + host_platform.machine()] + signing + ["build"], root, output, "build-" + lane, results)
+                run(common + ["-scheme", scheme, "-destination", destination] + signing + ["build"], root, output, "build-" + lane, results)
         if "tests" in phases:
             for lane, platform in (("ios", "iOS"), ("mac", "macOS"), ("tv", "tvOS"), ("vision", "visionOS")):
                 signing = ["CODE_SIGNING_ALLOWED=NO", "CODE_SIGNING_REQUIRED=NO"] if lane == "mac" else []

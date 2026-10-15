@@ -150,6 +150,7 @@ struct LiveTVView: View {
                         }
                     }
                 }
+                .mediaItemContextMenu(item: recording)
             }
             .listStyle(.plain)
         }
