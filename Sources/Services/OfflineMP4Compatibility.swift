@@ -31,7 +31,7 @@ enum OfflineMP4Compatibility {
                 let patches = try hev1Entries(in: metadata, range: 0 ..< metadata.count)
                 for patch in patches {
                     try file.seek(toOffset: offset + UInt64(patch))
-                    try file.write(contentsOf: Data("hvc1".utf8))
+                    try file.write(contentsOf: Data(AVPlayerContainerCompatibility.nativeHEVCTag.utf8))
                 }
                 if !patches.isEmpty {
                     try file.synchronize()
@@ -83,7 +83,7 @@ enum OfflineMP4Compatibility {
                 guard box.end - box.payload >= 8 else { throw corruptFile() }
                 let entries = try boxes(in: data, range: box.payload + 8 ..< box.end)
                 guard UInt64(entries.count) == integer(data, at: box.payload + 4, count: 4) else { throw corruptFile() }
-                for entry in entries where entry.tag == "hev1" {
+                for entry in entries where AVPlayerContainerCompatibility.requiresHEVCRemux(codecTag: entry.tag) {
                     // A visual sample entry has 78 bytes before its codec boxes.
                     guard entry.end - entry.payload >= 78 else { throw corruptFile() }
                     let children = try boxes(in: data, range: entry.payload + 78 ..< entry.end)

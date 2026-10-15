@@ -87,6 +87,20 @@ struct StreamURLBuilderTests {
         #expect(hevcSDR.conditions?.first { $0.property == .videoRangeType }?.value == "SDR")
     }
 
+    @Test("MP4 hev1 originals require remuxing while HEVC stream copy remains allowed")
+    func avPlayerProfileRemuxesIncompatibleHEVCTag() throws {
+        let profile = StreamURLBuilder.avPlayerProfile(maxStreamingBitrate: 42_000_000, capabilities: fullCapabilities)
+        let container = try #require(profile.containerProfiles?.first { $0.type == .video })
+        #expect(container.container == "mp4,m4v,mov")
+        let condition = try #require(container.conditions?.first { $0.property == .videoCodecTag })
+        #expect(condition.condition == .notEquals)
+        #expect(condition.value == "hev1")
+        #expect(condition.isRequired == false)
+        // A codec restriction would force encoding instead of repairing the container.
+        #expect(profile.codecProfiles?.flatMap { $0.conditions ?? [] }.contains { $0.property == .videoCodecTag } == false)
+        #expect(profile.transcodingProfiles?.first?.videoCodec == "hevc,h264")
+    }
+
     @Test("direct-play body disables transcoding for stereo sources")
     func playbackInfoBodyDisablesTranscodingForStereoSources() {
         let body = StreamURLBuilder.playbackInfoBody(

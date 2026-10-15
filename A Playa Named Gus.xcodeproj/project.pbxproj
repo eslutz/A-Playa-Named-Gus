@@ -65,6 +65,7 @@
 		16F8FB2D5EA00526814BF888 /* PagingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FEAD18FA0519173B30944250 /* PagingTests.swift */; };
 		17404B3B1E0449B92944958A /* NowPlayingArtworkFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0382ABEB4DFC51B706B8B155 /* NowPlayingArtworkFactory.swift */; };
 		17929C7547CB2FC522761FBD /* ServerMediaList.swift in Sources */ = {isa = PBXBuildFile; fileRef = E805E4780FC0FC44A7A60E06 /* ServerMediaList.swift */; };
+		17BA4CEDD0F26DCC39AD8A0C /* AVPlayerContainerCompatibility.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C9DCFA557674768D5AC2FF1 /* AVPlayerContainerCompatibility.swift */; };
 		18D7773D2F38E7CBB6E27F3B /* SessionCredentialTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E4364553D86D2189BFC0E5A /* SessionCredentialTests.swift */; };
 		19BFE834CF889C430A7F1CDF /* GusMacPlaybackActionUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 92796D708A72581D87515593 /* GusMacPlaybackActionUITests.swift */; };
 		19D38E5FFC74A6AABB92F1AB /* ReadiumShared in Frameworks */ = {isa = PBXBuildFile; platformFilters = (ios, ); productRef = ADC058B98C1045D98EE94732 /* ReadiumShared */; };
@@ -495,6 +496,7 @@
 		DD80D69556FB46F7EE22E75C /* PlaybackAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA78F7F8E8FFFBEADE960DC9 /* PlaybackAction.swift */; };
 		DDC9A510E59BF87F815DF341 /* PlaybackStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1FE14A55442C0E448865A64A /* PlaybackStoreTests.swift */; };
 		DEC075A4A1D94897CF8ABE10 /* PlaybackStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1FE14A55442C0E448865A64A /* PlaybackStoreTests.swift */; };
+		DF2F85D6C1A522E9F2A406C3 /* AVPlayerContainerCompatibility.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C9DCFA557674768D5AC2FF1 /* AVPlayerContainerCompatibility.swift */; };
 		DF6B50531516C48275D22251 /* MediaCollection.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3D6E08605F7B9CC984B34CF /* MediaCollection.swift */; };
 		DFE755C706F39F1FE61C54D0 /* MediaProviderSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = D9C80E7FE36C37BEB6C19FF9 /* MediaProviderSession.swift */; };
 		E15E8FD1CE621FC15DD41E65 /* GusApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F3BE976C1C2A02EF1A83D03 /* GusApp.swift */; };
@@ -739,6 +741,7 @@
 		38BFAF215ECAEF2D1A0ABA7D /* GusVisionOSUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = GusVisionOSUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		3C1D80F04A394097EACB1CB7 /* AirPlayRoutePicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AirPlayRoutePicker.swift; sourceTree = "<group>"; };
 		3C91B60761F33A606B2AB87B /* AsyncStreamBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AsyncStreamBridge.swift; sourceTree = "<group>"; };
+		3C9DCFA557674768D5AC2FF1 /* AVPlayerContainerCompatibility.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AVPlayerContainerCompatibility.swift; sourceTree = "<group>"; };
 		3DE7D8AB83947A0D81373839 /* UpNextStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpNextStoreTests.swift; sourceTree = "<group>"; };
 		3E7CBBC68183E5DF5625EECE /* AppRouteTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppRouteTests.swift; sourceTree = "<group>"; };
 		3F20C9784DD9B4BBEFEC5110 /* SessionPlayerHost.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionPlayerHost.swift; sourceTree = "<group>"; };
@@ -1160,6 +1163,7 @@
 				DD06090DF9E2A25BF5531E56 /* AppStorageLocation.swift */,
 				A31B2B6B0E738B485777671E /* ArtworkRequestSequence.swift */,
 				3C91B60761F33A606B2AB87B /* AsyncStreamBridge.swift */,
+				3C9DCFA557674768D5AC2FF1 /* AVPlayerContainerCompatibility.swift */,
 				57B357E747B2845B37DEB331 /* BookFileProvider.swift */,
 				55BB5AB56FB81C4381E36331 /* CollectionArtwork.swift */,
 				C16816CFC80F6FF884B6674C /* ContentRatingGate.swift */,
@@ -2250,6 +2254,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				DF2F85D6C1A522E9F2A406C3 /* AVPlayerContainerCompatibility.swift in Sources */,
 				C01C5EB69D7FBA1EC7F3DBBF /* AccountScope.swift in Sources */,
 				D595F9DDFF6E9ADA0E047A75 /* AppModel.swift in Sources */,
 				8F17D35A645BA9BD414704A3 /* AppStorageLocation.swift in Sources */,
@@ -2434,6 +2439,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				17BA4CEDD0F26DCC39AD8A0C /* AVPlayerContainerCompatibility.swift in Sources */,
 				FC128AC6B572ADE5B05DE2D7 /* AboutCardsView.swift in Sources */,
 				E38467F51B35ABEC24548ECB /* AccountScope.swift in Sources */,
 				E969667068D8C486F9DFDF89 /* AgeRangeDefaults.swift in Sources */,
