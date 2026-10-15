@@ -202,6 +202,7 @@ struct StreamURLBuilder {
     ) -> DeviceProfile {
         DeviceProfile(
             codecProfiles: codecProfiles(capabilities: capabilities),
+            containerProfiles: [AVPlayerContainerCompatibility.mp4Profile],
             directPlayProfiles: directPlayProfiles(capabilities: capabilities),
             maxStaticBitrate: maxStreamingBitrate,
             maxStreamingBitrate: maxStreamingBitrate,

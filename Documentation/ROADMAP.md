@@ -253,7 +253,10 @@ automated build verification. (Covers priority: *polish & testing*.)
   HDR honesty, and manifest subtitles; the system surface presents item metadata.
   *(Done: `DevicePlaybackCapabilities` gates HEVC/AV1 direct play on
   `VTIsHardwareDecodeSupported` and HDR ranges on `AVPlayer.eligibleForHDRPlayback`
-  (Hi10P/interlaced H.264 excluded via codec conditions); the transcode target is
+  (Hi10P/interlaced H.264 excluded via codec conditions); a shared container policy
+  routes `hev1` MP4 originals through lossless HLS/fMP4 remuxing to `hvc1`, matching
+  offline-download eligibility and tag normalization. Physical Idle Hands playback
+  acceptance remains pending. The transcode target is
   HEVC-preferred fMP4 HLS with 8-channel audio and `enableSubtitlesInManifest` (text
   subs ride the manifest, only bitmap subs burn in); `AVPlayerItem.externalMetadata`
   feeds the system title/info chrome (sans macOS, which lacks the API);

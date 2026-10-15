@@ -253,17 +253,28 @@ struct OfflineDownloadTests {
         #expect(!OfflineDownloadEligibility.isVideoStreamPlayable(MediaStreamInfo(codec: "hevc", type: .video, videoRange: "HDR"), capabilities: DevicePlaybackCapabilities(supportsHEVCDecode: true, supportsAV1Decode: false, supportsHDRPlayback: false)))
     }
 
-    @Test("HEVC originals tagged hev1 require an Apple-compatible container remux")
-    func incompatibleHEVCTagRemuxes() throws {
+    @Test("HEVC originals tagged hev1 require an Apple-compatible container remux", arguments: ["hev1", "HEV1"])
+    func incompatibleHEVCTagRemuxes(tag: String) throws {
         let source = try DownloadSourceResolver.localSource(for: MediaItem(canDownload: true, id: "episode", mediaSources: [
             MediaSource(container: "mp4", id: "source", mediaStreams: [
-                MediaStreamInfo(codec: "hevc", codecTag: "hev1", type: .video),
+                MediaStreamInfo(codec: "hevc", codecTag: tag, type: .video),
                 MediaStreamInfo(codec: "aac", type: .audio),
             ]),
         ]), capabilities: Self.modernCapabilities)
         #expect(source.kind == .remuxed)
         #expect(source.fileExtension == "mp4")
         #expect(source.request.query?.value(for: "allowVideoStreamCopy") == "true")
+    }
+
+    @Test("HEVC originals with native or absent sample tags retain direct download", arguments: ["hvc1", "HVC1", nil] as [String?])
+    func compatibleHEVCTagDownloadsOriginal(tag: String?) throws {
+        let source = try DownloadSourceResolver.localSource(for: MediaItem(canDownload: true, id: "movie", mediaSources: [
+            MediaSource(container: "mp4", id: "source", mediaStreams: [
+                MediaStreamInfo(codec: "hevc", codecTag: tag, type: .video),
+                MediaStreamInfo(codec: "aac", type: .audio),
+            ]),
+        ]), capabilities: Self.modernCapabilities)
+        #expect(source.kind == .original)
     }
 
     @Test("download records require current status fields")
