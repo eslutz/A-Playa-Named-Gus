@@ -142,9 +142,13 @@ final class AppModel {
     func synchronizeProfile(from session: SessionStore) {
         guard currentSession === session, let profile = session.profile.profile,
               profile.id == session.user.id else { return }
+        let previousUser = session.user
         session.user.name = profile.name ?? session.user.name
         session.user.primaryImageTag = profile.primaryImageTag
         upsert(user: session.user)
+        if previousUser != session.user, let token = storedToken(for: session.user) {
+            publishSessionToWatch(server: session.server, user: session.user, token: token)
+        }
     }
 
     // MARK: - Launch restore
@@ -200,6 +204,11 @@ final class AppModel {
         upsert(user: user)
         lastSessionAccount = SessionCredential(user: user).account
 
+        if let currentSession, currentSession.server.id == server.id,
+           currentSession.user.id == user.id, currentSession.user.providerKind == user.providerKind
+        {
+            currentSession.user = user
+        }
         guard currentSession == nil else { return }
         let client = JellyfinClientFactory.makeClient(url: server.url, accessToken: token)
         currentSession = SessionStore(client: client, user: user, server: server)

@@ -55,6 +55,23 @@ struct UserProfileStoreTests {
         #expect(state.requests.isEmpty)
     }
 
+    @Test("An unavailable avatar does not turn a confirmed save into a failure", arguments: [404, 503])
+    func avatarFailureAfterSave(status: Int) async throws {
+        let old = UserDto(id: "user", name: "Eric", primaryImageTag: "old-tag")
+        let updated = UserDto(configuration: UserConfiguration(audioLanguagePreference: "eng"), id: "user", name: "Updated", primaryImageTag: "new-tag")
+        let (store, _) = try fixture(
+            [JSONEncoder().encode(old), Data([1]), JSONEncoder().encode(old), Data(), Data(), JSONEncoder().encode(updated), Data()],
+            codes: [200, 200, 200, 204, 204, 200, status]
+        )
+        await store.load()
+        #expect(store.imageData == Data([1]))
+        #expect(await store.save(name: "Updated", audioLanguage: "eng", subtitleLanguage: ""))
+        #expect(store.profile?.name == "Updated")
+        #expect(store.profile?.configuration?.audioLanguagePreference == "eng")
+        #expect(store.imageData == nil)
+        #expect(store.errorMessage == nil)
+    }
+
     private func fixture(_ data: [Data], codes: [Int]? = nil) throws -> (UserProfileStore, ProfileResponseState) {
         let state = ProfileResponseState(responses: data, statusCodes: codes)
         let id = UUID().uuidString

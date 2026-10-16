@@ -31,7 +31,11 @@ final class UserProfileStore {
             profile = value
             errorMessage = nil
             if let tag = value.primaryImageTag {
-                imageData = try await client.send(Paths.getUserImage(parameters: .init(userID: userID, tag: tag))).value
+                // An optional image failure must not invalidate a confirmed profile
+                // refresh or save. Preserve cached data only for the same image tag.
+                if let data = try? await client.send(Paths.getUserImage(parameters: .init(userID: userID, tag: tag))).value {
+                    imageData = data
+                }
             } else {
                 imageData = nil
             }
