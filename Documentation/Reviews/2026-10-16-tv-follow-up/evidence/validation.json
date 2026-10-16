@@ -82,5 +82,33 @@
     "exitCode": 0,
     "seconds": 0.25,
     "diagnostics": []
+  },
+  {
+    "name": "iphone",
+    "exitCode": 0,
+    "seconds": 119.06,
+    "tests": {
+      "totalTestCount": 1,
+      "passedTests": 1,
+      "failedTests": 0,
+      "skippedTests": 0,
+      "expectedFailures": 0,
+      "result": "Passed"
+    },
+    "diagnostics": []
+  },
+  {
+    "name": "ipad",
+    "exitCode": 0,
+    "seconds": 106.48,
+    "tests": {
+      "totalTestCount": 1,
+      "passedTests": 1,
+      "failedTests": 0,
+      "skippedTests": 0,
+      "expectedFailures": 0,
+      "result": "Passed"
+    },
+    "diagnostics": []
   }
 ]
