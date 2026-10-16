@@ -59,6 +59,7 @@ struct StreamURLBuilder {
         let isTranscoding: Bool
         let stereoLayout: Stereo3DLayout
         let stereoFallbackReason: StereoFallbackReason?
+        var mediaSource: JellyfinAPI.MediaSourceInfo? = nil
 
         func fallingBackTo2D(from layout: Stereo3DLayout) -> Resolution {
             Resolution(
@@ -67,7 +68,8 @@ struct StreamURLBuilder {
                 mediaSourceID: mediaSourceID,
                 isTranscoding: isTranscoding,
                 stereoLayout: .none,
-                stereoFallbackReason: .directPlayUnavailable(layout)
+                stereoFallbackReason: .directPlayUnavailable(layout),
+                mediaSource: mediaSource
             )
         }
     }
@@ -159,7 +161,8 @@ struct StreamURLBuilder {
                 mediaSourceID: source.id,
                 isTranscoding: true,
                 stereoLayout: .none,
-                stereoFallbackReason: nil
+                stereoFallbackReason: nil,
+                mediaSource: source
             )
         }
 
@@ -186,7 +189,8 @@ struct StreamURLBuilder {
             mediaSourceID: source.id,
             isTranscoding: false,
             stereoLayout: stereoLayout,
-            stereoFallbackReason: nil
+            stereoFallbackReason: nil,
+            mediaSource: source
         )
     }
 

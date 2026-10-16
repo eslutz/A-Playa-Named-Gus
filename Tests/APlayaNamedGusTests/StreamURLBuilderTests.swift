@@ -155,6 +155,7 @@ struct StreamURLBuilderTests {
         let components = try #require(URLComponents(url: resolution.url, resolvingAgainstBaseURL: false))
         let queryItems = components.queryItems ?? []
 
+        #expect(resolution.mediaSource?.id == "hls-source")
         #expect(queryItems.contains(URLQueryItem(name: "MediaSourceId", value: "hls-source")))
         #expect(queryItems.contains(URLQueryItem(name: "api_key", value: "token")))
     }

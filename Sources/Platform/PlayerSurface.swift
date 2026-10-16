@@ -3,9 +3,8 @@ import SwiftUI
 
 #if os(tvOS)
     /// tvOS-native `AVPlayerViewController`, which provides the full focus-engine
-    /// transport. Jellyfin stream selection (server-side audio/subtitle indexes) and
-    /// chapters ride the transport bar's custom menus — AVKit's own media-selection
-    /// menu only covers HLS alternates, which transcoded streams don't carry.
+    /// transport and embedded-track menus. Server-only audio/subtitle choices and
+    /// chapters use the transport bar's custom menus when AVKit cannot expose them.
     struct TVPlayerSurface: UIViewControllerRepresentable {
         let player: AVPlayer
         let store: PlaybackStore
@@ -13,13 +12,15 @@ import SwiftUI
         func makeUIViewController(context: Context) -> AVPlayerViewController {
             let controller = AVPlayerViewController()
             controller.player = player
+            controller.delegate = context.coordinator
             controller.allowsPictureInPicturePlayback = false
             // tvOS AVKit always owns system video transport; its publishing toggle is unavailable.
             controller.appliesPreferredDisplayCriteriaAutomatically = true
             let info = UIHostingController(rootView: TVPlaybackInfo(store: store))
-            info.title = String(localized: "Playback Info")
+            info.title = String(localized: "Playback Details")
+            info.preferredContentSize = CGSize(width: 1600, height: 500)
             controller.customInfoViewControllers = [info]
-            controller.transportBarCustomMenuItems = transportMenuItems()
+            context.coordinator.update(controller: controller, surface: self)
             return controller
         }
 
@@ -27,25 +28,69 @@ import SwiftUI
             if controller.player !== player {
                 controller.player = player
             }
-            controller.transportBarCustomMenuItems = transportMenuItems()
+            context.coordinator.update(controller: controller, surface: self)
             if let info = controller.customInfoViewControllers.first as? UIHostingController<TVPlaybackInfo> {
                 info.rootView = TVPlaybackInfo(store: store)
             }
         }
 
-        static func dismantleUIViewController(_ controller: AVPlayerViewController, coordinator: ()) {
+        static func dismantleUIViewController(_ controller: AVPlayerViewController, coordinator: Coordinator) {
+            coordinator.cancel()
             controller.player?.pause()
             controller.player = nil
+            controller.delegate = nil
             controller.customInfoViewControllers = []
             controller.transportBarCustomMenuItems = []
         }
 
-        private func transportMenuItems() -> [UIMenuElement] {
+        func makeCoordinator() -> Coordinator {
+            Coordinator()
+        }
+
+        @MainActor final class Coordinator: NSObject, @MainActor AVPlayerViewControllerDelegate {
+            private weak var store: PlaybackStore?
+
+            func playerViewController(_ playerViewController: AVPlayerViewController, didSelect mediaSelectionOption: AVMediaSelectionOption?, in mediaSelectionGroup: AVMediaSelectionGroup) {
+                store?.recordNativeTrackSelection(option: mediaSelectionOption, group: mediaSelectionGroup)
+            }
+
+            private var task: Task<Void, Never>?
+            private var item: AVPlayerItem?
+            private var nativeAudio = false
+            private var nativeSubtitles = false
+
+            func update(controller: AVPlayerViewController, surface: TVPlayerSurface) {
+                store = surface.store
+                guard item !== surface.player.currentItem else {
+                    controller.transportBarCustomMenuItems = surface.transportMenuItems(nativeAudio: nativeAudio, nativeSubtitles: nativeSubtitles)
+                    return
+                }
+                item = surface.player.currentItem
+                nativeAudio = false
+                nativeSubtitles = false
+                controller.transportBarCustomMenuItems = surface.transportMenuItems(nativeAudio: false, nativeSubtitles: false)
+                task?.cancel()
+                task = Task { [weak self, weak controller] in
+                    let audio = await surface.store.hasNativeTrackSelection(kind: .audio)
+                    let subtitles = await surface.store.hasNativeTrackSelection(kind: .subtitle)
+                    guard !Task.isCancelled, let self, let controller else { return }
+                    nativeAudio = audio
+                    nativeSubtitles = subtitles
+                    controller.transportBarCustomMenuItems = surface.transportMenuItems(nativeAudio: audio, nativeSubtitles: subtitles)
+                }
+            }
+
+            func cancel() {
+                task?.cancel(); task = nil; item = nil
+            }
+        }
+
+        private func transportMenuItems(nativeAudio: Bool, nativeSubtitles: Bool) -> [UIMenuElement] {
             let store = store
             var menus: [UIMenuElement] = []
 
             let audioOptions = store.audioOptions
-            if !audioOptions.isEmpty {
+            if audioOptions.count > 1, !nativeAudio {
                 menus.append(UIMenu(
                     title: String(localized: "Audio", comment: "Player audio track menu"),
                     image: UIImage(systemName: "waveform"),
@@ -62,7 +107,7 @@ import SwiftUI
             }
 
             let subtitleOptions = store.subtitleOptions
-            if !subtitleOptions.isEmpty {
+            if !subtitleOptions.isEmpty, !nativeSubtitles {
                 let off = UIAction(
                     title: String(localized: "Off", comment: "Subtitles off"),
                     state: store.selectedSubtitleStreamIndex == nil ? .on : .off
@@ -83,6 +128,10 @@ import SwiftUI
                     options: .singleSelection,
                     children: [off] + options
                 ))
+            }
+
+            if !menus.isEmpty {
+                menus = [UIMenu(title: String(localized: "Server Tracks"), image: UIImage(systemName: "slider.horizontal.3"), children: menus)]
             }
 
             let chapters = store.chapterTargets

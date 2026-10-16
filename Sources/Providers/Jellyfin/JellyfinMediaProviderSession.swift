@@ -220,7 +220,8 @@ final class JellyfinMediaProviderSession: MediaProviderSession {
             mediaSourceID: resolution.mediaSourceID,
             playMethod: resolution.isTranscoding ? .transcode : .directStream,
             stereoLayout: resolution.stereoLayout,
-            stereoFallbackReason: resolution.stereoFallbackReason
+            stereoFallbackReason: resolution.stereoFallbackReason,
+            mediaSource: resolution.mediaSource.map(JellyfinMediaItemMapper.mediaSource)
         )
     }
 

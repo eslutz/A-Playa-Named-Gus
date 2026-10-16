@@ -74,11 +74,14 @@ struct MovieCollectionsShelf: View {
             ScrollView(.horizontal) {
                 LazyHStack(alignment: .top, spacing: PosterGrid.spacing) {
                     ForEach(store.relevant(to: libraryID)) { collection in
-                        CollectionLink(collection: collection).frame(width: 140)
+                        CollectionLink(collection: collection).frame(width: MediaRailMetrics.itemWidth(for: .poster))
                             .gusTVFocus(id: collection.id, section: "collectionShelf:" + (libraryID ?? "movies"), ids: store.relevant(to: libraryID).map(\.id), item: collection.item)
                     }
                 }
+                .gusTVRailPadding()
+                .tvFocusSection()
             }
+            .gusTVRailViewport()
         }
         .task(id: store.revision) { await store.loadLibrary(libraryID) }
     }

@@ -7,6 +7,7 @@ struct SettingsView: View {
     @Environment(OfflineDownloadStore.self) private var downloads
     @Environment(VideoPlaylistsStore.self) private var videoPlaylists
 
+    @State private var showingProfile = false
     @State private var reauthenticationServer: ServerConnection?
     @State private var switchErrorMessage: String?
     @AppStorage(ContentRatingGate.limitDefaultsKey) private var contentLimitRawValue = ContentRatingGate.Limit.off.rawValue
@@ -18,6 +19,7 @@ struct SettingsView: View {
     var body: some View {
         Form {
             Section("Account") {
+                Button("View and Edit Profile") { showingProfile = true }
                 LabeledContent("User", value: session.user.name)
                 LabeledContent("Server", value: session.server.name)
                 LabeledContent("Address", value: session.server.url.absoluteString)
@@ -111,6 +113,7 @@ struct SettingsView: View {
             }
         }
         .settingsFormStyle()
+        .sheet(isPresented: $showingProfile) { NavigationStack { UserProfileView() } }
         .navigationTitle("Settings")
         .task {
             downloads.load(serverID: session.server.id, userID: session.user.id)

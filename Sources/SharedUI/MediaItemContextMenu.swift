@@ -23,11 +23,11 @@ private struct MediaItemContextMenu<Actions: View>: ViewModifier {
             .contextMenu {
                 if let item, item.id != nil, ContentRatingGate.admitsStored(item) {
                     if [.movie, .episode, .video, .series].contains(item.type) {
-                        Button("Add to Next Up", systemImage: "text.badge.plus") { addToNextUp(item) }
+                        Button("Add to Next Up", systemImage: MediaActionSymbols.addToNextUp) { addToNextUp(item) }
                             .disabled(!allowsAddingToNextUp)
                     }
                     if [.movie, .episode, .video].contains(item.type) {
-                        Button("Add to Playlist", systemImage: "list.bullet.rectangle") { addingToPlaylist = true }
+                        Button("Add to Playlist", systemImage: MediaActionSymbols.addToPlaylist) { addingToPlaylist = true }
                     }
                     if CollectionPlatform.canManage && (root.collectionStore(session: session).capabilities.addMembers || root.collectionStore(session: session).capabilities.create) {
                         Button("Add to Collection", systemImage: "rectangle.stack.badge.plus") { addingToCollection = true }

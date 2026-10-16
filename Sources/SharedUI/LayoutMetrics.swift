@@ -41,8 +41,8 @@ enum VisionSidebarLayout {
 /// Portraits must remain legible at television viewing distance.
 enum CastCardMetrics {
     #if os(tvOS)
-        static let width: CGFloat = 200
-        static let height: CGFloat = 250
+        static let width: CGFloat = 240
+        static let height: CGFloat = 300
     #else
         static let width: CGFloat = 120
         static let height: CGFloat = 150

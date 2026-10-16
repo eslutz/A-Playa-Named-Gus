@@ -3,10 +3,8 @@ import SwiftUI
 extension View {
     @ViewBuilder func gusTVAccountMenu() -> some View {
         #if os(tvOS)
-            safeAreaInset(edge: .top, spacing: 0) {
-                HStack { Spacer(); TVAccountMenu() }
-                    .padding(.horizontal, 64).padding(.vertical, 12)
-                    .focusSection()
+            tabViewSidebarHeader {
+                TVAccountMenu().padding(.vertical, 16)
             }
         #else
             self
@@ -22,11 +20,13 @@ extension View {
         @Environment(AppNavigationModel.self) private var navigation
         @Environment(AudioPlaybackCoordinator.self) private var audio
         @Environment(RootNavigationState.self) private var root
+        @State private var showingProfile = false
         @State private var errorMessage: String?
         @State private var reauthenticationServer: ServerConnection?
 
         var body: some View {
             Menu {
+                Button("View and Edit Profile", systemImage: "person.crop.circle") { showingProfile = true }
                 ForEach(app.servers) { server in
                     Section(server.name) {
                         ForEach(app.users(on: server)) { user in
@@ -50,24 +50,30 @@ extension View {
                     }
                 }
                 Button("Manage Accounts", systemImage: "person.crop.circle.badge.gearshape") { navigation.open(.settings) }
-            } label: { Label(session.user.name, systemImage: "person.crop.circle") }
-                .accessibilityLabel("Account")
-                .accessibilityValue(session.user.name)
-                .sheet(item: $reauthenticationServer) { server in
-                    NavigationStack {
-                        SignInView(server: server)
-                            .toolbar {
-                                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { reauthenticationServer = nil } }
-                            }
-                    }
+            } label: {
+                HStack {
+                    ProfileAvatar(data: session.profile.imageData)
+                    Text(session.user.name)
                 }
-                .alert("Account Switch Failed", isPresented: Binding(get: { errorMessage != nil }, set: {
-                    if !$0 {
-                        errorMessage = nil
-                    }
-                })) {
-                    Button("OK", role: .cancel) { errorMessage = nil }
-                } message: { Text(errorMessage ?? "") }
+            }
+            .sheet(isPresented: $showingProfile) { NavigationStack { UserProfileView() } }
+            .accessibilityLabel("Account")
+            .accessibilityValue(session.user.name)
+            .sheet(item: $reauthenticationServer) { server in
+                NavigationStack {
+                    SignInView(server: server)
+                        .toolbar {
+                            ToolbarItem(placement: .cancellationAction) { Button("Cancel") { reauthenticationServer = nil } }
+                        }
+                }
+            }
+            .alert("Account Switch Failed", isPresented: Binding(get: { errorMessage != nil }, set: {
+                if !$0 {
+                    errorMessage = nil
+                }
+            })) {
+                Button("OK", role: .cancel) { errorMessage = nil }
+            } message: { Text(errorMessage ?? "") }
         }
     }
 #endif

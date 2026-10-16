@@ -189,6 +189,8 @@ enum PosterGrid {
 
 /// Keep icon actions compact while allowing larger spatial and television controls.
 enum DetailActionMetrics {
+    static let minimumLabelHeight: CGFloat = 44
+
     static var maximumRowWidth: CGFloat {
         #if os(macOS)
             return 280

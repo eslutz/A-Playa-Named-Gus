@@ -24,31 +24,57 @@ extension View {
         let store: PlaybackStore
 
         var body: some View {
-            Form {
-                Section("Playback") {
-                    LabeledContent("Delivery", value: store.playbackDeliveryTitle)
+            ScrollView {
+                VStack(alignment: .leading, spacing: 24) {
+                    Text("How this video is being played").font(.title3.bold())
                     Text(store.item.displayTitle).font(.headline)
-                }
-                if let video = store.sourceVideoStream {
-                    Section("Source Video") {
-                        if let codec = video.codec {
-                            LabeledContent("Codec", value: codec.uppercased())
-                        }
-                        if let width = video.width, let height = video.height {
-                            LabeledContent("Resolution", value: "\(width) × \(height)")
-                        }
-                        if let range = video.videoRange {
-                            LabeledContent("Dynamic Range", value: range)
-                        }
-                        Text("Source metadata does not confirm the display or audio output format.").foregroundStyle(.secondary)
+                    if let duration = store.item.runtimeText {
+                        detail("Duration", duration)
                     }
-                }
-                Section("Tracks") {
-                    if let selected = store.audioOptions.first(where: { $0.id == store.selectedAudioStreamIndex }) {
-                        LabeledContent("Audio", value: selected.title)
+                    VStack(alignment: .leading, spacing: 12) {
+                        detail("Delivery", store.playbackDeliveryTitle)
+                        Text(deliveryExplanation).foregroundStyle(.secondary)
+                    }.focusable().accessibilityElement(children: .combine)
+                    if let video = store.sourceVideoStream {
+                        VStack(alignment: .leading, spacing: 12) {
+                            Text("Source Video").font(.headline)
+                            if let codec = video.codec {
+                                detail("Codec", codec.uppercased())
+                            }
+                            if let width = video.width, let height = video.height {
+                                detail("Resolution", "\(width) × \(height)")
+                            }
+                            if let range = video.videoRange {
+                                detail("Dynamic Range", range)
+                            }
+                        }.focusable().accessibilityElement(children: .combine)
                     }
-                    LabeledContent("Subtitles", value: store.subtitleOptions.first(where: { $0.id == store.selectedSubtitleStreamIndex })?.title ?? String(localized: "Off"))
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("Tracks").font(.headline)
+                        detail("Audio", store.audioOptions.first(where: { $0.id == store.selectedAudioStreamIndex })?.title ?? String(localized: "Player default"))
+                        detail("Subtitles", store.subtitleOptions.first(where: { $0.id == store.selectedSubtitleStreamIndex })?.title ?? String(localized: "Off"))
+                        Text("Source metadata does not confirm the display or audio output format.").font(.caption).foregroundStyle(.secondary)
+                    }.focusable().accessibilityElement(children: .combine)
                 }
+                .frame(maxWidth: 1400, alignment: .leading)
+                .padding(32)
+            }
+        }
+
+        private func detail(_ title: LocalizedStringKey, _ value: String) -> some View {
+            HStack(alignment: .top, spacing: 32) {
+                Text(title).foregroundStyle(.secondary).frame(width: 240, alignment: .leading)
+                Text(value).frame(maxWidth: .infinity, alignment: .leading)
+            }
+        }
+
+        private var deliveryExplanation: LocalizedStringKey {
+            switch store.playbackDeliveryTitle {
+            case String(localized: "Direct Play"): "Playing the original file without server conversion."
+            case String(localized: "Original file"): "Playing the original file without server conversion."
+            case String(localized: "Server stream"): "The server delivers a stream adapted for this device. It may repackage the media or convert unsupported tracks."
+            case String(localized: "Downloaded"): "Playing a file saved on this device."
+            default: "Preparing the playback session."
             }
         }
     }

@@ -48,6 +48,7 @@ struct SeriesEpisodesView: View {
                     }
                     .scrollPosition(id: root.scrollBinding(for: "episodes:" + (store.selectedSeasonID ?? "")))
                     .lookToScroll(.horizontal)
+                    .gusTVRailViewport()
                 }
             }
         }
@@ -117,6 +118,7 @@ private struct EpisodeCard: View {
 
             .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
             .posterHoverEffect()
+            .gusTVArtworkStatus(item: episode)
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(episode.episodeLocator ?? episode.displayTitle)
@@ -125,19 +127,23 @@ private struct EpisodeCard: View {
 
                 Text(episode.displayTitle)
                     .font(.headline)
-                    .lineLimit(2)
+                    .lineLimit(2, reservesSpace: true)
                 if let overview = episode.overview?.trimmedNilIfEmpty {
                     Text(overview)
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                         .lineLimit(2)
                 }
+                Text(episode.userData?.isWatched == true ? String(localized: "Watched") : " ")
+                    .font(.caption).foregroundStyle(.secondary)
+                    .accessibilityHidden(episode.userData?.isWatched != true)
             }
             .gusTVCardCaption()
         }
         .contentShape(Rectangle())
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(episodeAccessibilityLabel)
+        .gusTVPosterStatusValue(item: episode)
     }
 
     private var episodeAccessibilityLabel: String {

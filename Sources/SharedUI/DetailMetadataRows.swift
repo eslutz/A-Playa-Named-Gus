@@ -44,6 +44,7 @@ private struct MetadataPillRow: View {
                 .padding(.vertical, 2)
             }
             .lookToScroll(.horizontal)
+            .gusTVRailViewport()
         }
     }
 }

@@ -139,6 +139,14 @@ final class AppModel {
         persistLastSessionAccount()
     }
 
+    func synchronizeProfile(from session: SessionStore) {
+        guard currentSession === session, let profile = session.profile.profile,
+              profile.id == session.user.id else { return }
+        session.user.name = profile.name ?? session.user.name
+        session.user.primaryImageTag = profile.primaryImageTag
+        upsert(user: session.user)
+    }
+
     // MARK: - Launch restore
 
     /// Silently restores the last session from the Keychain token + persisted stores.

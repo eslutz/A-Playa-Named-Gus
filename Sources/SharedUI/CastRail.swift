@@ -34,17 +34,20 @@ struct CastRail: View {
                             .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
                             .posterHoverEffect()
 
-                            Text(person.name)
-                                .font(.caption.weight(.medium))
-                                .gusTVPosterTitle()
-                                .fixedSize(horizontal: false, vertical: true)
-                            if let role = person.role {
-                                Text(role)
-                                    .font(.caption2)
-                                    .foregroundStyle(.secondary)
-                                    .gusTVPosterTitle()
+                            VStack(alignment: .leading, spacing: 7) {
+                                Text(person.name)
+                                    .font(.caption.weight(.medium))
+                                    .multilineTextAlignment(.leading)
                                     .fixedSize(horizontal: false, vertical: true)
+                                if let role = person.role {
+                                    Text(role)
+                                        .font(.caption2)
+                                        .foregroundStyle(.secondary)
+                                        .multilineTextAlignment(.leading)
+                                        .fixedSize(horizontal: false, vertical: true)
+                                }
                             }
+                            .padding(16)
                         }
                         .frame(width: CastCardMetrics.width, alignment: .leading)
                         .accessibilityElement(children: .combine)
@@ -55,6 +58,7 @@ struct CastRail: View {
                 .tvFocusSection()
             }
             .lookToScroll(.horizontal)
+            .gusTVRailViewport()
         }
     }
 

@@ -48,6 +48,7 @@ struct PlaybackSourceResolution {
     var playMethod: MediaPlaybackMethod
     var stereoLayout: Stereo3DLayout
     var stereoFallbackReason: StreamURLBuilder.StereoFallbackReason?
+    var mediaSource: MediaSource? = nil
 
     var isTranscoding: Bool {
         playMethod == .transcode
