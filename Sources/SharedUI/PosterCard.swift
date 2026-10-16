@@ -32,6 +32,9 @@ struct PosterCard: View {
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
                 }
+                Text(statusItem?.userData?.isWatched == true ? String(localized: "Watched") : " ")
+                    .font(.caption).foregroundStyle(.secondary)
+                    .accessibilityHidden(statusItem?.userData?.isWatched != true)
             }
             .gusTVCardCaption()
         }

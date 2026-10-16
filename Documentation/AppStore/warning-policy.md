@@ -3,6 +3,18 @@
 Requested October 13, 2026. A build with any warning or error is not accepted,
 even when Xcode or Xcode Cloud reports success.
 
+## Temporary owner-approved exception — October 15, 2026
+
+The owner waived only `xcodebuild: WARNING: Using the first of multiple matching destinations`
+in Xcode Cloud's macOS and visionOS `test-without-building` commands. Build 24 (`6fd4a86`)
+had exactly these two warnings across 18 raw log bundles, zero Intel compile/link actions,
+and all 12 actions succeeded. This is acceptance with a narrow exception, not a warning-free
+build. Retain raw-log review; compiler, linker, dependency, asset, other destination, and
+all other build-tool warnings still block acceptance. Do not change the diagnostic scanner
+to suppress these warnings.
+
+## Required checks
+
 - All Gus app, Watch, extension, unit-test and UI-test targets inherit
   `SWIFT_TREAT_WARNINGS_AS_ERRORS = YES` and `GCC_TREAT_WARNINGS_AS_ERRORS = YES`
   from the project-level settings in `project.yml`, in Debug and Release.

@@ -3,6 +3,7 @@ import SwiftUI
 /// Only the visual container changes with width; navigation and players remain session-owned.
 struct RootContainer: View {
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(AppModel.self) private var app
     @Environment(SessionStore.self) private var session
     @Environment(OfflineDownloadStore.self) private var downloads
     @Environment(AppNavigationModel.self) private var navigation
@@ -34,8 +35,14 @@ struct RootContainer: View {
                     await home.load()
                 }
             }
+            .task {
+                await session.profile.load()
+                app.synchronizeProfile(from: session)
+            }
             .task(id: scenePhase) {
                 guard scenePhase == .active else { return }
+                await session.profile.load()
+                app.synchronizeProfile(from: session)
                 session.references.beginRefresh()
                 await state.refreshCachedContent()
             }
@@ -67,6 +74,7 @@ struct RootContainer: View {
         #elseif os(tvOS)
             TabRootView()
                 .tabViewStyle(.sidebarAdaptable)
+                .gusTVAccountMenu()
                 .gusTVBrowsingBackdrop()
         #elseif os(visionOS)
             TabRootView().tabViewStyle(.sidebarAdaptable)
@@ -207,7 +215,6 @@ private struct SectionStack: View {
                 }
             }
             .gusItemDestinations()
-            .gusTVAccountMenu()
             .toolbar {
                 if !overflow.isEmpty, sectionID != RootNavigationState.moreID, state.paths[sectionID]?.isEmpty != false {
                     ToolbarItem(placement: .cancellationAction) {

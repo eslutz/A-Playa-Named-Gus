@@ -308,12 +308,13 @@ automated build verification. (Covers priority: *polish & testing*.)
 
 ---
 
-Build 23 release follow-up: correct the Cloud test-only preflight so transferred test products can run without a source checkout; retain ARM-only checks for compilation. Local bootstrap regressions pass; fresh hosted recovery remains pending. See [pipeline evidence](AppStore/pipeline-policy.md#build-23-test-runner-preflight-failure--2026-10-15).
+Build 23 recovery is merged in PR #29. Build 24 passed all 12 Cloud actions with zero Intel compile/link actions. The owner temporarily waived only the macOS and visionOS destination-selection warnings on October 15; all other warning gates remain in effect. See [pipeline evidence](AppStore/pipeline-policy.md#build-23-test-runner-preflight-failure--2026-10-15).
 
 ## M5 — Platform Polish & Accessibility (HIG pass)
 
 **Goal:** each platform feels first-party; the app is fully accessible and localized.
 
+- [~] **October 16 physical-TV follow-up.** Unify Next Up/playlist symbols and artwork progress placement; label watched status and common detail actions; extend rails to the viewport; move accounts to the native sidebar and filters into scrolling headings; fetch avatars and edit Jellyfin usernames/language preferences; widen cast/About presentation and simplify native/server playback menus. The download hero action now shares button sizing across iPhone/iPad, Mac, and Vision Pro. Six ARM platform builds, profile network regressions, and focused TV remote tests pass without warnings; physical acceptance and signed distribution remain pending. See [validation and screenshots](Reviews/2026-10-16-tv-follow-up/REPORT.md). The owner confirms the prior HEVC playback fix works on their TV.
 - [x] **tvOS.** Photo-driven presentation repair adds a full-screen appearance-aware canvas, native artwork card focus, system-controlled Play contrast, a second icon row for common actions (Next Up, Favorite, Watched, and Add to Playlist), and larger cast/About sections; More retains Start from Beginning. Light, Dark, and System preferences remain effective outside the dark artwork hero; physical-TV acceptance remains pending. Focus engine polish (poster focus scaling, sensible focus order), Top Shelf
   content, large-canvas layout. *Acceptance:* navigable entirely by remote; focus never
   trapped/lost. *(Done: poster navigation preserves native focus styling, related rails

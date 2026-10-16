@@ -65,13 +65,13 @@ struct ItemDetailView: View {
                     Menu {
                         let markWatched = store.item.userData?.isWatched != true
                         if store.item.type == .movie || store.item.type == .episode {
-                            Button("Add to Playlist", systemImage: "text.badge.plus") { addingToPlaylist = true }
+                            Button("Add to Playlist", systemImage: MediaActionSymbols.addToPlaylist) { addingToPlaylist = true }
                         }
                         if CollectionPlatform.canManage && (navigationState.collectionStore(session: session).capabilities.create || navigationState.collectionStore(session: session).capabilities.addMembers) {
                             Button("Add to Collection", systemImage: "rectangle.stack.badge.plus") { addingToCollection = true }
                         }
                         Divider()
-                        Button(markWatched ? "Mark as Watched" : "Mark as Unwatched", systemImage: markWatched ? "checkmark.circle" : "checkmark.circle.fill") {
+                        Button(markWatched ? "Mark as Watched" : "Mark as Unwatched", systemImage: markWatched ? "checkmark.circle" : "arrow.counterclockwise") {
                             Task { await store.setWatched(markWatched) }
                         }
                         .disabled(store.isUpdatingUserData || store.needsUserDataRefresh)
@@ -147,14 +147,14 @@ struct ItemDetailView: View {
                         #if os(tvOS)
                             ItemUserActionButton(
                                 title: store.item.userData?.isWatched == true ? "Mark as Unwatched" : "Mark as Watched",
-                                systemImage: store.item.userData?.isWatched == true ? "checkmark.circle.fill" : "checkmark.circle",
+                                systemImage: store.item.userData?.isWatched == true ? "arrow.counterclockwise" : "checkmark.circle",
                                 action: { Task { await store.setWatched(store.item.userData?.isWatched != true) } }
                             )
                             .disabled(store.isUpdatingUserData || store.needsUserDataRefresh)
                             .accessibilityIdentifier("Detail.watched")
                             .gusTVDetailActionFocus(id: "watched", item: store.item)
                             if store.item.type == .movie || store.item.type == .episode {
-                                ItemUserActionButton(title: "Add to Playlist", systemImage: "list.bullet.rectangle", action: { addingToPlaylist = true })
+                                ItemUserActionButton(title: "Add to Playlist", systemImage: MediaActionSymbols.addToPlaylist, action: { addingToPlaylist = true })
                                     .accessibilityIdentifier("Detail.playlist")
                                     .gusTVDetailActionFocus(id: "playlist", item: store.item)
                             }
@@ -172,6 +172,7 @@ struct ItemDetailView: View {
                         #endif
                         if DownloadsAvailability.isSupported, session.mediaProvider.capabilities.supportsDownloads {
                             DownloadButton(item: store.item, iconOnly: true)
+                                .accessibilityIdentifier("Detail.download")
                         }
                     }
 
@@ -230,6 +231,7 @@ struct ItemDetailView: View {
             }
             .scrollPosition(id: navigationState.scrollBinding(for: "detail:" + ItemRef(item: item).id))
         }
+        .gusTVBrowseViewport()
         .gusTVDetailCanvas()
         .lookToScroll()
         .task {

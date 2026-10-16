@@ -20,20 +20,20 @@ struct CinematicDetailHero<Accessory: View>: View {
         standardHero.gusTVDetailHero(item: item, backdropURL: backdropURL) {
             VStack(alignment: .leading, spacing: 24) {
                 playButton
-                HStack(spacing: 24) {
+                HStack(spacing: 64) {
                     upNextButton
-                        .frame(width: 80)
+                        .frame(width: 160)
                         .gusTVDetailActionFocus(id: "nextUp", item: item)
                     Group(subviews: accessory) { actions in
-                        ForEach(actions) { action in action.frame(width: 80) }
+                        ForEach(actions) { action in action.frame(width: 160) }
                     }
                     if isPlayableItem, let startFromBeginning {
                         Menu {
                             Button("Start from Beginning", systemImage: "arrow.counterclockwise", action: startFromBeginning)
                         } label: {
-                            Label("More", systemImage: "ellipsis").labelStyle(.iconOnly)
+                            Label("More", systemImage: "ellipsis").gusDetailActionLabel()
                         }
-                        .frame(width: 80)
+                        .frame(width: 160)
                         .accessibilityLabel("More")
                         .accessibilityIdentifier("Detail.more")
                         .gusTVDetailActionFocus(id: "more", item: item)
@@ -151,7 +151,7 @@ struct CinematicDetailHero<Accessory: View>: View {
     private var upNextButton: some View {
         ItemUserActionButton(
             title: isInUpNext ? "Remove from Next Up" : "Add to Next Up",
-            systemImage: isInUpNext ? "checkmark" : "plus",
+            systemImage: isInUpNext ? MediaActionSymbols.removeFromNextUp : MediaActionSymbols.addToNextUp,
             action: toggleUpNext
         )
         .accessibilityIdentifier("Detail.nextUp")
@@ -247,7 +247,7 @@ struct HeroMetadataRow: View {
     }
 }
 
-/// Icon-only glass button used for secondary hero actions (Up Next, etc.).
+/// Secondary hero action with a visible caption on TV and a spoken label elsewhere.
 struct ItemUserActionButton: View {
     let title: LocalizedStringKey
     let systemImage: String
@@ -256,8 +256,8 @@ struct ItemUserActionButton: View {
     var body: some View {
         Button(action: action) {
             Label(title, systemImage: systemImage)
-                .labelStyle(.iconOnly)
-                .frame(maxWidth: .infinity, minHeight: 44)
+                .gusDetailActionLabel()
+                .frame(maxWidth: .infinity, minHeight: DetailActionMetrics.minimumLabelHeight)
         }
         .gusGlassButtonStyle()
         .controlSize(.regular)

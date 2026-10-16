@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Horizontal scroll of info cards: poster + tagline, overview text, and media facts.
+/// Full-width synopsis and adaptive, roomy metadata cards.
 struct AboutCardsView: View {
     let item: MediaItem
     let posterURL: URL?
@@ -12,39 +12,27 @@ struct AboutCardsView: View {
                 .font(.title2.bold())
                 .accessibilityAddTraits(.isHeader)
 
-            ScrollView(.horizontal, showsIndicators: false) {
-                LazyHStack(alignment: .top, spacing: 16) {
-                    posterSummaryCard.gusTVFocusableInfo()
-
-                    if let overview = item.overview?.trimmedNilIfEmpty {
-                        DetailInfoCard(title: LocalizedStringKey(item.displayTitle)) {
-                            Text(overview)
-                                .lineLimit(5)
-                            Button("Show More") { showsFullSynopsis = true }
-                                .accessibilityIdentifier("Detail.fullSynopsis")
-                                .frame(minHeight: 44)
-                        }
+            VStack(alignment: .leading, spacing: 24) {
+                if let overview = item.overview?.trimmedNilIfEmpty {
+                    DetailInfoCard(title: "Synopsis") {
+                        Text(overview).fixedSize(horizontal: false, vertical: true)
+                        Button("Show More") { showsFullSynopsis = true }
+                            .accessibilityIdentifier("Detail.fullSynopsis")
                     }
-
-                    DetailInfoCard(title: "Media") {
-                        VStack(alignment: .leading, spacing: 8) {
-                            if let runtime = item.runtimeText {
-                                Text(runtime)
-                            }
-                            if let rating = item.officialRating {
-                                Text(rating)
-                            }
-                            if let container = item.container?.trimmedNilIfEmpty {
-                                Text(container.uppercased())
-                            }
-                        }
+                    .tvFocusSection()
+                }
+                ViewThatFits(in: .horizontal) {
+                    HStack(alignment: .top, spacing: 32) {
+                        informationCards.frame(minWidth: 320, maxWidth: .infinity)
+                    }
+                    VStack(alignment: .leading, spacing: 24) {
+                        informationCards
                     }
                 }
-                .gusTVRailPadding()
-                .tvFocusSection()
             }
+            .accessibilityElement(children: .contain)
             .accessibilityIdentifier("Detail.aboutCards")
-            .lookToScroll(.horizontal)
+            .tvFocusSection()
         }
         .sheet(isPresented: $showsFullSynopsis) {
             NavigationStack {
@@ -71,6 +59,22 @@ struct AboutCardsView: View {
         }
     }
 
+    @ViewBuilder private var informationCards: some View {
+        posterSummaryCard.gusTVFocusableInfo()
+        DetailInfoCard(title: "Media") {
+            if let runtime = item.runtimeText {
+                LabeledContent("Duration", value: runtime)
+            }
+            if let rating = item.officialRating {
+                LabeledContent("Rating", value: rating)
+            }
+            if let container = item.container?.trimmedNilIfEmpty {
+                LabeledContent("Container", value: container.uppercased().replacingOccurrences(of: ",", with: ", "))
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }.gusTVFocusableInfo()
+    }
+
     private var posterSummaryCard: some View {
         DetailInfoCard(title: LocalizedStringKey(item.displayTitle)) {
             HStack(alignment: .top, spacing: 12) {
@@ -82,7 +86,7 @@ struct AboutCardsView: View {
                 VStack(alignment: .leading, spacing: 6) {
                     if let tagline = item.primaryTagline {
                         Text(tagline)
-                            .lineLimit(3)
+                            .fixedSize(horizontal: false, vertical: true)
                     }
                     if let year = item.yearText {
                         Text(year)
@@ -105,14 +109,13 @@ struct DetailInfoCard<Content: View>: View {
         VStack(alignment: .leading, spacing: 10) {
             Text(title)
                 .font(.headline)
-                .lineLimit(2)
+                .fixedSize(horizontal: false, vertical: true)
             content
                 .font(.callout)
                 .foregroundStyle(.primary)
         }
-        .padding(16)
-        .frame(width: AboutCardMetrics.cardWidth, alignment: .topLeading)
-        .frame(minHeight: AboutCardMetrics.cardHeight, alignment: .topLeading)
+        .padding(28)
+        .frame(maxWidth: .infinity, minHeight: 200, alignment: .topLeading)
         .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 }

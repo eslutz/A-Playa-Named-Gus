@@ -24,15 +24,18 @@ struct WatchResumeView: View {
                 } label: {
                     HStack(spacing: 8) {
                         WatchPoster(item: item)
+                            .overlay(alignment: .bottom) {
+                                if let progress = item.playbackProgress, progress > 0, progress < 1 {
+                                    ProgressView(value: progress).tint(.white)
+                                        .padding(3).background(.black.opacity(0.65))
+                                        .accessibilityLabel("Playback progress")
+                                        .accessibilityValue(progress.formatted(.percent.precision(.fractionLength(0))))
+                                }
+                            }
                         VStack(alignment: .leading, spacing: 2) {
                             Text(item.displayTitle)
                                 .font(.headline)
                                 .lineLimit(2)
-                            if let progress = item.playbackProgress {
-                                ProgressView(value: progress)
-                                    .accessibilityLabel(String(localized: "Playback progress for \(item.displayTitle)", comment: "Accessibility label for the resume progress bar; parameter is the item title"))
-                                    .accessibilityValue(progress.formatted(.percent.precision(.fractionLength(0))))
-                            }
                         }
                     }
                 }

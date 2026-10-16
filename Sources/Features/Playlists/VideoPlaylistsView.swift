@@ -279,7 +279,7 @@ struct VideoPlaylistDetailView: View {
                     ItemUserActionButton(title: "Start from Beginning", systemImage: "arrow.counterclockwise") { play(playlist.entries.first, fromBeginning: true) }
                         .disabled(!isVideo || editing || mutating)
                         .accessibilityIdentifier("Playlist.restart")
-                    ItemUserActionButton(title: playlist.queued ? "Remove from Next Up" : "Add to Next Up", systemImage: playlist.queued ? "checkmark" : "plus") {
+                    ItemUserActionButton(title: playlist.queued ? "Remove from Next Up" : "Add to Next Up", systemImage: playlist.queued ? MediaActionSymbols.removeFromNextUp : MediaActionSymbols.addToNextUp) {
                         let resolved = lists.resolvedID(id, scope: scope)
                         supplemental.setQueued(id: resolved, queued: !playlist.queued, scope: scope)
                         NextUpActivityStore.shared.setDismissed("playlist:" + resolved.uuidString, dismissed: playlist.queued, scope: scope)

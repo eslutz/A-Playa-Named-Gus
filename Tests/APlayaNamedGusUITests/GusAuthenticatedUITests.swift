@@ -107,6 +107,37 @@ final class GusAuthenticatedUITests: XCTestCase {
         }
     }
 
+    // visionOS simulator accessibility can return zero-sized spatial frames;
+    // review its screen recording for this geometry check instead.
+    #if os(iOS) || os(macOS)
+        func testDownloadActionMatchesDetailActions() throws {
+            try prepare()
+            defer { finish() }
+            let app = try launch("item/" + required("SynopsisMovie"))
+            let download = app.buttons["Detail.download"].firstMatch
+            let favorite = app.buttons["Detail.favorite"].firstMatch
+            XCTAssertTrue(download.waitForExistence(timeout: 30), app.debugDescription)
+            #if os(iOS)
+                // The download may already be a disabled status from a prior run.
+                // Use the always-interactive neighbor to reveal the action row.
+                reveal(favorite, in: app)
+            #endif
+            capture(app, "download-action-aligned")
+            XCTAssertEqual(download.frame.height, favorite.frame.height, accuracy: 1, app.debugDescription)
+            XCTAssertEqual(download.frame.width, favorite.frame.width, accuracy: 1, app.debugDescription)
+            if download.isEnabled {
+                download.tap()
+                // Background transfer completion is scheduled by the OS. This
+                // regression checks the action-to-status layout transition.
+                let started = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in !download.isEnabled }, object: nil)
+                XCTAssertEqual(XCTWaiter.wait(for: [started], timeout: 10), .completed, app.debugDescription)
+            }
+            XCTAssertEqual(download.frame.height, favorite.frame.height, accuracy: 1)
+            XCTAssertEqual(download.frame.width, favorite.frame.width, accuracy: 1)
+            capture(app, "download-status-aligned")
+        }
+    #endif
+
     #if os(tvOS)
         /// Sample actual Settings rendering so a descendant color-scheme override cannot hide behind a saved preference.
         func testTVAppearancePreference() throws {
@@ -168,6 +199,61 @@ final class GusAuthenticatedUITests: XCTestCase {
             }
         }
 
+        func testTVSidebarProfile() throws {
+            try prepare()
+            defer { finish() }
+            let app = launch("home")
+            XCTAssertTrue(app.staticTexts["Next Up"].firstMatch.waitForExistence(timeout: 30))
+            XCUIRemote.shared.press(.menu)
+            let account = app.buttons["Account"].firstMatch
+            XCTAssertTrue(account.waitForExistence(timeout: 5), app.debugDescription)
+            for _ in 0 ..< 12 {
+                if account.hasFocus || account.descendants(matching: .any).allElementsBoundByIndex.contains(where: \.hasFocus) {
+                    break
+                }
+                XCUIRemote.shared.press(.up)
+            }
+            XCTAssertTrue(account.hasFocus || account.descendants(matching: .any).allElementsBoundByIndex.contains(where: \.hasFocus), app.debugDescription)
+            capture(app, "tv-sidebar-profile")
+            XCUIRemote.shared.press(.select)
+            let edit = app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", "View and Edit Profile")).firstMatch
+            XCTAssertTrue(edit.waitForExistence(timeout: 5), app.debugDescription)
+            XCUIRemote.shared.press(.select)
+            let username = app.textFields["Username"]
+            XCTAssertTrue(username.waitForExistence(timeout: 10), app.debugDescription)
+            XCTAssertEqual(username.value as? String, "gus")
+            let save = app.cells.containing(.button, identifier: "Save Changes").firstMatch
+            for _ in 0 ..< 12 {
+                if save.hasFocus {
+                    break
+                }
+                XCUIRemote.shared.press(.down)
+            }
+            XCTAssertTrue(save.hasFocus, app.debugDescription)
+            XCUIRemote.shared.press(.select)
+            XCTAssertTrue(app.staticTexts["Profile saved to Jellyfin."].waitForExistence(timeout: 10), app.debugDescription)
+            capture(app, "tv-profile-saved")
+        }
+
+        func testTVPlaybackDetails() throws {
+            try prepare()
+            defer { finish() }
+            let app = try launch("play/" + required("SynopsisMovie"))
+            let infoMenu = app.collectionViews["AVInfoMenuCollection"]
+            XCTAssertTrue(infoMenu.waitForExistence(timeout: 30), app.debugDescription)
+            XCUIRemote.shared.press(.playPause)
+            // Down opens the native Info panel; Up returns from its content to
+            // the tab strip, where the next tab is our custom details panel.
+            XCUIRemote.shared.press(.down)
+            XCUIRemote.shared.press(.down)
+            XCUIRemote.shared.press(.up)
+            XCUIRemote.shared.press(.right)
+            XCUIRemote.shared.press(.select)
+            XCTAssertTrue(app.staticTexts["How this video is being played"].waitForExistence(timeout: 5), app.debugDescription)
+            XCUIRemote.shared.press(.down)
+            capture(app, "tv-playback-details")
+        }
+
         /// Exercise the native remote through the hero and the lower detail content.
         func testTVDetailFocusAndAboutLayout() throws {
             try prepare()
@@ -225,6 +311,8 @@ final class GusAuthenticatedUITests: XCTestCase {
             XCTAssertTrue(restart.waitForExistence(timeout: 5), app.debugDescription)
             capture(app, "tv-detail-overflow")
             XCUIRemote.shared.press(.menu)
+            let menuDismissed = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in !restart.exists }, object: nil)
+            XCTAssertEqual(XCTWaiter.wait(for: [menuDismissed], timeout: 5), .completed)
             XCUIRemote.shared.press(.down)
             let synopsis = app.buttons["Synopsis"]
             let synopsisFocused = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in synopsis.hasFocus }, object: nil)
@@ -456,9 +544,8 @@ final class GusAuthenticatedUITests: XCTestCase {
             let app = try launch("item/" + required("SynopsisMovie"))
             XCTAssertTrue(app.buttons["Play"].firstMatch.waitForExistence(timeout: 30))
             let more = app.buttons["Detail.fullSynopsis"].firstMatch
-            let about = app.scrollViews["Detail.aboutCards"]
             for _ in 0 ..< 10 {
-                if about.isHittable {
+                if more.isHittable {
                     break
                 }
                 app.swipeUp()
@@ -467,7 +554,7 @@ final class GusAuthenticatedUITests: XCTestCase {
                 if more.isHittable {
                     break
                 }
-                about.swipeLeft()
+                app.swipeUp()
             }
             XCTAssertTrue(more.isHittable)
             more.tap()
@@ -476,7 +563,10 @@ final class GusAuthenticatedUITests: XCTestCase {
             XCTAssertEqual(heading.label, try required("SynopsisMovieTitle"))
             capture(app, "full-synopsis")
             app.buttons["Synopsis.done"].tap()
-            XCTAssertFalse(heading.exists)
+            let dismissed = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in !heading.exists }, object: nil)
+            let dismissalResult = XCTWaiter.wait(for: [dismissed], timeout: 10)
+            capture(app, "synopsis-dismissed")
+            XCTAssertEqual(dismissalResult, .completed, app.debugDescription)
         }
 
         func testLargestTextAuthenticatedDetails() throws {

@@ -158,6 +158,24 @@ struct AppModelSessionTests {
         #expect(fixture.tokens.token(for: SessionCredential(user: fixture.userA)) == nil)
         #expect(fixture.tokens.token(for: SessionCredential(user: fixture.userB)) == "token-b")
     }
+
+    @Test("a handed-off profile refresh updates the active account without replacing its session")
+    func handedOffProfileRefresh() throws {
+        let fixture = try Fixture()
+        fixture.appModel.adoptHandedOffSession(server: fixture.serverA, user: fixture.userA, token: "token-a")
+        let session = try #require(fixture.appModel.currentSession)
+        var updated = fixture.userA
+        updated.name = "Updated"
+        updated.primaryImageTag = "new-tag"
+        fixture.appModel.adoptHandedOffSession(server: fixture.serverA, user: updated, token: "token-a")
+        #expect(fixture.appModel.currentSession === session)
+        #expect(session.user == updated)
+        #expect(fixture.store.loadUsers().contains(updated))
+
+        // Another account's handoff must not replace the active account's profile.
+        fixture.appModel.adoptHandedOffSession(server: fixture.serverB, user: fixture.userB, token: "token-b")
+        #expect(session.user == updated)
+    }
 }
 
 @MainActor

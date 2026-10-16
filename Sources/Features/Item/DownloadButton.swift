@@ -92,7 +92,7 @@ struct DownloadButton: View {
         if iconOnly {
             Label(title, systemImage: systemImage)
                 .labelStyle(.iconOnly)
-                .frame(maxWidth: .infinity, minHeight: 28)
+                .frame(maxWidth: .infinity, minHeight: DetailActionMetrics.minimumLabelHeight)
         } else {
             Label(title, systemImage: systemImage)
         }

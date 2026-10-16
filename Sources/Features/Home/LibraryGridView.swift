@@ -24,6 +24,15 @@ struct LibraryGridView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
+                #if os(tvOS)
+                    HStack {
+                        Text(scope.title).font(.largeTitle.bold())
+                        Spacer()
+                        if let store {
+                            LibraryFilterMenu(store: store).disabled(store.isLoading)
+                        }
+                    }.padding(.bottom, 24)
+                #endif
                 if isMovies {
                     MovieCollectionsShelf(libraryID: scope.parentID)
                 }
@@ -39,11 +48,14 @@ struct LibraryGridView: View {
             .frame(maxWidth: PageContentMetrics.maxWidth, alignment: .leading)
             .frame(maxWidth: .infinity)
         }
+        .gusTVBrowseViewport()
         .navigationTitle(scope.title)
         .toolbar {
-            if let store {
-                ToolbarItem { LibraryFilterMenu(store: store).disabled(store.isLoading) }
-            }
+            #if !os(tvOS)
+                if let store {
+                    ToolbarItem { LibraryFilterMenu(store: store).disabled(store.isLoading) }
+                }
+            #endif
         }
         .task(id: scope.storeIdentity) { store = navigationState.libraryStore(for: scope, session: session) }
         .scrollPosition(id: navigationState.scrollBinding(for: "library:" + scope.storeIdentity))

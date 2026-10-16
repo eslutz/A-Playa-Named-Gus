@@ -36,12 +36,13 @@ extension View {
                         .accessibilityLabel("Synopsis")
                         .accessibilityHint("Read the full description")
                         .gusTVDetailActionFocus(id: "synopsis", item: item)
+                        .focusSection()
                     }
                 }
                 // Only controls over dark artwork need a dark appearance.
                 // Sheets and the rest of the detail screen inherit the app preference.
                 .environment(\.colorScheme, .dark)
-                .frame(maxWidth: 1000, alignment: .leading)
+                .frame(maxWidth: 1160, alignment: .leading)
             }
             .padding(.horizontal, 64).padding(.vertical, 48)
             .frame(maxWidth: .infinity, minHeight: 720, alignment: .bottomLeading)

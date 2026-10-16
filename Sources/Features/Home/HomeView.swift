@@ -133,6 +133,7 @@ struct HomeView: View {
                 .frame(maxWidth: PageContentMetrics.maxWidth, alignment: .leading)
                 .frame(maxWidth: .infinity)
             }
+            .gusTVBrowseViewport()
             .scrollPosition(id: rootState.scrollBinding(for: "home"))
             .lookToScroll()
             .refreshable {
@@ -170,6 +171,7 @@ private struct NextUpRail: View {
             }
             .scrollPosition(id: root.scrollBinding(for: "home.next"))
             .lookToScroll(.horizontal)
+            .gusTVRailViewport()
         }
     }
 }
@@ -253,6 +255,7 @@ private struct NextUpDestination: View {
                 ArtworkTile(url: entry.item.flatMap { session.mediaProvider.backdropImageURL(for: $0, maxWidth: 560) }, aspectRatio: 16.0 / 9.0, contentMode: .fit, placeholderSymbol: entry.playlist == nil ? "play.rectangle" : "list.bullet.rectangle", fallbackURLs: entry.item.map { session.mediaProvider.artworkURLs(for: $0, maxWidth: 560) } ?? [])
                     .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                     .posterHoverEffect()
+                    .gusTVArtworkStatus(item: entry.item, progressID: "NextUp.progress." + entry.id)
             }
             VStack(alignment: .leading, spacing: 6) {
                 Text(entry.playlist?.name ?? entry.item?.seriesName ?? entry.item?.displayTitle ?? "Video")
@@ -267,10 +270,6 @@ private struct NextUpDestination: View {
                     Text(" ").font(.caption).accessibilityHidden(true)
                 }
                 Text(reasonText).font(.caption).foregroundStyle(.secondary).lineLimit(1)
-                if let progress = entry.item?.playbackProgress, entry.reasons.contains(.resume) {
-                    ProgressView(value: progress).accessibilityLabel("Playback progress")
-                        .accessibilityIdentifier("NextUp.progress." + entry.id)
-                }
             }
             .gusTVCardCaption()
         }
@@ -346,6 +345,7 @@ struct MediaRail: View {
             }
             .scrollPosition(id: root.scrollBinding(for: focusKey ?? (root.selectedSectionID + ":rail:" + title)))
             .lookToScroll(.horizontal)
+            .gusTVRailViewport()
         }
     }
 }
@@ -412,6 +412,7 @@ private struct BackdropCard: View {
             ArtworkTile(url: imageURL, aspectRatio: MediaRailMetrics.aspectRatio(for: .backdrop), contentMode: .fit, placeholderSymbol: "play.rectangle", fallbackURLs: fallbackURLs, onExhausted: onExhausted)
                 .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                 .posterHoverEffect()
+                .gusTVArtworkStatus(item: item)
 
             VStack(alignment: .leading, spacing: 1) {
                 Text(title)

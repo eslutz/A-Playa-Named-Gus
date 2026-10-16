@@ -99,8 +99,8 @@ final class PlaybackStore {
         }
         switch reportContext?.playMethod {
         case .directPlay: return String(localized: "Direct Play")
-        case .directStream: return String(localized: "Remux")
-        case .transcode: return String(localized: "Transcode")
+        case .directStream: return String(localized: "Original file")
+        case .transcode: return String(localized: "Server stream")
         case nil: return String(localized: "Preparing")
         }
     }
@@ -173,6 +173,49 @@ final class PlaybackStore {
         guard !isLocalPlayback else { return }
         streamSelection.subtitleStreamIndex = index
         await rebuildCurrentItemPreservingPosition()
+    }
+
+    /// AVKit owns native track selection; retain the matching server index for
+    /// progress reporting and the playback-details panel without restarting playback.
+    func recordNativeTrackSelection(option: AVMediaSelectionOption?, group: AVMediaSelectionGroup) {
+        let kind: MediaStreamKind = group.options.first?.hasMediaCharacteristic(.audible) == true ? .audio : .subtitle
+        if option == nil, kind == .subtitle {
+            streamSelection.subtitleStreamIndex = nil
+            refreshReportedStreamSelection()
+            return
+        }
+        guard let option, let position = group.options.firstIndex(of: option) else { return }
+        let streams = item.mediaSources.first?.mediaStreams ?? []
+        let candidates = group.options.enumerated().map { offset, choice in
+            MediaSelectionCandidate(position: offset, languageTag: choice.extendedLanguageTag)
+        }
+        guard let index = streams.filter({ $0.type == kind }).compactMap(\.index).first(where: {
+            PlaybackMediaSelectionMatcher.candidatePosition(forStreamIndex: $0, kind: kind, streams: streams, candidates: candidates) == position
+        }) else { return }
+        if kind == .audio {
+            streamSelection.audioStreamIndex = index
+        } else {
+            streamSelection.subtitleStreamIndex = index
+        }
+        refreshReportedStreamSelection()
+    }
+
+    /// Hide redundant server menus only when every server choice maps to an
+    /// embedded native option. Transcoded and external tracks keep server controls.
+    func hasNativeTrackSelection(kind: MediaStreamKind) async -> Bool {
+        guard !isTranscodedPlayback, let playerItem = player?.currentItem else { return false }
+        let characteristic: AVMediaCharacteristic = kind == .audio ? .audible : .legible
+        guard let group = try? await playerItem.asset.loadMediaSelectionGroup(for: characteristic) else { return false }
+        let streams = item.mediaSources.first?.mediaStreams ?? []
+        let indexes = streams.filter { $0.type == kind }.compactMap(\.index)
+        guard !indexes.isEmpty else { return false }
+        let candidates = group.options.enumerated().map { offset, option in
+            MediaSelectionCandidate(position: offset, languageTag: option.extendedLanguageTag)
+        }
+        let positions = indexes.compactMap {
+            PlaybackMediaSelectionMatcher.candidatePosition(forStreamIndex: $0, kind: kind, streams: streams, candidates: candidates)
+        }
+        return Set(positions).count == indexes.count && (kind != .subtitle || group.allowsEmptySelection)
     }
 
     /// Direct-played files expose their embedded tracks to AVKit, so switching can use
@@ -322,6 +365,9 @@ final class PlaybackStore {
                     )
                 }
                 resolution = remoteResolution
+                if let source = remoteResolution.mediaSource {
+                    item.mediaSources = [source] + item.mediaSources.filter { $0.id != source.id }
+                }
                 playbackURL = remoteResolution.url
                 stereoPresentation = effectiveStereoPresentation(
                     requested: requestedPresentation,

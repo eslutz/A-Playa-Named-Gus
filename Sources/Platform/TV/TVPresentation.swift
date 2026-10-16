@@ -77,7 +77,7 @@ extension View {
 
     @ViewBuilder func gusTVRailPadding() -> some View {
         #if os(tvOS)
-            padding(.vertical, 32).padding(.horizontal, 24).scrollClipDisabled()
+            padding(.vertical, 32).padding(.horizontal, 24)
         #else
             padding(.vertical, 4)
         #endif
@@ -109,41 +109,53 @@ extension View {
         #endif
     }
 
-    @ViewBuilder func gusTVArtworkStatus(item: MediaItem?) -> some View {
+    /// All platforms anchor progress to the artwork, never to variable-height captions.
+    func gusTVArtworkStatus(item: MediaItem?, progressID: String = "") -> some View {
+        overlay(alignment: .bottom) {
+            if let progress = item?.playbackProgress, progress > 0, progress < 1 {
+                ProgressView(value: progress)
+                    .tint(.white)
+                    .padding(8)
+                    .background(.black.opacity(0.65), in: Capsule())
+                    .padding(12)
+                    .accessibilityLabel("Playback progress")
+                    .accessibilityIdentifier(progressID)
+            }
+        }
+    }
+
+    @ViewBuilder func gusTVBrowseViewport() -> some View {
         #if os(tvOS)
-            overlay(alignment: .topTrailing) {
-                if item?.userData?.isWatched == true {
-                    Image(systemName: "checkmark.circle.fill").padding(8)
-                        .background(.regularMaterial, in: Capsule()).padding(12).accessibilityHidden(true)
-                }
-            }
-            .overlay(alignment: .bottom) {
-                if let progress = item?.playbackProgress, progress > 0, progress < 1 {
-                    ProgressView(value: progress)
-                        .tint(.white)
-                        .padding(8)
-                        .background(.black.opacity(0.65), in: Capsule())
-                        .padding(12)
-                        .accessibilityHidden(true)
-                }
-            }
+            ignoresSafeArea(.container, edges: .horizontal)
         #else
             self
         #endif
     }
 
-    @ViewBuilder func gusTVPosterStatusValue(item: MediaItem?) -> some View {
+    @ViewBuilder func gusTVRailViewport() -> some View {
         #if os(tvOS)
-            if let progress = item?.playbackProgress, progress > 0, progress < 1 {
-                accessibilityValue(Text("Playback progress \(Int(progress * 100))%"))
-            } else if let watched = item?.userData?.isWatched {
-                accessibilityValue(watched ? Text("Watched") : Text("Unwatched"))
-            } else {
-                self
-            }
+            scrollClipDisabled()
         #else
             self
         #endif
+    }
+
+    @ViewBuilder func gusDetailActionLabel() -> some View {
+        #if os(tvOS)
+            labelStyle(TVActionLabelStyle())
+        #else
+            labelStyle(.iconOnly)
+        #endif
+    }
+
+    @ViewBuilder func gusTVPosterStatusValue(item: MediaItem?) -> some View {
+        if let progress = item?.playbackProgress, progress > 0, progress < 1 {
+            accessibilityValue(Text("Playback progress \(Int(progress * 100))%"))
+        } else if let watched = item?.userData?.isWatched {
+            accessibilityValue(watched ? Text("Watched") : Text("Unwatched"))
+        } else {
+            self
+        }
     }
 
     /// Share focus order across the primary action, common icons, overflow and synopsis.
@@ -158,6 +170,18 @@ extension View {
 }
 
 #if os(tvOS)
+    private struct TVActionLabelStyle: LabelStyle {
+        func makeBody(configuration: Configuration) -> some View {
+            VStack(spacing: 10) {
+                configuration.icon.font(.title3).frame(height: 48)
+                configuration.title.font(.caption2)
+                    .lineLimit(2, reservesSpace: true)
+                    .multilineTextAlignment(.center)
+            }
+            .frame(width: 140)
+        }
+    }
+
     private struct TVFocusedMediaKey: FocusedValueKey { typealias Value = MediaItem }
     private struct TVFocusedEntryKey: FocusedValueKey { typealias Value = NextUpEntry }
     extension FocusedValues {
