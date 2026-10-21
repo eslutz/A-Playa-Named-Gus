@@ -43,6 +43,12 @@ The failure is recorded and a successful PR/Cloud release gate is still required
 before tester installation access is claimed.
 [Release report](Documentation/AppStore/internal-testflight-release.md).
 
+## Designs
+
+Editable OpenPencil documents, screen coverage and the shared browser preview are in
+[Design/](Design/README.md). Current-app references and the expanded Seerr proposal
+are labeled separately; design coverage does not establish runtime acceptance.
+
 ## Contributing
 
 Use the [issues page](https://github.com/eslutz/A-Playa-Named-Gus/issues) for bugs and

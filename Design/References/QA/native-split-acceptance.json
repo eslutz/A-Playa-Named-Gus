@@ -1,0 +1,189 @@
+{
+  "date": "2026-10-20",
+  "status": "partially_passed_interface_crash",
+  "filesPassed": 3,
+  "artboardsPassed": 118,
+  "attempts": [
+    {
+      "file": "iPhone/Light/01 Connection and Library.fig",
+      "documentId": "tab-8",
+      "expectedArtboards": 35,
+      "openedArtboards": 35,
+      "faithfulFonts": true,
+      "fontIssues": [],
+      "faces": [
+        {
+          "family": "SF Pro",
+          "style": "Bold",
+          "status": "available",
+          "source": "local",
+          "substituteFamily": null
+        },
+        {
+          "family": "SF Pro",
+          "style": "Medium",
+          "status": "available",
+          "source": "local",
+          "substituteFamily": null
+        },
+        {
+          "family": "SF Pro",
+          "style": "Regular",
+          "status": "available",
+          "source": "local",
+          "substituteFamily": null
+        },
+        {
+          "family": "SF Pro",
+          "style": "SemiBold",
+          "status": "available",
+          "source": "local",
+          "substituteFamily": null
+        }
+      ],
+      "openAndReadMs": 3383,
+      "close": {
+        "closed": true,
+        "target": {
+          "documentId": "tab-8",
+          "documentName": "01 Connection and Library",
+          "path": "/Users/ericslutz/Developer/Code/Side Projects/A Playa Named Gus/Gus/Design/OpenPencil/Split/iPhone/Light/01 Connection and Library.fig",
+          "pageId": "0:3",
+          "pageName": "App Screens"
+        }
+      },
+      "passed": true
+    },
+    {
+      "file": "iPhone/Light/02 Details and Playback.fig",
+      "documentId": "tab-9",
+      "expectedArtboards": 34,
+      "openedArtboards": 34,
+      "faithfulFonts": true,
+      "fontIssues": [],
+      "faces": [
+        {
+          "family": "SF Pro",
+          "style": "Bold",
+          "status": "available",
+          "source": "local",
+          "substituteFamily": null
+        },
+        {
+          "family": "SF Pro",
+          "style": "Medium",
+          "status": "available",
+          "source": "local",
+          "substituteFamily": null
+        },
+        {
+          "family": "SF Pro",
+          "style": "Regular",
+          "status": "available",
+          "source": "local",
+          "substituteFamily": null
+        },
+        {
+          "family": "SF Pro",
+          "style": "SemiBold",
+          "status": "available",
+          "source": "local",
+          "substituteFamily": null
+        }
+      ],
+      "openAndReadMs": 3584,
+      "close": {
+        "closed": true,
+        "target": {
+          "documentId": "tab-9",
+          "documentName": "02 Details and Playback",
+          "path": "/Users/ericslutz/Developer/Code/Side Projects/A Playa Named Gus/Gus/Design/OpenPencil/Split/iPhone/Light/02 Details and Playback.fig",
+          "pageId": "0:3",
+          "pageName": "App Screens"
+        }
+      },
+      "passed": true
+    },
+    {
+      "file": "iPhone/Light/03 Downloads and Collections.fig",
+      "documentId": "tab-10",
+      "expectedArtboards": 49,
+      "openedArtboards": 49,
+      "faithfulFonts": true,
+      "fontIssues": [],
+      "faces": [
+        {
+          "family": "SF Pro",
+          "style": "Bold",
+          "status": "available",
+          "source": "local",
+          "substituteFamily": null
+        },
+        {
+          "family": "SF Pro",
+          "style": "Medium",
+          "status": "available",
+          "source": "local",
+          "substituteFamily": null
+        },
+        {
+          "family": "SF Pro",
+          "style": "Regular",
+          "status": "available",
+          "source": "local",
+          "substituteFamily": null
+        },
+        {
+          "family": "SF Pro",
+          "style": "SemiBold",
+          "status": "available",
+          "source": "local",
+          "substituteFamily": null
+        }
+      ],
+      "openAndReadMs": 4919,
+      "close": {
+        "closed": true,
+        "target": {
+          "documentId": "tab-10",
+          "documentName": "03 Downloads and Collections",
+          "path": "/Users/ericslutz/Developer/Code/Side Projects/A Playa Named Gus/Gus/Design/OpenPencil/Split/iPhone/Light/03 Downloads and Collections.fig",
+          "pageId": "0:3",
+          "pageName": "App Screens"
+        }
+      },
+      "passed": true
+    },
+    {
+      "file": "iPhone/Light/04 Settings and Live TV.fig",
+      "passed": false,
+      "open": {
+        "error": "The operation was timed out"
+      }
+    }
+  ],
+  "diagnostics": [
+    {
+      "source": "vue",
+      "time": "2:17:17 PM America/New_York",
+      "message": "null is not an object (evaluating 'e.rangeMin')",
+      "firstFrame": "ob@tauri://localhost/assets/raster-DKeytg_t.js:16:127339"
+    },
+    {
+      "source": "vue",
+      "time": "2:17:17 PM America/New_York",
+      "message": "null is not an object (evaluating 'e.component.subTree')"
+    },
+    {
+      "source": "vue",
+      "time": "2:17:27 PM America/New_York",
+      "message": "null is not an object (evaluating 'e.component.subTree')"
+    }
+  ],
+  "observedUI": "Tab bar selected PumpSync-Visual-QA-Final while canvas and layer panel still showed the closed 03 Downloads and Collections Gus file.",
+  "cause": "An OpenPencil interface/rendering failure is verified. Exact trigger and permanent prevention are not established.",
+  "preserved": "The four pre-existing documents remain open; no app restart or design save was performed during this test.",
+  "all82SplitChecksumsUnchanged": true,
+  "scope": "Historical attempts before the approved restart and CLI file-mode validation.",
+  "currentEvidence": "cli-transition.json and cli-acceptance.json"
+}

@@ -1,0 +1,106 @@
+{
+  "artboards": 120,
+  "files": 10,
+  "checks": [
+    {
+      "file": "iPhone/Dark/05 Discover.fig",
+      "artboards": 51,
+      "expected": 51,
+      "missing": [],
+      "extra": [],
+      "brokenInstances": 0,
+      "brokenStyles": 0,
+      "invalidGeometry": 0
+    },
+    {
+      "file": "iPhone/Light/05 Discover.fig",
+      "artboards": 51,
+      "expected": 51,
+      "missing": [],
+      "extra": [],
+      "brokenInstances": 0,
+      "brokenStyles": 0,
+      "invalidGeometry": 0
+    },
+    {
+      "file": "iPad-Landscape/Light/05 Discover.fig",
+      "artboards": 2,
+      "expected": 2,
+      "missing": [],
+      "extra": [],
+      "brokenInstances": 0,
+      "brokenStyles": 0,
+      "invalidGeometry": 0
+    },
+    {
+      "file": "iPad-Landscape/Dark/05 Discover.fig",
+      "artboards": 1,
+      "expected": 1,
+      "missing": [],
+      "extra": [],
+      "brokenInstances": 0,
+      "brokenStyles": 0,
+      "invalidGeometry": 0
+    },
+    {
+      "file": "iPad/Light/05 Discover.fig",
+      "artboards": 2,
+      "expected": 2,
+      "missing": [],
+      "extra": [],
+      "brokenInstances": 0,
+      "brokenStyles": 0,
+      "invalidGeometry": 0
+    },
+    {
+      "file": "macOS/Dark/05 Discover.fig",
+      "artboards": 1,
+      "expected": 1,
+      "missing": [],
+      "extra": [],
+      "brokenInstances": 0,
+      "brokenStyles": 0,
+      "invalidGeometry": 0
+    },
+    {
+      "file": "macOS/Light/05 Discover.fig",
+      "artboards": 3,
+      "expected": 3,
+      "missing": [],
+      "extra": [],
+      "brokenInstances": 0,
+      "brokenStyles": 0,
+      "invalidGeometry": 0
+    },
+    {
+      "file": "macOS-Narrow/Light/05 Discover.fig",
+      "artboards": 2,
+      "expected": 2,
+      "missing": [],
+      "extra": [],
+      "brokenInstances": 0,
+      "brokenStyles": 0,
+      "invalidGeometry": 0
+    },
+    {
+      "file": "tvOS/Dark/05 Discover.fig",
+      "artboards": 4,
+      "expected": 4,
+      "missing": [],
+      "extra": [],
+      "brokenInstances": 0,
+      "brokenStyles": 0,
+      "invalidGeometry": 0
+    },
+    {
+      "file": "visionOS/Dark/05 Discover.fig",
+      "artboards": 3,
+      "expected": 3,
+      "missing": [],
+      "extra": [],
+      "brokenInstances": 0,
+      "brokenStyles": 0,
+      "invalidGeometry": 0
+    }
+  ]
+}

@@ -26,6 +26,12 @@ constrain *how* each item is built.
 
 - [x] October 12 stale-reference recovery: shared account-scoped resolution, versioned Next Up migration, explicit legacy replacement, public-artwork fallbacks, scoped system links, preserved downloaded-file identity, and confirmed progress transfer. Source, regression tests, platform builds, and the physical Trespass recovery are verified; evidence and remaining cross-platform runtime limits are recorded in [the validation report](Reviews/2026-10-12-stale-media-references/VALIDATION.md).
 
+## Discover / Seerr design handoff
+
+- [x] Publish the editable design package in [Design/](../Design/README.md): 2,896 current-app references and 120 expanded Discover proposal artboards across 82 files. The proposal covers 51 phone states in both appearances and 18 selected native adaptive compositions; saved-file, font, raster and preview checks are recorded with the designs.
+- [ ] Implement the expanded catalog, detail, request options, issue/blocklist and notification-preference behavior in [the Discover specification](../Design/DISCOVER.md), tracking [#31](https://github.com/eslutz/A-Playa-Named-Gus/issues/31). Publishing the designs does not complete app implementation.
+- [ ] Complete native materials, Dynamic Type, assistive input, keyboard/remote/gaze, live Seerr and physical-device acceptance, followed by required hosted checks and release gates.
+
 ## Global Definition of Done (applies to every milestone)
 
 - Builds green on iOS, iPadOS, tvOS, visionOS, macOS (`xcodegen generate` first).

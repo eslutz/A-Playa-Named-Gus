@@ -1,0 +1,21 @@
+{
+  "fileBytes": 230687,
+  "pages": [
+    "App Screens",
+    "Guide & Coverage",
+    "Components"
+  ],
+  "artboards": 35,
+  "components": 68,
+  "instances": 17,
+  "brokenInstanceReferences": 0,
+  "textLayers": 501,
+  "textStyles": 0,
+  "fontFamilies": [
+    "SF Pro",
+    "SF Compact"
+  ],
+  "nodesWithBindings": 1047,
+  "variables": 39,
+  "readerDiagnostics": "not exposed"
+}

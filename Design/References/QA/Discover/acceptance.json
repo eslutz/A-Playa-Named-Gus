@@ -1,0 +1,20 @@
+{
+  "passed": true,
+  "editableFiles": 82,
+  "currentArtboards": 2896,
+  "proposalArtboards": 120,
+  "totalArtboards": 3016,
+  "phoneStatesPerAppearance": 51,
+  "adaptiveArtboards": 18,
+  "savedReferencesAndGeometry": "passed",
+  "inventoryNamesAndKeys": "passed by verify-splits.mjs and Discover coverage contract",
+  "previewSceneJSONAndSVGs": 3016,
+  "localDocumentationLinks": 114,
+  "faithfulFontFiles": 10,
+  "strictRasterProofs": 120,
+  "browser": "selected final flows passed; zero console errors",
+  "accessibilityLint": "18 flags confined to illustrated native Mac window buttons; see accessibility-lint.json",
+  "nativeAndRuntimeAcceptance": "Physical input, native material, assistive behavior and live Seerr acceptance remain separate",
+  "appSourceChanged": false,
+  "testing": "sequential; temporary preview server and test tab closed"
+}

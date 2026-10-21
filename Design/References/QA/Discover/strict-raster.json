@@ -1,0 +1,1174 @@
+[
+  {
+    "key": "iPhone-Dark-proposed-discover-browse",
+    "file": "iPhone/Dark/05 Discover.fig",
+    "page": "Discover Proposal",
+    "id": "0:4395",
+    "proof": "QA/Discover/Previews/iPhone-Dark-browse.png",
+    "passed": true,
+    "bytes": 77291,
+    "mode": "Reused prior strict raster: saved SVG exactly unchanged"
+  },
+  {
+    "key": "iPhone-Dark-proposed-discover-movie",
+    "file": "iPhone/Dark/05 Discover.fig",
+    "page": "Discover Proposal",
+    "id": "0:4482",
+    "proof": "QA/Discover/Previews/iPhone-Dark-movie.png",
+    "passed": true,
+    "bytes": 65592
+  },
+  {
+    "key": "iPhone-Dark-proposed-discover-request",
+    "file": "iPhone/Dark/05 Discover.fig",
+    "page": "Discover Proposal",
+    "id": "0:4586",
+    "proof": "QA/Discover/Previews/iPhone-Dark-request.png",
+    "passed": true,
+    "bytes": 69951,
+    "mode": "Reused prior strict raster: saved SVG exactly unchanged"
+  },
+  {
+    "key": "iPhone-Dark-proposed-discover-requestmovie",
+    "file": "iPhone/Dark/05 Discover.fig",
+    "page": "Discover Proposal",
+    "id": "0:4639",
+    "proof": "QA/Discover/Previews/iPhone-Dark-requestmovie.png",
+    "passed": true,
+    "bytes": 37628,
+    "mode": "Reused prior strict raster: saved SVG exactly unchanged"
+  },
+  {
+    "key": "iPhone-Dark-proposed-discover-advancedmovie",
+    "file": "iPhone/Dark/05 Discover.fig",
+    "page": "Discover Proposal",
+    "id": "0:4671",
+    "proof": "QA/Discover/Previews/iPhone-Dark-advancedmovie.png",
+    "passed": true,
+    "bytes": 47738,
+    "mode": "Reused prior strict raster: saved SVG exactly unchanged"
+  },
+  {
+    "key": "iPhone-Dark-proposed-discover-sentmovie",
+    "file": "iPhone/Dark/05 Discover.fig",
+    "page": "Discover Proposal",
+    "id": "0:4714",
+    "proof": "QA/Discover/Previews/iPhone-Dark-sentmovie.png",
+    "passed": true,
+    "bytes": 42941,
+    "mode": "Reused prior strict raster: saved SVG exactly unchanged"
+  },
+  {
+    "key": "iPhone-Dark-proposed-discover-welcome",
+    "file": "iPhone/Dark/05 Discover.fig",
+    "page": "Discover Proposal",
+    "id": "0:4769",
+    "proof": "QA/Discover/Previews/iPhone-Dark-welcome.png",
+    "passed": true,
+    "bytes": 56562,
+    "mode": "Reused prior strict raster: saved SVG exactly unchanged"
+  },
+  {
+    "key": "iPhone-Dark-proposed-discover-server",
+    "file": "iPhone/Dark/05 Discover.fig",
+    "page": "Discover Proposal",
+    "id": "0:4824",
+    "proof": "QA/Discover/Previews/iPhone-Dark-server.png",
+    "passed": true,
+    "bytes": 55997,
+    "mode": "Reused prior strict raster: saved SVG exactly unchanged"
+  },
+  {
+    "key": "iPhone-Dark-proposed-discover-signin",
+    "file": "iPhone/Dark/05 Discover.fig",
+    "page": "Discover Proposal",
+    "id": "0:4858",
+    "proof": "QA/Discover/Previews/iPhone-Dark-signin.png",
+    "passed": true,
+    "bytes": 48934
+  },
+  {
+    "key": "iPhone-Dark-proposed-discover-search",
+    "file": "iPhone/Dark/05 Discover.fig",
+    "page": "Discover Proposal",
+    "id": "0:4895",
+    "proof": "QA/Discover/Previews/iPhone-Dark-search.png",
+    "passed": true,
+    "bytes": 53406
+  },
+  {
+    "key": "iPhone-Dark-proposed-discover-filters",
+    "file": "iPhone/Dark/05 Discover.fig",
+    "page": "Discover Proposal",
+    "id": "0:4973",
+    "proof": "QA/Discover/Previews/iPhone-Dark-filters.png",
+    "passed": true,
+    "bytes": 48897,
+    "mode": "Reused prior strict raster: saved SVG exactly unchanged"
+  },
+  {
+    "key": "iPhone-Dark-proposed-discover-show",
+    "file": "iPhone/Dark/05 Discover.fig",
+    "page": "Discover Proposal",
+    "id": "0:5018",
+    "proof": "QA/Discover/Previews/iPhone-Dark-show.png",
+    "passed": true,
+    "bytes": 65416
+  },
+  {
+    "key": "iPhone-Dark-proposed-discover-advanced",
+    "file": "iPhone/Dark/05 Discover.fig",
+    "page": "Discover Proposal",
+    "id": "0:5123",
+    "proof": "QA/Discover/Previews/iPhone-Dark-advanced.png",
+    "passed": true,
+    "bytes": 61604,
+    "mode": "Reused prior strict raster: saved SVG exactly unchanged"
+  },
+  {
+    "key": "iPhone-Dark-proposed-discover-sent",
+    "file": "iPhone/Dark/05 Discover.fig",
+    "page": "Discover Proposal",
+    "id": "0:5172",
+    "proof": "QA/Discover/Previews/iPhone-Dark-sent.png",
+    "passed": true,
+    "bytes": 48489,
+    "mode": "Reused prior strict raster: saved SVG exactly unchanged"
+  },
+  {
+    "key": "iPhone-Dark-proposed-discover-myrequests",
+    "file": "iPhone/Dark/05 Discover.fig",
+    "page": "Discover Proposal",
+    "id": "0:5227",
+    "proof": "QA/Discover/Previews/iPhone-Dark-myrequests.png",
+    "passed": true,
+    "bytes": 74201
+  },
+  {
+    "key": "iPhone-Dark-proposed-discover-requestdetail",
+    "file": "iPhone/Dark/05 Discover.fig",
+    "page": "Discover Proposal",
+    "id": "0:5318",
+    "proof": "QA/Discover/Previews/iPhone-Dark-requestdetail.png",
+    "passed": true,
+    "bytes": 73976,
+    "mode": "Reused prior strict raster: saved SVG exactly unchanged"
+  },
+  {
+    "key": "iPhone-Dark-proposed-discover-available",
+    "file": "iPhone/Dark/05 Discover.fig",
+    "page": "Discover Proposal",
+    "id": "0:5398",
+    "proof": "QA/Discover/Previews/iPhone-Dark-available.png",
+    "passed": true,
+    "bytes": 68493
+  },
+  {
+    "key": "iPhone-Dark-proposed-discover-manager",
+    "file": "iPhone/Dark/05 Discover.fig",
+    "page": "Discover Proposal",
+    "id": "0:5502",
+    "proof": "QA/Discover/Previews/iPhone-Dark-manager.png",
+    "passed": true,
+    "bytes": 70633
+  },
+  {
+    "key": "iPhone-Dark-proposed-discover-approval",
+    "file": "iPhone/Dark/05 Discover.fig",
+    "page": "Discover Proposal",
+    "id": "0:5605",
+    "proof": "QA/Discover/Previews/iPhone-Dark-approval.png",
+    "passed": true,
+    "bytes": 59444,
+    "mode": "Reused prior strict raster: saved SVG exactly unchanged"
+  },
+  {
+    "key": "iPhone-Dark-proposed-discover-issues",
+    "file": "iPhone/Dark/05 Discover.fig",
+    "page": "Discover Proposal",
+    "id": "0:5651",
+    "proof": "QA/Discover/Previews/iPhone-Dark-issues.png",
+    "passed": true,
+    "bytes": 45493
+  },
+  {
+    "key": "iPhone-Dark-proposed-discover-issue",
+    "file": "iPhone/Dark/05 Discover.fig",
+    "page": "Discover Proposal",
+    "id": "0:5716",
+    "proof": "QA/Discover/Previews/iPhone-Dark-issue.png",
+    "passed": true,
+    "bytes": 67819
+  },
+  {
+    "key": "iPhone-Dark-proposed-discover-report",
+    "file": "iPhone/Dark/05 Discover.fig",
+    "page": "Discover Proposal",
+    "id": "0:5786",
+    "proof": "QA/Discover/Previews/iPhone-Dark-report.png",
+    "passed": true,
+    "bytes": 49712,
+    "mode": "Reused prior strict raster: saved SVG exactly unchanged"
+  },
+  {
+    "key": "iPhone-Dark-proposed-discover-titlemenu",
+    "file": "iPhone/Dark/05 Discover.fig",
+    "page": "Discover Proposal",
+    "id": "0:5818",
+    "proof": "QA/Discover/Previews/iPhone-Dark-titlemenu.png",
+    "passed": true,
+    "bytes": 35103,
+    "mode": "Reused prior strict raster: saved SVG exactly unchanged"
+  },
+  {
+    "key": "iPhone-Dark-proposed-discover-blocklist",
+    "file": "iPhone/Dark/05 Discover.fig",
+    "page": "Discover Proposal",
+    "id": "0:5878",
+    "proof": "QA/Discover/Previews/iPhone-Dark-blocklist.png",
+    "passed": true,
+    "bytes": 40258
+  },
+  {
+    "key": "iPhone-Dark-proposed-discover-settings",
+    "file": "iPhone/Dark/05 Discover.fig",
+    "page": "Discover Proposal",
+    "id": "0:5935",
+    "proof": "QA/Discover/Previews/iPhone-Dark-settings.png",
+    "passed": true,
+    "bytes": 61190,
+    "mode": "Reused prior strict raster: saved SVG exactly unchanged"
+  },
+  {
+    "key": "iPhone-Dark-proposed-discover-notifications",
+    "file": "iPhone/Dark/05 Discover.fig",
+    "page": "Discover Proposal",
+    "id": "0:6034",
+    "proof": "QA/Discover/Previews/iPhone-Dark-notifications.png",
+    "passed": true,
+    "bytes": 59320,
+    "mode": "Reused prior strict raster: saved SVG exactly unchanged"
+  },
+  {
+    "key": "iPhone-Dark-proposed-discover-expired",
+    "file": "iPhone/Dark/05 Discover.fig",
+    "page": "Discover Proposal",
+    "id": "0:6110",
+    "proof": "QA/Discover/Previews/iPhone-Dark-expired.png",
+    "passed": true,
+    "bytes": 33350,
+    "mode": "Reused prior strict raster: saved SVG exactly unchanged"
+  },
+  {
+    "key": "iPhone-Dark-proposed-discover-offline",
+    "file": "iPhone/Dark/05 Discover.fig",
+    "page": "Discover Proposal",
+    "id": "0:6162",
+    "proof": "QA/Discover/Previews/iPhone-Dark-offline.png",
+    "passed": true,
+    "bytes": 39336,
+    "mode": "Reused prior strict raster: saved SVG exactly unchanged"
+  },
+  {
+    "key": "iPhone-Dark-proposed-discover-quota",
+    "file": "iPhone/Dark/05 Discover.fig",
+    "page": "Discover Proposal",
+    "id": "0:6215",
+    "proof": "QA/Discover/Previews/iPhone-Dark-quota.png",
+    "passed": true,
+    "bytes": 44547,
+    "mode": "Reused prior strict raster: saved SVG exactly unchanged"
+  },
+  {
+    "key": "iPhone-Dark-proposed-discover-uncertain",
+    "file": "iPhone/Dark/05 Discover.fig",
+    "page": "Discover Proposal",
+    "id": "0:6267",
+    "proof": "QA/Discover/Previews/iPhone-Dark-uncertain.png",
+    "passed": true,
+    "bytes": 44034,
+    "mode": "Reused prior strict raster: saved SVG exactly unchanged"
+  },
+  {
+    "key": "iPhone-Dark-proposed-discover-empty",
+    "file": "iPhone/Dark/05 Discover.fig",
+    "page": "Discover Proposal",
+    "id": "0:6320",
+    "proof": "QA/Discover/Previews/iPhone-Dark-empty.png",
+    "passed": true,
+    "bytes": 29709,
+    "mode": "Reused prior strict raster: saved SVG exactly unchanged"
+  },
+  {
+    "key": "iPhone-Dark-proposed-discover-loading",
+    "file": "iPhone/Dark/05 Discover.fig",
+    "page": "Discover Proposal",
+    "id": "0:6372",
+    "proof": "QA/Discover/Previews/iPhone-Dark-loading.png",
+    "passed": true,
+    "bytes": 30297,
+    "mode": "Reused prior strict raster: saved SVG exactly unchanged"
+  },
+  {
+    "key": "iPhone-Dark-proposed-discover-accessibility",
+    "file": "iPhone/Dark/05 Discover.fig",
+    "page": "Discover Proposal",
+    "id": "0:6421",
+    "proof": "QA/Discover/Previews/iPhone-Dark-accessibility.png",
+    "passed": true,
+    "bytes": 47921,
+    "mode": "Reused prior strict raster: saved SVG exactly unchanged"
+  },
+  {
+    "key": "iPhone-Dark-proposed-discover-decline",
+    "file": "iPhone/Dark/05 Discover.fig",
+    "page": "Discover Proposal",
+    "id": "0:6471",
+    "proof": "QA/Discover/Previews/iPhone-Dark-decline.png",
+    "passed": true,
+    "bytes": 42344,
+    "mode": "Reused prior strict raster: saved SVG exactly unchanged"
+  },
+  {
+    "key": "iPhone-Dark-proposed-discover-blockconfirm",
+    "file": "iPhone/Dark/05 Discover.fig",
+    "page": "Discover Proposal",
+    "id": "0:6526",
+    "proof": "QA/Discover/Previews/iPhone-Dark-blockconfirm.png",
+    "passed": true,
+    "bytes": 41935,
+    "mode": "Reused prior strict raster: saved SVG exactly unchanged"
+  },
+  {
+    "key": "iPhone-Dark-proposed-discover-disconnect",
+    "file": "iPhone/Dark/05 Discover.fig",
+    "page": "Discover Proposal",
+    "id": "0:6581",
+    "proof": "QA/Discover/Previews/iPhone-Dark-disconnect.png",
+    "passed": true,
+    "bytes": 44346,
+    "mode": "Reused prior strict raster: saved SVG exactly unchanged"
+  },
+  {
+    "key": "iPhone-Dark-proposed-discover-hide",
+    "file": "iPhone/Dark/05 Discover.fig",
+    "page": "Discover Proposal",
+    "id": "0:6636",
+    "proof": "QA/Discover/Previews/iPhone-Dark-hide.png",
+    "passed": true,
+    "bytes": 42250,
+    "mode": "Reused prior strict raster: saved SVG exactly unchanged"
+  },
+  {
+    "key": "iPhone-Dark-proposed-discover-approved",
+    "file": "iPhone/Dark/05 Discover.fig",
+    "page": "Discover Proposal",
+    "id": "0:6689",
+    "proof": "QA/Discover/Previews/iPhone-Dark-approved.png",
+    "passed": true,
+    "bytes": 37757,
+    "mode": "Reused prior strict raster: saved SVG exactly unchanged"
+  },
+  {
+    "key": "iPhone-Dark-proposed-discover-cancel",
+    "file": "iPhone/Dark/05 Discover.fig",
+    "page": "Discover Proposal",
+    "id": "0:6740",
+    "proof": "QA/Discover/Previews/iPhone-Dark-cancel.png",
+    "passed": true,
+    "bytes": 44189,
+    "mode": "Reused prior strict raster: saved SVG exactly unchanged"
+  },
+  {
+    "key": "iPhone-Dark-proposed-discover-unblock",
+    "file": "iPhone/Dark/05 Discover.fig",
+    "page": "Discover Proposal",
+    "id": "0:6795",
+    "proof": "QA/Discover/Previews/iPhone-Dark-unblock.png",
+    "passed": true,
+    "bytes": 37123,
+    "mode": "Reused prior strict raster: saved SVG exactly unchanged"
+  },
+  {
+    "key": "iPhone-Dark-proposed-discover-resolved",
+    "file": "iPhone/Dark/05 Discover.fig",
+    "page": "Discover Proposal",
+    "id": "0:6848",
+    "proof": "QA/Discover/Previews/iPhone-Dark-resolved.png",
+    "passed": true,
+    "bytes": 34737,
+    "mode": "Reused prior strict raster: saved SVG exactly unchanged"
+  },
+  {
+    "key": "iPhone-Dark-proposed-discover-replace",
+    "file": "iPhone/Dark/05 Discover.fig",
+    "page": "Discover Proposal",
+    "id": "0:6899",
+    "proof": "QA/Discover/Previews/iPhone-Dark-replace.png",
+    "passed": true,
+    "bytes": 46814,
+    "mode": "Reused prior strict raster: saved SVG exactly unchanged"
+  },
+  {
+    "key": "iPhone-Dark-proposed-discover-catalog",
+    "file": "iPhone/Dark/05 Discover.fig",
+    "page": "Discover Proposal",
+    "id": "0:6954",
+    "proof": "QA/Discover/Previews/iPhone-Dark-catalog.png",
+    "passed": true,
+    "bytes": 62669
+  },
+  {
+    "key": "iPhone-Dark-proposed-discover-person",
+    "file": "iPhone/Dark/05 Discover.fig",
+    "page": "Discover Proposal",
+    "id": "0:7035",
+    "proof": "QA/Discover/Previews/iPhone-Dark-person.png",
+    "passed": true,
+    "bytes": 80675,
+    "mode": "Reused prior strict raster: saved SVG exactly unchanged"
+  },
+  {
+    "key": "iPhone-Dark-proposed-discover-managerfilters",
+    "file": "iPhone/Dark/05 Discover.fig",
+    "page": "Discover Proposal",
+    "id": "0:7104",
+    "proof": "QA/Discover/Previews/iPhone-Dark-managerfilters.png",
+    "passed": true,
+    "bytes": 42692,
+    "mode": "Reused prior strict raster: saved SVG exactly unchanged"
+  },
+  {
+    "key": "iPhone-Dark-proposed-discover-unsupported",
+    "file": "iPhone/Dark/05 Discover.fig",
+    "page": "Discover Proposal",
+    "id": "0:7143",
+    "proof": "QA/Discover/Previews/iPhone-Dark-unsupported.png",
+    "passed": true,
+    "bytes": 43920,
+    "mode": "Reused prior strict raster: saved SVG exactly unchanged"
+  },
+  {
+    "key": "iPhone-Dark-proposed-discover-signinerror",
+    "file": "iPhone/Dark/05 Discover.fig",
+    "page": "Discover Proposal",
+    "id": "0:7196",
+    "proof": "QA/Discover/Previews/iPhone-Dark-signinerror.png",
+    "passed": true,
+    "bytes": 49316
+  },
+  {
+    "key": "iPhone-Dark-proposed-discover-servererror",
+    "file": "iPhone/Dark/05 Discover.fig",
+    "page": "Discover Proposal",
+    "id": "0:7230",
+    "proof": "QA/Discover/Previews/iPhone-Dark-servererror.png",
+    "passed": true,
+    "bytes": 43464,
+    "mode": "Reused prior strict raster: saved SVG exactly unchanged"
+  },
+  {
+    "key": "iPhone-Dark-proposed-discover-partial",
+    "file": "iPhone/Dark/05 Discover.fig",
+    "page": "Discover Proposal",
+    "id": "0:7259",
+    "proof": "QA/Discover/Previews/iPhone-Dark-partial.png",
+    "passed": true,
+    "bytes": 68545,
+    "mode": "Reused prior strict raster: saved SVG exactly unchanged"
+  },
+  {
+    "key": "iPhone-Dark-proposed-discover-permission",
+    "file": "iPhone/Dark/05 Discover.fig",
+    "page": "Discover Proposal",
+    "id": "0:7347",
+    "proof": "QA/Discover/Previews/iPhone-Dark-permission.png",
+    "passed": true,
+    "bytes": 44578,
+    "mode": "Reused prior strict raster: saved SVG exactly unchanged"
+  },
+  {
+    "key": "iPhone-Dark-proposed-discover-mutationerror",
+    "file": "iPhone/Dark/05 Discover.fig",
+    "page": "Discover Proposal",
+    "id": "0:7400",
+    "proof": "QA/Discover/Previews/iPhone-Dark-mutationerror.png",
+    "passed": true,
+    "bytes": 50928,
+    "mode": "Reused prior strict raster: saved SVG exactly unchanged"
+  },
+  {
+    "key": "iPhone-Light-proposed-discover-browse",
+    "file": "iPhone/Light/05 Discover.fig",
+    "page": "Discover Proposal",
+    "id": "0:4395",
+    "proof": "QA/Discover/Previews/iPhone-Light-browse.png",
+    "passed": true,
+    "bytes": 76329,
+    "mode": "Reused prior strict raster: saved SVG exactly unchanged"
+  },
+  {
+    "key": "iPhone-Light-proposed-discover-movie",
+    "file": "iPhone/Light/05 Discover.fig",
+    "page": "Discover Proposal",
+    "id": "0:4482",
+    "proof": "QA/Discover/Previews/iPhone-Light-movie.png",
+    "passed": true,
+    "bytes": 64157
+  },
+  {
+    "key": "iPhone-Light-proposed-discover-request",
+    "file": "iPhone/Light/05 Discover.fig",
+    "page": "Discover Proposal",
+    "id": "0:4586",
+    "proof": "QA/Discover/Previews/iPhone-Light-request.png",
+    "passed": true,
+    "bytes": 68362,
+    "mode": "Reused prior strict raster: saved SVG exactly unchanged"
+  },
+  {
+    "key": "iPhone-Light-proposed-discover-requestmovie",
+    "file": "iPhone/Light/05 Discover.fig",
+    "page": "Discover Proposal",
+    "id": "0:4639",
+    "proof": "QA/Discover/Previews/iPhone-Light-requestmovie.png",
+    "passed": true,
+    "bytes": 36635,
+    "mode": "Reused prior strict raster: saved SVG exactly unchanged"
+  },
+  {
+    "key": "iPhone-Light-proposed-discover-advancedmovie",
+    "file": "iPhone/Light/05 Discover.fig",
+    "page": "Discover Proposal",
+    "id": "0:4671",
+    "proof": "QA/Discover/Previews/iPhone-Light-advancedmovie.png",
+    "passed": true,
+    "bytes": 46725,
+    "mode": "Reused prior strict raster: saved SVG exactly unchanged"
+  },
+  {
+    "key": "iPhone-Light-proposed-discover-sentmovie",
+    "file": "iPhone/Light/05 Discover.fig",
+    "page": "Discover Proposal",
+    "id": "0:4714",
+    "proof": "QA/Discover/Previews/iPhone-Light-sentmovie.png",
+    "passed": true,
+    "bytes": 41953,
+    "mode": "Reused prior strict raster: saved SVG exactly unchanged"
+  },
+  {
+    "key": "iPhone-Light-proposed-discover-welcome",
+    "file": "iPhone/Light/05 Discover.fig",
+    "page": "Discover Proposal",
+    "id": "0:4769",
+    "proof": "QA/Discover/Previews/iPhone-Light-welcome.png",
+    "passed": true,
+    "bytes": 55479,
+    "mode": "Reused prior strict raster: saved SVG exactly unchanged"
+  },
+  {
+    "key": "iPhone-Light-proposed-discover-server",
+    "file": "iPhone/Light/05 Discover.fig",
+    "page": "Discover Proposal",
+    "id": "0:4824",
+    "proof": "QA/Discover/Previews/iPhone-Light-server.png",
+    "passed": true,
+    "bytes": 54243,
+    "mode": "Reused prior strict raster: saved SVG exactly unchanged"
+  },
+  {
+    "key": "iPhone-Light-proposed-discover-signin",
+    "file": "iPhone/Light/05 Discover.fig",
+    "page": "Discover Proposal",
+    "id": "0:4858",
+    "proof": "QA/Discover/Previews/iPhone-Light-signin.png",
+    "passed": true,
+    "bytes": 47804
+  },
+  {
+    "key": "iPhone-Light-proposed-discover-search",
+    "file": "iPhone/Light/05 Discover.fig",
+    "page": "Discover Proposal",
+    "id": "0:4895",
+    "proof": "QA/Discover/Previews/iPhone-Light-search.png",
+    "passed": true,
+    "bytes": 52766
+  },
+  {
+    "key": "iPhone-Light-proposed-discover-filters",
+    "file": "iPhone/Light/05 Discover.fig",
+    "page": "Discover Proposal",
+    "id": "0:4973",
+    "proof": "QA/Discover/Previews/iPhone-Light-filters.png",
+    "passed": true,
+    "bytes": 47879,
+    "mode": "Reused prior strict raster: saved SVG exactly unchanged"
+  },
+  {
+    "key": "iPhone-Light-proposed-discover-show",
+    "file": "iPhone/Light/05 Discover.fig",
+    "page": "Discover Proposal",
+    "id": "0:5018",
+    "proof": "QA/Discover/Previews/iPhone-Light-show.png",
+    "passed": true,
+    "bytes": 64529
+  },
+  {
+    "key": "iPhone-Light-proposed-discover-advanced",
+    "file": "iPhone/Light/05 Discover.fig",
+    "page": "Discover Proposal",
+    "id": "0:5123",
+    "proof": "QA/Discover/Previews/iPhone-Light-advanced.png",
+    "passed": true,
+    "bytes": 60207,
+    "mode": "Reused prior strict raster: saved SVG exactly unchanged"
+  },
+  {
+    "key": "iPhone-Light-proposed-discover-sent",
+    "file": "iPhone/Light/05 Discover.fig",
+    "page": "Discover Proposal",
+    "id": "0:5172",
+    "proof": "QA/Discover/Previews/iPhone-Light-sent.png",
+    "passed": true,
+    "bytes": 47394,
+    "mode": "Reused prior strict raster: saved SVG exactly unchanged"
+  },
+  {
+    "key": "iPhone-Light-proposed-discover-myrequests",
+    "file": "iPhone/Light/05 Discover.fig",
+    "page": "Discover Proposal",
+    "id": "0:5227",
+    "proof": "QA/Discover/Previews/iPhone-Light-myrequests.png",
+    "passed": true,
+    "bytes": 72528
+  },
+  {
+    "key": "iPhone-Light-proposed-discover-requestdetail",
+    "file": "iPhone/Light/05 Discover.fig",
+    "page": "Discover Proposal",
+    "id": "0:5318",
+    "proof": "QA/Discover/Previews/iPhone-Light-requestdetail.png",
+    "passed": true,
+    "bytes": 72734,
+    "mode": "Reused prior strict raster: saved SVG exactly unchanged"
+  },
+  {
+    "key": "iPhone-Light-proposed-discover-available",
+    "file": "iPhone/Light/05 Discover.fig",
+    "page": "Discover Proposal",
+    "id": "0:5398",
+    "proof": "QA/Discover/Previews/iPhone-Light-available.png",
+    "passed": true,
+    "bytes": 67276
+  },
+  {
+    "key": "iPhone-Light-proposed-discover-manager",
+    "file": "iPhone/Light/05 Discover.fig",
+    "page": "Discover Proposal",
+    "id": "0:5502",
+    "proof": "QA/Discover/Previews/iPhone-Light-manager.png",
+    "passed": true,
+    "bytes": 68970
+  },
+  {
+    "key": "iPhone-Light-proposed-discover-approval",
+    "file": "iPhone/Light/05 Discover.fig",
+    "page": "Discover Proposal",
+    "id": "0:5605",
+    "proof": "QA/Discover/Previews/iPhone-Light-approval.png",
+    "passed": true,
+    "bytes": 57986,
+    "mode": "Reused prior strict raster: saved SVG exactly unchanged"
+  },
+  {
+    "key": "iPhone-Light-proposed-discover-issues",
+    "file": "iPhone/Light/05 Discover.fig",
+    "page": "Discover Proposal",
+    "id": "0:5651",
+    "proof": "QA/Discover/Previews/iPhone-Light-issues.png",
+    "passed": true,
+    "bytes": 44033
+  },
+  {
+    "key": "iPhone-Light-proposed-discover-issue",
+    "file": "iPhone/Light/05 Discover.fig",
+    "page": "Discover Proposal",
+    "id": "0:5716",
+    "proof": "QA/Discover/Previews/iPhone-Light-issue.png",
+    "passed": true,
+    "bytes": 66539
+  },
+  {
+    "key": "iPhone-Light-proposed-discover-report",
+    "file": "iPhone/Light/05 Discover.fig",
+    "page": "Discover Proposal",
+    "id": "0:5786",
+    "proof": "QA/Discover/Previews/iPhone-Light-report.png",
+    "passed": true,
+    "bytes": 48486,
+    "mode": "Reused prior strict raster: saved SVG exactly unchanged"
+  },
+  {
+    "key": "iPhone-Light-proposed-discover-titlemenu",
+    "file": "iPhone/Light/05 Discover.fig",
+    "page": "Discover Proposal",
+    "id": "0:5818",
+    "proof": "QA/Discover/Previews/iPhone-Light-titlemenu.png",
+    "passed": true,
+    "bytes": 34161,
+    "mode": "Reused prior strict raster: saved SVG exactly unchanged"
+  },
+  {
+    "key": "iPhone-Light-proposed-discover-blocklist",
+    "file": "iPhone/Light/05 Discover.fig",
+    "page": "Discover Proposal",
+    "id": "0:5878",
+    "proof": "QA/Discover/Previews/iPhone-Light-blocklist.png",
+    "passed": true,
+    "bytes": 39248
+  },
+  {
+    "key": "iPhone-Light-proposed-discover-settings",
+    "file": "iPhone/Light/05 Discover.fig",
+    "page": "Discover Proposal",
+    "id": "0:5935",
+    "proof": "QA/Discover/Previews/iPhone-Light-settings.png",
+    "passed": true,
+    "bytes": 59116,
+    "mode": "Reused prior strict raster: saved SVG exactly unchanged"
+  },
+  {
+    "key": "iPhone-Light-proposed-discover-notifications",
+    "file": "iPhone/Light/05 Discover.fig",
+    "page": "Discover Proposal",
+    "id": "0:6034",
+    "proof": "QA/Discover/Previews/iPhone-Light-notifications.png",
+    "passed": true,
+    "bytes": 58118,
+    "mode": "Reused prior strict raster: saved SVG exactly unchanged"
+  },
+  {
+    "key": "iPhone-Light-proposed-discover-expired",
+    "file": "iPhone/Light/05 Discover.fig",
+    "page": "Discover Proposal",
+    "id": "0:6110",
+    "proof": "QA/Discover/Previews/iPhone-Light-expired.png",
+    "passed": true,
+    "bytes": 32587,
+    "mode": "Reused prior strict raster: saved SVG exactly unchanged"
+  },
+  {
+    "key": "iPhone-Light-proposed-discover-offline",
+    "file": "iPhone/Light/05 Discover.fig",
+    "page": "Discover Proposal",
+    "id": "0:6162",
+    "proof": "QA/Discover/Previews/iPhone-Light-offline.png",
+    "passed": true,
+    "bytes": 38649,
+    "mode": "Reused prior strict raster: saved SVG exactly unchanged"
+  },
+  {
+    "key": "iPhone-Light-proposed-discover-quota",
+    "file": "iPhone/Light/05 Discover.fig",
+    "page": "Discover Proposal",
+    "id": "0:6215",
+    "proof": "QA/Discover/Previews/iPhone-Light-quota.png",
+    "passed": true,
+    "bytes": 43669,
+    "mode": "Reused prior strict raster: saved SVG exactly unchanged"
+  },
+  {
+    "key": "iPhone-Light-proposed-discover-uncertain",
+    "file": "iPhone/Light/05 Discover.fig",
+    "page": "Discover Proposal",
+    "id": "0:6267",
+    "proof": "QA/Discover/Previews/iPhone-Light-uncertain.png",
+    "passed": true,
+    "bytes": 43116,
+    "mode": "Reused prior strict raster: saved SVG exactly unchanged"
+  },
+  {
+    "key": "iPhone-Light-proposed-discover-empty",
+    "file": "iPhone/Light/05 Discover.fig",
+    "page": "Discover Proposal",
+    "id": "0:6320",
+    "proof": "QA/Discover/Previews/iPhone-Light-empty.png",
+    "passed": true,
+    "bytes": 28905,
+    "mode": "Reused prior strict raster: saved SVG exactly unchanged"
+  },
+  {
+    "key": "iPhone-Light-proposed-discover-loading",
+    "file": "iPhone/Light/05 Discover.fig",
+    "page": "Discover Proposal",
+    "id": "0:6372",
+    "proof": "QA/Discover/Previews/iPhone-Light-loading.png",
+    "passed": true,
+    "bytes": 29524,
+    "mode": "Reused prior strict raster: saved SVG exactly unchanged"
+  },
+  {
+    "key": "iPhone-Light-proposed-discover-accessibility",
+    "file": "iPhone/Light/05 Discover.fig",
+    "page": "Discover Proposal",
+    "id": "0:6421",
+    "proof": "QA/Discover/Previews/iPhone-Light-accessibility.png",
+    "passed": true,
+    "bytes": 47225,
+    "mode": "Reused prior strict raster: saved SVG exactly unchanged"
+  },
+  {
+    "key": "iPhone-Light-proposed-discover-decline",
+    "file": "iPhone/Light/05 Discover.fig",
+    "page": "Discover Proposal",
+    "id": "0:6471",
+    "proof": "QA/Discover/Previews/iPhone-Light-decline.png",
+    "passed": true,
+    "bytes": 41225,
+    "mode": "Reused prior strict raster: saved SVG exactly unchanged"
+  },
+  {
+    "key": "iPhone-Light-proposed-discover-blockconfirm",
+    "file": "iPhone/Light/05 Discover.fig",
+    "page": "Discover Proposal",
+    "id": "0:6526",
+    "proof": "QA/Discover/Previews/iPhone-Light-blockconfirm.png",
+    "passed": true,
+    "bytes": 41001,
+    "mode": "Reused prior strict raster: saved SVG exactly unchanged"
+  },
+  {
+    "key": "iPhone-Light-proposed-discover-disconnect",
+    "file": "iPhone/Light/05 Discover.fig",
+    "page": "Discover Proposal",
+    "id": "0:6581",
+    "proof": "QA/Discover/Previews/iPhone-Light-disconnect.png",
+    "passed": true,
+    "bytes": 43550,
+    "mode": "Reused prior strict raster: saved SVG exactly unchanged"
+  },
+  {
+    "key": "iPhone-Light-proposed-discover-hide",
+    "file": "iPhone/Light/05 Discover.fig",
+    "page": "Discover Proposal",
+    "id": "0:6636",
+    "proof": "QA/Discover/Previews/iPhone-Light-hide.png",
+    "passed": true,
+    "bytes": 41300,
+    "mode": "Reused prior strict raster: saved SVG exactly unchanged"
+  },
+  {
+    "key": "iPhone-Light-proposed-discover-approved",
+    "file": "iPhone/Light/05 Discover.fig",
+    "page": "Discover Proposal",
+    "id": "0:6689",
+    "proof": "QA/Discover/Previews/iPhone-Light-approved.png",
+    "passed": true,
+    "bytes": 37105,
+    "mode": "Reused prior strict raster: saved SVG exactly unchanged"
+  },
+  {
+    "key": "iPhone-Light-proposed-discover-cancel",
+    "file": "iPhone/Light/05 Discover.fig",
+    "page": "Discover Proposal",
+    "id": "0:6740",
+    "proof": "QA/Discover/Previews/iPhone-Light-cancel.png",
+    "passed": true,
+    "bytes": 43447,
+    "mode": "Reused prior strict raster: saved SVG exactly unchanged"
+  },
+  {
+    "key": "iPhone-Light-proposed-discover-unblock",
+    "file": "iPhone/Light/05 Discover.fig",
+    "page": "Discover Proposal",
+    "id": "0:6795",
+    "proof": "QA/Discover/Previews/iPhone-Light-unblock.png",
+    "passed": true,
+    "bytes": 36241,
+    "mode": "Reused prior strict raster: saved SVG exactly unchanged"
+  },
+  {
+    "key": "iPhone-Light-proposed-discover-resolved",
+    "file": "iPhone/Light/05 Discover.fig",
+    "page": "Discover Proposal",
+    "id": "0:6848",
+    "proof": "QA/Discover/Previews/iPhone-Light-resolved.png",
+    "passed": true,
+    "bytes": 33864,
+    "mode": "Reused prior strict raster: saved SVG exactly unchanged"
+  },
+  {
+    "key": "iPhone-Light-proposed-discover-replace",
+    "file": "iPhone/Light/05 Discover.fig",
+    "page": "Discover Proposal",
+    "id": "0:6899",
+    "proof": "QA/Discover/Previews/iPhone-Light-replace.png",
+    "passed": true,
+    "bytes": 46126,
+    "mode": "Reused prior strict raster: saved SVG exactly unchanged"
+  },
+  {
+    "key": "iPhone-Light-proposed-discover-catalog",
+    "file": "iPhone/Light/05 Discover.fig",
+    "page": "Discover Proposal",
+    "id": "0:6954",
+    "proof": "QA/Discover/Previews/iPhone-Light-catalog.png",
+    "passed": true,
+    "bytes": 62313
+  },
+  {
+    "key": "iPhone-Light-proposed-discover-person",
+    "file": "iPhone/Light/05 Discover.fig",
+    "page": "Discover Proposal",
+    "id": "0:7035",
+    "proof": "QA/Discover/Previews/iPhone-Light-person.png",
+    "passed": true,
+    "bytes": 79487,
+    "mode": "Reused prior strict raster: saved SVG exactly unchanged"
+  },
+  {
+    "key": "iPhone-Light-proposed-discover-managerfilters",
+    "file": "iPhone/Light/05 Discover.fig",
+    "page": "Discover Proposal",
+    "id": "0:7104",
+    "proof": "QA/Discover/Previews/iPhone-Light-managerfilters.png",
+    "passed": true,
+    "bytes": 42052,
+    "mode": "Reused prior strict raster: saved SVG exactly unchanged"
+  },
+  {
+    "key": "iPhone-Light-proposed-discover-unsupported",
+    "file": "iPhone/Light/05 Discover.fig",
+    "page": "Discover Proposal",
+    "id": "0:7143",
+    "proof": "QA/Discover/Previews/iPhone-Light-unsupported.png",
+    "passed": true,
+    "bytes": 43045,
+    "mode": "Reused prior strict raster: saved SVG exactly unchanged"
+  },
+  {
+    "key": "iPhone-Light-proposed-discover-signinerror",
+    "file": "iPhone/Light/05 Discover.fig",
+    "page": "Discover Proposal",
+    "id": "0:7196",
+    "proof": "QA/Discover/Previews/iPhone-Light-signinerror.png",
+    "passed": true,
+    "bytes": 48107
+  },
+  {
+    "key": "iPhone-Light-proposed-discover-servererror",
+    "file": "iPhone/Light/05 Discover.fig",
+    "page": "Discover Proposal",
+    "id": "0:7230",
+    "proof": "QA/Discover/Previews/iPhone-Light-servererror.png",
+    "passed": true,
+    "bytes": 42383,
+    "mode": "Reused prior strict raster: saved SVG exactly unchanged"
+  },
+  {
+    "key": "iPhone-Light-proposed-discover-partial",
+    "file": "iPhone/Light/05 Discover.fig",
+    "page": "Discover Proposal",
+    "id": "0:7259",
+    "proof": "QA/Discover/Previews/iPhone-Light-partial.png",
+    "passed": true,
+    "bytes": 67777,
+    "mode": "Reused prior strict raster: saved SVG exactly unchanged"
+  },
+  {
+    "key": "iPhone-Light-proposed-discover-permission",
+    "file": "iPhone/Light/05 Discover.fig",
+    "page": "Discover Proposal",
+    "id": "0:7347",
+    "proof": "QA/Discover/Previews/iPhone-Light-permission.png",
+    "passed": true,
+    "bytes": 43835,
+    "mode": "Reused prior strict raster: saved SVG exactly unchanged"
+  },
+  {
+    "key": "iPhone-Light-proposed-discover-mutationerror",
+    "file": "iPhone/Light/05 Discover.fig",
+    "page": "Discover Proposal",
+    "id": "0:7400",
+    "proof": "QA/Discover/Previews/iPhone-Light-mutationerror.png",
+    "passed": true,
+    "bytes": 50071,
+    "mode": "Reused prior strict raster: saved SVG exactly unchanged"
+  },
+  {
+    "key": "iPad-Landscape-Light-proposed-discover-browse",
+    "file": "iPad-Landscape/Light/05 Discover.fig",
+    "page": "Discover Proposal",
+    "id": "0:5393",
+    "proof": "QA/Discover/Previews/iPad-Landscape-Light-browse.png",
+    "passed": true,
+    "bytes": 128142,
+    "mode": "Reused prior strict raster: saved SVG exactly unchanged"
+  },
+  {
+    "key": "iPad-Landscape-Light-proposed-discover-manager",
+    "file": "iPad-Landscape/Light/05 Discover.fig",
+    "page": "Discover Proposal",
+    "id": "0:5514",
+    "proof": "QA/Discover/Previews/iPad-Landscape-Light-manager.png",
+    "passed": true,
+    "bytes": 96522
+  },
+  {
+    "key": "iPad-Landscape-Dark-proposed-discover-detail",
+    "file": "iPad-Landscape/Dark/05 Discover.fig",
+    "page": "Discover Proposal",
+    "id": "0:5390",
+    "proof": "QA/Discover/Previews/iPad-Landscape-Dark-detail.png",
+    "passed": true,
+    "bytes": 129400,
+    "mode": "Reused prior strict raster: saved SVG exactly unchanged"
+  },
+  {
+    "key": "iPad-Light-proposed-discover-manager",
+    "file": "iPad/Light/05 Discover.fig",
+    "page": "Discover Proposal",
+    "id": "0:5392",
+    "proof": "QA/Discover/Previews/iPad-Light-manager.png",
+    "passed": true,
+    "bytes": 73106
+  },
+  {
+    "key": "iPad-Light-proposed-discover-browse",
+    "file": "iPad/Light/05 Discover.fig",
+    "page": "Discover Proposal",
+    "id": "0:5468",
+    "proof": "QA/Discover/Previews/iPad-Light-browse.png",
+    "passed": true,
+    "bytes": 151173,
+    "mode": "Reused prior strict raster: saved SVG exactly unchanged"
+  },
+  {
+    "key": "macOS-Dark-proposed-discover-browse",
+    "file": "macOS/Dark/05 Discover.fig",
+    "page": "Discover Proposal",
+    "id": "0:5448",
+    "proof": "QA/Discover/Previews/macOS-Dark-browse.png",
+    "passed": true,
+    "bytes": 119678,
+    "mode": "Reused prior strict raster: saved SVG exactly unchanged"
+  },
+  {
+    "key": "macOS-Light-proposed-discover-manager",
+    "file": "macOS/Light/05 Discover.fig",
+    "page": "Discover Proposal",
+    "id": "0:5450",
+    "proof": "QA/Discover/Previews/macOS-Light-manager.png",
+    "passed": true,
+    "bytes": 79323
+  },
+  {
+    "key": "macOS-Light-proposed-discover-search",
+    "file": "macOS/Light/05 Discover.fig",
+    "page": "Discover Proposal",
+    "id": "0:5544",
+    "proof": "QA/Discover/Previews/macOS-Light-search.png",
+    "passed": true,
+    "bytes": 137298,
+    "mode": "Reused prior strict raster: saved SVG exactly unchanged"
+  },
+  {
+    "key": "macOS-Light-proposed-discover-detail",
+    "file": "macOS/Light/05 Discover.fig",
+    "page": "Discover Proposal",
+    "id": "0:5658",
+    "proof": "QA/Discover/Previews/macOS-Light-detail.png",
+    "passed": true,
+    "bytes": 108853,
+    "mode": "Reused prior strict raster: saved SVG exactly unchanged"
+  },
+  {
+    "key": "macOS-Narrow-Light-proposed-discover-manager",
+    "file": "macOS-Narrow/Light/05 Discover.fig",
+    "page": "Discover Proposal",
+    "id": "0:5447",
+    "proof": "QA/Discover/Previews/macOS-Narrow-Light-manager.png",
+    "passed": true,
+    "bytes": 56395
+  },
+  {
+    "key": "macOS-Narrow-Light-proposed-discover-detail",
+    "file": "macOS-Narrow/Light/05 Discover.fig",
+    "page": "Discover Proposal",
+    "id": "0:5526",
+    "proof": "QA/Discover/Previews/macOS-Narrow-Light-detail.png",
+    "passed": true,
+    "bytes": 58690,
+    "mode": "Reused prior strict raster: saved SVG exactly unchanged"
+  },
+  {
+    "key": "tvOS-Dark-proposed-discover-browse",
+    "file": "tvOS/Dark/05 Discover.fig",
+    "page": "Discover Proposal",
+    "id": "0:3619",
+    "proof": "QA/Discover/Previews/tvOS-Dark-browse.png",
+    "passed": true,
+    "bytes": 176383,
+    "mode": "Reused prior strict raster: saved SVG exactly unchanged"
+  },
+  {
+    "key": "tvOS-Dark-proposed-discover-detail",
+    "file": "tvOS/Dark/05 Discover.fig",
+    "page": "Discover Proposal",
+    "id": "0:3680",
+    "proof": "QA/Discover/Previews/tvOS-Dark-detail.png",
+    "passed": true,
+    "bytes": 102760,
+    "mode": "Reused prior strict raster: saved SVG exactly unchanged"
+  },
+  {
+    "key": "tvOS-Dark-proposed-discover-requestmovie",
+    "file": "tvOS/Dark/05 Discover.fig",
+    "page": "Discover Proposal",
+    "id": "0:3701",
+    "proof": "QA/Discover/Previews/tvOS-Dark-requestmovie.png",
+    "passed": true,
+    "bytes": 119829,
+    "mode": "Reused prior strict raster: saved SVG exactly unchanged"
+  },
+  {
+    "key": "tvOS-Dark-proposed-discover-sentmovie",
+    "file": "tvOS/Dark/05 Discover.fig",
+    "page": "Discover Proposal",
+    "id": "0:3729",
+    "proof": "QA/Discover/Previews/tvOS-Dark-sentmovie.png",
+    "passed": true,
+    "bytes": 78240,
+    "mode": "Reused prior strict raster: saved SVG exactly unchanged"
+  },
+  {
+    "key": "visionOS-Dark-proposed-discover-browse",
+    "file": "visionOS/Dark/05 Discover.fig",
+    "page": "Discover Proposal",
+    "id": "0:4659",
+    "proof": "QA/Discover/Previews/visionOS-Dark-browse.png",
+    "passed": true,
+    "bytes": 89995,
+    "mode": "Reused prior strict raster: saved SVG exactly unchanged"
+  },
+  {
+    "key": "visionOS-Dark-proposed-discover-detail",
+    "file": "visionOS/Dark/05 Discover.fig",
+    "page": "Discover Proposal",
+    "id": "0:4739",
+    "proof": "QA/Discover/Previews/visionOS-Dark-detail.png",
+    "passed": true,
+    "bytes": 91817,
+    "mode": "Reused prior strict raster: saved SVG exactly unchanged"
+  },
+  {
+    "key": "visionOS-Dark-proposed-discover-sent",
+    "file": "visionOS/Dark/05 Discover.fig",
+    "page": "Discover Proposal",
+    "id": "0:4792",
+    "proof": "QA/Discover/Previews/visionOS-Dark-sent.png",
+    "passed": true,
+    "bytes": 55126,
+    "mode": "Reused prior strict raster: saved SVG exactly unchanged"
+  }
+]

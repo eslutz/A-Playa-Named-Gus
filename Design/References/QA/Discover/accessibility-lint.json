@@ -1,0 +1,191 @@
+{
+  "scope": "Discover Proposal paths in the ten integrated files",
+  "preset": "accessibility",
+  "fixesApplied": false,
+  "checks": [
+    {
+      "file": "iPhone/Dark/05 Discover.fig",
+      "proposalFindings": 0,
+      "rules": {},
+      "samples": []
+    },
+    {
+      "file": "iPhone/Light/05 Discover.fig",
+      "proposalFindings": 0,
+      "rules": {},
+      "samples": []
+    },
+    {
+      "file": "iPad-Landscape/Light/05 Discover.fig",
+      "proposalFindings": 0,
+      "rules": {},
+      "samples": []
+    },
+    {
+      "file": "iPad-Landscape/Dark/05 Discover.fig",
+      "proposalFindings": 0,
+      "rules": {},
+      "samples": []
+    },
+    {
+      "file": "iPad/Light/05 Discover.fig",
+      "proposalFindings": 0,
+      "rules": {},
+      "samples": []
+    },
+    {
+      "file": "macOS/Dark/05 Discover.fig",
+      "proposalFindings": 3,
+      "rules": {
+        "touch-target-size": 3
+      },
+      "samples": [
+        {
+          "ruleId": "touch-target-size",
+          "severity": "error",
+          "message": "Touch target too small: 12\u00d712px",
+          "nodePath": [
+            "Discover Proposal",
+            "macOS / Dark / proposed-discover-browse \u2014 Discover \u00b7 Browse",
+            "Native app sidebar",
+            "Window controls",
+            "Window button"
+          ]
+        },
+        {
+          "ruleId": "touch-target-size",
+          "severity": "error",
+          "message": "Touch target too small: 12\u00d712px",
+          "nodePath": [
+            "Discover Proposal",
+            "macOS / Dark / proposed-discover-browse \u2014 Discover \u00b7 Browse",
+            "Native app sidebar",
+            "Window controls",
+            "Window button"
+          ]
+        },
+        {
+          "ruleId": "touch-target-size",
+          "severity": "error",
+          "message": "Touch target too small: 12\u00d712px",
+          "nodePath": [
+            "Discover Proposal",
+            "macOS / Dark / proposed-discover-browse \u2014 Discover \u00b7 Browse",
+            "Native app sidebar",
+            "Window controls",
+            "Window button"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "macOS/Light/05 Discover.fig",
+      "proposalFindings": 9,
+      "rules": {
+        "touch-target-size": 9
+      },
+      "samples": [
+        {
+          "ruleId": "touch-target-size",
+          "severity": "error",
+          "message": "Touch target too small: 12\u00d712px",
+          "nodePath": [
+            "Discover Proposal",
+            "macOS / Light / proposed-discover-manager \u2014 Discover \u00b7 Manage Requests",
+            "Native app sidebar",
+            "Window controls",
+            "Window button"
+          ]
+        },
+        {
+          "ruleId": "touch-target-size",
+          "severity": "error",
+          "message": "Touch target too small: 12\u00d712px",
+          "nodePath": [
+            "Discover Proposal",
+            "macOS / Light / proposed-discover-manager \u2014 Discover \u00b7 Manage Requests",
+            "Native app sidebar",
+            "Window controls",
+            "Window button"
+          ]
+        },
+        {
+          "ruleId": "touch-target-size",
+          "severity": "error",
+          "message": "Touch target too small: 12\u00d712px",
+          "nodePath": [
+            "Discover Proposal",
+            "macOS / Light / proposed-discover-manager \u2014 Discover \u00b7 Manage Requests",
+            "Native app sidebar",
+            "Window controls",
+            "Window button"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "macOS-Narrow/Light/05 Discover.fig",
+      "proposalFindings": 6,
+      "rules": {
+        "touch-target-size": 6
+      },
+      "samples": [
+        {
+          "ruleId": "touch-target-size",
+          "severity": "error",
+          "message": "Touch target too small: 12\u00d712px",
+          "nodePath": [
+            "Discover Proposal",
+            "macOS Narrow / Light / proposed-discover-manager \u2014 Discover \u00b7 Manage Requests",
+            "Native app sidebar",
+            "Window controls",
+            "Window button"
+          ]
+        },
+        {
+          "ruleId": "touch-target-size",
+          "severity": "error",
+          "message": "Touch target too small: 12\u00d712px",
+          "nodePath": [
+            "Discover Proposal",
+            "macOS Narrow / Light / proposed-discover-manager \u2014 Discover \u00b7 Manage Requests",
+            "Native app sidebar",
+            "Window controls",
+            "Window button"
+          ]
+        },
+        {
+          "ruleId": "touch-target-size",
+          "severity": "error",
+          "message": "Touch target too small: 12\u00d712px",
+          "nodePath": [
+            "Discover Proposal",
+            "macOS Narrow / Light / proposed-discover-manager \u2014 Discover \u00b7 Manage Requests",
+            "Native app sidebar",
+            "Window controls",
+            "Window button"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tvOS/Dark/05 Discover.fig",
+      "proposalFindings": 0,
+      "rules": {},
+      "samples": []
+    },
+    {
+      "file": "visionOS/Dark/05 Discover.fig",
+      "proposalFindings": 0,
+      "rules": {},
+      "samples": []
+    }
+  ],
+  "interpretation": "Static design lint is supporting evidence. Native caption/control sizes, graphic wordmarks and flat material approximations require interpretation. These results do not certify runtime accessibility.",
+  "disposition": {
+    "findings": 18,
+    "allFindings": "Touch-size rule flags the 12-point red/yellow/green macOS window-button illustrations. Native AppKit/SwiftUI owns these controls at runtime.",
+    "appOwnedProposalFindings": 0,
+    "lintClean": false
+  }
+}

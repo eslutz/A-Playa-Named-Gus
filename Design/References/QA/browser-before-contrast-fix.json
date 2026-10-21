@@ -1,0 +1,37 @@
+{
+  "date": "2026-10-20",
+  "servedAt": "127.0.0.1 (temporary, stopped after testing)",
+  "cases": [
+    "Settings PageDown and End/Home clamping",
+    "Wheel scroll down/up",
+    "Nested Cast rail ArrowRight/Left without moving outer viewport",
+    "Back restores Settings offset -699.2",
+    "Appearance preserves selected movie-detail state",
+    "Watch falls back to Dark and excludes main-app-only destinations",
+    "Seerr demo fields -> ready -> Sign In -> Back",
+    "Vision sidebar label-to-target mapping",
+    "Approve dialog Cancel returns to manager",
+    "Approve dialog synthetic success destination",
+    "Only modal actions exposed while confirmation is open",
+    "Detail menu -> Add to Playlist -> Back across split sections",
+    "No warning/error console logs in exercised flows",
+    "Corrected Watch Resume thumbnails/titles/progress; both rows open Play On"
+  ],
+  "status": "passed for exercised cases",
+  "notTested": [
+    "Every one of the 25,808 potential edges",
+    "Physical touch gestures",
+    "Native OpenPencil screen navigation/scrolling (unsupported)",
+    "Real authentication, purchases, requests or system sheets"
+  ],
+  "latestCases": [
+    "Watch blank connection form retains disabled Connect and offers an external synthetic-demo progression",
+    "Watch synthetic demo opens sign-in and Back returns",
+    "Watch connection-error End scrolling reaches footer; retry destination opens sign-in",
+    "Revised TV detail PageDown scrolling works",
+    "Disconnected Mac Discover has no catalog search",
+    "No browser warning/error console logs in latest exercised flows"
+  ],
+  "latestPotentialEdges": 25806,
+  "latestMappedScrollRegions": 825
+}

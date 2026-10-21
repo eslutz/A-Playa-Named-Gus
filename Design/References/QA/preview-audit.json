@@ -1,0 +1,11 @@
+{
+  "scenes": 2896,
+  "navigationEdges": 25792,
+  "missingTargets": 0,
+  "scrollRegions": 828,
+  "mappedScrollRegions": 828,
+  "invalidSvgScenes": 0,
+  "nestedScrollTests": "passed",
+  "generatedJavaScriptSyntax": "passed",
+  "browserAcceptance": "unverified; local file URL blocked"
+}

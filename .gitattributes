@@ -5,3 +5,8 @@ Documentation/Reviews/**/evidence/**/*.patch -text -diff
 Documentation/Reviews/**/evidence/**/*.txt -text -diff
 Documentation/Reviews/**/*.patch -text -diff
 Documentation/Reviews/2026-10-09-ios-ui/evidence/physical-2026-10-10/harness/Extra.swift -text -diff
+
+# Editable designs are binary; browser scenes and proofs are generated exports.
+Design/**/*.fig -text -diff
+Design/Exports/** linguist-generated=true
+Design/References/QA/** linguist-generated=true
