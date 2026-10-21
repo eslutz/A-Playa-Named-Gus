@@ -15508,8 +15508,8 @@
     },
     {
       "path": "Gus.fig",
-      "bytes": 4596567,
-      "sha256": "6f007311cf62e62177aaea06c64f7c499bd6349ba710ba61f2ca50c38dfa161b"
+      "bytes": 4597092,
+      "sha256": "140f69fa1a7c7a44a82e97c738e6ee9514ab56e4f205a76cef2053761df5708f"
     },
     {
       "path": "README.md",
@@ -16938,8 +16938,8 @@
     },
     {
       "path": "References/QA/combined-acceptance.json",
-      "bytes": 3274,
-      "sha256": "2820dfdd623cf842bd9719dd88e31c95763189ffcd8256795fd5d777896663e6"
+      "bytes": 4111,
+      "sha256": "51568634e1a1e3fae72fa4a4fb621ffac39432f3be11593d610198749bafe653"
     },
     {
       "path": "References/QA/contrast-detail.json",
@@ -17228,8 +17228,8 @@
     },
     {
       "path": "References/Source/README.md",
-      "bytes": 2907,
-      "sha256": "6c7a0b3933c4f5f16ac05d7dce470d76904b887888cab5ef9b9121a6edbbfa83"
+      "bytes": 3054,
+      "sha256": "a9e7ad174f0b7d3ccf50e75993086cf59d942df88c52e42fd3e0d4a6336af2ba"
     },
     {
       "path": "References/Source/cli-fonts.mjs",
@@ -17243,8 +17243,8 @@
     },
     {
       "path": "References/Source/combine.mjs",
-      "bytes": 17703,
-      "sha256": "414f7f7d235fd0a8761c9b93325498ffd3e2a0c72b97483a808b7715d64829ad"
+      "bytes": 17779,
+      "sha256": "3028e8e2901fd6eaee17bc4d3c328d134f71635c93f8b88550b7b8ab0a3c1941"
     },
     {
       "path": "References/Source/discover/README.md",
@@ -17292,6 +17292,11 @@
       "sha256": "8f5135e8a72ad3610ad6cd5b4f111c774f193d7138b5fb7bf99b95fd1d73ae4c"
     },
     {
+      "path": "References/Source/library-layout.mjs",
+      "bytes": 1475,
+      "sha256": "6a5b9e8df216294ba9b86833afdb47e136451ef88606b6af79343f6981da27dd"
+    },
+    {
       "path": "References/Source/openpencil",
       "bytes": 587,
       "sha256": "13a711842a9d68ec9064537d8dae2a89c8869124ea36854f86a7652ff42e9cec"
@@ -17328,8 +17333,8 @@
     },
     {
       "path": "References/Source/verify-publication.py",
-      "bytes": 5972,
-      "sha256": "3de24e88e32928b6cfb968fe0f2818b89534d460299df511268a8041bf0d5736"
+      "bytes": 6036,
+      "sha256": "438aa15085d17e84a48931a4c5053c1b1564b4b80aa31e7b6269ce7d468badc4"
     },
     {
       "path": "References/Source/verify-splits.mjs",
@@ -17338,8 +17343,8 @@
     },
     {
       "path": "References/combined-manifest.json",
-      "bytes": 1181484,
-      "sha256": "70eec998af5f83565a1d49fc8293138424a5f4c4fe4c9d3effe88c21a9851e7a"
+      "bytes": 1215977,
+      "sha256": "18ffdf7549355ff33b9c12f8703829d2fad01c29201d333dc8df8b501aab7aad"
     },
     {
       "path": "References/coverage.csv",

@@ -2,6 +2,7 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import crypto from 'node:crypto';
+import {layoutLibrary} from './library-layout.mjs';
 import {createRequire} from 'node:module';
 import {fileURLToPath,pathToFileURL} from 'node:url';
 const design=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../..');
@@ -106,6 +107,9 @@ function valid(g){
   if(g.activeMode.has(c.id)&&!modes.has(g.activeMode.get(c.id)))result.brokenVariableModes++;
   result.brokenVariableCollections+=c.variableIds.filter(id=>g.variables.get(id)?.collectionId!==c.id).length;
  }
+ const library=g.getPages().find(p=>p.name==='Components');
+ result.overlappingLibraryNodes=0;
+ if(library){const children=g.getChildren(library.id);for(let i=0;i<children.length;i++)for(let j=i+1;j<children.length;j++){const a=children[i],b=children[j];if(a.x<b.x+b.width&&b.x<a.x+a.width&&a.y<b.y+b.height&&b.y<a.y+a.height)result.overlappingLibraryNodes++;}}
  if(Object.values(result).some(Boolean))throw Error(JSON.stringify(result));return result;
 }
 export async function combine({limit=0,output=path.join(design,'Gus.fig')}={}){
@@ -150,11 +154,11 @@ export async function combine({limit=0,output=path.join(design,'Gus.fig')}={}){
  beforeResources.nodes=g.nodes.size;beforeResources.components=[...g.getAllNodes()].filter(n=>n.type==='COMPONENT').length;beforeResources.variables=g.variables.size;
  const dedup={...deduplicateVariables(g),...deduplicateStyles(g),...deduplicateComponents(g)};
  const components=g.addPage('Components'),guide=g.addPage('Guide & Coverage'),internal=g.addPage('Internal Styles');g.updateNode(internal.id,{internalOnly:true});
- let ci=0,gy=64;const guideHashes=new Set();
+ let gy=64;const guideHashes=new Set();
  // Shared definitions get one resource page. Only obsolete per-file scope cards are omitted.
  const masters=[...g.getAllNodes()].filter(n=>['COMPONENT','COMPONENT_SET'].includes(n.type)&&g.getNode(n.parentId)?.type!=='COMPONENT_SET');
- const cellWidth=Math.max(700,...masters.map(n=>n.width+100)),cellHeight=Math.max(500,...masters.map(n=>n.height+100));
- for(const n of masters){g.reparentNode(n.id,components.id);g.updateNode(n.id,{x:64+(ci%6)*cellWidth,y:64+Math.floor(ci/6)*cellHeight});ci++;}
+ for(const n of masters)g.reparentNode(n.id,components.id);
+ const libraryLayout=layoutLibrary(g,components);
  for(const n of [...g.getAllNodes()].filter(n=>n.sharedStyleType))g.reparentNode(n.id,internal.id);
  for(const p of resourcePages){if(!g.getNode(p.id))continue;for(const n of [...g.getChildren(p.id)]){
   if(n.name==='This file · scope and navigation'){g.deleteNode(n.id);continue;}
@@ -170,7 +174,7 @@ export async function combine({limit=0,output=path.join(design,'Gus.fig')}={}){
  const checks=valid(g);
  let unchanged=0;for(const item of ledger){const n=g.getNode(item.id),svg=core.renderNodesToSVG(g,n.parentId,[n.id]);if(sha(svg)!==item.svgSha256)throw Error('Appearance changed during merge: '+item.key);unchanged++;}
  const bytes=await core.exportFigFile(g,undefined,undefined,cover.id,false);await fs.writeFile(output,bytes);
- const result={output,sourceFiles:rows.length,artboards:ledger.length,currentArtboards:ledger.filter(x=>x.scope==='current').length,proposalArtboards:ledger.filter(x=>x.scope==='proposal').length,pages:g.getPages().map(p=>p.name),bytes:bytes.length,beforeResources,nodes:g.nodes.size,components:[...g.getAllNodes()].filter(n=>n.type==='COMPONENT').length,textStyles:[...g.getAllNodes()].filter(n=>n.sharedStyleType).length,variables:g.variables.size,dedup,unchangedScreenSVGs:unchanged,...checks};
+ const result={output,sourceFiles:rows.length,artboards:ledger.length,currentArtboards:ledger.filter(x=>x.scope==='current').length,proposalArtboards:ledger.filter(x=>x.scope==='proposal').length,pages:g.getPages().map(p=>p.name),bytes:bytes.length,libraryLayout,beforeResources,nodes:g.nodes.size,components:[...g.getAllNodes()].filter(n=>n.type==='COMPONENT').length,textStyles:[...g.getAllNodes()].filter(n=>n.sharedStyleType).length,variables:g.variables.size,dedup,unchangedScreenSVGs:unchanged,...checks};
  const metadata={result,inputs,artboards:ledger};await fs.writeFile(metadataPath(output),JSON.stringify(metadata,null,2));return result;
 }
 export async function verify(file=path.join(design,'Gus.fig')){
@@ -183,10 +187,9 @@ export async function verify(file=path.join(design,'Gus.fig')){
 }
 
 export async function arrangeLibrary(file=path.join(design,'Gus.fig')){
- const g=await read(file),page=g.getPages().find(p=>p.name==='Components'),nodes=g.getChildren(page.id);
- const cellWidth=Math.max(700,...nodes.map(n=>n.width+100)),cellHeight=Math.max(500,...nodes.map(n=>n.height+100));
- for(const [i,n]of nodes.entries())g.updateNode(n.id,{x:64+(i%6)*cellWidth,y:64+Math.floor(i/6)*cellHeight});
+ const g=await read(file),page=g.getPages().find(p=>p.name==='Components');
+ const libraryLayout=layoutLibrary(g,page);
  const bytes=await core.exportFigFile(g,undefined,undefined,g.getPages()[0].id,false);await fs.writeFile(file,bytes);
- const metadata=JSON.parse(await fs.readFile(metadataPath(file),'utf8'));metadata.result.bytes=bytes.length;metadata.result.libraryGrid={columns:6,cellWidth,cellHeight};await fs.writeFile(metadataPath(file),JSON.stringify(metadata,null,2));
- return {componentsArranged:nodes.length,bytes:bytes.length,cellWidth,cellHeight};
+ const metadata=JSON.parse(await fs.readFile(metadataPath(file),'utf8'));metadata.result.bytes=bytes.length;metadata.result.nodes=g.nodes.size;delete metadata.result.libraryGrid;metadata.result.libraryLayout=libraryLayout;await fs.writeFile(metadataPath(file),JSON.stringify(metadata,null,2));
+ return {...libraryLayout,bytes:bytes.length};
 }

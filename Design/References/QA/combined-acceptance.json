@@ -1,15 +1,15 @@
 {
   "date": "2026-10-21",
   "file": "Design/Gus.fig",
-  "sha256": "6f007311cf62e62177aaea06c64f7c499bd6349ba710ba61f2ca50c38dfa161b",
-  "bytes": 4596567,
+  "sha256": "140f69fa1a7c7a44a82e97c738e6ee9514ab56e4f205a76cef2053761df5708f",
+  "bytes": 4597092,
   "cli": "OpenPencil 0.16.0",
   "verification": {
     "passed": true,
     "artboards": 3016,
     "visiblePages": 31,
     "components": 204,
-    "textLayers": 53494,
+    "textLayers": 53498,
     "autoLayouts": 49214,
     "variables": 71,
     "brokenInstances": 0,
@@ -20,6 +20,7 @@
     "brokenVariableCollections": 0,
     "brokenVariableModes": 0,
     "brokenComponentProperties": 0,
+    "overlappingLibraryNodes": 0,
     "unchangedSavedScreenSVGs": 3016,
     "sourceFilesUnchanged": 82
   },
@@ -91,5 +92,37 @@
       "identicalToSourceProof": true,
       "sourceProof": "Design/References/QA/Discover/Previews/macOS-Narrow-Light-manager.png"
     }
-  ]
+  ],
+  "componentLayout": {
+    "componentsArranged": 204,
+    "width": 2528,
+    "height": 10049.299987792969,
+    "gap": 48,
+    "sections": [
+      {
+        "name": "Symbols",
+        "components": 90,
+        "rows": 10
+      },
+      {
+        "name": "Controls",
+        "components": 45,
+        "rows": 8
+      },
+      {
+        "name": "Artwork",
+        "components": 62,
+        "rows": 9
+      },
+      {
+        "name": "Backdrops",
+        "components": 7,
+        "rows": 4
+      }
+    ],
+    "screenSVGsUnchanged": 3016,
+    "existingOpenDocumentEditsPreserved": true,
+    "fontFaces": "Unchanged; new section headings use the existing SF Pro bold face.",
+    "visualReview": "Compact Symbols section inspected in the native editor. All library bounds separately checked for overlap."
+  }
 }

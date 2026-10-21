@@ -10,7 +10,7 @@ All commands run from the repository root. Run checks sequentially. These tools 
 
 ## Combined document
 
-`combine.mjs` uses the CLI's installed OpenPencil 0.16 SDK to transfer all artboards and dependencies into a fresh document, deduplicate equivalent resources, and save [Gus.fig](../../Gus.fig). It preserves editable text, components, auto-layout and variables. It does not modify the 82 inputs. Build and verify sequentially through the CLI:
+`combine.mjs` uses the CLI's installed OpenPencil 0.16 SDK to transfer all artboards and dependencies into a fresh document, deduplicate equivalent resources, and save [Gus.fig](../../Gus.fig). It preserves editable text, components, auto-layout and variables. `library-layout.mjs` packs the Components page into Symbols, Controls, Artwork and Backdrops using 48-point gaps and rows sized to their contents. It does not modify the 82 inputs. Build and verify sequentially through the CLI:
 
 ```sh
 Design/References/Source/openpencil eval 'Design/Gus/watchOS-46mm/Dark/01 Watch.fig' \

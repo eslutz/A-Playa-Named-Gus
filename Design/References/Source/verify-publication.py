@@ -65,6 +65,7 @@ combined = json.loads((reference/'combined-manifest.json').read_text())
 combined_qa = json.loads((reference/'QA/combined-acceptance.json').read_text())
 assert {a['key'] for a in combined['artboards']} == keys
 assert combined['verification']['passed'] and combined['verification']['unchangedSavedScreenSVGs'] == 3016
+assert combined['verification']['overlappingLibraryNodes'] == 0
 assert all(not v for k, v in combined['verification'].items() if k.startswith('broken') or k == 'nonfinite')
 assert combined_qa['sha256'] == hashlib.sha256((design/'Gus.fig').read_bytes()).hexdigest()
 assert combined_qa['fontReport']['faithful'] and not combined_qa['fontReport']['issues']
