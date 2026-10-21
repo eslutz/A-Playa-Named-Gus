@@ -15507,9 +15507,14 @@
       "sha256": "fc2867ad6c31f62a3487bf53bc8bb4343fc9cd5e501b836e1dd99e8c3554a631"
     },
     {
+      "path": "Gus.fig",
+      "bytes": 4596567,
+      "sha256": "6f007311cf62e62177aaea06c64f7c499bd6349ba710ba61f2ca50c38dfa161b"
+    },
+    {
       "path": "README.md",
-      "bytes": 3681,
-      "sha256": "497ff8b3f7a30d9adab7539a306c0368b86b17ebabb1278f22359f9203ba0a83"
+      "bytes": 4277,
+      "sha256": "b35321efbdf656f307ae7cd4bf00bcf1bd91b88a4f595e8af7335995689b27c9"
     },
     {
       "path": "References/QA/CLI/001.png",
@@ -16653,8 +16658,8 @@
     },
     {
       "path": "References/QA/Discover/acceptance.json",
-      "bytes": 853,
-      "sha256": "eaf143d075347a8d1cb71b4c35163893b3083cc81aa42f1f5e57a1b25ac6104b"
+      "bytes": 1046,
+      "sha256": "deaebc2d77eb89a9d14cfb3001e651930da6ec10e7d35362fdaa659bd5f12292"
     },
     {
       "path": "References/QA/Discover/accessibility-lint.json",
@@ -16930,6 +16935,11 @@
       "path": "References/QA/cli-watch-connect-corrected.png",
       "bytes": 16365,
       "sha256": "1c9b152c46e62a59d0b54ab74557a38c1d852399734dc1885cb28e7fa740e6c5"
+    },
+    {
+      "path": "References/QA/combined-acceptance.json",
+      "bytes": 3274,
+      "sha256": "2820dfdd623cf842bd9719dd88e31c95763189ffcd8256795fd5d777896663e6"
     },
     {
       "path": "References/QA/contrast-detail.json",
@@ -17213,13 +17223,13 @@
     },
     {
       "path": "References/README.md",
-      "bytes": 11976,
-      "sha256": "851812ff9c9b6e18551a03add5ae4b4577532f20fbe59dd65712b66951bebd27"
+      "bytes": 12568,
+      "sha256": "b0d4e3ebb7e8ec6b60d216c1d62e54092bdd6a4fc36f3061cd55a01aad9b3f39"
     },
     {
       "path": "References/Source/README.md",
-      "bytes": 1479,
-      "sha256": "01342a8bb462512d09f22b785196c24fd086cb94a6c07227360bee0de4bd4314"
+      "bytes": 2907,
+      "sha256": "6c7a0b3933c4f5f16ac05d7dce470d76904b887888cab5ef9b9121a6edbbfa83"
     },
     {
       "path": "References/Source/cli-fonts.mjs",
@@ -17230,6 +17240,11 @@
       "path": "References/Source/cli-qa.py",
       "bytes": 4424,
       "sha256": "79e34df49b667bfa9c64219431eaf5e15d9be78151b2e34c7d55a7facf8e4ee3"
+    },
+    {
+      "path": "References/Source/combine.mjs",
+      "bytes": 17703,
+      "sha256": "414f7f7d235fd0a8761c9b93325498ffd3e2a0c72b97483a808b7715d64829ad"
     },
     {
       "path": "References/Source/discover/README.md",
@@ -17313,13 +17328,18 @@
     },
     {
       "path": "References/Source/verify-publication.py",
-      "bytes": 5048,
-      "sha256": "ad044fccc61f8b7b938af999587a4303d8752b267e6910714707442c3d4d434c"
+      "bytes": 5972,
+      "sha256": "3de24e88e32928b6cfb968fe0f2818b89534d460299df511268a8041bf0d5736"
     },
     {
       "path": "References/Source/verify-splits.mjs",
       "bytes": 3437,
       "sha256": "9df7fa192b3d91b4ef3886bbff8a9b7536ad16be1181c92709a223c1e77265a1"
+    },
+    {
+      "path": "References/combined-manifest.json",
+      "bytes": 1181484,
+      "sha256": "70eec998af5f83565a1d49fc8293138424a5f4c4fe4c9d3effe88c21a9851e7a"
     },
     {
       "path": "References/coverage.csv",

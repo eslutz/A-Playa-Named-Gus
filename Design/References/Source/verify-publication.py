@@ -61,7 +61,18 @@ for p in (reference/'Source').rglob('*'):
         ast.parse(p.read_text(), filename=str(p))
 browser = json.loads((qa/'browser-acceptance.json').read_text())
 assert browser['passed'] and browser['consoleErrors'] == 0 and browser['previewServerStopped']
+combined = json.loads((reference/'combined-manifest.json').read_text())
+combined_qa = json.loads((reference/'QA/combined-acceptance.json').read_text())
+assert {a['key'] for a in combined['artboards']} == keys
+assert combined['verification']['passed'] and combined['verification']['unchangedSavedScreenSVGs'] == 3016
+assert all(not v for k, v in combined['verification'].items() if k.startswith('broken') or k == 'nonfinite')
+assert combined_qa['sha256'] == hashlib.sha256((design/'Gus.fig').read_bytes()).hexdigest()
+assert combined_qa['fontReport']['faithful'] and not combined_qa['fontReport']['issues']
+for source in combined['inputs']:
+    assert hashlib.sha256((design/'Gus'/source['file']).read_bytes()).hexdigest() == source['sha256']
 report = {'passed': True, 'editableFiles': 82, 'currentArtboards': 2896, 'proposalArtboards': 120, 'totalArtboards': 3016,
+          'combinedCandidate': {'file': 'Gus.fig', 'pages': 31, 'savedArtboards': 3016,
+                                'nativeEditorStatus': combined_qa['nativeEditor']['status']},
           'phoneStatesPerAppearance': 51, 'adaptiveArtboards': 18, 'savedReferencesAndGeometry': 'passed',
           'inventoryNamesAndKeys': 'passed by verify-splits.mjs and Discover coverage contract',
           'previewSceneJSONAndSVGs': len(scene_files), 'localDocumentationLinks': links,
