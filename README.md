@@ -13,8 +13,9 @@ this README stays intentionally short.
 ## Quick Start
 
 Use Xcode 27.1 or newer: the availability-guarded Duo arrangement APIs require
-the 27.1 SDK to compile. Deployment targets remain iOS/tvOS 18, visionOS 2,
-macOS 15, and watchOS 11; an SDK build does not establish minimum-OS execution.
+the 27.1 SDK to compile. The minimum OS version is 26.0 on iOS/iPadOS, tvOS, visionOS, macOS, and
+watchOS. Use OS 27.x features when available, with OS 26-compatible fallbacks.
+An SDK build does not establish minimum-OS execution.
 
 ```sh
 brew install xcodegen

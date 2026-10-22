@@ -28,7 +28,8 @@ final class PlaybackAudioSessionQueue {
 }
 
 /// Run audio-session category changes away from MainActor and use native
-/// asynchronous activation and deactivation.
+/// asynchronous activation and deactivation where available. OS 26 fallbacks
+/// stay on the same detached queue so synchronous calls never block MainActor.
 @MainActor
 enum PlaybackAudioSession {
     private static let queue = PlaybackAudioSessionQueue()
@@ -49,23 +50,39 @@ enum PlaybackAudioSession {
                 #else
                     try? session.setCategory(.playback, mode: video ? .moviePlayback : .default)
                 #endif
-                #if DEBUG
-                    let result = await withCheckedContinuation { (continuation: CheckedContinuation<PlaybackAudioSessionActivationResult, Never>) in
-                        session.activate(options: []) { succeeded, error in
-                            let error = error as NSError?
-                            continuation.resume(returning: PlaybackAudioSessionActivationResult(
-                                succeeded: succeeded,
-                                errorDomain: error?.domain,
-                                errorCode: error?.code
-                            ))
+                if #available(iOS 27.0, tvOS 27.0, visionOS 27.0, watchOS 5.0, *) {
+                    #if DEBUG
+                        let result = await withCheckedContinuation { (continuation: CheckedContinuation<PlaybackAudioSessionActivationResult, Never>) in
+                            session.activate(options: []) { succeeded, error in
+                                let error = error as NSError?
+                                continuation.resume(returning: PlaybackAudioSessionActivationResult(
+                                    succeeded: succeeded,
+                                    errorDomain: error?.domain,
+                                    errorCode: error?.code
+                                ))
+                            }
                         }
-                    }
-                    await MainActor.run { lastActivationResult = result }
-                #else
-                    await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
-                        session.activate(options: []) { _, _ in continuation.resume() }
-                    }
-                #endif
+                        await MainActor.run { lastActivationResult = result }
+                    #else
+                        await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
+                            session.activate(options: []) { _, _ in continuation.resume() }
+                        }
+                    #endif
+                } else {
+                    #if DEBUG
+                        let result: PlaybackAudioSessionActivationResult
+                        do {
+                            try session.setActive(true)
+                            result = PlaybackAudioSessionActivationResult(succeeded: true, errorDomain: nil, errorCode: nil)
+                        } catch {
+                            let error = error as NSError
+                            result = PlaybackAudioSessionActivationResult(succeeded: false, errorDomain: error.domain, errorCode: error.code)
+                        }
+                        await MainActor.run { lastActivationResult = result }
+                    #else
+                        try? session.setActive(true)
+                    #endif
+                }
 
             #endif
         }
@@ -76,8 +93,12 @@ enum PlaybackAudioSession {
         queue.enqueue {
             #if os(iOS) || os(tvOS) || os(visionOS) || os(watchOS)
                 let session = AVAudioSession.sharedInstance()
-                await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
-                    session.deactivate(options: .notifyOthersOnDeactivation) { _, _ in continuation.resume() }
+                if #available(iOS 27.0, tvOS 27.0, visionOS 27.0, watchOS 27.0, *) {
+                    await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
+                        session.deactivate(options: .notifyOthersOnDeactivation) { _, _ in continuation.resume() }
+                    }
+                } else {
+                    try? session.setActive(false, options: .notifyOthersOnDeactivation)
                 }
 
             #endif

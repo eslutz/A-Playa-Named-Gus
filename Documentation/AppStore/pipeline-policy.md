@@ -6,7 +6,7 @@ GitHub CI runs only on pull requests targeting main, with read-only repository p
 
 The saved Gus Internal TestFlight Cloud workflow accepts only exact main for automatic branch changes and manual starts. It requires unit tests using dedicated iOS, macOS, tvOS, and visionOS schemes before its internal TestFlight post-actions can distribute. iOS runs on iPhone 17 and iPad Pro 11-inch (M5); Mac, recommended Apple TVs, and Apple Vision Pro complete the device matrix. Four required internal-only archives produce the app products; Watch is embedded in iOS.
 
-At the original October 12 configuration check, Cloud's iOS runtime menu showed 27.1, 17.5, and 16.4 with no iOS 18 option. That observation is historical; OS 27 is now the deployment floor. The later saved Duo-deferral screenshot shows iOS 27.2 selected for iPhone and iPad. Earlier iPad native audio failures remain in the investigation history below; final merged-main action results and remaining acceptance limits are recorded separately.
+At the original October 12 configuration check, Cloud's iOS runtime menu showed 27.1, 17.5, and 16.4 with no iOS 18 option. That observation is historical; the current deployment floor is OS 26.0. The later saved Duo-deferral screenshot shows iOS 27.2 selected for iPhone and iPad. Earlier iPad native audio failures remain in the investigation history below; final merged-main action results and remaining acceptance limits are recorded separately.
 
 Saved configuration does not establish successful execution or tester eligibility. The PR matrix, subsequent merged-main Cloud run, and group association must pass before availability is claimed.
 
@@ -42,9 +42,11 @@ The corrected bare asynchronous control executed one real test and passed. The s
 
 The temporary activation comparison jobs and conditional test methods have been removed. The label “legacy” described the older synchronous Apple API used by that diagnostic, not a shipped compatibility mode. Production activation is unchanged; the normal platform checks validate the startup/completion fixture correction.
 
-## OS 27 deployment policy
+## OS 26 compatibility / OS 27 feature policy
 
-All supported Apple platforms require OS 27.0. Older-OS UI/audio fallback branches and development-era storage/credential/DTO migrations are removed. Existing development installs are not migrated: users may need to sign in again and recreate their local downloads and queues. The iOS 27.1 availability check remains for the Duo division API because 27.0 is supported and that API is introduced in 27.1. Platform-specific styles and SDK concurrency boundaries remain necessary for current APIs.
+All supported Apple platforms require OS 26.0, including the embedded Watch app and tvOS Top Shelf. Build with Xcode 27.1 or newer and retain OS 27.x functionality through availability checks and native OS 26 fallbacks. The conditional iOS tab accessory requires 26.1; 26.0 uses the Now Playing return bar. OS 27 retains asynchronous audio-session APIs, the tvOS sidebar account header, and the visionOS sample-buffer receiver. The iOS 27.1 Duo division API remains availability-guarded. Development-era storage/credential/DTO migrations removed by the earlier OS 27-only change remain removed; lowering the OS floor does not restore those migrations. Existing development installs may still need to sign in again and recreate local downloads and queues.
+
+The local compatibility report is [OS 26 validation](../Reviews/2026-10-21-os26-compatibility/VALIDATION.md). Required GitHub checks, merged-main Xcode Cloud actions, raw-log review, and TestFlight group availability must be verified for the release commit.
 
 On 2026-10-12, the user deferred required Duo simulator testing until the device is released and compatible runtimes are available. Duo functionality and its SDK compilation requirements remain in the app. [Saved destination evidence](pipeline-policy-evidence/duo-testing-deferred.png) shows the retained iPhone and iPad selections. All other required platform tests, archives, and main triggers are retained.
 

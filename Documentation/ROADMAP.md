@@ -18,6 +18,11 @@ constrain *how* each item is built.
 - **Native-first** is assumed on every item: reach for the Apple/system API first; a
   bespoke or third-party approach must be justified in the change that introduces it.
 
+## OS 26 compatibility / OS 27 features
+
+- [x] Set the minimum deployment target to 26.0 across iOS/iPadOS, tvOS, visionOS, macOS, watchOS, and Top Shelf, preserving OS 27.x features through availability guards and native OS 26 fallbacks. All six local Debug build lanes passed with zero warnings; tvOS 26.5/27.0 installation and launch passed, with six focused audio/TV playback tests passing on each OS. See [implementation and validation](Reviews/2026-10-21-os26-compatibility/VALIDATION.md).
+- [ ] Complete exact 26.0 runtime execution, physical Apple TV 26.6 account/focus/playback/Top Shelf acceptance, remaining platform runtime checks, and required signed/hosted release gates.
+
 ## October 2026 UI remediation
 
 - [~] October 11 repairs cover sign-in/error feedback, Mac discovery, persistent download artwork, confirmed/selective/bulk management deletion, native swipe deletion, completion cleanup, adaptive hero/actions/sidebar, audio return controls, and playback lifecycle/replay. Physical phone checks finished on **1.0.0 (11)**; management scrolling/Cancel and compact actions passed, and the phone is released with no automation pending. Later source changes have not been installed on it. The landscape Home search repair passed 1/1; full narrow-screen portrait/landscape checks passed 2/2 in light/dark at accessibility XXXL. The final focused playback run passed **23/23** (two real natural-completion/replay checks and 21 UI/lifecycle regressions). Nested EPUB chapter navigation now uses a native sheet/list with recursive disclosure groups and retains Readium’s directional navigation adapter. Its isolated iOS simulator acceptance passed **1/1**, covering chapter selection, readable portrait/landscape pages, forward/backward paging, keyboard absence, and return to book details. See [current repair evidence](Reviews/2026-10-11-auth-device-repair/REPORT.md).
