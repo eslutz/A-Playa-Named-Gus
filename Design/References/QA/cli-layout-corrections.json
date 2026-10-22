@@ -1,0 +1,374 @@
+[
+  {
+    "index": 60,
+    "file": "tvOS/Light/01 Connection and Library.fig",
+    "beforeSha256": "a0b1dbd71e9462aae1d01b949982ccc6c937a6e15b564d939e66d9ee09454238",
+    "afterSha256": "fdd11b8fcf48079987e1c1ca203a486e7847a8f6b8e2edf63372224620a49e98",
+    "result": {
+      "changed": 13,
+      "samples": [
+        {
+          "row": "Local Server Discovery",
+          "text": "\u21bb",
+          "oldWidth": 70,
+          "width": 100
+        },
+        {
+          "row": "Connect",
+          "text": "\u25cc",
+          "oldWidth": 70,
+          "width": 100
+        },
+        {
+          "row": "Searching for Local Servers",
+          "text": "\u25cc",
+          "oldWidth": 70,
+          "width": 100
+        },
+        {
+          "row": "Local Server Discovery",
+          "text": "\u21bb",
+          "oldWidth": 70,
+          "width": 100
+        },
+        {
+          "row": "Demo Viewer",
+          "text": "No password required",
+          "oldWidth": 264,
+          "width": 288
+        }
+      ]
+    }
+  },
+  {
+    "index": 61,
+    "file": "tvOS/Light/02 Details and Playback.fig",
+    "beforeSha256": "59facee5ee1b80fe7501a772924d8dd4e46f876056c297306217dbbb7ed9541c",
+    "afterSha256": "9aeceb37c04facfa1b004ba1548e7b895334a3a4e0c2ff9bc3a7858fe736a041",
+    "result": {
+      "changed": 45,
+      "samples": [
+        {
+          "row": "Genre",
+          "text": "Drama",
+          "oldWidth": 70,
+          "width": 118.25
+        },
+        {
+          "row": "Released",
+          "text": "2026",
+          "oldWidth": 70,
+          "width": 100
+        },
+        {
+          "row": "Runtime",
+          "text": "1h 28m",
+          "oldWidth": 79.19999694824219,
+          "width": 137.10000000000002
+        },
+        {
+          "row": "Northbound",
+          "text": "2026",
+          "oldWidth": 70,
+          "width": 100
+        },
+        {
+          "row": "Content Rating",
+          "text": "PG",
+          "oldWidth": 70,
+          "width": 100
+        }
+      ]
+    }
+  },
+  {
+    "index": 62,
+    "file": "tvOS/Light/04 Settings and Live TV.fig",
+    "beforeSha256": "0e8301fc30d5b14f0acbe10e245d3c656014a6cd942b46831dad32480ebb072d",
+    "afterSha256": "3f2c02e19ac2163e9c0754464bd001c544cb0d9475b83ec787329887abe8fff6",
+    "result": {
+      "changed": 71,
+      "samples": [
+        {
+          "row": "Duration",
+          "text": "1h 28m",
+          "oldWidth": 79.19999694824219,
+          "width": 137.10000000000002
+        },
+        {
+          "row": "Delivery",
+          "text": "Direct Play",
+          "oldWidth": 145.1999969482422,
+          "width": 231.35
+        },
+        {
+          "row": "Codec",
+          "text": "HEVC",
+          "oldWidth": 70,
+          "width": 100
+        },
+        {
+          "row": "Resolution",
+          "text": "1920 \u00d7 1080",
+          "oldWidth": 145.1999969482422,
+          "width": 231.35
+        },
+        {
+          "row": "Dynamic Range",
+          "text": "SDR",
+          "oldWidth": 70,
+          "width": 100
+        }
+      ]
+    }
+  },
+  {
+    "index": 63,
+    "file": "tvOS/Light/03 Downloads and Collections.fig",
+    "beforeSha256": "e6365daece6ea0bef43f49d932ce76548e10d5fdc343ad036f8f7dd282dd5c10",
+    "afterSha256": "8ffbb0e97f1d34c661c29fd2e17cea3e4fb658d9081bbf629d71a60034fdbc64",
+    "result": {
+      "changed": 8,
+      "samples": [
+        {
+          "row": "Name",
+          "text": "Weekend Cinema",
+          "oldWidth": 184.8000030517578,
+          "width": 287.90000000000003
+        },
+        {
+          "row": "Next Up heading",
+          "text": "Show All",
+          "oldWidth": 165,
+          "width": 174.8
+        },
+        {
+          "row": "Genre",
+          "text": "Drama",
+          "oldWidth": 70,
+          "width": 118.25
+        },
+        {
+          "row": "Released",
+          "text": "2026",
+          "oldWidth": 70,
+          "width": 100
+        },
+        {
+          "row": "Runtime",
+          "text": "1h 28m",
+          "oldWidth": 79.19999694824219,
+          "width": 137.10000000000002
+        }
+      ]
+    }
+  },
+  {
+    "index": 64,
+    "file": "tvOS/Light/05 Discover.fig",
+    "beforeSha256": "e96dfeff953025cbc7cbe3f8e42c57abb5c0b09a68033346f73e982247105f25",
+    "afterSha256": "e96dfeff953025cbc7cbe3f8e42c57abb5c0b09a68033346f73e982247105f25",
+    "result": {
+      "changed": 0,
+      "samples": []
+    }
+  },
+  {
+    "index": 65,
+    "file": "tvOS/Dark/01 Connection and Library.fig",
+    "beforeSha256": "36cec8cc58b80ab7c61f3db83c643b0909ab78ab2ad9a13c0d662552c0f9ca20",
+    "afterSha256": "9961c4bf40f07cc62441a911b874e96899d5fdf9aa7a92b43480ffedc043674e",
+    "result": {
+      "changed": 13,
+      "samples": [
+        {
+          "row": "Local Server Discovery",
+          "text": "\u21bb",
+          "oldWidth": 70,
+          "width": 100
+        },
+        {
+          "row": "Connect",
+          "text": "\u25cc",
+          "oldWidth": 70,
+          "width": 100
+        },
+        {
+          "row": "Searching for Local Servers",
+          "text": "\u25cc",
+          "oldWidth": 70,
+          "width": 100
+        },
+        {
+          "row": "Local Server Discovery",
+          "text": "\u21bb",
+          "oldWidth": 70,
+          "width": 100
+        },
+        {
+          "row": "Demo Viewer",
+          "text": "No password required",
+          "oldWidth": 264,
+          "width": 288
+        }
+      ]
+    }
+  },
+  {
+    "index": 66,
+    "file": "tvOS/Dark/02 Details and Playback.fig",
+    "beforeSha256": "e0085ffaff1308d7feb6e0aa7202fbb6bd4129a16aa0cedc05da14f1ca1f3cca",
+    "afterSha256": "064b602bcb8cade53f344fa0e785012389976056f6ed97ee26f084cbc3a971e2",
+    "result": {
+      "changed": 45,
+      "samples": [
+        {
+          "row": "Genre",
+          "text": "Drama",
+          "oldWidth": 70,
+          "width": 118.25
+        },
+        {
+          "row": "Released",
+          "text": "2026",
+          "oldWidth": 70,
+          "width": 100
+        },
+        {
+          "row": "Runtime",
+          "text": "1h 28m",
+          "oldWidth": 79.19999694824219,
+          "width": 137.10000000000002
+        },
+        {
+          "row": "Northbound",
+          "text": "2026",
+          "oldWidth": 70,
+          "width": 100
+        },
+        {
+          "row": "Content Rating",
+          "text": "PG",
+          "oldWidth": 70,
+          "width": 100
+        }
+      ]
+    }
+  },
+  {
+    "index": 67,
+    "file": "tvOS/Dark/04 Settings and Live TV.fig",
+    "beforeSha256": "8ae2cd937109fdeceaf159d345ea5939c1fa5c46d56c7dc22a7ff94503511309",
+    "afterSha256": "02c2153b2d2ac4b475ad4703b9ada0da78f1c238b145c25a57205bae17dd9d5e",
+    "result": {
+      "changed": 71,
+      "samples": [
+        {
+          "row": "Duration",
+          "text": "1h 28m",
+          "oldWidth": 79.19999694824219,
+          "width": 137.10000000000002
+        },
+        {
+          "row": "Delivery",
+          "text": "Direct Play",
+          "oldWidth": 145.1999969482422,
+          "width": 231.35
+        },
+        {
+          "row": "Codec",
+          "text": "HEVC",
+          "oldWidth": 70,
+          "width": 100
+        },
+        {
+          "row": "Resolution",
+          "text": "1920 \u00d7 1080",
+          "oldWidth": 145.1999969482422,
+          "width": 231.35
+        },
+        {
+          "row": "Dynamic Range",
+          "text": "SDR",
+          "oldWidth": 70,
+          "width": 100
+        }
+      ]
+    }
+  },
+  {
+    "index": 68,
+    "file": "tvOS/Dark/03 Downloads and Collections.fig",
+    "beforeSha256": "2efb86f8c9237e84d05a7b5015df3bf6c30c75a46ef4de9f563ac6f5875620e9",
+    "afterSha256": "c2175aafd9dee25718cda7a40bf10561c518e2d9e0cc0d8a618e0485338b0eaf",
+    "result": {
+      "changed": 8,
+      "samples": [
+        {
+          "row": "Name",
+          "text": "Weekend Cinema",
+          "oldWidth": 184.8000030517578,
+          "width": 287.90000000000003
+        },
+        {
+          "row": "Next Up heading",
+          "text": "Show All",
+          "oldWidth": 165,
+          "width": 174.8
+        },
+        {
+          "row": "Genre",
+          "text": "Drama",
+          "oldWidth": 70,
+          "width": 118.25
+        },
+        {
+          "row": "Released",
+          "text": "2026",
+          "oldWidth": 70,
+          "width": 100
+        },
+        {
+          "row": "Runtime",
+          "text": "1h 28m",
+          "oldWidth": 79.19999694824219,
+          "width": 137.10000000000002
+        }
+      ]
+    }
+  },
+  {
+    "index": 69,
+    "file": "tvOS/Dark/05 Discover.fig",
+    "beforeSha256": "b6fbb7e90574ca43a99ce7a748fbf1189a4f55671c13b0044219a2b1991a26e8",
+    "afterSha256": "b6fbb7e90574ca43a99ce7a748fbf1189a4f55671c13b0044219a2b1991a26e8",
+    "result": {
+      "changed": 0,
+      "samples": []
+    }
+  },
+  {
+    "index": 80,
+    "file": "watchOS-46mm/Dark/01 Watch.fig",
+    "beforeSha256": "a2f9710c11cc526329e2526f03ba36b8c97898a0b16cc58edb759892bc22cffd",
+    "afterSha256": "138107129d5bfbba0060f842be65090526ae1f71e01549c365ba1bc320b1e036",
+    "result": {
+      "rebuilt": [
+        "watchOS 46mm / Dark / connect \u2014 Connect",
+        "watchOS 46mm / Dark / connect-error \u2014 Connect"
+      ]
+    }
+  },
+  {
+    "index": 81,
+    "file": "watchOS-Ultra/Dark/01 Watch.fig",
+    "beforeSha256": "c08ebd6e5593efc9c84def1341610efc105eff454cc2a5acc9c532b98b6c5d3f",
+    "afterSha256": "89476766695f6b1295d361978496e2e100943accade4e19405d8b3fbbabfd14d",
+    "result": {
+      "rebuilt": [
+        "watchOS Ultra / Dark / connect \u2014 Connect",
+        "watchOS Ultra / Dark / connect-error \u2014 Connect"
+      ]
+    }
+  }
+]

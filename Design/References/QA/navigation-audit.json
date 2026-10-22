@@ -1,0 +1,864 @@
+{
+  "scenes": 3016,
+  "currentScenes": 2896,
+  "proposalScenes": 120,
+  "navigationEdges": 26867,
+  "unavailableCurrentTargets": [],
+  "unrepresentedProposalActions": [
+    {
+      "key": "iPhone-Dark-proposed-discover-movie",
+      "target": "share"
+    },
+    {
+      "key": "iPhone-Dark-proposed-discover-advancedmovie",
+      "target": "format"
+    },
+    {
+      "key": "iPhone-Dark-proposed-discover-advancedmovie",
+      "target": "destination"
+    },
+    {
+      "key": "iPhone-Dark-proposed-discover-advancedmovie",
+      "target": "profile"
+    },
+    {
+      "key": "iPhone-Dark-proposed-discover-advancedmovie",
+      "target": "folder"
+    },
+    {
+      "key": "iPhone-Dark-proposed-discover-advancedmovie",
+      "target": "user"
+    },
+    {
+      "key": "iPhone-Dark-proposed-discover-signin",
+      "target": "method"
+    },
+    {
+      "key": "iPhone-Dark-proposed-discover-signin",
+      "target": "method"
+    },
+    {
+      "key": "iPhone-Dark-proposed-discover-filters",
+      "target": "genre"
+    },
+    {
+      "key": "iPhone-Dark-proposed-discover-filters",
+      "target": "year"
+    },
+    {
+      "key": "iPhone-Dark-proposed-discover-filters",
+      "target": "language"
+    },
+    {
+      "key": "iPhone-Dark-proposed-discover-filters",
+      "target": "sort"
+    },
+    {
+      "key": "iPhone-Dark-proposed-discover-filters",
+      "target": "availability"
+    },
+    {
+      "key": "iPhone-Dark-proposed-discover-advanced",
+      "target": "format"
+    },
+    {
+      "key": "iPhone-Dark-proposed-discover-advanced",
+      "target": "destination"
+    },
+    {
+      "key": "iPhone-Dark-proposed-discover-advanced",
+      "target": "profile"
+    },
+    {
+      "key": "iPhone-Dark-proposed-discover-advanced",
+      "target": "folder"
+    },
+    {
+      "key": "iPhone-Dark-proposed-discover-advanced",
+      "target": "language"
+    },
+    {
+      "key": "iPhone-Dark-proposed-discover-advanced",
+      "target": "user"
+    },
+    {
+      "key": "iPhone-Dark-proposed-discover-available",
+      "target": "play"
+    },
+    {
+      "key": "iPhone-Dark-proposed-discover-report",
+      "target": "issuetype"
+    },
+    {
+      "key": "iPhone-Dark-proposed-discover-titlemenu",
+      "target": "web"
+    },
+    {
+      "key": "iPhone-Dark-proposed-discover-titlemenu",
+      "target": "share"
+    },
+    {
+      "key": "iPhone-Dark-proposed-discover-settings",
+      "target": "region"
+    },
+    {
+      "key": "iPhone-Dark-proposed-discover-settings",
+      "target": "language"
+    },
+    {
+      "key": "iPhone-Dark-proposed-discover-settings",
+      "target": "web"
+    },
+    {
+      "key": "iPhone-Dark-proposed-discover-notifications",
+      "target": "email"
+    },
+    {
+      "key": "iPhone-Dark-proposed-discover-notifications",
+      "target": "toggle"
+    },
+    {
+      "key": "iPhone-Dark-proposed-discover-notifications",
+      "target": "toggle"
+    },
+    {
+      "key": "iPhone-Dark-proposed-discover-notifications",
+      "target": "toggle"
+    },
+    {
+      "key": "iPhone-Dark-proposed-discover-notifications",
+      "target": "toggle"
+    },
+    {
+      "key": "iPhone-Dark-proposed-discover-managerfilters",
+      "target": "status"
+    },
+    {
+      "key": "iPhone-Dark-proposed-discover-managerfilters",
+      "target": "mediatype"
+    },
+    {
+      "key": "iPhone-Dark-proposed-discover-managerfilters",
+      "target": "user"
+    },
+    {
+      "key": "iPhone-Dark-proposed-discover-managerfilters",
+      "target": "sort"
+    },
+    {
+      "key": "iPhone-Dark-proposed-discover-signinerror",
+      "target": "method"
+    },
+    {
+      "key": "iPhone-Light-proposed-discover-movie",
+      "target": "share"
+    },
+    {
+      "key": "iPhone-Light-proposed-discover-advancedmovie",
+      "target": "format"
+    },
+    {
+      "key": "iPhone-Light-proposed-discover-advancedmovie",
+      "target": "destination"
+    },
+    {
+      "key": "iPhone-Light-proposed-discover-advancedmovie",
+      "target": "profile"
+    },
+    {
+      "key": "iPhone-Light-proposed-discover-advancedmovie",
+      "target": "folder"
+    },
+    {
+      "key": "iPhone-Light-proposed-discover-advancedmovie",
+      "target": "user"
+    },
+    {
+      "key": "iPhone-Light-proposed-discover-signin",
+      "target": "method"
+    },
+    {
+      "key": "iPhone-Light-proposed-discover-signin",
+      "target": "method"
+    },
+    {
+      "key": "iPhone-Light-proposed-discover-filters",
+      "target": "genre"
+    },
+    {
+      "key": "iPhone-Light-proposed-discover-filters",
+      "target": "year"
+    },
+    {
+      "key": "iPhone-Light-proposed-discover-filters",
+      "target": "language"
+    },
+    {
+      "key": "iPhone-Light-proposed-discover-filters",
+      "target": "sort"
+    },
+    {
+      "key": "iPhone-Light-proposed-discover-filters",
+      "target": "availability"
+    },
+    {
+      "key": "iPhone-Light-proposed-discover-advanced",
+      "target": "format"
+    },
+    {
+      "key": "iPhone-Light-proposed-discover-advanced",
+      "target": "destination"
+    },
+    {
+      "key": "iPhone-Light-proposed-discover-advanced",
+      "target": "profile"
+    },
+    {
+      "key": "iPhone-Light-proposed-discover-advanced",
+      "target": "folder"
+    },
+    {
+      "key": "iPhone-Light-proposed-discover-advanced",
+      "target": "language"
+    },
+    {
+      "key": "iPhone-Light-proposed-discover-advanced",
+      "target": "user"
+    },
+    {
+      "key": "iPhone-Light-proposed-discover-available",
+      "target": "play"
+    },
+    {
+      "key": "iPhone-Light-proposed-discover-report",
+      "target": "issuetype"
+    },
+    {
+      "key": "iPhone-Light-proposed-discover-titlemenu",
+      "target": "web"
+    },
+    {
+      "key": "iPhone-Light-proposed-discover-titlemenu",
+      "target": "share"
+    },
+    {
+      "key": "iPhone-Light-proposed-discover-settings",
+      "target": "region"
+    },
+    {
+      "key": "iPhone-Light-proposed-discover-settings",
+      "target": "language"
+    },
+    {
+      "key": "iPhone-Light-proposed-discover-settings",
+      "target": "web"
+    },
+    {
+      "key": "iPhone-Light-proposed-discover-notifications",
+      "target": "email"
+    },
+    {
+      "key": "iPhone-Light-proposed-discover-notifications",
+      "target": "toggle"
+    },
+    {
+      "key": "iPhone-Light-proposed-discover-notifications",
+      "target": "toggle"
+    },
+    {
+      "key": "iPhone-Light-proposed-discover-notifications",
+      "target": "toggle"
+    },
+    {
+      "key": "iPhone-Light-proposed-discover-notifications",
+      "target": "toggle"
+    },
+    {
+      "key": "iPhone-Light-proposed-discover-managerfilters",
+      "target": "status"
+    },
+    {
+      "key": "iPhone-Light-proposed-discover-managerfilters",
+      "target": "mediatype"
+    },
+    {
+      "key": "iPhone-Light-proposed-discover-managerfilters",
+      "target": "user"
+    },
+    {
+      "key": "iPhone-Light-proposed-discover-managerfilters",
+      "target": "sort"
+    },
+    {
+      "key": "iPhone-Light-proposed-discover-signinerror",
+      "target": "method"
+    },
+    {
+      "key": "iPad-Landscape-Light-proposed-discover-browse",
+      "target": "settings"
+    },
+    {
+      "key": "iPad-Landscape-Light-proposed-discover-browse",
+      "target": "search"
+    },
+    {
+      "key": "iPad-Landscape-Light-proposed-discover-browse",
+      "target": "settings"
+    },
+    {
+      "key": "iPad-Landscape-Light-proposed-discover-browse",
+      "target": "myrequests"
+    },
+    {
+      "key": "iPad-Landscape-Light-proposed-discover-browse",
+      "target": "movie"
+    },
+    {
+      "key": "iPad-Landscape-Light-proposed-discover-browse",
+      "target": "movie"
+    },
+    {
+      "key": "iPad-Landscape-Light-proposed-discover-browse",
+      "target": "search"
+    },
+    {
+      "key": "iPad-Landscape-Light-proposed-discover-browse",
+      "target": "movie"
+    },
+    {
+      "key": "iPad-Landscape-Light-proposed-discover-browse",
+      "target": "movie"
+    },
+    {
+      "key": "iPad-Landscape-Light-proposed-discover-browse",
+      "target": "movie"
+    },
+    {
+      "key": "iPad-Landscape-Light-proposed-discover-browse",
+      "target": "movie"
+    },
+    {
+      "key": "iPad-Landscape-Light-proposed-discover-browse",
+      "target": "show"
+    },
+    {
+      "key": "iPad-Landscape-Light-proposed-discover-browse",
+      "target": "movie"
+    },
+    {
+      "key": "iPad-Landscape-Light-proposed-discover-browse",
+      "target": "search"
+    },
+    {
+      "key": "iPad-Landscape-Light-proposed-discover-manager",
+      "target": "settings"
+    },
+    {
+      "key": "iPad-Landscape-Light-proposed-discover-manager",
+      "target": "search"
+    },
+    {
+      "key": "iPad-Landscape-Light-proposed-discover-manager",
+      "target": "settings"
+    },
+    {
+      "key": "iPad-Landscape-Light-proposed-discover-manager",
+      "target": "myrequests"
+    },
+    {
+      "key": "iPad-Landscape-Light-proposed-discover-manager",
+      "target": "approval"
+    },
+    {
+      "key": "iPad-Landscape-Light-proposed-discover-manager",
+      "target": "approval"
+    },
+    {
+      "key": "iPad-Landscape-Light-proposed-discover-manager",
+      "target": "approval"
+    },
+    {
+      "key": "iPad-Landscape-Light-proposed-discover-manager",
+      "target": "approval"
+    },
+    {
+      "key": "iPad-Landscape-Light-proposed-discover-manager",
+      "target": "approved"
+    },
+    {
+      "key": "iPad-Landscape-Light-proposed-discover-manager",
+      "target": "decline"
+    },
+    {
+      "key": "iPad-Landscape-Dark-proposed-discover-detail",
+      "target": "settings"
+    },
+    {
+      "key": "iPad-Landscape-Dark-proposed-discover-detail",
+      "target": "search"
+    },
+    {
+      "key": "iPad-Landscape-Dark-proposed-discover-detail",
+      "target": "settings"
+    },
+    {
+      "key": "iPad-Landscape-Dark-proposed-discover-detail",
+      "target": "search"
+    },
+    {
+      "key": "iPad-Landscape-Dark-proposed-discover-detail",
+      "target": "movie"
+    },
+    {
+      "key": "iPad-Landscape-Dark-proposed-discover-detail",
+      "target": "movie"
+    },
+    {
+      "key": "iPad-Landscape-Dark-proposed-discover-detail",
+      "target": "movie"
+    },
+    {
+      "key": "iPad-Landscape-Dark-proposed-discover-detail",
+      "target": "advanced"
+    },
+    {
+      "key": "iPad-Landscape-Dark-proposed-discover-detail",
+      "target": "sent"
+    },
+    {
+      "key": "iPad-Light-proposed-discover-manager",
+      "target": "settings"
+    },
+    {
+      "key": "iPad-Light-proposed-discover-manager",
+      "target": "search"
+    },
+    {
+      "key": "iPad-Light-proposed-discover-manager",
+      "target": "settings"
+    },
+    {
+      "key": "iPad-Light-proposed-discover-manager",
+      "target": "myrequests"
+    },
+    {
+      "key": "iPad-Light-proposed-discover-manager",
+      "target": "approval"
+    },
+    {
+      "key": "iPad-Light-proposed-discover-manager",
+      "target": "approval"
+    },
+    {
+      "key": "iPad-Light-proposed-discover-manager",
+      "target": "approval"
+    },
+    {
+      "key": "iPad-Light-proposed-discover-manager",
+      "target": "approval"
+    },
+    {
+      "key": "iPad-Light-proposed-discover-browse",
+      "target": "settings"
+    },
+    {
+      "key": "iPad-Light-proposed-discover-browse",
+      "target": "search"
+    },
+    {
+      "key": "iPad-Light-proposed-discover-browse",
+      "target": "settings"
+    },
+    {
+      "key": "iPad-Light-proposed-discover-browse",
+      "target": "myrequests"
+    },
+    {
+      "key": "iPad-Light-proposed-discover-browse",
+      "target": "movie"
+    },
+    {
+      "key": "iPad-Light-proposed-discover-browse",
+      "target": "movie"
+    },
+    {
+      "key": "iPad-Light-proposed-discover-browse",
+      "target": "search"
+    },
+    {
+      "key": "iPad-Light-proposed-discover-browse",
+      "target": "movie"
+    },
+    {
+      "key": "iPad-Light-proposed-discover-browse",
+      "target": "movie"
+    },
+    {
+      "key": "iPad-Light-proposed-discover-browse",
+      "target": "movie"
+    },
+    {
+      "key": "iPad-Light-proposed-discover-browse",
+      "target": "movie"
+    },
+    {
+      "key": "iPad-Light-proposed-discover-browse",
+      "target": "search"
+    },
+    {
+      "key": "iPad-Light-proposed-discover-browse",
+      "target": "movie"
+    },
+    {
+      "key": "iPad-Light-proposed-discover-browse",
+      "target": "movie"
+    },
+    {
+      "key": "iPad-Light-proposed-discover-browse",
+      "target": "show"
+    },
+    {
+      "key": "iPad-Light-proposed-discover-browse",
+      "target": "movie"
+    },
+    {
+      "key": "macOS-Dark-proposed-discover-browse",
+      "target": "settings"
+    },
+    {
+      "key": "macOS-Dark-proposed-discover-browse",
+      "target": "search"
+    },
+    {
+      "key": "macOS-Dark-proposed-discover-browse",
+      "target": "settings"
+    },
+    {
+      "key": "macOS-Dark-proposed-discover-browse",
+      "target": "myrequests"
+    },
+    {
+      "key": "macOS-Dark-proposed-discover-browse",
+      "target": "manager"
+    },
+    {
+      "key": "macOS-Dark-proposed-discover-browse",
+      "target": "movie"
+    },
+    {
+      "key": "macOS-Dark-proposed-discover-browse",
+      "target": "movie"
+    },
+    {
+      "key": "macOS-Dark-proposed-discover-browse",
+      "target": "search"
+    },
+    {
+      "key": "macOS-Dark-proposed-discover-browse",
+      "target": "movie"
+    },
+    {
+      "key": "macOS-Dark-proposed-discover-browse",
+      "target": "movie"
+    },
+    {
+      "key": "macOS-Dark-proposed-discover-browse",
+      "target": "movie"
+    },
+    {
+      "key": "macOS-Dark-proposed-discover-browse",
+      "target": "movie"
+    },
+    {
+      "key": "macOS-Dark-proposed-discover-browse",
+      "target": "show"
+    },
+    {
+      "key": "macOS-Dark-proposed-discover-browse",
+      "target": "movie"
+    },
+    {
+      "key": "macOS-Dark-proposed-discover-browse",
+      "target": "search"
+    },
+    {
+      "key": "macOS-Dark-proposed-discover-browse",
+      "target": "movie"
+    },
+    {
+      "key": "macOS-Dark-proposed-discover-browse",
+      "target": "movie"
+    },
+    {
+      "key": "macOS-Dark-proposed-discover-browse",
+      "target": "show"
+    },
+    {
+      "key": "macOS-Dark-proposed-discover-browse",
+      "target": "movie"
+    },
+    {
+      "key": "macOS-Light-proposed-discover-manager",
+      "target": "settings"
+    },
+    {
+      "key": "macOS-Light-proposed-discover-manager",
+      "target": "settings"
+    },
+    {
+      "key": "macOS-Light-proposed-discover-manager",
+      "target": "browse"
+    },
+    {
+      "key": "macOS-Light-proposed-discover-manager",
+      "target": "myrequests"
+    },
+    {
+      "key": "macOS-Light-proposed-discover-manager",
+      "target": "approval"
+    },
+    {
+      "key": "macOS-Light-proposed-discover-manager",
+      "target": "approval"
+    },
+    {
+      "key": "macOS-Light-proposed-discover-manager",
+      "target": "approval"
+    },
+    {
+      "key": "macOS-Light-proposed-discover-manager",
+      "target": "approval"
+    },
+    {
+      "key": "macOS-Light-proposed-discover-manager",
+      "target": "approved"
+    },
+    {
+      "key": "macOS-Light-proposed-discover-manager",
+      "target": "decline"
+    },
+    {
+      "key": "macOS-Light-proposed-discover-search",
+      "target": "settings"
+    },
+    {
+      "key": "macOS-Light-proposed-discover-search",
+      "target": "settings"
+    },
+    {
+      "key": "macOS-Light-proposed-discover-search",
+      "target": "browse"
+    },
+    {
+      "key": "macOS-Light-proposed-discover-search",
+      "target": "myrequests"
+    },
+    {
+      "key": "macOS-Light-proposed-discover-search",
+      "target": "movie"
+    },
+    {
+      "key": "macOS-Light-proposed-discover-search",
+      "target": "movie"
+    },
+    {
+      "key": "macOS-Light-proposed-discover-search",
+      "target": "movie"
+    },
+    {
+      "key": "macOS-Light-proposed-discover-search",
+      "target": "movie"
+    },
+    {
+      "key": "macOS-Light-proposed-discover-search",
+      "target": "show"
+    },
+    {
+      "key": "macOS-Light-proposed-discover-search",
+      "target": "movie"
+    },
+    {
+      "key": "macOS-Light-proposed-discover-search",
+      "target": "movie"
+    },
+    {
+      "key": "macOS-Light-proposed-discover-search",
+      "target": "movie"
+    },
+    {
+      "key": "macOS-Light-proposed-discover-search",
+      "target": "show"
+    },
+    {
+      "key": "macOS-Light-proposed-discover-search",
+      "target": "movie"
+    },
+    {
+      "key": "macOS-Light-proposed-discover-detail",
+      "target": "settings"
+    },
+    {
+      "key": "macOS-Light-proposed-discover-detail",
+      "target": "settings"
+    },
+    {
+      "key": "macOS-Light-proposed-discover-detail",
+      "target": "movie"
+    },
+    {
+      "key": "macOS-Light-proposed-discover-detail",
+      "target": "movie"
+    },
+    {
+      "key": "macOS-Light-proposed-discover-detail",
+      "target": "movie"
+    },
+    {
+      "key": "macOS-Light-proposed-discover-detail",
+      "target": "advanced"
+    },
+    {
+      "key": "macOS-Light-proposed-discover-detail",
+      "target": "sent"
+    },
+    {
+      "key": "macOS-Narrow-Light-proposed-discover-manager",
+      "target": "settings"
+    },
+    {
+      "key": "macOS-Narrow-Light-proposed-discover-manager",
+      "target": "search"
+    },
+    {
+      "key": "macOS-Narrow-Light-proposed-discover-manager",
+      "target": "settings"
+    },
+    {
+      "key": "macOS-Narrow-Light-proposed-discover-manager",
+      "target": "browse"
+    },
+    {
+      "key": "macOS-Narrow-Light-proposed-discover-manager",
+      "target": "myrequests"
+    },
+    {
+      "key": "macOS-Narrow-Light-proposed-discover-manager",
+      "target": "approval"
+    },
+    {
+      "key": "macOS-Narrow-Light-proposed-discover-manager",
+      "target": "approval"
+    },
+    {
+      "key": "macOS-Narrow-Light-proposed-discover-manager",
+      "target": "approval"
+    },
+    {
+      "key": "macOS-Narrow-Light-proposed-discover-manager",
+      "target": "approval"
+    },
+    {
+      "key": "macOS-Narrow-Light-proposed-discover-detail",
+      "target": "settings"
+    },
+    {
+      "key": "macOS-Narrow-Light-proposed-discover-detail",
+      "target": "search"
+    },
+    {
+      "key": "macOS-Narrow-Light-proposed-discover-detail",
+      "target": "settings"
+    },
+    {
+      "key": "tvOS-Dark-proposed-discover-browse",
+      "target": "search"
+    },
+    {
+      "key": "tvOS-Dark-proposed-discover-browse",
+      "target": "show"
+    },
+    {
+      "key": "visionOS-Dark-proposed-discover-browse",
+      "target": "search"
+    },
+    {
+      "key": "visionOS-Dark-proposed-discover-browse",
+      "target": "settings"
+    },
+    {
+      "key": "visionOS-Dark-proposed-discover-browse",
+      "target": "myrequests"
+    },
+    {
+      "key": "visionOS-Dark-proposed-discover-browse",
+      "target": "manager"
+    },
+    {
+      "key": "visionOS-Dark-proposed-discover-browse",
+      "target": "movie"
+    },
+    {
+      "key": "visionOS-Dark-proposed-discover-browse",
+      "target": "movie"
+    },
+    {
+      "key": "visionOS-Dark-proposed-discover-browse",
+      "target": "search"
+    },
+    {
+      "key": "visionOS-Dark-proposed-discover-browse",
+      "target": "movie"
+    },
+    {
+      "key": "visionOS-Dark-proposed-discover-browse",
+      "target": "movie"
+    },
+    {
+      "key": "visionOS-Dark-proposed-discover-browse",
+      "target": "movie"
+    },
+    {
+      "key": "visionOS-Dark-proposed-discover-browse",
+      "target": "movie"
+    },
+    {
+      "key": "visionOS-Dark-proposed-discover-browse",
+      "target": "movie"
+    },
+    {
+      "key": "visionOS-Dark-proposed-discover-detail",
+      "target": "search"
+    },
+    {
+      "key": "visionOS-Dark-proposed-discover-detail",
+      "target": "settings"
+    },
+    {
+      "key": "visionOS-Dark-proposed-discover-detail",
+      "target": "play"
+    },
+    {
+      "key": "visionOS-Dark-proposed-discover-detail",
+      "target": "request"
+    },
+    {
+      "key": "visionOS-Dark-proposed-discover-detail",
+      "target": "request"
+    },
+    {
+      "key": "visionOS-Dark-proposed-discover-detail",
+      "target": "advanced"
+    },
+    {
+      "key": "visionOS-Dark-proposed-discover-sent",
+      "target": "search"
+    },
+    {
+      "key": "visionOS-Dark-proposed-discover-sent",
+      "target": "settings"
+    }
+  ],
+  "scrollRegions": 825,
+  "proposalScrolling": "Static viewports; not a scroll simulation",
+  "browserAcceptance": "Current-app prior acceptance is recorded separately; integration requires targeted browser review."
+}

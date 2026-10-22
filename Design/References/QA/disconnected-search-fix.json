@@ -1,0 +1,62 @@
+[
+  {
+    "file": "macOS/Light/05 Discover.fig",
+    "index": 44,
+    "result": {
+      "screen": "macOS / Light / discover \u2014 Discover",
+      "removed": [
+        {
+          "id": "0:53",
+          "name": "NSSearchField \u00b7 Command-F"
+        }
+      ]
+    },
+    "beforeSha256": "346e4e5c485e11ebcd485015e2e693f8b4d5ed849146c519688f4ae581aacfa1",
+    "afterSha256": "6b06b752e04b82626c5e3dd811f0e995821e757b042e9230f3b40c64b1214f60"
+  },
+  {
+    "file": "macOS/Dark/05 Discover.fig",
+    "index": 49,
+    "result": {
+      "screen": "macOS / Dark / discover \u2014 Discover",
+      "removed": [
+        {
+          "id": "0:53",
+          "name": "NSSearchField \u00b7 Command-F"
+        }
+      ]
+    },
+    "beforeSha256": "f97b61380f7e11731d36cdce0d07f374dde8611cda3b3bb0138f231bc7344917",
+    "afterSha256": "0a520497466737ea9f38fa97d861bf46719bbce26d9df0a9e137d72c7deafc5e"
+  },
+  {
+    "file": "macOS-Narrow/Light/05 Discover.fig",
+    "index": 54,
+    "result": {
+      "screen": "macOS Narrow / Light / discover \u2014 Discover",
+      "removed": [
+        {
+          "id": "0:53",
+          "name": "NSSearchField \u00b7 Command-F"
+        }
+      ]
+    },
+    "beforeSha256": "6e7ee72167794565a541810291789ee402a309b0a25be90866c3b396b7cdd8bb",
+    "afterSha256": "0cb81c4f33ec927037b27d8e397b177fedfdec6383987f9d11c9fd3ede8c2ac1"
+  },
+  {
+    "file": "macOS-Narrow/Dark/05 Discover.fig",
+    "index": 59,
+    "result": {
+      "screen": "macOS Narrow / Dark / discover \u2014 Discover",
+      "removed": [
+        {
+          "id": "0:53",
+          "name": "NSSearchField \u00b7 Command-F"
+        }
+      ]
+    },
+    "beforeSha256": "1f8c2dd1fb3b810b8ea90f2cb61cb12228c4e0e11dad15be514e475e358bae89",
+    "afterSha256": "95fa27cc156a89967431672b96cb776a3a5e204705380d4626e3d25c5daed0a5"
+  }
+]

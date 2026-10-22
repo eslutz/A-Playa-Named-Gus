@@ -1,0 +1,10 @@
+{
+  "sample": "iPhone Light Home",
+  "dimensions": [
+    402,
+    874
+  ],
+  "pixelsOverChannelTolerance8": 9478,
+  "pixelPercent": 2.698,
+  "scope": "One CLI strict-font export compared with the earlier live OpenPencil export. This is not a runtime app or whole-inventory pixel-perfect claim."
+}

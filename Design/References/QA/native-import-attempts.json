@@ -1,0 +1,18 @@
+{
+  "date": "2026-10-20",
+  "status": "blocked",
+  "attempts": [
+    {
+      "file": "iPhone/Light/01 Connection and Library.fig",
+      "result": "MCP timeout"
+    },
+    {
+      "file": "watchOS-Ultra/Dark/01 Watch.fig",
+      "result": "MCP timeout"
+    }
+  ],
+  "observedBlocker": "OpenPencil GoToWindow native sheet remains open; automated Escape did not dismiss it.",
+  "preserved": "App was not restarted; unrelated tabs were not closed.",
+  "scope": "Historical attempts before the approved restart and CLI file-mode validation.",
+  "currentEvidence": "cli-transition.json and cli-acceptance.json"
+}
