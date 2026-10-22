@@ -3,8 +3,20 @@ import SwiftUI
 extension View {
     @ViewBuilder func gusTVAccountMenu() -> some View {
         #if os(tvOS)
-            tabViewSidebarHeader {
-                TVAccountMenu().padding(.vertical, 16)
+            if #available(tvOS 27.0, *) {
+                tabViewSidebarHeader {
+                    TVAccountMenu().padding(.vertical, 16)
+                }
+            } else {
+                // OS 26 has no sidebar-header slot; retain the same native menu
+                // in a focusable inset above the tabs.
+                safeAreaInset(edge: .top) {
+                    HStack {
+                        TVAccountMenu()
+                        Spacer()
+                    }
+                    .padding()
+                }
             }
         #else
             self

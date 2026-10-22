@@ -35,6 +35,14 @@ do not push directly or bypass protection. GitHub runs CI on PRs targeting `main
 Xcode Cloud tests merged `main` before internal TestFlight distribution; see
 `Documentation/AppStore/pipeline-policy.md` for the saved release gates.
 
+## OS compatibility policy
+
+The minimum deployment target is **26.0 on every platform**, including Watch and
+Top Shelf. Build with Xcode 27.1 or newer and prefer the latest OS 27.x APIs,
+guarding newer APIs with runtime availability checks and preserving useful OS 26
+fallbacks. Lowering deployment targets must not remove newer OS functionality.
+Build validation and actual OS 26 runtime/device acceptance are separate gates.
+
 ## Warning-free build policy
 
 Treat every warning as an error. App, extension, Watch, and test targets must

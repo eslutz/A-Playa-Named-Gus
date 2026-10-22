@@ -206,13 +206,30 @@ struct SessionPlayerRequest: ViewModifier {
         func body(content: Content) -> some View {
             // Size-class changes must not replace the content subtree: doing so
             // tears down its sheets and navigation while a player is presented.
-            content
-                .tabViewBottomAccessory(isEnabled: isVisible && widthClass == .compact && usesTabAccessory) { returnControl }
+            tabAccessory(content: content)
                 .safeAreaInset(edge: .bottom) {
-                    if isVisible, widthClass != .compact || !usesTabAccessory {
+                    if isVisible, !supportsTabAccessory || widthClass != .compact || !usesTabAccessory {
                         returnControl.background(.bar)
                     }
                 }
+        }
+
+        private var supportsTabAccessory: Bool {
+            if #available(iOS 26.1, *) {
+                true
+            } else {
+                false
+            }
+        }
+
+        @ViewBuilder private func tabAccessory(content: Content) -> some View {
+            if #available(iOS 26.1, *) {
+                content.tabViewBottomAccessory(isEnabled: isVisible && widthClass == .compact && usesTabAccessory) { returnControl }
+            } else {
+                // The conditional accessory API arrived in 26.1. Keep OS 26.0
+                // on the existing return bar without branching on player state.
+                content
+            }
         }
 
         @ViewBuilder private var returnControl: some View {
