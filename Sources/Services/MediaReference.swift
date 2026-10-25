@@ -223,8 +223,7 @@ final class MediaReferenceResolver {
             return false
         }
         let a = identities(saved), b = identities(candidate)
-        guard !a.isEmpty, a.contains(where: { b[$0.key] == $0.value }) else { return false }
-        guard !a.contains(where: { b[$0.key] != nil && b[$0.key] != $0.value }) else { return false }
+        guard !a.isEmpty, a.contains(where: { b[$0.key] == $0.value }), !a.contains(where: { b[$0.key] != nil && b[$0.key] != $0.value }) else { return false }
         if saved.type == .episode {
             // Different series IDs need separate explicit recovery; episode numbers
             // alone cannot establish which series an episode belongs to.

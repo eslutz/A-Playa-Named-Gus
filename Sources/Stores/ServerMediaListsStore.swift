@@ -229,8 +229,7 @@ final class ServerMediaListsStore {
         for kind in ServerMediaListKind.allCases {
             do {
                 let remote = try await session.mediaProvider.mediaLists(kind: kind)
-                guard current(scope, token) else { return }
-                guard save(scope: scope, { cache in
+                guard current(scope, token), save(scope: scope, { cache in
                     let old = cache.lists
                     var refreshed: [ServerMediaList] = []
                     for var list in remote {
@@ -286,8 +285,7 @@ final class ServerMediaListsStore {
     func create(name: String, kind: ServerMediaListKind, session: SessionStore, itemIDs: [String] = [], items: [MediaItem] = []) async -> UUID? {
         guard prepare(scope: session.references.scope) else { return nil }
         let name = name.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !name.isEmpty else { return nil }
-        guard items.allSatisfy({ $0.id != nil }) else { return nil }
+        guard !name.isEmpty, items.allSatisfy({ $0.id != nil }) else { return nil }
         let snapshots: [MediaItem]
         if itemIDs.isEmpty {
             snapshots = items
@@ -374,8 +372,7 @@ final class ServerMediaListsStore {
     /// Call only after the user verifies the operation did not reach Jellyfin.
     func retryPendingEdit(id: UUID, session: SessionStore) async {
         let scope = session.references.scope
-        guard prepare(scope: scope) else { return }
-        guard save(scope: scope, { cache in
+        guard prepare(scope: scope), save(scope: scope, { cache in
             guard let index = cache.pending.firstIndex(where: { $0.id == id }) else { return }
             cache.pending[index].status = .queued
             cache.pending[index].message = nil

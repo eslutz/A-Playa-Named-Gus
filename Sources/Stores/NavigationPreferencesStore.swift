@@ -103,6 +103,7 @@ struct NavigationSectionPreference: Codable, Equatable {
     static let librariesID = "libraries"
     static let playlistsID = "playlists"
     static let settingsID = "settings"
+    static let discoverID = "discover"
 
     var id: String
     /// `nil` means the section follows the server-derived default: categories with
@@ -287,6 +288,7 @@ final class NavigationPreferencesStore {
             id == NavigationSectionPreference.librariesID ||
             id == NavigationSectionPreference.playlistsID ||
             id == NavigationSectionPreference.settingsID ||
+            id == NavigationSectionPreference.discoverID ||
             NavigationCategory(id: id) != nil
     }
 
@@ -299,7 +301,7 @@ final class NavigationPreferencesStore {
             [NavigationSectionPreference.librariesID, NavigationSectionPreference.playlistsID]
         return required +
             visibleCategories +
-            [NavigationSectionPreference.settingsID] +
+            [NavigationSectionPreference.discoverID, NavigationSectionPreference.settingsID] +
             hiddenCategories
     }
 
@@ -353,6 +355,11 @@ final class NavigationPreferencesStore {
                 libraries: [],
                 canMove: true,
                 canHide: false
+            )
+        case NavigationSectionPreference.discoverID:
+            return ResolvedNavigationSection(
+                id: id, title: String(localized: "Discover"), systemImage: "sparkles",
+                isVisible: visibility[id] ?? true, category: nil, libraries: [], canMove: true, canHide: true
             )
         default:
             guard let category = categoryByID[id] else { return nil }
