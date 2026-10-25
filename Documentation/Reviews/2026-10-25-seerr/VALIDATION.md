@@ -1,6 +1,6 @@
 # Seerr integration validation — October 25, 2026
 
-Native Seerr 3 discovery, authentication, movie/season requests and recovery, personal history, manager review, and supported issue/blocklist/preferences are implemented and locally qualified. **GitHub CI and Cloud/TestFlight distribution remain pending.**
+Native Seerr 3 discovery, authentication, movie/season requests and recovery, personal history, manager review, and supported issue/blocklist/preferences are implemented and locally qualified. **GitHub CI and protected-main merge passed. Build 1.0.0 (31) is available to Gus Internal on all four native platforms through API-key-authenticated local Xcode delivery. Cloud startup failed before actions; no Cloud qualification success is claimed.**
 
 ## Candidate and evidence
 
@@ -29,7 +29,7 @@ The [two PR comment fixes](PR-COMMENT-FIXES.md) add format-independent request-r
 
 ## Release gates and limits
 
-The user approved publication and [PR #34](https://github.com/eslutz/A-Playa-Named-Gus/pull/34) is open. An embedded Watch metadata warning in the first hosted iOS build prompted an [automation-only layout correction](CI-WATCH-METADATA.md); fresh checks on that corrected head remain required. Protected-main merge and the manual **Gus Internal TestFlight** workflow remain outstanding. Distribution requires the intended merged source, raw warning-policy review, successful signed exports/uploads, processing and all four internal beta group associations. **No new TestFlight build is claimed.**
+[PR #34](https://github.com/eslutz/A-Playa-Named-Gus/pull/34) merged after all 13 checks passed and both conversations were resolved. The checked source tree matches merged main `ee5bf9ea`. The [release record](RELEASE.md) documents the successful gates and the corrected API authentication, failed Cloud startup attempts and successful local Xcode delivery for the **Gus Internal TestFlight** release. Distribution requires the intended merged source, raw warning-policy review, successful signed exports/uploads, processing and all four internal beta group associations. **All four native Build 31 records are VALID, INTERNAL_ONLY and IN_BETA_TESTING with Gus Internal association.**
 
 Tests used synthetic loopback Seerr/Jellyfin fixtures. Live Seerr, exact OS 26.0 runtime, physical-device, VoiceOver/assistive and remaining platform GUI acceptance are unverified. Watch has no Discover destination.
 

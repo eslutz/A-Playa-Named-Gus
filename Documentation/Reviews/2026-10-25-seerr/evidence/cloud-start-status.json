@@ -1,0 +1,21 @@
+{
+  "method": "POST",
+  "endpoint": "/v1/ciBuildRuns",
+  "httpStatus": 201,
+  "runCreated": true,
+  "lastExistingRunNumber": 28,
+  "verifiedAt": "2026-10-25T15:33:36.676340+00:00",
+  "remainingAction": null,
+  "initialScopedRequest": {
+    "httpStatus": 405,
+    "errorCode": "METHOD_NOT_ALLOWED",
+    "runCreated": false
+  },
+  "authentication": "Standard ES256 JWT without optional scope claim",
+  "runID": "7bec9434-a8bf-4825-946b-884259b5e807",
+  "runNumber": 29,
+  "sourceCommit": "ee5bf9eae0282a3ad9be884493ff031d7314c8e8",
+  "releaseCompletedUsing": "Local API-key-authenticated native Xcode delivery",
+  "testFlightBuild": "1.0.0 (31)",
+  "cloudQualificationPassed": false
+}
