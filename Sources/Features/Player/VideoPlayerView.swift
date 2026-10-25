@@ -259,8 +259,8 @@ struct VideoPlayerView: View {
 }
 
 #if os(visionOS)
+    @MainActor
     private extension VideoPlayerView {
-        @MainActor
         func syncFramePackedCinemaIfNeeded(_ store: PlaybackStore) async {
             guard
                 let layout = store.stereoPresentation.framePackedLayout,
@@ -296,7 +296,6 @@ struct VideoPlayerView: View {
             }
         }
 
-        @MainActor
         func closeFramePackedCinemaIfNeeded() {
             guard openedFramePackedCinema else { return }
             openedFramePackedCinema = false

@@ -566,8 +566,7 @@ final class OfflineDownloadStore: DownloadSessionCoordinatorEventHandler {
             errorMessage = GusError(from: error).localizedDescription
             return
         }
-        guard DownloadsAvailability.isSupported else { return }
-        guard session.mediaProvider.capabilities.supportsDownloads else { return }
+        guard DownloadsAvailability.isSupported, session.mediaProvider.capabilities.supportsDownloads else { return }
         guard let itemID = item.id, OfflineDownloadEligibility.canDownload(item) else {
             errorMessage = String(localized: "This item is not available for download.", comment: "Download unavailable message")
             return
@@ -879,8 +878,8 @@ final class OfflineDownloadStore: DownloadSessionCoordinatorEventHandler {
         do {
             let item = try await session.references.selectedReplacement(candidate)
             try Task.checkCancellation()
-            guard session.references.isActive else { return false }
-            guard var record = fileStore.record(forRecordID: snapshot.id), record.downloadedAt == snapshot.downloadedAt,
+            guard session.references.isActive,
+                  var record = fileStore.record(forRecordID: snapshot.id), record.downloadedAt == snapshot.downloadedAt,
                   loadedServerID == scope.serverID, loadedUserID == scope.userID else { return false }
             record.remoteReference = MediaReference(item: item, scope: scope)
             record.remoteUnavailable = false

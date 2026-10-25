@@ -1,0 +1,78 @@
+[
+  {
+    "name": "history-iphone",
+    "command": [
+      "xcodebuild",
+      "-project",
+      "A Playa Named Gus.xcodeproj",
+      "-scheme",
+      "Gus iOS Tests",
+      "-derivedDataPath",
+      "/tmp/gus-seerr-candidate-derived",
+      "-onlyUsePackageVersionsFromResolvedFile",
+      "ONLY_ACTIVE_ARCH=YES",
+      "-collect-test-diagnostics",
+      "never",
+      "-parallel-testing-enabled",
+      "NO",
+      "-only-testing:GusUITests/GusSeerrUITests/testConnectPersistRequestHistoryAndCancel",
+      "-only-testing:GusUITests/GusSeerrUITests/testManagerReviewsPendingRequestBeforeApproval",
+      "-destination",
+      "platform=iOS Simulator,id=8D6A5B35-B67B-4725-B428-DC0EAA80797D",
+      "-resultBundlePath",
+      "/tmp/gus-seerr-validation/history-ui-final/iphone.xcresult",
+      "test",
+      "EXCLUDED_ARCHS=x86_64 i386"
+    ],
+    "exitCode": 0,
+    "seconds": 240.51,
+    "log": "history-iphone.log",
+    "tests": {
+      "totalTestCount": 2,
+      "passedTests": 2,
+      "failedTests": 0,
+      "skippedTests": 0,
+      "expectedFailures": 0,
+      "result": "Passed"
+    },
+    "diagnostics": []
+  },
+  {
+    "name": "history-ipad",
+    "command": [
+      "xcodebuild",
+      "-project",
+      "A Playa Named Gus.xcodeproj",
+      "-scheme",
+      "Gus iOS Tests",
+      "-derivedDataPath",
+      "/tmp/gus-seerr-candidate-derived",
+      "-onlyUsePackageVersionsFromResolvedFile",
+      "ONLY_ACTIVE_ARCH=YES",
+      "-collect-test-diagnostics",
+      "never",
+      "-parallel-testing-enabled",
+      "NO",
+      "-only-testing:GusUITests/GusSeerrUITests/testConnectPersistRequestHistoryAndCancel",
+      "-only-testing:GusUITests/GusSeerrUITests/testManagerReviewsPendingRequestBeforeApproval",
+      "-destination",
+      "platform=iOS Simulator,id=188DD406-3103-454A-911F-DF680344ACCC",
+      "-resultBundlePath",
+      "/tmp/gus-seerr-validation/history-ui-final/ipad.xcresult",
+      "test",
+      "EXCLUDED_ARCHS=x86_64 i386"
+    ],
+    "exitCode": 0,
+    "seconds": 277.3,
+    "log": "history-ipad.log",
+    "tests": {
+      "totalTestCount": 2,
+      "passedTests": 2,
+      "failedTests": 0,
+      "skippedTests": 0,
+      "expectedFailures": 0,
+      "result": "Passed"
+    },
+    "diagnostics": []
+  }
+]

@@ -489,8 +489,7 @@ final class AudioPlayerStore {
     }
 
     private func reportProgress(force: Bool) {
-        guard let context = reportContext else { return }
-        guard force || currentTime - lastProgressReportTime >= 10 else { return }
+        guard let context = reportContext, force || currentTime - lastProgressReportTime >= 10 else { return }
         lastProgressReportTime = currentTime
         let ticks = PlaybackTime.ticks(fromSeconds: currentTime)
         let paused = !isPlaying

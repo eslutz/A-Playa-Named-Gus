@@ -301,11 +301,7 @@ private final class PlaybackInfoURLProtocol: URLProtocol {
     override func stopLoading() {}
 
     private static func state(for request: URLRequest) throws -> PlaybackInfoURLProtocolState {
-        guard let stateID = request.value(forHTTPHeaderField: stateHeaderName) else {
-            throw URLError(.badServerResponse)
-        }
-
-        guard let state = states.withLock({ $0[stateID] }) else {
+        guard let stateID = request.value(forHTTPHeaderField: stateHeaderName), let state = states.withLock({ $0[stateID] }) else {
             throw URLError(.badServerResponse)
         }
         return state

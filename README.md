@@ -54,3 +54,7 @@ issues.
 
 See the [Contributing wiki page](https://github.com/eslutz/A-Playa-Named-Gus/wiki/Contributing)
 for contribution details.
+
+## Discover with Seerr
+
+Connect a Seerr 3 account to browse and request movies and series, track requests, review permitted manager actions, and manage supported issues and preferences. The connection stays scoped to this Gus account and device. See the [Discover guide](https://github.com/eslutz/A-Playa-Named-Gus/wiki/Discover) and [verified API contracts](Documentation/Seerr-api-contract.md).

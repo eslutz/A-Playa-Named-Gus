@@ -995,3 +995,13 @@ October 12 pipeline policy supersedes direct-main publication: main now requires
 - [ ] Compatible tvOS 27 runtime capture and remote-only focus, Back/Menu, repeated/cancelled account/playback flows; physical VoiceOver/HDR/audio and signed private-sync acceptance remain open.
 
 Based on merged PR #21 (`c847a27`): Jellyfin owns playlists and collections; unique native membership, permissions and explicit legacy import remain unchanged. No duplicate-entry queue product is introduced. Local implementation and evidence: [TV redesign](Reviews/2026-10-13-tvos-redesign/IMPLEMENTATION.md). No publication or release acceptance is claimed.
+
+## Seerr integration — October 25, 2026
+
+- [x] Implement the accepted Discovery flow: account-scoped Seerr 3 setup, enabled catalog shelves, search/paging/filters, title/person/season details, exact Jellyfin identity matching, reviewed movie/season requests, history/cancellation and manager decisions.
+- [x] Add permission-gated own issues, blocklist and supported regional/email preferences, with private cookies and persistent unresolved-write safeguards.
+- [x] Complete warning-free local builds, unit tests, iPhone/iPad UI regressions, unsigned Release archives and static qualification.
+- [ ] Pass required PR checks and the full internal TestFlight release workflow.
+- [ ] Record live Seerr, physical-device and assistive-input acceptance separately from synthetic contract and simulator checks.
+
+Scope and API evidence: [Seerr contract](Seerr-api-contract.md). The ongoing overall Sketch redesign is outside this feature release.

@@ -195,9 +195,8 @@ final class DownloadSessionCoordinator: NSObject, DownloadSessionCoordinating, U
             var snapshots: [(String, URLSessionDownloadTask)] = []
             for task in tasks {
                 guard let downloadTask = task as? URLSessionDownloadTask,
-                      let recordID = downloadTask.taskDescription
-                else { continue }
-                guard self.track(downloadTask, recordID: recordID) else { continue }
+                      let recordID = downloadTask.taskDescription,
+                      self.track(downloadTask, recordID: recordID) else { continue }
                 activeRecordIDs.insert(recordID)
                 snapshots.append((recordID, downloadTask))
             }
@@ -417,8 +416,7 @@ final class DownloadSessionCoordinator: NSObject, DownloadSessionCoordinating, U
 
     private func recordID(for task: URLSessionTask) -> String? {
         lock.withLock {
-            guard !cancelledTaskIDs.contains(task.taskIdentifier) else { return nil }
-            guard let recordID = task.taskDescription ?? recordIDByTaskID[task.taskIdentifier] else { return nil }
+            guard !cancelledTaskIDs.contains(task.taskIdentifier), let recordID = task.taskDescription ?? recordIDByTaskID[task.taskIdentifier] else { return nil }
             if let activeTask = tasksByRecordID[recordID], activeTask.taskIdentifier != task.taskIdentifier {
                 return nil
             }

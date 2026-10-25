@@ -106,6 +106,10 @@ struct SettingsView: View {
                 .gusKeyboardShortcut("q", modifiers: [.command, .shift])
             }
 
+            Section("Integrations") {
+                NavigationLink { SeerrSettingsView() } label: { Label("Seerr", systemImage: "sparkles") }
+            }
+
             Section("About") {
                 LabeledContent("Version", value: DeviceIdentity.appVersion)
                 LabeledContent("Client", value: DeviceIdentity.clientName)

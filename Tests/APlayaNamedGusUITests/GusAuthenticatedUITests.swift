@@ -801,7 +801,7 @@ final class GusAuthenticatedUITests: XCTestCase {
         guard let synopsisMovie = items.filter({
             $0["Type"] as? String == "Movie" && !($0["Overview"] as? String ?? "").isEmpty
         }).max(by: { ($0["Name"] as? String ?? "").count < ($1["Name"] as? String ?? "").count }),
-            let id = synopsisMovie["Id"] as? String, let title = synopsisMovie["Name"] as? String
+              let id = synopsisMovie["Id"] as? String, let title = synopsisMovie["Name"] as? String
         else { throw FixtureError.missingMedia }
         result["SynopsisMovie"] = id
         result["SynopsisMovieTitle"] = title
