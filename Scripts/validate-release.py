@@ -29,7 +29,7 @@ def diagnostic_lines(text):
 
 
 def apple_silicon_command(command):
-    """Apply the architecture policy to Xcode and its package/embedded targets."""
+    """Apply Apple Silicon policy and deterministic Watch automation layout."""
     if not command or Path(command[0]).name != "xcodebuild":
         return command
     intel = {"x86_64", "i386", "x86_64h"}
@@ -39,7 +39,9 @@ def apple_silicon_command(command):
             architectures = [command[index + 1]]
         if intel.intersection(architectures):
             raise RuntimeError("Intel builds are unsupported; use Apple Silicon architectures")
-    return command + ["EXCLUDED_ARCHS=x86_64 i386"]
+    # Only GusWatch Debug consumes this setting. Xcode/Previews keep the native
+    # dylib layout; noninteractive builds avoid the preview linker metadata race.
+    return command + ["EXCLUDED_ARCHS=x86_64 i386", "GUS_WATCH_DEBUG_DYLIB=NO"]
 
 
 def run(command, root, output, name, results, env=None, timeout=3600):

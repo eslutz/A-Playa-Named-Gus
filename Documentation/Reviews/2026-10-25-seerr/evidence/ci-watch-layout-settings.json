@@ -1,0 +1,17 @@
+[
+  {
+    "configuration": "Debug",
+    "automationOverride": false,
+    "debugDylib": "YES"
+  },
+  {
+    "configuration": "Debug",
+    "automationOverride": true,
+    "debugDylib": "NO"
+  },
+  {
+    "configuration": "Release",
+    "automationOverride": true,
+    "debugDylib": "NO"
+  }
+]

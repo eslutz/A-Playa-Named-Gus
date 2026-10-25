@@ -4,9 +4,9 @@ Native Seerr 3 discovery, authentication, movie/season requests and recovery, pe
 
 ## Candidate and evidence
 
-The candidate is isolated on `codex/seerr-integration`, based on protected-main `f53eaf37`; the original unfinished design checkout is preserved. Xcode 27.1 (`27A9275`), Apple Silicon, saved package pins and the repository warning gate were used. [Final source fingerprints](evidence/final-source-hashes.json) identify the code and resources qualified below.
+The candidate is isolated on `codex/seerr-integration`, based on protected-main `f53eaf37`; the original unfinished design checkout is preserved. Xcode 27.1 (`27A9275`), Apple Silicon, saved package pins and the repository warning gate were used. [Initial local matrix fingerprints](evidence/final-source-hashes.json) identify the baseline qualified below. Subsequent automation-only CI corrections are documented separately.
 
-All runtime and test sources match across the final build, unit, history UI, archive and static matrices. After runtime testing, two unchanged English navigation labels (`Integrations`, `Seerr`) were added to the string catalog. Final builds, archives and static checks include that resource completion; [the exact delta](evidence/resource-only-delta.json) and [runtime fingerprints](evidence/runtime-source-hashes.json) preserve this distinction.
+All Swift runtime and Swift test sources match across the baseline final build, unit, history UI, archive and static matrices. After runtime testing, two unchanged English navigation labels (`Integrations`, `Seerr`) were added to the string catalog. Final builds, archives and static checks include that resource completion; [the exact delta](evidence/resource-only-delta.json) and [runtime fingerprints](evidence/runtime-source-hashes.json) preserve this distinction.
 
 ## Local qualification
 
@@ -25,7 +25,7 @@ Reviewed synthetic captures: [iPhone Discover](captures/iphone-discover.png), [i
 
 ## Release gates and limits
 
-The GitHub push was blocked by automatic approval review pending explicit outbound payload/destination approval. The protected-main PR, all 13 required checks, merge, and manual **Gus Internal TestFlight** workflow remain outstanding. Distribution requires the intended merged source, raw warning-policy review, successful signed exports/uploads, processing and all four internal beta group associations. **No new TestFlight build is claimed.**
+The user approved publication and [PR #34](https://github.com/eslutz/A-Playa-Named-Gus/pull/34) is open. An embedded Watch metadata warning in the first hosted iOS build prompted an [automation-only layout correction](CI-WATCH-METADATA.md); fresh checks on that corrected head remain required. Protected-main merge and the manual **Gus Internal TestFlight** workflow remain outstanding. Distribution requires the intended merged source, raw warning-policy review, successful signed exports/uploads, processing and all four internal beta group associations. **No new TestFlight build is claimed.**
 
 Tests used synthetic loopback Seerr/Jellyfin fixtures. Live Seerr, exact OS 26.0 runtime, physical-device, VoiceOver/assistive and remaining platform GUI acceptance are unverified. Watch has no Discover destination.
 

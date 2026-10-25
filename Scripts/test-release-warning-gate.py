@@ -17,6 +17,7 @@ class WarningGateTests(unittest.TestCase):
         command = validation.apple_silicon_command(["xcodebuild", "ARCHS=arm64_32", "archive"])
         self.assertIn("EXCLUDED_ARCHS=x86_64 i386", command)
         self.assertIn("ARCHS=arm64_32", command)
+        self.assertIn("GUS_WATCH_DEBUG_DYLIB=NO", command)
         self.assertEqual(validation.apple_silicon_command(["python3", "test.py"]), ["python3", "test.py"])
 
     def test_explicit_intel_architecture_is_rejected(self):
