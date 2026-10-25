@@ -25,12 +25,12 @@
       }
     },
     "NSLocalNetworkUsageDescription" : {
-      "comment" : "System permission prompt shown when the user chooses local Jellyfin server discovery.",
+      "comment" : "System permission prompt for connecting to local Jellyfin or Seerr servers and user-initiated Jellyfin discovery.",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "A Playa Named Gus can find Jellyfin servers on your local network when you choose Find Local Servers."
+            "value" : "A Playa Named Gus uses your local network to connect to Jellyfin and Seerr servers and to find Jellyfin servers when you choose Find Local Servers."
           }
         }
       }

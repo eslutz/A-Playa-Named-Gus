@@ -1,4 +1,5 @@
 import Foundation
+import os
 
 /// Credential material: callers may save this representation in Keychain, never preferences or diagnostics.
 struct SeerrSessionCookie: Codable, Hashable, Sendable {
@@ -51,6 +52,8 @@ actor SeerrClient {
     private let session: URLSession
     private let redirectPolicy: SeerrRedirectPolicy
     private var cookies: [SeerrSessionCookie]
+    private var sessionGeneration = UUID()
+    private nonisolated let lifetime = OSAllocatedUnfairLock(initialState: SeerrSessionLifetime.active)
 
     init(baseURL: URL, session: URLSession? = nil, cookies: [SeerrSessionCookie] = []) throws {
         let normalized = try Self.normalizeURL(baseURL.absoluteString)
@@ -101,11 +104,21 @@ actor SeerrClient {
     }
 
     func sessionCookies() -> [SeerrSessionCookie] {
+        guard lifetime.withLock({ $0 == .active }) else { return [] }
         cookies.removeAll { !Self.validCookie($0, for: baseURL) }
         return cookies
     }
 
+    /// Stop new work synchronously when an owning account changes, before actor cleanup can be scheduled.
+    nonisolated func invalidateSession() {
+        lifetime.withLock { $0 = .cleared }
+    }
+
+    /// Deactivation is permanent: an in-flight response must never revive a signed-out account.
+    /// A new sign-in attempt requires a new client, while injected transports remain usable.
     func clearSession() {
+        invalidateSession()
+        sessionGeneration = UUID()
         cookies.removeAll()
     }
 
@@ -150,7 +163,7 @@ actor SeerrClient {
     }
 
     func logout() async throws {
-        defer { cookies.removeAll() }
+        defer { clearSession() }
         _ = try await perform("auth/logout", method: "POST", mutation: false)
     }
 
@@ -298,6 +311,9 @@ actor SeerrClient {
         mutation: Bool = false
     ) async throws -> Data {
         try Task.checkCancellation()
+        try checkSessionLifetime()
+        let generation = sessionGeneration
+        let dispatchedMutation = mutation || (method != "GET" && method != "HEAD")
         guard var components = URLComponents(url: baseURL.appending(path: "api/v1/\(path)"), resolvingAgainstBaseURL: false) else {
             throw SeerrClientError.invalidURL
         }
@@ -324,13 +340,26 @@ actor SeerrClient {
         }
         let data: Data
         let response: URLResponse
+        try checkSessionLifetime()
         do {
             (data, response) = try await session.data(for: request, delegate: redirectPolicy)
         } catch {
+            guard lifetime.withLock({ $0 == .active }), generation == sessionGeneration else {
+                if dispatchedMutation {
+                    throw SeerrClientError.mutationOutcomeUnknown
+                }
+                throw CancellationError()
+            }
             if mutation {
                 throw SeerrClientError.mutationOutcomeUnknown
             }
             throw error
+        }
+        guard lifetime.withLock({ $0 == .active }), generation == sessionGeneration else {
+            if dispatchedMutation {
+                throw SeerrClientError.mutationOutcomeUnknown
+            }
+            throw CancellationError()
         }
         guard let response = response as? HTTPURLResponse, let responseURL = response.url,
               redirectPolicy.allows(responseURL)
@@ -338,18 +367,39 @@ actor SeerrClient {
         if (300 ... 399).contains(response.statusCode) {
             throw SeerrClientError.redirectRejected
         }
+        if response.statusCode == 401 {
+            let reason = lifetime.withLock { state in
+                if state == .active {
+                    state = .unauthorized
+                }
+                return state
+            }
+            sessionGeneration = UUID()
+            cookies.removeAll()
+            if reason == .cleared {
+                if dispatchedMutation {
+                    throw SeerrClientError.mutationOutcomeUnknown
+                }
+                throw CancellationError()
+            }
+            throw SeerrClientError.unauthorized
+        }
         absorbCookies(response: response, url: responseURL)
         switch response.statusCode {
         case 200 ... 299: return data
-        case 401:
-            cookies.removeAll()
-            throw SeerrClientError.unauthorized
         case 403: throw SeerrClientError.forbidden
         case 404: throw SeerrClientError.notFound
         case 409: throw SeerrClientError.conflict
-        case 429: throw SeerrClientError.quotaExceeded
         case 500 ... 599 where mutation: throw SeerrClientError.mutationOutcomeUnknown
         default: throw SeerrClientError.httpStatus(response.statusCode)
+        }
+    }
+
+    private nonisolated func checkSessionLifetime() throws {
+        switch lifetime.withLock({ $0 }) {
+        case .active: return
+        case .cleared: throw CancellationError()
+        case .unauthorized: throw SeerrClientError.unauthorized
         }
     }
 
@@ -422,6 +472,10 @@ actor SeerrClient {
 
     private struct LocalCredentials: Encodable { let email: String; let password: String }
     private struct JellyfinCredentials: Encodable { let username: String; let password: String }
+}
+
+private enum SeerrSessionLifetime: Sendable {
+    case active, cleared, unauthorized
 }
 
 /// Credentials and cookies may only follow a redirect inside the configured exact origin and base path.

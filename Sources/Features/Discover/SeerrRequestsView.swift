@@ -13,6 +13,7 @@ struct SeerrRequestsView: View {
     @State private var errorMessage: String?
     @State private var refreshID = UUID()
     @State private var loadID = UUID()
+    @State private var resultsKey: String?
 
     init(managing: Bool = false) {
         self.managing = managing
@@ -84,14 +85,17 @@ struct SeerrRequestsView: View {
         guard reset || !isLoading else { return }
         let operation = UUID()
         let revision = store.revision
+        let key = "\(revision):\(filter.rawValue)"
         loadID = operation
         isLoading = true
         errorMessage = nil
         if reset {
-            requests = []
+            // Keep native List identities and scroll position during same-query refresh.
+            if resultsKey != key {
+                requests = []; hasLoaded = false
+            }
             nextSkip = 0
             canLoadMore = false
-            hasLoaded = false
         }
         defer {
             if loadID == operation {
@@ -108,17 +112,34 @@ struct SeerrRequestsView: View {
             let skip = nextSkip
             let page = try await client.requests(filter: filter, requestedBy: managing ? nil : user.id, take: 20, skip: skip)
             guard revision == store.revision, loadID == operation, !Task.isCancelled else { return }
-            var seen = Set(requests.map(\.id))
             let visible = page.results.filter { managing || $0.requestedBy?.id == user.id }
-            requests.append(contentsOf: visible.filter { seen.insert($0.id).inserted })
+            requests = SeerrRequestPageReconciler.reconcile(current: requests, incoming: visible, reset: reset)
             nextSkip = skip + page.results.count
             canLoadMore = !page.results.isEmpty && nextSkip < page.pageInfo.results
             hasLoaded = true
+            resultsKey = key
         } catch {
             guard revision == store.revision, loadID == operation, !Task.isCancelled else { return }
             store.handle(error)
             errorMessage = error.localizedDescription
         }
+    }
+}
+
+/// Refresh replaces the authoritative page; overlapping later pages update records by stable ID.
+enum SeerrRequestPageReconciler {
+    static func reconcile(current: [SeerrRequest], incoming: [SeerrRequest], reset: Bool) -> [SeerrRequest] {
+        var result: [SeerrRequest] = []
+        var positions: [Int: Int] = [:]
+        for request in (reset ? [] : current) + incoming {
+            if let position = positions[request.id] {
+                result[position] = request
+            } else {
+                positions[request.id] = result.count
+                result.append(request)
+            }
+        }
+        return result
     }
 }
 
@@ -310,6 +331,17 @@ private struct SeerrRequestDetailView: View {
             LabeledContent("Request", value: request.status.seerrRequestDescription)
             LabeledContent("Media Availability", value: request.seerrMediaDescription)
             LabeledContent("Format", value: request.seerrFormatDescription)
+            if managing {
+                if let serverID = request.serverId {
+                    LabeledContent("Service ID", value: String(serverID))
+                }
+                if let profileID = request.profileId {
+                    LabeledContent("Quality Profile ID", value: String(profileID))
+                }
+                if let destination = request.rootFolder, !destination.isEmpty {
+                    LabeledContent("Destination", value: destination)
+                }
+            }
             if let requester = request.requestedBy {
                 LabeledContent("Requested By", value: requester.name)
             }

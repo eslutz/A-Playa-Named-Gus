@@ -126,7 +126,7 @@ struct ResolvedNavigationSection: Identifiable, Equatable {
     /// Home stays fixed; every other visible/hidden section can be reordered within its
     /// current list.
     let canMove: Bool
-    /// Only category sections can be hidden. Required destinations remain visible.
+    /// Category sections and Discover can be hidden. Required destinations remain visible.
     let canHide: Bool
 }
 

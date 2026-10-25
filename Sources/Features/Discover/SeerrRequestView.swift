@@ -19,7 +19,7 @@ private struct SeerrRequestForm: View {
     var body: some View {
         NavigationStack {
             Group {
-                if store.admits(draft.title) {
+                if store.isConnected, store.admits(draft.title) {
                     Form {
                         Section {
                             Text(draft.title.displayTitle).font(.headline)

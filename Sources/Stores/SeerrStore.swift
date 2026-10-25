@@ -74,11 +74,12 @@ final class SeerrStore {
             let account = try await candidate.me()
             guard account.id == saved.seerrUserID else { throw SeerrClientError.unauthorized }
             guard expected == revision, !Task.isCancelled else { return }
+            try await persistCookies(candidate)
+            guard expected == revision, !Task.isCancelled else { return }
             client = candidate
             user = account
             state = .connected
             errorMessage = nil
-            try await persistCookies(candidate)
         } catch {
             guard expected == revision, !Task.isCancelled else { return }
             handle(error)
@@ -96,14 +97,14 @@ final class SeerrStore {
         try Task.checkCancellation()
         guard expected == revision else { throw CancellationError() }
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-        let previous = (try? Data(contentsOf: fileURL)).flatMap { try? JSONDecoder().decode(SavedConnection.self, from: $0) }
-        let samePrincipal = previous?.url == candidate.baseURL && previous?.seerrUserID == account.id
+        let previousConnection = (try? Data(contentsOf: fileURL)).flatMap { try? JSONDecoder().decode(SavedConnection.self, from: $0) }
+        let samePrincipal = previousConnection?.url == candidate.baseURL && previousConnection?.seerrUserID == account.id
         let saved = SavedConnection(
             scope: scope,
             url: candidate.baseURL,
             seerrUserID: account.id,
-            pendingRequests: samePrincipal ? previous?.pendingRequests : nil,
-            pendingSupport: samePrincipal ? previous?.pendingSupport : nil
+            pendingRequests: samePrincipal ? previousConnection?.pendingRequests : nil,
+            pendingSupport: samePrincipal ? previousConnection?.pendingSupport : nil
         )
         let data = try JSONEncoder().encode(saved)
         let previousToken = tokens.token(account: credentialAccount)
@@ -119,6 +120,10 @@ final class SeerrStore {
             }
             throw error
         }
+        let previous = client
+        if previous !== candidate {
+            previous?.invalidateSession()
+        }
         revision = UUID()
         blockedTitles = []
         requestDrafts = [:]
@@ -130,6 +135,9 @@ final class SeerrStore {
         restored = true
         state = .connected
         errorMessage = nil
+        if previous !== candidate {
+            Task { await previous?.clearSession() }
+        }
     }
 
     func retryRestore() async {
@@ -154,8 +162,22 @@ final class SeerrStore {
         try await persistCookies(client)
     }
 
+    /// Account replacement invalidates in-flight work while preserving this account's saved connection.
+    func deactivate() {
+        let previous = client
+        previous?.invalidateSession()
+        revision = UUID()
+        client = nil
+        user = nil
+        requestDrafts = [:]
+        restored = false
+        state = .disconnected
+        Task { await previous?.clearSession() }
+    }
+
     func disconnect() {
         let previous = client
+        previous?.invalidateSession()
         revision = UUID()
         client = nil
         user = nil
@@ -176,6 +198,9 @@ final class SeerrStore {
         guard !(error is CancellationError) else { return }
         errorMessage = error.localizedDescription
         if case SeerrClientError.unauthorized = error {
+            let previous = client
+            previous?.invalidateSession()
+            Task { await previous?.clearSession() }
             revision = UUID()
             client = nil
             user = nil

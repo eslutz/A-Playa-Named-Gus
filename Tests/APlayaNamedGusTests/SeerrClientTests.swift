@@ -358,6 +358,136 @@ struct SeerrClientTests {
         #expect(query.first(where: { $0.name == "mediaType" })?.value == "tv")
     }
 
+    @Test("clearing a session rejects a late read before it can restore response cookies")
+    func clearSessionRejectsLateRead() async throws {
+        let gate = SeerrResponseGate()
+        let fixture = SeerrFixture(responses: [
+            .init(json: #"{"id":3,"permissions":32}"#, headers: ["Set-Cookie": "connect.sid=late-cookie; Path=/; Secure"], gate: gate),
+        ])
+        let client = try fixture.client()
+        let operation = Task { try await client.me() }
+        await gate.waitUntilPaused()
+        await client.clearSession()
+        gate.release()
+        await #expect(throws: CancellationError.self) { try await operation.value }
+        #expect(await client.sessionCookies().isEmpty)
+        await #expect(throws: CancellationError.self) { try await client.status() }
+        #expect(fixture.requests.count == 1)
+    }
+
+    @Test("a deactivated composite support operation cannot dispatch its subsequent POST")
+    func clearSessionStopsCompositeSupportMutation() async throws {
+        let gate = SeerrResponseGate()
+        let fixture = SeerrFixture(responses: [
+            .init(json: #"{"id":3,"permissions":4194304}"#, headers: ["Set-Cookie": "connect.sid=late-cookie; Path=/; Secure"], gate: gate),
+            .init(json: #"{"version":"3.5.1"}"#),
+        ])
+        let client = try fixture.client()
+        let operation = Task { try await client.reportIssue(mediaID: 88, type: .audio, message: "Synthetic test report") }
+        await gate.waitUntilPaused()
+        await client.clearSession()
+        gate.release()
+        await #expect(throws: CancellationError.self) { try await operation.value }
+        #expect(await client.sessionCookies().isEmpty)
+        #expect(fixture.requests.count == 1)
+        #expect(fixture.requests.first?.httpMethod == "GET")
+        #expect(fixture.requests.first?.url?.path == "/seerr/api/v1/auth/me")
+        // Deactivation belongs to the client, not its injected transport shared by another client.
+        let replacement = try fixture.client()
+        #expect(try await replacement.status().version == "3.5.1")
+        #expect(fixture.requests.count == 2)
+    }
+
+    @Test("a dispatched POST has an uncertain outcome when its client is cleared before the reply")
+    func clearSessionPreservesMutationUncertainty() async throws {
+        let gate = SeerrResponseGate()
+        let fixture = SeerrFixture(responses: [
+            .init(json: #"{"id":9,"status":1}"#, status: 201, headers: ["Set-Cookie": "connect.sid=late-cookie; Path=/; Secure"], gate: gate),
+        ])
+        let client = try fixture.client()
+        let operation = Task { try await client.createRequest(SeerrRequestPayload(mediaType: .movie, mediaId: 10)) }
+        await gate.waitUntilPaused()
+        await client.clearSession()
+        gate.release()
+        await #expect(throws: SeerrClientError.mutationOutcomeUnknown) { try await operation.value }
+        #expect(await client.sessionCookies().isEmpty)
+        await #expect(throws: CancellationError.self) { try await client.createRequest(SeerrRequestPayload(mediaType: .movie, mediaId: 10)) }
+        #expect(fixture.requests.count == 1)
+    }
+
+    @Test("a 401 permanently invalidates sibling reads and their late session cookies")
+    func unauthorizedInvalidatesOutstandingResponses() async throws {
+        let gate = SeerrResponseGate()
+        let fixture = SeerrFixture(responses: [
+            .init(json: #"{"id":3,"permissions":32}"#, headers: ["Set-Cookie": "connect.sid=late-cookie; Path=/; Secure"], gate: gate),
+            .init(status: 401, headers: ["Set-Cookie": "connect.sid=unauthorized-cookie; Path=/; Secure"]),
+        ])
+        let client = try fixture.client()
+        let operation = Task { try await client.me() }
+        await gate.waitUntilPaused()
+        await #expect(throws: SeerrClientError.unauthorized) { try await client.status() }
+        gate.release()
+        await #expect(throws: CancellationError.self) { try await operation.value }
+        #expect(await client.sessionCookies().isEmpty)
+        await #expect(throws: SeerrClientError.unauthorized) { try await client.me() }
+        #expect(fixture.requests.count == 2)
+        await client.clearSession()
+        await #expect(throws: CancellationError.self) { try await client.me() }
+        #expect(fixture.requests.count == 2)
+    }
+
+    @Test("HTTP 429 does not imply that a user's media-request quota is exhausted")
+    func throttlingDoesNotInferQuota() async throws {
+        let fixture = SeerrFixture(responses: [.init(status: 429), .init(status: 403)])
+        let client = try fixture.client()
+        await #expect(throws: SeerrClientError.httpStatus(429)) { try await client.status() }
+        await #expect(throws: SeerrClientError.forbidden) { try await client.status() }
+        #expect(fixture.requests.count == 2)
+    }
+
+    @Test("synchronous invalidation rejects late cookies before actor cleanup runs", arguments: [200, 401])
+    func synchronousInvalidationRejectsLateCookies(status: Int) async throws {
+        let gate = SeerrResponseGate()
+        let fixture = SeerrFixture(responses: [
+            .init(json: #"{"id":3,"permissions":32}"#, status: status, headers: ["Set-Cookie": "connect.sid=late-cookie; Path=/; Secure"], gate: gate),
+        ])
+        let client = try fixture.client()
+        let operation = Task { try await client.me() }
+        await gate.waitUntilPaused()
+        client.invalidateSession()
+        gate.release()
+        await #expect(throws: CancellationError.self) { try await operation.value }
+        #expect(await client.sessionCookies().isEmpty)
+        await #expect(throws: CancellationError.self) { try await client.me() }
+        #expect(fixture.requests.count == 1)
+        await client.clearSession()
+        #expect(await client.sessionCookies().isEmpty)
+    }
+
+    @Test("synchronous invalidation stops a comment while its internal issue preflight is paused")
+    func synchronousInvalidationStopsCompositeContinuation() async throws {
+        let gate = SeerrResponseGate()
+        let fixture = SeerrFixture(responses: [
+            .init(json: #"{"id":3,"permissions":4194304}"#),
+            .init(
+                json: #"{"id":11,"issueType":2,"status":1,"createdBy":{"id":3,"permissions":4194304}}"#,
+                headers: ["Set-Cookie": "connect.sid=late-cookie; Path=/; Secure"],
+                gate: gate
+            ),
+        ])
+        let client = try fixture.client()
+        let operation = Task { try await client.commentOnIssue(id: 11, message: "Synthetic test comment") }
+        await gate.waitUntilPaused()
+        client.invalidateSession()
+        gate.release()
+        await #expect(throws: CancellationError.self) { try await operation.value }
+        #expect(await client.sessionCookies().isEmpty)
+        #expect(fixture.requests.map(\.httpMethod) == ["GET", "GET"])
+        #expect(fixture.requests.map { $0.url?.path } == ["/seerr/api/v1/auth/me", "/seerr/api/v1/issue/11"])
+        await #expect(throws: CancellationError.self) { try await client.commentOnIssue(id: 11, message: "Another comment") }
+        #expect(fixture.requests.count == 2)
+    }
+
     private static func title(_ json: String) throws -> SeerrTitle {
         try JSONDecoder().decode(SeerrTitle.self, from: Data(json.utf8))
     }
@@ -385,6 +515,7 @@ private struct SeerrStub: Sendable {
     var status = 200
     var headers: [String: String] = [:]
     var error: URLError?
+    var gate: SeerrResponseGate?
 }
 
 private final class SeerrFixture: Sendable {
@@ -418,6 +549,7 @@ private final class SeerrFixture: Sendable {
 private final class SeerrURLProtocol: URLProtocol {
     static let header = "X-Gus-Seerr-Test-ID"
     static let states = OSAllocatedUnfairLock(initialState: [String: SeerrProtocolState]())
+    private let delivery = OSAllocatedUnfairLock<SeerrResponseDelivery?>(initialState: nil)
 
     override class func canInit(with request: URLRequest) -> Bool {
         request.value(forHTTPHeaderField: header) != nil
@@ -435,10 +567,6 @@ private final class SeerrURLProtocol: URLProtocol {
             return
         }
         let stub = state.next(request)
-        if let error = stub.error {
-            client?.urlProtocol(self, didFailWithError: error)
-            return
-        }
         guard let response = HTTPURLResponse(
             url: url,
             statusCode: stub.status,
@@ -449,12 +577,112 @@ private final class SeerrURLProtocol: URLProtocol {
             client?.urlProtocol(self, didFailWithError: URLError(.badServerResponse))
             return
         }
-        client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
-        client?.urlProtocol(self, didLoad: Data(stub.json.utf8))
-        client?.urlProtocolDidFinishLoading(self)
+        let delivery = SeerrResponseDelivery(owner: self)
+        self.delivery.withLock { $0 = delivery }
+        let transmit: @Sendable () -> Void = {
+            delivery.withOwner { owner in
+                if let error = stub.error {
+                    owner.client?.urlProtocol(owner, didFailWithError: error)
+                } else {
+                    owner.client?.urlProtocol(owner, didReceive: response, cacheStoragePolicy: .notAllowed)
+                    owner.client?.urlProtocol(owner, didLoad: Data(stub.json.utf8))
+                    owner.client?.urlProtocolDidFinishLoading(owner)
+                }
+            }
+        }
+        if let gate = stub.gate {
+            gate.pause(transmit)
+        } else {
+            transmit()
+        }
     }
 
-    override func stopLoading() {}
+    override func stopLoading() {
+        let current = delivery.withLock { state in
+            let current = state
+            state = nil
+            return current
+        }
+        current?.cancel()
+    }
+}
+
+/// Foundation's protocol handle is deliberately not Sendable. This audited wrapper serializes
+/// its weak ownership and callbacks with cancellation; a recursive lock permits reentrant stopLoading.
+private final class SeerrResponseDelivery: @unchecked Sendable {
+    private let lock = NSRecursiveLock()
+    private weak var owner: SeerrURLProtocol?
+    init(owner: SeerrURLProtocol) {
+        self.owner = owner
+    }
+
+    func withOwner(_ body: (SeerrURLProtocol) -> Void) {
+        lock.lock()
+        defer { lock.unlock() }
+        guard let owner else { return }
+        body(owner)
+    }
+
+    func cancel() {
+        lock.lock()
+        defer { lock.unlock() }
+        owner = nil
+    }
+}
+
+/// The event gate pauses delivery rather than sleeping, so tests control the precise response race.
+private final class SeerrResponseGate: Sendable {
+    private struct State {
+        var paused = false
+        var released = false
+        var waiters: [CheckedContinuation<Void, Never>] = []
+        var transmit: (@Sendable () -> Void)?
+    }
+
+    private let state = OSAllocatedUnfairLock(initialState: State())
+
+    func waitUntilPaused() async {
+        await withCheckedContinuation { continuation in
+            let ready = state.withLock { state in
+                if state.paused {
+                    return true
+                }
+                state.waiters.append(continuation)
+                return false
+            }
+            if ready {
+                continuation.resume()
+            }
+        }
+    }
+
+    func pause(_ transmit: @escaping @Sendable () -> Void) {
+        let delivery = state.withLock { state in
+            state.paused = true
+            let waiters = state.waiters
+            state.waiters = []
+            if !state.released {
+                state.transmit = transmit
+            }
+            return (waiters, state.released)
+        }
+        for waiter in delivery.0 {
+            waiter.resume()
+        }
+        if delivery.1 {
+            transmit()
+        }
+    }
+
+    func release() {
+        let transmit = state.withLock { state in
+            state.released = true
+            let transmit = state.transmit
+            state.transmit = nil
+            return transmit
+        }
+        transmit?()
+    }
 }
 
 private final class SeerrProtocolState: Sendable {

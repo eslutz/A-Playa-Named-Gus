@@ -159,6 +159,24 @@ struct SeerrStoreTests {
         #expect(context.http.requests.allSatisfy { $0.value(forHTTPHeaderField: "Cookie") == "connect.sid=store-fixture-secret" })
     }
 
+    @Test("account deactivation preserves the saved connection while invalidating access")
+    func deactivationPreservesSavedConnection() async throws {
+        let context = try StoreTestContext()
+        defer { context.cleanUp() }
+        try await context.store.connect(client: context.http.client(), user: SeerrUser(id: 2, permissions: .request))
+        let previousRevision = context.store.revision
+        let metadata = try Data(contentsOf: context.connectionFile)
+        let cookie = context.tokens.token(account: context.credentialAccount)
+        context.store.deactivate()
+        #expect(context.store.revision != previousRevision)
+        #expect(!context.store.isConnected)
+        #expect(context.store.user == nil)
+        #expect(context.store.client == nil)
+        #expect(throws: SeerrConnectionError.signInRequired) { try context.store.requireClient() }
+        #expect(try Data(contentsOf: context.connectionFile) == metadata)
+        #expect(context.tokens.token(account: context.credentialAccount) == cookie)
+    }
+
     @Test("blocking invalidates cached presentation by typed media identity")
     func blockInvalidatesSharedTypedIdentity() async throws {
         let context = try StoreTestContext(replies: [

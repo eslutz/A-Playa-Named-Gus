@@ -64,9 +64,9 @@
 		<true/>
 	</dict>
 
-	<!-- User-initiated Jellyfin server discovery on the local network. -->
+	<!-- Local server connections and user-initiated Jellyfin discovery. -->
 	<key>NSLocalNetworkUsageDescription</key>
-	<string>A Playa Named Gus can find Jellyfin servers on your local network when you choose Find Local Servers.</string>
+	<string>A Playa Named Gus uses your local network to connect to Jellyfin and Seerr servers and to find Jellyfin servers when you choose Find Local Servers.</string>
 
 	<!-- iOS/tvOS background audio + Picture in Picture. Ignored on macOS. -->
 	<key>UIBackgroundModes</key>

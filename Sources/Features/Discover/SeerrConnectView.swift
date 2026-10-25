@@ -160,15 +160,18 @@ private struct SeerrSignInView: View {
         message = nil
         defer { isSigningIn = false; password = "" }
         do {
+            let attempt = try SeerrClient(baseURL: client.baseURL)
             let account = try await(method == "local"
-                ? client.loginLocal(email: username.trimmingCharacters(in: .whitespacesAndNewlines), password: password)
-                : client.loginJellyfin(username: username.trimmingCharacters(in: .whitespacesAndNewlines), password: password))
+                ? attempt.loginLocal(email: username.trimmingCharacters(in: .whitespacesAndNewlines), password: password)
+                : attempt.loginJellyfin(username: username.trimmingCharacters(in: .whitespacesAndNewlines), password: password))
             guard !Task.isCancelled, expected == store.revision else { return }
-            try await store.connect(client: client, user: account, expectedRevision: expected)
+            try await store.connect(client: attempt, user: account, expectedRevision: expected)
             completed()
         } catch {
             guard !Task.isCancelled else { return }
-            message = error.localizedDescription
+            message = error as? SeerrClientError == .unauthorized
+                ? String(localized: "Seerr rejected the account name or password. Check your credentials and try again.")
+                : error.localizedDescription
         }
     }
 }

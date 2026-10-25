@@ -32,7 +32,7 @@
             openHistory(app)
             openRequestRow(app)
             XCTAssertTrue(app.staticTexts["Media Availability"].waitForExistence(timeout: 10))
-            XCTAssertTrue(app.staticTexts["Gus Fixture Manager"].exists)
+            assertMetadataValue("Requested By", contains: "Gus Fixture Manager", in: app)
             let cancel = app.buttons["Cancel My Request"].firstMatch
             reveal(cancel, in: app)
             cancel.tap()
@@ -43,6 +43,8 @@
             XCTAssertTrue(state.requests.isEmpty)
             XCTAssertEqual(state.events.filter { $0.method == "DELETE" && $0.path == "/api/v1/request/1" }.count, 1)
             XCTAssertEqual(requestPosts(state), 1)
+            assertEmptyHistory("My Requests", in: app)
+            capture("seerr-own-history-refreshed-empty")
         }
 
         func testLostSubmissionResponseReadsBackWithoutDuplicatePost() async throws {
@@ -88,9 +90,9 @@
             manage.tap()
             XCTAssertTrue(app.navigationBars["Manage Requests"].waitForExistence(timeout: 10))
             openRequestRow(app)
+            assertMetadataValue("Request", contains: "Pending Approval", in: app)
             let approve = app.buttons["Approve Request"].firstMatch
             reveal(approve, in: app)
-            XCTAssertTrue(app.staticTexts["Pending Approval"].exists)
             capture("seerr-manager-request-review")
             approve.tap()
             confirm("Approve Request", in: app)
@@ -100,6 +102,8 @@
             XCTAssertEqual(state.requests.first?.status, 2)
             XCTAssertEqual(state.events.filter { $0.method == "POST" && $0.path == "/api/v1/request/1/approve" }.count, 1)
             XCTAssertEqual(requestPosts(state), 1)
+            assertEmptyHistory("Manage Requests", in: app)
+            capture("seerr-pending-manager-history-refreshed-empty")
         }
 
         private func prepare(uncertainNext: Bool = false) async throws -> XCUIApplication {
@@ -123,7 +127,10 @@
         }
 
         private func openIntegration(_ app: XCUIApplication) {
-            XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: 30))
+            if !app.navigationBars["Settings"].waitForExistence(timeout: 20) {
+                XCTAssertTrue(selectSidebarSection("Settings", in: app))
+            }
+            XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: 10))
             let integration = app.buttons["Seerr"].firstMatch
             reveal(integration, in: app)
             integration.tap()
@@ -172,6 +179,8 @@
             let tab = app.tabBars.buttons["Discover"]
             if tab.exists {
                 tab.tap()
+            } else if selectSidebarSection("Discover", in: app) {
+                // Regular-width iPad uses the native split-view sidebar.
             } else {
                 if app.navigationBars["Discover Settings"].exists {
                     let back = app.navigationBars.buttons["Settings"].firstMatch
@@ -195,6 +204,47 @@
             XCTAssertTrue(app.buttons["View Title"].firstMatch.waitForExistence(timeout: 20))
         }
 
+        private func selectSidebarSection(_ title: String, in app: XCUIApplication) -> Bool {
+            guard !app.tabBars.firstMatch.exists else { return false }
+            let collection = app.collectionViews["Sidebar"].firstMatch
+            let table = app.tables["Sidebar"].firstMatch
+            if !collection.exists, !table.exists {
+                let toggle = app.buttons.matching(NSPredicate(format: "label IN %@", ["Show Sidebar", "Toggle Sidebar", "Sidebar"])).firstMatch
+                if toggle.exists, toggle.isHittable {
+                    toggle.tap()
+                }
+            }
+            let sidebar = collection.waitForExistence(timeout: 2) ? collection : table
+            if sidebar.exists {
+                let row = sidebar.descendants(matching: .any).matching(NSPredicate(format: "label == %@", title)).firstMatch
+                for _ in 0 ..< 10 {
+                    if row.exists, row.isHittable {
+                        row.tap(); return true
+                    }
+                    sidebar.swipeUp()
+                }
+            }
+            // Some OS versions expose sidebar List rows without a named container.
+            let cell = app.cells[title].firstMatch
+            if cell.exists, cell.isHittable {
+                cell.tap(); return true
+            }
+            let labelledCell = app.cells.containing(.staticText, identifier: title).firstMatch
+            if labelledCell.exists, labelledCell.isHittable {
+                labelledCell.tap(); return true
+            }
+            return false
+        }
+
+        private func assertMetadataValue(_ label: String, contains value: String, in app: XCUIApplication) {
+            let labelled = app.cells.containing(.staticText, identifier: label).firstMatch
+            let merged = app.cells.matching(NSPredicate(format: "label CONTAINS %@", label)).firstMatch
+            let row = labelled.exists ? labelled : merged.exists ? merged : labelled
+            reveal(row, in: app)
+            let matchingValue = row.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", value)).firstMatch
+            XCTAssertTrue(row.label.contains(value) || matchingValue.waitForExistence(timeout: 2), "Request metadata row must contain its server-provided value")
+        }
+
         private func openMovieReview(_ app: XCUIApplication) {
             let title = app.buttons["View Title"].firstMatch
             reveal(title, in: app)
@@ -208,10 +258,12 @@
 
         private func submit(_ app: XCUIApplication) {
             let submit = app.buttons["Seerr.submitRequest"].firstMatch
+            // iPad presents the grouped Form in a scrollable sheet; its final
+            // action is not materialized until that section enters the viewport.
+            reveal(submit, in: app)
             XCTAssertTrue(submit.waitForExistence(timeout: 20))
             let ready = XCTNSPredicateExpectation(predicate: NSPredicate(format: "enabled == true"), object: submit)
             XCTAssertEqual(XCTWaiter.wait(for: [ready], timeout: 15), .completed)
-            reveal(submit, in: app)
             submit.tap()
         }
 
@@ -232,6 +284,14 @@
             XCTAssertTrue(history.waitForExistence(timeout: 10))
             history.tap()
             XCTAssertTrue(app.navigationBars["My Requests"].waitForExistence(timeout: 10))
+        }
+
+        private func assertEmptyHistory(_ title: String, in app: XCUIApplication) {
+            let back = app.navigationBars.buttons[title].firstMatch
+            XCTAssertTrue(back.waitForExistence(timeout: 10))
+            back.tap()
+            XCTAssertTrue(app.navigationBars[title].waitForExistence(timeout: 10))
+            XCTAssertTrue(app.staticTexts["No Requests"].waitForExistence(timeout: 15))
         }
 
         private func openRequestRow(_ app: XCUIApplication) {

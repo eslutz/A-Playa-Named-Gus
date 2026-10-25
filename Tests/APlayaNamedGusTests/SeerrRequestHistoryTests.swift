@@ -3,6 +3,31 @@ import Testing
 
 @Suite("Seerr request history authorization")
 struct SeerrRequestHistoryTests {
+    @Test("refresh applies new statuses and removes requests omitted by the server")
+    func refreshReplacesStaleRequests() {
+        let previous = [SeerrRequest(id: 10, status: .pending), SeerrRequest(id: 20, status: .pending)]
+        let approved = SeerrRequest(id: 10, status: .approved)
+        let refreshed = SeerrRequestPageReconciler.reconcile(current: previous, incoming: [approved], reset: true)
+        #expect(refreshed == [approved])
+        #expect(SeerrRequestPageReconciler.reconcile(current: refreshed, incoming: [], reset: true).isEmpty)
+    }
+
+    @Test("refresh follows server ordering while preserving returned request identities")
+    func refreshUsesCurrentServerOrder() {
+        let previous = [SeerrRequest(id: 10, status: .pending), SeerrRequest(id: 20, status: .pending)]
+        let incoming = [SeerrRequest(id: 20, status: .approved), SeerrRequest(id: 10, status: .declined)]
+        #expect(SeerrRequestPageReconciler.reconcile(current: previous, incoming: incoming, reset: true) == incoming)
+    }
+
+    @Test("overlapping later pages update existing requests without duplicating or moving their rows")
+    func laterPageUpdatesOverlappingRequests() {
+        let previous = [SeerrRequest(id: 10, status: .pending), SeerrRequest(id: 20, status: .pending)]
+        let approved = SeerrRequest(id: 10, status: .approved)
+        let next = SeerrRequest(id: 30, status: .pending)
+        let appended = SeerrRequestPageReconciler.reconcile(current: previous, incoming: [approved, next, next], reset: false)
+        #expect(appended == [approved, previous[1], next])
+    }
+
     @Test("a missing request cannot confirm a cancellation without an acknowledged DELETE")
     func cancellationReadbackRequiresAcknowledgement() {
         let unknownMissing = SeerrHistoryReadbackPolicy.isSettled(action: .cancel, status: nil, acknowledged: false)

@@ -2,6 +2,9 @@ import SwiftUI
 
 /// Discover owns its search scope while each supported feed loads and retries independently.
 struct DiscoverBrowseView: View {
+    @Environment(AppNavigationModel.self) private var navigation
+    @FocusState private var searchFocused: Bool
+    @State private var searchPresented = false
     let store: SeerrStore
     @State private var feeds: [SeerrCatalogStore] = []
     @State private var enabledFeeds: [SeerrDiscoveryFeed] = []
@@ -45,7 +48,12 @@ struct DiscoverBrowseView: View {
             }
         }
         .navigationTitle("Discover")
-        .searchable(text: $query, prompt: Text("Search Discover"))
+        .gusSearchable(text: $query, isPresented: $searchPresented, isFocused: $searchFocused, prompt: Text("Search Discover"))
+        .onChange(of: navigation.searchFocusRequest, initial: true) { _, request in
+            guard request > 0 else { return }
+            searchPresented = true
+            searchFocused = true
+        }
         .onSubmit(of: .search) {
             submitsImmediately = true
             submittedSearch = UUID()

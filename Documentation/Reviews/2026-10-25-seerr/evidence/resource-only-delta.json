@@ -1,0 +1,10 @@
+{
+  "changedFiles": [
+    "Resources/Localizable.xcstrings"
+  ],
+  "addedEnglishKeys": [
+    "Integrations",
+    "Seerr"
+  ],
+  "runtimeAndTestSourcesUnchanged": true
+}

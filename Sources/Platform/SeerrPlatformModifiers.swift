@@ -9,3 +9,13 @@ extension View {
         #endif
     }
 }
+
+extension ToolbarItemPlacement {
+    static var seerrSecondaryAction: ToolbarItemPlacement {
+        #if os(tvOS)
+            .automatic
+        #else
+            .secondaryAction
+        #endif
+    }
+}

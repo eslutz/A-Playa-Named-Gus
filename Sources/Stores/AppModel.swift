@@ -97,6 +97,7 @@ final class AppModel {
     var currentSession: SessionStore? {
         didSet {
             if oldValue !== currentSession {
+                oldValue?.seerr.deactivate()
                 oldValue?.references.invalidate()
                 oldValue?.invalidateCollections()
             }

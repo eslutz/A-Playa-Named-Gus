@@ -47,6 +47,9 @@ struct RootContainer: View {
                 await state.refreshCachedContent()
             }
             .onChange(of: navigation.searchFocusRequest, initial: true) { _, request in
+                if request > 0, state.selectedSectionID == NavigationSectionPreference.discoverID {
+                    state.paths[NavigationSectionPreference.discoverID] = NavigationPath()
+                }
                 #if os(tvOS)
                     if request > 0 {
                         state.selectedSectionID = "gus.tv.search"

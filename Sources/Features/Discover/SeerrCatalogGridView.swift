@@ -338,7 +338,7 @@ struct SeerrCatalogResults: View {
             .lookToScroll()
         }
         .toolbar {
-            ToolbarItem(placement: .secondaryAction) {
+            ToolbarItem(placement: .seerrSecondaryAction) {
                 Menu {
                     Picker("View", selection: $usesList) {
                         Label("Grid", systemImage: "square.grid.2x2").tag(false)
