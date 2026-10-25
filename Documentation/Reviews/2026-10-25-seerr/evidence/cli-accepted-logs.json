@@ -1,0 +1,313 @@
+{
+  "acceptedCommands": [
+    {
+      "name": "archive-ios-private.log",
+      "sha256": "f698eee461a05484d3cd073a9e095b48ee70c0389dd914d08aad182250c19254",
+      "diagnosticCount": 0,
+      "distributionLogs": []
+    },
+    {
+      "name": "archive-tv-private.log",
+      "sha256": "6ca513c15ad6cea317e34487fdbe1df026023f73ab3d6f7c95c0bc39387d1467",
+      "diagnosticCount": 0,
+      "distributionLogs": []
+    },
+    {
+      "name": "archive-mac-private.log",
+      "sha256": "ae0b64aa3706841aea1ed88af776d56336ab823bb56b714e1bfa82322c3a3789",
+      "diagnosticCount": 0,
+      "distributionLogs": []
+    },
+    {
+      "name": "archive-vision-private.log",
+      "sha256": "dca837ba557ee51d877c86c76b0b44550a4add9e3c65c17a04ff50434cbe316a",
+      "diagnosticCount": 0,
+      "distributionLogs": []
+    },
+    {
+      "name": "upload-ios-private.log",
+      "sha256": "cf27d80b88aab78593854a0b435d5af91f423ece2b6133031683f1eeddb8433e",
+      "diagnosticCount": 0,
+      "distributionLogs": [
+        {
+          "name": "ContentDelivery.log",
+          "sha256": "a994315331468d54fa3538e5ae1f4f9f6985037e93384341a3ecd2d3a040ac68",
+          "diagnosticCount": 0
+        },
+        {
+          "name": "DVTITunesSoftwareService.log",
+          "sha256": "e11a85b0474e82f19984ba97e655b53e813ccb924cb20ac9371c66c016f21511",
+          "diagnosticCount": 0
+        },
+        {
+          "name": "IDEDistribution.critical.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "diagnosticCount": 0
+        },
+        {
+          "name": "IDEDistribution.standard.log",
+          "sha256": "466df68a59f23d231826784593d54e554aaabe7eef89b29d8d5109176f1e1d48",
+          "diagnosticCount": 0
+        },
+        {
+          "name": "IDEDistribution.verbose.log",
+          "sha256": "a082d61425c639000b5b47b7fa3a2867f6e999e3d42e9a268e5978f58bce7936",
+          "diagnosticCount": 0
+        },
+        {
+          "name": "IDEDistributionAppStoreConnect.log",
+          "sha256": "69fd2aefc29edee0d1f95af0dc7e480b5ec30c42c52de300b1d19857146956e1",
+          "diagnosticCount": 0
+        },
+        {
+          "name": "IDEDistributionPipeline.log",
+          "sha256": "8891abecd4df8ae682605abea28c1ce731247b0e1c731cc610754024d20a818c",
+          "diagnosticCount": 0
+        },
+        {
+          "name": "IDEDistributionProvisioning.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "diagnosticCount": 0
+        }
+      ]
+    },
+    {
+      "name": "upload-tv-private.log",
+      "sha256": "058320ae8512d2917354942007b905282a94cd29cc2c55c81ed694dc3cf72171",
+      "diagnosticCount": 0,
+      "distributionLogs": [
+        {
+          "name": "ContentDelivery.log",
+          "sha256": "42656ccc8a0e89fda5cd2a34236e5d19c399a9bd52b779f5af1056dc38292096",
+          "diagnosticCount": 0
+        },
+        {
+          "name": "DVTITunesSoftwareService.log",
+          "sha256": "64baba2807cf6bc7f0e145f6a2238386e93e771e96fc4825ec9563ed97aeed3d",
+          "diagnosticCount": 0
+        },
+        {
+          "name": "IDEDistribution.critical.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "diagnosticCount": 0
+        },
+        {
+          "name": "IDEDistribution.standard.log",
+          "sha256": "354b19e384391742369612d75954b2df5ffeaae52d28544d1a3bed1c50500c62",
+          "diagnosticCount": 0
+        },
+        {
+          "name": "IDEDistribution.verbose.log",
+          "sha256": "a539c6b87ebfeb347ab23a7d4f0e8d6ccbfa8182a6e51f8ab60cbd873c92fa58",
+          "diagnosticCount": 0
+        },
+        {
+          "name": "IDEDistributionAppStoreConnect.log",
+          "sha256": "ea911de268b09e39bdb4441b3e73b6452c063e1cde4861f0dd993e054fd3c2bb",
+          "diagnosticCount": 0
+        },
+        {
+          "name": "IDEDistributionPipeline.log",
+          "sha256": "b54011841e42db81e674ef5473ea5b08bf1ce4d49043202bbd81a9cd7c470e6b",
+          "diagnosticCount": 0
+        },
+        {
+          "name": "IDEDistributionProvisioning.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "diagnosticCount": 0
+        }
+      ]
+    },
+    {
+      "name": "upload-mac-private.log",
+      "sha256": "4d6abb8761305987e0597dabe88019e86132fe177aedf55c399fdc362c4e5533",
+      "diagnosticCount": 0,
+      "distributionLogs": [
+        {
+          "name": "ContentDelivery.log",
+          "sha256": "eac226e689c4a43a2ed92072c0b85c9ed89da3fe06057f1344ed3d4071bdbac4",
+          "diagnosticCount": 0
+        },
+        {
+          "name": "DVTITunesSoftwareService.log",
+          "sha256": "c8973175df98e23be5ee9cc7450d21eb194c7f3d1a25ed0dd5b52dff4f70897b",
+          "diagnosticCount": 0
+        },
+        {
+          "name": "IDEDistribution.critical.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "diagnosticCount": 0
+        },
+        {
+          "name": "IDEDistribution.standard.log",
+          "sha256": "d0e2a760bf0fa2c3fe39fcd02e9d6fd8dd4779db2afe7533fd61905479fc5d50",
+          "diagnosticCount": 0
+        },
+        {
+          "name": "IDEDistribution.verbose.log",
+          "sha256": "b75cead3d71898e968d04c5b9985a2195adc29abeefad2b0a285f80c53b6b98d",
+          "diagnosticCount": 0
+        },
+        {
+          "name": "IDEDistributionAppStoreConnect.log",
+          "sha256": "1955a3beb8f3d57daae4247dbc3f3d0718c5e60c579a99c7392d6b22cdb9a982",
+          "diagnosticCount": 0
+        },
+        {
+          "name": "IDEDistributionPipeline.log",
+          "sha256": "b3524011e33d043b55242164af9d75a776e5e498de3abf1f6180652eb298de9d",
+          "diagnosticCount": 0
+        },
+        {
+          "name": "IDEDistributionProvisioning.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "diagnosticCount": 0
+        }
+      ]
+    },
+    {
+      "name": "upload-vision-private.log",
+      "sha256": "ac4ad66bcd573ab93edb8c74220431c4c4fb80040ff86c50d99a6df5cebba983",
+      "diagnosticCount": 0,
+      "distributionLogs": [
+        {
+          "name": "ContentDelivery.log",
+          "sha256": "e4b3fd78ce2dc7ab53fe1bd921c1a9ec30f58b4bf39b275fb77d9fc70da50c83",
+          "diagnosticCount": 0
+        },
+        {
+          "name": "DVTITunesSoftwareService.log",
+          "sha256": "c2d22d5822283f80228fc5770224a59125b9a506ade212e5240de7b43c824a05",
+          "diagnosticCount": 0
+        },
+        {
+          "name": "IDEDistribution.critical.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "diagnosticCount": 0
+        },
+        {
+          "name": "IDEDistribution.standard.log",
+          "sha256": "8d02e2c3691edd145e1e1d3fd58fef530786f307c6c460efd46e8cd6228b05e4",
+          "diagnosticCount": 0
+        },
+        {
+          "name": "IDEDistribution.verbose.log",
+          "sha256": "9af5c1fc50922bc935398edcd534921c1227054fe5e04fcd6ad19de80c75c38a",
+          "diagnosticCount": 0
+        },
+        {
+          "name": "IDEDistributionAppStoreConnect.log",
+          "sha256": "050ded40243e6bd69dfcbb5883b18bebe3c839aba6de605a7ef8b9758dc3c1b1",
+          "diagnosticCount": 0
+        },
+        {
+          "name": "IDEDistributionPipeline.log",
+          "sha256": "d1318ab52bdd6c4b7b5c1e31898a524d9b4f5049a16f738d7d257d17a332f4c7",
+          "diagnosticCount": 0
+        },
+        {
+          "name": "IDEDistributionProvisioning.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "diagnosticCount": 0
+        }
+      ]
+    },
+    {
+      "name": "export-ios-private.log",
+      "sha256": "f9e7cee31c0cf8190308e73accf1ffb0ee4b784118f0feb10d0f9e0d3cbd2302",
+      "diagnosticCount": 0,
+      "distributionLogs": [
+        {
+          "name": "ContentDelivery.log",
+          "sha256": "6226196b9c3ee1f23902a9f0e0a477904b2de81d9e1e297201d03b7b192fdd4b",
+          "diagnosticCount": 0
+        },
+        {
+          "name": "DVTITunesSoftwareService.log",
+          "sha256": "2a560920c976ec2a3d331f203bb2794cf503edc9e8dad2e4f4f294ba68526659",
+          "diagnosticCount": 0
+        },
+        {
+          "name": "IDEDistribution.critical.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "diagnosticCount": 0
+        },
+        {
+          "name": "IDEDistribution.standard.log",
+          "sha256": "b43e06ba4e15c5f00cfc721e0970205e0cddea777b67be540fca2f1011a99e5e",
+          "diagnosticCount": 0
+        },
+        {
+          "name": "IDEDistribution.verbose.log",
+          "sha256": "bc790d9e528f0f4f0400c427e47e339cd788faa441d82188f5227d2013f00c89",
+          "diagnosticCount": 0
+        },
+        {
+          "name": "IDEDistributionAppStoreConnect.log",
+          "sha256": "796c76509f53da0240a922bd123782e55468252442197b48bcf098f174d6f8bd",
+          "diagnosticCount": 0
+        },
+        {
+          "name": "IDEDistributionPipeline.log",
+          "sha256": "5c02e84d357b89e63b6ef2c7fec0312920c02f03a49c4cf72cc1a51b850860bf",
+          "diagnosticCount": 0
+        },
+        {
+          "name": "IDEDistributionProvisioning.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "diagnosticCount": 0
+        }
+      ]
+    },
+    {
+      "name": "export-mac-private.log",
+      "sha256": "6bda00ed3b5b73fc9884098cfe722761d21ef54623800df848c1aecf72fcada6",
+      "diagnosticCount": 0,
+      "distributionLogs": [
+        {
+          "name": "ContentDelivery.log",
+          "sha256": "bc9b18e4acf7df2cd833e1ddc841948bab50fc967cb497d1daf99af176806702",
+          "diagnosticCount": 0
+        },
+        {
+          "name": "DVTITunesSoftwareService.log",
+          "sha256": "54338c4d49405d333a9e9b06089d8f31865e618e0edc5413f2192326f872db83",
+          "diagnosticCount": 0
+        },
+        {
+          "name": "IDEDistribution.critical.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "diagnosticCount": 0
+        },
+        {
+          "name": "IDEDistribution.standard.log",
+          "sha256": "3754a0011a6aa4bff2a386f884fcdcb239ccee485809252ba440c3aa5b55374b",
+          "diagnosticCount": 0
+        },
+        {
+          "name": "IDEDistribution.verbose.log",
+          "sha256": "9527966028d0f3217db90105df14e729ab0c5b9110bb92b8017d5186a765826c",
+          "diagnosticCount": 0
+        },
+        {
+          "name": "IDEDistributionAppStoreConnect.log",
+          "sha256": "96e0cdffb87cf47dce1d490ccf9ef336e005765e8c550cf45080ea3d2c02b07c",
+          "diagnosticCount": 0
+        },
+        {
+          "name": "IDEDistributionPipeline.log",
+          "sha256": "c5c1d4b053fdd2a3817acc3bfe6c80fc1bb5fc099ffcacf655ac8ba999288bb3",
+          "diagnosticCount": 0
+        },
+        {
+          "name": "IDEDistributionProvisioning.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "diagnosticCount": 0
+        }
+      ]
+    }
+  ],
+  "unexpectedDiagnosticCount": 0,
+  "priorFailedAttemptsExcludedFromAcceptance": true,
+  "priorMacProcessingFailure": "90284 on development-signed NIOPosix resource bundle; corrected package verified and processed successfully."
+}
