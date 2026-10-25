@@ -5,6 +5,33 @@ import Testing
 
 @Suite("Seerr contracts and isolation")
 struct SeerrClientTests {
+    @Test("4K-only requesters can open review independently of standard availability", arguments: [SeerrMediaStatus.available, .pending, .processing])
+    func fourKReviewEntry(standard: SeerrMediaStatus) throws {
+        var title = try Self.title(#"{"id":10,"mediaType":"movie","mediaInfo":{"id":1,"status":5,"status4k":1}}"#)
+        title.mediaInfo?.status = standard
+        let user = SeerrUser(id: 1, permissions: .request4KMovie)
+        #expect(SeerrRequestEligibility.canOpenReview(title: title, type: .movie, user: user))
+        #expect(SeerrRequestEligibility.canOpenReview(title: title, type: .movie, user: SeerrUser(id: 2, permissions: .admin)))
+    }
+
+    @Test("review entry respects format permissions, availability and global blocklisting")
+    func reviewEntryBoundaries() throws {
+        var title = try Self.title(#"{"id":10,"mediaType":"movie","mediaInfo":{"id":1,"status":5,"status4k":1}}"#)
+        let standard = SeerrUser(id: 1, permissions: .requestMovie)
+        let administrator = SeerrUser(id: 2, permissions: .admin)
+        #expect(!SeerrRequestEligibility.canOpenReview(title: title, type: .movie, user: standard))
+        #expect(!SeerrRequestEligibility.canOpenReview(title: title, type: .movie, user: nil))
+        title.mediaInfo?.status4k = .available
+        #expect(!SeerrRequestEligibility.canOpenReview(title: title, type: .movie, user: administrator))
+        title.mediaInfo?.status = .notRequested
+        #expect(SeerrRequestEligibility.canOpenReview(title: title, type: .movie, user: standard))
+        title.mediaInfo?.status = .blocklisted
+        title.mediaInfo?.status4k = .notRequested
+        #expect(!SeerrRequestEligibility.canOpenReview(title: title, type: .movie, user: administrator))
+        title.mediaInfo?.status = .processing
+        #expect(SeerrRequestEligibility.canOpenReview(title: title, type: .tv, user: SeerrUser(id: 3, permissions: .requestTV)))
+    }
+
     @Test("normalizes secure defaults, ports and reverse-proxy base paths")
     func normalizesURLs() throws {
         #expect(try SeerrClient.normalizeURL(" media.example:5055/seerr/ ").absoluteString == "https://media.example:5055/seerr")

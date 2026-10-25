@@ -210,12 +210,7 @@ struct SeerrTitleDetailView: View {
     }
 
     private func canOpenRequest(_ title: SeerrTitle) -> Bool {
-        guard store.user?.canRequest(detail.mediaType) == true else { return false }
-        switch title.mediaInfo?.status {
-        case .available, .blocklisted: return false
-        case .pending, .processing: return detail.mediaType == .tv
-        default: return true
-        }
+        SeerrRequestEligibility.canOpenReview(title: title, type: detail.mediaType, user: store.user)
     }
 
     private func seasonList(_ title: SeerrTitle, seasons: [SeerrSeason]) -> some View {

@@ -23,6 +23,10 @@ Every accepted build/test/archive lane has an empty build-diagnostic list. The c
 
 Reviewed synthetic captures: [iPhone Discover](captures/iphone-discover.png), [iPad Discover](captures/ipad-discover.png), [uncertain response](captures/iphone-uncertain-request.png), [canceled history](captures/iphone-cancellation-history.png), [approved Pending queue](captures/ipad-pending-history.png). The fixture intentionally uses placeholder artwork.
 
+## PR review follow-up
+
+The [two PR comment fixes](PR-COMMENT-FIXES.md) add format-independent request-review entry and submitted preference snapshots. Their full local iOS suite passes 530 tests without build diagnostics. Earlier broad matrix results remain baseline evidence; the final corrected head requires fresh hosted checks.
+
 ## Release gates and limits
 
 The user approved publication and [PR #34](https://github.com/eslutz/A-Playa-Named-Gus/pull/34) is open. An embedded Watch metadata warning in the first hosted iOS build prompted an [automation-only layout correction](CI-WATCH-METADATA.md); fresh checks on that corrected head remain required. Protected-main merge and the manual **Gus Internal TestFlight** workflow remain outstanding. Distribution requires the intended merged source, raw warning-policy review, successful signed exports/uploads, processing and all four internal beta group associations. **No new TestFlight build is claimed.**
