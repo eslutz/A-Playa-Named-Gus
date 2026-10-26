@@ -10,6 +10,7 @@ struct PlayerWindowRef: Hashable, Codable {
         restored.playbackStart = .automatic
         restored.playlistEntryID = nil
         restored.playlistFromBeginning = nil
+        restored.playlistShuffled = nil
         fallback = restored
     }
 
