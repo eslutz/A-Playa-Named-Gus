@@ -21,6 +21,33 @@ struct VideoPlaylistPlaybackTests {
         #expect(sequence.advance(after: c, surviving: [c, added]) == nil)
     }
 
+    @Test func shufflePlaysEveryOccurrenceOnceInOneStableSession() {
+        let ids = (0 ..< 12).map { _ in UUID() }
+        var sequence = PlaylistPlaybackSequence(entryIDs: ids, startID: ids[5], shuffled: true)
+        #expect(sequence.currentID == ids[5])
+        let sessionOrder = sequence.remainingIDs
+        #expect(Set(sessionOrder) == Set(ids))
+        #expect(sessionOrder.count == ids.count)
+        var played: [UUID] = []
+        while let current = sequence.currentID {
+            played.append(current)
+            _ = sequence.advance(after: current, surviving: Set(ids))
+        }
+        #expect(played == sessionOrder)
+    }
+
+    @Test func shuffleHonorsRemovalsAndDoesNotAddNewOccurrences() {
+        let ids = (0 ..< 5).map { _ in UUID() }
+        var sequence = PlaylistPlaybackSequence(entryIDs: ids, startID: ids[0], shuffled: true)
+        let removed = sequence.remainingIDs[1]
+        let added = UUID()
+        _ = sequence.advance(after: ids[0], surviving: Set(ids.filter { $0 != removed } + [added]))
+        #expect(!sequence.remainingIDs.contains(removed))
+        #expect(!sequence.remainingIDs.contains(added))
+        #expect(sequence.remainingIDs.count == 3)
+        #expect(PlaylistPlaybackSequence(entryIDs: [], startID: nil, shuffled: true).currentID == nil)
+    }
+
     @Test func playFromHereKeepsSelectedEntry() {
         let ids = [UUID(), UUID(), UUID()]
         let sequence = PlaylistPlaybackSequence(entryIDs: ids, startID: ids[1])
@@ -33,13 +60,18 @@ struct VideoPlaylistNavigationTests {
     @Test func playlistWindowIdentitySurvivesRoundTripAndPreservesDuplicates() throws {
         let playlist = UUID(), firstEntry = UUID(), repeatedEntry = UUID()
         let item = MediaItem(id: "same-episode", type: .episode)
-        let first = ItemRef(item: item, serverID: "server", userID: "user", playlistID: playlist, playlistEntryID: firstEntry, playlistFromBeginning: true)
+        let first = ItemRef(item: item, serverID: "server", userID: "user", playlistID: playlist, playlistEntryID: firstEntry, playlistFromBeginning: true, playlistShuffled: true)
         let repeated = ItemRef(item: item, serverID: "server", userID: "user", playlistID: playlist, playlistEntryID: repeatedEntry, playlistFromBeginning: true)
         #expect(first != repeated)
         let restored = try JSONDecoder().decode(ItemRef.self, from: JSONEncoder().encode(first))
         #expect(restored == first)
         #expect(restored.playlistID == playlist)
         #expect(restored.playlistFromBeginning == true)
+        #expect(restored.playlistShuffled == true)
+        var legacy = try #require(JSONSerialization.jsonObject(with: JSONEncoder().encode(first)) as? [String: Any])
+        legacy.removeValue(forKey: "playlistShuffled")
+        let olderRef = try JSONDecoder().decode(ItemRef.self, from: JSONSerialization.data(withJSONObject: legacy))
+        #expect(olderRef.playlistShuffled == nil)
     }
 
     @MainActor @Test func playlistsAreRequiredAndCannotBeHidden() {
