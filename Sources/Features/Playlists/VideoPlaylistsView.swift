@@ -201,7 +201,7 @@ struct VideoPlaylistDetailView: View {
                             Menu {
                                 Button("Rename", systemImage: "pencil") { renaming = true }.disabled(!serverList.canEdit)
                                 Button("Edit Items", systemImage: "line.3.horizontal") { editing = true }.disabled(!serverList.canEdit || !serverList.entriesLoaded)
-                                if serverList.entries.isEmpty || !serverList.entries.allSatisfy({ $0.item.isAudioPlayable }) {
+                                if serverList.entriesLoaded, serverList.entries.isEmpty || !serverList.entries.allSatisfy({ $0.item.isAudioPlayable }) {
                                     Button(playlist.queued ? "Remove from Next Up" : "Add to Next Up", systemImage: playlist.queued ? MediaActionSymbols.removeFromNextUp : MediaActionSymbols.addToNextUp) {
                                         let resolved = lists.resolvedID(id, scope: scope)
                                         supplemental.setQueued(id: resolved, queued: !playlist.queued, scope: scope)
