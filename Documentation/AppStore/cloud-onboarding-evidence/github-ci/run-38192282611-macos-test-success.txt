@@ -1,8 +1,0 @@
-Run 38192282611; source edd06e6636cd32b877622dbcb4ccb34524a1b3c1
-Prepare Mac unit test signing: completed/success (completed-job metadata)
-2026-10-12T01:38:37.3608920Z Xcode 27.1
-2026-10-12T01:38:37.3609770Z Build version 27A9269
-2026-10-12T01:42:16.6545240Z ✔ Test "Play after natural queue completion restarts playback and tracks the next completion" passed after 3.421 seconds.
-2026-10-12T01:42:17.7451340Z ✔ Test "Replay after automatic deletion respects local-only playback and does not stream" passed after 1.170 seconds.
-2026-10-12T01:42:20.8264600Z ✔ Test run with 288 tests in 49 suites passed after 6.557 seconds.
-2026-10-12T01:42:28.2408570Z ** TEST SUCCEEDED **

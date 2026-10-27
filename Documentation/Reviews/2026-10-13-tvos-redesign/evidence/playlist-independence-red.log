@@ -1,3 +1,0 @@
-􀢄 Test "an independent playlist cursor does not select the series primary episode" recorded an issue at TVDetailPlaybackTargetTests.swift:20:9: Expectation failed: TVDetailPlaybackTarget.resolve(item: MediaItem(id: "show", type: .series), nextUp: entries, episodes: [next])?.id == "next"
-􀢄 Test run with 4 tests in 1 suite failed after 0.063 seconds with 1 issue.
-** TEST FAILED **

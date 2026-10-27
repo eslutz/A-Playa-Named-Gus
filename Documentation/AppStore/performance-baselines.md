@@ -63,8 +63,7 @@ budget is asserted or enforced by these measurements.
 | Media item mapping (2000 DTOs) | 0.00353525 s | 10 | macOS Release, testability enabled, coverage off |
 | URL normalization (2000 inputs) | 0.00614148 s | 10 | macOS Release, testability enabled, coverage off |
 
-Raw samples and median/range are retained in the final review's
-`evidence/final/sanitizers-performance/release-metrics.json`. These differ in
+The raw samples are no longer retained in source. These measurements differ in
 platform, toolchain and configuration from the older Xcode 26.5/iPhone Debug
 measurements above and should not be compared as a release regression percentage.
 

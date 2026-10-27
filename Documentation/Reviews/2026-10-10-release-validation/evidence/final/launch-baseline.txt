@@ -1,7 +1,0 @@
-Cold-launch baseline on 0091C2E3-7B8A-4452-B708-095D613AEB3A (5 runs):
-  run 1: 301 ms
-  run 2: 281 ms
-  run 3: 260 ms
-  run 4: 264 ms
-  run 5: 248 ms
-  average: 271 ms

@@ -170,8 +170,8 @@ resource `X7N8FKWCC6`, platform `UNIVERSAL`, Team `QS3GC3CT43`. The API snapshot
 returns only the default `IN_APP_PURCHASE` capability; no extra Watch entitlement
 or in-app purchase implementation was added. Build 7 now verifies matching App Store profile generation, signed export, and
 embedded Watch signatures/version. iOS upload still awaits the repaired default
-icons; profile/export acceptance does not establish tester installation. [Registration proof](cloud-onboarding-evidence/internal-testflight/watch-registration.json),
-[confirmed failure](cloud-onboarding-evidence/internal-testflight/run-4-export-diagnosis.json).
+icons; profile/export acceptance does not establish tester installation. Registration proof,
+confirmed failure.
 
 ## Setting Your Team ID (Local Override)
 
@@ -266,4 +266,4 @@ listed capabilities/container, then regenerate profiles and run signed acceptanc
 No successful capability grant, profile refresh, production schema deployment or
 physical sync is claimed by these attempts.
 
-Native-list ownership and current validation are tracked in [the implementation ledger](../Reviews/2026-10-13-jellyfin-lists/IMPLEMENTATION.md). The signed provisioning and physical sync gates above remain open.
+Native-list ownership and current validation are tracked in [the implementation ledger](../Reviews/README.md). The signed provisioning and physical sync gates above remain open.

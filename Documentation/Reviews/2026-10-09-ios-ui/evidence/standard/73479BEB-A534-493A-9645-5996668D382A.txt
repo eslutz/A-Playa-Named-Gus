@@ -1,1 +1,0 @@
-<XCUIAccessibilityAuditIssue: 0x10f1115c0>AuditType:"1" CompactDescription:"Contrast failed" DetailedDescription:"Contrast failed for SwiftUI.AccessibilityNode" Element:"Server Address" StaticText

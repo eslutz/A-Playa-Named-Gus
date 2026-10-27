@@ -175,3 +175,9 @@ iOSInjectionProject/
 
 # Local historical design archive; never commit.
 /Design/Archive/
+
+# Local review and release evidence; do not commit generated captures or results.
+/Documentation/Reviews/**/evidence/
+/Documentation/Reviews/**/captures/
+/Documentation/AppStore/*evidence*/
+*.xcresult/

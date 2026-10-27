@@ -4,7 +4,7 @@ Research date: October 13, 2026. Historical investigation and proposal; this res
 
 ## Subsequent implementation and acceptance — October 13
 
-The native TV work was subsequently implemented and merged through [PR #22](https://github.com/eslutz/A-Playa-Named-Gus/pull/22). [The integration ledger](../../Reviews/2026-10-13-tvos-redesign/INTEGRATION.md) records cinematic browsing/details, native account/playback presentation, retained-parent focus restoration, title fallback and review fixes. [The runtime ledger](../../Reviews/2026-10-13-tvos-redesign/RUNTIME.md) records the later TV simulator acceptance.
+The native TV work was subsequently implemented and merged through [PR #22](https://github.com/eslutz/A-Playa-Named-Gus/pull/22). [The integration ledger](../../Reviews/README.md) records cinematic browsing/details, native account/playback presentation, retained-parent focus restoration, title fallback and review fixes. [The runtime ledger](../../Reviews/README.md) records the later TV simulator acceptance.
 
 Xcode Cloud Build 17 validated merged commit `a794a7f308c3c4281e6b98a5f2f908f3a684207b`: all iOS, macOS, tvOS and visionOS tests, archives and internal TestFlight actions succeeded, with zero warnings/errors across all 12 action issue lists. See [pipeline acceptance](../../AppStore/pipeline-policy.md#verified-merged-main-acceptance--2026-10-13).
 
@@ -20,7 +20,7 @@ Eric’s “iPad port” concern has a source-supported basis: Gus has TV card s
 
 ## Baseline, scope and provenance
 
-Gus: `feature/unified-next-up-playlists`, `ca5a6e67f348118474e2485a6a49a4148699d7da`. The initial checkout already had a modified App Store pipeline policy, two untracked pipeline evidence images and untracked Plans/Research content. Preserved. Read `CLAUDE.md`, roadmap, account/root/navigation, Home/library/detail/player sources and the [Next Up implementation ledger](../../Reviews/2026-10-12-next-up-playlists/IMPLEMENTATION.md). `.agents/skills` does not exist in this checkout. Used the available iOS UI Review and Product Design audit methodology; its context preflight found no saved Product Design context. No memory edits or communication with the completed dependency session.
+Gus: `feature/unified-next-up-playlists`, `ca5a6e67f348118474e2485a6a49a4148699d7da`. The initial checkout already had a modified App Store pipeline policy, two untracked pipeline evidence images and untracked Plans/Research content. Preserved. Read `CLAUDE.md`, roadmap, account/root/navigation, Home/library/detail/player sources and the [Next Up implementation ledger](../../Reviews/README.md). `.agents/skills` does not exist in this checkout. Used the available iOS UI Review and Product Design audit methodology; its context preflight found no saved Product Design context. No memory edits or communication with the completed dependency session.
 
 Gus is an Apple-first Jellyfin client for iOS/iPadOS, tvOS, visionOS and macOS, plus a focused Watch companion. Core constraints: system frameworks; Observation/MainActor; typed SwiftUI navigation; platform divergence in `Platform/`; Jellyfin provider boundary; AVKit video, native audio, no VLCKit. Readium is an explicitly justified mobile EPUB exception and is not a TV dependency. Retain music, audiobooks, photos, Live TV, books’ appropriate TV behavior, Top Shelf, remote sessions, rating gates and future provider separation. A video-focused comparator must not silently narrow Gus’s product.
 
@@ -59,11 +59,11 @@ These are inspected reference images, not screenshots of app flows executed by t
 
 ![Official Swiftfin tvOS poster-preview demonstration frame](evidence/swiftfin-poster-preview-reference.png)
 
-3. **Gus historical detail — inspected, historical context.** [October 10 capture](../../Reviews/2026-10-10-ui-remediation/evidence/tv-final/tv-detail-full-screen.png). The backdrop occupies a centered panel, the long title is repeated above and within it, and secondary actions split into separate icon placements. Useful evidence of the direction Eric dislikes, not a current-revision defect reproduction. Native tab chrome is already present.
+3. **Gus historical detail — inspected, historical context.** October 10 capture. The backdrop occupies a centered panel, the long title is repeated above and within it, and secondary actions split into separate icon placements. Useful evidence of the direction Eric dislikes, not a current-revision defect reproduction. Native tab chrome is already present.
 
-![Historical Gus tvOS detail](../../Reviews/2026-10-10-ui-remediation/evidence/tv-final/tv-detail-full-screen.png)
 
-4. **Gus historical return-to-Home — inspected, historical context.** [October 10 capture](../../Reviews/2026-10-10-ui-remediation/evidence/tv-final/tv-detail-return-home.png) contains keyboard/search over Home and recently added books. It illustrates how search can dominate the browsing canvas, but does not establish a current search bug. New unified Next Up is not shown.
+
+4. **Gus historical return-to-Home — inspected, historical context.** October 10 capture contains keyboard/search over Home and recently added books. It illustrates how search can dominate the browsing canvas, but does not establish a current search bug. New unified Next Up is not shown.
 
 5. **Current Gus launch/Home/library/detail/account/playback — blocked.** Destination mismatch above. All live flow steps and accessibility settings are untested in this run. The source comparison below is explicitly independent of historical screenshots.
 

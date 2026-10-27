@@ -1,7 +1,0 @@
-Fresh six-platform candidate-10 builds: five unique first-party complete-concurrency diagnostics.
-
-Sources/Features/Books/BookReaderView.swift:163:46: warning: sending value of non-Sendable type 'AssetRetriever' risks causing data races; this is an error in the Swift 6 language mode [#RegionIsolation::SendingRisksDataRace]
-Sources/Features/Books/BookReaderView.swift:165:37: warning: sending 'opener' risks causing data races; this is an error in the Swift 6 language mode [#RegionIsolation::SendingRisksDataRace]
-Sources/Features/Books/BookReaderView.swift:168:63: warning: sending 'publication' risks causing data races; this is an error in the Swift 6 language mode [#RegionIsolation::SendingRisksDataRace]
-Sources/Features/Books/BookReaderView.swift:192:38: warning: sending 'publication' risks causing data races; this is an error in the Swift 6 language mode [#RegionIsolation::SendingRisksDataRace]
-Sources/Features/Settings/AgeRangeDefaults.swift:51:61: warning: sending value of non-Sendable type 'DeclaredAgeRangeAction' risks causing data races; this is an error in the Swift 6 language mode [#RegionIsolation::SendingRisksDataRace]

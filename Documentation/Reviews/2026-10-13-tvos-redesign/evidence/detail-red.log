@@ -1,6 +1,0 @@
-􀢄 Test "series plays its existing Next Up episode rather than the series container" recorded an issue at TVDetailPlaybackTargetTests.swift:11:9: Expectation failed: TVDetailPlaybackTarget.resolve(item: show, nextUp: entries, episodes: [])?.id == "episode"
-􀢄 Test "empty series and collection containers have no direct play action" recorded an issue at TVDetailPlaybackTargetTests.swift:16:9: Expectation failed: TVDetailPlaybackTarget.resolve(item: MediaItem(id: "show", type: .series), nextUp: [], episodes: []) == nil
-􀢄 Test "empty series and collection containers have no direct play action" recorded an issue at TVDetailPlaybackTargetTests.swift:17:9: Expectation failed: TVDetailPlaybackTarget.resolve(item: MediaItem(id: "collection", type: .boxSet), nextUp: [], episodes: []) == nil
-􀢄 Test "selected-season fallback prefers an unfinished episode" recorded an issue at TVDetailPlaybackTargetTests.swift:24:9: Expectation failed: TVDetailPlaybackTarget.resolve(item: MediaItem(id: "show", type: .series), nextUp: [], episodes: [first, next])?.id == "unwatched"
-􀢄 Test run with 3 tests in 1 suite failed after 0.023 seconds with 4 issues.
-** TEST FAILED **

@@ -43,6 +43,11 @@ status checked against current source. Design coverage does not prove runtime be
 
 ## Delivery policy
 
+Keep build and review evidence out of Git. Store logs, result bundles, screenshots,
+exports and dated validation artifacts locally outside the tracked source tree.
+Keep durable decisions, actionable limitations and reproducible instructions in
+concise documentation; historical results do not establish current release readiness.
+
 Changes to protected `main` require a pull request and all required GitHub CI checks;
 do not push directly or bypass protection. GitHub runs CI on PRs targeting `main`.
 Xcode Cloud uses manual-only main workflows: cached single-iPhone validation and a separate

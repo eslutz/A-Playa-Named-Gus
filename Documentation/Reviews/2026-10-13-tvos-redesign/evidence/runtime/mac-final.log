@@ -1,7 +1,0 @@
-/tmp/gus-tvos-cinematic-native/Tests/APlayaNamedGusTests/LibraryStoreTests.swift:223:70: warning: 'LibraryItemsURLProtocol' inherits an unavailable 'Sendable' conformance; conforming here risks data races [#UnavailableSendableConformance]
-    |                     |                                                `- warning: 'LibraryItemsURLProtocol' inherits an unavailable 'Sendable' conformance; conforming here risks data races [#UnavailableSendableConformance]
-	 Executed 3 tests, with 0 failures (0 unexpected) in 1.455 (1.456) seconds
-	 Executed 3 tests, with 0 failures (0 unexpected) in 1.455 (1.457) seconds
-	 Executed 3 tests, with 0 failures (0 unexpected) in 1.455 (1.459) seconds
-􁁛 Test run with 408 tests in 64 suites passed after 10.523 seconds.
-** TEST SUCCEEDED **

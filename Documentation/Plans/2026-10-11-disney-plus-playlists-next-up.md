@@ -16,10 +16,10 @@
 
 | Scope | Current status and source of truth |
 |---|---|
-| Unified Jellyfin Next Up, Home and Top Shelf | Implemented; see [Next Up ledger](../Reviews/2026-10-12-next-up-playlists/IMPLEMENTATION.md). Cross-provider identity, ordering and Disney progress remain proposed. |
-| Jellyfin playlists and collections | Implemented with native server ownership, account-scoped offline cache/journal, and supplemental Gus cursor/Next Up state; see [native-list ledger](../Reviews/2026-10-13-jellyfin-lists/IMPLEMENTATION.md). The verified server deduplicates repeated titles; legacy repeated-title imports are blocked with originals preserved. |
+| Unified Jellyfin Next Up, Home and Top Shelf | Implemented; see [Next Up ledger](../Reviews/README.md). Cross-provider identity, ordering and Disney progress remain proposed. |
+| Jellyfin playlists and collections | Implemented with native server ownership, account-scoped offline cache/journal, and supplemental Gus cursor/Next Up state; see [native-list ledger](../Reviews/README.md). The verified server deduplicates repeated titles; legacy repeated-title imports are blocked with originals preserved. |
 | Private CloudKit supplemental state | Implemented for Gus saved intent, cursors and activity. Signing/container provisioning is enabled and Cloud distribution succeeded; physical multi-device sync, account-change and conflict acceptance remain separate open gates. |
-| Native TV presentation | Merged through [PR #22](https://github.com/eslutz/A-Playa-Named-Gus/pull/22); see [TV integration](../Reviews/2026-10-13-tvos-redesign/INTEGRATION.md) and [runtime evidence](../Reviews/2026-10-13-tvos-redesign/RUNTIME.md). |
+| Native TV presentation | Merged through [PR #22](https://github.com/eslutz/A-Playa-Named-Gus/pull/22); see [TV integration](../Reviews/README.md) and [runtime evidence](../Reviews/README.md). |
 | Disney+ and mixed-provider lists | Remaining proposal: authenticated access proof, profile isolation, catalog/reference contracts, external playback handoff, progress semantics, and a separately approved mixed-list authority. |
 | Hosted validation | Build 17 on merged commit `a794a7f308c3c4281e6b98a5f2f908f3a684207b`: all four Cloud tests, archives and internal TestFlight actions succeeded, with zero issues across all 12 actions. This does not prove Disney access or physical sync/accessibility. See [pipeline acceptance](../AppStore/pipeline-policy.md#verified-merged-main-acceptance--2026-10-13). |
 

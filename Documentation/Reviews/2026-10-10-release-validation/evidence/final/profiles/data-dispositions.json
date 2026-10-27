@@ -1,5 +1,0 @@
-{
-  "timeProfiler": "Primary time-sample export has 2968 samples, 988 main-thread; auxiliary input-source warning retained; no response-time/CPU-percent budget claim",
-  "swiftUI": "Inconclusive: standard template fails unsupported simulator Hitches; compatible attached and launch-time recordings return zero but warn no SwiftUI data. Attached swiftui-updates export has zero rows. No SwiftUI body/layout runtime acceptance claimed.",
-  "leaks": "Inconclusive: both attached and launch-time recordings return zero but inventory has no allocations/leaks tables. No zero-leak finding; physical memory/leak soak remains required."
-}

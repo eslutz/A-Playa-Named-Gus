@@ -1,1 +1,0 @@
-<XCUIAccessibilityAuditIssue: 0x10f329200>AuditType:"4" CompactDescription:"Hit area is too small" DetailedDescription:"The size of this SwiftUI.AccessibilityNode is too small for user to interact." Element:(null)

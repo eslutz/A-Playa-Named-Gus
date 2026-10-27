@@ -10,7 +10,7 @@ At the original October 12 configuration check, Cloud's iOS runtime menu showed 
 
 Saved configuration does not establish successful execution or tester eligibility. The PR matrix, subsequent merged-main Cloud run, and group association must pass before availability is claimed.
 
-The old compile-only Gus Multiplatform Validation workflow was permanently deleted after explicit confirmation (see [confirmation dialog](pipeline-policy-evidence/delete-validation-confirmation.jpg)); Apple says associated builds are no longer shown by default. Saved diagnostic evidence remains in this repository. The former automatic main-release trigger and its auto-cancel rule were removed on October 22; Cloud starts are now deliberate manual actions.
+The old compile-only Gus Multiplatform Validation workflow was permanently deleted after explicit confirmation (see confirmation dialog); Apple says associated builds are no longer shown by default. Saved diagnostic evidence remains in this repository. The former automatic main-release trigger and its auto-cancel rule were removed on October 22; Cloud starts are now deliberate manual actions.
 
 The retained iPad audio failure message now captures the native asynchronous audio-session activation result (success and error domain/code) in Debug builds. Release behavior and the native end-event requirement are unchanged; this gathers root-cause evidence without treating a retry as a fix.
 
@@ -22,7 +22,7 @@ Routine validation uses one required test action with no test filtering: `Gus iO
 
 Clean is disabled for routine validation so Cloud can restore derived data and caches. The release workflow retains clean builds following [Apple's distribution guidance](https://developer.apple.com/documentation/xcode/creating-a-workflow-that-builds-your-app-for-distribution). No new Cloud builds were started for this configuration-only change. API readback verified two enabled workflows, manual main-only conditions, one explicit routine destination, clean settings and exact preservation of all eight release actions. Actual execution and quota savings remain unmeasured.
 
-Before/after API snapshots and rollback instructions: [optimization evidence](../Reviews/2026-10-22-xcode-cloud-usage/OPTIMIZATION.md). The snapshots describe the saved server configuration; they do not include Cloud environment variables or distribution post-actions, which were verified in the UI.
+The saved settings were checked at the time. Re-read the current workflows before changing or relying on them; historical API snapshots are no longer retained in the source tree.
 
 ## Automatic start file filters — 2026-10-12
 
@@ -30,7 +30,7 @@ Historical configuration, superseded by the manual-only split on October 22: the
 
 The four TestFlight post-actions associate each platform archive with Gus Internal after the required workflow actions succeed; they are the distribution stage, not additional tests or public App Store submission.
 
-Saved UI proof: `pipeline-policy-evidence/cloud-path-filters.jpg`. Independent Apple API proof: `pipeline-policy-evidence/cloud-path-filters.json`.
+Historical screenshots and API snapshots are no longer retained in the source tree.
 
 ## iPad native completion investigation — run 38251008247
 
@@ -56,15 +56,15 @@ The temporary activation comparison jobs and conditional test methods have been 
 
 All supported Apple platforms require OS 26.0, including the embedded Watch app and tvOS Top Shelf. Build with Xcode 27.1 or newer and retain OS 27.x functionality through availability checks and native OS 26 fallbacks. The conditional iOS tab accessory requires 26.1; 26.0 uses the Now Playing return bar. OS 27 retains asynchronous audio-session APIs, the tvOS sidebar account header, and the visionOS sample-buffer receiver. The iOS 27.1 Duo division API remains availability-guarded. Development-era storage/credential/DTO migrations removed by the earlier OS 27-only change remain removed; lowering the OS floor does not restore those migrations. Existing development installs may still need to sign in again and recreate local downloads and queues.
 
-The local compatibility report is [OS 26 validation](../Reviews/2026-10-21-os26-compatibility/VALIDATION.md). Required GitHub checks, merged-main Xcode Cloud actions, raw-log review, and TestFlight group availability must be verified for the release commit.
+The local compatibility report is [OS 26 validation](../Reviews/README.md). Required GitHub checks, merged-main Xcode Cloud actions, raw-log review, and TestFlight group availability must be verified for the release commit.
 
-On 2026-10-12, the user deferred required Duo simulator testing until the device is released and compatible runtimes are available. Duo functionality and its SDK compilation requirements remain in the app. [Saved destination evidence](pipeline-policy-evidence/duo-testing-deferred.png) shows the retained iPhone and iPad selections. All other required release platform tests and archives remain retained. Main triggers were subsequently replaced by manual-only starts on October 22.
+On 2026-10-12, the user deferred required Duo simulator testing until the device is released and compatible runtimes are available. Duo functionality and its SDK compilation requirements remain in the app. Saved destination evidence shows the retained iPhone and iPad selections. All other required release platform tests and archives remain retained. Main triggers were subsequently replaced by manual-only starts on October 22.
 
 ## Merged-main action results — 2026-10-13
 
 [PR #22](https://github.com/eslutz/A-Playa-Named-Gus/pull/22) merged as `a794a7f308c3c4281e6b98a5f2f908f3a684207b` after all 13 GitHub checks passed and both review conversations were resolved. The source tree matches the final checked branch commit `3c631386a154b099d8376facc938913e2ee483a5`.
 
-[Xcode Cloud Build 17](https://appstoreconnect.apple.com/teams/1f3fb703-e0b0-42fc-bc0b-d00a3bfdf58e/xcode-cloud/products/f2e5bb18-7cd2-44ab-b88c-9d54ac63b512/builds/af959737-7e61-4452-bfcc-4c59dec0013b/summary) ran that exact merge SHA. All four tests, four archives/signing/export paths and four internal TestFlight actions succeeded. Apple's API returned empty issue lists for all 12 actions. This confirms the reported action results, but does not establish that their raw logs were warning-free. Build 17's raw test/archive log inspection is not recorded here, so strict warning-free acceptance remains unresolved. [Build 18's raw-log review](../Reviews/2026-10-13-collections/CLOUD-BUILD18.md) subsequently demonstrated why empty issue lists are insufficient. Physical playback, VoiceOver and multi-device CloudKit acceptance also remain separate. Future changes must satisfy the same [warning-free policy](warning-policy.md).
+[Xcode Cloud Build 17](https://appstoreconnect.apple.com/teams/1f3fb703-e0b0-42fc-bc0b-d00a3bfdf58e/xcode-cloud/products/f2e5bb18-7cd2-44ab-b88c-9d54ac63b512/builds/af959737-7e61-4452-bfcc-4c59dec0013b/summary) ran that exact merge SHA. All four tests, four archives/signing/export paths and four internal TestFlight actions succeeded. Apple's API returned empty issue lists for all 12 actions. This confirms the reported action results, but does not establish that their raw logs were warning-free. Build 17's raw test/archive log inspection is not recorded here, so strict warning-free acceptance remains unresolved. [Build 18's raw-log review](../Reviews/README.md) subsequently demonstrated why empty issue lists are insufficient. Physical playback, VoiceOver and multi-device CloudKit acceptance also remain separate. Future changes must satisfy the same [warning-free policy](warning-policy.md).
 
 ## Build 23 test-runner preflight failure — 2026-10-15
 

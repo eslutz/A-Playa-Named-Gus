@@ -1,6 +1,0 @@
-Current accepted lanes: four successful attempt-1 lanes plus iPad attempt 2.
-iPhone: 288 Swift Testing cases/49 suites, zero issues; 3 distinct XCTest performance cases; evidence attempt 1, job 114633546525.
-iPad: 288 Swift Testing cases/49 suites, zero issues; 3 distinct XCTest performance cases; evidence attempt 2, job 114639806315.
-macOS: 288 Swift Testing cases/49 suites, zero issues; 3 distinct XCTest performance cases; evidence attempt 1, job 114633546463.
-tvOS: 288 Swift Testing cases/49 suites, zero issues; 3 distinct XCTest performance cases; evidence attempt 1, job 114633546460.
-visionOS: 288 Swift Testing cases/49 suites, zero issues; 3 distinct XCTest performance cases; evidence attempt 1, job 114633546543.

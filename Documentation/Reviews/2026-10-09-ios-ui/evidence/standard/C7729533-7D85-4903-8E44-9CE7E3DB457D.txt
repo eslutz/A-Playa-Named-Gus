@@ -1,1 +1,0 @@
-<XCUIAccessibilityAuditIssue: 0x10f3295c0>AuditType:"1" CompactDescription:"Contrast nearly passed" DetailedDescription:"Contrast is not high enough for SwiftUI.AccessibilityNode unless font size is larger." Element:"Enter your Jellyfin server's address, including the port (default 8096)." StaticText

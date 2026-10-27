@@ -130,7 +130,7 @@ state that dependency plainly.
 
 ## October 10 local validation scope
 
-The [final review](../Reviews/2026-10-10-release-validation/VALIDATION.md) records native
+The [final review](../Reviews/README.md) records native
 AX5 with rendered-growth assertions, Apple's RTL/doubled-string stress modes, dark and
 Increased Contrast, actual Reduce Motion/Reduce Transparency/Differentiate Without
 Color/Bold Text settings, native control geometry/descriptions and scoped iPhone

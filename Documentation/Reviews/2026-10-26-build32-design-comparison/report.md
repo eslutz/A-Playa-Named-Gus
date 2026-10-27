@@ -8,7 +8,7 @@ Sketch baseline: [R5 Light, eeGbj2](https://www.sketch.com/s/5d22768f-8a13-470f-
 
 Artwork, titles, metadata, counts and available services differ between abstract design fixtures and public-domain demo media. Notes distinguish these from layout differences. Some pairs deliberately use the closest valid counterpart at a different state/scroll position; those differences are stated. No Sketch-only screens are included. GUS-052 is reserved for an excluded duplicate AirPlay attempt and is intentionally absent.
 
-Review each ID using **Prefer Sketch / Prefer app / Combine / Additional changes**. The private Page is the commentable review destination; this local copy preserves evidence and navigation.
+Review each ID using **Prefer Sketch / Prefer app / Combine / Additional changes**. The private Page is the commentable review destination. The local image set is retained in the ignored design archive, not in source.
 
 
 ## Index
@@ -31,7 +31,7 @@ Review each ID using **Prefer Sketch / Prefer app / Combine / Additional changes
 
 ### GUS-001 — Connect to Jellyfin
 
-![GUS-001 — Connect to Jellyfin](pairs/GUS-001.png)
+
 
 Sketch uses a branded introduction, one address field, a local-server row and a prominent Connect button. Build 32 uses grouped form sections and a separate local-discovery empty state. Both captures have no entered server address.
 
@@ -41,7 +41,7 @@ Sketch uses a branded introduction, one address field, a local-server row and a 
 
 ### GUS-002 — Jellyfin Sign In
 
-![GUS-002 — Jellyfin Sign In](pairs/GUS-002.png)
+
 
 Sketch places the brand and sign-in explanation above labeled fields and includes More sign-in options. The app uses the server name as its navigation title and shows Quick Connect directly. Sketch has example credentials entered; the app fields are empty.
 
@@ -51,7 +51,7 @@ Sketch places the brand and sign-in explanation above labeled fields and include
 
 ### GUS-003 — Quick Connect authorization
 
-![GUS-003 — Quick Connect authorization](pairs/GUS-003.png)
+
 
 Sketch gives the approval code a dedicated screen and large type. The app inserts the code and Cancel action into its existing sign-in form. Codes and server identities are capture content, not design differences.
 
@@ -61,7 +61,7 @@ Sketch gives the approval code a dedicated screen and large type. The app insert
 
 ### GUS-080 — Connecting to server
 
-![GUS-080 — Connecting to server](pairs/GUS-080.png)
+
 
 No equivalent screen/state was found among the saved R5 Light frames. The app capture is retained for review; the blank panel does not mean the app screen is absent.
 
@@ -71,7 +71,7 @@ No equivalent screen/state was found among the saved R5 Light frames. The app ca
 
 ### GUS-081 — Sign-in error
 
-![GUS-081 — Sign-in error](pairs/GUS-081.png)
+
 
 Sketch changes the sign-in heading and displays recovery text; Build 32 retains the form and inserts a red error row. One deliberately incorrect demo password produced this capture; no repeated failures were attempted.
 
@@ -85,7 +85,7 @@ Sketch changes the sign-in heading and displays recovery text; Build 32 retains 
 
 ### GUS-004 — Home
 
-![GUS-004 — Home](pairs/GUS-004.png)
+
 
 Both use landscape Next Up cards and portrait media shelves. Sketch uses separate Movies/Series tabs and a trailing Search control; the app exposes Search Library above the shelves and different default tabs. Available shelves and artwork differ with demo content.
 
@@ -95,7 +95,7 @@ Both use landscape Next Up cards and portrait media shelves. Sketch uses separat
 
 ### GUS-005 — Next Up full list
 
-![GUS-005 — Next Up full list](pairs/GUS-005.png)
+
 
 Sketch shows a poster grid with a List switch. Build 32 shows a compact episode row. Item counts, titles and resume progress differ.
 
@@ -105,7 +105,7 @@ Sketch shows a poster grid with a List switch. Build 32 shows a compact episode 
 
 ### GUS-008 — Libraries
 
-![GUS-008 — Libraries](pairs/GUS-008.png)
+
 
 Sketch lists named libraries as text rows. The app presents a two-column artwork grid. Library names and counts come from different fixtures.
 
@@ -115,7 +115,7 @@ Sketch lists named libraries as text rows. The app presents a two-column artwork
 
 ### GUS-019 — More destinations
 
-![GUS-019 — More destinations](pairs/GUS-019.png)
+
 
 Sketch uses a flat list of sections; the app uses a grouped card with icons. Different entries reflect navigation configuration; Photos and Live TV were enabled later through the app’s Navigation settings for their captures.
 
@@ -125,7 +125,7 @@ Sketch uses a flat list of sections; the app uses a grouped card with icons. Dif
 
 ### GUS-071 — Search entry
 
-![GUS-071 — Search entry](pairs/GUS-071.png)
+
 
 No equivalent screen/state was found among the saved R5 Light frames. The app capture is retained for review; the blank panel does not mean the app screen is absent.
 
@@ -135,7 +135,7 @@ No equivalent screen/state was found among the saved R5 Light frames. The app ca
 
 ### GUS-072 — Search results
 
-![GUS-072 — Search results](pairs/GUS-072.png)
+
 
 Both show poster search results. Sketch uses a titled Search destination and bottom search field; the app uses a top search field. Queries, results and counts differ.
 
@@ -145,7 +145,7 @@ Both show poster search results. Sketch uses a titled Search destination and bot
 
 ### GUS-073 — Search — no results
 
-![GUS-073 — Search — no results](pairs/GUS-073.png)
+
 
 Both represent no search results. Sketch adds explanatory text and Edit Search; the app centers a symbol and No Results while retaining the top query.
 
@@ -155,7 +155,7 @@ Both represent no search results. Sketch adds explanatory text and Edit Search; 
 
 ### GUS-074 — Home — lower shelves
 
-![GUS-074 — Home — lower shelves](pairs/GUS-074.png)
+
 
 Supplementary Home scroll capture. Both continue media shelves, but this app viewport shows Books/Movies while the design shows Shows/Music. Shelf availability/order and artwork differ with the fixture; do not compare those titles as visual defects.
 
@@ -169,7 +169,7 @@ Supplementary Home scroll capture. Both continue media shelves, but this app vie
 
 ### GUS-006 — Downloaded media — empty
 
-![GUS-006 — Downloaded media — empty](pairs/GUS-006.png)
+
 
 Closest destination counterpart: Sketch shows a populated Downloads list with transfer states and Download Options. The app capture is the empty Downloaded library with search, media segments and Manage Downloads. The empty versus populated state is intentional and is not evidence of missing downloads.
 
@@ -179,7 +179,7 @@ Closest destination counterpart: Sketch shows a populated Downloads list with tr
 
 ### GUS-007 — Manage Downloads — empty
 
-![GUS-007 — Manage Downloads — empty](pairs/GUS-007.png)
+
 
 Both show storage statistics and Delete After Finishing. The app wraps sections in grouped cards and uses a centered No Downloads state; Sketch uses a flatter list and inline empty copy.
 
@@ -189,7 +189,7 @@ Both show storage statistics and Delete After Finishing. The app wraps sections 
 
 ### GUS-017 — Manage Downloads — completed item
 
-![GUS-017 — Manage Downloads — completed item](pairs/GUS-017.png)
+
 
 Both show storage totals, transfer counts and Delete After Finishing. Sketch contains several transfer states; the app has one completed movie. Different sizes and active/paused counts are demo-state differences.
 
@@ -199,7 +199,7 @@ Both show storage totals, transfer counts and Delete After Finishing. Sketch con
 
 ### GUS-018 — Download selection mode
 
-![GUS-018 — Download selection mode](pairs/GUS-018.png)
+
 
 Both enter download selection mode with Done and Select All. The app also exposes a disabled Delete Selected (0) row. The Sketch fixture has more download records, extending below the viewport.
 
@@ -209,7 +209,7 @@ Both enter download selection mode with Done and Select All. The app also expose
 
 ### GUS-076 — Delete downloads confirmation
 
-![GUS-076 — Delete downloads confirmation](pairs/GUS-076.png)
+
 
 Both show a destructive download confirmation that preserves the server copy. The app warning names a movie; Sketch names an EPUB/PDF fixture. The confirmation was canceled.
 
@@ -219,7 +219,7 @@ Both show a destructive download confirmation that preserves the server copy. Th
 
 ### GUS-077 — Downloaded media — populated
 
-![GUS-077 — Downloaded media — populated](pairs/GUS-077.png)
+
 
 Sketch’s Downloads destination mixes transfer status with downloaded items and a Download Options button. Build 32 separates the completed Downloaded library from management, adding search and media segments. The single retained movie is demo state.
 
@@ -233,7 +233,7 @@ Sketch’s Downloads destination mixes transfer status with downloaded items and
 
 ### GUS-009 — Movies library
 
-![GUS-009 — Movies library](pairs/GUS-009.png)
+
 
 Sketch shows a single-library poster grid with a List toggle and scope caption. The app includes a Collections shelf above movies and a filter menu. Artwork and movie counts differ.
 
@@ -243,7 +243,7 @@ Sketch shows a single-library poster grid with a List toggle and scope caption. 
 
 ### GUS-010 — Library sort and status filter
 
-![GUS-010 — Library sort and status filter](pairs/GUS-010.png)
+
 
 No equivalent screen/state was found among the saved R5 Light frames. The app capture is retained for review; the blank panel does not mean the app screen is absent.
 
@@ -253,7 +253,7 @@ No equivalent screen/state was found among the saved R5 Light frames. The app ca
 
 ### GUS-011 — Movie details
 
-![GUS-011 — Movie details](pairs/GUS-011.png)
+
 
 Both have hero artwork, playback and circular secondary actions. Sketch places overview text in the hero and Cast & Crew immediately below; the app shows Recommended below this movie. Metadata and available credits differ by title.
 
@@ -263,7 +263,7 @@ Both have hero artwork, playback and circular secondary actions. Sketch places o
 
 ### GUS-012 — Movie detail actions
 
-![GUS-012 — Movie detail actions](pairs/GUS-012.png)
+
 
 No equivalent screen/state was found among the saved R5 Light frames. The app capture is retained for review; the blank panel does not mean the app screen is absent.
 
@@ -273,7 +273,7 @@ No equivalent screen/state was found among the saved R5 Light frames. The app ca
 
 ### GUS-013 — Add to playlist
 
-![GUS-013 — Add to playlist](pairs/GUS-013.png)
+
 
 No equivalent screen/state was found among the saved R5 Light frames. The app capture is retained for review; the blank panel does not mean the app screen is absent.
 
@@ -283,7 +283,7 @@ No equivalent screen/state was found among the saved R5 Light frames. The app ca
 
 ### GUS-014 — Add to collection
 
-![GUS-014 — Add to collection](pairs/GUS-014.png)
+
 
 No equivalent screen/state was found among the saved R5 Light frames. The app capture is retained for review; the blank panel does not mean the app screen is absent.
 
@@ -293,7 +293,7 @@ No equivalent screen/state was found among the saved R5 Light frames. The app ca
 
 ### GUS-015 — Movie details — lower sections
 
-![GUS-015 — Movie details — lower sections](pairs/GUS-015.png)
+
 
 Supplementary scroll capture of GUS-011. Build 32 reveals Recommended and About lower down; the same Sketch detail frame is repeated because no equivalent scrolled frame was found.
 
@@ -303,7 +303,7 @@ Supplementary scroll capture of GUS-011. Build 32 reveals Recommended and About 
 
 ### GUS-043 — Shows library
 
-![GUS-043 — Shows library](pairs/GUS-043.png)
+
 
 Closest show-library counterpart: Sketch’s Show All grid is scoped to shows, while Build 32 is the Shows destination. Both use posters; toolbar and navigation context differ. The app includes two demo series.
 
@@ -313,7 +313,7 @@ Closest show-library counterpart: Sketch’s Show All grid is scoped to shows, w
 
 ### GUS-044 — Series details and episodes
 
-![GUS-044 — Series details and episodes](pairs/GUS-044.png)
+
 
 Both present a series with episode browsing. The Sketch counterpart retains an episode scroll anchor; the app shows the hero and Season 1 entry. Different viewport position and series metadata must be considered.
 
@@ -323,7 +323,7 @@ Both present a series with episode browsing. The Sketch counterpart retains an e
 
 ### GUS-045 — Season picker
 
-![GUS-045 — Season picker](pairs/GUS-045.png)
+
 
 No equivalent screen/state was found among the saved R5 Light frames. The app capture is retained for review; the blank panel does not mean the app screen is absent.
 
@@ -333,7 +333,7 @@ No equivalent screen/state was found among the saved R5 Light frames. The app ca
 
 ### GUS-046 — Episode details
 
-![GUS-046 — Episode details](pairs/GUS-046.png)
+
 
 Both show episode hero details and playback. Sketch uses the unstarted Play state; the app has Resume after playback. Cast presentation also differs: Sketch uses a row, the app visible cast cards.
 
@@ -343,7 +343,7 @@ Both show episode hero details and playback. Sketch uses the unstarted Play stat
 
 ### GUS-075 — Media context menu
 
-![GUS-075 — Media context menu](pairs/GUS-075.png)
+
 
 No equivalent screen/state was found among the saved R5 Light frames. The app capture is retained for review; the blank panel does not mean the app screen is absent.
 
@@ -357,7 +357,7 @@ No equivalent screen/state was found among the saved R5 Light frames. The app ca
 
 ### GUS-016 — Video player — controls visible
 
-![GUS-016 — Video player — controls visible](pairs/GUS-016.png)
+
 
 Both represent the native video-player surface. The Sketch frame is a sparse AVKit placeholder with Done; the real app exposes playback, seek, route and speed controls. AVKit keeps a black playback background even with system/app light appearance; this is not a dark-mode app capture.
 
@@ -367,7 +367,7 @@ Both represent the native video-player surface. The Sketch frame is a sparse AVK
 
 ### GUS-078 — Video playback speed
 
-![GUS-078 — Video playback speed](pairs/GUS-078.png)
+
 
 No equivalent screen/state was found among the saved R5 Light frames. The app capture is retained for review; the blank panel does not mean the app screen is absent.
 
@@ -381,7 +381,7 @@ No equivalent screen/state was found among the saved R5 Light frames. The app ca
 
 ### GUS-020 — Settings — account and playback
 
-![GUS-020 — Settings — account and playback](pairs/GUS-020.png)
+
 
 Sketch gathers account, navigation and preferences into a concise settings list. Build 32 expands user/server details and account status inline and shows search. The server/user values are demo content.
 
@@ -391,7 +391,7 @@ Sketch gathers account, navigation and preferences into a concise settings list.
 
 ### GUS-021 — User profile
 
-![GUS-021 — User profile](pairs/GUS-021.png)
+
 
 Both edit username and preferred audio/subtitle languages. Build 32 uses a sheet with avatar and grouped fields; Sketch uses a flatter form with a prominent Save Changes button. No profile changes were saved.
 
@@ -401,7 +401,7 @@ Both edit username and preferred audio/subtitle languages. Build 32 uses a sheet
 
 ### GUS-022 — Profile language choices
 
-![GUS-022 — Profile language choices](pairs/GUS-022.png)
+
 
 No equivalent screen/state was found among the saved R5 Light frames. The app capture is retained for review; the blank panel does not mean the app screen is absent.
 
@@ -411,7 +411,7 @@ No equivalent screen/state was found among the saved R5 Light frames. The app ca
 
 ### GUS-023 — Streaming quality choices
 
-![GUS-023 — Streaming quality choices](pairs/GUS-023.png)
+
 
 No equivalent screen/state was found among the saved R5 Light frames. The app capture is retained for review; the blank panel does not mean the app screen is absent.
 
@@ -421,7 +421,7 @@ No equivalent screen/state was found among the saved R5 Light frames. The app ca
 
 ### GUS-024 — Settings — playback, appearance and content
 
-![GUS-024 — Settings — playback, appearance and content](pairs/GUS-024.png)
+
 
 Closest settings counterpart: Sketch separates Preferences into its own screen. Build 32 keeps playback, iCloud, appearance, navigation and restrictions in the scrollable Settings form.
 
@@ -431,7 +431,7 @@ Closest settings counterpart: Sketch separates Preferences into its own screen. 
 
 ### GUS-025 — Appearance choices
 
-![GUS-025 — Appearance choices](pairs/GUS-025.png)
+
 
 No equivalent screen/state was found among the saved R5 Light frames. The app capture is retained for review; the blank panel does not mean the app screen is absent.
 
@@ -441,7 +441,7 @@ No equivalent screen/state was found among the saved R5 Light frames. The app ca
 
 ### GUS-026 — Content rating choices
 
-![GUS-026 — Content rating choices](pairs/GUS-026.png)
+
 
 Sketch shows a dedicated Restrictions screen with the limit Off. Build 32 shows the rating-choice popup in Settings. This pair compares the same setting at different presentation stages; it is not an exact open-menu design match.
 
@@ -451,7 +451,7 @@ Sketch shows a dedicated Restrictions screen with the limit Off. Build 32 shows 
 
 ### GUS-027 — Navigation sections
 
-![GUS-027 — Navigation sections](pairs/GUS-027.png)
+
 
 Sketch shows removal/reordering controls immediately. Build 32 starts with a read-only shown/hidden list and an Edit button. Section order differs with configuration.
 
@@ -461,7 +461,7 @@ Sketch shows removal/reordering controls immediately. Build 32 starts with a rea
 
 ### GUS-028 — Edit navigation sections
 
-![GUS-028 — Edit navigation sections](pairs/GUS-028.png)
+
 
 Sketch separates Shown and Hidden using segments. Build 32 displays both groups in one scrolling editor with remove/add controls and a checkmark to finish.
 
@@ -471,7 +471,7 @@ Sketch separates Shown and Hidden using segments. Build 32 displays both groups 
 
 ### GUS-029 — Settings — content, Seerr and About
 
-![GUS-029 — Settings — content, Seerr and About](pairs/GUS-029.png)
+
 
 Supplementary Settings scroll capture. Build 32 shows restrictions, Sign Out, Seerr and About values inline; Sketch’s root settings frame uses navigation rows. The root design is repeated for context.
 
@@ -485,7 +485,7 @@ Supplementary Settings scroll capture. Build 32 shows restrictions, Sign Out, Se
 
 ### GUS-030 — Seerr settings — disconnected
 
-![GUS-030 — Seerr settings — disconnected](pairs/GUS-030.png)
+
 
 No equivalent screen/state was found among the saved R5 Light frames. The app capture is retained for review; the blank panel does not mean the app screen is absent.
 
@@ -495,7 +495,7 @@ No equivalent screen/state was found among the saved R5 Light frames. The app ca
 
 ### GUS-031 — Connect to Seerr
 
-![GUS-031 — Connect to Seerr](pairs/GUS-031.png)
+
 
 Both collect a Seerr URL in a sheet. Sketch shows a filled example and Continue button near the middle; Build 32 has an empty grouped field and disabled Continue row. Server values and input completeness differ.
 
@@ -505,7 +505,7 @@ Both collect a Seerr URL in a sheet. Sketch shows a filled example and Continue 
 
 ### GUS-042 — Discover — not connected
 
-![GUS-042 — Discover — not connected](pairs/GUS-042.png)
+
 
 Both explain Discover and offer Connect to Seerr plus Hide Menu Item. Build 32 adds a centered symbol and uses more compact controls. Both are disconnected.
 
@@ -515,7 +515,7 @@ Both explain Discover and offer Connect to Seerr plus Hide Menu Item. Build 32 a
 
 ### GUS-070 — Live TV — no channels
 
-![GUS-070 — Live TV — no channels](pairs/GUS-070.png)
+
 
 Closest Live TV destination counterpart: Sketch contains channels, Recordings/Scheduled segments and Reload. The app shows No Live TV Content because the demo server has no TV source. Populated versus empty content is an explicit state difference.
 
@@ -525,7 +525,7 @@ Closest Live TV destination counterpart: Sketch contains channels, Recordings/Sc
 
 ### GUS-079 — Seerr connection validation error
 
-![GUS-079 — Seerr connection validation error](pairs/GUS-079.png)
+
 
 Both display an inline connection error. Sketch says the Seerr server cannot be reached; Build 32 reports that the item is unavailable when given the Jellyfin-only demo URL. These are different validation causes in the same setup flow.
 
@@ -539,7 +539,7 @@ Both display an inline connection error. Sketch says the Seerr server cannot be 
 
 ### GUS-032 — Playlist update error
 
-![GUS-032 — Playlist update error](pairs/GUS-032.png)
+
 
 No equivalent screen/state was found among the saved R5 Light frames. The app capture is retained for review; the blank panel does not mean the app screen is absent.
 
@@ -549,7 +549,7 @@ No equivalent screen/state was found among the saved R5 Light frames. The app ca
 
 ### GUS-033 — Playlists
 
-![GUS-033 — Playlists](pairs/GUS-033.png)
+
 
 Both list playlists. Sketch includes a Grid toggle and bottom New Playlist button; Build 32 uses a toolbar plus button. Playlist names and counts are existing demo fixtures.
 
@@ -559,7 +559,7 @@ Both list playlists. Sketch includes a Grid toggle and bottom New Playlist butto
 
 ### GUS-034 — Create playlist
 
-![GUS-034 — Create playlist](pairs/GUS-034.png)
+
 
 No equivalent screen/state was found among the saved R5 Light frames. The app capture is retained for review; the blank panel does not mean the app screen is absent.
 
@@ -569,7 +569,7 @@ No equivalent screen/state was found among the saved R5 Light frames. The app ca
 
 ### GUS-035 — Video playlist details
 
-![GUS-035 — Video playlist details](pairs/GUS-035.png)
+
 
 Sketch uses numbered media rows and a bottom Resume action. Build 32 places Play, repeat and shuffle beneath the title, with Add Items above grouped rows. Playback progress and entry counts differ.
 
@@ -579,7 +579,7 @@ Sketch uses numbered media rows and a bottom Resume action. Build 32 places Play
 
 ### GUS-036 — Playlist actions
 
-![GUS-036 — Playlist actions](pairs/GUS-036.png)
+
 
 Both expose playlist actions in a menu. Sketch’s menu includes Start from Beginning and Shuffle; Build 32 has playback controls on the parent screen and menu entries for Rename, Edit Items, Add to Next Up and Delete Playlist.
 
@@ -589,7 +589,7 @@ Both expose playlist actions in a menu. Sketch’s menu includes Start from Begi
 
 ### GUS-037 — Rename playlist
 
-![GUS-037 — Rename playlist](pairs/GUS-037.png)
+
 
 No equivalent screen/state was found among the saved R5 Light frames. The app capture is retained for review; the blank panel does not mean the app screen is absent.
 
@@ -599,7 +599,7 @@ No equivalent screen/state was found among the saved R5 Light frames. The app ca
 
 ### GUS-038 — Edit playlist items
 
-![GUS-038 — Edit playlist items](pairs/GUS-038.png)
+
 
 Both expose remove/reorder editing. Sketch shows drag handles plus a move-action popup; the app capture shows removal controls and Done. The open move popup is a state difference.
 
@@ -609,7 +609,7 @@ Both expose remove/reorder editing. Sketch shows drag handles plus a move-action
 
 ### GUS-039 — Add playlist items
 
-![GUS-039 — Add playlist items](pairs/GUS-039.png)
+
 
 Both are Add Media sheets. Sketch shows a populated search with keyboard and results; Build 32 shows the empty query with the search field at the bottom. No items were added.
 
@@ -619,7 +619,7 @@ Both are Add Media sheets. Sketch shows a populated search with keyboard and res
 
 ### GUS-040 — Delete playlist confirmation
 
-![GUS-040 — Delete playlist confirmation](pairs/GUS-040.png)
+
 
 No equivalent screen/state was found among the saved R5 Light frames. The app capture is retained for review; the blank panel does not mean the app screen is absent.
 
@@ -629,7 +629,7 @@ No equivalent screen/state was found among the saved R5 Light frames. The app ca
 
 ### GUS-041 — Empty playlist
 
-![GUS-041 — Empty playlist](pairs/GUS-041.png)
+
 
 No equivalent screen/state was found among the saved R5 Light frames. The app capture is retained for review; the blank panel does not mean the app screen is absent.
 
@@ -639,7 +639,7 @@ No equivalent screen/state was found among the saved R5 Light frames. The app ca
 
 ### GUS-061 — Collections
 
-![GUS-061 — Collections](pairs/GUS-061.png)
+
 
 Sketch defaults to a collection list with Grid toggle and bottom New Collection. Build 32 shows a grid and a toolbar plus button. Collection names and artwork are demo fixtures.
 
@@ -649,7 +649,7 @@ Sketch defaults to a collection list with Grid toggle and bottom New Collection.
 
 ### GUS-062 — Create collection
 
-![GUS-062 — Create collection](pairs/GUS-062.png)
+
 
 No equivalent screen/state was found among the saved R5 Light frames. The app capture is retained for review; the blank panel does not mean the app screen is absent.
 
@@ -659,7 +659,7 @@ No equivalent screen/state was found among the saved R5 Light frames. The app ca
 
 ### GUS-063 — Collection details
 
-![GUS-063 — Collection details](pairs/GUS-063.png)
+
 
 Sketch presents collection films as rows with Grid/More controls. Build 32 uses a collection header and poster grid. Membership counts and artwork differ.
 
@@ -669,7 +669,7 @@ Sketch presents collection films as rows with Grid/More controls. Build 32 uses 
 
 ### GUS-064 — Collection actions and sort order
 
-![GUS-064 — Collection actions and sort order](pairs/GUS-064.png)
+
 
 No equivalent screen/state was found among the saved R5 Light frames. The app capture is retained for review; the blank panel does not mean the app screen is absent.
 
@@ -679,7 +679,7 @@ No equivalent screen/state was found among the saved R5 Light frames. The app ca
 
 ### GUS-065 — Edit collection
 
-![GUS-065 — Edit collection](pairs/GUS-065.png)
+
 
 Both edit name, description and artwork. Build 32 uses a grouped sheet with top Save; Sketch uses a flat form and bottom Save with explanatory copy. No changes were saved.
 
@@ -689,7 +689,7 @@ Both edit name, description and artwork. Build 32 uses a grouped sheet with top 
 
 ### GUS-066 — Add movies to collection
 
-![GUS-066 — Add movies to collection](pairs/GUS-066.png)
+
 
 Both are Add Movies membership sheets. Sketch has a search result and selected item; the app shows an empty search. Existing membership and search state differ. No movies were added.
 
@@ -699,7 +699,7 @@ Both are Add Movies membership sheets. Sketch has a search result and selected i
 
 ### GUS-067 — Delete collection confirmation
 
-![GUS-067 — Delete collection confirmation](pairs/GUS-067.png)
+
 
 No equivalent screen/state was found among the saved R5 Light frames. The app capture is retained for review; the blank panel does not mean the app screen is absent.
 
@@ -713,7 +713,7 @@ No equivalent screen/state was found among the saved R5 Light frames. The app ca
 
 ### GUS-047 — Music library
 
-![GUS-047 — Music library](pairs/GUS-047.png)
+
 
 Sketch surfaces an album followed by Artists. Build 32 begins with existing playlist tiles, with artists and albums farther down. This is a hierarchy difference as well as different demo library composition.
 
@@ -723,7 +723,7 @@ Sketch surfaces an album followed by Artists. Build 32 begins with existing play
 
 ### GUS-048 — Music library — artists and albums
 
-![GUS-048 — Music library — artists and albums](pairs/GUS-048.png)
+
 
 Supplementary GUS-047 scroll capture showing app artists/albums. The same Sketch Music frame is repeated for context; artwork and available artist associations differ.
 
@@ -733,7 +733,7 @@ Supplementary GUS-047 scroll capture showing app artists/albums. The same Sketch
 
 ### GUS-049 — Artist albums
 
-![GUS-049 — Artist albums](pairs/GUS-049.png)
+
 
 Both show an empty artist-albums state. Sketch uses inline text under the artist name; the app centers a symbol and No Albums. Different artist names are content.
 
@@ -743,7 +743,7 @@ Both show an empty artist-albums state. Sketch uses inline text under the artist
 
 ### GUS-050 — Album and tracks
 
-![GUS-050 — Album and tracks](pairs/GUS-050.png)
+
 
 Both show album artwork, Play/Shuffle and tracks. Sketch uses compact inline metadata and flat rows; Build 32 uses a larger title/artist block and rounded grouped track list.
 
@@ -753,7 +753,7 @@ Both show album artwork, Play/Shuffle and tracks. Sketch uses compact inline met
 
 ### GUS-051 — Audio player
 
-![GUS-051 — Audio player](pairs/GUS-051.png)
+
 
 Both show paused audio with scrubber, transport, shuffle and repeat. Sketch also draws volume and queue controls; the app capture exposes an AirPlay route button and close/stop symbols. Missing demo artwork explains the placeholder.
 
@@ -763,7 +763,7 @@ Both show paused audio with scrubber, transport, shuffle and repeat. Sketch also
 
 ### GUS-053 — Persistent Now Playing control
 
-![GUS-053 — Persistent Now Playing control](pairs/GUS-053.png)
+
 
 Both retain a mini-player beneath album content. Sketch includes the track’s artwork and a labeled track line; the app uses a compact capsule. The selected track and album artwork differ.
 
@@ -773,7 +773,7 @@ Both retain a mini-player beneath album content. Sketch includes the track’s a
 
 ### GUS-059 — Photos library
 
-![GUS-059 — Photos library](pairs/GUS-059.png)
+
 
 No equivalent screen/state was found among the saved R5 Light frames. The app capture is retained for review; the blank panel does not mean the app screen is absent.
 
@@ -783,7 +783,7 @@ No equivalent screen/state was found among the saved R5 Light frames. The app ca
 
 ### GUS-060 — Photo album
 
-![GUS-060 — Photo album](pairs/GUS-060.png)
+
 
 No equivalent screen/state was found among the saved R5 Light frames. The app capture is retained for review; the blank panel does not mean the app screen is absent.
 
@@ -793,7 +793,7 @@ No equivalent screen/state was found among the saved R5 Light frames. The app ca
 
 ### GUS-068 — Photos destination
 
-![GUS-068 — Photos destination](pairs/GUS-068.png)
+
 
 Both show a photo grid with captions. Sketch has separate List and Filter buttons; the app uses a filter icon. Different photograph aspect ratios and names are content differences.
 
@@ -803,7 +803,7 @@ Both show a photo grid with captions. Sketch has separate List and Filter button
 
 ### GUS-069 — Photo viewer
 
-![GUS-069 — Photo viewer](pairs/GUS-069.png)
+
 
 Both display an image against black with title and slideshow control. Build 32 retains the tab bar in this capture; Sketch does not. Black is the viewer’s media canvas while the app remains light.
 
@@ -817,7 +817,7 @@ Both display an image against black with title and slideshow control. Build 32 r
 
 ### GUS-054 — Books library
 
-![GUS-054 — Books library](pairs/GUS-054.png)
+
 
 Both use a book-cover grid. Sketch includes separate List and Filter controls; the app has one filter icon. The demo EPUB files have no cover images, so the app displays placeholders.
 
@@ -827,7 +827,7 @@ Both use a book-cover grid. Sketch includes separate List and Filter controls; t
 
 ### GUS-055 — Book details
 
-![GUS-055 — Book details](pairs/GUS-055.png)
+
 
 Sketch presents a book cover with Read/Share below. Build 32 uses the common media-detail hero, Read/Share and secondary actions, followed by recommendations. EPUB metadata and covers differ.
 
@@ -837,7 +837,7 @@ Sketch presents a book cover with Read/Share below. Build 32 uses the common med
 
 ### GUS-056 — EPUB reader
 
-![GUS-056 — EPUB reader](pairs/GUS-056.png)
+
 
 Both show an EPUB reader with close and chapter navigation. Sketch displays chapter prose; the app capture is Dracula’s title page. Publication typography and content differ, so this is not a like-for-like page-format test.
 
@@ -847,7 +847,7 @@ Both show an EPUB reader with close and chapter navigation. Sketch displays chap
 
 ### GUS-057 — Book chapter navigation
 
-![GUS-057 — Book chapter navigation](pairs/GUS-057.png)
+
 
 Both show chapter navigation in a sheet. Sketch uses an X and a flatter hierarchy; the app uses Done and grouped rows. Chapter labels and nesting come from different books.
 
@@ -857,7 +857,7 @@ Both show chapter navigation in a sheet. Sketch uses an X and a flatter hierarch
 
 ### GUS-058 — Book sharing sheet
 
-![GUS-058 — Book sharing sheet](pairs/GUS-058.png)
+
 
 Both show a native sharing sheet over the book detail. Available share destinations depend on simulator apps/accounts; their absence is not treated as an app design defect. The app also exposes SharePlay.
 

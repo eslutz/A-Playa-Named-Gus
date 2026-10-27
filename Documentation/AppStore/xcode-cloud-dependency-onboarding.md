@@ -128,9 +128,9 @@ It distinguishes the two known identities,
 accepts either expected form, and continues rejecting an unrelated account before
 writing signing configuration. `DEVELOPMENT_TEAM` remains `QS3GC3CT43`.
 
-[Actual failed bootstrap log](cloud-onboarding-evidence/build-1-bootstrap-failure.jpg),
-[Build 1 summary](cloud-onboarding-evidence/run-1/summary.json), and
-[failed overview](cloud-onboarding-evidence/build-1-failed-overview.jpg) preserve the
+Actual failed bootstrap log,
+Build 1 summary, and
+failed overview preserve the
 failure. Source fetching and project configuration checks passed in the sampled iOS
 log; complete build acceptance was still pending at that stage and was subsequently
 established by Build 2 below.
@@ -150,9 +150,9 @@ without upstream administrator connections. The initial wizard's internal cause
 remains unconfirmed. Build 2 finished `COMPLETE/SUCCEEDED`, with all four required
 BUILD actions successful and no build errors.
 
-[Inspected resolution log](cloud-onboarding-evidence/build-2-package-resolution.txt),
-[resolution proof](cloud-onboarding-evidence/build-2-dependencies-passed.jpg), and
-[authenticated run](cloud-onboarding-evidence/run-2/run.json) record this stage.
+Inspected resolution log,
+resolution proof, and
+authenticated run record this stage.
 
 ### Final validation result and limits
 
@@ -160,20 +160,20 @@ Cloud Build 2 passed **4/4** required actions: iOS, macOS, tvOS, and visionOS, u
 source commit `084a470683a78256e939bd63b416bc2fb0150bb2` on Xcode 27.1 RC. The built
 source SHA is recorded independently of later documentation/evidence and CI
 configuration changes, which do not change the app source.
-[Final authenticated summary](cloud-onboarding-evidence/run-2/summary.json),
-[action results](cloud-onboarding-evidence/run-2/actions.json), and
-[completed-build proof](cloud-onboarding-evidence/build-2-succeeded.jpg) confirm the result.
+Final authenticated summary,
+action results, and
+completed-build proof confirm the result.
 
 There are zero errors. iOS reports six warnings and macOS one: the previously
 recorded DeclaredAgeRange/Readium Swift 6 isolation boundaries and deprecated
 Readium URL equality. tvOS and visionOS report none. These warnings are preserved
-in the [issue list](cloud-onboarding-evidence/run-2/issues.json); build success does
+in the issue list; build success does
 not erase the documented migration work.
 
 The workflow contains BUILD actions, no Cloud TEST, archive, distribution, or
 TestFlight action. Local unit/UI acceptance is recorded in the repair report.
-The sampled live Duo audio transition/control check has [separate simulator
-evidence](../Reviews/2026-10-11-auth-device-repair/evidence/duo-transitions/acceptance.json).
+The sampled live Duo audio transition/control check has separate simulator
+evidence.
 Minimum-OS runtime, manual VoiceOver, broader Duo video/navigation/sheet flows,
 signed archives, and TestFlight acceptance remain separate gates. No further
 physical-phone automation was started. Website and wiki updates remain local to
@@ -195,8 +195,8 @@ SDK explicitly, preserving every matrix job. Availability in the software manife
 alone did not prove compatibility; the subsequent compilation result is recorded
 below. Cloud's four successful RC BUILD actions above remain separately verified.
 
-[Sanitized failure excerpts](cloud-onboarding-evidence/github-ci/run-38185709518-failures.txt)
-and [runner manifest](cloud-onboarding-evidence/github-ci/runner-manifest.json)
+Sanitized failure excerpts
+and runner manifest
 record this diagnosis. The same run's macOS unit test job failed while launching
 its test runner (`IDELaunchErrorDomain 20`, `RBSRequestErrorDomain 5`,
 `NSPOSIXErrorDomain 162`), before an app assertion could execute. Its underlying
@@ -207,8 +207,8 @@ GitHub run `38186826599` subsequently passed both iOS/iPadOS builds with Xcode 2
 `27A9269`, including actual compilation of `SessionPlayerHost.swift`; the previously
 missing Duo symbols now compile. Its iPhone unit tests and Watch build also passed:
 **288 Swift Testing tests across 48 suites and three XCTest tests**, with
-[test evidence](cloud-onboarding-evidence/github-ci/run-38186826599-iphone-test-success.json).
-[iPadOS compilation evidence](cloud-onboarding-evidence/github-ci/run-38186826599-ipados-sdk-build-success.json)
+test evidence.
+iPadOS compilation evidence
 distinguishes this source acceptance from live Duo runtime acceptance.
 
 The Mac unit host still failed before assertions. Its log packages the restricted
@@ -227,7 +227,7 @@ Remote acceptance passed in [run 38187673465](https://github.com/eslutz/A-Playa-
 at exact commit `aaebc323be81f391f9e9436b00f6c86d21a7b10e`. The signing fixture step
 succeeded, the Mac host launched, and **288 Swift Testing cases in 48 suites plus
 three separate XCTest performance-measurement cases passed**, with no failures.
-[Mac success evidence](cloud-onboarding-evidence/github-ci/run-38187673465-macos-test-success.json)
+Mac success evidence
 clears the hosted launch/execution gate. This does not establish interactive Mac
 UI acceptance or provisioned production/archive signing.
 
@@ -236,8 +236,8 @@ unit lanes, lint, and documentation checks. The iPhone lane compiled and launche
 passed its three XCTest measurement cases, and ran all 288 Swift Testing cases,
 but recorded one completion-wait issue in the audio replay regression. A separate
 600-second simulator diagnostics timeout accounts for the long finish.
-[Run summary](cloud-onboarding-evidence/github-ci/run-38187673465-summary.json),
-[exact iPhone failure](cloud-onboarding-evidence/github-ci/run-38187673465-iphone-test-failure.json).
+Run summary,
+exact iPhone failure.
 Native player/audio overload messages are context, not proof of the underlying cause.
 
 Source inspection found independent playback suites activating/deactivating the same
@@ -260,8 +260,8 @@ All six platform builds and Mac/iPad/tvOS/visionOS test lanes passed. Each test 
 executed 288 Swift Testing cases in 49 suites and three XCTest measurement cases;
 the iPhone recorded one issue in its first natural-completion wait. The player
 remained ready/playing, rate 1.0, item time 0.4 seconds; the following deletion replay
-case passed. [Summary](cloud-onboarding-evidence/github-ci/run-38190182036-summary.json),
-[failure with native state](cloud-onboarding-evidence/github-ci/run-38190182036-iphone-test-failure.json).
+case passed. Summary,
+failure with native state.
 
 The suite isolation hazard is repaired, but it did not resolve this observed failure.
 No completion-observer defect is established. A focused test-only investigation uses
@@ -273,9 +273,9 @@ four successful Cloud RC BUILD actions are unaffected.
 
 ### Final required GitHub CI acceptance
 
-[Run 38192282611](https://github.com/eslutz/A-Playa-Named-Gus/actions/runs/38192282611) completed **13/13 jobs successfully** at exact commit `edd06e6636cd32b877622dbcb4ccb34524a1b3c1`: six platform builds, five native unit lanes, lint, and docs. Every iPhone/iPad/macOS/tvOS/visionOS lane passed **288 Swift Testing cases in 49 suites** and **three separate XCTest measurements**, with no failures or observed skipped test-case lines. [Summary](cloud-onboarding-evidence/github-ci/run-38192282611-summary.json), [lane metadata](cloud-onboarding-evidence/github-ci/run-38192282611-test-lanes.json), [completed log excerpts](cloud-onboarding-evidence/github-ci/run-38192282611-test-lanes.txt).
+[Run 38192282611](https://github.com/eslutz/A-Playa-Named-Gus/actions/runs/38192282611) completed **13/13 jobs successfully** at exact commit `edd06e6636cd32b877622dbcb4ccb34524a1b3c1`: six platform builds, five native unit lanes, lint, and docs. Every iPhone/iPad/macOS/tvOS/visionOS lane passed **288 Swift Testing cases in 49 suites** and **three separate XCTest measurements**, with no failures or observed skipped test-case lines. Summary, lane metadata, completed log excerpts.
 
-Both strengthened native audio cases passed in all five lanes. On iPhone, natural completion/replay passed in 4.338 seconds and automatic-deletion/local-only no-stream in 1.303 seconds. Enforced expectations verify exactly one actual end event and zero failed-end events per completed item, replay item replacement/two provider resolutions, and zero server resolution after local deletion. [iPhone proof](cloud-onboarding-evidence/github-ci/run-38192282611-iphone-native-replay-success.json), [all native cases](cloud-onboarding-evidence/github-ci/run-38192282611-native-audio-cases.json). The test-only one-second 48 kHz PCM fixture retains the eight-second deadline and actual natural completions. The earlier 400 ms/8 kHz failure's cause is still unproven; no product workaround was added. That tested app source and production configuration match the successful Cloud `084a470` build. Required CI acceptance is complete for historical `edd06e`. Current-source GUS-UI-040 has Cloud Build 3 compilation and GitHub attempt 2 build/unit acceptance below; the unchanged-source iPad retry passed while its first-attempt failure remains recorded with an unresolved cause. Saved Duo runtime acceptance predates the edit. Physical, minimum-OS, manual VoiceOver, full Mac UI, broader Duo, signed archive, and TestFlight acceptance remain separate.
+Both strengthened native audio cases passed in all five lanes. On iPhone, natural completion/replay passed in 4.338 seconds and automatic-deletion/local-only no-stream in 1.303 seconds. Enforced expectations verify exactly one actual end event and zero failed-end events per completed item, replay item replacement/two provider resolutions, and zero server resolution after local deletion. iPhone proof, all native cases. The test-only one-second 48 kHz PCM fixture retains the eight-second deadline and actual natural completions. The earlier 400 ms/8 kHz failure's cause is still unproven; no product workaround was added. That tested app source and production configuration match the successful Cloud `084a470` build. Required CI acceptance is complete for historical `edd06e`. Current-source GUS-UI-040 has Cloud Build 3 compilation and GitHub attempt 2 build/unit acceptance below; the unchanged-source iPad retry passed while its first-attempt failure remains recorded with an unresolved cause. Saved Duo runtime acceptance predates the edit. Physical, minimum-OS, manual VoiceOver, full Mac UI, broader Duo, signed archive, and TestFlight acceptance remain separate.
 
 ## Recovery and acceptance
 
@@ -292,9 +292,9 @@ primary repository alone would not have established it.
 
 ## Evidence and status caveat
 
-Durable sanitized evidence: [created product and workflow](cloud-onboarding-evidence/product-created.json),
-[blocked dependency wizard](cloud-onboarding-evidence/cloud-public-repository-blocker.png),
-and [successful setup](cloud-onboarding-evidence/cloud-setup-complete.png).
+Durable sanitized evidence: created product and workflow,
+blocked dependency wizard,
+and successful setup.
 Original project, pins, and project.yml hashes still match the pre-experiment baseline.
 
 - Configuration: `project.yml`, `A Playa Named Gus.xcodeproj/project.pbxproj`, and
@@ -317,14 +317,14 @@ Original project, pins, and project.yml hashes still match the pre-experiment ba
 
 ### Preceding-source Cloud Build 3 and CI gate
 
-Cloud Build 3 (`db702224-7ba1-4c39-964c-0e1796b8a0d4`) completed **4/4 BUILD actions successfully** at exact source `64505d9dfd337c90f390c7c66503912eac252d3f` on Xcode 27.1 RC (`27A9275`) / macOS 27.2 beta 2. It includes GUS-UI-040. API pagination is complete: zero errors, six iOS and one Mac warnings, with messages unchanged from Build 2; tvOS and visionOS have no reported issues. [API summary](cloud-onboarding-evidence/run-3/summary.json), [issue ledger](cloud-onboarding-evidence/run-3/issues.json), [results image](cloud-onboarding-evidence/build-3-succeeded-results.jpg). The 16 committed pins are unchanged. No Build 3 package-fetch log was exported, so Build 2 remains the evidence for its recorded 16-repository resolution. Cloud BUILD success does not establish Cloud tests, signed archives, upload or TestFlight distribution.
+Cloud Build 3 (`db702224-7ba1-4c39-964c-0e1796b8a0d4`) completed **4/4 BUILD actions successfully** at exact source `64505d9dfd337c90f390c7c66503912eac252d3f` on Xcode 27.1 RC (`27A9275`) / macOS 27.2 beta 2. It includes GUS-UI-040. API pagination is complete: zero errors, six iOS and one Mac warnings, with messages unchanged from Build 2; tvOS and visionOS have no reported issues. API summary, issue ledger, results image. The 16 committed pins are unchanged. No Build 3 package-fetch log was exported, so Build 2 remains the evidence for its recorded 16-repository resolution. Cloud BUILD success does not establish Cloud tests, signed archives, upload or TestFlight distribution.
 
-Current [GitHub run 38194318738, attempt 1](https://github.com/eslutz/A-Playa-Named-Gus/actions/runs/38194318738/attempts/1) passed **12/13 jobs**: all six builds, four non-iPad unit lanes, lint/docs. All five lanes ran 288 Swift Testing cases in 49 suites plus three separate XCTest performance measurements. iPad recorded one first-natural-completion issue at `AudioPlaybackTests.swift:250`, with native end/failure counts zero at current time/duration 1.0; its following deletion/no-stream case passed. [First-attempt summary](cloud-onboarding-evidence/github-ci/run-38194318738-attempt-1-summary.json), [iPad failure](cloud-onboarding-evidence/github-ci/run-38194318738-attempt-1-ipad-test-failure.json). The unchanged-source targeted iPad rerun passed in [attempt 2](https://github.com/eslutz/A-Playa-Named-Gus/actions/runs/38194318738/attempts/2), completing **13/13 successful checks**; the other 12 successes were carried forward from attempt 1. The accepted iPad lane passed 288 Swift Testing cases in 49 suites (50.658 seconds), three distinct XCTest performance cases, native completion/replay (5.097 seconds), and deletion/no-stream (1.278 seconds). All five accepted lanes passed both native cases; no skips or production workaround were introduced. [Current matrix](cloud-onboarding-evidence/github-ci/run-38194318738-attempt-2-summary.json), [accepted lane counts](cloud-onboarding-evidence/github-ci/run-38194318738-current-test-lanes.json), [iPad success excerpt](cloud-onboarding-evidence/github-ci/run-38194318738-attempt-2-ipad-test-success.txt), [native cases](cloud-onboarding-evidence/github-ci/run-38194318738-current-native-audio-cases.json). Required current-source build/unit CI is accepted after retry. The first failure’s cause remains unresolved; no reliable fixture or platform-only fix is claimed. Internal-only TestFlight is authorized and its all-pipelines-pass prerequisite is met; signed archive/upload/distribution and manual VoiceOver, minimum-OS, current physical/full Mac, and broader Duo acceptance remain pending. Saved sampled Duo proof covers the preceding source.
+Current [GitHub run 38194318738, attempt 1](https://github.com/eslutz/A-Playa-Named-Gus/actions/runs/38194318738/attempts/1) passed **12/13 jobs**: all six builds, four non-iPad unit lanes, lint/docs. All five lanes ran 288 Swift Testing cases in 49 suites plus three separate XCTest performance measurements. iPad recorded one first-natural-completion issue at `AudioPlaybackTests.swift:250`, with native end/failure counts zero at current time/duration 1.0; its following deletion/no-stream case passed. First-attempt summary, iPad failure. The unchanged-source targeted iPad rerun passed in [attempt 2](https://github.com/eslutz/A-Playa-Named-Gus/actions/runs/38194318738/attempts/2), completing **13/13 successful checks**; the other 12 successes were carried forward from attempt 1. The accepted iPad lane passed 288 Swift Testing cases in 49 suites (50.658 seconds), three distinct XCTest performance cases, native completion/replay (5.097 seconds), and deletion/no-stream (1.278 seconds). All five accepted lanes passed both native cases; no skips or production workaround were introduced. Current matrix, accepted lane counts, iPad success excerpt, native cases. Required current-source build/unit CI is accepted after retry. The first failure’s cause remains unresolved; no reliable fixture or platform-only fix is claimed. Internal-only TestFlight is authorized and its all-pipelines-pass prerequisite is met; signed archive/upload/distribution and manual VoiceOver, minimum-OS, current physical/full Mac, and broader Duo acceptance remain pending. Saved sampled Duo proof covers the preceding source.
 
 
 ### Internal TestFlight archive attempt
 
-The authorized manual `Gus Internal TestFlight` workflow is saved with four required internal-only Release ARCHIVE actions and four group distribution post-actions. Its Build 4 (`33eae093-33a9-4dd9-a12e-b8b9a306054a`) completed **FAILED** at exact `64505d9`: iOS App Store export and Mac App Store Connect preparation failed; tvOS/visionOS uploads are valid and ready for beta testing. All four distribution post-actions were skipped. `Gus Internal` has zero associated builds and its eligible selected account tester remains `NOT_INVITED`; upload readiness alone does not provide tester access. Current GitHub 13/13 and Cloud Build 3 4/4 BUILD acceptance remain valid, while release/distribution/install acceptance is unmet and the underlying errors require log diagnosis. [Release report](internal-testflight-release.md), [final API proof](cloud-onboarding-evidence/internal-testflight/run-4-summary.json).
+The authorized manual `Gus Internal TestFlight` workflow is saved with four required internal-only Release ARCHIVE actions and four group distribution post-actions. Its Build 4 (`33eae093-33a9-4dd9-a12e-b8b9a306054a`) completed **FAILED** at exact `64505d9`: iOS App Store export and Mac App Store Connect preparation failed; tvOS/visionOS uploads are valid and ready for beta testing. All four distribution post-actions were skipped. `Gus Internal` has zero associated builds and its eligible selected account tester remains `NOT_INVITED`; upload readiness alone does not provide tester access. Current GitHub 13/13 and Cloud Build 3 4/4 BUILD acceptance remain valid, while release/distribution/install acceptance is unmet and the underlying errors require log diagnosis. [Release report](internal-testflight-release.md), final API proof.
 
 ### Warning repair and current release gate
 

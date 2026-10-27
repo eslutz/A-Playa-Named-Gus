@@ -1,1 +1,0 @@
-<XCUIAccessibilityAuditIssue: 0x10ead96e0>AuditType:"131072" CompactDescription:"Text clipped" DetailedDescription:"Text of this UISearchBarTextField may be clipped at larger Dynamic Type sizes." Element:"Search Downloaded" SearchField

@@ -1,3 +1,0 @@
-    t =   122.28s         App event loop idle notification not received, will attempt to continue.
-/tmp/gus-release-runtime/WatchTests/WatchRemediation.swift:21: error: -[WatchRemediationTests.WatchRemediation testSmallWatchAudio] : Failed to get matching snapshots: Timed out while evaluating UI query.
-Test Case '-[WatchRemediationTests.WatchRemediation testSmallWatchAudio]' failed (270.161 seconds).

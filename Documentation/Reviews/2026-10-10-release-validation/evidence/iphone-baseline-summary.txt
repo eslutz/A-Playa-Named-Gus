@@ -1,8 +1,0 @@
-Test Case '-[GusAuditTests.Remediation testAccessibleBookActions]' passed (22.777 seconds).
-Test Case '-[GusAuditTests.Remediation testAudioExitAndRotation]' passed (36.919 seconds).
-AUDIT_ISSUE connect <XCUIAccessibilityAuditIssue: 0x111ac54d0>AuditType:"1" CompactDescription:"Contrast failed" DetailedDescription:"Contrast failed for SwiftUI.AccessibilityNode" Element:(null)
-AUDIT_ISSUE connect <XCUIAccessibilityAuditIssue: 0x111ac5620>AuditType:"131072" CompactDescription:"Text clipped" DetailedDescription:"Text of this SwiftUI.UIKitTextField may be clipped at larger Dynamic Type sizes." Element:"http://192.168.1.50:8096" TextField
-Test Case '-[GusAuditTests.Remediation testConnectContrastCandidate]' passed (18.143 seconds).
-Test Case '-[GusAuditTests.Remediation testFullSynopsis]' passed (28.989 seconds).
-/tmp/gus-release-runtime/Tests/Remediation.swift:17: error: -[GusAuditTests.Remediation testLayouts] : Asynchronous wait failed: Exceeded timeout of 50 seconds, with unfulfilled expectations: "Native capture".
-Test Case '-[GusAuditTests.Remediation testLayouts]' failed (136.596 seconds).

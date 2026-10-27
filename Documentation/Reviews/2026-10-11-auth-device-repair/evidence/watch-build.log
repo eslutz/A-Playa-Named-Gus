@@ -1,5 +1,0 @@
-Command line invocation:
-    /Applications/Development/Xcode.app/Contents/Developer/usr/bin/xcodebuild -project "A Playa Named Gus.xcodeproj" -scheme "Gus watchOS" -destination "generic/platform=watchOS Simulator" -derivedDataPath build/release-validation-audit build
-
-** BUILD SUCCEEDED **
-Full raw log retained in /tmp/gus-device-repair/watch-build.log

@@ -1,3 +1,0 @@
-Error Domain=com.apple.dt.deviceprep Code=-3 "Unlock Eric’s iPhone 18 Pro Max to Continue" UserInfo={NSRecoveryAttempter=<_DVTErrorRecoveryAttempter: 0x7ae9318970>, NSLocalizedRecoveryOptions=(
-), NSLocalizedRecoverySuggestion=Xcode cannot launch GusPhysicalAuditTests on Eric’s iPhone 18 Pro Max because the device is locked., DVTRecoveryBlockKey=<__NSMallocBlock__: 0x7aebea82a0>, NSLocalizedDescription=Unlock Eric’s iPhone 18 Pro Max to Continue}
-2026-10-11 10:43:02.393 xcodebuild[70293:3289464] [MT] Run Destination Preflight: Waiting for the destination to become ready.
