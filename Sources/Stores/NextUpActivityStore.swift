@@ -12,6 +12,7 @@ struct NextUpActivityPersistence {
         var firstSeenIDs: [String] = []
         /// Optional for compatibility with snapshots written before dismissals existed.
         var dismissedIDs: Set<String>? = nil
+        var dismissedAt: [String: Date]? = nil
     }
 
     func load(scope: AccountScope, identityKey: String, migrateLocalData: Bool = false) throws -> Snapshot {
@@ -77,14 +78,18 @@ final class NextUpActivityStore {
     }
 
     @discardableResult
-    func setDismissed(_ id: String, dismissed: Bool, scope: AccountScope) -> Bool {
+    func setDismissed(_ id: String, dismissed: Bool, scope: AccountScope, at date: Date = Date()) -> Bool {
         load(scope: scope)
         var current = snapshots[scope] ?? .init()
         var ids = current.dismissedIDs ?? []
         if dismissed {
             ids.insert(id)
+            var dates = current.dismissedAt ?? [:]
+            dates[id] = date
+            current.dismissedAt = dates
         } else {
             ids.remove(id)
+            current.dismissedAt?.removeValue(forKey: id)
         }
         current.dismissedIDs = ids
         return commit(current, scope: scope)
@@ -96,10 +101,12 @@ final class NextUpActivityStore {
         guard !blockedScopes.contains(scope) else { return }
         var current = snapshots[scope] ?? .init()
         current.dismissedIDs?.remove(id)
+        current.dismissedAt?.removeValue(forKey: id)
         current.activity[id] = max(current.activity[id] ?? .distantPast, date)
         let series = item.type == .episode ? item.seriesID.map { MediaItem(providerKind: item.providerKind, id: $0, type: .series) } : nil
         if let series, let seriesKey = NextUpBuilder.mediaID(series) {
             current.dismissedIDs?.remove(seriesKey)
+            current.dismissedAt?.removeValue(forKey: seriesKey)
             current.activity[seriesKey] = max(current.activity[seriesKey] ?? .distantPast, date)
         }
         if commit(current, scope: scope) {
@@ -116,8 +123,10 @@ final class NextUpActivityStore {
         load(scope: scope)
         var current = snapshots[scope] ?? .init()
         current.dismissedIDs?.remove(id)
+        current.dismissedAt?.removeValue(forKey: id)
         if item.type == .episode, let seriesID = item.seriesID {
             current.dismissedIDs?.remove("media:\(item.providerKind.rawValue):\(seriesID)")
+            current.dismissedAt?.removeValue(forKey: "media:\(item.providerKind.rawValue):\(seriesID)")
         }
         return commit(current, scope: scope)
     }
@@ -127,6 +136,29 @@ final class NextUpActivityStore {
             return true
         }
         return item.type == .episode && item.seriesID.map { isDismissed("media:\(item.providerKind.rawValue):\($0)", scope: scope) } == true
+    }
+
+    /// A new server playback after removal may originate in another Jellyfin
+    /// client. Cached metadata and watched/unwatched toggles cannot restore it.
+    func reconcileResume(_ items: [MediaItem], scope: AccountScope) {
+        load(scope: scope)
+        var current = snapshots[scope] ?? .init()
+        for item in items where item.userData?.isWatched != true && (item.userData?.playbackPositionTicks ?? 0) > 0 {
+            guard let playedAt = item.userData?.lastPlayedAt, let id = NextUpBuilder.mediaID(item) else { continue }
+            var ids = [id]
+            if item.type == .episode, let seriesID = item.seriesID {
+                ids.append("media:\(item.providerKind.rawValue):\(seriesID)")
+            }
+            for key in ids {
+                if let removedAt = current.dismissedAt?[key], playedAt > removedAt {
+                    current.dismissedIDs?.remove(key)
+                    current.dismissedAt?.removeValue(forKey: key)
+                }
+            }
+        }
+        if current != snapshots[scope] {
+            _ = commit(current, scope: scope)
+        }
     }
 
     /// A native completion retires saved membership as well as automatic resume.
@@ -166,6 +198,10 @@ final class NextUpActivityStore {
         var current = snapshots[scope] ?? .init()
         for (id, date) in activity {
             current.activity[id] = max(current.activity[id] ?? .distantPast, date)
+            if let removedAt = current.dismissedAt?[id], date > removedAt {
+                current.dismissedIDs?.remove(id)
+                current.dismissedAt?.removeValue(forKey: id)
+            }
         }
         guard current != snapshots[scope] else { return true }
         return commit(current, scope: scope)

@@ -123,6 +123,7 @@ final class HomeStore {
 
     private func rebuildNextUp() {
         let scope = session.references.scope
+        activity.reconcileResume(resumeItems + nextUpItems, scope: scope)
         unifiedNextUp = NextUpBuilder.build(
             resume: resumeItems, nextEpisodes: nextUpItems, saved: savedIntents,
             playlists: playlistCandidates.filter { !activity.isDismissed("playlist:" + $0.id.uuidString, scope: scope) }, activity: activity.snapshot(scope: scope),

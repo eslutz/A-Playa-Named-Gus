@@ -52,6 +52,39 @@ struct NextUpHomeStoreTests {
         #expect(store.unifiedNextUp.map(\.id) == ["media:jellyfin:movie"])
     }
 
+    @Test("only newer positive server playback restores a removal; zero or stale metadata stays dismissed")
+    func remotePlaybackRestoresDismissal() async {
+        let activity = activityStore()
+        let scope = AccountScope(serverID: "s", userID: "u")
+        let removedAt = Date(timeIntervalSince1970: 20)
+        #expect(activity.setDismissed("media:jellyfin:movie", dismissed: true, scope: scope, at: removedAt))
+        let provider = FakeMediaProviderSession(capabilities: ProviderCapabilities())
+        var item = MediaItem(id: "movie", type: .movie, userData: MediaUserData(playbackPositionTicks: 30, isWatched: false, lastPlayedAt: Date(timeIntervalSince1970: 10)))
+        provider.resumePageHandler = { _, _ in MediaItemPage(items: [item], totalRecordCount: 1) }
+        let store = home(provider, activity: activity)
+        await store.load()
+        #expect(store.unifiedNextUp.isEmpty)
+        item.userData?.lastPlayedAt = Date(timeIntervalSince1970: 30)
+        item.userData?.playbackPositionTicks = 0
+        await store.refresh()
+        #expect(store.unifiedNextUp.isEmpty)
+        item.userData?.playbackPositionTicks = 40
+        await store.refresh()
+        #expect(store.unifiedNextUp.map(\.id) == ["media:jellyfin:movie"])
+        #expect(!activity.isDismissed("media:jellyfin:movie", scope: scope))
+    }
+
+    @Test("new playback activity synced from another Gus device restores a dismissal, old activity cannot")
+    func syncedPlaybackRestoresDismissal() {
+        let activity = activityStore()
+        let scope = AccountScope(serverID: "s", userID: "u")
+        #expect(activity.setDismissed("media:jellyfin:movie", dismissed: true, scope: scope, at: Date(timeIntervalSince1970: 20)))
+        #expect(activity.applySyncedSnapshot(["media:jellyfin:movie": Date(timeIntervalSince1970: 10)], scope: scope))
+        #expect(activity.isDismissed("media:jellyfin:movie", scope: scope))
+        #expect(activity.applySyncedSnapshot(["media:jellyfin:movie": Date(timeIntervalSince1970: 30)], scope: scope))
+        #expect(!activity.isDismissed("media:jellyfin:movie", scope: scope))
+    }
+
     @Test("legacy activity snapshots remain readable after adding dismissals")
     func legacyActivitySnapshot() throws {
         let snapshot = try JSONDecoder().decode(NextUpActivityPersistence.Snapshot.self, from: Data(#"{"activity":{},"firstSeenIDs":["media:jellyfin:legacy"]}"#.utf8))
