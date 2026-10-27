@@ -19,6 +19,19 @@ theming system), look for the system API that already does it and use that inste
 first-party *feel* comes from using the system's adaptive components and **never overriding
 their look**.
 
+**Sketch is the fresh redesign workspace.** The private **Gus** folder in Eric Slutz's
+Workspace contains the editable working documents; `Design/` contains the two iPhone R5
+snapshots, and `Design/Archive/` holds local historical design material. Follow Apple HIG, Apple Design
+Resources and current framework documentation. Use linked official Apple components;
+never label a flat or blur approximation verified native Liquid Glass fidelity.
+Only a reviewed Sketch version is implementation authority, and only for its explicitly
+accepted scope. Consult the locally archived `Design/Archive/2026-10-27/Sketch/README.md`
+and its milestone index first, when available.
+Preserve the archived `Gus.fig`, Fresh Foundation candidate and split Figma files as
+historical references; do not import their screen layouts into the redesign or regenerate
+them. The archived `Design/Archive/2026-10-27/DISCOVER.md` remains the approved behavioral input, with implementation
+status checked against current source. Design coverage does not prove runtime behavior.
+
 - Third-party *runtime* dependencies are limited to `jellyfin-sdk-swift` (`from: 2.1.0`)
   plus, on iOS/iPadOS only, the Readium toolkit for in-app EPUB reading (ADR 0009 — no
   system API renders EPUB; tvOS/macOS don't link it by design, visionOS is blocked on an
@@ -32,7 +45,8 @@ their look**.
 
 Changes to protected `main` require a pull request and all required GitHub CI checks;
 do not push directly or bypass protection. GitHub runs CI on PRs targeting `main`.
-Xcode Cloud tests merged `main` before internal TestFlight distribution; see
+Xcode Cloud uses manual-only main workflows: cached single-iPhone validation and a separate
+full-matrix internal TestFlight release. Release-candidate tests remain required; see
 `Documentation/AppStore/pipeline-policy.md` for the saved release gates.
 
 ## OS compatibility policy

@@ -1,0 +1,88 @@
+{
+  "testFlight": {
+    "verifiedAt": "2026-10-26T01:40:41.190039+00:00",
+    "app": "6778382140",
+    "mergeSHA": "c2301c2e16cc7841368cbb65b8d4cd4e31d29992",
+    "group": {
+      "id": "cc95594c-6adf-4f5b-82b1-85cb92a8165f",
+      "name": "Gus Internal"
+    },
+    "builds": [
+      {
+        "platform": "IOS",
+        "id": "bba0430b-690b-4c21-b3f6-54bce093b264",
+        "version": "1.0.0",
+        "build": "32",
+        "processingState": "VALID",
+        "internalBuildState": "IN_BETA_TESTING",
+        "groupAssociated": true
+      },
+      {
+        "platform": "MAC_OS",
+        "id": "184f6db4-2e70-42f2-a83a-75232367430d",
+        "version": "1.0.0",
+        "build": "32",
+        "processingState": "VALID",
+        "internalBuildState": "IN_BETA_TESTING",
+        "groupAssociated": true
+      },
+      {
+        "platform": "VISION_OS",
+        "id": "274bd48b-ec38-4d5c-a308-da80f96056ca",
+        "version": "1.0.0",
+        "build": "32",
+        "processingState": "VALID",
+        "internalBuildState": "IN_BETA_TESTING",
+        "groupAssociated": true
+      },
+      {
+        "platform": "TV_OS",
+        "id": "0fc5925f-45d4-4ed5-9abb-dbea3d82cc93",
+        "version": "1.0.0",
+        "build": "32",
+        "processingState": "VALID",
+        "internalBuildState": "IN_BETA_TESTING",
+        "groupAssociated": true
+      }
+    ],
+    "physicalInstallationVerified": false,
+    "physicalHapticFeelVerified": false,
+    "delivery": "Native Xcode CLI with App Store Connect API key",
+    "cloudQualification": "Run 32 failed before starting any actions"
+  },
+  "source": {
+    "mergeSHA": "c2301c2e16cc7841368cbb65b8d4cd4e31d29992",
+    "checkedHead": "35451592a86358d314859272c802b566038cffdd",
+    "checkedTree": "c5ca3e434a823661bf19807890d57aab4ab6234d",
+    "mergedTree": "c5ca3e434a823661bf19807890d57aab4ab6234d",
+    "runtimeFingerprintsVerified": 302
+  },
+  "packageResolvedSHA256": "00a0967ece45fba31954d3294e4d9a65c04bd8c2ad58a0f7dd1daa152b064b70",
+  "capture": {
+    "simulatorName": "Gus Build 32 Review",
+    "model": "iPhone 17",
+    "udid": "470506B9-581E-49A2-BE6D-0A7B3506405E",
+    "iOS": "27.0 (24A434)",
+    "configuration": "Release",
+    "appearance": "Light",
+    "server": "gus-demo-jellyfin",
+    "sourceRevision": "c2301c2e16cc7841368cbb65b8d4cd4e31d29992"
+  },
+  "page": "https://chatgpt.com/space/page_ecc8f0e400888191b8965b15afe07eff",
+  "status": "Capturing app screens; Sketch deferred until coordinated handoff",
+  "installedBundle": {
+    "CFBundleIdentifier": "dev.ericslutz.gus",
+    "CFBundleShortVersionString": "1.0.0",
+    "CFBundleVersion": "32",
+    "DTSDKName": "iphonesimulator27.1"
+  },
+  "simulatorBuild": {
+    "result": "SUCCEEDED",
+    "configuration": "Release",
+    "architecture": "arm64",
+    "warnings": 0,
+    "errors": 0,
+    "buildLogSHA256": "6c133af2b3ae49aa9cd13420da0f9e02afb55da82bfd259d069b60d7a9cb9aad",
+    "buildLogPath": "/Users/ericslutz/Library/Developer/XcodeBuildMCP/workspaces/Gus-765befa80e6a/logs/build_sim_2026-10-26T11-25-51-919Z_pid5283_9943da91.log"
+  }
+}

@@ -2,9 +2,9 @@
 
 **Started:** 2026-06-12
 **HEAD commit:** `e7f54d5` (main) — post-remediation of cycle 1 findings
-**Prior cycle:** archived at `docs/reviews/2026-06-12-cycle1-review-log.md` and
-`docs/reviews/2026-06-12-cycle1-review-summary.md`. Cycle 1 ran at `0f6290a`;
-remediation landed in `56dc200`, `9e56f2b`, `e7f54d5`. This cycle re-reviews the
+**Prior cycle:** Cycle 1 ran at `0f6290a`; remediation landed in
+`56dc200`, `9e56f2b`, `e7f54d5`. Retired cycle-1 review records and its completed
+remediation plan remain available in Git history. This cycle re-reviews the
 current code from scratch and verifies claimed fixes rather than trusting them.
 
 **Process:** 26 expert sub-agents in 6 batches (max 5 concurrent), checkpoint after

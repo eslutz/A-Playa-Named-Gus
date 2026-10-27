@@ -1,0 +1,4601 @@
+[
+  {
+    "product": {
+      "attributes": {
+        "createdDate": "2026-10-11T21:24:34.123Z",
+        "name": "Gus",
+        "productType": "APP"
+      },
+      "id": "f2e5bb18-7cd2-44ab-b88c-9d54ac63b512",
+      "links": {
+        "self": "https://api.appstoreconnect.apple.com/v1/ciProducts/f2e5bb18-7cd2-44ab-b88c-9d54ac63b512"
+      },
+      "relationships": {
+        "additionalRepositories": {
+          "links": {
+            "related": "https://api.appstoreconnect.apple.com/v1/ciProducts/f2e5bb18-7cd2-44ab-b88c-9d54ac63b512/additionalRepositories",
+            "self": "https://api.appstoreconnect.apple.com/v1/ciProducts/f2e5bb18-7cd2-44ab-b88c-9d54ac63b512/relationships/additionalRepositories"
+          }
+        },
+        "app": {
+          "links": {
+            "related": "https://api.appstoreconnect.apple.com/v1/ciProducts/f2e5bb18-7cd2-44ab-b88c-9d54ac63b512/app",
+            "self": "https://api.appstoreconnect.apple.com/v1/ciProducts/f2e5bb18-7cd2-44ab-b88c-9d54ac63b512/relationships/app"
+          }
+        },
+        "buildRuns": {
+          "links": {
+            "related": "https://api.appstoreconnect.apple.com/v1/ciProducts/f2e5bb18-7cd2-44ab-b88c-9d54ac63b512/buildRuns",
+            "self": "https://api.appstoreconnect.apple.com/v1/ciProducts/f2e5bb18-7cd2-44ab-b88c-9d54ac63b512/relationships/buildRuns"
+          }
+        },
+        "primaryRepositories": {
+          "links": {
+            "related": "https://api.appstoreconnect.apple.com/v1/ciProducts/f2e5bb18-7cd2-44ab-b88c-9d54ac63b512/primaryRepositories",
+            "self": "https://api.appstoreconnect.apple.com/v1/ciProducts/f2e5bb18-7cd2-44ab-b88c-9d54ac63b512/relationships/primaryRepositories"
+          }
+        },
+        "workflows": {
+          "links": {
+            "related": "https://api.appstoreconnect.apple.com/v1/ciProducts/f2e5bb18-7cd2-44ab-b88c-9d54ac63b512/workflows",
+            "self": "https://api.appstoreconnect.apple.com/v1/ciProducts/f2e5bb18-7cd2-44ab-b88c-9d54ac63b512/relationships/workflows"
+          }
+        }
+      },
+      "type": "ciProducts"
+    },
+    "runs": [
+      {
+        "actions": [
+          {
+            "id": "8464769a-8bfe-4467-9e05-2ef05a443502",
+            "attributes": {
+              "name": "Archive - tvOS",
+              "actionType": "ARCHIVE",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-22T02:30:00.113Z",
+              "finishedDate": "2026-10-22T02:40:36.691Z"
+            }
+          },
+          {
+            "id": "10e66ac9-fbd1-443e-95fa-583cfb059e5e",
+            "attributes": {
+              "name": "TestFlight Internal Testing - visionOS",
+              "actionType": "TEST",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-22T02:44:59.441Z",
+              "finishedDate": "2026-10-22T02:45:04.601Z"
+            }
+          },
+          {
+            "id": "e03161f0-6070-462e-9f98-21dbb8d9c821",
+            "attributes": {
+              "name": "Test - iOS",
+              "actionType": "TEST",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-22T02:29:53.002Z",
+              "finishedDate": "2026-10-22T02:41:16.718Z"
+            }
+          },
+          {
+            "id": "b79521eb-666c-42dc-a9bd-fc41de62f323",
+            "attributes": {
+              "name": "Archive - macOS",
+              "actionType": "ARCHIVE",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-22T02:34:47.713Z",
+              "finishedDate": "2026-10-22T02:40:31.319Z"
+            }
+          },
+          {
+            "id": "63b55db1-8cbd-41ef-ad7d-cfef4702a9c7",
+            "attributes": {
+              "name": "TestFlight Internal Testing - macOS",
+              "actionType": "TEST",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-22T02:45:06.441Z",
+              "finishedDate": "2026-10-22T02:45:14.897Z"
+            }
+          },
+          {
+            "id": "a2bfc71e-3f2f-4c2b-a0eb-2ae05a0e20f2",
+            "attributes": {
+              "name": "Test - visionOS",
+              "actionType": "TEST",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-22T02:29:53.937Z",
+              "finishedDate": "2026-10-22T02:39:12.72Z"
+            }
+          },
+          {
+            "id": "ddfa4a59-0623-4678-9185-30cca63d1ce7",
+            "attributes": {
+              "name": "Archive - iOS",
+              "actionType": "ARCHIVE",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-22T02:34:58.329Z",
+              "finishedDate": "2026-10-22T02:44:54.656Z"
+            }
+          },
+          {
+            "id": "091b3f4a-d0d4-4d67-a551-d2ae9f4d32b5",
+            "attributes": {
+              "name": "TestFlight Internal Testing - tvOS",
+              "actionType": "TEST",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-22T02:45:00.828Z",
+              "finishedDate": "2026-10-22T02:45:13.494Z"
+            }
+          },
+          {
+            "id": "b65f4109-dc36-4438-b076-1a38c009e05e",
+            "attributes": {
+              "name": "Archive - visionOS",
+              "actionType": "ARCHIVE",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-22T02:29:53.763Z",
+              "finishedDate": "2026-10-22T02:38:14.133Z"
+            }
+          },
+          {
+            "id": "168dbb55-ef76-44de-8f10-80ed8ec2939f",
+            "attributes": {
+              "name": "TestFlight Internal Testing - iOS",
+              "actionType": "TEST",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-22T02:45:02.368Z",
+              "finishedDate": "2026-10-22T02:45:11.547Z"
+            }
+          },
+          {
+            "id": "51a4c705-a94c-42e1-a04e-b612de4f0819",
+            "attributes": {
+              "name": "Test - tvOS",
+              "actionType": "TEST",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-22T02:29:53.952Z",
+              "finishedDate": "2026-10-22T02:38:40.318Z"
+            }
+          },
+          {
+            "id": "54fc6bc3-ebd7-4cb6-a686-49a49f30ed76",
+            "attributes": {
+              "name": "Test - macOS",
+              "actionType": "TEST",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-22T02:29:53.175Z",
+              "finishedDate": "2026-10-22T02:37:59.452Z"
+            }
+          }
+        ],
+        "run": {
+          "id": "49f89e18-b8ff-4906-91b9-4b0ae5f6262e",
+          "attributes": {
+            "number": 28,
+            "completionStatus": "SUCCEEDED",
+            "startReason": "MANUAL",
+            "startedDate": "2026-10-22T02:29:53.002Z",
+            "finishedDate": "2026-10-22T02:45:14.897Z"
+          }
+        }
+      },
+      {
+        "actions": [
+          {
+            "id": "cab8f14e-06ba-4d03-aa8a-7bdb42435373",
+            "attributes": {
+              "name": "Archive - iOS",
+              "actionType": "ARCHIVE",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-22T01:30:33.589Z",
+              "finishedDate": "2026-10-22T01:38:46.173Z"
+            }
+          },
+          {
+            "id": "2a333317-0183-40b6-ab8c-a8dea07c5f5a",
+            "attributes": {
+              "name": "Test - visionOS",
+              "actionType": "TEST",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-22T01:26:01.057Z",
+              "finishedDate": "2026-10-22T01:35:11.206Z"
+            }
+          },
+          {
+            "id": "01e00d65-03d8-4909-b972-ad335ecf4151",
+            "attributes": {
+              "name": "Archive - tvOS",
+              "actionType": "ARCHIVE",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-22T01:26:02.657Z",
+              "finishedDate": "2026-10-22T01:32:54.341Z"
+            }
+          },
+          {
+            "id": "570057b4-21ea-42df-86c5-077345681dfa",
+            "attributes": {
+              "name": "Archive - visionOS",
+              "actionType": "ARCHIVE",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-22T01:26:02.388Z",
+              "finishedDate": "2026-10-22T01:34:38.315Z"
+            }
+          },
+          {
+            "id": "75ab39a6-fbca-463e-bd99-7918c15d3ba5",
+            "attributes": {
+              "name": "TestFlight Internal Testing - iOS",
+              "actionType": "TEST",
+              "completionStatus": "SKIPPED",
+              "startedDate": null,
+              "finishedDate": null
+            }
+          },
+          {
+            "id": "1c1d5c39-3c1b-4a8f-b476-61764548864e",
+            "attributes": {
+              "name": "TestFlight Internal Testing - macOS",
+              "actionType": "TEST",
+              "completionStatus": "SKIPPED",
+              "startedDate": null,
+              "finishedDate": null
+            }
+          },
+          {
+            "id": "5367cef0-f607-4e42-a38d-ccb07876b614",
+            "attributes": {
+              "name": "Archive - macOS",
+              "actionType": "ARCHIVE",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-22T01:26:07.348Z",
+              "finishedDate": "2026-10-22T01:33:02.624Z"
+            }
+          },
+          {
+            "id": "520e5283-cd0d-4bd7-97d7-ffa9b0c056cf",
+            "attributes": {
+              "name": "TestFlight Internal Testing - tvOS",
+              "actionType": "TEST",
+              "completionStatus": "SKIPPED",
+              "startedDate": null,
+              "finishedDate": null
+            }
+          },
+          {
+            "id": "5688c20e-d3a5-47be-b019-729aa5ef9d9b",
+            "attributes": {
+              "name": "Test - iOS",
+              "actionType": "TEST",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-22T01:26:00.503Z",
+              "finishedDate": "2026-10-22T01:38:43.808Z"
+            }
+          },
+          {
+            "id": "63506240-b244-4160-ac21-a3d516fbb36b",
+            "attributes": {
+              "name": "Test - macOS",
+              "actionType": "TEST",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-22T01:26:00.246Z",
+              "finishedDate": "2026-10-22T01:34:58.807Z"
+            }
+          },
+          {
+            "id": "75212fed-5f7d-40b9-aa7e-45d4afd4c7b7",
+            "attributes": {
+              "name": "Test - tvOS",
+              "actionType": "TEST",
+              "completionStatus": "FAILED",
+              "startedDate": "2026-10-22T01:26:01.574Z",
+              "finishedDate": "2026-10-22T01:56:29.089Z"
+            }
+          },
+          {
+            "id": "e08d7717-e6cc-4229-a424-0f4b6e3277b3",
+            "attributes": {
+              "name": "TestFlight Internal Testing - visionOS",
+              "actionType": "TEST",
+              "completionStatus": "SKIPPED",
+              "startedDate": null,
+              "finishedDate": null
+            }
+          }
+        ],
+        "run": {
+          "id": "39d77935-2a15-40a0-b8b5-0e4b6374d3ea",
+          "attributes": {
+            "number": 27,
+            "completionStatus": "FAILED",
+            "startReason": "GIT_REF_CHANGE",
+            "startedDate": "2026-10-22T01:26:00.246Z",
+            "finishedDate": "2026-10-22T01:56:29.089Z"
+          }
+        }
+      },
+      {
+        "actions": [
+          {
+            "id": "8bb90a00-d632-47ca-bf5e-70ad0d9f908a",
+            "attributes": {
+              "name": "Test - macOS",
+              "actionType": "TEST",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-16T18:29:59.576Z",
+              "finishedDate": "2026-10-16T18:35:34.002Z"
+            }
+          },
+          {
+            "id": "575a47e1-179f-4b06-83db-3750d77bf8fa",
+            "attributes": {
+              "name": "TestFlight Internal Testing - visionOS",
+              "actionType": "TEST",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-16T18:37:50.33Z",
+              "finishedDate": "2026-10-16T18:37:53.311Z"
+            }
+          },
+          {
+            "id": "df910ade-486d-4c46-9169-42f97f6575d9",
+            "attributes": {
+              "name": "TestFlight Internal Testing - macOS",
+              "actionType": "TEST",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-16T18:37:49.976Z",
+              "finishedDate": "2026-10-16T18:37:53.943Z"
+            }
+          },
+          {
+            "id": "4e863e1a-40e7-40ea-a697-5439651c30bb",
+            "attributes": {
+              "name": "Archive - tvOS",
+              "actionType": "ARCHIVE",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-16T18:30:00.102Z",
+              "finishedDate": "2026-10-16T18:36:31.978Z"
+            }
+          },
+          {
+            "id": "6179d3f1-d84c-42a2-b59d-7afb10205814",
+            "attributes": {
+              "name": "Archive - iOS",
+              "actionType": "ARCHIVE",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-16T18:30:01.035Z",
+              "finishedDate": "2026-10-16T18:37:45.097Z"
+            }
+          },
+          {
+            "id": "a9d6dcef-4e71-420a-bac1-1a94e2482111",
+            "attributes": {
+              "name": "TestFlight Internal Testing - iOS",
+              "actionType": "TEST",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-16T18:37:54.367Z",
+              "finishedDate": "2026-10-16T18:37:57.509Z"
+            }
+          },
+          {
+            "id": "78ba6c72-e900-4e40-9eea-696cfdd90781",
+            "attributes": {
+              "name": "Test - tvOS",
+              "actionType": "TEST",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-16T18:29:59.841Z",
+              "finishedDate": "2026-10-16T18:36:27.605Z"
+            }
+          },
+          {
+            "id": "4dd342ce-a7d7-49ce-8bd5-a0bc887c654d",
+            "attributes": {
+              "name": "Archive - visionOS",
+              "actionType": "ARCHIVE",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-16T18:29:59.349Z",
+              "finishedDate": "2026-10-16T18:36:28.232Z"
+            }
+          },
+          {
+            "id": "2b626a10-2fd5-428d-9edc-3a59b8ed9db0",
+            "attributes": {
+              "name": "Test - iOS",
+              "actionType": "TEST",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-16T18:29:59.665Z",
+              "finishedDate": "2026-10-16T18:37:19.034Z"
+            }
+          },
+          {
+            "id": "87f31cee-d609-4631-b546-77eb9353f962",
+            "attributes": {
+              "name": "Test - visionOS",
+              "actionType": "TEST",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-16T18:30:00.288Z",
+              "finishedDate": "2026-10-16T18:37:43.217Z"
+            }
+          },
+          {
+            "id": "54b85a02-b233-4a0b-8afd-aea8039dfac5",
+            "attributes": {
+              "name": "Archive - macOS",
+              "actionType": "ARCHIVE",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-16T18:30:00.498Z",
+              "finishedDate": "2026-10-16T18:36:03.886Z"
+            }
+          },
+          {
+            "id": "6dacd710-fe74-4fce-a268-15a3c6c0096e",
+            "attributes": {
+              "name": "TestFlight Internal Testing - tvOS",
+              "actionType": "TEST",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-16T18:37:48.09Z",
+              "finishedDate": "2026-10-16T18:37:50.654Z"
+            }
+          }
+        ],
+        "run": {
+          "id": "6df0f354-9488-454b-abe1-6ae472fcf4da",
+          "attributes": {
+            "number": 26,
+            "completionStatus": "SUCCEEDED",
+            "startReason": "MANUAL",
+            "startedDate": "2026-10-16T18:29:59.665Z",
+            "finishedDate": "2026-10-16T18:37:57.509Z"
+          }
+        }
+      },
+      {
+        "actions": [],
+        "run": {
+          "id": "ba19411d-622d-440c-9df6-beb082496f0e",
+          "attributes": {
+            "number": 25,
+            "completionStatus": "FAILED",
+            "startReason": "GIT_REF_CHANGE",
+            "startedDate": null,
+            "finishedDate": "2026-10-16T17:01:08.141Z"
+          }
+        }
+      },
+      {
+        "actions": [
+          {
+            "id": "95e22cd7-114d-43e8-a491-d20aed0e0bb7",
+            "attributes": {
+              "name": "Archive - iOS",
+              "actionType": "ARCHIVE",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-15T12:35:25.78Z",
+              "finishedDate": "2026-10-15T12:54:27.725Z"
+            }
+          },
+          {
+            "id": "5a955495-6726-4e37-9c23-a53a702bedfe",
+            "attributes": {
+              "name": "Test - iOS",
+              "actionType": "TEST",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-15T12:35:19.892Z",
+              "finishedDate": "2026-10-15T12:47:08.486Z"
+            }
+          },
+          {
+            "id": "59e048f3-5ec2-4f64-b1f3-caa6f6195e90",
+            "attributes": {
+              "name": "TestFlight Internal Testing - macOS",
+              "actionType": "TEST",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-15T12:57:38.145Z",
+              "finishedDate": "2026-10-15T12:57:41.496Z"
+            }
+          },
+          {
+            "id": "14f17248-2af0-4d8f-a6f6-eadfad9450b0",
+            "attributes": {
+              "name": "Archive - tvOS",
+              "actionType": "ARCHIVE",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-15T12:35:22.91Z",
+              "finishedDate": "2026-10-15T12:46:56.229Z"
+            }
+          },
+          {
+            "id": "3d48f82f-c230-4200-bc44-f2441ad2b5a5",
+            "attributes": {
+              "name": "Archive - visionOS",
+              "actionType": "ARCHIVE",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-15T12:35:21.483Z",
+              "finishedDate": "2026-10-15T12:47:26.383Z"
+            }
+          },
+          {
+            "id": "8f463fa3-e381-48e7-8776-c1b37db39f90",
+            "attributes": {
+              "name": "Test - tvOS",
+              "actionType": "TEST",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-15T12:35:20.975Z",
+              "finishedDate": "2026-10-15T12:43:42.62Z"
+            }
+          },
+          {
+            "id": "97e5a0c4-c12f-4cef-9d00-c9c5e0f53c49",
+            "attributes": {
+              "name": "TestFlight Internal Testing - tvOS",
+              "actionType": "TEST",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-15T12:57:25.929Z",
+              "finishedDate": "2026-10-15T12:57:31.836Z"
+            }
+          },
+          {
+            "id": "227503b3-d22f-4f39-a6f7-4b1810cac554",
+            "attributes": {
+              "name": "Archive - macOS",
+              "actionType": "ARCHIVE",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-15T12:35:25.03Z",
+              "finishedDate": "2026-10-15T12:45:43.605Z"
+            }
+          },
+          {
+            "id": "81c79e3f-b1c7-494d-be8a-9b7b2b88b9ee",
+            "attributes": {
+              "name": "Test - macOS",
+              "actionType": "TEST",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-15T12:35:20.587Z",
+              "finishedDate": "2026-10-15T12:44:38.375Z"
+            }
+          },
+          {
+            "id": "f0298e93-cd79-4138-9be6-70bf7629e36c",
+            "attributes": {
+              "name": "Test - visionOS",
+              "actionType": "TEST",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-15T12:35:21.183Z",
+              "finishedDate": "2026-10-15T12:43:24.832Z"
+            }
+          },
+          {
+            "id": "ef47258b-312e-4e11-86ad-466b45fdfc71",
+            "attributes": {
+              "name": "TestFlight Internal Testing - iOS",
+              "actionType": "TEST",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-15T12:57:40.593Z",
+              "finishedDate": "2026-10-15T12:57:44.392Z"
+            }
+          },
+          {
+            "id": "c84cb0ee-7799-4953-9653-2b839d8829ff",
+            "attributes": {
+              "name": "TestFlight Internal Testing - visionOS",
+              "actionType": "TEST",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-15T12:57:25.868Z",
+              "finishedDate": "2026-10-15T12:57:37.658Z"
+            }
+          }
+        ],
+        "run": {
+          "id": "f2e95c31-c7ca-4826-bd20-9091ab117af3",
+          "attributes": {
+            "number": 24,
+            "completionStatus": "SUCCEEDED",
+            "startReason": "GIT_REF_CHANGE",
+            "startedDate": "2026-10-15T12:35:19.892Z",
+            "finishedDate": "2026-10-15T12:57:44.392Z"
+          }
+        }
+      },
+      {
+        "actions": [
+          {
+            "id": "ee98c4bb-d634-46b1-9ff8-4955f4bcb3d3",
+            "attributes": {
+              "name": "Archive - visionOS",
+              "actionType": "ARCHIVE",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-15T11:46:49.855Z",
+              "finishedDate": "2026-10-15T11:59:25.724Z"
+            }
+          },
+          {
+            "id": "66b7239c-fd35-47ce-84ba-383ac28066ed",
+            "attributes": {
+              "name": "Test - iOS",
+              "actionType": "TEST",
+              "completionStatus": "FAILED",
+              "startedDate": "2026-10-15T11:46:47.059Z",
+              "finishedDate": "2026-10-15T11:56:31.334Z"
+            }
+          },
+          {
+            "id": "690fbc7b-e485-4fb3-af0c-8df1af7d6ba2",
+            "attributes": {
+              "name": "TestFlight Internal Testing - iOS",
+              "actionType": "TEST",
+              "completionStatus": "SKIPPED",
+              "startedDate": null,
+              "finishedDate": null
+            }
+          },
+          {
+            "id": "731dfeff-dba8-47f9-bd2a-b98b1f6aa1ee",
+            "attributes": {
+              "name": "Test - tvOS",
+              "actionType": "TEST",
+              "completionStatus": "FAILED",
+              "startedDate": "2026-10-15T11:46:48.828Z",
+              "finishedDate": "2026-10-15T11:56:22.856Z"
+            }
+          },
+          {
+            "id": "69758842-3da8-4fe6-9611-a57406a368fb",
+            "attributes": {
+              "name": "TestFlight Internal Testing - visionOS",
+              "actionType": "TEST",
+              "completionStatus": "SKIPPED",
+              "startedDate": null,
+              "finishedDate": null
+            }
+          },
+          {
+            "id": "a2cb752d-2c56-4ca7-b921-99f57ef2254c",
+            "attributes": {
+              "name": "Archive - tvOS",
+              "actionType": "ARCHIVE",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-15T11:46:49.851Z",
+              "finishedDate": "2026-10-15T12:00:00.98Z"
+            }
+          },
+          {
+            "id": "803b6b72-e7c1-431c-a7bd-b71f599b3c0b",
+            "attributes": {
+              "name": "TestFlight Internal Testing - tvOS",
+              "actionType": "TEST",
+              "completionStatus": "SKIPPED",
+              "startedDate": null,
+              "finishedDate": null
+            }
+          },
+          {
+            "id": "c2ff69c9-3b3d-46e0-8fc1-4baef513c946",
+            "attributes": {
+              "name": "Test - visionOS",
+              "actionType": "TEST",
+              "completionStatus": "FAILED",
+              "startedDate": "2026-10-15T11:46:49.25Z",
+              "finishedDate": "2026-10-15T11:55:41.467Z"
+            }
+          },
+          {
+            "id": "1d2a1280-4dfa-4d16-82e2-7b7cb0e63a04",
+            "attributes": {
+              "name": "Archive - iOS",
+              "actionType": "ARCHIVE",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-15T11:50:01.929Z",
+              "finishedDate": "2026-10-15T12:04:17.828Z"
+            }
+          },
+          {
+            "id": "33f41e12-6c21-4eca-9c1c-8b5d8524e1c9",
+            "attributes": {
+              "name": "Archive - macOS",
+              "actionType": "ARCHIVE",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-15T11:46:58.425Z",
+              "finishedDate": "2026-10-15T12:05:31.086Z"
+            }
+          },
+          {
+            "id": "3dfd74c0-3b64-4fa1-afb5-7a1164d34ea5",
+            "attributes": {
+              "name": "TestFlight Internal Testing - macOS",
+              "actionType": "TEST",
+              "completionStatus": "SKIPPED",
+              "startedDate": null,
+              "finishedDate": null
+            }
+          },
+          {
+            "id": "ebca91b7-ca57-4c99-8ccf-79ff986a3946",
+            "attributes": {
+              "name": "Test - macOS",
+              "actionType": "TEST",
+              "completionStatus": "FAILED",
+              "startedDate": "2026-10-15T11:46:48.26Z",
+              "finishedDate": "2026-10-15T11:56:08.317Z"
+            }
+          }
+        ],
+        "run": {
+          "id": "b5294752-1328-42e1-a75f-9d441a8bfa99",
+          "attributes": {
+            "number": 23,
+            "completionStatus": "FAILED",
+            "startReason": "GIT_REF_CHANGE",
+            "startedDate": "2026-10-15T11:46:47.059Z",
+            "finishedDate": "2026-10-15T12:05:31.086Z"
+          }
+        }
+      },
+      {
+        "actions": [
+          {
+            "id": "44afde8c-f2c5-4b38-b824-961d28ed0f12",
+            "attributes": {
+              "name": "Test - visionOS",
+              "actionType": "TEST",
+              "completionStatus": "FAILED",
+              "startedDate": "2026-10-15T03:08:07.479Z",
+              "finishedDate": "2026-10-15T03:10:39.909Z"
+            }
+          },
+          {
+            "id": "200982ae-cbe0-4258-9ef4-3b1d88adcc6b",
+            "attributes": {
+              "name": "Archive - iOS",
+              "actionType": "ARCHIVE",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-15T03:08:08.53Z",
+              "finishedDate": "2026-10-15T03:18:01.861Z"
+            }
+          },
+          {
+            "id": "ecda6b5a-a1f4-43bc-9d98-4eb8c5f74842",
+            "attributes": {
+              "name": "Archive - tvOS",
+              "actionType": "ARCHIVE",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-15T03:08:08.753Z",
+              "finishedDate": "2026-10-15T03:18:19.439Z"
+            }
+          },
+          {
+            "id": "b2595240-d217-4dff-aac5-7cc582d4b8b0",
+            "attributes": {
+              "name": "TestFlight Internal Testing - macOS",
+              "actionType": "TEST",
+              "completionStatus": "SKIPPED",
+              "startedDate": null,
+              "finishedDate": null
+            }
+          },
+          {
+            "id": "59ebd9a8-258f-4d49-9113-566d4929b7af",
+            "attributes": {
+              "name": "TestFlight Internal Testing - iOS",
+              "actionType": "TEST",
+              "completionStatus": "SKIPPED",
+              "startedDate": null,
+              "finishedDate": null
+            }
+          },
+          {
+            "id": "cb2fbb40-d778-4070-bb20-9d50c8c963a4",
+            "attributes": {
+              "name": "TestFlight Internal Testing - tvOS",
+              "actionType": "TEST",
+              "completionStatus": "SKIPPED",
+              "startedDate": null,
+              "finishedDate": null
+            }
+          },
+          {
+            "id": "cc376846-f65b-4e4e-adab-70f98e3b6077",
+            "attributes": {
+              "name": "Archive - visionOS",
+              "actionType": "ARCHIVE",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-15T03:08:08.897Z",
+              "finishedDate": "2026-10-15T03:16:52.639Z"
+            }
+          },
+          {
+            "id": "ee395bad-7acb-4b0b-a106-9fe7c089086d",
+            "attributes": {
+              "name": "Archive - macOS",
+              "actionType": "ARCHIVE",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-15T03:08:08.632Z",
+              "finishedDate": "2026-10-15T03:17:39.703Z"
+            }
+          },
+          {
+            "id": "7557c38d-c455-49a0-9de4-94f40a61b028",
+            "attributes": {
+              "name": "Test - tvOS",
+              "actionType": "TEST",
+              "completionStatus": "FAILED",
+              "startedDate": "2026-10-15T03:08:08.055Z",
+              "finishedDate": "2026-10-15T03:10:53.749Z"
+            }
+          },
+          {
+            "id": "d94fe8d0-f089-4962-b504-90c046437913",
+            "attributes": {
+              "name": "TestFlight Internal Testing - visionOS",
+              "actionType": "TEST",
+              "completionStatus": "SKIPPED",
+              "startedDate": null,
+              "finishedDate": null
+            }
+          },
+          {
+            "id": "06e0fa0c-85ce-45eb-a6b9-fba7e4dcf48e",
+            "attributes": {
+              "name": "Test - iOS",
+              "actionType": "TEST",
+              "completionStatus": "FAILED",
+              "startedDate": "2026-10-15T03:08:05.007Z",
+              "finishedDate": "2026-10-15T03:11:41.13Z"
+            }
+          },
+          {
+            "id": "eb9ac743-f897-4c7a-a3fd-8b7efd8d839c",
+            "attributes": {
+              "name": "Test - macOS",
+              "actionType": "TEST",
+              "completionStatus": "FAILED",
+              "startedDate": "2026-10-15T03:08:07.524Z",
+              "finishedDate": "2026-10-15T03:10:47.331Z"
+            }
+          }
+        ],
+        "run": {
+          "id": "3e7e9948-d239-48cf-a8c5-1d1d1123b3ae",
+          "attributes": {
+            "number": 22,
+            "completionStatus": "FAILED",
+            "startReason": "GIT_REF_CHANGE",
+            "startedDate": "2026-10-15T03:08:05.007Z",
+            "finishedDate": "2026-10-15T03:18:19.439Z"
+          }
+        }
+      },
+      {
+        "actions": [
+          {
+            "id": "f86bd83b-e35c-4f3d-b581-8e5c25e4b285",
+            "attributes": {
+              "name": "Test - iOS",
+              "actionType": "TEST",
+              "completionStatus": "FAILED",
+              "startedDate": "2026-10-15T02:44:33.318Z",
+              "finishedDate": "2026-10-15T02:52:27.325Z"
+            }
+          },
+          {
+            "id": "5c08be6e-3411-4809-9a87-439f7996300c",
+            "attributes": {
+              "name": "Archive - tvOS",
+              "actionType": "ARCHIVE",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-15T02:44:38.165Z",
+              "finishedDate": "2026-10-15T02:54:49.919Z"
+            }
+          },
+          {
+            "id": "18fa733a-45e7-4fbd-a697-63be06d1d527",
+            "attributes": {
+              "name": "Archive - iOS",
+              "actionType": "ARCHIVE",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-15T02:49:00.656Z",
+              "finishedDate": "2026-10-15T02:57:55.185Z"
+            }
+          },
+          {
+            "id": "8f34ce57-c44b-473e-851c-ff8a808536e7",
+            "attributes": {
+              "name": "TestFlight Internal Testing - macOS",
+              "actionType": "TEST",
+              "completionStatus": "SKIPPED",
+              "startedDate": null,
+              "finishedDate": null
+            }
+          },
+          {
+            "id": "8a715166-77ab-4dd2-a815-995af4e924a6",
+            "attributes": {
+              "name": "Archive - macOS",
+              "actionType": "ARCHIVE",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-15T02:44:38.551Z",
+              "finishedDate": "2026-10-15T02:54:20.003Z"
+            }
+          },
+          {
+            "id": "59f21745-fcdc-421f-9cfa-f08506c54adc",
+            "attributes": {
+              "name": "TestFlight Internal Testing - iOS",
+              "actionType": "TEST",
+              "completionStatus": "SKIPPED",
+              "startedDate": null,
+              "finishedDate": null
+            }
+          },
+          {
+            "id": "b9e6d847-8ced-41ef-9ca8-c26f7fa425fe",
+            "attributes": {
+              "name": "Test - tvOS",
+              "actionType": "TEST",
+              "completionStatus": "FAILED",
+              "startedDate": "2026-10-15T02:44:37.101Z",
+              "finishedDate": "2026-10-15T02:49:34.568Z"
+            }
+          },
+          {
+            "id": "cdf9c481-90a5-4ba0-80de-65adaface81a",
+            "attributes": {
+              "name": "Test - macOS",
+              "actionType": "TEST",
+              "completionStatus": "FAILED",
+              "startedDate": "2026-10-15T02:44:35.338Z",
+              "finishedDate": "2026-10-15T02:49:44.175Z"
+            }
+          },
+          {
+            "id": "24c013a3-8d57-466a-ae33-56fc2e60a939",
+            "attributes": {
+              "name": "Archive - visionOS",
+              "actionType": "ARCHIVE",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-15T02:44:36.586Z",
+              "finishedDate": "2026-10-15T02:54:53.837Z"
+            }
+          },
+          {
+            "id": "4f332380-6fa8-4650-8848-e51dd89ff104",
+            "attributes": {
+              "name": "Test - visionOS",
+              "actionType": "TEST",
+              "completionStatus": "FAILED",
+              "startedDate": "2026-10-15T02:44:36.562Z",
+              "finishedDate": "2026-10-15T02:48:57.648Z"
+            }
+          },
+          {
+            "id": "191ae604-3af9-418e-bc44-d7ca760b6cb5",
+            "attributes": {
+              "name": "TestFlight Internal Testing - visionOS",
+              "actionType": "TEST",
+              "completionStatus": "SKIPPED",
+              "startedDate": null,
+              "finishedDate": null
+            }
+          },
+          {
+            "id": "0c7ea951-9591-47b1-afc3-df51bb27e415",
+            "attributes": {
+              "name": "TestFlight Internal Testing - tvOS",
+              "actionType": "TEST",
+              "completionStatus": "SKIPPED",
+              "startedDate": null,
+              "finishedDate": null
+            }
+          }
+        ],
+        "run": {
+          "id": "328767d0-5f34-4eae-a531-50d82b0a5290",
+          "attributes": {
+            "number": 21,
+            "completionStatus": "FAILED",
+            "startReason": "GIT_REF_CHANGE",
+            "startedDate": "2026-10-15T02:44:33.318Z",
+            "finishedDate": "2026-10-15T02:57:55.185Z"
+          }
+        }
+      },
+      {
+        "actions": [
+          {
+            "id": "e9a519be-7a13-42cc-b348-b1b7ec459c18",
+            "attributes": {
+              "name": "Test - tvOS",
+              "actionType": "TEST",
+              "completionStatus": "FAILED",
+              "startedDate": "2026-10-15T01:29:49.674Z",
+              "finishedDate": "2026-10-15T01:31:09.066Z"
+            }
+          },
+          {
+            "id": "4ca8bcaf-0ee9-4d5b-96ce-5f9cae9be956",
+            "attributes": {
+              "name": "Test - visionOS",
+              "actionType": "TEST",
+              "completionStatus": "FAILED",
+              "startedDate": "2026-10-15T01:29:49.754Z",
+              "finishedDate": "2026-10-15T01:31:17.478Z"
+            }
+          },
+          {
+            "id": "58ee86bf-12d5-4f0e-9530-c228b8cdf5b7",
+            "attributes": {
+              "name": "Test - iOS",
+              "actionType": "TEST",
+              "completionStatus": "FAILED",
+              "startedDate": "2026-10-15T01:29:48.608Z",
+              "finishedDate": "2026-10-15T01:30:58.709Z"
+            }
+          },
+          {
+            "id": "e0e0f097-dd60-4740-a563-f4102f028dbb",
+            "attributes": {
+              "name": "Archive - macOS",
+              "actionType": "ARCHIVE",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-15T01:34:29.077Z",
+              "finishedDate": "2026-10-15T01:40:16.812Z"
+            }
+          },
+          {
+            "id": "a0f42d28-d26d-48a6-91c9-f59963f663b0",
+            "attributes": {
+              "name": "Archive - visionOS",
+              "actionType": "ARCHIVE",
+              "completionStatus": "FAILED",
+              "startedDate": "2026-10-15T01:29:52.946Z",
+              "finishedDate": "2026-10-15T01:31:10.65Z"
+            }
+          },
+          {
+            "id": "9ad26294-4a10-424d-bbc0-5b189ee3c8c1",
+            "attributes": {
+              "name": "Test - macOS",
+              "actionType": "TEST",
+              "completionStatus": "FAILED",
+              "startedDate": "2026-10-15T01:29:49.416Z",
+              "finishedDate": "2026-10-15T01:31:01.8Z"
+            }
+          },
+          {
+            "id": "24e4980b-8d25-4958-a0fd-c0a45660d0fd",
+            "attributes": {
+              "name": "Archive - tvOS",
+              "actionType": "ARCHIVE",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-15T01:34:28.387Z",
+              "finishedDate": "2026-10-15T01:41:15.365Z"
+            }
+          },
+          {
+            "id": "befb82d4-9c68-4b8a-834c-b9aace8a8c35",
+            "attributes": {
+              "name": "TestFlight Internal Testing - macOS",
+              "actionType": "TEST",
+              "completionStatus": "SKIPPED",
+              "startedDate": null,
+              "finishedDate": null
+            }
+          },
+          {
+            "id": "a276b98a-52a2-43ad-ad0a-c763f64a6cb0",
+            "attributes": {
+              "name": "Archive - iOS",
+              "actionType": "ARCHIVE",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-15T01:34:28.856Z",
+              "finishedDate": "2026-10-15T01:50:36.499Z"
+            }
+          },
+          {
+            "id": "161bd567-c3cc-4f3a-87a5-8269e7879038",
+            "attributes": {
+              "name": "TestFlight Internal Testing - tvOS",
+              "actionType": "TEST",
+              "completionStatus": "SKIPPED",
+              "startedDate": null,
+              "finishedDate": null
+            }
+          },
+          {
+            "id": "48172f84-cea4-4aae-8fed-c574a9719d52",
+            "attributes": {
+              "name": "TestFlight Internal Testing - visionOS",
+              "actionType": "TEST",
+              "completionStatus": "SKIPPED",
+              "startedDate": null,
+              "finishedDate": null
+            }
+          },
+          {
+            "id": "f97ef285-5e35-476e-898d-13ba0cb64b8b",
+            "attributes": {
+              "name": "TestFlight Internal Testing - iOS",
+              "actionType": "TEST",
+              "completionStatus": "SKIPPED",
+              "startedDate": null,
+              "finishedDate": null
+            }
+          }
+        ],
+        "run": {
+          "id": "71699ff3-0f0d-4458-9db7-a36f2b3514d2",
+          "attributes": {
+            "number": 20,
+            "completionStatus": "FAILED",
+            "startReason": "GIT_REF_CHANGE",
+            "startedDate": "2026-10-15T01:29:48.608Z",
+            "finishedDate": "2026-10-15T01:50:36.499Z"
+          }
+        }
+      },
+      {
+        "actions": [
+          {
+            "id": "426dd0c5-4f5a-4591-8300-3b0045e09c06",
+            "attributes": {
+              "name": "Test - visionOS",
+              "actionType": "TEST",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-14T18:09:52.695Z",
+              "finishedDate": "2026-10-14T18:20:28.603Z"
+            }
+          },
+          {
+            "id": "02061ddc-c0ba-4fa4-b9ba-c2f940f9ecb6",
+            "attributes": {
+              "name": "Test - tvOS",
+              "actionType": "TEST",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-14T18:09:52.609Z",
+              "finishedDate": "2026-10-14T18:19:28.238Z"
+            }
+          },
+          {
+            "id": "4f67a97f-3247-4121-9359-cbe1dbec8db6",
+            "attributes": {
+              "name": "Archive - tvOS",
+              "actionType": "ARCHIVE",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-14T18:09:55.252Z",
+              "finishedDate": "2026-10-14T18:20:08.696Z"
+            }
+          },
+          {
+            "id": "eff2ba1a-59af-4eea-986a-007965b46fb8",
+            "attributes": {
+              "name": "Archive - iOS",
+              "actionType": "ARCHIVE",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-14T18:09:56.847Z",
+              "finishedDate": "2026-10-14T18:23:53.409Z"
+            }
+          },
+          {
+            "id": "23bbed5a-930b-443c-9fcc-25082ff1de83",
+            "attributes": {
+              "name": "Test - macOS",
+              "actionType": "TEST",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-14T18:09:51.771Z",
+              "finishedDate": "2026-10-14T18:18:33.17Z"
+            }
+          },
+          {
+            "id": "684be4ef-216c-477f-84bf-e46004bbac6a",
+            "attributes": {
+              "name": "TestFlight Internal Testing - tvOS",
+              "actionType": "TEST",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-14T19:06:57.208Z",
+              "finishedDate": "2026-10-14T19:07:04.829Z"
+            }
+          },
+          {
+            "id": "a2081b71-399b-4a47-a4b0-8d04f26d93c0",
+            "attributes": {
+              "name": "TestFlight Internal Testing - iOS",
+              "actionType": "TEST",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-14T19:08:04.8Z",
+              "finishedDate": "2026-10-14T19:08:08.082Z"
+            }
+          },
+          {
+            "id": "b0f57ed9-acb7-478a-b5f3-02162a9a3c35",
+            "attributes": {
+              "name": "Test - iOS",
+              "actionType": "TEST",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-14T18:09:52.199Z",
+              "finishedDate": "2026-10-14T18:20:26.408Z"
+            }
+          },
+          {
+            "id": "0ff4fdc8-7a9d-468a-85fa-90c48535131a",
+            "attributes": {
+              "name": "TestFlight Internal Testing - macOS",
+              "actionType": "TEST",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-14T19:06:48.621Z",
+              "finishedDate": "2026-10-14T19:06:58.341Z"
+            }
+          },
+          {
+            "id": "cbc9a2ae-07fd-485b-b648-e38277ed1eeb",
+            "attributes": {
+              "name": "TestFlight Internal Testing - visionOS",
+              "actionType": "TEST",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-14T19:06:51.378Z",
+              "finishedDate": "2026-10-14T19:07:00.971Z"
+            }
+          },
+          {
+            "id": "45a406ea-2c0b-4a06-9ddd-45377ab8d06e",
+            "attributes": {
+              "name": "Archive - macOS",
+              "actionType": "ARCHIVE",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-14T18:09:57.364Z",
+              "finishedDate": "2026-10-14T19:05:42.156Z"
+            }
+          },
+          {
+            "id": "6e0b25b0-55b4-4282-86d9-a070c03554f7",
+            "attributes": {
+              "name": "Archive - visionOS",
+              "actionType": "ARCHIVE",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-14T18:09:53.952Z",
+              "finishedDate": "2026-10-14T18:23:44.568Z"
+            }
+          }
+        ],
+        "run": {
+          "id": "2a78b958-09ab-4750-8fc4-d3770354c50c",
+          "attributes": {
+            "number": 19,
+            "completionStatus": "SUCCEEDED",
+            "startReason": "GIT_REF_CHANGE",
+            "startedDate": "2026-10-14T18:09:51.771Z",
+            "finishedDate": "2026-10-14T19:08:08.082Z"
+          }
+        }
+      },
+      {
+        "actions": [
+          {
+            "id": "a39d389d-adeb-462a-aa3a-1a6af7b23822",
+            "attributes": {
+              "name": "Test - macOS",
+              "actionType": "TEST",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-14T04:17:57.443Z",
+              "finishedDate": "2026-10-14T04:24:58.249Z"
+            }
+          },
+          {
+            "id": "3e34c74f-d747-4c8f-90c5-e15f75e163b0",
+            "attributes": {
+              "name": "TestFlight Internal Testing - visionOS",
+              "actionType": "TEST",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-14T04:29:47.4Z",
+              "finishedDate": "2026-10-14T04:29:55.805Z"
+            }
+          },
+          {
+            "id": "0d119d94-cd16-4299-867d-4d46cb94be9d",
+            "attributes": {
+              "name": "Archive - iOS",
+              "actionType": "ARCHIVE",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-14T04:18:03.981Z",
+              "finishedDate": "2026-10-14T04:29:37.846Z"
+            }
+          },
+          {
+            "id": "3d14f64b-c1d6-477e-b619-95d7ca38b7c6",
+            "attributes": {
+              "name": "Test - iOS",
+              "actionType": "TEST",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-14T04:17:58.031Z",
+              "finishedDate": "2026-10-14T04:28:11.743Z"
+            }
+          },
+          {
+            "id": "2848f6da-15c0-4816-9165-cc574849a367",
+            "attributes": {
+              "name": "TestFlight Internal Testing - macOS",
+              "actionType": "TEST",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-14T04:29:43.786Z",
+              "finishedDate": "2026-10-14T04:29:47.124Z"
+            }
+          },
+          {
+            "id": "6582ea55-0c49-4923-9f7e-dc1b451f056d",
+            "attributes": {
+              "name": "Archive - visionOS",
+              "actionType": "ARCHIVE",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-14T04:18:03.132Z",
+              "finishedDate": "2026-10-14T04:27:47.669Z"
+            }
+          },
+          {
+            "id": "f7741e06-6bb8-4693-b084-1700e03033e5",
+            "attributes": {
+              "name": "Archive - tvOS",
+              "actionType": "ARCHIVE",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-14T04:18:02.829Z",
+              "finishedDate": "2026-10-14T04:27:36.551Z"
+            }
+          },
+          {
+            "id": "2a5eb624-3029-4a1e-81f3-2b19b9c1b135",
+            "attributes": {
+              "name": "Test - visionOS",
+              "actionType": "TEST",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-14T04:17:58.386Z",
+              "finishedDate": "2026-10-14T04:26:31.225Z"
+            }
+          },
+          {
+            "id": "b0dd74d3-7a76-430b-9b90-e8a259f8e8a0",
+            "attributes": {
+              "name": "Archive - macOS",
+              "actionType": "ARCHIVE",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-14T04:18:03.614Z",
+              "finishedDate": "2026-10-14T04:27:56.852Z"
+            }
+          },
+          {
+            "id": "4e93d9b3-7f67-4937-8752-1589b74126ca",
+            "attributes": {
+              "name": "Test - tvOS",
+              "actionType": "TEST",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-14T04:17:58.01Z",
+              "finishedDate": "2026-10-14T04:26:18.773Z"
+            }
+          },
+          {
+            "id": "52c0254a-7847-40a3-9de1-cf1976c6b8a4",
+            "attributes": {
+              "name": "TestFlight Internal Testing - tvOS",
+              "actionType": "TEST",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-14T04:29:44.667Z",
+              "finishedDate": "2026-10-14T04:29:48.211Z"
+            }
+          },
+          {
+            "id": "ad7e2600-555c-4ba0-a478-34ef961c420f",
+            "attributes": {
+              "name": "TestFlight Internal Testing - iOS",
+              "actionType": "TEST",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-14T04:29:41.688Z",
+              "finishedDate": "2026-10-14T04:29:45.034Z"
+            }
+          }
+        ],
+        "run": {
+          "id": "1f1cb2c0-6386-4cb2-8fe4-17615e4b7178",
+          "attributes": {
+            "number": 18,
+            "completionStatus": "SUCCEEDED",
+            "startReason": "GIT_REF_CHANGE",
+            "startedDate": "2026-10-14T04:17:57.443Z",
+            "finishedDate": "2026-10-14T04:29:55.805Z"
+          }
+        }
+      },
+      {
+        "actions": [
+          {
+            "id": "c0338455-c620-4a42-90b7-6f2b34097ff9",
+            "attributes": {
+              "name": "Archive - macOS",
+              "actionType": "ARCHIVE",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-13T21:51:50.623Z",
+              "finishedDate": "2026-10-13T22:02:03.379Z"
+            }
+          },
+          {
+            "id": "d6c0b5eb-6ed1-4e2b-8078-0d9d90d1b915",
+            "attributes": {
+              "name": "Archive - tvOS",
+              "actionType": "ARCHIVE",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-13T21:51:50.092Z",
+              "finishedDate": "2026-10-13T21:59:53.587Z"
+            }
+          },
+          {
+            "id": "0f12d02d-27a2-484b-9c9c-e1e184028dfe",
+            "attributes": {
+              "name": "TestFlight Internal Testing - iOS",
+              "actionType": "TEST",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-13T22:07:06.381Z",
+              "finishedDate": "2026-10-13T22:07:10.231Z"
+            }
+          },
+          {
+            "id": "3dbeaf97-2006-4ecc-b179-1ef1fe7e2498",
+            "attributes": {
+              "name": "Archive - visionOS",
+              "actionType": "ARCHIVE",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-13T21:51:49.722Z",
+              "finishedDate": "2026-10-13T22:05:29.774Z"
+            }
+          },
+          {
+            "id": "96413472-7395-40e2-8553-4a6e2ecbea62",
+            "attributes": {
+              "name": "TestFlight Internal Testing - tvOS",
+              "actionType": "TEST",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-13T22:07:03.506Z",
+              "finishedDate": "2026-10-13T22:07:06.426Z"
+            }
+          },
+          {
+            "id": "bff30269-31fc-446c-b1d2-018ba3d339b9",
+            "attributes": {
+              "name": "Test - tvOS",
+              "actionType": "TEST",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-13T21:51:48.455Z",
+              "finishedDate": "2026-10-13T22:00:45.162Z"
+            }
+          },
+          {
+            "id": "243c079d-3a23-4c59-9d46-452a99549166",
+            "attributes": {
+              "name": "TestFlight Internal Testing - visionOS",
+              "actionType": "TEST",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-13T22:05:36.163Z",
+              "finishedDate": "2026-10-13T22:05:39.144Z"
+            }
+          },
+          {
+            "id": "4538c30f-14d8-4d96-bf85-2adabf3f8000",
+            "attributes": {
+              "name": "Test - visionOS",
+              "actionType": "TEST",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-13T21:51:49.478Z",
+              "finishedDate": "2026-10-13T22:00:17.254Z"
+            }
+          },
+          {
+            "id": "f0ec1dc9-e32d-40c3-b871-7ce0917ee9b3",
+            "attributes": {
+              "name": "Archive - iOS",
+              "actionType": "ARCHIVE",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-13T21:51:50.245Z",
+              "finishedDate": "2026-10-13T22:04:09.776Z"
+            }
+          },
+          {
+            "id": "43d0d2fe-778e-4245-bf7d-edf55ea4815a",
+            "attributes": {
+              "name": "TestFlight Internal Testing - macOS",
+              "actionType": "TEST",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-13T22:05:33.345Z",
+              "finishedDate": "2026-10-13T22:05:37.456Z"
+            }
+          },
+          {
+            "id": "4c2b31a6-9ee6-4063-8068-30d2eb90638b",
+            "attributes": {
+              "name": "Test - iOS",
+              "actionType": "TEST",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-13T21:51:45.883Z",
+              "finishedDate": "2026-10-13T22:02:28.349Z"
+            }
+          },
+          {
+            "id": "8b95f587-fbfc-4011-b065-01ec26998d3e",
+            "attributes": {
+              "name": "Test - macOS",
+              "actionType": "TEST",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-13T21:51:45.437Z",
+              "finishedDate": "2026-10-13T22:01:01.398Z"
+            }
+          }
+        ],
+        "run": {
+          "id": "af959737-7e61-4452-bfcc-4c59dec0013b",
+          "attributes": {
+            "number": 17,
+            "completionStatus": "SUCCEEDED",
+            "startReason": "GIT_REF_CHANGE",
+            "startedDate": "2026-10-13T21:51:45.437Z",
+            "finishedDate": "2026-10-13T22:07:10.231Z"
+          }
+        }
+      },
+      {
+        "actions": [
+          {
+            "id": "20b491fc-adbe-4783-be85-4d524c803e84",
+            "attributes": {
+              "name": "Archive - visionOS",
+              "actionType": "ARCHIVE",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-13T19:25:10.919Z",
+              "finishedDate": "2026-10-13T19:39:09.03Z"
+            }
+          },
+          {
+            "id": "223fc998-439d-4389-a392-af69edeb8868",
+            "attributes": {
+              "name": "Test - visionOS",
+              "actionType": "TEST",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-13T19:25:06.704Z",
+              "finishedDate": "2026-10-13T19:40:20.941Z"
+            }
+          },
+          {
+            "id": "fd40cc6c-dd3c-4dec-be73-f963ce19ea01",
+            "attributes": {
+              "name": "Test - iOS",
+              "actionType": "TEST",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-13T19:25:05.143Z",
+              "finishedDate": "2026-10-13T19:40:21.855Z"
+            }
+          },
+          {
+            "id": "51aab6fa-686c-4174-b5b9-f506fefcbc5a",
+            "attributes": {
+              "name": "TestFlight Internal Testing - visionOS",
+              "actionType": "TEST",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-13T19:51:10.604Z",
+              "finishedDate": "2026-10-13T19:51:16.454Z"
+            }
+          },
+          {
+            "id": "888da64d-7072-4f26-a3fe-6bc9c8fd3b2a",
+            "attributes": {
+              "name": "Test - tvOS",
+              "actionType": "TEST",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-13T19:25:06.849Z",
+              "finishedDate": "2026-10-13T19:35:42.402Z"
+            }
+          },
+          {
+            "id": "a71ea16c-4cc0-4ade-b646-2ef9795dd087",
+            "attributes": {
+              "name": "Test - macOS",
+              "actionType": "TEST",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-13T19:25:05.447Z",
+              "finishedDate": "2026-10-13T19:34:56.093Z"
+            }
+          },
+          {
+            "id": "dcae14ff-1dfa-4f76-aae3-0530acfaf2b1",
+            "attributes": {
+              "name": "Archive - iOS",
+              "actionType": "ARCHIVE",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-13T19:32:31.089Z",
+              "finishedDate": "2026-10-13T19:49:55.154Z"
+            }
+          },
+          {
+            "id": "264cbcdf-916b-42fd-8ed3-b56e3d7498bf",
+            "attributes": {
+              "name": "Archive - macOS",
+              "actionType": "ARCHIVE",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-13T19:32:21.898Z",
+              "finishedDate": "2026-10-13T19:45:59.729Z"
+            }
+          },
+          {
+            "id": "29bda570-c4e7-431a-ba07-001d79592aec",
+            "attributes": {
+              "name": "TestFlight Internal Testing - tvOS",
+              "actionType": "TEST",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-13T19:50:51.965Z",
+              "finishedDate": "2026-10-13T19:50:58.497Z"
+            }
+          },
+          {
+            "id": "3734da92-cef9-4ad0-a578-25e23fb6e8cd",
+            "attributes": {
+              "name": "TestFlight Internal Testing - macOS",
+              "actionType": "TEST",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-13T19:50:48.924Z",
+              "finishedDate": "2026-10-13T19:50:54.038Z"
+            }
+          },
+          {
+            "id": "892d25b6-75f1-43c4-a027-aad022b62dd2",
+            "attributes": {
+              "name": "Archive - tvOS",
+              "actionType": "ARCHIVE",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-13T19:32:19.021Z",
+              "finishedDate": "2026-10-13T19:39:02.064Z"
+            }
+          },
+          {
+            "id": "20276192-44fc-45ab-b150-1dc505d74bdf",
+            "attributes": {
+              "name": "TestFlight Internal Testing - iOS",
+              "actionType": "TEST",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-13T19:50:45.635Z",
+              "finishedDate": "2026-10-13T19:50:51.675Z"
+            }
+          }
+        ],
+        "run": {
+          "id": "a4c58610-a4fa-4ea9-945e-67d59b67f40f",
+          "attributes": {
+            "number": 16,
+            "completionStatus": "SUCCEEDED",
+            "startReason": "MANUAL",
+            "startedDate": "2026-10-13T19:25:05.447Z",
+            "finishedDate": "2026-10-13T19:51:16.454Z"
+          }
+        }
+      },
+      {
+        "actions": [
+          {
+            "id": "199082e6-6674-4c39-b2ab-81a620d4d3b5",
+            "attributes": {
+              "name": "Archive - macOS",
+              "actionType": "ARCHIVE",
+              "completionStatus": "FAILED",
+              "startedDate": "2026-10-13T14:12:38.719Z",
+              "finishedDate": "2026-10-13T14:16:01.675Z"
+            }
+          },
+          {
+            "id": "1c127ce2-a82b-41c8-b36d-afc362cef4c0",
+            "attributes": {
+              "name": "TestFlight Internal Testing - macOS",
+              "actionType": "TEST",
+              "completionStatus": "SKIPPED",
+              "startedDate": null,
+              "finishedDate": null
+            }
+          },
+          {
+            "id": "8b95508f-432c-41cb-915f-0294c9590256",
+            "attributes": {
+              "name": "TestFlight Internal Testing - visionOS",
+              "actionType": "TEST",
+              "completionStatus": "SKIPPED",
+              "startedDate": null,
+              "finishedDate": null
+            }
+          },
+          {
+            "id": "a2bc1460-c271-4d3b-ba64-20a328a339af",
+            "attributes": {
+              "name": "Test - visionOS",
+              "actionType": "TEST",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-13T14:12:37.982Z",
+              "finishedDate": "2026-10-13T14:22:31.448Z"
+            }
+          },
+          {
+            "id": "0221dc01-1082-44f7-9cc2-cb2eff72a34a",
+            "attributes": {
+              "name": "Archive - visionOS",
+              "actionType": "ARCHIVE",
+              "completionStatus": "FAILED",
+              "startedDate": "2026-10-13T14:12:38.485Z",
+              "finishedDate": "2026-10-13T14:15:53.589Z"
+            }
+          },
+          {
+            "id": "30c2cef0-e2fa-41fb-8238-118a9b909e97",
+            "attributes": {
+              "name": "TestFlight Internal Testing - tvOS",
+              "actionType": "TEST",
+              "completionStatus": "SKIPPED",
+              "startedDate": null,
+              "finishedDate": null
+            }
+          },
+          {
+            "id": "95335203-b195-4f11-8b3c-3b2b1cb20ab8",
+            "attributes": {
+              "name": "Test - tvOS",
+              "actionType": "TEST",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-13T14:12:36.807Z",
+              "finishedDate": "2026-10-13T14:21:35.399Z"
+            }
+          },
+          {
+            "id": "b1f1cfbd-8799-418f-97d9-244ca3978ec6",
+            "attributes": {
+              "name": "Test - macOS",
+              "actionType": "TEST",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-13T14:12:36.702Z",
+              "finishedDate": "2026-10-13T14:20:50.777Z"
+            }
+          },
+          {
+            "id": "86f124dc-c944-4f0b-a3f0-3d4ad78ca5c7",
+            "attributes": {
+              "name": "Archive - tvOS",
+              "actionType": "ARCHIVE",
+              "completionStatus": "FAILED",
+              "startedDate": "2026-10-13T14:12:38.924Z",
+              "finishedDate": "2026-10-13T14:15:41.482Z"
+            }
+          },
+          {
+            "id": "dfba068e-8a44-40a5-9d92-fa08beb6aabf",
+            "attributes": {
+              "name": "Test - iOS",
+              "actionType": "TEST",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-13T14:12:33.767Z",
+              "finishedDate": "2026-10-13T14:22:37.378Z"
+            }
+          },
+          {
+            "id": "d323e770-e427-404b-8cda-e183b4dde4d1",
+            "attributes": {
+              "name": "Archive - iOS",
+              "actionType": "ARCHIVE",
+              "completionStatus": "FAILED",
+              "startedDate": "2026-10-13T14:12:40.266Z",
+              "finishedDate": "2026-10-13T14:16:52.11Z"
+            }
+          },
+          {
+            "id": "a180adc6-1966-4823-aed3-dde53b6b5217",
+            "attributes": {
+              "name": "TestFlight Internal Testing - iOS",
+              "actionType": "TEST",
+              "completionStatus": "SKIPPED",
+              "startedDate": null,
+              "finishedDate": null
+            }
+          }
+        ],
+        "run": {
+          "id": "16e11d0f-c56f-49d5-bdea-da9e4cdbb2a5",
+          "attributes": {
+            "number": 15,
+            "completionStatus": "FAILED",
+            "startReason": "GIT_REF_CHANGE",
+            "startedDate": "2026-10-13T14:12:33.767Z",
+            "finishedDate": "2026-10-13T14:22:37.378Z"
+          }
+        }
+      },
+      {
+        "actions": [
+          {
+            "id": "4e213055-8521-447c-90a3-b60d3ffb90a2",
+            "attributes": {
+              "name": "Archive - iOS",
+              "actionType": "ARCHIVE",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-12T23:36:00.389Z",
+              "finishedDate": "2026-10-12T23:43:50.739Z"
+            }
+          },
+          {
+            "id": "450b613c-038e-497c-bc97-909f8b17ee36",
+            "attributes": {
+              "name": "Test - iOS",
+              "actionType": "TEST",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-12T23:31:01.312Z",
+              "finishedDate": "2026-10-12T23:43:16.067Z"
+            }
+          },
+          {
+            "id": "5a08d2e7-583e-4237-be0b-ab1fecca6090",
+            "attributes": {
+              "name": "Test - visionOS",
+              "actionType": "TEST",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-12T23:33:17.632Z",
+              "finishedDate": "2026-10-12T23:42:42.028Z"
+            }
+          },
+          {
+            "id": "01a9b54c-3824-4841-9e31-57349820bca5",
+            "attributes": {
+              "name": "Test - macOS",
+              "actionType": "TEST",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-12T23:31:03.211Z",
+              "finishedDate": "2026-10-12T23:43:41.068Z"
+            }
+          },
+          {
+            "id": "64864c12-ff0b-41b2-86e2-2468ea04da39",
+            "attributes": {
+              "name": "TestFlight Internal Testing - macOS",
+              "actionType": "TEST",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-12T23:44:08.834Z",
+              "finishedDate": "2026-10-12T23:44:12.538Z"
+            }
+          },
+          {
+            "id": "68d6dc00-c995-4775-b18a-e1811dbbb879",
+            "attributes": {
+              "name": "Archive - macOS",
+              "actionType": "ARCHIVE",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-12T23:35:45.399Z",
+              "finishedDate": "2026-10-12T23:41:48.717Z"
+            }
+          },
+          {
+            "id": "c5d6e330-cc51-4786-8835-2802fa13585e",
+            "attributes": {
+              "name": "TestFlight Internal Testing - visionOS",
+              "actionType": "TEST",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-12T23:44:03.387Z",
+              "finishedDate": "2026-10-12T23:44:06.428Z"
+            }
+          },
+          {
+            "id": "39b07741-0063-4edc-8198-b7e0a20dc99c",
+            "attributes": {
+              "name": "TestFlight Internal Testing - iOS",
+              "actionType": "TEST",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-12T23:44:00.382Z",
+              "finishedDate": "2026-10-12T23:44:04.273Z"
+            }
+          },
+          {
+            "id": "5c22824c-3268-4500-b728-a1286874d7b8",
+            "attributes": {
+              "name": "Archive - tvOS",
+              "actionType": "ARCHIVE",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-12T23:35:23.272Z",
+              "finishedDate": "2026-10-12T23:41:07.109Z"
+            }
+          },
+          {
+            "id": "87257ca7-6f80-47c2-a50e-d4cb74b15d97",
+            "attributes": {
+              "name": "Archive - visionOS",
+              "actionType": "ARCHIVE",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-12T23:33:31.698Z",
+              "finishedDate": "2026-10-12T23:42:01.928Z"
+            }
+          },
+          {
+            "id": "b764791f-79d3-499d-a476-195052cd2f28",
+            "attributes": {
+              "name": "Test - tvOS",
+              "actionType": "TEST",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-12T23:31:04.905Z",
+              "finishedDate": "2026-10-12T23:38:48.347Z"
+            }
+          },
+          {
+            "id": "c5cae45e-310c-48c8-9dfa-cc8d63b1c1a9",
+            "attributes": {
+              "name": "TestFlight Internal Testing - tvOS",
+              "actionType": "TEST",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-12T23:44:06.112Z",
+              "finishedDate": "2026-10-12T23:44:08.897Z"
+            }
+          }
+        ],
+        "run": {
+          "id": "2188e3eb-b13b-49f9-9fc6-b8c71f69aaf1",
+          "attributes": {
+            "number": 14,
+            "completionStatus": "SUCCEEDED",
+            "startReason": "GIT_REF_CHANGE",
+            "startedDate": "2026-10-12T23:31:01.312Z",
+            "finishedDate": "2026-10-12T23:44:12.538Z"
+          }
+        }
+      },
+      {
+        "actions": [
+          {
+            "id": "0dfef7d7-77db-4db5-97b9-84a68bfe9123",
+            "attributes": {
+              "name": "Archive - visionOS",
+              "actionType": "ARCHIVE",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-12T21:09:06.659Z",
+              "finishedDate": "2026-10-12T21:16:04.041Z"
+            }
+          },
+          {
+            "id": "50f0c60f-b2d2-45c3-8ec2-44837da969cb",
+            "attributes": {
+              "name": "TestFlight Internal Testing - tvOS",
+              "actionType": "TEST",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-12T21:21:22.298Z",
+              "finishedDate": "2026-10-12T21:21:25.691Z"
+            }
+          },
+          {
+            "id": "522a566c-c1b6-4567-a871-156bb21566bf",
+            "attributes": {
+              "name": "Archive - macOS",
+              "actionType": "ARCHIVE",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-12T21:09:06.599Z",
+              "finishedDate": "2026-10-12T21:18:27.612Z"
+            }
+          },
+          {
+            "id": "80bc10a0-c825-495e-a8fd-17cfab157aa3",
+            "attributes": {
+              "name": "Test - macOS",
+              "actionType": "TEST",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-12T21:09:05.296Z",
+              "finishedDate": "2026-10-12T21:15:05.296Z"
+            }
+          },
+          {
+            "id": "840870e6-fb3f-4893-96ad-120efb2f2485",
+            "attributes": {
+              "name": "Test - iOS",
+              "actionType": "TEST",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-12T21:09:06.575Z",
+              "finishedDate": "2026-10-12T21:16:48.499Z"
+            }
+          },
+          {
+            "id": "a9ea4fc1-8445-45e5-b294-f07b50cf880b",
+            "attributes": {
+              "name": "Archive - iOS",
+              "actionType": "ARCHIVE",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-12T21:09:06.684Z",
+              "finishedDate": "2026-10-12T21:20:51.762Z"
+            }
+          },
+          {
+            "id": "2d18f842-d612-44a7-aa4e-a90d391e2d77",
+            "attributes": {
+              "name": "TestFlight Internal Testing - macOS",
+              "actionType": "TEST",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-12T21:21:19.273Z",
+              "finishedDate": "2026-10-12T21:21:22.48Z"
+            }
+          },
+          {
+            "id": "806f8974-9e31-4db9-ad29-488a9fa56361",
+            "attributes": {
+              "name": "TestFlight Internal Testing - visionOS",
+              "actionType": "TEST",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-12T21:20:59.338Z",
+              "finishedDate": "2026-10-12T21:21:03.921Z"
+            }
+          },
+          {
+            "id": "4638bb64-0850-4923-8560-5dd1f7996e6a",
+            "attributes": {
+              "name": "Archive - tvOS",
+              "actionType": "ARCHIVE",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-12T21:09:06.856Z",
+              "finishedDate": "2026-10-12T21:15:36.961Z"
+            }
+          },
+          {
+            "id": "8242952e-90bb-4f6b-ba8a-f0d906079855",
+            "attributes": {
+              "name": "Test - visionOS",
+              "actionType": "TEST",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-12T21:09:05.919Z",
+              "finishedDate": "2026-10-12T21:14:50.309Z"
+            }
+          },
+          {
+            "id": "9bbe7bb1-e37b-4659-82f9-19079c621fdf",
+            "attributes": {
+              "name": "Test - tvOS",
+              "actionType": "TEST",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-12T21:09:05.84Z",
+              "finishedDate": "2026-10-12T21:15:04.589Z"
+            }
+          },
+          {
+            "id": "b7009d1e-4098-4e08-be9f-e24f24c39f5c",
+            "attributes": {
+              "name": "TestFlight Internal Testing - iOS",
+              "actionType": "TEST",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-12T21:20:56.334Z",
+              "finishedDate": "2026-10-12T21:20:59.939Z"
+            }
+          }
+        ],
+        "run": {
+          "id": "bec3070f-4210-4111-b9ec-dfcfc11eade7",
+          "attributes": {
+            "number": 13,
+            "completionStatus": "SUCCEEDED",
+            "startReason": "MANUAL",
+            "startedDate": "2026-10-12T21:09:05.296Z",
+            "finishedDate": "2026-10-12T21:21:25.691Z"
+          }
+        }
+      },
+      {
+        "actions": [
+          {
+            "id": "5d048a51-5a19-4569-97d4-3609cd4aa98f",
+            "attributes": {
+              "name": "Test - iOS",
+              "actionType": "TEST",
+              "completionStatus": "FAILED",
+              "startedDate": "2026-10-12T20:52:00Z",
+              "finishedDate": "2026-10-12T20:53:16.728Z"
+            }
+          },
+          {
+            "id": "fcc23551-f8b3-44cc-add1-2608aaeabd4b",
+            "attributes": {
+              "name": "TestFlight Internal Testing - visionOS",
+              "actionType": "TEST",
+              "completionStatus": "SKIPPED",
+              "startedDate": null,
+              "finishedDate": null
+            }
+          },
+          {
+            "id": "4c0d90dc-319f-4d00-a2ce-bc03b64a7262",
+            "attributes": {
+              "name": "Archive - macOS",
+              "actionType": "ARCHIVE",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-12T20:52:07.574Z",
+              "finishedDate": "2026-10-12T21:08:46.231Z"
+            }
+          },
+          {
+            "id": "f6b6cd88-a8c8-4ff9-920a-baf39e416022",
+            "attributes": {
+              "name": "TestFlight Internal Testing - macOS",
+              "actionType": "TEST",
+              "completionStatus": "SKIPPED",
+              "startedDate": null,
+              "finishedDate": null
+            }
+          },
+          {
+            "id": "176e9560-817d-45d5-a132-7e9c09a26cea",
+            "attributes": {
+              "name": "Archive - iOS",
+              "actionType": "ARCHIVE",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-12T20:52:08.194Z",
+              "finishedDate": "2026-10-12T21:01:09.662Z"
+            }
+          },
+          {
+            "id": "3640a0e2-9f2b-4ae0-a95f-95f0d1eff20a",
+            "attributes": {
+              "name": "TestFlight Internal Testing - tvOS",
+              "actionType": "TEST",
+              "completionStatus": "SKIPPED",
+              "startedDate": null,
+              "finishedDate": null
+            }
+          },
+          {
+            "id": "40ed8df6-1c3c-4ee4-bcc6-2eeb3ba93969",
+            "attributes": {
+              "name": "Test - visionOS",
+              "actionType": "TEST",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-12T20:52:01.189Z",
+              "finishedDate": "2026-10-12T20:58:56.405Z"
+            }
+          },
+          {
+            "id": "c582625a-0f85-474e-8388-1d31043e6f3b",
+            "attributes": {
+              "name": "Test - tvOS",
+              "actionType": "TEST",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-12T20:52:00.278Z",
+              "finishedDate": "2026-10-12T20:59:26.943Z"
+            }
+          },
+          {
+            "id": "751216fe-5767-4b8c-85d2-d8eb82b131ad",
+            "attributes": {
+              "name": "Test - macOS",
+              "actionType": "TEST",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-12T20:52:00.739Z",
+              "finishedDate": "2026-10-12T21:00:05.104Z"
+            }
+          },
+          {
+            "id": "d67132b6-0b2c-4d20-a15b-89a1ac95141b",
+            "attributes": {
+              "name": "TestFlight Internal Testing - iOS",
+              "actionType": "TEST",
+              "completionStatus": "SKIPPED",
+              "startedDate": null,
+              "finishedDate": null
+            }
+          },
+          {
+            "id": "c498098c-d619-4f5a-b5ad-327b6d9c77cf",
+            "attributes": {
+              "name": "Archive - visionOS",
+              "actionType": "ARCHIVE",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-12T20:52:07.135Z",
+              "finishedDate": "2026-10-12T21:00:33.98Z"
+            }
+          },
+          {
+            "id": "416fe32a-8592-496a-b786-4070e29a8c2c",
+            "attributes": {
+              "name": "Archive - tvOS",
+              "actionType": "ARCHIVE",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-12T20:52:07.184Z",
+              "finishedDate": "2026-10-12T21:00:15.74Z"
+            }
+          }
+        ],
+        "run": {
+          "id": "5e85313c-5176-43b6-8007-6323fe8f8ea4",
+          "attributes": {
+            "number": 12,
+            "completionStatus": "FAILED",
+            "startReason": "GIT_REF_CHANGE",
+            "startedDate": "2026-10-12T20:52:00Z",
+            "finishedDate": "2026-10-12T21:08:46.231Z"
+          }
+        }
+      },
+      {
+        "actions": [
+          {
+            "id": "707c49aa-3e6e-45ff-8c65-b93c7c8c42a9",
+            "attributes": {
+              "name": "Archive - visionOS",
+              "actionType": "ARCHIVE",
+              "completionStatus": "FAILED",
+              "startedDate": "2026-10-12T20:10:53.666Z",
+              "finishedDate": "2026-10-12T20:13:12.381Z"
+            }
+          },
+          {
+            "id": "bd9ef57c-57cb-451b-8756-14e480e7dddf",
+            "attributes": {
+              "name": "Test - iOS",
+              "actionType": "TEST",
+              "completionStatus": "FAILED",
+              "startedDate": "2026-10-12T20:10:52.416Z",
+              "finishedDate": "2026-10-12T20:12:01.525Z"
+            }
+          },
+          {
+            "id": "15fdb6b8-34fe-4cc8-96f7-74e15f16bbca",
+            "attributes": {
+              "name": "TestFlight Internal Testing - macOS",
+              "actionType": "TEST",
+              "completionStatus": "SKIPPED",
+              "startedDate": null,
+              "finishedDate": null
+            }
+          },
+          {
+            "id": "46867f3d-6698-44de-887f-4e431d188e3a",
+            "attributes": {
+              "name": "TestFlight Internal Testing - iOS",
+              "actionType": "TEST",
+              "completionStatus": "SKIPPED",
+              "startedDate": null,
+              "finishedDate": null
+            }
+          },
+          {
+            "id": "b8279fe7-56ce-4af3-9dd2-de07aaf72d96",
+            "attributes": {
+              "name": "Test - tvOS",
+              "actionType": "TEST",
+              "completionStatus": "FAILED",
+              "startedDate": "2026-10-12T20:10:51.851Z",
+              "finishedDate": "2026-10-12T20:25:05.866Z"
+            }
+          },
+          {
+            "id": "c4f9a679-a85b-4b65-8bf1-0d763e0be573",
+            "attributes": {
+              "name": "Archive - tvOS",
+              "actionType": "ARCHIVE",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-12T20:10:55.037Z",
+              "finishedDate": "2026-10-12T20:27:48.654Z"
+            }
+          },
+          {
+            "id": "768571ef-aa97-4567-bf4a-33cece0dbc5f",
+            "attributes": {
+              "name": "Test - visionOS",
+              "actionType": "TEST",
+              "completionStatus": "FAILED",
+              "startedDate": "2026-10-12T20:10:53.01Z",
+              "finishedDate": "2026-10-12T20:11:58.742Z"
+            }
+          },
+          {
+            "id": "7b3235fc-efcb-4db9-8a87-41e096329249",
+            "attributes": {
+              "name": "TestFlight Internal Testing - tvOS",
+              "actionType": "TEST",
+              "completionStatus": "SKIPPED",
+              "startedDate": null,
+              "finishedDate": null
+            }
+          },
+          {
+            "id": "9c776d19-4f88-419d-b345-53c990868545",
+            "attributes": {
+              "name": "Archive - iOS",
+              "actionType": "ARCHIVE",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-12T20:10:56.022Z",
+              "finishedDate": "2026-10-12T20:18:12.667Z"
+            }
+          },
+          {
+            "id": "e6fc261f-77d8-4638-a31f-073bc6392fb5",
+            "attributes": {
+              "name": "Archive - macOS",
+              "actionType": "ARCHIVE",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-12T20:10:55.137Z",
+              "finishedDate": "2026-10-12T20:16:01.361Z"
+            }
+          },
+          {
+            "id": "a04da937-db1c-47bd-a95a-7faa1d43e27d",
+            "attributes": {
+              "name": "Test - macOS",
+              "actionType": "TEST",
+              "completionStatus": "FAILED",
+              "startedDate": "2026-10-12T20:10:51.728Z",
+              "finishedDate": "2026-10-12T20:14:12.308Z"
+            }
+          },
+          {
+            "id": "fa841cd0-6e3e-4391-a3fe-406d8e57671e",
+            "attributes": {
+              "name": "TestFlight Internal Testing - visionOS",
+              "actionType": "TEST",
+              "completionStatus": "SKIPPED",
+              "startedDate": null,
+              "finishedDate": null
+            }
+          }
+        ],
+        "run": {
+          "id": "f5d77973-7fec-4afe-8cf3-8183123cee47",
+          "attributes": {
+            "number": 11,
+            "completionStatus": "FAILED",
+            "startReason": "GIT_REF_CHANGE",
+            "startedDate": "2026-10-12T20:10:51.728Z",
+            "finishedDate": "2026-10-12T20:27:48.654Z"
+          }
+        }
+      },
+      {
+        "actions": [
+          {
+            "id": "da30ae29-2c8b-4294-8c4f-2f02517302b9",
+            "attributes": {
+              "name": "Archive - iOS",
+              "actionType": "ARCHIVE",
+              "completionStatus": "CANCELED",
+              "startedDate": "2026-10-12T19:38:39.224Z",
+              "finishedDate": "2026-10-12T19:45:40.395Z"
+            }
+          },
+          {
+            "id": "99e5d779-84e0-4076-a379-92c1a6fa455f",
+            "attributes": {
+              "name": "TestFlight Internal Testing - iOS",
+              "actionType": "TEST",
+              "completionStatus": "SKIPPED",
+              "startedDate": null,
+              "finishedDate": null
+            }
+          },
+          {
+            "id": "08d06cb4-48a8-4350-ac5c-cfc8d1bf54cf",
+            "attributes": {
+              "name": "Archive - macOS",
+              "actionType": "ARCHIVE",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-12T19:38:37.665Z",
+              "finishedDate": "2026-10-12T19:44:09.27Z"
+            }
+          },
+          {
+            "id": "55234f5c-4f7f-4b53-b6d5-390137c367dc",
+            "attributes": {
+              "name": "Test - visionOS",
+              "actionType": "TEST",
+              "completionStatus": "FAILED",
+              "startedDate": "2026-10-12T19:38:37.273Z",
+              "finishedDate": "2026-10-12T19:39:48.123Z"
+            }
+          },
+          {
+            "id": "7cbcd327-b57b-433c-a6e7-2df529d4203d",
+            "attributes": {
+              "name": "Test - iOS",
+              "actionType": "TEST",
+              "completionStatus": "FAILED",
+              "startedDate": "2026-10-12T19:38:34.865Z",
+              "finishedDate": "2026-10-12T19:39:41.333Z"
+            }
+          },
+          {
+            "id": "cca40702-c4b0-409c-805b-3f7c59a7ed36",
+            "attributes": {
+              "name": "Test - macOS",
+              "actionType": "TEST",
+              "completionStatus": "FAILED",
+              "startedDate": "2026-10-12T19:38:34.677Z",
+              "finishedDate": "2026-10-12T19:41:02.168Z"
+            }
+          },
+          {
+            "id": "77629734-41cc-4d2a-8a36-d9cbf431d0a5",
+            "attributes": {
+              "name": "TestFlight Internal Testing - visionOS",
+              "actionType": "TEST",
+              "completionStatus": "SKIPPED",
+              "startedDate": null,
+              "finishedDate": null
+            }
+          },
+          {
+            "id": "a5b36c96-1f23-4795-a756-71a866484262",
+            "attributes": {
+              "name": "Archive - visionOS",
+              "actionType": "ARCHIVE",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-12T19:38:37.741Z",
+              "finishedDate": "2026-10-12T19:44:00.591Z"
+            }
+          },
+          {
+            "id": "ad8d70f3-5cd2-4e64-b694-e91720cb7594",
+            "attributes": {
+              "name": "TestFlight Internal Testing - tvOS",
+              "actionType": "TEST",
+              "completionStatus": "SKIPPED",
+              "startedDate": null,
+              "finishedDate": null
+            }
+          },
+          {
+            "id": "35d78a3d-8702-44e0-bcf1-47b3ad497b84",
+            "attributes": {
+              "name": "Test - tvOS",
+              "actionType": "TEST",
+              "completionStatus": "CANCELED",
+              "startedDate": "2026-10-12T19:38:37.297Z",
+              "finishedDate": "2026-10-12T19:45:40.395Z"
+            }
+          },
+          {
+            "id": "defe3240-d195-4129-8fec-7f239d211bf0",
+            "attributes": {
+              "name": "TestFlight Internal Testing - macOS",
+              "actionType": "TEST",
+              "completionStatus": "SKIPPED",
+              "startedDate": null,
+              "finishedDate": null
+            }
+          },
+          {
+            "id": "1c357dc6-4888-4929-a097-2d61732e73bb",
+            "attributes": {
+              "name": "Archive - tvOS",
+              "actionType": "ARCHIVE",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-12T19:38:37.41Z",
+              "finishedDate": "2026-10-12T19:43:21.704Z"
+            }
+          }
+        ],
+        "run": {
+          "id": "38905662-ebea-4f96-980b-c975c274aba3",
+          "attributes": {
+            "number": 10,
+            "completionStatus": "CANCELED",
+            "startReason": "GIT_REF_CHANGE",
+            "startedDate": "2026-10-12T19:38:34.677Z",
+            "finishedDate": "2026-10-12T19:45:40.347Z"
+          }
+        }
+      },
+      {
+        "actions": [
+          {
+            "id": "18b273c0-4f42-4742-9e13-5efd4577c570",
+            "attributes": {
+              "name": "Test - macOS",
+              "actionType": "TEST",
+              "completionStatus": "FAILED",
+              "startedDate": "2026-10-12T15:50:28.654Z",
+              "finishedDate": "2026-10-12T15:53:16.676Z"
+            }
+          },
+          {
+            "id": "259abd35-9fc0-4947-b149-c708e38b7f45",
+            "attributes": {
+              "name": "Archive - macOS",
+              "actionType": "ARCHIVE",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-12T15:50:30.585Z",
+              "finishedDate": "2026-10-12T15:56:36.844Z"
+            }
+          },
+          {
+            "id": "758bd3be-5281-4774-b5a7-f8952046503f",
+            "attributes": {
+              "name": "Archive - tvOS",
+              "actionType": "ARCHIVE",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-12T15:50:29.064Z",
+              "finishedDate": "2026-10-12T15:58:26.421Z"
+            }
+          },
+          {
+            "id": "8c3d6b44-55e4-4a1d-999f-d2f4aef93d87",
+            "attributes": {
+              "name": "Test - iOS",
+              "actionType": "TEST",
+              "completionStatus": "FAILED",
+              "startedDate": "2026-10-12T15:50:28.431Z",
+              "finishedDate": "2026-10-12T15:51:34.327Z"
+            }
+          },
+          {
+            "id": "94a022cf-7e41-436d-85f4-ee6647761b74",
+            "attributes": {
+              "name": "TestFlight Internal Testing - iOS",
+              "actionType": "TEST",
+              "completionStatus": "SKIPPED",
+              "startedDate": null,
+              "finishedDate": null
+            }
+          },
+          {
+            "id": "569527f0-a3f4-4e56-8409-b4987dd8d38b",
+            "attributes": {
+              "name": "Archive - visionOS",
+              "actionType": "ARCHIVE",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-12T15:50:29.565Z",
+              "finishedDate": "2026-10-12T15:58:51.262Z"
+            }
+          },
+          {
+            "id": "a2a7f062-ac6e-4f5d-8927-9f2b71e06071",
+            "attributes": {
+              "name": "TestFlight Internal Testing - macOS",
+              "actionType": "TEST",
+              "completionStatus": "SKIPPED",
+              "startedDate": null,
+              "finishedDate": null
+            }
+          },
+          {
+            "id": "96f58c9e-2f6c-4924-8565-6ab25f724f40",
+            "attributes": {
+              "name": "TestFlight Internal Testing - tvOS",
+              "actionType": "TEST",
+              "completionStatus": "SKIPPED",
+              "startedDate": null,
+              "finishedDate": null
+            }
+          },
+          {
+            "id": "f1d352a0-e9d7-4f27-b317-798edc421cb8",
+            "attributes": {
+              "name": "Test - tvOS",
+              "actionType": "TEST",
+              "completionStatus": "FAILED",
+              "startedDate": "2026-10-12T15:50:29.011Z",
+              "finishedDate": "2026-10-12T16:04:59.999Z"
+            }
+          },
+          {
+            "id": "d999f9da-5494-4eac-8e6e-607e1fcb00fa",
+            "attributes": {
+              "name": "Archive - iOS",
+              "actionType": "ARCHIVE",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-12T15:50:29.546Z",
+              "finishedDate": "2026-10-12T16:03:34.859Z"
+            }
+          },
+          {
+            "id": "30b0d015-bd19-40cd-bb8d-ba2b8ad0e028",
+            "attributes": {
+              "name": "TestFlight Internal Testing - visionOS",
+              "actionType": "TEST",
+              "completionStatus": "SKIPPED",
+              "startedDate": null,
+              "finishedDate": null
+            }
+          },
+          {
+            "id": "cc2c8f01-a1d7-4b50-bcbb-c40b4efb0945",
+            "attributes": {
+              "name": "Test - visionOS",
+              "actionType": "TEST",
+              "completionStatus": "FAILED",
+              "startedDate": "2026-10-12T15:50:27.769Z",
+              "finishedDate": "2026-10-12T15:51:45.506Z"
+            }
+          }
+        ],
+        "run": {
+          "id": "07ee746f-c873-45a2-87aa-dc8bcad45bdd",
+          "attributes": {
+            "number": 9,
+            "completionStatus": "FAILED",
+            "startReason": "GIT_REF_CHANGE",
+            "startedDate": "2026-10-12T15:50:27.769Z",
+            "finishedDate": "2026-10-12T16:04:59.999Z"
+          }
+        }
+      },
+      {
+        "actions": [
+          {
+            "id": "4a0a0a5c-3d47-4dfa-b93b-2be6608f7142",
+            "attributes": {
+              "name": "Build - macOS",
+              "actionType": "BUILD",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-12T11:22:40.859Z",
+              "finishedDate": "2026-10-12T11:24:44.571Z"
+            }
+          },
+          {
+            "id": "1dcbd05f-8e35-4d1f-86ca-f9789dfd1c8a",
+            "attributes": {
+              "name": "Build - iOS",
+              "actionType": "BUILD",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-12T11:22:39.275Z",
+              "finishedDate": "2026-10-12T11:25:08.634Z"
+            }
+          },
+          {
+            "id": "eb712786-cab4-4c89-acd9-5bc4ea22cdb3",
+            "attributes": {
+              "name": "Build - visionOS",
+              "actionType": "BUILD",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-12T11:22:43.824Z",
+              "finishedDate": "2026-10-12T11:24:23.225Z"
+            }
+          },
+          {
+            "id": "36b774f9-3105-42e9-bad7-738cb6ba0c87",
+            "attributes": {
+              "name": "Build - tvOS",
+              "actionType": "BUILD",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-12T11:22:40.715Z",
+              "finishedDate": "2026-10-12T11:24:27.635Z"
+            }
+          }
+        ],
+        "run": {
+          "id": "6985488d-e72e-477b-9161-5397e037650a",
+          "attributes": {
+            "number": 8,
+            "completionStatus": "SUCCEEDED",
+            "startReason": "MANUAL",
+            "startedDate": "2026-10-12T11:22:39.275Z",
+            "finishedDate": "2026-10-12T11:25:08.634Z"
+          }
+        }
+      },
+      {
+        "actions": [
+          {
+            "id": "b23626c0-4048-459f-95d7-476503548308",
+            "attributes": {
+              "name": "Archive - macOS",
+              "actionType": "ARCHIVE",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-12T09:59:17.801Z",
+              "finishedDate": "2026-10-12T10:05:24.751Z"
+            }
+          },
+          {
+            "id": "0a3e4ee1-dcfd-4122-947f-975569e70947",
+            "attributes": {
+              "name": "TestFlight Internal Testing - macOS",
+              "actionType": "TEST",
+              "completionStatus": "SKIPPED",
+              "startedDate": null,
+              "finishedDate": null
+            }
+          },
+          {
+            "id": "10e69dee-bed2-4b6a-847d-69f7f36683b3",
+            "attributes": {
+              "name": "Archive - iOS",
+              "actionType": "ARCHIVE",
+              "completionStatus": "FAILED",
+              "startedDate": "2026-10-12T09:59:18.381Z",
+              "finishedDate": "2026-10-12T10:13:46.098Z"
+            }
+          },
+          {
+            "id": "d87b4bad-a90b-4b3b-9c88-760dda1b01b9",
+            "attributes": {
+              "name": "TestFlight Internal Testing - tvOS",
+              "actionType": "TEST",
+              "completionStatus": "SKIPPED",
+              "startedDate": null,
+              "finishedDate": null
+            }
+          },
+          {
+            "id": "e2e58a7d-7983-4e89-80be-e4b45268be90",
+            "attributes": {
+              "name": "TestFlight Internal Testing - iOS",
+              "actionType": "TEST",
+              "completionStatus": "SKIPPED",
+              "startedDate": null,
+              "finishedDate": null
+            }
+          },
+          {
+            "id": "19333347-ea25-422e-bc47-a46e79a21d3c",
+            "attributes": {
+              "name": "Archive - tvOS",
+              "actionType": "ARCHIVE",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-12T09:59:17.306Z",
+              "finishedDate": "2026-10-12T10:04:33.16Z"
+            }
+          },
+          {
+            "id": "f69b1008-a031-4611-9af9-ade8e5106a89",
+            "attributes": {
+              "name": "TestFlight Internal Testing - visionOS",
+              "actionType": "TEST",
+              "completionStatus": "SKIPPED",
+              "startedDate": null,
+              "finishedDate": null
+            }
+          },
+          {
+            "id": "0d34094c-2b96-41ba-860f-23c0e50848c1",
+            "attributes": {
+              "name": "Archive - visionOS",
+              "actionType": "ARCHIVE",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-12T09:59:18.018Z",
+              "finishedDate": "2026-10-12T10:08:15.202Z"
+            }
+          }
+        ],
+        "run": {
+          "id": "7d7435a0-677a-4c25-b35b-209a24d53af6",
+          "attributes": {
+            "number": 7,
+            "completionStatus": "FAILED",
+            "startReason": "MANUAL",
+            "startedDate": "2026-10-12T09:59:17.306Z",
+            "finishedDate": "2026-10-12T10:13:46.098Z"
+          }
+        }
+      },
+      {
+        "actions": [
+          {
+            "id": "25a2dd7c-b0e3-4a14-8091-732b26de53ac",
+            "attributes": {
+              "name": "Build - visionOS",
+              "actionType": "BUILD",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-12T09:27:29.535Z",
+              "finishedDate": "2026-10-12T09:29:08.281Z"
+            }
+          },
+          {
+            "id": "6e6c03ae-d0d1-488c-a13a-2f4accabaa7a",
+            "attributes": {
+              "name": "Build - macOS",
+              "actionType": "BUILD",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-12T09:27:28.801Z",
+              "finishedDate": "2026-10-12T09:29:29.299Z"
+            }
+          },
+          {
+            "id": "e9c1c23d-734e-4726-8104-faeee159f89e",
+            "attributes": {
+              "name": "Build - tvOS",
+              "actionType": "BUILD",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-12T09:27:28.863Z",
+              "finishedDate": "2026-10-12T09:29:08.794Z"
+            }
+          },
+          {
+            "id": "6e4ae7da-5488-476d-87f5-06b7f246cff1",
+            "attributes": {
+              "name": "Build - iOS",
+              "actionType": "BUILD",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-12T09:27:29.596Z",
+              "finishedDate": "2026-10-12T09:30:04.872Z"
+            }
+          }
+        ],
+        "run": {
+          "id": "f62c41a1-6948-4d38-bdba-c158e05c66b5",
+          "attributes": {
+            "number": 6,
+            "completionStatus": "SUCCEEDED",
+            "startReason": "MANUAL",
+            "startedDate": "2026-10-12T09:27:28.863Z",
+            "finishedDate": "2026-10-12T09:30:04.872Z"
+          }
+        }
+      },
+      {
+        "actions": [
+          {
+            "id": "d4e5dbf4-43c3-41ac-aaa1-301c9408b904",
+            "attributes": {
+              "name": "Build - tvOS",
+              "actionType": "BUILD",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-12T08:30:15.438Z",
+              "finishedDate": "2026-10-12T08:31:56.06Z"
+            }
+          },
+          {
+            "id": "7596e077-9d2a-40ad-b8ec-e00e167201f7",
+            "attributes": {
+              "name": "Build - iOS",
+              "actionType": "BUILD",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-12T08:30:16.418Z",
+              "finishedDate": "2026-10-12T08:32:50.403Z"
+            }
+          },
+          {
+            "id": "521936fc-c518-4ec4-a54a-5ebef3030ee6",
+            "attributes": {
+              "name": "Build - visionOS",
+              "actionType": "BUILD",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-12T08:30:15.914Z",
+              "finishedDate": "2026-10-12T08:31:58.069Z"
+            }
+          },
+          {
+            "id": "7a70c949-97d2-4669-8b88-ba8ccd8b9014",
+            "attributes": {
+              "name": "Build - macOS",
+              "actionType": "BUILD",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-12T08:30:15.76Z",
+              "finishedDate": "2026-10-12T08:32:17.743Z"
+            }
+          }
+        ],
+        "run": {
+          "id": "0f0892cc-dcc6-4229-972b-72335a6550e5",
+          "attributes": {
+            "number": 5,
+            "completionStatus": "SUCCEEDED",
+            "startReason": "MANUAL",
+            "startedDate": "2026-10-12T08:30:15.438Z",
+            "finishedDate": "2026-10-12T08:32:50.403Z"
+          }
+        }
+      },
+      {
+        "actions": [
+          {
+            "id": "b8c378fb-6ec7-4c9a-b084-651c5f7032c2",
+            "attributes": {
+              "name": "Archive - tvOS",
+              "actionType": "ARCHIVE",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-12T02:59:51.929Z",
+              "finishedDate": "2026-10-12T03:04:49.831Z"
+            }
+          },
+          {
+            "id": "8d0571a4-284c-40d2-929d-02e790739f61",
+            "attributes": {
+              "name": "TestFlight Internal Testing - visionOS",
+              "actionType": "TEST",
+              "completionStatus": "SKIPPED",
+              "startedDate": null,
+              "finishedDate": null
+            }
+          },
+          {
+            "id": "ebf76c2f-2805-4099-83ba-5c89d286bb3a",
+            "attributes": {
+              "name": "TestFlight Internal Testing - macOS",
+              "actionType": "TEST",
+              "completionStatus": "SKIPPED",
+              "startedDate": null,
+              "finishedDate": null
+            }
+          },
+          {
+            "id": "8a87adc5-9aaa-4b0c-80d6-24d7c0b13213",
+            "attributes": {
+              "name": "TestFlight Internal Testing - tvOS",
+              "actionType": "TEST",
+              "completionStatus": "SKIPPED",
+              "startedDate": null,
+              "finishedDate": null
+            }
+          },
+          {
+            "id": "f3e960c7-1028-45f9-8f37-fad40a7035fc",
+            "attributes": {
+              "name": "Archive - macOS",
+              "actionType": "ARCHIVE",
+              "completionStatus": "FAILED",
+              "startedDate": "2026-10-12T02:59:52.331Z",
+              "finishedDate": "2026-10-12T03:10:29.622Z"
+            }
+          },
+          {
+            "id": "67150df6-1732-4b0e-a5f6-aa9632d080c9",
+            "attributes": {
+              "name": "Archive - iOS",
+              "actionType": "ARCHIVE",
+              "completionStatus": "FAILED",
+              "startedDate": "2026-10-12T02:59:52.994Z",
+              "finishedDate": "2026-10-12T03:03:39.913Z"
+            }
+          },
+          {
+            "id": "27861d92-3718-45a6-a558-76e4e65ff5af",
+            "attributes": {
+              "name": "TestFlight Internal Testing - iOS",
+              "actionType": "TEST",
+              "completionStatus": "SKIPPED",
+              "startedDate": null,
+              "finishedDate": null
+            }
+          },
+          {
+            "id": "f7d398fc-a7b2-46ac-951b-cf734909a815",
+            "attributes": {
+              "name": "Archive - visionOS",
+              "actionType": "ARCHIVE",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-12T02:59:53.126Z",
+              "finishedDate": "2026-10-12T03:04:57.938Z"
+            }
+          }
+        ],
+        "run": {
+          "id": "33eae093-33a9-4dd9-a12e-b8b9a306054a",
+          "attributes": {
+            "number": 4,
+            "completionStatus": "FAILED",
+            "startReason": "MANUAL",
+            "startedDate": "2026-10-12T02:59:51.929Z",
+            "finishedDate": "2026-10-12T03:10:29.622Z"
+          }
+        }
+      },
+      {
+        "actions": [
+          {
+            "id": "e04467f4-3678-4378-ab9f-6fac08966e17",
+            "attributes": {
+              "name": "Build - macOS",
+              "actionType": "BUILD",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-12T02:06:07.686Z",
+              "finishedDate": "2026-10-12T02:08:13.941Z"
+            }
+          },
+          {
+            "id": "a773eab1-9657-4a65-bf72-16e606af1e69",
+            "attributes": {
+              "name": "Build - visionOS",
+              "actionType": "BUILD",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-12T02:06:09.502Z",
+              "finishedDate": "2026-10-12T02:07:47.476Z"
+            }
+          },
+          {
+            "id": "9722775d-b1f6-4a60-863f-e3783dbe67f2",
+            "attributes": {
+              "name": "Build - tvOS",
+              "actionType": "BUILD",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-12T02:06:09.414Z",
+              "finishedDate": "2026-10-12T02:07:45.554Z"
+            }
+          },
+          {
+            "id": "1b8a8f43-0781-43b8-ad7d-066e97f11a5a",
+            "attributes": {
+              "name": "Build - iOS",
+              "actionType": "BUILD",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-12T02:06:07.487Z",
+              "finishedDate": "2026-10-12T02:08:29.574Z"
+            }
+          }
+        ],
+        "run": {
+          "id": "db702224-7ba1-4c39-964c-0e1796b8a0d4",
+          "attributes": {
+            "number": 3,
+            "completionStatus": "SUCCEEDED",
+            "startReason": "MANUAL",
+            "startedDate": "2026-10-12T02:06:07.487Z",
+            "finishedDate": "2026-10-12T02:08:29.574Z"
+          }
+        }
+      },
+      {
+        "actions": [
+          {
+            "id": "f5529aba-2087-4c05-befb-11ca08d5829c",
+            "attributes": {
+              "name": "Build - iOS",
+              "actionType": "BUILD",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-11T23:50:54.252Z",
+              "finishedDate": "2026-10-11T23:53:32.005Z"
+            }
+          },
+          {
+            "id": "c84c8872-6e29-4440-adef-4e75104cabb8",
+            "attributes": {
+              "name": "Build - visionOS",
+              "actionType": "BUILD",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-11T23:50:56.827Z",
+              "finishedDate": "2026-10-11T23:52:35.891Z"
+            }
+          },
+          {
+            "id": "c4eb468c-a066-4b35-a9b9-4159b7b97d85",
+            "attributes": {
+              "name": "Build - macOS",
+              "actionType": "BUILD",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-11T23:50:57.469Z",
+              "finishedDate": "2026-10-11T23:52:58.849Z"
+            }
+          },
+          {
+            "id": "9b875c77-a15e-41f3-acdd-7339baf02392",
+            "attributes": {
+              "name": "Build - tvOS",
+              "actionType": "BUILD",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-11T23:50:57.146Z",
+              "finishedDate": "2026-10-11T23:52:36.788Z"
+            }
+          }
+        ],
+        "run": {
+          "id": "635600e9-4fa2-4d68-8369-05e1bf1a0dc0",
+          "attributes": {
+            "number": 2,
+            "completionStatus": "SUCCEEDED",
+            "startReason": "MANUAL",
+            "startedDate": "2026-10-11T23:50:54.252Z",
+            "finishedDate": "2026-10-11T23:53:32.005Z"
+          }
+        }
+      },
+      {
+        "actions": [
+          {
+            "id": "3f43b141-a313-4553-83c6-d3ab3aca17b3",
+            "attributes": {
+              "name": "Build - macOS",
+              "actionType": "BUILD",
+              "completionStatus": "FAILED",
+              "startedDate": "2026-10-11T23:43:31.711Z",
+              "finishedDate": "2026-10-11T23:44:20.534Z"
+            }
+          },
+          {
+            "id": "544f1e78-cf2a-4d11-9747-5ae9eeb11532",
+            "attributes": {
+              "name": "Build - iOS",
+              "actionType": "BUILD",
+              "completionStatus": "FAILED",
+              "startedDate": "2026-10-11T23:43:27.786Z",
+              "finishedDate": "2026-10-11T23:44:37.137Z"
+            }
+          },
+          {
+            "id": "8da2c618-0a4a-4cd5-8e87-f224184dc472",
+            "attributes": {
+              "name": "Build - tvOS",
+              "actionType": "BUILD",
+              "completionStatus": "FAILED",
+              "startedDate": "2026-10-11T23:43:31.663Z",
+              "finishedDate": "2026-10-11T23:44:13.764Z"
+            }
+          },
+          {
+            "id": "6f19aec7-9a2f-4726-a2fa-a7e744f94c98",
+            "attributes": {
+              "name": "Build - visionOS",
+              "actionType": "BUILD",
+              "completionStatus": "FAILED",
+              "startedDate": "2026-10-11T23:43:30.834Z",
+              "finishedDate": "2026-10-11T23:44:07.325Z"
+            }
+          }
+        ],
+        "run": {
+          "id": "5c1749b4-56a3-461c-a93c-4f3b8fe17b9c",
+          "attributes": {
+            "number": 1,
+            "completionStatus": "FAILED",
+            "startReason": "MANUAL",
+            "startedDate": "2026-10-11T23:43:27.786Z",
+            "finishedDate": "2026-10-11T23:44:37.137Z"
+          }
+        }
+      }
+    ],
+    "workflows": [
+      {
+        "attributes": {
+          "name": "Gus Internal TestFlight",
+          "clean": true,
+          "actions": [
+            {
+              "actionType": "TEST",
+              "buildDistributionAudience": null,
+              "destination": null,
+              "isRequiredToPass": true,
+              "name": "Test - iOS",
+              "platform": "IOS",
+              "scheme": "Gus iOS Unit Tests",
+              "testConfiguration": {
+                "kind": "USE_SCHEME_SETTINGS",
+                "testDestinations": [
+                  {
+                    "deviceTypeIdentifier": "com.apple.CoreSimulator.SimDeviceType.iPhone-17",
+                    "deviceTypeName": "iPhone 17",
+                    "kind": "SIMULATOR",
+                    "runtimeIdentifier": "com.apple.CoreSimulator.SimRuntime.iOS-27-2",
+                    "runtimeName": "iOS 27.2"
+                  },
+                  {
+                    "deviceTypeIdentifier": "com.apple.CoreSimulator.SimDeviceType.iPad-Pro-11-inch-M5-12GB",
+                    "deviceTypeName": "iPad Pro 11-inch (M5)",
+                    "kind": "SIMULATOR",
+                    "runtimeIdentifier": "com.apple.CoreSimulator.SimRuntime.iOS-27-2",
+                    "runtimeName": "iOS 27.2"
+                  }
+                ],
+                "testPlanName": ""
+              }
+            },
+            {
+              "actionType": "TEST",
+              "buildDistributionAudience": null,
+              "destination": null,
+              "isRequiredToPass": true,
+              "name": "Test - macOS",
+              "platform": "MACOS",
+              "scheme": "Gus macOS Unit Tests",
+              "testConfiguration": {
+                "kind": "USE_SCHEME_SETTINGS",
+                "testDestinations": [
+                  {
+                    "deviceTypeIdentifier": "mac",
+                    "deviceTypeName": "Mac",
+                    "kind": "MAC",
+                    "runtimeIdentifier": "builder",
+                    "runtimeName": "Same As Selected macOS Version"
+                  }
+                ],
+                "testPlanName": ""
+              }
+            },
+            {
+              "actionType": "TEST",
+              "buildDistributionAudience": null,
+              "destination": null,
+              "isRequiredToPass": true,
+              "name": "Test - tvOS",
+              "platform": "TVOS",
+              "scheme": "Gus tvOS Unit Tests",
+              "testConfiguration": {
+                "kind": "USE_SCHEME_SETTINGS",
+                "testDestinations": [
+                  {
+                    "deviceTypeIdentifier": "recommended_apple_tvs",
+                    "deviceTypeName": "Recommended Apple TVs",
+                    "kind": "SIMULATOR",
+                    "runtimeIdentifier": "default",
+                    "runtimeName": "Latest from Selected Xcode (tvOS 27.0)"
+                  }
+                ],
+                "testPlanName": ""
+              }
+            },
+            {
+              "actionType": "TEST",
+              "buildDistributionAudience": null,
+              "destination": null,
+              "isRequiredToPass": true,
+              "name": "Test - visionOS",
+              "platform": "VISIONOS",
+              "scheme": "Gus visionOS Unit Tests",
+              "testConfiguration": {
+                "kind": "USE_SCHEME_SETTINGS",
+                "testDestinations": [
+                  {
+                    "deviceTypeIdentifier": "com.apple.CoreSimulator.SimDeviceType.Apple-Vision-Pro-4K",
+                    "deviceTypeName": "Apple Vision Pro",
+                    "kind": "SIMULATOR",
+                    "runtimeIdentifier": "com.apple.CoreSimulator.SimRuntime.xrOS-27-2",
+                    "runtimeName": "visionOS 27.2"
+                  }
+                ],
+                "testPlanName": ""
+              }
+            },
+            {
+              "actionType": "ARCHIVE",
+              "buildDistributionAudience": "INTERNAL_ONLY",
+              "destination": null,
+              "isRequiredToPass": true,
+              "name": "Archive - visionOS",
+              "platform": "VISIONOS",
+              "scheme": "A Playa Named Gus",
+              "testConfiguration": null
+            },
+            {
+              "actionType": "ARCHIVE",
+              "buildDistributionAudience": "INTERNAL_ONLY",
+              "destination": null,
+              "isRequiredToPass": true,
+              "name": "Archive - tvOS",
+              "platform": "TVOS",
+              "scheme": "A Playa Named Gus",
+              "testConfiguration": null
+            },
+            {
+              "actionType": "ARCHIVE",
+              "buildDistributionAudience": "INTERNAL_ONLY",
+              "destination": "ANY_MAC",
+              "isRequiredToPass": true,
+              "name": "Archive - macOS",
+              "platform": "MACOS",
+              "scheme": "A Playa Named Gus",
+              "testConfiguration": null
+            },
+            {
+              "actionType": "ARCHIVE",
+              "buildDistributionAudience": "INTERNAL_ONLY",
+              "destination": null,
+              "isRequiredToPass": true,
+              "name": "Archive - iOS",
+              "platform": "IOS",
+              "scheme": "A Playa Named Gus",
+              "testConfiguration": null
+            }
+          ],
+          "branchStartCondition": {
+            "autoCancel": true,
+            "filesAndFoldersRule": {
+              "matchers": [
+                {
+                  "directory": "Sources",
+                  "fileExtension": null,
+                  "fileName": null
+                },
+                {
+                  "directory": "Tests",
+                  "fileExtension": null,
+                  "fileName": null
+                },
+                {
+                  "directory": "Resources",
+                  "fileExtension": null,
+                  "fileName": null
+                },
+                {
+                  "directory": "Config",
+                  "fileExtension": null,
+                  "fileName": null
+                },
+                {
+                  "directory": "ci_scripts",
+                  "fileExtension": null,
+                  "fileName": null
+                },
+                {
+                  "directory": "Scripts",
+                  "fileExtension": null,
+                  "fileName": null
+                },
+                {
+                  "directory": "A Playa Named Gus.xcodeproj",
+                  "fileExtension": null,
+                  "fileName": null
+                },
+                {
+                  "directory": "",
+                  "fileExtension": null,
+                  "fileName": "project.yml"
+                },
+                {
+                  "directory": "",
+                  "fileExtension": null,
+                  "fileName": "Package.resolved"
+                },
+                {
+                  "directory": "",
+                  "fileExtension": null,
+                  "fileName": "Package.swift"
+                }
+              ],
+              "mode": "START_IF_ANY_FILE_MATCHES"
+            },
+            "source": {
+              "isAllMatch": false,
+              "patterns": [
+                {
+                  "isPrefix": false,
+                  "pattern": "main"
+                }
+              ]
+            }
+          },
+          "manualBranchStartCondition": {
+            "source": {
+              "isAllMatch": false,
+              "patterns": [
+                {
+                  "isPrefix": false,
+                  "pattern": "main"
+                }
+              ]
+            }
+          },
+          "pullRequestStartCondition": null,
+          "scheduledStartCondition": null,
+          "tagStartCondition": null,
+          "isEnabled": true
+        },
+        "id": "559f9de9-14d5-4b85-a091-8c3598fa346f",
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/ciWorkflows/559f9de9-14d5-4b85-a091-8c3598fa346f"
+        },
+        "relationships": {
+          "buildRuns": {
+            "links": {
+              "related": "https://api.appstoreconnect.apple.com/v1/ciWorkflows/559f9de9-14d5-4b85-a091-8c3598fa346f/buildRuns",
+              "self": "https://api.appstoreconnect.apple.com/v1/ciWorkflows/559f9de9-14d5-4b85-a091-8c3598fa346f/relationships/buildRuns"
+            }
+          },
+          "repository": {
+            "links": {
+              "related": "https://api.appstoreconnect.apple.com/v1/ciWorkflows/559f9de9-14d5-4b85-a091-8c3598fa346f/repository",
+              "self": "https://api.appstoreconnect.apple.com/v1/ciWorkflows/559f9de9-14d5-4b85-a091-8c3598fa346f/relationships/repository"
+            }
+          }
+        },
+        "type": "ciWorkflows"
+      }
+    ]
+  },
+  {
+    "product": {
+      "attributes": {
+        "createdDate": "2026-08-11T19:05:24.38Z",
+        "name": "PumpSync",
+        "productType": "APP"
+      },
+      "id": "2E9036C0-9B68-4B35-9F7C-1867AB66EAC1",
+      "links": {
+        "self": "https://api.appstoreconnect.apple.com/v1/ciProducts/2E9036C0-9B68-4B35-9F7C-1867AB66EAC1"
+      },
+      "relationships": {
+        "additionalRepositories": {
+          "links": {
+            "related": "https://api.appstoreconnect.apple.com/v1/ciProducts/2E9036C0-9B68-4B35-9F7C-1867AB66EAC1/additionalRepositories",
+            "self": "https://api.appstoreconnect.apple.com/v1/ciProducts/2E9036C0-9B68-4B35-9F7C-1867AB66EAC1/relationships/additionalRepositories"
+          }
+        },
+        "app": {
+          "links": {
+            "related": "https://api.appstoreconnect.apple.com/v1/ciProducts/2E9036C0-9B68-4B35-9F7C-1867AB66EAC1/app",
+            "self": "https://api.appstoreconnect.apple.com/v1/ciProducts/2E9036C0-9B68-4B35-9F7C-1867AB66EAC1/relationships/app"
+          }
+        },
+        "buildRuns": {
+          "links": {
+            "related": "https://api.appstoreconnect.apple.com/v1/ciProducts/2E9036C0-9B68-4B35-9F7C-1867AB66EAC1/buildRuns",
+            "self": "https://api.appstoreconnect.apple.com/v1/ciProducts/2E9036C0-9B68-4B35-9F7C-1867AB66EAC1/relationships/buildRuns"
+          }
+        },
+        "primaryRepositories": {
+          "links": {
+            "related": "https://api.appstoreconnect.apple.com/v1/ciProducts/2E9036C0-9B68-4B35-9F7C-1867AB66EAC1/primaryRepositories",
+            "self": "https://api.appstoreconnect.apple.com/v1/ciProducts/2E9036C0-9B68-4B35-9F7C-1867AB66EAC1/relationships/primaryRepositories"
+          }
+        },
+        "workflows": {
+          "links": {
+            "related": "https://api.appstoreconnect.apple.com/v1/ciProducts/2E9036C0-9B68-4B35-9F7C-1867AB66EAC1/workflows",
+            "self": "https://api.appstoreconnect.apple.com/v1/ciProducts/2E9036C0-9B68-4B35-9F7C-1867AB66EAC1/relationships/workflows"
+          }
+        }
+      },
+      "type": "ciProducts"
+    },
+    "runs": [
+      {
+        "actions": [
+          {
+            "id": "44ca7e49-3794-4953-b824-4151fc3dc5ee",
+            "attributes": {
+              "name": "Test - iOS",
+              "actionType": "TEST",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-19T20:35:36.574Z",
+              "finishedDate": "2026-10-19T20:51:12.213Z"
+            }
+          },
+          {
+            "id": "62454182-1a36-4dab-92af-58ff25a5eac4",
+            "attributes": {
+              "name": "TestFlight Internal Testing - iOS",
+              "actionType": "TEST",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-19T20:51:23.501Z",
+              "finishedDate": "2026-10-19T20:51:27.685Z"
+            }
+          },
+          {
+            "id": "450f096e-e191-4b2b-94e5-171aec5cc4c0",
+            "attributes": {
+              "name": "Archive - iOS",
+              "actionType": "ARCHIVE",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-19T20:35:36.767Z",
+              "finishedDate": "2026-10-19T20:42:45.577Z"
+            }
+          }
+        ],
+        "run": {
+          "id": "c45bf40a-6df0-49e5-a241-5f848e5be7d2",
+          "attributes": {
+            "number": 50,
+            "completionStatus": "SUCCEEDED",
+            "startReason": "MANUAL",
+            "startedDate": "2026-10-19T20:35:36.574Z",
+            "finishedDate": "2026-10-19T20:51:27.685Z"
+          }
+        }
+      },
+      {
+        "actions": [
+          {
+            "id": "ac6416f0-91fc-494a-b5c7-c8ec93e7b562",
+            "attributes": {
+              "name": "TestFlight Internal Testing - iOS",
+              "actionType": "TEST",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-19T18:46:46.628Z",
+              "finishedDate": "2026-10-19T18:46:49.922Z"
+            }
+          },
+          {
+            "id": "02384501-00a3-4552-a971-cd7c96ce5b5a",
+            "attributes": {
+              "name": "Test - iOS",
+              "actionType": "TEST",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-19T18:31:50.825Z",
+              "finishedDate": "2026-10-19T18:44:16.787Z"
+            }
+          },
+          {
+            "id": "12103d55-796a-4429-80a4-a6afe66fb0d0",
+            "attributes": {
+              "name": "Archive - iOS",
+              "actionType": "ARCHIVE",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-19T18:31:50.639Z",
+              "finishedDate": "2026-10-19T18:35:57.783Z"
+            }
+          }
+        ],
+        "run": {
+          "id": "e1bb086d-5ed4-47c3-bea7-a7454d152385",
+          "attributes": {
+            "number": 49,
+            "completionStatus": "SUCCEEDED",
+            "startReason": "MANUAL",
+            "startedDate": "2026-10-19T18:31:50.639Z",
+            "finishedDate": "2026-10-19T18:46:49.922Z"
+          }
+        }
+      },
+      {
+        "actions": [
+          {
+            "id": "8ef90d58-a631-4f04-b0b6-b68d72e2f2f3",
+            "attributes": {
+              "name": "Archive - iOS",
+              "actionType": "ARCHIVE",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-12T23:52:56.962Z",
+              "finishedDate": "2026-10-12T23:56:16.553Z"
+            }
+          },
+          {
+            "id": "5d23aede-6a00-40a5-99ba-afbd131605c2",
+            "attributes": {
+              "name": "Test - iOS",
+              "actionType": "TEST",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-12T23:52:56.284Z",
+              "finishedDate": "2026-10-13T00:05:20.125Z"
+            }
+          },
+          {
+            "id": "7f7ec01f-6770-4066-b5ed-c3f7d3cfa7e2",
+            "attributes": {
+              "name": "TestFlight Internal Testing - iOS",
+              "actionType": "TEST",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-13T00:05:39.418Z",
+              "finishedDate": "2026-10-13T00:05:42.479Z"
+            }
+          }
+        ],
+        "run": {
+          "id": "d3fd81e5-5a59-4abc-968e-7307383cc524",
+          "attributes": {
+            "number": 48,
+            "completionStatus": "SUCCEEDED",
+            "startReason": "MANUAL",
+            "startedDate": "2026-10-12T23:52:56.284Z",
+            "finishedDate": "2026-10-13T00:05:42.479Z"
+          }
+        }
+      },
+      {
+        "actions": [
+          {
+            "id": "ffb2554e-85c3-4127-9a58-b82d9c6eda08",
+            "attributes": {
+              "name": "Archive - iOS",
+              "actionType": "ARCHIVE",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-12T22:38:56.676Z",
+              "finishedDate": "2026-10-12T22:43:11.765Z"
+            }
+          },
+          {
+            "id": "982ccd0a-3c4f-4c5c-bbd0-6dcb15f8283b",
+            "attributes": {
+              "name": "TestFlight Internal Testing - iOS",
+              "actionType": "TEST",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-12T22:50:20.203Z",
+              "finishedDate": "2026-10-12T22:50:23.431Z"
+            }
+          },
+          {
+            "id": "0fb37437-9ef4-4caa-8006-351e9f54e3ea",
+            "attributes": {
+              "name": "Test - iOS",
+              "actionType": "TEST",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-12T22:38:56.162Z",
+              "finishedDate": "2026-10-12T22:50:14.103Z"
+            }
+          }
+        ],
+        "run": {
+          "id": "9f8348fe-b3c5-4b4b-a675-48629d99737e",
+          "attributes": {
+            "number": 47,
+            "completionStatus": "SUCCEEDED",
+            "startReason": "MANUAL",
+            "startedDate": "2026-10-12T22:38:56.162Z",
+            "finishedDate": "2026-10-12T22:50:23.431Z"
+          }
+        }
+      },
+      {
+        "actions": [
+          {
+            "id": "54322854-2638-403d-ade8-a81b75a8f54d",
+            "attributes": {
+              "name": "Test - iOS",
+              "actionType": "TEST",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-12T20:00:17.397Z",
+              "finishedDate": "2026-10-12T20:12:04.606Z"
+            }
+          },
+          {
+            "id": "d5cc7c06-dde6-4b1d-9bef-b474a55b22bd",
+            "attributes": {
+              "name": "TestFlight Internal Testing - iOS",
+              "actionType": "TEST",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-12T20:12:37.143Z",
+              "finishedDate": "2026-10-12T20:12:44.208Z"
+            }
+          },
+          {
+            "id": "66e107a7-31c0-4f15-ba84-4493dc45a2f5",
+            "attributes": {
+              "name": "Archive - iOS",
+              "actionType": "ARCHIVE",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-12T20:00:18.094Z",
+              "finishedDate": "2026-10-12T20:05:05.567Z"
+            }
+          }
+        ],
+        "run": {
+          "id": "abc65380-9cff-498a-add6-69e43b7d13d5",
+          "attributes": {
+            "number": 46,
+            "completionStatus": "SUCCEEDED",
+            "startReason": "MANUAL",
+            "startedDate": "2026-10-12T20:00:17.397Z",
+            "finishedDate": "2026-10-12T20:12:44.208Z"
+          }
+        }
+      },
+      {
+        "actions": [
+          {
+            "id": "1061e97a-d418-4b5f-962c-ed361831fe82",
+            "attributes": {
+              "name": "Archive - iOS",
+              "actionType": "ARCHIVE",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-12T15:38:37.494Z",
+              "finishedDate": "2026-10-12T15:43:09.81Z"
+            }
+          },
+          {
+            "id": "dfa8ed34-ad1d-43bc-b7f7-9df70177eb81",
+            "attributes": {
+              "name": "TestFlight Internal Testing - iOS",
+              "actionType": "TEST",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-12T15:52:53.795Z",
+              "finishedDate": "2026-10-12T15:53:01.547Z"
+            }
+          },
+          {
+            "id": "d8fa7689-3e11-4319-aab0-558b7725516c",
+            "attributes": {
+              "name": "Test - iOS",
+              "actionType": "TEST",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-12T15:38:37.403Z",
+              "finishedDate": "2026-10-12T15:50:16.027Z"
+            }
+          }
+        ],
+        "run": {
+          "id": "d30cca12-e7cf-4bca-96a5-ad62c8fd5b54",
+          "attributes": {
+            "number": 45,
+            "completionStatus": "SUCCEEDED",
+            "startReason": "MANUAL",
+            "startedDate": "2026-10-12T15:38:37.403Z",
+            "finishedDate": "2026-10-12T15:53:01.547Z"
+          }
+        }
+      },
+      {
+        "actions": [
+          {
+            "id": "4d247f56-bc21-4895-aa8d-9927bb0e521f",
+            "attributes": {
+              "name": "Test - iOS",
+              "actionType": "TEST",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-12T13:10:59.53Z",
+              "finishedDate": "2026-10-12T13:22:31.936Z"
+            }
+          },
+          {
+            "id": "a7f3caad-5e7f-45b9-8bf3-2d3d965afd1f",
+            "attributes": {
+              "name": "Archive - iOS",
+              "actionType": "ARCHIVE",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-12T13:10:59.375Z",
+              "finishedDate": "2026-10-12T13:15:27.881Z"
+            }
+          },
+          {
+            "id": "92bc58e0-197d-42e8-afea-c85ac7b1529e",
+            "attributes": {
+              "name": "TestFlight Internal Testing - iOS",
+              "actionType": "TEST",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-12T13:25:19.205Z",
+              "finishedDate": "2026-10-12T13:25:23.26Z"
+            }
+          }
+        ],
+        "run": {
+          "id": "d5eddf08-3196-47a8-a2bc-4683c05a4c1e",
+          "attributes": {
+            "number": 44,
+            "completionStatus": "SUCCEEDED",
+            "startReason": "MANUAL",
+            "startedDate": "2026-10-12T13:10:59.53Z",
+            "finishedDate": "2026-10-12T13:25:23.26Z"
+          }
+        }
+      },
+      {
+        "actions": [
+          {
+            "id": "9fa1cc1f-2e6e-4f4b-a7a4-ee598f3b041e",
+            "attributes": {
+              "name": "Test - iOS",
+              "actionType": "TEST",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-12T12:25:18.72Z",
+              "finishedDate": "2026-10-12T12:36:24.195Z"
+            }
+          },
+          {
+            "id": "d927b48d-36ab-4f7c-9cac-017829c8fc21",
+            "attributes": {
+              "name": "Archive - iOS",
+              "actionType": "ARCHIVE",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-12T12:25:18.737Z",
+              "finishedDate": "2026-10-12T12:29:30.22Z"
+            }
+          },
+          {
+            "id": "67febae5-ba95-44be-a99c-0e7c4d5a7cbb",
+            "attributes": {
+              "name": "TestFlight Internal Testing - iOS",
+              "actionType": "TEST",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-12T12:37:42.274Z",
+              "finishedDate": "2026-10-12T12:37:46.954Z"
+            }
+          }
+        ],
+        "run": {
+          "id": "1e7522ad-fdd9-4fc7-8b08-e9d72e408d6f",
+          "attributes": {
+            "number": 43,
+            "completionStatus": "SUCCEEDED",
+            "startReason": "MANUAL",
+            "startedDate": "2026-10-12T12:25:18.737Z",
+            "finishedDate": "2026-10-12T12:37:46.954Z"
+          }
+        }
+      },
+      {
+        "actions": [
+          {
+            "id": "2692794a-1ad8-47f7-b178-a23ac59835e1",
+            "attributes": {
+              "name": "Test - iOS",
+              "actionType": "TEST",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-12T10:22:47.698Z",
+              "finishedDate": "2026-10-12T10:34:19.738Z"
+            }
+          },
+          {
+            "id": "b71f1408-33a8-48ee-b538-ccb8fc2f2ebf",
+            "attributes": {
+              "name": "Archive - iOS",
+              "actionType": "ARCHIVE",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-12T10:22:49.589Z",
+              "finishedDate": "2026-10-12T10:26:55.968Z"
+            }
+          },
+          {
+            "id": "337d2c4e-be6c-445d-b256-00c227a4362f",
+            "attributes": {
+              "name": "TestFlight Internal Testing - iOS",
+              "actionType": "TEST",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-12T10:37:03.506Z",
+              "finishedDate": "2026-10-12T10:37:07.884Z"
+            }
+          }
+        ],
+        "run": {
+          "id": "236927c2-3d1e-4192-aa7d-34d802eda5e1",
+          "attributes": {
+            "number": 42,
+            "completionStatus": "SUCCEEDED",
+            "startReason": "MANUAL",
+            "startedDate": "2026-10-12T10:22:47.698Z",
+            "finishedDate": "2026-10-12T10:37:07.884Z"
+          }
+        }
+      },
+      {
+        "actions": [
+          {
+            "id": "0187fb98-be4d-473a-a6e1-f42cd17414e5",
+            "attributes": {
+              "name": "Archive - iOS",
+              "actionType": "ARCHIVE",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-12T09:04:03.181Z",
+              "finishedDate": "2026-10-12T09:07:39.023Z"
+            }
+          },
+          {
+            "id": "d5941ea4-fe63-4185-92a0-73bae63a7e41",
+            "attributes": {
+              "name": "Test - iOS",
+              "actionType": "TEST",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-12T09:04:02.854Z",
+              "finishedDate": "2026-10-12T09:15:24.193Z"
+            }
+          },
+          {
+            "id": "e3825b2c-7be0-44c9-a128-0bbe92617c60",
+            "attributes": {
+              "name": "TestFlight Internal Testing - iOS",
+              "actionType": "TEST",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-12T09:18:24.366Z",
+              "finishedDate": "2026-10-12T09:18:28.925Z"
+            }
+          }
+        ],
+        "run": {
+          "id": "ffb6ab02-f758-498c-97bf-2ac9d16d4b29",
+          "attributes": {
+            "number": 41,
+            "completionStatus": "SUCCEEDED",
+            "startReason": "MANUAL",
+            "startedDate": "2026-10-12T09:04:02.854Z",
+            "finishedDate": "2026-10-12T09:18:28.925Z"
+          }
+        }
+      },
+      {
+        "actions": [
+          {
+            "id": "33d521e6-c122-4a33-ba6e-42367c565865",
+            "attributes": {
+              "name": "TestFlight Internal Testing - iOS",
+              "actionType": "TEST",
+              "completionStatus": "SKIPPED",
+              "startedDate": null,
+              "finishedDate": null
+            }
+          },
+          {
+            "id": "420bc628-cd0c-4ed9-b3b5-5594478cb403",
+            "attributes": {
+              "name": "Test - iOS",
+              "actionType": "TEST",
+              "completionStatus": "FAILED",
+              "startedDate": "2026-10-12T08:17:03.364Z",
+              "finishedDate": "2026-10-12T08:37:41.179Z"
+            }
+          },
+          {
+            "id": "72ff7073-fe5f-4059-b60a-e731add64a4d",
+            "attributes": {
+              "name": "Archive - iOS",
+              "actionType": "ARCHIVE",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-12T08:17:03.455Z",
+              "finishedDate": "2026-10-12T08:21:17.083Z"
+            }
+          }
+        ],
+        "run": {
+          "id": "23d24a2a-5442-45d1-afbe-20fe6db16414",
+          "attributes": {
+            "number": 40,
+            "completionStatus": "FAILED",
+            "startReason": "MANUAL",
+            "startedDate": "2026-10-12T08:17:03.364Z",
+            "finishedDate": "2026-10-12T08:37:41.179Z"
+          }
+        }
+      },
+      {
+        "actions": [
+          {
+            "id": "474755ff-e5e3-47a7-a7dc-ae1dece4b37a",
+            "attributes": {
+              "name": "TestFlight Internal Testing - iOS",
+              "actionType": "TEST",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-02T19:06:57.608Z",
+              "finishedDate": "2026-10-02T19:07:00.974Z"
+            }
+          },
+          {
+            "id": "bad52691-2b85-4fac-bd21-c1935f881236",
+            "attributes": {
+              "name": "Test - iOS",
+              "actionType": "TEST",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-02T18:56:10.02Z",
+              "finishedDate": "2026-10-02T19:06:47.15Z"
+            }
+          },
+          {
+            "id": "8a527a90-728f-454f-bbac-da6d996fcd1a",
+            "attributes": {
+              "name": "Archive - iOS",
+              "actionType": "ARCHIVE",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-02T18:56:10.459Z",
+              "finishedDate": "2026-10-02T18:59:46.267Z"
+            }
+          }
+        ],
+        "run": {
+          "id": "638bf641-2e45-477d-8f7c-9385156d5423",
+          "attributes": {
+            "number": 39,
+            "completionStatus": "SUCCEEDED",
+            "startReason": "MANUAL",
+            "startedDate": "2026-10-02T18:56:10.02Z",
+            "finishedDate": "2026-10-02T19:07:00.974Z"
+          }
+        }
+      },
+      {
+        "actions": [
+          {
+            "id": "17f942d9-9882-4fa7-8743-de7fcd2044f6",
+            "attributes": {
+              "name": "Test - iOS",
+              "actionType": "TEST",
+              "completionStatus": "FAILED",
+              "startedDate": "2026-10-02T17:50:15.272Z",
+              "finishedDate": "2026-10-02T18:09:59.704Z"
+            }
+          },
+          {
+            "id": "0aa42b6d-b15f-49bf-82ba-0d72ecfb2c58",
+            "attributes": {
+              "name": "TestFlight Internal Testing - iOS",
+              "actionType": "TEST",
+              "completionStatus": "SKIPPED",
+              "startedDate": null,
+              "finishedDate": null
+            }
+          },
+          {
+            "id": "c59f894c-b363-4794-afa2-e34b72d5c977",
+            "attributes": {
+              "name": "Archive - iOS",
+              "actionType": "ARCHIVE",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-02T17:50:15.422Z",
+              "finishedDate": "2026-10-02T17:55:20.022Z"
+            }
+          }
+        ],
+        "run": {
+          "id": "63a8b80d-d262-4a52-ac86-b36e3d7ae6cd",
+          "attributes": {
+            "number": 38,
+            "completionStatus": "FAILED",
+            "startReason": "MANUAL",
+            "startedDate": "2026-10-02T17:50:15.272Z",
+            "finishedDate": "2026-10-02T18:09:59.704Z"
+          }
+        }
+      },
+      {
+        "actions": [
+          {
+            "id": "5951074b-295b-48ca-a0cb-a1ec91232c90",
+            "attributes": {
+              "name": "Test - iOS",
+              "actionType": "TEST",
+              "completionStatus": "FAILED",
+              "startedDate": "2026-10-02T16:08:39.065Z",
+              "finishedDate": "2026-10-02T16:27:50.441Z"
+            }
+          },
+          {
+            "id": "6008114a-8f30-4770-807e-d1f44adc1d24",
+            "attributes": {
+              "name": "TestFlight Internal Testing - iOS",
+              "actionType": "TEST",
+              "completionStatus": "SKIPPED",
+              "startedDate": null,
+              "finishedDate": null
+            }
+          },
+          {
+            "id": "c5d56a6b-0815-455e-9c3a-70f3d52c7d4b",
+            "attributes": {
+              "name": "Archive - iOS",
+              "actionType": "ARCHIVE",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-02T16:08:39.43Z",
+              "finishedDate": "2026-10-02T16:13:29.03Z"
+            }
+          }
+        ],
+        "run": {
+          "id": "c09b3bbe-1193-49f2-b709-2838fb938510",
+          "attributes": {
+            "number": 37,
+            "completionStatus": "FAILED",
+            "startReason": "MANUAL",
+            "startedDate": "2026-10-02T16:08:39.065Z",
+            "finishedDate": "2026-10-02T16:27:50.441Z"
+          }
+        }
+      },
+      {
+        "actions": [
+          {
+            "id": "414c7d1a-5b9f-452a-8ae6-b5bb90a3c180",
+            "attributes": {
+              "name": "TestFlight Internal Testing - iOS",
+              "actionType": "TEST",
+              "completionStatus": "SKIPPED",
+              "startedDate": null,
+              "finishedDate": null
+            }
+          },
+          {
+            "id": "47186968-4b21-45eb-9618-928b31555a23",
+            "attributes": {
+              "name": "Test - iOS",
+              "actionType": "TEST",
+              "completionStatus": "FAILED",
+              "startedDate": "2026-10-02T15:35:51.085Z",
+              "finishedDate": "2026-10-02T15:55:23.047Z"
+            }
+          },
+          {
+            "id": "40a4993a-81a8-4339-b372-e3272c495a1c",
+            "attributes": {
+              "name": "Archive - iOS",
+              "actionType": "ARCHIVE",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-02T15:35:59.93Z",
+              "finishedDate": "2026-10-02T15:41:48.658Z"
+            }
+          }
+        ],
+        "run": {
+          "id": "66e47248-5cf4-4990-bdbd-5b575d569fb0",
+          "attributes": {
+            "number": 36,
+            "completionStatus": "FAILED",
+            "startReason": "MANUAL",
+            "startedDate": "2026-10-02T15:35:51.085Z",
+            "finishedDate": "2026-10-02T15:55:23.047Z"
+          }
+        }
+      },
+      {
+        "actions": [
+          {
+            "id": "0a46ced8-385f-44f0-b885-2c58797ec760",
+            "attributes": {
+              "name": "Archive - iOS",
+              "actionType": "ARCHIVE",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-02T15:00:02.555Z",
+              "finishedDate": "2026-10-02T15:06:03.259Z"
+            }
+          },
+          {
+            "id": "7c1c210b-d9ee-4858-b37c-d4ffce769033",
+            "attributes": {
+              "name": "Test - iOS",
+              "actionType": "TEST",
+              "completionStatus": "FAILED",
+              "startedDate": "2026-10-02T15:00:02.32Z",
+              "finishedDate": "2026-10-02T15:20:55.415Z"
+            }
+          },
+          {
+            "id": "5cd444cc-73a6-4f56-927b-899049a0ac2b",
+            "attributes": {
+              "name": "TestFlight Internal Testing - iOS",
+              "actionType": "TEST",
+              "completionStatus": "SKIPPED",
+              "startedDate": null,
+              "finishedDate": null
+            }
+          }
+        ],
+        "run": {
+          "id": "0f110b67-45d0-4b2f-a645-68e47519859b",
+          "attributes": {
+            "number": 35,
+            "completionStatus": "FAILED",
+            "startReason": "MANUAL",
+            "startedDate": "2026-10-02T15:00:02.555Z",
+            "finishedDate": "2026-10-02T15:20:55.415Z"
+          }
+        }
+      },
+      {
+        "actions": [
+          {
+            "id": "4ae36eb9-b22b-49fb-aa0d-714c0c9dfdf0",
+            "attributes": {
+              "name": "Archive - iOS",
+              "actionType": "ARCHIVE",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-02T13:18:21.28Z",
+              "finishedDate": "2026-10-02T13:22:25.495Z"
+            }
+          },
+          {
+            "id": "edc6f192-c4fa-43e2-a9a5-8e7b5ca3f0f8",
+            "attributes": {
+              "name": "TestFlight Internal Testing - iOS",
+              "actionType": "TEST",
+              "completionStatus": "SKIPPED",
+              "startedDate": null,
+              "finishedDate": null
+            }
+          },
+          {
+            "id": "dff18282-4e67-474a-86a5-3ff0a4c421a4",
+            "attributes": {
+              "name": "Test - iOS",
+              "actionType": "TEST",
+              "completionStatus": "FAILED",
+              "startedDate": "2026-10-02T13:18:20.259Z",
+              "finishedDate": "2026-10-02T13:37:33.143Z"
+            }
+          }
+        ],
+        "run": {
+          "id": "6b32806b-c5dd-41cb-80b6-71d2128541cb",
+          "attributes": {
+            "number": 34,
+            "completionStatus": "FAILED",
+            "startReason": "MANUAL",
+            "startedDate": "2026-10-02T13:18:20.259Z",
+            "finishedDate": "2026-10-02T13:37:33.143Z"
+          }
+        }
+      },
+      {
+        "actions": [
+          {
+            "id": "741ecd20-4066-4a57-b86f-1ce9058c4904",
+            "attributes": {
+              "name": "Archive - iOS",
+              "actionType": "ARCHIVE",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-01T13:14:59.614Z",
+              "finishedDate": "2026-10-01T13:29:13.479Z"
+            }
+          },
+          {
+            "id": "366db375-2f1a-40cb-860c-3a28a96302e4",
+            "attributes": {
+              "name": "Test - iOS",
+              "actionType": "TEST",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-01T13:14:54.543Z",
+              "finishedDate": "2026-10-01T13:33:43.487Z"
+            }
+          },
+          {
+            "id": "f3bd2c69-3e31-4d04-b821-e0da9371c54c",
+            "attributes": {
+              "name": "TestFlight Internal Testing - iOS",
+              "actionType": "TEST",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-01T13:34:19.198Z",
+              "finishedDate": "2026-10-01T13:34:23.733Z"
+            }
+          }
+        ],
+        "run": {
+          "id": "597f29c4-a143-4c39-8ea0-0c8ed4e3331a",
+          "attributes": {
+            "number": 33,
+            "completionStatus": "SUCCEEDED",
+            "startReason": "MANUAL",
+            "startedDate": "2026-10-01T13:14:54.543Z",
+            "finishedDate": "2026-10-01T13:34:23.733Z"
+          }
+        }
+      },
+      {
+        "actions": [
+          {
+            "id": "6988a061-1056-479b-9f45-4700ee5ff787",
+            "attributes": {
+              "name": "TestFlight Internal Testing - iOS",
+              "actionType": "TEST",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-09-28T17:10:05.733Z",
+              "finishedDate": "2026-09-28T17:10:09.27Z"
+            }
+          },
+          {
+            "id": "eaab2f6f-c355-46ce-93e9-3007ed0b2473",
+            "attributes": {
+              "name": "Archive - iOS",
+              "actionType": "ARCHIVE",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-09-28T16:51:00.207Z",
+              "finishedDate": "2026-09-28T17:05:29.379Z"
+            }
+          },
+          {
+            "id": "facc9dec-0f2d-4a62-a843-920ab3f55cb8",
+            "attributes": {
+              "name": "Test - iOS",
+              "actionType": "TEST",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-09-28T16:49:26.559Z",
+              "finishedDate": "2026-09-28T17:07:11.486Z"
+            }
+          }
+        ],
+        "run": {
+          "id": "45a1c14c-cf43-4e17-9eab-20d8d28c4a8e",
+          "attributes": {
+            "number": 32,
+            "completionStatus": "SUCCEEDED",
+            "startReason": "MANUAL",
+            "startedDate": "2026-09-28T16:49:26.559Z",
+            "finishedDate": "2026-09-28T17:10:09.27Z"
+          }
+        }
+      },
+      {
+        "actions": [
+          {
+            "id": "7f8cc249-9856-41ea-a98d-1d41e8fbf5a9",
+            "attributes": {
+              "name": "TestFlight Internal Testing - iOS",
+              "actionType": "TEST",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-09-26T07:44:58.514Z",
+              "finishedDate": "2026-09-26T07:45:02.41Z"
+            }
+          },
+          {
+            "id": "50193b01-0cd4-406a-af71-19bdd6dd9cc0",
+            "attributes": {
+              "name": "Test - iOS",
+              "actionType": "TEST",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-09-26T07:36:28.628Z",
+              "finishedDate": "2026-09-26T07:44:53.868Z"
+            }
+          },
+          {
+            "id": "7f3cf1b3-8ef1-4ad4-bfbc-cc1b4c792cfe",
+            "attributes": {
+              "name": "Archive - iOS",
+              "actionType": "ARCHIVE",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-09-26T07:36:32.646Z",
+              "finishedDate": "2026-09-26T07:40:02.149Z"
+            }
+          }
+        ],
+        "run": {
+          "id": "b83950ef-dfff-4ab6-ade6-f23a4c9f6b63",
+          "attributes": {
+            "number": 31,
+            "completionStatus": "SUCCEEDED",
+            "startReason": "MANUAL",
+            "startedDate": "2026-09-26T07:36:28.628Z",
+            "finishedDate": "2026-09-26T07:45:02.41Z"
+          }
+        }
+      },
+      {
+        "actions": [
+          {
+            "id": "5d4922f8-160e-4cae-ae35-12b648aa1f9b",
+            "attributes": {
+              "name": "Archive - iOS",
+              "actionType": "ARCHIVE",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-09-23T13:36:00.14Z",
+              "finishedDate": "2026-09-23T13:41:06.498Z"
+            }
+          },
+          {
+            "id": "6228d71c-027d-49c4-993f-096add2a62ab",
+            "attributes": {
+              "name": "TestFlight Internal Testing - iOS",
+              "actionType": "TEST",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-09-23T13:46:05.777Z",
+              "finishedDate": "2026-09-23T13:46:08.374Z"
+            }
+          },
+          {
+            "id": "6edaba77-b7eb-4677-a416-442eb74664f9",
+            "attributes": {
+              "name": "Test - iOS",
+              "actionType": "TEST",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-09-23T13:35:47.895Z",
+              "finishedDate": "2026-09-23T13:45:58.22Z"
+            }
+          }
+        ],
+        "run": {
+          "id": "ad9d79d1-d084-4aa5-a462-10322f994734",
+          "attributes": {
+            "number": 30,
+            "completionStatus": "SUCCEEDED",
+            "startReason": "MANUAL",
+            "startedDate": "2026-09-23T13:35:47.895Z",
+            "finishedDate": "2026-09-23T13:46:08.374Z"
+          }
+        }
+      }
+    ],
+    "workflows": [
+      {
+        "attributes": {
+          "name": "PumpSync Internal Beta",
+          "clean": true,
+          "actions": [
+            {
+              "actionType": "TEST",
+              "buildDistributionAudience": null,
+              "destination": null,
+              "isRequiredToPass": true,
+              "name": "Test - iOS",
+              "platform": "IOS",
+              "scheme": "PumpSync",
+              "testConfiguration": {
+                "kind": "USE_SCHEME_SETTINGS",
+                "testDestinations": [
+                  {
+                    "deviceTypeIdentifier": "recommended_iphones",
+                    "deviceTypeName": "Recommended iPhones",
+                    "kind": "SIMULATOR",
+                    "runtimeIdentifier": "default",
+                    "runtimeName": "Latest from Selected Xcode (iOS 26.5)"
+                  }
+                ],
+                "testPlanName": ""
+              }
+            },
+            {
+              "actionType": "ARCHIVE",
+              "buildDistributionAudience": "INTERNAL_ONLY",
+              "destination": null,
+              "isRequiredToPass": true,
+              "name": "Archive - iOS",
+              "platform": "IOS",
+              "scheme": "PumpSync Beta",
+              "testConfiguration": null
+            }
+          ],
+          "branchStartCondition": null,
+          "manualBranchStartCondition": {
+            "source": {
+              "isAllMatch": true,
+              "patterns": []
+            }
+          },
+          "pullRequestStartCondition": null,
+          "scheduledStartCondition": null,
+          "tagStartCondition": null,
+          "isEnabled": true
+        },
+        "id": "0549B95A-6802-4DE6-8A2E-0D79DF62DD1A",
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/ciWorkflows/0549B95A-6802-4DE6-8A2E-0D79DF62DD1A"
+        },
+        "relationships": {
+          "buildRuns": {
+            "links": {
+              "related": "https://api.appstoreconnect.apple.com/v1/ciWorkflows/0549B95A-6802-4DE6-8A2E-0D79DF62DD1A/buildRuns",
+              "self": "https://api.appstoreconnect.apple.com/v1/ciWorkflows/0549B95A-6802-4DE6-8A2E-0D79DF62DD1A/relationships/buildRuns"
+            }
+          },
+          "repository": {
+            "links": {
+              "related": "https://api.appstoreconnect.apple.com/v1/ciWorkflows/0549B95A-6802-4DE6-8A2E-0D79DF62DD1A/repository",
+              "self": "https://api.appstoreconnect.apple.com/v1/ciWorkflows/0549B95A-6802-4DE6-8A2E-0D79DF62DD1A/relationships/repository"
+            }
+          }
+        },
+        "type": "ciWorkflows"
+      }
+    ]
+  },
+  {
+    "product": {
+      "attributes": {
+        "createdDate": "2026-10-05T16:12:17.998Z",
+        "name": "AppleHomeObserver",
+        "productType": "APP"
+      },
+      "id": "1f79ee96-4bd9-4f35-ad1c-f5fc624e86e3",
+      "links": {
+        "self": "https://api.appstoreconnect.apple.com/v1/ciProducts/1f79ee96-4bd9-4f35-ad1c-f5fc624e86e3"
+      },
+      "relationships": {
+        "additionalRepositories": {
+          "links": {
+            "related": "https://api.appstoreconnect.apple.com/v1/ciProducts/1f79ee96-4bd9-4f35-ad1c-f5fc624e86e3/additionalRepositories",
+            "self": "https://api.appstoreconnect.apple.com/v1/ciProducts/1f79ee96-4bd9-4f35-ad1c-f5fc624e86e3/relationships/additionalRepositories"
+          }
+        },
+        "app": {
+          "links": {
+            "related": "https://api.appstoreconnect.apple.com/v1/ciProducts/1f79ee96-4bd9-4f35-ad1c-f5fc624e86e3/app",
+            "self": "https://api.appstoreconnect.apple.com/v1/ciProducts/1f79ee96-4bd9-4f35-ad1c-f5fc624e86e3/relationships/app"
+          }
+        },
+        "buildRuns": {
+          "links": {
+            "related": "https://api.appstoreconnect.apple.com/v1/ciProducts/1f79ee96-4bd9-4f35-ad1c-f5fc624e86e3/buildRuns",
+            "self": "https://api.appstoreconnect.apple.com/v1/ciProducts/1f79ee96-4bd9-4f35-ad1c-f5fc624e86e3/relationships/buildRuns"
+          }
+        },
+        "primaryRepositories": {
+          "links": {
+            "related": "https://api.appstoreconnect.apple.com/v1/ciProducts/1f79ee96-4bd9-4f35-ad1c-f5fc624e86e3/primaryRepositories",
+            "self": "https://api.appstoreconnect.apple.com/v1/ciProducts/1f79ee96-4bd9-4f35-ad1c-f5fc624e86e3/relationships/primaryRepositories"
+          }
+        },
+        "workflows": {
+          "links": {
+            "related": "https://api.appstoreconnect.apple.com/v1/ciProducts/1f79ee96-4bd9-4f35-ad1c-f5fc624e86e3/workflows",
+            "self": "https://api.appstoreconnect.apple.com/v1/ciProducts/1f79ee96-4bd9-4f35-ad1c-f5fc624e86e3/relationships/workflows"
+          }
+        }
+      },
+      "type": "ciProducts"
+    },
+    "runs": [
+      {
+        "actions": [
+          {
+            "id": "085eb706-386b-4495-9aca-ac46c4ff8d63",
+            "attributes": {
+              "name": "Archive - macOS",
+              "actionType": "ARCHIVE",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-05T16:51:19.863Z",
+              "finishedDate": "2026-10-05T16:56:08.801Z"
+            }
+          },
+          {
+            "id": "b682b08c-df7d-4230-a51a-aebb1eb14c21",
+            "attributes": {
+              "name": "TestFlight Internal Testing - macOS",
+              "actionType": "TEST",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-05T16:59:02.524Z",
+              "finishedDate": "2026-10-05T16:59:05.952Z"
+            }
+          }
+        ],
+        "run": {
+          "id": "b429580b-378b-427e-9a29-b3d10840f15a",
+          "attributes": {
+            "number": 3,
+            "completionStatus": "SUCCEEDED",
+            "startReason": "MANUAL",
+            "startedDate": "2026-10-05T16:51:19.863Z",
+            "finishedDate": "2026-10-05T16:59:05.952Z"
+          }
+        }
+      },
+      {
+        "actions": [
+          {
+            "id": "fa9b2c34-12e2-4bde-8d5a-6ddafb6edda1",
+            "attributes": {
+              "name": "TestFlight Internal Testing - macOS",
+              "actionType": "TEST",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-05T16:35:29.364Z",
+              "finishedDate": "2026-10-05T16:35:33.802Z"
+            }
+          },
+          {
+            "id": "9f66863f-bacf-488e-90f6-5215ca3d0522",
+            "attributes": {
+              "name": "Archive - macOS",
+              "actionType": "ARCHIVE",
+              "completionStatus": "SUCCEEDED",
+              "startedDate": "2026-10-05T16:30:54.451Z",
+              "finishedDate": "2026-10-05T16:35:26.069Z"
+            }
+          }
+        ],
+        "run": {
+          "id": "ddb113e5-7620-46b2-9703-c2d1edde9fdb",
+          "attributes": {
+            "number": 2,
+            "completionStatus": "SUCCEEDED",
+            "startReason": "MANUAL",
+            "startedDate": "2026-10-05T16:30:54.451Z",
+            "finishedDate": "2026-10-05T16:35:33.802Z"
+          }
+        }
+      },
+      {
+        "actions": [
+          {
+            "id": "143ba000-a8ad-4246-abdd-db68e68b065a",
+            "attributes": {
+              "name": "Archive - macOS",
+              "actionType": "ARCHIVE",
+              "completionStatus": "CANCELED",
+              "startedDate": null,
+              "finishedDate": "2026-10-05T16:22:23.813Z"
+            }
+          }
+        ],
+        "run": {
+          "id": "4668dd09-2765-42ef-9b8a-0ec008c983b5",
+          "attributes": {
+            "number": 1,
+            "completionStatus": "CANCELED",
+            "startReason": "MANUAL",
+            "startedDate": null,
+            "finishedDate": "2026-10-05T16:22:23.754Z"
+          }
+        }
+      }
+    ],
+    "workflows": [
+      {
+        "attributes": {
+          "name": "Apple Home Observer TestFlight",
+          "clean": false,
+          "actions": [
+            {
+              "actionType": "ARCHIVE",
+              "buildDistributionAudience": "INTERNAL_ONLY",
+              "destination": "ANY_MAC_CATALYST",
+              "isRequiredToPass": true,
+              "name": "Archive - macOS",
+              "platform": "MACOS",
+              "scheme": "AppleHomeObserver",
+              "testConfiguration": null
+            }
+          ],
+          "branchStartCondition": null,
+          "manualBranchStartCondition": {
+            "source": {
+              "isAllMatch": true,
+              "patterns": []
+            }
+          },
+          "pullRequestStartCondition": null,
+          "scheduledStartCondition": null,
+          "tagStartCondition": null,
+          "isEnabled": true
+        },
+        "id": "BD810C7C-4DD5-4DC8-AD3B-A25B2F5ECCFB",
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/ciWorkflows/BD810C7C-4DD5-4DC8-AD3B-A25B2F5ECCFB"
+        },
+        "relationships": {
+          "buildRuns": {
+            "links": {
+              "related": "https://api.appstoreconnect.apple.com/v1/ciWorkflows/BD810C7C-4DD5-4DC8-AD3B-A25B2F5ECCFB/buildRuns",
+              "self": "https://api.appstoreconnect.apple.com/v1/ciWorkflows/BD810C7C-4DD5-4DC8-AD3B-A25B2F5ECCFB/relationships/buildRuns"
+            }
+          },
+          "repository": {
+            "links": {
+              "related": "https://api.appstoreconnect.apple.com/v1/ciWorkflows/BD810C7C-4DD5-4DC8-AD3B-A25B2F5ECCFB/repository",
+              "self": "https://api.appstoreconnect.apple.com/v1/ciWorkflows/BD810C7C-4DD5-4DC8-AD3B-A25B2F5ECCFB/relationships/repository"
+            }
+          }
+        },
+        "type": "ciWorkflows"
+      }
+    ]
+  }
+]

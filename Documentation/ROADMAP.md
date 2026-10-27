@@ -31,6 +31,12 @@ constrain *how* each item is built.
 
 - [x] October 12 stale-reference recovery: shared account-scoped resolution, versioned Next Up migration, explicit legacy replacement, public-artwork fallbacks, scoped system links, preserved downloaded-file identity, and confirmed progress transfer. Source, regression tests, platform builds, and the physical Trespass recovery are verified; evidence and remaining cross-platform runtime limits are recorded in [the validation report](Reviews/2026-10-12-stale-media-references/VALIDATION.md).
 
+## Discover / Seerr design handoff
+
+- [x] Preserve historical Figma design material in the local Git-ignored `Design/Archive/`.
+- [~] Complete the Apple-native Sketch redesign across supported devices. The iPhone R5 Light and Dark snapshots are in `Design/` and await acceptance. Later devices remain pending. Design acceptance and runtime validation are separate.
+- [ ] Complete native materials, accessibility, live Seerr and physical-device acceptance, followed by required hosted checks and release gates.
+
 ## Global Definition of Done (applies to every milestone)
 
 - Builds green on iOS, iPadOS, tvOS, visionOS, macOS (`xcodegen generate` first).
@@ -995,6 +1001,11 @@ October 12 pipeline policy supersedes direct-main publication: main now requires
 - [ ] Compatible tvOS 27 runtime capture and remote-only focus, Back/Menu, repeated/cancelled account/playback flows; physical VoiceOver/HDR/audio and signed private-sync acceptance remain open.
 
 Based on merged PR #21 (`c847a27`): Jellyfin owns playlists and collections; unique native membership, permissions and explicit legacy import remain unchanged. No duplicate-entry queue product is introduced. Local implementation and evidence: [TV redesign](Reviews/2026-10-13-tvos-redesign/IMPLEMENTATION.md). No publication or release acceptance is claimed.
+
+### Xcode Cloud usage optimization — 2026-10-22
+
+- [x] Split Cloud into manual-only, main-only Gus Validation (one explicit iPhone 17 / iOS 27.2, cached, no archives/distribution) and Gus Internal TestFlight (unchanged full release test/device/archive matrix, clean). Server configuration verified through API readback; GitHub PR CI remains unchanged.
+- [ ] Measure actual compute usage and cache reuse on subsequent routine runs. Configuration verification does not establish execution or release acceptance. See [pipeline policy](AppStore/pipeline-policy.md#usage-optimization--2026-10-22).
 
 ## Seerr integration — October 25, 2026
 

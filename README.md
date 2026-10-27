@@ -44,6 +44,10 @@ The failure is recorded and a successful PR/Cloud release gate is still required
 before tester installation access is claimed.
 [Release report](Documentation/AppStore/internal-testflight-release.md).
 
+## Designs
+
+The [iPhone Light](Design/Device-Completion-iPhone-Light.sketch) and [Dark](Design/Device-Completion-iPhone-Dark.sketch) Sketch snapshots are awaiting acceptance. Historical design material is retained in the local, Git-ignored `Design/Archive/`. Design coverage does not establish runtime acceptance.
+
 ## Contributing
 
 Use the [issues page](https://github.com/eslutz/A-Playa-Named-Gus/issues) for bugs and
