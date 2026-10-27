@@ -1,9 +1,0 @@
-{
-  "workflows": [
-    {
-      "id": "559f9de9-14d5-4b85-a091-8c3598fa346f",
-      "name": "Gus Internal TestFlight",
-      "isEnabled": true
-    }
-  ]
-}

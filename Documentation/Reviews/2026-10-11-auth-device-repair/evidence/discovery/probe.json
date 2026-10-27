@@ -1,7 +1,0 @@
-{
-  "192.168.60.40": {
-    "Name": "jellyfin-server",
-    "Address": "https://stream.ericslutz.dev",
-    "Id": "d4ffae2d208c40cba3f3a3668018bf4f"
-  }
-}

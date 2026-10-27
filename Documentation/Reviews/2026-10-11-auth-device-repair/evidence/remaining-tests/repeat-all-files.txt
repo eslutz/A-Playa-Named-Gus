@@ -1,3 +1,0 @@
-after both tracks completed while Repeat All active {"records": 2, "files": [true, true]}
-after Stop {"records": 0, "files": []}
-Stopped fixture file existence: {'Repeat QA 1': False, 'Repeat QA 2': False}

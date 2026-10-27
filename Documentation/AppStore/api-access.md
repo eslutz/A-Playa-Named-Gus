@@ -21,7 +21,7 @@ The previously missing embedded Watch identifier is registered as `X7N8FKWCC6`
 (`UNIVERSAL`, Team `QS3GC3CT43`). Build 7's App Store export now contains a correctly
 signed Watch companion with a matching distribution profile and version/build.
 Mac category/copyright metadata is included and its Build 7 upload is
-`VALID`/`READY_FOR_BETA_TESTING`. [Signing proof](cloud-onboarding-evidence/internal-testflight/run-7/ios-watch-signed-products.json),
+`VALID`/`READY_FOR_BETA_TESTING`. Signing proof,
 [icon diagnosis](icon-upload-repair.md), [release status](internal-testflight-release.md).
 
 - `.env.asc.example` is the safe template; `.env.asc.local` is ignored and mode 600.
@@ -79,7 +79,7 @@ individual key, `iat`, `exp`, and `aud: appstoreconnect-v1`) and the existing
 token. A successful start is non-idempotent: inspect existing runs after any
 ambiguous response before retrying. The first pending response may have an
 empty source SHA; fetch the run again and require the intended full merge SHA
-before accepting it. See the [Seerr release record](../Reviews/2026-10-25-seerr/RELEASE.md)
+before accepting it. See the [Seerr release record](../Reviews/README.md)
 for the first successful CLI start, Cloud startup failure, and successful alternate local Xcode delivery. See the [sign-in-free CLI procedure](cli-release.md).
 
 Configuration precedence: account-wide config, `.env.local`, `.env.asc.local`, then `ASC_*` environment variables. The helper issues short-lived, per-request GET tokens with the complete query in their scope; API management writes remain deliberate operations, not a restriction on the installed key. No key contents or bearer tokens are logged.

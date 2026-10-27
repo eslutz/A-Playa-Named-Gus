@@ -1,7 +1,0 @@
-{
-  "command": "/Applications/Development/Xcode.app/Contents/Developer/usr/bin/xcodebuild -project \"A Playa Named Gus.xcodeproj\" -scheme \"Gus tvOS Unit Tests\" -destination \"platform=tvOS Simulator,id=07FA9453-0F67-4F99-AA46-7799B3883D6E\" -derivedDataPath build/DerivedData ONLY_ACTIVE_ARCH=YES test",
-  "result": "TEST SUCCEEDED",
-  "tests": 274,
-  "suites": 46,
-  "scope": "Full TV suite after the final tvOS-only safe-area inset adjustment"
-}

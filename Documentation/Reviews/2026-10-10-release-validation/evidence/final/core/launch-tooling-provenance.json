@@ -1,9 +1,0 @@
-{
-  "changedInputs": [
-    "Sources/App/GusApp.swift",
-    "Scripts/measure-launch-baseline.sh"
-  ],
-  "releaseSourceChange": "Session restoration test argument now DEBUG only",
-  "scriptChange": "Observed product-name path correction",
-  "validation": "All four final Release archives, fresh static checks, unchanged Debug tokens and fresh expanded runtime checks; actual five-run corrected helper follows"
-}

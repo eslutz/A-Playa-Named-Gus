@@ -2,7 +2,7 @@
 
 Status: **source/configuration self-audit; release acceptance pending.**
 The current findings, runtime evidence and manual/device gates are recorded in
-[the October 10 release audit](../Reviews/2026-10-10-release-validation/REPORT.md).
+[the October 10 release audit](../Reviews/README.md).
 This document does not establish Apple approval or full runtime coverage.
 
 This document walks the [App Review Guidelines](https://developer.apple.com/app-store/review/guidelines/)

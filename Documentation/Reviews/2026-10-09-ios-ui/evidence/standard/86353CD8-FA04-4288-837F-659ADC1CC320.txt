@@ -1,1 +1,0 @@
-<XCUIAccessibilityAuditIssue: 0x10f111590>AuditType:"1" CompactDescription:"Contrast failed" DetailedDescription:"Contrast failed for SwiftUI.AccessibilityNode" Element:"Enter your Jellyfin server's address, including the port (default 8096)." StaticText
