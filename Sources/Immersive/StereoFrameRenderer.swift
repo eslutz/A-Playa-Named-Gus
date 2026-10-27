@@ -32,7 +32,8 @@
     final class StereoFrameRenderer {
         let videoRenderer = AVSampleBufferVideoRenderer()
         private let synchronizer = AVSampleBufferRenderSynchronizer()
-        private var receiver: AVSampleBufferVideoRenderer.Receiver!
+        private let enqueueSampleBuffer: (sending CMSampleBuffer) -> Void
+        private let flushBuffers: () -> Void
         private var renderingRate: Float?
 
         private let player: AVPlayer
@@ -51,7 +52,23 @@
         init(player: AVPlayer, layout: Stereo3DLayout) {
             self.player = player
             self.layout = layout
-            receiver = synchronizer.sampleBufferReceiver(adding: videoRenderer)
+            if #available(visionOS 27.0, *) {
+                let receiver = synchronizer.sampleBufferReceiver(adding: videoRenderer)
+                enqueueSampleBuffer = { sampleBuffer in
+                    _ = receiver.enqueueImmediately(CMReadySampleBuffer<CMSampleBuffer.DynamicContent>(unsafeBuffer: sampleBuffer))
+                }
+                flushBuffers = { receiver.flush() }
+            } else {
+                // The receiver API is new in 27; OS 26 retains the same tagged
+                // stereo buffers and render clock through the native renderer.
+                let renderer = videoRenderer
+                synchronizer.addRenderer(renderer)
+                enqueueSampleBuffer = { sampleBuffer in
+                    guard renderer.isReadyForMoreMediaData else { return }
+                    renderer.enqueue(sampleBuffer)
+                }
+                flushBuffers = { renderer.flush() }
+            }
             setupOutput()
             startDisplayLink()
             observeSeek()
@@ -74,7 +91,7 @@
             currentItemObservation?.invalidate()
             currentItemObservation = nil
             bufferPool = nil
-            receiver.flush()
+            flushBuffers()
             synchronizer.setRate(0, time: .invalid)
         }
 
@@ -116,7 +133,7 @@
                         oldItem.remove(output)
                     }
                     self.setupOutput()
-                    self.receiver.flush()
+                    self.flushBuffers()
                     self.renderingRate = nil
                     self.cachedFormatDescription = nil
 
@@ -129,7 +146,7 @@
         }
 
         private func handleSeek() {
-            receiver.flush()
+            flushBuffers()
             renderingRate = nil
             cachedFormatDescription = nil
         }
@@ -179,7 +196,7 @@
                 formatDescription: formatDesc
             )
 
-            _ = receiver.enqueueImmediately(CMReadySampleBuffer<CMSampleBuffer.DynamicContent>(unsafeBuffer: sampleBuffer))
+            enqueueSampleBuffer(sampleBuffer)
         }
 
         // MARK: - Frame splitting

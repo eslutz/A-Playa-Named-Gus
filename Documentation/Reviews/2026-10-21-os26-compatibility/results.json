@@ -1,0 +1,114 @@
+{
+  "toolchain": {
+    "xcode": "27.1",
+    "build": "27A9275"
+  },
+  "minimum_os": "26.0",
+  "builds": [
+    {
+      "platform": "tv",
+      "exit_code": 0,
+      "diagnostics": [
+        "** BUILD SUCCEEDED **"
+      ]
+    },
+    {
+      "platform": "ios",
+      "exit_code": 0,
+      "diagnostics": [
+        "** BUILD SUCCEEDED **"
+      ]
+    },
+    {
+      "platform": "ipad",
+      "exit_code": 0,
+      "diagnostics": [
+        "** BUILD SUCCEEDED **"
+      ]
+    },
+    {
+      "platform": "watch",
+      "exit_code": 0,
+      "diagnostics": [
+        "** BUILD SUCCEEDED **"
+      ]
+    },
+    {
+      "platform": "vision",
+      "exit_code": 0,
+      "diagnostics": [
+        "** BUILD SUCCEEDED **"
+      ]
+    },
+    {
+      "platform": "mac",
+      "exit_code": 0,
+      "diagnostics": [
+        "** BUILD SUCCEEDED **"
+      ]
+    }
+  ],
+  "local_mac_signing": "disabled for compilation, matching Scripts/validate-release.py",
+  "tv_simulator_smoke": [
+    {
+      "version": "26.5",
+      "install": "passed",
+      "launch": "passed"
+    },
+    {
+      "version": "27.0",
+      "install": "passed",
+      "launch": "passed"
+    }
+  ],
+  "focused_tv_tests": [
+    {
+      "version": "26.5",
+      "exit_code": 0,
+      "diagnostics": [
+        "\u200b\u2714 Test \"Play after natural queue completion restarts playback and tracks the next completion\" with 2 test cases passed after 5.360 seconds.",
+        "\u2714 Test \"Replay after automatic deletion respects local-only playback and does not stream\" passed after 1.177 seconds.",
+        "\u2714 Suite \"Audio queue replay\" passed after 6.540 seconds.",
+        "\u2714 Suite \"Playback integration\" passed after 6.541 seconds.",
+        "\u2714 Test \"late activation, dismissal and replacement retain request order\" passed after 0.021 seconds.",
+        "\u2714 Suite \"Audio session operation ordering\" passed after 0.021 seconds.",
+        "\u2714 Test \"background preparation cannot start playback when it finishes\" passed after 0.014 seconds.",
+        "\u2714 Test \"server track rebuild retains an explicit playback speed\" passed after 0.022 seconds.",
+        "\u2714 Test \"server track rebuild retains paused state\" passed after 0.026 seconds.",
+        "\u2714 Suite \"TV video presentation lifecycle\" passed after 0.063 seconds.",
+        "\u2714 Test run with 6 tests in 4 suites passed after 6.627 seconds.",
+        "** TEST SUCCEEDED **"
+      ]
+    },
+    {
+      "version": "27.0",
+      "exit_code": 0,
+      "diagnostics": [
+        "\u2714 Test \"Play after natural queue completion restarts playback and tracks the next completion\" with 2 test cases passed after 5.326 seconds.",
+        "\u2714 Test \"Replay after automatic deletion respects local-only playback and does not stream\" passed after 1.186 seconds.",
+        "\u2714 Suite \"Audio queue replay\" passed after 6.516 seconds.",
+        "\u2714 Suite \"Playback integration\" passed after 6.516 seconds.",
+        "\u2714 Test \"late activation, dismissal and replacement retain request order\" passed after 0.023 seconds.",
+        "\u2714 Suite \"Audio session operation ordering\" passed after 0.023 seconds.",
+        "\u2714 Test \"background preparation cannot start playback when it finishes\" passed after 0.034 seconds.",
+        "\u2714 Test \"server track rebuild retains an explicit playback speed\" passed after 0.116 seconds.",
+        "\u2714 Test \"server track rebuild retains paused state\" passed after 0.032 seconds.",
+        "\u2714 Suite \"TV video presentation lifecycle\" passed after 0.184 seconds.",
+        "\u2714 Test run with 6 tests in 4 suites passed after 6.725 seconds.",
+        "** TEST SUCCEEDED **"
+      ]
+    }
+  ],
+  "other_checks": {
+    "cloud_project_consistency": "passed",
+    "changed_swift_format": "passed",
+    "whitespace": "passed",
+    "warning_gate_self_tests": 11,
+    "website_tests": 3
+  },
+  "limits": [
+    "No exact OS 26.0 runtime is installed.",
+    "Simulator installation and launch are not authenticated playback or UI acceptance.",
+    "Physical tvOS 26.6 installation and playback, signed archives, hosted CI, Xcode Cloud, and TestFlight remain unverified."
+  ]
+}
