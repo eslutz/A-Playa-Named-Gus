@@ -8,9 +8,10 @@ struct PlaylistPlaybackSequence {
         remainingIDs.first
     }
 
-    init(entryIDs: [UUID], startID: UUID?) {
+    init(entryIDs: [UUID], startID: UUID?, shuffled: Bool = false) {
         let start = startID.flatMap { entryIDs.firstIndex(of: $0) } ?? 0
-        remainingIDs = Array(entryIDs.dropFirst(start))
+        let ordered = Array(entryIDs.dropFirst(start))
+        remainingIDs = shuffled ? entryIDs.shuffled() : ordered
     }
 
     mutating func remap(using transform: (UUID) -> UUID) {
@@ -42,7 +43,7 @@ final class VideoPlaylistPlaybackCoordinator {
     private var active = true
     private let startsFromBeginning: Bool
 
-    init(playlistID: UUID, entryID: UUID?, fromBeginning: Bool, playlists: VideoPlaylistsStore, session: SessionStore, downloads: OfflineDownloadStore, serverLists: ServerMediaListsStore = .shared) {
+    init(playlistID: UUID, entryID: UUID?, fromBeginning: Bool, shuffled: Bool = false, playlists: VideoPlaylistsStore, session: SessionStore, downloads: OfflineDownloadStore, serverLists: ServerMediaListsStore = .shared) {
         self.playlistID = playlistID
         self.playlists = playlists
         self.serverLists = serverLists
@@ -54,7 +55,7 @@ final class VideoPlaylistPlaybackCoordinator {
         let playlist = serverLists.videoPlaylist(id: playlistID, scope: scope, supplemental: playlists)
         let entries = playlist?.entries ?? []
         let startID = entryID ?? (fromBeginning ? nil : playlist?.playbackAction.entryID)
-        sequence = PlaylistPlaybackSequence(entryIDs: entries.map(\.id), startID: startID)
+        sequence = PlaylistPlaybackSequence(entryIDs: entries.map(\.id), startID: startID, shuffled: shuffled)
         startsFromBeginning = fromBeginning
     }
 

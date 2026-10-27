@@ -279,6 +279,9 @@ struct VideoPlaylistDetailView: View {
                     ItemUserActionButton(title: "Start from Beginning", systemImage: "arrow.counterclockwise") { play(playlist.entries.first, fromBeginning: true) }
                         .disabled(!isVideo || editing || mutating)
                         .accessibilityIdentifier("Playlist.restart")
+                    ItemUserActionButton(title: "Shuffle", systemImage: "shuffle") { play(playlist.entries.first, fromBeginning: true, shuffled: true) }
+                        .disabled(!isVideo || editing || mutating)
+                        .accessibilityIdentifier("Playlist.shuffle")
                     ItemUserActionButton(title: playlist.queued ? "Remove from Next Up" : "Add to Next Up", systemImage: playlist.queued ? MediaActionSymbols.removeFromNextUp : MediaActionSymbols.addToNextUp) {
                         let resolved = lists.resolvedID(id, scope: scope)
                         supplemental.setQueued(id: resolved, queued: !playlist.queued, scope: scope)
@@ -392,9 +395,9 @@ struct VideoPlaylistDetailView: View {
         }
     }
 
-    private func play(_ entry: VideoPlaylistEntry?, fromBeginning: Bool) {
+    private func play(_ entry: VideoPlaylistEntry?, fromBeginning: Bool, shuffled: Bool = false) {
         guard let entry else { return }
-        player = ItemRef(item: entry.reference.item, serverID: scope.serverID, userID: scope.userID, playlistID: lists.resolvedID(id, scope: scope), playlistEntryID: entry.id, playlistFromBeginning: fromBeginning)
+        player = ItemRef(item: entry.reference.item, serverID: scope.serverID, userID: scope.userID, playlistID: lists.resolvedID(id, scope: scope), playlistEntryID: entry.id, playlistFromBeginning: fromBeginning, playlistShuffle: shuffled)
     }
 
     private func move(_ index: Int, by offset: Int, in playlist: VideoPlaylist) {

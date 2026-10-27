@@ -49,7 +49,7 @@ extension View {
         func body(content: Content) -> some View {
             content
                 .sheet(item: sheetItem) { ref in
-                    PresentedPlayer(item: ref.item, localOnly: ref.localOnly == true, playlistID: ref.playlistID, playlistEntryID: ref.playlistEntryID, playlistFromBeginning: ref.playlistFromBeginning == true, playbackStart: ref.playbackStart)
+                    PresentedPlayer(item: ref.item, localOnly: ref.localOnly == true, playlistID: ref.playlistID, playlistEntryID: ref.playlistEntryID, playlistFromBeginning: ref.playlistFromBeginning == true, playlistShuffle: ref.playlistShuffle == true, playbackStart: ref.playbackStart)
                         .frame(minWidth: 640, minHeight: 360)
                 }
                 .onChange(of: item) { _, ref in
@@ -86,7 +86,7 @@ extension View {
                    ref.serverID == nil || ref.serverID == session.server.id,
                    ref.userID == nil || ref.userID == session.user.id
                 {
-                    PresentedPlayer(item: ref.item, localOnly: ref.localOnly == true, playlistID: ref.playlistID, playlistEntryID: ref.playlistEntryID, playlistFromBeginning: ref.playlistFromBeginning == true, playbackStart: ref.playbackStart)
+                    PresentedPlayer(item: ref.item, localOnly: ref.localOnly == true, playlistID: ref.playlistID, playlistEntryID: ref.playlistEntryID, playlistFromBeginning: ref.playlistFromBeginning == true, playlistShuffle: ref.playlistShuffle == true, playbackStart: ref.playbackStart)
                         .environment(session)
                         .id(AccountScope(serverID: session.server.id, userID: session.user.id))
                         .id(command?.id)
@@ -114,6 +114,7 @@ struct PresentedPlayer: View {
     var playlistID: UUID? = nil
     var playlistEntryID: UUID? = nil
     var playlistFromBeginning = false
+    var playlistShuffle = false
     var playbackStart: PlaybackStartIntent = .automatic
     var close: (() -> Void)?
 
@@ -156,7 +157,7 @@ struct PresentedPlayer: View {
             if item.isAudioPlayable {
                 AudioPlayerScreen(item: item, localOnly: localOnly, playbackStart: playbackStart)
             } else {
-                VideoPlayerView(item: item, localOnly: localOnly, playlistID: playlistID, playlistEntryID: playlistEntryID, playlistFromBeginning: playlistFromBeginning, playbackStart: playbackStart)
+                VideoPlayerView(item: item, localOnly: localOnly, playlistID: playlistID, playlistEntryID: playlistEntryID, playlistFromBeginning: playlistFromBeginning, playlistShuffle: playlistShuffle, playbackStart: playbackStart)
             }
         }
     }
