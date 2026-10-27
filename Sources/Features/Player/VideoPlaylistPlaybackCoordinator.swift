@@ -161,6 +161,7 @@ final class VideoPlaylistPlaybackCoordinator {
                 player.teardown()
                 return
             }
+            NextUpActivityStore.shared.setDismissed("playlist:" + stateID.uuidString, dismissed: false, scope: scope)
         } catch {
             guard active, !GusError(from: error).isCancellation else { return }
             errorMessage = GusError(from: error).localizedDescription

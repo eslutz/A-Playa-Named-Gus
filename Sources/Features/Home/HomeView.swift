@@ -82,7 +82,7 @@ struct HomeView: View {
         activity.reconcile(scope: scope)
         serverLists.load(scope: scope)
         let candidates = serverLists.videoPlaylists(scope: scope, supplemental: playlists).compactMap { playlist -> NextUpPlaylistCandidate? in
-            guard playlist.queued || (playlist.cursor != nil && playlist.cursor?.finished != true) else { return nil }
+            guard playlist.appearsInNextUp else { return nil }
             let index = playlist.entries.firstIndex { $0.id == playlist.cursor?.entryID } ?? 0
             let item = playlist.entries.indices.contains(index) ? playlist.entries[index].reference.item : nil
             guard item.map({ ContentRatingGate.admitsStored($0) }) ?? true else { return nil }

@@ -335,7 +335,23 @@ final class VideoPlaylistsStore {
     }
 
     func setQueued(id: UUID, queued: Bool, scope: AccountScope) {
-        editPlaylist(id: id, scope: scope, key: "queued", value: queued, activity: queued)
+        load(scope: scope)
+        guard playlist(id: id, scope: scope) != nil else { return }
+        let playlistKey = playlistRecordKey(id: id, scope: scope)
+        guard envelope.records[playlistKey]?.scope == scope else { return }
+        _ = mutate(scope: scope) { state, stamp in
+            guard var record = state.records[playlistKey] else { return }
+            try record.set("queued", value: queued, revision: stamp)
+            if queued {
+                try record.set("activity", value: Date(), revision: stamp)
+                let cursorKey = "cursor-" + playlistKey
+                if var cursor = state.records[cursorKey], cursor.value("cursor", as: PlaylistCursor.self)?.finished == true {
+                    try cursor.set("cursor", value: PlaylistCursor(entryID: nil, positionTicks: 0, finished: false), revision: stamp)
+                    Self.put(cursor, in: &state)
+                }
+            }
+            Self.put(record, in: &state)
+        }
     }
 
     /// Verify durable storage before preparation without changing the saved cursor.
@@ -352,8 +368,13 @@ final class VideoPlaylistsStore {
             var record = state.records[key] ?? SavedMediaRecord(id: key, scope: scope, kind: .cursor)
             try record.set("cursor", value: PlaylistCursor(entryID: entryID, positionTicks: positionTicks.map { max(0, $0) }, finished: finished), revision: stamp)
             Self.put(record, in: &state)
-            if activity, var playlist = state.records[playlistKey] {
-                try playlist.set("activity", value: Date(), revision: stamp)
+            if var playlist = state.records[playlistKey] {
+                if finished {
+                    try playlist.set("queued", value: false, revision: stamp)
+                }
+                if activity {
+                    try playlist.set("activity", value: Date(), revision: stamp)
+                }
                 Self.put(playlist, in: &state)
             }
         }

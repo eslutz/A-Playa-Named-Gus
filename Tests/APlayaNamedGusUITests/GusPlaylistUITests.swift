@@ -164,6 +164,9 @@
             capture.name = "playlist-row-selected-playback"; capture.lifetime = .keepAlways; add(capture)
             let completed = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in app.buttons["Playlist.play"].isHittable && app.staticTexts["Item 1 of 2"].exists }, object: nil)
             XCTAssertEqual(XCTWaiter.wait(for: [completed], timeout: 120), .completed)
+            app.terminate(); app.launch()
+            XCTAssertTrue(app.tabBars.firstMatch.waitForExistence(timeout: 30))
+            XCTAssertFalse(card.exists, "A completed playlist must stay out of Next Up after relaunch")
         }
 
         func testPlaylistCreateRenamePersistAndDelete() async throws {

@@ -206,10 +206,12 @@ struct VideoPlaylistDetailView: View {
                                 Button("Rename", systemImage: "pencil") { renaming = true }.disabled(!serverList.canEdit)
                                 Button("Edit Items", systemImage: "line.3.horizontal") { editing = true }.disabled(!serverList.canEdit || !serverList.entriesLoaded)
                                 if serverList.entriesLoaded, serverList.entries.isEmpty || !serverList.entries.allSatisfy({ $0.item.isAudioPlayable }) {
-                                    Button(playlist.queued ? "Remove from Next Up" : "Add to Next Up", systemImage: playlist.queued ? MediaActionSymbols.removeFromNextUp : MediaActionSymbols.addToNextUp) {
+                                    let key = "playlist:" + lists.resolvedID(id, scope: scope).uuidString
+                                    let isInNextUp = playlist.appearsInNextUp && !NextUpActivityStore.shared.isDismissed(key, scope: scope)
+                                    Button(isInNextUp ? "Remove from Next Up" : "Add to Next Up", systemImage: isInNextUp ? MediaActionSymbols.removeFromNextUp : MediaActionSymbols.addToNextUp) {
                                         let resolved = lists.resolvedID(id, scope: scope)
-                                        supplemental.setQueued(id: resolved, queued: !playlist.queued, scope: scope)
-                                        NextUpActivityStore.shared.setDismissed("playlist:" + resolved.uuidString, dismissed: playlist.queued, scope: scope)
+                                        supplemental.setQueued(id: resolved, queued: !isInNextUp, scope: scope)
+                                        NextUpActivityStore.shared.setDismissed(key, dismissed: isInNextUp, scope: scope)
                                     }
                                 }
                                 Divider()
