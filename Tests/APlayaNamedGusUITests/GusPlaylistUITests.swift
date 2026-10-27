@@ -115,13 +115,13 @@
             continueAfterFailure = false
             executionTimeAllowance = 240
             let name = "Actions 1C81D887"
-            let auth = try await demoRequest("/Users/AuthenticateByName", body: ["Username": "gus", "Pw": "playa-demo"])
-            let token = try XCTUnwrap(auth["AccessToken"] as? String)
-            let userID = try XCTUnwrap((auth["User"] as? [String: Any])?["Id"] as? String)
             let native = try await nativeList(named: name, kind: "Playlist")
             let id = try XCTUnwrap(native?["Id"] as? String)
             let entries = try await nativeEntries(listID: id, playlist: true)
             XCTAssertGreaterThanOrEqual(entries.count, 2)
+            let auth = try await demoRequest("/Users/AuthenticateByName", body: ["Username": "gus", "Pw": "playa-demo"])
+            let token = try XCTUnwrap(auth["AccessToken"] as? String)
+            let userID = try XCTUnwrap((auth["User"] as? [String: Any])?["Id"] as? String)
             for entry in entries {
                 let itemID = try XCTUnwrap(entry["Id"] as? String)
                 let ticks = max(1, (entry["RunTimeTicks"] as? Int ?? 50_000_000) / 5)
