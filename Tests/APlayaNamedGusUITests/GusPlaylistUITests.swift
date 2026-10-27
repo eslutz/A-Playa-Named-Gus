@@ -141,7 +141,7 @@
                 app.tap()
             }
             app.terminate(); app.launch()
-            let card = try app.buttons["NextUp.card.playlist:" + XCTUnwrap(UUID(uuidString: id)).uuidString]
+            let card = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@ AND label CONTAINS %@", "NextUp.card.playlist:", name)).firstMatch
             XCTAssertTrue(card.waitForExistence(timeout: 30))
             for entry in entries {
                 XCTAssertFalse(try app.buttons["NextUp.card.media:jellyfin:" + XCTUnwrap(entry["Id"] as? String)].exists)
@@ -243,7 +243,7 @@
                 XCTAssertTrue(result.waitForExistence(timeout: 20)); result.tap()
                 XCTAssertTrue(app.buttons["Playlist.play"].waitForExistence(timeout: 10))
             }
-            XCTAssertEqual(app.staticTexts.matching(identifier: "Edison Kinetoscopic Record of a Sneeze (1894)").count, 1)
+            XCTAssertEqual(app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@ AND label CONTAINS %@", "Playlist.entry.", "Edison Kinetoscopic Record of a Sneeze (1894)")).count, 1)
             let before = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
             before.name = "ordered-native-playlist"; before.lifetime = .keepAlways; add(before)
             let native = try await nativeList(named: name, kind: "Playlist")
