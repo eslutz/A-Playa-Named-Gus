@@ -1,7 +1,0 @@
-{
-  "scenesParsed": 2896,
-  "scrollRegions": 825,
-  "mappedRegions": 825,
-  "unmappedRegions": [],
-  "checks": "All SVG scenes parsed as XML. Scroll viewport rectangles matched with export geometry; browser gestures require acceptance."
-}

@@ -172,3 +172,6 @@ iOSInjectionProject/
 .ionide
 
 # End of https://www.toptal.com/developers/gitignore/api/macos,visualstudiocode,swift
+
+# Local historical design archive; never commit.
+/Design/Archive/
