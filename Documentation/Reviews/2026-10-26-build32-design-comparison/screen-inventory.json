@@ -1,0 +1,969 @@
+[
+  {
+    "slug": "connect",
+    "title": "Connect to Jellyfin",
+    "section": "Connection and accounts",
+    "source": "Sources/Features/Connect",
+    "status": "captured",
+    "comparisonID": "GUS-001",
+    "comparisonId": "GUS-001"
+  },
+  {
+    "slug": "connect-keyboard",
+    "title": "Server address entry",
+    "section": "Connection and accounts",
+    "source": "Sources/Features/Connect",
+    "status": "covered",
+    "comparisonId": "GUS-080",
+    "reason": "Control is included in the referenced layout; no separate duplicate comparison."
+  },
+  {
+    "slug": "connect-error",
+    "title": "Connection error",
+    "section": "Connection and accounts",
+    "source": "Sources/Features/Connect",
+    "status": "unavailable",
+    "reason": "Connection to an unused localhost port remained pending during observation; canceled through the app. No completed error captured."
+  },
+  {
+    "slug": "local-discovery",
+    "title": "Local server discovery results",
+    "section": "Connection and accounts",
+    "source": "Sources/Features/Connect",
+    "status": "unavailable",
+    "reason": "The requested demo server was not discovered on the local network. Other server results are outside the requested demo scope."
+  },
+  {
+    "slug": "signin",
+    "title": "Jellyfin sign in",
+    "section": "Connection and accounts",
+    "source": "Sources/Features/Connect",
+    "status": "captured",
+    "comparisonID": "GUS-002",
+    "comparisonId": "GUS-002"
+  },
+  {
+    "slug": "signin-error",
+    "title": "Sign-in error",
+    "section": "Connection and accounts",
+    "source": "Sources/Features/Connect",
+    "status": "captured",
+    "comparisonId": "GUS-081"
+  },
+  {
+    "slug": "quick-connect",
+    "title": "Quick Connect approval",
+    "section": "Connection and accounts",
+    "source": "Sources/Features/Connect",
+    "status": "captured",
+    "comparisonID": "GUS-003",
+    "comparisonId": "GUS-003"
+  },
+  {
+    "slug": "home",
+    "title": "Home",
+    "section": "Home and navigation",
+    "source": "Sources/Features/Home",
+    "status": "captured",
+    "comparisonId": "GUS-004"
+  },
+  {
+    "slug": "home-lower",
+    "title": "Home lower sections",
+    "section": "Home and navigation",
+    "source": "Sources/Features/Home",
+    "status": "captured",
+    "comparisonId": "GUS-074"
+  },
+  {
+    "slug": "next-up",
+    "title": "Next Up full list",
+    "section": "Home and navigation",
+    "source": "Sources/Features/Home",
+    "status": "captured",
+    "comparisonId": "GUS-005"
+  },
+  {
+    "slug": "more",
+    "title": "More destinations",
+    "section": "Home and navigation",
+    "source": "Sources/Features/Home",
+    "status": "captured",
+    "comparisonId": "GUS-019"
+  },
+  {
+    "slug": "libraries",
+    "title": "Libraries",
+    "section": "Home and navigation",
+    "source": "Sources/Features/Home",
+    "status": "captured",
+    "comparisonId": "GUS-008"
+  },
+  {
+    "slug": "search",
+    "title": "Search entry",
+    "section": "Home and navigation",
+    "source": "Sources/Features/Home",
+    "status": "captured",
+    "comparisonId": "GUS-071"
+  },
+  {
+    "slug": "search-results",
+    "title": "Search results",
+    "section": "Home and navigation",
+    "source": "Sources/Features/Home",
+    "status": "captured",
+    "comparisonId": "GUS-072"
+  },
+  {
+    "slug": "search-empty",
+    "title": "Search with no results",
+    "section": "Home and navigation",
+    "source": "Sources/Features/Home",
+    "status": "captured",
+    "comparisonId": "GUS-073"
+  },
+  {
+    "slug": "movies",
+    "title": "Movies library",
+    "section": "Movies and shows",
+    "source": "Sources/Features/Item",
+    "status": "captured",
+    "comparisonId": "GUS-009"
+  },
+  {
+    "slug": "library-filter",
+    "title": "Library filter menu",
+    "section": "Movies and shows",
+    "source": "Sources/Features/Item",
+    "status": "captured",
+    "comparisonId": "GUS-010"
+  },
+  {
+    "slug": "library-sort",
+    "title": "Library sort choices",
+    "section": "Movies and shows",
+    "source": "Sources/Features/Item",
+    "status": "covered",
+    "comparisonId": "GUS-010",
+    "reason": "Control is included in the referenced layout; no separate duplicate comparison."
+  },
+  {
+    "slug": "library-status",
+    "title": "Library status filter",
+    "section": "Movies and shows",
+    "source": "Sources/Features/Item",
+    "status": "covered",
+    "comparisonId": "GUS-010",
+    "reason": "Control is included in the referenced layout; no separate duplicate comparison."
+  },
+  {
+    "slug": "movie-detail",
+    "title": "Movie details",
+    "section": "Movies and shows",
+    "source": "Sources/Features/Item",
+    "status": "captured",
+    "comparisonId": "GUS-011"
+  },
+  {
+    "slug": "movie-detail-lower",
+    "title": "Movie details lower sections",
+    "section": "Movies and shows",
+    "source": "Sources/Features/Item",
+    "status": "captured",
+    "comparisonId": "GUS-015"
+  },
+  {
+    "slug": "detail-menu",
+    "title": "Detail actions",
+    "section": "Movies and shows",
+    "source": "Sources/Features/Item",
+    "status": "captured",
+    "comparisonId": "GUS-012"
+  },
+  {
+    "slug": "item-context",
+    "title": "Media context menu",
+    "section": "Movies and shows",
+    "source": "Sources/Features/Item",
+    "status": "captured",
+    "comparisonId": "GUS-075"
+  },
+  {
+    "slug": "add-playlist",
+    "title": "Add to playlist",
+    "section": "Movies and shows",
+    "source": "Sources/Features/Item",
+    "status": "captured",
+    "comparisonId": "GUS-013"
+  },
+  {
+    "slug": "add-collection",
+    "title": "Add to collection",
+    "section": "Movies and shows",
+    "source": "Sources/Features/Item",
+    "status": "captured",
+    "comparisonId": "GUS-014"
+  },
+  {
+    "slug": "shows",
+    "title": "Shows library",
+    "section": "Movies and shows",
+    "source": "Sources/Features/Item",
+    "status": "captured",
+    "comparisonId": "GUS-043"
+  },
+  {
+    "slug": "series-detail",
+    "title": "Series details and episodes",
+    "section": "Movies and shows",
+    "source": "Sources/Features/Item",
+    "status": "captured",
+    "comparisonId": "GUS-044"
+  },
+  {
+    "slug": "season-picker",
+    "title": "Season picker",
+    "section": "Movies and shows",
+    "source": "Sources/Features/Item",
+    "status": "captured",
+    "comparisonId": "GUS-045"
+  },
+  {
+    "slug": "episode-detail",
+    "title": "Episode details",
+    "section": "Movies and shows",
+    "source": "Sources/Features/Item",
+    "status": "captured",
+    "comparisonId": "GUS-046"
+  },
+  {
+    "slug": "restricted",
+    "title": "Restricted content",
+    "section": "Movies and shows",
+    "source": "Sources/Features/Item",
+    "status": "unavailable",
+    "reason": "Demo content did not present a restricted-content state during the walkthrough."
+  },
+  {
+    "slug": "music",
+    "title": "Music library",
+    "section": "Music and photos",
+    "source": "Sources/Features/Music",
+    "status": "captured",
+    "comparisonId": "GUS-047"
+  },
+  {
+    "slug": "album-detail",
+    "title": "Album and tracks",
+    "section": "Music and photos",
+    "source": "Sources/Features/Music",
+    "status": "captured",
+    "comparisonId": "GUS-050"
+  },
+  {
+    "slug": "artist-albums",
+    "title": "Artist albums",
+    "section": "Music and photos",
+    "source": "Sources/Features/Music",
+    "status": "captured",
+    "comparisonId": "GUS-049"
+  },
+  {
+    "slug": "audio-player",
+    "title": "Audio player",
+    "section": "Music and photos",
+    "source": "Sources/Features/Music",
+    "status": "captured",
+    "comparisonId": "GUS-051"
+  },
+  {
+    "slug": "audio-speed",
+    "title": "Audio playback speed",
+    "section": "Music and photos",
+    "source": "Sources/Features/Music",
+    "status": "unavailable",
+    "reason": "No audiobook media is present in gus-demo-jellyfin; this control is audiobook-specific."
+  },
+  {
+    "slug": "audio-chapters",
+    "title": "Audiobook chapter menu",
+    "section": "Music and photos",
+    "source": "Sources/Features/Music",
+    "status": "unavailable",
+    "reason": "No audiobook media or chapter metadata is present in gus-demo-jellyfin."
+  },
+  {
+    "slug": "mini-player",
+    "title": "Persistent Now Playing",
+    "section": "Music and photos",
+    "source": "Sources/Features/Music",
+    "status": "captured",
+    "comparisonId": "GUS-053"
+  },
+  {
+    "slug": "airplay",
+    "title": "AirPlay output picker",
+    "section": "Music and photos",
+    "source": "Sources/Features/Music",
+    "status": "unavailable",
+    "reason": "AirPlay action did not present a route picker in this simulator."
+  },
+  {
+    "slug": "photos",
+    "title": "Photos library",
+    "section": "Music and photos",
+    "source": "Sources/Features/Music",
+    "status": "captured",
+    "comparisonId": "GUS-059"
+  },
+  {
+    "slug": "photo-album",
+    "title": "Photo album",
+    "section": "Music and photos",
+    "source": "Sources/Features/Music",
+    "status": "captured",
+    "comparisonId": "GUS-060"
+  },
+  {
+    "slug": "photo-viewer",
+    "title": "Photo viewer",
+    "section": "Music and photos",
+    "source": "Sources/Features/Music",
+    "status": "captured",
+    "comparisonId": "GUS-069"
+  },
+  {
+    "slug": "books",
+    "title": "Books library",
+    "section": "Books",
+    "source": "Sources/Features/Books",
+    "status": "captured",
+    "comparisonId": "GUS-054"
+  },
+  {
+    "slug": "book-detail",
+    "title": "Book details",
+    "section": "Books",
+    "source": "Sources/Features/Books",
+    "status": "captured",
+    "comparisonId": "GUS-055"
+  },
+  {
+    "slug": "epub-reader",
+    "title": "EPUB reader",
+    "section": "Books",
+    "source": "Sources/Features/Books",
+    "status": "captured",
+    "comparisonId": "GUS-056"
+  },
+  {
+    "slug": "pdf-reader",
+    "title": "PDF reader",
+    "section": "Books",
+    "source": "Sources/Features/Books",
+    "status": "unavailable",
+    "reason": "The demo Books library contains EPUB files, no PDFs."
+  },
+  {
+    "slug": "book-chapters",
+    "title": "Reader chapters",
+    "section": "Books",
+    "source": "Sources/Features/Books",
+    "status": "captured",
+    "comparisonId": "GUS-057"
+  },
+  {
+    "slug": "book-share",
+    "title": "Book share sheet",
+    "section": "Books",
+    "source": "Sources/Features/Books",
+    "status": "captured",
+    "comparisonId": "GUS-058"
+  },
+  {
+    "slug": "playlists",
+    "title": "Playlists",
+    "section": "Playlists and collections",
+    "source": "Sources/Features/Playlists",
+    "status": "captured",
+    "comparisonId": "GUS-033"
+  },
+  {
+    "slug": "playlist-create",
+    "title": "Create playlist",
+    "section": "Playlists and collections",
+    "source": "Sources/Features/Playlists",
+    "status": "captured",
+    "comparisonId": "GUS-034"
+  },
+  {
+    "slug": "playlist-detail",
+    "title": "Playlist details",
+    "section": "Playlists and collections",
+    "source": "Sources/Features/Playlists",
+    "status": "captured",
+    "comparisonId": "GUS-035"
+  },
+  {
+    "slug": "playlist-menu",
+    "title": "Playlist actions",
+    "section": "Playlists and collections",
+    "source": "Sources/Features/Playlists",
+    "status": "captured",
+    "comparisonId": "GUS-036"
+  },
+  {
+    "slug": "playlist-rename",
+    "title": "Rename playlist",
+    "section": "Playlists and collections",
+    "source": "Sources/Features/Playlists",
+    "status": "captured",
+    "comparisonId": "GUS-037"
+  },
+  {
+    "slug": "playlist-edit",
+    "title": "Edit playlist entries",
+    "section": "Playlists and collections",
+    "source": "Sources/Features/Playlists",
+    "status": "captured",
+    "comparisonId": "GUS-038"
+  },
+  {
+    "slug": "playlist-add",
+    "title": "Add playlist items",
+    "section": "Playlists and collections",
+    "source": "Sources/Features/Playlists",
+    "status": "captured",
+    "comparisonId": "GUS-039"
+  },
+  {
+    "slug": "playlist-delete",
+    "title": "Delete playlist confirmation",
+    "section": "Playlists and collections",
+    "source": "Sources/Features/Playlists",
+    "status": "captured",
+    "comparisonId": "GUS-040"
+  },
+  {
+    "slug": "playlist-empty",
+    "title": "Empty playlist",
+    "section": "Playlists and collections",
+    "source": "Sources/Features/Playlists",
+    "status": "captured",
+    "comparisonId": "GUS-041"
+  },
+  {
+    "slug": "collections",
+    "title": "Collections",
+    "section": "Playlists and collections",
+    "source": "Sources/Features/Playlists",
+    "status": "captured",
+    "comparisonId": "GUS-061"
+  },
+  {
+    "slug": "collection-detail",
+    "title": "Collection details",
+    "section": "Playlists and collections",
+    "source": "Sources/Features/Playlists",
+    "status": "captured",
+    "comparisonId": "GUS-063"
+  },
+  {
+    "slug": "collection-create",
+    "title": "Create collection",
+    "section": "Playlists and collections",
+    "source": "Sources/Features/Playlists",
+    "status": "captured",
+    "comparisonId": "GUS-062"
+  },
+  {
+    "slug": "collection-edit",
+    "title": "Edit collection",
+    "section": "Playlists and collections",
+    "source": "Sources/Features/Playlists",
+    "status": "captured",
+    "comparisonId": "GUS-065"
+  },
+  {
+    "slug": "collection-add",
+    "title": "Add collection items",
+    "section": "Playlists and collections",
+    "source": "Sources/Features/Playlists",
+    "status": "captured",
+    "comparisonId": "GUS-066"
+  },
+  {
+    "slug": "collection-delete",
+    "title": "Delete collection confirmation",
+    "section": "Playlists and collections",
+    "source": "Sources/Features/Playlists",
+    "status": "captured",
+    "comparisonId": "GUS-067"
+  },
+  {
+    "slug": "downloaded-empty",
+    "title": "Downloaded library empty",
+    "section": "Downloads",
+    "source": "Sources/Features/Settings/DownloadsView.swift",
+    "status": "captured",
+    "comparisonId": "GUS-006"
+  },
+  {
+    "slug": "downloads-empty",
+    "title": "Downloads management empty",
+    "section": "Downloads",
+    "source": "Sources/Features/Settings/DownloadsView.swift",
+    "status": "captured",
+    "comparisonId": "GUS-007"
+  },
+  {
+    "slug": "downloads-progress",
+    "title": "Download in progress",
+    "section": "Downloads",
+    "source": "Sources/Features/Settings/DownloadsView.swift",
+    "status": "unavailable",
+    "reason": "The tested demo download completed before a stable progress capture was obtained."
+  },
+  {
+    "slug": "downloads",
+    "title": "Downloads management populated",
+    "section": "Downloads",
+    "source": "Sources/Features/Settings/DownloadsView.swift",
+    "status": "captured",
+    "comparisonId": "GUS-017"
+  },
+  {
+    "slug": "downloads-select",
+    "title": "Select downloads",
+    "section": "Downloads",
+    "source": "Sources/Features/Settings/DownloadsView.swift",
+    "status": "captured",
+    "comparisonId": "GUS-018"
+  },
+  {
+    "slug": "downloads-delete",
+    "title": "Delete downloads confirmation",
+    "section": "Downloads",
+    "source": "Sources/Features/Settings/DownloadsView.swift",
+    "status": "captured",
+    "comparisonId": "GUS-076"
+  },
+  {
+    "slug": "downloaded",
+    "title": "Downloaded library populated",
+    "section": "Downloads",
+    "source": "Sources/Features/Settings/DownloadsView.swift",
+    "status": "captured",
+    "comparisonId": "GUS-077"
+  },
+  {
+    "slug": "downloaded-filter",
+    "title": "Downloaded media filter",
+    "section": "Downloads",
+    "source": "Sources/Features/Settings/DownloadsView.swift",
+    "status": "covered",
+    "comparisonId": "GUS-077",
+    "reason": "Control is included in the referenced layout; no separate duplicate comparison."
+  },
+  {
+    "slug": "settings",
+    "title": "Settings account section",
+    "section": "Settings",
+    "source": "Sources/Features/Settings",
+    "status": "captured",
+    "comparisonId": "GUS-020"
+  },
+  {
+    "slug": "settings-middle",
+    "title": "Settings playback and appearance",
+    "section": "Settings",
+    "source": "Sources/Features/Settings",
+    "status": "captured",
+    "comparisonId": "GUS-024"
+  },
+  {
+    "slug": "settings-bottom",
+    "title": "Settings restrictions integrations and about",
+    "section": "Settings",
+    "source": "Sources/Features/Settings",
+    "status": "captured",
+    "comparisonId": "GUS-029"
+  },
+  {
+    "slug": "profile",
+    "title": "Profile editor",
+    "section": "Settings",
+    "source": "Sources/Features/Settings",
+    "status": "captured",
+    "comparisonId": "GUS-021"
+  },
+  {
+    "slug": "profile-language",
+    "title": "Profile language picker",
+    "section": "Settings",
+    "source": "Sources/Features/Settings",
+    "status": "captured",
+    "comparisonId": "GUS-022"
+  },
+  {
+    "slug": "quality",
+    "title": "Streaming quality picker",
+    "section": "Settings",
+    "source": "Sources/Features/Settings",
+    "status": "captured",
+    "comparisonId": "GUS-023"
+  },
+  {
+    "slug": "appearance",
+    "title": "Appearance picker",
+    "section": "Settings",
+    "source": "Sources/Features/Settings",
+    "status": "captured",
+    "comparisonId": "GUS-025"
+  },
+  {
+    "slug": "content-ratings",
+    "title": "Content rating limit",
+    "section": "Settings",
+    "source": "Sources/Features/Settings",
+    "status": "captured",
+    "comparisonId": "GUS-026"
+  },
+  {
+    "slug": "navigation",
+    "title": "Navigation settings",
+    "section": "Settings",
+    "source": "Sources/Features/Settings",
+    "status": "captured",
+    "comparisonId": "GUS-027"
+  },
+  {
+    "slug": "navigation-edit",
+    "title": "Edit navigation",
+    "section": "Settings",
+    "source": "Sources/Features/Settings",
+    "status": "captured",
+    "comparisonId": "GUS-028"
+  },
+  {
+    "slug": "discover",
+    "title": "Discover connection entry",
+    "section": "Discover and Live TV",
+    "source": "Sources/Features/Discover",
+    "status": "captured",
+    "comparisonId": "GUS-042"
+  },
+  {
+    "slug": "seerr-connect",
+    "title": "Connect to Seerr",
+    "section": "Discover and Live TV",
+    "source": "Sources/Features/Discover",
+    "status": "captured",
+    "comparisonId": "GUS-031"
+  },
+  {
+    "slug": "seerr-connect-error",
+    "title": "Seerr validation error",
+    "section": "Discover and Live TV",
+    "source": "Sources/Features/Discover",
+    "status": "captured",
+    "comparisonId": "GUS-079"
+  },
+  {
+    "slug": "seerr-settings",
+    "title": "Discover settings disconnected",
+    "section": "Discover and Live TV",
+    "source": "Sources/Features/Discover",
+    "status": "captured",
+    "comparisonId": "GUS-030"
+  },
+  {
+    "slug": "live-tv",
+    "title": "Live TV empty",
+    "section": "Discover and Live TV",
+    "source": "Sources/Features/Discover",
+    "status": "captured",
+    "comparisonId": "GUS-070"
+  },
+  {
+    "slug": "video-player",
+    "title": "Video player",
+    "section": "Playback",
+    "source": "Sources/Features/Player",
+    "status": "captured",
+    "comparisonId": "GUS-016"
+  },
+  {
+    "slug": "video-tracks",
+    "title": "Video audio and subtitle controls",
+    "section": "Playback",
+    "source": "Sources/Features/Player",
+    "status": "unavailable",
+    "reason": "The tested demo episode exposed no alternate audio/subtitle menu in the native player."
+  },
+  {
+    "slug": "video-options",
+    "title": "Video playback options",
+    "section": "Playback",
+    "source": "Sources/Features/Player",
+    "status": "captured",
+    "comparisonId": "GUS-078"
+  },
+  {
+    "slug": "seerr-unavailable-00",
+    "title": "Seerr sign in",
+    "section": "Discover capture limitations",
+    "source": "Sources/Features/Discover/SeerrConnectView.swift",
+    "status": "unavailable",
+    "reason": "Requires an authenticated Seerr 3 service and appropriate server data or permissions. The requested gus-demo-jellyfin server supplies Jellyfin only."
+  },
+  {
+    "slug": "seerr-unavailable-01",
+    "title": "Discover browse",
+    "section": "Discover capture limitations",
+    "source": "Sources/Features/Discover/DiscoverBrowseView.swift",
+    "status": "unavailable",
+    "reason": "Requires an authenticated Seerr 3 service and appropriate server data or permissions. The requested gus-demo-jellyfin server supplies Jellyfin only."
+  },
+  {
+    "slug": "seerr-unavailable-02",
+    "title": "Discover catalog results",
+    "section": "Discover capture limitations",
+    "source": "Sources/Features/Discover/SeerrCatalogGridView.swift",
+    "status": "unavailable",
+    "reason": "Requires an authenticated Seerr 3 service and appropriate server data or permissions. The requested gus-demo-jellyfin server supplies Jellyfin only."
+  },
+  {
+    "slug": "seerr-unavailable-03",
+    "title": "Discover catalog filters",
+    "section": "Discover capture limitations",
+    "source": "Sources/Features/Discover/SeerrCatalogGridView.swift",
+    "status": "unavailable",
+    "reason": "Requires an authenticated Seerr 3 service and appropriate server data or permissions. The requested gus-demo-jellyfin server supplies Jellyfin only."
+  },
+  {
+    "slug": "seerr-unavailable-04",
+    "title": "Discover movie details",
+    "section": "Discover capture limitations",
+    "source": "Sources/Features/Discover/SeerrTitleDetailView.swift",
+    "status": "unavailable",
+    "reason": "Requires an authenticated Seerr 3 service and appropriate server data or permissions. The requested gus-demo-jellyfin server supplies Jellyfin only."
+  },
+  {
+    "slug": "seerr-unavailable-05",
+    "title": "Discover series details",
+    "section": "Discover capture limitations",
+    "source": "Sources/Features/Discover/SeerrTitleDetailView.swift",
+    "status": "unavailable",
+    "reason": "Requires an authenticated Seerr 3 service and appropriate server data or permissions. The requested gus-demo-jellyfin server supplies Jellyfin only."
+  },
+  {
+    "slug": "seerr-unavailable-06",
+    "title": "Discover season and episodes",
+    "section": "Discover capture limitations",
+    "source": "Sources/Features/Discover/SeerrSeasonView.swift",
+    "status": "unavailable",
+    "reason": "Requires an authenticated Seerr 3 service and appropriate server data or permissions. The requested gus-demo-jellyfin server supplies Jellyfin only."
+  },
+  {
+    "slug": "seerr-unavailable-07",
+    "title": "Discover person and credits",
+    "section": "Discover capture limitations",
+    "source": "Sources/Features/Discover/SeerrPersonView.swift",
+    "status": "unavailable",
+    "reason": "Requires an authenticated Seerr 3 service and appropriate server data or permissions. The requested gus-demo-jellyfin server supplies Jellyfin only."
+  },
+  {
+    "slug": "seerr-unavailable-08",
+    "title": "Choose Jellyfin playback match",
+    "section": "Discover capture limitations",
+    "source": "Sources/Features/Discover/SeerrPlaybackMatchView.swift",
+    "status": "unavailable",
+    "reason": "Requires an authenticated Seerr 3 service and appropriate server data or permissions. The requested gus-demo-jellyfin server supplies Jellyfin only."
+  },
+  {
+    "slug": "seerr-unavailable-09",
+    "title": "Review movie request",
+    "section": "Discover capture limitations",
+    "source": "Sources/Features/Discover/SeerrRequestView.swift",
+    "status": "unavailable",
+    "reason": "Requires an authenticated Seerr 3 service and appropriate server data or permissions. The requested gus-demo-jellyfin server supplies Jellyfin only."
+  },
+  {
+    "slug": "seerr-unavailable-10",
+    "title": "Review series request and options",
+    "section": "Discover capture limitations",
+    "source": "Sources/Features/Discover/SeerrRequestView.swift",
+    "status": "unavailable",
+    "reason": "Requires an authenticated Seerr 3 service and appropriate server data or permissions. The requested gus-demo-jellyfin server supplies Jellyfin only."
+  },
+  {
+    "slug": "seerr-unavailable-11",
+    "title": "My Requests",
+    "section": "Discover capture limitations",
+    "source": "Sources/Features/Discover/SeerrRequestsView.swift",
+    "status": "unavailable",
+    "reason": "Requires an authenticated Seerr 3 service and appropriate server data or permissions. The requested gus-demo-jellyfin server supplies Jellyfin only."
+  },
+  {
+    "slug": "seerr-unavailable-12",
+    "title": "Manage Requests",
+    "section": "Discover capture limitations",
+    "source": "Sources/Features/Discover/SeerrRequestsView.swift",
+    "status": "unavailable",
+    "reason": "Requires an authenticated Seerr 3 service and appropriate server data or permissions. The requested gus-demo-jellyfin server supplies Jellyfin only."
+  },
+  {
+    "slug": "seerr-unavailable-13",
+    "title": "Request details and management confirmations",
+    "section": "Discover capture limitations",
+    "source": "Sources/Features/Discover/SeerrRequestsView.swift",
+    "status": "unavailable",
+    "reason": "Requires an authenticated Seerr 3 service and appropriate server data or permissions. The requested gus-demo-jellyfin server supplies Jellyfin only."
+  },
+  {
+    "slug": "seerr-unavailable-14",
+    "title": "Issues",
+    "section": "Discover capture limitations",
+    "source": "Sources/Features/Discover/SeerrSupportViews.swift",
+    "status": "unavailable",
+    "reason": "Requires an authenticated Seerr 3 service and appropriate server data or permissions. The requested gus-demo-jellyfin server supplies Jellyfin only."
+  },
+  {
+    "slug": "seerr-unavailable-15",
+    "title": "Report an issue",
+    "section": "Discover capture limitations",
+    "source": "Sources/Features/Discover/SeerrSupportViews.swift",
+    "status": "unavailable",
+    "reason": "Requires an authenticated Seerr 3 service and appropriate server data or permissions. The requested gus-demo-jellyfin server supplies Jellyfin only."
+  },
+  {
+    "slug": "seerr-unavailable-16",
+    "title": "Issue discussion and status confirmations",
+    "section": "Discover capture limitations",
+    "source": "Sources/Features/Discover/SeerrSupportViews.swift",
+    "status": "unavailable",
+    "reason": "Requires an authenticated Seerr 3 service and appropriate server data or permissions. The requested gus-demo-jellyfin server supplies Jellyfin only."
+  },
+  {
+    "slug": "seerr-unavailable-17",
+    "title": "Blocklist and removal confirmation",
+    "section": "Discover capture limitations",
+    "source": "Sources/Features/Discover/SeerrSupportViews.swift",
+    "status": "unavailable",
+    "reason": "Requires an authenticated Seerr 3 service and appropriate server data or permissions. The requested gus-demo-jellyfin server supplies Jellyfin only."
+  },
+  {
+    "slug": "seerr-unavailable-18",
+    "title": "Block title confirmation",
+    "section": "Discover capture limitations",
+    "source": "Sources/Features/Discover/SeerrSupportViews.swift",
+    "status": "unavailable",
+    "reason": "Requires an authenticated Seerr 3 service and appropriate server data or permissions. The requested gus-demo-jellyfin server supplies Jellyfin only."
+  },
+  {
+    "slug": "seerr-unavailable-19",
+    "title": "Seerr catalog and notification preferences",
+    "section": "Discover capture limitations",
+    "source": "Sources/Features/Discover/SeerrSupportViews.swift",
+    "status": "unavailable",
+    "reason": "Requires an authenticated Seerr 3 service and appropriate server data or permissions. The requested gus-demo-jellyfin server supplies Jellyfin only."
+  },
+  {
+    "slug": "seerr-unavailable-20",
+    "title": "Connected Discover settings and disconnect confirmation",
+    "section": "Discover capture limitations",
+    "source": "Sources/Features/Discover/SeerrSettingsView.swift",
+    "status": "unavailable",
+    "reason": "Requires an authenticated Seerr 3 service and appropriate server data or permissions. The requested gus-demo-jellyfin server supplies Jellyfin only."
+  },
+  {
+    "slug": "synopsis",
+    "title": "Full synopsis sheet",
+    "source": "Sources/SharedUI/AboutCardsView.swift",
+    "section": "Conditional states",
+    "status": "unavailable",
+    "reason": "The inspected demo detail layouts did not expose a full-synopsis sheet."
+  },
+  {
+    "slug": "media-replacement",
+    "title": "Media replacement picker",
+    "source": "Sources/SharedUI/SavedQueueRecoveryRail.swift",
+    "section": "Conditional states",
+    "status": "unavailable",
+    "reason": "No stale or missing saved-media reference was encountered; demo library was not damaged to manufacture one."
+  },
+  {
+    "slug": "progress-transfer",
+    "title": "Saved progress transfer and confirmation",
+    "source": "Sources/SharedUI/ProgressTransferView.swift",
+    "section": "Conditional states",
+    "status": "unavailable",
+    "reason": "No replacement/progress-recovery condition was encountered in the demo account."
+  },
+  {
+    "slug": "account-reauthentication",
+    "title": "Account reauthentication",
+    "source": "Sources/Features/Settings/SettingsView.swift",
+    "section": "Conditional states",
+    "status": "unavailable",
+    "reason": "The demo account had a valid fresh session; no expired stored-account session was available."
+  },
+  {
+    "slug": "shareplay",
+    "title": "SharePlay sharing and unavailable alert",
+    "source": "Sources/Platform/SharePlaySharingController.swift",
+    "section": "Conditional states",
+    "status": "unavailable",
+    "reason": "Native Share sheet is captured, but a SharePlay session requires additional participants/account conditions not available in this simulator walkthrough."
+  },
+  {
+    "slug": "download-error",
+    "title": "Download failure alert",
+    "source": "Sources/SharedUI/DownloadErrorAlert.swift",
+    "section": "Conditional states",
+    "status": "unavailable",
+    "reason": "No download failure occurred during the demo walkthrough."
+  },
+  {
+    "slug": "playlist-sync-error",
+    "title": "Playlist update failure and retry confirmation",
+    "source": "Sources/Features/Playlists/VideoPlaylistsView.swift",
+    "section": "Conditional states",
+    "status": "captured",
+    "comparisonId": "GUS-032"
+  },
+  {
+    "slug": "music-lower",
+    "title": "Music library \u2014 artists and albums",
+    "section": "Music and photos",
+    "status": "captured",
+    "comparisonId": "GUS-048",
+    "source": "Runtime walkthrough"
+  },
+  {
+    "slug": "collection-menu",
+    "title": "Collection actions and sort order",
+    "section": "Playlists and collections",
+    "status": "captured",
+    "comparisonId": "GUS-064",
+    "source": "Runtime walkthrough"
+  },
+  {
+    "slug": "photos-destination",
+    "title": "Photos destination",
+    "section": "Music and photos",
+    "status": "captured",
+    "comparisonId": "GUS-068",
+    "source": "Runtime walkthrough"
+  },
+  {
+    "slug": "connect-loading",
+    "title": "Connecting to server",
+    "section": "Connection",
+    "status": "captured",
+    "comparisonId": "GUS-080",
+    "source": "Runtime walkthrough"
+  }
+]

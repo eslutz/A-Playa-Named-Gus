@@ -1,0 +1,10 @@
+{
+  "captured": 80,
+  "matched": 57,
+  "missingDesign": 23,
+  "coveredWithinCapture": 4,
+  "limitations": 36,
+  "inventoryEntries": 120,
+  "firstPagePairValidation": "User confirmed images and commenting; selection comment independently read back attached to GUS-001",
+  "pagePublication": "Complete: 80 images and comparison headings, 80 review prompts, 23 missing-design labels, 36 capture limitations"
+}

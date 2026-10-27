@@ -1,0 +1,52 @@
+{
+  "page_id": "page_ecc8f0e400888191b8965b15afe07eff",
+  "threads": [
+    {
+      "id": "9e99a3e0-31a9-4ed8-b1f3-f25f6c6b7aa1",
+      "target": {
+        "kind": "selection",
+        "anchor": {
+          "blockId": "58d652e7-7529-4fca-8afc-372b094bb5e8",
+          "relativePositionBase64": "AOLh9v0NFwA="
+        },
+        "head": {
+          "blockId": "58d652e7-7529-4fca-8afc-372b094bb5e8",
+          "relativePositionBase64": "AOLh9v0NM0E="
+        }
+      },
+      "selectionContext": {
+        "status": "attached",
+        "text": "GUS-001 — Connect to Jellyfin",
+        "start": {
+          "blockId": "58d652e7-7529-4fca-8afc-372b094bb5e8",
+          "offsetUtf16": 3
+        },
+        "end": {
+          "blockId": "58d652e7-7529-4fca-8afc-372b094bb5e8",
+          "offsetUtf16": 32
+        },
+        "truncated": false
+      },
+      "state": "open",
+      "createdAt": "2026-10-26T12:57:43.248Z",
+      "updatedAt": "2026-10-26T12:57:43.248Z",
+      "author": {
+        "id": "user-03TgswAM73H3C79ggosNPuml",
+        "displayName": "Eric Slutz"
+      },
+      "messages": [
+        {
+          "id": "8f1e59fd-010d-4a89-b6cc-037eb08eff14",
+          "author": {
+            "id": "user-03TgswAM73H3C79ggosNPuml",
+            "displayName": "Eric Slutz"
+          },
+          "body": "sketch",
+          "createdAt": "2026-10-26T12:57:43.248Z",
+          "reactions": []
+        }
+      ]
+    }
+  ],
+  "truncated": false
+}

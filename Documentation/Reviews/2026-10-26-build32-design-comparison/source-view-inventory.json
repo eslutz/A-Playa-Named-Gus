@@ -1,0 +1,432 @@
+[
+  {
+    "view": "ArtworkTile",
+    "source": "Sources/SharedUI/ArtworkTile.swift",
+    "line": 5
+  },
+  {
+    "view": "RestrictedContentView",
+    "source": "Sources/SharedUI/RestrictedContentView.swift",
+    "line": 7
+  },
+  {
+    "view": "CinematicDetailHero",
+    "source": "Sources/SharedUI/CinematicDetailHero.swift",
+    "line": 5
+  },
+  {
+    "view": "ProgressTransferView",
+    "source": "Sources/SharedUI/ProgressTransferView.swift",
+    "line": 2
+  },
+  {
+    "view": "MediaReplacementPicker",
+    "source": "Sources/SharedUI/SavedQueueRecoveryRail.swift",
+    "line": 38
+  },
+  {
+    "view": "LoadingStateView",
+    "source": "Sources/SharedUI/LoadingStateView.swift",
+    "line": 5
+  },
+  {
+    "view": "AlbumDetailView",
+    "source": "Sources/Features/Music/AlbumDetailView.swift",
+    "line": 5
+  },
+  {
+    "view": "ArtistAlbumsView",
+    "source": "Sources/Features/Music/AlbumDetailView.swift",
+    "line": 167
+  },
+  {
+    "view": "AudioPlayerView",
+    "source": "Sources/Features/Music/AudioPlayerView.swift",
+    "line": 5
+  },
+  {
+    "view": "AudioPlayerScreen",
+    "source": "Sources/Features/Music/AudioPlayerView.swift",
+    "line": 232
+  },
+  {
+    "view": "DownloadsView",
+    "source": "Sources/Features/Settings/DownloadsView.swift",
+    "line": 2
+  },
+  {
+    "view": "SettingsView",
+    "source": "Sources/Features/Settings/SettingsView.swift",
+    "line": 4
+  },
+  {
+    "view": "DownloadsSettingsSection",
+    "source": "Sources/Features/Settings/SettingsView.swift",
+    "line": 208
+  },
+  {
+    "view": "UserProfileView",
+    "source": "Sources/Features/Settings/UserProfileView.swift",
+    "line": 2
+  },
+  {
+    "view": "NavigationSettingsView",
+    "source": "Sources/Features/Settings/NavigationSettingsView.swift",
+    "line": 6
+  },
+  {
+    "view": "LibraryGridView",
+    "source": "Sources/Features/Home/LibraryGridView.swift",
+    "line": 4
+  },
+  {
+    "view": "LibraryFilterMenu",
+    "source": "Sources/Features/Home/LibraryGridView.swift",
+    "line": 95
+  },
+  {
+    "view": "HomeView",
+    "source": "Sources/Features/Home/HomeView.swift",
+    "line": 8
+  },
+  {
+    "view": "NextUpListView",
+    "source": "Sources/Features/Home/HomeView.swift",
+    "line": 178
+  },
+  {
+    "view": "NextUpDestination",
+    "source": "Sources/Features/Home/HomeView.swift",
+    "line": 205
+  },
+  {
+    "view": "LibrariesLandingView",
+    "source": "Sources/Features/Home/HomeView.swift",
+    "line": 458
+  },
+  {
+    "view": "LibrariesGrid",
+    "source": "Sources/Features/Home/HomeView.swift",
+    "line": 498
+  },
+  {
+    "view": "VideoPlaylistsView",
+    "source": "Sources/Features/Playlists/VideoPlaylistsView.swift",
+    "line": 4
+  },
+  {
+    "view": "VideoPlaylistDetailView",
+    "source": "Sources/Features/Playlists/VideoPlaylistsView.swift",
+    "line": 121
+  },
+  {
+    "view": "SavedPlaylistErrorBanner",
+    "source": "Sources/Features/Playlists/VideoPlaylistsView.swift",
+    "line": 431
+  },
+  {
+    "view": "AddToVideoPlaylistView",
+    "source": "Sources/Features/Playlists/VideoPlaylistsView.swift",
+    "line": 447
+  },
+  {
+    "view": "AddToServerMediaListView",
+    "source": "Sources/Features/Playlists/VideoPlaylistsView.swift",
+    "line": 454
+  },
+  {
+    "view": "ServerListSearchView",
+    "source": "Sources/Features/Playlists/VideoPlaylistsView.swift",
+    "line": 492
+  },
+  {
+    "view": "ServerListNameEditor",
+    "source": "Sources/Features/Playlists/VideoPlaylistsView.swift",
+    "line": 557
+  },
+  {
+    "view": "SeerrCatalogGridView",
+    "source": "Sources/Features/Discover/SeerrCatalogGridView.swift",
+    "line": 165
+  },
+  {
+    "view": "SeerrCatalogFilterView",
+    "source": "Sources/Features/Discover/SeerrCatalogGridView.swift",
+    "line": 199
+  },
+  {
+    "view": "SeerrCatalogResults",
+    "source": "Sources/Features/Discover/SeerrCatalogGridView.swift",
+    "line": 279
+  },
+  {
+    "view": "SeerrArtworkView",
+    "source": "Sources/Features/Discover/SeerrArtwork.swift",
+    "line": 4
+  },
+  {
+    "view": "SeerrResultLink",
+    "source": "Sources/Features/Discover/SeerrArtwork.swift",
+    "line": 65
+  },
+  {
+    "view": "SeerrPlaybackMatchView",
+    "source": "Sources/Features/Discover/SeerrPlaybackMatchView.swift",
+    "line": 2
+  },
+  {
+    "view": "SeerrSettingsView",
+    "source": "Sources/Features/Discover/SeerrSettingsView.swift",
+    "line": 2
+  },
+  {
+    "view": "SeerrRequestView",
+    "source": "Sources/Features/Discover/SeerrRequestView.swift",
+    "line": 2
+  },
+  {
+    "view": "SeerrRequestForm",
+    "source": "Sources/Features/Discover/SeerrRequestView.swift",
+    "line": 10
+  },
+  {
+    "view": "DiscoverView",
+    "source": "Sources/Features/Discover/DiscoverView.swift",
+    "line": 4
+  },
+  {
+    "view": "SeerrRequestsView",
+    "source": "Sources/Features/Discover/SeerrRequestsView.swift",
+    "line": 4
+  },
+  {
+    "view": "SeerrRequestDetailView",
+    "source": "Sources/Features/Discover/SeerrRequestsView.swift",
+    "line": 204
+  },
+  {
+    "view": "SeerrTitleDetailView",
+    "source": "Sources/Features/Discover/SeerrTitleDetailView.swift",
+    "line": 56
+  },
+  {
+    "view": "SeerrCreditsSection",
+    "source": "Sources/Features/Discover/SeerrTitleDetailView.swift",
+    "line": 246
+  },
+  {
+    "view": "SeerrRecommendationsSection",
+    "source": "Sources/Features/Discover/SeerrTitleDetailView.swift",
+    "line": 284
+  },
+  {
+    "view": "SeerrIssuesView",
+    "source": "Sources/Features/Discover/SeerrSupportViews.swift",
+    "line": 4
+  },
+  {
+    "view": "SeerrReportIssueView",
+    "source": "Sources/Features/Discover/SeerrSupportViews.swift",
+    "line": 92
+  },
+  {
+    "view": "SeerrIssueDetailView",
+    "source": "Sources/Features/Discover/SeerrSupportViews.swift",
+    "line": 186
+  },
+  {
+    "view": "SeerrBlocklistView",
+    "source": "Sources/Features/Discover/SeerrSupportViews.swift",
+    "line": 330
+  },
+  {
+    "view": "SeerrBlocklistAction",
+    "source": "Sources/Features/Discover/SeerrSupportViews.swift",
+    "line": 460
+  },
+  {
+    "view": "SeerrPreferencesView",
+    "source": "Sources/Features/Discover/SeerrSupportViews.swift",
+    "line": 547
+  },
+  {
+    "view": "SeerrConnectView",
+    "source": "Sources/Features/Discover/SeerrConnectView.swift",
+    "line": 4
+  },
+  {
+    "view": "SeerrSignInView",
+    "source": "Sources/Features/Discover/SeerrConnectView.swift",
+    "line": 86
+  },
+  {
+    "view": "SeerrPersonView",
+    "source": "Sources/Features/Discover/SeerrPersonView.swift",
+    "line": 73
+  },
+  {
+    "view": "SeerrPersonCreditSection",
+    "source": "Sources/Features/Discover/SeerrPersonView.swift",
+    "line": 136
+  },
+  {
+    "view": "SeerrSeasonView",
+    "source": "Sources/Features/Discover/SeerrSeasonView.swift",
+    "line": 5
+  },
+  {
+    "view": "SeerrEpisodeMetadata",
+    "source": "Sources/Features/Discover/SeerrSeasonView.swift",
+    "line": 101
+  },
+  {
+    "view": "DiscoverBrowseView",
+    "source": "Sources/Features/Discover/DiscoverBrowseView.swift",
+    "line": 4
+  },
+  {
+    "view": "SeerrDiscoveryHero",
+    "source": "Sources/Features/Discover/DiscoverBrowseView.swift",
+    "line": 157
+  },
+  {
+    "view": "BookReaderScreen",
+    "source": "Sources/Features/Books/BookReaderView.swift",
+    "line": 11
+  },
+  {
+    "view": "BookChapterListEntries",
+    "source": "Sources/Features/Books/BookReaderView.swift",
+    "line": 135
+  },
+  {
+    "view": "BookReaderPresenter",
+    "source": "Sources/Features/Books/BookActions.swift",
+    "line": 123
+  },
+  {
+    "view": "SearchResultsView",
+    "source": "Sources/Features/Search/SearchResultsView.swift",
+    "line": 2
+  },
+  {
+    "view": "SearchRootView",
+    "source": "Sources/Features/Search/SearchResultsView.swift",
+    "line": 55
+  },
+  {
+    "view": "LiveTVView",
+    "source": "Sources/Features/LiveTV/LiveTVView.swift",
+    "line": 6
+  },
+  {
+    "view": "SeriesEpisodesView",
+    "source": "Sources/Features/Item/SeriesEpisodesView.swift",
+    "line": 4
+  },
+  {
+    "view": "SeasonPicker",
+    "source": "Sources/Features/Item/SeriesEpisodesView.swift",
+    "line": 69
+  },
+  {
+    "view": "ItemDetailView",
+    "source": "Sources/Features/Item/ItemDetailView.swift",
+    "line": 5
+  },
+  {
+    "view": "PhotoViewerView",
+    "source": "Sources/Features/Photos/PhotoViewerView.swift",
+    "line": 5
+  },
+  {
+    "view": "ConnectFlowView",
+    "source": "Sources/Features/Connect/ConnectFlowView.swift",
+    "line": 7
+  },
+  {
+    "view": "SignInView",
+    "source": "Sources/Features/Connect/SignInView.swift",
+    "line": 8
+  },
+  {
+    "view": "ConnectServerView",
+    "source": "Sources/Features/Connect/ConnectServerView.swift",
+    "line": 7
+  },
+  {
+    "view": "CollectionsView",
+    "source": "Sources/Features/Collections/CollectionViews.swift",
+    "line": 2
+  },
+  {
+    "view": "CollectionLink",
+    "source": "Sources/Features/Collections/CollectionViews.swift",
+    "line": 40
+  },
+  {
+    "view": "MovieCollectionMemberships",
+    "source": "Sources/Features/Collections/CollectionViews.swift",
+    "line": 89
+  },
+  {
+    "view": "MediaCollectionDetailView",
+    "source": "Sources/Features/Collections/CollectionViews.swift",
+    "line": 118
+  },
+  {
+    "view": "CollectionFeedback",
+    "source": "Sources/Features/Collections/CollectionViews.swift",
+    "line": 229
+  },
+  {
+    "view": "CollectionEditor",
+    "source": "Sources/Features/Collections/CollectionManagementViews.swift",
+    "line": 2
+  },
+  {
+    "view": "AddToMediaCollectionView",
+    "source": "Sources/Features/Collections/CollectionManagementViews.swift",
+    "line": 83
+  },
+  {
+    "view": "CollectionMoviePicker",
+    "source": "Sources/Features/Collections/CollectionManagementViews.swift",
+    "line": 132
+  },
+  {
+    "view": "DownloadedLibraryView",
+    "source": "Sources/Features/Downloads/DownloadedLibraryView.swift",
+    "line": 4
+  },
+  {
+    "view": "DownloadedBookPlayerView",
+    "source": "Sources/Features/Downloads/DownloadedBookPlayerView.swift",
+    "line": 5
+  },
+  {
+    "view": "GusPlayerWindowContent",
+    "source": "Sources/Features/Player/PlayerPresentation.swift",
+    "line": 76
+  },
+  {
+    "view": "PresentedPlayer",
+    "source": "Sources/Features/Player/PlayerPresentation.swift",
+    "line": 109
+  },
+  {
+    "view": "VideoPlayerView",
+    "source": "Sources/Features/Player/VideoPlayerView.swift",
+    "line": 8
+  },
+  {
+    "view": "StereoFallbackNotice",
+    "source": "Sources/Features/Player/VideoPlayerView.swift",
+    "line": 329
+  },
+  {
+    "view": "PlayerSurface",
+    "source": "Sources/Features/Player/VideoPlayerView.swift",
+    "line": 355
+  }
+]
