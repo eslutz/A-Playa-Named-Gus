@@ -231,8 +231,16 @@ private struct SectionStack: View {
         NavigationStack(path: state.pathBinding(for: sectionID)) {
             Group {
                 if sectionID == RootNavigationState.searchID {
-                    GlobalSearchContent(state: state.searchState(for: sectionID, session: session))
-                        .navigationTitle("Search")
+                    #if os(iOS)
+                        if widthClass == .compact {
+                            GlobalSearchContent(state: state.searchState(for: sectionID, session: session))
+                                .navigationTitle("Search")
+                        } else {
+                            standaloneSearch
+                        }
+                    #else
+                        standaloneSearch
+                    #endif
                 } else if sectionID == "gus.tv.search" {
                     SearchRootView(state: state.searchState(for: sectionID, session: session)) {
                         ContentUnavailableView("Search Library", systemImage: "magnifyingglass")
@@ -281,6 +289,13 @@ private struct SectionStack: View {
         #if os(visionOS)
         .gusNowPlaying(coordinator: audio, enabled: state.detailItem == nil)
         #endif
+    }
+
+    private var standaloneSearch: some View {
+        SearchRootView(state: state.searchState(for: sectionID, session: session)) {
+            ContentUnavailableView("Search Library", systemImage: "magnifyingglass")
+        }
+        .navigationTitle("Search")
     }
 }
 

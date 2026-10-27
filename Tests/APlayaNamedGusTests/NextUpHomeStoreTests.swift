@@ -19,6 +19,26 @@ struct NextUpHomeStoreTests {
         return HomeStore(session: session, activity: activity)
     }
 
+    @Test("Recently Added bounds a large episode scan even when fewer than twelve series exist")
+    func boundedLatestSeriesScan() async {
+        let provider = FakeMediaProviderSession(capabilities: ProviderCapabilities())
+        var offsets: [Int] = []
+        provider.itemsHandler = { query in
+            guard query.includeTypes?.contains(.episode) == true else {
+                return MediaItemPage(items: [], totalRecordCount: 0)
+            }
+            offsets.append(query.startIndex)
+            let episodes = (query.startIndex ..< query.startIndex + query.limit).map { index in
+                MediaItem(id: "episode-\(index)", seriesID: "series-\(index % 10)", seriesName: "Show \(index % 10)", type: .episode)
+            }
+            return MediaItemPage(items: episodes, totalRecordCount: 6000)
+        }
+        let store = home(provider, activity: activityStore())
+        await store.load()
+        #expect(offsets == [0, 60, 120])
+        #expect(store.latestSections.first(where: { $0.kind == .shows })?.items.count == 10)
+    }
+
     @Test("dismissed Next Up identities survive persistence without changing playback data")
     func dismissalPersistence() throws {
         let data = Data(#"{"activity":{},"firstSeenIDs":[],"dismissedIDs":["media:jellyfin:movie"]}"#.utf8)

@@ -286,7 +286,9 @@ final class HomeStore {
                     do {
                         var items: [MediaItem] = []
                         var offset = 0
-                        while items.count < 12 {
+                        // A small shelf must not scan thousands of episodes to
+                        // find twelve distinct series. Show All owns further paging.
+                        while items.count < 12, offset < 180 {
                             try Task.checkCancellation()
                             let page = try await provider.latestMedia(kind: kind, startIndex: offset, limit: 60)
                             items = kind.displayItems(items + ContentRatingGate.filter(page.items))
