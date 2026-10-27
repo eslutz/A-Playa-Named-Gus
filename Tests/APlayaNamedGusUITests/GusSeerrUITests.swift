@@ -16,7 +16,11 @@
             submit(app)
             assertPendingConfirmation(app)
             capture("seerr-movie-pending")
-            app.buttons["Done"].firstMatch.tap()
+            app.buttons["View My Requests"].firstMatch.tap()
+            XCTAssertTrue(app.navigationBars["My Requests"].waitForExistence(timeout: 10))
+            capture("seerr-confirmation-history")
+            app.navigationBars.buttons.firstMatch.tap()
+            app.buttons["Close"].firstMatch.tap()
 
             // A new app process must restore the cookie without another login.
             app.terminate()
@@ -45,6 +49,15 @@
             XCTAssertEqual(requestPosts(state), 1)
             assertEmptyHistory("My Requests", in: app)
             capture("seerr-own-history-refreshed-empty")
+            // Leave the dedicated demo account disconnected from the temporary fixture.
+            app.terminate()
+            app.launch()
+            openIntegration(app)
+            let disconnect = app.buttons["Disconnect This Device"].firstMatch
+            reveal(disconnect, in: app)
+            disconnect.tap()
+            confirm("Disconnect", in: app)
+            XCTAssertTrue(app.buttons["Connect to Seerr"].firstMatch.waitForExistence(timeout: 10))
         }
 
         func testLostSubmissionResponseReadsBackWithoutDuplicatePost() async throws {
@@ -80,7 +93,7 @@
             openMovieReview(app)
             submit(app)
             assertPendingConfirmation(app)
-            app.buttons["Done"].firstMatch.tap()
+            app.buttons["Close"].firstMatch.tap()
             backToDiscover(app)
             let menu = app.buttons["Seerr.menu"].firstMatch
             XCTAssertTrue(menu.waitForExistence(timeout: 10))
@@ -156,6 +169,7 @@
             connect.tap()
             let address = app.textFields["Seerr.serverURL"]
             XCTAssertTrue(address.waitForExistence(timeout: 10))
+            capture("seerr-connect")
             address.tap()
             address.typeText("http://127.0.0.1:5056")
             let next = app.buttons["Seerr.continue"].firstMatch
@@ -163,8 +177,10 @@
             next.tap()
             let username = app.textFields["Seerr.username"]
             XCTAssertTrue(username.waitForExistence(timeout: 15))
+            capture("seerr-sign-in")
             username.tap()
             username.typeText("fixture@example.invalid")
+            XCTAssertEqual(username.value as? String, "fixture@example.invalid")
             let password = app.secureTextFields["Seerr.password"]
             XCTAssertTrue(password.exists)
             password.tap()
@@ -268,7 +284,7 @@
         }
 
         private func assertPendingConfirmation(_ app: XCUIApplication) {
-            XCTAssertTrue(app.staticTexts["Request Confirmed"].waitForExistence(timeout: 20))
+            XCTAssertTrue(app.staticTexts["Request submitted"].waitForExistence(timeout: 20))
             XCTAssertTrue(app.staticTexts["Pending Approval"].exists)
         }
 

@@ -34,7 +34,8 @@ constrain *how* each item is built.
 ## Discover / Seerr design handoff
 
 - [x] Preserve historical Figma design material in the local Git-ignored `Design/Archive/`.
-- [~] Complete the Apple-native Sketch redesign across supported devices. The iPhone R5 Light and Dark snapshots are in `Design/` and await acceptance. Later devices remain pending. Design acceptance and runtime validation are separate.
+- [~] Complete the Apple-native Sketch redesign across supported devices. The current iPhone implementation uses the user-selected live **Gus iPhone** Sketch Screens, States and Components pages. The R5 snapshots in `Design/` are historical references. The candidate updates onboarding, compact navigation, library layouts, details and audio controls; unmatched existing screens retain their behavior and shared native styling. Light-only before/after comparison artifacts stay outside source. Later-device redesign and physical iPhone acceptance remain pending.
+- [~] iPhone review iteration 2 addresses theme selection, native glass controls, media-type Recently Added, consistent dismissal, download progress/artwork, playlist editing/completion, and Seerr polish. The external report keeps its original pair and adds a third image per scenario. Simulator validation is distinct from iPad runtime, physical-device, accessibility, live Seerr, hosted checks and release acceptance.
 - [ ] Complete native materials, accessibility, live Seerr and physical-device acceptance, followed by required hosted checks and release gates.
 
 ## Global Definition of Done (applies to every milestone)
@@ -976,9 +977,11 @@ October 12 pipeline policy supersedes direct-main publication: main now requires
 
 ## Unified Next Up and Jellyfin lists — feature branch
 
+- [x] All Next Up reuses the shared library artwork row and separators; hide the ambiguous Saved origin label while retaining playback status and playlist position.
+
 - [~] Playlist and item-detail actions use shared playback styling, explicit restart, contextual management menus, and occurrence-scoped editing with left drag handles and right removal controls. Local authenticated UI and the platform matrix pass; fresh review and hosted gates remain pending. See [implementation and evidence](Reviews/README.md).
 
-- [~] Shared media context menus add titles to Next Up, native playlists and collections; remove only from the named group; explicitly mark movies/episodes watched or unwatched and reset their resume positions. Next Up cards reserve episode metadata height. Automatic Next Up dismissals are persisted per device/account and can be restored by explicitly adding or playing the item; platform/runtime validation is in progress.
+- [~] Next Up removal clears Jellyfin and local resume checkpoints without changing watched status. Mark Watched also retires saved intent; Mark Unwatched does not resurrect it. Add or a genuine playback start restores a dismissed item. Active playlists suppress individual members except unfinished earlier episodes skipped by the playlist. Tapping a video playlist row starts the sequence at that entry. Runtime and release-candidate validation remain distinct from physical-device acceptance.
 
 - [~] Combine Continue Watching and saved/automatic next episodes into one Next Up list ordered by genuine viewing/list activity; preserve undated legacy order and missing saved references.
 - [~] Jellyfin owns native playlist and Collection/BoxSet names, IDs, membership, playlist order and permissions. Gus keeps an account-scoped playlist cache and durable per-operation playlist edits. Collections use a separate session store and online-only management. Jellyfin 10.11.11 deduplicates playlist items, so native lists contain each media item once; an uncertain create/add outcome requires review before an explicit retry.

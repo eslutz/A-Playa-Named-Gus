@@ -144,6 +144,7 @@ struct GusApp: App {
                     continueSpotlightActivity(activity)
                 }
                 // nil follows the system; light/dark force the scheme on every platform.
+                .gusTheme()
                 .preferredColorScheme(appearance.colorScheme)
         }
         #if os(macOS)
@@ -169,6 +170,7 @@ struct GusApp: App {
                         .environment(serverLists)
                         .environment(navigationPreferences)
                         .environment(sharedWithYou)
+                        .gusTheme()
                         .preferredColorScheme(appearance.colorScheme)
                 }
             }

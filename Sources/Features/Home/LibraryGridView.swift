@@ -6,6 +6,11 @@ struct LibraryGridView: View {
     @Environment(SessionStore.self) private var session
     let scope: LibraryGridScope
     @State private var store: LibraryStore?
+    @State private var showsList = false
+    @State private var showsPhotoAlbums = false
+    #if os(iOS)
+        @Environment(\.horizontalSizeClass) private var widthClass
+    #endif
     init(library: MediaItem) {
         scope = .library(library)
     }
@@ -18,7 +23,46 @@ struct LibraryGridView: View {
         switch scope {
         case let .library(item): item.collectionType == .movies
         case let .category(category): category == .movies
+        case .photoLibrary, .musicLibrary, .latest: false
         }
+    }
+
+    private var isPhotos: Bool {
+        switch scope {
+        case let .library(item): item.collectionType == .photos
+        case let .category(category): category == .photos
+        case .photoLibrary: true
+        case .musicLibrary, .latest: false
+        }
+    }
+
+    private var isMusic: Bool {
+        switch scope {
+        case let .library(item): item.collectionType == .music
+        case let .category(category): category == .music
+        case .musicLibrary: true
+        case .photoLibrary, .latest: false
+        }
+    }
+
+    private var usesMusicLayout: Bool {
+        #if os(iOS)
+            widthClass == .compact && isMusic
+        #else
+            false
+        #endif
+    }
+
+    private var effectiveScope: LibraryGridScope {
+        #if os(iOS)
+            if usesMusicLayout {
+                return .musicLibrary(parentID: scope.parentID)
+            }
+            if widthClass == .compact, isPhotos {
+                return .photoLibrary(parentID: scope.parentID, albums: showsPhotoAlbums)
+            }
+        #endif
+        return scope
     }
 
     var body: some View {
@@ -52,12 +96,33 @@ struct LibraryGridView: View {
         .navigationTitle(scope.title)
         .toolbar {
             #if !os(tvOS)
+                ToolbarItem(placement: .primaryAction) {
+                    Button {
+                        showsList.toggle()
+                    } label: {
+                        Label(showsList ? "Grid" : "List", systemImage: showsList ? "square.grid.2x2" : "list.bullet")
+                    }
+                    .accessibilityIdentifier("Library.displayMode")
+                    .gusIPhoneOnly()
+                }
                 if let store {
                     ToolbarItem { LibraryFilterMenu(store: store).disabled(store.isLoading) }
                 }
             #endif
         }
-        .task(id: scope.storeIdentity) { store = navigationState.libraryStore(for: scope, session: session) }
+        .safeAreaInset(edge: .top) {
+            if isPhotos {
+                Picker("Photos", selection: $showsPhotoAlbums) {
+                    Text("All Photos").tag(false)
+                    Text("Albums").tag(true)
+                }
+                .pickerStyle(.segmented)
+                .padding(.horizontal, 24).padding(.vertical, 8)
+                .background(.background)
+                .gusIPhoneOnly()
+            }
+        }
+        .task(id: effectiveScope.storeIdentity) { store = navigationState.libraryStore(for: effectiveScope, session: session) }
         .scrollPosition(id: navigationState.scrollBinding(for: "library:" + scope.storeIdentity))
         .lookToScroll()
         .refreshable {
@@ -68,7 +133,108 @@ struct LibraryGridView: View {
         }
     }
 
-    private func grid(_ store: LibraryStore) -> some View {
+    @ViewBuilder private func grid(_ store: LibraryStore) -> some View {
+        if usesMusicLayout {
+            musicContent(store)
+        } else if showsList {
+            LazyVStack(spacing: 0) {
+                ForEach(store.items, id: \.id) { item in
+                    NavigationLink(value: ItemRef(item: item)) { MediaLibraryRow(item: item) }
+                        .buttonStyle(.plain)
+                        .mediaItemContextMenu(item: item)
+                        .id(ItemRef(item: item).id)
+                        .task { await store.loadMoreIfNeeded(currentItem: item) }
+                    Divider()
+                }
+                if let error = store.pageError {
+                    Text(error).foregroundStyle(.secondary)
+                }
+                if store.canLoadMore {
+                    Button("Continue Searching") { Task { await store.continueSearching() } }
+                        .disabled(store.isLoadingNextPage).frame(minHeight: 44)
+                }
+                if store.isLoadingNextPage {
+                    ProgressView()
+                }
+            }
+            .scrollTargetLayout()
+        } else {
+            posterGrid(store)
+        }
+    }
+
+    private func musicContent(_ store: LibraryStore) -> some View {
+        let albums = store.items.filter { $0.type == .musicAlbum }
+        let artists = store.items.filter { $0.type == .musicArtist }
+        return VStack(alignment: .leading, spacing: 24) {
+            if showsList {
+                LazyVStack(spacing: 0) {
+                    ForEach(albums, id: \.id) { album in
+                        musicRow(album, subtitle: musicSubtitle(album), store: store)
+                    }
+                }
+            } else {
+                LazyVGrid(columns: PosterGrid.columns, alignment: .leading, spacing: PosterGrid.spacing) {
+                    ForEach(albums, id: \.id) { album in
+                        NavigationLink(value: ItemRef(item: album)) {
+                            PosterCard(title: album.displayTitle, subtitle: musicSubtitle(album), imageURL: session.mediaProvider.primaryImageURL(for: album, context: .posterGrid), aspectRatio: 1, placeholderSymbol: "music.note")
+                        }
+                        .posterNavigationStyle()
+                        .mediaItemContextMenu(item: album)
+                        .id(ItemRef(item: album).id)
+                        .task { await store.loadMoreIfNeeded(currentItem: album) }
+                    }
+                }
+            }
+            if !artists.isEmpty {
+                Text("Artists").font(.title3.bold()).accessibilityAddTraits(.isHeader)
+                LazyVStack(spacing: 0) {
+                    ForEach(artists, id: \.id) { artist in
+                        musicRow(artist, subtitle: nil, store: store)
+                    }
+                }
+            }
+            if let error = store.pageError {
+                Text(error).foregroundStyle(.secondary)
+            }
+            if store.canLoadMore {
+                Button("Continue Searching") { Task { await store.continueSearching() } }
+                    .disabled(store.isLoadingNextPage).frame(minHeight: 44)
+            }
+            if store.isLoadingNextPage {
+                ProgressView()
+            }
+        }
+        .scrollTargetLayout()
+    }
+
+    private func musicSubtitle(_ album: MediaItem) -> String? {
+        let fields = [album.albumArtist ?? album.artists.first, album.productionYear.map(String.init)].compactMap { $0 }
+        return fields.isEmpty ? nil : fields.joined(separator: " · ")
+    }
+
+    private func musicRow(_ item: MediaItem, subtitle: String?, store: LibraryStore) -> some View {
+        NavigationLink(value: ItemRef(item: item)) {
+            HStack {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(item.displayTitle).foregroundStyle(.primary)
+                    if let subtitle {
+                        Text(subtitle).font(.caption).foregroundStyle(.secondary)
+                    }
+                }
+                Spacer(minLength: 12)
+                Image(systemName: "chevron.right").font(.caption.weight(.semibold)).foregroundStyle(.tertiary)
+            }
+            .padding(.horizontal, 14).padding(.vertical, 12)
+            .frame(minHeight: 44).contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .mediaItemContextMenu(item: item)
+        .id(ItemRef(item: item).id)
+        .task { await store.loadMoreIfNeeded(currentItem: item) }
+    }
+
+    private func posterGrid(_ store: LibraryStore) -> some View {
         LazyVGrid(columns: PosterGrid.columns, alignment: .leading, spacing: PosterGrid.spacing) {
             ForEach(store.items, id: \.id) { item in
                 NavigationLink(value: ItemRef(item: item)) { PosterCard(item: item, imageURL: session.mediaProvider.primaryImageURL(for: item, context: .posterGrid)) }
@@ -94,7 +260,14 @@ struct LibraryGridView: View {
 }
 
 private struct LibraryFilterMenu: View {
+    #if os(iOS)
+        @Environment(\.horizontalSizeClass) private var widthClass
+    #endif
     let store: LibraryStore
+
+    private var filterSymbol: String {
+        store.filter.hasActiveFilter ? "line.3.horizontal.decrease.circle.fill" : "line.3.horizontal.decrease.circle"
+    }
 
     var body: some View {
         Menu {
@@ -112,7 +285,8 @@ private struct LibraryFilterMenu: View {
                 }
             }
         } label: {
-            Label("Filter", systemImage: store.filter.hasActiveFilter ? "line.3.horizontal.decrease.circle.fill" : "line.3.horizontal.decrease.circle")
+            Label("Filter", systemImage: filterSymbol)
+                .accessibilityValue(store.filter.hasActiveFilter ? String(localized: "Active") : "")
         }
     }
 

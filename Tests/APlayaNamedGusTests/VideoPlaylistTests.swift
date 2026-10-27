@@ -4,6 +4,30 @@ import Foundation
 import Testing
 
 struct VideoPlaylistTests {
+    @MainActor @Test func completionRetiresQueueAndExplicitRequeueResetsFinishedCursor() throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let scope = AccountScope(serverID: "s", userID: "u")
+        let id = UUID(), entryID = UUID()
+        let store = VideoPlaylistsStore(directory: directory, syncEnabled: false)
+        #expect(store.registerServerPlaylist(id: id, scope: scope))
+        store.setQueued(id: id, queued: true, scope: scope)
+        #expect(store.setCursor(id: id, entryID: entryID, positionTicks: 10, finished: false, scope: scope))
+        #expect(store.playlist(id: id, scope: scope)?.appearsInNextUp == true)
+        #expect(store.setCursor(id: id, entryID: nil, positionTicks: nil, finished: true, scope: scope))
+        let reloaded = VideoPlaylistsStore(directory: directory, syncEnabled: false)
+        #expect(reloaded.serverPlaylistState(id: id, scope: scope).queued == false)
+        #expect(reloaded.playlist(id: id, scope: scope)?.appearsInNextUp == false)
+        // Old installations may retain an explicit queue bit alongside completion.
+        #expect(reloaded.setServerPlaylistState(id: id, cursor: PlaylistCursor(entryID: nil, positionTicks: nil, finished: true), queued: true, activityAt: nil, scope: scope))
+        #expect(reloaded.playlist(id: id, scope: scope)?.appearsInNextUp == false)
+        reloaded.setQueued(id: id, queued: true, scope: scope)
+        let restored = try #require(reloaded.playlist(id: id, scope: scope))
+        #expect(restored.appearsInNextUp)
+        #expect(restored.cursor?.finished == false)
+        #expect(restored.cursor?.positionTicks == 0)
+    }
+
     @MainActor @Test(arguments: ["local", "account-a"])
     func disabledSyncIgnoresCloudAccountNotification(identity: String) async throws {
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)

@@ -8,6 +8,10 @@ struct VideoPlaylist: Identifiable, Codable, Equatable, Sendable {
     var cursor: PlaylistCursor?
     var queued: Bool
     var activityAt: Date?
+
+    var appearsInNextUp: Bool {
+        cursor?.finished != true && (queued || cursor != nil)
+    }
 }
 
 struct VideoPlaylistEntry: Identifiable, Codable, Equatable, Sendable {

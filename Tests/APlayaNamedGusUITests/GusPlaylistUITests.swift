@@ -7,27 +7,17 @@
     final class GusPlaylistUITests: XCTestCase {
         func testNextUpAlignmentAndContextActions() async throws {
             continueAfterFailure = false
-            executionTimeAllowance = 180
+            executionTimeAllowance = 300
             let auth = try await demoRequest("/Users/AuthenticateByName", body: ["Username": "gus", "Pw": "playa-demo"])
             let token = try XCTUnwrap(auth["AccessToken"] as? String)
             let user = try XCTUnwrap(auth["User"] as? [String: Any])
             let userID = try XCTUnwrap(user["Id"] as? String)
             let result = try await demoRequest("/Items?recursive=true&includeItemTypes=Movie,Episode&userId=" + userID, token: token)
             let items = try XCTUnwrap(result["Items"] as? [[String: Any]])
-            let movie = try XCTUnwrap(items.first { $0["Type"] as? String == "Movie" })
+            let movie = try XCTUnwrap(items.first { $0["Type"] as? String == "Movie" && ($0["Name"] as? String)?.hasPrefix("President McKinley") == true })
             let episode = try XCTUnwrap(items.first { $0["Type"] as? String == "Episode" })
             let movieID = try XCTUnwrap(movie["Id"] as? String)
             let episodeID = try XCTUnwrap(episode["Id"] as? String)
-            let episodeTicks = max(1, (episode["RunTimeTicks"] as? Int ?? 50_000_000) / 5)
-            for item in [movie, episode] {
-                let id = try XCTUnwrap(item["Id"] as? String)
-                let ticks = max(1, (item["RunTimeTicks"] as? Int ?? 50_000_000) / 5)
-                _ = try await demoRequest(
-                    "/UserItems/" + id + "/UserData?userId=" + userID,
-                    token: token,
-                    body: ["Played": false, "PlaybackPositionTicks": ticks, "PlayedPercentage": 20, "LastPlayedDate": ISO8601DateFormatter().string(from: Date())]
-                )
-            }
             XCUIDevice.shared.orientation = .landscapeLeft
             defer { XCUIDevice.shared.orientation = .portrait }
             let app = XCUIApplication()
@@ -45,6 +35,15 @@
                 XCTAssertTrue(app.buttons["Add to Next Up"].waitForExistence(timeout: 10))
                 app.buttons["Add to Next Up"].tap()
                 app.terminate()
+            }
+            for item in [movie, episode] {
+                let id = try XCTUnwrap(item["Id"] as? String)
+                let ticks = max(1, (item["RunTimeTicks"] as? Int ?? 50_000_000) / 5)
+                _ = try await demoRequest(
+                    "/UserItems/" + id + "/UserData?userId=" + userID,
+                    token: token,
+                    body: ["Played": false, "PlaybackPositionTicks": ticks, "PlayedPercentage": 20, "LastPlayedDate": ISO8601DateFormatter().string(from: Date())]
+                )
             }
             app.launchArguments = arguments
             app.launch()
@@ -74,8 +73,13 @@
             XCTAssertEqual(XCTWaiter.wait(for: [removed], timeout: 10), .completed)
             let unchanged = try await demoRequest("/Items/" + episodeID + "?userId=" + userID, token: token)
             let unchangedData = try XCTUnwrap(unchanged["UserData"] as? [String: Any])
-            XCTAssertEqual(unchangedData["PlaybackPositionTicks"] as? Int, episodeTicks)
+            XCTAssertEqual(unchangedData["PlaybackPositionTicks"] as? Int, 0)
             XCTAssertEqual(unchangedData["Played"] as? Bool, false)
+            let resume = try await demoRequest("/UserItems/Resume?userId=" + userID + "&limit=1000", token: token)
+            XCTAssertFalse((resume["Items"] as? [[String: Any]] ?? []).contains { $0["Id"] as? String == episodeID })
+            app.terminate(); app.launch()
+            XCTAssertTrue(movieCard.waitForExistence(timeout: 30))
+            XCTAssertFalse(episodeCard.exists)
             movieCard.press(forDuration: 1)
             app.buttons["Mark Watched"].tap()
             let marked = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in !movieProgress.exists }, object: nil)
@@ -84,6 +88,85 @@
             let watchedData = try XCTUnwrap(watched["UserData"] as? [String: Any])
             XCTAssertEqual(watchedData["PlaybackPositionTicks"] as? Int, 0)
             XCTAssertEqual(watchedData["Played"] as? Bool, true)
+            app.terminate()
+            app.launchArguments = arguments + ["--gus-route", "item/" + movieID]
+            app.launch()
+            XCTAssertTrue(app.buttons["Detail.actions"].waitForExistence(timeout: 30))
+            app.buttons["Detail.actions"].tap(); app.buttons["Mark as Unwatched"].tap()
+            let add = app.buttons["Add to Next Up"]
+            XCTAssertTrue(add.waitForExistence(timeout: 10))
+            // Wait for the acknowledged mutation before reading Jellyfin's state.
+            let updated = try await waitForUnwatched(itemID: movieID, userID: userID, token: token)
+            XCTAssertEqual(updated["PlaybackPositionTicks"] as? Int, 0)
+            app.terminate(); app.launchArguments = arguments; app.launch()
+            XCTAssertTrue(app.tabBars.firstMatch.waitForExistence(timeout: 30))
+            XCTAssertFalse(movieCard.exists)
+            XCTAssertFalse(episodeCard.exists)
+            app.terminate()
+            app.launchArguments = arguments + ["--gus-route", "item/" + movieID]
+            app.launch()
+            XCTAssertTrue(app.buttons["Add to Next Up"].waitForExistence(timeout: 30))
+            app.buttons["Add to Next Up"].tap()
+            app.terminate(); app.launchArguments = arguments; app.launch()
+            XCTAssertTrue(movieCard.waitForExistence(timeout: 30))
+        }
+
+        func testPlaylistRowStartsSelectedEntryAndSuppressesMembers() async throws {
+            continueAfterFailure = false
+            executionTimeAllowance = 240
+            let name = "Actions 1C81D887"
+            let native = try await nativeList(named: name, kind: "Playlist")
+            let id = try XCTUnwrap(native?["Id"] as? String)
+            let entries = try await nativeEntries(listID: id, playlist: true)
+            XCTAssertGreaterThanOrEqual(entries.count, 2)
+            let auth = try await demoRequest("/Users/AuthenticateByName", body: ["Username": "gus", "Pw": "playa-demo"])
+            let token = try XCTUnwrap(auth["AccessToken"] as? String)
+            let userID = try XCTUnwrap((auth["User"] as? [String: Any])?["Id"] as? String)
+            for entry in entries {
+                let itemID = try XCTUnwrap(entry["Id"] as? String)
+                let ticks = max(1, (entry["RunTimeTicks"] as? Int ?? 50_000_000) / 5)
+                _ = try await demoRequest("/UserItems/" + itemID + "/UserData?userId=" + userID, token: token, body: ["Played": false, "PlaybackPositionTicks": ticks, "PlayedPercentage": 20])
+            }
+            let app = XCUIApplication()
+            app.launchArguments = ["--gus-skip-session-restore", "--gus-demo-server", "--gus-disable-cloud-sync"]
+            app.launch(); defer { app.terminate() }
+            openPlaylists(app)
+            let row = revealPlaylistRow(named: name, in: app)
+            XCTAssertTrue(row.exists); row.tap()
+            XCTAssertTrue(app.buttons["Playlist.more"].waitForExistence(timeout: 10))
+            app.buttons["Playlist.more"].tap()
+            if app.buttons["Add to Next Up"].exists {
+                app.buttons["Add to Next Up"].tap()
+            } else {
+                app.tap()
+            }
+            app.terminate(); app.launch()
+            let card = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@ AND label CONTAINS %@", "NextUp.card.playlist:", name)).firstMatch
+            XCTAssertTrue(card.waitForExistence(timeout: 30))
+            for entry in entries {
+                XCTAssertFalse(try app.buttons["NextUp.card.media:jellyfin:" + XCTUnwrap(entry["Id"] as? String)].exists)
+            }
+            openPlaylists(app); revealPlaylistRow(named: name, in: app).tap()
+            let buttons = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@", "Playlist.entry."))
+            XCTAssertEqual(buttons.count, entries.count)
+            buttons.element(boundBy: 1).tap()
+            let expectedID = try XCTUnwrap(entries[1]["Id"] as? String)
+            var observed = false
+            for _ in 0 ..< 60 {
+                let sessions = try await demoSessions(token: token)
+                if sessions.contains(where: { (($0["NowPlayingItem"] as? [String: Any])?["Id"] as? String) == expectedID }) {
+                    observed = true; break
+                }
+                try await Task.sleep(for: .milliseconds(250))
+            }
+            XCTAssertTrue(observed, "Tapping the second row must start that entry as playlist playback")
+            let capture = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+            capture.name = "playlist-row-selected-playback"; capture.lifetime = .keepAlways; add(capture)
+            let completed = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in app.buttons["Playlist.play"].isHittable && app.staticTexts["Item 1 of 2"].exists }, object: nil)
+            XCTAssertEqual(XCTWaiter.wait(for: [completed], timeout: 120), .completed)
+            app.terminate(); app.launch()
+            XCTAssertTrue(app.tabBars.firstMatch.waitForExistence(timeout: 30))
+            XCTAssertFalse(card.exists, "A completed playlist must stay out of Next Up after relaunch")
         }
 
         func testPlaylistCreateRenamePersistAndDelete() async throws {
@@ -94,7 +177,7 @@
             let renamed = name + " Renamed"
             app.launch()
             openPlaylists(app)
-            app.buttons["New List"].tap(); app.buttons["New Playlist"].tap()
+            app.buttons["Playlist.create"].tap()
             let field = app.textFields["Name"].firstMatch
             XCTAssertTrue(field.waitForExistence(timeout: 5))
             field.tap(); field.typeText(name)
@@ -147,7 +230,7 @@
             app.launch()
             openPlaylists(app)
             let name = "Ordered Acceptance " + UUID().uuidString.prefix(8)
-            app.buttons["New List"].tap(); app.buttons["New Playlist"].tap()
+            app.buttons["Playlist.create"].tap()
             let field = app.textFields["Name"].firstMatch
             XCTAssertTrue(field.waitForExistence(timeout: 5))
             field.tap(); field.typeText(name)
@@ -163,7 +246,7 @@
                 XCTAssertTrue(result.waitForExistence(timeout: 20)); result.tap()
                 XCTAssertTrue(app.buttons["Playlist.play"].waitForExistence(timeout: 10))
             }
-            XCTAssertEqual(app.staticTexts.matching(identifier: "Edison Kinetoscopic Record of a Sneeze (1894)").count, 1)
+            XCTAssertEqual(app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@ AND label CONTAINS %@", "Playlist.entry.", "Edison Kinetoscopic Record of a Sneeze (1894)")).count, 1)
             let before = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
             before.name = "ordered-native-playlist"; before.lifetime = .keepAlways; add(before)
             let native = try await nativeList(named: name, kind: "Playlist")
@@ -171,8 +254,10 @@
             let entries = try await nativeEntries(listID: nativeID, playlist: true)
             XCTAssertEqual(entries.compactMap { $0["Name"] as? String }, ["Edison Kinetoscopic Record of a Sneeze (1894)", "May Irwin Kiss (1896)"])
             app.buttons["Playlist.play"].tap()
-            let done = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in app.staticTexts["Playlist Finished"].isHittable }, object: nil)
+            let done = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in app.buttons["Playlist.play"].isHittable && app.staticTexts["Item 1 of 2"].exists }, object: nil)
             XCTAssertEqual(XCTWaiter.wait(for: [done], timeout: 180), .completed)
+            XCTAssertFalse(app.staticTexts["Playlist Finished"].exists)
+            XCTAssertEqual(app.buttons["Playlist.play"].label, "Play")
             let after = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
             after.name = "ordered-playlist-natural-completion"; after.lifetime = .keepAlways; add(after)
             app.navigationBars.buttons.firstMatch.tap()
@@ -276,14 +361,15 @@
             XCTAssertLessThan(app.buttons["Playlist.restart"].frame.width, app.buttons["Playlist.play"].frame.width)
             let controlsCapture = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
             controlsCapture.name = "playlist-playback-controls"; controlsCapture.lifetime = .keepAlways; add(controlsCapture)
-            XCTAssertEqual(app.buttons.matching(identifier: "Add Items").count, 1)
+            XCTAssertEqual(app.buttons.matching(identifier: "Playlist.addItems").count, 1)
             XCTAssertFalse(app.buttons["Playlist.nextUp"].exists)
             app.buttons["Playlist.more"].tap(); app.buttons["Edit Items"].tap()
             XCTAssertTrue(app.buttons["Playlist.done"].waitForExistence(timeout: 5))
-            let handles = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Reorder"))
+            let handles = app.descendants(matching: .any).matching(NSPredicate(format: "identifier BEGINSWITH %@", "Playlist.reorder."))
             XCTAssertEqual(handles.count, 2)
             XCTAssertFalse(app.buttons["Playlist.play"].isEnabled)
-            let destination = handles.element(boundBy: 0).coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
+            // Cross the first row's midpoint so UIKit inserts above it rather than at the same boundary.
+            let destination = handles.element(boundBy: 0).coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.05))
             handles.element(boundBy: 1).coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).press(forDuration: 1.5, thenDragTo: destination, withVelocity: .slow, thenHoldForDuration: 1.5)
             let dragCapture = XCTAttachment(string: app.debugDescription)
             dragCapture.name = "playlist-drag-receiver-hierarchy"; dragCapture.lifetime = .keepAlways; add(dragCapture)
@@ -297,6 +383,15 @@
             hierarchy.name = "playlist-after-drag-hierarchy"; hierarchy.lifetime = .keepAlways; add(hierarchy)
             let reordered = try await nativeEntries(listID: id, playlist: true)
             XCTAssertEqual(reordered.map { $0["Id"] as? String }, original.reversed().map { $0["Id"] as? String })
+            let lowerTarget = handles.element(boundBy: 1).coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
+            handles.element(boundBy: 0).coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).press(forDuration: 1.5, thenDragTo: lowerTarget, withVelocity: .slow, thenHoldForDuration: 1.5)
+            let movedDown = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+                app.staticTexts["Edison Kinetoscopic Record of a Sneeze (1894)"].firstMatch.frame.minY < app.staticTexts["May Irwin Kiss (1896)"].firstMatch.frame.minY
+            }, object: nil)
+            XCTAssertEqual(XCTWaiter.wait(for: [movedDown], timeout: 10), .completed)
+            XCTAssertEqual(XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: NSPredicate(format: "enabled == true"), object: app.buttons["Playlist.done"])], timeout: 15), .completed)
+            let restoredOrder = try await nativeEntries(listID: id, playlist: true)
+            XCTAssertEqual(restoredOrder.map { $0["Id"] as? String }, original.map { $0["Id"] as? String })
             let capture = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
             capture.name = "playlist-native-row-reordering"; capture.lifetime = .keepAlways; add(capture)
             let trash = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@", "Playlist.remove.")).firstMatch
@@ -316,7 +411,7 @@
             XCTAssertNotNil(retained)
             app.buttons["Playlist.more"].tap(); app.buttons["Delete Playlist"].tap()
             app.alerts.buttons["Delete"].tap()
-            XCTAssertTrue(app.buttons["New List"].waitForExistence(timeout: 10))
+            XCTAssertTrue(app.buttons["Playlist.create"].waitForExistence(timeout: 10))
             let deleted = try await nativeList(named: name, kind: "Playlist")
             XCTAssertNil(deleted)
         }
@@ -387,6 +482,28 @@
             capture.name = "item-detail-largest-text"; capture.lifetime = .keepAlways; add(capture)
         }
 
+        private func demoSessions(token: String) async throws -> [[String: Any]] {
+            var request = URLRequest(url: URL(string: "http://localhost:8096/Sessions")!)
+            request.setValue(token, forHTTPHeaderField: "X-Emby-Token")
+            let (data, response) = try await URLSession.shared.data(for: request)
+            XCTAssertEqual((response as? HTTPURLResponse)?.statusCode, 200)
+            return try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [[String: Any]])
+        }
+
+        private func waitForUnwatched(itemID: String, userID: String, token: String) async throws -> [String: Any] {
+            var data: [String: Any] = [:]
+            for _ in 0 ..< 50 {
+                let result = try await demoRequest("/Items/" + itemID + "?userId=" + userID, token: token)
+                data = result["UserData"] as? [String: Any] ?? [:]
+                if data["Played"] as? Bool == false {
+                    return data
+                }
+                try await Task.sleep(for: .milliseconds(100))
+            }
+            XCTFail("Jellyfin did not confirm Mark Unwatched")
+            return data
+        }
+
         private func demoRequest(_ path: String, token: String? = nil, body: [String: Any]? = nil) async throws -> [String: Any] {
             var request = try URLRequest(url: XCTUnwrap(URL(string: "http://localhost:8096" + path)))
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -422,12 +539,12 @@
         /// this test's newly created name below the initial viewport.
         private func revealPlaylistRow(named name: String, in app: XCUIApplication) -> XCUIElement {
             let row = app.staticTexts[name]
-            if row.waitForExistence(timeout: 5), row.isHittable {
+            if row.waitForExistence(timeout: 5), row.isHittable, row.frame.maxY < app.frame.height - 140 {
                 return row
             }
             for _ in 0 ..< 8 {
                 app.swipeUp()
-                if row.exists, row.isHittable {
+                if row.exists, row.isHittable, row.frame.maxY < app.frame.height - 140 {
                     return row
                 }
             }
@@ -438,12 +555,19 @@
             let tab = app.tabBars.buttons["Playlists"]
             if tab.waitForExistence(timeout: 3) {
                 tab.tap()
+            } else if app.tabBars.firstMatch.exists {
+                let more = app.tabBars.buttons["More"]
+                XCTAssertTrue(more.waitForExistence(timeout: 5))
+                more.tap()
+                let playlists = app.buttons["Playlists"].firstMatch
+                XCTAssertTrue(playlists.waitForExistence(timeout: 10))
+                playlists.tap()
             } else {
                 let sidebar = app.collectionViews["Sidebar"].staticTexts["Playlists"]
                 XCTAssertTrue(sidebar.waitForExistence(timeout: 20))
                 sidebar.tap()
             }
-            XCTAssertTrue(app.buttons["New List"].waitForExistence(timeout: 10))
+            XCTAssertTrue(app.buttons["Playlist.create"].waitForExistence(timeout: 10))
         }
     }
 #endif

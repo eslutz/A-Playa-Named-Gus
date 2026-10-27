@@ -82,11 +82,11 @@ struct HomeView: View {
         activity.reconcile(scope: scope)
         serverLists.load(scope: scope)
         let candidates = serverLists.videoPlaylists(scope: scope, supplemental: playlists).compactMap { playlist -> NextUpPlaylistCandidate? in
-            guard playlist.queued || (playlist.cursor != nil && playlist.cursor?.finished != true) else { return nil }
+            guard playlist.appearsInNextUp else { return nil }
             let index = playlist.entries.firstIndex { $0.id == playlist.cursor?.entryID } ?? 0
             let item = playlist.entries.indices.contains(index) ? playlist.entries[index].reference.item : nil
             guard item.map({ ContentRatingGate.admitsStored($0) }) ?? true else { return nil }
-            return NextUpPlaylistCandidate(id: playlist.id, name: playlist.name, item: item, position: playlist.entries.isEmpty ? 0 : index + 1, total: playlist.entries.count, activityAt: playlist.activityAt)
+            return NextUpPlaylistCandidate(id: playlist.id, name: playlist.name, item: item, position: playlist.entries.isEmpty ? 0 : index + 1, total: playlist.entries.count, activityAt: playlist.activityAt, members: playlist.entries.map(\.reference.item))
         }
         store?.updateNextUp(saved: upNext.entries(serverID: scope.serverID, userID: scope.userID), playlists: candidates)
     }
@@ -123,7 +123,7 @@ struct HomeView: View {
                     }
                     ProgressTransferView()
                     ForEach(store.latestSections) { section in
-                        MediaRail(title: section.title, items: section.items, requestsInitialFocus: store.unifiedNextUp.isEmpty && section.id == store.latestSections.first?.id)
+                        MediaRail(title: section.title, items: section.items, latestKind: section.kind, requestsInitialFocus: store.unifiedNextUp.isEmpty && section.id == store.latestSections.first?.id)
                             .gusTVFallbackHero(items: section.items, enabled: store.unifiedNextUp.isEmpty && section.id == store.latestSections.first?.id)
                             .id(section.id)
                     }
@@ -152,7 +152,7 @@ private struct NextUpRail: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
-                Text("Next Up").font(.title2.bold()).accessibilityAddTraits(.isHeader)
+                Text("Next Up").gusPhoneRailHeading().accessibilityAddTraits(.isHeader)
                 Spacer()
                 NavigationLink("Show All") { NextUpListView(store: store) }
                     .gusTVFocus(id: "all", section: "home.next.control", ids: ["all"], context: root.selectedSectionID)
@@ -161,7 +161,7 @@ private struct NextUpRail: View {
                 LazyHStack(alignment: .top, spacing: MediaRailMetrics.spacing(for: .backdrop)) {
                     ForEach(Array(store.unifiedNextUp.prefix(20))) { entry in
                         NextUpDestination(entry: entry, usesArtwork: true)
-                            .frame(width: MediaRailMetrics.itemWidth(for: .backdrop))
+                            .gusPhoneRailWidth(backdrop: true, fallback: MediaRailMetrics.itemWidth(for: .backdrop))
                             .gusTVFocus(id: entry.id, section: "home.next", ids: store.unifiedNextUp.prefix(20).map(\.id), initial: entry.id == store.unifiedNextUp.first?.id, item: entry.item, entry: entry, context: root.selectedSectionID)
                     }
                 }
@@ -178,9 +178,28 @@ private struct NextUpRail: View {
 
 private struct NextUpListView: View {
     let store: HomeStore
+    @AppStorage("nextUpDisplayGrid") private var showsGrid = false
     var body: some View {
-        List {
-            ForEach(store.unifiedNextUp) { entry in NextUpDestination(entry: entry) }
+        ScrollView {
+            if showsGrid {
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 160), alignment: .top)], alignment: .leading, spacing: 16) {
+                    ForEach(store.unifiedNextUp) { entry in
+                        NextUpDestination(entry: entry, usesArtwork: true)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                }
+                .padding(.horizontal)
+            } else {
+                LazyVStack(spacing: 0) {
+                    ForEach(store.unifiedNextUp) { entry in
+                        NextUpDestination(entry: entry, usesArtwork: showsGrid)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                        Divider()
+                    }
+                }
+                .padding(.horizontal)
+            }
+
             if store.hasMoreNextUp {
                 Button("Load More") { Task { await store.loadMoreNextUp() } }
                     .disabled(store.isLoadingMore)
@@ -195,6 +214,13 @@ private struct NextUpListView: View {
             }
         }
         .navigationTitle("Next Up")
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                Button(showsGrid ? "List" : "Grid", systemImage: showsGrid ? "list.bullet" : "square.grid.2x2") { showsGrid.toggle() }
+                    .accessibilityIdentifier("NextUp.displayMode")
+                    .accessibilityValue(showsGrid ? "Grid" : "List")
+            }
+        }
         .overlay {
             if store.unifiedNextUp.isEmpty {
                 ContentUnavailableView("Nothing in Next Up", systemImage: "play.rectangle")
@@ -234,12 +260,13 @@ private struct NextUpDestination: View {
         .accessibilityIdentifier("NextUp.card." + entry.id)
         .mediaItemContextMenu(item: entry.playlist == nil ? entry.item : nil, groupName: String(localized: "Next Up"), allowsAddingToNextUp: false, remove: {
             let scope = session.references.scope
-            guard NextUpActivityStore.shared.setDismissed(entry.id, dismissed: true, scope: scope) else { return }
-            if let saved = entry.savedEntry {
-                upNext.remove(saved)
-            }
             if let playlist = entry.playlist {
+                guard NextUpActivityStore.shared.setDismissed(entry.id, dismissed: true, scope: scope) else {
+                    throw GusError.server(NextUpActivityStore.shared.errorMessage ?? String(localized: "Your queue change couldn't be saved. Try again."))
+                }
                 playlists.setQueued(id: playlist.id, queued: false, scope: scope)
+            } else if let item = entry.item {
+                try await upNext.removeFromNextUp(item, session: session)
             }
         })
         .sheet(item: $replacement) { saved in
@@ -249,39 +276,48 @@ private struct NextUpDestination: View {
         }
     }
 
-    private var label: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            if usesArtwork {
-                ArtworkTile(url: entry.item.flatMap { session.mediaProvider.backdropImageURL(for: $0, maxWidth: 560) }, aspectRatio: 16.0 / 9.0, contentMode: .fit, placeholderSymbol: entry.playlist == nil ? "play.rectangle" : "list.bullet.rectangle", fallbackURLs: entry.item.map { session.mediaProvider.artworkURLs(for: $0, maxWidth: 560) } ?? [])
-                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                    .posterHoverEffect()
-                    .gusTVArtworkStatus(item: entry.item, progressID: "NextUp.progress." + entry.id)
-            }
+    @ViewBuilder private var label: some View {
+        if !usesArtwork {
+            MediaLibraryRow(item: entry.item, title: entry.playlist?.name ?? entry.item?.seriesName ?? entry.item?.displayTitle, subtitle: episodeSubtitle, status: reasonText)
+        } else {
             VStack(alignment: .leading, spacing: 6) {
-                Text(entry.playlist?.name ?? entry.item?.seriesName ?? entry.item?.displayTitle ?? "Video")
-                    .font(.headline).lineLimit(1)
-                if let item = entry.item, item.type == .episode {
-                    if let locator = item.episodeLocator {
-                        Text("\(locator) · \(item.displayTitle)").font(.caption).foregroundStyle(.secondary).lineLimit(1)
-                    } else {
-                        Text(item.displayTitle).font(.caption).foregroundStyle(.secondary).lineLimit(1)
-                    }
-                } else {
-                    Text(" ").font(.caption).accessibilityHidden(true)
+                if usesArtwork {
+                    ArtworkTile(url: entry.item.flatMap { session.mediaProvider.backdropImageURL(for: $0, maxWidth: 560) }, aspectRatio: 16.0 / 9.0, contentMode: .fit, placeholderSymbol: entry.playlist == nil ? "play.rectangle" : "list.bullet.rectangle", fallbackURLs: entry.item.map { session.mediaProvider.artworkURLs(for: $0, maxWidth: 560) } ?? [])
+                        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                        .posterHoverEffect()
+                        .gusTVArtworkStatus(item: entry.item, progressID: "NextUp.progress." + entry.id)
                 }
-                Text(reasonText).font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(entry.playlist?.name ?? entry.item?.seriesName ?? entry.item?.displayTitle ?? "Video")
+                        .font(.headline).lineLimit(1)
+                    if let item = entry.item, item.type == .episode {
+                        if let locator = item.episodeLocator {
+                            Text("\(locator) · \(item.displayTitle)").font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                        } else {
+                            Text(item.displayTitle).font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                        }
+                    } else {
+                        Text(" ").font(.caption).accessibilityHidden(true)
+                    }
+                    Text(reasonText).font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                }
+                .gusTVCardCaption()
             }
-            .gusTVCardCaption()
+            .contentShape(Rectangle())
         }
-        .contentShape(Rectangle())
+    }
+
+    private var episodeSubtitle: String? {
+        guard let item = entry.item, item.type == .episode else { return nil }
+        return item.episodeLocator.map { "\($0) · \(item.displayTitle)" } ?? item.displayTitle
     }
 
     private var reasonText: String {
-        entry.reasons.map { reason in
+        entry.reasons.filter { $0 != .saved }.map { reason in
             switch reason {
             case .resume: String(localized: "Resume", comment: "Next Up reason")
             case .nextEpisode: String(localized: "Next Episode", comment: "Next Up reason")
-            case .saved: String(localized: "Saved", comment: "Next Up reason")
+            case .saved: ""
             case .playlist: String(localized: "Playlist \(entry.playlist?.position ?? 0) of \(entry.playlist?.total ?? 0)", comment: "Next Up playlist position")
             }
         }.joined(separator: " · ")
@@ -294,6 +330,8 @@ struct MediaRail: View {
     @Environment(SessionStore.self) private var session
     let title: String
     let items: [MediaItem]
+    var library: MediaItem? = nil
+    var latestKind: LatestMediaKind? = nil
     var style: MediaRailStyle = .poster
     var focusKey: String? = nil
     var focusContext: String? = nil
@@ -302,9 +340,19 @@ struct MediaRail: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text(title)
-                .font(.title2.bold())
-                .accessibilityAddTraits(.isHeader)
+            HStack {
+                Text(title)
+                    .gusPhoneRailHeading()
+                    .accessibilityAddTraits(.isHeader)
+                Spacer()
+                if let latestKind {
+                    NavigationLink("Show All") { LibraryGridView(scope: .latest(latestKind)) }
+                        .gusIPhoneOnly()
+                } else if let library {
+                    NavigationLink("Show All") { LibraryGridView(library: library) }
+                        .gusIPhoneOnly()
+                }
+            }
 
             ScrollView(.horizontal, showsIndicators: false) {
                 LazyHStack(alignment: .top, spacing: style.spacing) {
@@ -319,7 +367,7 @@ struct MediaRail: View {
                                     fallbackURLs: session.mediaProvider.artworkURLs(for: item, maxWidth: 260),
                                     onExhausted: { _ = try? await session.references.currentItem(item) }
                                 )
-                                .frame(width: style.itemWidth)
+                                .gusPhoneRailWidth(backdrop: style == .backdrop, fallback: style.itemWidth)
                             case .backdrop:
                                 BackdropCard(
                                     item: item,
@@ -330,7 +378,7 @@ struct MediaRail: View {
                                         await upNext.refresh(session: session)
                                     }
                                 )
-                                .frame(width: style.itemWidth)
+                                .gusPhoneRailWidth(backdrop: style == .backdrop, fallback: style.itemWidth)
                             }
                         }
                         .id(ItemRef(item: item).id)
@@ -456,6 +504,19 @@ private struct BackdropCard: View {
 /// Persistent Libraries destination used by tabs, sidebars, and menu routes.
 /// Shares the root container's `HomeStore` with `HomeView`.
 struct LibrariesLandingView: View {
+    @State private var showsGrid = false
+    #if os(iOS)
+        @Environment(\.horizontalSizeClass) private var widthClass
+    #endif
+
+    private var usesList: Bool {
+        #if os(iOS)
+            widthClass == .compact && !showsGrid
+        #else
+            false
+        #endif
+    }
+
     let store: HomeStore?
 
     init(store: HomeStore? = nil) {
@@ -472,6 +533,15 @@ struct LibrariesLandingView: View {
             }
         }
         .navigationTitle("Libraries")
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                Button { showsGrid.toggle() } label: {
+                    Label(showsGrid ? "List" : "Grid", systemImage: showsGrid ? "list.bullet" : "square.grid.2x2")
+                }
+                .accessibilityIdentifier("Libraries.displayMode")
+                .gusIPhoneOnly()
+            }
+        }
     }
 
     private func content(_ store: HomeStore) -> some View {
@@ -482,13 +552,31 @@ struct LibrariesLandingView: View {
             emptySymbol: "rectangle.stack",
             retryAction: { Task { await store.load() } }
         ) {
-            ScrollView {
-                LibrariesGrid(libraries: store.libraries)
-                    .padding()
-                    .frame(maxWidth: PageContentMetrics.maxWidth, alignment: .leading)
-                    .frame(maxWidth: .infinity)
+            Group {
+                if usesList {
+                    List(store.libraries, id: \.id) { library in
+                        NavigationLink(value: LibraryRef(item: library)) {
+                            HStack(spacing: 16) {
+                                Image(systemName: library.librarySymbol)
+                                    .font(.title2).foregroundStyle(.blue)
+                                    .frame(width: 54, height: 54)
+                                    .background(.quaternary, in: RoundedRectangle(cornerRadius: 12))
+                                Text(library.displayTitle).font(.body.weight(.medium))
+                            }
+                            .padding(.vertical, 8)
+                        }
+                    }
+                    .listStyle(.plain)
+                } else {
+                    ScrollView {
+                        LibrariesGrid(libraries: store.libraries)
+                            .gusPhonePagePadding()
+                            .frame(maxWidth: PageContentMetrics.maxWidth, alignment: .leading)
+                            .frame(maxWidth: .infinity)
+                    }
+                    .lookToScroll()
+                }
             }
-            .lookToScroll()
             .refreshable { await store.refresh() }
         }
     }

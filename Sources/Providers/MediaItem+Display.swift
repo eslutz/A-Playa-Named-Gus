@@ -83,7 +83,7 @@ extension MediaItem {
         case .book, .audioBook: return "book"
         case .audio, .musicAlbum, .musicArtist, .playlist: return "music.note"
         case .series, .season, .episode: return "tv"
-        case .photo: return "photo"
+        case .photo, .photoAlbum: return "photo"
         case .boxSet: return "rectangle.stack"
         default: return "film"
         }

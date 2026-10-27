@@ -19,6 +19,26 @@ struct NextUpHomeStoreTests {
         return HomeStore(session: session, activity: activity)
     }
 
+    @Test("Recently Added bounds a large episode scan even when fewer than twelve series exist")
+    func boundedLatestSeriesScan() async {
+        let provider = FakeMediaProviderSession(capabilities: ProviderCapabilities())
+        var offsets: [Int] = []
+        provider.itemsHandler = { query in
+            guard query.includeTypes?.contains(.episode) == true else {
+                return MediaItemPage(items: [], totalRecordCount: 0)
+            }
+            offsets.append(query.startIndex)
+            let episodes = (query.startIndex ..< query.startIndex + query.limit).map { index in
+                MediaItem(id: "episode-\(index)", seriesID: "series-\(index % 10)", seriesName: "Show \(index % 10)", type: .episode)
+            }
+            return MediaItemPage(items: episodes, totalRecordCount: 6000)
+        }
+        let store = home(provider, activity: activityStore())
+        await store.load()
+        #expect(offsets == [0, 60, 120])
+        #expect(store.latestSections.first(where: { $0.kind == .shows })?.items.count == 10)
+    }
+
     @Test("dismissed Next Up identities survive persistence without changing playback data")
     func dismissalPersistence() throws {
         let data = Data(#"{"activity":{},"firstSeenIDs":[],"dismissedIDs":["media:jellyfin:movie"]}"#.utf8)
@@ -28,7 +48,7 @@ struct NextUpHomeStoreTests {
         #expect(object["dismissedIDs"] as? [String] == ["media:jellyfin:movie"])
     }
 
-    @Test("dismissal survives reload and refresh, stays account scoped, and playback restores the item")
+    @Test("dismissal survives reload and refresh; starting playback restores the item")
     func dismissedAutomaticItem() async {
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: directory) }
@@ -50,6 +70,39 @@ struct NextUpHomeStoreTests {
         reloaded.recordPlayback(item: item, scope: scope)
         await store.refresh()
         #expect(store.unifiedNextUp.map(\.id) == ["media:jellyfin:movie"])
+    }
+
+    @Test("only newer positive server playback restores a removal; zero or stale metadata stays dismissed")
+    func remotePlaybackRestoresDismissal() async {
+        let activity = activityStore()
+        let scope = AccountScope(serverID: "s", userID: "u")
+        let removedAt = Date(timeIntervalSince1970: 20)
+        #expect(activity.setDismissed("media:jellyfin:movie", dismissed: true, scope: scope, at: removedAt))
+        let provider = FakeMediaProviderSession(capabilities: ProviderCapabilities())
+        var item = MediaItem(id: "movie", type: .movie, userData: MediaUserData(playbackPositionTicks: 30, isWatched: false, lastPlayedAt: Date(timeIntervalSince1970: 10)))
+        provider.resumePageHandler = { _, _ in MediaItemPage(items: [item], totalRecordCount: 1) }
+        let store = home(provider, activity: activity)
+        await store.load()
+        #expect(store.unifiedNextUp.isEmpty)
+        item.userData?.lastPlayedAt = Date(timeIntervalSince1970: 30)
+        item.userData?.playbackPositionTicks = 0
+        await store.refresh()
+        #expect(store.unifiedNextUp.isEmpty)
+        item.userData?.playbackPositionTicks = 40
+        await store.refresh()
+        #expect(store.unifiedNextUp.map(\.id) == ["media:jellyfin:movie"])
+        #expect(!activity.isDismissed("media:jellyfin:movie", scope: scope))
+    }
+
+    @Test("new playback activity synced from another Gus device restores a dismissal, old activity cannot")
+    func syncedPlaybackRestoresDismissal() {
+        let activity = activityStore()
+        let scope = AccountScope(serverID: "s", userID: "u")
+        #expect(activity.setDismissed("media:jellyfin:movie", dismissed: true, scope: scope, at: Date(timeIntervalSince1970: 20)))
+        #expect(activity.applySyncedSnapshot(["media:jellyfin:movie": Date(timeIntervalSince1970: 10)], scope: scope))
+        #expect(activity.isDismissed("media:jellyfin:movie", scope: scope))
+        #expect(activity.applySyncedSnapshot(["media:jellyfin:movie": Date(timeIntervalSince1970: 30)], scope: scope))
+        #expect(!activity.isDismissed("media:jellyfin:movie", scope: scope))
     }
 
     @Test("legacy activity snapshots remain readable after adding dismissals")
@@ -123,14 +176,25 @@ struct NextUpHomeStoreTests {
     func latestRailsFailIndependently() async {
         let provider = FakeMediaProviderSession(capabilities: ProviderCapabilities())
         provider.userViewsHandler = { [MediaItem(id: "a"), MediaItem(id: "b")] }
-        provider.latestHandler = { library in [MediaItem(id: "\(library.id!)0", type: .movie)] }
+        provider.itemsHandler = { query in
+            if query.includeTypes == [.movie] {
+                return MediaItemPage(items: [MediaItem(id: "a0", type: .movie)], totalRecordCount: 1)
+            }
+            if query.includeTypes == [.book] {
+                return MediaItemPage(items: [MediaItem(id: "b0", type: .book)], totalRecordCount: 1)
+            }
+            return MediaItemPage(items: [], totalRecordCount: 0)
+        }
         let store = home(provider, activity: activityStore())
         await store.load()
-        provider.latestHandler = { library in
-            if library.id == "a" {
+        provider.itemsHandler = { query in
+            if query.includeTypes == [.movie] {
                 throw GusError.offline
             }
-            return [MediaItem(id: "b1", type: .movie)]
+            if query.includeTypes == [.book] {
+                return MediaItemPage(items: [MediaItem(id: "b1", type: .book)], totalRecordCount: 1)
+            }
+            return MediaItemPage(items: [], totalRecordCount: 0)
         }
         await store.refresh()
         #expect(store.latestSections.flatMap(\.items).compactMap(\.id) == ["a0", "b1"])

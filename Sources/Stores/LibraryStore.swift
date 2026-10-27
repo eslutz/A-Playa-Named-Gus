@@ -95,6 +95,9 @@ struct LibraryFilterState: Equatable {
 enum LibraryGridScope: Equatable {
     case library(MediaItem)
     case category(NavigationCategory)
+    case photoLibrary(parentID: String?, albums: Bool)
+    case musicLibrary(parentID: String?)
+    case latest(LatestMediaKind)
 
     var title: String {
         switch self {
@@ -102,6 +105,11 @@ enum LibraryGridScope: Equatable {
             return library.name ?? String(localized: "Library", comment: "Fallback library title")
         case let .category(category):
             return category.title
+        case .photoLibrary:
+            return String(localized: "Photos")
+        case .musicLibrary:
+            return String(localized: "Music")
+        case let .latest(kind): return kind.title
         }
     }
 
@@ -111,6 +119,11 @@ enum LibraryGridScope: Equatable {
             return library.librarySymbol
         case let .category(category):
             return category.systemImage
+        case .photoLibrary:
+            return "photo"
+        case .musicLibrary:
+            return "music.note"
+        case .latest: return "clock"
         }
     }
 
@@ -118,8 +131,10 @@ enum LibraryGridScope: Equatable {
         switch self {
         case let .library(library):
             return library.id
-        case .category:
+        case .category, .latest:
             return nil
+        case let .photoLibrary(parentID, _), let .musicLibrary(parentID):
+            return parentID
         }
     }
 
@@ -129,6 +144,11 @@ enum LibraryGridScope: Equatable {
             return nil
         case let .category(category):
             return category.includeTypes
+        case let .photoLibrary(_, albums):
+            return albums ? [.photoAlbum] : [.photo]
+        case .musicLibrary:
+            return [.musicAlbum, .musicArtist]
+        case let .latest(kind): return kind.includeTypes
         }
     }
 
@@ -136,7 +156,7 @@ enum LibraryGridScope: Equatable {
         switch self {
         case .library:
             return false
-        case .category:
+        case .category, .photoLibrary, .musicLibrary, .latest:
             return true
         }
     }
@@ -147,6 +167,11 @@ enum LibraryGridScope: Equatable {
             return library.id ?? library.name ?? library.collectionType?.rawValue ?? "library"
         case let .category(category):
             return category.id
+        case let .photoLibrary(parentID, albums):
+            return "photos:" + (parentID ?? "all") + (albums ? ":albums" : ":images")
+        case let .musicLibrary(parentID):
+            return "music:" + (parentID ?? "all")
+        case let .latest(kind): return "latest:" + kind.rawValue
         }
     }
 }
@@ -200,6 +225,9 @@ final class LibraryStore {
         self.scope = scope
         self.session = session
         self.admits = admits
+        if case .latest = scope {
+            filter.sort = .recentlyAdded
+        }
     }
 
     var title: String {
@@ -301,7 +329,14 @@ final class LibraryStore {
         try Task.checkCancellation()
         guard generation == loadGeneration else { return }
 
-        let admitted = page.items.filter(admits)
+        let admitted: [MediaItem]
+        if case let .latest(kind) = scope {
+            let existing = replaceResults ? [] : items
+            let existingIDs = Set(existing.compactMap(\.id))
+            admitted = kind.displayItems(page.items.filter(admits)).filter { !existingIDs.contains($0.id ?? "") }
+        } else {
+            admitted = page.items.filter(admits)
+        }
         if replaceResults {
             items = admitted
             paging.replaceResults(receivedCount: page.items.count, totalRecordCount: page.totalRecordCount)

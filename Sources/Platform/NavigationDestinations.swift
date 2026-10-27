@@ -27,6 +27,10 @@ struct ItemRouteDestination: View {
             ArtistAlbumsView(artist: item)
         case .photo:
             PhotoViewerView(photo: item)
+        #if os(iOS)
+            case .photoAlbum:
+                LibraryGridView(library: item)
+        #endif
         default:
             ItemDetailView(item: item)
         }

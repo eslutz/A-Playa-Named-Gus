@@ -89,17 +89,21 @@ struct NavigationSettingsView: View {
 
         ForEach(sections) { section in
             if isEditing {
-                Button {
-                    show(section)
-                } label: {
-                    HStack {
-                        navigationRow(section)
-                        Spacer()
+                HStack {
+                    navigationRow(section)
+                    Spacer()
+                    Button {
+                        show(section)
+                    } label: {
                         Image(systemName: "plus.circle.fill")
                             .foregroundStyle(.green)
+                            .frame(minWidth: 44, minHeight: 44)
                     }
+                    .buttonStyle(.borderless)
+                    .accessibilityLabel(Text("Show \(section.title)"))
+                    .accessibilityIdentifier("Navigation.show." + section.id)
                 }
-                .buttonStyle(.plain)
+                .listRowInsets(EdgeInsets(top: 0, leading: 20, bottom: 0, trailing: 12))
             } else {
                 navigationRow(section)
             }
@@ -144,6 +148,7 @@ struct NavigationSettingsView: View {
                     .dropDestination(for: String.self) { draggedIDs, _ in
                         _ = moveDraggedSection(draggedIDs.first, before: section.id, in: sections)
                     }
+                    .listRowInsets(EdgeInsets(top: 0, leading: 20, bottom: 0, trailing: 12))
             } else {
                 navigationRow(section)
                     .moveDisabled(!section.canMove)

@@ -10,13 +10,17 @@ struct PosterCard: View {
     var statusItem: MediaItem? = nil
     let imageURL: URL?
     var aspectRatio: CGFloat = 2.0 / 3.0
+    var iPhoneAspectRatio: CGFloat? = nil
+    #if os(iOS)
+        @Environment(\.horizontalSizeClass) private var widthClass
+    #endif
     var placeholderSymbol: String = "film"
     var fallbackURLs: [URL] = []
     var onExhausted: (() async -> Void)?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            ArtworkTile(url: imageURL, aspectRatio: aspectRatio, placeholderSymbol: placeholderSymbol, fallbackURLs: fallbackURLs, onExhausted: onExhausted)
+            ArtworkTile(url: imageURL, aspectRatio: resolvedAspectRatio, placeholderSymbol: placeholderSymbol, fallbackURLs: fallbackURLs, onExhausted: onExhausted)
                 .frame(maxWidth: .infinity)
                 .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                 .posterHoverEffect()
@@ -32,9 +36,7 @@ struct PosterCard: View {
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
                 }
-                Text(statusItem?.userData?.isWatched == true ? String(localized: "Watched") : " ")
-                    .font(.caption).foregroundStyle(.secondary)
-                    .accessibilityHidden(statusItem?.userData?.isWatched != true)
+                statusCaption
             }
             .gusTVCardCaption()
         }
@@ -42,6 +44,30 @@ struct PosterCard: View {
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(accessibilityLabel)
         .gusTVPosterStatusValue(item: statusItem)
+    }
+
+    private var usesIPhoneLayout: Bool {
+        #if os(iOS)
+            widthClass == .compact
+        #else
+            false
+        #endif
+    }
+
+    private var resolvedAspectRatio: CGFloat {
+        usesIPhoneLayout ? iPhoneAspectRatio ?? aspectRatio : aspectRatio
+    }
+
+    @ViewBuilder private var statusCaption: some View {
+        if usesIPhoneLayout {
+            if statusItem?.userData?.isWatched == true {
+                Text("Watched").font(.caption).foregroundStyle(.secondary)
+            }
+        } else {
+            Text(statusItem?.userData?.isWatched == true ? String(localized: "Watched") : " ")
+                .font(.caption).foregroundStyle(.secondary)
+                .accessibilityHidden(statusItem?.userData?.isWatched != true)
+        }
     }
 
     private var accessibilityLabel: Text {
@@ -54,8 +80,16 @@ struct PosterCard: View {
 }
 
 extension PosterCard {
+    private static func artworkAspectRatio(for item: MediaItem) -> CGFloat {
+        switch item.type {
+        case .musicAlbum, .musicArtist, .audio, .audioBook: 1
+        case .photo, .photoAlbum: 4.0 / 3.0
+        default: 2.0 / 3.0
+        }
+    }
+
     /// Convenience initializer from a media item, choosing a sensible title/subtitle.
-    init(item: MediaItem, imageURL: URL?, aspectRatio: CGFloat = 2.0 / 3.0, fallbackURLs: [URL] = [], onExhausted: (() async -> Void)? = nil) {
+    init(item: MediaItem, imageURL: URL?, aspectRatio: CGFloat? = nil, fallbackURLs: [URL] = [], onExhausted: (() async -> Void)? = nil) {
         let title: String
         let subtitle: String?
 
@@ -74,7 +108,9 @@ extension PosterCard {
             title: title,
             subtitle: subtitle,
             imageURL: imageURL,
-            aspectRatio: aspectRatio,
+            aspectRatio: aspectRatio ?? 2.0 / 3.0,
+            iPhoneAspectRatio: aspectRatio == nil ? Self.artworkAspectRatio(for: item) : nil,
+            placeholderSymbol: item.artworkPlaceholderSymbol,
             fallbackURLs: fallbackURLs,
             onExhausted: onExhausted
         )

@@ -6720,6 +6720,618 @@
           }
         }
       }
+    },
+    "Let’s connect.": {
+      "comment": "iPhone Sketch presentation.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Let’s connect."
+          }
+        }
+      }
+    },
+    "Add your Jellyfin server to bring your library into Gus.": {
+      "comment": "iPhone Sketch presentation.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add your Jellyfin server to bring your library into Gus."
+          }
+        }
+      }
+    },
+    "Server address": {
+      "comment": "iPhone Sketch presentation.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Server address"
+          }
+        }
+      }
+    },
+    "https://media.example.com": {
+      "comment": "iPhone Sketch presentation.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "https://media.example.com"
+          }
+        }
+      }
+    },
+    "Find a local server": {
+      "comment": "iPhone Sketch presentation.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Find a local server"
+          }
+        }
+      }
+    },
+    "Search for Jellyfin servers on your local network when you’re on the same Wi-Fi.": {
+      "comment": "iPhone Sketch presentation.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Search for Jellyfin servers on your local network when you’re on the same Wi-Fi."
+          }
+        }
+      }
+    },
+    "Sign in.": {
+      "comment": "iPhone Sketch presentation.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sign in."
+          }
+        }
+      }
+    },
+    "Use your Jellyfin account for this server.": {
+      "comment": "iPhone Sketch presentation.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Use your Jellyfin account for this server."
+          }
+        }
+      }
+    },
+    "More sign-in options": {
+      "comment": "iPhone Sketch presentation.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "More sign-in options"
+          }
+        }
+      }
+    },
+    "Sign-in Options": {
+      "comment": "iPhone Sketch presentation.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sign-in Options"
+          }
+        }
+      }
+    },
+    "Authorization code": {
+      "comment": "iPhone Sketch presentation.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Authorization code"
+          }
+        }
+      }
+    },
+    "Queue": {
+      "comment": "iPhone Sketch presentation.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Queue"
+          }
+        }
+      }
+    },
+    "All Photos": {
+      "comment": "iPhone Sketch presentation.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "All Photos"
+          }
+        }
+      }
+    },
+    "%lld tracks": {
+      "comment": "iPhone Sketch presentation.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld tracks"
+          }
+        }
+      }
+    },
+    "Show %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show %@"
+          }
+        }
+      }
+    },
+    "Artists": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Artists"
+          }
+        }
+      }
+    },
+    "No Additional Sign-in Options": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No Additional Sign-in Options"
+          }
+        }
+      }
+    },
+    "Use your Jellyfin username and password to sign in.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Use your Jellyfin username and password to sign in."
+          }
+        }
+      }
+    },
+    "Accent Color": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Accent Color"
+          }
+        }
+      }
+    },
+    "Apple Default": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apple Default"
+          }
+        }
+      }
+    },
+    "Audio Language": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Audio Language"
+          }
+        }
+      }
+    },
+    "Back to My Requests": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Back to My Requests"
+          }
+        }
+      }
+    },
+    "Collections Unavailable": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Collections Unavailable"
+          }
+        }
+      }
+    },
+    "Connect your Seerr server to discover movies and shows, request titles, and follow their availability.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connect your Seerr server to discover movies and shows, request titles, and follow their availability."
+          }
+        }
+      }
+    },
+    "Custom": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Custom"
+          }
+        }
+      }
+    },
+    "Discover your next favorite": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Discover your next favorite"
+          }
+        }
+      }
+    },
+    "Enable a supported method in Seerr settings to connect Gus.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enable a supported method in Seerr settings to connect Gus."
+          }
+        }
+      }
+    },
+    "Follow approval and availability in My Requests.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Follow approval and availability in My Requests."
+          }
+        }
+      }
+    },
+    "Gus Default": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gus Default"
+          }
+        }
+      }
+    },
+    "In progress": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In progress"
+          }
+        }
+      }
+    },
+    "Item 1 of %lld": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Item 1 of %lld"
+          }
+        }
+      }
+    },
+    "No Matching Requests": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No Matching Requests"
+          }
+        }
+      }
+    },
+    "Other Titles": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Other Titles"
+          }
+        }
+      }
+    },
+    "Recently Added Audiobooks": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recently Added Audiobooks"
+          }
+        }
+      }
+    },
+    "Recently Added Books": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recently Added Books"
+          }
+        }
+      }
+    },
+    "Recently Added Movies": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recently Added Movies"
+          }
+        }
+      }
+    },
+    "Recently Added Music": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recently Added Music"
+          }
+        }
+      }
+    },
+    "Recently Added Photos": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recently Added Photos"
+          }
+        }
+      }
+    },
+    "Recently Added Shows": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recently Added Shows"
+          }
+        }
+      }
+    },
+    "Recently Added Videos": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recently Added Videos"
+          }
+        }
+      }
+    },
+    "Request Submitted": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Request Submitted"
+          }
+        }
+      }
+    },
+    "Request submitted": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Request submitted"
+          }
+        }
+      }
+    },
+    "Series": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Series"
+          }
+        }
+      }
+    },
+    "Sign in to request titles and track your requests.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sign in to request titles and track your requests."
+          }
+        }
+      }
+    },
+    "Subtitle Language": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Subtitle Language"
+          }
+        }
+      }
+    },
+    "The server returned an invalid list entry identifier.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The server returned an invalid list entry identifier."
+          }
+        }
+      }
+    },
+    "The server returned repeated list entry identifiers. Gus cannot safely edit or resume this list.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The server returned repeated list entry identifiers. Gus cannot safely edit or resume this list."
+          }
+        }
+      }
+    },
+    "Theme": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Theme"
+          }
+        }
+      }
+    },
+    "This request is no longer in Seerr.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This request is no longer in Seerr."
+          }
+        }
+      }
+    },
+    "This server does not enable Seerr or Jellyfin account sign-in.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This server does not enable Seerr or Jellyfin account sign-in."
+          }
+        }
+      }
+    },
+    "Titles you request will appear here.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Titles you request will appear here."
+          }
+        }
+      }
+    },
+    "Try another status to see your requests.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Try another status to see your requests."
+          }
+        }
+      }
+    },
+    "View My Requests": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "View My Requests"
+          }
+        }
+      }
+    },
+    "Your connection is saved for this Gus account on this device.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your connection is saved for this Gus account on this device."
+          }
+        }
+      }
+    },
+    "Your password is used only to sign in. Session cookies stay in this device’s Keychain.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your password is used only to sign in. Session cookies stay in this device’s Keychain."
+          }
+        }
+      }
+    },
+    "https://seerr.example.com": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "https://seerr.example.com"
+          }
+        }
+      }
     }
   },
   "version": "1.1"

@@ -13,34 +13,41 @@ struct SeerrConnectView: View {
 
     var body: some View {
         NavigationStack {
-            Form {
-                Section {
-                    TextField("Seerr Server URL", text: $address)
-                        .urlFieldStyle()
+            SeerrSetupLayout {
+                VStack(alignment: .leading, spacing: 12) {
+                    Image(systemName: "sparkles").font(.largeTitle).foregroundStyle(.tint).accessibilityHidden(true)
+                    Text("Discover your next favorite").font(.title2.bold())
+                    Text("Connect your Seerr server to discover movies and shows, request titles, and follow their availability.").foregroundStyle(.secondary)
+                }
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Seerr Server URL").font(.subheadline.weight(.medium))
+                    TextField("https://seerr.example.com", text: $address)
+                        .urlFieldStyle().seerrSetupFieldStyle()
+                        .accessibilityLabel("Seerr Server URL")
                         .accessibilityIdentifier("Seerr.serverURL")
                         .disabled(isValidating)
                         .onSubmit { startValidation() }
-                } header: { Text("Connect to Seerr") } footer: {
-                    Text("Enter the address of your Seerr 3 server. Your connection is saved for this Gus account on this device.")
+                    Text("Your connection is saved for this Gus account on this device.").font(.footnote).foregroundStyle(.secondary)
                 }
                 if let message {
-                    Section { Text(message).foregroundStyle(.secondary).accessibilityIdentifier("Seerr.connectionError") }
+                    Label(message, systemImage: "exclamationmark.triangle")
+                        .font(.callout).accessibilityIdentifier("Seerr.connectionError")
                 }
-                Section {
-                    Button { startValidation() } label: {
-                        HStack {
-                            Text(isValidating ? "Checking Server…" : "Continue")
-                            if isValidating {
-                                ProgressView()
-                            }
+                Button { startValidation() } label: {
+                    HStack {
+                        Text(isValidating ? "Checking Server…" : "Continue")
+                        if isValidating {
+                            ProgressView()
                         }
                     }
-                    .gusDefaultActionShortcut()
-                    .disabled(address.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isValidating)
-                    .accessibilityIdentifier("Seerr.continue")
+                    .frame(maxWidth: .infinity, minHeight: 44)
+                    .gusProminentActionForeground()
                 }
+                .gusProminentGlassButtonStyle().gusProminentActionTint().controlSize(.large)
+                .gusDefaultActionShortcut()
+                .disabled(address.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isValidating)
+                .accessibilityIdentifier("Seerr.continue")
             }
-            .seerrFormStyle()
             .navigationTitle("Connect to Seerr")
             .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } } }
             .navigationDestination(isPresented: Binding(get: { candidate != nil && info != nil }, set: {
@@ -97,53 +104,58 @@ private struct SeerrSignInView: View {
     @State private var message: String?
 
     var body: some View {
-        Form {
-            Section {
-                LabeledContent("Server", value: info.settings.applicationTitle ?? "Seerr")
-                LabeledContent("Version", value: info.status.version)
-                Picker("Sign-In Method", selection: $method) {
-                    if info.settings.supportsLocalLogin {
-                        Text("Seerr Account").tag("local")
-                    }
-                    if info.settings.supportsJellyfinLogin {
-                        Text("Jellyfin Account").tag("jellyfin")
-                    }
-                }
-                .disabled(isSigningIn)
-                .onChange(of: method) { _, _ in password = ""; message = nil }
+        SeerrSetupLayout {
+            VStack(alignment: .leading, spacing: 6) {
+                Text(info.settings.applicationTitle ?? "Seerr").font(.title2.bold())
+                Text(client.baseURL.host() ?? "Seerr").font(.subheadline).foregroundStyle(.secondary)
+                Text("Sign in to request titles and track your requests.").foregroundStyle(.secondary)
             }
             if info.settings.supportsLocalLogin || info.settings.supportsJellyfinLogin {
-                Section {
+                if info.settings.supportsLocalLogin && info.settings.supportsJellyfinLogin {
+                    Picker("Sign-In Method", selection: $method) {
+                        Text("Seerr Account").tag("local")
+                        Text("Jellyfin Account").tag("jellyfin")
+                    }
+                    .pickerStyle(.segmented)
+                    .disabled(isSigningIn)
+                    .onChange(of: method) { _, _ in password = ""; message = nil }
+                }
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(method == "local" ? "Email" : "Username").font(.subheadline.weight(.medium))
                     TextField(method == "local" ? "Email" : "Username", text: $username)
-                        .autocorrectionDisabled()
-                        .textContentType(.username)
+                        .autocorrectionDisabled().gusAccountNameInput()
+                        .textContentType(.username).seerrSetupFieldStyle()
                         .accessibilityIdentifier("Seerr.username")
+                    Text("Password").font(.subheadline.weight(.medium)).padding(.top, 8)
                     SecureField("Password", text: $password)
-                        .textContentType(.password)
+                        .textContentType(.password).seerrSetupFieldStyle()
                         .accessibilityIdentifier("Seerr.password")
                         .onSubmit { startSignIn() }
-                } footer: { Text("Your password is used only to sign in. Seerr session cookies are kept in this device’s Keychain and never synced through iCloud.") }
-                    .disabled(isSigningIn)
-                if let message {
-                    Section { Text(message).foregroundStyle(.secondary) }
                 }
-                Section {
-                    Button { startSignIn() } label: {
-                        HStack {
-                            Text(isSigningIn ? "Signing In…" : "Sign In"); if isSigningIn {
-                                ProgressView()
-                            }
+                .disabled(isSigningIn)
+                if let message {
+                    Label(message, systemImage: "exclamationmark.triangle").font(.callout)
+                }
+                Button { startSignIn() } label: {
+                    HStack {
+                        Text(isSigningIn ? "Signing In…" : "Sign In")
+                        if isSigningIn {
+                            ProgressView()
                         }
                     }
-                    .gusDefaultActionShortcut()
-                    .disabled(isSigningIn || username.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || password.isEmpty)
-                    .accessibilityIdentifier("Seerr.signIn")
+                    .frame(maxWidth: .infinity, minHeight: 44)
+                    .gusProminentActionForeground()
                 }
+                .gusProminentGlassButtonStyle().gusProminentActionTint().controlSize(.large)
+                .gusDefaultActionShortcut()
+                .disabled(isSigningIn || username.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || password.isEmpty)
+                .accessibilityIdentifier("Seerr.signIn")
+                Text("Your password is used only to sign in. Session cookies stay in this device’s Keychain.").font(.footnote).foregroundStyle(.secondary)
             } else {
-                Section { Text("This server does not enable Seerr or Jellyfin account sign-in. Enable a supported method in Seerr settings to connect Gus.") }
+                Label("This server does not enable Seerr or Jellyfin account sign-in.", systemImage: "lock")
+                Text("Enable a supported method in Seerr settings to connect Gus.").foregroundStyle(.secondary)
             }
         }
-        .seerrFormStyle()
         .navigationTitle("Sign In to Seerr")
         .onAppear { method = info.settings.supportsLocalLogin ? "local" : "jellyfin" }
         .onDisappear { operation?.cancel(); password = "" }

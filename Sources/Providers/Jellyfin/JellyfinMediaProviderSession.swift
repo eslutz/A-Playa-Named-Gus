@@ -778,6 +778,7 @@ final class JellyfinMediaProviderSession: MediaProviderSession {
         case .book: return .book
         case .audioBook: return .audioBook
         case .photo: return .photo
+        case .photoAlbum: return .photoAlbum
         case .liveChannel: return .tvChannel
         case .liveProgram: return .tvProgram
         case .recording: return .recording

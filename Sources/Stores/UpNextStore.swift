@@ -172,6 +172,51 @@ final class UpNextStore {
         candidatesByEntry.removeValue(forKey: entry.id)
     }
 
+    /// Removing a resume card also clears Jellyfin Continue Watching. Zero is an
+    /// explicit, idempotent position reset; watched history is left unchanged.
+    func removeFromNextUp(_ item: MediaItem, session: SessionStore, activity: NextUpActivityStore = .shared, progress: OfflinePlaybackProgressStore = .shared) async throws {
+        guard let id = item.id, item.providerKind == session.mediaProvider.providerKind else { throw GusError.notFound }
+        var itemIDs = [id]
+        if item.type == .series {
+            // A saved show represents its episodes in Continue Watching. Collect
+            // before resetting so removing rows cannot shift subsequent pages.
+            var start = 0
+            while true {
+                let page = try await session.mediaProvider.resumeItemsPage(startIndex: start, limit: 100)
+                itemIDs += page.items.filter { $0.seriesID == id }.compactMap(\.id)
+                start += page.items.count
+                if page.items.isEmpty || start >= (page.totalRecordCount ?? Int.max) {
+                    break
+                }
+            }
+        }
+        for itemID in Set(itemIDs) {
+            do {
+                try await session.mediaProvider.updatePlaybackPosition(itemID: itemID, positionTicks: 0)
+            } catch {
+                // A confirmed missing item has no server resume entry to clear.
+                guard GusError(from: error) == .notFound else { throw error }
+            }
+            progress.resetCheckpoint(itemID: itemID, scope: session.references.scope)
+        }
+        try dismissLocally(item, scope: session.references.scope, activity: activity)
+    }
+
+    /// Shared by removal and Mark Watched, so a later Mark Unwatched cannot
+    /// restore a stale saved intent. Add or a new playback clears the dismissal.
+    func dismissLocally(_ item: MediaItem, scope: AccountScope, activity: NextUpActivityStore = .shared) throws {
+        load(serverID: scope.serverID, userID: scope.userID)
+        guard let key = NextUpBuilder.mediaID(item), activity.setDismissed(key, dismissed: true, scope: scope) else {
+            throw GusError.server(activity.errorMessage ?? String(localized: "Your queue change couldn't be saved. Try again."))
+        }
+        let old = entriesByScope[scope] ?? []
+        let entries = old.filter { $0.reference.item.id != item.id || $0.reference.item.providerKind != item.providerKind }
+        guard commit(entries, scope: scope) else {
+            throw GusError.server(errorMessage ?? String(localized: "Your queue change couldn't be saved. Try again."))
+        }
+        publishChanges(from: old, to: entries, scope: scope)
+    }
+
     func candidates(for entry: UpNextEntry) -> [MediaItem] {
         candidatesByEntry[entry.id] ?? []
     }

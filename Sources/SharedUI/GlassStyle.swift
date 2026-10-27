@@ -41,7 +41,7 @@ extension View {
         #if os(tvOS)
             self
         #else
-            foregroundStyle(Color.gusProminentActionForeground)
+            gusPhoneProminentForeground()
         #endif
     }
 
@@ -51,7 +51,7 @@ extension View {
         #if os(tvOS)
             self
         #else
-            tint(.accentColor)
+            gusPhoneActionTint()
         #endif
     }
 
@@ -63,6 +63,19 @@ extension View {
         #else
             buttonStyle(.glass)
 
+        #endif
+    }
+}
+
+/// Native glass shares sampling between adjacent floating controls.
+struct GusGlassControlGroup<Content: View>: View {
+    @ViewBuilder let content: Content
+
+    var body: some View {
+        #if os(visionOS) || os(tvOS)
+            content
+        #else
+            GlassEffectContainer(spacing: 8) { content }
         #endif
     }
 }

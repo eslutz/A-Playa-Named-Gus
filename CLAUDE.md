@@ -24,8 +24,11 @@ Workspace contains the editable working documents; `Design/` contains the two iP
 snapshots, and `Design/Archive/` holds local historical design material. Follow Apple HIG, Apple Design
 Resources and current framework documentation. Use linked official Apple components;
 never label a flat or blur approximation verified native Liquid Glass fidelity.
-Only a reviewed Sketch version is implementation authority, and only for its explicitly
-accepted scope. Consult the locally archived `Design/Archive/2026-10-27/Sketch/README.md`
+The current iPhone implementation follows the user-selected live **Gus iPhone** document
+(`65DEED33-7DFF-47E5-AF51-31D00E68E6EE`), its Screens, States and Components pages,
+inspected through Sketch MCP. The R5 snapshots remain historical references. Runtime
+verification uses one iPhone simulator in Light appearance against the local demo server;
+physical acceptance and later-device redesign remain separate. Consult the locally archived `Design/Archive/2026-10-27/Sketch/README.md`
 and its milestone index first, when available.
 Preserve the archived `Gus.fig`, Fresh Foundation candidate and split Figma files as
 historical references; do not import their screen layouts into the redesign or regenerate
@@ -242,8 +245,9 @@ navigation destinations are registered once at each `NavigationStack` root via
 app destinations use `AppRoute` + `AppNavigationModel` for `gus://home`, `gus://search`,
 and `gus://settings`, shared by URL opens, menu commands, and the tvOS Top Shelf extension.
 All section stacks bind their paths to `RootNavigationState`. Compact iPhone navigation
-with more than five sections exposes the first four plus an explicit More list, keeping
-one stack per section. Settings/Downloads children use the typed `AppScreen` destinations.
+uses three content tabs plus an explicit More list and a native Search tab, keeping
+one stack per section. The default content tabs are Home, Movies and Series when
+available; a saved account-specific order keeps its first three visible sections. Settings/Downloads children use the typed `AppScreen` destinations.
 
 **Content deep links** (`gus://item/<id>`, `gus://play/<id>` — `Models/ContentLink.swift`)
 ride `AppNavigationModel` via a consume-once pending-link; `Platform/ContentLinkHandler.swift`
@@ -283,8 +287,8 @@ feeds `MPNowPlayingInfoCenter` / `MPRemoteCommandCenter`. `AVAudioSession` is gu
 shuffle/repeat, speed, chapters) over the Jellyfin universal audio endpoint.
 `playerPresentation` routes by `MediaItem.isAudioPlayable`.
 `AudioPlaybackCoordinator` owns the queue and preparation task independently of the player
-presentation. Done closes prepared audio while playback continues; the persistent Now
-Playing control reopens it, and Stop ends the queue. Closing during preparation cancels
+presentation. Close dismisses prepared iOS audio while playback continues; the persistent Now
+Playing control reopens it. Non-iOS playback retains its platform controls. Closing during preparation cancels
 the task. Audio/video stores reject late results after cancellation or teardown; loading
 and failed player states expose cancellation and retry. The Watch companion uses its own
 scrollable audio sheet and tears down playback when leaving that sheet.
@@ -445,3 +449,9 @@ The mature [Swiftfin](https://github.com/eslutz/Swiftfin) app is **reference onl
 mirror its *patterns* and SDK call shapes, **never copy its code**. Swiftfin is built on
 VLCKit, a custom coordinator/router, Factory DI, Combine, and ~30 dependencies; A Playa
 Named Gus deliberately re-expresses those patterns on the Apple-first stack above.
+
+### iOS review iteration 2
+
+Theme selection is device-local and independent of Appearance: Gus Default, Apple Default, or an opaque custom accent. Shared theme storage/contrast helpers are reusable; only iOS exposes the selector. Home Recently Added feeds span libraries by media type; All Next Up has a local grid/list choice. Read-only sheets use leading Close and editors use trailing Done/Save. iOS playlist reorder handles use public drag-and-drop because the system edit-mode handle has no leading placement API; moves still use the existing scoped server edit queue. Completed playlist presentation resets to Play and item 1 while retaining the completion marker for Next Up.
+
+Extend the existing external iPhone comparison report with `Scripts/generate-ui-comparison.py --next-iteration <captures> --output <existing-report> --notes <notes>`. Preserve original Before/After assets, captions, notes and manifest fields; iteration 2 is a third inline image. No screenshots or build evidence belong in source.

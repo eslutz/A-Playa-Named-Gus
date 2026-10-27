@@ -21,7 +21,9 @@ struct DiscoverView: View {
                     Text(store.errorMessage ?? String(localized: "Browse movies and shows, request missing titles, and track your requests."))
                 } actions: {
                     Button(store.serverURL == nil ? "Connect to Seerr" : "Sign In to Seerr") { showingSetup = true }
-                        .buttonStyle(.borderedProminent)
+                        .gusProminentGlassButtonStyle().gusProminentActionTint()
+                        .controlSize(.large)
+                        .frame(minHeight: 44)
                         .accessibilityIdentifier("Seerr.connect")
                     if store.state == .offline {
                         Button("Retry Connection") { Task { await store.retryRestore() } }

@@ -74,7 +74,7 @@ final class VideoPlaylistPlaybackCoordinator {
     func start(_ player: PlaybackStore) async {
         normalizeEntryIDs()
         let cursor = serverLists.videoPlaylist(id: playlistID, scope: scope, supplemental: playlists)?.cursor
-        let ticks = startsFromBeginning ? 0 : (cursor?.entryID == sequence.currentID ? cursor?.positionTicks : nil)
+        let ticks = startsFromBeginning || cursor?.finished == true ? 0 : (cursor?.entryID == sequence.currentID ? cursor?.positionTicks : nil)
         await prepareCurrent(player, ticks: ticks)
     }
 
@@ -161,6 +161,7 @@ final class VideoPlaylistPlaybackCoordinator {
                 player.teardown()
                 return
             }
+            NextUpActivityStore.shared.setDismissed("playlist:" + stateID.uuidString, dismissed: false, scope: scope)
         } catch {
             guard active, !GusError(from: error).isCancellation else { return }
             errorMessage = GusError(from: error).localizedDescription

@@ -8,6 +8,9 @@ struct AlbumDetailView: View {
     @Environment(OfflineDownloadStore.self) private var downloads
     let album: MediaItem
 
+    #if os(iOS)
+        @Environment(\.horizontalSizeClass) private var widthClass
+    #endif
     @State private var tracks: [MediaItem] = []
     @State private var state: LoadState = .idle
 
@@ -24,7 +27,7 @@ struct AlbumDetailView: View {
                     header
                     trackList
                 }
-                .padding()
+                .gusPhonePagePadding()
                 .frame(maxWidth: PageContentMetrics.maxWidth, alignment: .leading)
                 .frame(maxWidth: .infinity)
             }
@@ -36,16 +39,49 @@ struct AlbumDetailView: View {
         }
     }
 
-    private var header: some View {
+    @ViewBuilder private var header: some View {
+        #if os(iOS)
+            if widthClass == .compact {
+                VStack(alignment: .leading, spacing: 24) {
+                    HStack(spacing: 6) {
+                        if let artist = album.albumArtist ?? album.artists.first {
+                            Text(artist)
+                        }
+                        if let year = album.productionYear {
+                            Text(String(year))
+                        }
+                        Text("\(tracks.count) tracks")
+                    }
+                    .font(.subheadline).foregroundStyle(.secondary)
+                    albumArtwork
+                    HStack(spacing: 12) { albumActions }
+                }
+            } else {
+                adaptiveHeader
+            }
+        #else
+            adaptiveHeader
+        #endif
+    }
+
+    private var adaptiveHeader: some View {
         ViewThatFits(in: .horizontal) {
             HStack(alignment: .top, spacing: 20) { albumArtwork; albumInfo }
             VStack(alignment: .leading, spacing: 20) { albumArtwork; albumInfo }
         }
     }
 
+    private var artworkWidth: CGFloat {
+        #if os(iOS)
+            widthClass == .compact ? 160 : 180
+        #else
+            180
+        #endif
+    }
+
     private var albumArtwork: some View {
         ArtworkTile(url: session.mediaProvider.primaryImageURL(for: album, context: .posterGrid), aspectRatio: 1, placeholderSymbol: "music.note")
-            .frame(width: 180)
+            .frame(width: artworkWidth)
             .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 
@@ -68,14 +104,14 @@ struct AlbumDetailView: View {
     @ViewBuilder private var albumActions: some View {
         Button { play(startingAt: 0) } label: {
             Label("Play", systemImage: "play.fill")
-                .foregroundStyle(Color.gusProminentActionForeground)
-                .frame(minHeight: 44)
+                .gusProminentActionForeground()
+                .gusPhoneActionLabelHeight()
         }
         .gusProminentGlassButtonStyle()
         .controlSize(.large)
         .fixedSize()
         Button { play(startingAt: 0, shuffled: true) } label: {
-            Label("Shuffle", systemImage: "shuffle").frame(minHeight: 44)
+            Label("Shuffle", systemImage: "shuffle").gusPhoneActionLabelHeight()
         }
         .gusGlassButtonStyle()
         .controlSize(.large)

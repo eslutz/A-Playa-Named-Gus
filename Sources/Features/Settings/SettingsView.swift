@@ -7,6 +7,10 @@ struct SettingsView: View {
     @Environment(OfflineDownloadStore.self) private var downloads
     @Environment(VideoPlaylistsStore.self) private var videoPlaylists
 
+    #if os(iOS)
+        @Environment(\.horizontalSizeClass) private var widthClass
+    #endif
+
     @State private var showingProfile = false
     @State private var reauthenticationServer: ServerConnection?
     @State private var switchErrorMessage: String?
@@ -19,7 +23,21 @@ struct SettingsView: View {
     var body: some View {
         Form {
             Section("Account") {
-                Button("View and Edit Profile") { showingProfile = true }
+                Button { showingProfile = true } label: {
+                    #if os(iOS)
+                        if widthClass == .compact {
+                            HStack {
+                                Text("View and Edit Profile").foregroundStyle(.primary)
+                                Spacer()
+                                Image(systemName: "chevron.right").font(.caption.weight(.semibold)).foregroundStyle(.tertiary)
+                            }
+                        } else {
+                            Text("View and Edit Profile")
+                        }
+                    #else
+                        Text("View and Edit Profile")
+                    #endif
+                }
                 LabeledContent("User", value: session.user.name)
                 LabeledContent("Server", value: session.server.name)
                 LabeledContent("Address", value: session.server.url.absoluteString)
@@ -71,6 +89,9 @@ struct SettingsView: View {
                         Text(appearance.title).tag(appearance.rawValue)
                     }
                 }
+                #if os(iOS)
+                    ThemeSettingsControls()
+                #endif
                 NavigationLink(value: AppScreen.navigationSettings) {
                     Label("Navigation", systemImage: "list.bullet")
                 }

@@ -117,6 +117,25 @@ struct MovieCollectionMemberships: View {
 }
 
 struct MediaCollectionDetailView: View {
+    #if os(iOS)
+        @Environment(\.horizontalSizeClass) private var widthClass
+    #endif
+    private var artworkWidth: CGFloat {
+        #if os(iOS)
+            widthClass == .compact ? 120 : 140
+        #else
+            140
+        #endif
+    }
+
+    private var collectionTitleFont: Font {
+        #if os(iOS)
+            widthClass == .compact ? .title.bold() : .largeTitle.bold()
+        #else
+            .largeTitle.bold()
+        #endif
+    }
+
     @Environment(RootNavigationState.self) private var root
     @Environment(SessionStore.self) private var session
     @Environment(\.dismiss) private var dismiss
@@ -140,9 +159,9 @@ struct MediaCollectionDetailView: View {
                 CollectionFeedback(store: store)
                 if let collection, ContentRatingGate.admitsStored(collection.item) {
                     HStack(alignment: .top, spacing: 20) {
-                        AsyncPoster(url: session.mediaProvider.primaryImageURL(for: collection.item, context: .posterGrid)).frame(width: 140, height: 210)
+                        AsyncPoster(url: session.mediaProvider.primaryImageURL(for: collection.item, context: .posterGrid)).frame(width: artworkWidth, height: artworkWidth * 1.5)
                         VStack(alignment: .leading, spacing: 12) {
-                            Text(collection.item.displayTitle).font(.largeTitle.bold())
+                            Text(collection.item.displayTitle).font(collectionTitleFont)
                             if collection.membersLoaded {
                                 Text("\(admitted(collection).count) titles").foregroundStyle(.secondary)
                             }

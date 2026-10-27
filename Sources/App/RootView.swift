@@ -15,6 +15,7 @@ struct RootView: View {
 
     var body: some View {
         content
+            .gusIPhoneCanvas()
             .environment(audio)
             .onChange(of: activeAccount) { _, _ in audio.stop(); videoPlaylists.deactivate(); serverLists.deactivate() }
     }

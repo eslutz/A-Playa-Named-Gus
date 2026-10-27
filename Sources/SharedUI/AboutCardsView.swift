@@ -51,7 +51,7 @@ struct AboutCardsView: View {
                 .navigationTitle("Synopsis")
                 .toolbar {
                     ToolbarItem(placement: .cancellationAction) {
-                        Button("Done") { showsFullSynopsis = false }
+                        GusCloseButton { showsFullSynopsis = false }
                             .accessibilityIdentifier("Synopsis.done")
                     }
                 }

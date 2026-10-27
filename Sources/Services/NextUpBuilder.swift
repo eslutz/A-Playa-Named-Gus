@@ -1,7 +1,6 @@
 import Foundation
 
-/// A playlist remains a separate navigation target even when its current video is
-/// also resumable or saved independently.
+/// Full membership prevents individual cards duplicating an active playlist.
 struct NextUpPlaylistCandidate: Equatable, Sendable {
     let id: UUID
     let name: String
@@ -9,6 +8,7 @@ struct NextUpPlaylistCandidate: Equatable, Sendable {
     let position: Int
     let total: Int
     var activityAt: Date? = nil
+    var members: [MediaItem] = []
 }
 
 enum NextUpReason: String, Equatable, Sendable {
@@ -75,13 +75,29 @@ enum NextUpBuilder {
             return item.seriesID.map { "\(item.providerKind.rawValue):\($0)" }
         }
 
+        func permitsIndividual(_ item: MediaItem) -> Bool {
+            guard let key = mediaID(item) else { return false }
+            let memberships = playlists.compactMap { playlist -> (NextUpPlaylistCandidate, Int)? in
+                let members = playlist.members.isEmpty ? playlist.item.map { [$0] } ?? [] : playlist.members
+                guard let index = members.firstIndex(where: { mediaID($0) == key }) else { return nil }
+                return (playlist, index)
+            }
+            guard !memberships.isEmpty else { return true }
+            // A skipped, still-unfinished episode may be resumed independently.
+            // Current/future members and movies remain represented by the list.
+            guard item.type == .episode, !completed(item),
+                  (item.userData?.playbackPositionTicks ?? 0) > 0 || (item.userData?.playedPercentage ?? 0) > 0 else { return false }
+            return memberships.allSatisfy { playlist, index in index + 1 < playlist.position }
+        }
+
         // Pick one unfinished automatic episode per series, favoring genuine
         // activity and using persisted first-seen order for undated ties.
         let promoted = nextEpisodes.filter { item in
-            item.type == .episode && !completed(item) && ((item.userData?.playbackPositionTicks ?? 0) > 0 || (item.userData?.playedPercentage ?? 0) > 0)
+            guard permitsIndividual(item) else { return false }
+            return item.type == .episode && !completed(item) && ((item.userData?.playbackPositionTicks ?? 0) > 0 || (item.userData?.playedPercentage ?? 0) > 0)
         }
         let promotedIDs = Set(promoted.compactMap(mediaID))
-        let unfinished = (resume + promoted).enumerated().filter { !completed($0.element) }
+        let unfinished = (resume + promoted).enumerated().filter { !completed($0.element) && permitsIndividual($0.element) }
         let orderedResume = unfinished.sorted { a, b in
             let ad = date(for: a.element), bd = date(for: b.element)
             if ad != bd {
@@ -101,6 +117,7 @@ enum NextUpBuilder {
         }
         var nextSeries = Set<String>()
         for item in nextEpisodes where item.type == .episode && !completed(item) {
+            guard permitsIndividual(item) else { continue }
             if let id = mediaID(item), promotedIDs.contains(id) {
                 continue
             }
@@ -109,9 +126,9 @@ enum NextUpBuilder {
             }
             add(item, reason: .nextEpisode)
         }
-        // Saved snapshots remain even after completion or confirmed removal from
-        // the server, so the user can explicitly rewatch, replace, or remove them.
+        // Missing references stay recoverable, but completed content is retired.
         for entry in saved {
+            guard !completed(entry.reference.item), permitsIndividual(entry.reference.item) else { continue }
             add(entry.reference.item, reason: .saved, intent: entry)
         }
         for playlist in playlists {

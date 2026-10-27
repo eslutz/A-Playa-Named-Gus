@@ -6,6 +6,30 @@ import Testing
 
 @Suite("Library store helpers", .serialized)
 struct LibraryStoreTests {
+    @Test("iPhone music browse requests albums and artists without video playlists")
+    func musicScope() {
+        let query = LibraryRequest.parameters(scope: .musicLibrary(parentID: "music"), startIndex: 60, limit: 60)
+        #expect(query.parentID == "music")
+        #expect(query.includeTypes == [.musicAlbum, .musicArtist])
+        #expect(query.isRecursive)
+        #expect(query.startIndex == 60)
+        #expect(LibraryGridScope.musicLibrary(parentID: "music").storeIdentity != LibraryGridScope.category(.music).storeIdentity)
+    }
+
+    @Test("photo albums and all photos query separate paged scopes")
+    func photoScopes() {
+        let albums = LibraryRequest.parameters(scope: .photoLibrary(parentID: "photos", albums: true), startIndex: 60, limit: 60)
+        let images = LibraryRequest.parameters(scope: .photoLibrary(parentID: "photos", albums: false), startIndex: 0, limit: 60)
+        #expect(albums.parentID == "photos")
+        #expect(albums.includeTypes == [.photoAlbum])
+        #expect(images.includeTypes == [.photo])
+        #expect(albums.isRecursive)
+        #expect(albums.startIndex == 60)
+        #expect(LibraryGridScope.photoLibrary(parentID: "photos", albums: true).storeIdentity != LibraryGridScope.photoLibrary(parentID: "photos", albums: false).storeIdentity)
+        let mapped = JellyfinMediaItemMapper.mediaItem(from: BaseItemDto(id: "album", name: "Pictures", type: .photoAlbum))
+        #expect(mapped.type == .photoAlbum)
+    }
+
     @Test("builds paged provider library queries")
     func buildsPagedLibraryQuery() {
         let query = LibraryRequest.parameters(

@@ -542,6 +542,7 @@ final class PlaybackStore {
     }
 
     private func handlePlaybackEnded() {
+        NextUpActivityStore.shared.recordCompletion(item: item, scope: accountScope)
         // Retire the observer before dispatching an asynchronous queue transition.
         removeEndObserver()
         downloads?.deleteAfterCompletion(playingDownload)

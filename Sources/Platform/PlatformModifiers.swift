@@ -126,6 +126,16 @@ extension View {
         #endif
     }
 
+    /// Account identifiers must preserve the typed case on software keyboards.
+    @ViewBuilder
+    func gusAccountNameInput() -> some View {
+        #if os(iOS)
+            textInputAutocapitalization(.never)
+        #else
+            self
+        #endif
+    }
+
     /// URL-entry conveniences (no autocorrect/autocapitalization, URL keyboard) where
     /// the platform supports them.
     @ViewBuilder

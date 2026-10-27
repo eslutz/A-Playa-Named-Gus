@@ -17,6 +17,7 @@ enum MediaItemType: String, Codable, Hashable, Sendable {
     case book
     case audioBook
     case photo
+    case photoAlbum
     case liveChannel
     case liveProgram
     case recording

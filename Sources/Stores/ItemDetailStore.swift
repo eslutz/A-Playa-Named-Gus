@@ -81,7 +81,7 @@ final class ItemDetailStore {
     }
 
     /// Explicit menu actions do not toggle against potentially stale displayed metadata.
-    func setWatched(_ watched: Bool, localProgress: OfflinePlaybackProgressStore = .shared) async {
+    func setWatched(_ watched: Bool, localProgress: OfflinePlaybackProgressStore = .shared, nextUp: UpNextStore? = nil, activity: NextUpActivityStore = .shared) async {
         guard !isUpdatingUserData, item.id != nil else { return }
         isUpdatingUserData = true
         actionError = nil
@@ -94,6 +94,13 @@ final class ItemDetailStore {
             localProgress.resetCheckpoint(itemID: id, scope: session.references.scope)
             // This provider API selects an endpoint; the inverse requests the desired status.
             try await session.mediaProvider.toggleWatched(itemID: id, currentlyWatched: !watched)
+            if watched {
+                if let nextUp {
+                    try nextUp.dismissLocally(item, scope: session.references.scope, activity: activity)
+                } else if let key = NextUpBuilder.mediaID(item), !activity.setDismissed(key, dismissed: true, scope: session.references.scope) {
+                    throw GusError.server(activity.errorMessage ?? String(localized: "Your queue change couldn't be saved. Try again."))
+                }
+            }
             item = try await session.references.currentItem(item)
             needsUserDataRefresh = false
         } catch {

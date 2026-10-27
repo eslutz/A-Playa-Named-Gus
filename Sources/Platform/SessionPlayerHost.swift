@@ -27,16 +27,34 @@ struct AdaptiveAudioLayout<Artwork: View, Controls: View>: View {
 
     private func continuousLayout(geometry: GeometryProxy) -> some View {
         ScrollView {
-            ViewThatFits(in: .horizontal) {
-                HStack(alignment: .center, spacing: 24) {
-                    artwork.frame(width: min(geometry.size.height * 0.5, 240))
-                    controls.frame(minWidth: 280, maxWidth: 560)
+            #if os(iOS)
+                if geometry.size.width < 600, geometry.size.height > geometry.size.width {
+                    VStack(spacing: 24) {
+                        artwork.frame(width: min(geometry.size.width - 48, 320))
+                        Spacer(minLength: 24)
+                        controls
+                    }
+                    .frame(minHeight: max(0, geometry.size.height - 48))
+                    .padding(24)
+                } else {
+                    adaptiveContent(geometry: geometry)
                 }
-                VStack(spacing: 24) { artwork; controls }
-            }
-            .padding(24)
-            .frame(maxWidth: .infinity)
+            #else
+                adaptiveContent(geometry: geometry)
+            #endif
         }
+    }
+
+    private func adaptiveContent(geometry: GeometryProxy) -> some View {
+        ViewThatFits(in: .horizontal) {
+            HStack(alignment: .center, spacing: 24) {
+                artwork.frame(width: min(geometry.size.height * 0.5, 240))
+                controls.frame(minWidth: 280, maxWidth: 560)
+            }
+            VStack(spacing: 24) { artwork; controls }
+        }
+        .padding(24)
+        .frame(maxWidth: .infinity)
     }
 }
 
@@ -117,6 +135,9 @@ extension View {
 
 private struct SessionAudioPlayer: View {
     @Environment(AudioPlaybackCoordinator.self) private var audio
+    #if os(iOS)
+        @Environment(\.horizontalSizeClass) private var widthClass
+    #endif
     var body: some View {
         NavigationStack {
             Group {
@@ -127,8 +148,20 @@ private struct SessionAudioPlayer: View {
                 }
             }
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("Done", systemImage: "xmark") { audio.close() } }
-                ToolbarItem { Button("Stop", systemImage: "stop.fill") { audio.stop() } }
+                #if os(iOS)
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button("Close", systemImage: "xmark") { audio.close() }.labelStyle(.iconOnly)
+                    }
+                    if widthClass == .compact {
+                        ToolbarItem(placement: .principal) {
+                            Text(audio.store?.currentTrack?.album ?? String(localized: "Now Playing"))
+                                .font(.caption).foregroundStyle(.secondary).textCase(.uppercase)
+                        }
+                    }
+                #else
+                    ToolbarItem(placement: .cancellationAction) { Button("Done", systemImage: "xmark") { audio.close() } }
+                    ToolbarItem { Button("Stop", systemImage: "stop.fill") { audio.stop() } }
+                #endif
             }
             .accessibilityAction(.escape) { audio.close() }
         }
@@ -146,15 +179,18 @@ private struct SessionAudioPlayer: View {
 }
 
 private struct NowPlayingReturnView: View {
+    @Environment(SessionStore.self) private var session
+    #if os(iOS)
+        @Environment(\.horizontalSizeClass) private var widthClass
+    #endif
     let coordinator: AudioPlaybackCoordinator
     let store: AudioPlayerStore
     var body: some View {
         HStack {
             Button { coordinator.reopen() } label: {
-                Label(store.currentTrack?.displayTitle ?? String(localized: "Now Playing"), systemImage: "music.note")
-                    .lineLimit(1)
-                    .frame(minHeight: 44)
+                returnLabel
             }
+            .gusPhonePlainButtonStyle()
             .accessibilityIdentifier("NowPlaying.reopen")
             .accessibilityHint("Opens Now Playing")
             Button { store.playPause() } label: {
@@ -166,6 +202,40 @@ private struct NowPlayingReturnView: View {
             .disabled(store.state != .loaded)
         }
         .frame(maxWidth: .infinity, minHeight: 44)
+    }
+
+    @ViewBuilder private var returnLabel: some View {
+        #if os(iOS)
+            if widthClass == .compact {
+                compactLabel
+            } else {
+                legacyLabel
+            }
+        #else
+            legacyLabel
+        #endif
+    }
+
+    private var legacyLabel: some View {
+        Label(store.currentTrack?.displayTitle ?? String(localized: "Now Playing"), systemImage: "music.note")
+            .lineLimit(1).frame(minHeight: 44)
+    }
+
+    private var compactLabel: some View {
+        HStack(spacing: 12) {
+            ArtworkTile(url: store.currentTrack.flatMap { session.mediaProvider.primaryImageURL(for: $0, context: .posterGrid) }, aspectRatio: 1, placeholderSymbol: "music.note")
+                .frame(width: 40, height: 40).clipShape(RoundedRectangle(cornerRadius: 6))
+            VStack(alignment: .leading, spacing: 2) {
+                Text(store.currentTrack?.displayTitle ?? String(localized: "Now Playing")).font(.subheadline.weight(.medium))
+                if let artist = store.currentTrack?.albumArtist ?? store.currentTrack?.artists.first {
+                    Text(artist).font(.caption).foregroundStyle(.secondary)
+                }
+            }
+            .lineLimit(1)
+            Spacer(minLength: 0)
+        }
+        .frame(minHeight: 44)
+        .contentShape(Rectangle())
     }
 }
 
