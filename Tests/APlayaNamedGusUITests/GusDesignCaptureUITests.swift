@@ -281,6 +281,33 @@
             }
         }
 
+        func testNextUpLibraryListReview() throws {
+            for item in media.filter({ ["Movie", "Episode"].contains($0["type"] ?? "") }).prefix(6) {
+                let app = try launch("item/" + XCTUnwrap(item["id"]))
+                let action = app.buttons.matching(NSPredicate(format: "label == %@ OR label == %@", "Add to Next Up", "Remove from Next Up")).firstMatch
+                XCTAssertTrue(action.waitForExistence(timeout: 30))
+                if action.label == "Add to Next Up" {
+                    action.tap()
+                }
+            }
+            let app = launch("home")
+            let showAll = app.buttons["Show All"].firstMatch
+            XCTAssertTrue(showAll.waitForExistence(timeout: 30)); showAll.tap()
+            let layout = app.buttons["NextUp.displayMode"]
+            XCTAssertTrue(layout.waitForExistence(timeout: 10))
+            if layout.label.contains("List") {
+                layout.tap()
+            }
+            XCTAssertFalse(app.staticTexts["Saved"].exists)
+            XCTAssertFalse(app.staticTexts["Resume · Saved"].exists)
+            capture("next-up-library-list")
+            layout.tap()
+            XCTAssertTrue(layout.label.contains("List"))
+            capture("next-up-library-grid")
+            layout.tap()
+            XCTAssertTrue(layout.label.contains("Grid"))
+        }
+
         func testReviewFollowUp() throws {
             // Enrich only the synthetic demo account, through the same public UI as a user.
             let candidates = Array(media.filter { ["Movie", "Episode"].contains($0["type"] ?? "") }.prefix(6))

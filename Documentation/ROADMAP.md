@@ -977,6 +977,8 @@ October 12 pipeline policy supersedes direct-main publication: main now requires
 
 ## Unified Next Up and Jellyfin lists — feature branch
 
+- [x] All Next Up reuses the shared library artwork row and separators; hide the ambiguous Saved origin label while retaining playback status and playlist position.
+
 - [~] Playlist and item-detail actions use shared playback styling, explicit restart, contextual management menus, and occurrence-scoped editing with left drag handles and right removal controls. Local authenticated UI and the platform matrix pass; fresh review and hosted gates remain pending. See [implementation and evidence](Reviews/README.md).
 
 - [~] Next Up removal clears Jellyfin and local resume checkpoints without changing watched status. Mark Watched also retires saved intent; Mark Unwatched does not resurrect it. Add or a genuine playback start restores a dismissed item. Active playlists suppress individual members except unfinished earlier episodes skipped by the playlist. Tapping a video playlist row starts the sequence at that entry. Runtime and release-candidate validation remain distinct from physical-device acceptance.

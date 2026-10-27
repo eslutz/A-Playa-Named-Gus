@@ -181,13 +181,24 @@ private struct NextUpListView: View {
     @AppStorage("nextUpDisplayGrid") private var showsGrid = false
     var body: some View {
         ScrollView {
-            LazyVGrid(columns: showsGrid ? [GridItem(.adaptive(minimum: 160), alignment: .top)] : [GridItem(.flexible())], alignment: .leading, spacing: 16) {
-                ForEach(store.unifiedNextUp) { entry in
-                    NextUpDestination(entry: entry, usesArtwork: showsGrid)
-                        .frame(maxWidth: .infinity, alignment: .leading)
+            if showsGrid {
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 160), alignment: .top)], alignment: .leading, spacing: 16) {
+                    ForEach(store.unifiedNextUp) { entry in
+                        NextUpDestination(entry: entry, usesArtwork: true)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
                 }
+                .padding(.horizontal)
+            } else {
+                LazyVStack(spacing: 0) {
+                    ForEach(store.unifiedNextUp) { entry in
+                        NextUpDestination(entry: entry, usesArtwork: showsGrid)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                        Divider()
+                    }
+                }
+                .padding(.horizontal)
             }
-            .padding(.horizontal)
 
             if store.hasMoreNextUp {
                 Button("Load More") { Task { await store.loadMoreNextUp() } }
@@ -265,39 +276,48 @@ private struct NextUpDestination: View {
         }
     }
 
-    private var label: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            if usesArtwork {
-                ArtworkTile(url: entry.item.flatMap { session.mediaProvider.backdropImageURL(for: $0, maxWidth: 560) }, aspectRatio: 16.0 / 9.0, contentMode: .fit, placeholderSymbol: entry.playlist == nil ? "play.rectangle" : "list.bullet.rectangle", fallbackURLs: entry.item.map { session.mediaProvider.artworkURLs(for: $0, maxWidth: 560) } ?? [])
-                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                    .posterHoverEffect()
-                    .gusTVArtworkStatus(item: entry.item, progressID: "NextUp.progress." + entry.id)
-            }
+    @ViewBuilder private var label: some View {
+        if !usesArtwork {
+            MediaLibraryRow(item: entry.item, title: entry.playlist?.name ?? entry.item?.seriesName ?? entry.item?.displayTitle, subtitle: episodeSubtitle, status: reasonText)
+        } else {
             VStack(alignment: .leading, spacing: 6) {
-                Text(entry.playlist?.name ?? entry.item?.seriesName ?? entry.item?.displayTitle ?? "Video")
-                    .font(.headline).lineLimit(1)
-                if let item = entry.item, item.type == .episode {
-                    if let locator = item.episodeLocator {
-                        Text("\(locator) · \(item.displayTitle)").font(.caption).foregroundStyle(.secondary).lineLimit(1)
-                    } else {
-                        Text(item.displayTitle).font(.caption).foregroundStyle(.secondary).lineLimit(1)
-                    }
-                } else {
-                    Text(" ").font(.caption).accessibilityHidden(true)
+                if usesArtwork {
+                    ArtworkTile(url: entry.item.flatMap { session.mediaProvider.backdropImageURL(for: $0, maxWidth: 560) }, aspectRatio: 16.0 / 9.0, contentMode: .fit, placeholderSymbol: entry.playlist == nil ? "play.rectangle" : "list.bullet.rectangle", fallbackURLs: entry.item.map { session.mediaProvider.artworkURLs(for: $0, maxWidth: 560) } ?? [])
+                        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                        .posterHoverEffect()
+                        .gusTVArtworkStatus(item: entry.item, progressID: "NextUp.progress." + entry.id)
                 }
-                Text(reasonText).font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(entry.playlist?.name ?? entry.item?.seriesName ?? entry.item?.displayTitle ?? "Video")
+                        .font(.headline).lineLimit(1)
+                    if let item = entry.item, item.type == .episode {
+                        if let locator = item.episodeLocator {
+                            Text("\(locator) · \(item.displayTitle)").font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                        } else {
+                            Text(item.displayTitle).font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                        }
+                    } else {
+                        Text(" ").font(.caption).accessibilityHidden(true)
+                    }
+                    Text(reasonText).font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                }
+                .gusTVCardCaption()
             }
-            .gusTVCardCaption()
+            .contentShape(Rectangle())
         }
-        .contentShape(Rectangle())
+    }
+
+    private var episodeSubtitle: String? {
+        guard let item = entry.item, item.type == .episode else { return nil }
+        return item.episodeLocator.map { "\($0) · \(item.displayTitle)" } ?? item.displayTitle
     }
 
     private var reasonText: String {
-        entry.reasons.map { reason in
+        entry.reasons.filter { $0 != .saved }.map { reason in
             switch reason {
             case .resume: String(localized: "Resume", comment: "Next Up reason")
             case .nextEpisode: String(localized: "Next Episode", comment: "Next Up reason")
-            case .saved: String(localized: "Saved", comment: "Next Up reason")
+            case .saved: ""
             case .playlist: String(localized: "Playlist \(entry.playlist?.position ?? 0) of \(entry.playlist?.total ?? 0)", comment: "Next Up playlist position")
             }
         }.joined(separator: " · ")
