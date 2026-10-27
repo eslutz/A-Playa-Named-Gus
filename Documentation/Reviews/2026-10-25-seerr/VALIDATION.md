@@ -1,12 +1,12 @@
 # Seerr integration validation — October 25, 2026
 
-Native Seerr 3 discovery, authentication, movie/season requests and recovery, personal history, manager review, and supported issue/blocklist/preferences are implemented and locally qualified. **GitHub CI and Cloud/TestFlight distribution remain pending.**
+Native Seerr 3 discovery, authentication, movie/season requests and recovery, personal history, manager review, and supported issue/blocklist/preferences are implemented and locally qualified. **GitHub CI and protected-main merge passed. Build 1.0.0 (31) is available to Gus Internal on all four native platforms through API-key-authenticated local Xcode delivery. Cloud startup failed before actions; no Cloud qualification success is claimed.**
 
 ## Candidate and evidence
 
-The candidate is isolated on `codex/seerr-integration`, based on protected-main `f53eaf37`; the original unfinished design checkout is preserved. Xcode 27.1 (`27A9275`), Apple Silicon, saved package pins and the repository warning gate were used. [Final source fingerprints](evidence/final-source-hashes.json) identify the code and resources qualified below.
+The candidate is isolated on `codex/seerr-integration`, based on protected-main `f53eaf37`; the original unfinished design checkout is preserved. Xcode 27.1 (`27A9275`), Apple Silicon, saved package pins and the repository warning gate were used. [Initial local matrix fingerprints](evidence/final-source-hashes.json) identify the baseline qualified below. Subsequent automation-only CI corrections are documented separately.
 
-All runtime and test sources match across the final build, unit, history UI, archive and static matrices. After runtime testing, two unchanged English navigation labels (`Integrations`, `Seerr`) were added to the string catalog. Final builds, archives and static checks include that resource completion; [the exact delta](evidence/resource-only-delta.json) and [runtime fingerprints](evidence/runtime-source-hashes.json) preserve this distinction.
+All Swift runtime and Swift test sources match across the baseline final build, unit, history UI, archive and static matrices. After runtime testing, two unchanged English navigation labels (`Integrations`, `Seerr`) were added to the string catalog. Final builds, archives and static checks include that resource completion; [the exact delta](evidence/resource-only-delta.json) and [runtime fingerprints](evidence/runtime-source-hashes.json) preserve this distinction.
 
 ## Local qualification
 
@@ -23,9 +23,13 @@ Every accepted build/test/archive lane has an empty build-diagnostic list. The c
 
 Reviewed synthetic captures: [iPhone Discover](captures/iphone-discover.png), [iPad Discover](captures/ipad-discover.png), [uncertain response](captures/iphone-uncertain-request.png), [canceled history](captures/iphone-cancellation-history.png), [approved Pending queue](captures/ipad-pending-history.png). The fixture intentionally uses placeholder artwork.
 
+## PR review follow-up
+
+The [two PR comment fixes](PR-COMMENT-FIXES.md) add format-independent request-review entry and submitted preference snapshots. Their full local iOS suite passes 530 tests without build diagnostics. Earlier broad matrix results remain baseline evidence; the final corrected head requires fresh hosted checks.
+
 ## Release gates and limits
 
-The GitHub push was blocked by automatic approval review pending explicit outbound payload/destination approval. The protected-main PR, all 13 required checks, merge, and manual **Gus Internal TestFlight** workflow remain outstanding. Distribution requires the intended merged source, raw warning-policy review, successful signed exports/uploads, processing and all four internal beta group associations. **No new TestFlight build is claimed.**
+[PR #34](https://github.com/eslutz/A-Playa-Named-Gus/pull/34) merged after all 13 checks passed and both conversations were resolved. The checked source tree matches merged main `ee5bf9ea`. The [release record](RELEASE.md) documents the successful gates and the corrected API authentication, failed Cloud startup attempts and successful local Xcode delivery for the **Gus Internal TestFlight** release. Distribution requires the intended merged source, raw warning-policy review, successful signed exports/uploads, processing and all four internal beta group associations. **All four native Build 31 records are VALID, INTERNAL_ONLY and IN_BETA_TESTING with Gus Internal association.**
 
 Tests used synthetic loopback Seerr/Jellyfin fixtures. Live Seerr, exact OS 26.0 runtime, physical-device, VoiceOver/assistive and remaining platform GUI acceptance are unverified. Watch has no Discover destination.
 

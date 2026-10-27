@@ -33,10 +33,9 @@ constrain *how* each item is built.
 
 ## Discover / Seerr design handoff
 
-- [x] Retain the historical Figma design package in [Design/](../Design/README.md): 2,896 earlier app references and 120 expanded Discover proposal artboards across 82 files. Its saved-file, font, raster and preview evidence does not establish completion or acceptance of the fresh Sketch redesign.
-- [~] Complete the Apple-native Sketch redesign across iPhone, iPad, macOS, tvOS, visionOS, watchOS and CarPlay. Use the single [Sketch progress dashboard](../Design/Sketch/PROGRESS.md) for current work, verified modules, remaining scope and blockers; [milestone evidence](../Design/Sketch/milestones.json) records snapshots and dependencies. Ready-for-review design, explicit user acceptance and runtime/device validation remain separate. Only explicitly accepted scope becomes implementation authority.
-- [ ] Implement the expanded catalog, detail, request options, issue/blocklist and notification-preference behavior in [the Discover specification](../Design/DISCOVER.md), tracking [#31](https://github.com/eslutz/A-Playa-Named-Gus/issues/31). Publishing the designs does not complete app implementation.
-- [ ] Complete native materials, Dynamic Type, assistive input, keyboard/remote/gaze, live Seerr and physical-device acceptance, followed by required hosted checks and release gates.
+- [x] Preserve historical Figma design material in the local Git-ignored `Design/Archive/`.
+- [~] Complete the Apple-native Sketch redesign across supported devices. The iPhone R5 Light and Dark snapshots are in `Design/` and await acceptance. Later devices remain pending. Design acceptance and runtime validation are separate.
+- [ ] Complete native materials, accessibility, live Seerr and physical-device acceptance, followed by required hosted checks and release gates.
 
 ## Global Definition of Done (applies to every milestone)
 
@@ -1007,3 +1006,13 @@ Based on merged PR #21 (`c847a27`): Jellyfin owns playlists and collections; uni
 
 - [x] Split Cloud into manual-only, main-only Gus Validation (one explicit iPhone 17 / iOS 27.2, cached, no archives/distribution) and Gus Internal TestFlight (unchanged full release test/device/archive matrix, clean). Server configuration verified through API readback; GitHub PR CI remains unchanged.
 - [ ] Measure actual compute usage and cache reuse on subsequent routine runs. Configuration verification does not establish execution or release acceptance. See [pipeline policy](AppStore/pipeline-policy.md#usage-optimization--2026-10-22).
+
+## Seerr integration — October 25, 2026
+
+- [x] Implement the accepted Discovery flow: account-scoped Seerr 3 setup, enabled catalog shelves, search/paging/filters, title/person/season details, exact Jellyfin identity matching, reviewed movie/season requests, history/cancellation and manager decisions.
+- [x] Add permission-gated own issues, blocklist and supported regional/email preferences, with private cookies and persistent unresolved-write safeguards.
+- [x] Complete warning-free local builds, unit tests, iPhone/iPad UI regressions, unsigned Release archives and static qualification.
+- [ ] Pass required PR checks and the full internal TestFlight release workflow.
+- [ ] Record live Seerr, physical-device and assistive-input acceptance separately from synthetic contract and simulator checks.
+
+Scope and API evidence: [Seerr contract](Seerr-api-contract.md). The ongoing overall Sketch redesign is outside this feature release.

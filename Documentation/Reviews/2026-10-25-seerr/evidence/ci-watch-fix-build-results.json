@@ -1,0 +1,152 @@
+[
+  {
+    "name": "build-ios",
+    "command": [
+      "xcodebuild",
+      "-project",
+      "A Playa Named Gus.xcodeproj",
+      "-derivedDataPath",
+      "/tmp/gus-seerr-candidate-derived",
+      "-onlyUsePackageVersionsFromResolvedFile",
+      "-scheme",
+      "A Playa Named Gus",
+      "-destination",
+      "platform=iOS Simulator,id=8D6A5B35-B67B-4725-B428-DC0EAA80797D",
+      "CODE_SIGNING_ALLOWED=NO",
+      "build",
+      "EXCLUDED_ARCHS=x86_64 i386",
+      "GUS_WATCH_DEBUG_DYLIB=NO"
+    ],
+    "exitCode": 0,
+    "seconds": 26.75,
+    "log": "build-ios.log",
+    "diagnostics": []
+  },
+  {
+    "name": "archive-ios",
+    "command": [
+      "xcodebuild",
+      "-project",
+      "A Playa Named Gus.xcodeproj",
+      "-derivedDataPath",
+      "/tmp/gus-seerr-candidate-derived",
+      "-onlyUsePackageVersionsFromResolvedFile",
+      "-scheme",
+      "A Playa Named Gus",
+      "-destination",
+      "generic/platform=iOS",
+      "-configuration",
+      "Release",
+      "CODE_SIGNING_ALLOWED=NO",
+      "CODE_SIGNING_REQUIRED=NO",
+      "-archivePath",
+      "/tmp/gus-seerr-validation/ci-watch-fix/ios.xcarchive",
+      "archive",
+      "EXCLUDED_ARCHS=x86_64 i386",
+      "GUS_WATCH_DEBUG_DYLIB=NO"
+    ],
+    "exitCode": 0,
+    "seconds": 198.61,
+    "log": "archive-ios.log",
+    "diagnostics": []
+  },
+  {
+    "name": "format",
+    "command": [
+      "swiftformat",
+      "Sources",
+      "Tests",
+      "--lint",
+      "--cache",
+      "ignore"
+    ],
+    "exitCode": 0,
+    "seconds": 0.5,
+    "log": "format.log",
+    "diagnostics": []
+  },
+  {
+    "name": "api-format",
+    "command": [
+      "swiftformat",
+      "Scripts/app-store-connect.swift",
+      "--lint",
+      "--cache",
+      "ignore"
+    ],
+    "exitCode": 0,
+    "seconds": 0.04,
+    "log": "api-format.log",
+    "diagnostics": []
+  },
+  {
+    "name": "cloud-bootstrap",
+    "command": [
+      "python3",
+      "Scripts/test-cloud-bootstrap.py"
+    ],
+    "exitCode": 0,
+    "seconds": 0.7,
+    "log": "cloud-bootstrap.log",
+    "diagnostics": []
+  },
+  {
+    "name": "project-pins",
+    "command": [
+      "python3",
+      "Scripts/check-cloud-project.py"
+    ],
+    "exitCode": 0,
+    "seconds": 0.35,
+    "log": "project-pins.log",
+    "diagnostics": []
+  },
+  {
+    "name": "warning-gate-tests",
+    "command": [
+      "/opt/homebrew/opt/python@3.15/bin/python3.15",
+      "Scripts/test-release-warning-gate.py"
+    ],
+    "exitCode": 0,
+    "seconds": 0.49,
+    "log": "warning-gate-tests.log",
+    "diagnostics": []
+  },
+  {
+    "name": "asc-self-test",
+    "command": [
+      "swift",
+      "Scripts/app-store-connect.swift",
+      "self-test"
+    ],
+    "exitCode": 0,
+    "seconds": 1.08,
+    "log": "asc-self-test.log",
+    "diagnostics": []
+  },
+  {
+    "name": "whitespace",
+    "command": [
+      "git",
+      "diff",
+      "--check"
+    ],
+    "exitCode": 0,
+    "seconds": 0.05,
+    "log": "whitespace.log",
+    "diagnostics": []
+  },
+  {
+    "name": "yaml",
+    "command": [
+      "ruby",
+      "-ryaml",
+      "-e",
+      "(Dir['.github/workflows/*.yml'] + ['project.yml']).each { |p| YAML.load_file(p) }"
+    ],
+    "exitCode": 0,
+    "seconds": 0.1,
+    "log": "yaml.log",
+    "diagnostics": []
+  }
+]

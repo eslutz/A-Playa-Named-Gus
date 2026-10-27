@@ -1,0 +1,44 @@
+{
+  "authentication": "ES256 without optional scope claim",
+  "runs": [
+    {
+      "id": "7bec9434-a8bf-4825-946b-884259b5e807",
+      "number": 29,
+      "executionProgress": "COMPLETE",
+      "completionStatus": "FAILED",
+      "createdDate": "2026-10-25T15:32:03.357Z",
+      "startedDate": null,
+      "finishedDate": "2026-10-25T15:32:20.827Z",
+      "issueCounts": null,
+      "sourceCommit": "ee5bf9eae0282a3ad9be884493ff031d7314c8e8",
+      "actionCount": 0
+    },
+    {
+      "id": "04632f9b-e641-410c-95ca-441d4890c122",
+      "number": 30,
+      "executionProgress": "COMPLETE",
+      "completionStatus": "FAILED",
+      "createdDate": "2026-10-25T15:36:51.771Z",
+      "startedDate": null,
+      "finishedDate": "2026-10-25T15:37:03.499Z",
+      "issueCounts": null,
+      "sourceCommit": "ee5bf9eae0282a3ad9be884493ff031d7314c8e8",
+      "actionCount": 0
+    },
+    {
+      "id": "168ff5f4-2f17-4c88-b29c-77f89b80b268",
+      "number": 31,
+      "workflow": "Gus Validation (diagnostic only; no archives or distribution)",
+      "executionProgress": "COMPLETE",
+      "completionStatus": "FAILED",
+      "createdDate": "2026-10-25T15:56:02.813Z",
+      "startedDate": null,
+      "finishedDate": "2026-10-25T15:56:12.916Z",
+      "issueCounts": null,
+      "sourceCommit": "ee5bf9eae0282a3ad9be884493ff031d7314c8e8",
+      "actionCount": 0
+    }
+  ],
+  "retryPolicy": "One bounded full-workflow retry, then one cheap non-distributing routine diagnostic to isolate workflow scope. No further Cloud attempts.",
+  "interpretation": "CLI start and exact source verification succeeded; Cloud startup failed before native actions. Cause is not exposed in these API responses."
+}

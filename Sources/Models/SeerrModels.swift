@@ -541,6 +541,22 @@ struct SeerrRequestPayload: Codable, Hashable, Sendable {
 }
 
 enum SeerrRequestEligibility {
+    /// Opening review does not authorize a write; settings and quota are refreshed there.
+    static func canOpenReview(title: SeerrTitle, type: SeerrMediaType, user: SeerrUser?) -> Bool {
+        guard let user, title.mediaInfo?.status != .blocklisted else { return false }
+        if let status = title.mediaInfo?.status, case .unknown = status {
+            return false
+        }
+        return [false, true].contains { is4K in
+            guard user.canRequest(type, is4K: is4K) else { return false }
+            switch title.mediaInfo?.availability(is4K: is4K) {
+            case .available, .blocklisted, .unknown: return false
+            case .pending, .processing, .partiallyAvailable: return type == .tv
+            default: return true
+            }
+        }
+    }
+
     /// Missing media-info means no existing request; unknown server states never become requestable.
     static func requestableSeasons(title: SeerrTitle, settings: SeerrPublicSettings, is4K: Bool = false) -> [Int] {
         guard title.mediaInfo?.status != .blocklisted,

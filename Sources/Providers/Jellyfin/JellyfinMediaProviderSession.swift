@@ -253,8 +253,7 @@ final class JellyfinMediaProviderSession: MediaProviderSession {
     // MARK: - Live TV
 
     func liveTVIsEnabled() async -> Bool {
-        guard let info = try? await client.send(Paths.getLiveTvInfo).value else { return false }
-        guard info.isEnabled == true else { return false }
+        guard let info = try? await client.send(Paths.getLiveTvInfo).value, info.isEnabled == true else { return false }
         if let enabledUsers = info.enabledUsers, !enabledUsers.isEmpty {
             return enabledUsers.contains(userID)
         }

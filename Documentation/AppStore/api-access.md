@@ -61,9 +61,25 @@ assigning builds to tester groups require deliberate write requests using the te
 Apple supports starting builds through
 [`POST /v1/ciBuildRuns`](https://developer.apple.com/documentation/appstoreconnectapi/post-v1-cibuildruns).
 The API does not replace initial Xcode Cloud onboarding or GitHub repository authorization.
-The first authenticated start request for this account returned HTTP 405 without
-creating a run; the App Store Connect Start Build UI succeeded. Use the proven UI
-start path rather than blindly retrying that failed write. See the
-[Cloud diagnosis](xcode-cloud-dependency-onboarding.md).
+The initial scoped start requests returned HTTP 405 without creating a run; the
+App Store Connect Start Build UI succeeded. The CLI path was corrected on
+October 25, 2026: omit the optional JWT `scope` claim for write operations.
+The otherwise identical `POST /v1/ciBuildRuns` then created Build 29, whose
+source commit was independently verified as merged main
+`ee5bf9eae0282a3ad9be884493ff031d7314c8e8`. Interactive sign-in is not required
+when the configured API key already has the necessary access.
+
+Apple's [token documentation](https://developer.apple.com/documentation/appstoreconnectapi/generating-tokens-for-api-requests)
+describes scope entries using the GET method and permits a token without a
+scope for requests allowed by the API key's role. Keep the inspection helper's
+GET scopes; do not put `POST /v1/ciBuildRuns` in a write token's scope.
+Use short-lived ES256 claims (`iss` for a team key or `sub: user` for an
+individual key, `iat`, `exp`, and `aud: appstoreconnect-v1`) and the existing
+[start request template](api-templates/start-build.json). Do not log the key or
+token. A successful start is non-idempotent: inspect existing runs after any
+ambiguous response before retrying. The first pending response may have an
+empty source SHA; fetch the run again and require the intended full merge SHA
+before accepting it. See the [Seerr release record](../Reviews/2026-10-25-seerr/RELEASE.md)
+for the first successful CLI start, Cloud startup failure, and successful alternate local Xcode delivery. See the [sign-in-free CLI procedure](cli-release.md).
 
 Configuration precedence: account-wide config, `.env.local`, `.env.asc.local`, then `ASC_*` environment variables. The helper issues short-lived, per-request GET tokens with the complete query in their scope; API management writes remain deliberate operations, not a restriction on the installed key. No key contents or bearer tokens are logged.

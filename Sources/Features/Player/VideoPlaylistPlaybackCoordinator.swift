@@ -9,9 +9,13 @@ struct PlaylistPlaybackSequence {
     }
 
     init(entryIDs: [UUID], startID: UUID?, shuffled: Bool = false) {
+        if shuffled {
+            let first = startID.flatMap { entryIDs.contains($0) ? $0 : nil } ?? entryIDs.randomElement()
+            remainingIDs = first.map { start in [start] + entryIDs.filter { $0 != start }.shuffled() } ?? []
+            return
+        }
         let start = startID.flatMap { entryIDs.firstIndex(of: $0) } ?? 0
-        let ordered = Array(entryIDs.dropFirst(start))
-        remainingIDs = shuffled ? entryIDs.shuffled() : ordered
+        remainingIDs = Array(entryIDs.dropFirst(start))
     }
 
     mutating func remap(using transform: (UUID) -> UUID) {

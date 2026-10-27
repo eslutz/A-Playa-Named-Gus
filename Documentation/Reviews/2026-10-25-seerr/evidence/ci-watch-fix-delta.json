@@ -1,0 +1,12 @@
+{
+  "changedFiles": [
+    "A Playa Named Gus.xcodeproj/project.pbxproj",
+    "Config/Shared.xcconfig",
+    "Scripts/test-cloud-bootstrap.py",
+    "Scripts/test-release-warning-gate.py",
+    "Scripts/validate-release.py",
+    "ci_scripts/ci_post_clone.sh",
+    "project.yml"
+  ],
+  "swiftRuntimeTestsAndResourcesUnchanged": true
+}

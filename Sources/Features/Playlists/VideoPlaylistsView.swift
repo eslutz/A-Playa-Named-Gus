@@ -132,6 +132,7 @@ struct VideoPlaylistDetailView: View {
     @State private var editing = false
     @State private var deletingPlaylist = false
     @State private var mutating = false
+    @State private var editingEntryIDs: [UUID]?
     @Environment(\.dismiss) private var dismiss
     private var scope: AccountScope {
         session.references.scope
@@ -193,13 +194,20 @@ struct VideoPlaylistDetailView: View {
                 .toolbar {
                     ToolbarItem(placement: .primaryAction) {
                         if editing {
-                            Button("Done") { editing = false }
+                            Button("Done") { editing = false; editingEntryIDs = nil }
                                 .disabled(mutating)
                                 .accessibilityIdentifier("Playlist.done")
                         } else {
                             Menu {
                                 Button("Rename", systemImage: "pencil") { renaming = true }.disabled(!serverList.canEdit)
                                 Button("Edit Items", systemImage: "line.3.horizontal") { editing = true }.disabled(!serverList.canEdit || !serverList.entriesLoaded)
+                                if serverList.entriesLoaded, serverList.entries.isEmpty || !serverList.entries.allSatisfy({ $0.item.isAudioPlayable }) {
+                                    Button(playlist.queued ? "Remove from Next Up" : "Add to Next Up", systemImage: playlist.queued ? MediaActionSymbols.removeFromNextUp : MediaActionSymbols.addToNextUp) {
+                                        let resolved = lists.resolvedID(id, scope: scope)
+                                        supplemental.setQueued(id: resolved, queued: !playlist.queued, scope: scope)
+                                        NextUpActivityStore.shared.setDismissed("playlist:" + resolved.uuidString, dismissed: playlist.queued, scope: scope)
+                                    }
+                                }
                                 Divider()
                                 Button("Delete Playlist", systemImage: "trash", role: .destructive) { deletingPlaylist = true }.disabled(!serverList.canEdit)
                             } label: { Label("More", systemImage: "ellipsis") }
@@ -261,35 +269,40 @@ struct VideoPlaylistDetailView: View {
                 }
                 if playlist.cursor?.finished == true {
                     Label("Playlist Finished", systemImage: "checkmark.circle")
-                } else if let current = playlist.entries.firstIndex(where: { $0.id == playlist.cursor?.entryID }) {
-                    Text("Playlist \(current + 1) of \(playlist.entries.count)").font(.caption).foregroundStyle(.secondary)
+                } else if selection.hasProgress, let current = playlist.entries.firstIndex(where: { $0.id == playlist.cursor?.entryID }) {
+                    Text("Resume at item \(current + 1) of \(playlist.entries.count)").font(.caption).foregroundStyle(.secondary)
                 }
-                Button {
-                    play(playlist.entries.first(where: { $0.id == selection.entryID }), fromBeginning: !selection.hasProgress)
-                } label: {
-                    Label(selection.hasProgress ? "Resume" : "Play", systemImage: "play.fill")
-                        .foregroundStyle(Color.gusProminentActionForeground)
-                        .frame(maxWidth: .infinity)
-                }
-                .gusProminentGlassButtonStyle().controlSize(.large).tint(.accentColor)
-                .frame(maxWidth: DetailActionMetrics.maximumRowWidth)
-                .disabled(!isVideo || selection.isUnavailable || editing || mutating)
-                .accessibilityIdentifier("Playlist.play")
-                HStack(spacing: 8) {
-                    ItemUserActionButton(title: "Start from Beginning", systemImage: "arrow.counterclockwise") { play(playlist.entries.first, fromBeginning: true) }
-                        .disabled(!isVideo || editing || mutating)
-                        .accessibilityIdentifier("Playlist.restart")
-                    ItemUserActionButton(title: "Shuffle", systemImage: "shuffle") { play(playlist.entries.first, fromBeginning: true, shuffled: true) }
-                        .disabled(!isVideo || editing || mutating)
-                        .accessibilityIdentifier("Playlist.shuffle")
-                    ItemUserActionButton(title: playlist.queued ? "Remove from Next Up" : "Add to Next Up", systemImage: playlist.queued ? MediaActionSymbols.removeFromNextUp : MediaActionSymbols.addToNextUp) {
-                        let resolved = lists.resolvedID(id, scope: scope)
-                        supplemental.setQueued(id: resolved, queued: !playlist.queued, scope: scope)
-                        NextUpActivityStore.shared.setDismissed("playlist:" + resolved.uuidString, dismissed: playlist.queued, scope: scope)
+                HStack(spacing: 12) {
+                    Button {
+                        play(playlist.entries.first(where: { $0.id == selection.entryID }), fromBeginning: !selection.hasProgress)
+                    } label: {
+                        Label(selection.hasProgress ? "Resume" : "Play", systemImage: "play.fill")
+                            .foregroundStyle(Color.gusProminentActionForeground)
+                            .frame(maxWidth: .infinity, minHeight: 24)
                     }
-                    .disabled(editing || mutating)
-                    .accessibilityIdentifier("Playlist.nextUp")
+                    .gusProminentGlassButtonStyle().tint(.accentColor)
+                    .disabled(!isVideo || selection.isUnavailable || editing || mutating)
+                    .accessibilityIdentifier("Playlist.play")
+                    Button {
+                        play(playlist.entries.first, fromBeginning: true)
+                    } label: {
+                        Label("Start from Beginning", systemImage: "arrow.counterclockwise")
+                            .labelStyle(.iconOnly).frame(minWidth: 24, minHeight: 24)
+                    }
+                    .gusGlassButtonStyle().buttonBorderShape(.circle)
+                    .disabled(!isVideo || editing || mutating)
+                    .accessibilityIdentifier("Playlist.restart")
+                    Button {
+                        play(playlist.entries.randomElement(), fromBeginning: true, shuffled: true)
+                    } label: {
+                        Label("Shuffle", systemImage: "shuffle")
+                            .labelStyle(.iconOnly).frame(minWidth: 24, minHeight: 24)
+                    }
+                    .gusGlassButtonStyle().buttonBorderShape(.circle)
+                    .disabled(!isVideo || editing || mutating)
+                    .accessibilityIdentifier("Playlist.shuffle")
                 }
+                .controlSize(.large)
                 .frame(maxWidth: DetailActionMetrics.maximumRowWidth)
                 if !isVideo && !playlist.entries.isEmpty {
                     Text("Play mixed media individually. Ordered video playback supports movies and episodes.").foregroundStyle(.secondary)
@@ -298,45 +311,58 @@ struct VideoPlaylistDetailView: View {
         }
     }
 
-    /// Edit mode isolates left-handle drag/drop from List's cell-level interactions.
+    /// Native List movement lifts the whole row and animates insertion gaps.
     private func editingContents(_ playlist: VideoPlaylist, serverList: ServerMediaList) -> some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 16) {
-                playbackControls(playlist)
+        let entries = editingEntryIDs.map { ids in ids.compactMap { id in playlist.entries.first { $0.id == id } } } ?? playlist.entries
+        return List {
+            playbackControls(playlist)
+            Section {
                 HStack {
                     Spacer()
                     Button("Add Items", systemImage: "text.badge.plus") { adding = true }
                         .disabled(!serverList.canEdit || mutating)
                 }
-                PlaylistEditingGroup {
-                    VStack(spacing: 0) {
-                        ForEach(Array(playlist.entries.enumerated()), id: \.element.id) { index, entry in
-                            editingRow(entry, index: index, playlist: playlist)
-                                .padding(.vertical, 8)
-                                .contentShape(Rectangle())
-                                .playlistDropTarget(enabled: serverList.canEdit && !mutating) { payload in drop(payload, before: entry.id, playlist: playlist) }
-                            if index + 1 < playlist.entries.count {
-                                Divider()
-                            }
-                        }
-                        Color.clear.frame(height: 24)
-                            .playlistDropTarget(enabled: serverList.canEdit && !mutating) { payload in drop(payload, before: nil, playlist: playlist) }
-                            .accessibilityHidden(true)
+                .moveDisabled(true)
+                #if os(tvOS)
+                    ForEach(Array(entries.enumerated()), id: \.element.id) { index, entry in
+                        editingRow(entry, index: index, playlist: playlist)
                     }
-                }
-                if let message = lists.statusMessage, !message.isEmpty {
-                    Text(message).foregroundStyle(.secondary)
-                }
+                #else
+                    ForEach(Array(entries.enumerated()), id: \.element.id) { index, entry in
+                        editingRow(entry, index: index, playlist: playlist)
+                            .moveDisabled(!serverList.canEdit || mutating)
+                    }
+                    .onMove { offsets, destination in
+                        guard offsets.count == 1, let source = offsets.first, !mutating, serverList.canEdit else { return }
+                        var reordered = entries
+                        reordered.move(fromOffsets: offsets, toOffset: destination)
+                        guard reordered.map(\.id) != entries.map(\.id) else { return }
+                        editingEntryIDs = reordered.map(\.id)
+                        let moved = entries[source]
+                        let newIndex = reordered.firstIndex { $0.id == moved.id }!
+                        let before = reordered.indices.contains(newIndex + 1) ? reordered[newIndex + 1].id : nil
+                        mutate {
+                            _ = await lists.move(entryID: moved.id, in: id, before: before, session: session)
+                            editingEntryIDs = nil
+                        }
+                    }
+                #endif
             }
-            .padding()
+            if let message = lists.statusMessage, !message.isEmpty {
+                Text(message).foregroundStyle(.secondary)
+            }
         }
+        #if os(iOS) || os(visionOS)
+        .environment(\.editMode, .constant(.active))
+        #endif
     }
 
     private func editingRow(_ entry: VideoPlaylistEntry, index: Int, playlist: VideoPlaylist) -> some View {
         let title = ContentRatingGate.admitsStored(entry.reference.item) ? entry.reference.item.displayTitle : String(localized: "Restricted Content")
         return HStack {
-            PlaylistReorderHandle(payload: PlaylistItemDrag(scope: scope, playlistID: lists.resolvedID(id, scope: scope), entryID: entry.id), title: title, moveUp: { move(index, by: -1, in: playlist) }, moveDown: { move(index, by: 1, in: playlist) }, canMoveUp: index > 0, canMoveDown: index + 1 < playlist.entries.count)
-                .accessibilityIdentifier("Playlist.drag." + entry.id.uuidString)
+            #if os(tvOS)
+                PlaylistReorderHandle(title: title, moveUp: { move(index, by: -1, in: playlist) }, moveDown: { move(index, by: 1, in: playlist) }, canMoveUp: index > 0, canMoveDown: index + 1 < playlist.entries.count)
+            #endif
             Text("\(index + 1)").foregroundStyle(.secondary)
             VStack(alignment: .leading) {
                 Text(title)
@@ -358,13 +384,6 @@ struct VideoPlaylistDetailView: View {
         guard !mutating, serverList?.canEdit == true else { return }
         mutating = true
         Task { await action(); mutating = false }
-    }
-
-    private func drop(_ payload: PlaylistItemDrag, before: UUID?, playlist: VideoPlaylist) -> Bool {
-        guard editing, !mutating, serverList?.canEdit == true,
-              let move = payload.destination(in: playlist.entries.map(\.id), scope: scope, playlistID: lists.resolvedID(id, scope: scope), before: before) else { return false }
-        mutate { _ = await lists.move(entryID: move.entryID, in: id, before: move.before, session: session) }
-        return true
     }
 
     private func entryRow(_ entry: VideoPlaylistEntry, index: Int, playlist: VideoPlaylist, canEdit: Bool) -> some View {
@@ -397,7 +416,7 @@ struct VideoPlaylistDetailView: View {
 
     private func play(_ entry: VideoPlaylistEntry?, fromBeginning: Bool, shuffled: Bool = false) {
         guard let entry else { return }
-        player = ItemRef(item: entry.reference.item, serverID: scope.serverID, userID: scope.userID, playlistID: lists.resolvedID(id, scope: scope), playlistEntryID: entry.id, playlistFromBeginning: fromBeginning, playlistShuffle: shuffled)
+        player = ItemRef(item: entry.reference.item, serverID: scope.serverID, userID: scope.userID, playlistID: lists.resolvedID(id, scope: scope), playlistEntryID: entry.id, playlistFromBeginning: fromBeginning, playlistShuffled: shuffled)
     }
 
     private func move(_ index: Int, by offset: Int, in playlist: VideoPlaylist) {

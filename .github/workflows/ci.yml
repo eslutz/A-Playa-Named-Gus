@@ -4,6 +4,10 @@ on:
   pull_request:
     branches:
       - main
+    paths:
+      - 'Sources/**'
+      - 'A Playa Named Gus.xcodeproj/project.pbxproj'
+      - 'project.yml'
 
 permissions:
   contents: read

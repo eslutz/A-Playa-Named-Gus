@@ -46,9 +46,7 @@ before tester installation access is claimed.
 
 ## Designs
 
-Editable OpenPencil documents, screen coverage and the shared browser preview are in
-[Design/](Design/README.md). Current-app references and the expanded Seerr proposal
-are labeled separately; design coverage does not establish runtime acceptance.
+The [iPhone Light](Design/Device-Completion-iPhone-Light.sketch) and [Dark](Design/Device-Completion-iPhone-Dark.sketch) Sketch snapshots are awaiting acceptance. Historical design material is retained in the local, Git-ignored `Design/Archive/`. Design coverage does not establish runtime acceptance.
 
 ## Contributing
 
@@ -60,3 +58,7 @@ issues.
 
 See the [Contributing wiki page](https://github.com/eslutz/A-Playa-Named-Gus/wiki/Contributing)
 for contribution details.
+
+## Discover with Seerr
+
+Connect a Seerr 3 account to browse and request movies and series, track requests, review permitted manager actions, and manage supported issues and preferences. The connection stays scoped to this Gus account and device. See the [Discover guide](https://github.com/eslutz/A-Playa-Named-Gus/wiki/Discover) and [verified API contracts](Documentation/Seerr-api-contract.md).

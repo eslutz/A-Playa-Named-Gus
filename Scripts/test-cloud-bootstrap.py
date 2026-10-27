@@ -44,6 +44,7 @@ class BootstrapTests(unittest.TestCase):
         self.assertEqual(self.run_script().returncode, 0)
         config = (self.root / "Config/Local.xcconfig").read_text()
         self.assertIn("CODE_SIGNING_ALLOWED = YES", config)
+        self.assertIn("GUS_WATCH_DEBUG_DYLIB = NO", config)
         self.assertIn("DEVELOPMENT_TEAM = QS3GC3CT43", config)
         self.assertEqual((self.project / "project.pbxproj").read_text(), "fixture project")
         self.assertEqual(self.lock.read_text(), "fixture pins")

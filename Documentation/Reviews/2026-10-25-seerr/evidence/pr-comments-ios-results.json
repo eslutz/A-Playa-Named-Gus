@@ -1,0 +1,36 @@
+[
+  {
+    "name": "unit-ios",
+    "command": [
+      "xcodebuild",
+      "-project",
+      "A Playa Named Gus.xcodeproj",
+      "-scheme",
+      "Gus iOS Unit Tests",
+      "-destination",
+      "platform=iOS Simulator,id=8D6A5B35-B67B-4725-B428-DC0EAA80797D",
+      "-derivedDataPath",
+      "/tmp/gus-seerr-candidate-derived",
+      "-onlyUsePackageVersionsFromResolvedFile",
+      "-parallel-testing-enabled",
+      "NO",
+      "-resultBundlePath",
+      "/tmp/gus-seerr-validation/pr-comments/unit-ios.xcresult",
+      "test",
+      "EXCLUDED_ARCHS=x86_64 i386",
+      "GUS_WATCH_DEBUG_DYLIB=NO"
+    ],
+    "exitCode": 0,
+    "seconds": 39.22,
+    "log": "unit-ios.log",
+    "tests": {
+      "totalTestCount": 530,
+      "passedTests": 530,
+      "failedTests": 0,
+      "skippedTests": 0,
+      "expectedFailures": 0,
+      "result": "Passed"
+    },
+    "diagnostics": []
+  }
+]

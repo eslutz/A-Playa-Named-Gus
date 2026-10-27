@@ -591,6 +591,7 @@ struct SeerrPreferencesView: View {
                     }
                     Button("Save Catalog Preferences") { operation = Task { await save(email: false) } }.disabled(loading || requiresRefresh || regionalChanges.isEmpty)
                 }
+                .disabled(loading || requiresRefresh)
                 if emailEnabled {
                     Section("Email Notifications") {
                         eventToggle("Request Approved", bit: 4)
@@ -666,6 +667,10 @@ struct SeerrPreferencesView: View {
 
     private func save(email: Bool) async {
         guard !loading, !requiresRefresh else { return }
+        let submittedPreferences = SeerrRegionalPreferences(discoverRegion: region, streamingRegion: streamingRegion, originalLanguage: language)
+        let submittedRegionalChanges = regionalChanges
+        let submittedEmailEvents = emailEvents
+        let submittedEmailChanges = emailEvents ^ originalEmailEvents
         let expected = store.revision
         loading = true
         defer { loading = false }
@@ -674,15 +679,15 @@ struct SeerrPreferencesView: View {
             guard expected == store.revision, !Task.isCancelled else { return }
             let client = try store.requireClient()
             if email {
-                try await client.updateEmailNotificationPreferences(events: emailEvents, changedMask: emailEvents ^ originalEmailEvents)
+                try await client.updateEmailNotificationPreferences(events: submittedEmailEvents, changedMask: submittedEmailChanges)
             } else {
-                try await client.updateRegionalPreferences(SeerrRegionalPreferences(discoverRegion: region, streamingRegion: streamingRegion, originalLanguage: language), changedFields: regionalChanges)
+                try await client.updateRegionalPreferences(submittedPreferences, changedFields: submittedRegionalChanges)
             }
             guard expected == store.revision, !Task.isCancelled else { return }
             if email {
-                originalEmailEvents = emailEvents
+                originalEmailEvents = submittedEmailEvents
             } else {
-                originalPreferences = SeerrRegionalPreferences(discoverRegion: region, streamingRegion: streamingRegion, originalLanguage: language)
+                originalPreferences = submittedPreferences
             }
             message = String(localized: "Preferences saved.")
         } catch {

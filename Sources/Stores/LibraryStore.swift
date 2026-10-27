@@ -245,8 +245,8 @@ final class LibraryStore {
     }
 
     func loadMoreIfNeeded(currentItem item: MediaItem) async {
-        guard canLoadMore, !isLoadingNextPage, state == .loaded else { return }
-        guard let index = items.firstIndex(where: { $0.id == item.id }),
+        guard canLoadMore, !isLoadingNextPage, state == .loaded,
+              let index = items.firstIndex(where: { $0.id == item.id }),
               paging.shouldLoadMore(currentIndex: index, loadedCount: items.count)
         else { return }
 

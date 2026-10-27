@@ -69,6 +69,11 @@ CODE_SIGN_ENTITLEMENTS[sdk=xrsimulator*] = Config/Gus-SharePlay.entitlements
 CODE_SIGN_ENTITLEMENTS[sdk=appletvos*] = Config/Gus-tvOS.entitlements
 CODE_SIGN_ENTITLEMENTS[sdk=appletvsimulator*] = Config/Gus-tvOS.entitlements
 
+// Watch previews use the native debug dylib locally. Automated builds can use
+// the ordinary executable layout to avoid Xcode overwriting App Intents linker
+// dependency metadata while creating the separate preview dylib.
+GUS_WATCH_DEBUG_DYLIB = YES
+
 // MARK: - Local overrides
 //
 // Local and Xcode Cloud generated overrides can opt into
