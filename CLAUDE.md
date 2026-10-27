@@ -45,8 +45,17 @@ status checked against current source. Design coverage does not prove runtime be
 
 Changes to protected `main` require a pull request and all required GitHub CI checks;
 do not push directly or bypass protection. GitHub runs CI on PRs targeting `main`.
-Xcode Cloud tests merged `main` before internal TestFlight distribution; see
+Xcode Cloud uses manual-only main workflows: cached single-iPhone validation and a separate
+full-matrix internal TestFlight release. Release-candidate tests remain required; see
 `Documentation/AppStore/pipeline-policy.md` for the saved release gates.
+
+## OS compatibility policy
+
+The minimum deployment target is **26.0 on every platform**, including Watch and
+Top Shelf. Build with Xcode 27.1 or newer and prefer the latest OS 27.x APIs,
+guarding newer APIs with runtime availability checks and preserving useful OS 26
+fallbacks. Lowering deployment targets must not remove newer OS functionality.
+Build validation and actual OS 26 runtime/device acceptance are separate gates.
 
 ## Warning-free build policy
 
