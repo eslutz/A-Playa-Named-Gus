@@ -8,7 +8,9 @@ struct UserProfileView: View {
     @State private var audioLanguage = ""
     @State private var subtitleLanguage = ""
     @State private var ready = false
-    @State private var saved = false
+    #if !os(iOS)
+        @State private var saved = false
+    #endif
 
     var body: some View {
         Form {
@@ -18,8 +20,8 @@ struct UserProfileView: View {
                 Text("Changing your username also changes the name you use to sign in to Jellyfin.").font(.footnote)
             }
             Section("Jellyfin Playback Preferences") {
-                languagePicker("Preferred audio language", selection: $audioLanguage)
-                languagePicker("Preferred subtitle language", selection: $subtitleLanguage)
+                languagePicker("Audio Language", selection: $audioLanguage)
+                languagePicker("Subtitle Language", selection: $subtitleLanguage)
             }
             if let message = session.profile.errorMessage {
                 Section {
@@ -27,19 +29,42 @@ struct UserProfileView: View {
                     Button("Reload Profile") { Task { await load() } }
                 }
             }
-            if saved {
-                Text("Profile saved to Jellyfin.")
-            }
-            Button("Save Changes") {
-                Task {
-                    saved = await session.profile.save(name: name, audioLanguage: audioLanguage, subtitleLanguage: subtitleLanguage)
-                    app.synchronizeProfile(from: session)
+            #if !os(iOS)
+                if saved {
+                    Text("Profile saved to Jellyfin.")
                 }
-            }.disabled(!ready || name.trimmedNilIfEmpty == nil || (session.profile.isSaving || session.profile.isLoading))
+                Button("Save Changes") {
+                    Task {
+                        saved = await session.profile.save(name: name, audioLanguage: audioLanguage, subtitleLanguage: subtitleLanguage)
+                        app.synchronizeProfile(from: session)
+                    }
+                }
+                .disabled(!ready || name.trimmedNilIfEmpty == nil || session.profile.isSaving || session.profile.isLoading)
+            #endif
         }
         .disabled(session.profile.isSaving || session.profile.isLoading)
         .navigationTitle("Profile")
-        .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Done") { dismiss() } } }
+        .toolbar {
+            #if os(iOS)
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { dismiss() }.disabled(session.profile.isSaving)
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Save") {
+                        Task {
+                            if await session.profile.save(name: name, audioLanguage: audioLanguage, subtitleLanguage: subtitleLanguage) {
+                                app.synchronizeProfile(from: session)
+                                dismiss()
+                            }
+                        }
+                    }
+                    .disabled(!ready || name.trimmedNilIfEmpty == nil || session.profile.isSaving || session.profile.isLoading)
+                }
+            #else
+                ToolbarItem(placement: .cancellationAction) { Button("Done") { dismiss() } }
+            #endif
+        }
+        .interactiveDismissDisabled(session.profile.isSaving)
         .task { await load() }
         .onChange(of: session.profile.profile) { _, _ in
             if !ready {

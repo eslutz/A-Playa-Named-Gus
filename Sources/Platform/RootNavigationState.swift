@@ -5,6 +5,7 @@ import SwiftUI
 @MainActor @Observable
 final class RootNavigationState {
     static let moreID = "gus.more"
+    static let searchID = "gus.search"
     var selectedSectionID = NavigationSectionPreference.homeID
     var paths: [String: NavigationPath] = [:] {
         didSet {
@@ -107,6 +108,16 @@ final class RootNavigationState {
 
     static func directSectionIDs(_ ids: [String]) -> [String] {
         ids.count > 5 ? Array(ids.prefix(4)) : ids
+    }
+
+    /// Leave room for the native More and search tabs without losing account customization.
+    static func iPhoneDirectSectionIDs(_ ids: [String], usesSavedOrder: Bool) -> [String] {
+        let preferred = [NavigationSectionPreference.homeID, NavigationCategory.movies.id, NavigationCategory.tvshows.id]
+        if usesSavedOrder {
+            return Array(ids.prefix(3))
+        }
+        let initial = preferred.filter { ids.contains($0) }
+        return Array((initial + ids.filter { !initial.contains($0) }).prefix(3))
     }
 
     func adopt(_ route: AppRoute) {

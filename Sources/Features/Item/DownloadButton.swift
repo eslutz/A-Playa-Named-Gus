@@ -18,11 +18,23 @@ struct DownloadButton: View {
                     .accessibilityLabel("Downloaded")
                     .accessibilityValue(record.downloadedAt.formatted(date: .abbreviated, time: .shortened))
             case .queued:
-                statusLabel("Queued", systemImage: "clock")
+                statusLabel("Queued", systemImage: "clock", indeterminate: true)
                     .foregroundStyle(.secondary)
+                    .overlay {
+                        if iconOnly {
+                            DownloadProgressRing(activity: downloads.activities[record.id] ?? record.activity)
+                        }
+                    }
             case .downloading:
-                statusLabel(activityLabel(for: record), systemImage: "arrow.down.circle")
+                let activity = downloads.activities[record.id] ?? record.activity
+                statusLabel(activityLabel(for: record), systemImage: "arrow.down.circle", indeterminate: activity?.phase != .downloading || activity?.progress == nil)
                     .foregroundStyle(.secondary)
+                    .overlay {
+                        if iconOnly {
+                            DownloadProgressRing(activity: downloads.activities[record.id] ?? record.activity)
+                        }
+                    }
+                    .accessibilityValue(progressValue(for: record))
             case .paused:
                 Button {
                     Task { await downloads.resume(itemID: item.id ?? "", session: session) }
@@ -42,6 +54,11 @@ struct DownloadButton: View {
         {
             downloadAction(itemID: itemID)
         }
+    }
+
+    private func progressValue(for record: OfflineDownloadRecord) -> String {
+        guard let progress = (downloads.activities[record.id] ?? record.activity)?.progress else { return String(localized: "In progress") }
+        return progress.formatted(.percent.precision(.fractionLength(0)))
     }
 
     private func activityLabel(for record: OfflineDownloadRecord) -> LocalizedStringKey {
@@ -73,13 +90,21 @@ struct DownloadButton: View {
     }
 
     @ViewBuilder
-    private func statusLabel(_ title: LocalizedStringKey, systemImage: String) -> some View {
+    private func statusLabel(_ title: LocalizedStringKey, systemImage: String, indeterminate: Bool = false) -> some View {
         if iconOnly {
-            Button {} label: { downloadLabel(title, systemImage: systemImage) }
-                .gusGlassButtonStyle()
-                .controlSize(.regular)
-                .frame(minWidth: 44, minHeight: 44)
-                .disabled(true)
+            Button {} label: {
+                if indeterminate {
+                    ProgressView().controlSize(.regular)
+                        .frame(maxWidth: .infinity, minHeight: DetailActionMetrics.minimumLabelHeight)
+                } else {
+                    downloadLabel(title, systemImage: systemImage)
+                }
+            }
+            .accessibilityLabel(Text(title))
+            .gusGlassButtonStyle()
+            .controlSize(.regular)
+            .frame(minWidth: 44, minHeight: 44)
+            .disabled(true)
         } else {
             downloadLabel(title, systemImage: systemImage)
         }
@@ -96,5 +121,27 @@ struct DownloadButton: View {
         } else {
             Label(title, systemImage: systemImage)
         }
+    }
+}
+
+/// A system progress indicator for unknown work, and a byte-backed ring for transfer.
+private struct DownloadProgressRing: View {
+    let activity: DownloadActivity?
+    var body: some View {
+        Group {
+            if let activity, activity.phase == .downloading, let progress = activity.progress {
+                Circle().stroke(.quaternary, lineWidth: 3)
+                    .overlay {
+                        Circle().trim(from: 0, to: progress)
+                            .stroke(.tint, style: StrokeStyle(lineWidth: 3, lineCap: .round))
+                            .rotationEffect(.degrees(-90))
+                    }
+            } else {
+                Circle().stroke(.quaternary, lineWidth: 3)
+            }
+        }
+        .padding(2)
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
     }
 }

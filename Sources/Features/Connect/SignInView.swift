@@ -16,8 +16,32 @@ struct SignInView: View {
     @State private var quickConnectStore: QuickConnectStore?
     @State private var signInStore: SignInStore?
     @State private var signInTask: Task<Void, Never>?
+    #if os(iOS)
+        @Environment(\.horizontalSizeClass) private var widthClass
+        @State private var showingSignInOptions = false
+    #endif
 
     var body: some View {
+        Group {
+            #if os(iOS)
+                if widthClass == .compact {
+                    onboarding
+                } else {
+                    signInForm
+                }
+            #else
+                signInForm
+            #endif
+        }
+        .task { await loadPublicSignInData() }
+        .task { await refreshQuickConnectAvailability() }
+        .onDisappear {
+            signInTask?.cancel()
+            quickConnectStore?.cancel()
+        }
+    }
+
+    private var signInForm: some View {
         Form {
             publicProfilesSection
             credentialsSection
@@ -30,15 +54,115 @@ struct SignInView: View {
         .frame(maxWidth: 760)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .navigationTitle(server.name)
-        .task {
-            await loadPublicSignInData()
-            await refreshQuickConnectAvailability()
-        }
-        .onDisappear {
-            signInTask?.cancel()
-            quickConnectStore?.cancel()
-        }
     }
+
+    #if os(iOS)
+        private var onboarding: some View {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 24) {
+                    GusOnboardingHeader()
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("Sign in.").font(.largeTitle.bold())
+                        Text(server.name).font(.title3).foregroundStyle(.secondary)
+                        Text(server.url.host() ?? server.url.absoluteString)
+                            .font(.caption).foregroundStyle(.secondary)
+                    }
+                    GusOnboardingField(title: "Username") {
+                        TextField("Username", text: $username)
+                            .autocorrectionDisabled()
+                            .textInputAutocapitalization(.never)
+                            .textContentType(.username)
+                    }
+                    GusOnboardingField(title: "Password") {
+                        SecureField("Password", text: $password)
+                            .textContentType(.password)
+                            .onSubmit(signIn)
+                    }
+                    signInErrorSection
+                    if let disclaimer = signInStore?.loginDisclaimer {
+                        Text(disclaimer).font(.footnote).foregroundStyle(.secondary)
+                    }
+                    Text("Use your Jellyfin account for this server.")
+                        .font(.caption).foregroundStyle(.secondary)
+                        .padding(.vertical, 12)
+                    Button(action: signIn) {
+                        HStack {
+                            if isSigningIn {
+                                ProgressView().tint(.white)
+                            }
+                            Text("Sign In").frame(maxWidth: .infinity)
+                        }
+                        .frame(minHeight: 26)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .buttonBorderShape(.capsule)
+                    .controlSize(.large)
+                    .disabled(username.isEmpty || isSigningIn)
+                    if isSigningIn {
+                        Button("Cancel", role: .cancel) { signInTask?.cancel() }
+                    }
+                    Button("More sign-in options") { showingSignInOptions = true }
+                        .disabled(quickConnectStore == nil || signInStore == nil)
+                        .frame(maxWidth: .infinity, minHeight: 50)
+                        .background(Color(uiColor: .secondarySystemBackground), in: Capsule())
+                }
+                .padding(.horizontal, 28)
+                .padding(.vertical, 24)
+                .frame(maxWidth: 520)
+                .frame(maxWidth: .infinity)
+            }
+            .navigationTitle("")
+            .navigationBarTitleDisplayMode(.inline)
+            .scrollDismissesKeyboard(.interactively)
+            .gusIPhoneCanvas()
+            .sheet(isPresented: $showingSignInOptions) {
+                NavigationStack {
+                    signInOptionsContent
+                        .navigationTitle("Sign-in Options")
+                        .toolbar {
+                            ToolbarItem(placement: .cancellationAction) {
+                                GusCloseButton { showingSignInOptions = false }
+                            }
+                        }
+                }
+            }
+        }
+
+        @ViewBuilder private var signInOptionsContent: some View {
+            if let quickConnectStore, case let .polling(code) = quickConnectStore.state {
+                VStack(spacing: 28) {
+                    Image(systemName: "bolt.horizontal.circle").font(.largeTitle).foregroundStyle(.blue)
+                    Text("Quick Connect").font(.title.bold())
+                    Text(code).font(.largeTitle.monospaced().bold())
+                        .textSelection(.enabled)
+                        .accessibilityLabel("Authorization code")
+                    Text("Approve this code in Jellyfin on another device.")
+                        .foregroundStyle(.secondary).multilineTextAlignment(.center)
+                    Button("Cancel", role: .cancel) { quickConnectStore.cancel() }
+                        .buttonStyle(.bordered).controlSize(.large)
+                }
+                .padding(28)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else if signInStore?.state == .loaded,
+                      signInStore?.publicUsers.isEmpty == true,
+                      signInStore?.loginDisclaimer == nil,
+                      quickConnectStore?.availability == .unavailable
+            {
+                ContentUnavailableView("No Additional Sign-in Options", systemImage: "person.crop.circle", description: Text("Use your Jellyfin username and password to sign in."))
+            } else {
+                Form {
+                    publicProfilesSection
+                    quickConnectSection
+                    if let signInStore, case let .failed(message) = signInStore.state {
+                        Section {
+                            Label(message, systemImage: "exclamationmark.triangle")
+                            Button("Try Again") { Task { await loadPublicSignInData() } }
+                        }
+                    }
+                }
+            }
+        }
+    #endif
 
     @ViewBuilder
     private var publicProfilesSection: some View {
@@ -50,6 +174,9 @@ struct SignInView: View {
                         Button {
                             username = profile.user.name ?? profile.displayName
                             password = ""
+                            #if os(iOS)
+                                showingSignInOptions = false
+                            #endif
                         } label: {
                             PublicUserProfileRow(
                                 profile: profile,

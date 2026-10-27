@@ -20,43 +20,40 @@ private struct SeerrRequestForm: View {
         NavigationStack {
             Group {
                 if store.isConnected, store.admits(draft.title) {
-                    Form {
-                        Section {
-                            Text(draft.title.displayTitle).font(.headline)
-                            if let year = draft.title.releaseYear {
-                                Text(year).foregroundStyle(.secondary)
-                            }
-                        } header: { Text(draft.type == .tv ? "Request Seasons" : "Request Movie") }
-                        if draft.phase == .loading {
-                            Section { ProgressView("Checking Request Eligibility…") }
-                        } else if draft.phase == .confirmed, let request = draft.confirmed {
+                    if draft.phase == .confirmed, let request = draft.confirmed {
+                        SeerrRequestConfirmation(title: draft.title, status: request.status.seerrRequestDescription)
+                    } else {
+                        Form {
                             Section {
-                                Label("Request Confirmed", systemImage: "checkmark.circle")
-                                Text(request.status.seerrRequestDescription)
-                                Text("Approval and availability are separate. Track the title in My Requests.").foregroundStyle(.secondary)
-                                Button("Done") { store.finishRequestDraft(title: draft.title); dismiss() }
-                            }
-                        } else if draft.phase == .uncertain {
-                            Section {
-                                Label("Check Request Before Retrying", systemImage: "questionmark.circle")
-                                Text("Seerr may have received this request. Check its status before submitting another request.")
-                                Button { Task { await draft.check(store: store) } } label: {
-                                    HStack {
-                                        Text("Check Request"); if draft.isChecking {
-                                            ProgressView()
-                                        }
-                                    }
-                                }.disabled(draft.isChecking)
-                                if let url = store.serverURL {
-                                    Link("Check in Seerr", destination: url.appending(path: "requests"))
+                                Text(draft.title.displayTitle).font(.headline)
+                                if let year = draft.title.releaseYear {
+                                    Text(year).foregroundStyle(.secondary)
                                 }
-                                Button("Review Another Request") { confirmingRetry = true }.disabled(draft.isChecking)
+                            } header: { Text(draft.type == .tv ? "Request Seasons" : "Request Movie") }
+                            if draft.phase == .loading {
+                                Section { ProgressView("Checking Request Eligibility…") }
+                            } else if draft.phase == .uncertain {
+                                Section {
+                                    Label("Check Request Before Retrying", systemImage: "questionmark.circle")
+                                    Text("Seerr may have received this request. Check its status before submitting another request.")
+                                    Button { Task { await draft.check(store: store) } } label: {
+                                        HStack {
+                                            Text("Check Request"); if draft.isChecking {
+                                                ProgressView()
+                                            }
+                                        }
+                                    }.disabled(draft.isChecking)
+                                    if let url = store.serverURL {
+                                        Link("Check in Seerr", destination: url.appending(path: "requests"))
+                                    }
+                                    Button("Review Another Request") { confirmingRetry = true }.disabled(draft.isChecking)
+                                }
+                            } else {
+                                review
                             }
-                        } else {
-                            review
-                        }
-                        if let message = draft.message {
-                            Section { Text(message).foregroundStyle(.secondary) }
+                            if let message = draft.message {
+                                Section { Text(message).foregroundStyle(.secondary) }
+                            }
                         }
                     }
                 } else {
@@ -64,8 +61,13 @@ private struct SeerrRequestForm: View {
                 }
             }
             .seerrFormStyle()
-            .navigationTitle("Review Request")
-            .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Close") { dismiss() }.disabled(draft.phase == .submitting) } }
+            .navigationTitle(draft.phase == .confirmed ? "Request" : "Review Request")
+            .toolbar { ToolbarItem(placement: .cancellationAction) { GusCloseButton {
+                if draft.phase == .confirmed {
+                    store.finishRequestDraft(title: draft.title)
+                }
+                dismiss()
+            }.disabled(draft.phase == .submitting) } }
             .interactiveDismissDisabled(draft.phase == .submitting)
             .confirmationDialog("Retry request for \(draft.title.displayTitle)?", isPresented: $confirmingRetry, titleVisibility: .visible) {
                 Button("I Verified the Request Was Not Received") { Task { await draft.resetAfterVerification(store: store) } }
@@ -187,5 +189,36 @@ private struct SeerrRequestForm: View {
                 Button("Refresh Eligibility") { Task { await draft.load(store: store) } }.disabled(draft.phase == .submitting)
             }
         }
+    }
+}
+
+/// Submission acknowledgment is distinct from approval and availability.
+private struct SeerrRequestConfirmation: View {
+    let title: SeerrTitle
+    let status: String
+    @State private var showingHistory = false
+
+    var body: some View {
+        SeerrSetupLayout {
+            HStack(alignment: .top, spacing: 16) {
+                SeerrArtworkView(path: title.posterPath).frame(width: 64, height: 96)
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(title.displayTitle).font(.title3.bold())
+                    if let year = title.releaseYear {
+                        Text(year).foregroundStyle(.secondary)
+                    }
+                }
+            }
+            VStack(alignment: .leading, spacing: 12) {
+                Label("Request submitted", systemImage: "checkmark.circle").font(.title2.bold())
+                Text(status).font(.headline)
+                Text("Follow approval and availability in My Requests.").foregroundStyle(.secondary)
+            }
+            Button { showingHistory = true } label: {
+                Text("View My Requests").frame(maxWidth: .infinity, minHeight: 44).gusProminentActionForeground()
+            }
+            .gusProminentGlassButtonStyle().gusProminentActionTint().controlSize(.large)
+        }
+        .navigationDestination(isPresented: $showingHistory) { SeerrRequestsView() }
     }
 }

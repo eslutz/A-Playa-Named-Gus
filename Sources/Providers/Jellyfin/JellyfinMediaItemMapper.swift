@@ -102,6 +102,8 @@ enum JellyfinMediaItemMapper {
             return .audioBook
         case .photo:
             return .photo
+        case .photoAlbum:
+            return .photoAlbum
         case .tvChannel, .liveTvChannel:
             return .liveChannel
         case .tvProgram, .liveTvProgram:

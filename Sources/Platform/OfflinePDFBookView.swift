@@ -48,7 +48,7 @@ struct OfflineBookShareView: View {
         }
         .navigationTitle(item.displayTitle)
         .toolbar {
-            ToolbarItem(placement: .cancellationAction) { Button("Done") { dismiss() } }
+            ToolbarItem(placement: .cancellationAction) { GusCloseButton { dismiss() } }
         }
     }
 }
@@ -76,7 +76,7 @@ struct OfflinePDFBookView: View {
                     )
                     .navigationTitle(item.displayTitle)
                     .toolbar {
-                        ToolbarItem(placement: .cancellationAction) { Button("Done") { dismiss() } }
+                        ToolbarItem(placement: .cancellationAction) { GusCloseButton { dismiss() } }
                         ToolbarItem { ShareLink(item: fileURL) { Label("Share", systemImage: "square.and.arrow.up") } }
                     }
                 } else {
@@ -85,11 +85,11 @@ struct OfflinePDFBookView: View {
                         systemImage: "book.closed",
                         description: Text("The downloaded PDF could not be opened.")
                     )
-                    .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Done") { dismiss() } } }
+                    .toolbar { ToolbarItem(placement: .cancellationAction) { GusCloseButton { dismiss() } } }
                 }
             #else
                 ContentUnavailableView("Reading Isn't Available Here", systemImage: "book")
-                    .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Done") { dismiss() } } }
+                    .toolbar { ToolbarItem(placement: .cancellationAction) { GusCloseButton { dismiss() } } }
             #endif
         }
     }

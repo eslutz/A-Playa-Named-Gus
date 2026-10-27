@@ -7,7 +7,18 @@ struct AudioPlayerView: View {
     @Environment(SessionStore.self) private var session
     let store: AudioPlayerStore
 
-    @ScaledMetric(relativeTo: .title) private var playPauseIconSize: CGFloat = 56
+    @State private var showingQueue = false
+    #if os(iOS)
+        @Environment(\.horizontalSizeClass) private var widthClass
+    #endif
+
+    private var usesLeadingTitle: Bool {
+        #if os(iOS)
+            widthClass == .compact
+        #else
+            false
+        #endif
+    }
 
     @State private var scrubTime: Double = 0
     @State private var isScrubbing = false
@@ -20,6 +31,28 @@ struct AudioPlayerView: View {
         LoadingStateView(state: store.state, retryAction: { audio.retry() }) {
             AdaptiveAudioLayout { artwork } controls: { controls }
         }
+        .sheet(isPresented: $showingQueue) {
+            NavigationStack {
+                List(store.queue.order, id: \.self) { index in
+                    let queuedTrack = store.queue.tracks[index]
+                    Button {
+                        if let id = queuedTrack.id {
+                            Task { await store.select(trackID: id) }
+                        }
+                    } label: {
+                        HStack {
+                            Text(queuedTrack.displayTitle)
+                            Spacer()
+                            if store.queue.order.indices.contains(store.queue.position), index == store.queue.order[store.queue.position] {
+                                Image(systemName: "speaker.wave.2.fill").accessibilityLabel("Now Playing")
+                            }
+                        }
+                    }
+                }
+                .navigationTitle("Queue")
+                .toolbar { ToolbarItem(placement: .cancellationAction) { GusCloseButton { showingQueue = false }.labelStyle(.iconOnly) } }
+            }
+        }
         .onChange(of: store.currentTime, initial: true) { _, time in
             guard !isScrubbing else { return }
             scrubTime = time
@@ -27,7 +60,17 @@ struct AudioPlayerView: View {
     }
 
     private var controls: some View {
-        VStack(spacing: 20) { titleBlock; progressBlock; transportControls; secondaryControls }
+        VStack(spacing: usesLeadingTitle ? 24 : 20) {
+            titleBlock
+            progressBlock
+            transportControls
+            #if os(iOS)
+                GusSystemVolumeControl().frame(height: 32).gusIPhoneOnly()
+            #endif
+            if !usesLeadingTitle || track?.type == .audioBook {
+                secondaryControls
+            }
+        }
     }
 
     private var artwork: some View {
@@ -42,11 +85,11 @@ struct AudioPlayerView: View {
     }
 
     private var titleBlock: some View {
-        VStack(spacing: 4) {
+        VStack(alignment: usesLeadingTitle ? .leading : .center, spacing: 4) {
             Text(track?.displayTitle ?? "")
                 .font(.title2.bold())
                 .lineLimit(2)
-                .multilineTextAlignment(.center)
+                .multilineTextAlignment(usesLeadingTitle ? .leading : .center)
             if let artist = track?.albumArtist ?? track?.artists.first {
                 Text(artist)
                     .font(.headline)
@@ -58,6 +101,7 @@ struct AudioPlayerView: View {
                     .foregroundStyle(.secondary)
             }
         }
+        .frame(maxWidth: .infinity, alignment: usesLeadingTitle ? .leading : .center)
         .accessibilityElement(children: .combine)
     }
 
@@ -89,14 +133,31 @@ struct AudioPlayerView: View {
 
     private var transportControls: some View {
         ViewThatFits(in: .horizontal) {
-            HStack(spacing: 12) { shuffleButton; previousButton; playPauseButton; nextButton; repeatButton }
+            HStack(spacing: usesLeadingTitle ? 4 : 12) {
+                if usesLeadingTitle {
+                    queueButton
+                }
+                shuffleButton; previousButton; playPauseButton; nextButton; repeatButton
+                if usesLeadingTitle {
+                    AirPlayRoutePicker().frame(width: 44, height: 44)
+                }
+            }
             VStack(spacing: 12) {
                 HStack(spacing: 12) { previousButton; playPauseButton; nextButton }
-                HStack(spacing: 24) { shuffleButton; repeatButton }
+                HStack(spacing: 12) {
+                    if usesLeadingTitle {
+                        queueButton
+                    }
+                    shuffleButton; repeatButton
+                    if usesLeadingTitle {
+                        AirPlayRoutePicker().frame(width: 44, height: 44)
+                    }
+                }
             }
         }
         .font(.title2)
         .buttonStyle(AudioTransportStyle())
+        .gusPhoneAudioTransportColor()
     }
 
     private var shuffleButton: some View {
@@ -126,8 +187,7 @@ struct AudioPlayerView: View {
         Button {
             store.playPause()
         } label: {
-            Image(systemName: store.isPlaying ? "pause.circle.fill" : "play.circle.fill")
-                .font(.system(size: playPauseIconSize))
+            AudioTransportGlyph(isPlaying: store.isPlaying)
         }
         .accessibilityLabel(
             store.isPlaying
@@ -161,8 +221,16 @@ struct AudioPlayerView: View {
                 speedMenu
                 chaptersMenu
             }
-            AirPlayRoutePicker()
+            if !usesLeadingTitle {
+                AirPlayRoutePicker()
+            }
         }
+    }
+
+    private var queueButton: some View {
+        Button("Queue", systemImage: "list.bullet") { showingQueue = true }
+            .labelStyle(.iconOnly)
+            .frame(minWidth: 44, minHeight: 44)
     }
 
     private var speedMenu: some View {

@@ -22,7 +22,7 @@ struct DownloadedBookPlayerView: View {
         } else {
             NavigationStack {
                 ContentUnavailableView("Download Unavailable", systemImage: "book.closed", description: Text("The downloaded file is missing. Manage Downloads to download it again."))
-                    .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Done") { dismiss() } } }
+                    .toolbar { ToolbarItem(placement: .cancellationAction) { GusCloseButton { dismiss() } } }
             }
         }
     }

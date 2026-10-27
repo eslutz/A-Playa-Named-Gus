@@ -6,6 +6,7 @@ struct HomeLatestSection: Identifiable, Sendable {
     let id: String
     let title: String
     let items: [MediaItem]
+    let kind: LatestMediaKind
 }
 
 enum LatestMediaDisplayMapper {
@@ -271,49 +272,41 @@ final class HomeStore {
         #endif
     }
 
-    /// Fetches "Recently Added" rails for the first few libraries in parallel,
-    /// preserving the library order in the returned sections.
-    private func loadLatestSections(for libraries: [MediaItem]) async throws -> [HomeLatestSection] {
-        let candidates = Array(libraries.prefix(6))
+    /// Each feed is globally sorted by the signed-in user's provider.
+    private func loadLatestSections(for _: [MediaItem]) async throws -> [HomeLatestSection] {
         let provider = session.mediaProvider
-
-        let cachedByID = Dictionary(latestSections.map { ($0.id, $0) }, uniquingKeysWith: { _, new in new })
-        let sectionsByIndex = await withTaskGroup(
-            of: (Int, HomeLatestSection?, GusError?).self
-        ) { group in
-            for (index, library) in candidates.enumerated() {
-                guard let parentID = library.id else { continue }
+        let cached = Dictionary(latestSections.map { ($0.kind, $0) }, uniquingKeysWith: { _, new in new })
+        var result: [LatestMediaKind: HomeLatestSection] = [:]
+        await withTaskGroup(of: (LatestMediaKind, [MediaItem]?, GusError?).self) { group in
+            for kind in LatestMediaKind.allCases {
                 group.addTask {
                     do {
-                        let latestItems = try await provider.latestMedia(in: library, limit: 12)
-                        let items = ContentRatingGate.filter(
-                            LatestMediaDisplayMapper.displayItems(from: latestItems, libraryCollectionType: library.collectionType)
-                        )
-                        guard !items.isEmpty else { return (index, nil, nil) }
-                        return (index, HomeLatestSection(
-                            id: parentID,
-                            title: String(
-                                localized: "Recently Added \(library.name ?? "Library")",
-                                comment: "Home latest media section title, e.g. Recently Added Movies"
-                            ),
-                            items: items
-                        ), nil)
-                    } catch { return (index, cachedByID[parentID], GusError(from: error)) }
+                        var items: [MediaItem] = []
+                        var offset = 0
+                        while items.count < 12 {
+                            try Task.checkCancellation()
+                            let page = try await provider.latestMedia(kind: kind, startIndex: offset, limit: 60)
+                            items = kind.displayItems(items + ContentRatingGate.filter(page.items))
+                            offset += page.items.count
+                            if page.items.isEmpty || page.items.count < 60 || page.totalRecordCount.map({ offset >= $0 }) == true {
+                                break
+                            }
+                        }
+                        return (kind, Array(items.prefix(12)), nil)
+                    } catch { return (kind, nil, GusError(from: error)) }
                 }
             }
-
-            var collected: [(Int, HomeLatestSection)] = []
-            for await(index, section, error) in group {
+            for await(kind, items, error) in group {
                 if let error, !error.isCancellation {
                     errorMessage = error.localizedDescription
                 }
-                if let section {
-                    collected.append((index, section))
+                if let items, !items.isEmpty {
+                    result[kind] = HomeLatestSection(id: "latest:" + kind.rawValue, title: kind.title, items: items, kind: kind)
+                } else if items == nil, let previous = cached[kind] {
+                    result[kind] = HomeLatestSection(id: previous.id, title: previous.title, items: ContentRatingGate.filter(previous.items), kind: kind)
                 }
             }
-            return collected
         }
-
-        return sectionsByIndex.sorted { $0.0 < $1.0 }.map(\.1)
+        return LatestMediaKind.allCases.compactMap { result[$0] }.filter { !$0.items.isEmpty }
     }
 }

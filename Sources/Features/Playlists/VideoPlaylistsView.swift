@@ -14,7 +14,7 @@ struct VideoPlaylistsView: View {
 
     var body: some View {
         List {
-            Section("Playlists") { rows(.playlist) }
+            Section { rows(.playlist) }
             let pending = lists.pendingEdits(scope: scope).filter(\.needsReview)
             if !pending.isEmpty {
                 Section("Changes Need Review") {
@@ -49,9 +49,9 @@ struct VideoPlaylistsView: View {
         .navigationTitle("Playlists")
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
-                Menu {
-                    Button("New Playlist", systemImage: "list.and.film") { creating = .playlist }
-                } label: { Label("New List", systemImage: "plus") }
+                Button("New Playlist", systemImage: "plus") { creating = .playlist }
+                    .labelStyle(.iconOnly)
+                    .accessibilityIdentifier("Playlist.create")
             }
         }
         .sheet(isPresented: Binding(get: { creating != nil }, set: {
@@ -132,6 +132,7 @@ struct VideoPlaylistDetailView: View {
     @State private var editing = false
     @State private var deletingPlaylist = false
     @State private var mutating = false
+    @ScaledMetric(relativeTo: .body) private var numberDigitWidth: CGFloat = 10.5
     @State private var editingEntryIDs: [UUID]?
     @Environment(\.dismiss) private var dismiss
     private var scope: AccountScope {
@@ -166,11 +167,6 @@ struct VideoPlaylistDetailView: View {
                                     playbackControls(playlist)
                                 }
                                 Section {
-                                    HStack {
-                                        Spacer()
-                                        Button("Add Items", systemImage: "text.badge.plus") { adding = true }
-                                            .disabled(!serverList.canEdit || mutating)
-                                    }
                                     if playlist.entries.isEmpty {
                                         Text("Add movies or individual episodes to get started.").foregroundStyle(.secondary)
                                     }
@@ -192,6 +188,12 @@ struct VideoPlaylistDetailView: View {
                 }
                 .navigationTitle(playlist.name)
                 .toolbar {
+                    ToolbarItem(placement: .primaryAction) {
+                        Button("Add Items", systemImage: "text.badge.plus") { adding = true }
+                            .labelStyle(.iconOnly)
+                            .disabled(!serverList.canEdit || mutating)
+                            .accessibilityIdentifier("Playlist.addItems")
+                    }
                     ToolbarItem(placement: .primaryAction) {
                         if editing {
                             Button("Done") { editing = false; editingEntryIDs = nil }
@@ -258,17 +260,21 @@ struct VideoPlaylistDetailView: View {
     }
 
     private func playbackControls(_ playlist: VideoPlaylist) -> some View {
+        Section { playbackSummary(playlist) }
+    }
+
+    private func playbackSummary(_ playlist: VideoPlaylist) -> some View {
         let selection = playlist.playbackAction
         let isVideo = !playlist.entries.isEmpty && playlist.entries.allSatisfy { [.movie, .episode, .video].contains($0.reference.item.type) }
-        return Section {
+        return Group {
             VStack(alignment: .leading, spacing: 12) {
                 Text("\(playlist.entries.count) items").font(.subheadline).foregroundStyle(.secondary)
                 if selection.isUnavailable {
                     Label("Resume Entry Unavailable", systemImage: "exclamationmark.triangle")
                     Text("Choose an entry to play from, or start this playlist again.").foregroundStyle(.secondary)
                 }
-                if playlist.cursor?.finished == true {
-                    Label("Playlist Finished", systemImage: "checkmark.circle")
+                if !selection.hasProgress, !playlist.entries.isEmpty {
+                    Text("Item 1 of \(playlist.entries.count)").font(.caption).foregroundStyle(.secondary)
                 } else if selection.hasProgress, let current = playlist.entries.firstIndex(where: { $0.id == playlist.cursor?.entryID }) {
                     Text("Resume at item \(current + 1) of \(playlist.entries.count)").font(.caption).foregroundStyle(.secondary)
                 }
@@ -277,10 +283,10 @@ struct VideoPlaylistDetailView: View {
                         play(playlist.entries.first(where: { $0.id == selection.entryID }), fromBeginning: !selection.hasProgress)
                     } label: {
                         Label(selection.hasProgress ? "Resume" : "Play", systemImage: "play.fill")
-                            .foregroundStyle(Color.gusProminentActionForeground)
-                            .frame(maxWidth: .infinity, minHeight: 24)
+                            .gusProminentActionForeground()
+                            .frame(maxWidth: .infinity).gusPhoneActionLabelHeight()
                     }
-                    .gusProminentGlassButtonStyle().tint(.accentColor)
+                    .gusProminentGlassButtonStyle().gusProminentActionTint()
                     .disabled(!isVideo || selection.isUnavailable || editing || mutating)
                     .accessibilityIdentifier("Playlist.play")
                     Button {
@@ -311,59 +317,107 @@ struct VideoPlaylistDetailView: View {
         }
     }
 
-    /// Native List movement lifts the whole row and animates insertion gaps.
+    /// iOS uses a native scroll container because List owns its trailing reorder affordance.
     private func editingContents(_ playlist: VideoPlaylist, serverList: ServerMediaList) -> some View {
         let entries = editingEntryIDs.map { ids in ids.compactMap { id in playlist.entries.first { $0.id == id } } } ?? playlist.entries
-        return List {
-            playbackControls(playlist)
-            Section {
-                HStack {
-                    Spacer()
-                    Button("Add Items", systemImage: "text.badge.plus") { adding = true }
-                        .disabled(!serverList.canEdit || mutating)
-                }
-                .moveDisabled(true)
-                #if os(tvOS)
-                    ForEach(Array(entries.enumerated()), id: \.element.id) { index, entry in
-                        editingRow(entry, index: index, playlist: playlist)
-                    }
-                #else
-                    ForEach(Array(entries.enumerated()), id: \.element.id) { index, entry in
-                        editingRow(entry, index: index, playlist: playlist)
-                            .moveDisabled(!serverList.canEdit || mutating)
-                    }
-                    .onMove { offsets, destination in
-                        guard offsets.count == 1, let source = offsets.first, !mutating, serverList.canEdit else { return }
-                        var reordered = entries
-                        reordered.move(fromOffsets: offsets, toOffset: destination)
-                        guard reordered.map(\.id) != entries.map(\.id) else { return }
-                        editingEntryIDs = reordered.map(\.id)
-                        let moved = entries[source]
-                        let newIndex = reordered.firstIndex { $0.id == moved.id }!
-                        let before = reordered.indices.contains(newIndex + 1) ? reordered[newIndex + 1].id : nil
-                        mutate {
-                            _ = await lists.move(entryID: moved.id, in: id, before: before, session: session)
-                            editingEntryIDs = nil
+        #if os(iOS)
+            return ScrollView {
+                VStack(alignment: .leading, spacing: 24) {
+                    playbackSummary(playlist)
+                        .padding(16)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(Color(uiColor: .secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 24))
+                    LazyVStack(spacing: 0) {
+                        ForEach(Array(entries.enumerated()), id: \.element.id) { index, entry in
+                            editingRow(entry, index: index, playlist: playlist)
+                                .padding(.horizontal, 16).padding(.vertical, 10)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .contentShape(Rectangle())
+                                .dropDestination(for: String.self) { payloads, _ in
+                                    _ = acceptMove(payloads, before: entry.id, playlist: playlist)
+                                }
+                            if index + 1 < entries.count {
+                                Divider().padding(.leading, 16)
+                            }
                         }
+                        Color.clear.frame(height: 24)
+                            .accessibilityHidden(true)
+                            .dropDestination(for: String.self) { payloads, _ in
+                                _ = acceptMove(payloads, before: nil, playlist: playlist)
+                            }
                     }
-                #endif
+                    .background(Color(uiColor: .secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 24))
+                    if let message = lists.statusMessage, !message.isEmpty {
+                        Text(message).foregroundStyle(.secondary)
+                    }
+                }
+                .padding(.horizontal, 20).padding(.vertical, 16)
             }
-            if let message = lists.statusMessage, !message.isEmpty {
-                Text(message).foregroundStyle(.secondary)
+            .background(Color(uiColor: .systemGroupedBackground))
+        #else
+            return List {
+                playbackControls(playlist)
+                Section {
+                    #if os(tvOS)
+                        ForEach(Array(entries.enumerated()), id: \.element.id) { index, entry in
+                            editingRow(entry, index: index, playlist: playlist)
+                        }
+                    #else
+                        ForEach(Array(entries.enumerated()), id: \.element.id) { index, entry in
+                            editingRow(entry, index: index, playlist: playlist)
+                                .moveDisabled(!serverList.canEdit || mutating)
+                        }
+                        .onMove { offsets, destination in
+                            guard offsets.count == 1, let source = offsets.first, !mutating, serverList.canEdit else { return }
+                            var reordered = entries
+                            reordered.move(fromOffsets: offsets, toOffset: destination)
+                            guard reordered.map(\.id) != entries.map(\.id) else { return }
+                            editingEntryIDs = reordered.map(\.id)
+                            let moved = entries[source]
+                            let newIndex = reordered.firstIndex { $0.id == moved.id }!
+                            let before = reordered.indices.contains(newIndex + 1) ? reordered[newIndex + 1].id : nil
+                            mutate {
+                                _ = await lists.move(entryID: moved.id, in: id, before: before, session: session)
+                                editingEntryIDs = nil
+                            }
+                        }
+                    #endif
+                }
+                if let message = lists.statusMessage, !message.isEmpty {
+                    Text(message).foregroundStyle(.secondary)
+                }
             }
-        }
-        #if os(iOS) || os(visionOS)
-        .environment(\.editMode, .constant(.active))
+            #if os(iOS) || os(visionOS)
+            .environment(\.editMode, .constant(.active))
+            #endif
         #endif
     }
 
     private func editingRow(_ entry: VideoPlaylistEntry, index: Int, playlist: VideoPlaylist) -> some View {
         let title = ContentRatingGate.admitsStored(entry.reference.item) ? entry.reference.item.displayTitle : String(localized: "Restricted Content")
-        return HStack {
-            #if os(tvOS)
+        return HStack(spacing: 16) {
+            #if os(iOS)
+                Image(systemName: "line.3.horizontal")
+                    .foregroundStyle(.secondary)
+                    .frame(width: 44, height: 44)
+                    .contentShape(Rectangle())
+                    .draggable(dragPayload(entry))
+                    .accessibilityLabel("Reorder \(title)")
+                    .accessibilityIdentifier("Playlist.reorder." + entry.id.uuidString)
+                    .accessibilityAction(named: "Move Up") {
+                        if index > 0 {
+                            move(index, by: -1, in: playlist)
+                        }
+                    }
+                    .accessibilityAction(named: "Move Down") {
+                        if index + 1 < playlist.entries.count {
+                            move(index, by: 1, in: playlist)
+                        }
+                    }
+            #elseif os(tvOS)
                 PlaylistReorderHandle(title: title, moveUp: { move(index, by: -1, in: playlist) }, moveDown: { move(index, by: 1, in: playlist) }, canMoveUp: index > 0, canMoveDown: index + 1 < playlist.entries.count)
             #endif
-            Text("\(index + 1)").foregroundStyle(.secondary)
+            Text("\(index + 1)").monospacedDigit().frame(width: max(28, CGFloat(String(max(playlist.entries.count, 1)).count) * numberDigitWidth), alignment: .trailing).foregroundStyle(.secondary)
             VStack(alignment: .leading) {
                 Text(title)
                 if ContentRatingGate.admitsStored(entry.reference.item), let series = entry.reference.item.seriesName {
@@ -380,6 +434,29 @@ struct VideoPlaylistDetailView: View {
         .disabled(mutating)
     }
 
+    private func dragPayload(_ entry: VideoPlaylistEntry) -> String {
+        let payload = PlaylistItemDrag(scope: scope, playlistID: id, entryID: entry.id)
+        return (try? JSONEncoder().encode(payload)).flatMap { String(data: $0, encoding: .utf8) } ?? ""
+    }
+
+    private func acceptMove(_ payloads: [String], before target: UUID?, playlist: VideoPlaylist) -> Bool {
+        guard !mutating, serverList?.canEdit == true, payloads.count == 1,
+              let data = payloads.first?.data(using: .utf8),
+              let payload = try? JSONDecoder().decode(PlaylistItemDrag.self, from: data),
+              payload.scope == scope, payload.playlistID == id else { return false }
+        let entries = playlist.entries.map(\.id)
+        var before = target
+        // A downward drop passes the target; an upward drop inserts before it.
+        if let target, let sourceIndex = entries.firstIndex(of: payload.entryID),
+           let targetIndex = entries.firstIndex(of: target), sourceIndex < targetIndex
+        {
+            before = entries.indices.contains(targetIndex + 1) ? entries[targetIndex + 1] : nil
+        }
+        guard let move = payload.destination(in: entries, scope: scope, playlistID: id, before: before) else { return false }
+        mutate { _ = await lists.move(entryID: move.entryID, in: id, before: move.before, session: session) }
+        return true
+    }
+
     private func mutate(_ action: @escaping @MainActor () async -> Void) {
         guard !mutating, serverList?.canEdit == true else { return }
         mutating = true
@@ -389,8 +466,8 @@ struct VideoPlaylistDetailView: View {
     private func entryRow(_ entry: VideoPlaylistEntry, index: Int, playlist: VideoPlaylist, canEdit: Bool) -> some View {
         let admitted = ContentRatingGate.admitsStored(entry.reference.item)
         let isVideo = playlist.entries.allSatisfy { [.movie, .episode, .video].contains($0.reference.item.type) }
-        return HStack {
-            Text("\(index + 1)").foregroundStyle(.secondary)
+        return HStack(spacing: 16) {
+            Text("\(index + 1)").monospacedDigit().frame(width: max(28, CGFloat(String(max(playlist.entries.count, 1)).count) * numberDigitWidth), alignment: .trailing).foregroundStyle(.secondary)
             if admitted {
                 NavigationLink(value: ItemRef(item: entry.reference.item)) {
                     VStack(alignment: .leading) {

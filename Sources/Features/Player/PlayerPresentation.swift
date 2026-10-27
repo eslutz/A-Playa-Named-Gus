@@ -126,7 +126,7 @@ struct PresentedPlayer: View {
                 RestrictedContentView()
                     .toolbar {
                         ToolbarItem(placement: .cancellationAction) {
-                            Button("Done") {
+                            GusCloseButton {
                                 dismiss()
                             }
                         }
@@ -145,7 +145,7 @@ struct PresentedPlayer: View {
                 PhotoViewerView(photo: item)
                     .toolbar {
                         ToolbarItem(placement: .cancellationAction) {
-                            Button("Done") {
+                            GusCloseButton {
                                 dismiss()
                             }
                         }
@@ -180,7 +180,7 @@ struct PresentedPlayer: View {
                     }
                     .toolbar {
                         ToolbarItem(placement: .cancellationAction) {
-                            Button("Done") {
+                            GusCloseButton {
                                 dismiss()
                             }
                         }

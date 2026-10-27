@@ -34,7 +34,8 @@ constrain *how* each item is built.
 ## Discover / Seerr design handoff
 
 - [x] Preserve historical Figma design material in the local Git-ignored `Design/Archive/`.
-- [~] Complete the Apple-native Sketch redesign across supported devices. The iPhone R5 Light and Dark snapshots are in `Design/` and await acceptance. Later devices remain pending. Design acceptance and runtime validation are separate.
+- [~] Complete the Apple-native Sketch redesign across supported devices. The current iPhone implementation uses the user-selected live **Gus iPhone** Sketch Screens, States and Components pages. The R5 snapshots in `Design/` are historical references. The candidate updates onboarding, compact navigation, library layouts, details and audio controls; unmatched existing screens retain their behavior and shared native styling. Light-only before/after comparison artifacts stay outside source. Later-device redesign and physical iPhone acceptance remain pending.
+- [~] iPhone review iteration 2 addresses theme selection, native glass controls, media-type Recently Added, consistent dismissal, download progress/artwork, playlist editing/completion, and Seerr polish. The external report keeps its original pair and adds a third image per scenario. Simulator validation is distinct from iPad runtime, physical-device, accessibility, live Seerr, hosted checks and release acceptance.
 - [ ] Complete native materials, accessibility, live Seerr and physical-device acceptance, followed by required hosted checks and release gates.
 
 ## Global Definition of Done (applies to every milestone)

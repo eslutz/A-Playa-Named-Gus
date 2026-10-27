@@ -33,7 +33,7 @@ private struct ContentLinkHandler: ViewModifier {
                         .gusItemDestinations()
                         .toolbar {
                             ToolbarItem(placement: .cancellationAction) {
-                                Button("Done", systemImage: "xmark") {
+                                GusCloseButton {
                                     rootState.detailItem = nil
                                 }
                                 .foregroundStyle(.primary)

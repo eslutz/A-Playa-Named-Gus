@@ -13,15 +13,20 @@ struct OfflineArtwork: View {
     @State private var image: Image?
 
     var body: some View {
-        Group {
-            if let image {
-                image.resizable().scaledToFill()
-            } else {
-                Rectangle().fill(.quaternary)
-                    .overlay { Image(systemName: systemImage).foregroundStyle(.secondary) }
+        Rectangle().fill(.quaternary)
+            .overlay {
+                GeometryReader { geometry in
+                    if let image {
+                        image.resizable().scaledToFill()
+                            .frame(width: geometry.size.width, height: geometry.size.height)
+                            .clipped()
+                    } else {
+                        Image(systemName: systemImage).foregroundStyle(.secondary)
+                            .frame(width: geometry.size.width, height: geometry.size.height)
+                    }
+                }
             }
-        }
-        .clipped()
+            .clipped()
         .accessibilityHidden(true)
         .task(id: url) {
             image = nil

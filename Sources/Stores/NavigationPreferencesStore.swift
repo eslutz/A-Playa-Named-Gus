@@ -163,6 +163,11 @@ final class NavigationPreferencesStore {
         }
     }
 
+    /// Existing account choices take precedence over the iPhone's initial tab arrangement.
+    func hasSavedPreferences(serverID: String, userID: String) -> Bool {
+        !(preferencesByScope[AccountScope(serverID: serverID, userID: userID)] ?? []).isEmpty
+    }
+
     /// Merges stored preferences with the sections the app knows about. Stored order wins,
     /// unknown stored ids are dropped, and missing ids are appended in the native default
     /// order. Hidden rows are returned after visible rows so the editor can present

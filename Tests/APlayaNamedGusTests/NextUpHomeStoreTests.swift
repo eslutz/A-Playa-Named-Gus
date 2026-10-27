@@ -123,14 +123,17 @@ struct NextUpHomeStoreTests {
     func latestRailsFailIndependently() async {
         let provider = FakeMediaProviderSession(capabilities: ProviderCapabilities())
         provider.userViewsHandler = { [MediaItem(id: "a"), MediaItem(id: "b")] }
-        provider.latestHandler = { library in [MediaItem(id: "\(library.id!)0", type: .movie)] }
+        provider.itemsHandler = { query in
+            if query.includeTypes == [.movie] { return MediaItemPage(items: [MediaItem(id: "a0", type: .movie)], totalRecordCount: 1) }
+            if query.includeTypes == [.book] { return MediaItemPage(items: [MediaItem(id: "b0", type: .book)], totalRecordCount: 1) }
+            return MediaItemPage(items: [], totalRecordCount: 0)
+        }
         let store = home(provider, activity: activityStore())
         await store.load()
-        provider.latestHandler = { library in
-            if library.id == "a" {
-                throw GusError.offline
-            }
-            return [MediaItem(id: "b1", type: .movie)]
+        provider.itemsHandler = { query in
+            if query.includeTypes == [.movie] { throw GusError.offline }
+            if query.includeTypes == [.book] { return MediaItemPage(items: [MediaItem(id: "b1", type: .book)], totalRecordCount: 1) }
+            return MediaItemPage(items: [], totalRecordCount: 0)
         }
         await store.refresh()
         #expect(store.latestSections.flatMap(\.items).compactMap(\.id) == ["a0", "b1"])

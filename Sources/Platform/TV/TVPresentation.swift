@@ -71,7 +71,7 @@ extension View {
         #if os(tvOS)
             padding(.horizontal, 64).padding(.vertical, 32)
         #else
-            padding()
+            gusPhonePagePadding()
         #endif
     }
 

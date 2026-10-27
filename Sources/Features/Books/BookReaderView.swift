@@ -36,7 +36,7 @@
                 #endif
                     .toolbar {
                         ToolbarItem(placement: .cancellationAction) {
-                            Button("Done") {
+                            GusCloseButton {
                                 // The session host owns this cover; do not dismiss
                                 // an ancestor detail sheet after adaptive relayout.
                                 if let close {
@@ -122,7 +122,7 @@
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
                     ToolbarItem(placement: .cancellationAction) {
-                        Button("Done") { showingChapters = false }
+                        GusCloseButton { showingChapters = false }
                             .accessibilityIdentifier("BookChapters.done")
                     }
                 }

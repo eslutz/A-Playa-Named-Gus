@@ -8,6 +8,9 @@ struct ItemDetailView: View {
     @Environment(OfflineDownloadStore.self) private var downloads
     @Environment(PlaybackRefreshStore.self) private var playbackRefresh
     @Environment(UpNextStore.self) private var upNext
+    #if os(iOS)
+        @Environment(\.horizontalSizeClass) private var widthClass
+    #endif
     let item: MediaItem
 
     @State private var playerItem: ItemRef?
@@ -35,13 +38,10 @@ struct ItemDetailView: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
-        .navigationTitle(store?.item.displayTitle ?? item.displayTitle)
+        .navigationTitle(detailNavigationTitle)
         .gusTVDetailTitle()
         #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
-        #endif
-        #if os(iOS) || os(visionOS)
-        .toolbarBackground(.hidden, for: .navigationBar)
         #endif
         .task {
             if store == nil {
@@ -92,6 +92,15 @@ struct ItemDetailView: View {
                 userID: session.user.id
             )
         }
+    }
+
+    private var detailNavigationTitle: String {
+        #if os(iOS)
+            if widthClass == .compact {
+                return ""
+            }
+        #endif
+        return store?.item.displayTitle ?? item.displayTitle
     }
 
     private func resumeTicks(for item: MediaItem) -> Int? {

@@ -27,11 +27,11 @@ struct BookActionButtons: View {
                         readerItem = ItemRef(item: item)
                     } label: {
                         Label("Read", systemImage: "book")
-                            .foregroundStyle(Color.gusProminentActionForeground)
+                            .gusProminentActionForeground()
                     }
                     .gusProminentGlassButtonStyle()
                     .controlSize(.large)
-                    .tint(.accentColor)
+                    .gusProminentActionTint()
                     .visionHoverEffect(cornerRadius: 10)
                 #endif
 
@@ -157,7 +157,7 @@ struct BookActionButtons: View {
                         }
                         .toolbar {
                             ToolbarItem(placement: .cancellationAction) {
-                                Button("Done") {
+                                GusCloseButton {
                                     preparation?.cancel()
                                     if let close {
                                         close()

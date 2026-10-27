@@ -56,17 +56,24 @@ struct SeerrRequestsView: View {
                 }
                 if isLoading {
                     ProgressView("Loading Requests")
-                } else if hasLoaded, requests.isEmpty, errorMessage == nil {
-                    ContentUnavailableView(
-                        "No Requests",
-                        systemImage: "tray",
-                        description: Text("No requests match the selected status.")
-                    )
                 }
                 if canLoadMore, !isLoading {
                     Button("Load More Requests") { Task { await load(reset: false) } }
                         .accessibilityIdentifier("Seerr.requests.more")
                 }
+            }
+        }
+        .overlay {
+            if hasLoaded, requests.isEmpty, errorMessage == nil, !isLoading,
+               !managing || store.user?.canManageRequests == true
+            {
+                ContentUnavailableView(
+                    filter == .all ? "No Requests" : "No Matching Requests",
+                    systemImage: "tray",
+                    description: Text(filter == .all ? "Titles you request will appear here." : "Try another status to see your requests.")
+                )
+                .padding(.top, 84)
+                .allowsHitTesting(false)
             }
         }
         .navigationTitle(managing ? "Manage Requests" : "My Requests")
@@ -202,6 +209,7 @@ private struct SeerrRequestHistoryRow: View {
 
 /// Every destructive or approval action is confirmed, revalidated and read back.
 private struct SeerrRequestDetailView: View {
+    @Environment(\.dismiss) private var dismiss
     @Environment(SeerrStore.self) private var store
     let requestID: Int
     let managing: Bool
@@ -275,11 +283,15 @@ private struct SeerrRequestDetailView: View {
                 ProgressView(mutation.progressTitle)
             }
             if wasRemoved {
-                ContentUnavailableView(
-                    "Request Removed",
-                    systemImage: "checkmark.circle",
-                    description: Text("Seerr confirmed that this request is no longer present.")
-                )
+                VStack(alignment: .leading, spacing: 16) {
+                    Label("Request Removed", systemImage: "checkmark.circle").font(.title3.bold())
+                    Text("This request is no longer in Seerr.").foregroundStyle(.secondary)
+                    Button("Back to My Requests") { dismiss() }
+                        .gusGlassButtonStyle().controlSize(.large)
+                }
+                .padding(.vertical, 16)
+                .listRowBackground(Color.clear)
+                .seerrHiddenRowSeparator()
             } else if mayRead, !isRestricted, let request {
                 details(request)
                 actions(request)

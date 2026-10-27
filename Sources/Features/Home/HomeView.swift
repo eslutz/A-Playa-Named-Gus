@@ -123,7 +123,7 @@ struct HomeView: View {
                     }
                     ProgressTransferView()
                     ForEach(store.latestSections) { section in
-                        MediaRail(title: section.title, items: section.items, requestsInitialFocus: store.unifiedNextUp.isEmpty && section.id == store.latestSections.first?.id)
+                        MediaRail(title: section.title, items: section.items, latestKind: section.kind, requestsInitialFocus: store.unifiedNextUp.isEmpty && section.id == store.latestSections.first?.id)
                             .gusTVFallbackHero(items: section.items, enabled: store.unifiedNextUp.isEmpty && section.id == store.latestSections.first?.id)
                             .id(section.id)
                     }
@@ -152,7 +152,7 @@ private struct NextUpRail: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
-                Text("Next Up").font(.title2.bold()).accessibilityAddTraits(.isHeader)
+                Text("Next Up").gusPhoneRailHeading().accessibilityAddTraits(.isHeader)
                 Spacer()
                 NavigationLink("Show All") { NextUpListView(store: store) }
                     .gusTVFocus(id: "all", section: "home.next.control", ids: ["all"], context: root.selectedSectionID)
@@ -161,7 +161,7 @@ private struct NextUpRail: View {
                 LazyHStack(alignment: .top, spacing: MediaRailMetrics.spacing(for: .backdrop)) {
                     ForEach(Array(store.unifiedNextUp.prefix(20))) { entry in
                         NextUpDestination(entry: entry, usesArtwork: true)
-                            .frame(width: MediaRailMetrics.itemWidth(for: .backdrop))
+                            .gusPhoneRailWidth(backdrop: true, fallback: MediaRailMetrics.itemWidth(for: .backdrop))
                             .gusTVFocus(id: entry.id, section: "home.next", ids: store.unifiedNextUp.prefix(20).map(\.id), initial: entry.id == store.unifiedNextUp.first?.id, item: entry.item, entry: entry, context: root.selectedSectionID)
                     }
                 }
@@ -178,9 +178,17 @@ private struct NextUpRail: View {
 
 private struct NextUpListView: View {
     let store: HomeStore
+    @AppStorage("nextUpDisplayGrid") private var showsGrid = false
     var body: some View {
-        List {
-            ForEach(store.unifiedNextUp) { entry in NextUpDestination(entry: entry) }
+        ScrollView {
+            LazyVGrid(columns: showsGrid ? [GridItem(.adaptive(minimum: 160), alignment: .top)] : [GridItem(.flexible())], alignment: .leading, spacing: 16) {
+                ForEach(store.unifiedNextUp) { entry in
+                    NextUpDestination(entry: entry, usesArtwork: showsGrid)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+            }
+            .padding(.horizontal)
+
             if store.hasMoreNextUp {
                 Button("Load More") { Task { await store.loadMoreNextUp() } }
                     .disabled(store.isLoadingMore)
@@ -195,6 +203,13 @@ private struct NextUpListView: View {
             }
         }
         .navigationTitle("Next Up")
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                Button(showsGrid ? "List" : "Grid", systemImage: showsGrid ? "list.bullet" : "square.grid.2x2") { showsGrid.toggle() }
+                    .accessibilityIdentifier("NextUp.displayMode")
+                    .accessibilityValue(showsGrid ? "Grid" : "List")
+            }
+        }
         .overlay {
             if store.unifiedNextUp.isEmpty {
                 ContentUnavailableView("Nothing in Next Up", systemImage: "play.rectangle")
@@ -294,6 +309,8 @@ struct MediaRail: View {
     @Environment(SessionStore.self) private var session
     let title: String
     let items: [MediaItem]
+    var library: MediaItem? = nil
+    var latestKind: LatestMediaKind? = nil
     var style: MediaRailStyle = .poster
     var focusKey: String? = nil
     var focusContext: String? = nil
@@ -302,9 +319,19 @@ struct MediaRail: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text(title)
-                .font(.title2.bold())
-                .accessibilityAddTraits(.isHeader)
+            HStack {
+                Text(title)
+                    .gusPhoneRailHeading()
+                    .accessibilityAddTraits(.isHeader)
+                Spacer()
+                if let latestKind {
+                    NavigationLink("Show All") { LibraryGridView(scope: .latest(latestKind)) }
+                        .gusIPhoneOnly()
+                } else if let library {
+                    NavigationLink("Show All") { LibraryGridView(library: library) }
+                        .gusIPhoneOnly()
+                }
+            }
 
             ScrollView(.horizontal, showsIndicators: false) {
                 LazyHStack(alignment: .top, spacing: style.spacing) {
@@ -319,7 +346,7 @@ struct MediaRail: View {
                                     fallbackURLs: session.mediaProvider.artworkURLs(for: item, maxWidth: 260),
                                     onExhausted: { _ = try? await session.references.currentItem(item) }
                                 )
-                                .frame(width: style.itemWidth)
+                                .gusPhoneRailWidth(backdrop: style == .backdrop, fallback: style.itemWidth)
                             case .backdrop:
                                 BackdropCard(
                                     item: item,
@@ -330,7 +357,7 @@ struct MediaRail: View {
                                         await upNext.refresh(session: session)
                                     }
                                 )
-                                .frame(width: style.itemWidth)
+                                .gusPhoneRailWidth(backdrop: style == .backdrop, fallback: style.itemWidth)
                             }
                         }
                         .id(ItemRef(item: item).id)
@@ -456,6 +483,19 @@ private struct BackdropCard: View {
 /// Persistent Libraries destination used by tabs, sidebars, and menu routes.
 /// Shares the root container's `HomeStore` with `HomeView`.
 struct LibrariesLandingView: View {
+    @State private var showsGrid = false
+    #if os(iOS)
+        @Environment(\.horizontalSizeClass) private var widthClass
+    #endif
+
+    private var usesList: Bool {
+        #if os(iOS)
+            widthClass == .compact && !showsGrid
+        #else
+            false
+        #endif
+    }
+
     let store: HomeStore?
 
     init(store: HomeStore? = nil) {
@@ -472,6 +512,15 @@ struct LibrariesLandingView: View {
             }
         }
         .navigationTitle("Libraries")
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                Button { showsGrid.toggle() } label: {
+                    Label(showsGrid ? "List" : "Grid", systemImage: showsGrid ? "list.bullet" : "square.grid.2x2")
+                }
+                .accessibilityIdentifier("Libraries.displayMode")
+                .gusIPhoneOnly()
+            }
+        }
     }
 
     private func content(_ store: HomeStore) -> some View {
@@ -482,13 +531,31 @@ struct LibrariesLandingView: View {
             emptySymbol: "rectangle.stack",
             retryAction: { Task { await store.load() } }
         ) {
-            ScrollView {
-                LibrariesGrid(libraries: store.libraries)
-                    .padding()
-                    .frame(maxWidth: PageContentMetrics.maxWidth, alignment: .leading)
-                    .frame(maxWidth: .infinity)
+            Group {
+                if usesList {
+                    List(store.libraries, id: \.id) { library in
+                        NavigationLink(value: LibraryRef(item: library)) {
+                            HStack(spacing: 16) {
+                                Image(systemName: library.librarySymbol)
+                                    .font(.title2).foregroundStyle(.blue)
+                                    .frame(width: 54, height: 54)
+                                    .background(.quaternary, in: RoundedRectangle(cornerRadius: 12))
+                                Text(library.displayTitle).font(.body.weight(.medium))
+                            }
+                            .padding(.vertical, 8)
+                        }
+                    }
+                    .listStyle(.plain)
+                } else {
+                    ScrollView {
+                        LibrariesGrid(libraries: store.libraries)
+                            .gusPhonePagePadding()
+                            .frame(maxWidth: PageContentMetrics.maxWidth, alignment: .leading)
+                            .frame(maxWidth: .infinity)
+                    }
+                    .lookToScroll()
+                }
             }
-            .lookToScroll()
             .refreshable { await store.refresh() }
         }
     }

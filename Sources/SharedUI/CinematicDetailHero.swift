@@ -5,6 +5,9 @@ import SwiftUI
 struct CinematicDetailHero<Accessory: View>: View {
     @Environment(SessionStore.self) private var session
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    #if os(iOS)
+        @Environment(\.horizontalSizeClass) private var widthClass
+    #endif
     let item: MediaItem
     var playbackItem: MediaItem? = nil
     var primaryPlayEnabled = true
@@ -66,7 +69,7 @@ struct CinematicDetailHero<Accessory: View>: View {
                     .frame(width: geometry.size.width, height: geometry.size.height)
                     .clipped()
                     .overlay {
-                        LinearGradient(colors: [.black.opacity(0.85), .black.opacity(0.6), .black.opacity(0.2)], startPoint: .bottom, endPoint: .top)
+                        LinearGradient(colors: heroScrim, startPoint: .bottom, endPoint: .top)
                     }
             }
             // Extend artwork to the pane edge in landscape while keeping the
@@ -95,10 +98,17 @@ struct CinematicDetailHero<Accessory: View>: View {
             }
         }
         .foregroundStyle(.white)
-        // Metadata and synopsis need a predictable contrast surface over arbitrary
-        // artwork. Opaque black keeps white text independent of the image beneath it.
-        .padding(12)
-        .background(.black, in: RoundedRectangle(cornerRadius: 8))
+        // The iPhone's full hero scrim provides contrast; wider layouts keep their copy panel.
+        .gusPhoneHeroCopy()
+    }
+
+    private var heroScrim: [Color] {
+        #if os(iOS)
+            if widthClass == .compact {
+                return [.black.opacity(0.95), .black.opacity(0.72), .black.opacity(0.15)]
+            }
+        #endif
+        return [.black.opacity(0.85), .black.opacity(0.6), .black.opacity(0.2)]
     }
 
     private var actionStack: some View {
@@ -117,7 +127,7 @@ struct CinematicDetailHero<Accessory: View>: View {
             // These controls have spoken labels rather than visible text. Keep
             // symbols compact so accessibility text sizes cannot overlap peers.
             .dynamicTypeSize(...DynamicTypeSize.large)
-            .buttonBorderShape(.capsule)
+            .gusPhoneHeroAccessoryStyle()
             .frame(maxWidth: DetailActionMetrics.maximumRowWidth)
         }
     }
@@ -184,6 +194,8 @@ struct CinematicDetailHero<Accessory: View>: View {
             return 560
         #elseif os(macOS)
             return 480
+        #elseif os(iOS)
+            return widthClass == .compact ? 550 : 420
         #else
             return 420
         #endif
@@ -273,13 +285,15 @@ struct DetailActionRow<Content: View>: View {
     @ViewBuilder let content: Content
 
     var body: some View {
-        ViewThatFits(in: .horizontal) {
-            HStack(spacing: 8) { content }
-            Grid(alignment: .leading, horizontalSpacing: 8, verticalSpacing: 8) {
-                Group(subviews: content) { actions in
-                    ForEach(Array(stride(from: 0, to: actions.count, by: 2)), id: \.self) { start in
-                        GridRow {
-                            ForEach(actions[start ..< min(start + 2, actions.count)]) { action in action }
+        GusGlassControlGroup {
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: 8) { content }
+                Grid(alignment: .leading, horizontalSpacing: 8, verticalSpacing: 8) {
+                    Group(subviews: content) { actions in
+                        ForEach(Array(stride(from: 0, to: actions.count, by: 2)), id: \.self) { start in
+                            GridRow {
+                                ForEach(actions[start ..< min(start + 2, actions.count)]) { action in action }
+                            }
                         }
                     }
                 }

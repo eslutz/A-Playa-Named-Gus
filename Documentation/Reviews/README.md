@@ -13,7 +13,7 @@ in source. Historical records remain in Git history.
   require explicit import and must not silently lose repeated entries.
 - Video playlist shuffle is a playback-session sequence; it does not reorder the
   saved list. Mixed-media entries remain individually playable. Native list editing
-  uses system reorder controls.
+  uses system reorder controls; iOS leading handles use public drag-and-drop in a scroll container because native List owns its trailing handle.
 - Seerr is account-scoped. Request review evaluates standard and 4K permissions
   independently; fresh settings and quota gate submission. Preference saves use
   snapshots of submitted values, and unresolved writes require recovery rather
@@ -25,9 +25,10 @@ in source. Historical records remain in Git history.
 - iOS and macOS remain in Swift 5 language mode with complete concurrency checks
   because of the Readium and Declared Age Range isolation boundaries. See
   [Swift concurrency](2026-10-10-release-validation/SWIFT-CONCURRENCY.md).
-- The current iPhone R5 designs await acceptance. The [per-screen Build 32
-  comparison](2026-10-26-build32-design-comparison/report.md) records review
-  questions, not accepted design decisions. Later-device design remains pending.
+- The iPhone implementation now follows the user-selected live Gus iPhone Sketch
+  document (Screens, States and Components). The historical R5/Build 32 review
+  records remain reference material. Current Light-mode simulator comparisons
+  stay outside source; physical acceptance and later-device design remain pending.
 
 ## Acceptance still needed
 
@@ -49,3 +50,13 @@ The saved Cloud workflow configuration and current release gates are described i
 [the pipeline policy](../AppStore/pipeline-policy.md). Routine validation does not
 replace full release qualification. Recheck the live configuration before relying
 on it; Cloud execution and actual tester installation remain separate outcomes.
+
+## Reproducing an iPhone design comparison
+
+Use the local `gus-demo-jellyfin` server and one fixed iPhone simulator for both revisions. `GusDesignCaptureUITests` captures Light-mode scenes into an external XCTest result bundle; its optional-category walkthrough temporarily changes the synthetic account's navigation preferences, so back up and restore those preferences. Seerr UI regressions additionally require `Scripts/discover-fixture-server.py`.
+
+Export attachments outside the repository, organize original PNGs by matching scenario filenames, then run `Scripts/generate-ui-comparison.py --before <baseline> --after <candidate> --references <mapping.json> --notes <scope.txt> --device <device-and-OS> --baseline <commit> --output <external-directory>`. The generator refuses an output directory inside this repository and reports incomplete pairs explicitly. Its manifest records image dimensions and hashes.
+
+For subsequent review fixes, preserve the original comparison and append a third image with `Scripts/generate-ui-comparison.py --next-iteration <captures> --output <existing-external-report> --notes <scope.txt> --findings <checklist.json>`. This retains original assets, captions, notes and before/after manifest fields; new scenarios explicitly mark missing historical captures. Keep the numbered checklist, validation details and report backups outside source.
+
+For focused feedback after that third column, use `--follow-up <captures>` in place of `--next-iteration`. Matching existing scenarios gain a fourth Review follow-up image; all three historical columns remain intact. The synthetic Next Up walkthrough saves additional demo titles through the app to make the list presentation reviewable.
