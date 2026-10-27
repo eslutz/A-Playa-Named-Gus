@@ -6,10 +6,8 @@ on:
       - main
     paths:
       - 'Sources/**'
-      - 'Tests/**'
       - 'A Playa Named Gus.xcodeproj/project.pbxproj'
       - 'project.yml'
-      - 'Package.resolved'
 
 permissions:
   contents: read
