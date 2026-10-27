@@ -176,13 +176,29 @@ final class UpNextStore {
     /// explicit, idempotent position reset; watched history is left unchanged.
     func removeFromNextUp(_ item: MediaItem, session: SessionStore, activity: NextUpActivityStore = .shared, progress: OfflinePlaybackProgressStore = .shared) async throws {
         guard let id = item.id, item.providerKind == session.mediaProvider.providerKind else { throw GusError.notFound }
-        do {
-            try await session.mediaProvider.updatePlaybackPosition(itemID: id, positionTicks: 0)
-        } catch {
-            // A confirmed missing item has no server resume entry to clear.
-            guard GusError(from: error) == .notFound else { throw error }
+        var itemIDs = [id]
+        if item.type == .series {
+            // A saved show represents its episodes in Continue Watching. Collect
+            // before resetting so removing rows cannot shift subsequent pages.
+            var start = 0
+            while true {
+                let page = try await session.mediaProvider.resumeItemsPage(startIndex: start, limit: 100)
+                itemIDs += page.items.filter { $0.seriesID == id }.compactMap(\.id)
+                start += page.items.count
+                if page.items.isEmpty || start >= (page.totalRecordCount ?? Int.max) {
+                    break
+                }
+            }
         }
-        progress.resetCheckpoint(itemID: id, scope: session.references.scope)
+        for itemID in Set(itemIDs) {
+            do {
+                try await session.mediaProvider.updatePlaybackPosition(itemID: itemID, positionTicks: 0)
+            } catch {
+                // A confirmed missing item has no server resume entry to clear.
+                guard GusError(from: error) == .notFound else { throw error }
+            }
+            progress.resetCheckpoint(itemID: itemID, scope: session.references.scope)
+        }
         try dismissLocally(item, scope: session.references.scope, activity: activity)
     }
 

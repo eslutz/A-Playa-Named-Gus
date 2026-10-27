@@ -85,9 +85,7 @@ private struct MediaItemContextMenu<Actions: View>: ViewModifier {
         if !upNext.contains(item, serverID: scope.serverID, userID: scope.userID) {
             upNext.toggle(item, serverID: scope.serverID, userID: scope.userID)
         }
-        if let id = NextUpBuilder.mediaID(item) {
-            NextUpActivityStore.shared.setDismissed(id, dismissed: false, scope: scope)
-        }
+        NextUpActivityStore.shared.restore(item, scope: scope)
         errorMessage = upNext.errorMessage ?? NextUpActivityStore.shared.errorMessage
     }
 

@@ -127,7 +127,9 @@ final class HomeStore {
             resume: resumeItems, nextEpisodes: nextUpItems, saved: savedIntents,
             playlists: playlistCandidates.filter { !activity.isDismissed("playlist:" + $0.id.uuidString, scope: scope) }, activity: activity.snapshot(scope: scope),
             firstSeenIDs: activity.firstSeenIDs(scope: scope)
-        ).filter { !activity.isDismissed($0.id, scope: scope) }
+        ).filter {
+            !activity.isDismissed($0.id, scope: scope) && ($0.playlist != nil || $0.item.map { !activity.isDismissed($0, scope: scope) } != false)
+        }
         activity.remember(unifiedNextUp.map(\.id), scope: scope)
     }
 

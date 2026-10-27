@@ -150,9 +150,7 @@ struct ItemDetailView: View {
                                     catch { nextUpError = GusError(from: error).localizedDescription }
                                 } else {
                                     upNext.toggle(store.item, serverID: session.server.id, userID: session.user.id)
-                                    if let id = NextUpBuilder.mediaID(store.item) {
-                                        NextUpActivityStore.shared.setDismissed(id, dismissed: false, scope: session.references.scope)
-                                    }
+                                    NextUpActivityStore.shared.restore(store.item, scope: session.references.scope)
                                 }
                                 playbackRefresh.markPlaybackProgressChanged()
                             }

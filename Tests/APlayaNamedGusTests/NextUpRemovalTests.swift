@@ -88,4 +88,39 @@ struct NextUpRemovalTests {
             #expect(activity.isDismissed("media:jellyfin:episode", scope: scope))
         }
     }
+
+    @Test("removing a saved show clears only its resumable episodes across pages; playback restores it")
+    func seriesRemovalAndCompletion() async throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let queue = UpNextStore(persistence: UpNextPersistence(directory: directory.appendingPathComponent("queue")))
+        let activity = NextUpActivityStore(persistence: NextUpActivityPersistence(directory: directory.appendingPathComponent("activity")))
+        let progress = OfflinePlaybackProgressStore(directory: directory)
+        let scope = AccountScope(serverID: "s", userID: "u")
+        let show = MediaItem(id: "show", type: .series)
+        let episode = MediaItem(id: "one", seriesID: "show", type: .episode)
+        let resumes = [episode, MediaItem(id: "other", seriesID: "different", type: .episode), MediaItem(id: "two", seriesID: "show", type: .episode)]
+        let provider = FakeMediaProviderSession(capabilities: ProviderCapabilities())
+        var offsets: [Int] = []
+        var cleared: [String] = []
+        provider.resumePageHandler = { start, _ in
+            offsets.append(start)
+            return MediaItemPage(items: Array(resumes.dropFirst(start).prefix(1)), totalRecordCount: resumes.count)
+        }
+        provider.progressHandler = { id, ticks in #expect(ticks == 0); cleared.append(id) }
+        progress.checkpoint(itemID: "two", positionTicks: 99, scope: scope)
+        progress.checkpoint(itemID: "other", positionTicks: 50, scope: scope)
+        try await queue.removeFromNextUp(show, session: session(provider), activity: activity, progress: progress)
+        #expect(offsets == [0, 1, 2])
+        #expect(Set(cleared) == ["show", "one", "two"])
+        #expect(progress.positionTicks(forItemID: "two", scope: scope) == 0)
+        #expect(progress.positionTicks(forItemID: "other", scope: scope) == 50)
+        #expect(activity.isDismissed(episode, scope: scope))
+        activity.recordPlayback(item: episode, scope: scope)
+        #expect(!activity.isDismissed(episode, scope: scope))
+        activity.recordCompletion(item: episode, scope: scope)
+        #expect(activity.isDismissed(episode, scope: scope))
+        activity.recordPlayback(item: episode, scope: scope)
+        #expect(!activity.isDismissed(episode, scope: scope))
+    }
 }

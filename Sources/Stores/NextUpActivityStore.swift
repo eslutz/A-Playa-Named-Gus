@@ -99,6 +99,7 @@ final class NextUpActivityStore {
         current.activity[id] = max(current.activity[id] ?? .distantPast, date)
         let series = item.type == .episode ? item.seriesID.map { MediaItem(providerKind: item.providerKind, id: $0, type: .series) } : nil
         if let series, let seriesKey = NextUpBuilder.mediaID(series) {
+            current.dismissedIDs?.remove(seriesKey)
             current.activity[seriesKey] = max(current.activity[seriesKey] ?? .distantPast, date)
         }
         if commit(current, scope: scope) {
@@ -107,6 +108,25 @@ final class NextUpActivityStore {
                 syncStore?.recordActivity(item: series, scope: scope, at: date)
             }
         }
+    }
+
+    @discardableResult
+    func restore(_ item: MediaItem, scope: AccountScope) -> Bool {
+        guard let id = NextUpBuilder.mediaID(item) else { return false }
+        load(scope: scope)
+        var current = snapshots[scope] ?? .init()
+        current.dismissedIDs?.remove(id)
+        if item.type == .episode, let seriesID = item.seriesID {
+            current.dismissedIDs?.remove("media:\(item.providerKind.rawValue):\(seriesID)")
+        }
+        return commit(current, scope: scope)
+    }
+
+    func isDismissed(_ item: MediaItem, scope: AccountScope) -> Bool {
+        if let id = NextUpBuilder.mediaID(item), isDismissed(id, scope: scope) {
+            return true
+        }
+        return item.type == .episode && item.seriesID.map { isDismissed("media:\(item.providerKind.rawValue):\($0)", scope: scope) } == true
     }
 
     /// A native completion retires saved membership as well as automatic resume.
