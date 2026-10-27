@@ -47,6 +47,9 @@ struct RootContainer: View {
                 await state.refreshCachedContent()
             }
             .onChange(of: navigation.searchFocusRequest, initial: true) { _, request in
+                if request > 0, state.selectedSectionID == NavigationSectionPreference.discoverID {
+                    state.paths[NavigationSectionPreference.discoverID] = NavigationPath()
+                }
                 #if os(tvOS)
                     if request > 0 {
                         state.selectedSectionID = "gus.tv.search"
@@ -57,6 +60,8 @@ struct RootContainer: View {
             .onChange(of: state.selectedSectionID) { _, id in storedSelection = id }
             .environment(state)
             .environment(audio)
+            .environment(session.seerr)
+            .task { await session.seerr.restore() }
     }
 
     @ViewBuilder private var presentationRoot: some View {
@@ -201,6 +206,8 @@ private struct SectionStack: View {
                 } else if let section = sections.first(where: { $0.id == sectionID }) {
                     if section.id == NavigationSectionPreference.downloadedID {
                         DownloadedLibraryView()
+                    } else if section.id == NavigationSectionPreference.discoverID {
+                        DiscoverView()
                     } else {
                         #if os(tvOS)
                             RootSectionDestination(section: section, home: home)

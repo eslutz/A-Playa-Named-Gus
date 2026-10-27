@@ -16,6 +16,7 @@ final class SessionStore {
     var user: StoredUser
     let profile: UserProfileStore
     let server: ServerConnection
+    let seerr: SeerrStore
     /// Called when any request in this session receives a 401; navigates back to sign-in.
     var onUnauthorized: () -> Void = {}
 
@@ -48,6 +49,7 @@ final class SessionStore {
         self.profile = UserProfileStore(client: client, userID: user.id)
         self.user = user
         self.server = server
+        self.seerr = SeerrStore(scope: AccountScope(serverID: server.id, userID: user.id))
         let provider = mediaProvider ?? JellyfinMediaProviderSession(client: client, userID: user.id)
         self.mediaProvider = provider
         self.references = MediaReferenceResolver(provider: provider, scope: AccountScope(serverID: server.id, userID: user.id))

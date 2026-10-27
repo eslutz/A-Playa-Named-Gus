@@ -30,6 +30,7 @@ struct NavigationPreferencesTests {
             "category.movies",
             "category.tvshows",
             "category.music",
+            "discover",
             "settings",
             "category.books",
             "category.photos",
@@ -41,6 +42,7 @@ struct NavigationPreferencesTests {
             "category.movies",
             "category.tvshows",
             "category.music",
+            "discover",
             "settings",
         ])
         #expect(store.hiddenSections(libraries: Self.libraries, serverID: "s", userID: "u").filter { $0.id != "downloaded" && $0.id != "playlists" }.map(\.id) == [
@@ -89,7 +91,7 @@ struct NavigationPreferencesTests {
 
         #expect(
             store.visibleSections(libraries: Self.libraries, serverID: "s", userID: "u").filter { $0.id != "downloaded" && $0.id != "playlists" }.map(\.id)
-                == ["home", "libraries", "category.movies", "category.music", "settings", "category.books"]
+                == ["home", "libraries", "category.movies", "category.music", "discover", "settings", "category.books"]
         )
         #expect(
             store.hiddenSections(libraries: Self.libraries, serverID: "s", userID: "u").filter { $0.id != "downloaded" && $0.id != "playlists" }.map(\.id)
@@ -111,7 +113,10 @@ struct NavigationPreferencesTests {
         let musicIndex = try #require(movable.firstIndex { $0.id == "category.music" })
         let librariesIndex = try #require(movable.firstIndex { $0.id == "libraries" })
         store.move(sectionID: "category.music", by: librariesIndex - musicIndex, libraries: Self.libraries, serverID: "s", userID: "u")
-        store.move(sectionID: "settings", by: -1, libraries: Self.libraries, serverID: "s", userID: "u")
+        let updated = store.visibleSections(libraries: Self.libraries, serverID: "s", userID: "u").filter(\.canMove)
+        let settingsIndex = try #require(updated.firstIndex { $0.id == "settings" })
+        let moviesIndex = try #require(updated.firstIndex { $0.id == "category.movies" })
+        store.move(sectionID: "settings", by: moviesIndex - settingsIndex, libraries: Self.libraries, serverID: "s", userID: "u")
 
         let sections = store.resolvedSections(libraries: Self.libraries, serverID: "s", userID: "u")
         #expect(sections.filter { $0.id != "downloaded" && $0.id != "playlists" }.map(\.id) == [
@@ -120,6 +125,7 @@ struct NavigationPreferencesTests {
             "libraries",
             "settings",
             "category.movies",
+            "discover",
             "category.tvshows",
             "category.books",
             "category.photos",
@@ -127,7 +133,7 @@ struct NavigationPreferencesTests {
         ])
         #expect(
             store.visibleSections(libraries: Self.libraries, serverID: "s", userID: "u").filter { $0.id != "downloaded" && $0.id != "playlists" }.map(\.id)
-                == ["home", "category.music", "libraries", "settings", "category.movies"]
+                == ["home", "category.music", "libraries", "settings", "category.movies", "discover"]
         )
     }
 
@@ -157,6 +163,22 @@ struct NavigationPreferencesTests {
         let sections = store.resolvedSections(libraries: Self.libraries, serverID: "s", userID: "u")
         #expect(sections.first?.id == "home")
         #expect(sections.dropFirst().first?.id == "libraries")
+    }
+
+    @Test("Discover can be hidden and restored independently for each account")
+    func discoverVisibility() {
+        let store = Self.makeStore()
+        let before = store.visibleSections(libraries: Self.libraries, serverID: "s", userID: "u").map(\.id)
+        #expect(before.contains("discover"))
+        store.setVisibility(false, forSectionID: "discover", libraries: Self.libraries, serverID: "s", userID: "u")
+        let after = store.visibleSections(libraries: Self.libraries, serverID: "s", userID: "u").map(\.id)
+        #expect(Array(before.prefix(4)) == Array(after.prefix(4)))
+        #expect(!after.contains("discover"))
+        #expect(store.visibleSections(libraries: Self.libraries, serverID: "other", userID: "u").contains { $0.id == "discover" })
+        store.setVisibility(true, forSectionID: "discover", libraries: Self.libraries, serverID: "s", userID: "u")
+        let restored = store.visibleSections(libraries: Self.libraries, serverID: "s", userID: "u").map(\.id)
+        #expect(Set(restored) == Set(before))
+        #expect(Array(restored.prefix(4)) == Array(before.prefix(4)))
     }
 
     @Test("preferences are scoped per account")

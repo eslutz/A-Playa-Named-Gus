@@ -15,7 +15,12 @@ struct AppModelSessionTests {
         #expect(fixture.appModel.currentSession?.user == fixture.userA)
         #expect(fixture.appModel.lastSessionAccount == SessionCredential(user: fixture.userA).account)
 
+        let outgoingSeerr = try #require(fixture.appModel.currentSession?.seerr)
+        let outgoingRevision = outgoingSeerr.revision
         try fixture.appModel.switchToStoredUser(fixture.userB)
+        #expect(outgoingSeerr.revision != outgoingRevision)
+        #expect(!outgoingSeerr.isConnected)
+        #expect(throws: SeerrConnectionError.signInRequired) { try outgoingSeerr.requireClient() }
         #expect(fixture.appModel.currentSession?.user == fixture.userB)
         #expect(fixture.appModel.lastSessionAccount == SessionCredential(user: fixture.userB).account)
         #expect(fixture.tokens.token(for: SessionCredential(user: fixture.userA)) == "token-a")

@@ -97,6 +97,7 @@ final class AppModel {
     var currentSession: SessionStore? {
         didSet {
             if oldValue !== currentSession {
+                oldValue?.seerr.deactivate()
                 oldValue?.references.invalidate()
                 oldValue?.invalidateCollections()
             }
@@ -452,8 +453,7 @@ final class AppModel {
     }
 
     private func clearCurrentAccountDataIfNeeded(replacingWith user: StoredUser, on server: ServerConnection) {
-        guard let session = currentSession else { return }
-        guard session.user != user || session.server.id != server.id else { return }
+        guard let session = currentSession, session.user != user || session.server.id != server.id else { return }
         clearAccountData(server: session.server, user: session.user, preservingDownloads: true)
     }
 
