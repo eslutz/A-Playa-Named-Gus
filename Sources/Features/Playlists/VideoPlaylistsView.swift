@@ -123,6 +123,8 @@ struct VideoPlaylistDetailView: View {
     @Environment(SessionStore.self) private var session
     @Environment(ServerMediaListsStore.self) private var lists
     @Environment(VideoPlaylistsStore.self) private var supplemental
+    @Environment(AudioPlaybackCoordinator.self) private var audio
+    @Environment(OfflineDownloadStore.self) private var downloads
     let id: UUID
     @State private var renaming = false
     @State private var adding = false
@@ -465,11 +467,13 @@ struct VideoPlaylistDetailView: View {
 
     private func entryRow(_ entry: VideoPlaylistEntry, index: Int, playlist: VideoPlaylist, canEdit: Bool) -> some View {
         let admitted = ContentRatingGate.admitsStored(entry.reference.item)
-        let isVideo = playlist.entries.allSatisfy { [.movie, .episode, .video].contains($0.reference.item.type) }
+        let isPlayable = [.movie, .episode, .video].contains(entry.reference.item.type) || entry.reference.item.isAudioPlayable
         return HStack(spacing: 16) {
             Text("\(index + 1)").monospacedDigit().frame(width: max(28, CGFloat(String(max(playlist.entries.count, 1)).count) * numberDigitWidth), alignment: .trailing).foregroundStyle(.secondary)
-            if admitted {
-                NavigationLink(value: ItemRef(item: entry.reference.item)) {
+            if admitted && isPlayable {
+                Button {
+                    play(entry, fromBeginning: true)
+                } label: {
                     VStack(alignment: .leading) {
                         Text(entry.reference.item.displayTitle)
                         if let series = entry.reference.item.seriesName {
@@ -477,6 +481,11 @@ struct VideoPlaylistDetailView: View {
                         }
                     }
                 }
+                .disabled(editing || mutating)
+                .accessibilityIdentifier("Playlist.entry." + entry.id.uuidString)
+                .accessibilityHint("Plays the playlist starting with this item")
+            } else if admitted {
+                NavigationLink(value: ItemRef(item: entry.reference.item)) { Text(entry.reference.item.displayTitle) }
             } else {
                 Label("Restricted Content", systemImage: "lock")
             }
@@ -484,7 +493,7 @@ struct VideoPlaylistDetailView: View {
         .mediaItemContextMenu(item: admitted ? entry.reference.item : nil, groupName: playlist.name, canRemove: canEdit, remove: {
             _ = await lists.remove(entryID: entry.id, from: id, kind: .playlist, session: session)
         }) {
-            Button("Play from Here") { play(entry, fromBeginning: true) }.disabled(!admitted || !isVideo || editing || mutating)
+            Button("Play from Here") { play(entry, fromBeginning: true) }.disabled(!admitted || !isPlayable || editing || mutating)
             Button("Move Up") { move(index, by: -1, in: playlist) }.disabled(!canEdit || index == 0)
             Button("Move Down") { move(index, by: 1, in: playlist) }.disabled(!canEdit || index == playlist.entries.count - 1)
             Button("Choose Replacement") { replacing = entry }.disabled(!admitted || !canEdit)
@@ -493,6 +502,16 @@ struct VideoPlaylistDetailView: View {
 
     private func play(_ entry: VideoPlaylistEntry?, fromBeginning: Bool, shuffled: Bool = false) {
         guard let entry else { return }
+        if let playlist, playlist.entries.allSatisfy({ $0.reference.item.isAudioPlayable }),
+           let index = playlist.entries.firstIndex(where: { $0.id == entry.id })
+        {
+            audio.play(tracks: playlist.entries.map(\.reference.item), startIndex: index, shuffled: shuffled, playbackStart: fromBeginning ? .fromBeginning : .automatic, session: session, downloads: downloads)
+            return
+        }
+        if let playlist, !playlist.entries.allSatisfy({ [.movie, .episode, .video].contains($0.reference.item.type) }) {
+            player = ItemRef(item: entry.reference.item, serverID: scope.serverID, userID: scope.userID, playbackStart: fromBeginning ? .fromBeginning : .automatic)
+            return
+        }
         player = ItemRef(item: entry.reference.item, serverID: scope.serverID, userID: scope.userID, playlistID: lists.resolvedID(id, scope: scope), playlistEntryID: entry.id, playlistFromBeginning: fromBeginning, playlistShuffled: shuffled)
     }
 

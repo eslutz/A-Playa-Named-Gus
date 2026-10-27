@@ -148,7 +148,7 @@ struct NavigationSettingsView: View {
                     .dropDestination(for: String.self) { draggedIDs, _ in
                         _ = moveDraggedSection(draggedIDs.first, before: section.id, in: sections)
                     }
-                .listRowInsets(EdgeInsets(top: 0, leading: 20, bottom: 0, trailing: 12))
+                    .listRowInsets(EdgeInsets(top: 0, leading: 20, bottom: 0, trailing: 12))
             } else {
                 navigationRow(section)
                     .moveDisabled(!section.canMove)

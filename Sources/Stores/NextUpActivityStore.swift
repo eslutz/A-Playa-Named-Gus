@@ -109,6 +109,16 @@ final class NextUpActivityStore {
         }
     }
 
+    /// A native completion retires saved membership as well as automatic resume.
+    /// Starting this item again clears the dismissal through recordPlayback.
+    func recordCompletion(item: MediaItem, scope: AccountScope) {
+        guard let id = NextUpBuilder.mediaID(item), setDismissed(id, dismissed: true, scope: scope), let syncStore else { return }
+        syncStore.load(scope: scope)
+        for intent in syncStore.savedIntents(scope: scope) where intent.queued && intent.reference.item.id == item.id && intent.reference.item.providerKind == item.providerKind {
+            syncStore.setSavedIntent(id: intent.id, reference: intent.reference, queued: false, activityAt: intent.activityAt, scope: scope)
+        }
+    }
+
     /// Registers discovery order once. Refreshing content can add new IDs but
     /// cannot change the rank of an already encountered, undated card.
     func remember(_ ids: [String], scope: AccountScope) {

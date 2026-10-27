@@ -86,7 +86,7 @@ struct HomeView: View {
             let index = playlist.entries.firstIndex { $0.id == playlist.cursor?.entryID } ?? 0
             let item = playlist.entries.indices.contains(index) ? playlist.entries[index].reference.item : nil
             guard item.map({ ContentRatingGate.admitsStored($0) }) ?? true else { return nil }
-            return NextUpPlaylistCandidate(id: playlist.id, name: playlist.name, item: item, position: playlist.entries.isEmpty ? 0 : index + 1, total: playlist.entries.count, activityAt: playlist.activityAt)
+            return NextUpPlaylistCandidate(id: playlist.id, name: playlist.name, item: item, position: playlist.entries.isEmpty ? 0 : index + 1, total: playlist.entries.count, activityAt: playlist.activityAt, members: playlist.entries.map(\.reference.item))
         }
         store?.updateNextUp(saved: upNext.entries(serverID: scope.serverID, userID: scope.userID), playlists: candidates)
     }
@@ -249,12 +249,13 @@ private struct NextUpDestination: View {
         .accessibilityIdentifier("NextUp.card." + entry.id)
         .mediaItemContextMenu(item: entry.playlist == nil ? entry.item : nil, groupName: String(localized: "Next Up"), allowsAddingToNextUp: false, remove: {
             let scope = session.references.scope
-            guard NextUpActivityStore.shared.setDismissed(entry.id, dismissed: true, scope: scope) else { return }
-            if let saved = entry.savedEntry {
-                upNext.remove(saved)
-            }
             if let playlist = entry.playlist {
+                guard NextUpActivityStore.shared.setDismissed(entry.id, dismissed: true, scope: scope) else {
+                    throw GusError.server(NextUpActivityStore.shared.errorMessage ?? String(localized: "Your queue change couldn't be saved. Try again."))
+                }
                 playlists.setQueued(id: playlist.id, queued: false, scope: scope)
+            } else if let item = entry.item {
+                try await upNext.removeFromNextUp(item, session: session)
             }
         })
         .sheet(item: $replacement) { saved in

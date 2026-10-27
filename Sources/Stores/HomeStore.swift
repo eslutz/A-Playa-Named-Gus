@@ -125,7 +125,7 @@ final class HomeStore {
         let scope = session.references.scope
         unifiedNextUp = NextUpBuilder.build(
             resume: resumeItems, nextEpisodes: nextUpItems, saved: savedIntents,
-            playlists: playlistCandidates, activity: activity.snapshot(scope: scope),
+            playlists: playlistCandidates.filter { !activity.isDismissed("playlist:" + $0.id.uuidString, scope: scope) }, activity: activity.snapshot(scope: scope),
             firstSeenIDs: activity.firstSeenIDs(scope: scope)
         ).filter { !activity.isDismissed($0.id, scope: scope) }
         activity.remember(unifiedNextUp.map(\.id), scope: scope)

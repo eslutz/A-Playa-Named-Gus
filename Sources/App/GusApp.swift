@@ -171,7 +171,7 @@ struct GusApp: App {
                         .environment(navigationPreferences)
                         .environment(sharedWithYou)
                         .gusTheme()
-                .preferredColorScheme(appearance.colorScheme)
+                        .preferredColorScheme(appearance.colorScheme)
                 }
             }
             .defaultSize(width: 1024, height: 576)

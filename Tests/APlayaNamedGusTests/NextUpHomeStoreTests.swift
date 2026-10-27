@@ -28,7 +28,7 @@ struct NextUpHomeStoreTests {
         #expect(object["dismissedIDs"] as? [String] == ["media:jellyfin:movie"])
     }
 
-    @Test("dismissal survives reload and refresh, stays account scoped, and playback restores the item")
+    @Test("dismissal survives reload and refresh; starting playback restores the item")
     func dismissedAutomaticItem() async {
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: directory) }
@@ -124,15 +124,23 @@ struct NextUpHomeStoreTests {
         let provider = FakeMediaProviderSession(capabilities: ProviderCapabilities())
         provider.userViewsHandler = { [MediaItem(id: "a"), MediaItem(id: "b")] }
         provider.itemsHandler = { query in
-            if query.includeTypes == [.movie] { return MediaItemPage(items: [MediaItem(id: "a0", type: .movie)], totalRecordCount: 1) }
-            if query.includeTypes == [.book] { return MediaItemPage(items: [MediaItem(id: "b0", type: .book)], totalRecordCount: 1) }
+            if query.includeTypes == [.movie] {
+                return MediaItemPage(items: [MediaItem(id: "a0", type: .movie)], totalRecordCount: 1)
+            }
+            if query.includeTypes == [.book] {
+                return MediaItemPage(items: [MediaItem(id: "b0", type: .book)], totalRecordCount: 1)
+            }
             return MediaItemPage(items: [], totalRecordCount: 0)
         }
         let store = home(provider, activity: activityStore())
         await store.load()
         provider.itemsHandler = { query in
-            if query.includeTypes == [.movie] { throw GusError.offline }
-            if query.includeTypes == [.book] { return MediaItemPage(items: [MediaItem(id: "b1", type: .book)], totalRecordCount: 1) }
+            if query.includeTypes == [.movie] {
+                throw GusError.offline
+            }
+            if query.includeTypes == [.book] {
+                return MediaItemPage(items: [MediaItem(id: "b1", type: .book)], totalRecordCount: 1)
+            }
             return MediaItemPage(items: [], totalRecordCount: 0)
         }
         await store.refresh()

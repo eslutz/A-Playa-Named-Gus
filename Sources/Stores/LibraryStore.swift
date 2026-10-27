@@ -225,7 +225,9 @@ final class LibraryStore {
         self.scope = scope
         self.session = session
         self.admits = admits
-        if case .latest = scope { filter.sort = .recentlyAdded }
+        if case .latest = scope {
+            filter.sort = .recentlyAdded
+        }
     }
 
     var title: String {

@@ -10,7 +10,7 @@ private struct MediaItemContextMenu<Actions: View>: ViewModifier {
     let groupName: String?
     let canRemove: Bool
     let allowsAddingToNextUp: Bool
-    let remove: (() async -> Void)?
+    let remove: (() async throws -> Void)?
     @ViewBuilder let additionalActions: () -> Actions
     @State private var addingToPlaylist = false
     @State private var addingToCollection = false
@@ -44,7 +44,14 @@ private struct MediaItemContextMenu<Actions: View>: ViewModifier {
                 if let groupName, let remove {
                     Divider()
                     Button("Remove from \(groupName)", systemImage: "minus.circle", role: .destructive) {
-                        Task { await remove() }
+                        Task {
+                            guard !updating else { return }
+                            updating = true
+                            defer { updating = false }
+                            do { try await remove() }
+                            catch { errorMessage = GusError(from: error).localizedDescription }
+                            playbackRefresh.markPlaybackProgressChanged()
+                        }
                     }
                     .disabled(!canRemove || updating)
                 }
@@ -90,7 +97,7 @@ private struct MediaItemContextMenu<Actions: View>: ViewModifier {
         Task {
             defer { updating = false }
             let store = ItemDetailStore(item: current(item), session: session)
-            await store.setWatched(watched)
+            await store.setWatched(watched, nextUp: upNext)
             errorMessage = store.actionError
             await upNext.refresh(session: session, force: true)
             // Also reconcile partial success if a subsequent request failed.
@@ -100,11 +107,11 @@ private struct MediaItemContextMenu<Actions: View>: ViewModifier {
 }
 
 extension View {
-    func mediaItemContextMenu(item: MediaItem?, groupName: String? = nil, canRemove: Bool = true, allowsAddingToNextUp: Bool = true, remove: (() async -> Void)? = nil) -> some View {
+    func mediaItemContextMenu(item: MediaItem?, groupName: String? = nil, canRemove: Bool = true, allowsAddingToNextUp: Bool = true, remove: (() async throws -> Void)? = nil) -> some View {
         mediaItemContextMenu(item: item, groupName: groupName, canRemove: canRemove, allowsAddingToNextUp: allowsAddingToNextUp, remove: remove) { EmptyView() }
     }
 
-    func mediaItemContextMenu<Actions: View>(item: MediaItem?, groupName: String? = nil, canRemove: Bool = true, allowsAddingToNextUp: Bool = true, remove: (() async -> Void)? = nil, @ViewBuilder additionalActions: @escaping () -> Actions) -> some View {
+    func mediaItemContextMenu<Actions: View>(item: MediaItem?, groupName: String? = nil, canRemove: Bool = true, allowsAddingToNextUp: Bool = true, remove: (() async throws -> Void)? = nil, @ViewBuilder additionalActions: @escaping () -> Actions) -> some View {
         modifier(MediaItemContextMenu(item: item, groupName: groupName, canRemove: canRemove, allowsAddingToNextUp: allowsAddingToNextUp, remove: remove, additionalActions: additionalActions))
     }
 }

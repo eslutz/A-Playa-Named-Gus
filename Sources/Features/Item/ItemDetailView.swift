@@ -13,6 +13,8 @@ struct ItemDetailView: View {
     #endif
     let item: MediaItem
 
+    @State private var updatingNextUp = false
+    @State private var nextUpError: String?
     @State private var playerItem: ItemRef?
     @State private var sharePlay = SharePlayCoordinator.shared
     @State private var addingToPlaylist = false
@@ -43,55 +45,62 @@ struct ItemDetailView: View {
         #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
         #endif
-        .task {
-            if store == nil {
-                let store = navigationState.detailStore(for: item, session: session)
-                self.store = store
-            }
-        }
-        .onChange(of: session.references.revision) { _, _ in
-            if let store, let id = store.item.id, let current = session.references.updates[id] {
-                store.acceptResolvedMetadata(current)
-            }
-        }
-        .playerPresentation(item: $playerItem)
-        .sheet(isPresented: $addingToCollection) { NavigationStack { AddToMediaCollectionView(item: store?.item ?? item) } }
-        .sheet(isPresented: $addingToPlaylist) {
-            NavigationStack { AddToVideoPlaylistView(item: store?.item ?? item) }
-        }
-        .toolbar {
-            if !isRestricted, let store, store.item.id != nil {
-                ToolbarItem(placement: .primaryAction) {
-                    Menu {
-                        let markWatched = store.item.userData?.isWatched != true
-                        if store.item.type == .movie || store.item.type == .episode {
-                            Button("Add to Playlist", systemImage: MediaActionSymbols.addToPlaylist) { addingToPlaylist = true }
-                        }
-                        if CollectionPlatform.canManage && (navigationState.collectionStore(session: session).capabilities.create || navigationState.collectionStore(session: session).capabilities.addMembers) {
-                            Button("Add to Collection", systemImage: "rectangle.stack.badge.plus") { addingToCollection = true }
-                        }
-                        Divider()
-                        Button(markWatched ? "Mark as Watched" : "Mark as Unwatched", systemImage: markWatched ? "checkmark.circle" : "arrow.counterclockwise") {
-                            Task { await store.setWatched(markWatched) }
-                        }
-                        .disabled(store.isUpdatingUserData || store.needsUserDataRefresh)
-                    } label: { Label("More", systemImage: "ellipsis") }
-                        .accessibilityIdentifier("Detail.actions")
+            .task {
+                if store == nil {
+                    let store = navigationState.detailStore(for: item, session: session)
+                    self.store = store
                 }
             }
-        }
-        .sharePlaySharingPresentation(presentation: $sharePlayPresentation, errorMessage: $sharePlayErrorMessage)
-        .downloadErrorAlert(downloads)
-        // Handoff: continue browsing this item on another device. Restricted items
-        // (family safety) are never advertised.
-        .userActivity(GusUserActivity.itemDetail, isActive: !isRestricted && (store?.item.id ?? item.id) != nil) { activity in
-            GusUserActivity.configure(
-                activity,
-                item: store?.item ?? item,
-                serverID: session.server.id,
-                userID: session.user.id
-            )
-        }
+            .onChange(of: session.references.revision) { _, _ in
+                if let store, let id = store.item.id, let current = session.references.updates[id] {
+                    store.acceptResolvedMetadata(current)
+                }
+            }
+            .playerPresentation(item: $playerItem)
+            .sheet(isPresented: $addingToCollection) { NavigationStack { AddToMediaCollectionView(item: store?.item ?? item) } }
+            .sheet(isPresented: $addingToPlaylist) {
+                NavigationStack { AddToVideoPlaylistView(item: store?.item ?? item) }
+            }
+            .toolbar {
+                if !isRestricted, let store, store.item.id != nil {
+                    ToolbarItem(placement: .primaryAction) {
+                        Menu {
+                            let markWatched = store.item.userData?.isWatched != true
+                            if store.item.type == .movie || store.item.type == .episode {
+                                Button("Add to Playlist", systemImage: MediaActionSymbols.addToPlaylist) { addingToPlaylist = true }
+                            }
+                            if CollectionPlatform.canManage && (navigationState.collectionStore(session: session).capabilities.create || navigationState.collectionStore(session: session).capabilities.addMembers) {
+                                Button("Add to Collection", systemImage: "rectangle.stack.badge.plus") { addingToCollection = true }
+                            }
+                            Divider()
+                            Button(markWatched ? "Mark as Watched" : "Mark as Unwatched", systemImage: markWatched ? "checkmark.circle" : "arrow.counterclockwise") {
+                                Task { await store.setWatched(markWatched, nextUp: upNext) }
+                            }
+                            .disabled(store.isUpdatingUserData || store.needsUserDataRefresh)
+                        } label: { Label("More", systemImage: "ellipsis") }
+                            .accessibilityIdentifier("Detail.actions")
+                    }
+                }
+            }
+            .sharePlaySharingPresentation(presentation: $sharePlayPresentation, errorMessage: $sharePlayErrorMessage)
+            .downloadErrorAlert(downloads)
+            .alert("Item Could Not Be Updated", isPresented: Binding(get: { nextUpError != nil }, set: {
+                if !$0 {
+                    nextUpError = nil
+                }
+            })) {
+                Button("OK", role: .cancel) { nextUpError = nil }
+            } message: { Text(nextUpError ?? "") }
+            // Handoff: continue browsing this item on another device. Restricted items
+            // (family safety) are never advertised.
+            .userActivity(GusUserActivity.itemDetail, isActive: !isRestricted && (store?.item.id ?? item.id) != nil) { activity in
+                GusUserActivity.configure(
+                    activity,
+                    item: store?.item ?? item,
+                    serverID: session.server.id,
+                    userID: session.user.id
+                )
+            }
     }
 
     private var detailNavigationTitle: String {
@@ -132,11 +141,21 @@ struct ItemDetailView: View {
                         },
                         isInUpNext: upNext.contains(store.item, serverID: session.server.id, userID: session.user.id),
                         toggleUpNext: {
-                            upNext.toggle(store.item, serverID: session.server.id, userID: session.user.id)
-                            if upNext.contains(store.item, serverID: session.server.id, userID: session.user.id), let id = NextUpBuilder.mediaID(store.item) {
-                                NextUpActivityStore.shared.setDismissed(id, dismissed: false, scope: session.references.scope)
+                            guard !updatingNextUp else { return }
+                            updatingNextUp = true
+                            Task {
+                                defer { updatingNextUp = false }
+                                if upNext.contains(store.item, serverID: session.server.id, userID: session.user.id) {
+                                    do { try await upNext.removeFromNextUp(store.item, session: session) }
+                                    catch { nextUpError = GusError(from: error).localizedDescription }
+                                } else {
+                                    upNext.toggle(store.item, serverID: session.server.id, userID: session.user.id)
+                                    if let id = NextUpBuilder.mediaID(store.item) {
+                                        NextUpActivityStore.shared.setDismissed(id, dismissed: false, scope: session.references.scope)
+                                    }
+                                }
+                                playbackRefresh.markPlaybackProgressChanged()
                             }
-                            playbackRefresh.markPlaybackProgressChanged()
                         }
                     ) {
                         ItemUserActionButton(
@@ -157,7 +176,7 @@ struct ItemDetailView: View {
                             ItemUserActionButton(
                                 title: store.item.userData?.isWatched == true ? "Mark as Unwatched" : "Mark as Watched",
                                 systemImage: store.item.userData?.isWatched == true ? "arrow.counterclockwise" : "checkmark.circle",
-                                action: { Task { await store.setWatched(store.item.userData?.isWatched != true) } }
+                                action: { Task { await store.setWatched(store.item.userData?.isWatched != true, nextUp: upNext) } }
                             )
                             .disabled(store.isUpdatingUserData || store.needsUserDataRefresh)
                             .accessibilityIdentifier("Detail.watched")
