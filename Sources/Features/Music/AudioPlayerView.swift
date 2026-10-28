@@ -14,6 +14,14 @@ struct AudioPlayerView: View {
 
     private var usesLeadingTitle: Bool {
         #if os(iOS)
+            widthClass == .compact || DeviceIdentity.usesIPadPresentation
+        #else
+            false
+        #endif
+    }
+
+    private var usesInlineTransport: Bool {
+        #if os(iOS)
             widthClass == .compact
         #else
             false
@@ -65,9 +73,11 @@ struct AudioPlayerView: View {
             progressBlock
             transportControls
             #if os(iOS)
-                GusSystemVolumeControl().frame(height: 32).gusIPhoneOnly()
+                if widthClass == .compact || DeviceIdentity.usesIPadPresentation {
+                    GusSystemVolumeControl().frame(height: 32)
+                }
             #endif
-            if !usesLeadingTitle || track?.type == .audioBook {
+            if !usesInlineTransport || track?.type == .audioBook {
                 secondaryControls
             }
         }
@@ -133,23 +143,23 @@ struct AudioPlayerView: View {
 
     private var transportControls: some View {
         ViewThatFits(in: .horizontal) {
-            HStack(spacing: usesLeadingTitle ? 4 : 12) {
-                if usesLeadingTitle {
+            HStack(spacing: usesInlineTransport ? 4 : 12) {
+                if usesInlineTransport {
                     queueButton
                 }
                 shuffleButton; previousButton; playPauseButton; nextButton; repeatButton
-                if usesLeadingTitle {
+                if usesInlineTransport {
                     AirPlayRoutePicker().frame(width: 44, height: 44)
                 }
             }
             VStack(spacing: 12) {
                 HStack(spacing: 12) { previousButton; playPauseButton; nextButton }
                 HStack(spacing: 12) {
-                    if usesLeadingTitle {
+                    if usesInlineTransport {
                         queueButton
                     }
                     shuffleButton; repeatButton
-                    if usesLeadingTitle {
+                    if usesInlineTransport {
                         AirPlayRoutePicker().frame(width: 44, height: 44)
                     }
                 }
@@ -221,8 +231,14 @@ struct AudioPlayerView: View {
                 speedMenu
                 chaptersMenu
             }
-            if !usesLeadingTitle {
-                AirPlayRoutePicker()
+            if !usesInlineTransport {
+                queueButton
+                #if os(iOS)
+                    if DeviceIdentity.usesIPadPresentation {
+                        Spacer()
+                    }
+                #endif
+                AirPlayRoutePicker().frame(width: 44, height: 44)
             }
         }
     }

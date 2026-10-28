@@ -9,7 +9,7 @@ extension View {
 }
 
 /// Resolves content links through the active session. Detail links push into the current
-/// tvOS stack or use a sheet on the other platforms; play links use the session player host.
+/// iPad/tvOS stack or use a sheet on other platforms; play links use the session player host.
 /// Links that arrive while signed out stay pending in `AppNavigationModel` and are
 /// consumed here once a session exists.
 private struct ContentLinkHandler: ViewModifier {
@@ -75,6 +75,16 @@ private struct ContentLinkHandler: ViewModifier {
             case .item:
                 #if os(tvOS)
                     rootState.paths[rootState.selectedSectionID, default: NavigationPath()].append(ItemRef(item: item))
+                #elseif os(iOS)
+                    if DeviceIdentity.usesIPadPresentation {
+                        if item.type == .photo {
+                            rootState.playerItem = ItemRef(item: item, serverID: session.server.id, userID: session.user.id)
+                        } else {
+                            rootState.paths[rootState.selectedSectionID, default: NavigationPath()].append(ItemRef(item: item))
+                        }
+                    } else {
+                        rootState.detailItem = ItemRef(item: item)
+                    }
                 #else
                     rootState.detailItem = ItemRef(item: item)
                 #endif

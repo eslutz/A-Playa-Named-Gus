@@ -44,10 +44,14 @@ struct DiscoverView: View {
                     }
                     NavigationLink { SeerrSettingsView() } label: { Label("Discover Settings", systemImage: "gearshape") }
                 }
+                .labelStyle(.iconOnly)
                 .accessibilityIdentifier("Seerr.menu")
             }
             if store.isConnected {
-                ToolbarItem { NavigationLink("My Requests") { SeerrRequestsView() } }
+                ToolbarItem {
+                    NavigationLink { SeerrRequestsView() } label: { Label("My Requests", systemImage: "clock") }
+                        .labelStyle(.iconOnly)
+                }
             }
         }
         .sheet(isPresented: $showingSetup) { SeerrConnectView() }

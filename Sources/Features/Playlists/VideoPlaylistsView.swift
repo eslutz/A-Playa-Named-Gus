@@ -217,6 +217,7 @@ struct VideoPlaylistDetailView: View {
                                 Divider()
                                 Button("Delete Playlist", systemImage: "trash", role: .destructive) { deletingPlaylist = true }.disabled(!serverList.canEdit)
                             } label: { Label("More", systemImage: "ellipsis") }
+                                .labelStyle(.iconOnly)
                                 .disabled(mutating)
                                 .accessibilityIdentifier("Playlist.more")
                         }

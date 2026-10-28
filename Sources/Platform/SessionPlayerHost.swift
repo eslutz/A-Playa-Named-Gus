@@ -45,16 +45,32 @@ struct AdaptiveAudioLayout<Artwork: View, Controls: View>: View {
         }
     }
 
+    private var artworkLimit: CGFloat {
+        #if os(iOS)
+            DeviceIdentity.usesIPadPresentation ? 300 : 240
+        #else
+            240
+        #endif
+    }
+
     private func adaptiveContent(geometry: GeometryProxy) -> some View {
         ViewThatFits(in: .horizontal) {
             HStack(alignment: .center, spacing: 24) {
-                artwork.frame(width: min(geometry.size.height * 0.5, 240))
+                artwork.frame(width: min(geometry.size.height * 0.5, artworkLimit))
                 controls.frame(minWidth: 280, maxWidth: 560)
             }
             VStack(spacing: 24) { artwork; controls }
         }
         .padding(24)
-        .frame(maxWidth: .infinity)
+        .frame(maxWidth: .infinity, minHeight: minimumContentHeight(geometry))
+    }
+
+    private func minimumContentHeight(_ geometry: GeometryProxy) -> CGFloat {
+        #if os(iOS)
+            DeviceIdentity.usesIPadPresentation ? max(0, geometry.size.height - 48) : 0
+        #else
+            0
+        #endif
     }
 }
 
@@ -150,13 +166,16 @@ private struct SessionAudioPlayer: View {
             .toolbar {
                 #if os(iOS)
                     ToolbarItem(placement: .cancellationAction) {
-                        Button("Close", systemImage: "xmark") { audio.close() }.labelStyle(.iconOnly)
+                        ImmersiveDismissButton { audio.close() }
+                            .accessibilityIdentifier("AudioPlayer.close")
                     }
                     if widthClass == .compact {
                         ToolbarItem(placement: .principal) {
                             Text(audio.store?.currentTrack?.album ?? String(localized: "Now Playing"))
                                 .font(.caption).foregroundStyle(.secondary).textCase(.uppercase)
                         }
+                    } else if DeviceIdentity.usesIPadPresentation {
+                        ToolbarItem(placement: .principal) { Text("Now Playing").font(.headline) }
                     }
                 #else
                     ToolbarItem(placement: .cancellationAction) { Button("Done", systemImage: "xmark") { audio.close() } }
@@ -206,7 +225,7 @@ private struct NowPlayingReturnView: View {
 
     @ViewBuilder private var returnLabel: some View {
         #if os(iOS)
-            if widthClass == .compact {
+            if widthClass == .compact || DeviceIdentity.usesIPadPresentation {
                 compactLabel
             } else {
                 legacyLabel

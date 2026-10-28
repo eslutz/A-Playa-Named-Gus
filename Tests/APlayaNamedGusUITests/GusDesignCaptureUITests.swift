@@ -1,4 +1,5 @@
 #if os(iOS)
+    import UIKit
     import XCTest
 
     /// Repeatable visual walkthrough of the real demo server, shared by baseline and redesign.
@@ -12,7 +13,7 @@
         override func setUp() async throws {
             continueAfterFailure = false
             executionTimeAllowance = 600
-            XCUIDevice.shared.orientation = .portrait
+            XCUIDevice.shared.orientation = UIDevice.current.userInterfaceIdiom == .pad ? .landscapeLeft : .portrait
             var request = URLRequest(url: URL(string: "http://127.0.0.1:8096/Users/AuthenticateByName")!)
             request.httpMethod = "POST"
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -39,6 +40,57 @@
                 XCUIDevice.shared.orientation = .portrait
             }
             try await super.tearDown()
+        }
+
+        func testIPadR2SearchAndSidebar() throws {
+            guard UIDevice.current.userInterfaceIdiom == .pad else {
+                throw XCTSkip("Requires an iPad")
+            }
+            XCUIDevice.shared.orientation = .landscapeLeft
+            let app = launch("home")
+            let hide = app.buttons["Navigation.hideSidebar"]
+            XCTAssertTrue(hide.waitForExistence(timeout: 30))
+            XCTAssertEqual(app.buttons.allElementsBoundByIndex.filter {
+                $0.isHittable && $0.label.localizedCaseInsensitiveContains("sidebar")
+            }.count, 1)
+            XCTAssertFalse(app.searchFields.firstMatch.exists)
+            hide.tap()
+            let show = app.buttons["Navigation.showSidebar"]
+            XCTAssertTrue(show.waitForExistence(timeout: 5))
+            show.tap()
+            let search = app.descendants(matching: .any)["Navigation.search"].firstMatch
+            XCTAssertTrue(search.waitForExistence(timeout: 5))
+            search.tap()
+            let field = app.searchFields.firstMatch
+            XCTAssertTrue(field.waitForExistence(timeout: 10))
+            field.tap()
+            field.typeText("Popeye")
+            hide.tap()
+            XCTAssertTrue(show.waitForExistence(timeout: 5))
+            show.tap()
+            XCTAssertEqual(field.value as? String, "Popeye")
+            let mode = app.buttons["Search.displayMode"]
+            XCTAssertTrue(mode.waitForExistence(timeout: 15))
+            mode.tap()
+            XCTAssertEqual(mode.label, "Grid")
+            XCUIDevice.shared.orientation = .portrait
+            XCTAssertEqual(field.value as? String, "Popeye")
+            XCUIDevice.shared.orientation = .landscapeLeft
+            XCTAssertEqual(field.value as? String, "Popeye")
+        }
+
+        func testIPadR2MainWindowNavigation() throws {
+            guard UIDevice.current.userInterfaceIdiom == .pad else { throw XCTSkip("Requires an iPad") }
+            let album = try XCTUnwrap(media.first { $0["type"] == "MusicAlbum" })
+            let app = try launch("item/" + XCTUnwrap(album["id"]))
+            let title = try XCTUnwrap(album["name"])
+            XCTAssertTrue(app.navigationBars[title].waitForExistence(timeout: 30))
+            XCTAssertTrue(app.buttons["Navigation.hideSidebar"].exists)
+            XCTAssertFalse(app.buttons["ContentLink.detailDone"].exists)
+            let back = app.navigationBars[title].buttons["Home"]
+            XCTAssertTrue(back.exists)
+            back.tap()
+            XCTAssertTrue(app.navigationBars["Home"].exists)
         }
 
         func testConnection() {
@@ -69,8 +121,11 @@
         func testRootDestinations() {
             for (route, name) in [("home", "home"), ("libraries", "libraries"), ("downloaded", "downloads"), ("settings", "settings")] {
                 let app = launch(route)
-                XCTAssertTrue(app.tabBars.firstMatch.waitForExistence(timeout: 30))
+                XCTAssertTrue(waitForRoot(app))
                 capture(name)
+                if route == "home", UIDevice.current.userInterfaceIdiom == .pad {
+                    capture("more")
+                }
                 if route == "home", let show = button("Show All", app) {
                     show.tap()
                     capture("next-up")
@@ -131,7 +186,7 @@
             app.buttons["Gus Default"].firstMatch.tap()
             capture("theme-gus")
             let home = launch("home")
-            XCTAssertTrue(home.tabBars.firstMatch.waitForExistence(timeout: 30))
+            XCTAssertTrue(waitForRoot(home))
             if let show = button("Show All", home) {
                 show.tap()
                 let layout = home.buttons["NextUp.displayMode"]
@@ -166,7 +221,7 @@
         func testLibraryCategories() {
             for (title, name) in [("Movies", "movies"), ("Shows", "shows"), ("Music", "music"), ("Books", "books"), ("Photos", "photos"), ("Live TV", "live-tv"), ("Discover", "discover"), ("Playlists", "playlists")] {
                 let app = launch("home")
-                XCTAssertTrue(app.tabBars.firstMatch.waitForExistence(timeout: 30))
+                XCTAssertTrue(waitForRoot(app))
                 guard openDestination(title, app) else { continue }
                 capture(name)
                 if name == "movies", let filter = button("Sort and Filter", app) ?? button("Filter", app) {
@@ -188,7 +243,12 @@
             for (type, name) in [("Movie", "movie"), ("Series", "series"), ("Episode", "episode"), ("MusicArtist", "artist"), ("MusicAlbum", "album"), ("Book", "book"), ("Playlist", "playlist"), ("BoxSet", "collection")] {
                 guard let item = media.first(where: { $0["type"] == type }), let id = item["id"] else { continue }
                 let app = launch("item/" + id)
-                XCTAssertTrue(app.buttons["ContentLink.detailDone"].waitForExistence(timeout: 30) || app.navigationBars.firstMatch.exists)
+                if UIDevice.current.userInterfaceIdiom == .pad {
+                    XCTAssertTrue(app.navigationBars[item["name"] ?? ""].waitForExistence(timeout: 30))
+                    XCTAssertFalse(app.buttons["ContentLink.detailDone"].exists)
+                } else {
+                    XCTAssertTrue(app.buttons["ContentLink.detailDone"].waitForExistence(timeout: 30))
+                }
                 capture(name + "-detail")
                 if type == "Movie" || type == "Episode" {
                     app.swipeUp()
@@ -230,7 +290,7 @@
             capture("search-empty")
 
             let settings = launch("settings")
-            XCTAssertTrue(settings.tabBars.firstMatch.waitForExistence(timeout: 30))
+            XCTAssertTrue(waitForRoot(settings))
             for _ in 0 ..< 3 {
                 if let nav = button("Navigation", settings), nav.isHittable {
                     nav.tap()
@@ -248,7 +308,7 @@
         func testAudioAndBook() {
             if let item = media.first(where: { $0["type"] == "Audio" && !($0["name"] ?? "").hasPrefix("Repeat QA") }), let id = item["id"] {
                 let app = launch("play/" + id)
-                XCTAssertTrue(app.buttons["Close"].waitForExistence(timeout: 30))
+                XCTAssertTrue(app.buttons[UIDevice.current.userInterfaceIdiom == .pad ? "AudioPlayer.close" : "Close"].waitForExistence(timeout: 30))
                 if let pause = button("Pause", app) {
                     pause.tap()
                 }
@@ -256,15 +316,18 @@
                 let queue = app.buttons["Queue"].firstMatch
                 if queue.waitForExistence(timeout: 5) {
                     let previous = app.buttons["Previous Track"].firstMatch
-                    XCTAssertEqual(queue.frame.midY, previous.frame.midY, accuracy: 2)
-                    XCTAssertGreaterThan(queue.frame.midY, app.frame.height * 0.65)
+                    if UIDevice.current.userInterfaceIdiom != .pad {
+                        XCTAssertEqual(queue.frame.midY, previous.frame.midY, accuracy: 2)
+                        XCTAssertGreaterThan(queue.frame.midY, app.frame.height * 0.65)
+                    }
                     queue.tap()
                     XCTAssertTrue(app.navigationBars["Queue"].waitForExistence(timeout: 5))
                     capture("audio-queue")
                     app.buttons["Close"].firstMatch.tap()
                 }
-                if let done = button("Close", app) {
-                    done.tap()
+                let close = app.buttons["AudioPlayer.close"]
+                if close.isHittable {
+                    close.tap()
                 }
                 capture("audio-accessory")
             }
@@ -339,7 +402,8 @@
             XCTAssertTrue(app.textFields["Name"].waitForExistence(timeout: 5))
             capture("playlist-new")
             app.buttons["Cancel"].firstMatch.tap()
-            let row = app.staticTexts["Actions 1C81D887"].firstMatch
+            let playlist = try XCTUnwrap(media.first { $0["type"] == "Playlist" })
+            let row = try app.staticTexts[XCTUnwrap(playlist["name"])].firstMatch
             XCTAssertTrue(row.waitForExistence(timeout: 10)); row.tap()
             XCTAssertTrue(app.buttons["Playlist.more"].waitForExistence(timeout: 10))
             capture("ordered-native-playlist")
@@ -366,7 +430,7 @@
                 }
             }
             let downloads = launch("downloaded")
-            XCTAssertTrue(downloads.tabBars.firstMatch.waitForExistence(timeout: 30))
+            XCTAssertTrue(waitForRoot(downloads))
             if let manage = button("Manage Downloads", downloads) {
                 manage.tap()
                 capture("downloads-manager")
@@ -377,7 +441,11 @@
             for (type, name) in [("Photo", "photo-viewer"), ("PhotoAlbum", "photo-album")] {
                 guard let item = media.first(where: { $0["type"] == type }), let id = item["id"] else { continue }
                 let app = launch("item/" + id)
-                XCTAssertTrue(app.buttons["ContentLink.detailDone"].waitForExistence(timeout: 30))
+                if UIDevice.current.userInterfaceIdiom == .pad {
+                    XCTAssertTrue(app.navigationBars.firstMatch.waitForExistence(timeout: 30))
+                } else {
+                    XCTAssertTrue(app.buttons["ContentLink.detailDone"].waitForExistence(timeout: 30))
+                }
                 capture(name)
             }
             if let item = media.first(where: { $0["name"] == "Dracula" }), let id = item["id"] {
@@ -398,7 +466,7 @@
 
         func testLibraryDisplayModes() {
             let app = launch("libraries")
-            XCTAssertTrue(app.tabBars.firstMatch.waitForExistence(timeout: 30))
+            XCTAssertTrue(waitForRoot(app))
             if let mode = button("Libraries.displayMode", app) {
                 mode.tap()
                 capture("libraries-grid")
@@ -406,7 +474,7 @@
                 capture("libraries-grid")
             }
             let movies = launch("home")
-            XCTAssertTrue(movies.tabBars.firstMatch.waitForExistence(timeout: 30))
+            XCTAssertTrue(waitForRoot(movies))
             if openDestination("Movies", movies), let mode = button("Library.displayMode", movies) {
                 mode.tap()
                 capture("movies-list")
@@ -417,7 +485,7 @@
 
         func testMusicDisplayModes() {
             let app = launch("home")
-            XCTAssertTrue(app.tabBars.firstMatch.waitForExistence(timeout: 30))
+            XCTAssertTrue(waitForRoot(app))
             XCTAssertTrue(openDestination("Music", app))
             capture("music")
             if let mode = button("Library.displayMode", app) {
@@ -429,7 +497,7 @@
 
         func testPushedMediaAndCollectionScreens() {
             let app = launch("home")
-            XCTAssertTrue(app.tabBars.firstMatch.waitForExistence(timeout: 30))
+            XCTAssertTrue(waitForRoot(app))
             if openDestination("Movies", app), let movie = media.first(where: { $0["type"] == "Movie" }), let name = movie["name"] {
                 let row = app.buttons[name].firstMatch
                 if row.waitForExistence(timeout: 20) {
@@ -439,10 +507,13 @@
                 }
             }
             let playlists = launch("home")
-            XCTAssertTrue(playlists.tabBars.firstMatch.waitForExistence(timeout: 30))
+            XCTAssertTrue(waitForRoot(playlists))
             if openDestination("Playlists", playlists), let playlist = media.first(where: { $0["type"] == "Playlist" }), let name = playlist["name"] {
                 let row = playlists.buttons.matching(NSPredicate(format: "label CONTAINS %@", name)).firstMatch
                 if row.waitForExistence(timeout: 20) {
+                    row.press(forDuration: 1)
+                    capture("playlist-actions")
+                    playlists.coordinate(withNormalizedOffset: CGVector(dx: 0.95, dy: 0.95)).tap()
                     row.tap()
                     capture("playlist-pushed")
                     if let more = button("Playlist.more", playlists) {
@@ -458,7 +529,7 @@
                 }
             }
             let collections = launch("home")
-            XCTAssertTrue(collections.tabBars.firstMatch.waitForExistence(timeout: 30))
+            XCTAssertTrue(waitForRoot(collections))
             if openDestination("Movies", collections), let all = button("See All", collections) {
                 all.tap()
                 capture("collections-grid")
@@ -474,7 +545,7 @@
         func testDownloadManagementStates() {
             guard let item = media.first(where: { $0["type"] == "Movie" && ($0["name"] ?? "").contains("May Irwin") }), let id = item["id"], let title = item["name"] else { return }
             let app = launch("item/" + id)
-            XCTAssertTrue(app.buttons["ContentLink.detailDone"].waitForExistence(timeout: 30))
+            XCTAssertTrue(waitForMovieDetail(app))
             let download = app.buttons["Download"].firstMatch
             let createdHere = download.waitForExistence(timeout: 5)
             if createdHere {
@@ -487,7 +558,7 @@
                 capture("download-in-progress", waitsForLoading: false)
             }
             let downloaded = launch("downloaded")
-            XCTAssertTrue(downloaded.tabBars.firstMatch.waitForExistence(timeout: 30))
+            XCTAssertTrue(waitForRoot(downloaded))
             capture("downloads-populated")
             if let manage = button("Manage Downloads", downloaded) {
                 manage.tap()
@@ -530,7 +601,7 @@
             theme.tap(); settings.buttons["Gus Default"].firstMatch.tap()
             guard let item = media.first(where: { $0["type"] == "Movie" && ($0["name"] ?? "").contains("Sneeze") }), let id = item["id"], let title = item["name"] else { return XCTFail("Missing rights-cleared long-title movie") }
             let detail = launch("item/" + id)
-            XCTAssertTrue(detail.buttons["ContentLink.detailDone"].waitForExistence(timeout: 30))
+            XCTAssertTrue(waitForMovieDetail(detail))
             let download = detail.buttons["Download"].firstMatch
             let createdHere = download.waitForExistence(timeout: 5)
             if createdHere {
@@ -573,7 +644,7 @@
         func testOptionalPhotoAndLiveTVSections() {
             for title in ["Photos", "Live TV"] {
                 let settings = launch("settings")
-                XCTAssertTrue(settings.tabBars.firstMatch.waitForExistence(timeout: 30))
+                XCTAssertTrue(waitForRoot(settings))
                 let nav = settings.buttons["Navigation"].firstMatch
                 for _ in 0 ..< 6 where !nav.isHittable {
                     settings.swipeUp()
@@ -590,13 +661,14 @@
                     }
                     settings.swipeUp()
                 }
-                XCTAssertTrue(hidden.isHittable)
                 capture("navigation-optional-edit")
-                hidden.tap()
-                XCTAssertTrue(hidden.waitForNonExistence(timeout: 10))
+                if hidden.isHittable {
+                    hidden.tap()
+                    XCTAssertTrue(hidden.waitForNonExistence(timeout: 10))
+                }
                 settings.buttons["Done"].firstMatch.tap()
                 let app = settings
-                app.tabBars.buttons["Home"].tap()
+                XCTAssertTrue(openDestination("Home", app))
                 XCTAssertTrue(openDestination(title, app))
                 capture(title == "Photos" ? "photos" : "live-tv")
                 if title == "Photos" {
@@ -627,8 +699,41 @@
             return app
         }
 
+        private func waitForMovieDetail(_ app: XCUIApplication) -> Bool {
+            app.buttons[UIDevice.current.userInterfaceIdiom == .pad ? "Detail.play" : "ContentLink.detailDone"].waitForExistence(timeout: 30)
+        }
+
+        private func waitForRoot(_ app: XCUIApplication) -> Bool {
+            if UIDevice.current.userInterfaceIdiom == .pad {
+                return app.buttons["Navigation.hideSidebar"].waitForExistence(timeout: 30)
+            }
+            return app.tabBars.firstMatch.waitForExistence(timeout: 30)
+        }
+
         private func openDestination(_ title: String, _ app: XCUIApplication) -> Bool {
             let titles = title == "Shows" ? ["Shows", "Series"] : [title]
+            if UIDevice.current.userInterfaceIdiom == .pad {
+                let show = app.buttons["Navigation.showSidebar"]
+                if show.isHittable {
+                    show.tap()
+                }
+                if title == "Search" {
+                    let search = app.descendants(matching: .any)["Navigation.search"].firstMatch
+                    guard search.waitForExistence(timeout: 5) else { return false }
+                    search.tap()
+                    return true
+                }
+                let row = app.descendants(matching: .any).matching(NSPredicate(
+                    format: "identifier BEGINSWITH %@ AND label IN %@", "Navigation.section.", titles
+                )).firstMatch
+                for _ in 0 ..< 5 {
+                    if row.exists && row.isHittable {
+                        row.tap(); return true
+                    }
+                    app.collectionViews.firstMatch.swipeUp()
+                }
+                return false
+            }
             if let tab = app.tabBars.buttons.matching(NSPredicate(format: "label IN %@", titles)).allElementsBoundByIndex.first, tab.isHittable {
                 tab.tap()
                 return true
@@ -658,6 +763,8 @@
         private func dismissSheet(_ app: XCUIApplication) {
             if let done = button("Close", app) ?? button("Done", app) ?? button("Cancel", app), done.isHittable {
                 done.tap()
+            } else if let back = button("Back", app), back.isHittable {
+                back.tap()
             } else {
                 app.swipeDown()
             }

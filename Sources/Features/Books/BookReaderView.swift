@@ -36,7 +36,7 @@
                 #endif
                     .toolbar {
                         ToolbarItem(placement: .cancellationAction) {
-                            GusCloseButton {
+                            ImmersiveDismissButton {
                                 // The session host owns this cover; do not dismiss
                                 // an ancestor detail sheet after adaptive relayout.
                                 if let close {
@@ -95,6 +95,8 @@
                     Label("Can't Open This Book", systemImage: "book.closed")
                 } description: {
                     Text(message)
+                } actions: {
+                    Button("Try Again") { Task { await model.retry() } }
                 }
             case .loaded:
                 EPUBNavigatorRepresentable(model: model)
@@ -107,6 +109,7 @@
                 model.navigator?.view.window?.endEditing(true)
                 showingChapters = true
             }
+            .labelStyle(.iconOnly)
             .accessibilityLabel("Chapters")
         }
 
@@ -204,6 +207,12 @@
 
         private var syncEnabled: Bool {
             provider?.capabilities.supportsBookProgressSync == true
+        }
+
+        func retry() async {
+            guard case .failed = state else { return }
+            state = .idle
+            await open()
         }
 
         func open() async {

@@ -35,6 +35,14 @@ historical references; do not import their screen layouts into the redesign or r
 them. The archived `Design/Archive/2026-10-27/DISCOVER.md` remains the approved behavioral input, with implementation
 status checked against current source. Design coverage does not prove runtime behavior.
 
+The iPad implementation follows the fresh **Gus iPadOS R2** handoff. Its ordinary
+details stay in the main navigation stack; Reader, Photos and Now Playing occupy
+the window. Global Search is a dedicated sidebar destination (a Search tab in a
+compact window), and the sidebar visibility control sits at its trailing edge.
+Use native controls and preserve the approved iPhone presentation. The external
+94-scenario comparison and supporting-state checklist track runtime acceptance;
+see `Documentation/ipad-r2-capabilities.md` for client/service boundaries.
+
 - Third-party *runtime* dependencies are limited to `jellyfin-sdk-swift` (`from: 2.1.0`)
   plus, on iOS/iPadOS only, the Readium toolkit for in-app EPUB reading (ADR 0009 — no
   system API renders EPUB; tvOS/macOS don't link it by design, visionOS is blocked on an
@@ -251,8 +259,8 @@ available; a saved account-specific order keeps its first three visible sections
 
 **Content deep links** (`gus://item/<id>`, `gus://play/<id>` — `Models/ContentLink.swift`)
 ride `AppNavigationModel` via a consume-once pending-link; `Platform/ContentLinkHandler.swift`
-resolves the id through the session's provider. tvOS item links push into the selected
-section's normal stack; other platforms present a detail sheet. Session player hosts sit
+resolves the id through the session's provider. iPad and tvOS item links push into the selected
+section's normal stack; iPad photos open the fullscreen session viewer. Other platforms present a detail sheet. Session player hosts sit
 above adaptive layout replacement, with the detail sheet hosting playback while it is open.
 Content links are the shared entry point for: **Handoff** (`Platform/UserActivities.swift`
 — detail/player surfaces publish `NSUserActivity` with ids only, never tokens), **Core

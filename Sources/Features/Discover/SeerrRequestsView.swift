@@ -82,6 +82,7 @@ struct SeerrRequestsView: View {
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Button("Refresh Requests", systemImage: "arrow.clockwise") { refreshID = UUID() }
+                    .labelStyle(.iconOnly)
                     .disabled(isLoading)
             }
         }

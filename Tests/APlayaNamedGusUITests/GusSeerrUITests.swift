@@ -1,5 +1,6 @@
 #if os(iOS)
     import Foundation
+    import UIKit
     import XCTest
 
     /// Requires the localhost Jellyfin demo and Scripts/discover-fixture-server.py.
@@ -19,8 +20,13 @@
             app.buttons["View My Requests"].firstMatch.tap()
             XCTAssertTrue(app.navigationBars["My Requests"].waitForExistence(timeout: 10))
             capture("seerr-confirmation-history")
-            app.navigationBars.buttons.firstMatch.tap()
-            app.buttons["Close"].firstMatch.tap()
+            if UIDevice.current.userInterfaceIdiom == .pad {
+                XCTAssertTrue(app.buttons["Navigation.hideSidebar"].exists)
+                XCTAssertFalse(app.buttons["Close"].exists)
+            } else {
+                app.navigationBars["My Requests"].buttons.firstMatch.tap()
+                app.buttons["Close"].firstMatch.tap()
+            }
 
             // A new app process must restore the cookie without another login.
             app.terminate()
@@ -345,7 +351,7 @@
 
         private func capture(_ name: String) {
             let image = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
-            image.name = name; image.lifetime = .keepAlways; add(image)
+            image.name = "design-" + name; image.lifetime = .keepAlways; add(image)
         }
 
         private func requestPosts(_ state: FixtureState) -> Int {

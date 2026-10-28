@@ -145,7 +145,7 @@ struct PresentedPlayer: View {
                 PhotoViewerView(photo: item)
                     .toolbar {
                         ToolbarItem(placement: .cancellationAction) {
-                            GusCloseButton {
+                            ImmersiveDismissButton {
                                 dismiss()
                             }
                         }

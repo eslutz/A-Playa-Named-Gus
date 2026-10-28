@@ -5,6 +5,10 @@ struct SearchResultsView: View {
     @Environment(SessionStore.self) private var session
     let store: SearchStore
 
+    private var searchState: SectionSearchState {
+        rootState.searchState(for: rootState.selectedSectionID, session: session)
+    }
+
     var body: some View {
         LoadingStateView(
             state: store.state,
@@ -14,21 +18,20 @@ struct SearchResultsView: View {
             retryAction: { Task { await store.search(store.query) } }
         ) {
             ScrollView {
-                LazyVGrid(columns: PosterGrid.columns, alignment: .leading, spacing: PosterGrid.spacing) {
+                LazyVGrid(columns: searchState.showsList ? [GridItem(.flexible())] : PosterGrid.columns, alignment: .leading, spacing: PosterGrid.spacing) {
                     ForEach(store.results, id: \.id) { item in
-                        NavigationLink(value: ItemRef(item: item)) {
-                            PosterCard(
-                                item: item,
-                                imageURL: session.mediaProvider.primaryImageURL(for: item, context: .posterGrid)
-                            )
+                        MediaItemNavigationLink(item: item) {
+                            if searchState.showsList {
+                                MediaLibraryRow(item: item)
+                            } else {
+                                PosterCard(item: item, imageURL: session.mediaProvider.primaryImageURL(for: item, context: .posterGrid))
+                            }
                         }
                         .id(ItemRef(item: item).id)
                         .posterNavigationStyle()
                         .mediaItemContextMenu(item: item)
                         .gusTVFocus(id: ItemRef(item: item).id, section: "search:" + rootState.selectedSectionID + ":" + store.query, ids: store.results.map { ItemRef(item: $0).id }, item: item)
-                        .task {
-                            await store.loadMoreIfNeeded(currentItem: item)
-                        }
+                        .task { await store.loadMoreIfNeeded(currentItem: item) }
                     }
 
                     if let error = store.pageError {
@@ -49,6 +52,21 @@ struct SearchResultsView: View {
             }
             .scrollPosition(id: rootState.scrollBinding(for: "search:" + rootState.selectedSectionID + ":" + store.query))
             .lookToScroll()
+        }
+        .toolbar {
+            #if os(iOS)
+                if DeviceIdentity.usesIPadPresentation {
+                    ToolbarItem(placement: .primaryAction) {
+                        Button {
+                            searchState.showsList.toggle()
+                        } label: {
+                            Label(searchState.showsList ? "Grid" : "List", systemImage: searchState.showsList ? "square.grid.2x2" : "list.bullet")
+                        }
+                        .labelStyle(.iconOnly)
+                        .accessibilityIdentifier("Search.displayMode")
+                    }
+                }
+            #endif
         }
     }
 }

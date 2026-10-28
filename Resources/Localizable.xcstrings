@@ -7332,6 +7332,90 @@
           }
         }
       }
+    },
+    "Hide Sidebar": {
+      "comment": "Accessibility label for the trailing iPad sidebar visibility button.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hide Sidebar"
+          }
+        }
+      }
+    },
+    "Show Sidebar": {
+      "comment": "Accessibility label for restoring the iPad sidebar.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show Sidebar"
+          }
+        }
+      }
+    },
+    "Back": {
+      "comment": "Returns from the fullscreen iPad reader, photo viewer or Now Playing surface.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Back"
+          }
+        }
+      }
+    },
+    "Reload Profile?": {
+      "comment": "Confirmation before replacing an unsaved profile draft.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reload Profile?"
+          }
+        }
+      }
+    },
+    "Reload and Discard Draft": {
+      "comment": "Destructive confirmation action to replace an unsaved profile draft.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reload and Discard Draft"
+          }
+        }
+      }
+    },
+    "Keep Editing": {
+      "comment": "Cancel replacing an unsaved profile draft.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keep Editing"
+          }
+        }
+      }
+    },
+    "Reloading replaces your unsaved profile changes with the current server profile.": {
+      "comment": "Explains the effect of reloading a changed profile draft.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reloading replaces your unsaved profile changes with the current server profile."
+          }
+        }
+      }
     }
   },
   "version": "1.1"

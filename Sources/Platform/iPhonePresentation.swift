@@ -1,5 +1,36 @@
 import SwiftUI
 
+#if os(iOS)
+    import UIKit
+
+    @MainActor
+    extension DeviceIdentity {
+        /// Window traits retain the iPad idiom even in a compact multitasking window.
+        static var usesIPadPresentation: Bool {
+            UIApplication.shared.connectedScenes.contains {
+                ($0 as? UIWindowScene)?.traitCollection.userInterfaceIdiom == .pad
+            }
+        }
+    }
+#endif
+
+/// Immersive iPad surfaces return to their caller without implying playback stops.
+struct ImmersiveDismissButton: View {
+    let action: () -> Void
+
+    var body: some View {
+        #if os(iOS)
+            if DeviceIdentity.usesIPadPresentation {
+                Button("Back", systemImage: "chevron.backward", action: action).labelStyle(.iconOnly)
+            } else {
+                GusCloseButton(action: action)
+            }
+        #else
+            GusCloseButton(action: action)
+        #endif
+    }
+}
+
 /// Shared iPhone treatments from the reviewed Sketch component page.
 /// Native controls retain their platform materials, accessibility, and interaction.
 extension View {
@@ -62,6 +93,12 @@ private struct IPhoneCanvasModifier: ViewModifier {
 #endif
 
 extension View {
+    @ViewBuilder func gusIOSOnly() -> some View {
+        #if os(iOS)
+            self
+        #endif
+    }
+
     func gusIPhoneOnly() -> some View {
         modifier(IPhoneOnlyModifier())
     }

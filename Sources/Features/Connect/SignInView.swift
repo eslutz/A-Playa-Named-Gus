@@ -33,6 +33,19 @@ struct SignInView: View {
                 signInForm
             #endif
         }
+        #if os(iOS)
+        .sheet(isPresented: $showingSignInOptions) {
+            NavigationStack {
+                signInOptionsContent
+                    .navigationTitle("Sign-in Options")
+                    .toolbar {
+                        ToolbarItem(placement: .cancellationAction) {
+                            GusCloseButton { showingSignInOptions = false }
+                        }
+                    }
+            }
+        }
+        #endif
         .task { await loadPublicSignInData() }
         .task { await refreshQuickConnectAvailability() }
         .onDisappear {
@@ -43,9 +56,23 @@ struct SignInView: View {
 
     private var signInForm: some View {
         Form {
-            publicProfilesSection
-            credentialsSection
-            quickConnectSection
+            #if os(iOS)
+                if DeviceIdentity.usesIPadPresentation {
+                    credentialsSection
+                    Section {
+                        Button("More sign-in options") { showingSignInOptions = true }
+                            .disabled(quickConnectStore == nil || signInStore == nil)
+                    }
+                } else {
+                    publicProfilesSection
+                    credentialsSection
+                    quickConnectSection
+                }
+            #else
+                publicProfilesSection
+                credentialsSection
+                quickConnectSection
+            #endif
             signInErrorSection
             signInActionSection
         }
@@ -115,17 +142,6 @@ struct SignInView: View {
             .navigationBarTitleDisplayMode(.inline)
             .scrollDismissesKeyboard(.interactively)
             .gusIPhoneCanvas()
-            .sheet(isPresented: $showingSignInOptions) {
-                NavigationStack {
-                    signInOptionsContent
-                        .navigationTitle("Sign-in Options")
-                        .toolbar {
-                            ToolbarItem(placement: .cancellationAction) {
-                                GusCloseButton { showingSignInOptions = false }
-                            }
-                        }
-                }
-            }
         }
 
         @ViewBuilder private var signInOptionsContent: some View {

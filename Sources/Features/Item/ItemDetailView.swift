@@ -78,6 +78,7 @@ struct ItemDetailView: View {
                             }
                             .disabled(store.isUpdatingUserData || store.needsUserDataRefresh)
                         } label: { Label("More", systemImage: "ellipsis") }
+                            .labelStyle(.iconOnly)
                             .accessibilityIdentifier("Detail.actions")
                     }
                 }

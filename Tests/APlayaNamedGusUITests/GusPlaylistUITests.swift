@@ -300,7 +300,7 @@
             }
             XCTAssertEqual(app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@ AND label CONTAINS %@", "Playlist.entry.", "Edison Kinetoscopic Record of a Sneeze (1894)")).count, 1)
             let before = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
-            before.name = "ordered-native-playlist"; before.lifetime = .keepAlways; add(before)
+            before.name = "design-ordered-native-playlist"; before.lifetime = .keepAlways; add(before)
             let native = try await nativeList(named: name, kind: "Playlist")
             let nativeID = try XCTUnwrap(native?["Id"] as? String)
             let entries = try await nativeEntries(listID: nativeID, playlist: true)
@@ -311,8 +311,8 @@
             XCTAssertFalse(app.staticTexts["Playlist Finished"].exists)
             XCTAssertEqual(app.buttons["Playlist.play"].label, "Play")
             let after = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
-            after.name = "ordered-playlist-natural-completion"; after.lifetime = .keepAlways; add(after)
-            app.navigationBars.buttons.firstMatch.tap()
+            after.name = "design-ordered-playlist-natural-completion"; after.lifetime = .keepAlways; add(after)
+            app.navigationBars[name].buttons.firstMatch.tap()
             row.press(forDuration: 1)
             app.buttons["Delete"].firstMatch.tap()
             app.buttons["Delete"].firstMatch.tap()
@@ -412,7 +412,7 @@
             XCTAssertEqual(app.buttons["Playlist.shuffle"].frame.height, app.buttons["Playlist.restart"].frame.height, accuracy: 1)
             XCTAssertLessThan(app.buttons["Playlist.restart"].frame.width, app.buttons["Playlist.play"].frame.width)
             let controlsCapture = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
-            controlsCapture.name = "playlist-playback-controls"; controlsCapture.lifetime = .keepAlways; add(controlsCapture)
+            controlsCapture.name = "design-playlist-playback-controls"; controlsCapture.lifetime = .keepAlways; add(controlsCapture)
             XCTAssertEqual(app.buttons.matching(identifier: "Playlist.addItems").count, 1)
             XCTAssertFalse(app.buttons["Playlist.nextUp"].exists)
             app.buttons["Playlist.more"].tap(); app.buttons["Edit Items"].tap()
@@ -445,7 +445,7 @@
             let restoredOrder = try await nativeEntries(listID: id, playlist: true)
             XCTAssertEqual(restoredOrder.map { $0["Id"] as? String }, original.map { $0["Id"] as? String })
             let capture = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
-            capture.name = "playlist-native-row-reordering"; capture.lifetime = .keepAlways; add(capture)
+            capture.name = "design-playlist-native-row-reordering"; capture.lifetime = .keepAlways; add(capture)
             let trash = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@", "Playlist.remove.")).firstMatch
             XCTAssertTrue(trash.waitForExistence(timeout: 5)); trash.tap()
             let settledRemoval = XCTNSPredicateExpectation(predicate: NSPredicate(format: "enabled == true"), object: app.buttons["Playlist.done"])
@@ -604,6 +604,9 @@
         }
 
         private func openPlaylists(_ app: XCUIApplication) {
+            if UIDevice.current.userInterfaceIdiom == .pad {
+                XCUIDevice.shared.orientation = .landscapeLeft
+            }
             let tab = app.tabBars.buttons["Playlists"]
             if tab.waitForExistence(timeout: 3) {
                 tab.tap()
@@ -615,7 +618,11 @@
                 XCTAssertTrue(playlists.waitForExistence(timeout: 10))
                 playlists.tap()
             } else {
-                let sidebar = app.collectionViews["Sidebar"].staticTexts["Playlists"]
+                let show = app.buttons["Navigation.showSidebar"]
+                if show.isHittable {
+                    show.tap()
+                }
+                let sidebar = app.descendants(matching: .any)["Navigation.section.playlists"].firstMatch
                 XCTAssertTrue(sidebar.waitForExistence(timeout: 20))
                 sidebar.tap()
             }

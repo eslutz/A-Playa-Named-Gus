@@ -194,20 +194,60 @@ private struct SplitRootView: View {
     }
 
     var body: some View {
-        NavigationSplitView {
+        NavigationSplitView(columnVisibility: Bindable(state).sidebarVisibility) {
             List(selection: Binding<String?>(get: { state.selectedSectionID }, set: {
                 if let id = $0 {
                     state.selectedSectionID = id
                 }
             })) {
-                ForEach(sections) { section in Label(section.title, systemImage: section.systemImage).tag(section.id) }
+                #if os(iOS)
+                    Label("Search", systemImage: "magnifyingglass")
+                        .accessibilityIdentifier("Navigation.search")
+                        .tag(RootNavigationState.searchID)
+                #endif
+                ForEach(sections) { section in
+                    Label(section.title, systemImage: section.systemImage)
+                        .accessibilityIdentifier("Navigation.section." + section.id)
+                        .tag(section.id)
+                }
             }
             .navigationTitle("Gus")
-            .navigationSplitViewColumnWidth(min: 180, ideal: 220, max: 260)
+            #if os(iOS)
+                .navigationSplitViewColumnWidth(min: 220, ideal: 280, max: 320)
+                .toolbar(removing: .sidebarToggle)
+                .toolbar {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button("Hide Sidebar", systemImage: "sidebar.left") {
+                            state.sidebarVisibility = .detailOnly
+                        }
+                        .labelStyle(.iconOnly)
+                        .accessibilityIdentifier("Navigation.hideSidebar")
+                    }
+                }
+            #else
+                .navigationSplitViewColumnWidth(min: 180, ideal: 220, max: 260)
+            #endif
         } detail: {
             SectionStack(sectionID: state.selectedSectionID)
+            #if os(iOS)
+                .toolbar(removing: .sidebarToggle)
+                .toolbar {
+                    if state.sidebarVisibility == .detailOnly {
+                        ToolbarItem(placement: .topBarLeading) {
+                            Button("Show Sidebar", systemImage: "sidebar.left") {
+                                state.sidebarVisibility = .doubleColumn
+                            }
+                            .labelStyle(.iconOnly)
+                            .accessibilityIdentifier("Navigation.showSidebar")
+                        }
+                    }
+                }
+            #endif
         }
         .navigationSplitViewStyle(.balanced)
+        #if os(iOS)
+            .toolbar(removing: .sidebarToggle)
+        #endif
     }
 }
 
@@ -258,13 +298,7 @@ private struct SectionStack: View {
                         DiscoverView()
                     } else {
                         #if os(iOS)
-                            if widthClass == .compact {
-                                RootSectionDestination(section: section, home: home)
-                            } else {
-                                SearchRootView(state: state.searchState(for: section.id, session: session)) {
-                                    RootSectionDestination(section: section, home: home)
-                                }
-                            }
+                            RootSectionDestination(section: section, home: home)
                         #elseif os(tvOS)
                             RootSectionDestination(section: section, home: home)
                         #else

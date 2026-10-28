@@ -1,5 +1,27 @@
 import SwiftUI
 
+/// Photos use the stable session cover on iPad; other items retain typed push navigation.
+struct MediaItemNavigationLink<Label: View>: View {
+    @Environment(RootNavigationState.self) private var navigation
+    @Environment(SessionStore.self) private var session
+    let item: MediaItem
+    @ViewBuilder var label: () -> Label
+
+    var body: some View {
+        #if os(iOS)
+            if DeviceIdentity.usesIPadPresentation, item.type == .photo {
+                Button {
+                    navigation.playerItem = ItemRef(item: item, serverID: session.server.id, userID: session.user.id)
+                } label: { label() }
+            } else {
+                NavigationLink(value: ItemRef(item: item)) { label() }
+            }
+        #else
+            NavigationLink(value: ItemRef(item: item)) { label() }
+        #endif
+    }
+}
+
 /// The type-routed detail surface for one media item — albums and playlists get the
 /// track list, artists their albums, photos the viewer, everything else item detail.
 /// Shared by pushed navigation (`gusItemDestinations`) and modally presented content
@@ -68,6 +90,7 @@ extension View {
             switch screen {
             case .downloads: DownloadsView()
             case .navigationSettings: NavigationSettingsView()
+            case .seerrRequests: SeerrRequestsView()
             }
         }
     }
@@ -94,5 +117,18 @@ private struct ScopedCollectionsDestination: View {
         } else {
             ContentUnavailableView("Collections Unavailable", systemImage: "rectangle.stack")
         }
+    }
+}
+
+@MainActor extension RootNavigationState {
+    /// Confirmation can leave its task sheet and reveal history in the iPad content stack.
+    func pushIPadRequestHistory() -> Bool {
+        #if os(iOS)
+            guard DeviceIdentity.usesIPadPresentation else { return false }
+            paths[selectedSectionID, default: NavigationPath()].append(AppScreen.seerrRequests)
+            return true
+        #else
+            return false
+        #endif
     }
 }

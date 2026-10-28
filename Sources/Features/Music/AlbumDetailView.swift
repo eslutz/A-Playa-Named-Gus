@@ -6,6 +6,7 @@ struct AlbumDetailView: View {
     @Environment(AudioPlaybackCoordinator.self) private var audio
     @Environment(SessionStore.self) private var session
     @Environment(OfflineDownloadStore.self) private var downloads
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     let album: MediaItem
 
     #if os(iOS)
@@ -23,19 +24,59 @@ struct AlbumDetailView: View {
             retryAction: { Task { await loadTracks() } }
         ) {
             ScrollView {
-                VStack(alignment: .leading, spacing: 24) {
-                    header
-                    trackList
-                }
-                .gusPhonePagePadding()
-                .frame(maxWidth: PageContentMetrics.maxWidth, alignment: .leading)
-                .frame(maxWidth: .infinity)
+                albumContent
+                    .gusPhonePagePadding()
+                    .frame(maxWidth: PageContentMetrics.maxWidth, alignment: .leading)
+                    .frame(maxWidth: .infinity)
             }
             .lookToScroll()
         }
         .navigationTitle(album.displayTitle)
         .task {
             await loadTracks()
+        }
+    }
+
+    @ViewBuilder private var albumContent: some View {
+        #if os(iOS)
+            if DeviceIdentity.usesIPadPresentation, widthClass == .regular, !dynamicTypeSize.isAccessibilitySize {
+                ViewThatFits(in: .horizontal) {
+                    HStack(alignment: .top, spacing: 32) {
+                        VStack(alignment: .leading, spacing: 16) {
+                            albumArtwork
+                            if let artist = album.albumArtist ?? album.artists.first {
+                                Text(artist).font(.subheadline).foregroundStyle(.secondary)
+                            }
+                            if let year = album.productionYear {
+                                Text(String(year)).font(.subheadline).foregroundStyle(.secondary)
+                            }
+                            Text("\(tracks.count) tracks").font(.subheadline).foregroundStyle(.secondary)
+                            ViewThatFits(in: .horizontal) {
+                                HStack(spacing: 12) { albumActions }
+                                VStack(alignment: .leading, spacing: 12) { albumActions }
+                            }
+                        }
+                        .frame(width: 240, alignment: .leading)
+                        VStack(alignment: .leading, spacing: 16) {
+                            Text("Tracks").font(.headline)
+                            trackList
+                        }
+                        .frame(minWidth: 280, maxWidth: .infinity, alignment: .leading)
+                    }
+                    stackedContent
+                }
+            } else {
+                stackedContent
+            }
+        #else
+            stackedContent
+        #endif
+    }
+
+    private var stackedContent: some View {
+        VStack(alignment: .leading, spacing: 24) {
+            header
+            trackList
         }
     }
 
@@ -73,7 +114,7 @@ struct AlbumDetailView: View {
 
     private var artworkWidth: CGFloat {
         #if os(iOS)
-            widthClass == .compact ? 160 : 180
+            widthClass == .compact ? 160 : (DeviceIdentity.usesIPadPresentation ? 240 : 180)
         #else
             180
         #endif

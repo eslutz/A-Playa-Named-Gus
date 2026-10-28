@@ -221,6 +221,10 @@ private extension View {
     func settingsFormStyle() -> some View {
         #if os(visionOS)
             formStyle(.automatic)
+        #elseif os(iOS)
+            formStyle(.grouped)
+                .frame(maxWidth: DeviceIdentity.usesIPadPresentation ? 760 : .infinity)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         #else
             formStyle(.grouped)
         #endif
