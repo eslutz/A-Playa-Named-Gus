@@ -30,12 +30,11 @@ struct PosterCard: View {
                 Text(title)
                     .font(.subheadline.weight(.medium))
                     .gusTVPosterTitle()
-                if let subtitle {
-                    Text(subtitle)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
-                }
+                Text(subtitle ?? " ")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .accessibilityHidden(subtitle == nil)
                 statusCaption
             }
             .gusTVCardCaption()
@@ -58,16 +57,14 @@ struct PosterCard: View {
         usesIPhoneLayout ? iPhoneAspectRatio ?? aspectRatio : aspectRatio
     }
 
-    @ViewBuilder private var statusCaption: some View {
-        if usesIPhoneLayout {
-            if statusItem?.userData?.isWatched == true {
-                Text("Watched").font(.caption).foregroundStyle(.secondary)
-            }
-        } else {
-            Text(statusItem?.userData?.isWatched == true ? String(localized: "Watched") : " ")
-                .font(.caption).foregroundStyle(.secondary)
-                .accessibilityHidden(statusItem?.userData?.isWatched != true)
-        }
+    private var statusCaption: some View {
+        // Keep identical caption geometry when watched status changes, including
+        // localized text and Dynamic Type. Invisible status is not announced.
+        Text("Watched")
+            .font(.caption).foregroundStyle(.secondary)
+            .lineLimit(1)
+            .opacity(statusItem?.userData?.isWatched == true ? 1 : 0)
+            .accessibilityHidden(statusItem?.userData?.isWatched != true)
     }
 
     private var accessibilityLabel: Text {

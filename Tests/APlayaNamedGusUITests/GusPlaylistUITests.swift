@@ -5,6 +5,58 @@
     /// These cases establish server-backed CRUD, not physical/iCloud acceptance.
     @MainActor
     final class GusPlaylistUITests: XCTestCase {
+        func testWatchedPosterKeepsGridGeometry() async throws {
+            continueAfterFailure = false
+            executionTimeAllowance = 240
+            let auth = try await demoRequest("/Users/AuthenticateByName", body: ["Username": "gus", "Pw": "playa-demo"])
+            let token = try XCTUnwrap(auth["AccessToken"] as? String)
+            let userID = try XCTUnwrap((auth["User"] as? [String: Any])?["Id"] as? String)
+            let result = try await demoRequest("/Items?recursive=true&includeItemTypes=Movie&sortBy=SortName&sortOrder=Ascending&userId=" + userID, token: token)
+            let items = try Array(XCTUnwrap(result["Items"] as? [[String: Any]]).prefix(2))
+            XCTAssertEqual(items.count, 2)
+            let titles = try items.map { try XCTUnwrap($0["Name"] as? String) }
+            let ids = try items.map { try XCTUnwrap($0["Id"] as? String) }
+            let app = XCUIApplication()
+            defer { app.terminate() }
+            for largeText in [false, true] {
+                var original: [CGRect] = []
+                for watched in [false, true, false] {
+                    // Seed server states and reload the same view to isolate card
+                    // geometry from context-menu preview and automatic scrolling.
+                    for (index, id) in ids.enumerated() {
+                        _ = try await demoRequest("/UserItems/" + id + "/UserData?userId=" + userID, token: token, body: ["Played": index == 0 && watched, "PlaybackPositionTicks": 0])
+                    }
+                    app.launchArguments = ["--gus-skip-session-restore", "--gus-demo-server", "--gus-disable-cloud-sync", "-dev.ericslutz.gus.appearance", "light", "-dev.ericslutz.gus.contentRatingLimit", "off"]
+                    if largeText {
+                        app.launchArguments += ["-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXXL"]
+                    }
+                    app.launch()
+                    let movies = app.tabBars.buttons["Movies"]
+                    XCTAssertTrue(movies.waitForExistence(timeout: 30)); movies.tap()
+                    let cards = titles.map { title in app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", title)).firstMatch }
+                    for card in cards {
+                        XCTAssertTrue(card.waitForExistence(timeout: 30))
+                    }
+                    app.swipeUp()
+                    XCTAssertEqual(cards[0].value as? String, watched ? "Watched" : "Unwatched")
+                    XCTAssertEqual(cards[1].value as? String, "Unwatched")
+                    XCTAssertEqual(cards[0].frame.minY, cards[1].frame.minY, accuracy: 1)
+                    XCTAssertEqual(cards[0].frame.height, cards[1].frame.height, accuracy: 1)
+                    if original.isEmpty {
+                        original = cards.map(\.frame)
+                    }
+                    for (card, before) in zip(cards, original) {
+                        XCTAssertEqual(card.frame.height, before.height, accuracy: 1)
+                        XCTAssertEqual(card.frame.width, before.width, accuracy: 1)
+                    }
+                    let capture = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+                    capture.name = "poster-\(largeText ? "large-text" : "standard")-\(watched ? "watched" : "unwatched")"
+                    capture.lifetime = .keepAlways; add(capture)
+                    app.terminate()
+                }
+            }
+        }
+
         func testNextUpAlignmentAndContextActions() async throws {
             continueAfterFailure = false
             executionTimeAllowance = 300
