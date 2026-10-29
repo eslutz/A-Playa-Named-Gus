@@ -16,6 +16,7 @@ struct RootContainer: View {
         // Keep the presentation anchor stable when the native tab/split container
         // changes its hosting hierarchy during rotation or window resizing.
         presentationRoot
+            // Keep the editor and its draft alive while tab/split children are replaced.
             .sheet(isPresented: Bindable(state).isProfilePresented) {
                 NavigationStack { UserProfileView() }
             }

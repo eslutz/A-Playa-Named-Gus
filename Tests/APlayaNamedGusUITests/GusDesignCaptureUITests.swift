@@ -136,6 +136,24 @@
             XCTAssertTrue(app.navigationBars["Profile"].waitForNonExistence(timeout: 10))
         }
 
+        func testIPadR2SettingsScrollPositions() throws {
+            guard UIDevice.current.userInterfaceIdiom == .pad else { throw XCTSkip("Requires an iPad") }
+            let app = launch("settings")
+            XCTAssertTrue(waitForRoot(app))
+            let theme = app.buttons["Settings.theme"]
+            for _ in 0 ..< 8 where !theme.isHittable {
+                app.swipeUp()
+            }
+            XCTAssertTrue(theme.isHittable)
+            capture("settings-middle")
+            let version = app.descendants(matching: .any).matching(NSPredicate(format: "label BEGINSWITH %@", "Version")).firstMatch
+            for _ in 0 ..< 8 where !version.isHittable {
+                app.swipeUp()
+            }
+            XCTAssertTrue(version.isHittable)
+            capture("settings-lower")
+        }
+
         func testConnection() {
             let app = launch(nil)
             XCTAssertTrue(app.textFields["ConnectServerView.serverAddress"].waitForExistence(timeout: 15))
