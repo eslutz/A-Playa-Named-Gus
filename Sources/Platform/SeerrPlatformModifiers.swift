@@ -1,6 +1,18 @@
 import SwiftUI
 
 extension View {
+    @ViewBuilder func gusSeerrSetupTitle() -> some View {
+        #if os(iOS)
+            if DeviceIdentity.usesIPadPresentation {
+                navigationBarTitleDisplayMode(.inline)
+            } else {
+                self
+            }
+        #else
+            self
+        #endif
+    }
+
     @ViewBuilder func gusSeerrSetupHeading() -> some View {
         #if os(iOS)
             if DeviceIdentity.usesIPadPresentation {

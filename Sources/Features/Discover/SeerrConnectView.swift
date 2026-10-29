@@ -50,6 +50,7 @@ struct SeerrConnectView: View {
                 .accessibilityIdentifier("Seerr.continue")
             }
             .navigationTitle("Connect to Seerr")
+            .gusSeerrSetupTitle()
             .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } } }
             .navigationDestination(isPresented: Binding(get: { candidate != nil && info != nil }, set: {
                 if !$0 {
@@ -158,6 +159,7 @@ private struct SeerrSignInView: View {
             }
         }
         .navigationTitle("Sign In to Seerr")
+        .gusSeerrSetupTitle()
         .onAppear { method = info.settings.supportsLocalLogin ? "local" : "jellyfin" }
         .onDisappear { operation?.cancel(); password = "" }
     }
