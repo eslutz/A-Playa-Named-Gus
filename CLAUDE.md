@@ -20,8 +20,9 @@ first-party *feel* comes from using the system's adaptive components and **never
 their look**.
 
 **Sketch is the fresh redesign workspace.** The private **Gus** folder in Eric Slutz's
-Workspace contains the editable working documents; `Design/` contains the two iPhone R5
-snapshots, and `Design/Archive/` holds local historical design material. Follow Apple HIG, Apple Design
+Workspace contains the editable working documents; `Design/Sketch/Snapshots/` contains
+the tracked iPhone R5 snapshots and the iPadOS/shared-library snapshots, and
+`Design/Archive/` holds local historical design material. Follow Apple HIG, Apple Design
 Resources and current framework documentation. Use linked official Apple components;
 never label a flat or blur approximation verified native Liquid Glass fidelity.
 The current iPhone implementation follows the user-selected live **Gus iPhone** document
