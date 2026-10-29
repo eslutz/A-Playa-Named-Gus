@@ -679,6 +679,13 @@
             }
             let large = launch("downloaded", largeText: true)
             XCTAssertTrue(large.staticTexts[title].firstMatch.waitForExistence(timeout: 30))
+            if UIDevice.current.userInterfaceIdiom == .pad {
+                let hide = large.buttons["Navigation.hideSidebar"]
+                if hide.isHittable {
+                    hide.tap()
+                }
+                XCTAssertTrue(large.buttons["Navigation.showSidebar"].waitForExistence(timeout: 5))
+            }
             capture("downloads-browse-large-text")
             let manage = large.buttons["Manage Downloads"].firstMatch
             XCTAssertTrue(manage.waitForExistence(timeout: 10)); manage.tap()
