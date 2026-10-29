@@ -4,12 +4,12 @@ The iPad redesign uses the existing media-provider sessions, Seerr client, sessi
 
 ## Presentation and state ownership
 
-- The regular-width sidebar owns the trailing visibility control and a dedicated global Search destination. Each section retains its navigation path; query, result layout and scroll state belong to the signed-in session. Compact windows use the existing native tab navigation.
+- The regular-width sidebar owns the trailing visibility control and a dedicated global Search destination. Each section retains its navigation path; query, per-library layout, photo-album selection and scroll state belong to the signed-in session. Compact windows use the existing native tab navigation. Accessibility text defaults to the detail pane with a native Show Sidebar action available.
 - Ordinary media details push into the selected section, including external item links. Photos, Reader and Now Playing use the stable session cover above adaptive layout changes. Closing prepared audio returns to the persistent accessory without stopping playback.
 - Music separates album browsing and artists when width and text size permit. Album detail separates artwork/actions from tracks; media detail separates artwork/actions from synopsis. Narrow windows and accessibility text use the stacked layout.
 - Request creation, profile editing, chapter selection and queue selection remain focused sheets. From a confirmed iPad request, View My Requests leaves the task sheet and pushes history in the main content stack.
 - Common toolbar actions use SF Symbols with semantic labels. Save, Cancel, destructive choices and recovery actions retain explicit text. Native volume/output controls retain system behavior; simulator output limitations do not justify a simulated volume slider.
-- Failed profile saves keep the editor draft. A requested reload confirms before replacing changed fields. Reader opening failures expose retry without resetting a successfully opened publication.
+- The profile sheet is hosted above adaptive container replacement so its draft survives layout changes. Saves expose native progress; failed saves keep the editor draft. A requested reload confirms before replacing changed fields. Reader opening failures expose retry without resetting a successfully opened publication.
 
 ## Comparison workflow
 

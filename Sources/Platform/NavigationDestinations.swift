@@ -132,3 +132,23 @@ private struct ScopedCollectionsDestination: View {
         #endif
     }
 }
+
+/// The iPad toolbar uses a value route; other platforms retain their current label.
+struct SeerrRequestHistoryLink: View {
+    var body: some View {
+        #if os(iOS)
+            if DeviceIdentity.usesIPadPresentation {
+                NavigationLink(value: AppScreen.seerrRequests) { Label("My Requests", systemImage: "clock") }
+                    .labelStyle(.iconOnly)
+            } else {
+                legacyLink
+            }
+        #else
+            legacyLink
+        #endif
+    }
+
+    private var legacyLink: some View {
+        NavigationLink("My Requests") { SeerrRequestsView() }
+    }
+}

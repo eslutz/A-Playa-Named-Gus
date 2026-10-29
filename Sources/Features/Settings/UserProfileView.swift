@@ -57,12 +57,18 @@ struct UserProfileView: View {
                     Button("Cancel") { dismiss() }.disabled(session.profile.isSaving)
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Save") {
+                    Button {
                         Task {
                             if await session.profile.save(name: name, audioLanguage: audioLanguage, subtitleLanguage: subtitleLanguage) {
                                 app.synchronizeProfile(from: session)
                                 dismiss()
                             }
+                        }
+                    } label: {
+                        if session.profile.isSaving {
+                            ProgressView().accessibilityLabel("Saving Profile")
+                        } else {
+                            Text("Save")
                         }
                     }
                     .disabled(!ready || name.trimmedNilIfEmpty == nil || session.profile.isSaving || session.profile.isLoading)

@@ -23,6 +23,10 @@ final class RootNavigationState {
     }
 
     var scrollAnchors: [String: String] = [:]
+    var libraryListModes: [String: Bool] = [:]
+    var photoAlbumModes: [String: Bool] = [:]
+    var librariesShowGrid = false
+    var isProfilePresented = false
     /// Owned by this signed-in tree, so another account never inherits focus.
     var tvFocus = TVFocusMemory()
     var home: HomeStore?

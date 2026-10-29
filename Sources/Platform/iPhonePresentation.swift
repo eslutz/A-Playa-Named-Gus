@@ -93,8 +93,18 @@ private struct IPhoneCanvasModifier: ViewModifier {
 #endif
 
 extension View {
-    @ViewBuilder func gusIOSOnly() -> some View {
+    func gusIPhoneOrIPadOnly() -> some View {
+        modifier(IPhoneOnlyModifier(includesIPad: true))
+    }
+
+    @ViewBuilder func gusIPadIconOnly() -> some View {
         #if os(iOS)
+            if DeviceIdentity.usesIPadPresentation {
+                labelStyle(.iconOnly)
+            } else {
+                self
+            }
+        #else
             self
         #endif
     }
@@ -125,12 +135,13 @@ extension View {
 }
 
 private struct IPhoneOnlyModifier: ViewModifier {
+    var includesIPad = false
     #if os(iOS)
         @Environment(\.horizontalSizeClass) private var widthClass
     #endif
     func body(content: Content) -> some View {
         #if os(iOS)
-            if widthClass == .compact {
+            if widthClass == .compact || (includesIPad && DeviceIdentity.usesIPadPresentation) {
                 content
             }
         #endif

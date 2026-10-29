@@ -230,8 +230,8 @@ State objects are `@Observable @MainActor` classes (Observation framework — no
 - `RootView` switches on `AppModel.currentSession`: `nil` → `ConnectFlowView`; otherwise
   injects a `SessionStore` (authenticated `JellyfinClient` + user + server) into the signed-in tree.
 - Feature stores take a `SessionStore` and use its media provider. `RootNavigationState`
-  owns Home, cached library/detail stores, per-section search, navigation paths, and
-  scroll anchors for the signed-in account; adaptive view replacement reuses that state.
+  owns Home, cached library/detail stores, per-section search, navigation paths,
+  per-library display choices, profile presentation, and scroll anchors for the signed-in account; adaptive view replacement reuses that state.
   `RootView` owns `AudioPlaybackCoordinator` and stops it when the account changes.
 
 ### Auth & session flow

@@ -186,7 +186,7 @@ struct SeerrCatalogGridView: View {
                 if catalog.supportsFilters {
                     ToolbarItem(placement: .primaryAction) {
                         Button("Filters", systemImage: "line.3.horizontal.decrease") { showingFilters = true }
-                            .labelStyle(.iconOnly)
+                            .gusIPadIconOnly()
                     }
                 }
             }

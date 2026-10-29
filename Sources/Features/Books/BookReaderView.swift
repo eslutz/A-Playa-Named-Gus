@@ -109,7 +109,7 @@
                 model.navigator?.view.window?.endEditing(true)
                 showingChapters = true
             }
-            .labelStyle(.iconOnly)
+            .gusIPadIconOnly()
             .accessibilityLabel("Chapters")
         }
 

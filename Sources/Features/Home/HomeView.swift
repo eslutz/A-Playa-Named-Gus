@@ -217,7 +217,7 @@ private struct NextUpListView: View {
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Button(showsGrid ? "List" : "Grid", systemImage: showsGrid ? "list.bullet" : "square.grid.2x2") { showsGrid.toggle() }
-                    .labelStyle(.iconOnly)
+                    .gusIPadIconOnly()
                     .accessibilityIdentifier("NextUp.displayMode")
                     .accessibilityValue(showsGrid ? "Grid" : "List")
             }
@@ -348,10 +348,10 @@ struct MediaRail: View {
                 Spacer()
                 if let latestKind {
                     NavigationLink("Show All") { LibraryGridView(scope: .latest(latestKind)) }
-                        .gusIOSOnly()
+                        .gusIPhoneOrIPadOnly()
                 } else if let library {
                     NavigationLink("Show All") { LibraryGridView(library: library) }
-                        .gusIOSOnly()
+                        .gusIPhoneOrIPadOnly()
                 }
             }
 
@@ -505,7 +505,12 @@ private struct BackdropCard: View {
 /// Persistent Libraries destination used by tabs, sidebars, and menu routes.
 /// Shares the root container's `HomeStore` with `HomeView`.
 struct LibrariesLandingView: View {
-    @State private var showsGrid = false
+    @Environment(RootNavigationState.self) private var navigationState
+    private var showsGrid: Bool {
+        get { navigationState.librariesShowGrid }
+        nonmutating set { navigationState.librariesShowGrid = newValue }
+    }
+
     #if os(iOS)
         @Environment(\.horizontalSizeClass) private var widthClass
     #endif
@@ -540,8 +545,8 @@ struct LibrariesLandingView: View {
                     Label(showsGrid ? "List" : "Grid", systemImage: showsGrid ? "list.bullet" : "square.grid.2x2")
                 }
                 .accessibilityIdentifier("Libraries.displayMode")
-                .labelStyle(.iconOnly)
-                .gusIOSOnly()
+                .gusIPadIconOnly()
+                .gusIPhoneOrIPadOnly()
             }
         }
     }

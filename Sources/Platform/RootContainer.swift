@@ -16,6 +16,9 @@ struct RootContainer: View {
         // Keep the presentation anchor stable when the native tab/split container
         // changes its hosting hierarchy during rotation or window resizing.
         presentationRoot
+            .sheet(isPresented: Bindable(state).isProfilePresented) {
+                NavigationStack { UserProfileView() }
+            }
             .gusContentLinks()
             .gusSessionPlayerHost(state: state, enabled: state.detailItem == nil)
             .gusAudioHost(coordinator: audio, enabled: state.detailItem == nil)
@@ -104,6 +107,8 @@ struct RootContainer: View {
         var body: some View {
             if widthClass == .compact {
                 TabRootView()
+            } else if DeviceIdentity.usesIPadPresentation {
+                IPadSplitRootView()
             } else {
                 SplitRootView()
             }
@@ -194,25 +199,50 @@ private struct SplitRootView: View {
     }
 
     var body: some View {
-        NavigationSplitView(columnVisibility: Bindable(state).sidebarVisibility) {
+        NavigationSplitView {
             List(selection: Binding<String?>(get: { state.selectedSectionID }, set: {
                 if let id = $0 {
                     state.selectedSectionID = id
                 }
             })) {
-                #if os(iOS)
+                ForEach(sections) { section in Label(section.title, systemImage: section.systemImage).tag(section.id) }
+            }
+            .navigationTitle("Gus")
+            .navigationSplitViewColumnWidth(min: 180, ideal: 220, max: 260)
+        } detail: {
+            SectionStack(sectionID: state.selectedSectionID)
+        }
+        .navigationSplitViewStyle(.balanced)
+    }
+}
+
+#if os(iOS)
+    private struct IPadSplitRootView: View {
+        @Environment(RootNavigationState.self) private var state
+        @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+        @Environment(SessionStore.self) private var session
+        @Environment(NavigationPreferencesStore.self) private var preferences
+        private var sections: [ResolvedNavigationSection] {
+            RootSections.resolve(preferences, state: state, session: session)
+        }
+
+        var body: some View {
+            NavigationSplitView(columnVisibility: Bindable(state).sidebarVisibility) {
+                List(selection: Binding<String?>(get: { state.selectedSectionID }, set: {
+                    if let id = $0 {
+                        state.selectedSectionID = id
+                    }
+                })) {
                     Label("Search", systemImage: "magnifyingglass")
                         .accessibilityIdentifier("Navigation.search")
                         .tag(RootNavigationState.searchID)
-                #endif
-                ForEach(sections) { section in
-                    Label(section.title, systemImage: section.systemImage)
-                        .accessibilityIdentifier("Navigation.section." + section.id)
-                        .tag(section.id)
+                    ForEach(sections) { section in
+                        Label(section.title, systemImage: section.systemImage)
+                            .accessibilityIdentifier("Navigation.section." + section.id)
+                            .tag(section.id)
+                    }
                 }
-            }
-            .navigationTitle("Gus")
-            #if os(iOS)
+                .navigationTitle("Gus")
                 .navigationSplitViewColumnWidth(min: 220, ideal: 280, max: 320)
                 .toolbar(removing: .sidebarToggle)
                 .toolbar {
@@ -224,32 +254,33 @@ private struct SplitRootView: View {
                         .accessibilityIdentifier("Navigation.hideSidebar")
                     }
                 }
-            #else
-                .navigationSplitViewColumnWidth(min: 180, ideal: 220, max: 260)
-            #endif
-        } detail: {
-            SectionStack(sectionID: state.selectedSectionID)
-            #if os(iOS)
-                .toolbar(removing: .sidebarToggle)
-                .toolbar {
-                    if state.sidebarVisibility == .detailOnly {
-                        ToolbarItem(placement: .topBarLeading) {
-                            Button("Show Sidebar", systemImage: "sidebar.left") {
-                                state.sidebarVisibility = .doubleColumn
+
+            } detail: {
+                SectionStack(sectionID: state.selectedSectionID)
+                    .toolbar(removing: .sidebarToggle)
+                    .toolbar {
+                        if state.sidebarVisibility == .detailOnly {
+                            ToolbarItem(placement: .topBarLeading) {
+                                Button("Show Sidebar", systemImage: "sidebar.left") {
+                                    state.sidebarVisibility = .doubleColumn
+                                }
+                                .labelStyle(.iconOnly)
+                                .accessibilityIdentifier("Navigation.showSidebar")
                             }
-                            .labelStyle(.iconOnly)
-                            .accessibilityIdentifier("Navigation.showSidebar")
                         }
                     }
-                }
-            #endif
-        }
-        .navigationSplitViewStyle(.balanced)
-        #if os(iOS)
+            }
+            .navigationSplitViewStyle(.balanced)
             .toolbar(removing: .sidebarToggle)
-        #endif
+            .onChange(of: dynamicTypeSize, initial: true) { _, size in
+                if size.isAccessibilitySize {
+                    state.sidebarVisibility = .detailOnly
+                }
+            }
+        }
     }
-}
+
+#endif
 
 private struct SectionStack: View {
     #if os(iOS)
@@ -298,7 +329,13 @@ private struct SectionStack: View {
                         DiscoverView()
                     } else {
                         #if os(iOS)
-                            RootSectionDestination(section: section, home: home)
+                            if widthClass == .compact || DeviceIdentity.usesIPadPresentation {
+                                RootSectionDestination(section: section, home: home)
+                            } else {
+                                SearchRootView(state: state.searchState(for: section.id, session: session)) {
+                                    RootSectionDestination(section: section, home: home)
+                                }
+                            }
                         #elseif os(tvOS)
                             RootSectionDestination(section: section, home: home)
                         #else
@@ -313,6 +350,20 @@ private struct SectionStack: View {
             }
             .gusItemDestinations()
             .toolbar {
+                #if os(iOS)
+                    if sectionID == RootNavigationState.searchID, DeviceIdentity.usesIPadPresentation {
+                        ToolbarItem(placement: .primaryAction) {
+                            let search = state.searchState(for: sectionID, session: session)
+                            Button {
+                                search.showsList.toggle()
+                            } label: {
+                                Label(search.showsList ? "Grid" : "List", systemImage: search.showsList ? "square.grid.2x2" : "list.bullet")
+                            }
+                            .labelStyle(.iconOnly)
+                            .accessibilityIdentifier("Search.displayMode")
+                        }
+                    }
+                #endif
                 if overflow.contains(where: { $0.id == sectionID }), state.paths[sectionID]?.isEmpty != false {
                     ToolbarItem(placement: .cancellationAction) {
                         Button("More", systemImage: "chevron.backward") { state.selectedSectionID = RootNavigationState.moreID }

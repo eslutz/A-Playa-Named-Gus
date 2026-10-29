@@ -6,8 +6,20 @@ struct LibraryGridView: View {
     @Environment(SessionStore.self) private var session
     let scope: LibraryGridScope
     @State private var store: LibraryStore?
-    @State private var showsList = false
-    @State private var showsPhotoAlbums = false
+    private var showsList: Bool {
+        get { navigationState.libraryListModes[scope.storeIdentity, default: false] }
+        nonmutating set { navigationState.libraryListModes[scope.storeIdentity] = newValue }
+    }
+
+    private var showsPhotoAlbums: Bool {
+        get { navigationState.photoAlbumModes[scope.storeIdentity, default: false] }
+        nonmutating set { navigationState.photoAlbumModes[scope.storeIdentity] = newValue }
+    }
+
+    private var photoAlbumsSelection: Binding<Bool> {
+        Binding(get: { showsPhotoAlbums }, set: { showsPhotoAlbums = $0 })
+    }
+
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     #if os(iOS)
         @Environment(\.horizontalSizeClass) private var widthClass
@@ -104,8 +116,8 @@ struct LibraryGridView: View {
                         Label(showsList ? "Grid" : "List", systemImage: showsList ? "square.grid.2x2" : "list.bullet")
                     }
                     .accessibilityIdentifier("Library.displayMode")
-                    .labelStyle(.iconOnly)
-                    .gusIOSOnly()
+                    .gusIPadIconOnly()
+                    .gusIPhoneOrIPadOnly()
                 }
                 if let store {
                     ToolbarItem { LibraryFilterMenu(store: store).disabled(store.isLoading) }
@@ -114,14 +126,14 @@ struct LibraryGridView: View {
         }
         .safeAreaInset(edge: .top) {
             if isPhotos {
-                Picker("Photos", selection: $showsPhotoAlbums) {
+                Picker("Photos", selection: photoAlbumsSelection) {
                     Text("All Photos").tag(false)
                     Text("Albums").tag(true)
                 }
                 .pickerStyle(.segmented)
                 .padding(.horizontal, 24).padding(.vertical, 8)
                 .background(.background)
-                .gusIOSOnly()
+                .gusIPhoneOrIPadOnly()
             }
         }
         .task(id: effectiveScope.storeIdentity) { store = navigationState.libraryStore(for: effectiveScope, session: session) }
@@ -325,7 +337,7 @@ private struct LibraryFilterMenu: View {
             Label("Filter", systemImage: filterSymbol)
                 .accessibilityValue(store.filter.hasActiveFilter ? String(localized: "Active") : "")
         }
-        .labelStyle(.iconOnly)
+        .gusIPadIconOnly()
     }
 
     private var sortSelection: Binding<LibrarySortOption> {

@@ -53,21 +53,6 @@ struct SearchResultsView: View {
             .scrollPosition(id: rootState.scrollBinding(for: "search:" + rootState.selectedSectionID + ":" + store.query))
             .lookToScroll()
         }
-        .toolbar {
-            #if os(iOS)
-                if DeviceIdentity.usesIPadPresentation {
-                    ToolbarItem(placement: .primaryAction) {
-                        Button {
-                            searchState.showsList.toggle()
-                        } label: {
-                            Label(searchState.showsList ? "Grid" : "List", systemImage: searchState.showsList ? "square.grid.2x2" : "list.bullet")
-                        }
-                        .labelStyle(.iconOnly)
-                        .accessibilityIdentifier("Search.displayMode")
-                    }
-                }
-            #endif
-        }
     }
 }
 

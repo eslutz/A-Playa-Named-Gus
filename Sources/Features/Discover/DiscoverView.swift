@@ -44,13 +44,12 @@ struct DiscoverView: View {
                     }
                     NavigationLink { SeerrSettingsView() } label: { Label("Discover Settings", systemImage: "gearshape") }
                 }
-                .labelStyle(.iconOnly)
+                .gusIPadIconOnly()
                 .accessibilityIdentifier("Seerr.menu")
             }
             if store.isConnected {
                 ToolbarItem {
-                    NavigationLink { SeerrRequestsView() } label: { Label("My Requests", systemImage: "clock") }
-                        .labelStyle(.iconOnly)
+                    SeerrRequestHistoryLink()
                 }
             }
         }

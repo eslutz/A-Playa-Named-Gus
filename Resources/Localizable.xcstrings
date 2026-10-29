@@ -7416,6 +7416,18 @@
           }
         }
       }
+    },
+    "Saving Profile": {
+      "comment": "Accessibility label for profile-save progress in the editor toolbar.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Saving Profile"
+          }
+        }
+      }
     }
   },
   "version": "1.1"

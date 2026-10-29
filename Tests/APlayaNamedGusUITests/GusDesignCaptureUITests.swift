@@ -93,6 +93,49 @@
             XCTAssertTrue(app.navigationBars["Home"].exists)
         }
 
+        func testIPadR2ScopedLayoutsAndProfileDraft() throws {
+            guard UIDevice.current.userInterfaceIdiom == .pad else { throw XCTSkip("Requires an iPad") }
+            let app = launch("home")
+            XCTAssertTrue(waitForRoot(app))
+            XCTAssertTrue(openDestination("Music", app))
+            let mode = app.buttons["Library.displayMode"]
+            XCTAssertTrue(mode.waitForExistence(timeout: 15))
+            XCTAssertEqual(mode.label, "List")
+            mode.tap()
+            XCTAssertEqual(mode.label, "Grid")
+            XCTAssertTrue(openDestination("Home", app))
+            XCTAssertTrue(openDestination("Music", app))
+            XCTAssertEqual(mode.label, "Grid")
+            XCTAssertTrue(openDestination("Photos", app))
+            XCTAssertTrue(mode.waitForExistence(timeout: 15))
+            XCTAssertEqual(mode.label, "List", "A different library keeps its own display choice")
+            let albums = app.buttons["Albums"].firstMatch
+            XCTAssertTrue(albums.waitForExistence(timeout: 10))
+            albums.tap()
+            XCTAssertTrue(albums.isSelected)
+            XCTAssertTrue(openDestination("Home", app))
+            XCTAssertTrue(openDestination("Photos", app))
+            XCTAssertTrue(albums.isSelected)
+
+            XCTAssertTrue(openDestination("Settings", app))
+            let profile = app.buttons["View and Edit Profile"].firstMatch
+            XCTAssertTrue(profile.waitForExistence(timeout: 15))
+            profile.tap()
+            let username = app.textFields["Username"]
+            XCTAssertTrue(username.waitForExistence(timeout: 15))
+            let ready = XCTNSPredicateExpectation(predicate: NSPredicate(format: "enabled == true"), object: username)
+            XCTAssertEqual(XCTWaiter.wait(for: [ready], timeout: 15), .completed)
+            let original = try XCTUnwrap(username.value as? String)
+            username.tap()
+            username.typeText(" draft")
+            XCUIDevice.shared.orientation = .portrait
+            XCTAssertEqual(username.value as? String, original + " draft")
+            XCUIDevice.shared.orientation = .landscapeLeft
+            XCTAssertEqual(username.value as? String, original + " draft")
+            app.buttons["Cancel"].firstMatch.tap()
+            XCTAssertTrue(app.navigationBars["Profile"].waitForNonExistence(timeout: 10))
+        }
+
         func testConnection() {
             let app = launch(nil)
             XCTAssertTrue(app.textFields["ConnectServerView.serverAddress"].waitForExistence(timeout: 15))
@@ -285,8 +328,11 @@
             if let clear = button("Clear text", app) {
                 clear.tap()
             }
+            // A new query explicitly focuses the native field after clearing.
+            field.tap()
             field.typeText("zzzz-no-match-98765")
             dismissKeyboard(app)
+            XCTAssertTrue(app.staticTexts["No Results"].waitForExistence(timeout: 20))
             capture("search-empty")
 
             let settings = launch("settings")
@@ -610,6 +656,9 @@
             }
             let browse = launch("downloaded")
             XCTAssertTrue(browse.staticTexts[title].firstMatch.waitForExistence(timeout: 90))
+            if UIDevice.current.userInterfaceIdiom == .pad {
+                XCUIDevice.shared.orientation = .portrait
+            }
             let large = launch("downloaded", largeText: true)
             XCTAssertTrue(large.staticTexts[title].firstMatch.waitForExistence(timeout: 30))
             capture("downloads-browse-large-text")

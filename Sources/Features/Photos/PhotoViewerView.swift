@@ -44,7 +44,7 @@ struct PhotoViewerView: View {
                             systemImage: isSlideshowActive ? "pause.fill" : "play.fill"
                         )
                     }
-                    .labelStyle(.iconOnly)
+                    .gusIPadIconOnly()
                     .accessibilityLabel(isSlideshowActive ? "Pause Slideshow" : "Play Slideshow")
                 }
             }
