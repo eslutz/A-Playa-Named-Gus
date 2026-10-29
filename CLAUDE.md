@@ -35,13 +35,13 @@ historical references; do not import their screen layouts into the redesign or r
 them. The archived `Design/Archive/2026-10-27/DISCOVER.md` remains the approved behavioral input, with implementation
 status checked against current source. Design coverage does not prove runtime behavior.
 
-The iPad implementation follows the fresh **Gus iPadOS R2** handoff. Its ordinary
+The iPad implementation follows the fresh **Gus iPadOS** handoff. Its ordinary
 details stay in the main navigation stack; Reader, Photos and Now Playing occupy
 the window. Global Search is a dedicated sidebar destination (a Search tab in a
 compact window), and the sidebar visibility control sits at its trailing edge.
 Use native controls and preserve the approved iPhone presentation. The external
 94-scenario comparison and supporting-state checklist track runtime acceptance;
-see `Documentation/ipad-r2-capabilities.md` for client/service boundaries.
+see `Documentation/ipad-capabilities.md` for client/service boundaries.
 
 - Third-party *runtime* dependencies are limited to `jellyfin-sdk-swift` (`from: 2.1.0`)
   plus, on iOS/iPadOS only, the Readium toolkit for in-app EPUB reading (ADR 0009 — no

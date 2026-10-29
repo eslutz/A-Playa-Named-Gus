@@ -1,4 +1,4 @@
-# iPad R2 client and service boundaries
+# iPad client and service boundaries
 
 The iPad redesign uses the existing media-provider sessions, Seerr client, session navigation and playback coordinators. It introduces no new server service or runtime dependency. The external comparison report owns the scenario checklist and runtime evidence; this document records durable implementation boundaries.
 

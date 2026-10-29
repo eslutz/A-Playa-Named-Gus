@@ -59,7 +59,7 @@ private struct IPhoneCanvasModifier: ViewModifier {
 }
 
 #if os(iOS)
-    /// R2 onboarding uses two columns on wide iPads and stacks without scaling in narrow windows.
+    /// iPad onboarding uses two columns on wide iPads and stacks without scaling in narrow windows.
     struct GusIPadOnboardingLayout<Intro: View, Fields: View>: View {
         @Environment(\.dynamicTypeSize) private var dynamicTypeSize
         @ViewBuilder let intro: Intro

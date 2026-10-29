@@ -107,7 +107,7 @@ def main():
 
     page = root / "index.html"
     markup = page.read_text()
-    markup = markup.replace("Gus iPadOS · fresh Sketch redesign", "Gus iPadOS · R2 design and implementation")
+    markup = markup.replace("Gus iPadOS · fresh Sketch redesign", "Gus iPadOS · design and implementation")
     markup = markup.replace("Current iPad app", "Before iPad app")
     markup = re.sub(r"<!-- implementation-status:start -->.*?<!-- implementation-status:end -->", "", markup, flags=re.S)
     status = (f'<!-- implementation-status:start --><section><h2>iPad implementation comparison</h2>'
