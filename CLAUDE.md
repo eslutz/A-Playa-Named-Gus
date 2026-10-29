@@ -25,6 +25,9 @@ iPhone document and iPadOS/shared-library snapshots, and `Design/Archive/`
 holds local historical design material. Follow Apple HIG, Apple Design
 Resources and current framework documentation. Use linked official Apple components;
 never label a flat or blur approximation verified native Liquid Glass fidelity.
+Keep one `Design/Gus-<device>.sketch` document per device with both Light and Dark
+content, and one `Design/Gus-Shared-Library.sketch` for both appearances. See
+`Design/README.md` for appearance maintenance and coverage.
 The current iPhone implementation follows the user-selected live **Gus iPhone** document
 (`65DEED33-7DFF-47E5-AF51-31D00E68E6EE`), its Screens, States and Components pages,
 inspected through Sketch MCP. The older separate iPhone appearance snapshots are retained in the local, Git-ignored archive. Runtime
