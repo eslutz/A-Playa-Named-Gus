@@ -46,7 +46,7 @@ before tester installation access is claimed.
 
 ## Designs
 
-The [iPhone Light](Design/Device-Completion-iPhone-Light.sketch) and [Dark](Design/Device-Completion-iPhone-Dark.sketch) Sketch snapshots are awaiting acceptance. Historical design material is retained in the local, Git-ignored `Design/Archive/`. Design coverage does not establish runtime acceptance.
+The [iPhone Light](Design/Gus-iPhone-Light.sketch) and [Dark](Design/Gus-iPhone-Dark.sketch) Sketch snapshots are awaiting acceptance. The [iPadOS design](Design/Gus-iPadOS.sketch) and [shared library](Design/Gus-Shared-Library.sketch) are also tracked here. Historical design material is retained in the local, Git-ignored `Design/Archive/`. Design coverage does not establish runtime acceptance.
 
 ## Contributing
 
