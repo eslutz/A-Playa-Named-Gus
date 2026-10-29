@@ -106,7 +106,7 @@ struct ItemDetailView: View {
 
     private var detailNavigationTitle: String {
         #if os(iOS)
-            if widthClass == .compact {
+            if widthClass == .compact, !DeviceIdentity.usesIPadPresentation {
                 return ""
             }
         #endif
