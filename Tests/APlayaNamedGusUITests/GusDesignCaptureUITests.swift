@@ -822,8 +822,14 @@
         }
 
         private func dismissKeyboard(_ app: XCUIApplication) {
-            if app.keyboards.firstMatch.exists {
-                app.typeText("\n")
+            guard app.keyboards.firstMatch.exists else { return }
+            // A keyboard can outlive its field briefly during navigation. Tap its
+            // native action instead of sending text to an unfocused application.
+            let actions = ["Search", "search", "Go", "go", "Done", "done", "Return", "return", "Hide keyboard", "Dismiss keyboard"]
+            if let key = app.keyboards.buttons.matching(NSPredicate(format: "label IN %@", actions))
+                .allElementsBoundByIndex.first(where: \.isHittable)
+            {
+                key.tap()
             }
         }
 
