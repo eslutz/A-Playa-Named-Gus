@@ -21,13 +21,13 @@ their look**.
 
 **Sketch is the fresh redesign workspace.** The private **Gus** folder in Eric Slutz's
 Workspace contains the editable working documents; `Design/` contains the tracked
-iPhone appearance snapshots and iPadOS/shared-library snapshots, and `Design/Archive/`
+iPhone document and iPadOS/shared-library snapshots, and `Design/Archive/`
 holds local historical design material. Follow Apple HIG, Apple Design
 Resources and current framework documentation. Use linked official Apple components;
 never label a flat or blur approximation verified native Liquid Glass fidelity.
 The current iPhone implementation follows the user-selected live **Gus iPhone** document
 (`65DEED33-7DFF-47E5-AF51-31D00E68E6EE`), its Screens, States and Components pages,
-inspected through Sketch MCP. The R5 snapshots remain historical references. Runtime
+inspected through Sketch MCP. The older separate iPhone appearance snapshots are retained in the local, Git-ignored archive. Runtime
 verification uses one iPhone simulator in Light appearance against the local demo server;
 physical acceptance and later-device redesign remain separate. Consult the locally archived `Design/Archive/2026-10-27/Sketch/README.md`
 and its milestone index first, when available.
