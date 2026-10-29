@@ -24,7 +24,9 @@ struct SignInView: View {
     var body: some View {
         Group {
             #if os(iOS)
-                if widthClass == .compact {
+                if DeviceIdentity.usesIPadPresentation {
+                    iPadOnboarding
+                } else if widthClass == .compact {
                     onboarding
                 } else {
                     signInForm
@@ -33,6 +35,19 @@ struct SignInView: View {
                 signInForm
             #endif
         }
+        #if os(iOS)
+        .sheet(isPresented: $showingSignInOptions) {
+            NavigationStack {
+                signInOptionsContent
+                    .navigationTitle("Sign-in Options")
+                    .toolbar {
+                        ToolbarItem(placement: .cancellationAction) {
+                            GusCloseButton { showingSignInOptions = false }
+                        }
+                    }
+            }
+        }
+        #endif
         .task { await loadPublicSignInData() }
         .task { await refreshQuickConnectAvailability() }
         .onDisappear {
@@ -43,9 +58,23 @@ struct SignInView: View {
 
     private var signInForm: some View {
         Form {
-            publicProfilesSection
-            credentialsSection
-            quickConnectSection
+            #if os(iOS)
+                if DeviceIdentity.usesIPadPresentation {
+                    credentialsSection
+                    Section {
+                        Button("More sign-in options") { showingSignInOptions = true }
+                            .disabled(quickConnectStore == nil || signInStore == nil)
+                    }
+                } else {
+                    publicProfilesSection
+                    credentialsSection
+                    quickConnectSection
+                }
+            #else
+                publicProfilesSection
+                credentialsSection
+                quickConnectSection
+            #endif
             signInErrorSection
             signInActionSection
         }
@@ -57,6 +86,64 @@ struct SignInView: View {
     }
 
     #if os(iOS)
+        private var iPadOnboarding: some View {
+            GusIPadOnboardingLayout {
+                GusOnboardingHeader()
+                Text("Sign in.").font(.largeTitle.bold())
+                Text(server.name).font(.title3).foregroundStyle(.secondary)
+                Text(server.url.host() ?? server.url.absoluteString)
+                    .font(.title3).foregroundStyle(.secondary)
+            } fields: {
+                onboardingFields
+            }
+            .navigationTitle("")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar(.visible, for: .navigationBar)
+        }
+
+        private var onboardingFields: some View {
+            VStack(alignment: .leading, spacing: 24) {
+                GusOnboardingField(title: "Username") {
+                    TextField("Username", text: $username)
+                        .autocorrectionDisabled()
+                        .textInputAutocapitalization(.never)
+                        .textContentType(.username)
+                }
+                GusOnboardingField(title: "Password") {
+                    SecureField("Password", text: $password)
+                        .textContentType(.password)
+                        .onSubmit(signIn)
+                }
+                signInErrorSection
+                if let disclaimer = signInStore?.loginDisclaimer {
+                    Text(disclaimer).font(.footnote).foregroundStyle(.secondary)
+                }
+                Text("Use your Jellyfin account for this server.")
+                    .font(.caption).foregroundStyle(.secondary)
+                    .padding(.vertical, 12)
+                Button(action: signIn) {
+                    HStack {
+                        if isSigningIn {
+                            ProgressView().tint(.white)
+                        }
+                        Text("Sign In").frame(maxWidth: .infinity)
+                    }
+                    .frame(minHeight: 26)
+                }
+                .buttonStyle(.borderedProminent)
+                .buttonBorderShape(.capsule)
+                .controlSize(.large)
+                .disabled(username.isEmpty || isSigningIn)
+                if isSigningIn {
+                    Button("Cancel", role: .cancel) { signInTask?.cancel() }
+                }
+                Button("More sign-in options") { showingSignInOptions = true }
+                    .disabled(quickConnectStore == nil || signInStore == nil)
+                    .frame(maxWidth: .infinity, minHeight: 50)
+                    .background(Color(uiColor: .secondarySystemBackground), in: Capsule())
+            }
+        }
+
         private var onboarding: some View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 24) {
@@ -67,44 +154,7 @@ struct SignInView: View {
                         Text(server.url.host() ?? server.url.absoluteString)
                             .font(.caption).foregroundStyle(.secondary)
                     }
-                    GusOnboardingField(title: "Username") {
-                        TextField("Username", text: $username)
-                            .autocorrectionDisabled()
-                            .textInputAutocapitalization(.never)
-                            .textContentType(.username)
-                    }
-                    GusOnboardingField(title: "Password") {
-                        SecureField("Password", text: $password)
-                            .textContentType(.password)
-                            .onSubmit(signIn)
-                    }
-                    signInErrorSection
-                    if let disclaimer = signInStore?.loginDisclaimer {
-                        Text(disclaimer).font(.footnote).foregroundStyle(.secondary)
-                    }
-                    Text("Use your Jellyfin account for this server.")
-                        .font(.caption).foregroundStyle(.secondary)
-                        .padding(.vertical, 12)
-                    Button(action: signIn) {
-                        HStack {
-                            if isSigningIn {
-                                ProgressView().tint(.white)
-                            }
-                            Text("Sign In").frame(maxWidth: .infinity)
-                        }
-                        .frame(minHeight: 26)
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .buttonBorderShape(.capsule)
-                    .controlSize(.large)
-                    .disabled(username.isEmpty || isSigningIn)
-                    if isSigningIn {
-                        Button("Cancel", role: .cancel) { signInTask?.cancel() }
-                    }
-                    Button("More sign-in options") { showingSignInOptions = true }
-                        .disabled(quickConnectStore == nil || signInStore == nil)
-                        .frame(maxWidth: .infinity, minHeight: 50)
-                        .background(Color(uiColor: .secondarySystemBackground), in: Capsule())
+                    onboardingFields
                 }
                 .padding(.horizontal, 28)
                 .padding(.vertical, 24)
@@ -115,17 +165,6 @@ struct SignInView: View {
             .navigationBarTitleDisplayMode(.inline)
             .scrollDismissesKeyboard(.interactively)
             .gusIPhoneCanvas()
-            .sheet(isPresented: $showingSignInOptions) {
-                NavigationStack {
-                    signInOptionsContent
-                        .navigationTitle("Sign-in Options")
-                        .toolbar {
-                            ToolbarItem(placement: .cancellationAction) {
-                                GusCloseButton { showingSignInOptions = false }
-                            }
-                        }
-                }
-            }
         }
 
         @ViewBuilder private var signInOptionsContent: some View {

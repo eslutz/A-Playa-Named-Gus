@@ -217,6 +217,7 @@ private struct NextUpListView: View {
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Button(showsGrid ? "List" : "Grid", systemImage: showsGrid ? "list.bullet" : "square.grid.2x2") { showsGrid.toggle() }
+                    .gusIPadIconOnly()
                     .accessibilityIdentifier("NextUp.displayMode")
                     .accessibilityValue(showsGrid ? "Grid" : "List")
             }
@@ -253,7 +254,7 @@ private struct NextUpDestination: View {
                     }
                 }
             } else if let item = entry.item {
-                NavigationLink(value: ItemRef(item: item)) { label }
+                MediaItemNavigationLink(item: item) { label }
                     .posterNavigationStyle()
             }
         }
@@ -347,10 +348,10 @@ struct MediaRail: View {
                 Spacer()
                 if let latestKind {
                     NavigationLink("Show All") { LibraryGridView(scope: .latest(latestKind)) }
-                        .gusIPhoneOnly()
+                        .gusIPhoneOrIPadOnly()
                 } else if let library {
                     NavigationLink("Show All") { LibraryGridView(library: library) }
-                        .gusIPhoneOnly()
+                        .gusIPhoneOrIPadOnly()
                 }
             }
 
@@ -358,7 +359,7 @@ struct MediaRail: View {
                 LazyHStack(alignment: .top, spacing: style.spacing) {
                     ForEach(items, id: \.id) { saved in
                         let item = saved.id.flatMap { session.references.updates[$0] } ?? saved
-                        NavigationLink(value: ItemRef(item: item)) {
+                        MediaItemNavigationLink(item: item) {
                             switch style {
                             case .poster:
                                 PosterCard(
@@ -504,14 +505,19 @@ private struct BackdropCard: View {
 /// Persistent Libraries destination used by tabs, sidebars, and menu routes.
 /// Shares the root container's `HomeStore` with `HomeView`.
 struct LibrariesLandingView: View {
-    @State private var showsGrid = false
+    @Environment(RootNavigationState.self) private var navigationState
+    private var showsGrid: Bool {
+        get { navigationState.librariesShowGrid }
+        nonmutating set { navigationState.librariesShowGrid = newValue }
+    }
+
     #if os(iOS)
         @Environment(\.horizontalSizeClass) private var widthClass
     #endif
 
     private var usesList: Bool {
         #if os(iOS)
-            widthClass == .compact && !showsGrid
+            (widthClass == .compact || DeviceIdentity.usesIPadPresentation) && !showsGrid
         #else
             false
         #endif
@@ -539,7 +545,8 @@ struct LibrariesLandingView: View {
                     Label(showsGrid ? "List" : "Grid", systemImage: showsGrid ? "list.bullet" : "square.grid.2x2")
                 }
                 .accessibilityIdentifier("Libraries.displayMode")
-                .gusIPhoneOnly()
+                .gusIPadIconOnly()
+                .gusIPhoneOrIPadOnly()
             }
         }
     }

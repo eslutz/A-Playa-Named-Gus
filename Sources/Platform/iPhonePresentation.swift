@@ -1,5 +1,36 @@
 import SwiftUI
 
+#if os(iOS)
+    import UIKit
+
+    @MainActor
+    extension DeviceIdentity {
+        /// Window traits retain the iPad idiom even in a compact multitasking window.
+        static var usesIPadPresentation: Bool {
+            UIApplication.shared.connectedScenes.contains {
+                ($0 as? UIWindowScene)?.traitCollection.userInterfaceIdiom == .pad
+            }
+        }
+    }
+#endif
+
+/// Immersive iPad surfaces return to their caller without implying playback stops.
+struct ImmersiveDismissButton: View {
+    let action: () -> Void
+
+    var body: some View {
+        #if os(iOS)
+            if DeviceIdentity.usesIPadPresentation {
+                Button("Back", systemImage: "chevron.backward", action: action).labelStyle(.iconOnly)
+            } else {
+                GusCloseButton(action: action)
+            }
+        #else
+            GusCloseButton(action: action)
+        #endif
+    }
+}
+
 /// Shared iPhone treatments from the reviewed Sketch component page.
 /// Native controls retain their platform materials, accessibility, and interaction.
 extension View {
@@ -28,6 +59,34 @@ private struct IPhoneCanvasModifier: ViewModifier {
 }
 
 #if os(iOS)
+    /// iPad onboarding uses two columns on wide iPads and stacks without scaling in narrow windows.
+    struct GusIPadOnboardingLayout<Intro: View, Fields: View>: View {
+        @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+        @ViewBuilder let intro: Intro
+        @ViewBuilder let fields: Fields
+
+        var body: some View {
+            GeometryReader { geometry in
+                ScrollView {
+                    let wide = geometry.size.width >= 900 && !dynamicTypeSize.isAccessibilitySize
+                    let layout = wide ? AnyLayout(HStackLayout(alignment: .center, spacing: 96))
+                        : AnyLayout(VStackLayout(alignment: .leading, spacing: 40))
+                    layout {
+                        VStack(alignment: .leading, spacing: 24) { intro }
+                            .frame(maxWidth: 420, alignment: .leading)
+                        VStack(alignment: .leading, spacing: 28) { fields }
+                            .frame(maxWidth: 460, alignment: .leading)
+                    }
+                    .padding(wide ? 64 : 28)
+                    .frame(maxWidth: 1120)
+                    .frame(maxWidth: .infinity, minHeight: geometry.size.height)
+                }
+                .scrollDismissesKeyboard(.interactively)
+                .background(Color(uiColor: .systemBackground))
+            }
+        }
+    }
+
     struct GusOnboardingHeader: View {
         var body: some View {
             HStack(alignment: .top) {
@@ -62,6 +121,22 @@ private struct IPhoneCanvasModifier: ViewModifier {
 #endif
 
 extension View {
+    func gusIPhoneOrIPadOnly() -> some View {
+        modifier(IPhoneOnlyModifier(includesIPad: true))
+    }
+
+    @ViewBuilder func gusIPadIconOnly() -> some View {
+        #if os(iOS)
+            if DeviceIdentity.usesIPadPresentation {
+                labelStyle(.iconOnly)
+            } else {
+                self
+            }
+        #else
+            self
+        #endif
+    }
+
     func gusIPhoneOnly() -> some View {
         modifier(IPhoneOnlyModifier())
     }
@@ -88,12 +163,13 @@ extension View {
 }
 
 private struct IPhoneOnlyModifier: ViewModifier {
+    var includesIPad = false
     #if os(iOS)
         @Environment(\.horizontalSizeClass) private var widthClass
     #endif
     func body(content: Content) -> some View {
         #if os(iOS)
-            if widthClass == .compact {
+            if widthClass == .compact || (includesIPad && DeviceIdentity.usesIPadPresentation) {
                 content
             }
         #endif

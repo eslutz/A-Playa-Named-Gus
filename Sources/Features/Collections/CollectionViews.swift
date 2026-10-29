@@ -29,7 +29,7 @@ struct CollectionsView: View {
         .navigationTitle("Collections")
         .toolbar {
             if CollectionPlatform.canManage && store.capabilities.create {
-                ToolbarItem(placement: .primaryAction) { Button("New Collection", systemImage: "plus") { creating = true }.collectionShortcut("n") }
+                ToolbarItem(placement: .primaryAction) { Button("New Collection", systemImage: "plus") { creating = true }.gusIPadIconOnly().collectionShortcut("n") }
             }
         }
         .sheet(isPresented: $creating) { NavigationStack { CollectionEditor() } }
@@ -207,7 +207,7 @@ struct MediaCollectionDetailView: View {
                             Button("Delete Collection", systemImage: "trash", role: .destructive) { deleting = true }
                         }
                     }
-                } label: { Label("More", systemImage: "ellipsis.circle") }.disabled(store.isMutating || collection == nil)
+                } label: { Label("More", systemImage: "ellipsis.circle") }.gusIPadIconOnly().disabled(store.isMutating || collection == nil)
             }
         }
         .sheet(isPresented: $editing) { NavigationStack { CollectionEditor(collectionID: id) } }

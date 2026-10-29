@@ -20,13 +20,17 @@ first-party *feel* comes from using the system's adaptive components and **never
 their look**.
 
 **Sketch is the fresh redesign workspace.** The private **Gus** folder in Eric Slutz's
-Workspace contains the editable working documents; `Design/` contains the two iPhone R5
-snapshots, and `Design/Archive/` holds local historical design material. Follow Apple HIG, Apple Design
+Workspace contains the editable working documents; `Design/` contains the tracked
+iPhone document and iPadOS/shared-library snapshots, and `Design/Archive/`
+holds local historical design material. Follow Apple HIG, Apple Design
 Resources and current framework documentation. Use linked official Apple components;
 never label a flat or blur approximation verified native Liquid Glass fidelity.
+Keep one `Design/Gus-<device>.sketch` document per device with both Light and Dark
+content, and one `Design/Gus-Shared-Library.sketch` for both appearances. See
+`Design/README.md` for appearance maintenance and coverage.
 The current iPhone implementation follows the user-selected live **Gus iPhone** document
 (`65DEED33-7DFF-47E5-AF51-31D00E68E6EE`), its Screens, States and Components pages,
-inspected through Sketch MCP. The R5 snapshots remain historical references. Runtime
+inspected through Sketch MCP. The older separate iPhone appearance snapshots are retained in the local, Git-ignored archive. Runtime
 verification uses one iPhone simulator in Light appearance against the local demo server;
 physical acceptance and later-device redesign remain separate. Consult the locally archived `Design/Archive/2026-10-27/Sketch/README.md`
 and its milestone index first, when available.
@@ -34,6 +38,14 @@ Preserve the archived `Gus.fig`, Fresh Foundation candidate and split Figma file
 historical references; do not import their screen layouts into the redesign or regenerate
 them. The archived `Design/Archive/2026-10-27/DISCOVER.md` remains the approved behavioral input, with implementation
 status checked against current source. Design coverage does not prove runtime behavior.
+
+The iPad implementation follows the fresh **Gus iPadOS** handoff. Its ordinary
+details stay in the main navigation stack; Reader, Photos and Now Playing occupy
+the window. Global Search is a dedicated sidebar destination (a Search tab in a
+compact window), and the sidebar visibility control sits at its trailing edge.
+Use native controls and preserve the approved iPhone presentation. The external
+94-scenario comparison and supporting-state checklist track runtime acceptance;
+see `Documentation/ipad-capabilities.md` for client/service boundaries.
 
 - Third-party *runtime* dependencies are limited to `jellyfin-sdk-swift` (`from: 2.1.0`)
   plus, on iOS/iPadOS only, the Readium toolkit for in-app EPUB reading (ADR 0009 — no
@@ -222,8 +234,8 @@ State objects are `@Observable @MainActor` classes (Observation framework — no
 - `RootView` switches on `AppModel.currentSession`: `nil` → `ConnectFlowView`; otherwise
   injects a `SessionStore` (authenticated `JellyfinClient` + user + server) into the signed-in tree.
 - Feature stores take a `SessionStore` and use its media provider. `RootNavigationState`
-  owns Home, cached library/detail stores, per-section search, navigation paths, and
-  scroll anchors for the signed-in account; adaptive view replacement reuses that state.
+  owns Home, cached library/detail stores, per-section search, navigation paths,
+  per-library display choices, profile presentation, and scroll anchors for the signed-in account; adaptive view replacement reuses that state.
   `RootView` owns `AudioPlaybackCoordinator` and stops it when the account changes.
 
 ### Auth & session flow
@@ -251,8 +263,8 @@ available; a saved account-specific order keeps its first three visible sections
 
 **Content deep links** (`gus://item/<id>`, `gus://play/<id>` — `Models/ContentLink.swift`)
 ride `AppNavigationModel` via a consume-once pending-link; `Platform/ContentLinkHandler.swift`
-resolves the id through the session's provider. tvOS item links push into the selected
-section's normal stack; other platforms present a detail sheet. Session player hosts sit
+resolves the id through the session's provider. iPad and tvOS item links push into the selected
+section's normal stack; iPad photos open the fullscreen session viewer. Other platforms present a detail sheet. Session player hosts sit
 above adaptive layout replacement, with the detail sheet hosting playback while it is open.
 Content links are the shared entry point for: **Handoff** (`Platform/UserActivities.swift`
 — detail/player surfaces publish `NSUserActivity` with ids only, never tokens), **Core

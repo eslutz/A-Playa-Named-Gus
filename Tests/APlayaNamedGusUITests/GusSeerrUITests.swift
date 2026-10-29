@@ -1,5 +1,6 @@
 #if os(iOS)
     import Foundation
+    import UIKit
     import XCTest
 
     /// Requires the localhost Jellyfin demo and Scripts/discover-fixture-server.py.
@@ -15,12 +16,18 @@
             openMovieReview(app)
             submit(app)
             assertPendingConfirmation(app)
+            assertIPadActionSize(app.buttons["View My Requests"].firstMatch)
             capture("seerr-movie-pending")
             app.buttons["View My Requests"].firstMatch.tap()
             XCTAssertTrue(app.navigationBars["My Requests"].waitForExistence(timeout: 10))
             capture("seerr-confirmation-history")
-            app.navigationBars.buttons.firstMatch.tap()
-            app.buttons["Close"].firstMatch.tap()
+            if UIDevice.current.userInterfaceIdiom == .pad {
+                XCTAssertTrue(app.buttons["Navigation.hideSidebar"].exists)
+                XCTAssertFalse(app.buttons["Close"].exists)
+            } else {
+                app.navigationBars["My Requests"].buttons.firstMatch.tap()
+                app.buttons["Close"].firstMatch.tap()
+            }
 
             // A new app process must restore the cookie without another login.
             app.terminate()
@@ -150,6 +157,12 @@
             XCTAssertTrue(app.navigationBars["Discover Settings"].waitForExistence(timeout: 10))
         }
 
+        private func assertIPadActionSize(_ button: XCUIElement) {
+            guard UIDevice.current.userInterfaceIdiom == .pad else { return }
+            XCTAssertGreaterThanOrEqual(button.frame.height, 44)
+            XCTAssertLessThanOrEqual(button.frame.height, 64, "Large native actions must not add a second tall label inset")
+        }
+
         private func connect(_ app: XCUIApplication) {
             // Keychain entries outlive app processes and test cases. Reset the
             // connection through its public UI rather than relying on install state.
@@ -177,6 +190,7 @@
             next.tap()
             let username = app.textFields["Seerr.username"]
             XCTAssertTrue(username.waitForExistence(timeout: 15))
+            assertIPadActionSize(app.buttons["Seerr.signIn"].firstMatch)
             capture("seerr-sign-in")
             username.tap()
             username.typeText("fixture@example.invalid")
@@ -345,7 +359,7 @@
 
         private func capture(_ name: String) {
             let image = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
-            image.name = name; image.lifetime = .keepAlways; add(image)
+            image.name = "design-" + name; image.lifetime = .keepAlways; add(image)
         }
 
         private func requestPosts(_ state: FixtureState) -> Int {

@@ -1,0 +1,809 @@
+{
+  "Shared": {
+    "derivedMasters": 66,
+    "pairedStyles": 73
+  },
+  "iPad": {
+    "derivedMasters": 169,
+    "pairedStyles": 99
+  },
+  "Screens": {
+    "pairs": [
+      {
+        "light": "48C1555C-343F-49F8-A76C-F013F9DF4887",
+        "dark": "F59A9D13-03B6-5A22-A7E3-B8903A5852FB",
+        "name": "Home / Ready / Light / Landscape"
+      },
+      {
+        "light": "B8BB208D-047A-4904-8A37-2B1772E47D77",
+        "dark": "3CAE2FE6-777B-5479-88C6-9A34CE1A6449",
+        "name": "Next Up / Grid / Landscape / Light"
+      },
+      {
+        "light": "0373F9CE-82A4-4D79-A2AB-B03AA166D426",
+        "dark": "A2ECD4A2-1130-5B3C-AE33-5148154E7B0D",
+        "name": "Discover / Connection unavailable / Landscape / Light"
+      },
+      {
+        "light": "A2C533E4-A798-4C9F-83A9-EA8BBAA1C77C",
+        "dark": "A9692189-4BF6-5F42-AA34-B5EA1CEA48FF",
+        "name": "Settings / Account and Playback / Landscape / Light"
+      },
+      {
+        "light": "71EB01FE-2B25-4CA6-A820-059DCFABEE09",
+        "dark": "52958B1C-78DB-52AE-8F89-70CC7C752262",
+        "name": "Navigation / Sections / Landscape / Light"
+      },
+      {
+        "light": "3BB4FFEB-79D3-4878-9FEF-46FFF032BCF3",
+        "dark": "9DA51ECC-0ACD-5F80-B757-21094AAF232A",
+        "name": "Navigation / Edit visible sections / Landscape / Light"
+      },
+      {
+        "light": "27534605-BE66-49F4-9F23-9CBBA5A5387F",
+        "dark": "9FED8DEE-E1AD-5AB8-AB6D-A0CC0FDADC05",
+        "name": "Navigation / Live TV hidden while editing / Landscape / Light"
+      },
+      {
+        "light": "DABC33DE-12FA-4F4B-8E48-76C21433B828",
+        "dark": "6A92295E-B38C-55C2-925B-A36DD2A57A1E",
+        "name": "Navigation / Live TV hidden / Landscape / Light"
+      },
+      {
+        "light": "94A2B26E-AF78-4878-ABB5-16029DD51389",
+        "dark": "20F38D24-BA97-5CB4-9866-8FBA2DD8E40D",
+        "name": "Settings / Profile saved / Landscape / Light"
+      },
+      {
+        "light": "864F9CFD-0B8C-4365-9787-7F53FD2A9052",
+        "dark": "21E61794-1A52-5709-9F1D-9EBCC95FACFC",
+        "name": "Settings / Profile editor / Landscape / Light"
+      },
+      {
+        "light": "C7CD8010-AF84-41C2-9EB9-C4F3FD8CE316",
+        "dark": "36212F4B-400A-56B1-988C-5C0EC5F65A1F",
+        "name": "Profile / Draft entered / Landscape / Light"
+      },
+      {
+        "light": "C0C0D527-AE7A-4CD2-B0B0-8AA7F50D9CF6",
+        "dark": "909581E9-E75F-5C09-921E-6BCC98A6663B",
+        "name": "Profile / Save failed preserving draft / Landscape / Light"
+      },
+      {
+        "light": "BE7CBC80-8E88-4F97-9C51-5BBADA06351B",
+        "dark": "580A7541-30EF-5CD1-9580-5E5AF6671D59",
+        "name": "Profile / Confirm reload discarding draft / Landscape / Light"
+      },
+      {
+        "light": "2C993180-A0C5-479F-A8DA-A911416FFFC3",
+        "dark": "35333A6F-FFDC-530C-97EF-EB39FE729B5E",
+        "name": "Profile / Saving draft / Landscape / Light"
+      },
+      {
+        "light": "00A7BDCA-9DEE-4E90-9C2D-07EF7B4CDFAE",
+        "dark": "E65F71FD-F88E-5687-86F5-02A43B943711",
+        "name": "Profile / Reloading server values / Landscape / Light"
+      },
+      {
+        "light": "45471DF6-8CBB-44FD-BAD8-50FDFF1C2490",
+        "dark": "B4BADBF0-86FD-5DE1-918B-84ECC1020D0F",
+        "name": "Profile / Username editing / Landscape / Light"
+      },
+      {
+        "light": "B9AFEFD6-BB16-4E66-ACED-F34EBCB8F529",
+        "dark": "018A78D1-4516-5257-A2FB-1E00BAE4CFD9",
+        "name": "Settings / Restrictions Integrations About / Landscape / Light"
+      },
+      {
+        "light": "42D39656-E728-4702-802A-1CFFEDF307C5",
+        "dark": "3D604DE1-4841-557A-960D-CD8CADB21AAC",
+        "name": "Settings / Content Rating menu / Landscape / Light"
+      },
+      {
+        "light": "B137436B-DCB7-488F-8974-8EACB6686055",
+        "dark": "F90F4F88-358C-5CC1-83FC-304848F5DAD8",
+        "name": "Settings / Playback Appearance / Landscape / Light"
+      },
+      {
+        "light": "ACC8CC50-0C35-4F60-8173-C274D17B5AF5",
+        "dark": "6F97FD50-36C1-53DC-B60B-0BA68E9262B8",
+        "name": "Settings / Live TV hidden / Landscape / Light"
+      },
+      {
+        "light": "E0B91288-A9C9-45F2-BEF0-872147A2E670",
+        "dark": "79A6647C-6D8D-5D88-942D-303C767DD3AA",
+        "name": "Theme / Mode chooser / Landscape / Light"
+      },
+      {
+        "light": "256B0D9F-B449-4864-BEB3-6415BEE3D694",
+        "dark": "4159F21E-D43B-5890-94D2-6CE6B6FCE6B5",
+        "name": "Theme / Gus Default restored / Landscape / Light"
+      },
+      {
+        "light": "3EB9A7F6-CE3D-46B4-B503-15F2E91C40EF",
+        "dark": "5A5908D4-EC76-5D7B-8901-27544E8037D2",
+        "name": "Theme / Custom accent / Landscape / Light"
+      },
+      {
+        "light": "15D1C368-475B-45E1-92C0-BA5B9649A7B9",
+        "dark": "B3117429-CF8E-5E69-8BDE-3EDABB0B5EA0",
+        "name": "Theme / Custom orange selected / Landscape / Light"
+      },
+      {
+        "light": "D88D18A7-2EC9-461E-8080-074374DF9C74",
+        "dark": "6FF0576C-3C48-58B3-8C51-0EF70EE0D10A",
+        "name": "Theme / Native opaque color picker / Landscape / Light"
+      },
+      {
+        "light": "F2EAA536-E57D-462E-BAB5-D5D519D1EE4A",
+        "dark": "E50C00EB-F831-562F-A4E5-BAF60D1FA3DC",
+        "name": "Theme / RGB sliders reference / Landscape / Light"
+      },
+      {
+        "light": "5A791D1D-3FE5-452C-AA6C-35DAC9F832F0",
+        "dark": "C3BA0AE7-CE55-5C75-A23C-EBD036C7A78C",
+        "name": "Theme / Orange grid retained / Landscape / Light"
+      },
+      {
+        "light": "5710EF68-8A0D-47C9-87BF-8E665762D2B4",
+        "dark": "740C8E8E-71F5-5F8D-BD3D-0C3E744E2827",
+        "name": "Theme / Apple Default / Landscape / Light"
+      },
+      {
+        "light": "B1E0EACF-3BC2-41BC-85AF-95DEBC601F32",
+        "dark": "EA471CEB-121F-5F10-8CF6-1BBD7DC7E26E",
+        "name": "Settings / Streaming Quality menu / Landscape / Light"
+      },
+      {
+        "light": "B8CCD83B-4869-4F39-B1D9-5C98B03C804E",
+        "dark": "A48E1501-3739-50E3-A1B5-845F1A1A6744",
+        "name": "Settings / Appearance menu / Landscape / Light"
+      },
+      {
+        "light": "DC22C247-8DA7-4F24-9CCA-D98AE752DE8E",
+        "dark": "8C776465-2BC3-527F-A486-4254052A3D0B",
+        "name": "Seerr / My Requests refreshed empty / Landscape / Light"
+      },
+      {
+        "light": "A7CBF7DA-054D-435B-A186-589A03CFF219",
+        "dark": "2733F5C0-0037-5810-8A58-319F829D4C88",
+        "name": "Seerr / Own request removed / Landscape / Light"
+      },
+      {
+        "light": "AD175CBC-A5B2-4293-AFB4-A66BE7867B06",
+        "dark": "B03E77A1-371E-5592-85D7-BD882249D8E5",
+        "name": "Discover / Connected catalog / Landscape / Light"
+      },
+      {
+        "light": "77D48573-17C5-4F4D-BB7E-531F5631BAE5",
+        "dark": "1B1154BF-3AD0-5EEE-AD2D-D225F74D8EE5",
+        "name": "Discover / Popular TV and upcoming movies / Landscape / Light"
+      },
+      {
+        "light": "A8EBF56C-1380-4AC9-A8AE-3FD825E2527C",
+        "dark": "F5982DAF-A9D5-52B0-AF06-63C2EB680231",
+        "name": "Discover / Upcoming feeds and attribution / Landscape / Light"
+      },
+      {
+        "light": "DFDD0954-FE74-44EF-98FD-1F1E471ED643",
+        "dark": "984301A4-0B69-5321-B29A-7EBE70CA04DE",
+        "name": "Discover / Popular feeds / Landscape / Light"
+      },
+      {
+        "light": "9AE1F700-E11A-45FF-8695-66BB00765437",
+        "dark": "C610BD0F-3904-52DA-AAD2-195967E20462",
+        "name": "Seerr / My Requests confirmed pending approval / Landscape / Light"
+      },
+      {
+        "light": "C5F87DCF-998D-4B51-B99E-035690EDD774",
+        "dark": "75704742-FCF0-5DB3-AFF0-A0F342A37EED",
+        "name": "Seerr / Request submitted awaiting approval / Landscape / Light"
+      },
+      {
+        "light": "E2ABAFA5-2336-4C35-AC30-5708B0A0AD98",
+        "dark": "984B7315-9C19-540E-8F3D-42056BDD84AB",
+        "name": "Seerr / Connect / Landscape / Light"
+      },
+      {
+        "light": "A9823CD9-F381-423A-8065-0AA3169E154D",
+        "dark": "81A82924-39A8-5074-A518-2756BD5C3AF1",
+        "name": "Seerr / Sign In / Landscape / Light"
+      },
+      {
+        "light": "A29F6EA8-B63A-47F6-B13E-E4AE001368E0",
+        "dark": "99154BEC-AC98-5390-B7AF-65862818808F",
+        "name": "Search / Entry / Landscape / Light"
+      },
+      {
+        "light": "64E960BA-2650-4B15-8C68-20D478634DFE",
+        "dark": "FE5060BE-9F3A-5676-9B3B-D8C67975F71D",
+        "name": "Search / No results with keyboard / Landscape / Light"
+      },
+      {
+        "light": "ABEDE50F-D5CD-4EDF-8CC5-08F92F63796D",
+        "dark": "B71BC949-352C-50D5-A96A-C7CC2B733EE0",
+        "name": "Search / Example query pending / Landscape / Light"
+      },
+      {
+        "light": "1AB6E623-E362-4B3F-8C15-4EB1972FC682",
+        "dark": "AA8E1462-3AE8-5AB8-AC83-5CAC2F810044",
+        "name": "Search / Failed query preserved / Landscape / Light"
+      },
+      {
+        "light": "493CB6AE-ED0D-428A-ADF9-CAE34EB2C5D9",
+        "dark": "B663D833-B67C-5BEF-A74C-039EE3887637",
+        "name": "Search / Submitted pending / Landscape / Light"
+      },
+      {
+        "light": "DA90DF1E-1608-4092-AC7C-AAF9D53F6A80",
+        "dark": "324021C2-74BA-5B2A-9572-1BF1A8EE9A5F",
+        "name": "Search / Results / Landscape / Light"
+      },
+      {
+        "light": "B1876EE5-A2AC-43B3-BA0A-2918E1B83298",
+        "dark": "B972FDBA-911C-57D3-B944-A44F2BE326C3",
+        "name": "Next Up / List / Landscape / Light"
+      },
+      {
+        "light": "E62884E2-C56B-4D42-A88E-6ED62E04D49E",
+        "dark": "6246CFE2-2D7E-56EB-B97B-615BC52F4E0A",
+        "name": "Home / Ready / Light / Portrait"
+      },
+      {
+        "light": "DB728F38-EA15-42EF-AF23-BE81385DD6C4",
+        "dark": "EEC517CD-BA64-5586-8F33-E109E031B225",
+        "name": "Movies / Grid / Light / Landscape"
+      },
+      {
+        "light": "85F1A38F-69E7-4BAD-B0EB-EF043045B207",
+        "dark": "E01C0ECA-76D0-5C68-BDEE-42305884C078",
+        "name": "Movies / Collections and library / Landscape / Light"
+      },
+      {
+        "light": "D106AB0E-1E1A-40C3-AB33-6CDF0483AF07",
+        "dark": "C5632FA4-64C4-554E-8A89-A11CDBC42D7F",
+        "name": "Collections / Grid / Light / Landscape"
+      },
+      {
+        "light": "C0B52D95-A3A7-41DE-A2BB-E4D8375944CC",
+        "dark": "57ECB643-5262-52D8-AE21-FA6F0AE31C58",
+        "name": "Collection / Pushed detail / Light / Landscape"
+      },
+      {
+        "light": "AC210589-CF59-4BBE-9B58-193411A3333A",
+        "dark": "016EAE02-6B07-558C-B01D-D3FC45521C33",
+        "name": "Books / Library / Light / Landscape"
+      },
+      {
+        "light": "A8D83872-23B6-4A70-84AD-6149818D4967",
+        "dark": "B97E7C2E-376B-5885-AC00-173A00DB5A6C",
+        "name": "Libraries / List / Light / Landscape"
+      },
+      {
+        "light": "4F161C54-C76F-4B7F-94B4-0B936DCA1931",
+        "dark": "A9200634-7C8A-560E-A27A-0D2176A37957",
+        "name": "Playlists / List / Light / Landscape"
+      },
+      {
+        "light": "018BD78B-209A-42F0-991B-E125F8C2BA61",
+        "dark": "FAAE3A49-426A-5590-A7AE-9308569F5B8F",
+        "name": "Playlists / Details / Light / Landscape"
+      },
+      {
+        "light": "4DDDE259-C114-43FA-A55B-CD4F8522AFFC",
+        "dark": "2B957244-EF83-51A5-B99E-00BE40923892",
+        "name": "Live TV / Empty / Light / Landscape"
+      },
+      {
+        "light": "1F633BFF-5F60-4A42-A5FB-B111D50D71A0",
+        "dark": "738989AA-FA3A-55BB-9BC6-8FCBEB09ED67",
+        "name": "Downloads / Browse empty / Light / Landscape"
+      },
+      {
+        "light": "B86C45BD-917C-49CD-8BC7-5B7B3D1DEA38",
+        "dark": "78C1592B-FF77-51D3-AFA3-E1A1283D85FA",
+        "name": "Downloaded / Populated / Landscape / Light"
+      },
+      {
+        "light": "D7AA7627-1BF3-4753-89B7-0091C9487A58",
+        "dark": "C46F90B2-172D-5999-8D5A-21833B43B78E",
+        "name": "Downloads / Manage populated / Landscape / Light"
+      },
+      {
+        "light": "679BA184-3E9F-4EAB-9936-DF21678F3359",
+        "dark": "56AE691F-8938-5CF7-BE3A-1999141F515E",
+        "name": "Libraries / Grid / Light / Landscape"
+      },
+      {
+        "light": "022D3D1D-4D4B-490B-A403-C05E17E4AD02",
+        "dark": "99EE403D-415F-525A-B6EB-04230BEE7822",
+        "name": "Photos / All Photos / Light / Landscape"
+      },
+      {
+        "light": "37ED9B40-6E0C-4650-A52D-2D16F6F9FDF0",
+        "dark": "8C5C6F70-20D7-5635-B30D-04AE11F92DB5",
+        "name": "Photos / Album detail / Light / Landscape"
+      },
+      {
+        "light": "BB9C5A31-8889-4F96-A17A-576B441C55CF",
+        "dark": "EB778A78-8111-5804-B471-FD7892C2A051",
+        "name": "Photos / Albums / Light / Landscape"
+      },
+      {
+        "light": "63C9A943-8A44-43A5-A6E1-EF396D4CA20C",
+        "dark": "4753AB94-9B2D-5536-8020-26F71262F4FA",
+        "name": "Photos / Albums list / Light / Landscape"
+      },
+      {
+        "light": "E46FE07E-4BC9-47E2-83D6-E227EF9C2E2E",
+        "dark": "9D8E0BC4-BCC5-512B-8188-D27820125978",
+        "name": "Books / Details / Light / Landscape"
+      },
+      {
+        "light": "1CCCA49D-D2A3-427B-BE43-60962036550B",
+        "dark": "C9D00205-A77B-5BAF-8DA7-3C59469E516E",
+        "name": "Music / Albums / Light / Landscape"
+      },
+      {
+        "light": "0A3A4342-0153-4339-AD36-C5AD7C208AED",
+        "dark": "1BE0818A-D232-5F20-867E-4E233CF208D0",
+        "name": "Artist / Albums / Light / Landscape"
+      },
+      {
+        "light": "4FEF7609-A14C-430C-A281-5ECE98614680",
+        "dark": "B8590BF8-2E9E-51BE-B91E-DEEB6864E8DC",
+        "name": "Album / Pushed tracks / Landscape / Light"
+      },
+      {
+        "light": "0816ECA2-7479-41B4-955D-F2355715AD43",
+        "dark": "2430C519-17C7-5D23-BE1E-8F867B60FA87",
+        "name": "Music / List / Light / Landscape"
+      },
+      {
+        "light": "DAD30BD5-E3FA-4E35-904A-EE6FCEECF20F",
+        "dark": "E9598666-D86D-5D3D-9991-73DF666C2FF2",
+        "name": "Shows / Grid / Light / Landscape"
+      },
+      {
+        "light": "39409CDE-8320-4CF0-8705-67A9A1204F77",
+        "dark": "C8EB577E-DA6B-57CD-8F30-77F4862B3386",
+        "name": "Series / Detail / Light / Landscape"
+      },
+      {
+        "light": "C0797417-659C-4824-A3B2-0ACE05A2499A",
+        "dark": "9E0E6221-8B29-587D-A679-03A4F882BD63",
+        "name": "Episode / Detail / Light / Landscape"
+      },
+      {
+        "light": "EB87642C-C5CC-48B7-B71A-2DF901B47C67",
+        "dark": "525FB9B9-1874-593F-97F6-D740E96C1723",
+        "name": "Movie / Detail / Light / Landscape"
+      },
+      {
+        "light": "11BAE77E-1EBD-45ED-9366-6BEEDC961F59",
+        "dark": "2880B677-610D-5085-9D5A-329A715C1124",
+        "name": "Movies / List / Light / Landscape"
+      },
+      {
+        "light": "969673F6-21CA-46FC-8308-8B59806994A2",
+        "dark": "B3A07759-D037-5D79-BBC3-E0CE1C630064",
+        "name": "Connect / Ready / Landscape / Light"
+      },
+      {
+        "light": "D15B5C2D-6FA0-4BF9-8680-19BF98D5368F",
+        "dark": "D865378C-19C3-5E0B-A714-EC2ED052CD53",
+        "name": "Connect / Local server found / Landscape / Light"
+      },
+      {
+        "light": "5192C571-726B-4ECA-B75E-D7BD2A8A9B78",
+        "dark": "0A5D38CD-702A-584B-BB63-A494130BB5AE",
+        "name": "Connect / Finding local servers / Landscape / Light"
+      },
+      {
+        "light": "378F591C-E557-4456-8B4B-6875302927FF",
+        "dark": "B1B4A745-AD43-5E48-A6BC-20A44AF37E89",
+        "name": "Connect / No local servers found / Landscape / Light"
+      },
+      {
+        "light": "BA35CE93-CF70-44AF-BEAD-2BCD355949F6",
+        "dark": "4519DC01-02AD-5912-8893-071011AC0309",
+        "name": "Sign In / Ready / Landscape / Light"
+      },
+      {
+        "light": "BA34E987-AD8C-43E6-A5CC-AB4CCCB3893F",
+        "dark": "106447BB-536F-5648-9625-003E7820692B",
+        "name": "Sign In / Example credentials keyboard / Landscape / Light"
+      },
+      {
+        "light": "8F965EEF-87F4-4662-9D95-5A957A0BED6A",
+        "dark": "DF49F1F4-1763-5D1B-89CE-7BE20B0D414E",
+        "name": "Sign In / Example credentials entered / Landscape / Light"
+      },
+      {
+        "light": "CEF15D39-9FD8-4629-98B5-9109DCA59210",
+        "dark": "DE6DC981-E0FE-5179-B58E-006F3A781D2C",
+        "name": "Sign In / Rejected credentials / Landscape / Light"
+      },
+      {
+        "light": "9B6B5550-0AD9-4AAD-A50F-59A9A7BE2A42",
+        "dark": "B4A06256-9D04-50E6-816B-2566DF3FF3F8",
+        "name": "Sign In / Signing in / Landscape / Light"
+      },
+      {
+        "light": "DCFCC56D-0FFD-4A16-9616-CD5D605BC931",
+        "dark": "88369BDA-3114-5A8E-BF6C-31D18ADAA85A",
+        "name": "Sign In / Options sheet / Landscape / Light"
+      },
+      {
+        "light": "ED5C5A9F-3778-40C6-98DA-63D18927CAB4",
+        "dark": "2A0F7024-D0BA-53AA-8C24-7DAA855F0321",
+        "name": "Quick Connect / Authorization / Landscape / Light"
+      },
+      {
+        "light": "D3D719C3-9F37-42E3-AE5B-B2007C1B6EBA",
+        "dark": "EE35D6CA-5C9F-50DF-AD11-7CC309EED5A1",
+        "name": "Connect / Address entered with keyboard / Landscape / Light"
+      },
+      {
+        "light": "E85E7A02-CBBC-4C55-B189-18AA8237D42F",
+        "dark": "98D84DA7-C080-5DED-A79A-C854DFA8AD6B",
+        "name": "Connect / Address entered keyboard dismissed / Landscape / Light"
+      },
+      {
+        "light": "E3942688-5856-4394-8A12-B780051C700E",
+        "dark": "8EB0F75E-633B-5411-AC83-90EE57F6582E",
+        "name": "Connect / Connecting / Landscape / Light"
+      },
+      {
+        "light": "3D15091E-FD65-4EE9-A81E-112CC23BC06B",
+        "dark": "7D937F06-146D-5041-AD23-E7DE802F704A",
+        "name": "Connect / Failed address preserved / Landscape / Light"
+      },
+      {
+        "light": "E2346B16-BEAD-4BBF-9983-1A721E190914",
+        "dark": "AD75C082-18C1-501C-9FEC-33992135A053",
+        "name": "More / Destinations / Compact iPad / Light"
+      },
+      {
+        "light": "E118A556-DDED-427E-9DAE-19CEE28C5FE0",
+        "dark": "A3C5BF89-2B70-50B0-AE12-4E2A758E50D6",
+        "name": "Playlists / Playback controls / Compact iPad / Light"
+      },
+      {
+        "light": "EE22AA75-18A6-45A6-BB22-3DA1C86EB9DF",
+        "dark": "4221AC5A-6C57-5EFA-9C41-9ABF0541D00A",
+        "name": "Theme / Hex editing / Compact window and iPad keyboard / Light"
+      },
+      {
+        "light": "E4ABA198-1FE8-46AB-A46C-804B750F744B",
+        "dark": "09D43D49-5A14-5CF5-B6B2-0C34164FD180",
+        "name": "Theme / RGB picker / Compact window / Light"
+      },
+      {
+        "light": "863AF938-BE56-496F-9B0E-96F0FB9EFA92",
+        "dark": "A0A42FFE-4EA2-5245-A19A-298811EFD2C5",
+        "name": "Theme / Custom orange / Compact window / Light"
+      }
+    ],
+    "layout": "Five Light/Dark pairs per row; internal screen geometry preserved",
+    "pairsPerRow": 5,
+    "appearanceGap": 120
+  },
+  "States": {
+    "pairs": [
+      {
+        "light": "D5755E86-E160-4C8F-8079-EB6706880E11",
+        "dark": "4AC5F467-E481-5821-96FB-A870FB6F1768",
+        "name": "Movies / Layout menu / Light / Landscape"
+      },
+      {
+        "light": "F4A4F6E3-815A-48AA-879E-B4978BE446AC",
+        "dark": "C62064B2-CC3E-5FED-BE18-0FC9DD79EEAC",
+        "name": "Movies / Filters / Light / Landscape"
+      },
+      {
+        "light": "CA00106E-66BD-4D6A-845A-96ABDFBBB951",
+        "dark": "EE0177DC-9DD2-5038-8557-EE16E4F815E2",
+        "name": "Episode / Scrolled content / Light / Landscape"
+      },
+      {
+        "light": "9A24C615-E7FB-4AF4-877B-79C628BAA124",
+        "dark": "5639D35B-690B-57DE-BFE1-37FE6DC50CED",
+        "name": "Movie / Scrolled content / Light / Landscape"
+      },
+      {
+        "light": "0C7639E1-564F-473F-A84E-43EAC1A82E7E",
+        "dark": "D526CA49-80DA-55BF-A481-7F9A5E606FD8",
+        "name": "Movie / About main content / Light / Landscape"
+      },
+      {
+        "light": "174E59BE-1A3A-44A3-ACCC-CCD2B49BAA4F",
+        "dark": "13BB6104-B611-5C98-A11E-34B0C1D19A55",
+        "name": "Episode / About main content / Light / Landscape"
+      },
+      {
+        "light": "4E919A23-DC9D-4CDA-A96D-59B76766F2A3",
+        "dark": "2ADF89BF-1963-55D1-98C4-AD7A3B25516C",
+        "name": "Movie / More actions / Light / Landscape"
+      },
+      {
+        "light": "33F7FD69-949C-45A6-8387-B8E5B885413F",
+        "dark": "E923AA7B-4F8A-5E1F-B646-296725701243",
+        "name": "Movie / Overview actions / Landscape / Light"
+      },
+      {
+        "light": "C719FF9C-B917-4A45-8CB3-754BF0FBD42C",
+        "dark": "09B85F56-7FBE-584E-A9C6-5DE2D544F0A2",
+        "name": "Episode / More actions / Light / Landscape"
+      },
+      {
+        "light": "38FD3CC5-2C4D-48D9-8C1F-D5E61AB33A14",
+        "dark": "6C85942A-5828-5BE1-8500-7BB3D08FCEB8",
+        "name": "Audio / Now Playing / Light / Landscape"
+      },
+      {
+        "light": "9F29FCA5-8AA6-461E-BD03-CE47098CF134",
+        "dark": "6CC0230D-A1AC-5356-AF22-D870C4B8CD44",
+        "name": "Audio / Queue / Light / Landscape"
+      },
+      {
+        "light": "F91292CF-C3DB-4854-917E-15D4D80148DD",
+        "dark": "E9442A2C-9818-5E24-97F9-87FE5C897FE9",
+        "name": "Audio / Persistent accessory / Light / Landscape"
+      },
+      {
+        "light": "83064BA4-D124-4A55-9CA5-A6257F80BF87",
+        "dark": "0174A004-D541-58A8-95DC-BD91B6E1D0B9",
+        "name": "Books / Reader / Light / Landscape"
+      },
+      {
+        "light": "AB395180-2FF1-4440-8A76-73E6E5C486A2",
+        "dark": "5B1B0871-13CB-54A4-9DFB-96BA103BC100",
+        "name": "Books / Chapters / Light / Landscape"
+      },
+      {
+        "light": "A26D8F85-74E5-4727-B586-E3972CFFC621",
+        "dark": "32991AC2-7A38-5DC0-BC98-22E677E88547",
+        "name": "Photos / Viewer / Light / Landscape"
+      },
+      {
+        "light": "0CC5487E-70EE-497A-99AD-1FDFA4BB075B",
+        "dark": "8C2D189A-F085-581D-B373-1122C3B3AF91",
+        "name": "Photos / Album viewer first photo / Light / Landscape"
+      },
+      {
+        "light": "1BB2140E-76E3-4931-A9B9-8815BD8F89F1",
+        "dark": "A90BBEDF-28CF-594C-931A-302F03503D4E",
+        "name": "Photos / Viewer second photo / Light / Landscape"
+      },
+      {
+        "light": "0B145469-8242-4709-9255-C923142DA891",
+        "dark": "B3F27BA3-FF5C-51A0-8670-9CBF2BE78956",
+        "name": "Photos / Album viewer second photo / Light / Landscape"
+      },
+      {
+        "light": "6C0804BB-5710-438F-B8F3-43396A56555E",
+        "dark": "2DBE963A-AEFB-536B-9203-66617097F27B",
+        "name": "Playlists / Edit items / Light / Landscape"
+      },
+      {
+        "light": "4930CFBA-91FD-4213-93E1-30C9A434566D",
+        "dark": "7C3AF10B-AC93-5DB6-A2EC-B821255AAD70",
+        "name": "Playlists / Reordered draft / Light / Landscape"
+      },
+      {
+        "light": "F4DDAC37-4D3E-4C27-B455-15C2D1E315B4",
+        "dark": "38D8B105-CF3D-5EB9-B313-617553501DD6",
+        "name": "Playlists / Save failed with draft retained / Light / Landscape"
+      },
+      {
+        "light": "C3C18625-B0BF-446C-A53B-520C956AD065",
+        "dark": "810A7F15-77A8-59B7-AABD-9358DD8C7ED7",
+        "name": "Playlists / Saving reordered items / Light / Landscape"
+      },
+      {
+        "light": "8B33B096-6804-4EE4-82E6-A89468900879",
+        "dark": "8F343DC4-914F-5726-87AB-1CE13C2B52F3",
+        "name": "Playlists / Reordered saved / Light / Landscape"
+      },
+      {
+        "light": "B556C917-C626-4F85-BCF4-47489AF2970E",
+        "dark": "E33C2F1D-4CED-5B23-8704-10FF5A717623",
+        "name": "Playlists / Detail actions / Light / Landscape"
+      },
+      {
+        "light": "44DBDD50-ECDE-4CEB-9E01-68E324215069",
+        "dark": "7DBA84A5-FE9C-5224-905C-AC6194681CF0",
+        "name": "Playlists / Pushed main content from Home / Light / Landscape"
+      },
+      {
+        "light": "0C3D971C-5F2C-4326-AD00-FAD06F2B2A31",
+        "dark": "CC727A25-43DC-5C99-8758-7BAFF0A2C9FD",
+        "name": "Playlists / Completed presentation reset / Light / Landscape"
+      },
+      {
+        "light": "3C763C74-34C6-44C8-9ABC-03AAAF7AB204",
+        "dark": "433C1E71-478A-57CF-AD10-B8880F02D27A",
+        "name": "Playlists / Pushed main content actions / Light / Landscape"
+      },
+      {
+        "light": "062AC8AD-A579-4BE1-8B1E-775F1F622362",
+        "dark": "69656658-0F6E-5332-A122-3946E9EF5B0D",
+        "name": "Playlists / New / Light / Landscape"
+      },
+      {
+        "light": "E5C41E26-ABCF-4018-A271-1D7B502D6D52",
+        "dark": "49C74C8D-43D1-5E21-8FB7-0D2B4721642A",
+        "name": "Playlists / New name entered / Light / Landscape"
+      },
+      {
+        "light": "B0612822-EC05-4631-8AD5-D1360E2350AA",
+        "dark": "DB312342-5B36-5B8F-AFBF-38FDB101B044",
+        "name": "Playlists / Creation failed with name retained / Light / Landscape"
+      },
+      {
+        "light": "840C69E8-D58B-4680-9868-392DB4E19BC1",
+        "dark": "F73855B9-30E2-55EC-B2FA-E06083FCB5FB",
+        "name": "Playlists / Creating named playlist / Light / Landscape"
+      },
+      {
+        "light": "696FF305-8364-42BC-B26B-AEEE0189B5DC",
+        "dark": "1416805A-18AB-51AB-BE84-4AD1CCC70285",
+        "name": "Playlists / Created empty / Light / Landscape"
+      },
+      {
+        "light": "F1DF34E2-A1A7-4293-9171-4E49733D3B47",
+        "dark": "6A3600D0-C72B-53D7-934B-4D8DCE063717",
+        "name": "Media / Add to Playlist / Light / Landscape"
+      },
+      {
+        "light": "2022D11A-DBCC-46AC-B74B-35B96A96F748",
+        "dark": "DE1BEE08-7488-56E6-83EF-B0E4A39B4D34",
+        "name": "Media / Add to playlist failed / Light / Landscape"
+      },
+      {
+        "light": "947C81CC-802D-4494-B89E-4BF94CA6E7FE",
+        "dark": "2F1E61E8-159F-5B06-A82B-04DA51CD0B84",
+        "name": "Media / Adding to playlist / Light / Landscape"
+      },
+      {
+        "light": "18CA6B49-2AD2-4D2A-A5D1-C2C5824E54FB",
+        "dark": "E39C5511-C8A5-539F-A9D9-5C249F6F1565",
+        "name": "Collection / Pushed main content from Home / Light / Landscape"
+      },
+      {
+        "light": "93E31009-B54E-4570-A4BC-FCB1F0152447",
+        "dark": "AC42D502-A5E1-513E-8D50-5FE2E491D7B3",
+        "name": "Movie / Pushed main content / Landscape / Light"
+      },
+      {
+        "light": "83A969A1-5E37-4FFC-BE60-8745CB90C1AD",
+        "dark": "12668D08-B5E2-51DD-8CCA-335E357171B3",
+        "name": "Movie / Download starting / Landscape / Light"
+      },
+      {
+        "light": "D7965FBC-7E4C-4261-BCEA-93F0CB6D94CD",
+        "dark": "08473368-8A29-5E7D-8B8E-74E112ECA93E",
+        "name": "Downloads / Selecting none / Landscape / Light"
+      },
+      {
+        "light": "73AF41F6-0E93-4F3B-8660-71611D0AF620",
+        "dark": "244798FA-FEF9-55F0-92CC-C048811F656A",
+        "name": "Downloads / Selecting one / Landscape / Light"
+      },
+      {
+        "light": "D5115105-5A1F-4E62-989F-DC25554660CC",
+        "dark": "E8A6495F-C2C0-5BC9-A0E3-BA2EDF5400E0",
+        "name": "Downloads / Delete selected confirmation / Landscape / Light"
+      },
+      {
+        "light": "CC1CD8E4-DE55-4DFC-9F52-7127D0457675",
+        "dark": "9711A8A0-2AE2-510D-9FE1-8E42874F00BE",
+        "name": "Downloads / Deleted / Empty manager / Landscape / Light"
+      },
+      {
+        "light": "65B5DEDC-4E67-498A-82A6-D5F23CE01EE0",
+        "dark": "734E74B3-6395-54C7-845F-03D00AAB6C18",
+        "name": "Downloaded / Large text / Portrait / Light"
+      },
+      {
+        "light": "00806922-64E2-4FDE-A7FD-60FECF7A99EF",
+        "dark": "F527EADF-EEF5-537B-8724-5AA64C4C7752",
+        "name": "Downloads / Manage large text / Portrait / Light"
+      },
+      {
+        "light": "3F1D00E8-7EDF-4AAF-9DD0-415D214888D1",
+        "dark": "CF0D977C-CE68-5ED0-B46C-F298FD240B04",
+        "name": "Home / Shows and Music / Landscape / Light"
+      },
+      {
+        "light": "A7905E43-838B-466E-812A-D2B846044D6F",
+        "dark": "3B9EE7F4-5142-5A90-8A32-8B7A3C5C3167",
+        "name": "Home / Audiobooks and Books / Landscape / Light"
+      },
+      {
+        "light": "093D9332-BB05-433E-AC28-F7DB0E8EF0AC",
+        "dark": "8C1769E3-E121-57CF-9634-0FB857626811",
+        "name": "Home / Books and Photos / Landscape / Light"
+      },
+      {
+        "light": "CD3AA399-1D63-429A-B3D7-9ED3C8AF4A23",
+        "dark": "B01D8996-3B67-5641-89B1-DEA0FEF93560",
+        "name": "Search / Results list / Landscape / Light"
+      },
+      {
+        "light": "5BB647BF-D5A3-42D5-AE15-9F76A499ABE6",
+        "dark": "691AD292-6481-55F9-99E5-EF3F72B8CEFA",
+        "name": "Search / Entry with keyboard / Landscape / Light"
+      },
+      {
+        "light": "393A9909-B276-46E0-80E3-4764A973CD07",
+        "dark": "16A2DCF0-07B2-5514-B3B1-B7161C7D0192",
+        "name": "Search / No results keyboard dismissed / Landscape / Light"
+      },
+      {
+        "light": "F0777964-8651-419C-8486-B6ED2AB32956",
+        "dark": "F874E0E8-E385-5BAC-8273-68858433BCDA",
+        "name": "Search / Pushed Aurora / Landscape / Light"
+      },
+      {
+        "light": "B6A72C2A-D268-41D7-8217-B90C17DDC5B1",
+        "dark": "623A0DCA-F264-5ED0-B9EA-8F92E63E92A5",
+        "name": "Search / Pushed Aurora from list / Landscape / Light"
+      },
+      {
+        "light": "028EAEE4-25DF-4375-9517-4D3D9719DD90",
+        "dark": "1605AF46-EED8-5781-ABC3-626DDF1B6CD0",
+        "name": "Movie / Pushed main content / Compact height / Light"
+      },
+      {
+        "light": "46E2F33A-EF68-4B6A-9F26-A64C1E8E5F0D",
+        "dark": "9B22371D-C52E-566F-94CA-B94A6B4B5AA5",
+        "name": "Settings / Profile editor / Compact height / Light"
+      },
+      {
+        "light": "492DE99D-A12E-44B3-A42D-43CA8A209749",
+        "dark": "02A0246E-8129-5853-AEBA-B2CCB1E85B96",
+        "name": "Audio / Now Playing / Compact height / Light"
+      },
+      {
+        "light": "A6523C51-0CFB-48CF-ABEA-7EEAE3097AD4",
+        "dark": "99D71ACC-A58F-5AC8-B1B1-D94DAA098DBF",
+        "name": "Album / Pushed / Music grid origin / Light"
+      },
+      {
+        "light": "125CE470-3B25-44A0-9C1D-F875D0D6FB41",
+        "dark": "BBD3C76A-E685-59CD-8A42-D390886BE2C6",
+        "name": "Album / Pushed / Music list origin / Light"
+      },
+      {
+        "light": "26A886DF-60B1-43D8-94B9-858AF152A080",
+        "dark": "77FF8262-2880-5CAF-9C7D-75D6938934AF",
+        "name": "Artist / Pushed / Music origin / Light"
+      },
+      {
+        "light": "5B8C99B4-AA8B-414E-B50D-B21F1F953BC8",
+        "dark": "500E11D9-8DF6-5CBB-AAF0-EBE7F54AFA62",
+        "name": "Book / Pushed / Books origin / Light"
+      },
+      {
+        "light": "35F078B1-29BF-4B2B-9BC0-8FAECF5D34AB",
+        "dark": "61E54D71-C78A-504F-88F4-BA8053D595B4",
+        "name": "Audio / Queue / Compact window / Light"
+      },
+      {
+        "light": "CDC26869-EAED-4DDF-8F4F-A1F6B7FB9585",
+        "dark": "62F0D3B9-BD7E-5245-BFB5-B11C544F39B2",
+        "name": "Audio / Now Playing / Compact window / Light"
+      },
+      {
+        "light": "EF82DB47-044C-4F95-A227-B645F7990C3D",
+        "dark": "C72815AA-9FD5-5726-873D-92898952DC82",
+        "name": "Audio / Persistent accessory / Compact More origin / Light"
+      }
+    ],
+    "layout": "Five Light/Dark pairs per row; internal screen geometry preserved",
+    "pairsPerRow": 5,
+    "appearanceGap": 120
+  }
+}

@@ -10,6 +10,7 @@ struct SeerrRequestView: View {
 
 private struct SeerrRequestForm: View {
     @Environment(SeerrStore.self) private var store
+    @Environment(RootNavigationState.self) private var navigation
     @Environment(\.dismiss) private var dismiss
     @AppStorage(ContentRatingGate.limitDefaultsKey) private var contentLimit = "off"
     @AppStorage(ContentRatingGate.hideUnratedDefaultsKey) private var hideUnrated = false
@@ -21,7 +22,12 @@ private struct SeerrRequestForm: View {
             Group {
                 if store.isConnected, store.admits(draft.title) {
                     if draft.phase == .confirmed, let request = draft.confirmed {
-                        SeerrRequestConfirmation(title: draft.title, status: request.status.seerrRequestDescription)
+                        SeerrRequestConfirmation(title: draft.title, status: request.status.seerrRequestDescription) {
+                            guard navigation.pushIPadRequestHistory() else { return false }
+                            store.finishRequestDraft(title: draft.title)
+                            dismiss()
+                            return true
+                        }
                     } else {
                         Form {
                             Section {
@@ -196,6 +202,7 @@ private struct SeerrRequestForm: View {
 private struct SeerrRequestConfirmation: View {
     let title: SeerrTitle
     let status: String
+    let openMainWindowHistory: () -> Bool
     @State private var showingHistory = false
 
     var body: some View {
@@ -214,8 +221,12 @@ private struct SeerrRequestConfirmation: View {
                 Text(status).font(.headline)
                 Text("Follow approval and availability in My Requests.").foregroundStyle(.secondary)
             }
-            Button { showingHistory = true } label: {
-                Text("View My Requests").frame(maxWidth: .infinity, minHeight: 44).gusProminentActionForeground()
+            Button {
+                if !openMainWindowHistory() {
+                    showingHistory = true
+                }
+            } label: {
+                Text("View My Requests").frame(maxWidth: .infinity).gusSeerrActionLabelSizing().gusProminentActionForeground()
             }
             .gusProminentGlassButtonStyle().gusProminentActionTint().controlSize(.large)
         }

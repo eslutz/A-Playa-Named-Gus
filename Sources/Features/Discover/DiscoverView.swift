@@ -44,10 +44,13 @@ struct DiscoverView: View {
                     }
                     NavigationLink { SeerrSettingsView() } label: { Label("Discover Settings", systemImage: "gearshape") }
                 }
+                .gusIPadIconOnly()
                 .accessibilityIdentifier("Seerr.menu")
             }
             if store.isConnected {
-                ToolbarItem { NavigationLink("My Requests") { SeerrRequestsView() } }
+                ToolbarItem {
+                    SeerrRequestHistoryLink()
+                }
             }
         }
         .sheet(isPresented: $showingSetup) { SeerrConnectView() }

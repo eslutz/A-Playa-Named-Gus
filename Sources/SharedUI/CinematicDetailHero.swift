@@ -20,6 +20,64 @@ struct CinematicDetailHero<Accessory: View>: View {
     @ViewBuilder let accessory: Accessory
 
     var body: some View {
+        #if os(iOS)
+            if DeviceIdentity.usesIPadPresentation {
+                iPadHero
+            } else {
+                legacyHero
+            }
+        #else
+            legacyHero
+        #endif
+    }
+
+    #if os(iOS)
+        private var iPadHero: some View {
+            ViewThatFits(in: .horizontal) {
+                if !dynamicTypeSize.isAccessibilitySize {
+                    HStack(alignment: .top, spacing: 32) {
+                        iPadArtworkAndActions.frame(width: item.type == .book ? 240 : 400)
+                        iPadOverview.frame(minWidth: 280, maxWidth: 680, alignment: .leading)
+                    }
+                }
+                VStack(alignment: .leading, spacing: 24) {
+                    iPadArtworkAndActions.frame(maxWidth: item.type == .book ? 240 : 400, alignment: .leading)
+                    iPadOverview
+                }
+            }
+            .padding(24)
+            .frame(maxWidth: PageContentMetrics.maxWidth, alignment: .leading)
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+
+        private var iPadArtworkAndActions: some View {
+            VStack(alignment: .leading, spacing: 16) {
+                AsyncPoster(
+                    url: item.type == .book ? session.mediaProvider.primaryImageURL(for: item, context: .posterGrid) : backdropURL,
+                    placeholderSymbol: item.artworkPlaceholderSymbol,
+                    fallbackURLs: session.mediaProvider.artworkURLs(for: item, maxWidth: 1280)
+                )
+                .aspectRatio(item.type == .book ? 2.0 / 3.0 : 16.0 / 9.0, contentMode: .fit)
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .accessibilityHidden(true)
+                HeroMetadataRow(item: item, foreground: .secondary)
+                actionStack
+            }
+        }
+
+        private var iPadOverview: some View {
+            VStack(alignment: .leading, spacing: 16) {
+                if let overview = item.overview?.trimmedNilIfEmpty {
+                    Text("Synopsis").font(.headline)
+                    Text(overview).fixedSize(horizontal: false, vertical: true)
+                        .accessibilityIdentifier("Detail.heroOverview")
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    #endif
+
+    private var legacyHero: some View {
         standardHero.gusTVDetailHero(item: item, backdropURL: backdropURL) {
             VStack(alignment: .leading, spacing: 24) {
                 playButton

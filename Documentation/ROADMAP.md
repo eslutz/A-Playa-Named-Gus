@@ -33,6 +33,8 @@ constrain *how* each item is built.
 
 ## Discover / Seerr design handoff
 
+- [x] Implement the iPad Sketch handoff: dedicated global Search, sidebar-edge visibility control, main-window detail navigation, adaptive media layouts and client interaction states, preserving the approved iPhone presentation. PR #41 includes the external 94-scenario implementation comparison, supporting-state source mapping, warning-free platform builds and [service capability limits](ipad-capabilities.md). Physical-device, minimum-OS, assistive-technology and live-service acceptance remain separate release gates; screenshot coverage does not establish every error branch or window-size combination.
+
 - [x] Preserve historical Figma design material in the local Git-ignored `Design/Archive/`.
 - [~] Complete the Apple-native Sketch redesign across supported devices. The current iPhone implementation uses the user-selected live **Gus iPhone** Sketch Screens, States and Components pages. The R5 snapshots in `Design/` are historical references. The candidate updates onboarding, compact navigation, library layouts, details and audio controls; unmatched existing screens retain their behavior and shared native styling. Light-only before/after comparison artifacts stay outside source. Later-device redesign and physical iPhone acceptance remain pending.
 - [~] iPhone review iteration 2 addresses theme selection, native glass controls, media-type Recently Added, consistent dismissal, download progress/artwork, playlist editing/completion, and Seerr polish. The external report keeps its original pair and adds a third image per scenario. Simulator validation is distinct from iPad runtime, physical-device, accessibility, live Seerr, hosted checks and release acceptance.

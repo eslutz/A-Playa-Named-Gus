@@ -7,6 +7,11 @@ final class RootNavigationState {
     static let moreID = "gus.more"
     static let searchID = "gus.search"
     var selectedSectionID = NavigationSectionPreference.homeID
+    #if os(iOS)
+        var sidebarVisibility = NavigationSplitViewVisibility.doubleColumn
+    #else
+        var sidebarVisibility = NavigationSplitViewVisibility.automatic
+    #endif
     var paths: [String: NavigationPath] = [:] {
         didSet {
             #if os(tvOS)
@@ -18,6 +23,10 @@ final class RootNavigationState {
     }
 
     var scrollAnchors: [String: String] = [:]
+    var libraryListModes: [String: Bool] = [:]
+    var photoAlbumModes: [String: Bool] = [:]
+    var librariesShowGrid = false
+    var isProfilePresented = false
     /// Owned by this signed-in tree, so another account never inherits focus.
     var tvFocus = TVFocusMemory()
     var home: HomeStore?
@@ -126,7 +135,12 @@ final class RootNavigationState {
         case .libraries: selectedSectionID = NavigationSectionPreference.librariesID
         case .downloaded: selectedSectionID = NavigationSectionPreference.downloadedID
         case .settings: selectedSectionID = NavigationSectionPreference.settingsID
-        case .search: break
+        case .search:
+            #if os(iOS)
+                selectedSectionID = Self.searchID
+            #else
+                break
+            #endif
         }
     }
 }
@@ -136,6 +150,7 @@ final class SectionSearchState {
     var store: SearchStore?
     var text = ""
     var isPresented = false
+    var showsList = false
     private var searchTask: Task<Void, Never>?
     private var requestedText: String?
 
@@ -164,4 +179,5 @@ final class SectionSearchState {
 enum AppScreen: Hashable {
     case downloads
     case navigationSettings
+    case seerrRequests
 }

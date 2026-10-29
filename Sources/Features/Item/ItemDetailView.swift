@@ -78,6 +78,7 @@ struct ItemDetailView: View {
                             }
                             .disabled(store.isUpdatingUserData || store.needsUserDataRefresh)
                         } label: { Label("More", systemImage: "ellipsis") }
+                            .gusIPadIconOnly()
                             .accessibilityIdentifier("Detail.actions")
                     }
                 }
@@ -105,7 +106,7 @@ struct ItemDetailView: View {
 
     private var detailNavigationTitle: String {
         #if os(iOS)
-            if widthClass == .compact {
+            if widthClass == .compact, !DeviceIdentity.usesIPadPresentation {
                 return ""
             }
         #endif

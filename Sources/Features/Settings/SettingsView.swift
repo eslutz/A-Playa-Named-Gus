@@ -3,6 +3,7 @@ import SwiftUI
 /// Account, known servers, sign-out, and version info.
 struct SettingsView: View {
     @Environment(AppModel.self) private var appModel
+    @Environment(RootNavigationState.self) private var navigationState
     @Environment(SessionStore.self) private var session
     @Environment(OfflineDownloadStore.self) private var downloads
     @Environment(VideoPlaylistsStore.self) private var videoPlaylists
@@ -11,7 +12,6 @@ struct SettingsView: View {
         @Environment(\.horizontalSizeClass) private var widthClass
     #endif
 
-    @State private var showingProfile = false
     @State private var reauthenticationServer: ServerConnection?
     @State private var switchErrorMessage: String?
     @AppStorage(ContentRatingGate.limitDefaultsKey) private var contentLimitRawValue = ContentRatingGate.Limit.off.rawValue
@@ -23,7 +23,7 @@ struct SettingsView: View {
     var body: some View {
         Form {
             Section("Account") {
-                Button { showingProfile = true } label: {
+                Button { navigationState.isProfilePresented = true } label: {
                     #if os(iOS)
                         if widthClass == .compact {
                             HStack {
@@ -138,7 +138,6 @@ struct SettingsView: View {
             }
         }
         .settingsFormStyle()
-        .sheet(isPresented: $showingProfile) { NavigationStack { UserProfileView() } }
         .navigationTitle("Settings")
         .task {
             downloads.load(serverID: session.server.id, userID: session.user.id)
@@ -221,6 +220,10 @@ private extension View {
     func settingsFormStyle() -> some View {
         #if os(visionOS)
             formStyle(.automatic)
+        #elseif os(iOS)
+            formStyle(.grouped)
+                .frame(maxWidth: DeviceIdentity.usesIPadPresentation ? 760 : .infinity)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         #else
             formStyle(.grouped)
         #endif

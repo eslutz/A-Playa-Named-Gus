@@ -8,6 +8,7 @@ struct UserProfileView: View {
     @State private var audioLanguage = ""
     @State private var subtitleLanguage = ""
     @State private var ready = false
+    @State private var confirmingReload = false
     #if !os(iOS)
         @State private var saved = false
     #endif
@@ -26,7 +27,13 @@ struct UserProfileView: View {
             if let message = session.profile.errorMessage {
                 Section {
                     Text(message)
-                    Button("Reload Profile") { Task { await load() } }
+                    Button("Reload Profile") {
+                        if hasDraftChanges {
+                            confirmingReload = true
+                        } else {
+                            Task { await load() }
+                        }
+                    }
                 }
             }
             #if !os(iOS)
@@ -50,12 +57,18 @@ struct UserProfileView: View {
                     Button("Cancel") { dismiss() }.disabled(session.profile.isSaving)
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Save") {
+                    Button {
                         Task {
                             if await session.profile.save(name: name, audioLanguage: audioLanguage, subtitleLanguage: subtitleLanguage) {
                                 app.synchronizeProfile(from: session)
                                 dismiss()
                             }
+                        }
+                    } label: {
+                        if session.profile.isSaving {
+                            ProgressView().accessibilityLabel("Saving Profile")
+                        } else {
+                            Text("Save")
                         }
                     }
                     .disabled(!ready || name.trimmedNilIfEmpty == nil || session.profile.isSaving || session.profile.isLoading)
@@ -64,6 +77,12 @@ struct UserProfileView: View {
                 ToolbarItem(placement: .cancellationAction) { Button("Done") { dismiss() } }
             #endif
         }
+        .confirmationDialog("Reload Profile?", isPresented: $confirmingReload) {
+            Button("Reload and Discard Draft", role: .destructive) { Task { await load() } }
+            Button("Keep Editing", role: .cancel) {}
+        } message: {
+            Text("Reloading replaces your unsaved profile changes with the current server profile.")
+        }
         .interactiveDismissDisabled(session.profile.isSaving)
         .task { await load() }
         .onChange(of: session.profile.profile) { _, _ in
@@ -71,6 +90,13 @@ struct UserProfileView: View {
                 populateFields()
             }
         }
+    }
+
+    private var hasDraftChanges: Bool {
+        guard ready, let profile = session.profile.profile else { return false }
+        return name != (profile.name ?? session.user.name)
+            || audioLanguage != (profile.configuration?.audioLanguagePreference ?? "")
+            || subtitleLanguage != (profile.configuration?.subtitleLanguagePreference ?? "")
     }
 
     private func languagePicker(_ title: LocalizedStringKey, selection: Binding<String>) -> some View {
@@ -94,7 +120,9 @@ struct UserProfileView: View {
     private func load() async {
         await session.profile.load()
         app.synchronizeProfile(from: session)
-        populateFields()
+        if session.profile.errorMessage == nil || !ready {
+            populateFields()
+        }
     }
 
     private func populateFields() {
