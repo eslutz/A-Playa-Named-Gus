@@ -22,7 +22,9 @@ struct ConnectServerView: View {
     var body: some View {
         Group {
             #if os(iOS)
-                if widthClass == .compact {
+                if DeviceIdentity.usesIPadPresentation {
+                    iPadOnboarding
+                } else if widthClass == .compact {
                     onboarding
                 } else {
                     serverForm
@@ -56,6 +58,93 @@ struct ConnectServerView: View {
     }
 
     #if os(iOS)
+        private var iPadOnboarding: some View {
+            GusIPadOnboardingLayout {
+                GusOnboardingHeader()
+                Text("Let’s connect.").font(.largeTitle.bold())
+                Text("Add your Jellyfin server to bring your library into Gus.")
+                    .font(.title3).foregroundStyle(.secondary)
+            } fields: {
+                addressEntry
+                connectEntry
+                discoveryEntry
+            }
+            .navigationTitle("")
+            .toolbar(.hidden, for: .navigationBar)
+            .sheet(isPresented: $showingLocalServers) {
+                NavigationStack {
+                    Form { localServersSection }
+                        .navigationTitle("Local Servers")
+                        .toolbar {
+                            ToolbarItem(placement: .cancellationAction) {
+                                GusCloseButton { showingLocalServers = false }
+                            }
+                        }
+                }
+            }
+        }
+
+        private var addressEntry: some View {
+            VStack(alignment: .leading, spacing: 24) {
+                GusOnboardingField(title: "Server address") {
+                    TextField("https://media.example.com", text: $urlText)
+                        .urlFieldStyle()
+                        .accessibilityLabel("Server Address")
+                        .accessibilityIdentifier("ConnectServerView.serverAddress")
+                        .onSubmit(connect)
+                }
+            }
+        }
+
+        private var discoveryEntry: some View {
+            VStack(alignment: .leading, spacing: 24) {
+                VStack(alignment: .leading, spacing: 14) {
+                    Button {
+                        showingLocalServers = true
+                        discoveryStore.start()
+                    } label: {
+                        HStack(spacing: 16) {
+                            Image(systemName: "dot.radiowaves.left.and.right").foregroundStyle(.blue)
+                            Text("Find a local server").foregroundStyle(.primary)
+                            Spacer()
+                            Image(systemName: "chevron.right").foregroundStyle(.secondary)
+                        }
+                        .padding(.vertical, 18)
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .overlay(alignment: .top) { Divider() }
+                    .overlay(alignment: .bottom) { Divider() }
+                    Text("Search for Jellyfin servers on your local network when you’re on the same Wi-Fi.")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
+            }
+        }
+
+        private var connectEntry: some View {
+            VStack(alignment: .leading, spacing: 24) {
+                connectErrorSection
+                Button(action: connect) {
+                    HStack {
+                        if isConnecting {
+                            ProgressView().tint(.white)
+                        }
+                        Text("Connect").frame(maxWidth: .infinity)
+                    }
+                    .frame(minHeight: 26)
+                }
+                .buttonStyle(.borderedProminent)
+                .buttonBorderShape(.capsule)
+                .controlSize(.large)
+                .disabled(urlText.trimmingCharacters(in: .whitespaces).isEmpty || isConnecting)
+                .accessibilityIdentifier("ConnectServerView.connectButton")
+                if isConnecting {
+                    Button("Cancel", role: .cancel) { cancelConnect() }
+                        .accessibilityIdentifier("ConnectServerView.cancelButton")
+                }
+            }
+        }
+
         private var onboarding: some View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 28) {
@@ -66,52 +155,9 @@ struct ConnectServerView: View {
                             .font(.title3).foregroundStyle(.secondary)
                     }
                     .padding(.bottom, 20)
-                    GusOnboardingField(title: "Server address") {
-                        TextField("https://media.example.com", text: $urlText)
-                            .urlFieldStyle()
-                            .accessibilityLabel("Server Address")
-                            .accessibilityIdentifier("ConnectServerView.serverAddress")
-                            .onSubmit(connect)
-                    }
-                    VStack(alignment: .leading, spacing: 14) {
-                        Button {
-                            showingLocalServers = true
-                            discoveryStore.start()
-                        } label: {
-                            HStack(spacing: 16) {
-                                Image(systemName: "dot.radiowaves.left.and.right").foregroundStyle(.blue)
-                                Text("Find a local server").foregroundStyle(.primary)
-                                Spacer()
-                                Image(systemName: "chevron.right").foregroundStyle(.secondary)
-                            }
-                            .padding(.vertical, 18)
-                            .contentShape(Rectangle())
-                        }
-                        .buttonStyle(.plain)
-                        .overlay(alignment: .top) { Divider() }
-                        .overlay(alignment: .bottom) { Divider() }
-                        Text("Search for Jellyfin servers on your local network when you’re on the same Wi-Fi.")
-                            .font(.caption).foregroundStyle(.secondary)
-                    }
-                    connectErrorSection
-                    Button(action: connect) {
-                        HStack {
-                            if isConnecting {
-                                ProgressView().tint(.white)
-                            }
-                            Text("Connect").frame(maxWidth: .infinity)
-                        }
-                        .frame(minHeight: 26)
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .buttonBorderShape(.capsule)
-                    .controlSize(.large)
-                    .disabled(urlText.trimmingCharacters(in: .whitespaces).isEmpty || isConnecting)
-                    .accessibilityIdentifier("ConnectServerView.connectButton")
-                    if isConnecting {
-                        Button("Cancel", role: .cancel) { cancelConnect() }
-                            .accessibilityIdentifier("ConnectServerView.cancelButton")
-                    }
+                    addressEntry
+                    discoveryEntry
+                    connectEntry
                 }
                 .padding(.horizontal, 28)
                 .padding(.vertical, 24)

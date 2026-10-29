@@ -16,6 +16,7 @@
             openMovieReview(app)
             submit(app)
             assertPendingConfirmation(app)
+            assertIPadActionSize(app.buttons["View My Requests"].firstMatch)
             capture("seerr-movie-pending")
             app.buttons["View My Requests"].firstMatch.tap()
             XCTAssertTrue(app.navigationBars["My Requests"].waitForExistence(timeout: 10))
@@ -156,6 +157,12 @@
             XCTAssertTrue(app.navigationBars["Discover Settings"].waitForExistence(timeout: 10))
         }
 
+        private func assertIPadActionSize(_ button: XCUIElement) {
+            guard UIDevice.current.userInterfaceIdiom == .pad else { return }
+            XCTAssertGreaterThanOrEqual(button.frame.height, 44)
+            XCTAssertLessThanOrEqual(button.frame.height, 64, "Large native actions must not add a second tall label inset")
+        }
+
         private func connect(_ app: XCUIApplication) {
             // Keychain entries outlive app processes and test cases. Reset the
             // connection through its public UI rather than relying on install state.
@@ -183,6 +190,7 @@
             next.tap()
             let username = app.textFields["Seerr.username"]
             XCTAssertTrue(username.waitForExistence(timeout: 15))
+            assertIPadActionSize(app.buttons["Seerr.signIn"].firstMatch)
             capture("seerr-sign-in")
             username.tap()
             username.typeText("fixture@example.invalid")

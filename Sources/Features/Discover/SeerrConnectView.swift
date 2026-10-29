@@ -14,11 +14,12 @@ struct SeerrConnectView: View {
     var body: some View {
         NavigationStack {
             SeerrSetupLayout {
-                VStack(alignment: .leading, spacing: 12) {
+                VStack(alignment: .gusSeerrSetupHeading, spacing: 12) {
                     Image(systemName: "sparkles").font(.largeTitle).foregroundStyle(.tint).accessibilityHidden(true)
                     Text("Discover your next favorite").font(.title2.bold())
                     Text("Connect your Seerr server to discover movies and shows, request titles, and follow their availability.").foregroundStyle(.secondary)
                 }
+                .gusSeerrSetupHeading()
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Seerr Server URL").font(.subheadline.weight(.medium))
                     TextField("https://seerr.example.com", text: $address)
@@ -40,7 +41,7 @@ struct SeerrConnectView: View {
                             ProgressView()
                         }
                     }
-                    .frame(maxWidth: .infinity, minHeight: 44)
+                    .frame(maxWidth: .infinity).gusSeerrActionLabelSizing()
                     .gusProminentActionForeground()
                 }
                 .gusProminentGlassButtonStyle().gusProminentActionTint().controlSize(.large)
@@ -143,7 +144,7 @@ private struct SeerrSignInView: View {
                             ProgressView()
                         }
                     }
-                    .frame(maxWidth: .infinity, minHeight: 44)
+                    .frame(maxWidth: .infinity).gusSeerrActionLabelSizing()
                     .gusProminentActionForeground()
                 }
                 .gusProminentGlassButtonStyle().gusProminentActionTint().controlSize(.large)

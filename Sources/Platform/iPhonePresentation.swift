@@ -59,6 +59,34 @@ private struct IPhoneCanvasModifier: ViewModifier {
 }
 
 #if os(iOS)
+    /// R2 onboarding uses two columns on wide iPads and stacks without scaling in narrow windows.
+    struct GusIPadOnboardingLayout<Intro: View, Fields: View>: View {
+        @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+        @ViewBuilder let intro: Intro
+        @ViewBuilder let fields: Fields
+
+        var body: some View {
+            GeometryReader { geometry in
+                ScrollView {
+                    let wide = geometry.size.width >= 900 && !dynamicTypeSize.isAccessibilitySize
+                    let layout = wide ? AnyLayout(HStackLayout(alignment: .center, spacing: 96))
+                        : AnyLayout(VStackLayout(alignment: .leading, spacing: 40))
+                    layout {
+                        VStack(alignment: .leading, spacing: 24) { intro }
+                            .frame(maxWidth: 420, alignment: .leading)
+                        VStack(alignment: .leading, spacing: 28) { fields }
+                            .frame(maxWidth: 460, alignment: .leading)
+                    }
+                    .padding(wide ? 64 : 28)
+                    .frame(maxWidth: 1120)
+                    .frame(maxWidth: .infinity, minHeight: geometry.size.height)
+                }
+                .scrollDismissesKeyboard(.interactively)
+                .background(Color(uiColor: .systemBackground))
+            }
+        }
+    }
+
     struct GusOnboardingHeader: View {
         var body: some View {
             HStack(alignment: .top) {

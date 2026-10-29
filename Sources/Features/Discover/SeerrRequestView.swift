@@ -226,7 +226,7 @@ private struct SeerrRequestConfirmation: View {
                     showingHistory = true
                 }
             } label: {
-                Text("View My Requests").frame(maxWidth: .infinity, minHeight: 44).gusProminentActionForeground()
+                Text("View My Requests").frame(maxWidth: .infinity).gusSeerrActionLabelSizing().gusProminentActionForeground()
             }
             .gusProminentGlassButtonStyle().gusProminentActionTint().controlSize(.large)
         }

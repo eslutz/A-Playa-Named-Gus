@@ -10,6 +10,7 @@ The iPad redesign uses the existing media-provider sessions, Seerr client, sessi
 - Request creation, profile editing, chapter selection and queue selection remain focused sheets. From a confirmed iPad request, View My Requests leaves the task sheet and pushes history in the main content stack.
 - Common toolbar actions use SF Symbols with semantic labels. Save, Cancel, destructive choices and recovery actions retain explicit text. Native volume/output controls retain system behavior; simulator output limitations do not justify a simulated volume slider.
 - The profile sheet is hosted above adaptive container replacement so its draft survives layout changes. Saves expose native progress; failed saves keep the editor draft. A requested reload confirms before replacing changed fields. Reader opening failures expose retry without resetting a successfully opened publication.
+- Jellyfin Connect and Sign In use the shared onboarding identity and fields, arranged in two columns on wide iPad windows and stacked in narrow windows or accessibility text sizes. Seerr setup uses the designed centered introduction and filled fields on iPad; native action labels avoid adding a second large vertical inset. The approved iPhone onboarding and other-platform forms retain their existing presentation.
 
 ## Comparison workflow
 
