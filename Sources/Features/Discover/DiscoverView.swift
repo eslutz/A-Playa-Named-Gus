@@ -53,7 +53,7 @@ struct DiscoverView: View {
                 }
             }
         }
-        .sheet(isPresented: $showingSetup) { SeerrConnectView() }
+        .gusTVTask(isPresented: $showingSetup) { SeerrConnectView() }
     }
 
     private func hide() {

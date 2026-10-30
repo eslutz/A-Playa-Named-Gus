@@ -107,6 +107,7 @@ struct LibraryGridView: View {
         }
         .gusTVBrowseViewport()
         .navigationTitle(scope.title)
+        .gusTVDetailTitle()
         .toolbar {
             #if !os(tvOS)
                 ToolbarItem(placement: .primaryAction) {

@@ -67,7 +67,7 @@ struct SeerrSettingsView: View {
         }
         .seerrFormStyle()
         .navigationTitle("Discover Settings")
-        .sheet(isPresented: $showingSetup) { SeerrConnectView() }
+        .gusTVTask(isPresented: $showingSetup) { SeerrConnectView() }
         .confirmationDialog("Disconnect Seerr on this device?", isPresented: $confirmingDisconnect, titleVisibility: .visible) {
             Button("Disconnect", role: .destructive) { store.disconnect() }
         } message: { Text("Your Seerr requests remain on the server. This removes the saved connection for this Gus account on this device.") }

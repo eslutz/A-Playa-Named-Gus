@@ -161,21 +161,31 @@ private struct SeerrDiscoveryHero: View {
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     var body: some View {
-        if dynamicTypeSize.isAccessibilitySize {
-            VStack(alignment: .leading, spacing: 12) {
+        #if os(tvOS)
+            GusTVMediaDetailLayout {
                 SeerrArtworkView(path: title.backdropPath, aspectRatio: 16.0 / 9.0, width: "w1280")
+            } summary: {
                 heroText
+            } details: {
+                EmptyView()
             }
-        } else {
-            SeerrArtworkView(path: title.backdropPath, aspectRatio: 16.0 / 9.0, width: "w1280")
-                .overlay(alignment: .bottomLeading) {
-                    ZStack(alignment: .bottomLeading) {
-                        LinearGradient(colors: [.clear, .black.opacity(0.85)], startPoint: .top, endPoint: .bottom)
-                        heroText.padding(20).foregroundStyle(.white)
-                    }
-                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        #else
+            if dynamicTypeSize.isAccessibilitySize {
+                VStack(alignment: .leading, spacing: 12) {
+                    SeerrArtworkView(path: title.backdropPath, aspectRatio: 16.0 / 9.0, width: "w1280")
+                    heroText
                 }
-        }
+            } else {
+                SeerrArtworkView(path: title.backdropPath, aspectRatio: 16.0 / 9.0, width: "w1280")
+                    .overlay(alignment: .bottomLeading) {
+                        ZStack(alignment: .bottomLeading) {
+                            LinearGradient(colors: [.clear, .black.opacity(0.85)], startPoint: .top, endPoint: .bottom)
+                            heroText.padding(20).foregroundStyle(.white)
+                        }
+                        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    }
+            }
+        #endif
     }
 
     private var heroText: some View {
@@ -185,7 +195,8 @@ private struct SeerrDiscoveryHero: View {
             NavigationLink {
                 SeerrTitleDetailView(title: title, store: store)
             } label: { Label("View Title", systemImage: "info.circle") }
-                .buttonStyle(.borderedProminent)
+                .gusTVRequestButtonStyle()
+                .accessibilityIdentifier("Seerr.title." + (title.mediaType?.rawValue ?? "unknown") + "." + String(title.id))
         }
     }
 }

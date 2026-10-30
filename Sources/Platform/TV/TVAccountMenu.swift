@@ -68,10 +68,10 @@ extension View {
                     Text(session.user.name)
                 }
             }
-            .sheet(isPresented: $showingProfile) { NavigationStack { UserProfileView() } }
+            .gusTVTask(isPresented: $showingProfile) { NavigationStack { UserProfileView() } }
             .accessibilityLabel("Account")
             .accessibilityValue(session.user.name)
-            .sheet(item: $reauthenticationServer) { server in
+            .gusTVTask(item: $reauthenticationServer) { server in
                 NavigationStack {
                     SignInView(server: server)
                         .toolbar {

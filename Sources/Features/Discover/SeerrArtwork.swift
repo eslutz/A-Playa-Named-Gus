@@ -83,6 +83,7 @@ struct SeerrResultLink: View {
             }
         }
         .posterNavigationStyle()
+        .accessibilityIdentifier("Seerr.title." + (title.mediaType?.rawValue ?? "unknown") + "." + String(title.id))
     }
 }
 

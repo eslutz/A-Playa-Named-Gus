@@ -9,7 +9,7 @@ struct UserProfileView: View {
     @State private var subtitleLanguage = ""
     @State private var ready = false
     @State private var confirmingReload = false
-    #if !os(iOS)
+    #if !os(iOS) && !os(tvOS)
         @State private var saved = false
     #endif
 
@@ -36,7 +36,7 @@ struct UserProfileView: View {
                     }
                 }
             }
-            #if !os(iOS)
+            #if !os(iOS) && !os(tvOS)
                 if saved {
                     Text("Profile saved to Jellyfin.")
                 }
@@ -52,7 +52,7 @@ struct UserProfileView: View {
         .disabled(session.profile.isSaving || session.profile.isLoading)
         .navigationTitle("Profile")
         .toolbar {
-            #if os(iOS)
+            #if os(iOS) || os(tvOS)
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }.disabled(session.profile.isSaving)
                 }
@@ -72,6 +72,7 @@ struct UserProfileView: View {
                         }
                     }
                     .disabled(!ready || name.trimmedNilIfEmpty == nil || session.profile.isSaving || session.profile.isLoading)
+                    .accessibilityIdentifier("Profile.save")
                 }
             #else
                 ToolbarItem(placement: .cancellationAction) { Button("Done") { dismiss() } }

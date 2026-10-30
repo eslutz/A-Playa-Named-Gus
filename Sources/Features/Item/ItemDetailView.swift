@@ -58,30 +58,33 @@ struct ItemDetailView: View {
             }
             .playerPresentation(item: $playerItem)
             .sheet(isPresented: $addingToCollection) { NavigationStack { AddToMediaCollectionView(item: store?.item ?? item) } }
-            .sheet(isPresented: $addingToPlaylist) {
+            .sheet(isPresented: $addingToPlaylist, onDismiss: { navigationState.restoreTVDetailFocus(item: item) }) {
                 NavigationStack { AddToVideoPlaylistView(item: store?.item ?? item) }
+                    .gusTVExitTask { addingToPlaylist = false }
             }
             .toolbar {
-                if !isRestricted, let store, store.item.id != nil {
-                    ToolbarItem(placement: .primaryAction) {
-                        Menu {
-                            let markWatched = store.item.userData?.isWatched != true
-                            if store.item.type == .movie || store.item.type == .episode {
-                                Button("Add to Playlist", systemImage: MediaActionSymbols.addToPlaylist) { addingToPlaylist = true }
-                            }
-                            if CollectionPlatform.canManage && (navigationState.collectionStore(session: session).capabilities.create || navigationState.collectionStore(session: session).capabilities.addMembers) {
-                                Button("Add to Collection", systemImage: "rectangle.stack.badge.plus") { addingToCollection = true }
-                            }
-                            Divider()
-                            Button(markWatched ? "Mark as Watched" : "Mark as Unwatched", systemImage: markWatched ? "checkmark.circle" : "arrow.counterclockwise") {
-                                Task { await store.setWatched(markWatched, nextUp: upNext) }
-                            }
-                            .disabled(store.isUpdatingUserData || store.needsUserDataRefresh)
-                        } label: { Label("More", systemImage: "ellipsis") }
-                            .gusIPadIconOnly()
-                            .accessibilityIdentifier("Detail.actions")
+                #if !os(tvOS)
+                    if !isRestricted, let store, store.item.id != nil {
+                        ToolbarItem(placement: .primaryAction) {
+                            Menu {
+                                let markWatched = store.item.userData?.isWatched != true
+                                if store.item.type == .movie || store.item.type == .episode {
+                                    Button("Add to Playlist", systemImage: MediaActionSymbols.addToPlaylist) { addingToPlaylist = true }
+                                }
+                                if CollectionPlatform.canManage && (navigationState.collectionStore(session: session).capabilities.create || navigationState.collectionStore(session: session).capabilities.addMembers) {
+                                    Button("Add to Collection", systemImage: "rectangle.stack.badge.plus") { addingToCollection = true }
+                                }
+                                Divider()
+                                Button(markWatched ? "Mark as Watched" : "Mark as Unwatched", systemImage: markWatched ? "checkmark.circle" : "arrow.counterclockwise") {
+                                    Task { await store.setWatched(markWatched, nextUp: upNext) }
+                                }
+                                .disabled(store.isUpdatingUserData || store.needsUserDataRefresh)
+                            } label: { Label("More", systemImage: "ellipsis") }
+                                .gusIPadIconOnly()
+                                .accessibilityIdentifier("Detail.actions")
+                        }
                     }
-                }
+                #endif
             }
             .sharePlaySharingPresentation(presentation: $sharePlayPresentation, errorMessage: $sharePlayErrorMessage)
             .downloadErrorAlert(downloads)
@@ -180,10 +183,24 @@ struct ItemDetailView: View {
                             .disabled(store.isUpdatingUserData || store.needsUserDataRefresh)
                             .accessibilityIdentifier("Detail.watched")
                             .gusTVDetailActionFocus(id: "watched", item: store.item)
-                            if store.item.type == .movie || store.item.type == .episode {
-                                ItemUserActionButton(title: "Add to Playlist", systemImage: MediaActionSymbols.addToPlaylist, action: { addingToPlaylist = true })
-                                    .accessibilityIdentifier("Detail.playlist")
-                                    .gusTVDetailActionFocus(id: "playlist", item: store.item)
+                            if target != nil || store.item.type == .movie || store.item.type == .episode || CollectionPlatform.canManage {
+                                Menu {
+                                    if let target, ContentRatingGate.admitsStored(target) {
+                                        Button("Start from Beginning", systemImage: "arrow.counterclockwise") {
+                                            playerItem = ItemRef(item: target, serverID: session.server.id, userID: session.user.id, playbackStart: .fromBeginning)
+                                        }
+                                    }
+                                    if store.item.type == .movie || store.item.type == .episode {
+                                        Button("Add to Playlist", systemImage: MediaActionSymbols.addToPlaylist) { addingToPlaylist = true }
+                                    }
+                                    if CollectionPlatform.canManage && (navigationState.collectionStore(session: session).capabilities.create || navigationState.collectionStore(session: session).capabilities.addMembers) {
+                                        Button("Add to Collection", systemImage: "rectangle.stack.badge.plus") { addingToCollection = true }
+                                    }
+                                } label: {
+                                    Label("More", systemImage: "ellipsis").gusDetailActionLabel()
+                                }
+                                .accessibilityIdentifier("Detail.more")
+                                .gusTVDetailActionFocus(id: "more", item: store.item)
                             }
                         #endif
                         #if !os(tvOS)

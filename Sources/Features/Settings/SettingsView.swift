@@ -12,6 +12,7 @@ struct SettingsView: View {
         @Environment(\.horizontalSizeClass) private var widthClass
     #endif
 
+    @State private var showingTVAccentEditor = false
     @State private var reauthenticationServer: ServerConnection?
     @State private var switchErrorMessage: String?
     @AppStorage(ContentRatingGate.limitDefaultsKey) private var contentLimitRawValue = ContentRatingGate.Limit.off.rawValue
@@ -101,6 +102,10 @@ struct SettingsView: View {
                 Text("System follows your device's light and dark setting. Navigation customizes which sections appear in the main menu.")
             }
 
+            #if os(tvOS)
+                TVThemeSettingsControls { showingTVAccentEditor = true }
+            #endif
+
             Section {
                 Picker("Limit Content Ratings", selection: $contentLimitRawValue) {
                     ForEach(ContentRatingGate.Limit.allCases) { limit in
@@ -138,6 +143,7 @@ struct SettingsView: View {
             }
         }
         .settingsFormStyle()
+        .gusTVAccentEditor(isPresented: $showingTVAccentEditor)
         .navigationTitle("Settings")
         .task {
             downloads.load(serverID: session.server.id, userID: session.user.id)

@@ -30,7 +30,12 @@ struct PhotoViewerView: View {
             #endif
             .ignoresSafeArea(edges: .bottom)
         }
+        #if os(tvOS)
+        .navigationTitle("")
+        #else
         .navigationTitle(currentTitle)
+        #endif
+        .gusTVPhotoHeading(title: currentTitle, position: (siblings.firstIndex(where: { $0.id == selectedID }) ?? 0) + 1, total: siblings.count)
         #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
         #endif

@@ -32,6 +32,7 @@ struct AlbumDetailView: View {
             .lookToScroll()
         }
         .navigationTitle(album.displayTitle)
+        .gusTVDetailTitle()
         .task {
             await loadTracks()
         }
@@ -68,6 +69,21 @@ struct AlbumDetailView: View {
             } else {
                 stackedContent
             }
+        #elseif os(tvOS)
+            HStack(alignment: .top, spacing: 64) {
+                VStack(alignment: .leading, spacing: 32) {
+                    albumArtwork
+                    VStack(alignment: .leading, spacing: 24) { albumActions }
+                }
+                .frame(width: 360)
+                VStack(alignment: .leading, spacing: 24) {
+                    Text("Tracks").font(.title2.bold())
+                    trackList
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .gusTVContentHeading(album.displayTitle)
+            .padding(64)
         #else
             stackedContent
         #endif
@@ -115,6 +131,8 @@ struct AlbumDetailView: View {
     private var artworkWidth: CGFloat {
         #if os(iOS)
             widthClass == .compact ? 160 : (DeviceIdentity.usesIPadPresentation ? 240 : 180)
+        #elseif os(tvOS)
+            360
         #else
             180
         #endif
@@ -271,6 +289,7 @@ struct ArtistAlbumsView: View {
                         .posterNavigationStyle()
                     }
                 }
+                .gusTVContentHeading(artist.displayTitle)
                 .padding()
                 .frame(maxWidth: PageContentMetrics.maxWidth, alignment: .leading)
                 .frame(maxWidth: .infinity)
@@ -279,6 +298,7 @@ struct ArtistAlbumsView: View {
             .lookToScroll()
         }
         .navigationTitle(artist.displayTitle)
+        .gusTVDetailTitle()
         .task {
             await loadAlbums()
         }

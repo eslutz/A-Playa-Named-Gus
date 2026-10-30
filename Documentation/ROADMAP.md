@@ -31,6 +31,11 @@ constrain *how* each item is built.
 
 - [x] October 12 stale-reference recovery: shared account-scoped resolution, versioned Next Up migration, explicit legacy replacement, public-artwork fallbacks, scoped system links, preserved downloaded-file identity, and confirmed progress transfer. Source, regression tests, platform builds, and the physical Trespass recovery are verified; evidence and remaining cross-platform runtime limits are recorded in [the validation report](Reviews/README.md).
 
+## Apple TV presentation alignment
+
+- [~] Align supported tvOS surfaces with current iPhone/iPad conventions: readable browsing/detail hierarchy, remote focus restoration, fullscreen authentication/editor tasks, audio return behavior, and device-local themes with preset/hex accent editing. Preserve native tvOS controls and existing other-platform presentation. See [TV boundaries and validation](tvos-capabilities.md).
+- [ ] Complete implementation comparison, native remote interaction coverage, platform checks and private review. Physical television/Siri Remote, exact minimum-OS and signed distribution acceptance remain separate.
+
 ## Discover / Seerr design handoff
 
 - [x] Implement the iPad Sketch handoff: dedicated global Search, sidebar-edge visibility control, main-window detail navigation, adaptive media layouts and client interaction states, preserving the approved iPhone presentation. PR #41 includes the external 94-scenario implementation comparison, supporting-state source mapping, warning-free platform builds and [service capability limits](ipad-capabilities.md). Physical-device, minimum-OS, assistive-technology and live-service acceptance remain separate release gates; screenshot coverage does not establish every error branch or window-size combination.
@@ -999,14 +1004,16 @@ October 12 pipeline policy supersedes direct-main publication: main now requires
 - [x] Authenticated collection create/edit/membership/artwork/delete readbacks passed against the isolated Jellyfin demo, including multiple memberships and preservation of member playback state.
 - [ ] Cross-platform UI/accessibility and physical-device acceptance. See [collection implementation evidence](Reviews/README.md) and the [Collections wiki guide](https://github.com/eslutz/A-Playa-Named-Gus/wiki/Collections).
 
-## Native tvOS presentation — local feature candidate
+## Native tvOS presentation — implementation candidate
 
-- [~] Native sidebar and dedicated Search; cinematic focus-driven unified Next Up and recently-added fallback, adaptive TV grids, TV detail composition and direct Account menu.
-- [~] Session-owned identity/index focus bookmarks plus horizontal scroll restoration; poster progress/watched accessibility values and full-synopsis sheet.
-- [~] Native AVKit display matching, Playback Info/Next Episode, single TV video Now Playing owner, background pause and pause/rate-preserving server track rebuilds.
-- [ ] Compatible tvOS 27 runtime capture and remote-only focus, Back/Menu, repeated/cancelled account/playback flows; physical VoiceOver/HDR/audio and signed private-sync acceptance remain open.
+- [x] Align the existing sidebar, dedicated Search, browse headings and bounded artwork with the shared iPhone/iPad hierarchy. Details keep their native stack; albums separate artwork/actions from tracks, photo albums open a gallery, and photos reserve title/count space.
+- [x] Use full-screen native TV authentication/editing tasks, explicit profile Save/Cancel, readable native action focus, More for secondary actions and opener focus restoration after the playlist chooser.
+- [x] Add device-local Gus Default, Apple Default and Custom themes, native accent presets and validated six-digit hex drafts. Closing prepared audio returns to Now Playing while Stop remains explicit.
+- [x] Retain editable TV Screens, States and Components in `Design/Gus-tvOS.sketch`; keep artwork placeholders and implementation captures in the private comparison Page.
+- [x] Pass warning-free builds for iOS, macOS, tvOS, visionOS and watchOS, the TV unit suite and representative remote-only simulator regressions. These checks do not establish release or physical-device acceptance.
+- [ ] Review the implementation comparisons and complete physical-TV/Siri Remote, VoiceOver, HDR/audio, exact tvOS 26.0, populated Live TV, alternate tracks and signed private-sync acceptance.
 
-Based on merged PR #21 (`c847a27`): Jellyfin owns playlists and collections; unique native membership, permissions and explicit legacy import remain unchanged. No duplicate-entry queue product is introduced. Local implementation and evidence: [TV redesign](Reviews/README.md). No publication or release acceptance is claimed.
+Jellyfin continues to own playlists and collections; native membership, permissions, restriction gates and explicit legacy import remain unchanged. No duplicate-entry queue product is introduced. See [TV capabilities](tvos-capabilities.md) for client/service boundaries and isolated validation. Required PR CI, signed release qualification and distribution remain separate gates.
 
 ### Xcode Cloud usage optimization — 2026-10-22
 

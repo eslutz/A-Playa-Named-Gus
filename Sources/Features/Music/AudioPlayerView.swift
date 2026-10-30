@@ -15,6 +15,8 @@ struct AudioPlayerView: View {
     private var usesLeadingTitle: Bool {
         #if os(iOS)
             widthClass == .compact || DeviceIdentity.usesIPadPresentation
+        #elseif os(tvOS)
+            true
         #else
             false
         #endif
@@ -89,9 +91,17 @@ struct AudioPlayerView: View {
             aspectRatio: 1,
             placeholderSymbol: track?.type == .audioBook ? "book" : "music.note"
         )
-        .frame(maxWidth: 320)
+        .frame(maxWidth: audioArtworkWidth)
         .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
         .accessibilityHidden(true)
+    }
+
+    private var audioArtworkWidth: CGFloat {
+        #if os(tvOS)
+            480
+        #else
+            320
+        #endif
     }
 
     private var titleBlock: some View {
@@ -166,7 +176,7 @@ struct AudioPlayerView: View {
             }
         }
         .font(.title2)
-        .buttonStyle(AudioTransportStyle())
+        .gusAudioTransportStyle()
         .gusPhoneAudioTransportColor()
     }
 
@@ -342,5 +352,15 @@ private struct AudioTransportStyle: ButtonStyle {
             .frame(minWidth: 44, minHeight: 44)
             .contentShape(Rectangle())
             .opacity(configuration.isPressed ? 0.6 : 1)
+    }
+}
+
+extension View {
+    @ViewBuilder func gusAudioTransportStyle() -> some View {
+        #if os(tvOS)
+            buttonStyle(.bordered)
+        #else
+            buttonStyle(AudioTransportStyle())
+        #endif
     }
 }

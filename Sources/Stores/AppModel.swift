@@ -262,7 +262,11 @@ final class AppModel {
         /// demo library, used for screenshots and reviewer/tester walkthroughs.
         func connectToLocalDemoServer() async -> String? {
             do {
-                let server = try await connect(to: "http://localhost:8096")
+                let address = ProcessInfo.processInfo.environment["GUS_DEMO_URL"] ?? "http://localhost:8096"
+                guard let url = URL(string: address), url.scheme == "http",
+                      ["localhost", "127.0.0.1", "::1"].contains(url.host ?? ""),
+                      url.user == nil, url.password == nil else { return String(localized: "The demo server must use a local HTTP address.") }
+                let server = try await connect(to: address)
                 let username = ProcessInfo.processInfo.environment["GUS_DEMO_USERNAME"] ?? "gus"
                 let password = ProcessInfo.processInfo.environment["GUS_DEMO_PASSWORD"] ?? "playa-demo"
                 try await signIn(to: server, username: username, password: password)

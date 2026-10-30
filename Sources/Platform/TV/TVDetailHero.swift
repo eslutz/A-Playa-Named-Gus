@@ -19,19 +19,35 @@ extension View {
         @ViewBuilder let controls: () -> Controls
         @State private var showingOverview = false
 
+        private var artworkAspectRatio: CGFloat {
+            switch item.type {
+            case .musicAlbum, .musicArtist, .audio, .audioBook: 1
+            case .photo, .photoAlbum: 4.0 / 3.0
+            default: 2.0 / 3.0
+            }
+        }
+
         var body: some View {
-            VStack(alignment: .leading, spacing: 24) {
-                Spacer(minLength: 180)
-                VStack(alignment: .leading, spacing: 20) {
-                    Text(item.displayTitle).font(.largeTitle.bold()).lineLimit(3)
-                        .foregroundStyle(.white)
+            HStack(alignment: .top, spacing: 64) {
+                AsyncPoster(
+                    url: session.mediaProvider.primaryImageURL(for: item, context: .posterGrid),
+                    placeholderSymbol: item.artworkPlaceholderSymbol,
+                    fallbackURLs: session.mediaProvider.artworkURLs(for: item, maxWidth: 1280)
+                )
+                .aspectRatio(artworkAspectRatio, contentMode: .fit)
+                .frame(width: 360)
+                .clipShape(RoundedRectangle(cornerRadius: 16))
+                .accessibilityHidden(true)
+                VStack(alignment: .leading, spacing: 28) {
+                    Text(item.displayTitle).font(.largeTitle.bold())
+                        .fixedSize(horizontal: false, vertical: true)
                         .accessibilityAddTraits(.isHeader)
-                    HeroMetadataRow(item: item)
+                    HeroMetadataRow(item: item, foreground: .secondary)
                     controls().focusSection()
                     if let overview = item.overview?.trimmedNilIfEmpty {
                         Button { showingOverview = true } label: {
                             Text(overview).font(.body).lineLimit(3).multilineTextAlignment(.leading)
-                                .frame(maxWidth: 880, alignment: .leading)
+                                .frame(maxWidth: .infinity, alignment: .leading)
                         }
                         .accessibilityLabel("Synopsis")
                         .accessibilityHint("Read the full description")
@@ -39,27 +55,10 @@ extension View {
                         .focusSection()
                     }
                 }
-                // Only controls over dark artwork need a dark appearance.
-                // Sheets and the rest of the detail screen inherit the app preference.
-                .environment(\.colorScheme, .dark)
-                .frame(maxWidth: 1160, alignment: .leading)
+                .frame(maxWidth: 1100, alignment: .leading)
             }
-            .padding(.horizontal, 64).padding(.vertical, 48)
-            .frame(maxWidth: .infinity, minHeight: 720, alignment: .bottomLeading)
-            .background {
-                GeometryReader { geometry in
-                    AsyncPoster(url: backdropURL, placeholderSymbol: item.artworkPlaceholderSymbol, fallbackURLs: session.mediaProvider.artworkURLs(for: item, maxWidth: 1920))
-                        .frame(width: geometry.size.width, height: geometry.size.height).clipped()
-                        .overlay {
-                            LinearGradient(colors: [.black.opacity(0.8), .black.opacity(0.35), .clear], startPoint: .leading, endPoint: .trailing)
-                        }
-                        .overlay {
-                            LinearGradient(colors: [.clear, .black], startPoint: .center, endPoint: .bottom)
-                        }
-                        .accessibilityHidden(true)
-                }
-                .ignoresSafeArea(.container, edges: [.top, .horizontal])
-            }
+            .padding(64)
+            .frame(maxWidth: .infinity, alignment: .leading)
             .sheet(isPresented: $showingOverview) {
                 NavigationStack {
                     ScrollView {
@@ -68,7 +67,7 @@ extension View {
                     }
                     .focusable()
                     .navigationTitle(item.displayTitle)
-                    .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Done") { showingOverview = false } } }
+                    .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Close") { showingOverview = false } } }
                 }
             }
         }

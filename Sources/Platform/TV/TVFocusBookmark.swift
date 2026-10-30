@@ -41,6 +41,12 @@ struct TVFocusMemory {
         }
     }
 
+    /// A dismissed task returns to the control that opened it in the same context.
+    mutating func requestRestoration(context: String) {
+        guard let section = sectionsByContext[context], let bookmark = bookmarks[section] else { return }
+        returning[context] = Frame(context: context, section: section, bookmark: bookmark)
+    }
+
     func restorationRequest(context: String) -> UUID? {
         returning[context]?.request
     }

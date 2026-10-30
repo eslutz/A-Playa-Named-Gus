@@ -1,6 +1,160 @@
 {
   "sourceLanguage": "en",
   "strings": {
+    "The demo server must use a local HTTP address.": {
+      "comment": "DEBUG-only local demo server URL validation.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The demo server must use a local HTTP address."
+          }
+        }
+      }
+    },
+    "Gus Teal": {
+      "comment": "Apple TV accent editor and media presentation.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gus Teal"
+          }
+        }
+      }
+    },
+    "Blue": {
+      "comment": "Apple TV accent editor and media presentation.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Blue"
+          }
+        }
+      }
+    },
+    "Purple": {
+      "comment": "Apple TV accent editor and media presentation.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Purple"
+          }
+        }
+      }
+    },
+    "Pink": {
+      "comment": "Apple TV accent editor and media presentation.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pink"
+          }
+        }
+      }
+    },
+    "Red": {
+      "comment": "Apple TV accent editor and media presentation.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Red"
+          }
+        }
+      }
+    },
+    "Orange": {
+      "comment": "Apple TV accent editor and media presentation.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Orange"
+          }
+        }
+      }
+    },
+    "Yellow": {
+      "comment": "Apple TV accent editor and media presentation.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yellow"
+          }
+        }
+      }
+    },
+    "Green": {
+      "comment": "Apple TV accent editor and media presentation.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Green"
+          }
+        }
+      }
+    },
+    "Hex Color": {
+      "comment": "Apple TV accent editor and media presentation.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hex Color"
+          }
+        }
+      }
+    },
+    "Accent Preview": {
+      "comment": "Apple TV accent editor and media presentation.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Accent Preview"
+          }
+        }
+      }
+    },
+    "Choose an accent or enter a six-digit hex color.": {
+      "comment": "Apple TV accent editor and media presentation.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose an accent or enter a six-digit hex color."
+          }
+        }
+      }
+    },
+    "Enter six hexadecimal digits, such as 4F7C82.": {
+      "comment": "Apple TV accent editor and media presentation.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enter six hexadecimal digits, such as 4F7C82."
+          }
+        }
+      }
+    },
+    "%lld of %lld": {
+      "comment": "Apple TV accent editor and media presentation.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld of %lld"
+          }
+        }
+      }
+    },
     "%@ of %@": {
       "comment": "Accessibility value for elapsed media playback time\nVoiceOver value for the playback scrubber, e.g. 1:30 of 4:05",
       "localizations": {

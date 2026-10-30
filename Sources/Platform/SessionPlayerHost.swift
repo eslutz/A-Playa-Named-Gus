@@ -48,6 +48,8 @@ struct AdaptiveAudioLayout<Artwork: View, Controls: View>: View {
     private var artworkLimit: CGFloat {
         #if os(iOS)
             DeviceIdentity.usesIPadPresentation ? 300 : 240
+        #elseif os(tvOS)
+            480
         #else
             240
         #endif
@@ -177,6 +179,12 @@ private struct SessionAudioPlayer: View {
                     } else if DeviceIdentity.usesIPadPresentation {
                         ToolbarItem(placement: .principal) { Text("Now Playing").font(.headline) }
                     }
+                #elseif os(tvOS)
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button("Close", systemImage: "xmark") { audio.close() }
+                            .accessibilityIdentifier("AudioPlayer.close")
+                    }
+                    ToolbarItem { Button("Stop", systemImage: "stop.fill") { audio.stop() } }
                 #else
                     ToolbarItem(placement: .cancellationAction) { Button("Done", systemImage: "xmark") { audio.close() } }
                     ToolbarItem { Button("Stop", systemImage: "stop.fill") { audio.stop() } }
@@ -185,14 +193,11 @@ private struct SessionAudioPlayer: View {
             .accessibilityAction(.escape) { audio.close() }
         }
         .background {
-            #if os(tvOS)
-                Color.black.ignoresSafeArea()
-            #else
-                Rectangle().fill(.background).ignoresSafeArea()
-            #endif
+            Rectangle().fill(.background).ignoresSafeArea()
         }
+        .gusTVCanvas()
         #if os(tvOS)
-        .onExitCommand { audio.close() }
+            .onExitCommand { audio.close() }
         #endif
     }
 }
@@ -211,6 +216,7 @@ private struct NowPlayingReturnView: View {
             }
             .gusPhonePlainButtonStyle()
             .accessibilityIdentifier("NowPlaying.reopen")
+            .gusTVFocus(id: "nowPlaying", section: "nowPlaying", ids: ["nowPlaying"], initial: true)
             .accessibilityHint("Opens Now Playing")
             Button { store.playPause() } label: {
                 Label(store.isPlaying ? "Pause" : "Play", systemImage: store.isPlaying ? "pause.fill" : "play.fill")
@@ -221,6 +227,7 @@ private struct NowPlayingReturnView: View {
             .disabled(store.state != .loaded)
         }
         .frame(maxWidth: .infinity, minHeight: 44)
+        .tvFocusSection()
     }
 
     @ViewBuilder private var returnLabel: some View {

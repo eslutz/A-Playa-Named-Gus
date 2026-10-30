@@ -18,19 +18,19 @@
 # See Documentation/AppStore/demo-server.md for the demo-library workflow.
 set -euo pipefail
 
-CONTAINER="gus-demo-jellyfin"
+CONTAINER="${GUS_DEMO_CONTAINER:-gus-demo-jellyfin}"
 IMAGE="jellyfin/jellyfin:latest"
-PORT=8096
+PORT="${GUS_DEMO_PORT:-8096}"
 BASE_URL="http://localhost:${PORT}"
 DEMO_USER="gus"
 DEMO_PASSWORD="playa-demo"
 SCRIPT_DIR="${0:A:h}"
-MEDIA_DIR="${SCRIPT_DIR:h}/sample_media"
+MEDIA_DIR="${GUS_DEMO_MEDIA_DIR:-${SCRIPT_DIR:h}/sample_media}"
 AUTH_HEADER='Authorization: MediaBrowser Client="GusDemoSetup", Device="script", DeviceId="gus-demo-setup", Version="1.0"'
 
 wait_for_api() {
   for _ in $(seq 1 60); do
-    if curl -fsS "$BASE_URL/System/Info/Public" >/dev/null 2>&1; then
+    if curl -fsS "$BASE_URL/System/Info/Public" 2>/dev/null | python3 -c 'import json,sys; d=json.load(sys.stdin); sys.exit(0 if isinstance(d.get("StartupWizardCompleted"), bool) else 1)' >/dev/null 2>&1; then
       return 0
     fi
     sleep 2
@@ -73,6 +73,9 @@ run_first_time_setup() {
   }
 
   add_library "Movies" "movies" "/media/Movies"
+  if [[ -d "$MEDIA_DIR/Shows" ]]; then
+    add_library "Shows" "tvshows" "/media/Shows"
+  fi
   add_library "Music" "music" "/media/Music"
   add_library "Photos" "homevideos" "/media/Photos"
   add_library "Books" "books" "/media/Books"
@@ -93,8 +96,8 @@ case "${1:-start}" in
     else
       docker run -d --name "$CONTAINER" \
         -p "$PORT:8096" \
-        -v gus-demo-jellyfin-config:/config \
-        -v gus-demo-jellyfin-cache:/cache \
+        -v "${CONTAINER}-config:/config" \
+        -v "${CONTAINER}-cache:/cache" \
         -v "$MEDIA_DIR:/media:ro" \
         "$IMAGE" >/dev/null
       echo "Created container $CONTAINER."
@@ -110,7 +113,7 @@ case "${1:-start}" in
     ;;
   reset)
     docker rm -f "$CONTAINER" >/dev/null 2>&1 || true
-    docker volume rm gus-demo-jellyfin-config gus-demo-jellyfin-cache >/dev/null 2>&1 || true
+    docker volume rm "${CONTAINER}-config" "${CONTAINER}-cache" >/dev/null 2>&1 || true
     echo "Removed container and config volumes (media folder untouched)."
     ;;
   status)
