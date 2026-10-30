@@ -25,9 +25,21 @@ struct GusToolbarLabel: View {
 }
 
 extension View {
+    @ViewBuilder func gusTVNativeControls() -> some View {
+        #if os(tvOS)
+            if #available(tvOS 27.0, *) {
+                self
+            } else {
+                buttonStyle(.bordered).tint(nil)
+            }
+        #else
+            self
+        #endif
+    }
+
     @ViewBuilder func gusTVToolbarIcon() -> some View {
         #if os(tvOS)
-            labelStyle(.iconOnly)
+            labelStyle(.iconOnly).gusTVNativeControls()
         #else
             self
         #endif

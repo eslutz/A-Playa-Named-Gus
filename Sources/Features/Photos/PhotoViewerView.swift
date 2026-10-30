@@ -50,6 +50,7 @@ struct PhotoViewerView: View {
                         )
                     }
                     .gusIPadIconOnly()
+                    .gusTVToolbarIcon()
                     .accessibilityLabel(isSlideshowActive ? "Pause Slideshow" : "Play Slideshow")
                 }
             }

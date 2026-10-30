@@ -243,6 +243,7 @@ private struct NextUpListView: View {
     private var displayModeButton: some View {
         Button { showsGrid.toggle() } label: { GusToolbarLabel(showsGrid ? "List" : "Grid", systemImage: showsGrid ? "list.bullet" : "square.grid.2x2") }
             .gusIPadIconOnly()
+            .gusTVToolbarIcon()
             .accessibilityIdentifier("NextUp.displayMode")
             .accessibilityLabel(showsGrid ? "List" : "Grid")
             .accessibilityValue(showsGrid ? "Grid" : "List")

@@ -8,6 +8,7 @@ struct GusCloseButton: View {
         #if os(tvOS)
             Button(action: action) { Image(systemName: "xmark") }
                 .accessibilityLabel("Close")
+                .gusTVNativeControls()
         #else
             Button("Close", systemImage: "xmark", action: action)
                 .labelStyle(.iconOnly)

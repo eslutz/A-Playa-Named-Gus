@@ -341,6 +341,7 @@ private struct LibraryFilterMenu: View {
                 .accessibilityValue(store.filter.hasActiveFilter ? String(localized: "Active") : "")
         }
         .gusIPadIconOnly()
+        .gusTVToolbarIcon()
         .accessibilityLabel("Filter")
         .accessibilityValue(store.filter.hasActiveFilter ? String(localized: "Active") : "")
     }

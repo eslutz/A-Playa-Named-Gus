@@ -51,6 +51,7 @@ struct VideoPlaylistsView: View {
             ToolbarItem(placement: .primaryAction) {
                 Button { creating = .playlist } label: { GusToolbarLabel("New Playlist", systemImage: "plus") }
                     .labelStyle(.iconOnly)
+                    .gusTVToolbarIcon()
                     .accessibilityIdentifier("Playlist.create")
                     .accessibilityLabel("New Playlist")
             }
@@ -202,6 +203,7 @@ struct VideoPlaylistDetailView: View {
                         Button { adding = true } label: { GusToolbarLabel("Add Items", systemImage: "text.badge.plus", tvSystemImage: "plus") }
                             .labelStyle(.iconOnly)
                             .disabled(!serverList.canEdit || mutating)
+                            .gusTVToolbarIcon()
                             .accessibilityIdentifier("Playlist.addItems")
                             .accessibilityLabel("Add Items")
                     }
@@ -228,6 +230,7 @@ struct VideoPlaylistDetailView: View {
                             } label: { GusToolbarLabel("More", systemImage: "ellipsis") }
                                 .gusIPadIconOnly()
                                 .disabled(mutating)
+                                .gusTVToolbarIcon()
                                 .accessibilityIdentifier("Playlist.more")
                                 .accessibilityLabel("More")
                         }

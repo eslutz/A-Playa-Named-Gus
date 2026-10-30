@@ -51,7 +51,7 @@ struct AudioPlayerView: View {
         }
         .toolbar {
             #if os(tvOS)
-                ToolbarItem { Button { showingQueue = true } label: { GusToolbarLabel("Queue", systemImage: "list.bullet") }.accessibilityLabel("Queue") }
+                ToolbarItem { Button { showingQueue = true } label: { GusToolbarLabel("Queue", systemImage: "list.bullet") }.accessibilityLabel("Queue").gusTVToolbarIcon() }
             #endif
         }
         .gusTVTask(isPresented: $showingQueue) {

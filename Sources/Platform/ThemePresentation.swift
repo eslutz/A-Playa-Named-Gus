@@ -40,25 +40,10 @@ private struct GusThemeModifier: ViewModifier {
             let fill: Color = preference == .gus ? Color("AccentColor") : preference == .apple ? .blue : accent.color
             let tint: Color = preference == .custom ? accent.readable(onDark: colorScheme == .dark).color : fill
             let foreground: Color = preference == .gus ? .gusProminentActionForeground : preference == .custom && accent.usesBlackForeground ? .black : .white
-            #if os(tvOS)
-                if #available(tvOS 27.0, *) {
-                    content.tint(tint)
-                        .accentColor(tint)
-                        .environment(\.gusThemeFill, fill)
-                        .environment(\.gusThemeForeground, foreground)
-                } else {
-                    // Match the native untinted TV action styles: OS 26 can
-                    // otherwise paint an unfocused label in its plate color.
-                    content.buttonStyle(.bordered).tint(nil)
-                        .environment(\.gusThemeFill, fill)
-                        .environment(\.gusThemeForeground, foreground)
-                }
-            #else
-                content.tint(tint)
-                    .accentColor(tint)
-                    .environment(\.gusThemeFill, fill)
-                    .environment(\.gusThemeForeground, foreground)
-            #endif
+            content.tint(tint)
+                .accentColor(tint)
+                .environment(\.gusThemeFill, fill)
+                .environment(\.gusThemeForeground, foreground)
         #else
             content
         #endif

@@ -192,8 +192,9 @@ struct SeerrCatalogGridView: View {
                     }
                 #endif
             }
-            .sheet(isPresented: $showingFilters) {
+            .gusTVTask(isPresented: $showingFilters) {
                 SeerrCatalogFilterView(catalog: catalog, store: store)
+                    .gusTVExitTask { showingFilters = false }
             }
     }
 }
@@ -311,6 +312,7 @@ struct SeerrCatalogResults: View {
                         viewMenu
                         if let filtersAction {
                             Button(action: filtersAction) { GusToolbarLabel("Filters", systemImage: "line.3.horizontal.decrease") }
+                                .gusTVToolbarIcon()
                                 .accessibilityLabel("Filters")
                         }
                     }
@@ -388,6 +390,7 @@ struct SeerrCatalogResults: View {
                 Label("List", systemImage: "list.bullet").tag(true)
             }
         } label: { GusToolbarLabel("View", systemImage: usesList ? "list.bullet" : "square.grid.2x2") }
+            .gusTVToolbarIcon()
             .accessibilityLabel("View")
             .accessibilityValue(usesList ? "List" : "Grid")
     }
