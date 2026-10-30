@@ -21,30 +21,40 @@ extension View {
 
         private var summary: some View {
             VStack(alignment: .leading, spacing: 24) {
-                Text(item.displayTitle).font(.largeTitle.bold())
-                    .fixedSize(horizontal: false, vertical: true)
-                    .accessibilityAddTraits(.isHeader)
-                if let overview = item.overview?.trimmedNilIfEmpty {
-                    Button { showingOverview = true } label: {
-                        Text(overview).font(.body).lineLimit(3).multilineTextAlignment(.leading)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel("Synopsis")
-                    .accessibilityHint("Read the full description")
-                    .gusTVDetailActionFocus(id: "synopsis", item: item)
-                }
+                heading
+                overview
                 HeroMetadataRow(item: item, foreground: .white.opacity(0.8))
             }
-            .foregroundStyle(.white)
+        }
+
+        private var heading: some View {
+            Text(item.displayTitle).font(.largeTitle.bold()).foregroundStyle(.white)
+                .fixedSize(horizontal: false, vertical: true)
+                .accessibilityAddTraits(.isHeader)
+        }
+
+        @ViewBuilder private var overview: some View {
+            if let overview = item.overview?.trimmedNilIfEmpty {
+                Button { showingOverview = true } label: {
+                    Text(overview).font(.body).lineLimit(3).multilineTextAlignment(.leading)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .buttonStyle(.plain)
+                .environment(\.colorScheme, .dark)
+                .accessibilityLabel("Synopsis")
+                .accessibilityHint("Read the full description")
+                .gusTVDetailActionFocus(id: "synopsis", item: item)
+            }
         }
 
         var body: some View {
             Group {
                 if item.type == .series || item.type == .season {
                     VStack(alignment: .leading, spacing: 28) {
-                        summary
+                        heading
+                        HeroMetadataRow(item: item, foreground: .white.opacity(0.8))
                         controls().frame(width: 440)
+                        overview
                     }.frame(maxWidth: 1080, alignment: .leading)
                         .frame(maxWidth: .infinity, alignment: .leading)
                 } else {
