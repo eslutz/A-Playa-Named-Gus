@@ -81,9 +81,14 @@ struct SeerrRequestsView: View {
         .refreshable { await load(reset: true) }
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
-                Button("Refresh Requests", systemImage: "arrow.clockwise") { refreshID = UUID() }
-                    .gusIPadIconOnly().gusTVToolbarIcon()
-                    .disabled(isLoading)
+                #if os(tvOS)
+                    Button { refreshID = UUID() } label: { Image(systemName: "arrow.clockwise") }
+                        .accessibilityLabel("Refresh Requests")
+                #else
+                    Button("Refresh Requests", systemImage: "arrow.clockwise") { refreshID = UUID() }
+                        .gusIPadIconOnly()
+                #endif
+                        .disabled(isLoading)
             }
         }
     }
