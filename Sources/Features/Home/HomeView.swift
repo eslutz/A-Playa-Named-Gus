@@ -155,8 +155,10 @@ private struct NextUpRail: View {
                 Text("Next Up").gusPhoneRailHeading().accessibilityAddTraits(.isHeader)
                 Spacer()
                 NavigationLink("Show All") { NextUpListView(store: store) }
+                    .accessibilityIdentifier("NextUp.showAll")
                     .gusTVFocus(id: "all", section: "home.next.control", ids: ["all"], context: root.selectedSectionID)
             }
+            .tvFocusSection()
             ScrollView(.horizontal, showsIndicators: false) {
                 LazyHStack(alignment: .top, spacing: MediaRailMetrics.spacing(for: .backdrop)) {
                     ForEach(Array(store.unifiedNextUp.prefix(20))) { entry in
@@ -216,9 +218,10 @@ private struct NextUpListView: View {
         .navigationTitle("Next Up")
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
-                Button(showsGrid ? "List" : "Grid", systemImage: showsGrid ? "list.bullet" : "square.grid.2x2") { showsGrid.toggle() }
+                Button { showsGrid.toggle() } label: { GusToolbarLabel(showsGrid ? "List" : "Grid", systemImage: showsGrid ? "list.bullet" : "square.grid.2x2") }
                     .gusIPadIconOnly()
                     .accessibilityIdentifier("NextUp.displayMode")
+                    .accessibilityLabel(showsGrid ? "List" : "Grid")
                     .accessibilityValue(showsGrid ? "Grid" : "List")
             }
         }

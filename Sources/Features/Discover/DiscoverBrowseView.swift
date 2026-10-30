@@ -228,7 +228,9 @@ private struct SeerrDiscoveryShelf: View {
                 NavigationLink("See All") {
                     SeerrCatalogGridView(title: feed.seerrTitle, source: .feed(feed), store: store)
                 }
+                .accessibilityIdentifier("Seerr.feed.\(feed.rawValue).showAll")
             }
+            .tvFocusSection()
             if catalog.state == .loading && catalog.items.isEmpty {
                 ProgressView("Loading titles")
                     .frame(maxWidth: .infinity, alignment: .leading)

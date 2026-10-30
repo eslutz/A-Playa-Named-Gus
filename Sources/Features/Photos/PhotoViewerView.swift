@@ -44,7 +44,7 @@ struct PhotoViewerView: View {
                     Button {
                         isSlideshowActive.toggle()
                     } label: {
-                        Label(
+                        GusToolbarLabel(
                             isSlideshowActive ? "Pause Slideshow" : "Play Slideshow",
                             systemImage: isSlideshowActive ? "pause.fill" : "play.fill"
                         )

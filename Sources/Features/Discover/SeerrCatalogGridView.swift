@@ -185,8 +185,8 @@ struct SeerrCatalogGridView: View {
             .toolbar {
                 if catalog.supportsFilters {
                     ToolbarItem(placement: .primaryAction) {
-                        Button("Filters", systemImage: "line.3.horizontal.decrease") { showingFilters = true }
-                            .gusIPadIconOnly().gusTVToolbarIcon()
+                        Button { showingFilters = true } label: { GusToolbarLabel("Filters", systemImage: "line.3.horizontal.decrease") }
+                            .gusIPadIconOnly().gusTVToolbarIcon().accessibilityLabel("Filters")
                     }
                 }
             }
@@ -345,7 +345,9 @@ struct SeerrCatalogResults: View {
                         Label("Grid", systemImage: "square.grid.2x2").tag(false)
                         Label("List", systemImage: "list.bullet").tag(true)
                     }
-                } label: { Label("View", systemImage: usesList ? "list.bullet" : "square.grid.2x2") }
+                } label: { GusToolbarLabel("View", systemImage: usesList ? "list.bullet" : "square.grid.2x2") }
+                    .accessibilityLabel("View")
+                    .accessibilityValue(usesList ? "List" : "Grid")
             }
         }
         .onChange(of: store.revision) { _, _ in scrollID = nil }

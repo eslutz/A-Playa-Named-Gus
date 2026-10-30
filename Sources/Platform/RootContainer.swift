@@ -367,7 +367,7 @@ private struct SectionStack: View {
                 #endif
                 if overflow.contains(where: { $0.id == sectionID }), state.paths[sectionID]?.isEmpty != false {
                     ToolbarItem(placement: .cancellationAction) {
-                        Button("More", systemImage: "chevron.backward") { state.selectedSectionID = RootNavigationState.moreID }
+                        Button { state.selectedSectionID = RootNavigationState.moreID } label: { GusToolbarLabel("More", systemImage: "chevron.backward") }.accessibilityLabel("More")
                     }
                 }
             }

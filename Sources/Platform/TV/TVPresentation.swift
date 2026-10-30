@@ -1,5 +1,29 @@
 import SwiftUI
 
+/// Toolbar symbols remain native, with their full spoken names retained.
+/// Other platforms keep the original Label presentation.
+/// Set the accessible name on the enclosing Button or Menu as well: native
+/// tvOS toolbar containers do not always promote a child image label.
+struct GusToolbarLabel: View {
+    let title: LocalizedStringKey
+    let systemImage: String
+    let tvSystemImage: String?
+
+    init(_ title: LocalizedStringKey, systemImage: String, tvSystemImage: String? = nil) {
+        self.title = title
+        self.systemImage = systemImage
+        self.tvSystemImage = tvSystemImage
+    }
+
+    var body: some View {
+        #if os(tvOS)
+            Image(systemName: tvSystemImage ?? systemImage).accessibilityLabel(Text(title))
+        #else
+            Label(title, systemImage: systemImage)
+        #endif
+    }
+}
+
 extension View {
     @ViewBuilder func gusTVToolbarIcon() -> some View {
         #if os(tvOS)

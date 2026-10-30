@@ -141,7 +141,8 @@ struct SeerrTitleDetailView: View {
                         }
                     }
                 }
-            } label: { Label("More Actions", systemImage: "ellipsis") }
+            } label: { GusToolbarLabel("More Actions", systemImage: "ellipsis") }
+                .accessibilityLabel("More Actions")
         }
     }
 

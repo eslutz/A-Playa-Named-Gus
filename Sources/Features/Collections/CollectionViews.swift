@@ -234,7 +234,7 @@ struct MediaCollectionDetailView: View {
                     Button("Delete Collection", systemImage: "trash", role: .destructive) { deleting = true }
                 }
             }
-        } label: { Label("More", systemImage: "ellipsis.circle") }.gusIPadIconOnly().gusTVToolbarIcon().disabled(store.isMutating || collection == nil)
+        } label: { GusToolbarLabel("More", systemImage: "ellipsis.circle", tvSystemImage: "ellipsis") }.gusIPadIconOnly().gusTVToolbarIcon().accessibilityLabel("More").disabled(store.isMutating || collection == nil)
     }
 
     private func admitted(_ collection: MediaCollection) -> [MediaItem] {

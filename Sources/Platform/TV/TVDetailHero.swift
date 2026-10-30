@@ -90,7 +90,7 @@ extension View {
                     }
                     .focusable()
                     .navigationTitle(item.displayTitle)
-                    .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Close") { showingOverview = false } } }
+                    .toolbar { ToolbarItem(placement: .cancellationAction) { GusCloseButton { showingOverview = false } } }
                 }
             }
         }
