@@ -20,4 +20,6 @@ Keep screenshots, result bundles and comparison manifests outside Git. Preserve 
 
 No new backend or runtime dependency is required. Respect existing provider permissions, restriction gates and mutation reconciliation. Requests with uncertain outcomes require readback before retry. Populated Live TV requires tuner/guide/channel data, subtitle switching requires subtitle-bearing media, and output routing/Top Shelf require suitable system or physical-device conditions. tvOS continues to exclude downloads and an EPUB reader; unsupported list/album toggles and nonexistent member-removal confirmations are not implied by presentation consistency.
 
+Season episode selection remains on the series detail through its season selector; a direct season item uses the generic detail surface. Inventory source mappings do not establish every action or proposal as accepted. VoiceOver, increased contrast and Reduce Motion still need assistive runtime review.
+
 The deployment floor remains tvOS 26.0. Simulator results do not establish physical television rendering, Siri Remote acceptance, exact minimum-OS behavior or signed distribution readiness.

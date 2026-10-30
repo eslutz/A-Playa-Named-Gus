@@ -169,7 +169,15 @@ final class GusAuthenticatedUITests: XCTestCase {
             }
         }
 
-        func testTVSeerrSetupAndRequestReachability() throws {
+        func testTVSeerrSetupAndRequestReachability() async throws {
+            // Reset only the disposable loopback fixture so this mutation path is repeatable.
+            var reset = try URLRequest(url: XCTUnwrap(URL(string: "http://127.0.0.1:5059/__fixture/reset")))
+            reset.httpMethod = "POST"
+            reset.timeoutInterval = 10
+            let resetClient = URLSession(configuration: .ephemeral, delegate: FixtureHTTPClient(), delegateQueue: nil)
+            defer { resetClient.invalidateAndCancel() }
+            let (_, response) = try await resetClient.data(for: reset)
+            XCTAssertEqual((response as? HTTPURLResponse)?.statusCode, 200)
             try prepare()
             executionTimeAllowance = 360
             defer { finish() }
@@ -210,6 +218,16 @@ final class GusAuthenticatedUITests: XCTestCase {
             XCUIRemote.shared.press(.select)
             XCTAssertTrue(app.buttons["Seerr.submitRequest"].waitForExistence(timeout: 15))
             capture(app, "tv-seerr-request-review")
+            try focusTV(app, identifier: "Seerr.submitRequest")
+            XCTAssertTrue(app.buttons["Seerr.submitRequest"].isEnabled)
+            XCUIRemote.shared.press(.select)
+            XCTAssertTrue(app.staticTexts["Request submitted"].waitForExistence(timeout: 15), app.debugDescription)
+            capture(app, "tv-seerr-request-confirmed")
+            try focusTV(app, label: "View My Requests")
+            XCUIRemote.shared.press(.select)
+            XCTAssertTrue(app.descendants(matching: .any)["Seerr.requests.filter"].waitForExistence(timeout: 15), app.debugDescription)
+            XCTAssertTrue(app.staticTexts["Gus Fixture Movie"].waitForExistence(timeout: 10), app.debugDescription)
+            capture(app, "tv-seerr-request-history")
         }
 
         private func enterTV(_ app: XCUIApplication, identifier: String, text: String) throws {
