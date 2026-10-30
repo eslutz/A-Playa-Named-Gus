@@ -209,6 +209,8 @@ final class GusAuthenticatedUITests: XCTestCase {
             app.terminate()
 
             let lists = launch("libraries")
+            XCUIRemote.shared.press(.right)
+            XCUIRemote.shared.press(.menu)
             try focusTV(lists, label: "Playlists")
             XCUIRemote.shared.press(.select)
             XCTAssertTrue(lists.buttons["Playlist.create"].waitForExistence(timeout: 15))
