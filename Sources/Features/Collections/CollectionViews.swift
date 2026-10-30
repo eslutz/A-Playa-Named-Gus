@@ -180,7 +180,7 @@ struct MediaCollectionDetailView: View {
                         #endif
                     }
                     #if os(tvOS)
-                        .focusSection()
+                    .focusSection()
                     #endif
                     if collection.membersLoaded {
                         if admitted(collection).isEmpty {
