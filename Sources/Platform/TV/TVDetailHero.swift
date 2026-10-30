@@ -19,66 +19,63 @@ extension View {
         @ViewBuilder let controls: () -> Controls
         @State private var showingOverview = false
 
-        private var summary: some View {
-            VStack(alignment: .leading, spacing: 24) {
-                heading
-                overview
-                HeroMetadataRow(item: item, foreground: .white.opacity(0.8))
-            }
-        }
-
-        private var heading: some View {
-            Text(item.displayTitle).font(.largeTitle.bold()).foregroundStyle(.white)
-                .fixedSize(horizontal: false, vertical: true)
-                .accessibilityAddTraits(.isHeader)
-        }
-
-        @ViewBuilder private var overview: some View {
-            if let overview = item.overview?.trimmedNilIfEmpty {
-                Button { showingOverview = true } label: {
-                    Text(overview).font(.body).lineLimit(3).multilineTextAlignment(.leading)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                }
-                .buttonStyle(.plain)
-                .environment(\.colorScheme, .dark)
-                .accessibilityLabel("Synopsis")
-                .accessibilityHint("Read the full description")
-                .gusTVDetailActionFocus(id: "synopsis", item: item)
-            }
-        }
-
         var body: some View {
-            Group {
-                if item.type == .series || item.type == .season {
-                    VStack(alignment: .leading, spacing: 28) {
-                        heading
-                        HeroMetadataRow(item: item, foreground: .white.opacity(0.8))
-                        controls().frame(width: 440)
-                        overview
-                    }.frame(maxWidth: 1080, alignment: .leading)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                } else {
-                    HStack(alignment: .bottom, spacing: 80) {
-                        summary.frame(maxWidth: 1040, alignment: .leading)
-                        Spacer(minLength: 0)
-                        controls().frame(width: 440).focusSection()
+            VStack(alignment: .leading, spacing: 32) {
+                VStack(alignment: .leading, spacing: 8) {
+                    if item.type == .episode, let seriesName = item.seriesName?.trimmedNilIfEmpty {
+                        Text(seriesName)
+                            .font(.title3.weight(.medium))
+                            .foregroundStyle(.white.opacity(0.7))
                     }
+                    Text(item.displayTitle)
+                        .font(.largeTitle.bold())
+                        .lineLimit(2)
+                        .frame(maxWidth: 1200, alignment: .leading)
+                        .accessibilityAddTraits(.isHeader)
+                }
+                Spacer(minLength: 300)
+                HStack(alignment: .top, spacing: 56) {
+                    controls()
+                        .frame(width: 528, alignment: .leading)
+                        .focusSection()
+                    VStack(alignment: .leading, spacing: 20) {
+                        if let overview = item.overview?.trimmedNilIfEmpty {
+                            Button { showingOverview = true } label: {
+                                Text(overview)
+                                    .font(.body)
+                                    .lineLimit(4)
+                                    .multilineTextAlignment(.leading)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                            }
+                            .buttonStyle(.plain)
+                            .accessibilityLabel("Synopsis")
+                            .accessibilityHint("Read the full description")
+                            .accessibilityIdentifier("Detail.heroOverview")
+                            .gusTVDetailActionFocus(id: "synopsis", item: item)
+                        }
+                        HeroMetadataRow(item: item, foreground: .white.opacity(0.7))
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .focusSection()
                 }
             }
-            .padding(64)
-            .frame(maxWidth: .infinity, minHeight: 700, alignment: .bottomLeading)
+            .foregroundStyle(.white)
+            .environment(\.colorScheme, .dark)
+            .padding(.horizontal, 80)
+            .padding(.top, 64)
+            .padding(.bottom, 64)
+            .frame(maxWidth: .infinity, minHeight: 940, alignment: .bottomLeading)
             .background {
                 GeometryReader { geometry in
-                    AsyncPoster(
-                        url: backdropURL,
-                        placeholderSymbol: item.artworkPlaceholderSymbol,
-                        fallbackURLs: session.mediaProvider.artworkURLs(for: item, maxWidth: 1920)
-                    )
-                    .frame(width: geometry.size.width, height: geometry.size.height)
-                    .clipped()
-                    .overlay {
-                        LinearGradient(colors: [.black.opacity(0.9), .black.opacity(0.5), .black.opacity(0.1)], startPoint: .bottom, endPoint: .top)
-                    }
+                    AsyncPoster(url: backdropURL, placeholderSymbol: item.artworkPlaceholderSymbol, fallbackURLs: session.mediaProvider.artworkURLs(for: item, maxWidth: 1920))
+                        .frame(width: geometry.size.width, height: geometry.size.height).clipped()
+                        .overlay {
+                            LinearGradient(colors: [.black.opacity(0.55), .clear], startPoint: .top, endPoint: .center)
+                        }
+                        .overlay {
+                            LinearGradient(stops: [.init(color: .clear, location: 0.35), .init(color: .black.opacity(0.75), location: 0.7), .init(color: .black, location: 1)], startPoint: .top, endPoint: .bottom)
+                        }
+                        .accessibilityHidden(true)
                 }
                 .accessibilityHidden(true)
             }

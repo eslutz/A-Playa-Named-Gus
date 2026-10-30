@@ -30,8 +30,8 @@ struct CastRail: View {
                                         .foregroundStyle(.secondary)
                                 }
                             }
-                            .frame(width: CastCardMetrics.width, height: CastCardMetrics.height)
-                            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                            .frame(width: CastCardMetrics.width, height: portraitHeight)
+                            .clipShape(portraitShape)
                             .posterHoverEffect()
 
                             VStack(alignment: .leading, spacing: 7) {
@@ -60,6 +60,22 @@ struct CastRail: View {
             .lookToScroll(.horizontal)
             .gusTVRailViewport()
         }
+    }
+
+    private var portraitHeight: CGFloat {
+        #if os(tvOS)
+            CastCardMetrics.width
+        #else
+            CastCardMetrics.height
+        #endif
+    }
+
+    private var portraitShape: RoundedRectangle {
+        #if os(tvOS)
+            RoundedRectangle(cornerRadius: CastCardMetrics.width / 2, style: .continuous)
+        #else
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+        #endif
     }
 
     private var displayPeople: [CastDisplayPerson] {

@@ -164,6 +164,7 @@ struct ItemDetailView: View {
                             title: store.item.userData?.isFavorite == true
                                 ? "Remove from Favorites"
                                 : "Add to Favorites",
+                            compactTitle: "Favorite",
                             systemImage: store.item.userData?.isFavorite == true
                                 ? "heart.fill"
                                 : "heart",
@@ -244,11 +245,16 @@ struct ItemDetailView: View {
                         if store.item.type == .movie, let id = store.item.id {
                             MovieCollectionMemberships(movieID: id).padding(.vertical)
                         }
-                        DetailMetadataRows(item: store.item).id("metadata")
+                        #if !os(tvOS)
+                            DetailMetadataRows(item: store.item).id("metadata")
+                        #endif
 
-                        if !store.item.people.isEmpty {
-                            CastRail(people: store.item.people).id("cast")
-                        }
+                        #if !os(tvOS)
+                            if !store.item.people.isEmpty {
+                                CastRail(people: store.item.people).id("cast")
+                            }
+
+                        #endif
 
                         if !store.specialFeatures.isEmpty {
                             MediaRail(title: String(localized: "Special Features", comment: "Item detail section header for bonus/extra content"), items: store.specialFeatures, style: .backdrop, focusKey: "detail:" + ItemRef(item: item).id + ":extras", focusContext: "detail:" + ItemRef(item: item).id)
@@ -257,6 +263,13 @@ struct ItemDetailView: View {
                         if !store.similarItems.isEmpty {
                             MediaRail(title: String(localized: "Recommended", comment: "Item detail section header for similar/recommended items"), items: store.similarItems, focusKey: "detail:" + ItemRef(item: item).id + ":recommended", focusContext: "detail:" + ItemRef(item: item).id)
                         }
+
+                        #if os(tvOS)
+                            if !store.item.people.isEmpty {
+                                CastRail(people: store.item.people).id("cast")
+                            }
+                            DetailMetadataRows(item: store.item).id("metadata")
+                        #endif
 
                         AboutCardsView(
                             item: store.item,
@@ -296,7 +309,7 @@ struct ItemDetailView: View {
 
     private var sectionPadding: EdgeInsets {
         #if os(tvOS)
-            return EdgeInsets(top: 48, leading: 64, bottom: 64, trailing: 64)
+            return EdgeInsets(top: 48, leading: 80, bottom: 80, trailing: 80)
         #elseif os(visionOS)
             return EdgeInsets(top: 30, leading: 36, bottom: 40, trailing: 36)
         #else
