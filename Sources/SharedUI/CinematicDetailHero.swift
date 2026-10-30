@@ -80,12 +80,13 @@ struct CinematicDetailHero<Accessory: View>: View {
     private var legacyHero: some View {
         standardHero.gusTVDetailHero(item: item, backdropURL: backdropURL) {
             VStack(alignment: .leading, spacing: 24) {
-                playButton
+                playButton.frame(maxWidth: .infinity)
                 HStack(spacing: 24) {
                     upNextButton
+                        .frame(width: 160)
                         .gusTVDetailActionFocus(id: "nextUp", item: item)
                     Group(subviews: accessory) { actions in
-                        ForEach(actions) { action in action }
+                        ForEach(actions) { action in action.frame(width: 160) }
                     }
                 }
                 .tvFocusSection()
@@ -196,7 +197,7 @@ struct CinematicDetailHero<Accessory: View>: View {
             .controlSize(.large)
             // Keep the primary action prominent without turning wide panes into
             // a full-width button. Narrow panes can still shrink naturally.
-            .frame(maxWidth: min(320, DetailActionMetrics.maximumRowWidth))
+            .frame(maxWidth: primaryActionWidth)
             .gusProminentActionTint()
             .gusDefaultActionShortcut()
             .gusTVDetailActionFocus(id: "play", item: item, initial: true)
@@ -204,9 +205,18 @@ struct CinematicDetailHero<Accessory: View>: View {
         }
     }
 
+    private var primaryActionWidth: CGFloat {
+        #if os(tvOS)
+            528
+        #else
+            min(320, DetailActionMetrics.maximumRowWidth)
+        #endif
+    }
+
     private var upNextButton: some View {
         ItemUserActionButton(
             title: isInUpNext ? "Remove from Next Up" : "Add to Next Up",
+            compactTitle: "Next Up",
             systemImage: isInUpNext ? MediaActionSymbols.removeFromNextUp : MediaActionSymbols.addToNextUp,
             action: toggleUpNext
         )
@@ -308,12 +318,21 @@ struct HeroMetadataRow: View {
 /// Secondary hero action with a visible caption on TV and a spoken label elsewhere.
 struct ItemUserActionButton: View {
     let title: LocalizedStringKey
+    var compactTitle: LocalizedStringKey? = nil
     let systemImage: String
     let action: () -> Void
 
+    private var visibleTitle: LocalizedStringKey {
+        #if os(tvOS)
+            compactTitle ?? title
+        #else
+            title
+        #endif
+    }
+
     var body: some View {
         Button(action: action) {
-            Label(title, systemImage: systemImage)
+            Label(visibleTitle, systemImage: systemImage)
                 .gusDetailActionLabel()
                 .frame(maxWidth: .infinity, minHeight: DetailActionMetrics.minimumLabelHeight)
         }

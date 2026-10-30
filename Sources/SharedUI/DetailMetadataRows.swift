@@ -31,20 +31,28 @@ private struct MetadataPillRow: View {
                 .accessibilityAddTraits(.isHeader)
                 .accessibilityIdentifier(identifier)
 
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 10) {
-                    ForEach(values, id: \.self) { value in
-                        Text(value)
-                            .font(.subheadline.weight(.medium))
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 7)
-                            .background(.thinMaterial, in: Capsule())
+            #if os(tvOS)
+                Text(values.joined(separator: " · "))
+                    .font(.body)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .gusTVFocusableInfo()
+            #else
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 10) {
+                        ForEach(values, id: \.self) { value in
+                            Text(value)
+                                .font(.subheadline.weight(.medium))
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 7)
+                                .background(.thinMaterial, in: Capsule())
+                        }
                     }
+                    .padding(.vertical, 2)
                 }
-                .padding(.vertical, 2)
-            }
-            .lookToScroll(.horizontal)
-            .gusTVRailViewport()
+                .lookToScroll(.horizontal)
+                .gusTVRailViewport()
+            #endif
         }
     }
 }

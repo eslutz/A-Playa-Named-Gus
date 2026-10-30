@@ -8,11 +8,17 @@ struct SeriesEpisodesView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             HStack {
-                Text("Episodes")
-                    .font(.title2.bold())
-                    .accessibilityAddTraits(.isHeader)
-                Spacer()
-                SeasonPicker(store: store)
+                #if os(tvOS)
+                    SeasonPicker(store: store)
+                        .font(.title2.bold())
+                    Spacer()
+                #else
+                    Text("Episodes")
+                        .font(.title2.bold())
+                        .accessibilityAddTraits(.isHeader)
+                    Spacer()
+                    SeasonPicker(store: store)
+                #endif
             }
 
             LoadingStateView(
@@ -56,7 +62,7 @@ struct SeriesEpisodesView: View {
 
     private var episodeCardWidth: CGFloat {
         #if os(tvOS)
-            return 360
+            return 520
         #elseif os(visionOS)
             return 320
         #else
@@ -110,7 +116,7 @@ private struct EpisodeCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             ArtworkTile(
-                url: session.mediaProvider.backdropImageURL(for: episode, maxWidth: 420),
+                url: session.mediaProvider.backdropImageURL(for: episode, maxWidth: artworkWidth),
                 aspectRatio: 16.0 / 9.0,
                 contentMode: .fit,
                 placeholderSymbol: "play.rectangle"
@@ -132,8 +138,15 @@ private struct EpisodeCard: View {
                     Text(overview)
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
-                        .lineLimit(2)
+                        .lineLimit(overviewLineLimit)
                 }
+                #if os(tvOS)
+                    if let runtime = episode.runtimeText {
+                        Text(runtime)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                #endif
                 Text(episode.userData?.isWatched == true ? String(localized: "Watched") : " ")
                     .font(.caption).foregroundStyle(.secondary)
                     .accessibilityHidden(episode.userData?.isWatched != true)
@@ -144,6 +157,22 @@ private struct EpisodeCard: View {
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(episodeAccessibilityLabel)
         .gusTVPosterStatusValue(item: episode)
+    }
+
+    private var artworkWidth: Int {
+        #if os(tvOS)
+            1040
+        #else
+            420
+        #endif
+    }
+
+    private var overviewLineLimit: Int {
+        #if os(tvOS)
+            3
+        #else
+            2
+        #endif
     }
 
     private var episodeAccessibilityLabel: String {
