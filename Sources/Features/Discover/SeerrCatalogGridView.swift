@@ -178,17 +178,19 @@ struct SeerrCatalogGridView: View {
     }
 
     var body: some View {
-        SeerrCatalogResults(catalog: catalog, store: store)
+        SeerrCatalogResults(catalog: catalog, store: store, toolbarTitle: title, filtersAction: catalog.supportsFilters ? { showingFilters = true } : nil)
             .navigationTitle(title)
             .task(id: "\(store.revision):\(contentLimitRawValue):\(hideUnratedContent)") { await catalog.load(store: store) }
             .refreshable { await catalog.load(store: store, refresh: true) }
             .toolbar {
-                if catalog.supportsFilters {
-                    ToolbarItem(placement: .primaryAction) {
-                        Button { showingFilters = true } label: { GusToolbarLabel("Filters", systemImage: "line.3.horizontal.decrease") }
-                            .gusIPadIconOnly().gusTVToolbarIcon().accessibilityLabel("Filters")
+                #if !os(tvOS)
+                    if catalog.supportsFilters {
+                        ToolbarItem(placement: .primaryAction) {
+                            Button { showingFilters = true } label: { GusToolbarLabel("Filters", systemImage: "line.3.horizontal.decrease") }
+                                .gusIPadIconOnly().accessibilityLabel("Filters")
+                        }
                     }
-                }
+                #endif
             }
             .sheet(isPresented: $showingFilters) {
                 SeerrCatalogFilterView(catalog: catalog, store: store)
@@ -280,6 +282,8 @@ private struct SeerrCatalogFilterView: View {
 struct SeerrCatalogResults: View {
     let catalog: SeerrCatalogStore
     let store: SeerrStore
+    var toolbarTitle: String? = nil
+    var filtersAction: (() -> Void)? = nil
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @AppStorage(ContentRatingGate.limitDefaultsKey) private var contentLimitRawValue = ContentRatingGate.Limit.off.rawValue
     @AppStorage(ContentRatingGate.hideUnratedDefaultsKey) private var hideUnratedContent = false
@@ -298,6 +302,32 @@ struct SeerrCatalogResults: View {
     }
 
     var body: some View {
+        #if os(tvOS)
+            if let toolbarTitle {
+                VStack(spacing: 24) {
+                    HStack {
+                        Text(toolbarTitle).font(.largeTitle.bold())
+                        Spacer()
+                        viewMenu
+                        if let filtersAction {
+                            Button(action: filtersAction) { GusToolbarLabel("Filters", systemImage: "line.3.horizontal.decrease") }
+                                .accessibilityLabel("Filters")
+                        }
+                    }
+                    .focusSection()
+                    .padding(.horizontal)
+                    results
+                }
+                .gusTVDetailTitle()
+            } else {
+                results
+            }
+        #else
+            results
+        #endif
+    }
+
+    private var results: some View {
         LoadingStateView(
             state: catalog.isValid(for: store) ? (visibleItems.isEmpty ? catalog.state : .loaded) : .loading,
             isEmpty: visibleItems.isEmpty && !catalog.hasMore,
@@ -339,18 +369,26 @@ struct SeerrCatalogResults: View {
             .lookToScroll()
         }
         .toolbar {
-            ToolbarItem(placement: .seerrSecondaryAction) {
-                Menu {
-                    Picker("View", selection: $usesList) {
-                        Label("Grid", systemImage: "square.grid.2x2").tag(false)
-                        Label("List", systemImage: "list.bullet").tag(true)
-                    }
-                } label: { GusToolbarLabel("View", systemImage: usesList ? "list.bullet" : "square.grid.2x2") }
-                    .accessibilityLabel("View")
-                    .accessibilityValue(usesList ? "List" : "Grid")
-            }
+            #if os(tvOS)
+                if toolbarTitle == nil {
+                    ToolbarItem(placement: .seerrSecondaryAction) { viewMenu }
+                }
+            #else
+                ToolbarItem(placement: .seerrSecondaryAction) { viewMenu }
+            #endif
         }
         .onChange(of: store.revision) { _, _ in scrollID = nil }
+    }
+
+    private var viewMenu: some View {
+        Menu {
+            Picker("View", selection: $usesList) {
+                Label("Grid", systemImage: "square.grid.2x2").tag(false)
+                Label("List", systemImage: "list.bullet").tag(true)
+            }
+        } label: { GusToolbarLabel("View", systemImage: usesList ? "list.bullet" : "square.grid.2x2") }
+            .accessibilityLabel("View")
+            .accessibilityValue(usesList ? "List" : "Grid")
     }
 
     @ViewBuilder private var pagination: some View {

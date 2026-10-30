@@ -8,8 +8,8 @@ extension View {
                     TVAccountMenu().padding(.vertical, 16)
                 }
             } else {
-                // OS 26 uses the navigation toolbar in SectionStack. An inset
-                // above TabView competes with its native navigation focus guide.
+                // OS 26 retains profile and saved-account actions in Settings.
+                // A focusable inset competes with the native navigation guide.
                 self
             }
         #else
@@ -20,8 +20,7 @@ extension View {
 
 #if os(tvOS)
     /// A direct native menu over existing saved-session switching, without extra prompts.
-    struct TVAccountMenu: View {
-        var usesToolbarSymbol = false
+    private struct TVAccountMenu: View {
         @Environment(AppModel.self) private var app
         @Environment(SessionStore.self) private var session
         @Environment(AppNavigationModel.self) private var navigation
@@ -58,13 +57,9 @@ extension View {
                 }
                 Button("Manage Accounts", systemImage: "person.crop.circle.badge.gearshape") { navigation.open(.settings) }
             } label: {
-                if usesToolbarSymbol {
-                    Image(systemName: "person.crop.circle")
-                } else {
-                    HStack {
-                        ProfileAvatar(data: session.profile.imageData)
-                        Text(session.user.name)
-                    }
+                HStack {
+                    ProfileAvatar(data: session.profile.imageData)
+                    Text(session.user.name)
                 }
             }
             .gusTVTask(isPresented: $showingProfile) { NavigationStack { UserProfileView() } }

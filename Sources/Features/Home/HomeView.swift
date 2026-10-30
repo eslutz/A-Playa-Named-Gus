@@ -183,6 +183,16 @@ private struct NextUpListView: View {
     @AppStorage("nextUpDisplayGrid") private var showsGrid = false
     var body: some View {
         ScrollView {
+            #if os(tvOS)
+                HStack {
+                    Text("Next Up").font(.largeTitle.bold())
+                    Spacer()
+                    displayModeButton
+                }
+                .focusSection()
+                .padding(.horizontal)
+                .padding(.bottom, 24)
+            #endif
             if showsGrid {
                 LazyVGrid(columns: [GridItem(.adaptive(minimum: 160), alignment: .top)], alignment: .leading, spacing: 16) {
                     ForEach(store.unifiedNextUp) { entry in
@@ -216,20 +226,25 @@ private struct NextUpListView: View {
             }
         }
         .navigationTitle("Next Up")
+        .gusTVDetailTitle()
         .toolbar {
-            ToolbarItem(placement: .primaryAction) {
-                Button { showsGrid.toggle() } label: { GusToolbarLabel(showsGrid ? "List" : "Grid", systemImage: showsGrid ? "list.bullet" : "square.grid.2x2") }
-                    .gusIPadIconOnly()
-                    .accessibilityIdentifier("NextUp.displayMode")
-                    .accessibilityLabel(showsGrid ? "List" : "Grid")
-                    .accessibilityValue(showsGrid ? "Grid" : "List")
-            }
+            #if !os(tvOS)
+                ToolbarItem(placement: .primaryAction) { displayModeButton }
+            #endif
         }
         .overlay {
             if store.unifiedNextUp.isEmpty {
                 ContentUnavailableView("Nothing in Next Up", systemImage: "play.rectangle")
             }
         }
+    }
+
+    private var displayModeButton: some View {
+        Button { showsGrid.toggle() } label: { GusToolbarLabel(showsGrid ? "List" : "Grid", systemImage: showsGrid ? "list.bullet" : "square.grid.2x2") }
+            .gusIPadIconOnly()
+            .accessibilityIdentifier("NextUp.displayMode")
+            .accessibilityLabel(showsGrid ? "List" : "Grid")
+            .accessibilityValue(showsGrid ? "Grid" : "List")
     }
 }
 

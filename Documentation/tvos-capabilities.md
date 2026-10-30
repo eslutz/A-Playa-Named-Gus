@@ -24,4 +24,4 @@ Season episode selection remains on the series detail through its season selecto
 
 The deployment floor remains tvOS 26.0. Simulator results do not establish physical television rendering, Siri Remote acceptance, exact minimum-OS behavior or signed distribution readiness.
 
-Account appears in the native sidebar header on tvOS 27. On tvOS 26 it uses a native toolbar symbol, preserving the navigation focus guide rather than inserting a separate focusable row above the tabs.
+Account appears in the native sidebar header on tvOS 27. On tvOS 26, the existing Settings form retains profile and saved-account switching controls without inserting a focusable row above the tabs. TV browsing and catalog headers use native focus sections so their trailing actions remain reachable from the content.

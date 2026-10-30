@@ -351,11 +351,6 @@ private struct SectionStack: View {
             }
             .gusItemDestinations()
             .toolbar {
-                #if os(tvOS)
-                    if #unavailable(tvOS 27.0) {
-                        ToolbarItem(placement: .primaryAction) { TVAccountMenu(usesToolbarSymbol: true) }
-                    }
-                #endif
                 #if os(iOS)
                     if sectionID == RootNavigationState.searchID, DeviceIdentity.usesIPadPresentation {
                         ToolbarItem(placement: .primaryAction) {
