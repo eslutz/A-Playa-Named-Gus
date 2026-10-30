@@ -23,3 +23,5 @@ No new backend or runtime dependency is required. Respect existing provider perm
 Season episode selection remains on the series detail through its season selector; a direct season item uses the generic detail surface. Inventory source mappings do not establish every action or proposal as accepted. VoiceOver, increased contrast and Reduce Motion still need assistive runtime review.
 
 The deployment floor remains tvOS 26.0. Simulator results do not establish physical television rendering, Siri Remote acceptance, exact minimum-OS behavior or signed distribution readiness.
+
+Account appears in the native sidebar header on tvOS 27. On tvOS 26 it uses a native toolbar symbol, preserving the navigation focus guide rather than inserting a separate focusable row above the tabs.

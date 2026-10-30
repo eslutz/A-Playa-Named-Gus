@@ -23,3 +23,5 @@ This round follows the owner's TV-009–075 review and supplied cinematic hero r
 Release requires fresh protected-branch CI, merged-candidate release qualification, processed internal TestFlight build and group association. A queued Cloud run or a delivered upload alone is not tester availability.
 
 Toolbar policy follows [Apple’s toolbar guidance](https://developer.apple.com/design/human-interface-guidelines/toolbars). Native tvOS sidebar headers can include a contextual title and chevron; retain these system controls. Content actions and menu rows are not toolbar icons and keep descriptive labels.
+
+On tvOS 26, Account uses a native navigation-toolbar symbol because the sidebar-header API requires tvOS 27. This keeps Account out of a separate inset that competes with toolbar focus. On tvOS 27, Account remains in the native sidebar header.

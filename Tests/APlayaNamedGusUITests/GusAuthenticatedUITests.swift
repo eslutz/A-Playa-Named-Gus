@@ -168,8 +168,7 @@ final class GusAuthenticatedUITests: XCTestCase {
             app.launchArguments = ["--gus-demo-server", "--gus-disable-cloud-sync", "--gus-route", "home"]
             app.launch()
             XCTAssertTrue(app.staticTexts["Recently Added Movies"].waitForExistence(timeout: 30))
-            XCUIRemote.shared.press(.right)
-            XCUIRemote.shared.press(.menu)
+            try showTVSidebar(app)
             try focusTV(app, label: "Discover")
             XCUIRemote.shared.press(.select)
             let shelf = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@ AND identifier ENDSWITH %@", "Seerr.feed.", ".showAll")).firstMatch
@@ -194,8 +193,7 @@ final class GusAuthenticatedUITests: XCTestCase {
             defer { finish() }
             let app = launch("home")
             XCTAssertTrue(app.staticTexts["Recently Added Movies"].waitForExistence(timeout: 30))
-            XCUIRemote.shared.press(.right)
-            XCUIRemote.shared.press(.menu)
+            try showTVSidebar(app)
             try focusTV(app, label: "Movies")
             XCUIRemote.shared.press(.select)
             XCTAssertTrue(app.buttons["Filter"].waitForExistence(timeout: 20), app.debugDescription)
@@ -209,8 +207,7 @@ final class GusAuthenticatedUITests: XCTestCase {
             app.terminate()
 
             let lists = launch("libraries")
-            XCUIRemote.shared.press(.right)
-            XCUIRemote.shared.press(.menu)
+            try showTVSidebar(lists)
             try focusTV(lists, label: "Playlists")
             XCUIRemote.shared.press(.select)
             XCTAssertTrue(lists.buttons["Playlist.create"].waitForExistence(timeout: 15))
@@ -538,6 +535,21 @@ final class GusAuthenticatedUITests: XCTestCase {
             XCTAssertFalse(code.exists)
         }
 
+        private func showTVSidebar(_ app: XCUIApplication) throws {
+            let sidebars = app.collectionViews.matching(NSPredicate(format: "label == %@", "Sidebar"))
+            let visible = { sidebars.allElementsBoundByAccessibilityElement.contains { sidebar in
+                sidebar.cells.allElementsBoundByAccessibilityElement.contains { !$0.frame.isEmpty && $0.isEnabled }
+            } }
+            for _ in 0 ..< 8 {
+                if visible() {
+                    break
+                }
+                XCUIRemote.shared.press(.left)
+            }
+            let shown = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in visible() }, object: nil)
+            XCTAssertEqual(XCTWaiter.wait(for: [shown], timeout: 10), .completed, app.debugDescription)
+        }
+
         private func focusTV(_ app: XCUIApplication, identifier: String? = nil, label: String? = nil) throws {
             let query = app.descendants(matching: .any)
             let target = identifier.map { query.matching(identifier: $0).firstMatch }
@@ -560,7 +572,9 @@ final class GusAuthenticatedUITests: XCTestCase {
                 }
                 let currentPoint = CGPoint(x: current.midX, y: current.midY)
                 let sidebar = app.collectionViews.matching(NSPredicate(format: "label == %@", "Sidebar"))
-                    .allElementsBoundByAccessibilityElement.first { $0.frame.contains(currentPoint) }
+                    .allElementsBoundByAccessibilityElement.first { sidebar in
+                        sidebar.cells.allElementsBoundByAccessibilityElement.contains { !$0.frame.isEmpty && $0.frame.contains(currentPoint) }
+                    }
                 if let sidebar,
                    !sidebar.descendants(matching: .any).matching(NSPredicate(format: "identifier == %@ OR label == %@", key, key)).firstMatch.exists
                 {
@@ -575,9 +589,9 @@ final class GusAuthenticatedUITests: XCTestCase {
                     return
                 }
                 let direction: XCUIRemote.Button
-                if destination.minY > current.maxY {
+                if destination.midY > current.maxY {
                     direction = .down
-                } else if destination.maxY < current.minY {
+                } else if destination.midY < current.minY {
                     direction = .up
                 } else if destination.minX > current.maxX {
                     direction = .right

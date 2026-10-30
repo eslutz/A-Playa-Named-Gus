@@ -8,15 +8,9 @@ extension View {
                     TVAccountMenu().padding(.vertical, 16)
                 }
             } else {
-                // OS 26 has no sidebar-header slot; retain the same native menu
-                // in a focusable inset above the tabs.
-                safeAreaInset(edge: .top) {
-                    HStack {
-                        TVAccountMenu()
-                        Spacer()
-                    }
-                    .padding()
-                }
+                // OS 26 uses the navigation toolbar in SectionStack. An inset
+                // above TabView competes with its native navigation focus guide.
+                self
             }
         #else
             self
@@ -26,7 +20,8 @@ extension View {
 
 #if os(tvOS)
     /// A direct native menu over existing saved-session switching, without extra prompts.
-    private struct TVAccountMenu: View {
+    struct TVAccountMenu: View {
+        var usesToolbarSymbol = false
         @Environment(AppModel.self) private var app
         @Environment(SessionStore.self) private var session
         @Environment(AppNavigationModel.self) private var navigation
@@ -63,9 +58,13 @@ extension View {
                 }
                 Button("Manage Accounts", systemImage: "person.crop.circle.badge.gearshape") { navigation.open(.settings) }
             } label: {
-                HStack {
-                    ProfileAvatar(data: session.profile.imageData)
-                    Text(session.user.name)
+                if usesToolbarSymbol {
+                    Image(systemName: "person.crop.circle")
+                } else {
+                    HStack {
+                        ProfileAvatar(data: session.profile.imageData)
+                        Text(session.user.name)
+                    }
                 }
             }
             .gusTVTask(isPresented: $showingProfile) { NavigationStack { UserProfileView() } }
