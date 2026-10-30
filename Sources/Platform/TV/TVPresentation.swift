@@ -199,7 +199,7 @@ extension View {
 
     @ViewBuilder func gusDetailActionLabel() -> some View {
         #if os(tvOS)
-            labelStyle(.iconOnly)
+            labelStyle(TVDetailActionLabelStyle())
         #else
             labelStyle(.iconOnly)
         #endif
@@ -224,6 +224,18 @@ extension View {
 }
 
 #if os(tvOS)
+    private struct TVDetailActionLabelStyle: LabelStyle {
+        func makeBody(configuration: Configuration) -> some View {
+            VStack(spacing: 10) {
+                configuration.icon.font(.title3).frame(height: 48)
+                configuration.title.font(.caption2)
+                    .lineLimit(1)
+                    .multilineTextAlignment(.center)
+            }
+            .frame(width: 140)
+        }
+    }
+
     private struct TVFocusedMediaKey: FocusedValueKey { typealias Value = MediaItem }
     private struct TVFocusedEntryKey: FocusedValueKey { typealias Value = NextUpEntry }
     extension FocusedValues {
