@@ -547,7 +547,7 @@ final class GusAuthenticatedUITests: XCTestCase {
             for _ in 0 ..< 30 {
                 let key = identifier ?? label!
                 let cells = app.cells.containing(NSPredicate(format: "identifier == %@ OR label == %@", key, key))
-                let resolved = cells.allElementsBoundByAccessibilityElement.last ?? target
+                let resolved = cells.allElementsBoundByAccessibilityElement.last { !$0.frame.isEmpty } ?? target
                 let destination = resolved.frame
                 guard let current = try? focusedTVFrame(app) else {
                     let focused = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
