@@ -82,7 +82,7 @@ struct SeerrRequestsView: View {
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Button("Refresh Requests", systemImage: "arrow.clockwise") { refreshID = UUID() }
-                    .gusIPadIconOnly()
+                    .gusIPadIconOnly().gusTVToolbarIcon()
                     .disabled(isLoading)
             }
         }
@@ -190,8 +190,8 @@ private struct SeerrRequestHistoryRow: View {
     }
 
     private var rowContent: some View {
-        HStack(alignment: .top, spacing: 12) {
-            SeerrArtworkView(path: title?.posterPath).frame(width: 64)
+        HStack(alignment: .center, spacing: 24) {
+            SeerrArtworkView(path: title?.posterPath).gusTVRequestArtwork()
             VStack(alignment: .leading, spacing: 4) {
                 Text(title?.displayTitle ?? String(localized: "Request #\(request.id)")).font(.headline)
                 Text("Request: \(request.status.seerrRequestDescription)")

@@ -92,6 +92,7 @@ struct SeerrTitleDetailView: View {
             }
         }
         .navigationTitle(authorizedTitle?.displayTitle ?? String(localized: "Title"))
+        .gusTVSingleContentTitle()
         .task(id: accessRevision) {
             requestTitle = nil
             reportTitle = nil

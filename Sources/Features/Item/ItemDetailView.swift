@@ -57,8 +57,8 @@ struct ItemDetailView: View {
                 }
             }
             .playerPresentation(item: $playerItem)
-            .sheet(isPresented: $addingToCollection) { NavigationStack { AddToMediaCollectionView(item: store?.item ?? item) } }
-            .sheet(isPresented: $addingToPlaylist, onDismiss: { navigationState.restoreTVDetailFocus(item: item) }) {
+            .gusTVTask(isPresented: $addingToCollection) { NavigationStack { AddToMediaCollectionView(item: store?.item ?? item) } }
+            .gusTVTask(isPresented: $addingToPlaylist, onDismiss: { navigationState.restoreTVDetailFocus(item: item) }) {
                 NavigationStack { AddToVideoPlaylistView(item: store?.item ?? item) }
                     .gusTVExitTask { addingToPlaylist = false }
             }
@@ -71,7 +71,7 @@ struct ItemDetailView: View {
                                 if store.item.type == .movie || store.item.type == .episode {
                                     Button("Add to Playlist", systemImage: MediaActionSymbols.addToPlaylist) { addingToPlaylist = true }
                                 }
-                                if CollectionPlatform.canManage && (navigationState.collectionStore(session: session).capabilities.create || navigationState.collectionStore(session: session).capabilities.addMembers) {
+                                if store.item.type == .movie, CollectionPlatform.canManage && (navigationState.collectionStore(session: session).capabilities.create || navigationState.collectionStore(session: session).capabilities.addMembers) {
                                     Button("Add to Collection", systemImage: "rectangle.stack.badge.plus") { addingToCollection = true }
                                 }
                                 Divider()
@@ -175,16 +175,13 @@ struct ItemDetailView: View {
                         .accessibilityIdentifier("Detail.favorite")
                         .gusTVDetailActionFocus(id: "favorite", item: store.item)
                         #if os(tvOS)
-                            ItemUserActionButton(
-                                title: store.item.userData?.isWatched == true ? "Mark as Unwatched" : "Mark as Watched",
-                                systemImage: store.item.userData?.isWatched == true ? "arrow.counterclockwise" : "checkmark.circle",
-                                action: { Task { await store.setWatched(store.item.userData?.isWatched != true, nextUp: upNext) } }
-                            )
-                            .disabled(store.isUpdatingUserData || store.needsUserDataRefresh)
-                            .accessibilityIdentifier("Detail.watched")
-                            .gusTVDetailActionFocus(id: "watched", item: store.item)
-                            if target != nil || store.item.type == .movie || store.item.type == .episode || CollectionPlatform.canManage {
+                            if store.item.id != nil {
                                 Menu {
+                                    Button(store.item.userData?.isWatched == true ? "Mark as Unwatched" : "Mark as Watched", systemImage: "checkmark.circle") {
+                                        Task { await store.setWatched(store.item.userData?.isWatched != true, nextUp: upNext) }
+                                    }
+                                    .disabled(store.isUpdatingUserData || store.needsUserDataRefresh)
+                                    .accessibilityIdentifier("Detail.watched")
                                     if let target, ContentRatingGate.admitsStored(target) {
                                         Button("Start from Beginning", systemImage: "arrow.counterclockwise") {
                                             playerItem = ItemRef(item: target, serverID: session.server.id, userID: session.user.id, playbackStart: .fromBeginning)
@@ -193,7 +190,7 @@ struct ItemDetailView: View {
                                     if store.item.type == .movie || store.item.type == .episode {
                                         Button("Add to Playlist", systemImage: MediaActionSymbols.addToPlaylist) { addingToPlaylist = true }
                                     }
-                                    if CollectionPlatform.canManage && (navigationState.collectionStore(session: session).capabilities.create || navigationState.collectionStore(session: session).capabilities.addMembers) {
+                                    if store.item.type == .movie, CollectionPlatform.canManage && (navigationState.collectionStore(session: session).capabilities.create || navigationState.collectionStore(session: session).capabilities.addMembers) {
                                         Button("Add to Collection", systemImage: "rectangle.stack.badge.plus") { addingToCollection = true }
                                     }
                                 } label: {

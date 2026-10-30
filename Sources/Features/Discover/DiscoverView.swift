@@ -34,22 +34,36 @@ struct DiscoverView: View {
         }
         .navigationTitle("Discover")
         .toolbar {
-            ToolbarItem {
-                Menu("Discover", systemImage: "ellipsis") {
-                    if store.isConnected {
-                        NavigationLink { SeerrRequestsView() } label: { Label("My Requests", systemImage: "clock") }
-                        if store.user?.canManageRequests == true {
-                            NavigationLink { SeerrRequestsView(managing: true) } label: { Label("Manage Requests", systemImage: "checklist") }
-                        }
-                    }
-                    NavigationLink { SeerrSettingsView() } label: { Label("Discover Settings", systemImage: "gearshape") }
+            #if os(tvOS)
+                ToolbarItem {
+                    NavigationLink { SeerrSettingsView() } label: { Label("Seerr Settings", systemImage: "gearshape") }.gusTVToolbarIcon()
                 }
-                .gusIPadIconOnly()
-                .accessibilityIdentifier("Seerr.menu")
-            }
+                if store.isConnected {
+                    ToolbarItem {
+                        NavigationLink { DiscoverBrowseView(store: store, searchOnly: true) } label: { Label("Search Seerr", systemImage: "magnifyingglass") }.gusTVToolbarIcon()
+                    }
+                    if store.user?.canManageRequests == true {
+                        ToolbarItem { NavigationLink("Manage Requests") { SeerrRequestsView(managing: true) } }
+                    }
+                }
+            #else
+                ToolbarItem {
+                    Menu("Discover", systemImage: "ellipsis") {
+                        if store.isConnected {
+                            NavigationLink { SeerrRequestsView() } label: { Label("My Requests", systemImage: "clock") }
+                            if store.user?.canManageRequests == true {
+                                NavigationLink { SeerrRequestsView(managing: true) } label: { Label("Manage Requests", systemImage: "checklist") }
+                            }
+                        }
+                        NavigationLink { SeerrSettingsView() } label: { Label("Discover Settings", systemImage: "gearshape") }
+                    }
+                    .gusIPadIconOnly()
+                    .accessibilityIdentifier("Seerr.menu")
+                }
+            #endif
             if store.isConnected {
                 ToolbarItem {
-                    SeerrRequestHistoryLink()
+                    SeerrRequestHistoryLink().gusTVToolbarIcon()
                 }
             }
         }

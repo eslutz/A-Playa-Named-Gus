@@ -1,6 +1,14 @@
 import SwiftUI
 
 extension View {
+    @ViewBuilder func gusTVToolbarIcon() -> some View {
+        #if os(tvOS)
+            labelStyle(.iconOnly)
+        #else
+            self
+        #endif
+    }
+
     @ViewBuilder func gusTVHomeTitle() -> some View {
         #if os(tvOS)
             navigationTitle("Home")
@@ -77,6 +85,14 @@ extension View {
         #endif
     }
 
+    @ViewBuilder func gusTVSingleContentTitle() -> some View {
+        #if os(tvOS)
+            navigationTitle("")
+        #else
+            self
+        #endif
+    }
+
     @ViewBuilder func gusTVDetailTitle() -> some View {
         #if os(tvOS)
             toolbar(.hidden, for: .navigationBar)
@@ -147,7 +163,7 @@ extension View {
 
     @ViewBuilder func gusDetailActionLabel() -> some View {
         #if os(tvOS)
-            labelStyle(TVActionLabelStyle())
+            labelStyle(.iconOnly)
         #else
             labelStyle(.iconOnly)
         #endif
@@ -165,24 +181,13 @@ extension View {
 
     /// Share focus order across the primary action, common icons, overflow and synopsis.
     func gusTVDetailActionFocus(id: String, item: MediaItem, initial: Bool = false) -> some View {
-        var ids = ["play", "nextUp", "favorite", "watched"]
+        var ids = ["play", "nextUp", "favorite"]
         ids += ["more", "synopsis"]
         return gusTVFocus(id: id, section: "detail:" + ItemRef(item: item).id, ids: ids, initial: initial, item: item)
     }
 }
 
 #if os(tvOS)
-    private struct TVActionLabelStyle: LabelStyle {
-        func makeBody(configuration: Configuration) -> some View {
-            HStack(spacing: 12) {
-                configuration.icon.font(.title3)
-                configuration.title.font(.body)
-                    .lineLimit(2).multilineTextAlignment(.leading)
-            }
-            .frame(maxWidth: .infinity, minHeight: 56, alignment: .leading)
-        }
-    }
-
     private struct TVFocusedMediaKey: FocusedValueKey { typealias Value = MediaItem }
     private struct TVFocusedEntryKey: FocusedValueKey { typealias Value = NextUpEntry }
     extension FocusedValues {
@@ -251,7 +256,7 @@ extension View {
     func restoreTVDetailFocus(item: MediaItem) {
         #if os(tvOS)
             let context = "detail:" + ItemRef(item: item).id
-            tvFocus.remember(id: "more", index: 4, section: context, context: context)
+            tvFocus.remember(id: "more", index: 3, section: context, context: context)
             tvFocus.requestRestoration(context: context)
         #endif
     }

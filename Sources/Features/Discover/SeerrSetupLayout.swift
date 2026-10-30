@@ -7,7 +7,11 @@ struct SeerrSetupLayout<Content: View>: View {
     var body: some View {
         #if os(tvOS)
             Group(subviews: content) { children in
-                TVOnboardingLayout { children[0] } fields: {
+                HStack(alignment: .center, spacing: 80) {
+                    VStack(alignment: .leading, spacing: 32) {
+                        Text("Seerr").font(.largeTitle.bold())
+                        children[0]
+                    }.frame(maxWidth: 640, alignment: .leading)
                     ScrollView {
                         VStack(alignment: .leading, spacing: 32) {
                             ForEach(children[1...]) { child in child }
@@ -15,6 +19,9 @@ struct SeerrSetupLayout<Content: View>: View {
                         .padding(32)
                     }
                 }
+                .padding(64)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .gusTVCanvas()
             }
         #else
             GeometryReader { geometry in

@@ -6,6 +6,7 @@ struct DiscoverBrowseView: View {
     @FocusState private var searchFocused: Bool
     @State private var searchPresented = false
     let store: SeerrStore
+    let searchOnly: Bool
     @State private var feeds: [SeerrCatalogStore] = []
     @State private var enabledFeeds: [SeerrDiscoveryFeed] = []
     @State private var feedState: LoadState = .idle
@@ -19,7 +20,8 @@ struct DiscoverBrowseView: View {
     @AppStorage(ContentRatingGate.limitDefaultsKey) private var contentLimitRawValue = ContentRatingGate.Limit.off.rawValue
     @AppStorage(ContentRatingGate.hideUnratedDefaultsKey) private var hideUnratedContent = false
 
-    init(store: SeerrStore) {
+    init(store: SeerrStore, searchOnly: Bool = false) {
+        self.searchOnly = searchOnly
         self.store = store
     }
 
@@ -43,12 +45,14 @@ struct DiscoverBrowseView: View {
                 } else {
                     ProgressView("Searching Discover")
                 }
+            } else if searchOnly {
+                ContentUnavailableView("Search Seerr", systemImage: "magnifyingglass", description: Text("Find movies and shows to request."))
             } else {
                 browse
             }
         }
-        .navigationTitle("Discover")
-        .gusSearchable(text: $query, isPresented: $searchPresented, isFocused: $searchFocused, prompt: Text("Search Discover"))
+        .navigationTitle(searchOnly ? "Search Seerr" : "Discover")
+        .gusSeerrSearch(text: $query, isPresented: $searchPresented, isFocused: $searchFocused, enabledOnTV: searchOnly)
         .onChange(of: navigation.searchFocusRequest, initial: true) { _, request in
             guard request > 0 else { return }
             searchPresented = true

@@ -128,6 +128,13 @@ final class AudioPlayerStore {
     private let logger = Logger(category: .playback)
     private let playerFactory: @MainActor () -> AVPlayer
     private var player: AVPlayer?
+    var nativePlayer: AVPlayer? {
+        player
+    }
+
+    #if os(tvOS)
+        private var timeControlObserver: NSKeyValueObservation?
+    #endif
     private var timeObserver: Any?
     private var endObserver: NSObjectProtocol?
     private var statusObserver: NSKeyValueObservation?
@@ -425,6 +432,16 @@ final class AudioPlayerStore {
     // MARK: - Observers
 
     private func addObservers(player: AVPlayer) {
+        #if os(tvOS)
+            let observedGeneration = preparationGeneration
+            timeControlObserver = player.observe(\.timeControlStatus, options: [.initial, .new]) { [weak self] player, _ in
+                let playing = player.timeControlStatus == .playing
+                Task { @MainActor [weak self] in
+                    guard let self, preparationGeneration == observedGeneration else { return }
+                    isPlaying = playing
+                }
+            }
+        #endif
         let generation = preparationGeneration
         statusObserver = player.currentItem?.observe(\.status, options: [.initial, .new]) { [weak self] item, _ in
             guard item.status == .failed else { return }
@@ -462,6 +479,10 @@ final class AudioPlayerStore {
     }
 
     private func removeObservers() {
+        #if os(tvOS)
+            timeControlObserver?.invalidate()
+            timeControlObserver = nil
+        #endif
         statusObserver?.invalidate()
         statusObserver = nil
         if let timeObserver {

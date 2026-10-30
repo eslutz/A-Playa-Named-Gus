@@ -57,8 +57,10 @@ extension View {
                     }.focusable().accessibilityElement(children: .combine)
                 }
                 .frame(maxWidth: 1400, alignment: .leading)
-                .padding(32)
+                .padding(48)
             }
+            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 24))
+            .preferredColorScheme(.dark)
         }
 
         private func detail(_ title: LocalizedStringKey, _ value: String) -> some View {

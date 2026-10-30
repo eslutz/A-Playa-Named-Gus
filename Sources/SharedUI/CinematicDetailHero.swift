@@ -81,7 +81,7 @@ struct CinematicDetailHero<Accessory: View>: View {
         standardHero.gusTVDetailHero(item: item, backdropURL: backdropURL) {
             VStack(alignment: .leading, spacing: 24) {
                 playButton
-                LazyVGrid(columns: [GridItem(.adaptive(minimum: 260), alignment: .leading)], alignment: .leading, spacing: 24) {
+                HStack(spacing: 24) {
                     upNextButton
                         .gusTVDetailActionFocus(id: "nextUp", item: item)
                     Group(subviews: accessory) { actions in

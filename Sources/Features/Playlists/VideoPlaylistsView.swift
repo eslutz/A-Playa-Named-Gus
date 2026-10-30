@@ -54,7 +54,7 @@ struct VideoPlaylistsView: View {
                     .accessibilityIdentifier("Playlist.create")
             }
         }
-        .sheet(isPresented: Binding(get: { creating != nil }, set: {
+        .gusTVTask(isPresented: Binding(get: { creating != nil }, set: {
             if !$0 {
                 creating = nil
             }
@@ -110,10 +110,17 @@ struct VideoPlaylistsView: View {
     }
 
     private func label(_ list: ServerMediaList) -> some View {
-        VStack(alignment: .leading) {
-            Text(list.name)
-            if list.entriesLoaded {
-                Text("\(list.entries.count) items").font(.caption).foregroundStyle(.secondary)
+        HStack(spacing: 24) {
+            #if os(tvOS)
+                AsyncPoster(url: session.mediaProvider.primaryImageURL(for: MediaItem(id: ServerMediaListID.string(list.id), name: list.name, type: .playlist), context: .posterGrid), placeholderSymbol: "list.and.film")
+                    .frame(width: 96, height: 64).clipShape(RoundedRectangle(cornerRadius: 8))
+                    .accessibilityHidden(true)
+            #endif
+            VStack(alignment: .leading, spacing: 8) {
+                Text(list.name)
+                if list.entriesLoaded {
+                    Text("\(list.entries.count) items").font(.caption).foregroundStyle(.secondary)
+                }
             }
         }
     }
@@ -237,15 +244,15 @@ struct VideoPlaylistDetailView: View {
                 }
             }
         } message: { Text("Delete “\(playlist?.name ?? "")”? The media will remain in your library.") }
-        .sheet(isPresented: $renaming) {
+        .gusTVTask(isPresented: $renaming) {
             NavigationStack {
                 ServerListNameEditor(initialName: playlist?.name ?? "", title: "Rename Playlist", saveTitle: "Save") { name in
                     await lists.rename(id: id, kind: .playlist, name: name, session: session)
                 }
             }
         }
-        .sheet(isPresented: $adding) { NavigationStack { ServerListSearchView(listID: id, kind: .playlist) } }
-        .sheet(item: $replacing) { entry in
+        .gusTVTask(isPresented: $adding) { NavigationStack { ServerListSearchView(listID: id, kind: .playlist) } }
+        .gusTVTask(item: $replacing) { entry in
             MediaReplacementPicker(item: entry.reference.item, candidates: []) { replacement in
                 guard let current = try? await session.references.selectedReplacement(replacement) else { return false }
                 return await lists.replace(entryID: entry.id, in: id, with: current, session: session)

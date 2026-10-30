@@ -19,47 +19,60 @@ extension View {
         @ViewBuilder let controls: () -> Controls
         @State private var showingOverview = false
 
-        private var artworkAspectRatio: CGFloat {
-            switch item.type {
-            case .musicAlbum, .musicArtist, .audio, .audioBook: 1
-            case .photo, .photoAlbum: 4.0 / 3.0
-            default: 2.0 / 3.0
+        private var summary: some View {
+            VStack(alignment: .leading, spacing: 24) {
+                Text(item.displayTitle).font(.largeTitle.bold())
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityAddTraits(.isHeader)
+                if let overview = item.overview?.trimmedNilIfEmpty {
+                    Button { showingOverview = true } label: {
+                        Text(overview).font(.body).lineLimit(3).multilineTextAlignment(.leading)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Synopsis")
+                    .accessibilityHint("Read the full description")
+                    .gusTVDetailActionFocus(id: "synopsis", item: item)
+                }
+                HeroMetadataRow(item: item, foreground: .white.opacity(0.8))
             }
+            .foregroundStyle(.white)
         }
 
         var body: some View {
-            HStack(alignment: .top, spacing: 64) {
-                AsyncPoster(
-                    url: session.mediaProvider.primaryImageURL(for: item, context: .posterGrid),
-                    placeholderSymbol: item.artworkPlaceholderSymbol,
-                    fallbackURLs: session.mediaProvider.artworkURLs(for: item, maxWidth: 1280)
-                )
-                .aspectRatio(artworkAspectRatio, contentMode: .fit)
-                .frame(width: 360)
-                .clipShape(RoundedRectangle(cornerRadius: 16))
-                .accessibilityHidden(true)
-                VStack(alignment: .leading, spacing: 28) {
-                    Text(item.displayTitle).font(.largeTitle.bold())
-                        .fixedSize(horizontal: false, vertical: true)
-                        .accessibilityAddTraits(.isHeader)
-                    HeroMetadataRow(item: item, foreground: .secondary)
-                    controls().focusSection()
-                    if let overview = item.overview?.trimmedNilIfEmpty {
-                        Button { showingOverview = true } label: {
-                            Text(overview).font(.body).lineLimit(3).multilineTextAlignment(.leading)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                        }
-                        .accessibilityLabel("Synopsis")
-                        .accessibilityHint("Read the full description")
-                        .gusTVDetailActionFocus(id: "synopsis", item: item)
-                        .focusSection()
+            Group {
+                if item.type == .series || item.type == .season {
+                    VStack(alignment: .leading, spacing: 28) {
+                        summary
+                        controls().frame(width: 440)
+                    }.frame(maxWidth: 1080, alignment: .leading)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                } else {
+                    HStack(alignment: .bottom, spacing: 80) {
+                        summary.frame(maxWidth: 1040, alignment: .leading)
+                        Spacer(minLength: 0)
+                        controls().frame(width: 440).focusSection()
                     }
                 }
-                .frame(maxWidth: 1100, alignment: .leading)
             }
             .padding(64)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .sheet(isPresented: $showingOverview) {
+            .frame(maxWidth: .infinity, minHeight: 700, alignment: .bottomLeading)
+            .background {
+                GeometryReader { geometry in
+                    AsyncPoster(
+                        url: backdropURL,
+                        placeholderSymbol: item.artworkPlaceholderSymbol,
+                        fallbackURLs: session.mediaProvider.artworkURLs(for: item, maxWidth: 1920)
+                    )
+                    .frame(width: geometry.size.width, height: geometry.size.height)
+                    .clipped()
+                    .overlay {
+                        LinearGradient(colors: [.black.opacity(0.9), .black.opacity(0.5), .black.opacity(0.1)], startPoint: .bottom, endPoint: .top)
+                    }
+                }
+                .accessibilityHidden(true)
+            }
+            .gusTVTask(isPresented: $showingOverview) {
                 NavigationStack {
                     ScrollView {
                         Text(item.overview ?? "").font(.title3).padding(64)

@@ -123,6 +123,8 @@ struct MediaCollectionDetailView: View {
     private var artworkWidth: CGFloat {
         #if os(iOS)
             widthClass == .compact ? 120 : 140
+        #elseif os(tvOS)
+            300
         #else
             140
         #endif
@@ -192,6 +194,7 @@ struct MediaCollectionDetailView: View {
             }.gusTVPagePadding()
         }
         .navigationTitle(collection?.item.displayTitle ?? String(localized: "Collection"))
+        .gusTVSingleContentTitle()
         .toolbar {
             ToolbarItem {
                 Menu {
@@ -207,7 +210,7 @@ struct MediaCollectionDetailView: View {
                             Button("Delete Collection", systemImage: "trash", role: .destructive) { deleting = true }
                         }
                     }
-                } label: { Label("More", systemImage: "ellipsis.circle") }.gusIPadIconOnly().disabled(store.isMutating || collection == nil)
+                } label: { Label("More", systemImage: "ellipsis.circle") }.gusIPadIconOnly().gusTVToolbarIcon().disabled(store.isMutating || collection == nil)
             }
         }
         .sheet(isPresented: $editing) { NavigationStack { CollectionEditor(collectionID: id) } }

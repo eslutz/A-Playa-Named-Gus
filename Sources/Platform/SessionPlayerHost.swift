@@ -157,7 +157,7 @@ private struct SessionAudioPlayer: View {
         @Environment(\.horizontalSizeClass) private var widthClass
     #endif
     var body: some View {
-        NavigationStack {
+        #if os(tvOS)
             Group {
                 if let store = audio.store {
                     AudioPlayerView(store: store)
@@ -165,39 +165,45 @@ private struct SessionAudioPlayer: View {
                     ContentUnavailableView("Nothing Playing", systemImage: "music.note")
                 }
             }
-            .toolbar {
-                #if os(iOS)
-                    ToolbarItem(placement: .cancellationAction) {
-                        ImmersiveDismissButton { audio.close() }
-                            .accessibilityIdentifier("AudioPlayer.close")
+            .ignoresSafeArea()
+            .gusTVCanvas()
+        #else
+            NavigationStack {
+                Group {
+                    if let store = audio.store {
+                        AudioPlayerView(store: store)
+                    } else {
+                        ContentUnavailableView("Nothing Playing", systemImage: "music.note")
                     }
-                    if widthClass == .compact {
-                        ToolbarItem(placement: .principal) {
-                            Text(audio.store?.currentTrack?.album ?? String(localized: "Now Playing"))
-                                .font(.caption).foregroundStyle(.secondary).textCase(.uppercase)
+                }
+                .toolbar {
+                    #if os(iOS)
+                        ToolbarItem(placement: .cancellationAction) {
+                            ImmersiveDismissButton { audio.close() }
+                                .accessibilityIdentifier("AudioPlayer.close")
                         }
-                    } else if DeviceIdentity.usesIPadPresentation {
-                        ToolbarItem(placement: .principal) { Text("Now Playing").font(.headline) }
-                    }
-                #elseif os(tvOS)
-                    ToolbarItem(placement: .cancellationAction) {
-                        Button("Close", systemImage: "xmark") { audio.close() }
-                            .accessibilityIdentifier("AudioPlayer.close")
-                    }
-                    ToolbarItem { Button("Stop", systemImage: "stop.fill") { audio.stop() } }
-                #else
-                    ToolbarItem(placement: .cancellationAction) { Button("Done", systemImage: "xmark") { audio.close() } }
-                    ToolbarItem { Button("Stop", systemImage: "stop.fill") { audio.stop() } }
-                #endif
+                        if widthClass == .compact {
+                            ToolbarItem(placement: .principal) {
+                                Text(audio.store?.currentTrack?.album ?? String(localized: "Now Playing"))
+                                    .font(.caption).foregroundStyle(.secondary).textCase(.uppercase)
+                            }
+                        } else if DeviceIdentity.usesIPadPresentation {
+                            ToolbarItem(placement: .principal) { Text("Now Playing").font(.headline) }
+                        }
+                    #else
+                        ToolbarItem(placement: .cancellationAction) { Button("Done", systemImage: "xmark") { audio.close() } }
+                        ToolbarItem { Button("Stop", systemImage: "stop.fill") { audio.stop() } }
+                    #endif
+                }
+                .accessibilityAction(.escape) { audio.close() }
             }
-            .accessibilityAction(.escape) { audio.close() }
-        }
-        .background {
-            Rectangle().fill(.background).ignoresSafeArea()
-        }
-        .gusTVCanvas()
-        #if os(tvOS)
-            .onExitCommand { audio.close() }
+            .background {
+                Rectangle().fill(.background).ignoresSafeArea()
+            }
+            .gusTVCanvas()
+            #if os(tvOS)
+                .onExitCommand { audio.close() }
+            #endif
         #endif
     }
 }

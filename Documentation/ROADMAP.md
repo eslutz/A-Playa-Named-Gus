@@ -1006,6 +1006,8 @@ October 12 pipeline policy supersedes direct-main publication: main now requires
 
 ## Native tvOS presentation — implementation candidate
 
+The subsequent [owner review remediation](tvos-review-remediation.md) restores cinematic detail hierarchy, moves mutations into overflow, uses native audio transport, and separates Seerr search/setup/review. Fresh validation and physical-TV inspection are tracked separately from the earlier implementation checks.
+
 - [x] Align the existing sidebar, dedicated Search, browse headings and bounded artwork with the shared iPhone/iPad hierarchy. Details keep their native stack; albums separate artwork/actions from tracks, photo albums open a gallery, and photos reserve title/count space.
 - [x] Use full-screen native TV authentication/editing tasks, explicit profile Save/Cancel, readable native action focus, More for secondary actions and opener focus restoration after the playlist chooser.
 - [x] Add device-local Gus Default, Apple Default and Custom themes, native accent presets and validated six-digit hex drafts. Closing prepared audio returns to Now Playing while Stop remains explicit.

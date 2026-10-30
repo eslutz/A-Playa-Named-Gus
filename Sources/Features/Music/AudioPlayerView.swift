@@ -39,9 +39,22 @@ struct AudioPlayerView: View {
 
     var body: some View {
         LoadingStateView(state: store.state, retryAction: { audio.retry() }) {
-            AdaptiveAudioLayout { artwork } controls: { controls }
+            #if os(tvOS)
+                if let player = store.nativePlayer {
+                    TVAudioPlayerSurface(player: player, store: store, onClose: { audio.close() }, onStop: { audio.stop() }, artworkURL: track.flatMap { session.mediaProvider.primaryImageURL(for: $0, context: .nowPlayingArtwork) })
+                } else {
+                    ContentUnavailableView("Playback Finished", systemImage: "music.note", description: Text("Choose another track from your library."))
+                }
+            #else
+                AdaptiveAudioLayout { artwork } controls: { controls }
+            #endif
         }
-        .sheet(isPresented: $showingQueue) {
+        .toolbar {
+            #if os(tvOS)
+                ToolbarItem { Button("Queue", systemImage: "list.bullet") { showingQueue = true } }
+            #endif
+        }
+        .gusTVTask(isPresented: $showingQueue) {
             NavigationStack {
                 List(store.queue.order, id: \.self) { index in
                     let queuedTrack = store.queue.tracks[index]

@@ -98,3 +98,42 @@ extension HorizontalAlignment {
         #endif
     }
 }
+
+extension View {
+    @ViewBuilder func gusSeerrSearch(text: Binding<String>, isPresented: Binding<Bool>, isFocused: FocusState<Bool>.Binding, enabledOnTV: Bool) -> some View {
+        #if os(tvOS)
+            if enabledOnTV {
+                searchable(text: text, prompt: Text("Search Seerr"))
+            } else {
+                self
+            }
+        #else
+            gusSearchable(text: text, isPresented: isPresented, isFocused: isFocused, prompt: Text("Search Discover"))
+        #endif
+    }
+
+    @ViewBuilder func gusTVRequestReview(title: SeerrTitle) -> some View {
+        #if os(tvOS)
+            HStack(alignment: .center, spacing: 80) {
+                VStack(alignment: .leading, spacing: 24) {
+                    SeerrArtworkView(path: title.posterPath).frame(width: 240)
+                    Text(title.displayTitle).font(.title.bold())
+                    Text(title.seerrIdentityDescription).foregroundStyle(.secondary)
+                    Text("Seerr").font(.headline).foregroundStyle(.secondary)
+                }.frame(width: 500, alignment: .leading)
+                self.frame(maxWidth: 1000)
+            }
+            .padding(64).frame(maxWidth: .infinity, maxHeight: .infinity)
+        #else
+            self
+        #endif
+    }
+
+    @ViewBuilder func gusTVRequestArtwork() -> some View {
+        #if os(tvOS)
+            frame(width: 160)
+        #else
+            frame(width: 64)
+        #endif
+    }
+}

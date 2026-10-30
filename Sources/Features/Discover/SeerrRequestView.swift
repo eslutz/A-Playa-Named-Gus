@@ -61,6 +61,7 @@ private struct SeerrRequestForm: View {
                                 Section { Text(message).foregroundStyle(.secondary) }
                             }
                         }
+                        .gusTVRequestReview(title: draft.title)
                     }
                 } else {
                     RestrictedContentView()

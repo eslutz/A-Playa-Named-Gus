@@ -41,7 +41,7 @@ final class GusAuthenticatedUITests: XCTestCase {
         defer { finish() }
         let app = try launch("play/" + required("Audio"))
         #if os(tvOS)
-            XCTAssertTrue(app.buttons["Close"].waitForExistence(timeout: 30))
+            XCTAssertTrue(app.cells["AVAudibleSettings"].waitForExistence(timeout: 30))
         #else
             XCTAssertTrue(app.buttons["Done"].waitForExistence(timeout: 30))
         #endif
@@ -66,7 +66,11 @@ final class GusAuthenticatedUITests: XCTestCase {
         #else
             reopen.tap()
         #endif
-        XCTAssertTrue(app.buttons["Stop"].waitForExistence(timeout: 10))
+        #if os(tvOS)
+            XCTAssertTrue(app.cells["AVAudibleSettings"].waitForExistence(timeout: 10))
+        #else
+            XCTAssertTrue(app.buttons["Stop"].waitForExistence(timeout: 10))
+        #endif
         capture(app, "audio-reopened")
         #if os(tvOS)
             XCUIRemote.shared.press(.menu)
@@ -138,6 +142,43 @@ final class GusAuthenticatedUITests: XCTestCase {
     #endif
 
     #if os(tvOS)
+        func testTVRemediationHeroAndOverflow() throws {
+            try prepare()
+            executionTimeAllowance = 240
+            defer { finish() }
+            for kind in ["SynopsisMovie", "Series", "Season"] {
+                let app = try launch("item/" + required(kind))
+                XCTAssertTrue(app.buttons["Detail.favorite"].waitForExistence(timeout: 30))
+                XCUIRemote.shared.press(.right)
+                capture(app, "tv-remediation-" + kind.lowercased())
+                XCTAssertFalse(app.buttons["Detail.watched"].exists, "Watched belongs in overflow")
+                try focusTV(app, identifier: "Detail.more")
+                XCUIRemote.shared.press(.select)
+                XCTAssertTrue(app.descendants(matching: .any).matching(identifier: "Detail.watched").firstMatch.waitForExistence(timeout: 10))
+                capture(app, "tv-remediation-overflow-" + kind.lowercased())
+                XCUIRemote.shared.press(.menu)
+                app.terminate()
+            }
+        }
+
+        func testTVRemediationNativeAudio() throws {
+            try prepare()
+            defer { finish() }
+            let app = try launch("play/" + required("Audio"))
+            XCTAssertTrue(app.cells["AVAudibleSettings"].waitForExistence(timeout: 30))
+            XCUIRemote.shared.press(.playPause)
+            XCUIRemote.shared.press(.up)
+            capture(app, "tv-remediation-native-audio")
+            for _ in 0 ..< 3 {
+                XCUIRemote.shared.press(.menu)
+                if app.buttons["NowPlaying.reopen"].waitForExistence(timeout: 1) {
+                    break
+                }
+            }
+            XCTAssertTrue(app.buttons["NowPlaying.reopen"].waitForExistence(timeout: 5))
+            capture(app, "tv-remediation-audio-return")
+        }
+
         func testTVMediaReviewRound() throws {
             try prepare()
             executionTimeAllowance = 300
@@ -504,14 +545,14 @@ final class GusAuthenticatedUITests: XCTestCase {
             XCTAssertEqual(XCTWaiter.wait(for: [focused], timeout: 10), .completed)
             capture(app, "tv-detail-play-focused")
 
-            let common = ["Detail.nextUp", "Detail.favorite", "Detail.watched", "Detail.more"].map { app.buttons[$0] }
+            let common = ["Detail.nextUp", "Detail.favorite", "Detail.more"].map { app.buttons[$0] }
             for button in common {
                 XCTAssertTrue(button.exists)
                 XCTAssertGreaterThan(button.frame.minY, play.frame.maxY)
             }
             for (index, button) in common.enumerated() {
                 try focusTV(app, identifier: button.identifier)
-                if index == 1 || index == 2 {
+                if index == 1 {
                     let originalLabel = button.label
                     XCUIRemote.shared.press(.select)
                     let changed = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in button.label != originalLabel && button.isEnabled }, object: nil)
@@ -520,7 +561,7 @@ final class GusAuthenticatedUITests: XCTestCase {
                     let restored = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in button.label == originalLabel && button.isEnabled }, object: nil)
                     XCTAssertEqual(XCTWaiter.wait(for: [restored], timeout: 10), .completed)
                 }
-                if index == 3 {
+                if index == 2 {
                     XCUIRemote.shared.press(.select)
                     try focusTV(app, label: "Add to Playlist")
                     XCUIRemote.shared.press(.select)

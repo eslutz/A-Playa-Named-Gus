@@ -102,11 +102,25 @@ struct SignInView: View {
                 }
                 .padding(32)
             }
-            .sheet(isPresented: $showingSignInOptions) {
+            .gusTVTask(isPresented: $showingSignInOptions) {
                 NavigationStack {
-                    Form { publicProfilesSection; quickConnectSection }
-                        .navigationTitle("Sign-in Options")
-                        .toolbar { ToolbarItem(placement: .cancellationAction) { GusCloseButton { showingSignInOptions = false } } }
+                    Group {
+                        if let quickConnectStore, case let .polling(code) = quickConnectStore.state {
+                            VStack(spacing: 40) {
+                                Text("Quick Connect").font(.title.bold())
+                                Text(code).font(.system(size: 72, weight: .bold, design: .monospaced))
+                                    .accessibilityLabel("Authorization code")
+                                Text("Approve this code in Jellyfin on another device.")
+                                    .foregroundStyle(.secondary).multilineTextAlignment(.center)
+                                Button("Cancel", role: .cancel) { quickConnectStore.cancel() }
+                            }
+                            .padding(64).frame(maxWidth: .infinity, maxHeight: .infinity)
+                        } else {
+                            Form { publicProfilesSection; quickConnectSection }
+                        }
+                    }
+                    .navigationTitle("Sign-in Options")
+                    .toolbar { ToolbarItem(placement: .cancellationAction) { GusCloseButton { showingSignInOptions = false } } }
                 }
             }
         }
