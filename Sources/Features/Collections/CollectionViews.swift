@@ -179,6 +179,9 @@ struct MediaCollectionDetailView: View {
                             collectionActions
                         #endif
                     }
+                    #if os(tvOS)
+                        .focusSection()
+                    #endif
                     if collection.membersLoaded {
                         if admitted(collection).isEmpty {
                             ContentUnavailableView("No Titles", systemImage: "film")
