@@ -22,6 +22,18 @@ struct ThemeAndLatestMediaTests {
         }
     }
 
+    @Test func televisionAccentInputPreservesStorageRules() {
+        #expect(ThemeAccent.userInput("  #ff7f00\n")?.hex == "FF7F00")
+        #expect(ThemeAccent.userInput("4f7c82") == .gus)
+        for input in ["#FFF", "##123456", "12345678", "１２３４５６", "12345G", ""] {
+            #expect(ThemeAccent.userInput(input) == nil)
+        }
+        #expect(Set(ThemeAccentPreset.allCases.map(\.rawValue)).count == 8)
+        for preset in ThemeAccentPreset.allCases {
+            #expect(ThemeAccent(hex: preset.rawValue)?.hex == preset.rawValue)
+        }
+    }
+
     @Test @MainActor func latestFeedSpansLibrariesAndPromotesShowsAcrossPages() async throws {
         let provider = FakeMediaProviderSession(capabilities: ProviderCapabilities())
         var captured: MediaItemQuery?

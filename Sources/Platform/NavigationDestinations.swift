@@ -49,7 +49,7 @@ struct ItemRouteDestination: View {
             ArtistAlbumsView(artist: item)
         case .photo:
             PhotoViewerView(photo: item)
-        #if os(iOS)
+        #if os(iOS) || os(tvOS)
             case .photoAlbum:
                 LibraryGridView(library: item)
         #endif
@@ -143,6 +143,9 @@ struct SeerrRequestHistoryLink: View {
             } else {
                 legacyLink
             }
+        #elseif os(tvOS)
+            NavigationLink { SeerrRequestsView() } label: { Image(systemName: "clock") }
+                .accessibilityLabel("My Requests")
         #else
             legacyLink
         #endif

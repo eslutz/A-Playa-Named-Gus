@@ -6,6 +6,11 @@ both appearances live in `Gus-Shared-Library.sketch`.
 
 - `Gus-iPhone.sketch`: current iPhone Screens, States, and Components, including
   both appearances. The older separate appearance files are archived locally.
+- `Gus-tvOS.sketch`: editable TV Screens, States and Components, including the
+  connection/profile revisions and native-reference theme/hex editor studies.
+  Canonical private cloud version: [vwZAA3](https://www.sketch.com/s/2711b90a-32b4-4f8d-a0ca-725c75e9e207/v/vwZAA3).
+  TV artwork slots remain placeholders. Simulator comparisons and interaction
+  coverage are reviewed separately from these design studies.
 - `Gus-iPadOS.sketch`: 95 Screens and 62 States in each appearance. Light/Dark
   partners are adjacent in a compact canvas grid; their internal layouts match.
 - `Gus-Shared-Library.sketch`: existing Light/Dark components plus editable paired

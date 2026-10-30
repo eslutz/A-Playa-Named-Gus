@@ -6,6 +6,7 @@ struct DiscoverBrowseView: View {
     @FocusState private var searchFocused: Bool
     @State private var searchPresented = false
     let store: SeerrStore
+    let searchOnly: Bool
     @State private var feeds: [SeerrCatalogStore] = []
     @State private var enabledFeeds: [SeerrDiscoveryFeed] = []
     @State private var feedState: LoadState = .idle
@@ -19,7 +20,8 @@ struct DiscoverBrowseView: View {
     @AppStorage(ContentRatingGate.limitDefaultsKey) private var contentLimitRawValue = ContentRatingGate.Limit.off.rawValue
     @AppStorage(ContentRatingGate.hideUnratedDefaultsKey) private var hideUnratedContent = false
 
-    init(store: SeerrStore) {
+    init(store: SeerrStore, searchOnly: Bool = false) {
+        self.searchOnly = searchOnly
         self.store = store
     }
 
@@ -43,12 +45,14 @@ struct DiscoverBrowseView: View {
                 } else {
                     ProgressView("Searching Discover")
                 }
+            } else if searchOnly {
+                ContentUnavailableView("Search Seerr", systemImage: "magnifyingglass", description: Text("Find movies and shows to request."))
             } else {
                 browse
             }
         }
-        .navigationTitle("Discover")
-        .gusSearchable(text: $query, isPresented: $searchPresented, isFocused: $searchFocused, prompt: Text("Search Discover"))
+        .navigationTitle(searchOnly ? "Search Seerr" : "Discover")
+        .gusSeerrSearch(text: $query, isPresented: $searchPresented, isFocused: $searchFocused, enabledOnTV: searchOnly)
         .onChange(of: navigation.searchFocusRequest, initial: true) { _, request in
             guard request > 0 else { return }
             searchPresented = true
@@ -88,6 +92,16 @@ struct DiscoverBrowseView: View {
         ) {
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 32) {
+                    #if os(tvOS)
+                        HStack(spacing: 32) {
+                            NavigationLink { DiscoverBrowseView(store: store, searchOnly: true) } label: { Label("Search Seerr", systemImage: "magnifyingglass") }
+                            SeerrRequestHistoryLink()
+                            NavigationLink { SeerrSettingsView() } label: { Label("Seerr Settings", systemImage: "gearshape") }
+                            if store.user?.canManageRequests == true {
+                                NavigationLink("Manage Requests") { SeerrRequestsView(managing: true) }
+                            }
+                        }.focusSection().padding(.vertical, 24)
+                    #endif
                     if let trending = feeds.first(where: { $0.source == .feed(.trending) }), trending.isValid(for: store),
                        let hero = trending.items.first(where: { $0.backdropPath != nil && store.admits($0) })
                     {
@@ -161,21 +175,31 @@ private struct SeerrDiscoveryHero: View {
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     var body: some View {
-        if dynamicTypeSize.isAccessibilitySize {
-            VStack(alignment: .leading, spacing: 12) {
+        #if os(tvOS)
+            GusTVMediaDetailLayout {
                 SeerrArtworkView(path: title.backdropPath, aspectRatio: 16.0 / 9.0, width: "w1280")
+            } summary: {
                 heroText
+            } details: {
+                EmptyView()
             }
-        } else {
-            SeerrArtworkView(path: title.backdropPath, aspectRatio: 16.0 / 9.0, width: "w1280")
-                .overlay(alignment: .bottomLeading) {
-                    ZStack(alignment: .bottomLeading) {
-                        LinearGradient(colors: [.clear, .black.opacity(0.85)], startPoint: .top, endPoint: .bottom)
-                        heroText.padding(20).foregroundStyle(.white)
-                    }
-                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        #else
+            if dynamicTypeSize.isAccessibilitySize {
+                VStack(alignment: .leading, spacing: 12) {
+                    SeerrArtworkView(path: title.backdropPath, aspectRatio: 16.0 / 9.0, width: "w1280")
+                    heroText
                 }
-        }
+            } else {
+                SeerrArtworkView(path: title.backdropPath, aspectRatio: 16.0 / 9.0, width: "w1280")
+                    .overlay(alignment: .bottomLeading) {
+                        ZStack(alignment: .bottomLeading) {
+                            LinearGradient(colors: [.clear, .black.opacity(0.85)], startPoint: .top, endPoint: .bottom)
+                            heroText.padding(20).foregroundStyle(.white)
+                        }
+                        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    }
+            }
+        #endif
     }
 
     private var heroText: some View {
@@ -185,7 +209,8 @@ private struct SeerrDiscoveryHero: View {
             NavigationLink {
                 SeerrTitleDetailView(title: title, store: store)
             } label: { Label("View Title", systemImage: "info.circle") }
-                .buttonStyle(.borderedProminent)
+                .gusTVRequestButtonStyle()
+                .accessibilityIdentifier("Seerr.hero." + (title.mediaType?.rawValue ?? "unknown") + "." + String(title.id))
         }
     }
 }

@@ -81,23 +81,11 @@ struct CinematicDetailHero<Accessory: View>: View {
         standardHero.gusTVDetailHero(item: item, backdropURL: backdropURL) {
             VStack(alignment: .leading, spacing: 24) {
                 playButton
-                HStack(spacing: 64) {
+                HStack(spacing: 24) {
                     upNextButton
-                        .frame(width: 160)
                         .gusTVDetailActionFocus(id: "nextUp", item: item)
                     Group(subviews: accessory) { actions in
-                        ForEach(actions) { action in action.frame(width: 160) }
-                    }
-                    if isPlayableItem, let startFromBeginning {
-                        Menu {
-                            Button("Start from Beginning", systemImage: "arrow.counterclockwise", action: startFromBeginning)
-                        } label: {
-                            Label("More", systemImage: "ellipsis").gusDetailActionLabel()
-                        }
-                        .frame(width: 160)
-                        .accessibilityLabel("More")
-                        .accessibilityIdentifier("Detail.more")
-                        .gusTVDetailActionFocus(id: "more", item: item)
+                        ForEach(actions) { action in action }
                     }
                 }
                 .tvFocusSection()

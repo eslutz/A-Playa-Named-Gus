@@ -16,6 +16,8 @@ struct ConnectServerView: View {
     @State private var connectGeneration = 0
     #if os(iOS)
         @Environment(\.horizontalSizeClass) private var widthClass
+    #endif
+    #if os(iOS) || os(tvOS)
         @State private var showingLocalServers = false
     #endif
 
@@ -29,6 +31,13 @@ struct ConnectServerView: View {
                 } else {
                     serverForm
                 }
+            #elseif os(tvOS)
+                TVOnboardingLayout {
+                    Text("Let’s connect.").font(.largeTitle.bold())
+                    Text("Add your Jellyfin server to bring your library into Gus.").foregroundStyle(.secondary)
+                } fields: {
+                    tvFields
+                }
             #else
                 serverForm
             #endif
@@ -38,6 +47,55 @@ struct ConnectServerView: View {
             discoveryStore.cancel()
         }
     }
+
+    #if os(tvOS)
+        private var tvFields: some View {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 32) {
+                    Text("Server address").font(.headline)
+                    TextField("https://media.example.com", text: $urlText)
+                        .urlFieldStyle().disabled(isConnecting).onSubmit(connect)
+                        .accessibilityLabel("Server Address")
+                        .accessibilityIdentifier("ConnectServerView.serverAddress")
+                    if let errorMessage {
+                        Label(errorMessage, systemImage: "exclamationmark.triangle")
+                    }
+                    Button(action: connect) {
+                        HStack {
+                            Text("Connect")
+                            if isConnecting {
+                                ProgressView()
+                            }
+                        }
+                        .frame(maxWidth: .infinity)
+                    }
+                    .gusProminentGlassButtonStyle()
+                    .disabled(urlText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isConnecting)
+                    .accessibilityIdentifier("ConnectServerView.connectButton")
+                    if isConnecting {
+                        Button("Cancel", role: .cancel) { cancelConnect() }
+                    }
+                    Button("Find a local server", systemImage: "dot.radiowaves.left.and.right") {
+                        showingLocalServers = true
+                        discoveryStore.start()
+                    }
+                    .disabled(isConnecting)
+                    Text("Search for Jellyfin servers on your local network when you’re on the same Wi-Fi.")
+                        .font(.caption).foregroundStyle(.secondary)
+                    #if DEBUG
+                        demoServerSection
+                    #endif
+                }
+                .padding(32)
+            }
+            .sheet(isPresented: $showingLocalServers) {
+                NavigationStack {
+                    Form { localServersSection }.navigationTitle("Local Servers")
+                        .toolbar { ToolbarItem(placement: .cancellationAction) { GusCloseButton { showingLocalServers = false } } }
+                }
+            }
+        }
+    #endif
 
     private var serverForm: some View {
         Form {

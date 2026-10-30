@@ -28,32 +28,37 @@ struct DiscoverView: View {
                     if store.state == .offline {
                         Button("Retry Connection") { Task { await store.retryRestore() } }
                     }
+                    #if os(tvOS)
+                        NavigationLink { SeerrSettingsView() } label: { Label("Seerr Settings", systemImage: "gearshape") }
+                    #endif
                     Button("Hide Menu Item") { hide() }
                 }
             }
         }
         .navigationTitle("Discover")
         .toolbar {
-            ToolbarItem {
-                Menu("Discover", systemImage: "ellipsis") {
-                    if store.isConnected {
-                        NavigationLink { SeerrRequestsView() } label: { Label("My Requests", systemImage: "clock") }
-                        if store.user?.canManageRequests == true {
-                            NavigationLink { SeerrRequestsView(managing: true) } label: { Label("Manage Requests", systemImage: "checklist") }
-                        }
-                    }
-                    NavigationLink { SeerrSettingsView() } label: { Label("Discover Settings", systemImage: "gearshape") }
-                }
-                .gusIPadIconOnly()
-                .accessibilityIdentifier("Seerr.menu")
-            }
-            if store.isConnected {
+            #if !os(tvOS)
                 ToolbarItem {
-                    SeerrRequestHistoryLink()
+                    Menu("Discover", systemImage: "ellipsis") {
+                        if store.isConnected {
+                            NavigationLink { SeerrRequestsView() } label: { Label("My Requests", systemImage: "clock") }
+                            if store.user?.canManageRequests == true {
+                                NavigationLink { SeerrRequestsView(managing: true) } label: { Label("Manage Requests", systemImage: "checklist") }
+                            }
+                        }
+                        NavigationLink { SeerrSettingsView() } label: { Label("Discover Settings", systemImage: "gearshape") }
+                    }
+                    .gusIPadIconOnly()
+                    .accessibilityIdentifier("Seerr.menu")
                 }
-            }
+                if store.isConnected {
+                    ToolbarItem {
+                        SeerrRequestHistoryLink()
+                    }
+                }
+            #endif
         }
-        .sheet(isPresented: $showingSetup) { SeerrConnectView() }
+        .gusTVTask(isPresented: $showingSetup) { SeerrConnectView() }
     }
 
     private func hide() {

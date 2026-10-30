@@ -92,15 +92,16 @@ struct SeerrTitleDetailView: View {
             }
         }
         .navigationTitle(authorizedTitle?.displayTitle ?? String(localized: "Title"))
+        .gusTVDetailTitle()
         .task(id: accessRevision) {
             requestTitle = nil
             reportTitle = nil
             await detail.load(store: store)
         }
-        .sheet(item: $requestTitle, onDismiss: { Task { await detail.load(store: store) } }) { title in
+        .gusTVTask(item: $requestTitle, onDismiss: { Task { await detail.load(store: store) } }) { title in
             SeerrRequestView(title: title)
         }
-        .sheet(item: $reportTitle) { title in
+        .gusTVTask(item: $reportTitle) { title in
             SeerrReportIssueView(title: title)
         }
         .alert("Open Seerr on Another Device", isPresented: Binding(get: { externalURL != nil }, set: {
@@ -115,34 +116,38 @@ struct SeerrTitleDetailView: View {
             }
         }
         .toolbar {
-            if let title = authorizedTitle, let client = store.client {
-                ToolbarItem(placement: .primaryAction) {
-                    Menu {
-                        if store.user?.canViewIssues == true, title.mediaInfo != nil {
-                            NavigationLink {
-                                SeerrIssuesView(title: title)
-                            } label: { Label("Issues", systemImage: "exclamationmark.bubble") }
-                        }
-                        if store.user?.canCreateIssues == true, title.mediaInfo != nil {
-                            Button("Report an Issue", systemImage: "exclamationmark.bubble") { reportTitle = title }
-                        }
-                        Button("Open in Seerr", systemImage: "arrow.up.right.square") {
-                            let url = client.baseURL.appending(path: "\(detail.mediaType.rawValue)/\(title.id)")
-                            openURL(url) { accepted in
-                                if !accepted {
-                                    externalURL = url
-                                }
-                            }
-                        }
-                    } label: { Label("More Actions", systemImage: "ellipsis") }
+            #if !os(tvOS)
+                ToolbarItem(placement: .primaryAction) { moreActions }
+            #endif
+        }
+    }
+
+    @ViewBuilder private var moreActions: some View {
+        if let title = authorizedTitle, let client = store.client {
+            Menu {
+                if store.user?.canViewIssues == true, title.mediaInfo != nil {
+                    NavigationLink {
+                        SeerrIssuesView(title: title)
+                    } label: { Label("Issues", systemImage: "exclamationmark.bubble") }
                 }
-            }
+                if store.user?.canCreateIssues == true, title.mediaInfo != nil {
+                    Button("Report an Issue", systemImage: "exclamationmark.bubble") { reportTitle = title }
+                }
+                Button("Open in Seerr", systemImage: "arrow.up.right.square") {
+                    let url = client.baseURL.appending(path: "\(detail.mediaType.rawValue)/\(title.id)")
+                    openURL(url) { accepted in
+                        if !accepted {
+                            externalURL = url
+                        }
+                    }
+                }
+            } label: { Label("More Actions", systemImage: "ellipsis") }
         }
     }
 
     private func content(_ title: SeerrTitle) -> some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 28) {
+            GusTVMediaDetailLayout {
                 SeerrArtworkView(
                     path: title.backdropPath ?? title.posterPath,
                     aspectRatio: title.backdropPath == nil ? 2.0 / 3.0 : 16.0 / 9.0,
@@ -150,8 +155,10 @@ struct SeerrTitleDetailView: View {
                 )
                 .frame(maxHeight: 520)
                 .clipped()
+            } summary: {
                 identity(title)
                 actions(title)
+            } details: {
                 if let synopsis = title.overview?.trimmedNilIfEmpty {
                     Text(synopsis).font(.body).fixedSize(horizontal: false, vertical: true)
                 }
@@ -197,11 +204,16 @@ struct SeerrTitleDetailView: View {
                 Button(detail.mediaType == .tv ? "Request Seasons" : "Request", systemImage: "plus.circle") {
                     requestTitle = title
                 }
-                .buttonStyle(.borderedProminent)
+                .gusTVRequestButtonStyle()
+                .accessibilityIdentifier("Seerr.request")
+                .gusTVFocus(id: "request", section: "seerr-title:" + detail.mediaType.rawValue + ":" + String(title.id), ids: ["request"], initial: true)
             }
             if title.mediaInfo?.status == .available || title.mediaInfo?.status == .partiallyAvailable {
                 SeerrPlaybackMatchView(title: title)
             }
+            #if os(tvOS)
+                moreActions.gusTVToolbarIcon()
+            #endif
             SeerrBlocklistAction(title: title) {
                 detail.invalidate()
                 Task { await detail.load(store: store) }

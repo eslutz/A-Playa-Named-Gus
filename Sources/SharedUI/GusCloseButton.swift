@@ -5,7 +5,12 @@ struct GusCloseButton: View {
     let action: () -> Void
 
     var body: some View {
-        Button("Close", systemImage: "xmark", action: action)
-            .labelStyle(.iconOnly)
+        #if os(tvOS)
+            Button(action: action) { Image(systemName: "xmark") }
+                .accessibilityLabel("Close")
+        #else
+            Button("Close", systemImage: "xmark", action: action)
+                .labelStyle(.iconOnly)
+        #endif
     }
 }

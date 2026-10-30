@@ -18,6 +18,8 @@ struct SignInView: View {
     @State private var signInTask: Task<Void, Never>?
     #if os(iOS)
         @Environment(\.horizontalSizeClass) private var widthClass
+    #endif
+    #if os(iOS) || os(tvOS)
         @State private var showingSignInOptions = false
     #endif
 
@@ -30,6 +32,13 @@ struct SignInView: View {
                     onboarding
                 } else {
                     signInForm
+                }
+            #elseif os(tvOS)
+                TVOnboardingLayout {
+                    Text("Sign in.").font(.largeTitle.bold())
+                    Text("Use your Jellyfin account for this server.").foregroundStyle(.secondary)
+                } fields: {
+                    tvFields
                 }
             #else
                 signInForm
@@ -55,6 +64,67 @@ struct SignInView: View {
             quickConnectStore?.cancel()
         }
     }
+
+    #if os(tvOS)
+        private var tvFields: some View {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 32) {
+                    Text(server.name).font(.title2.bold())
+                    Text("Username").font(.headline)
+                    TextField("Username", text: $username)
+                        .autocorrectionDisabled().gusAccountNameInput().textContentType(.username)
+                        .accessibilityIdentifier("SignIn.username")
+                    Text("Password").font(.headline)
+                    SecureField("Password", text: $password).textContentType(.password).onSubmit(signIn)
+                        .accessibilityIdentifier("SignIn.password")
+                    if let errorMessage {
+                        Label(errorMessage, systemImage: "exclamationmark.triangle")
+                    }
+                    Button(action: signIn) {
+                        HStack {
+                            Text("Sign In")
+                            if isSigningIn {
+                                ProgressView()
+                            }
+                        }
+                        .frame(maxWidth: .infinity)
+                    }
+                    .gusProminentGlassButtonStyle()
+                    .disabled(username.isEmpty || isSigningIn)
+                    if isSigningIn {
+                        Button("Cancel", role: .cancel) { signInTask?.cancel() }
+                    }
+                    Button("More sign-in options") { showingSignInOptions = true }
+                        .disabled(quickConnectStore == nil || signInStore == nil || isSigningIn)
+                    if let disclaimer = signInStore?.loginDisclaimer {
+                        Text(disclaimer).font(.caption).foregroundStyle(.secondary)
+                    }
+                }
+                .padding(32)
+            }
+            .gusTVTask(isPresented: $showingSignInOptions) {
+                NavigationStack {
+                    Group {
+                        if let quickConnectStore, case let .polling(code) = quickConnectStore.state {
+                            VStack(spacing: 40) {
+                                Text("Quick Connect").font(.title.bold())
+                                Text(code).font(.system(size: 72, weight: .bold, design: .monospaced))
+                                    .accessibilityLabel("Authorization code")
+                                Text("Approve this code in Jellyfin on another device.")
+                                    .foregroundStyle(.secondary).multilineTextAlignment(.center)
+                                Button("Cancel", role: .cancel) { quickConnectStore.cancel() }
+                            }
+                            .padding(64).frame(maxWidth: .infinity, maxHeight: .infinity)
+                        } else {
+                            Form { publicProfilesSection; quickConnectSection }
+                        }
+                    }
+                    .navigationTitle("Sign-in Options")
+                    .toolbar { ToolbarItem(placement: .cancellationAction) { GusCloseButton { showingSignInOptions = false } } }
+                }
+            }
+        }
+    #endif
 
     private var signInForm: some View {
         Form {
@@ -213,7 +283,7 @@ struct SignInView: View {
                         Button {
                             username = profile.user.name ?? profile.displayName
                             password = ""
-                            #if os(iOS)
+                            #if os(iOS) || os(tvOS)
                                 showingSignInOptions = false
                             #endif
                         } label: {
@@ -352,6 +422,11 @@ struct SignInView: View {
                 }
             }
             .disabled(username.isEmpty || isSigningIn)
+            #if os(tvOS)
+                if isSigningIn {
+                    Button("Cancel", role: .cancel) { signInTask?.cancel() }
+                }
+            #endif
         }
     }
 

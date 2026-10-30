@@ -15,6 +15,8 @@ struct AudioPlayerView: View {
     private var usesLeadingTitle: Bool {
         #if os(iOS)
             widthClass == .compact || DeviceIdentity.usesIPadPresentation
+        #elseif os(tvOS)
+            true
         #else
             false
         #endif
@@ -37,9 +39,22 @@ struct AudioPlayerView: View {
 
     var body: some View {
         LoadingStateView(state: store.state, retryAction: { audio.retry() }) {
-            AdaptiveAudioLayout { artwork } controls: { controls }
+            #if os(tvOS)
+                if let player = store.nativePlayer {
+                    TVAudioPlayerSurface(player: player, store: store, onClose: { audio.close() }, onStop: { audio.stop() }, artworkURL: track.flatMap { session.mediaProvider.primaryImageURL(for: $0, context: .nowPlayingArtwork) })
+                } else {
+                    ContentUnavailableView("Playback Finished", systemImage: "music.note", description: Text("Choose another track from your library."))
+                }
+            #else
+                AdaptiveAudioLayout { artwork } controls: { controls }
+            #endif
         }
-        .sheet(isPresented: $showingQueue) {
+        .toolbar {
+            #if os(tvOS)
+                ToolbarItem { Button("Queue", systemImage: "list.bullet") { showingQueue = true } }
+            #endif
+        }
+        .gusTVTask(isPresented: $showingQueue) {
             NavigationStack {
                 List(store.queue.order, id: \.self) { index in
                     let queuedTrack = store.queue.tracks[index]
@@ -89,9 +104,17 @@ struct AudioPlayerView: View {
             aspectRatio: 1,
             placeholderSymbol: track?.type == .audioBook ? "book" : "music.note"
         )
-        .frame(maxWidth: 320)
+        .frame(maxWidth: audioArtworkWidth)
         .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
         .accessibilityHidden(true)
+    }
+
+    private var audioArtworkWidth: CGFloat {
+        #if os(tvOS)
+            480
+        #else
+            320
+        #endif
     }
 
     private var titleBlock: some View {
@@ -166,7 +189,7 @@ struct AudioPlayerView: View {
             }
         }
         .font(.title2)
-        .buttonStyle(AudioTransportStyle())
+        .gusAudioTransportStyle()
         .gusPhoneAudioTransportColor()
     }
 
@@ -342,5 +365,15 @@ private struct AudioTransportStyle: ButtonStyle {
             .frame(minWidth: 44, minHeight: 44)
             .contentShape(Rectangle())
             .opacity(configuration.isPressed ? 0.6 : 1)
+    }
+}
+
+extension View {
+    @ViewBuilder func gusAudioTransportStyle() -> some View {
+        #if os(tvOS)
+            buttonStyle(.bordered)
+        #else
+            buttonStyle(AudioTransportStyle())
+        #endif
     }
 }

@@ -27,14 +27,14 @@ extension View {
 }
 
 private struct GusThemeModifier: ViewModifier {
-    #if os(iOS)
+    #if os(iOS) || os(tvOS)
         @AppStorage(ThemePreference.defaultsKey) private var mode = ThemePreference.gus.rawValue
         @AppStorage(ThemePreference.customAccentKey) private var custom = ThemeAccent.gus.hex
         @Environment(\.colorScheme) private var colorScheme
     #endif
 
     func body(content: Content) -> some View {
-        #if os(iOS)
+        #if os(iOS) || os(tvOS)
             let preference = ThemePreference(rawValue: mode) ?? .gus
             let accent = ThemeAccent(hex: custom) ?? .gus
             let fill: Color = preference == .gus ? Color("AccentColor") : preference == .apple ? .blue : accent.color
@@ -50,35 +50,37 @@ private struct GusThemeModifier: ViewModifier {
     }
 }
 
-#if os(iOS)
+#if os(iOS) || os(tvOS)
     extension ThemeAccent {
         var color: Color {
             Color(.sRGB, red: red, green: green, blue: blue, opacity: 1)
         }
     }
 
-    struct ThemeSettingsControls: View {
-        @AppStorage(ThemePreference.defaultsKey) private var mode = ThemePreference.gus.rawValue
-        @AppStorage(ThemePreference.customAccentKey) private var custom = ThemeAccent.gus.hex
+    #if os(iOS)
+        struct ThemeSettingsControls: View {
+            @AppStorage(ThemePreference.defaultsKey) private var mode = ThemePreference.gus.rawValue
+            @AppStorage(ThemePreference.customAccentKey) private var custom = ThemeAccent.gus.hex
 
-        var body: some View {
-            Picker("Theme", selection: Binding(get: {
-                (ThemePreference(rawValue: mode) ?? .gus).rawValue
-            }, set: { mode = $0 })) {
-                ForEach(ThemePreference.allCases) { theme in Text(theme.title).tag(theme.rawValue) }
-            }
-            .accessibilityIdentifier("Settings.theme")
-            if mode == ThemePreference.custom.rawValue {
-                ColorPicker("Accent Color", selection: Binding(get: {
-                    (ThemeAccent(hex: custom) ?? .gus).color
-                }, set: { color in
-                    var red: CGFloat = 0, green: CGFloat = 0, blue: CGFloat = 0, alpha: CGFloat = 0
-                    if UIColor(color).getRed(&red, green: &green, blue: &blue, alpha: &alpha) {
-                        custom = ThemeAccent(red: Double(red), green: Double(green), blue: Double(blue)).hex
-                    }
-                }), supportsOpacity: false)
-                    .accessibilityIdentifier("Settings.accentColor")
+            var body: some View {
+                Picker("Theme", selection: Binding(get: {
+                    (ThemePreference(rawValue: mode) ?? .gus).rawValue
+                }, set: { mode = $0 })) {
+                    ForEach(ThemePreference.allCases) { theme in Text(theme.title).tag(theme.rawValue) }
+                }
+                .accessibilityIdentifier("Settings.theme")
+                if mode == ThemePreference.custom.rawValue {
+                    ColorPicker("Accent Color", selection: Binding(get: {
+                        (ThemeAccent(hex: custom) ?? .gus).color
+                    }, set: { color in
+                        var red: CGFloat = 0, green: CGFloat = 0, blue: CGFloat = 0, alpha: CGFloat = 0
+                        if UIColor(color).getRed(&red, green: &green, blue: &blue, alpha: &alpha) {
+                            custom = ThemeAccent(red: Double(red), green: Double(green), blue: Double(blue)).hex
+                        }
+                    }), supportsOpacity: false)
+                        .accessibilityIdentifier("Settings.accentColor")
+                }
             }
         }
-    }
+    #endif
 #endif

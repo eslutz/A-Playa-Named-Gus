@@ -109,7 +109,7 @@ struct AddToMediaCollectionView: View {
                             Spacer(); Image(systemName: "checkmark")
                         }
                     } }
-                    .disabled(existing || !store.capabilities.addMembers || store.isMutating || !CollectionPlatform.canManage)
+                    .disabled(existing || !store.capabilities.addMembers || store.isMutating || !CollectionPlatform.canAddMembers)
                 }
             }
             if store.capabilities.create && CollectionPlatform.canManage {

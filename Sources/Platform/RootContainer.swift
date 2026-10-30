@@ -17,7 +17,7 @@ struct RootContainer: View {
         // changes its hosting hierarchy during rotation or window resizing.
         presentationRoot
             // Keep the editor and its draft alive while tab/split children are replaced.
-            .sheet(isPresented: Bindable(state).isProfilePresented) {
+            .gusTVTask(isPresented: Bindable(state).isProfilePresented) {
                 NavigationStack { UserProfileView() }
             }
             .gusContentLinks()
@@ -160,7 +160,7 @@ private struct TabRootView: View {
             #endif
             ForEach(direct) { section in
                 Tab(value: section.id) { SectionStack(sectionID: section.id) } label: {
-                    #if os(iOS)
+                    #if os(iOS) || os(tvOS)
                         Label(section.id == NavigationCategory.tvshows.id ? String(localized: "Series") : section.title, systemImage: section.systemImage)
                     #else
                         Label(section.title, systemImage: section.systemImage)

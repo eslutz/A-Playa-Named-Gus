@@ -299,7 +299,7 @@ feeds `MPNowPlayingInfoCenter` / `MPRemoteCommandCenter`. `AVAudioSession` is gu
 shuffle/repeat, speed, chapters) over the Jellyfin universal audio endpoint.
 `playerPresentation` routes by `MediaItem.isAudioPlayable`.
 `AudioPlaybackCoordinator` owns the queue and preparation task independently of the player
-presentation. Close dismisses prepared iOS audio while playback continues; the persistent Now
+presentation. Close dismisses prepared iOS and tvOS audio while playback continues; the persistent Now
 Playing control reopens it. Non-iOS playback retains its platform controls. Closing during preparation cancels
 the task. Audio/video stores reject late results after cancellation or teardown; loading
 and failed player states expose cancellation and retry. The Watch companion uses its own
@@ -464,6 +464,6 @@ Named Gus deliberately re-expresses those patterns on the Apple-first stack abov
 
 ### iOS review iteration 2
 
-Theme selection is device-local and independent of Appearance: Gus Default, Apple Default, or an opaque custom accent. Shared theme storage/contrast helpers are reusable; only iOS exposes the selector. Home Recently Added feeds span libraries by media type; All Next Up has a local grid/list choice. Read-only sheets use leading Close and editors use trailing Done/Save. iOS playlist reorder handles use public drag-and-drop because the system edit-mode handle has no leading placement API; moves still use the existing scoped server edit queue. Completed playlist presentation resets to Play and item 1 while retaining the completion marker for Next Up.
+Theme selection is device-local and independent of Appearance: Gus Default, Apple Default, or an opaque custom accent. Shared theme storage/contrast helpers are reusable; iOS and tvOS expose the selector. iOS retains the system color picker; TV uses a fullscreen preset and hex editor with Save and Cancel. Home Recently Added feeds span libraries by media type; All Next Up has a local grid/list choice. Read-only sheets use leading Close and editors use trailing Done/Save. iOS playlist reorder handles use public drag-and-drop because the system edit-mode handle has no leading placement API; moves still use the existing scoped server edit queue. Completed playlist presentation resets to Play and item 1 while retaining the completion marker for Next Up.
 
 Extend the existing external iPhone comparison report with `Scripts/generate-ui-comparison.py --next-iteration <captures> --output <existing-report> --notes <notes>`. Preserve original Before/After assets, captions, notes and manifest fields; iteration 2 is a third inline image. No screenshots or build evidence belong in source.

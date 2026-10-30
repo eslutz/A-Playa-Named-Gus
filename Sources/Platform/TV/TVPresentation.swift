@@ -1,9 +1,17 @@
 import SwiftUI
 
 extension View {
+    @ViewBuilder func gusTVToolbarIcon() -> some View {
+        #if os(tvOS)
+            labelStyle(.iconOnly)
+        #else
+            self
+        #endif
+    }
+
     @ViewBuilder func gusTVHomeTitle() -> some View {
         #if os(tvOS)
-            navigationTitle("")
+            navigationTitle("Home")
         #else
             navigationTitle("Home")
         #endif
@@ -18,31 +26,25 @@ extension View {
         #endif
     }
 
-    @ViewBuilder func gusTVNextUpHero(entries: [NextUpEntry]) -> some View {
-        #if os(tvOS)
-            TVNextUpHero(entries: entries) { self }
-        #else
-            self
-        #endif
+    func gusTVNextUpHero(entries: [NextUpEntry]) -> some View {
+        self
     }
 
-    @ViewBuilder func gusTVFallbackHero(items: [MediaItem], enabled: Bool) -> some View {
-        #if os(tvOS)
-            if enabled {
-                TVNextUpHero(entries: items.compactMap { item in
-                    NextUpBuilder.mediaID(item).map { NextUpEntry(id: $0, item: item, reasons: [], activityAt: nil) }
-                }) { self }
-            } else {
-                self
-            }
-        #else
-            self
-        #endif
+    func gusTVFallbackHero(items: [MediaItem], enabled: Bool) -> some View {
+        self
     }
 
     @ViewBuilder func gusTVBrowsingBackdrop() -> some View {
         #if os(tvOS)
-            background { TVBrowsingBackdrop().ignoresSafeArea() }
+            gusTVCanvas()
+        #else
+            self
+        #endif
+    }
+
+    @ViewBuilder func gusTVCanvas() -> some View {
+        #if os(tvOS)
+            modifier(TVOpaqueCanvas())
         #else
             self
         #endif
@@ -61,7 +63,7 @@ extension View {
 
     @ViewBuilder func gusTVDetailCanvas() -> some View {
         #if os(tvOS)
-            background { Rectangle().fill(.background).ignoresSafeArea() }
+            gusTVCanvas()
         #else
             self
         #endif
@@ -83,9 +85,28 @@ extension View {
         #endif
     }
 
+    @ViewBuilder func gusTVSingleContentTitle() -> some View {
+        #if os(tvOS)
+            navigationTitle("")
+        #else
+            self
+        #endif
+    }
+
     @ViewBuilder func gusTVDetailTitle() -> some View {
         #if os(tvOS)
             toolbar(.hidden, for: .navigationBar)
+        #else
+            self
+        #endif
+    }
+
+    @ViewBuilder func gusTVContentHeading(_ title: String) -> some View {
+        #if os(tvOS)
+            VStack(alignment: .leading, spacing: 32) {
+                Text(title).font(.largeTitle.bold()).accessibilityAddTraits(.isHeader)
+                self
+            }
         #else
             self
         #endif
@@ -142,7 +163,7 @@ extension View {
 
     @ViewBuilder func gusDetailActionLabel() -> some View {
         #if os(tvOS)
-            labelStyle(TVActionLabelStyle())
+            labelStyle(.iconOnly)
         #else
             labelStyle(.iconOnly)
         #endif
@@ -160,28 +181,13 @@ extension View {
 
     /// Share focus order across the primary action, common icons, overflow and synopsis.
     func gusTVDetailActionFocus(id: String, item: MediaItem, initial: Bool = false) -> some View {
-        var ids = ["play", "nextUp", "favorite", "watched"]
-        if item.type == .movie || item.type == .episode {
-            ids.append("playlist")
-        }
+        var ids = ["play", "nextUp", "favorite"]
         ids += ["more", "synopsis"]
         return gusTVFocus(id: id, section: "detail:" + ItemRef(item: item).id, ids: ids, initial: initial, item: item)
     }
 }
 
 #if os(tvOS)
-    private struct TVActionLabelStyle: LabelStyle {
-        func makeBody(configuration: Configuration) -> some View {
-            VStack(spacing: 10) {
-                configuration.icon.font(.title3).frame(height: 48)
-                configuration.title.font(.caption2)
-                    .lineLimit(2, reservesSpace: true)
-                    .multilineTextAlignment(.center)
-            }
-            .frame(width: 140)
-        }
-    }
-
     private struct TVFocusedMediaKey: FocusedValueKey { typealias Value = MediaItem }
     private struct TVFocusedEntryKey: FocusedValueKey { typealias Value = NextUpEntry }
     extension FocusedValues {
@@ -217,6 +223,9 @@ extension View {
                     await Task.yield()
                     guard !Task.isCancelled else { return }
                     if root.tvFocus.restoredID(section: section, context: context, ids: ids, initial: initial) == id {
+                        focused = false
+                        await Task.yield()
+                        guard !Task.isCancelled else { return }
                         focused = true
                     }
                 }
@@ -229,95 +238,26 @@ extension View {
         }
     }
 
-    /// Focus changes drive decoration only; ordering and navigation remain in HomeStore.
-    private struct TVNextUpHero<Content: View>: View {
-        @Environment(RootNavigationState.self) private var root
-        @FocusedValue(\.gusTVEntry) private var focusedEntry
-        @FocusedValue(\.gusTVMedia) private var focusedMedia
-        @State private var selectedID: String?
-        let entries: [NextUpEntry]
-        @ViewBuilder let content: () -> Content
+#endif
 
-        private var selected: NextUpEntry? {
-            let id = selectedID ?? root.tvFocus.bookmarks["home.next"]?.restoredID(in: entries.map(\.id))
-            return entries.first { $0.id == id } ?? entries.first
-        }
-
-        var body: some View {
-            VStack(alignment: .leading, spacing: 24) {
-                if let entry = selected {
-                    VStack(alignment: .leading, spacing: 16) {
-                        Text(entry.playlist?.name.trimmedNilIfEmpty ?? entry.item?.seriesName?.trimmedNilIfEmpty ?? entry.item?.displayTitle ?? String(localized: "Next Up"))
-                            .font(.largeTitle.bold()).lineLimit(2)
-                        if let item = entry.item {
-                            if item.type == .episode {
-                                Text([item.episodeLocator, item.displayTitle].compactMap { $0 }.joined(separator: " · "))
-                                    .font(.title3).lineLimit(2)
-                            }
-                            HeroMetadataRow(item: item, foreground: .primary)
-                            if let overview = item.overview?.trimmedNilIfEmpty {
-                                Text(overview).font(.body).lineLimit(3)
-                            }
-                        }
-                    }
-                    .foregroundStyle(.primary)
-                    .padding(.vertical, 24)
-                    .frame(maxWidth: 900, minHeight: 260, alignment: .bottomLeading)
-                    // Cards carry the same title/state; decoration must not repeat speech.
-                    .accessibilityHidden(true)
-                }
-                content()
-            }
-            .padding(.top, 48)
-            .onChange(of: focusedEntry) { _, entry in
-                if let entry, entries.contains(where: { $0.id == entry.id }) {
-                    selectedID = entry.id
-                }
-            }
-            .onChange(of: focusedMedia) { _, item in
-                if let id = entries.first(where: { $0.item?.id == item?.id })?.id {
-                    selectedID = id
-                }
-            }
-        }
-    }
-
-    private struct TVBrowsingBackdrop: View {
+#if os(tvOS)
+    private struct TVOpaqueCanvas: ViewModifier {
         @Environment(\.colorScheme) private var colorScheme
-        @Environment(SessionStore.self) private var session
-        @FocusedValue(\.gusTVMedia) private var focusedItem
-        @State private var item: MediaItem?
 
-        private var canvas: Color {
-            colorScheme == .dark ? .black : .white
-        }
-
-        var body: some View {
-            GeometryReader { geometry in
-                ZStack {
-                    canvas
-                    if let item {
-                        AsyncPoster(url: session.mediaProvider.backdropImageURL(for: item, maxWidth: 1920), placeholderSymbol: "play.rectangle")
-                            .frame(width: geometry.size.width, height: geometry.size.height)
-                            .clipped()
-                            .overlay {
-                                LinearGradient(colors: [canvas.opacity(0.8), canvas.opacity(0.5)], startPoint: .leading, endPoint: .trailing)
-                            }
-                            .overlay {
-                                LinearGradient(colors: [.clear, canvas.opacity(0.85), canvas], startPoint: .top, endPoint: .bottom)
-                            }
-                    }
-                }
-                .frame(width: geometry.size.width, height: geometry.size.height)
-                .clipped()
-            }
-            .accessibilityHidden(true)
-            .task(id: focusedItem?.id) {
-                guard let focusedItem else { return }
-                do { try await Task.sleep(for: .milliseconds(300)) } catch { return }
-                guard !Task.isCancelled else { return }
-                item = focusedItem
+        func body(content: Content) -> some View {
+            content.background {
+                (colorScheme == .dark ? Color.black : Color.white).ignoresSafeArea()
             }
         }
     }
 #endif
+
+@MainActor extension RootNavigationState {
+    func restoreTVDetailFocus(item: MediaItem) {
+        #if os(tvOS)
+            let context = "detail:" + ItemRef(item: item).id
+            tvFocus.remember(id: "more", index: 3, section: context, context: context)
+            tvFocus.requestRestoration(context: context)
+        #endif
+    }
+}

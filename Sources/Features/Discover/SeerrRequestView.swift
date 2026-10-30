@@ -30,12 +30,14 @@ private struct SeerrRequestForm: View {
                         }
                     } else {
                         Form {
-                            Section {
-                                Text(draft.title.displayTitle).font(.headline)
-                                if let year = draft.title.releaseYear {
-                                    Text(year).foregroundStyle(.secondary)
-                                }
-                            } header: { Text(draft.type == .tv ? "Request Seasons" : "Request Movie") }
+                            #if !os(tvOS)
+                                Section {
+                                    Text(draft.title.displayTitle).font(.headline)
+                                    if let year = draft.title.releaseYear {
+                                        Text(year).foregroundStyle(.secondary)
+                                    }
+                                } header: { Text(draft.type == .tv ? "Request Seasons" : "Request Movie") }
+                            #endif
                             if draft.phase == .loading {
                                 Section { ProgressView("Checking Request Eligibility…") }
                             } else if draft.phase == .uncertain {
@@ -61,6 +63,7 @@ private struct SeerrRequestForm: View {
                                 Section { Text(message).foregroundStyle(.secondary) }
                             }
                         }
+                        .gusTVRequestReview(title: draft.title)
                     }
                 } else {
                     RestrictedContentView()

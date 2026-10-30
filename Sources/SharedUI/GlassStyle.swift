@@ -26,7 +26,7 @@ extension View {
     @ViewBuilder
     func gusProminentGlassButtonStyle() -> some View {
         #if os(tvOS)
-            buttonStyle(.bordered)
+            buttonStyle(.bordered).tint(nil)
         #elseif os(visionOS)
             buttonStyle(.borderedProminent)
         #else
@@ -58,7 +58,9 @@ extension View {
     /// Secondary action over artwork, using the platform’s native glass style.
     @ViewBuilder
     func gusGlassButtonStyle() -> some View {
-        #if os(visionOS)
+        #if os(tvOS)
+            buttonStyle(.bordered).tint(nil)
+        #elseif os(visionOS)
             buttonStyle(.bordered)
         #else
             buttonStyle(.glass)

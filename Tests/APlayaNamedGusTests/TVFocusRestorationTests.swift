@@ -39,6 +39,23 @@ struct TVFocusRestorationTests {
         #expect(memory.restoredID(section: "next", context: "home", ids: ["new-card"], initial: true) == nil, "New rails do not override existing screen focus")
     }
 
+    @Test("task dismissal restores its opener without borrowing another context")
+    func taskDismissal() {
+        var memory = TVFocusMemory()
+        memory.remember(id: "more", index: 3, section: "actions", context: "detail")
+        memory.remember(id: "other-card", index: 0, section: "latest", context: "home")
+        memory.requestRestoration(context: "detail")
+        #expect(memory.restorationRequest(context: "detail") == nil)
+        let acceptedFallback = memory.remember(id: "play", index: 0, section: "actions", context: "detail", ids: ["play", "more"])
+        #expect(!acceptedFallback)
+        #expect(memory.restorationRequest(context: "detail") != nil)
+        #expect(memory.restoredID(section: "actions", context: "detail", ids: ["play", "more"], initial: false) == "more")
+        memory.remember(id: "more", index: 1, section: "actions", context: "detail", ids: ["play", "more"])
+        #expect(memory.restorationRequest(context: "detail") == nil)
+        memory.requestRestoration(context: "missing")
+        #expect(memory.restorationRequest(context: "missing") == nil)
+    }
+
     @Test("invalid fallback positions are clamped")
     func clamped() {
         #expect(TVFocusBookmark(id: "missing", index: -1).restoredID(in: ["a", "b"]) == "a")
