@@ -49,9 +49,11 @@ struct VideoPlaylistsView: View {
         .navigationTitle("Playlists")
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
-                Button("New Playlist", systemImage: "plus") { creating = .playlist }
+                Button { creating = .playlist } label: { GusToolbarLabel("New Playlist", systemImage: "plus") }
                     .labelStyle(.iconOnly)
+                    .gusTVToolbarIcon()
                     .accessibilityIdentifier("Playlist.create")
+                    .accessibilityLabel("New Playlist")
             }
         }
         .gusTVTask(isPresented: Binding(get: { creating != nil }, set: {
@@ -198,10 +200,12 @@ struct VideoPlaylistDetailView: View {
                 .navigationTitle(playlist.name)
                 .toolbar {
                     ToolbarItem(placement: .primaryAction) {
-                        Button("Add Items", systemImage: "text.badge.plus") { adding = true }
+                        Button { adding = true } label: { GusToolbarLabel("Add Items", systemImage: "text.badge.plus", tvSystemImage: "plus") }
                             .labelStyle(.iconOnly)
                             .disabled(!serverList.canEdit || mutating)
+                            .gusTVToolbarIcon()
                             .accessibilityIdentifier("Playlist.addItems")
+                            .accessibilityLabel("Add Items")
                     }
                     ToolbarItem(placement: .primaryAction) {
                         if editing {
@@ -223,10 +227,12 @@ struct VideoPlaylistDetailView: View {
                                 }
                                 Divider()
                                 Button("Delete Playlist", systemImage: "trash", role: .destructive) { deletingPlaylist = true }.disabled(!serverList.canEdit)
-                            } label: { Label("More", systemImage: "ellipsis") }
+                            } label: { GusToolbarLabel("More", systemImage: "ellipsis") }
                                 .gusIPadIconOnly()
                                 .disabled(mutating)
+                                .gusTVToolbarIcon()
                                 .accessibilityIdentifier("Playlist.more")
+                                .accessibilityLabel("More")
                         }
                     }
                 }

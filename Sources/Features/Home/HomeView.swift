@@ -155,8 +155,10 @@ private struct NextUpRail: View {
                 Text("Next Up").gusPhoneRailHeading().accessibilityAddTraits(.isHeader)
                 Spacer()
                 NavigationLink("Show All") { NextUpListView(store: store) }
+                    .accessibilityIdentifier("NextUp.showAll")
                     .gusTVFocus(id: "all", section: "home.next.control", ids: ["all"], context: root.selectedSectionID)
             }
+            .tvFocusSection()
             ScrollView(.horizontal, showsIndicators: false) {
                 LazyHStack(alignment: .top, spacing: MediaRailMetrics.spacing(for: .backdrop)) {
                     ForEach(Array(store.unifiedNextUp.prefix(20))) { entry in
@@ -181,6 +183,17 @@ private struct NextUpListView: View {
     @AppStorage("nextUpDisplayGrid") private var showsGrid = false
     var body: some View {
         ScrollView {
+            #if os(tvOS)
+                HStack {
+                    Text("Next Up").font(.largeTitle.bold())
+                    Spacer()
+                    displayModeButton
+                }
+                .focusSection()
+                .padding(.horizontal)
+                .padding(.top, 64)
+                .padding(.bottom, 24)
+            #endif
             if showsGrid {
                 LazyVGrid(columns: [GridItem(.adaptive(minimum: 160), alignment: .top)], alignment: .leading, spacing: 16) {
                     ForEach(store.unifiedNextUp) { entry in
@@ -214,19 +227,26 @@ private struct NextUpListView: View {
             }
         }
         .navigationTitle("Next Up")
+        .gusTVDetailTitle()
         .toolbar {
-            ToolbarItem(placement: .primaryAction) {
-                Button(showsGrid ? "List" : "Grid", systemImage: showsGrid ? "list.bullet" : "square.grid.2x2") { showsGrid.toggle() }
-                    .gusIPadIconOnly()
-                    .accessibilityIdentifier("NextUp.displayMode")
-                    .accessibilityValue(showsGrid ? "Grid" : "List")
-            }
+            #if !os(tvOS)
+                ToolbarItem(placement: .primaryAction) { displayModeButton }
+            #endif
         }
         .overlay {
             if store.unifiedNextUp.isEmpty {
                 ContentUnavailableView("Nothing in Next Up", systemImage: "play.rectangle")
             }
         }
+    }
+
+    private var displayModeButton: some View {
+        Button { showsGrid.toggle() } label: { GusToolbarLabel(showsGrid ? "List" : "Grid", systemImage: showsGrid ? "list.bullet" : "square.grid.2x2") }
+            .gusIPadIconOnly()
+            .gusTVToolbarIcon()
+            .accessibilityIdentifier("NextUp.displayMode")
+            .accessibilityLabel(showsGrid ? "List" : "Grid")
+            .accessibilityValue(showsGrid ? "Grid" : "List")
     }
 }
 

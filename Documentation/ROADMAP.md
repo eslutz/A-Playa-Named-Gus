@@ -33,6 +33,8 @@ constrain *how* each item is built.
 
 ## Apple TV presentation alignment
 
+- [x] Apply Apple toolbar guidance to TV browsing, playlists, Seerr, photos and viewing overlays: accessible SF Symbols, native Back, and descriptive editor actions. See [toolbar policy](tvos-review-remediation.md).
+
 - [~] Align supported tvOS surfaces with current iPhone/iPad conventions: readable browsing/detail hierarchy, remote focus restoration, fullscreen authentication/editor tasks, audio return behavior, and device-local themes with preset/hex accent editing. Preserve native tvOS controls and existing other-platform presentation. See [TV boundaries and validation](tvos-capabilities.md).
 - [ ] Complete implementation comparison, native remote interaction coverage, platform checks and private review. Physical television/Siri Remote, exact minimum-OS and signed distribution acceptance remain separate.
 

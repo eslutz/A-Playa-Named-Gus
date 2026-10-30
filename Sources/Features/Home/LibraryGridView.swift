@@ -88,7 +88,9 @@ struct LibraryGridView: View {
                         if let store {
                             LibraryFilterMenu(store: store).disabled(store.isLoading)
                         }
-                    }.padding(.bottom, 24)
+                    }
+                    .focusSection()
+                    .padding(.bottom, 24)
                 #endif
                 if isMovies {
                     MovieCollectionsShelf(libraryID: scope.parentID)
@@ -335,10 +337,13 @@ private struct LibraryFilterMenu: View {
                 }
             }
         } label: {
-            Label("Filter", systemImage: filterSymbol)
+            GusToolbarLabel("Filter", systemImage: filterSymbol, tvSystemImage: "line.3.horizontal.decrease")
                 .accessibilityValue(store.filter.hasActiveFilter ? String(localized: "Active") : "")
         }
         .gusIPadIconOnly()
+        .gusTVToolbarIcon()
+        .accessibilityLabel("Filter")
+        .accessibilityValue(store.filter.hasActiveFilter ? String(localized: "Active") : "")
     }
 
     private var sortSelection: Binding<LibrarySortOption> {

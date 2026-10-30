@@ -8,15 +8,9 @@ extension View {
                     TVAccountMenu().padding(.vertical, 16)
                 }
             } else {
-                // OS 26 has no sidebar-header slot; retain the same native menu
-                // in a focusable inset above the tabs.
-                safeAreaInset(edge: .top) {
-                    HStack {
-                        TVAccountMenu()
-                        Spacer()
-                    }
-                    .padding()
-                }
+                // OS 26 retains profile and saved-account actions in Settings.
+                // A focusable inset competes with the native navigation guide.
+                self
             }
         #else
             self

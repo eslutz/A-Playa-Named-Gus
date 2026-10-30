@@ -129,7 +129,8 @@ import SwiftUI
                 }
             }
             .navigationTitle("Queue")
-            .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Close") { dismiss() } } }
+            .toolbar { ToolbarItem(placement: .cancellationAction) { GusCloseButton { dismiss() } } }
+            .gusTVNativeControls()
         }
     }
 #endif

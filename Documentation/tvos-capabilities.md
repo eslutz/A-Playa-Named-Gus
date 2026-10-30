@@ -4,7 +4,7 @@ Apple TV follows Gus's shared navigation state, feature stores, profile client, 
 
 Browsing uses readable headings and bounded artwork. Details separate artwork from metadata/actions and place episodes or tracks below. Secondary playlist/collection actions use More. Ordinary details retain the selected section's stack and focus history. Multi-field authentication and editing tasks occupy the TV viewport; selection sheets remain native. Closing prepared audio returns to Now Playing without stopping it; Stop remains explicit. Photos reserve title/count space outside the image.
 
-Theme and appearance are independent, device-local preferences. Gus Default, Apple Default and Custom use the existing storage format. Custom accents offer named presets and optional six-digit sRGB hex entry. Save commits an accent draft; Cancel discards it. Native focus treatment remains system-owned. iPhone/iPad retain their system color picker and existing presentation.
+Theme and appearance are independent, device-local preferences. Gus Default, Apple Default and Custom use the existing storage format. Custom accents offer named presets and optional six-digit sRGB hex entry. Save commits an accent draft; Cancel discards it. Native focus treatment remains system-owned. Standard tvOS 26 controls use native untinted colors to keep unfocused labels readable; stored accent choices remain available to explicit Gus surfaces and previews. iPhone/iPad retain their system color picker and existing presentation.
 
 ## Isolated validation
 
@@ -23,3 +23,5 @@ No new backend or runtime dependency is required. Respect existing provider perm
 Season episode selection remains on the series detail through its season selector; a direct season item uses the generic detail surface. Inventory source mappings do not establish every action or proposal as accepted. VoiceOver, increased contrast and Reduce Motion still need assistive runtime review.
 
 The deployment floor remains tvOS 26.0. Simulator results do not establish physical television rendering, Siri Remote acceptance, exact minimum-OS behavior or signed distribution readiness.
+
+Account appears in the native sidebar header on tvOS 27. On tvOS 26, the existing Settings form retains profile and saved-account switching controls without inserting a focusable row above the tabs. TV browsing and catalog headers use native focus sections so their trailing actions remain reachable from the content.

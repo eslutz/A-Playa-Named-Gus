@@ -147,6 +147,105 @@ final class GusAuthenticatedUITests: XCTestCase {
     #endif
 
     #if os(tvOS)
+        func testTVToolbarViewModes() throws {
+            try prepare()
+            executionTimeAllowance = 240
+            defer { finish() }
+            let app = launch("home")
+            XCTAssertTrue(app.buttons["NextUp.showAll"].waitForExistence(timeout: 30))
+            try focusTV(app, identifier: "NextUp.showAll")
+            XCUIRemote.shared.press(.select)
+            let mode = app.buttons["NextUp.displayMode"]
+            XCTAssertTrue(mode.waitForExistence(timeout: 15))
+            XCTAssertEqual(mode.staticTexts.count, 0)
+            capture(app, "toolbar-next-up")
+            try focusTV(app, identifier: "NextUp.displayMode")
+            let previous = mode.label
+            XCUIRemote.shared.press(.select)
+            XCTAssertNotEqual(mode.label, previous)
+            capture(app, "toolbar-next-up-toggled")
+            app.terminate()
+            app.launchArguments = ["--gus-demo-server", "--gus-disable-cloud-sync", "--gus-route", "home"]
+            app.launch()
+            XCTAssertTrue(app.staticTexts["Recently Added Movies"].waitForExistence(timeout: 30))
+            try showTVSidebar(app)
+            try focusTV(app, label: "Discover")
+            XCUIRemote.shared.press(.select)
+            let shelf = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@ AND identifier ENDSWITH %@", "Seerr.feed.", ".showAll")).firstMatch
+            XCTAssertTrue(shelf.waitForExistence(timeout: 20))
+            try focusTV(app, identifier: shelf.identifier)
+            XCUIRemote.shared.press(.select)
+            XCTAssertTrue(app.buttons["Filters"].waitForExistence(timeout: 15))
+            XCTAssertTrue(app.buttons["View"].exists)
+            XCTAssertEqual(app.buttons["Filters"].staticTexts.count, 0)
+            XCTAssertEqual(app.buttons["View"].staticTexts.count, 0)
+            capture(app, "toolbar-seerr-catalog")
+            try focusTV(app, label: "Filters")
+            XCUIRemote.shared.press(.select)
+            XCTAssertTrue(app.buttons["Apply"].waitForExistence(timeout: 10))
+            capture(app, "toolbar-seerr-filters")
+            XCUIRemote.shared.press(.menu)
+        }
+
+        func testTVToolbarSymbols() throws {
+            try prepare()
+            executionTimeAllowance = 300
+            defer { finish() }
+            let app = launch("home")
+            XCTAssertTrue(app.staticTexts["Recently Added Movies"].waitForExistence(timeout: 30))
+            try showTVSidebar(app)
+            try focusTV(app, label: "Movies")
+            XCUIRemote.shared.press(.select)
+            XCTAssertTrue(app.buttons["Filter"].waitForExistence(timeout: 20), app.debugDescription)
+            XCTAssertEqual(app.buttons["Filter"].staticTexts.count, 0)
+            capture(app, "toolbar-library-filter")
+            try focusTV(app, label: "Filter")
+            XCUIRemote.shared.press(.select)
+            Thread.sleep(forTimeInterval: 0.5) // Allow the native menu presentation to finish before its review capture.
+            capture(app, "toolbar-library-filter-open")
+            XCUIRemote.shared.press(.menu)
+            app.terminate()
+
+            let lists = launch("libraries")
+            try showTVSidebar(lists)
+            try focusTV(lists, label: "Playlists")
+            XCUIRemote.shared.press(.select)
+            XCTAssertTrue(lists.buttons["Playlist.create"].waitForExistence(timeout: 15))
+            XCTAssertEqual(lists.buttons["Playlist.create"].staticTexts.count, 0)
+            capture(lists, "toolbar-playlists")
+            let title = try required("PlaylistTitle")
+            let playlist = lists.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", title)).firstMatch
+            XCTAssertTrue(playlist.waitForExistence(timeout: 15))
+            try focusTV(lists, label: playlist.label)
+            XCUIRemote.shared.press(.select)
+            XCTAssertTrue(lists.buttons["Playlist.addItems"].waitForExistence(timeout: 15))
+            XCTAssertEqual(lists.buttons["Playlist.addItems"].staticTexts.count, 0)
+            XCTAssertEqual(lists.buttons["Playlist.more"].staticTexts.count, 0)
+            capture(lists, "toolbar-playlist-detail-back")
+            XCUIRemote.shared.press(.menu)
+            XCTAssertTrue(lists.buttons["Playlist.create"].waitForExistence(timeout: 10))
+            lists.terminate()
+
+            let detail = try launch("item/" + required("SynopsisMovie"))
+            try focusTV(detail, label: "Synopsis")
+            XCUIRemote.shared.press(.select)
+            XCTAssertTrue(detail.buttons["Close"].waitForExistence(timeout: 15))
+            XCTAssertEqual(detail.buttons["Close"].staticTexts.count, 0)
+            capture(detail, "toolbar-synopsis-close")
+            XCUIRemote.shared.press(.menu)
+            XCTAssertTrue(detail.buttons["Detail.more"].waitForExistence(timeout: 10))
+            detail.terminate()
+
+            let photo = try launch("item/" + required("Photo"))
+            XCTAssertTrue(photo.buttons["Play Slideshow"].waitForExistence(timeout: 20))
+            XCTAssertEqual(photo.buttons["Play Slideshow"].staticTexts.count, 0)
+            try focusTV(photo, label: "Play Slideshow")
+            capture(photo, "toolbar-photo-viewer")
+            XCUIRemote.shared.press(.select)
+            XCTAssertTrue(photo.buttons["Pause Slideshow"].waitForExistence(timeout: 10))
+            capture(photo, "toolbar-slideshow")
+        }
+
         func testTVRemediationHeroAndOverflow() throws {
             try prepare()
             executionTimeAllowance = 240
@@ -436,6 +535,24 @@ final class GusAuthenticatedUITests: XCTestCase {
             XCTAssertFalse(code.exists)
         }
 
+        private func showTVSidebar(_ app: XCUIApplication) throws {
+            let sidebars = app.collectionViews.matching(NSPredicate(format: "label == %@", "Sidebar"))
+            let visible = { sidebars.allElementsBoundByAccessibilityElement.contains { sidebar in
+                sidebar.cells.allElementsBoundByAccessibilityElement.contains { !$0.frame.isEmpty && $0.isEnabled }
+            } }
+            if #available(tvOS 27.0, *), !visible() {
+                XCUIRemote.shared.press(.menu)
+            }
+            for _ in 0 ..< 8 {
+                if visible() {
+                    break
+                }
+                XCUIRemote.shared.press(.left)
+            }
+            let shown = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in visible() }, object: nil)
+            XCTAssertEqual(XCTWaiter.wait(for: [shown], timeout: 10), .completed, app.debugDescription)
+        }
+
         private func focusTV(_ app: XCUIApplication, identifier: String? = nil, label: String? = nil) throws {
             let query = app.descendants(matching: .any)
             let target = identifier.map { query.matching(identifier: $0).firstMatch }
@@ -447,7 +564,7 @@ final class GusAuthenticatedUITests: XCTestCase {
             for _ in 0 ..< 30 {
                 let key = identifier ?? label!
                 let cells = app.cells.containing(NSPredicate(format: "identifier == %@ OR label == %@", key, key))
-                let resolved = cells.allElementsBoundByAccessibilityElement.last ?? target
+                let resolved = cells.allElementsBoundByAccessibilityElement.last { !$0.frame.isEmpty } ?? target
                 let destination = resolved.frame
                 guard let current = try? focusedTVFrame(app) else {
                     let focused = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
@@ -458,7 +575,9 @@ final class GusAuthenticatedUITests: XCTestCase {
                 }
                 let currentPoint = CGPoint(x: current.midX, y: current.midY)
                 let sidebar = app.collectionViews.matching(NSPredicate(format: "label == %@", "Sidebar"))
-                    .allElementsBoundByAccessibilityElement.first { $0.frame.contains(currentPoint) }
+                    .allElementsBoundByAccessibilityElement.first { sidebar in
+                        sidebar.cells.allElementsBoundByAccessibilityElement.contains { !$0.frame.isEmpty && $0.frame.contains(currentPoint) }
+                    }
                 if let sidebar,
                    !sidebar.descendants(matching: .any).matching(NSPredicate(format: "identifier == %@ OR label == %@", key, key)).firstMatch.exists
                 {
@@ -473,9 +592,9 @@ final class GusAuthenticatedUITests: XCTestCase {
                     return
                 }
                 let direction: XCUIRemote.Button
-                if destination.minY > current.maxY {
+                if destination.midY > current.maxY {
                     direction = .down
-                } else if destination.maxY < current.minY {
+                } else if destination.midY < current.minY {
                     direction = .up
                 } else if destination.minX > current.maxX {
                     direction = .right

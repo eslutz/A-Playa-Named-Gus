@@ -83,6 +83,7 @@ struct SeerrRequestsView: View {
             ToolbarItem(placement: .primaryAction) {
                 #if os(tvOS)
                     Button { refreshID = UUID() } label: { Image(systemName: "arrow.clockwise") }
+                        .gusTVToolbarIcon()
                         .accessibilityLabel("Refresh Requests")
                         .disabled(isLoading)
                 #else
