@@ -17,7 +17,7 @@ This round follows the owner's TV-009–075 review and supplied cinematic hero r
 | TV-068 | Replace ambiguous Discover overflow with direct Seerr Settings, Search Seerr and request destinations. |
 | Discovery identity | Seerr setup and confirmation use Seerr identity, not Gus onboarding branding. Fixture movie names are data, not production branding. |
 | TV-071 | Dedicated Search Seerr destination; catalog does not expose a persistent search field. |
-| TV-072 | Display the title once in content and preserve a separate native action toolbar. |
+| TV-072 | Display the title once in content; keep the native More menu beside the request actions. |
 | TV-073–075 | Split artwork/identity from native request review; clean confirmation with explicit status and history action; larger history thumbnails and compact toolbar labels. |
 
 Release requires fresh protected-branch CI, merged-candidate release qualification, processed internal TestFlight build and group association. A queued Cloud run or a delivered upload alone is not tester availability.

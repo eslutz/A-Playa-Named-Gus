@@ -84,11 +84,12 @@ struct SeerrRequestsView: View {
                 #if os(tvOS)
                     Button { refreshID = UUID() } label: { Image(systemName: "arrow.clockwise") }
                         .accessibilityLabel("Refresh Requests")
+                        .disabled(isLoading)
                 #else
                     Button("Refresh Requests", systemImage: "arrow.clockwise") { refreshID = UUID() }
                         .gusIPadIconOnly()
-                #endif
                         .disabled(isLoading)
+                #endif
             }
         }
     }
