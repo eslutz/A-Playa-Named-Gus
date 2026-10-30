@@ -316,6 +316,7 @@ struct SeerrCatalogResults: View {
                     }
                     .focusSection()
                     .padding(.horizontal)
+                    .padding(.top, 64)
                     results
                 }
                 .gusTVDetailTitle()

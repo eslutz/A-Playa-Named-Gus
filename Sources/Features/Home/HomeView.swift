@@ -191,6 +191,7 @@ private struct NextUpListView: View {
                 }
                 .focusSection()
                 .padding(.horizontal)
+                .padding(.top, 64)
                 .padding(.bottom, 24)
             #endif
             if showsGrid {

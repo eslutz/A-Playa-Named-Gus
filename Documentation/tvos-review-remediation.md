@@ -25,3 +25,5 @@ Release requires fresh protected-branch CI, merged-candidate release qualificati
 Toolbar policy follows [Apple’s toolbar guidance](https://developer.apple.com/design/human-interface-guidelines/toolbars). Native tvOS sidebar headers can include a contextual title and chevron; retain these system controls. Content actions and menu rows are not toolbar icons and keep descriptive labels.
 
 Account remains in the native sidebar header on tvOS 27. On tvOS 26, use the existing Settings profile and saved-account controls; a separate account inset competes with native navigation focus. Next Up and Seerr catalog actions share focus sections with their headings so the remote can reach them from cards on either OS.
+
+Standard tvOS 26 controls use the same native bordered, untinted treatment as the TV media actions. This avoids accent-colored labels disappearing into an accent-colored plate. Headings clear the system sidebar control.
