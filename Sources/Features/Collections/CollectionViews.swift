@@ -174,6 +174,10 @@ struct MediaCollectionDetailView: View {
                                 Text(overview)
                             }
                         }
+                        #if os(tvOS)
+                            Spacer(minLength: 32)
+                            collectionActions
+                        #endif
                     }
                     if collection.membersLoaded {
                         if admitted(collection).isEmpty {
@@ -194,24 +198,11 @@ struct MediaCollectionDetailView: View {
             }.gusTVPagePadding()
         }
         .navigationTitle(collection?.item.displayTitle ?? String(localized: "Collection"))
-        .gusTVSingleContentTitle()
+        .gusTVDetailTitle()
         .toolbar {
-            ToolbarItem {
-                Menu {
-                    Picker("Sort", selection: $sort) { ForEach(CollectionSort.allCases) { Text($0.title).tag($0) } }
-                    if CollectionPlatform.canManage {
-                        if store.capabilities.addMembers {
-                            Button("Add Movies", systemImage: "plus") { adding = true }
-                        }
-                        if store.capabilities.editMetadata || store.capabilities.editArtwork {
-                            Button("Edit", systemImage: "pencil") { editing = true }.collectionShortcut("e")
-                        }
-                        if store.permissions(for: id).delete {
-                            Button("Delete Collection", systemImage: "trash", role: .destructive) { deleting = true }
-                        }
-                    }
-                } label: { Label("More", systemImage: "ellipsis.circle") }.gusIPadIconOnly().gusTVToolbarIcon().disabled(store.isMutating || collection == nil)
-            }
+            #if !os(tvOS)
+                ToolbarItem { collectionActions }
+            #endif
         }
         .sheet(isPresented: $editing) { NavigationStack { CollectionEditor(collectionID: id) } }
         .sheet(isPresented: $adding) { NavigationStack { CollectionMoviePicker(collectionID: id) } }
@@ -224,6 +215,23 @@ struct MediaCollectionDetailView: View {
         } message: { Text("This deletes the collection from Jellyfin. Its movies and watched history remain.") }
         .task { await store.load(); await store.loadDetail(id: id); loading = false }
         .refreshable { await store.load(force: true); await store.loadDetail(id: id, force: true) }
+    }
+
+    private var collectionActions: some View {
+        Menu {
+            Picker("Sort", selection: $sort) { ForEach(CollectionSort.allCases) { Text($0.title).tag($0) } }
+            if CollectionPlatform.canManage {
+                if store.capabilities.addMembers {
+                    Button("Add Movies", systemImage: "plus") { adding = true }
+                }
+                if store.capabilities.editMetadata || store.capabilities.editArtwork {
+                    Button("Edit", systemImage: "pencil") { editing = true }.collectionShortcut("e")
+                }
+                if store.permissions(for: id).delete {
+                    Button("Delete Collection", systemImage: "trash", role: .destructive) { deleting = true }
+                }
+            }
+        } label: { Label("More", systemImage: "ellipsis.circle") }.gusIPadIconOnly().gusTVToolbarIcon().disabled(store.isMutating || collection == nil)
     }
 
     private func admitted(_ collection: MediaCollection) -> [MediaItem] {

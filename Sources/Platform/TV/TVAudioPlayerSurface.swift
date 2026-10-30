@@ -77,10 +77,6 @@ import SwiftUI
             AnyView(VStack(spacing: 24) {
                 ArtworkTile(url: artworkURL, aspectRatio: 1, placeholderSymbol: "music.note")
                     .frame(width: 440, height: 440).clipShape(RoundedRectangle(cornerRadius: 20))
-                Text(store.currentTrack?.displayTitle ?? "").font(.title2.bold())
-                if let artist = store.currentTrack?.albumArtist ?? store.currentTrack?.artists.first {
-                    Text(artist).foregroundStyle(.secondary)
-                }
             }.frame(maxWidth: .infinity, maxHeight: .infinity).padding(.bottom, 120)
                 .background(.black).foregroundStyle(.white).accessibilityHidden(true))
         }
@@ -90,7 +86,11 @@ import SwiftUI
             title.identifier = .commonIdentifierTitle
             title.value = (store.currentTrack?.displayTitle ?? "") as NSString
             title.extendedLanguageTag = "und"
-            player.currentItem?.externalMetadata = [title]
+            let artist = AVMutableMetadataItem()
+            artist.identifier = .commonIdentifierArtist
+            artist.value = (store.currentTrack?.albumArtist ?? store.currentTrack?.artists.first ?? "") as NSString
+            artist.extendedLanguageTag = "und"
+            player.currentItem?.externalMetadata = [title, artist]
         }
     }
 
@@ -104,12 +104,19 @@ import SwiftUI
                         Button("Previous", systemImage: "backward.end.fill") { Task { await store.previous() } }
                         Button("Next", systemImage: "forward.end.fill") { Task { await store.next() } }
                         Button(store.isShuffled ? "Shuffle On" : "Shuffle Off", systemImage: "shuffle") { store.toggleShuffle() }
-                        Button("Repeat: \(String(describing: store.repeatMode))", systemImage: "repeat") { store.cycleRepeatMode() }
+                        Button(store.repeatMode == .off ? "Repeat Off" : store.repeatMode == .one ? "Repeat One" : "Repeat All", systemImage: "repeat") { store.cycleRepeatMode() }
                     }
                 }
                 if store.currentTrack?.type == .audioBook {
                     Picker("Playback Speed", selection: Binding(get: { store.playbackRate }, set: { store.playbackRate = $0 })) {
                         ForEach([0.75, 1, 1.25, 1.5, 2], id: \.self) { Text("\($0, specifier: "%.2g")×").tag($0) }
+                    }
+                }
+                if let track = store.currentTrack, !track.chapters.isEmpty {
+                    Section("Chapters") {
+                        ForEach(PlaybackChapter.seekTargets(for: track)) { chapter in
+                            Button(chapter.title) { Task { await store.seek(to: chapter.seconds) } }
+                        }
                     }
                 }
                 ForEach(store.queue.order, id: \.self) { index in

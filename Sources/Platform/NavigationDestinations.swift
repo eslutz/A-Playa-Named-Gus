@@ -143,6 +143,9 @@ struct SeerrRequestHistoryLink: View {
             } else {
                 legacyLink
             }
+        #elseif os(tvOS)
+            NavigationLink { SeerrRequestsView() } label: { Image(systemName: "clock") }
+                .accessibilityLabel("My Requests")
         #else
             legacyLink
         #endif

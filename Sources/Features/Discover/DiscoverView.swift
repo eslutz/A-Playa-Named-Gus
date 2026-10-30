@@ -28,25 +28,16 @@ struct DiscoverView: View {
                     if store.state == .offline {
                         Button("Retry Connection") { Task { await store.retryRestore() } }
                     }
+                    #if os(tvOS)
+                        NavigationLink { SeerrSettingsView() } label: { Label("Seerr Settings", systemImage: "gearshape") }
+                    #endif
                     Button("Hide Menu Item") { hide() }
                 }
             }
         }
         .navigationTitle("Discover")
         .toolbar {
-            #if os(tvOS)
-                ToolbarItem {
-                    NavigationLink { SeerrSettingsView() } label: { Label("Seerr Settings", systemImage: "gearshape") }.gusTVToolbarIcon()
-                }
-                if store.isConnected {
-                    ToolbarItem {
-                        NavigationLink { DiscoverBrowseView(store: store, searchOnly: true) } label: { Label("Search Seerr", systemImage: "magnifyingglass") }.gusTVToolbarIcon()
-                    }
-                    if store.user?.canManageRequests == true {
-                        ToolbarItem { NavigationLink("Manage Requests") { SeerrRequestsView(managing: true) } }
-                    }
-                }
-            #else
+            #if !os(tvOS)
                 ToolbarItem {
                     Menu("Discover", systemImage: "ellipsis") {
                         if store.isConnected {
@@ -60,12 +51,12 @@ struct DiscoverView: View {
                     .gusIPadIconOnly()
                     .accessibilityIdentifier("Seerr.menu")
                 }
-            #endif
-            if store.isConnected {
-                ToolbarItem {
-                    SeerrRequestHistoryLink().gusTVToolbarIcon()
+                if store.isConnected {
+                    ToolbarItem {
+                        SeerrRequestHistoryLink()
+                    }
                 }
-            }
+            #endif
         }
         .gusTVTask(isPresented: $showingSetup) { SeerrConnectView() }
     }

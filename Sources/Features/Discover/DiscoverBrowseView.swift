@@ -92,6 +92,16 @@ struct DiscoverBrowseView: View {
         ) {
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 32) {
+                    #if os(tvOS)
+                        HStack(spacing: 32) {
+                            NavigationLink { DiscoverBrowseView(store: store, searchOnly: true) } label: { Label("Search Seerr", systemImage: "magnifyingglass") }
+                            SeerrRequestHistoryLink()
+                            NavigationLink { SeerrSettingsView() } label: { Label("Seerr Settings", systemImage: "gearshape") }
+                            if store.user?.canManageRequests == true {
+                                NavigationLink("Manage Requests") { SeerrRequestsView(managing: true) }
+                            }
+                        }.focusSection().padding(.vertical, 24)
+                    #endif
                     if let trending = feeds.first(where: { $0.source == .feed(.trending) }), trending.isValid(for: store),
                        let hero = trending.items.first(where: { $0.backdropPath != nil && store.admits($0) })
                     {
@@ -200,7 +210,7 @@ private struct SeerrDiscoveryHero: View {
                 SeerrTitleDetailView(title: title, store: store)
             } label: { Label("View Title", systemImage: "info.circle") }
                 .gusTVRequestButtonStyle()
-                .accessibilityIdentifier("Seerr.title." + (title.mediaType?.rawValue ?? "unknown") + "." + String(title.id))
+                .accessibilityIdentifier("Seerr.hero." + (title.mediaType?.rawValue ?? "unknown") + "." + String(title.id))
         }
     }
 }

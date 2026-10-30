@@ -161,11 +161,57 @@ final class GusAuthenticatedUITests: XCTestCase {
             }
         }
 
+        func testTVRemediationSupplementaryScreens() throws {
+            try prepare()
+            executionTimeAllowance = 240
+            defer { finish() }
+            let collection = try launch("item/" + required("BoxSet"))
+            XCTAssertTrue(try collection.staticTexts[required("BoxSetTitle")].waitForExistence(timeout: 30))
+            XCUIRemote.shared.press(.right)
+            Thread.sleep(forTimeInterval: 1)
+            capture(collection, "tv-remediation-collection")
+            collection.terminate()
+            let app = launch("libraries")
+            try focusTV(app, label: "Playlists")
+            XCUIRemote.shared.press(.select)
+            let title = try required("PlaylistTitle")
+            let link = app.descendants(matching: .any).matching(NSPredicate(format: "label BEGINSWITH %@", title)).firstMatch
+            XCTAssertTrue(link.waitForExistence(timeout: 20))
+            capture(app, "tv-remediation-playlist-thumbnails")
+            try focusTV(app, label: link.label)
+            XCUIRemote.shared.press(.select)
+            XCTAssertTrue(app.buttons["Playlist.more"].waitForExistence(timeout: 20))
+            try focusTV(app, identifier: "Playlist.addItems")
+            XCUIRemote.shared.press(.select)
+            XCTAssertTrue(app.searchFields.firstMatch.waitForExistence(timeout: 10))
+            capture(app, "tv-remediation-add-media")
+            XCUIRemote.shared.press(.menu)
+            app.terminate()
+            app.launchArguments = ["--gus-demo-server", "--gus-disable-cloud-sync", "--gus-route", "home"]
+            app.launch()
+            XCTAssertTrue(app.staticTexts["Recently Added Movies"].waitForExistence(timeout: 30))
+            XCUIRemote.shared.press(.menu)
+            try focusTV(app, label: "Discover")
+            XCUIRemote.shared.press(.select)
+            XCTAssertTrue(app.buttons["Search Seerr"].waitForExistence(timeout: 15))
+            XCTAssertFalse(app.searchFields.firstMatch.exists)
+            capture(app, "tv-remediation-discover-browse")
+            try focusTV(app, label: "Search Seerr")
+            XCUIRemote.shared.press(.select)
+            XCTAssertTrue(app.searchFields.firstMatch.waitForExistence(timeout: 10))
+            capture(app, "tv-remediation-seerr-search")
+        }
+
         func testTVRemediationNativeAudio() throws {
             try prepare()
             defer { finish() }
             let app = try launch("play/" + required("Audio"))
             XCTAssertTrue(app.cells["AVAudibleSettings"].waitForExistence(timeout: 30))
+            let advancing = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+                let marker = app.otherElements["AXElapsedTime"]
+                return marker.exists && marker.label != "00:00"
+            }, object: nil)
+            XCTAssertEqual(XCTWaiter.wait(for: [advancing], timeout: 30), .completed)
             XCUIRemote.shared.press(.playPause)
             XCUIRemote.shared.press(.up)
             capture(app, "tv-remediation-native-audio")
@@ -250,7 +296,7 @@ final class GusAuthenticatedUITests: XCTestCase {
             XCUIRemote.shared.press(.menu)
             try focusTV(app, label: "Discover")
             XCUIRemote.shared.press(.select)
-            try focusTV(app, identifier: "Seerr.title.movie.950000001")
+            try focusTV(app, identifier: "Seerr.hero.movie.950000001")
             XCUIRemote.shared.press(.select)
             try focusTV(app, identifier: "Seerr.request")
             let request = app.buttons["Seerr.request"]
@@ -351,6 +397,27 @@ final class GusAuthenticatedUITests: XCTestCase {
             capture(detail, "tv-detail-secondary-actions")
             XCUIRemote.shared.press(.menu)
             try focusTV(detail, identifier: "Detail.more")
+        }
+
+        func testTVQuickConnectPresentation() throws {
+            try prepare()
+            defer { finish() }
+            let app = application()
+            app.launchArguments = ["--gus-skip-session-restore", "--gus-disable-cloud-sync"]
+            app.launch()
+            try enterTV(app, identifier: "ConnectServerView.serverAddress", text: "http://127.0.0.1:8099")
+            try focusTV(app, identifier: "ConnectServerView.connectButton")
+            XCUIRemote.shared.press(.select)
+            try focusTV(app, label: "More sign-in options")
+            XCUIRemote.shared.press(.select)
+            try focusTV(app, label: "Use Quick Connect")
+            XCUIRemote.shared.press(.select)
+            XCTAssertTrue(app.staticTexts["Authorization code"].waitForExistence(timeout: 15))
+            let code = app.staticTexts["Authorization code"]
+            XCTAssertTrue(app.windows.firstMatch.frame.contains(code.frame))
+            try focusTV(app, label: "Cancel")
+            XCUIRemote.shared.press(.select)
+            XCTAssertFalse(code.exists)
         }
 
         private func focusTV(_ app: XCUIApplication, identifier: String? = nil, label: String? = nil) throws {
@@ -1094,7 +1161,7 @@ final class GusAuthenticatedUITests: XCTestCase {
         else { throw FixtureError.missingMedia }
         result["SynopsisMovie"] = id
         result["SynopsisMovieTitle"] = title
-        for type in ["Movie", "Series", "Episode", "Season", "MusicAlbum", "MusicArtist", "PhotoAlbum", "Photo", "Book"] {
+        for type in ["Movie", "Series", "Episode", "Season", "MusicAlbum", "MusicArtist", "PhotoAlbum", "Photo", "Book", "BoxSet", "Playlist"] {
             if let item = items.first(where: { $0["Type"] as? String == type }), let id = item["Id"] as? String {
                 result[type] = id
                 result[type + "Title"] = item["Name"] as? String
