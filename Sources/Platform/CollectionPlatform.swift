@@ -3,6 +3,14 @@ import UniformTypeIdentifiers
 
 /// Keep editing affordances off the television while sharing the browsing experience.
 enum CollectionPlatform {
+    static var canAddMembers: Bool {
+        #if os(watchOS)
+            false
+        #else
+            true
+        #endif
+    }
+
     static var canManage: Bool {
         #if os(tvOS) || os(watchOS)
             false

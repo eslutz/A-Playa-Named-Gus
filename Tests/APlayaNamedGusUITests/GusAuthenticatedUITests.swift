@@ -161,7 +161,17 @@ final class GusAuthenticatedUITests: XCTestCase {
                 XCUIRemote.shared.press(.select)
                 XCTAssertTrue(app.descendants(matching: .any).matching(identifier: "Detail.watched").firstMatch.waitForExistence(timeout: 10))
                 capture(app, "tv-remediation-overflow-" + kind.lowercased())
+                if kind == "SynopsisMovie", app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", "Add to Collection")).firstMatch.exists {
+                    try focusTV(app, label: "Add to Collection")
+                    XCUIRemote.shared.press(.select)
+                    XCTAssertTrue(app.staticTexts["Choose Collection"].waitForExistence(timeout: 15))
+                    capture(app, "tv-remediation-collection-chooser")
+                }
                 XCUIRemote.shared.press(.menu)
+                if app.buttons["Synopsis"].exists {
+                    try focusTV(app, label: "Synopsis")
+                    capture(app, "tv-remediation-focused-synopsis-" + kind.lowercased())
+                }
                 app.terminate()
             }
         }
