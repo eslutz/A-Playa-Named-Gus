@@ -168,6 +168,7 @@ final class GusAuthenticatedUITests: XCTestCase {
             let collection = try launch("item/" + required("BoxSet"))
             XCTAssertTrue(try collection.staticTexts[required("BoxSetTitle")].waitForExistence(timeout: 30))
             XCUIRemote.shared.press(.right)
+            try focusTV(collection, label: "More")
             Thread.sleep(forTimeInterval: 1)
             capture(collection, "tv-remediation-collection")
             collection.terminate()
@@ -459,6 +460,8 @@ final class GusAuthenticatedUITests: XCTestCase {
                 let direction: XCUIRemote.Button
                 if destination.minY > current.maxY {
                     direction = .down
+                } else if destination.maxY < current.minY {
+                    direction = .up
                 } else if destination.minX > current.maxX {
                     direction = .right
                 } else if destination.maxX < current.minX {
