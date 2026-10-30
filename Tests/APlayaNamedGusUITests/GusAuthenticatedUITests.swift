@@ -464,7 +464,11 @@ final class GusAuthenticatedUITests: XCTestCase {
             // the tab strip, where the next tab is our custom details panel.
             XCUIRemote.shared.press(.down)
             XCUIRemote.shared.press(.down)
-            try focusTV(app, label: "Playback Details")
+            XCUIRemote.shared.press(.up)
+            // AVKit delegates focus to a full-viewport container, so its tab
+            // strip uses native remote movement rather than SwiftUI frame matching.
+            XCTAssertTrue(app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", "Playback Details")).firstMatch.waitForExistence(timeout: 5))
+            XCUIRemote.shared.press(.right)
             XCUIRemote.shared.press(.select)
             XCTAssertTrue(app.staticTexts["How this video is being played"].waitForExistence(timeout: 5), app.debugDescription)
             XCUIRemote.shared.press(.down)
