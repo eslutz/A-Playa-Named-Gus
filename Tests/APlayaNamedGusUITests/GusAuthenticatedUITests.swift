@@ -52,7 +52,10 @@ final class GusAuthenticatedUITests: XCTestCase {
             capture(app, "audio-landscape")
         #endif
         #if os(tvOS)
-            XCUIRemote.shared.press(.menu)
+            for _ in 0 ..< 3 {
+                XCUIRemote.shared.press(.menu)
+                if app.buttons["NowPlaying.reopen"].waitForExistence(timeout: 2) { break }
+            }
         #else
             app.buttons["Done"].firstMatch.tap()
         #endif
