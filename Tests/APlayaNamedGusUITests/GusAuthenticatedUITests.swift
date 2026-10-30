@@ -540,6 +540,9 @@ final class GusAuthenticatedUITests: XCTestCase {
             let visible = { sidebars.allElementsBoundByAccessibilityElement.contains { sidebar in
                 sidebar.cells.allElementsBoundByAccessibilityElement.contains { !$0.frame.isEmpty && $0.isEnabled }
             } }
+            if #available(tvOS 27.0, *), !visible() {
+                XCUIRemote.shared.press(.menu)
+            }
             for _ in 0 ..< 8 {
                 if visible() {
                     break
