@@ -1036,4 +1036,4 @@ Scope and API evidence: [Seerr contract](Seerr-api-contract.md). The ongoing ove
 
 ### tvOS detail presentation follow-up
 
-The app follows the selected Apple TV detail references: top-left titles over full-bleed artwork, a lower action/synopsis area retaining both action rows and More, season-led episode rails, circular cast portraits, and metadata after content rails. The tvOS Sketch file was reconciled with simulator build 35 and synced to the canonical Sketch workspace. The review record, screenshots, and native/system exceptions are in [tvOS design validation](tvos-design-validation.json).
+The app follows the selected Apple TV detail references: top-left titles over full-bleed artwork, a lower action/synopsis area retaining both action rows and More, season-led episode rails, circular cast portraits, and metadata after content rails. The tvOS Sketch snapshot follows the canonical Sketch workspace. Durable limitations and reproduction steps are in [tvOS design validation](tvos-design-validation.md); captures and detailed historical audits stay outside Git.
