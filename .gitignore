@@ -181,3 +181,7 @@ iOSInjectionProject/
 /Documentation/Reviews/**/captures/
 /Documentation/AppStore/*evidence*/
 *.xcresult/
+
+# Local TV design review captures and historical audit; never commit.
+/Design/Validation/
+/Documentation/tvos-design-validation.json
