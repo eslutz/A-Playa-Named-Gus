@@ -83,12 +83,13 @@ struct CinematicDetailHero<Accessory: View>: View {
                 playButton.frame(maxWidth: .infinity)
                 HStack(spacing: 24) {
                     upNextButton
-                        .frame(width: 160)
+                        .frame(maxWidth: .infinity)
                         .gusTVDetailActionFocus(id: "nextUp", item: item)
                     Group(subviews: accessory) { actions in
-                        ForEach(actions) { action in action.frame(width: 160) }
+                        ForEach(actions) { action in action.frame(maxWidth: .infinity) }
                     }
                 }
+                .frame(width: primaryActionWidth)
                 .tvFocusSection()
             }
         }

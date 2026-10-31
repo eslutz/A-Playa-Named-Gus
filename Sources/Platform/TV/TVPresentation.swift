@@ -232,7 +232,7 @@ extension View {
                     .lineLimit(1)
                     .multilineTextAlignment(.center)
             }
-            .frame(width: 140)
+            .frame(width: 112)
         }
     }
 
