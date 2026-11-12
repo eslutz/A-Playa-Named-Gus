@@ -56,6 +56,61 @@ struct TVPlaybackLifecycleTests {
         #expect(!message.isEmpty)
     }
 
+    @Test("failure during a suspended initial seek is not overwritten by readiness")
+    func failureDuringInitialSeekIsPreserved() async throws {
+        let fixture = try RepositoryTestFixtures.url(for: "Tests/Fixtures/OfflinePlaylist.mov")
+        let item = MediaItem(id: "seek-failure", type: .movie)
+        let provider = FakeMediaProviderSession(capabilities: ProviderCapabilities())
+        provider.itemHandler = { _ in item }
+        provider.playbackHandler = {
+            PlaybackSourceResolution(url: fixture, playSessionID: nil, mediaSourceID: nil, playMethod: .transcode, stereoLayout: .none, stereoFallbackReason: nil)
+        }
+        let url = try #require(URL(string: "https://example.invalid"))
+        let session = SessionStore(
+            client: JellyfinClientFactory.makeClient(url: url),
+            user: StoredUser(id: "seek-user", name: "User", serverID: "seek-server"),
+            server: ServerConnection(id: "seek-server", name: "Server", url: url),
+            mediaProvider: provider
+        )
+        var seek: CheckedContinuation<Void, Never>?
+        let store = PlaybackStore(item: item, session: session, playbackRefresh: PlaybackRefreshStore(), initialSeek: { _, _ in
+            await withCheckedContinuation { seek = $0 }
+        })
+        defer { store.teardown() }
+        store.usesPlaylistOrder = true
+        let preparation = Task { await store.prepare(startTimeTicks: 0) }
+        let deadline = ContinuousClock.now + .seconds(10)
+        while seek == nil, ContinuousClock.now < deadline {
+            try await Task.sleep(for: .milliseconds(10))
+        }
+        guard let suspendedSeek = seek, let playerItem = store.player?.currentItem else {
+            preparation.cancel()
+            seek?.resume()
+            await preparation.value
+            Issue.record("Initial seek did not suspend")
+            return
+        }
+        NotificationCenter.default.post(
+            name: AVPlayerItem.failedToPlayToEndTimeNotification,
+            object: playerItem,
+            userInfo: [AVPlayerItemFailedToPlayToEndTimeErrorKey: NSError(domain: AVFoundationErrorDomain, code: -11800)]
+        )
+        let failure = store.state
+        guard case .failed = failure else {
+            suspendedSeek.resume()
+            await preparation.value
+            Issue.record("Player failure was not observed during seek")
+            return
+        }
+        suspendedSeek.resume()
+        await preparation.value
+        await Task.yield()
+        #expect(store.state == failure)
+        #expect(!store.hasStartedPlayback)
+        #expect(store.player?.rate == 0)
+        #expect(provider.playbackReportCallCount == 0)
+    }
+
     @Test("background preparation cannot start playback when it finishes")
     func preparationWhileInactive() async throws {
         let store = try store()

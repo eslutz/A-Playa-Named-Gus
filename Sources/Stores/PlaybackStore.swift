@@ -420,6 +420,18 @@ final class PlaybackStore {
 
             try Task.checkCancellation()
             guard generation == preparationGeneration else { return }
+            // AVPlayer can fail while the initial seek suspends this preparation.
+            // Preserve an observer's error and check the item itself in case its
+            // status callback has not reached the main actor yet.
+            if case .failed = state {
+                diagnostics.endInterval("PlaybackStartup", startupInterval)
+                return
+            }
+            if playerItem.status == .failed {
+                diagnostics.endInterval("PlaybackStartup", startupInterval)
+                handlePlayerFailure(playerItem.error)
+                return
+            }
             nowPlaying.startVideo(
                 player: player,
                 item: item,
