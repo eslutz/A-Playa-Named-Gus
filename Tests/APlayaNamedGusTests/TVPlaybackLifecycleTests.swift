@@ -7,8 +7,8 @@ import Testing
 @MainActor
 @Suite("TV video presentation lifecycle", .serialized)
 struct TVPlaybackLifecycleTests {
-    private func store() throws -> PlaybackStore {
-        let url = try RepositoryTestFixtures.url(for: "Tests/Fixtures/OfflinePlaylist.mov")
+    private func store(playbackURL: URL? = nil) throws -> PlaybackStore {
+        let url = try playbackURL ?? RepositoryTestFixtures.url(for: "Tests/Fixtures/OfflinePlaylist.mov")
         let provider = FakeMediaProviderSession(capabilities: ProviderCapabilities())
         provider.playbackHandler = {
             PlaybackSourceResolution(url: url, playSessionID: nil, mediaSourceID: nil, playMethod: .transcode, stereoLayout: .none, stereoFallbackReason: nil)
@@ -22,6 +22,25 @@ struct TVPlaybackLifecycleTests {
         let store = PlaybackStore(item: MediaItem(id: "fixture", type: .movie), session: session, playbackRefresh: PlaybackRefreshStore())
         store.usesPlaylistOrder = true
         return store
+    }
+
+    @Test("startup item failure reaches an actionable error state")
+    func startupFailureIsObserved() async throws {
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".mp4")
+        let store = try store(playbackURL: url)
+        defer { store.teardown() }
+        await store.prepare()
+        for _ in 0 ..< 100 {
+            if case .failed = store.state {
+                break
+            }
+            try await Task.sleep(for: .milliseconds(20))
+        }
+        guard case let .failed(message) = store.state else {
+            Issue.record("AVPlayer startup failure was not surfaced")
+            return
+        }
+        #expect(!message.isEmpty)
     }
 
     @Test("background preparation cannot start playback when it finishes")

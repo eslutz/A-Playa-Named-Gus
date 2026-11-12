@@ -280,6 +280,7 @@ written by `HomeStore`, read by the credential-free `GusTopShelf` extension).
 that leans **direct play** for everything the device's hardware decodes
 (`DevicePlaybackCapabilities` gates HEVC/AV1 on `VTIsHardwareDecodeSupported` — guarded
 `canImport(VideoToolbox)` for watchOS — and HDR ranges on `AVPlayer.eligibleForHDRPlayback`),
+routing raw TS/M2TS through HLS (including Blu-ray sources with mixed audio codecs),
 falling back to HEVC-preferred fMP4 HLS transcoding with 8-channel audio and
 `enableSubtitlesInManifest` (bitmap subs burn in; text subs ride the manifest).
 `PlaybackStore` owns the `AVPlayer` and tears it down on dismiss; it sets

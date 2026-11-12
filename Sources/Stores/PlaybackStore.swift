@@ -52,6 +52,7 @@ final class PlaybackStore {
     private var endObserver: (any NSObjectProtocol)?
     private var failedEndObserver: (any NSObjectProtocol)?
     private var pauseStateObservation: NSKeyValueObservation?
+    private var itemStatusObservation: NSKeyValueObservation?
     private var lastReportTask: Task<Void, Never>?
     private var didReportPause = false
     private var didReportStopped = false
@@ -501,6 +502,17 @@ final class PlaybackStore {
         removeEndObserver()
         let generation = preparationGeneration
         let itemIdentity = ObjectIdentifier(playerItem)
+        // Startup failures do not necessarily post failedToPlayToEndTime. Observe
+        // item status too, or an unsupported source leaves the loading player blank.
+        itemStatusObservation = playerItem.observe(\.status, options: [.initial, .new]) { [weak self] _, _ in
+            Task { @MainActor [weak self] in
+                guard let self, let currentItem = self.player?.currentItem,
+                      self.preparationGeneration == generation,
+                      ObjectIdentifier(currentItem) == itemIdentity,
+                      currentItem.status == .failed else { return }
+                self.handlePlayerFailure(currentItem.error)
+            }
+        }
         endObserver = NotificationCenter.default.addObserver(
             forName: AVPlayerItem.didPlayToEndTimeNotification,
             object: playerItem,
@@ -523,14 +535,30 @@ final class PlaybackStore {
                 guard let self, let currentItem = self.player?.currentItem,
                       self.preparationGeneration == generation,
                       ObjectIdentifier(currentItem) == itemIdentity else { return }
-                let message = error.map { GusError(from: $0).localizedDescription }
-                    ?? String(localized: "Playback stopped unexpectedly.", comment: "Generic playback failure message")
-                self.state = .failed(message)
+                self.handlePlayerFailure(error)
             }
         }
     }
 
+    private func handlePlayerFailure(_ error: Error?) {
+        DiagnosticsHub.shared.record(.playbackFailed)
+        let failure = error as NSError?
+        let domain: Int
+        switch failure?.domain {
+        case NSURLErrorDomain: domain = 1
+        case AVFoundationErrorDomain: domain = 2
+        case NSOSStatusErrorDomain: domain = 3
+        default: domain = 0
+        }
+        DiagnosticsHub.shared.record(.playbackItemFailed(errorCode: failure?.code ?? 0, errorDomain: domain))
+        let message = error.map { GusError(from: $0).localizedDescription }
+            ?? String(localized: "Playback stopped unexpectedly.", comment: "Generic playback failure message")
+        state = .failed(message)
+    }
+
     private func removeEndObserver() {
+        itemStatusObservation?.invalidate()
+        itemStatusObservation = nil
         if let endObserver {
             NotificationCenter.default.removeObserver(endObserver)
         }

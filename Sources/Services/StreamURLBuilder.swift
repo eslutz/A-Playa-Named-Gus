@@ -225,11 +225,6 @@ struct StreamURLBuilder {
             mp4Video.append("av1")
         }
 
-        var tsVideo = ["h264"]
-        if capabilities.supportsHEVCDecode {
-            tsVideo.append("hevc")
-        }
-
         return [
             DirectPlayProfile(
                 audioCodec: "aac,mp3,ac3,eac3,alac,flac",
@@ -237,13 +232,10 @@ struct StreamURLBuilder {
                 type: .video,
                 videoCodec: mp4Video.joined(separator: ",")
             ),
-            // Live TV and PVR recordings commonly arrive as transport streams.
-            DirectPlayProfile(
-                audioCodec: "aac,mp3,ac3,eac3",
-                container: "ts,mpegts",
-                type: .video,
-                videoCodec: tsVideo.joined(separator: ",")
-            ),
+            // Standalone TS/M2TS is not an AVPlayer direct-play contract. Jellyfin
+            // can approve a file because *another* audio track matches this profile,
+            // while the selected Blu-ray DTS track remains unsupported. Use HLS so
+            // the server selects the track, copies compatible video and converts audio.
         ]
     }
 
