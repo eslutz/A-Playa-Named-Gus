@@ -4,6 +4,15 @@ import Testing
 
 @Suite("Diagnostics")
 struct DiagnosticsTests {
+    @Test("wait and stall diagnostics contain bounded numeric and boolean values")
+    func playerWaitAndStall() {
+        let event = DiagnosticEvent.playbackTimeControl(status: 1, reason: 2, positionMilliseconds: 16, bufferEmpty: true, likelyToKeepUp: false)
+        #expect(event.name == "playback.time.control")
+        #expect(event.attributes == ["status": "1", "reason": "2", "positionMilliseconds": "16", "bufferEmpty": "true", "likelyToKeepUp": "false"])
+        #expect(DiagnosticEvent.playbackTimeControl(status: 99, reason: 99, positionMilliseconds: -1, bufferEmpty: false, likelyToKeepUp: true).attributes["reason"] == "0")
+        #expect(DiagnosticEvent.playbackStalled(positionMilliseconds: -1).attributes["positionMilliseconds"] == "0")
+    }
+
     @Test("player errors export numeric codes, never arbitrary domains")
     func playerErrorCodes() {
         #expect(DiagnosticEvent.playbackItemFailed(errorCode: -11800, errorDomain: 2).attributes == ["errorCode": "-11800", "errorDomain": "2"])

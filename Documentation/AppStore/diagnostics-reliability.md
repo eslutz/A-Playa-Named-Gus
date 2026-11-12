@@ -157,3 +157,5 @@ milestone.
       implemented diagnostic behavior. *(privacy-labels.md Diagnostics section and
       privacy-policy.md Diagnostics section; the hosted `/privacy` page adapts from
       privacy-policy.md when published.)*
+
+Playback diagnostics include numeric AVPlayer error categories/codes, time-control and wait-reason codes, buffer flags, playback position and stall markers. They exclude raw framework error text and playback URLs. Markers indicate observed client state, not proof that video reached the display.

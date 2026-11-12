@@ -50,6 +50,7 @@ final class PlaybackStore {
     private var reportContext: PlaybackReportContext?
     private var progressObserver: Any?
     private var endObserver: (any NSObjectProtocol)?
+    private var stalledObserver: (any NSObjectProtocol)?
     private var failedEndObserver: (any NSObjectProtocol)?
     private var pauseStateObservation: NSKeyValueObservation?
     private var itemStatusObservation: NSKeyValueObservation?
@@ -525,6 +526,16 @@ final class PlaybackStore {
                 self.handlePlaybackEnded()
             }
         }
+        stalledObserver = NotificationCenter.default.addObserver(
+            forName: AVPlayerItem.playbackStalledNotification, object: playerItem, queue: .main
+        ) { [weak self] _ in
+            MainActor.assumeIsolated {
+                guard let self, let currentItem = self.player?.currentItem,
+                      self.preparationGeneration == generation,
+                      ObjectIdentifier(currentItem) == itemIdentity else { return }
+                DiagnosticsHub.shared.record(.playbackStalled(positionMilliseconds: self.currentPositionTicks() / 10000))
+            }
+        }
         failedEndObserver = NotificationCenter.default.addObserver(
             forName: AVPlayerItem.failedToPlayToEndTimeNotification,
             object: playerItem,
@@ -557,6 +568,10 @@ final class PlaybackStore {
     }
 
     private func removeEndObserver() {
+        if let stalledObserver {
+            NotificationCenter.default.removeObserver(stalledObserver)
+        }
+        stalledObserver = nil
         itemStatusObservation?.invalidate()
         itemStatusObservation = nil
         if let endObserver {
@@ -602,6 +617,19 @@ final class PlaybackStore {
             let status = player.timeControlStatus
             Task { @MainActor in
                 guard let self, self.player === player, self.state == .ready else { return }
+                let reason: Int
+                switch player.reasonForWaitingToPlay {
+                case .toMinimizeStalls: reason = 1
+                case .evaluatingBufferingRate: reason = 2
+                case .noItemToPlay: reason = 3
+                default: reason = 0
+                }
+                DiagnosticsHub.shared.record(.playbackTimeControl(
+                    status: status.rawValue, reason: reason,
+                    positionMilliseconds: self.currentPositionTicks() / 10000,
+                    bufferEmpty: player.currentItem?.isPlaybackBufferEmpty ?? false,
+                    likelyToKeepUp: player.currentItem?.isPlaybackLikelyToKeepUp ?? false
+                ))
                 switch status {
                 case .paused where !self.didReportPause:
                     self.didReportPause = true

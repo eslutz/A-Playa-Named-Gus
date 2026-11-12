@@ -24,6 +24,19 @@ struct TVPlaybackLifecycleTests {
         return store
     }
 
+    @Test("stall notifications are recorded only for the active player item")
+    func stallsAreCapturedAndObserverIsRemoved() async throws {
+        let store = try store()
+        await store.prepare()
+        let playerItem = try #require(store.player?.currentItem)
+        let before = DiagnosticsHub.shared.recentEvents().filter { $0.name == "playback.stalled" }.count
+        NotificationCenter.default.post(name: AVPlayerItem.playbackStalledNotification, object: playerItem)
+        #expect(DiagnosticsHub.shared.recentEvents().filter { $0.name == "playback.stalled" }.count == before + 1)
+        store.teardown()
+        NotificationCenter.default.post(name: AVPlayerItem.playbackStalledNotification, object: playerItem)
+        #expect(DiagnosticsHub.shared.recentEvents().filter { $0.name == "playback.stalled" }.count == before + 1)
+    }
+
     @Test("startup item failure reaches an actionable error state")
     func startupFailureIsObserved() async throws {
         let url = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".mp4")

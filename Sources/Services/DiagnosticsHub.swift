@@ -26,6 +26,10 @@ enum DiagnosticEvent: Equatable {
     case playbackFailed
     /// Domain codes: 0 unknown, 1 URL, 2 AVFoundation, 3 OSStatus. Never raw error text.
     case playbackItemFailed(errorCode: Int, errorDomain: Int)
+    /// Time-control codes: 0 paused, 1 waiting, 2 playing. Wait reasons: 0 none/unknown,
+    /// 1 minimize stalls, 2 evaluate buffering, 3 no item. No raw framework strings.
+    case playbackTimeControl(status: Int, reason: Int, positionMilliseconds: Int, bufferEmpty: Bool, likelyToKeepUp: Bool)
+    case playbackStalled(positionMilliseconds: Int)
     case downloadQueued
     case downloadPaused
     case downloadCompleted
@@ -50,6 +54,8 @@ enum DiagnosticEvent: Equatable {
         case .playbackStarted: return "playback.started"
         case .playbackFailed: return "playback.failed"
         case .playbackItemFailed: return "playback.item.failed"
+        case .playbackTimeControl: return "playback.time.control"
+        case .playbackStalled: return "playback.stalled"
         case .downloadQueued: return "download.queued"
         case .downloadPaused: return "download.paused"
         case .downloadCompleted: return "download.completed"
@@ -60,6 +66,16 @@ enum DiagnosticEvent: Equatable {
     /// Numeric/boolean attributes only — see the type-level privacy contract.
     var attributes: [String: String] {
         switch self {
+        case let .playbackTimeControl(status, reason, positionMilliseconds, bufferEmpty, likelyToKeepUp):
+            return [
+                "status": String((0 ... 2).contains(status) ? status : 0),
+                "reason": String((0 ... 3).contains(reason) ? reason : 0),
+                "positionMilliseconds": String(max(0, positionMilliseconds)),
+                "bufferEmpty": String(bufferEmpty),
+                "likelyToKeepUp": String(likelyToKeepUp),
+            ]
+        case let .playbackStalled(positionMilliseconds):
+            return ["positionMilliseconds": String(max(0, positionMilliseconds))]
         case let .playbackItemFailed(errorCode, errorDomain):
             return ["errorCode": String(errorCode), "errorDomain": String((0 ... 3).contains(errorDomain) ? errorDomain : 0)]
         case let .libraryLoadFinished(itemCount):
