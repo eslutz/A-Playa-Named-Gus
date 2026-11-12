@@ -32,7 +32,7 @@ struct DeveloperDiagnosticsView: View {
             } header: {
                 Text("Export")
             } footer: {
-                Text("Includes the latest 200 app events and available performance summaries. Names, media titles, server addresses and sign-in details are excluded. Logs stay on this device until you export them. Apple TV storage may be purged by the system.")
+                Text("Includes the latest 200 app events and available performance summaries. Names, media titles, server addresses and sign-in details are excluded. Gus does not upload logs automatically. Apple TV storage may be purged by the system.")
             }
             Section("App Events") {
                 if snapshot.events.isEmpty {
