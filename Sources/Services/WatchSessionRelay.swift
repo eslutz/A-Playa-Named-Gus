@@ -67,10 +67,32 @@
             }
         }
 
+        /// Explicit user request only. WatchConnectivity queues it for reconnection;
+        /// a queued request is not a claim that current Watch logs were received.
+        @discardableResult
+        func requestDiagnostics() -> Bool {
+            guard WCSession.isSupported(), WCSession.default.activationState == .activated,
+                  WCSession.default.isPaired, WCSession.default.isWatchAppInstalled else { return false }
+            let session = WCSession.default
+            for transfer in session.outstandingUserInfoTransfers where transfer.userInfo["requestDiagnostics"] as? Bool == true {
+                transfer.cancel()
+            }
+            session.transferUserInfo(["requestDiagnostics": true])
+            return true
+        }
+
+        nonisolated func session(_ session: WCSession, didReceiveApplicationContext applicationContext: [String: Any]) {
+            guard let data = applicationContext["diagnosticSnapshot"] as? Data else { return }
+            WatchDiagnosticSnapshotStore.shared.receive(data)
+        }
+
         // MARK: - WCSessionDelegate
 
         nonisolated func session(_ session: WCSession, activationDidCompleteWith activationState: WCSessionActivationState, error: (any Error)?) {
             guard activationState == .activated else { return }
+            if let data = session.receivedApplicationContext["diagnosticSnapshot"] as? Data {
+                WatchDiagnosticSnapshotStore.shared.receive(data)
+            }
             Task { @MainActor [weak self] in
                 guard let self, let pendingPayload = self.pendingPayload else { return }
                 self.pendingPayload = nil
