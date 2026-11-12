@@ -25,6 +25,14 @@ struct TVLogPayload: Codable {
         return try encoder.encode(self)
     }
 
+    /// Keep fragmented input bounded before decoding or writing anything.
+    static func appending(_ data: Data, to accumulated: Data) throws -> Data {
+        guard accumulated.count <= 128 * 1024, data.count <= 128 * 1024 - accumulated.count else {
+            throw CocoaError(.fileReadTooLarge)
+        }
+        return accumulated + data
+    }
+
     static func decode(_ data: Data) throws -> Self {
         guard data.count <= 128 * 1024 else { throw CocoaError(.fileReadCorruptFile) }
         let decoder = JSONDecoder()

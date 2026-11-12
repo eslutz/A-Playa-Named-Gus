@@ -7737,7 +7737,6 @@
         }
       }
     },
-    "Log receiver unavailable. Reopen Gus to retry.": {},
     "Transferring logs…": {},
     "Log transfer timed out. Try again.": {},
     "Log transfer failed. Try again.": {},
@@ -7763,7 +7762,10 @@
     "A paired Watch running Gus is required.": {},
     "Refresh Watch Logs": {},
     "Prepare a new log export to include this snapshot.": {},
-    "No Watch snapshot received yet.": {}
+    "No Watch snapshot received yet.": {},
+    "Retry Receiver": {},
+    "Log receiver unavailable. Tap Retry Receiver.": {},
+    "Sends the latest 200 sanitized Apple TV events. Apple TV has no MetricKit performance reports.": {}
   },
   "version": "1.1"
 }

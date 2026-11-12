@@ -41,6 +41,7 @@ final class TVClientLogTransfer {
         func startReceiver() {
             #if os(iOS)
                 guard listener == nil else { return }
+                status = ""
                 do {
                     let listener = try NWListener(applicationService: Self.service)
                     listener.newConnectionHandler = { connection in
@@ -51,14 +52,14 @@ final class TVClientLogTransfer {
                             Task { @MainActor in
                                 self.listener?.cancel()
                                 self.listener = nil
-                                self.status = String(localized: "Log receiver unavailable. Reopen Gus to retry.")
+                                self.status = String(localized: "Log receiver unavailable. Tap Retry Receiver.")
                             }
                         }
                     }
                     self.listener = listener
                     listener.start(queue: .main)
                 } catch {
-                    status = String(localized: "Log receiver unavailable. Reopen Gus to retry.")
+                    status = String(localized: "Log receiver unavailable. Tap Retry Receiver.")
                 }
             #endif
         }
@@ -194,10 +195,12 @@ struct TVClientLogTransferSection: View {
                     Button("Cancel Transfer") { transfer.cancel() }
                 }
                 Text(transfer.status)
+                Text("Sends the latest 200 sanitized Apple TV events. Apple TV has no MetricKit performance reports.")
                 Text("Select your iPhone and approve the system connection prompt. Gus must be installed on both devices with the appropriate iCloud or Family Sharing relationship.")
             }
         #elseif os(iOS)
             Section("Apple TV Logs") {
+                Button("Retry Receiver") { transfer.startReceiver() }
                 Text(transfer.status.isEmpty ? "Select this phone from Gus’s Client Logs screen on Apple TV, then approve the system connection prompt." : transfer.status)
                 if let receivedAt = transfer.receivedAt, let url = transfer.receivedURL {
                     Text("Received \(receivedAt.formatted(date: .abbreviated, time: .standard))")
