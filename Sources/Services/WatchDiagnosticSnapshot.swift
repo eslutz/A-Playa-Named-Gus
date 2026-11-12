@@ -19,7 +19,8 @@ struct WatchDiagnosticSnapshot: Codable, Equatable, Sendable {
     }
 
     /// Validate the trust boundary again on receipt. Codable strings alone are not a
-    /// privacy guarantee: reject unknown fields/event names rather than exporting them.
+    /// privacy guarantee: reject unknown event names/attributes rather than exporting
+    /// them. Unrecognized JSON envelope fields are discarded by typed decoding.
     static func decode(_ data: Data) -> Self? {
         guard data.count <= maximumBytes,
               let value = try? JSONDecoder().decode(Self.self, from: data),
@@ -88,7 +89,7 @@ final class WatchDiagnosticSnapshotStore: Sendable {
         url = directory?.appendingPathComponent("watch-client-events.json")
         let saved = url.flatMap { try? Data(contentsOf: $0) }
         let decoded = saved.flatMap { data -> ReceivedWatchDiagnostics? in
-            guard data.count <= WatchDiagnosticSnapshot.maximumBytes,
+            guard data.count <= WatchDiagnosticSnapshot.maximumBytes + 1024,
                   let value = try? JSONDecoder().decode(ReceivedWatchDiagnostics.self, from: data),
                   let snapshotData = try? JSONEncoder().encode(value.snapshot),
                   WatchDiagnosticSnapshot.decode(snapshotData) != nil,
@@ -106,6 +107,9 @@ final class WatchDiagnosticSnapshotStore: Sendable {
     func receive(_ data: Data, now: Date = .now) -> Bool {
         guard let snapshot = WatchDiagnosticSnapshot.decode(data) else { return false }
         return storage.withLock { existing in
+            // Capture clocks are Watch-local: a backward Watch clock adjustment can
+            // leave the prior snapshot retained until its capture date is surpassed.
+            // The exported dates remain explicit rather than claiming freshness.
             // Delayed/out-of-order delivery must not replace a newer capture or make
             // an old identical snapshot appear freshly captured/received.
             if let existing, existing.snapshot.capturedAt >= snapshot.capturedAt {
