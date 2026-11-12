@@ -36,11 +36,19 @@ metadata, playback history, downloaded media, or server URLs from the app.
 
 A Playa Named Gus uses Apple's MetricKit to understand app health (such as crash counts,
 hang time, launch time, memory, and energy use). These summaries contain no personal
-information, no media titles, and no server addresses, and they stay on your device. If
+information, no media titles, and no server addresses, and are stored locally. If
 you have chosen to share analytics with app developers in your Apple device settings,
 Apple may make crash reports and aggregate metrics available to the developer through
 Apple's own tools; that sharing is controlled by Apple and your device settings, not by
 this app.
+
+You can prepare a sanitized client log export in Developer settings and choose a
+recipient with the system share sheet. No log bundle is uploaded to the developer
+automatically. At your request, Gus can transfer a Watch snapshot to its paired iPhone
+or send an Apple TV bundle to the iPhone you select through Apple's authenticated
+device-discovery interface. The receiving iPhone retains one replaceable snapshot
+with timestamps so delayed Watch data is not presented as current. Exports exclude
+media titles, server addresses, credentials and raw error messages.
 
 ## Apple Watch
 

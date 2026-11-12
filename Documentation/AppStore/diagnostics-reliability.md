@@ -129,8 +129,8 @@ milestone.
 - Privacy labels and privacy policy text must describe diagnostic collection accurately
   once implemented, including whether Apple-provided crash/diagnostics reports are visible
   to the developer.
-- User-initiated diagnostic export remains outside this initial implementation and is
-  tracked as a Future Features item.
+- User-initiated export contains only app-owned sanitized events and normalized summaries.
+  No developer upload occurs automatically; the user chooses whether and where to share it.
 
 ## Acceptance Checklist
 
@@ -159,3 +159,31 @@ milestone.
       privacy-policy.md when published.)*
 
 Playback diagnostics include numeric AVPlayer error categories/codes, time-control and wait-reason codes, buffer flags, playback position and stall markers. They exclude raw framework error text and playback URLs. Markers indicate observed client state, not proof that video reached the display.
+
+
+## Client log export and companion transfer
+
+Settings → Developer → Client Logs prepares a bounded JSON export on iPhone, iPad,
+Mac, Apple TV and Vision Pro. It contains the latest 200 retained app events and at
+most 60 normalized performance summaries, not the full system log. Video-specific
+error, wait and stall markers supplement the shared launch, connection, library,
+search, artwork, download and audio/video startup markers. They do not prove that
+video reached the display. Watch has no MetricKit collector or export screen.
+
+The paired Watch supplies an events-only snapshot when requested from iPhone.
+WatchConnectivity may deliver it later; exports and UI distinguish capture time from
+last receipt time. A cached Watch snapshot is not evidence of current Watch state.
+
+Apple TV can send its sanitized export to Gus on an iPhone selected through Apple's
+DeviceDiscoveryUI. The receiving app uses Apple's authenticated application-service
+connection, not an arbitrary LAN web server or cloud upload. iPhone then provides the
+normal system share sheet. Received data must pass byte/count limits and event-field
+allowlisting before it can be retained or shared. Only one replaceable received
+snapshot is retained per companion, not an unbounded history of transferred files.
+
+The iOS and tvOS apps must belong to the same universal App Store app, use matching
+bundle identifiers and application-service declarations, and satisfy Apple's device,
+network and iCloud/Family Sharing eligibility. A matching bundle identifier alone is
+not runtime verification. Simulator tests and successful builds do not verify discovery,
+physical transfer, reconnect/retry behavior or TestFlight eligibility. These remain
+release acceptance checks on a paired iPhone and Apple TV 4K, plus a paired Watch.

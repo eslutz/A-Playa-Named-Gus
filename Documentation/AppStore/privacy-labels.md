@@ -63,7 +63,10 @@ The Diagnostics & Reliability implementation does not change the answers above:
   aggregate summaries stored only in the app's Application Support directory. Nothing is
   transmitted to the developer.
 - `DiagnosticsHub` lifecycle markers carry only numeric/boolean values by construction
-  and stay in the unified log / in-memory buffer on the device.
+  and are retained in a bounded local buffer/file, also recorded in the unified log.
+- User-requested sanitized exports and Apple-native companion transfers do not send
+  data to the developer automatically. The user selects any subsequent share recipient;
+  incoming companion snapshots are validated and replace the prior snapshot.
 - Crash and metrics data in Xcode Organizer / App Store Connect comes from Apple's own
   opt-in "Share With App Developers" mechanism, which Apple discloses to the user; the
   app itself still collects nothing.
