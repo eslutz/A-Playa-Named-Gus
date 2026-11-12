@@ -23,6 +23,17 @@ class SimulatorSelectionTests(unittest.TestCase):
         inventory = fixture([("27.0", "Apple TV 4K (3rd generation)"), ("27.2", "Apple TV 4K (4th generation)")])
         self.assertEqual(selector.select_destination(inventory), "platform=tvOS Simulator,id=00000000-0000-0000-0000-000000000002")
 
+    def test_newer_runtime_than_sdk_is_excluded(self):
+        inventory = fixture([("27.0", "Apple TV 4K (3rd generation)"), ("27.2", "Apple TV 4K (4th generation)")])
+        self.assertTrue(selector.select_destination(inventory, "27.1").endswith("000000000001"))
+        self.assertTrue(selector.select_destination(inventory, "27.2").endswith("000000000002"))
+
+    def test_no_sdk_compatible_runtime_fails_closed(self):
+        with self.assertRaises(ValueError):
+            selector.select_destination(fixture([("27.3", "Apple TV")]), "27.2")
+        with self.assertRaises(ValueError):
+            selector.select_destination(fixture([]), "invalid")
+
     def test_versions_sort_numerically(self):
         inventory = fixture([("27.9", "Apple TV"), ("27.10", "Apple TV")])
         self.assertTrue(selector.select_destination(inventory).endswith("000000000002"))

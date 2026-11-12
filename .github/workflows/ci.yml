@@ -241,7 +241,8 @@ jobs:
         if: matrix.name == 'tvOS'
         run: |
           set -euo pipefail
-          destination="$(xcrun simctl list --json | python3 Scripts/select-simulator.py)"
+          sdk_version="$(xcrun --sdk appletvsimulator --show-sdk-version)"
+          destination="$(xcrun simctl list --json | python3 Scripts/select-simulator.py --sdk-version "$sdk_version")"
           echo "destination=$destination" >> "$GITHUB_OUTPUT"
 
       - name: Pick visionOS simulator
