@@ -174,7 +174,8 @@ The paired Watch supplies an events-only snapshot when requested from iPhone.
 WatchConnectivity may deliver it later; exports and UI distinguish capture time from
 last receipt time. A cached Watch snapshot is not evidence of current Watch state.
 
-Apple TV can send its sanitized export to Gus on an iPhone selected through Apple's
+Apple TV can send an events-only sanitized export (tvOS has no MetricKit reports)
+to Gus on an iPhone selected through Apple's
 DeviceDiscoveryUI. The receiving app uses Apple's authenticated application-service
 connection, not an arbitrary LAN web server or cloud upload. iPhone then provides the
 normal system share sheet. Received data must pass byte/count limits and event-field
