@@ -4,6 +4,58 @@ import Testing
 
 @Suite("Diagnostics")
 struct DiagnosticsTests {
+    @Test("wait and stall diagnostics contain bounded numeric and boolean values")
+    func playerWaitAndStall() {
+        let event = DiagnosticEvent.playbackTimeControl(status: 1, reason: 2, positionMilliseconds: 16, bufferEmpty: true, likelyToKeepUp: false)
+        #expect(event.name == "playback.time.control")
+        #expect(event.attributes == ["status": "1", "reason": "2", "positionMilliseconds": "16", "bufferEmpty": "true", "likelyToKeepUp": "false"])
+        #expect(DiagnosticEvent.playbackTimeControl(status: 99, reason: 99, positionMilliseconds: -1, bufferEmpty: false, likelyToKeepUp: true).attributes["reason"] == "0")
+        #expect(DiagnosticEvent.playbackStalled(positionMilliseconds: -1).attributes["positionMilliseconds"] == "0")
+    }
+
+    @Test("player errors export numeric codes, never arbitrary domains")
+    func playerErrorCodes() {
+        #expect(DiagnosticEvent.playbackItemFailed(errorCode: -11800, errorDomain: 2).attributes == ["errorCode": "-11800", "errorDomain": "2"])
+        #expect(DiagnosticEvent.playbackItemFailed(errorCode: -1, errorDomain: 999).attributes["errorDomain"] == "0")
+    }
+
+    @Test("client events survive relaunch and remain bounded")
+    func retainedClientEvents() {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let hub = DiagnosticsHub(directory: directory)
+        for index in 0 ..< 205 {
+            hub.record(.libraryLoadFinished(itemCount: index), date: Date(timeIntervalSince1970: Double(index)))
+        }
+        let restored = DiagnosticsHub(directory: directory).recentEvents()
+        #expect(restored.count == 200)
+        #expect(restored.first?.attributes["itemCount"] == "5")
+        #expect(restored.last?.attributes["itemCount"] == "204")
+    }
+
+    @Test("support export contains typed events and replaces the previous export")
+    func clientExport() throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let bundle = ClientLogExport(
+            formatVersion: 1,
+            exportedAt: Date(timeIntervalSince1970: 0),
+            platform: "Test",
+            appVersion: "1",
+            build: "2",
+            events: [DiagnosticEventRecord(name: "playback.failed", attributes: [:], date: Date(timeIntervalSince1970: 0))],
+            performance: []
+        )
+        let first = try bundle.save(directory: directory)
+        let second = try bundle.save(directory: directory)
+        #expect(first == second)
+        let data = try Data(contentsOf: first)
+        let json = try #require(JSONSerialization.jsonObject(with: data) as? [String: Any])
+        #expect(json["platform"] as? String == "Test")
+        #expect((json["events"] as? [[String: Any]])?.count == 1)
+        #expect(try FileManager.default.contentsOfDirectory(atPath: directory.path).count == 1)
+    }
+
     @Test("concurrent MetricKit-style appends preserve all summaries")
     func concurrentSummaryAppends() async {
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)

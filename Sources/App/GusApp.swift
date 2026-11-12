@@ -40,6 +40,7 @@ struct GusApp: App {
         URLCache.shared = JellyfinClientFactory.urlCache
         DiagnosticsHub.shared.record(.appLaunched)
         DiagnosticsHub.shared.startMetricCollection()
+        TVClientLogTransfer.shared.startReceiver()
         #if DEBUG
             let arguments = ProcessInfo.processInfo.arguments
             shouldRestoreLastSession = !arguments.contains("--gus-skip-session-restore")

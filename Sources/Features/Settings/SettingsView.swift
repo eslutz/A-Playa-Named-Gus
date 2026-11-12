@@ -136,6 +136,12 @@ struct SettingsView: View {
                 NavigationLink { SeerrSettingsView() } label: { Label("Seerr", systemImage: "sparkles") }
             }
 
+            Section("Developer") {
+                NavigationLink { DeveloperDiagnosticsView() } label: {
+                    Label("Client Logs", systemImage: "ladybug")
+                }
+            }
+
             Section("About") {
                 LabeledContent("Version", value: DeviceIdentity.appVersion)
                 LabeledContent("Client", value: DeviceIdentity.clientName)

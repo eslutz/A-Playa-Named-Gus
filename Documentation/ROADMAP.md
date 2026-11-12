@@ -23,6 +23,10 @@ constrain *how* each item is built.
 - [x] Set the minimum deployment target to 26.0 across iOS/iPadOS, tvOS, visionOS, macOS, watchOS, and Top Shelf, preserving OS 27.x features through availability guards and native OS 26 fallbacks. All six local Debug build lanes passed with zero warnings; tvOS 26.5/27.0 installation and launch passed, with six focused audio/TV playback tests passing on each OS. See [implementation and validation](Reviews/README.md).
 - [ ] Complete exact 26.0 runtime execution, physical Apple TV 26.6 account/focus/playback/Top Shelf acceptance, remaining platform runtime checks, and required signed/hosted release gates.
 
+## Playback reliability
+
+- [~] Route standalone transport-stream sources through HLS and surface AVPlayer startup failures in retained diagnostics. Local stream-format and unit regressions are separate from physical Apple TV acceptance; a second stalled HLS session still requires a verified cause.
+
 ## October 2026 UI remediation
 
 - [~] October 11 repairs cover sign-in/error feedback, Mac discovery, persistent download artwork, confirmed/selective/bulk management deletion, native swipe deletion, completion cleanup, adaptive hero/actions/sidebar, audio return controls, and playback lifecycle/replay. Physical phone checks finished on **1.0.0 (11)**; management scrolling/Cancel and compact actions passed, and the phone is released with no automation pending. Later source changes have not been installed on it. The landscape Home search repair passed 1/1; full narrow-screen portrait/landscape checks passed 2/2 in light/dark at accessibility XXXL. The final focused playback run passed **23/23** (two real natural-completion/replay checks and 21 UI/lifecycle regressions). Nested EPUB chapter navigation now uses a native sheet/list with recursive disclosure groups and retains Readium’s directional navigation adapter. Its isolated iOS simulator acceptance passed **1/1**, covering chapter selection, readable portrait/landscape pages, forward/backward paging, keyboard absence, and return to book details. See [current repair evidence](Reviews/README.md).
@@ -1037,3 +1041,6 @@ Scope and API evidence: [Seerr contract](Seerr-api-contract.md). The ongoing ove
 ### tvOS detail presentation follow-up
 
 The app follows the selected Apple TV detail references: top-left titles over full-bleed artwork, a lower action/synopsis area retaining both action rows and More, season-led episode rails, circular cast portraits, and metadata after content rails. The tvOS Sketch snapshot follows the canonical Sketch workspace. Durable limitations and reproduction steps are in [tvOS design validation](tvos-design-validation.md); captures and detailed historical audits stay outside Git.
+### Developer diagnostics
+
+- [~] Settings > Developer > Client Logs: bounded retained privacy-safe app events, normalized performance summaries, and user-initiated JSON export. Native sharing on iOS/iPadOS/macOS/visionOS; Apple TV sends an events-only bundle to a selected iPhone through DeviceDiscoveryUI. Explicit Watch requests return a bounded snapshot with capture/receipt timestamps for inclusion in the iPhone export. Physical-device transfer, reconnection and TestFlight acceptance remain open.

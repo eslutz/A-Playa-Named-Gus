@@ -50,8 +50,10 @@ final class PlaybackStore {
     private var reportContext: PlaybackReportContext?
     private var progressObserver: Any?
     private var endObserver: (any NSObjectProtocol)?
+    private var stalledObserver: (any NSObjectProtocol)?
     private var failedEndObserver: (any NSObjectProtocol)?
     private var pauseStateObservation: NSKeyValueObservation?
+    private var itemStatusObservation: NSKeyValueObservation?
     private var lastReportTask: Task<Void, Never>?
     private var didReportPause = false
     private var didReportStopped = false
@@ -418,6 +420,18 @@ final class PlaybackStore {
 
             try Task.checkCancellation()
             guard generation == preparationGeneration else { return }
+            // AVPlayer can fail while the initial seek suspends this preparation.
+            // Preserve an observer's error and check the item itself in case its
+            // status callback has not reached the main actor yet.
+            if case .failed = state {
+                diagnostics.endInterval("PlaybackStartup", startupInterval)
+                return
+            }
+            if playerItem.status == .failed {
+                diagnostics.endInterval("PlaybackStartup", startupInterval)
+                handlePlayerFailure(playerItem.error)
+                return
+            }
             nowPlaying.startVideo(
                 player: player,
                 item: item,
@@ -501,6 +515,17 @@ final class PlaybackStore {
         removeEndObserver()
         let generation = preparationGeneration
         let itemIdentity = ObjectIdentifier(playerItem)
+        // Startup failures do not necessarily post failedToPlayToEndTime. Observe
+        // item status too, or an unsupported source leaves the loading player blank.
+        itemStatusObservation = playerItem.observe(\.status, options: [.initial, .new]) { [weak self] _, _ in
+            Task { @MainActor [weak self] in
+                guard let self, let currentItem = self.player?.currentItem,
+                      self.preparationGeneration == generation,
+                      ObjectIdentifier(currentItem) == itemIdentity,
+                      currentItem.status == .failed else { return }
+                self.handlePlayerFailure(currentItem.error)
+            }
+        }
         endObserver = NotificationCenter.default.addObserver(
             forName: AVPlayerItem.didPlayToEndTimeNotification,
             object: playerItem,
@@ -513,6 +538,16 @@ final class PlaybackStore {
                 self.handlePlaybackEnded()
             }
         }
+        stalledObserver = NotificationCenter.default.addObserver(
+            forName: AVPlayerItem.playbackStalledNotification, object: playerItem, queue: .main
+        ) { [weak self] _ in
+            MainActor.assumeIsolated {
+                guard let self, let currentItem = self.player?.currentItem,
+                      self.preparationGeneration == generation,
+                      ObjectIdentifier(currentItem) == itemIdentity else { return }
+                DiagnosticsHub.shared.record(.playbackStalled(positionMilliseconds: self.currentPositionTicks() / 10000))
+            }
+        }
         failedEndObserver = NotificationCenter.default.addObserver(
             forName: AVPlayerItem.failedToPlayToEndTimeNotification,
             object: playerItem,
@@ -523,14 +558,34 @@ final class PlaybackStore {
                 guard let self, let currentItem = self.player?.currentItem,
                       self.preparationGeneration == generation,
                       ObjectIdentifier(currentItem) == itemIdentity else { return }
-                let message = error.map { GusError(from: $0).localizedDescription }
-                    ?? String(localized: "Playback stopped unexpectedly.", comment: "Generic playback failure message")
-                self.state = .failed(message)
+                self.handlePlayerFailure(error)
             }
         }
     }
 
+    private func handlePlayerFailure(_ error: Error?) {
+        DiagnosticsHub.shared.record(.playbackFailed)
+        let failure = error as NSError?
+        let domain: Int
+        switch failure?.domain {
+        case NSURLErrorDomain: domain = 1
+        case AVFoundationErrorDomain: domain = 2
+        case NSOSStatusErrorDomain: domain = 3
+        default: domain = 0
+        }
+        DiagnosticsHub.shared.record(.playbackItemFailed(errorCode: failure?.code ?? 0, errorDomain: domain))
+        let message = error.map { GusError(from: $0).localizedDescription }
+            ?? String(localized: "Playback stopped unexpectedly.", comment: "Generic playback failure message")
+        state = .failed(message)
+    }
+
     private func removeEndObserver() {
+        if let stalledObserver {
+            NotificationCenter.default.removeObserver(stalledObserver)
+        }
+        stalledObserver = nil
+        itemStatusObservation?.invalidate()
+        itemStatusObservation = nil
         if let endObserver {
             NotificationCenter.default.removeObserver(endObserver)
         }
@@ -574,6 +629,19 @@ final class PlaybackStore {
             let status = player.timeControlStatus
             Task { @MainActor in
                 guard let self, self.player === player, self.state == .ready else { return }
+                let reason: Int
+                switch player.reasonForWaitingToPlay {
+                case .toMinimizeStalls: reason = 1
+                case .evaluatingBufferingRate: reason = 2
+                case .noItemToPlay: reason = 3
+                default: reason = 0
+                }
+                DiagnosticsHub.shared.record(.playbackTimeControl(
+                    status: status.rawValue, reason: reason,
+                    positionMilliseconds: self.currentPositionTicks() / 10000,
+                    bufferEmpty: player.currentItem?.isPlaybackBufferEmpty ?? false,
+                    likelyToKeepUp: player.currentItem?.isPlaybackLikelyToKeepUp ?? false
+                ))
                 switch status {
                 case .paused where !self.didReportPause:
                     self.didReportPause = true

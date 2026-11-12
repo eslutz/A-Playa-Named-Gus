@@ -48,13 +48,18 @@ struct StreamURLBuilderTests {
         #expect(transcoding?.videoCodec == "h264")
     }
 
-    @Test("transport-stream direct play covers Live TV containers")
-    func avPlayerProfileDirectPlaysTransportStreams() throws {
+    @Test("Blu-ray TS and M2TS require HLS rather than raw-file direct play")
+    func avPlayerProfileRemuxesTransportStreams() throws {
         let profile = StreamURLBuilder.avPlayerProfile(maxStreamingBitrate: 42_000_000, capabilities: fullCapabilities)
-        let ts = try #require(profile.directPlayProfiles?.first { $0.container?.contains("mpegts") == true })
-
-        #expect(ts.videoCodec == "h264,hevc")
-        #expect(ts.audioCodec?.split(separator: ",").contains("eac3") == true)
+        let containers = profile.directPlayProfiles?.flatMap { ($0.container ?? "").split(separator: ",") } ?? []
+        #expect(!containers.contains("ts"))
+        #expect(!containers.contains("mpegts"))
+        #expect(!containers.contains("m2ts"))
+        let hls = try #require(profile.transcodingProfiles?.first)
+        #expect(hls.protocol == .hls)
+        #expect(hls.container == "mp4")
+        #expect(hls.videoCodec?.split(separator: ",").contains("h264") == true)
+        #expect(hls.audioCodec?.split(separator: ",").contains("dts") == false)
     }
 
     @Test("text subtitles ride the HLS manifest; bitmap subtitles burn in")

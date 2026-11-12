@@ -28,6 +28,19 @@
             adopt(applicationContext)
         }
 
+        /// The phone requests a snapshot explicitly. The outbound application context
+        /// is independent of the phone's credential context and retains only the latest
+        /// snapshot while disconnected, instead of an unbounded file-transfer queue.
+        func session(_ session: WCSession, didReceiveUserInfo userInfo: [String: Any]) {
+            guard userInfo["requestDiagnostics"] as? Bool == true,
+                  let data = try? WatchDiagnosticSnapshot.capture().encoded() else { return }
+            do {
+                try session.updateApplicationContext(["diagnosticSnapshot": data])
+            } catch {
+                logger.error("Watch diagnostic snapshot could not be queued")
+            }
+        }
+
         private func adopt(_ context: [String: Any]) {
             if let shouldClear = context["clearCredential"] as? Bool,
                shouldClear,

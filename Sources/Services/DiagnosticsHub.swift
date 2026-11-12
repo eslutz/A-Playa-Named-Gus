@@ -24,6 +24,12 @@ enum DiagnosticEvent: Equatable {
     case playbackStartRequested
     case playbackStarted(usingTranscoding: Bool, usingLocalFile: Bool)
     case playbackFailed
+    /// Domain codes: 0 unknown, 1 URL, 2 AVFoundation, 3 OSStatus. Never raw error text.
+    case playbackItemFailed(errorCode: Int, errorDomain: Int)
+    /// Time-control codes: 0 paused, 1 waiting, 2 playing. Wait reasons: 0 none/unknown,
+    /// 1 minimize stalls, 2 evaluate buffering, 3 no item. No raw framework strings.
+    case playbackTimeControl(status: Int, reason: Int, positionMilliseconds: Int, bufferEmpty: Bool, likelyToKeepUp: Bool)
+    case playbackStalled(positionMilliseconds: Int)
     case downloadQueued
     case downloadPaused
     case downloadCompleted
@@ -47,6 +53,9 @@ enum DiagnosticEvent: Equatable {
         case .playbackStartRequested: return "playback.start.requested"
         case .playbackStarted: return "playback.started"
         case .playbackFailed: return "playback.failed"
+        case .playbackItemFailed: return "playback.item.failed"
+        case .playbackTimeControl: return "playback.time.control"
+        case .playbackStalled: return "playback.stalled"
         case .downloadQueued: return "download.queued"
         case .downloadPaused: return "download.paused"
         case .downloadCompleted: return "download.completed"
@@ -57,6 +66,18 @@ enum DiagnosticEvent: Equatable {
     /// Numeric/boolean attributes only — see the type-level privacy contract.
     var attributes: [String: String] {
         switch self {
+        case let .playbackTimeControl(status, reason, positionMilliseconds, bufferEmpty, likelyToKeepUp):
+            return [
+                "status": String((0 ... 2).contains(status) ? status : 0),
+                "reason": String((0 ... 3).contains(reason) ? reason : 0),
+                "positionMilliseconds": String(max(0, positionMilliseconds)),
+                "bufferEmpty": String(bufferEmpty),
+                "likelyToKeepUp": String(likelyToKeepUp),
+            ]
+        case let .playbackStalled(positionMilliseconds):
+            return ["positionMilliseconds": String(max(0, positionMilliseconds))]
+        case let .playbackItemFailed(errorCode, errorDomain):
+            return ["errorCode": String(errorCode), "errorDomain": String((0 ... 3).contains(errorDomain) ? errorDomain : 0)]
         case let .libraryLoadFinished(itemCount):
             return ["itemCount": String(itemCount)]
         case let .playbackStarted(usingTranscoding, usingLocalFile):
@@ -71,7 +92,7 @@ enum DiagnosticEvent: Equatable {
 }
 
 /// A recorded diagnostic event with its capture time.
-struct DiagnosticEventRecord: Equatable {
+struct DiagnosticEventRecord: Codable, Equatable {
     let name: String
     let attributes: [String: String]
     let date: Date
@@ -85,14 +106,21 @@ struct DiagnosticEventRecord: Equatable {
 /// which is how the performance baselines in
 /// `Documentation/AppStore/performance-baselines.md` are re-measured.
 final class DiagnosticsHub: Sendable {
-    static let shared = DiagnosticsHub()
+    static let shared = DiagnosticsHub(directory: AppStorageLocation.appDirectory())
     static let maxRecentEvents = 200
 
     private let logger = Logger(category: .diagnostics)
     private let signposter = OSSignposter(subsystem: Logger.subsystem, category: "Diagnostics")
-    private let recentEventStorage = OSAllocatedUnfairLock(initialState: [DiagnosticEventRecord]())
+    private let recentEventStorage: OSAllocatedUnfairLock<[DiagnosticEventRecord]>
+    private let persistenceURL: URL?
 
-    init() {}
+    /// A nil directory gives tests an isolated, in-memory recorder.
+    init(directory: URL? = nil) {
+        persistenceURL = directory?.appendingPathComponent("client-events.json")
+        let saved = persistenceURL.flatMap { try? Data(contentsOf: $0) }
+            .flatMap { try? JSONDecoder().decode([DiagnosticEventRecord].self, from: $0) } ?? []
+        recentEventStorage = OSAllocatedUnfairLock(initialState: Array(saved.suffix(Self.maxRecentEvents)))
+    }
 
     /// Records a lifecycle marker into the ring buffer and the unified log.
     func record(_ event: DiagnosticEvent, date: Date = .now) {
@@ -101,6 +129,14 @@ final class DiagnosticsHub: Sendable {
             events.append(record)
             if events.count > Self.maxRecentEvents {
                 events.removeFirst(events.count - Self.maxRecentEvents)
+            }
+            if let persistenceURL {
+                do {
+                    try FileManager.default.createDirectory(at: persistenceURL.deletingLastPathComponent(), withIntermediateDirectories: true)
+                    try JSONEncoder().encode(events).write(to: persistenceURL, options: .atomic)
+                } catch {
+                    logger.error("Client event persistence failed")
+                }
             }
         }
         logger.debug("\(event.name, privacy: .public) \(event.attributes, privacy: .public)")

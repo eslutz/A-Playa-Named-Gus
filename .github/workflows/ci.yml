@@ -54,6 +54,7 @@ jobs:
         run: |
           python3 Scripts/test-cloud-bootstrap.py
           python3 Scripts/test-release-warning-gate.py
+          python3 Scripts/test-select-simulator.py
           python3 Scripts/check-app-icons.py
           swift Scripts/app-store-connect.swift self-test
 
@@ -173,7 +174,7 @@ jobs:
             destination: platform=iOS Simulator,name=iPad Pro 11-inch (M5)
           - name: tvOS
             scheme: Gus tvOS Unit Tests
-            destination: platform=tvOS Simulator,name=Apple TV 4K (3rd generation)
+            destination: ""
           - name: visionOS
             scheme: Gus visionOS Unit Tests
             destination: ""
@@ -235,6 +236,15 @@ jobs:
       - name: Resolve packages
         run: python3 Scripts/run-warning-free.py xcodebuild -onlyUsePackageVersionsFromResolvedFile -resolvePackageDependencies -project 'A Playa Named Gus.xcodeproj' -scheme '${{ matrix.scheme }}'
 
+      - name: Pick tvOS simulator
+        id: tv-sim
+        if: matrix.name == 'tvOS'
+        run: |
+          set -euo pipefail
+          sdk_version="$(xcrun --sdk appletvsimulator --show-sdk-version)"
+          destination="$(xcrun simctl list --json | python3 Scripts/select-simulator.py --sdk-version "$sdk_version")"
+          echo "destination=$destination" >> "$GITHUB_OUTPUT"
+
       - name: Pick visionOS simulator
         id: vision-sim
         if: matrix.name == 'visionOS'
@@ -254,7 +264,9 @@ jobs:
         run: |
           set -euo pipefail
           destination='${{ matrix.destination }}'
-          if [ '${{ matrix.name }}' = 'visionOS' ]; then
+          if [ '${{ matrix.name }}' = 'tvOS' ]; then
+            destination='${{ steps.tv-sim.outputs.destination }}'
+          elif [ '${{ matrix.name }}' = 'visionOS' ]; then
             destination='${{ steps.vision-sim.outputs.destination }}'
           fi
           python3 Scripts/run-warning-free.py xcodebuild test -project 'A Playa Named Gus.xcodeproj' -scheme '${{ matrix.scheme }}' -destination "$destination"
