@@ -130,5 +130,16 @@
             <array><string>public.data</string></array>
         </dict>
     </array>
+    <key>NSApplicationServices</key>
+    <dict>
+        <key>Browses</key>
+        <array><dict>
+            <key>NSApplicationServiceIdentifier</key><string>Gus-Client-Logs</string>
+            <key>NSApplicationServiceUsageDescription</key><string>Send the client logs you choose to Gus on your iPhone for sharing.</string>
+            <key>NSApplicationServicePlatformSupport</key><array><string>iOS</string></array>
+        </dict></array>
+        <key>Advertises</key>
+        <array><dict><key>NSApplicationServiceIdentifier</key><string>Gus-Client-Logs</string></dict></array>
+    </dict>
 </dict>
 </plist>

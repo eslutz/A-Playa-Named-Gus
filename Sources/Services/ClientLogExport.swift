@@ -10,6 +10,7 @@ struct ClientLogExport: Codable {
     let build: String
     let events: [DiagnosticEventRecord]
     let performance: [DiagnosticSummary]
+    var watch: ReceivedWatchDiagnostics? = nil
 
     static func snapshot() -> Self {
         Self(
@@ -19,7 +20,8 @@ struct ClientLogExport: Codable {
             appVersion: DeviceIdentity.appVersion,
             build: Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "Unknown",
             events: DiagnosticsHub.shared.recentEvents(),
-            performance: DiagnosticSummaryStore.shared.loadSummaries()
+            performance: DiagnosticSummaryStore.shared.loadSummaries(),
+            watch: WatchDiagnosticSnapshotStore.shared.latest()
         )
     }
 

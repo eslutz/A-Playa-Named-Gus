@@ -7736,7 +7736,34 @@
           }
         }
       }
-    }
+    },
+    "Log receiver unavailable. Reopen Gus to retry.": {},
+    "Transferring logs…": {},
+    "Log transfer timed out. Try again.": {},
+    "Log transfer failed. Try again.": {},
+    "Log transfer was rejected or interrupted.": {},
+    "Apple TV logs received. Open Developer → Client Logs to share.": {},
+    "Logs saved, but the sender could not be notified.": {},
+    "Invalid log bundle rejected.": {},
+    "Log bundle is too large.": {},
+    "Logs received on your phone. Open Gus → Developer → Client Logs to share.": {},
+    "Receipt was not confirmed. Check the phone before retrying.": {},
+    "Logs could not be prepared. Try again.": {},
+    "Send to iPhone": {},
+    "Send Logs to iPhone": {},
+    "Log transfer requires a supported Apple TV 4K and a nearby iPhone running Gus.": {},
+    "Cancel Transfer": {},
+    "Select your iPhone and approve the system connection prompt. Gus must be installed on both devices with the appropriate iCloud or Family Sharing relationship.": {},
+    "Apple TV Logs": {},
+    "Select this phone from Gus’s Client Logs screen on Apple TV, then approve the system connection prompt.": {},
+    "Share Apple TV Logs": {},
+    "Watch Logs": {},
+    "Request Watch Logs": {},
+    "Requested. Delivery may wait until your Watch reconnects. Refresh to check for arrival.": {},
+    "A paired Watch running Gus is required.": {},
+    "Refresh Watch Logs": {},
+    "Prepare a new log export to include this snapshot.": {},
+    "No Watch snapshot received yet.": {}
   },
   "version": "1.1"
 }
