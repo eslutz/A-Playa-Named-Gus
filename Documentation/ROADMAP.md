@@ -1037,3 +1037,6 @@ Scope and API evidence: [Seerr contract](Seerr-api-contract.md). The ongoing ove
 ### tvOS detail presentation follow-up
 
 The app follows the selected Apple TV detail references: top-left titles over full-bleed artwork, a lower action/synopsis area retaining both action rows and More, season-led episode rails, circular cast portraits, and metadata after content rails. The tvOS Sketch snapshot follows the canonical Sketch workspace. Durable limitations and reproduction steps are in [tvOS design validation](tvos-design-validation.md); captures and detailed historical audits stay outside Git.
+### Developer diagnostics
+
+- [~] Settings > Developer > Client Logs: bounded retained privacy-safe app events, normalized performance summaries, and user-initiated JSON export. Native sharing on iOS/iPadOS/macOS/visionOS; tvOS saves locally for paired-Xcode container extraction (development builds only). Physical-device export and full-platform acceptance remain open.

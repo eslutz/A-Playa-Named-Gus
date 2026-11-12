@@ -7582,6 +7582,160 @@
           }
         }
       }
+    },
+    "Developer": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Developer"
+          }
+        }
+      }
+    },
+    "Client Logs": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Client Logs"
+          }
+        }
+      }
+    },
+    "Build": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Build"
+          }
+        }
+      }
+    },
+    "Platform": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Platform"
+          }
+        }
+      }
+    },
+    "Prepare Log Export": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prepare Log Export"
+          }
+        }
+      }
+    },
+    "The log export could not be saved. Try again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The log export could not be saved. Try again."
+          }
+        }
+      }
+    },
+    "Export": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Export"
+          }
+        }
+      }
+    },
+    "Includes the latest 200 app events and available performance summaries. Names, media titles, server addresses and sign-in details are excluded. Logs stay on this device until you export them. Apple TV storage may be purged by the system.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Includes the latest 200 app events and available performance summaries. Names, media titles, server addresses and sign-in details are excluded. Logs stay on this device until you export them. Apple TV storage may be purged by the system."
+          }
+        }
+      }
+    },
+    "App Events": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "App Events"
+          }
+        }
+      }
+    },
+    "No app events recorded yet.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No app events recorded yet."
+          }
+        }
+      }
+    },
+    "Device Performance": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Device Performance"
+          }
+        }
+      }
+    },
+    "Reports are delivered periodically by the operating system. tvOS does not provide MetricKit reports.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reports are delivered periodically by the operating system. tvOS does not provide MetricKit reports."
+          }
+        }
+      }
+    },
+    "Share Client Logs": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Share Client Logs"
+          }
+        }
+      }
+    },
+    "Export saved on this Apple TV. On a paired Mac, use Xcode’s Devices and Simulators to download Gus’s app container. Find Gus-client-logs.json in Library/Application Support/A Playa Named Gus. This requires a development-installed app; TestFlight may not allow container download.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Export saved on this Apple TV. On a paired Mac, use Xcode’s Devices and Simulators to download Gus’s app container. Find Gus-client-logs.json in Library/Application Support/A Playa Named Gus. This requires a development-installed app; TestFlight may not allow container download."
+          }
+        }
+      }
     }
   },
   "version": "1.1"
