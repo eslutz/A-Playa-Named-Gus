@@ -4,10 +4,6 @@ on:
   pull_request:
     branches:
       - main
-    paths:
-      - 'Sources/**'
-      - 'A Playa Named Gus.xcodeproj/project.pbxproj'
-      - 'project.yml'
 
 permissions:
   contents: read
@@ -20,6 +16,24 @@ env:
   XCODE_APP: /Applications/Xcode_27.1.app
 
 jobs:
+  changes:
+    name: Validation Scope
+    runs-on: xcode-27
+    timeout-minutes: 10
+    outputs:
+      full: ${{ steps.scope.outputs.full }}
+    steps:
+      - name: Checkout history
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - name: Classify build inputs
+        id: scope
+        env:
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: python3 Scripts/classify-changes.py --base "$PR_BASE_SHA" --head "$PR_HEAD_SHA" >> "$GITHUB_OUTPUT"
+
   lint:
     name: Lint
     runs-on: xcode-27
@@ -55,6 +69,7 @@ jobs:
           python3 Scripts/test-cloud-bootstrap.py
           python3 Scripts/test-release-warning-gate.py
           python3 Scripts/test-select-simulator.py
+          python3 Scripts/test-classify-changes.py
           python3 Scripts/check-app-icons.py
           swift Scripts/app-store-connect.swift self-test
 
@@ -103,6 +118,8 @@ jobs:
           RUBY
 
   build:
+    if: always()
+    needs: changes
     name: Build ${{ matrix.name }}
     runs-on: xcode-27
     timeout-minutes: 45
@@ -125,10 +142,19 @@ jobs:
             destination: generic/platform=watchOS Simulator
 
     steps:
+      - name: Require successful change classification
+        if: needs.changes.result != 'success'
+        run: exit 1
+
       - name: Checkout
         uses: actions/checkout@v6
 
+      - name: Documentation-only validation complete
+        if: needs.changes.outputs.full != 'true'
+        run: echo "Documentation-only change; lightweight validation runs in separate required jobs."
+
       - name: Select Xcode 27.1 and verify iOS SDK
+        if: needs.changes.outputs.full == 'true'
         run: |
           set -euo pipefail
           if [ ! -d "$XCODE_APP" ]; then
@@ -145,20 +171,26 @@ jobs:
           fi
 
       - name: Install build tools
+        if: needs.changes.outputs.full == 'true'
         run: command -v xcodegen >/dev/null || brew install xcodegen
 
       - name: Verify shared Xcode project
+        if: needs.changes.outputs.full == 'true'
         run: python3 Scripts/check-cloud-project.py
 
       - name: Resolve packages
+        if: needs.changes.outputs.full == 'true'
         run: python3 Scripts/run-warning-free.py xcodebuild -onlyUsePackageVersionsFromResolvedFile -resolvePackageDependencies -project 'A Playa Named Gus.xcodeproj' -scheme 'A Playa Named Gus'
 
       - name: Build ${{ matrix.name }}
+        if: needs.changes.outputs.full == 'true'
         # Compile validation does not require production capability profiles.
         # Xcode Cloud owns provisioned distribution signing and release tests.
         run: python3 Scripts/run-warning-free.py xcodebuild -project 'A Playa Named Gus.xcodeproj' -scheme '${{ matrix.scheme || 'A Playa Named Gus' }}' -destination '${{ matrix.destination }}' CODE_SIGNING_ALLOWED=NO build
 
   test:
+    if: always()
+    needs: changes
     name: Test ${{ matrix.name }}
     runs-on: xcode-27
     timeout-minutes: 60
@@ -183,10 +215,19 @@ jobs:
             destination: platform=macOS,arch=arm64
 
     steps:
+      - name: Require successful change classification
+        if: needs.changes.result != 'success'
+        run: exit 1
+
       - name: Checkout
         uses: actions/checkout@v6
 
+      - name: Documentation-only validation complete
+        if: needs.changes.outputs.full != 'true'
+        run: echo "Documentation-only change; lightweight validation runs in separate required jobs."
+
       - name: Select Xcode 27.1 and verify iOS SDK
+        if: needs.changes.outputs.full == 'true'
         run: |
           set -euo pipefail
           if [ ! -d "$XCODE_APP" ]; then
@@ -203,13 +244,15 @@ jobs:
           fi
 
       - name: Install build tools
+        if: needs.changes.outputs.full == 'true'
         run: command -v xcodegen >/dev/null || brew install xcodegen
 
       - name: Verify shared Xcode project
+        if: needs.changes.outputs.full == 'true'
         run: python3 Scripts/check-cloud-project.py
 
       - name: Prepare Mac unit test signing
-        if: matrix.name == 'macOS'
+        if: needs.changes.outputs.full == 'true' && (matrix.name == 'macOS')
         run: |
           set -euo pipefail
           if [ -e Config/Local.xcconfig ] || [ -L Config/Local.xcconfig ]; then
@@ -234,11 +277,12 @@ jobs:
           printf 'CODE_SIGN_ENTITLEMENTS[sdk=macosx*] = %s\n' "$RUNNER_TEMP/gus-macos-unit.entitlements" > Config/Local.xcconfig
 
       - name: Resolve packages
+        if: needs.changes.outputs.full == 'true'
         run: python3 Scripts/run-warning-free.py xcodebuild -onlyUsePackageVersionsFromResolvedFile -resolvePackageDependencies -project 'A Playa Named Gus.xcodeproj' -scheme '${{ matrix.scheme }}'
 
       - name: Pick tvOS simulator
         id: tv-sim
-        if: matrix.name == 'tvOS'
+        if: needs.changes.outputs.full == 'true' && matrix.name == 'tvOS'
         run: |
           set -euo pipefail
           sdk_version="$(xcrun --sdk appletvsimulator --show-sdk-version)"
@@ -247,7 +291,7 @@ jobs:
 
       - name: Pick visionOS simulator
         id: vision-sim
-        if: matrix.name == 'visionOS'
+        if: needs.changes.outputs.full == 'true' && matrix.name == 'visionOS'
         run: |
           set -euo pipefail
           sim_id="$(
@@ -261,6 +305,7 @@ jobs:
           echo "destination=platform=visionOS Simulator,id=$sim_id" >> "$GITHUB_OUTPUT"
 
       - name: Test ${{ matrix.name }}
+        if: needs.changes.outputs.full == 'true'
         run: |
           set -euo pipefail
           destination='${{ matrix.destination }}'
@@ -272,7 +317,7 @@ jobs:
           python3 Scripts/run-warning-free.py xcodebuild test -project 'A Playa Named Gus.xcodeproj' -scheme '${{ matrix.scheme }}' -destination "$destination"
 
       - name: Diagnose Mac unit test launch failure
-        if: failure() && matrix.name == 'macOS'
+        if: needs.changes.outputs.full == 'true' && (failure() && matrix.name == 'macOS')
         continue-on-error: true
         run: |
           set -euo pipefail
