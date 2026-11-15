@@ -48,3 +48,34 @@ The delivered files were opened and saved by Sketch, checked for symbol/image
 references and appearance coverage, and reviewed using representative native PNG
 exports. Design completion does not establish runtime or physical-device
 acceptance. Review images and recovery checkpoints stay outside Git.
+
+## Refinement handoff reconciliation
+
+The current implementation adds native behavior that needs reconciliation with the
+canonical editable documents. The tracked Sketch snapshots were not changed or
+verified for these refinements. Sketch MCP is required for editable mutations;
+archive inspection, source review and simulator images do not establish saved-design
+fidelity.
+
+Use the existing Screens, States and Components pages and paired appearances. Map
+these representative scenarios to persistent frame/component IDs after inspecting
+the canonical document; do not invent frame IDs or duplicate every picker value.
+
+| Scenario | Native surface and state to reconcile |
+|---|---|
+| Detail version choice | Eligible multiversion menu; Start Over / Resume at Timestamp / Cancel; single-source default |
+| Playback choices | Native player menu without AVKit overlap; Automatic / Off / explicit or unavailable track; Watch and eligible CarPlay choices |
+| Foreground recovery | Initial failure, retained-content refresh failure, page retry, recording cancellation accepted/uncertain/confirmed |
+| Unconfirmed edits | Collection server-state review; partial profile save and canceled transmitted save requiring reload; preserved draft |
+| Download recovery | Unreadable metadata retry; storage failure during pause/resume; recorded version identity and converted-file track limits |
+| Audio collection | Ordered queue continuation; complete Shuffle collection progress/cancel/retry; disabled unavailable transport |
+| Browsing context | Resume-aligned season/episode; latest-feed expansion; Back/resize/focus restoration |
+| Artwork and semantics | Role-specific missing/stale artwork, unchanged bounds, full episode identity/status, larger text and RTL |
+| Reader recovery | Navigator construction failure; resource retry/keep reading; retained last valid locator |
+| Native previews | Compatible HLS scrubber preview; tvOS chapter navigation with deferred or missing artwork; unsupported JPEG trickplay |
+
+Capture matching current-build states before proposing visual changes. Record build,
+OS, device/window, appearance and fixture provenance alongside native frame exports.
+Physical focus, VoiceOver/Crown/keyboard/gaze interaction, contrast and comfort remain
+separate acceptance checks. The implementation ledger is in
+[app-wide refinement](../Documentation/app-wide-refinement.md).

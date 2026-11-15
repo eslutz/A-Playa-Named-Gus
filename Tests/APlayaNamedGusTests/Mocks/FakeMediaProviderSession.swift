@@ -27,13 +27,30 @@ final class FakeMediaProviderSession: MediaProviderSession {
     var similarItemsHandler: ((String) async throws -> [MediaItem])?
     var specialFeaturesHandler: ((String) async throws -> [MediaItem])?
     var episodesHandler: ((String) async throws -> MediaItemPage)?
+    var liveTVAvailabilityHandler: (() async throws -> LiveTVAvailability)?
+    var liveTVChannelsHandler: ((Int, Int) async throws -> MediaItemPage)?
+    var liveTVRecordingsHandler: ((Int, Int) async throws -> MediaItemPage)?
+    var liveTVTimersHandler: (() async throws -> [LiveTVTimer])?
+    var cancelLiveTVTimerHandler: ((String) async throws -> Void)?
     var seasonsHandler: (() async throws -> [MediaItem])?
     var progressHandler: ((String, Int) async throws -> Void)?
     private(set) var watchedRequests: [(itemID: String, currentlyWatched: Bool)] = []
+    private(set) var favoriteRequests: [(itemID: String, currentlyFavorite: Bool)] = []
     var watchedHandler: (() async throws -> Void)?
     var favoriteHandler: (() async throws -> Void)?
     var audioHandler: (() async throws -> PlaybackSourceResolution)?
     var playbackHandler: (() async throws -> PlaybackSourceResolution)?
+    var playbackReportHandler: ((String, PlaybackReportContext, Int, Bool) async throws -> Void)?
+    private(set) var playbackReports: [(kind: String, context: PlaybackReportContext, position: Int)] = []
+    private(set) var releasedPlaybackResources: [PlaybackResource] = []
+    private(set) var playbackRequestedSelections: [PlaybackStreamSelection] = []
+    /// Long-running native lifecycle probes keep observations bounded between samples.
+    func drainPlaybackReports() -> [(kind: String, context: PlaybackReportContext, position: Int)] {
+        let result = playbackReports
+        playbackReports.removeAll(keepingCapacity: true)
+        return result
+    }
+
     var mediaListsHandler: ((ServerMediaListKind) async throws -> [ServerMediaList])?
     var mediaListHandler: ((UUID, ServerMediaListKind) async throws -> ServerMediaList)?
     var createMediaListHandler: ((String, ServerMediaListKind, [String]) async throws -> UUID)?
@@ -193,7 +210,7 @@ final class FakeMediaProviderSession: MediaProviderSession {
         return []
     }
 
-    func episodes(seriesID: String, seasonID: String, limit: Int) async throws -> MediaItemPage {
+    func episodesPage(seriesID: String, seasonID: String, startIndex: Int, limit: Int) async throws -> MediaItemPage {
         if let episodesHandler {
             return try await episodesHandler(seasonID)
         }
@@ -230,6 +247,7 @@ final class FakeMediaProviderSession: MediaProviderSession {
     ) async throws -> PlaybackSourceResolution {
         playbackResolutionCallCount += 1
         playbackRequestedStartTicks.append(startTimeTicks)
+        playbackRequestedSelections.append(streamSelection)
         if let playbackHandler {
             return try await playbackHandler()
         }
@@ -243,8 +261,13 @@ final class FakeMediaProviderSession: MediaProviderSession {
         )
     }
 
-    func resolveAudioPlayback(for itemID: String) async throws -> PlaybackSourceResolution {
+    func releasePlaybackResource(_ resource: PlaybackResource) async throws {
+        releasedPlaybackResources.append(resource)
+    }
+
+    func resolveAudioPlayback(for itemID: String, streamSelection: PlaybackStreamSelection) async throws -> PlaybackSourceResolution {
         audioResolutionCallCount += 1
+        playbackRequestedSelections.append(streamSelection)
         if let audioHandler {
             return try await audioHandler()
         }
@@ -258,30 +281,33 @@ final class FakeMediaProviderSession: MediaProviderSession {
         )
     }
 
-    func liveTVIsEnabled() async -> Bool {
-        false
+    func liveTVAvailability() async throws -> LiveTVAvailability {
+        try await liveTVAvailabilityHandler?() ?? .notConfigured
     }
 
     func liveTVChannels(startIndex: Int, limit: Int) async throws -> MediaItemPage {
-        MediaItemPage(items: [], totalRecordCount: 0)
+        try await liveTVChannelsHandler?(startIndex, limit) ?? MediaItemPage(items: [], totalRecordCount: 0)
     }
 
-    func liveTVRecordings(limit: Int) async throws -> [MediaItem] {
-        []
+    func liveTVRecordingsPage(startIndex: Int, limit: Int) async throws -> MediaItemPage {
+        try await liveTVRecordingsHandler?(startIndex, limit) ?? MediaItemPage(items: [], totalRecordCount: 0)
     }
 
     func liveTVTimers() async throws -> [LiveTVTimer] {
-        []
+        try await liveTVTimersHandler?() ?? []
     }
 
-    func cancelLiveTVTimer(id: String) async throws {}
+    func cancelLiveTVTimer(id: String) async throws {
+        try await cancelLiveTVTimerHandler?(id)
+    }
 
-    func downloadSource(for item: MediaItem) async throws -> DownloadSourceResolution {
+    func downloadSource(for item: MediaItem, streamSelection: PlaybackStreamSelection) async throws -> DownloadSourceResolution {
         downloadSourceCallCount += 1
         return DownloadSourceResolution(
             url: URL(string: "https://example.com/download.mp4")!,
             fileExtension: "mp4",
-            requiresTranscoding: false
+            requiresTranscoding: false,
+            mediaSourceID: streamSelection.mediaSourceID ?? item.mediaSources.first?.id
         )
     }
 
@@ -291,19 +317,26 @@ final class FakeMediaProviderSession: MediaProviderSession {
     }
 
     func toggleFavorite(itemID: String, currentlyFavorite: Bool) async throws {
+        favoriteRequests.append((itemID, currentlyFavorite))
         try await favoriteHandler?()
     }
 
     func reportPlaybackStart(context: PlaybackReportContext, positionTicks: Int, isPaused: Bool) async throws {
         playbackReportCallCount += 1
+        playbackReports.append(("start", context, positionTicks))
+        try await playbackReportHandler?("start", context, positionTicks, isPaused)
     }
 
     func reportPlaybackProgress(context: PlaybackReportContext, positionTicks: Int, isPaused: Bool) async throws {
         playbackReportCallCount += 1
+        playbackReports.append(("progress", context, positionTicks))
+        try await playbackReportHandler?("progress", context, positionTicks, isPaused)
     }
 
     func reportPlaybackStopped(context: PlaybackReportContext, positionTicks: Int) async throws {
         playbackReportCallCount += 1
+        playbackReports.append(("stop", context, positionTicks))
+        try await playbackReportHandler?("stop", context, positionTicks, false)
     }
 
     var reportedBookProgress: (itemID: String, fraction: Double)?

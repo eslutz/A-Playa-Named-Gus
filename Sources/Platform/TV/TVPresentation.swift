@@ -217,7 +217,7 @@ extension View {
 
     /// Share focus order across the primary action, common icons, overflow and synopsis.
     func gusTVDetailActionFocus(id: String, item: MediaItem, initial: Bool = false) -> some View {
-        var ids = ["play", "nextUp", "favorite"]
+        var ids = ["play", "version", "nextUp", "favorite"]
         ids += ["more", "synopsis"]
         return gusTVFocus(id: id, section: "detail:" + ItemRef(item: item).id, ids: ids, initial: initial, item: item)
     }

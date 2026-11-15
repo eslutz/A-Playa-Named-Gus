@@ -6,7 +6,7 @@ struct SearchResultsView: View {
     let store: SearchStore
 
     private var searchState: SectionSearchState {
-        rootState.searchState(for: rootState.selectedSectionID, session: session)
+        rootState.searchState(for: rootState.selectedSectionID)
     }
 
     var body: some View {
@@ -24,7 +24,7 @@ struct SearchResultsView: View {
                             if searchState.showsList {
                                 MediaLibraryRow(item: item)
                             } else {
-                                PosterCard(item: item, imageURL: session.mediaProvider.primaryImageURL(for: item, context: .posterGrid))
+                                PosterCard(item: item, imageURL: session.mediaProvider.primaryImageURL(for: item, context: .posterGrid), fallbackURLs: session.mediaProvider.artworkURLs(for: item, request: .init(role: .poster, maxWidth: 360)))
                             }
                         }
                         .id(ItemRef(item: item).id)
@@ -34,7 +34,16 @@ struct SearchResultsView: View {
                         .task { await store.loadMoreIfNeeded(currentItem: item) }
                     }
 
-                    if let error = store.pageError {
+                    if store.isRefreshing {
+                        ProgressView().accessibilityLabel("Refreshing")
+                    }
+                    if let error = store.refreshError {
+                        VStack(spacing: 8) {
+                            Text(error).foregroundStyle(.secondary)
+                            Button("Try Again") { Task { await store.search(store.query) } }
+                                .disabled(store.isRefreshing)
+                        }
+                    } else if let error = store.pageError {
                         Text(error).foregroundStyle(.secondary)
                     }
                     if store.canLoadMore {
@@ -50,6 +59,7 @@ struct SearchResultsView: View {
                 .scrollTargetLayout()
                 .gusTVPagePadding()
             }
+            .gusVisibleContent(.search(rootState.selectedSectionID), isLoading: store.state.isLoading || store.isRefreshing || store.isLoadingNextPage)
             .scrollPosition(id: rootState.scrollBinding(for: "search:" + rootState.selectedSectionID + ":" + store.query))
             .lookToScroll()
         }
@@ -92,12 +102,7 @@ struct SearchRootView<Content: View>: View {
     @ViewBuilder
     private var searchSurface: some View {
         if isSearching {
-            if let store = state.store {
-                SearchResultsView(store: store)
-            } else {
-                ProgressView()
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-            }
+            OwnedSearchResults(state: state).id(ObjectIdentifier(state))
         } else {
             content()
         }
@@ -106,5 +111,38 @@ struct SearchRootView<Content: View>: View {
     private var isSearching: Bool {
         session.mediaProvider.capabilities.supportsSearch
             && !state.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+}
+
+/// One native result surface owns heavy pages while alive in the navigation
+/// hierarchy. The account registry keeps only query and presentation choices.
+struct OwnedSearchResults: View {
+    @Environment(SessionStore.self) private var session
+    let state: SectionSearchState
+    @State private var store: SearchStore?
+    @State private var owner = UUID()
+
+    var body: some View {
+        Group {
+            if state.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                ContentUnavailableView("Search Library", systemImage: "magnifyingglass")
+            } else if let store {
+                SearchResultsView(store: store)
+            } else {
+                ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
+        }
+        .task {
+            let acquired = store ?? state.acquireStore(session: session, owner: owner)
+            store = acquired
+            state.retain(acquired, owner: owner)
+        }
+        .onAppear {
+            if let store {
+                state.retain(store, owner: owner)
+            }
+        }
+        .onDisappear { state.release(owner: owner) }
+        .onChange(of: state.text) { _, _ in state.updateQuery() }
     }
 }

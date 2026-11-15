@@ -5,17 +5,17 @@ import Testing
 @MainActor
 @Suite("Next Up sync bridge")
 struct NextUpSyncBridgeTests {
-    @Test("first verified identity preserves legacy order and discovery ranks across relaunch", arguments: [false, true])
-    func firstIdentityPreservesLegacyOrdering(relaunch: Bool) throws {
+    @Test("first verified identity preserves current local order and discovery ranks across relaunch", arguments: [false, true])
+    func firstIdentityPreservesLocalOrdering(relaunch: Bool) throws {
         let folder = directory()
         defer { try? FileManager.default.removeItem(at: folder) }
         let scope = AccountScope(serverID: "s", userID: "u")
         let savedDirectory = folder.appendingPathComponent("saved")
         let persistence = UpNextPersistence(directory: folder.appendingPathComponent("queue"))
         let activityPersistence = NextUpActivityPersistence(directory: folder.appendingPathComponent("activity"))
-        let sync = VideoPlaylistsStore(directory: savedDirectory, syncEnabled: false)
+        let sync = SavedMediaStore(directory: savedDirectory, syncEnabled: false)
         let references = ["one", "two", "three"].map { MediaReference(item: MediaItem(id: $0, type: .movie), scope: scope) }
-            .sorted { VideoPlaylistsStore.canonicalIntentID(reference: $0).uuidString > VideoPlaylistsStore.canonicalIntentID(reference: $1).uuidString }
+            .sorted { SavedMediaStore.canonicalIntentID(reference: $0).uuidString > SavedMediaStore.canonicalIntentID(reference: $1).uuidString }
         try persistence.saveEntries(references.map { UpNextEntry(id: UUID(), reference: $0) }, scope: scope)
         let queue = UpNextStore(persistence: persistence, syncStore: sync)
         let before = queue.entries(serverID: "s", userID: "u")
@@ -25,7 +25,7 @@ struct NextUpSyncBridgeTests {
         activity.remember(firstSeen, scope: scope)
         activity.recordPlayback(item: MediaItem(id: "other"), scope: scope, at: Date(timeIntervalSince1970: 42))
         try sync.selectIdentity("account-a", scope: scope)
-        let selectedSync = relaunch ? VideoPlaylistsStore(directory: savedDirectory, syncEnabled: false) : sync
+        let selectedSync = relaunch ? SavedMediaStore(directory: savedDirectory, syncEnabled: false) : sync
         let selectedQueue = relaunch ? UpNextStore(persistence: persistence, syncStore: selectedSync) : queue
         let selectedActivity = relaunch ? NextUpActivityStore(persistence: activityPersistence, syncStore: selectedSync) : activity
         let migrated = selectedQueue.entries(serverID: "s", userID: "u")
@@ -45,12 +45,12 @@ struct NextUpSyncBridgeTests {
         #expect(selectedActivity.firstSeenIDs(scope: scope) == firstSeen)
     }
 
-    @Test("an account switch before the queue observes migration cannot claim local data")
+    @Test("an account switch before the queue observes the identity claim cannot claim local data")
     func skippedIdentityObservationStillIsolatesAccountSwitch() throws {
         let folder = directory()
         defer { try? FileManager.default.removeItem(at: folder) }
         let scope = AccountScope(serverID: "s", userID: "u")
-        let sync = VideoPlaylistsStore(directory: folder.appendingPathComponent("saved"), syncEnabled: false)
+        let sync = SavedMediaStore(directory: folder.appendingPathComponent("saved"), syncEnabled: false)
         let queue = UpNextStore(persistence: UpNextPersistence(directory: folder.appendingPathComponent("queue")), syncStore: sync)
         queue.toggle(MediaItem(id: "local", type: .movie), serverID: "s", userID: "u")
         let activity = NextUpActivityStore(persistence: NextUpActivityPersistence(directory: folder.appendingPathComponent("activity")), syncStore: sync)
@@ -68,7 +68,7 @@ struct NextUpSyncBridgeTests {
     @Test("replacement preserves the durable intent key and settles without a revision feedback loop")
     func canonicalReplacement() async throws {
         let scope = AccountScope(serverID: "s", userID: "u")
-        let sync = VideoPlaylistsStore(directory: directory(), syncEnabled: false)
+        let sync = SavedMediaStore(directory: directory(), syncEnabled: false)
         let store = UpNextStore(persistence: UpNextPersistence(directory: directory()), syncStore: sync)
         let provider = FakeMediaProviderSession(capabilities: ProviderCapabilities())
         provider.itemHandler = { id in MediaItem(id: id, type: .movie) }
@@ -102,8 +102,8 @@ struct NextUpSyncBridgeTests {
     @Test("a concurrent remote removal survives background reference refreshes with newer logical clocks")
     func metadataCannotRestoreMembership() async throws {
         let scope = AccountScope(serverID: "s", userID: "u")
-        let first = VideoPlaylistsStore(directory: directory(), syncEnabled: false)
-        let second = VideoPlaylistsStore(directory: directory(), syncEnabled: false)
+        let first = SavedMediaStore(directory: directory(), syncEnabled: false)
+        let second = SavedMediaStore(directory: directory(), syncEnabled: false)
         let a = UpNextStore(persistence: UpNextPersistence(directory: directory()), syncStore: first)
         let b = UpNextStore(persistence: UpNextPersistence(directory: directory()), syncStore: second)
         a.toggle(MediaItem(id: "movie", name: "Original", type: .movie), serverID: "s", userID: "u")
@@ -140,7 +140,7 @@ struct NextUpSyncBridgeTests {
     @Test("external cloud record or zone deletion after a rebind cannot republish cached intents", arguments: [false, true])
     func externalDeletionAfterRebind(zoneReset: Bool) async throws {
         let scope = AccountScope(serverID: "s", userID: "u")
-        let sync = VideoPlaylistsStore(directory: directory(), syncEnabled: false)
+        let sync = SavedMediaStore(directory: directory(), syncEnabled: false)
         let persistence = UpNextPersistence(directory: directory())
         let store = UpNextStore(persistence: persistence, syncStore: sync)
         let provider = FakeMediaProviderSession(capabilities: ProviderCapabilities())

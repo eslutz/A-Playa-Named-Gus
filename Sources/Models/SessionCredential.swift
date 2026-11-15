@@ -1,11 +1,23 @@
 import Foundation
 
+/// A credential installation, distinct from the account whose durable data it uses.
+/// Rotating a token or endpoint replaces the generation without changing account scope.
+struct SessionLease: Hashable, Sendable {
+    let credential: SessionCredential
+    let generation: UUID
+
+    init(credential: SessionCredential, generation: UUID = UUID()) {
+        self.credential = credential
+        self.generation = generation
+    }
+}
+
 /// Identifies the Keychain entry that holds a user's access token.
 ///
 /// The token itself is never stored in a `Codable` model — only this
 /// `serverID:userID` account string, which `KeychainStore` uses as the
 /// `kSecAttrAccount` for a `kSecClassGenericPassword` item.
-struct SessionCredential: Codable, Hashable {
+struct SessionCredential: Codable, Hashable, Sendable {
     let providerKind: MediaProviderKind
     let serverID: String
     let userID: String

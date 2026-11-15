@@ -1,6 +1,24 @@
 import Foundation
 import JellyfinAPI
 
+/// The visual purpose of artwork determines candidate identity and aspect ratio.
+enum MediaArtworkRole: Equatable, Sendable {
+    case poster
+    case episodeStill
+    case backdrop
+    case square
+    case photo
+    case avatar
+    case chapter(index: Int, tag: String?)
+}
+
+/// A semantic role plus a server-sized rendition. URL identity retains the
+/// origin, content tag, image index and requested dimensions.
+struct MediaArtworkRequest: Equatable, Sendable {
+    let role: MediaArtworkRole
+    let maxWidth: Int
+}
+
 /// Builds image URLs for `BaseItemDto`s via `client.url(with: Paths.getItemImage(...))`.
 ///
 /// Pattern reference: Swiftfin's `BaseItemDto+Images`. We deliberately request by
@@ -20,10 +38,11 @@ struct ImageURLBuilder {
 
     let client: JellyfinClient
 
-    func imageURL(itemID: String, type: ImageType, tag: String?, maxWidth: Int) -> URL? {
+    func imageURL(itemID: String, type: ImageType, tag: String?, maxWidth: Int, imageIndex: Int? = nil) -> URL? {
         let parameters = Paths.GetItemImageParameters(
             maxWidth: maxWidth,
-            tag: tag
+            tag: tag,
+            imageIndex: imageIndex
         )
         let request = Paths.getItemImage(
             itemID: itemID,
@@ -40,55 +59,55 @@ struct ImageURLBuilder {
     }
 
     func primaryImageURL(for item: MediaItem, maxWidth: Int = 400) -> URL? {
-        if let id = item.id, let tag = item.imageTags[MediaImageKind.primary.rawValue] {
-            return imageURL(itemID: id, type: .primary, tag: tag, maxWidth: maxWidth)
-        }
-        if let seriesID = item.seriesID, let tag = item.seriesPrimaryImageTag {
-            return imageURL(itemID: seriesID, type: .primary, tag: tag, maxWidth: maxWidth)
-        }
-        if let id = item.id {
-            return imageURL(itemID: id, type: .primary, tag: nil, maxWidth: maxWidth)
-        }
-        return nil
+        artworkURLs(for: item, request: .init(role: .poster, maxWidth: maxWidth)).first
     }
 
-    /// Wide backdrop image for a provider-neutral media item, falling back to primary.
     func backdropImageURL(for item: MediaItem, context: ImageContext) -> URL? {
         backdropImageURL(for: item, maxWidth: context.maxWidth)
     }
 
     func backdropImageURL(for item: MediaItem, maxWidth: Int = 1280) -> URL? {
-        artworkURLs(for: item, maxWidth: maxWidth).first
+        artworkURLs(for: item, request: .init(role: item.type == .episode ? .episodeStill : .backdrop, maxWidth: maxWidth)).first
     }
 
-    /// Ordered public image candidates. A parent backdrop belongs to the ID
-    /// Jellyfin explicitly identifies, which may be a series above the season.
-    func artworkURLs(for item: MediaItem, maxWidth: Int) -> [URL] {
-        var urls: [URL] = []
-        if let id = item.id, let tag = item.backdropImageTags.first,
-           let url = imageURL(itemID: id, type: .backdrop, tag: tag, maxWidth: maxWidth)
-        {
-            urls.append(url)
+    /// An episode still never inherits a parent portrait. A portrait episode card
+    /// represents its series before trying the episode's own landscape primary.
+    func artworkURLs(for item: MediaItem, request: MediaArtworkRequest) -> [URL] {
+        let role = request.role
+        let maxWidth = request.maxWidth
+        if case let .chapter(index, tag) = role {
+            guard let id = item.id, index >= 0 else { return [] }
+            return imageURL(itemID: id, type: .chapter, tag: tag, maxWidth: maxWidth, imageIndex: index).map { [$0] } ?? []
         }
-        if let owner = item.parentBackdropItemID, let tag = item.parentBackdropImageTags.first,
-           let url = imageURL(itemID: owner, type: .backdrop, tag: tag, maxWidth: maxWidth)
-        {
-            urls.append(url)
+        let ownPrimary = item.id.flatMap { imageURL(itemID: $0, type: .primary, tag: item.imageTags["Primary"], maxWidth: maxWidth) }
+        let seriesPrimary = item.seriesID.flatMap { id in
+            item.seriesPrimaryImageTag.flatMap { imageURL(itemID: id, type: .primary, tag: $0, maxWidth: maxWidth) }
         }
-        if let id = item.id, let tag = item.imageTags["Thumb"],
-           let url = imageURL(itemID: id, type: .thumb, tag: tag, maxWidth: maxWidth)
-        {
-            urls.append(url)
+        let ownBackdrop = item.id.flatMap { id in item.backdropImageTags.first.flatMap { imageURL(itemID: id, type: .backdrop, tag: $0, maxWidth: maxWidth) } }
+        let parentBackdrop = item.parentBackdropItemID.flatMap { id in item.parentBackdropImageTags.first.flatMap { imageURL(itemID: id, type: .backdrop, tag: $0, maxWidth: maxWidth) } }
+        let thumb = item.id.flatMap { id in item.imageTags["Thumb"].flatMap { imageURL(itemID: id, type: .thumb, tag: $0, maxWidth: maxWidth) } }
+        let candidates: [URL?]
+        switch role {
+        case .poster:
+            candidates = item.type == .episode ? [seriesPrimary, ownPrimary, thumb, ownBackdrop, parentBackdrop] : [ownPrimary, seriesPrimary, thumb, ownBackdrop, parentBackdrop]
+        case .episodeStill:
+            let landscapePrimary = item.primaryImageAspectRatio.map { $0 >= 1.33 } ?? true
+            candidates = [landscapePrimary ? ownPrimary : nil, thumb, ownBackdrop, parentBackdrop]
+        case .backdrop:
+            candidates = [ownBackdrop, parentBackdrop, thumb, ownPrimary]
+        case .square:
+            candidates = [ownPrimary, thumb, ownBackdrop]
+        case .photo, .avatar:
+            candidates = [ownPrimary]
+        case .chapter:
+            candidates = []
         }
-        if let url = primaryImageURL(for: item, maxWidth: maxWidth) {
-            urls.append(url)
-        }
-        return ArtworkRequestSequence.unique(urls)
+        return ArtworkRequestSequence.unique(candidates.compactMap { $0 })
     }
 
     func personImageURL(for person: MediaPerson, maxWidth: Int = 240) -> URL? {
         guard let personID = person.id else { return nil }
-        return imageURL(itemID: personID, type: .primary, tag: person.primaryImageTag, maxWidth: maxWidth)
+        return artworkURLs(for: MediaItem(id: personID, imageTags: person.primaryImageTag.map { ["Primary": $0] } ?? [:]), request: .init(role: .avatar, maxWidth: maxWidth)).first
     }
 
     func userImageURL(for user: UserDto) -> URL? {

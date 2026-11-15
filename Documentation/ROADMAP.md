@@ -23,6 +23,15 @@ constrain *how* each item is built.
 - [x] Set the minimum deployment target to 26.0 across iOS/iPadOS, tvOS, visionOS, macOS, watchOS, and Top Shelf, preserving OS 27.x features through availability guards and native OS 26 fallbacks. All six local Debug build lanes passed with zero warnings; tvOS 26.5/27.0 installation and launch passed, with six focused audio/TV playback tests passing on each OS. See [implementation and validation](Reviews/README.md).
 - [ ] Complete exact 26.0 runtime execution, physical Apple TV 26.6 account/focus/playback/Top Shelf acceptance, remaining platform runtime checks, and required signed/hosted release gates.
 
+## App-wide refinement
+
+- [~] Implement all 22 source-review findings and the approved source/version,
+  semantic track-memory, native preview and retired-code cleanup scope. Track
+  shared contracts, individual findings and acceptance in
+  [the implementation ledger](app-wide-refinement.md).
+- [ ] Complete the final-revision build, regression, physical interaction,
+  accessibility and performance matrix before marking this work accepted.
+
 ## Playback reliability
 
 - [~] Route standalone transport-stream sources through HLS and surface AVPlayer startup failures in retained diagnostics. Local stream-format and unit regressions are separate from physical Apple TV acceptance; a second stalled HLS session still requires a verified cause.
@@ -33,7 +42,7 @@ constrain *how* each item is built.
 - [x] Implement remediation for the 24 findings in the October 9–10 review and both addenda: bounded artwork/detail layouts, adaptive actions/audio, persistent audio dismissal/reopening, shared navigation across width changes, explicit iPhone More, tvOS link navigation, cancellation/retry, request identity, filtered paging, and localized accessibility fixes. The earlier candidate passed all six platform builds and four 274-test suites; see [the remediation report](Reviews/README.md) for scoped runtime and contrast evidence.
 - [~] Complete release acceptance: physical acceptance of later source changes, Mac window/keyboard checks, assistive technology and platform input, remaining appearance/metadata/error variants, full iPad contrast acceptance (native Xcode 27 sampler blocked), exact minimum-OS execution, broader Duo video/navigation/sheet transition flows, and signed TestFlight acceptance. The sampled live Duo audio transition/control check passed; see the repair report for its limits. The Watch stall was fixed and retested locally on 40 mm and 46 mm. Simulator checks do not close the remaining gates.
 
-- [x] October 12 stale-reference recovery: shared account-scoped resolution, versioned Next Up migration, explicit legacy replacement, public-artwork fallbacks, scoped system links, preserved downloaded-file identity, and confirmed progress transfer. Source, regression tests, platform builds, and the physical Trespass recovery are verified; evidence and remaining cross-platform runtime limits are recorded in [the validation report](Reviews/README.md).
+- [x] October 12 stale-reference recovery: shared account-scoped resolution, scoped system links, preserved downloaded-file identity, and confirmed progress transfer. The app-wide refinement supersedes its retired-format migration and import support; current-format identity recovery remains. Historical validation and remaining runtime limits are recorded in [the validation report](Reviews/README.md).
 
 ## Apple TV presentation alignment
 
@@ -86,8 +95,7 @@ considered launch and accent, consistent semantic theming.
   `ASSETCATALOG_COMPILER_APPICON_NAME: ""` override in `project.yml`.
   *Acceptance:* actool produces no missing-icon errors on any SDK; icon renders on each
   Home screen / launcher. *(Done: current source-controlled assets use the Gus brand mark;
-  the older `Scripts/generate-app-icon.swift` pineapple generator is retired and must not be
-  used for regeneration.)*
+  the obsolete pineapple generator has been removed.)*
 - [x] **Launch experience.** Confirm `UILaunchScreen` presents cleanly; consider a minimal
   branded launch on platforms that support it. *Acceptance:* no flash of unstyled content;
   consistent first frame. *(Done: iOS/iPadOS use a color-only `UILaunchScreen` backed by
@@ -447,7 +455,7 @@ preserving a clean route to future backends such as Emby.
   *Acceptance:* existing Jellyfin users migrate without reauthentication, token lookup
   remains Keychain-backed, and future providers can coexist without account/key collisions.
   *(Done: persisted server/user/session records carry `providerKind`, Keychain accounts
-  use `jellyfin:serverID:userID`, and restore migrates legacy Jellyfin token accounts.)*
+  use `jellyfin:serverID:userID`, and restore uses provider-scoped credential accounts.)*
 - [x] **Capability-driven feature availability.** Add a capability model so UI can show,
   hide, or degrade features based on backend and server configuration. *Acceptance:*
   feature code does not spread `if Jellyfin` / `if Emby` checks; provider-specific behavior
@@ -459,7 +467,7 @@ preserving a clean route to future backends such as Emby.
   capability handling. *Acceptance:* current Jellyfin connect, browse, search, detail,
   playback, progress, downloads, and settings flows behave unchanged across all supported
   platforms. *(Done: ADR 0008 records the boundary; focused tests cover Jellyfin mapping,
-  provider-scoped credentials, legacy token migration, playback reporting/domain
+  provider-scoped credentials, playback reporting/domain
   selection, download source selection, and capability-disabled downloads.)*
 
 ---
@@ -997,10 +1005,10 @@ October 12 pipeline policy supersedes direct-main publication: main now requires
 
 - [~] Next Up removal clears Jellyfin and local resume checkpoints without changing watched status. Mark Watched also retires saved intent; Mark Unwatched does not resurrect it. Add or a genuine playback start restores a dismissed item. Active playlists suppress individual members except unfinished earlier episodes skipped by the playlist. Tapping a video playlist row starts the sequence at that entry. Runtime and release-candidate validation remain distinct from physical-device acceptance.
 
-- [~] Combine Continue Watching and saved/automatic next episodes into one Next Up list ordered by genuine viewing/list activity; preserve undated legacy order and missing saved references.
+- [~] Combine Continue Watching and saved/automatic next episodes into one Next Up list ordered by genuine viewing/list activity; preserve undated current intent order and missing saved references.
 - [~] Jellyfin owns native playlist and Collection/BoxSet names, IDs, membership, playlist order and permissions. Gus keeps an account-scoped playlist cache and durable per-operation playlist edits. Collections use a separate session store and online-only management. Jellyfin 10.11.11 deduplicates playlist items, so native lists contain each media item once; an uncertain create/add outcome requires review before an explicit retry.
 - [~] Ordered movie/episode/video playback and persistent cursors apply only to all-video playlists, independently of normal episode autoplay. Existing audio playlists remain visible and open the audio player; mixed-media entries open individually. Collections group titles and do not form autoplay queues.
-- [~] Private CloudKit synchronizes supplemental Gus playlist cursors, saved Next Up intent and activity, rather than native list definitions. Previous Gus-owned playlists remain preserved and can be explicitly imported into Jellyfin; import refuses legacy lists with repeated items rather than silently collapsing them. Credentials, server URLs, signed artwork and downloaded files remain excluded.
+- [~] Private CloudKit synchronizes supplemental Gus playlist cursors, saved Next Up intent and activity, rather than native list definitions. Retired Gus-owned playlist definitions and import flows are no longer supported; current server-backed projections, saved intents, cursors and draft reconciliation remain supported. Credentials, server URLs, signed artwork and downloaded files remain excluded.
 - [ ] Signed iCloud container/provisioning and physical iPhone → Apple TV sync, offline/reconnect, playback/cursor and accessibility acceptance. Native list implementation and validation are tracked in [the implementation ledger](Reviews/README.md); no release acceptance is claimed.
 
 ## Native collections — implementation candidate
@@ -1021,7 +1029,7 @@ The subsequent [owner review remediation](tvos-review-remediation.md) restores c
 - [x] Pass warning-free builds for iOS, macOS, tvOS, visionOS and watchOS, the TV unit suite and representative remote-only simulator regressions. These checks do not establish release or physical-device acceptance.
 - [ ] Review the implementation comparisons and complete physical-TV/Siri Remote, VoiceOver, HDR/audio, exact tvOS 26.0, populated Live TV, alternate tracks and signed private-sync acceptance.
 
-Jellyfin continues to own playlists and collections; native membership, permissions, restriction gates and explicit legacy import remain unchanged. No duplicate-entry queue product is introduced. See [TV capabilities](tvos-capabilities.md) for client/service boundaries and isolated validation. Required PR CI, signed release qualification and distribution remain separate gates.
+Jellyfin continues to own playlists and collections; native membership, permissions and restriction gates remain authoritative. Retired local-list import has been removed. No duplicate-entry queue product is introduced. See [TV capabilities](tvos-capabilities.md) for client/service boundaries and isolated validation. Required PR CI, signed release qualification and distribution remain separate gates.
 
 ### Xcode Cloud usage optimization — 2026-10-22
 

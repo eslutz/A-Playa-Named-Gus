@@ -206,11 +206,14 @@ final class LibraryStore {
     private(set) var state: LoadState = .idle
     private(set) var items: [MediaItem] = []
     private(set) var isLoadingNextPage = false
+    private(set) var isRefreshing = false
+    private(set) var refreshError: String?
     private(set) var filter = LibraryFilterState.default
 
     let scope: LibraryGridScope
     private let admits: (MediaItem) -> Bool
     private let session: SessionStore
+    private let onFilterChanged: ((LibraryFilterState) -> Void)?
     private let logger = Logger(category: .library)
     private var paging = Paging(pageSize: LibraryRequest.pageSize, prefetchThreshold: 12)
     private var loadGeneration = 0
@@ -221,32 +224,61 @@ final class LibraryStore {
         self.init(scope: .library(library), session: session)
     }
 
-    init(scope: LibraryGridScope, session: SessionStore, admits: @escaping (MediaItem) -> Bool = { ContentRatingGate.admitsStored($0) }) {
+    init(scope: LibraryGridScope, session: SessionStore, admits: @escaping (MediaItem) -> Bool = { ContentRatingGate.admitsStored($0) }, initialFilter: LibraryFilterState? = nil, onFilterChanged: ((LibraryFilterState) -> Void)? = nil) {
         self.scope = scope
         self.session = session
         self.admits = admits
-        if case .latest = scope {
+        self.onFilterChanged = onFilterChanged
+        filter = initialFilter ?? .default
+        if case .latest = scope, initialFilter == nil {
             filter.sort = .recentlyAdded
         }
+        session.onInvalidation(of: self) { $0.invalidate() }
+    }
+
+    private func invalidate() {
+        loadGeneration += 1
+        pageTask?.cancel()
+        isRefreshing = false
+        isLoadingNextPage = false
     }
 
     var title: String {
         scope.title
     }
 
-    var isLoading: Bool {
-        state.isLoading || isLoadingNextPage
+    var foregroundPhase: ForegroundLoadPhase {
+        if let refreshError {
+            return .failed(.refresh, refreshError)
+        }
+        return state.foregroundPhase(hasContent: !items.isEmpty, refreshing: isRefreshing, paging: isLoadingNextPage, pageError: pageError)
     }
 
-    func load() async {
-        guard state != .loading else { return }
+    var isLoading: Bool {
+        state.isLoading || isRefreshing || isLoadingNextPage
+    }
+
+    func load(superseding: Bool = false) async {
+        guard session.isActive, superseding || !isLoading else { return }
+        let previousItems = items
+        let previousPaging = paging
+        let hasContent = !items.isEmpty
         loadGeneration += 1
         pageTask?.cancel()
         pageError = nil
         let generation = loadGeneration
         isLoadingNextPage = false
-        state = .loading
+        isRefreshing = hasContent
+        refreshError = nil
+        if !hasContent {
+            state = .loading
+        }
         paging.reset()
+        defer {
+            if generation == loadGeneration {
+                isRefreshing = false
+            }
+        }
         let diagnostics = DiagnosticsHub.shared
         diagnostics.record(.libraryLoadStarted)
         let loadInterval = diagnostics.beginInterval("LibraryLoad")
@@ -256,9 +288,19 @@ final class LibraryStore {
             diagnostics.record(.libraryLoadFinished(itemCount: items.count))
         } catch {
             diagnostics.endInterval("LibraryLoad", loadInterval)
-            guard generation == loadGeneration else { return }
+            guard generation == loadGeneration, session.isActive else { return }
             diagnostics.record(.libraryLoadFailed)
-            handle(error)
+            if hasContent {
+                items = previousItems
+                paging = previousPaging
+                let failure = GusError(from: error)
+                state = .loaded
+                if !failure.isCancellation {
+                    refreshError = failure.localizedDescription
+                }
+            } else {
+                handle(error)
+            }
         }
     }
 
@@ -269,11 +311,13 @@ final class LibraryStore {
     func applyFilter(_ filter: LibraryFilterState) async {
         guard self.filter != filter else { return }
         self.filter = filter
-        await load()
+        onFilterChanged?(filter)
+        items = []
+        await load(superseding: true)
     }
 
     func loadMoreIfNeeded(currentItem item: MediaItem) async {
-        guard canLoadMore, !isLoadingNextPage, state == .loaded,
+        guard canLoadMore, !isLoadingNextPage, !isRefreshing, state == .loaded,
               let index = items.firstIndex(where: { $0.id == item.id }),
               paging.shouldLoadMore(currentIndex: index, loadedCount: items.count)
         else { return }
@@ -282,7 +326,7 @@ final class LibraryStore {
     }
 
     func continueSearching() async {
-        guard canLoadMore, !isLoadingNextPage, state == .loaded else { return }
+        guard canLoadMore, !isLoadingNextPage, !isRefreshing, state == .loaded else { return }
         let generation = loadGeneration
         isLoadingNextPage = true
         pageError = nil
@@ -293,7 +337,7 @@ final class LibraryStore {
         }
         do { try await scanPages(replaceResults: false, generation: generation) }
         catch {
-            guard generation == loadGeneration else { return }
+            guard generation == loadGeneration, session.isActive else { return }
             let failure = GusError(from: error)
             if !failure.isCancellation {
                 pageError = failure.localizedDescription
@@ -305,10 +349,10 @@ final class LibraryStore {
         var replace = replaceResults
         for _ in 0 ..< 3 {
             try Task.checkCancellation()
-            guard generation == loadGeneration else { return }
+            guard generation == loadGeneration, session.isActive else { return }
             let before = replace ? 0 : items.count
             try await loadPage(startIndex: replace ? 0 : paging.nextStartIndex, replaceResults: replace, generation: generation)
-            guard generation == loadGeneration else { return }
+            guard generation == loadGeneration, session.isActive else { return }
             replace = false
             if items.count > before || !canLoadMore {
                 break
@@ -327,22 +371,22 @@ final class LibraryStore {
         pageTask = task
         let page = try await withTaskCancellationHandler { try await task.value } onCancel: { task.cancel() }
         try Task.checkCancellation()
-        guard generation == loadGeneration else { return }
+        guard generation == loadGeneration, session.isActive else { return }
+        let total = try MediaPageLoader.validatedTotal(for: page, startIndex: startIndex, previousTotal: replaceResults ? nil : paging.totalRecordCount)
 
         let admitted: [MediaItem]
         if case let .latest(kind) = scope {
             let existing = replaceResults ? [] : items
-            let existingIDs = Set(existing.compactMap(\.id))
-            admitted = kind.displayItems(page.items.filter(admits)).filter { !existingIDs.contains($0.id ?? "") }
+            admitted = MediaPageLoader.unique(kind.displayItems(page.items.filter(admits)), after: existing)
         } else {
-            admitted = page.items.filter(admits)
+            admitted = MediaPageLoader.unique(page.items.filter(admits), after: replaceResults ? [] : items)
         }
         if replaceResults {
             items = admitted
-            paging.replaceResults(receivedCount: page.items.count, totalRecordCount: page.totalRecordCount)
+            paging.replaceResults(receivedCount: page.items.count, totalRecordCount: total)
         } else {
             items.append(contentsOf: admitted)
-            paging.appendResults(receivedCount: page.items.count, totalRecordCount: page.totalRecordCount)
+            paging.appendResults(receivedCount: page.items.count, totalRecordCount: total)
         }
         state = .loaded
         let serverID = session.server.id

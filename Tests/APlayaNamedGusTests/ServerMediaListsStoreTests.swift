@@ -30,15 +30,18 @@ struct ServerMediaListsStoreTests {
         await store.refresh(session: session(provider))
         let restored = ServerMediaListsStore(directory: directory)
         restored.load(scope: scope)
-        let supplemental = VideoPlaylistsStore(directory: directory.appendingPathComponent("cloud"), syncEnabled: false)
+        let supplemental = SavedMediaStore(directory: directory.appendingPathComponent("cloud"), syncEnabled: false)
         supplemental.registerServerPlaylist(id: id, scope: scope)
         supplemental.setCursor(id: id, entryID: second, positionTicks: 123, finished: false, scope: scope)
         let projection = try #require(restored.videoPlaylist(id: id, scope: scope, supplemental: supplemental))
         #expect(projection.entries.map(\.id) == [first, second])
         #expect(projection.entries.map(\.reference.item.id) == ["video", "audio"])
         #expect(projection.cursor?.positionTicks == 123)
-        #expect(supplemental.playlists(scope: scope).isEmpty)
-        #expect(supplemental.envelope.records.values.filter { $0.kind == .entry }.isEmpty)
+        let intent = supplemental.envelope.records.values.filter { $0.kind == .playlist }
+        #expect(intent.count == 1)
+        #expect(intent.first?.value("serverBacked", as: Bool.self) == true)
+        #expect(intent.first?.value("name", as: String.self) == nil)
+        #expect(supplemental.envelope.records.count == 2)
         #expect(restored.lists(kind: .playlist, scope: AccountScope(serverID: "s", userID: "other")).isEmpty)
     }
 
@@ -138,54 +141,13 @@ struct ServerMediaListsStoreTests {
         provider.mediaListHandler = { _, _ in list }
         let store = ServerMediaListsStore(directory: directory)
         await store.refresh(session: session(provider))
-        let supplemental = VideoPlaylistsStore(directory: directory.appendingPathComponent("cloud"), syncEnabled: false)
+        let supplemental = SavedMediaStore(directory: directory.appendingPathComponent("cloud"), syncEnabled: false)
         supplemental.registerServerPlaylist(id: id, scope: scope)
         supplemental.setCursor(id: id, entryID: current, positionTicks: 100, finished: false, scope: scope)
         provider.mediaListHandler = { _, _ in throw URLError(.notConnectedToInternet) }
         #expect(await store.remove(entryID: current, from: id, kind: .playlist, session: session(provider)))
         #expect(store.videoPlaylist(id: id, scope: scope, supplemental: supplemental)?.cursor == PlaylistCursor(entryID: successor, positionTicks: 0, finished: false))
         #expect(supplemental.serverPlaylistState(id: id, scope: scope).cursor?.entryID == current)
-    }
-
-    @Test func importPreservesUniqueEntryCursorAndOriginal() async throws {
-        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
-        defer { try? FileManager.default.removeItem(at: directory) }
-        let provider = FakeMediaProviderSession(capabilities: ProviderCapabilities())
-        let nativeID = UUID(), first = UUID(), second = UUID()
-        var created = false
-        let native = ServerMediaList(id: nativeID, name: "Legacy", kind: .playlist, entries: [
-            ServerMediaListEntry(id: first, item: MediaItem(id: "first", type: .movie)),
-            ServerMediaListEntry(id: second, item: MediaItem(id: "second", type: .movie)),
-        ], canEdit: true, entriesLoaded: true)
-        provider.mediaListsHandler = { kind in created && kind == .playlist ? [native] : [] }
-        provider.mediaListHandler = { _, _ in native }
-        var createCalls = 0
-        provider.createMediaListHandler = { name, kind, itemIDs in
-            #expect(name == "Legacy")
-            #expect(kind == .playlist)
-            #expect(itemIDs == ["first", "second"])
-            createCalls += 1; created = true
-            return nativeID
-        }
-        let supplemental = VideoPlaylistsStore(directory: directory.appendingPathComponent("cloud"), syncEnabled: false)
-        let oldID = try #require(supplemental.create(name: "Legacy", scope: scope))
-        for itemID in ["first", "second"] {
-            #expect(supplemental.add(item: MediaItem(id: itemID, type: .movie), to: oldID, scope: scope))
-        }
-        let oldEntries = try #require(supplemental.playlist(id: oldID, scope: scope)).entries
-        supplemental.setCursor(id: oldID, entryID: oldEntries[1].id, positionTicks: 777, finished: false, scope: scope)
-        supplemental.setQueued(id: oldID, queued: true, scope: scope)
-        let original = try #require(supplemental.playlist(id: oldID, scope: scope))
-        let store = ServerMediaListsStore(directory: directory)
-        #expect(await store.importLegacy(original, session: session(provider), supplemental: supplemental) == nativeID)
-        #expect(store.legacyImportID(for: oldID, scope: scope) == nativeID)
-        #expect(supplemental.playlist(id: oldID, scope: scope) == original)
-        let imported = try #require(store.videoPlaylist(id: nativeID, scope: scope, supplemental: supplemental))
-        #expect(imported.cursor == PlaylistCursor(entryID: second, positionTicks: 777, finished: false))
-        #expect(imported.queued)
-        #expect(imported.activityAt == original.activityAt)
-        #expect(await store.importLegacy(original, session: session(provider), supplemental: supplemental) == nativeID)
-        #expect(createCalls == 1)
     }
 
     @Test func offlineCreateAliasesNativeIdentityAndCursorOnReconnect() async throws {
@@ -208,7 +170,7 @@ struct ServerMediaListsStoreTests {
         let localID = try #require(await store.create(name: "Offline", kind: .playlist, session: session(provider), itemIDs: ["first", "second"]))
         let draft = try #require(store.list(id: localID, kind: .playlist, scope: scope))
         let oldEntry = draft.entries[1].id
-        let supplemental = VideoPlaylistsStore(directory: directory.appendingPathComponent("cloud"), syncEnabled: false)
+        let supplemental = SavedMediaStore(directory: directory.appendingPathComponent("cloud"), syncEnabled: false)
         supplemental.registerServerPlaylist(id: localID, scope: scope)
         supplemental.setCursor(id: localID, entryID: oldEntry, positionTicks: 321, finished: false, scope: scope)
         online = true
@@ -249,7 +211,7 @@ struct ServerMediaListsStoreTests {
         online = false
         #expect(await store.add(item: MediaItem(id: "c", type: .movie), to: listID, kind: .playlist, session: session(provider)))
         let provisional = try #require(store.list(id: listID, kind: .playlist, scope: scope)?.entries.last?.id)
-        let supplemental = VideoPlaylistsStore(directory: directory.appendingPathComponent("cloud"), syncEnabled: false)
+        let supplemental = SavedMediaStore(directory: directory.appendingPathComponent("cloud"), syncEnabled: false)
         supplemental.registerServerPlaylist(id: listID, scope: scope)
         supplemental.setCursor(id: listID, entryID: provisional, positionTicks: 999, finished: false, scope: scope)
         online = true
@@ -279,7 +241,7 @@ struct ServerMediaListsStoreTests {
         online = false
         #expect(await store.add(item: MediaItem(id: "same", type: .movie), to: listID, kind: .playlist, session: session(provider)))
         let provisional = try #require(store.list(id: listID, kind: .playlist, scope: scope)?.entries.first?.id)
-        let supplemental = VideoPlaylistsStore(directory: directory.appendingPathComponent("cloud"), syncEnabled: false)
+        let supplemental = SavedMediaStore(directory: directory.appendingPathComponent("cloud"), syncEnabled: false)
         supplemental.registerServerPlaylist(id: listID, scope: scope)
         supplemental.setCursor(id: listID, entryID: provisional, positionTicks: 456, finished: false, scope: scope)
         online = true
@@ -415,7 +377,7 @@ struct ServerMediaListsStoreTests {
         provider.removeFromMediaListHandler = { _, _, ids in remote.entries.removeAll { ids.contains($0.id) } }
         let store = ServerMediaListsStore(directory: directory)
         await store.refresh(session: session(provider))
-        let supplemental = VideoPlaylistsStore(directory: directory.appendingPathComponent("cloud"), syncEnabled: false)
+        let supplemental = SavedMediaStore(directory: directory.appendingPathComponent("cloud"), syncEnabled: false)
         supplemental.registerServerPlaylist(id: listID, scope: scope)
         supplemental.setCursor(id: listID, entryID: current, positionTicks: 123, finished: false, scope: scope)
         #expect(await store.remove(entryID: current, from: listID, kind: .playlist, session: session(provider)))
@@ -443,7 +405,7 @@ struct ServerMediaListsStoreTests {
         let restored = ServerMediaListsStore(directory: directory)
         restored.load(scope: scope)
         #expect(restored.list(id: id, kind: .playlist, scope: scope)?.entries.first?.item == item)
-        let supplemental = VideoPlaylistsStore(directory: directory.appendingPathComponent("cloud"), syncEnabled: false)
+        let supplemental = SavedMediaStore(directory: directory.appendingPathComponent("cloud"), syncEnabled: false)
         #expect(restored.videoPlaylist(id: id, scope: scope, supplemental: supplemental)?.entries.first?.reference.item.type == .movie)
         #expect(restored.videoPlaylist(id: id, scope: scope, supplemental: supplemental)?.entries.first?.reference.item.officialRating == "PG")
         #expect(restored.pendingEdits(scope: scope).first?.items == [item])
@@ -461,7 +423,7 @@ struct ServerMediaListsStoreTests {
         provider.mediaListHandler = { _, _ in list }
         let store = ServerMediaListsStore(directory: directory)
         await store.refresh(session: session(provider))
-        let supplemental = VideoPlaylistsStore(directory: directory.appendingPathComponent("cloud"), syncEnabled: false)
+        let supplemental = SavedMediaStore(directory: directory.appendingPathComponent("cloud"), syncEnabled: false)
         supplemental.registerServerPlaylist(id: listID, scope: scope)
         supplemental.setCursor(id: listID, entryID: unknown, positionTicks: 789, finished: false, scope: scope)
         #expect(store.videoPlaylist(id: listID, scope: scope, supplemental: supplemental)?.cursor == PlaylistCursor(entryID: unknown, positionTicks: 789, finished: false))
@@ -552,29 +514,6 @@ struct ServerMediaListsStoreTests {
         #expect(creates == 0)
         #expect(store.pendingEdits(scope: scope).isEmpty)
         #expect(store.lists(kind: .playlist, scope: scope).isEmpty)
-        #expect(store.errorMessage != nil)
-    }
-
-    @Test func duplicateLegacyImportPreservesOriginalAndDoesNotTransmit() async throws {
-        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
-        defer { try? FileManager.default.removeItem(at: directory) }
-        let provider = FakeMediaProviderSession(capabilities: ProviderCapabilities())
-        var reads = 0, creates = 0
-        provider.mediaListsHandler = { _ in reads += 1; return [] }
-        provider.createMediaListHandler = { _, _, _ in creates += 1; return UUID() }
-        let supplemental = VideoPlaylistsStore(directory: directory.appendingPathComponent("cloud"), syncEnabled: false)
-        let oldID = try #require(supplemental.create(name: "Repeat", scope: scope))
-        for _ in 0 ..< 2 {
-            #expect(supplemental.add(item: MediaItem(id: "same", type: .movie), to: oldID, scope: scope))
-        }
-        let original = try #require(supplemental.playlist(id: oldID, scope: scope))
-        let store = ServerMediaListsStore(directory: directory)
-        #expect(await store.importLegacy(original, session: session(provider), supplemental: supplemental) == nil)
-        #expect(supplemental.playlist(id: oldID, scope: scope) == original)
-        #expect(store.legacyImportID(for: oldID, scope: scope) == nil)
-        #expect(store.pendingEdits(scope: scope).isEmpty)
-        #expect(reads == 0)
-        #expect(creates == 0)
         #expect(store.errorMessage != nil)
     }
 
@@ -675,7 +614,7 @@ struct ServerMediaListsStoreTests {
         #expect(await store.add(item: original, to: listID, kind: .playlist, session: session))
         let provisional = try #require(store.list(id: listID, kind: .playlist, scope: scope)?.entries.last?.id)
         #expect(provisional != originalID)
-        let supplemental = VideoPlaylistsStore(directory: folder.appendingPathComponent("supplemental"), syncEnabled: false)
+        let supplemental = SavedMediaStore(directory: folder.appendingPathComponent("supplemental"), syncEnabled: false)
         #expect(supplemental.registerServerPlaylist(id: listID, scope: scope))
         #expect(supplemental.setCursor(id: listID, entryID: provisional, positionTicks: 4_321_000, finished: false, scope: scope))
         online = true
@@ -685,7 +624,7 @@ struct ServerMediaListsStoreTests {
         // Selecting the confirmed re-added membership must not follow its old alias.
         #expect(supplemental.setCursor(id: listID, entryID: originalID, positionTicks: 7_654_000, finished: false, scope: scope))
         let downloads = OfflineDownloadStore(fileStore: OfflineDownloadFileStore(directory: folder.appendingPathComponent("downloads")), coordinator: NativeListDownloadCoordinator())
-        let player = PlaybackStore(item: original, session: session, playbackRefresh: PlaybackRefreshStore(), downloads: downloads)
+        let player = PlaybackStore(request: PlaybackRequest(item: original), session: session, playbackRefresh: PlaybackRefreshStore(), downloads: downloads)
         let coordinator = VideoPlaylistPlaybackCoordinator(playlistID: listID, entryID: originalID, fromBeginning: false, playlists: supplemental, session: session, downloads: downloads, serverLists: store)
         defer { coordinator.stop(player) }
         var requestedItems: [String] = []
@@ -697,40 +636,6 @@ struct ServerMediaListsStoreTests {
         #expect(await store.remove(entryID: originalID, from: listID, kind: .playlist, session: session))
         #expect(removedIDs == [originalID])
         #expect(store.list(id: listID, kind: .playlist, scope: scope)?.entries.map(\.id) == [replacementID])
-    }
-
-    @Test func legacyUnscopedAliasPreservesUnknownCursorAndRequiresMutationReview() async throws {
-        let folder = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
-        defer { try? FileManager.default.removeItem(at: folder) }
-        let listID = UUID(), unknown = UUID(), available = UUID(), ambiguous = UUID()
-        let list = ServerMediaList(id: listID, name: "Legacy cached list", kind: .playlist, entries: [
-            ServerMediaListEntry(id: available, item: MediaItem(id: ServerMediaListID.string(available), type: .movie)),
-        ], canEdit: true, entriesLoaded: true)
-        var cache = ServerMediaListsStore.Cache()
-        cache.lists = [list]
-        cache.entryAliases[unknown.uuidString] = ambiguous
-        cache.previousEntries[listID.uuidString] = [unknown, available]
-        cache.pending = [ServerMediaListsStore.PendingEdit(id: UUID(), listID: listID, kind: .playlist, action: .remove, entryID: unknown)]
-        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
-        let cacheURL = folder.appendingPathComponent(VideoPlaylistsStore.digest(scope.serverID + "\u{0}" + scope.userID) + ".json")
-        try JSONEncoder().encode(cache).write(to: cacheURL)
-        let store = ServerMediaListsStore(directory: folder)
-        store.load(scope: scope)
-        let supplemental = VideoPlaylistsStore(directory: folder.appendingPathComponent("supplemental"), syncEnabled: false)
-        let cursor = PlaylistCursor(entryID: unknown, positionTicks: 9_876_543, finished: false)
-        #expect(supplemental.setServerPlaylistState(id: listID, cursor: cursor, queued: true, activityAt: nil, scope: scope))
-        #expect(store.videoPlaylist(id: listID, scope: scope, supplemental: supplemental)?.cursor == cursor)
-        let provider = FakeMediaProviderSession(capabilities: ProviderCapabilities())
-        provider.mediaListsHandler = { kind in kind == .playlist ? [list] : [] }
-        provider.mediaListHandler = { _, _ in list }
-        var removals = 0
-        provider.removeFromMediaListHandler = { _, _, _ in removals += 1 }
-        await store.refresh(session: session(provider))
-        #expect(removals == 0)
-        #expect(store.pendingEdits(scope: scope).first?.needsReview == true)
-        #expect(store.videoPlaylist(id: listID, scope: scope, supplemental: supplemental)?.cursor == cursor)
-        let preserved = try JSONDecoder().decode(ServerMediaListsStore.Cache.self, from: Data(contentsOf: cacheURL))
-        #expect(preserved.entryAliases[unknown.uuidString] == ambiguous)
     }
 
     @Test func replacingSharedNativeMediaGUIDDoesNotRedirectAnotherPlaylist() async throws {
@@ -770,13 +675,13 @@ struct ServerMediaListsStoreTests {
         let store = ServerMediaListsStore(directory: directory)
         let session = session(provider)
         await store.refresh(session: session)
-        let supplemental = VideoPlaylistsStore(directory: folder.appendingPathComponent("supplemental"), syncEnabled: false)
+        let supplemental = SavedMediaStore(directory: folder.appendingPathComponent("supplemental"), syncEnabled: false)
         let cursor = PlaylistCursor(entryID: sharedID, positionTicks: 8_765_432, finished: false)
         let activity = Date(timeIntervalSince1970: 1_720_000_000)
         #expect(supplemental.setServerPlaylistState(id: firstID, cursor: cursor, queued: true, activityAt: activity, scope: scope))
         #expect(supplemental.setServerPlaylistState(id: secondID, cursor: cursor, queued: true, activityAt: activity, scope: scope))
         let downloads = OfflineDownloadStore(fileStore: OfflineDownloadFileStore(directory: folder.appendingPathComponent("downloads")), coordinator: NativeListDownloadCoordinator())
-        let player = PlaybackStore(item: shared, session: session, playbackRefresh: PlaybackRefreshStore(), downloads: downloads)
+        let player = PlaybackStore(request: PlaybackRequest(item: shared), session: session, playbackRefresh: PlaybackRefreshStore(), downloads: downloads)
         let coordinator = VideoPlaylistPlaybackCoordinator(playlistID: secondID, entryID: sharedID, fromBeginning: false, playlists: supplemental, session: session, downloads: downloads, serverLists: store)
         defer { coordinator.stop(player) }
 
@@ -809,17 +714,17 @@ struct ServerMediaListsStoreTests {
         let oldID = UUID(), nativeID = UUID(), entryID = UUID()
         let cursor = PlaylistCursor(entryID: entryID, positionTicks: 7_654_321, finished: false)
         let activity = Date(timeIntervalSince1970: 1_720_000_000)
-        let store = VideoPlaylistsStore(directory: folder.appendingPathComponent("source"), syncEnabled: false)
+        let store = SavedMediaStore(directory: folder.appendingPathComponent("source"), syncEnabled: false)
         #expect(store.setServerPlaylistState(id: oldID, cursor: cursor, queued: true, activityAt: activity, scope: scope))
         // Playback registration happens before draft migration, giving its
         // default queued:false a newer revision than the draft's queued:true.
         #expect(store.registerServerPlaylist(id: nativeID, scope: scope))
         let delayed = store.envelope
-        #expect(store.migrateServerPlaylistState(from: oldID, to: nativeID, scope: scope))
+        #expect(store.remapServerPlaylistState(from: oldID, to: nativeID, scope: scope))
         let migrated = store.envelope
 
         for delayedFirst in [false, true] {
-            let restored = VideoPlaylistsStore(directory: folder.appendingPathComponent(delayedFirst ? "delayed-first" : "migrated-first"), syncEnabled: false)
+            let restored = SavedMediaStore(directory: folder.appendingPathComponent(delayedFirst ? "delayed-first" : "migrated-first"), syncEnabled: false)
             restored.load(scope: scope)
             #expect(restored.saveSyncState { state in
                 state.records = delayedFirst ? delayed.records : migrated.records
@@ -833,7 +738,7 @@ struct ServerMediaListsStoreTests {
             #expect(result.activityAt == activity)
             #expect(result.cursor == cursor)
             let revision = restored.revision
-            #expect(restored.migrateServerPlaylistState(from: oldID, to: nativeID, scope: scope))
+            #expect(restored.remapServerPlaylistState(from: oldID, to: nativeID, scope: scope))
             #expect(restored.revision == revision)
             #expect(restored.serverPlaylistState(id: nativeID, scope: scope).queued)
         }
@@ -863,7 +768,7 @@ struct ServerMediaListsStoreTests {
         let firstCache = ServerMediaListsStore(directory: folder.appendingPathComponent("first-native"))
         let provisionalList = try #require(await firstCache.create(name: "Queue", kind: .playlist, session: session(provider), items: [item]))
         let provisionalEntry = try #require(firstCache.list(id: provisionalList, kind: .playlist, scope: scope)?.entries.first?.id)
-        let firstState = VideoPlaylistsStore(directory: folder.appendingPathComponent("first-cloud"), syncEnabled: false)
+        let firstState = SavedMediaStore(directory: folder.appendingPathComponent("first-cloud"), syncEnabled: false)
         firstState.registerServerPlaylist(id: provisionalList, scope: scope)
         firstState.setCursor(id: provisionalList, entryID: provisionalEntry, positionTicks: 1_234_567, finished: false, scope: scope)
         firstState.setQueued(id: provisionalList, queued: true, scope: scope)
@@ -881,7 +786,7 @@ struct ServerMediaListsStoreTests {
         #expect(firstState.revision == revision)
 
         // Replicate only Gus CloudKit records; native aliases stay on device one.
-        let secondState = VideoPlaylistsStore(directory: folder.appendingPathComponent("second-cloud"), syncEnabled: false)
+        let secondState = SavedMediaStore(directory: folder.appendingPathComponent("second-cloud"), syncEnabled: false)
         secondState.load(scope: scope)
         #expect(secondState.saveSyncState { state in
             state.records = firstState.envelope.records
@@ -908,4 +813,17 @@ private final class NativeListDownloadCoordinator: DownloadSessionCoordinating {
 
     func cancel(recordID: String) {}
     func reconnectActiveTasks() {}
+    @Test func cacheRejectsRetiredUnscopedAliasesAndPreservesCurrentDrafts() throws {
+        var cache = ServerMediaListsStore.Cache()
+        let list = UUID(), entry = UUID(), replacement = UUID(), edit = UUID()
+        cache.entryAliases[entry.uuidString] = replacement
+        cache.entryAliases[list.uuidString + ":" + entry.uuidString] = replacement
+        cache.draftResolutions[edit.uuidString] = .init(nativeID: list, completed: true)
+        cache.draftResolutions["legacy-" + UUID().uuidString] = .init(nativeID: UUID(), completed: true)
+        let restored = try JSONDecoder().decode(ServerMediaListsStore.Cache.self, from: JSONEncoder().encode(cache))
+        #expect(restored.entryAliases.count == 1)
+        #expect(restored.entryAliases[list.uuidString + ":" + entry.uuidString] == replacement)
+        #expect(restored.draftResolutions.count == 1)
+        #expect(restored.draftResolutions[edit.uuidString]?.nativeID == list)
+    }
 }

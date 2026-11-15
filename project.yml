@@ -111,7 +111,7 @@ targets:
         SWIFT_VERSION[sdk=xrsimulator*]: "6.0"
 
   # watchOS companion app (Documentation/watchos-brief.md). Compiles the verified
-  # shared-code subset — Models, Providers, Services, and the non-video Stores — plus
+  # shared-code subset — Models, Providers, Services, and Stores — plus
   # the watch-specific UI in Sources/Watch. Features/, Platform/, SharedUI/, Immersive/,
   # TopShelf/, and CarPlay/ assume the five desktop/TV platforms and stay excluded
   # (except the Now Playing + downloads-availability files, which are platform-neutral).
@@ -124,12 +124,12 @@ targets:
       - path: Sources/Providers
       - path: Sources/Services
       - path: Sources/Stores
-        excludes:
-          - "PlaybackStore.swift"
+      - path: Sources/Features/Downloads/DownloadedLibrary.swift
       - path: Sources/Features/Player/NowPlayingController.swift
       - path: Sources/Platform/NowPlayingArtworkFactory.swift
       - path: Sources/Platform/DownloadsAvailability.swift
       - path: Sources/SharedUI/LoadingStateView.swift
+      - path: Sources/SharedUI/NativeArtworkScope.swift
       - path: Resources/Localizable.xcstrings
       - path: Resources/Watch/InfoPlist.xcstrings
       - path: Resources/Watch/Assets.xcassets
@@ -346,6 +346,7 @@ targets:
     sources:
       - path: Tests/GusWatchUITests
     dependencies:
+      - sdk: AppIntents.framework
       - target: GusWatch
     settings:
       base:
@@ -386,6 +387,16 @@ schemes:
       gatherCoverageData: true
       targets:
         - GusTests
+
+  # UI-only validation can exercise an ordinary Release app without enabling
+  # @testable module exposure or code coverage in the measured application.
+  Gus iOS UI Tests:
+    build:
+      targets:
+        Gus: all
+    test:
+      targets:
+        - GusUITests
 
   Gus tvOS Tests:
     build:

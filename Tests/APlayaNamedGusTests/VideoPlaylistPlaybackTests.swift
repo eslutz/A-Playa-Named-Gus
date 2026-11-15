@@ -68,10 +68,10 @@ struct VideoPlaylistNavigationTests {
         #expect(restored.playlistID == playlist)
         #expect(restored.playlistFromBeginning == true)
         #expect(restored.playlistShuffled == true)
-        var legacy = try #require(JSONSerialization.jsonObject(with: JSONEncoder().encode(first)) as? [String: Any])
-        legacy.removeValue(forKey: "playlistShuffled")
-        let olderRef = try JSONDecoder().decode(ItemRef.self, from: JSONSerialization.data(withJSONObject: legacy))
-        #expect(olderRef.playlistShuffled == nil)
+        var automaticQueue = try #require(JSONSerialization.jsonObject(with: JSONEncoder().encode(first)) as? [String: Any])
+        automaticQueue.removeValue(forKey: "playlistShuffled")
+        let automaticRef = try JSONDecoder().decode(ItemRef.self, from: JSONSerialization.data(withJSONObject: automaticQueue))
+        #expect(automaticRef.playlistShuffled == nil)
     }
 
     @MainActor @Test func playlistsAreRequiredAndCannotBeHidden() {
@@ -110,7 +110,7 @@ struct VideoPlaylistPreparationTests {
         progress.checkpoint(itemID: "movie", positionTicks: 10_000_000, scope: scope, item: item)
         let previous = progress.pendingCheckpoints(scope: scope)
         var seek: CheckedContinuation<Void, Never>?
-        let player = PlaybackStore(item: item, session: session, playbackRefresh: PlaybackRefreshStore(), downloads: downloads, localOnly: localOnly, localProgress: progress, initialSeek: { _, _ in await withCheckedContinuation { seek = $0 } })
+        let player = PlaybackStore(request: PlaybackRequest(item: item), session: session, playbackRefresh: PlaybackRefreshStore(), downloads: downloads, localOnly: localOnly, localProgress: progress, initialSeek: { _, _ in await withCheckedContinuation { seek = $0 } })
         let preparation = Task { await player.prepare(startTimeTicks: 0) }
         // Offline preparation loads AVFoundation metadata asynchronously. A fixed
         // number of executor yields can expire before file I/O finishes on CI.
@@ -147,12 +147,12 @@ struct VideoPlaylistPreparationTests {
         let session = SessionStore(client: JellyfinClientFactory.makeClient(url: url), user: StoredUser(id: scope.userID, name: "User", serverID: scope.serverID), server: ServerConnection(id: scope.serverID, name: "Server", url: url), mediaProvider: provider)
         let lists = ServerMediaListsStore(directory: folder.appendingPathComponent("native"))
         await lists.refresh(id: id, kind: .playlist, session: session)
-        let supplemental = VideoPlaylistsStore(directory: folder.appendingPathComponent("supplemental"), syncEnabled: false)
+        let supplemental = SavedMediaStore(directory: folder.appendingPathComponent("supplemental"), syncEnabled: false)
         supplemental.registerServerPlaylist(id: id, scope: scope)
         supplemental.setCursor(id: id, entryID: later, positionTicks: 50_000_000, finished: false, scope: scope)
         let old = supplemental.serverPlaylistState(id: id, scope: scope).cursor
         let downloads = OfflineDownloadStore(fileStore: OfflineDownloadFileStore(directory: folder.appendingPathComponent("downloads")), coordinator: PlaylistFixtureDownloadCoordinator())
-        let player = PlaybackStore(item: item, session: session, playbackRefresh: PlaybackRefreshStore())
+        let player = PlaybackStore(request: PlaybackRequest(item: item), session: session, playbackRefresh: PlaybackRefreshStore())
         let coordinator = VideoPlaylistPlaybackCoordinator(playlistID: id, entryID: first, fromBeginning: true, playlists: supplemental, session: session, downloads: downloads, serverLists: lists)
         await coordinator.start(player)
         #expect(supplemental.serverPlaylistState(id: id, scope: scope).cursor == old)
@@ -184,9 +184,9 @@ struct VideoPlaylistPreparationTests {
         cached.load(scope: scope)
         var itemRequests = 0
         provider.itemHandler = { _ in itemRequests += 1; throw URLError(.notConnectedToInternet) }
-        let supplemental = VideoPlaylistsStore(directory: folder.appendingPathComponent("supplemental"), syncEnabled: false)
+        let supplemental = SavedMediaStore(directory: folder.appendingPathComponent("supplemental"), syncEnabled: false)
         let downloads = OfflineDownloadStore(fileStore: OfflineDownloadFileStore(directory: folder.appendingPathComponent("downloads")), coordinator: PlaylistFixtureDownloadCoordinator())
-        let player = PlaybackStore(item: video, session: session, playbackRefresh: PlaybackRefreshStore(), downloads: downloads)
+        let player = PlaybackStore(request: PlaybackRequest(item: video), session: session, playbackRefresh: PlaybackRefreshStore(), downloads: downloads)
         let coordinator = VideoPlaylistPlaybackCoordinator(playlistID: id, entryID: videoEntryID, fromBeginning: true, playlists: supplemental, session: session, downloads: downloads, serverLists: cached)
         defer { coordinator.stop(player) }
         await coordinator.start(player)
@@ -215,13 +215,13 @@ struct VideoPlaylistPreparationTests {
         let serverLists = ServerMediaListsStore(directory: folder.appendingPathComponent("native"))
         await serverLists.refresh(id: id, kind: .playlist, session: session)
         let directory = folder.appendingPathComponent("supplemental")
-        let supplemental = VideoPlaylistsStore(directory: directory, syncEnabled: false)
+        let supplemental = SavedMediaStore(directory: directory, syncEnabled: false)
         #expect(supplemental.registerServerPlaylist(id: id, scope: scope))
         // A file replacing the storage directory makes the atomic cursor write fail.
         try FileManager.default.removeItem(at: directory)
         try Data("unwritable directory".utf8).write(to: directory)
         let downloads = OfflineDownloadStore(fileStore: OfflineDownloadFileStore(directory: folder.appendingPathComponent("downloads")), coordinator: PlaylistFixtureDownloadCoordinator())
-        let player = PlaybackStore(item: item, session: session, playbackRefresh: PlaybackRefreshStore(), downloads: downloads)
+        let player = PlaybackStore(request: PlaybackRequest(item: item), session: session, playbackRefresh: PlaybackRefreshStore(), downloads: downloads)
         let coordinator = VideoPlaylistPlaybackCoordinator(playlistID: id, entryID: entryID, fromBeginning: true, playlists: supplemental, session: session, downloads: downloads, serverLists: serverLists)
         defer { coordinator.stop(player) }
         await coordinator.start(player)
@@ -274,9 +274,9 @@ struct VideoPlaylistPreparationTests {
         let cached = ServerMediaListsStore(directory: nativeDirectory)
         cached.load(scope: scope)
         let supplementalDirectory = folder.appendingPathComponent("supplemental")
-        let supplemental = VideoPlaylistsStore(directory: supplementalDirectory, syncEnabled: false)
+        let supplemental = SavedMediaStore(directory: supplementalDirectory, syncEnabled: false)
         let player = PlaybackStore(
-            item: item,
+            request: PlaybackRequest(item: item),
             session: session,
             playbackRefresh: PlaybackRefreshStore(),
             downloads: downloads,
@@ -310,7 +310,7 @@ struct VideoPlaylistPreparationTests {
         #expect(currentItem.status == .readyToPlay)
         await actualPlayer.seek(to: CMTime(seconds: 1, preferredTimescale: 600), toleranceBefore: .zero, toleranceAfter: .zero)
         coordinator.checkpoint(player)
-        let restored = VideoPlaylistsStore(directory: supplementalDirectory, syncEnabled: false)
+        let restored = SavedMediaStore(directory: supplementalDirectory, syncEnabled: false)
         restored.load(scope: scope)
         let cursor = try #require(restored.serverPlaylistState(id: playlistID, scope: scope).cursor)
         #expect(cursor.entryID == mediaID)
@@ -331,7 +331,7 @@ struct VideoPlaylistPreparationTests {
         let folder = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: folder) }
         let scope = AccountScope(serverID: "playlist-resolution-server", userID: "user")
-        let playlists = VideoPlaylistsStore(directory: folder, syncEnabled: false)
+        let playlists = SavedMediaStore(directory: folder, syncEnabled: false)
         let id = UUID()
         let item = MediaItem(id: "removal-test-movie", name: "Movie", type: .movie)
         let entry = ServerMediaListEntry(id: UUID(), item: item)
@@ -345,7 +345,7 @@ struct VideoPlaylistPreparationTests {
         let url = try #require(URL(string: "https://example.invalid"))
         let session = SessionStore(client: JellyfinClientFactory.makeClient(url: url), user: StoredUser(id: scope.userID, name: "User", serverID: scope.serverID), server: ServerConnection(id: scope.serverID, name: "Server", url: url), mediaProvider: provider)
         await serverLists.refresh(id: id, kind: .playlist, session: session)
-        let player = PlaybackStore(item: item, session: session, playbackRefresh: PlaybackRefreshStore())
+        let player = PlaybackStore(request: PlaybackRequest(item: item), session: session, playbackRefresh: PlaybackRefreshStore())
         let coordinator = VideoPlaylistPlaybackCoordinator(playlistID: id, entryID: entry.id, fromBeginning: true, playlists: playlists, session: session, downloads: .shared, serverLists: serverLists)
         let preparation = Task { await coordinator.start(player) }
         for _ in 0 ..< 1000 {

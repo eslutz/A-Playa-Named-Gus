@@ -4,7 +4,7 @@ import SwiftUI
 struct VideoPlaylistsView: View {
     @Environment(SessionStore.self) private var session
     @Environment(ServerMediaListsStore.self) private var lists
-    @Environment(VideoPlaylistsStore.self) private var supplemental
+    @Environment(SavedMediaStore.self) private var supplemental
     @State private var creating: ServerMediaListKind?
     @State private var deleting: ServerMediaList?
     @State private var retrying: UUID?
@@ -27,17 +27,6 @@ struct VideoPlaylistsView: View {
                                 Button("Retry") { retrying = edit.id }
                                 Button("Discard Change", role: .destructive) { _ = lists.discardPendingEdit(id: edit.id, scope: scope) }
                             }
-                        }
-                    }
-                }
-            }
-            let legacy = supplemental.playlists(scope: scope).filter { lists.legacyImportID(for: $0.id, scope: scope) == nil }
-            if !legacy.isEmpty {
-                Section("Import Gus Playlists") {
-                    Text("Copy your previous Gus playlists to Jellyfin. Originals remain available until import succeeds.").foregroundStyle(.secondary)
-                    ForEach(legacy) { playlist in
-                        Button { Task { _ = await lists.importLegacy(playlist, session: session) } } label: {
-                            Label(playlist.name, systemImage: "square.and.arrow.up")
                         }
                     }
                 }
@@ -131,7 +120,7 @@ struct VideoPlaylistsView: View {
 struct VideoPlaylistDetailView: View {
     @Environment(SessionStore.self) private var session
     @Environment(ServerMediaListsStore.self) private var lists
-    @Environment(VideoPlaylistsStore.self) private var supplemental
+    @Environment(SavedMediaStore.self) private var supplemental
     @Environment(AudioPlaybackCoordinator.self) private var audio
     @Environment(OfflineDownloadStore.self) private var downloads
     let id: UUID
@@ -521,11 +510,11 @@ struct VideoPlaylistDetailView: View {
         if let playlist, playlist.entries.allSatisfy({ $0.reference.item.isAudioPlayable }),
            let index = playlist.entries.firstIndex(where: { $0.id == entry.id })
         {
-            audio.play(tracks: playlist.entries.map(\.reference.item), startIndex: index, shuffled: shuffled, playbackStart: fromBeginning ? .fromBeginning : .automatic, session: session, downloads: downloads)
+            audio.play(tracks: playlist.entries.map(\.reference.item), startIndex: index, shuffled: shuffled, request: PlaybackRequest(item: entry.reference.item, start: fromBeginning ? .fromBeginning : .automatic), session: session, downloads: downloads)
             return
         }
         if let playlist, !playlist.entries.allSatisfy({ [.movie, .episode, .video].contains($0.reference.item.type) }) {
-            player = ItemRef(item: entry.reference.item, serverID: scope.serverID, userID: scope.userID, playbackStart: fromBeginning ? .fromBeginning : .automatic)
+            player = ItemRef(item: entry.reference.item, serverID: scope.serverID, userID: scope.userID, playbackRequest: PlaybackRequest(item: entry.reference.item, start: fromBeginning ? .fromBeginning : .automatic))
             return
         }
         player = ItemRef(item: entry.reference.item, serverID: scope.serverID, userID: scope.userID, playlistID: lists.resolvedID(id, scope: scope), playlistEntryID: entry.id, playlistFromBeginning: fromBeginning, playlistShuffled: shuffled)
@@ -541,7 +530,7 @@ struct VideoPlaylistDetailView: View {
 
 /// Supplemental queue and cursor failures remain independent of native list errors.
 struct SavedPlaylistErrorBanner: View {
-    @Environment(VideoPlaylistsStore.self) private var store
+    @Environment(SavedMediaStore.self) private var store
 
     var body: some View {
         if let message = store.errorMessage {

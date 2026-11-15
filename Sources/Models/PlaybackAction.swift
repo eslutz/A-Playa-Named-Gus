@@ -10,6 +10,93 @@ enum PlaybackStartIntent: String, Codable, Hashable, Sendable {
     }
 }
 
+/// One playback intent survives routing, queues, remote commands and native windows.
+/// Track indexes are source-local; semantic snapshots are rematched against fresh metadata.
+struct PlaybackRequest: Codable, Hashable, Sendable {
+    enum SubtitleIntent: String, Codable, Hashable, Sendable { case automatic, off, explicit }
+    var item: MediaItem
+    var streamSelection: PlaybackStreamSelection
+    var audioTrack: MediaStreamInfo?
+    var subtitleTrack: MediaStreamInfo?
+    var subtitleIntent: SubtitleIntent
+    var start: PlaybackStartIntent
+    var startPositionTicks: Int?
+    var presentation: Stereo3DViewingMode
+    var maxStreamingBitrate: Int?
+
+    init(
+        item: MediaItem,
+        streamSelection: PlaybackStreamSelection = .none,
+        audioTrack: MediaStreamInfo? = nil,
+        subtitleTrack: MediaStreamInfo? = nil,
+        subtitleIntent: SubtitleIntent? = nil,
+        start: PlaybackStartIntent = .automatic,
+        startPositionTicks: Int? = nil,
+        presentation: Stereo3DViewingMode = .automatic,
+        maxStreamingBitrate: Int? = nil
+    ) {
+        self.item = item
+        self.streamSelection = streamSelection
+        self.audioTrack = audioTrack
+        self.subtitleTrack = subtitleTrack
+        self.subtitleIntent = subtitleIntent ?? (streamSelection.subtitleStreamIndex == nil ? .automatic : streamSelection.subtitleStreamIndex == -1 ? .off : .explicit)
+        self.start = start
+        self.startPositionTicks = startPositionTicks.map { max(0, $0) }
+        self.presentation = presentation
+        self.maxStreamingBitrate = maxStreamingBitrate.map { max(1, $0) }
+    }
+
+    var requestedStartTicks: Int? {
+        start == .fromBeginning ? 0 : startPositionTicks
+    }
+
+    /// A cut switch retains semantic intent but never reuses source-local indexes.
+    func selectingMediaSource(_ id: String, startPositionTicks ticks: Int) -> PlaybackRequest {
+        var result = self
+        result.streamSelection = PlaybackStreamSelection(audioStreamIndex: nil, subtitleStreamIndex: subtitleIntent == .off ? -1 : nil, mediaSourceID: id)
+        result.start = .automatic
+        result.startPositionTicks = max(0, ticks)
+        return result
+    }
+
+    /// Cross-device intent carries identity and choices, never file paths, image URLs,
+    /// negotiated stream URLs, user data, or credentials from a populated MediaItem.
+    var sharingIntent: PlaybackRequest {
+        var result = self
+        result.item = MediaItem(providerKind: item.providerKind, id: item.id, type: item.type)
+        return result
+    }
+
+    @MainActor
+    func selection(in source: MediaSource) -> PlaybackStreamSelection {
+        var selection = streamSelection
+        if let audioTrack {
+            selection.audioStreamIndex = PlaybackTrackMemory.match(audioTrack, in: source.mediaStreams)
+        }
+        switch subtitleIntent {
+        case .automatic: selection.subtitleStreamIndex = nil
+        case .off: selection.subtitleStreamIndex = -1
+        case .explicit:
+            if let subtitleTrack {
+                selection.subtitleStreamIndex = PlaybackTrackMemory.match(subtitleTrack, in: source.mediaStreams)
+            }
+        }
+        return selection
+    }
+}
+
+/// Identity uses the incoming command, never the player's changing progress snapshot.
+/// A new cut, track or start command for the same item must retire its prior store.
+struct PlaybackPresentationIdentity: Hashable {
+    let request: PlaybackRequest
+    let sessionGeneration: UUID
+    var localOnly = false
+    var playlistID: UUID?
+    var playlistEntryID: UUID?
+    var playlistFromBeginning = false
+    var playlistShuffled = false
+}
+
 /// Shared by the detail label and video preparation, including an acknowledged local zero.
 enum PlaybackActionPosition {
     static func ticks(for item: MediaItem, localTicks: Int?) -> Int? {

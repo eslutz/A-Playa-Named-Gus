@@ -13,6 +13,7 @@ struct SeerrIssuesView: View {
     @State private var showingReport = false
     @State private var loadID = UUID()
     @State private var loadedRevision: UUID?
+    @State private var resultsKey: String?
 
     var body: some View {
         List {
@@ -63,7 +64,8 @@ struct SeerrIssuesView: View {
         let requestID = UUID()
         loadID = requestID
         let expected = store.revision
-        if reset {
+        let key = "\(expected):\(filter.rawValue):\(title?.seerrCatalogID ?? "all")"
+        if reset, resultsKey != key {
             items = []; offset = 0; total = 0
         }
         loading = true
@@ -81,9 +83,10 @@ struct SeerrIssuesView: View {
             offset = (reset ? 0 : offset) + page.results.count
             total = page.pageInfo.results
             loadedRevision = expected
+            resultsKey = key
             message = nil
         } catch {
-            guard expected == store.revision, !Task.isCancelled else { return }
+            guard expected == store.revision, loadID == requestID, !Task.isCancelled else { return }
             message = error.localizedDescription
             store.handle(error)
         }
@@ -96,6 +99,7 @@ struct SeerrReportIssueView: View {
     let title: SeerrTitle
     @AppStorage(ContentRatingGate.limitDefaultsKey) private var contentLimit = "off"
     @AppStorage(ContentRatingGate.hideUnratedDefaultsKey) private var hideUnrated = false
+    @State private var actionOutcome: ActionOutcome?
     @State private var type: SeerrIssueType = .video
     @State private var description = ""
     @State private var submitting = false
@@ -146,6 +150,7 @@ struct SeerrReportIssueView: View {
                 }
             }
             .seerrFormStyle()
+            .accessibilityValue(actionOutcome?.accessibilityValue ?? "")
             .modifier(SeerrSupportOperationLifetime(operation: $operation))
             .onChange(of: contentLimit + ":" + String(hideUnrated)) { _, _ in confirmingRetry = false }
             .navigationTitle("Report an Issue")
@@ -157,8 +162,14 @@ struct SeerrReportIssueView: View {
     }
 
     private func submit() async {
+        defer {
+            if Task.isCancelled {
+                actionOutcome = nil
+            }
+        }
         guard !submitting, !outcomeUnknown, !store.hasPendingSupportMutation(key: mutationKey), isAdmitted else { return }
         let expected = store.revision
+        actionOutcome = .pending
         submitting = true
         defer { submitting = false }
         do {
@@ -174,10 +185,12 @@ struct SeerrReportIssueView: View {
                 store.completeSupportMutation(key: mutationKey)
             }
             guard expected == store.revision, !Task.isCancelled else { return }
+            actionOutcome = .confirmed
             dismiss()
         } catch {
             guard expected == store.revision, !Task.isCancelled else { return }
             outcomeUnknown = error as? SeerrClientError == .mutationOutcomeUnknown
+            actionOutcome = error as? SeerrClientError == .mutationOutcomeUnknown ? .uncertain : .failed(GusError(from: error))
             message = error.localizedDescription
             store.handle(error)
         }
@@ -189,6 +202,7 @@ private struct SeerrIssueDetailView: View {
     let issueID: Int
     @AppStorage(ContentRatingGate.limitDefaultsKey) private var contentLimit = "off"
     @AppStorage(ContentRatingGate.hideUnratedDefaultsKey) private var hideUnrated = false
+    @State private var actionOutcome: ActionOutcome?
     @State private var issue: SeerrIssue?
     @State private var mediaTitle: String?
     @State private var comment = ""
@@ -250,6 +264,7 @@ private struct SeerrIssueDetailView: View {
             Button("Refresh") { Task { await load() } }.disabled(loading)
         }
         .seerrFormStyle()
+        .accessibilityValue(actionOutcome?.accessibilityValue ?? "")
         .modifier(SeerrSupportOperationLifetime(operation: $operation))
         .onChange(of: restrictionID) { _, _ in confirmingStatus = false; confirmingCommentRetry = false }
         .navigationTitle("Issue #\(issueID)")
@@ -267,8 +282,9 @@ private struct SeerrIssueDetailView: View {
         loadID = requestID
         let expected = store.revision
         let restrictions = restrictionID
-        issue = nil
-        mediaTitle = nil
+        if loadedRevision != expected || loadedRestrictions != restrictions {
+            issue = nil; mediaTitle = nil
+        }
         loading = true
         defer {
             if loadID == requestID {
@@ -289,16 +305,31 @@ private struct SeerrIssueDetailView: View {
             message = nil
             requiresRefresh = false
         } catch {
-            guard expected == store.revision, !Task.isCancelled else { return }
-            issue = nil
+            guard expected == store.revision, loadID == requestID, restrictions == restrictionID, !Task.isCancelled else { return }
+            if error as? SeerrClientError == .notFound || error as? SeerrConnectionError == .notPermitted {
+                issue = nil
+            }
+            requiresRefresh = true
             message = error.localizedDescription
             store.handle(error)
         }
     }
 
     private func mutate(resolve: Bool?) async {
+        defer {
+            if Task.isCancelled {
+                actionOutcome = nil
+            }
+        }
+        defer {
+            if Task.isCancelled {
+                actionOutcome = nil
+            }
+        }
         guard !loading, !requiresRefresh, resolve != nil || !store.hasPendingSupportMutation(key: mutationKey) else { return }
         let expected = store.revision
+        actionOutcome = .pending
+        actionOutcome = .pending
         loading = true
         do {
             try await store.refreshUser()
@@ -315,12 +346,16 @@ private struct SeerrIssueDetailView: View {
                 store.completeSupportMutation(key: mutationKey)
             }
             guard expected == store.revision, !Task.isCancelled else { loading = false; return }
+            actionOutcome = .confirmed
+            actionOutcome = resolve == nil ? .accepted : .confirmed
             issue = updated
             comment = ""
-            message = nil
+            message = resolve == nil ? String(localized: "Comment accepted.") : nil
         } catch {
             guard expected == store.revision, !Task.isCancelled else { loading = false; return }
             requiresRefresh = error as? SeerrClientError == .mutationOutcomeUnknown
+            actionOutcome = error as? SeerrClientError == .mutationOutcomeUnknown ? .uncertain : .failed(GusError(from: error))
+            actionOutcome = error as? SeerrClientError == .mutationOutcomeUnknown ? .uncertain : .failed(GusError(from: error))
             message = error.localizedDescription
             store.handle(error)
         }
@@ -332,6 +367,7 @@ struct SeerrBlocklistView: View {
     @Environment(SeerrStore.self) private var store
     @AppStorage(ContentRatingGate.limitDefaultsKey) private var contentLimit = "off"
     @AppStorage(ContentRatingGate.hideUnratedDefaultsKey) private var hideUnrated = false
+    @State private var actionOutcome: ActionOutcome?
     @State private var items: [SeerrBlocklistItem] = []
     @State private var total = 0
     @State private var offset = 0
@@ -374,6 +410,7 @@ struct SeerrBlocklistView: View {
                 ContentUnavailableView("Blocklist Unavailable", systemImage: "hand.raised", description: Text("Your Seerr account does not have permission to view the blocklist."))
             }
         }
+        .accessibilityValue(actionOutcome?.accessibilityValue ?? "")
         .navigationTitle("Blocklist")
         .modifier(SeerrSupportOperationLifetime(operation: $operation))
         .onChange(of: restrictionID) { _, _ in removing = nil }
@@ -397,7 +434,7 @@ struct SeerrBlocklistView: View {
         loadID = requestID
         let expected = store.revision
         let restrictions = restrictionID
-        if reset {
+        if reset, loadedRevision != expected || loadedRestrictions != restrictions {
             items = []; offset = 0; total = 0
         }
         loading = true
@@ -429,21 +466,29 @@ struct SeerrBlocklistView: View {
             requiresRefresh = false
             message = nil
         } catch {
-            guard expected == store.revision, !Task.isCancelled else { return }
+            guard expected == store.revision, loadID == requestID, !Task.isCancelled else { return }
             message = error.localizedDescription
             store.handle(error)
         }
     }
 
     private func remove(_ item: SeerrBlocklistItem) async {
+        defer {
+            if Task.isCancelled {
+                actionOutcome = nil
+            }
+        }
         guard !loading, !requiresRefresh else { return }
         let expected = store.revision
+        actionOutcome = .pending
         loading = true
         do {
             try await store.refreshUser()
             guard expected == store.revision, !Task.isCancelled else { loading = false; return }
             try await store.requireClient().removeFromBlocklist(tmdbID: item.tmdbId, mediaType: item.mediaType)
             guard expected == store.revision, !Task.isCancelled else { loading = false; return }
+            actionOutcome = .accepted
+            message = String(localized: "Removal accepted. Refresh to confirm.")
             items.removeAll { $0.id == item.id }
             offset = max(0, offset - 1)
             total = max(0, total - 1)
@@ -451,6 +496,7 @@ struct SeerrBlocklistView: View {
         } catch {
             guard expected == store.revision, !Task.isCancelled else { loading = false; return }
             requiresRefresh = error as? SeerrClientError == .mutationOutcomeUnknown
+            actionOutcome = error as? SeerrClientError == .mutationOutcomeUnknown ? .uncertain : .failed(GusError(from: error))
             message = error.localizedDescription
             store.handle(error)
         }
@@ -464,6 +510,7 @@ struct SeerrBlocklistAction: View {
     @AppStorage(ContentRatingGate.limitDefaultsKey) private var contentLimit = "off"
     @AppStorage(ContentRatingGate.hideUnratedDefaultsKey) private var hideUnrated = false
     var onChanged: () -> Void = {}
+    @State private var actionOutcome: ActionOutcome?
     @State private var confirming = false
     @State private var loading = false
     @State private var completed = false
@@ -501,8 +548,14 @@ struct SeerrBlocklistAction: View {
     }
 
     private func add() async {
+        defer {
+            if Task.isCancelled {
+                actionOutcome = nil
+            }
+        }
         guard !loading, !requiresRefresh else { return }
         let expected = store.revision
+        actionOutcome = .pending
         loading = true
         defer { loading = false }
         do {
@@ -510,14 +563,13 @@ struct SeerrBlocklistAction: View {
             guard expected == store.revision, !Task.isCancelled else { return }
             try await store.requireClient().addToBlocklist(title: title)
             guard expected == store.revision, !Task.isCancelled else { return }
-            completed = true
-            if let type = title.mediaType {
-                store.recordBlock(mediaType: type, id: title.id, blocked: true)
-            }
-            onChanged()
+            actionOutcome = .accepted
+            requiresRefresh = true
+            await refresh()
         } catch {
             guard expected == store.revision, !Task.isCancelled else { return }
             requiresRefresh = error as? SeerrClientError == .mutationOutcomeUnknown
+            actionOutcome = error as? SeerrClientError == .mutationOutcomeUnknown ? .uncertain : .failed(GusError(from: error))
             message = error.localizedDescription
             store.handle(error)
         }
@@ -533,12 +585,26 @@ struct SeerrBlocklistAction: View {
                 throw SeerrClientError.invalidResponse
             }
             completed = current.mediaInfo?.status == .blocklisted
-            requiresRefresh = false
-            message = nil
+            if completed {
+                actionOutcome = .confirmed
+                requiresRefresh = false
+                message = nil
+            } else if actionOutcome == .accepted || actionOutcome == .uncertain {
+                actionOutcome = .uncertain
+                requiresRefresh = true
+                message = SeerrClientError.mutationOutcomeUnknown.localizedDescription
+            } else {
+                requiresRefresh = false
+                message = nil
+            }
             store.recordBlock(mediaType: type, id: title.id, blocked: completed)
             onChanged()
         } catch {
             guard expected == store.revision, !Task.isCancelled else { return }
+            if actionOutcome == .accepted || actionOutcome == .uncertain {
+                actionOutcome = .uncertain
+                requiresRefresh = true
+            }
             message = error.localizedDescription
             store.handle(error)
         }
@@ -547,6 +613,7 @@ struct SeerrBlocklistAction: View {
 
 struct SeerrPreferencesView: View {
     @Environment(SeerrStore.self) private var store
+    @State private var actionOutcome: ActionOutcome?
     @State private var regions: [SeerrRegion] = []
     @State private var languages: [SeerrLanguage] = []
     @State private var region = ""
@@ -612,6 +679,7 @@ struct SeerrPreferencesView: View {
             Button("Refresh") { Task { await load() } }.disabled(loading)
         }
         .seerrFormStyle()
+        .accessibilityValue(actionOutcome?.accessibilityValue ?? "")
         .modifier(SeerrSupportOperationLifetime(operation: $operation))
         .navigationTitle("Seerr Preferences")
         .task(id: store.revision) { await load() }
@@ -666,12 +734,18 @@ struct SeerrPreferencesView: View {
     }
 
     private func save(email: Bool) async {
+        defer {
+            if Task.isCancelled {
+                actionOutcome = nil
+            }
+        }
         guard !loading, !requiresRefresh else { return }
         let submittedPreferences = SeerrRegionalPreferences(discoverRegion: region, streamingRegion: streamingRegion, originalLanguage: language)
         let submittedRegionalChanges = regionalChanges
         let submittedEmailEvents = emailEvents
         let submittedEmailChanges = emailEvents ^ originalEmailEvents
         let expected = store.revision
+        actionOutcome = .pending
         loading = true
         defer { loading = false }
         do {
@@ -689,10 +763,12 @@ struct SeerrPreferencesView: View {
             } else {
                 originalPreferences = submittedPreferences
             }
-            message = String(localized: "Preferences saved.")
+            actionOutcome = .accepted
+            message = String(localized: "Preferences accepted. Refresh to confirm the saved values.")
         } catch {
             guard expected == store.revision, !Task.isCancelled else { return }
             requiresRefresh = error as? SeerrClientError == .mutationOutcomeUnknown
+            actionOutcome = error as? SeerrClientError == .mutationOutcomeUnknown ? .uncertain : .failed(GusError(from: error))
             message = error.localizedDescription
             store.handle(error)
         }

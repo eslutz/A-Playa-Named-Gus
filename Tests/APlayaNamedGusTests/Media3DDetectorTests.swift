@@ -66,6 +66,44 @@ struct Media3DDetectorTests {
         #expect(Media3DDetector.presentation(for: item, on: .visionOS) == .nativeSpatial)
     }
 
+    @Test("selected 2D sources do not inherit primary SBS or MV-HEVC metadata", arguments: [false, true])
+    func selectedSourceOwnsStereoMetadata(spatial: Bool) {
+        let primary = MediaSource(
+            id: "primary",
+            mediaStreams: spatial ? [MediaStreamInfo(codec: "hevc", profile: "Main 10 multiview", type: .video)] : [],
+            video3DFormat: spatial ? nil : .halfSideBySide
+        )
+        let alternate = MediaSource(id: "alternate", mediaStreams: [MediaStreamInfo(codec: "hevc", profile: "Main 10", type: .video)])
+        let item = MediaItem(mediaSources: [primary, alternate], video3DFormat: spatial ? nil : .halfSideBySide)
+        let expected: Stereo3DPresentation = spatial ? .nativeSpatial : .immersiveFramePacked(.sideBySide(half: true))
+
+        #expect(Media3DDetector.presentation(for: item, on: .visionOS) == expected)
+        #expect(Media3DDetector.presentation(for: item, mediaSourceID: "primary", on: .visionOS) == expected)
+        #expect(Media3DDetector.presentation(for: item, mediaSourceID: "alternate", on: .visionOS) == .native2D)
+        // This is the post-negotiation path: the source snapshot may be newer than
+        // the canonical item, whose first source still defines item-level metadata.
+        #expect(Media3DDetector.presentation(for: item, mediaSourceID: "alternate", resolvedSource: alternate, on: .visionOS) == .native2D)
+        #expect(Media3DDetector.presentation(for: item, resolvedSource: alternate, on: .visionOS) == .native2D)
+        #expect(Media3DDetector.presentation(for: item, mediaSourceID: "missing-alternate", on: .visionOS) == .native2D)
+
+        let reversed = MediaItem(mediaSources: [alternate, primary])
+        #expect(Media3DDetector.presentation(for: reversed, on: .visionOS) == .native2D)
+        #expect(Media3DDetector.presentation(for: reversed, mediaSourceID: "primary", on: .visionOS) == expected)
+    }
+
+    @Test("primary item metadata survives while alternate missing metadata stays unknown")
+    func primaryAndMissingAlternateMetadata() {
+        let primary = MediaSource(id: "primary")
+        let item = MediaItem(mediaSources: [primary, MediaSource(id: "alternate")], video3DFormat: .fullSideBySide)
+        #expect(Media3DDetector.layout(for: item) == .sideBySide(half: false))
+        #expect(Media3DDetector.layout(for: item, mediaSourceID: "primary") == .sideBySide(half: false))
+        #expect(Media3DDetector.layout(for: item, mediaSourceID: "alternate") == .none)
+        #expect(Media3DDetector.layout(for: item, mediaSourceID: "missing") == .none)
+        #expect(Media3DDetector.layout(for: MediaItem(video3DFormat: .fullSideBySide), mediaSourceID: "missing") == .none)
+        let negotiatedAlternate = MediaSource(id: "alternate", video3DFormat: .halfTopAndBottom)
+        #expect(Media3DDetector.layout(for: item, mediaSourceID: "alternate", resolvedSource: negotiatedAlternate) == .topAndBottom(half: true))
+    }
+
     @Test("forces native 2D on non-visionOS platforms")
     func nonVisionOSAlwaysFallsBackTo2D() {
         let item = MediaItem(video3DFormat: .halfSideBySide)

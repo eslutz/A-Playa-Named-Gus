@@ -26,10 +26,11 @@ struct CollectionsView: View {
                 }
             }.gusTVPagePadding()
         }
+        .gusVisibleContent(.collections, isLoading: store.state.isLoading)
         .navigationTitle("Collections")
         .toolbar {
             if CollectionPlatform.canManage && store.capabilities.create {
-                ToolbarItem(placement: .primaryAction) { Button("New Collection", systemImage: "plus") { creating = true }.gusIPadIconOnly().collectionShortcut("n") }
+                ToolbarItem(placement: .primaryAction) { Button("New Collection", systemImage: "plus") { creating = true }.disabled(!store.canSubmitMutations).gusIPadIconOnly().collectionShortcut("n") }
             }
         }
         .sheet(isPresented: $creating) { NavigationStack { CollectionEditor() } }
@@ -43,7 +44,7 @@ struct CollectionLink: View {
     let collection: MediaCollection
     var body: some View {
         NavigationLink(value: MediaCollectionRef(id: collection.id, scope: session.references.scope)) {
-            PosterCard(title: collection.item.displayTitle, subtitle: String(localized: "Collection"), imageURL: session.mediaProvider.primaryImageURL(for: collection.item, context: .posterGrid), placeholderSymbol: "rectangle.stack")
+            PosterCard(title: collection.item.displayTitle, subtitle: String(localized: "Collection"), statusItem: collection.item, imageURL: session.mediaProvider.primaryImageURL(for: collection.item, context: .posterGrid), placeholderSymbol: "rectangle.stack", fallbackURLs: session.mediaProvider.artworkURLs(for: collection.item, request: .init(role: .poster, maxWidth: 360)))
         }.posterNavigationStyle()
     }
 }
@@ -83,6 +84,7 @@ struct MovieCollectionsShelf: View {
             }
             .gusTVRailViewport()
         }
+        .gusVisibleContent(.collections, isLoading: store.state.isLoading)
         .task(id: store.revision) { await store.loadLibrary(libraryID) }
     }
 }
@@ -103,7 +105,7 @@ struct MovieCollectionMemberships: View {
                     NavigationLink(value: MediaCollectionRef(id: collection.id, scope: session.references.scope)) {
                         Label(collection.item.displayTitle, systemImage: "rectangle.stack")
                     }
-                    .mediaItemContextMenu(item: nil, groupName: collection.item.displayTitle, canRemove: CollectionPlatform.canManage && store.capabilities.removeMembers, remove: {
+                    .mediaItemContextMenu(item: nil, groupName: collection.item.displayTitle, canRemove: CollectionPlatform.canManage && store.capabilities.removeMembers && store.canSubmitMutations, remove: {
                         _ = await store.mutate { try await session.mediaProvider.removeCollectionMembers(id: collection.id, itemIDs: [movieID]); return nil }
                     })
                 }
@@ -112,7 +114,9 @@ struct MovieCollectionMemberships: View {
                 Text(message).font(.caption).foregroundStyle(.secondary)
                 Button("Retry Collections") { Task { await store.load(force: true) } }
             }
-        }.task { await store.load() }
+        }
+        .gusVisibleContent(.collections, isLoading: store.state.isLoading)
+        .task { await store.load() }
     }
 }
 
@@ -161,7 +165,7 @@ struct MediaCollectionDetailView: View {
                 CollectionFeedback(store: store)
                 if let collection, ContentRatingGate.admitsStored(collection.item) {
                     HStack(alignment: .top, spacing: 20) {
-                        AsyncPoster(url: session.mediaProvider.primaryImageURL(for: collection.item, context: .posterGrid)).frame(width: artworkWidth, height: artworkWidth * 1.5)
+                        AsyncPoster(url: session.mediaProvider.primaryImageURL(for: collection.item, context: .posterGrid), fallbackURLs: session.mediaProvider.artworkURLs(for: collection.item, request: .init(role: .poster, maxWidth: 360))).frame(width: artworkWidth, height: artworkWidth * 1.5)
                         VStack(alignment: .leading, spacing: 12) {
                             Text(collection.item.displayTitle).font(collectionTitleFont)
                             if collection.membersLoaded {
@@ -216,6 +220,7 @@ struct MediaCollectionDetailView: View {
                 }
             } }
         } message: { Text("This deletes the collection from Jellyfin. Its movies and watched history remain.") }
+        .gusVisibleContent(.collections, isLoading: store.state.isLoading)
         .task { await store.load(); await store.loadDetail(id: id); loading = false }
         .refreshable { await store.load(force: true); await store.loadDetail(id: id, force: true) }
     }
@@ -234,7 +239,7 @@ struct MediaCollectionDetailView: View {
                     Button("Delete Collection", systemImage: "trash", role: .destructive) { deleting = true }
                 }
             }
-        } label: { GusToolbarLabel("More", systemImage: "ellipsis.circle", tvSystemImage: "ellipsis") }.gusIPadIconOnly().gusTVToolbarIcon().accessibilityLabel("More").disabled(store.isMutating || collection == nil)
+        } label: { GusToolbarLabel("More", systemImage: "ellipsis.circle", tvSystemImage: "ellipsis") }.gusIPadIconOnly().gusTVToolbarIcon().accessibilityLabel("More").disabled(!store.canSubmitMutations || collection == nil)
     }
 
     private func admitted(_ collection: MediaCollection) -> [MediaItem] {
@@ -246,10 +251,10 @@ struct MediaCollectionDetailView: View {
             Text(title).font(.title2.bold())
             LazyVGrid(columns: PosterGrid.columns, spacing: PosterGrid.spacing) {
                 ForEach(sort.sorted(members), id: \.id) { item in
-                    NavigationLink(value: ItemRef(item: item)) { PosterCard(item: item, imageURL: session.mediaProvider.primaryImageURL(for: item, context: .posterGrid)) }
+                    NavigationLink(value: ItemRef(item: item)) { PosterCard(item: item, imageURL: session.mediaProvider.primaryImageURL(for: item, context: .posterGrid), fallbackURLs: session.mediaProvider.artworkURLs(for: item, request: .init(role: .poster, maxWidth: 360))) }
                         .posterNavigationStyle()
                         .gusTVFocus(id: item.id ?? "", section: "collection:" + id, ids: sort.sorted(members).compactMap(\.id), item: item)
-                        .mediaItemContextMenu(item: item, groupName: collection.item.displayTitle, canRemove: CollectionPlatform.canManage && store.capabilities.removeMembers && !store.isMutating, remove: {
+                        .mediaItemContextMenu(item: item, groupName: collection.item.displayTitle, canRemove: CollectionPlatform.canManage && store.capabilities.removeMembers && store.canSubmitMutations, remove: {
                             if let itemID = item.id {
                                 _ = await store.mutate { try await session.mediaProvider.removeCollectionMembers(id: id, itemIDs: [itemID]); return nil }
                             }
@@ -263,10 +268,29 @@ struct MediaCollectionDetailView: View {
 struct CollectionFeedback: View {
     let store: CollectionStore
     var body: some View {
+        if store.actionOutcome == .pending {
+            ProgressView("Updating…")
+        } else if let outcome = store.actionOutcome {
+            Text(outcome.accessibilityValue).font(.caption).foregroundStyle(.secondary)
+        }
         if let message = store.errorMessage {
             Text(message).foregroundStyle(.secondary)
             Button("Refresh Collections") { Task { await store.load(force: true) } }
-            Button("Dismiss Error") { store.clearError() }
+            if !store.needsMutationReview {
+                Button("Dismiss Error") { store.clearError() }
+            }
+        } else if store.needsMutationReview {
+            Button("Refresh Collections") { Task { await store.load(force: true) } }
+        }
+        if store.needsMutationReview {
+            if store.canKeepCurrentServerState {
+                Section("Review Server Collections") {
+                    ForEach(store.collections) { collection in
+                        Text(collection.item.displayTitle)
+                    }
+                }
+                Button("Use Current Server State") { store.keepCurrentServerState() }
+            }
         }
         if let message = store.statusMessage {
             Text(message).foregroundStyle(.secondary)

@@ -5,6 +5,111 @@ import Testing
 
 @Suite("Item detail actions")
 struct ItemDetailActionTests {
+    @Test("a failed related shelf refresh retains its content and can retry independently")
+    @MainActor
+    func relatedContentRefresh() async throws {
+        let provider = FakeMediaProviderSession(capabilities: ProviderCapabilities())
+        let item = MediaItem(id: "movie", type: .movie)
+        provider.itemHandler = { _ in item }
+        provider.similarItemsHandler = { _ in [MediaItem(id: "similar", type: .movie)] }
+        provider.specialFeaturesHandler = { _ in [MediaItem(id: "feature", type: .video)] }
+        let url = try #require(URL(string: "https://example.invalid"))
+        let session = SessionStore(
+            client: JellyfinClientFactory.makeClient(url: url),
+            user: StoredUser(id: "u", name: "User", serverID: "s"),
+            server: ServerConnection(id: "s", name: "Server", url: url),
+            mediaProvider: provider
+        )
+        let store = ItemDetailStore(item: item, session: session)
+        await store.load()
+        provider.similarItemsHandler = { _ in throw GusError.offline }
+        provider.specialFeaturesHandler = { _ in [MediaItem(id: "new-feature", type: .video)] }
+        await store.load()
+        #expect(store.state == .loaded)
+        #expect(store.similarItems.map(\.id) == ["similar"])
+        #expect(store.specialFeatures.map(\.id) == ["new-feature"])
+        #expect(store.relatedContentError != nil)
+        provider.similarItemsHandler = { _ in [MediaItem(id: "new-similar", type: .movie)] }
+        await store.retryRelatedContent()
+        #expect(store.relatedContentError == nil)
+        #expect(store.similarItems.map(\.id) == ["new-similar"])
+    }
+
+    @Test("ambiguous favorite writes reconcile without repeating a toggle", arguments: [true, false])
+    @MainActor
+    func uncertainFavoriteWrite(serverApplied: Bool) async throws {
+        let provider = FakeMediaProviderSession(capabilities: ProviderCapabilities())
+        var remote = MediaItem(id: "movie", type: .movie, userData: MediaUserData(isFavorite: false))
+        var writes = 0
+        provider.itemHandler = { _ in remote }
+        provider.favoriteHandler = {
+            writes += 1
+            if serverApplied {
+                remote.userData?.isFavorite = true
+            }
+            throw GusError.timeout
+        }
+        let url = try #require(URL(string: "https://example.invalid"))
+        let session = SessionStore(
+            client: JellyfinClientFactory.makeClient(url: url),
+            user: StoredUser(id: "u", name: "User", serverID: "s"),
+            server: ServerConnection(id: "s", name: "Server", url: url),
+            mediaProvider: provider
+        )
+        let store = ItemDetailStore(item: remote, session: session)
+        await store.toggleFavorite()
+        #expect(store.actionOutcome == .uncertain)
+        #expect(store.needsUserDataRefresh)
+        await store.toggleFavorite()
+        #expect(writes == 1)
+        if serverApplied {
+            #expect(store.actionOutcome == .confirmed)
+            #expect(!store.needsUserDataRefresh)
+        } else {
+            #expect(store.needsUserDataRefresh)
+            #expect(store.canKeepCurrentUserData)
+            store.keepCurrentUserData()
+            #expect(!store.needsUserDataRefresh)
+            #expect(store.actionOutcome == nil)
+            #expect(writes == 1)
+        }
+    }
+
+    @Test("a metadata refresh cannot invert the watched or favorite action the user selected", arguments: [true, false])
+    @MainActor
+    func togglesPreserveDisplayedIntent(displayedStatus: Bool) async throws {
+        let provider = FakeMediaProviderSession(capabilities: ProviderCapabilities())
+        let displayed = MediaItem(id: "movie", type: .movie, userData: MediaUserData(isWatched: displayedStatus, isFavorite: displayedStatus))
+        var remote = MediaItem(id: "movie", type: .movie, userData: MediaUserData(isWatched: !displayedStatus, isFavorite: !displayedStatus))
+        provider.itemHandler = { _ in remote }
+        provider.favoriteHandler = {
+            remote.userData?.isFavorite = !(provider.favoriteRequests.last?.currentlyFavorite ?? !displayedStatus)
+        }
+        provider.watchedHandler = {
+            remote.userData?.isWatched = !(provider.watchedRequests.last?.currentlyWatched ?? !displayedStatus)
+        }
+        let url = try #require(URL(string: "https://example.invalid"))
+        let session = SessionStore(
+            client: JellyfinClientFactory.makeClient(url: url),
+            user: StoredUser(id: "u", name: "User", serverID: "s"),
+            server: ServerConnection(id: "s", name: "Server", url: url),
+            mediaProvider: provider
+        )
+        let favoriteStore = ItemDetailStore(item: displayed, session: session)
+        await favoriteStore.toggleFavorite()
+        #expect(provider.favoriteRequests.count == 1)
+        #expect(provider.favoriteRequests.first?.currentlyFavorite == displayedStatus)
+        #expect(favoriteStore.item.userData?.isFavorite == !displayedStatus)
+        #expect(favoriteStore.actionOutcome == .confirmed)
+
+        let watchedStore = ItemDetailStore(item: displayed, session: session)
+        await watchedStore.toggleWatched()
+        #expect(provider.watchedRequests.count == 1)
+        #expect(provider.watchedRequests.first?.currentlyWatched == displayedStatus)
+        #expect(watchedStore.item.userData?.isWatched == !displayedStatus)
+        #expect(watchedStore.actionOutcome == .confirmed)
+    }
+
     @Test("explicit watched actions reset resume data and select the requested endpoint despite stale metadata", arguments: [true, false])
     @MainActor
     func explicitWatchedAction(watched: Bool) async throws {
@@ -65,6 +170,45 @@ struct ItemDetailActionTests {
         #expect(store.actionError != nil)
         #expect(provider.watchedRequests.isEmpty)
         #expect(progress.positionTicks(forItemID: "movie", scope: scope) == 99)
+    }
+
+    @Test("a rejected watched write after a saved progress reset requires readback before another action")
+    @MainActor
+    func partiallyAcceptedWatchedAction() async throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let progress = OfflinePlaybackProgressStore(directory: directory)
+        let scope = AccountScope(serverID: "s", userID: "u")
+        progress.checkpoint(itemID: "movie", positionTicks: 99, scope: scope)
+        var remote = MediaItem(id: "movie", type: .movie, userData: MediaUserData(playbackPositionTicks: 99, isWatched: false))
+        let provider = FakeMediaProviderSession(capabilities: ProviderCapabilities())
+        provider.itemHandler = { _ in remote }
+        provider.progressHandler = { _, ticks in remote.userData?.playbackPositionTicks = ticks }
+        provider.watchedHandler = { throw GusError.forbidden }
+        let url = try #require(URL(string: "https://example.invalid"))
+        let session = SessionStore(
+            client: JellyfinClientFactory.makeClient(url: url),
+            user: StoredUser(id: "u", name: "User", serverID: "s"),
+            server: ServerConnection(id: "s", name: "Server", url: url),
+            mediaProvider: provider
+        )
+        let store = ItemDetailStore(item: remote, session: session)
+        await store.setWatched(true, localProgress: progress)
+        #expect(session.isActive)
+        #expect(store.actionOutcome == .uncertain)
+        #expect(store.needsUserDataRefresh)
+        #expect(store.actionError != nil)
+        #expect(progress.positionTicks(forItemID: "movie", scope: scope) == 0)
+
+        await store.setWatched(true, localProgress: progress)
+        #expect(provider.watchedRequests.count == 1)
+        #expect(store.item.userData?.playbackPositionTicks == 0)
+        #expect(store.item.userData?.isWatched == false)
+        #expect(store.needsUserDataRefresh)
+        #expect(store.canKeepCurrentUserData)
+        store.keepCurrentUserData()
+        #expect(!store.needsUserDataRefresh)
+        #expect(store.actionOutcome == nil)
     }
 
     @Test("authoritative replacement metadata clears a cached missing-item failure")

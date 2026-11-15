@@ -31,6 +31,17 @@ final class SeerrRequestDraft {
         self.title = title
     }
 
+    /// The durable submission journal remains authoritative; shared UI reads this projection.
+    var actionOutcome: ActionOutcome? {
+        switch phase {
+        case .loading: nil
+        case .review: message.map { .failed(.unknown($0)) }
+        case .submitting: .pending
+        case .uncertain: .uncertain
+        case .confirmed: .confirmed
+        }
+    }
+
     var type: SeerrMediaType {
         title.mediaType ?? .unknown
     }

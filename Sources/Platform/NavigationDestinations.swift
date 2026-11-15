@@ -141,17 +141,17 @@ struct SeerrRequestHistoryLink: View {
                 NavigationLink(value: AppScreen.seerrRequests) { Label("My Requests", systemImage: "clock") }
                     .labelStyle(.iconOnly)
             } else {
-                legacyLink
+                standardLink
             }
         #elseif os(tvOS)
             NavigationLink { SeerrRequestsView() } label: { Image(systemName: "clock") }
                 .accessibilityLabel("My Requests")
         #else
-            legacyLink
+            standardLink
         #endif
     }
 
-    private var legacyLink: some View {
+    private var standardLink: some View {
         NavigationLink("My Requests") { SeerrRequestsView() }
     }
 }

@@ -7,32 +7,42 @@ final class AudioPlaybackCoordinator {
     private(set) var store: AudioPlayerStore?
     var isPresented = false
     private var preparation: Task<Void, Never>?
-    private var playbackStart: PlaybackStartIntent = .automatic
+    private var startsShuffled = false
 
     func play(
         tracks: [MediaItem],
         startIndex: Int = 0,
         shuffled: Bool = false,
         localOnly: Bool = false,
-        playbackStart: PlaybackStartIntent = .automatic,
+        request: PlaybackRequest? = nil,
+        continuation: AudioQueueContinuation? = nil,
         session: SessionStore,
         downloads: OfflineDownloadStore
     ) {
         stop()
-        self.playbackStart = playbackStart
-        let player = AudioPlayerStore(session: session, tracks: tracks, startIndex: startIndex, downloads: downloads, localOnly: localOnly)
-        if shuffled {
-            player.toggleShuffle()
-        }
+        startsShuffled = shuffled
+        let player = AudioPlayerStore(session: session, tracks: tracks, startIndex: startIndex, request: request ?? (tracks.indices.contains(startIndex) ? PlaybackRequest(item: tracks[startIndex]) : nil), continuation: continuation, downloads: downloads, localOnly: localOnly)
         store = player
         isPresented = true
-        preparation = Task { await player.start(resume: playbackStart == .automatic) }
+        preparation = Task {
+            if shuffled, !(await player.collectForShuffle()) {
+                return
+            }
+            guard !Task.isCancelled else { return }
+            await player.start()
+        }
     }
 
     func retry() {
         guard let store else { return }
         preparation?.cancel()
-        preparation = Task { await store.start(resume: playbackStart == .automatic) }
+        preparation = Task {
+            if startsShuffled, !(await store.collectForShuffle()) {
+                return
+            }
+            guard !Task.isCancelled else { return }
+            await store.start()
+        }
     }
 
     func close() {

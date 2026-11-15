@@ -19,7 +19,7 @@ struct TVPlaybackLifecycleTests {
             server: ServerConnection(id: "tv-lifecycle-server", name: "Server", url: URL(string: "https://example.invalid")!),
             mediaProvider: provider
         )
-        let store = PlaybackStore(item: MediaItem(id: "fixture", type: .movie), session: session, playbackRefresh: PlaybackRefreshStore())
+        let store = PlaybackStore(request: PlaybackRequest(item: MediaItem(id: "fixture", type: .movie)), session: session, playbackRefresh: PlaybackRefreshStore())
         store.usesPlaylistOrder = true
         return store
     }
@@ -73,7 +73,7 @@ struct TVPlaybackLifecycleTests {
             mediaProvider: provider
         )
         var seek: CheckedContinuation<Void, Never>?
-        let store = PlaybackStore(item: item, session: session, playbackRefresh: PlaybackRefreshStore(), initialSeek: { _, _ in
+        let store = PlaybackStore(request: PlaybackRequest(item: item), session: session, playbackRefresh: PlaybackRefreshStore(), initialSeek: { _, _ in
             await withCheckedContinuation { seek = $0 }
         })
         defer { store.teardown() }
@@ -107,7 +107,7 @@ struct TVPlaybackLifecycleTests {
         await Task.yield()
         #expect(store.state == failure)
         #expect(!store.hasStartedPlayback)
-        #expect(store.player?.rate == 0)
+        #expect(store.player == nil)
         #expect(provider.playbackReportCallCount == 0)
     }
 

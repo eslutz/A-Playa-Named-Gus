@@ -7,7 +7,7 @@ import SwiftUI
 struct RootView: View {
     @Environment(AppModel.self) private var appModel
     @Environment(UpNextStore.self) private var upNext
-    @Environment(VideoPlaylistsStore.self) private var videoPlaylists
+    @Environment(SavedMediaStore.self) private var videoPlaylists
     @Environment(ServerMediaListsStore.self) private var serverLists
     @Environment(OfflineDownloadStore.self) private var downloads
     @State private var audio = AudioPlaybackCoordinator()
@@ -17,11 +17,17 @@ struct RootView: View {
         content
             .gusIPhoneCanvas()
             .environment(audio)
-            .onChange(of: activeAccount) { _, _ in audio.stop(); videoPlaylists.deactivate(); serverLists.deactivate() }
+            .disabled(appModel.isTransitioning)
+            .overlay {
+                if appModel.isTransitioning {
+                    ProgressView("Finishing Playback…").padding().background(.regularMaterial, in: .rect(cornerRadius: 12))
+                }
+            }
+            .onChange(of: activeLease) { _, _ in audio.stop(); videoPlaylists.deactivate(); serverLists.deactivate() }
     }
 
-    private var activeAccount: AccountScope? {
-        appModel.currentSession.map { AccountScope(serverID: $0.server.id, userID: $0.user.id) }
+    private var activeLease: SessionLease? {
+        appModel.currentSession?.lease
     }
 
     @ViewBuilder private var content: some View {
@@ -31,15 +37,16 @@ struct RootView: View {
                     upNext.reconcileSyncedIntents(scope: session.references.scope)
                     NextUpActivityStore.shared.reconcile(scope: session.references.scope)
                 }
-                .id(SessionCredential(user: session.user).account)
+                .id(session.lease)
                 .environment(session)
+                .gusArtworkTransport(session.artworkTransport)
                 .task(id: scenePhase) {
                     guard scenePhase == .active else { return }
                     await videoPlaylists.activate(scope: session.references.scope)
                     upNext.reconcileSyncedIntents(scope: session.references.scope)
                     NextUpActivityStore.shared.reconcile(scope: session.references.scope)
                     await upNext.refresh(session: session)
-                    guard !Task.isCancelled, activeAccount == session.references.scope else { return }
+                    guard !Task.isCancelled, activeLease == session.lease else { return }
                     serverLists.load(scope: session.references.scope)
                     await serverLists.refresh(session: session)
                 }
@@ -57,8 +64,7 @@ struct RootView: View {
                     OfflinePlaybackProgressStore.shared.retryUnavailable(scope: session.references.scope)
                     while !Task.isCancelled {
                         await OfflinePlaybackProgressStore.shared.sync(session: session) {
-                            appModel.currentSession?.server.id == session.server.id &&
-                                appModel.currentSession?.user.id == session.user.id
+                            activeLease == session.lease && session.isActive
                         }
                         try? await Task.sleep(for: .seconds(30))
                     }

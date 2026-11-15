@@ -1,5 +1,5 @@
 /// Stereoscopic layout as reported by Jellyfin or inferred from stream metadata.
-enum Stereo3DLayout: Equatable {
+enum Stereo3DLayout: Equatable, Sendable {
     case sideBySide(half: Bool)
     case topAndBottom(half: Bool)
     case mvHEVC
@@ -51,7 +51,7 @@ enum Stereo3DPresentation: Equatable {
     }
 }
 
-enum Stereo3DViewingMode: Equatable, CaseIterable {
+enum Stereo3DViewingMode: String, Codable, Hashable, Sendable, CaseIterable {
     case automatic
     case twoD
     case spatial
@@ -71,26 +71,39 @@ enum Media3DDetector {
         #endif
     }
 
-    static func layout(for item: MediaItem) -> Stereo3DLayout {
-        if let format = item.video3DFormat {
+    static func layout(for item: MediaItem, mediaSourceID: String? = nil, resolvedSource: MediaSource? = nil) -> Stereo3DLayout {
+        let source: MediaSource?
+        if let resolvedSource {
+            source = resolvedSource
+        } else if let mediaSourceID {
+            source = item.mediaSources.first { $0.id == mediaSourceID }
+        } else {
+            source = item.mediaSources.first
+        }
+        if let format = source?.video3DFormat {
             return layout(for: format)
         }
-
-        if let format = item.mediaSources.compactMap(\.video3DFormat).first {
+        let selectedID = source?.id ?? mediaSourceID
+        // Item-level metadata describes the primary cut. A selected alternate,
+        // including one no longer in the item metadata, must supply its own hints.
+        let usesItemMetadata = selectedID == item.mediaSources.first?.id
+            || (mediaSourceID == nil && item.mediaSources.isEmpty)
+        if usesItemMetadata, let format = item.video3DFormat {
             return layout(for: format)
         }
-
-        return looksLikeMVHEVC(item) ? .mvHEVC : .none
+        return source.map(looksLikeMVHEVC) == true ? .mvHEVC : .none
     }
 
     static func presentation(
         for item: MediaItem,
+        mediaSourceID: String? = nil,
+        resolvedSource: MediaSource? = nil,
         on platform: PlaybackPlatform = currentPlatform,
         viewingMode: Stereo3DViewingMode = .automatic
     ) -> Stereo3DPresentation {
         guard platform == .visionOS else { return .native2D }
 
-        let layout = layout(for: item)
+        let layout = layout(for: item, mediaSourceID: mediaSourceID, resolvedSource: resolvedSource)
         switch viewingMode {
         case .automatic:
             break
@@ -130,8 +143,8 @@ enum Media3DDetector {
     /// Jellyfin does not currently flag Apple spatial video. This is intentionally
     /// conservative: require HEVC plus an explicit multiview/spatial hint surfaced by
     /// server metadata, otherwise leave Feature 5's manual Spatial override to the user.
-    private static func looksLikeMVHEVC(_ item: MediaItem) -> Bool {
-        mediaStreams(for: item).contains { stream in
+    private static func looksLikeMVHEVC(_ source: MediaSource) -> Bool {
+        source.mediaStreams.contains { stream in
             guard stream.type == .video, isHEVC(stream.codec) else { return false }
             return stream.mvHEVCHintFields.contains { field in
                 let normalized = field.lowercased()
@@ -141,10 +154,6 @@ enum Media3DDetector {
                     || normalized.contains("spatial video")
             }
         }
-    }
-
-    private static func mediaStreams(for item: MediaItem) -> [MediaStreamInfo] {
-        item.mediaSources.flatMap(\.mediaStreams)
     }
 
     private static func isHEVC(_ codec: String?) -> Bool {

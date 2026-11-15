@@ -37,7 +37,7 @@ final class VideoPlaylistPlaybackCoordinator {
     private(set) var finished = false
     private let playlistID: UUID
     private let scope: AccountScope
-    private let playlists: VideoPlaylistsStore
+    private let playlists: SavedMediaStore
     private let serverLists: ServerMediaListsStore
     private let session: SessionStore
     private let downloads: OfflineDownloadStore
@@ -47,7 +47,7 @@ final class VideoPlaylistPlaybackCoordinator {
     private var active = true
     private let startsFromBeginning: Bool
 
-    init(playlistID: UUID, entryID: UUID?, fromBeginning: Bool, shuffled: Bool = false, playlists: VideoPlaylistsStore, session: SessionStore, downloads: OfflineDownloadStore, serverLists: ServerMediaListsStore = .shared) {
+    init(playlistID: UUID, entryID: UUID?, fromBeginning: Bool, shuffled: Bool = false, playlists: SavedMediaStore, session: SessionStore, downloads: OfflineDownloadStore, serverLists: ServerMediaListsStore = .shared) {
         self.playlistID = playlistID
         self.playlists = playlists
         self.serverLists = serverLists

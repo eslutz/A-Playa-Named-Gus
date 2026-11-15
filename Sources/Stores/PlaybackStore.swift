@@ -25,6 +25,7 @@ final class PlaybackStore {
     private(set) var isNextUpPromptVisible = false
     private(set) var stereoPresentation: Stereo3DPresentation = .native2D
     private(set) var stereoFallbackNotice: String?
+    var trackSelectionNotice: String?
     private(set) var viewingMode: Stereo3DViewingMode = .automatic
     /// Set when playback reaches its natural end with nothing left to auto-play;
     /// the player view observes it to dismiss itself.
@@ -36,13 +37,14 @@ final class PlaybackStore {
     }
 
     private(set) var item: MediaItem
+    private var playbackIntent: PlaybackRequest
     private let session: SessionStore
     private let playbackRefresh: PlaybackRefreshStore
     private let downloads: OfflineDownloadStore?
     private let localOnly: Bool
     private let localProgress: OfflinePlaybackProgressStore
     private let progressWriterToken: UUID
-    private let initialSeek: @MainActor (AVPlayer, Int) async -> Void
+    private let initialSeek: @MainActor (AVPlayer, Int) async throws -> Void
     private var isLocalPlayback = false
     private var playingDownload: OfflineDownloadRecord?
     private let nowPlaying = NowPlayingController()
@@ -52,9 +54,17 @@ final class PlaybackStore {
     private var endObserver: (any NSObjectProtocol)?
     private var stalledObserver: (any NSObjectProtocol)?
     private var failedEndObserver: (any NSObjectProtocol)?
+    private var mediaSelectionObserver: (any NSObjectProtocol)?
     private var pauseStateObservation: NSKeyValueObservation?
     private var itemStatusObservation: NSKeyValueObservation?
-    private var lastReportTask: Task<Void, Never>?
+    private var nativeNavigationTask: Task<Void, Never>?
+    private var playbackResource: PlaybackResource?
+    private var playbackIsLive = false
+    private var retryPositionTicks: Int?
+    private var startupRequestedAt = ContinuousClock.now
+    private var didObservePlaying = false
+    private var didObserveFirstRender = false
+    private var firstPlayingInterval: OSSignpostIntervalState?
     private var didReportPause = false
     private var didReportStopped = false
     private var isTranscodedPlayback = false
@@ -62,10 +72,14 @@ final class PlaybackStore {
     private var preparationGeneration = 0
     private var presentationIsActive = true
 
-    init(item: MediaItem, session: SessionStore, playbackRefresh: PlaybackRefreshStore, downloads: OfflineDownloadStore? = nil, localOnly: Bool = false, localProgress: OfflinePlaybackProgressStore? = nil, initialSeek: @escaping @MainActor (AVPlayer, Int) async -> Void = { player, ticks in
-        await player.seek(to: CMTime(seconds: PlaybackTime.seconds(fromTicks: ticks), preferredTimescale: 600), toleranceBefore: .zero, toleranceAfter: .zero)
+    init(request: PlaybackRequest, session: SessionStore, playbackRefresh: PlaybackRefreshStore, downloads: OfflineDownloadStore? = nil, localOnly: Bool = false, localProgress: OfflinePlaybackProgressStore? = nil, initialSeek: @escaping @MainActor (AVPlayer, Int) async throws -> Void = { player, ticks in
+        let finished = await player.seek(to: CMTime(seconds: PlaybackTime.seconds(fromTicks: ticks), preferredTimescale: 600), toleranceBefore: .zero, toleranceAfter: .zero)
+        guard finished else { throw URLError(.cannotDecodeContentData) }
     }) {
-        self.item = item
+        self.item = request.item
+        playbackIntent = request
+        streamSelection = request.streamSelection
+        viewingMode = request.presentation
         self.initialSeek = initialSeek
         self.session = session
         self.playbackRefresh = playbackRefresh
@@ -74,6 +88,17 @@ final class PlaybackStore {
         let progress = localProgress ?? .shared
         self.localProgress = progress
         progressWriterToken = progress.writerToken(for: AccountScope(serverID: session.server.id, userID: session.user.id))
+        session.onInvalidation(of: self) { owner in owner.teardown() }
+    }
+
+    var request: PlaybackRequest {
+        var snapshot = playbackIntent
+        snapshot.item = item
+        snapshot.streamSelection.mediaSourceID = reportContext?.mediaSourceID ?? streamSelection.mediaSourceID
+        if hasStartedPlayback {
+            snapshot.startPositionTicks = currentPositionTicks()
+        }
+        return snapshot
     }
 
     private var accountScope: AccountScope {
@@ -116,7 +141,19 @@ final class PlaybackStore {
     }
 
     var selectedSubtitleStreamIndex: Int? {
-        streamSelection.subtitleStreamIndex
+        streamSelection.subtitleStreamIndex.flatMap { $0 >= 0 ? $0 : nil }
+    }
+
+    private var menuMediaSource: MediaSource? {
+        item.mediaSources.first(where: { $0.id == selectedMediaSourceID }) ?? item.mediaSources.first
+    }
+
+    var audioMenuSelection: PlaybackTrackMenuSelection? {
+        PlaybackTrackMenuSelection.audio(for: playbackIntent, source: menuMediaSource)
+    }
+
+    var subtitleMenuSelection: PlaybackTrackMenuSelection? {
+        PlaybackTrackMenuSelection.subtitle(for: playbackIntent, source: menuMediaSource)
     }
 
     var isSpatialPlaybackActive: Bool {
@@ -144,17 +181,42 @@ final class PlaybackStore {
     }
 
     func prepare(startTimeTicks: Int? = nil) async {
-        guard player == nil else { return }
+        guard session.isActive, player == nil else { return }
         didReportStopped = false
         didFinishPlayback = false
-        let hasLocalFile = downloads?.localFileURL(for: item, serverID: session.server.id, userID: session.user.id) != nil
-        let localTicks = hasLocalFile ? item.id.flatMap { localProgress.positionTicks(forItemID: $0, scope: accountScope) } : nil
-        let initialTicks = PlaybackActionPosition.ticks(for: item, localTicks: startTimeTicks ?? localTicks)
+        let sourceID = streamSelection.mediaSourceID
+        let hasLocalFile = downloads?.localFileURL(for: item, serverID: session.server.id, userID: session.user.id, mediaSourceID: sourceID) != nil
+        let localRecord = hasLocalFile ? downloads?.record(for: item, serverID: session.server.id, userID: session.user.id, mediaSourceID: sourceID) : nil
+        let checkpointSource = sourceID ?? localRecord?.mediaSourceID
+        let localTicks = hasLocalFile || sourceID != nil ? item.id.flatMap { localProgress.positionTicks(forItemID: $0, scope: accountScope, mediaSourceID: checkpointSource) } : nil
+        var positionItem = localRecord?.playbackItem ?? item
+        if !hasLocalFile, let sourceID {
+            positionItem.runTimeTicks = MediaPlaybackIdentity.runTimeTicks(for: item, mediaSourceID: sourceID)
+        }
+        let explicitTicks = startTimeTicks ?? playbackIntent.requestedStartTicks
+        let initialTicks = retryPositionTicks ?? explicitTicks.map { max(0, $0) }
+            ?? PlaybackActionPosition.ticks(for: positionItem, localTicks: localTicks ?? (hasLocalFile || sourceID != nil ? 0 : nil))
         await loadPlayback(startTimeTicks: initialTicks, replacingCurrentItem: false)
     }
 
     func selectAudioStream(index: Int?) async {
-        guard streamSelection.audioStreamIndex != index else { return }
+        guard session.isActive else { return }
+        let requestedMenuSelection = index.map(PlaybackTrackMenuSelection.stream) ?? .automatic
+        let effectiveChanged = streamSelection.audioStreamIndex != index
+        guard audioMenuSelection != requestedMenuSelection || effectiveChanged else { return }
+        var requested = streamSelection
+        requested.audioStreamIndex = index
+        rememberExplicitTracks(kind: .audio, selection: requested)
+        guard effectiveChanged else { return }
+        guard player != nil else { streamSelection = requested; return }
+        if index == nil, !isTranscodedPlayback, let nativeItem = player?.currentItem,
+           let group = try? await nativeItem.asset.loadMediaSelectionGroup(for: .audible), session.isActive, player?.currentItem === nativeItem
+        {
+            nativeItem.selectMediaOptionAutomatically(in: group)
+            streamSelection.audioStreamIndex = nil
+            refreshReportedStreamSelection()
+            return
+        }
         if let index, await applyInPlaceMediaSelection(kind: .audio, streamIndex: index) {
             streamSelection.audioStreamIndex = index
             refreshReportedStreamSelection()
@@ -166,24 +228,36 @@ final class PlaybackStore {
     }
 
     func selectSubtitleStream(index: Int?) async {
-        guard streamSelection.subtitleStreamIndex != index else { return }
+        guard session.isActive else { return }
+        let requestedMenuSelection = index.map(PlaybackTrackMenuSelection.stream) ?? .off
+        let effectiveChanged = streamSelection.subtitleStreamIndex != (index ?? -1)
+        guard subtitleMenuSelection != requestedMenuSelection || effectiveChanged else { return }
+        var requested = streamSelection
+        requested.subtitleStreamIndex = index ?? -1
+        rememberExplicitTracks(kind: .subtitle, selection: requested)
+        guard effectiveChanged else { return }
+        guard player != nil else { streamSelection = requested; return }
         if await applyInPlaceMediaSelection(kind: .subtitle, streamIndex: index) {
-            streamSelection.subtitleStreamIndex = index
+            streamSelection.subtitleStreamIndex = index ?? -1
             refreshReportedStreamSelection()
             return
         }
         guard !isLocalPlayback else { return }
-        streamSelection.subtitleStreamIndex = index
+        streamSelection.subtitleStreamIndex = index ?? -1
         await rebuildCurrentItemPreservingPosition()
     }
 
     /// AVKit owns native track selection; retain the matching server index for
     /// progress reporting and the playback-details panel without restarting playback.
-    func recordNativeTrackSelection(option: AVMediaSelectionOption?, group: AVMediaSelectionGroup) {
+    func recordNativeTrackSelection(option: AVMediaSelectionOption?, group: AVMediaSelectionGroup, remember: Bool = true) {
         let kind: MediaStreamKind = group.options.first?.hasMediaCharacteristic(.audible) == true ? .audio : .subtitle
         if option == nil, kind == .subtitle {
-            streamSelection.subtitleStreamIndex = nil
+            let changed = streamSelection.subtitleStreamIndex != -1 || subtitleMenuSelection != .off
+            streamSelection.subtitleStreamIndex = -1
             refreshReportedStreamSelection()
+            if remember, changed {
+                rememberExplicitTracks(kind: kind)
+            }
             return
         }
         guard let option, let position = group.options.firstIndex(of: option) else { return }
@@ -194,20 +268,35 @@ final class PlaybackStore {
         guard let index = streams.filter({ $0.type == kind }).compactMap(\.index).first(where: {
             PlaybackMediaSelectionMatcher.candidatePosition(forStreamIndex: $0, kind: kind, streams: streams, candidates: candidates) == position
         }) else { return }
+        let previous = streamSelection
+        let previousMenuSelection = kind == .audio ? audioMenuSelection : subtitleMenuSelection
         if kind == .audio {
             streamSelection.audioStreamIndex = index
         } else {
             streamSelection.subtitleStreamIndex = index
         }
         refreshReportedStreamSelection()
+        if remember, previous != streamSelection || previousMenuSelection != .stream(index) {
+            rememberExplicitTracks(kind: kind)
+        }
+    }
+
+    private func refreshNativeTrackSelection(for playerItem: AVPlayerItem, generation: Int) async {
+        guard !isTranscodedPlayback else { return }
+        for characteristic in [AVMediaCharacteristic.audible, .legible] {
+            guard let group = try? await playerItem.asset.loadMediaSelectionGroup(for: characteristic),
+                  !Task.isCancelled, session.isActive, generation == preparationGeneration, player?.currentItem === playerItem else { continue }
+            recordNativeTrackSelection(option: playerItem.currentMediaSelection.selectedMediaOption(in: group), group: group, remember: false)
+        }
     }
 
     /// Hide redundant server menus only when every server choice maps to an
     /// embedded native option. Transcoded and external tracks keep server controls.
     func hasNativeTrackSelection(kind: MediaStreamKind) async -> Bool {
-        guard !isTranscodedPlayback, let playerItem = player?.currentItem else { return false }
+        guard session.isActive, !isTranscodedPlayback, let playerItem = player?.currentItem else { return false }
         let characteristic: AVMediaCharacteristic = kind == .audio ? .audible : .legible
-        guard let group = try? await playerItem.asset.loadMediaSelectionGroup(for: characteristic) else { return false }
+        guard let group = try? await playerItem.asset.loadMediaSelectionGroup(for: characteristic),
+              !Task.isCancelled, session.isActive, player?.currentItem === playerItem else { return false }
         let streams = item.mediaSources.first?.mediaStreams ?? []
         let indexes = streams.filter { $0.type == kind }.compactMap(\.index)
         guard !indexes.isEmpty else { return false }
@@ -224,9 +313,10 @@ final class PlaybackStore {
     /// `AVMediaSelection` in place — no multi-second stream rebuild. Transcoded streams
     /// carry only the negotiated tracks and must re-resolve against the server.
     private func applyInPlaceMediaSelection(kind: MediaStreamKind, streamIndex: Int?) async -> Bool {
-        guard !isTranscodedPlayback, let playerItem = player?.currentItem else { return false }
+        guard session.isActive, !isTranscodedPlayback, let playerItem = player?.currentItem else { return false }
         let characteristic: AVMediaCharacteristic = kind == .audio ? .audible : .legible
-        guard let group = try? await playerItem.asset.loadMediaSelectionGroup(for: characteristic) else { return false }
+        guard let group = try? await playerItem.asset.loadMediaSelectionGroup(for: characteristic),
+              !Task.isCancelled, session.isActive, player?.currentItem === playerItem else { return false }
 
         guard let streamIndex else {
             guard group.allowsEmptySelection else { return false }
@@ -252,27 +342,108 @@ final class PlaybackStore {
     /// in-place switch that didn't restart the play session.
     private func refreshReportedStreamSelection() {
         guard let context = reportContext else { return }
-        reportContext = PlaybackReportContext(
+        var refreshed = PlaybackReportContext(
             itemID: context.itemID,
             mediaSourceID: context.mediaSourceID,
             playSessionID: context.playSessionID,
             playMethod: context.playMethod,
             streamSelection: streamSelection
         )
+        refreshed.reportID = context.reportID
+        refreshed.liveStreamID = context.liveStreamID
+        refreshed.canSeek = context.canSeek
+        reportContext = refreshed
+    }
+
+    struct SourceOption: Identifiable {
+        let id: String
+        let title: String
+        let runTimeTicks: Int?
+    }
+
+    var mediaSourceOptions: [SourceOption] {
+        guard !isLocalPlayback, !playbackIsLive else { return [] }
+        return item.mediaSources.enumerated().compactMap { offset, source in
+            guard let id = source.id else { return nil }
+            return SourceOption(id: id, title: source.name ?? String(localized: "Version \(offset + 1)"), runTimeTicks: source.runTimeTicks)
+        }
+    }
+
+    var selectedMediaSourceID: String? {
+        streamSelection.mediaSourceID ?? reportContext?.mediaSourceID
+    }
+
+    func selectMediaSource(id: String, fromBeginning: Bool) async {
+        guard session.isActive, mediaSourceOptions.contains(where: { $0.id == id }), id != selectedMediaSourceID else { return }
+        let ticks = fromBeginning ? 0 : currentPositionTicks()
+        if !fromBeginning, let duration = mediaSourceOptions.first(where: { $0.id == id })?.runTimeTicks, duration > 0, ticks >= duration {
+            trackSelectionNotice = String(localized: "This timestamp is beyond this version. Choose Start Over.")
+            return
+        }
+        let rate = player?.rate ?? 0
+        let intent = request.selectingMediaSource(id, startPositionTicks: ticks)
+        teardown(reportStopped: true)
+        playbackIntent = intent
+        streamSelection = intent.streamSelection
+        await loadPlayback(startTimeTicks: ticks, replacingCurrentItem: false, resumeRate: rate)
+    }
+
+    private func rememberExplicitTracks(kind: MediaStreamKind, selection: PlaybackStreamSelection? = nil) {
+        let selection = selection ?? streamSelection
+        let source = menuMediaSource
+        playbackIntent.streamSelection.mediaSourceID = selection.mediaSourceID
+        if kind == .audio {
+            playbackIntent.streamSelection.audioStreamIndex = selection.audioStreamIndex
+            playbackIntent.audioTrack = source?.mediaStreams.first { $0.type == .audio && $0.index == selection.audioStreamIndex }
+        }
+        if kind == .subtitle {
+            playbackIntent.streamSelection.subtitleStreamIndex = selection.subtitleStreamIndex
+            playbackIntent.subtitleTrack = source?.mediaStreams.first { $0.type == .subtitle && $0.index == selection.subtitleStreamIndex }
+            playbackIntent.subtitleIntent = selection.subtitleStreamIndex == nil ? .automatic : selection.subtitleStreamIndex == -1 ? .off : .explicit
+        }
+        guard let source else { return }
+        PlaybackTrackMemory.shared.remember(
+            item: item,
+            source: source,
+            selection: selection,
+            scope: accountScope,
+            audioExplicit: kind == .audio,
+            subtitleExplicit: kind == .subtitle
+        )
+    }
+
+    func selectAutomaticSubtitles() async {
+        guard session.isActive else { return }
+        let intentChanged = subtitleMenuSelection != .automatic
+        streamSelection.subtitleStreamIndex = nil
+        rememberExplicitTracks(kind: .subtitle)
+        guard player != nil else { return }
+        if !isTranscodedPlayback, let nativeItem = player?.currentItem,
+           let group = try? await nativeItem.asset.loadMediaSelectionGroup(for: .legible), player?.currentItem === nativeItem
+        {
+            nativeItem.selectMediaOptionAutomatically(in: group)
+            refreshReportedStreamSelection()
+        } else if !isLocalPlayback, intentChanged {
+            await rebuildCurrentItemPreservingPosition()
+        }
     }
 
     func seek(to chapter: PlaybackChapter) async {
-        guard let player else { return }
-        await player.seek(
+        guard session.isActive, let player, let item = player.currentItem else { return }
+        let generation = preparationGeneration
+        let finished = await player.seek(
             to: CMTime(seconds: chapter.seconds, preferredTimescale: 600),
             toleranceBefore: .zero,
             toleranceAfter: .zero
         )
+        guard finished, !Task.isCancelled, session.isActive, generation == preparationGeneration, self.player === player, player.currentItem === item else { return }
+        reportPlaybackProgress(positionTicks: currentPositionTicks(), isPaused: player.timeControlStatus != .playing)
     }
 
     func selectViewingMode(_ mode: Stereo3DViewingMode) async {
-        guard !isLocalPlayback, viewingMode != mode else { return }
+        guard session.isActive, !isLocalPlayback, viewingMode != mode else { return }
         viewingMode = mode
+        playbackIntent.presentation = mode
         await rebuildCurrentItemPreservingPosition()
     }
 
@@ -280,6 +451,7 @@ final class PlaybackStore {
         guard let nextUpItem else { return }
         teardown(reportStopped: true)
         item = nextUpItem
+        playbackIntent = PlaybackRequest(item: nextUpItem)
         self.nextUpItem = nil
         isNextUpPromptVisible = false
         streamSelection = .none
@@ -290,6 +462,7 @@ final class PlaybackStore {
     func playPlaylistItem(_ next: MediaItem, startTimeTicks: Int?) async {
         teardown(reportStopped: true)
         item = next
+        playbackIntent = PlaybackRequest(item: next, startPositionTicks: startTimeTicks)
         streamSelection = .none
         usesPlaylistOrder = true
         await prepare(startTimeTicks: startTimeTicks)
@@ -301,8 +474,14 @@ final class PlaybackStore {
         // Close the server-side play session for the outgoing stream before the rebuild
         // reports a fresh start, so stream switches don't leak stale sessions.
         if hasStartedPlayback, let context = reportContext {
-            reportPlaybackStopped(context: context, positionTicks: ticks)
+            reportPlaybackStopped(context: context, positionTicks: ticks, resource: playbackResource)
+        } else if let resource = playbackResource {
+            let provider = session.mediaProvider
+            Task { await Self.release(resource, provider: provider) }
         }
+        playbackResource = nil
+        nativeNavigationTask?.cancel()
+        nativeNavigationTask = nil
         reportContext = nil
         await loadPlayback(startTimeTicks: ticks, replacingCurrentItem: true, resumeRate: rate)
     }
@@ -310,15 +489,22 @@ final class PlaybackStore {
     private func loadPlayback(startTimeTicks: Int?, replacingCurrentItem: Bool, resumeRate: Float = 1) async {
         preparationGeneration += 1
         let generation = preparationGeneration
+        guard session.isActive else { return }
+        player?.pause()
         state = .loading
+        startupRequestedAt = .now
+        didObservePlaying = false
+        didObserveFirstRender = false
+        finishFirstPlayingInterval()
+        firstPlayingInterval = DiagnosticsHub.shared.beginInterval("PlaybackFirstPlaying")
         hasStartedPlayback = false
         stereoFallbackNotice = nil
         let diagnostics = DiagnosticsHub.shared
         diagnostics.record(.playbackStartRequested)
-        let startupInterval = diagnostics.beginInterval("PlaybackStartup")
+        let startupInterval = diagnostics.beginInterval("PlaybackPreparation")
+        defer { diagnostics.endInterval("PlaybackPreparation", startupInterval) }
 
         guard var itemID = item.id else {
-            diagnostics.endInterval("PlaybackStartup", startupInterval)
             diagnostics.record(.playbackFailed)
             state = .failed(String(localized: "This item can't be played.", comment: "Playback error: item has no playable identifier"))
             return
@@ -328,13 +514,13 @@ final class PlaybackStore {
         do {
             await PlaybackAudioSession.activate(video: true)
             try Task.checkCancellation()
-            guard generation == preparationGeneration else { return }
-            playingDownload = downloads?.record(for: item, serverID: session.server.id, userID: session.user.id)
-            let localURL = downloads?.localFileURL(for: item, serverID: session.server.id, userID: session.user.id)
+            guard session.isActive, generation == preparationGeneration else { return }
+            playingDownload = downloads?.record(for: item, serverID: session.server.id, userID: session.user.id, mediaSourceID: streamSelection.mediaSourceID)
+            let localURL = downloads?.localFileURL(for: item, serverID: session.server.id, userID: session.user.id, mediaSourceID: streamSelection.mediaSourceID)
             guard ContentRatingGate.admitsStored(item) else {
                 throw GusError.server(String(localized: "This item is restricted.", comment: "Restricted playback"))
             }
-            if localURL == nil, localOnly || downloads?.record(for: item, serverID: session.server.id, userID: session.user.id)?.status.isComplete == true {
+            if localURL == nil, localOnly || downloads?.record(for: item, serverID: session.server.id, userID: session.user.id, mediaSourceID: streamSelection.mediaSourceID)?.status.isComplete == true {
                 throw GusError.server(String(localized: "The downloaded file is missing. Download it again to play it offline.", comment: "Missing offline file"))
             }
             isLocalPlayback = localURL != nil
@@ -342,50 +528,104 @@ final class PlaybackStore {
             let playbackURL: URL
             if let localURL {
                 if let downloaded = playingDownload {
-                    item = downloaded.item; itemID = downloaded.item.id ?? itemID
+                    item = downloaded.playbackItem; itemID = downloaded.item.id ?? itemID
+                    playbackIntent.item = item
+                    playbackIntent.streamSelection.mediaSourceID = downloaded.mediaSourceID
+                    streamSelection = downloaded.playbackSelection(for: playbackIntent)
                 }
                 resolution = nil
+                playbackIsLive = false
                 playbackURL = localURL
                 stereoPresentation = .native2D
             } else {
-                let current = try await session.references.currentItem(item)
-                try Task.checkCancellation()
-                guard generation == preparationGeneration, let currentID = current.id else { return }
-                effectiveStartTicks = MediaPlaybackIdentity.resumeTicks(requested: startTimeTicks, originalID: itemID, current: current)
-                item = current
-                itemID = currentID
-                guard ContentRatingGate.admitsStored(item) else { throw GusError.notFound }
-                let requestedPresentation = Media3DDetector.presentation(for: item, viewingMode: viewingMode)
-                let maxStreamingBitrate = PlaybackQuality.stored.maxStreamingBitrate
-                let remoteResolution = try await NetworkRetryPolicy.idempotent.run {
-                    try await self.session.mediaProvider.resolvePlayback(
-                        for: itemID,
-                        maxStreamingBitrate: maxStreamingBitrate,
-                        streamSelection: self.streamSelection,
-                        startTimeTicks: effectiveStartTicks,
-                        stereoLayout: requestedPresentation.resolutionStereoLayout
-                    )
+                let requestedItem = item
+                let requestedSelection = streamSelection
+                let requestedIntent = playbackIntent
+                let requestedMode = viewingMode
+                let originalID = itemID
+                let provider = session.mediaProvider
+                let activeSession = session
+                let ownerIsCurrent: @MainActor @Sendable () -> Bool = { [weak self] in self?.preparationGeneration == generation && activeSession.isActive }
+                let requestedScope = accountScope
+                let resolutionDeadline = ContinuousClock.now + .seconds(30)
+                let resolved = try await PlaybackDeadline.run(for: .seconds(30), cancelOperation: false, onDiscard: { (result: ResolvedPlayback) in
+                    if let resource = result.resolution.resource {
+                        await PlaybackStore.release(resource, provider: provider)
+                    }
+                }) {
+                    try await PlaybackResolutionBudget.withValue(deadline: resolutionDeadline, ownerIsCurrent: ownerIsCurrent) {
+                        let current = try await activeSession.references.currentItem(requestedItem)
+                        try PlaybackResolutionBudget.check()
+                        guard ContinuousClock.now < resolutionDeadline else { throw PlaybackDeadline.Timeout() }
+                        try Task.checkCancellation()
+                        guard activeSession.isActive else { throw CancellationError() }
+                        guard let currentID = current.id, ContentRatingGate.admitsStored(current) else { throw GusError.notFound }
+                        var selection = requestedSelection
+                        var unavailableTrack = false
+                        if let source = current.mediaSources.first(where: { $0.id == selection.mediaSourceID }) ?? current.mediaSources.first {
+                            let requested = requestedIntent.selection(in: source)
+                            selection.audioStreamIndex = requested.audioStreamIndex
+                            selection.subtitleStreamIndex = requested.subtitleStreamIndex
+                            unavailableTrack = PlaybackTrackMemory.shared.hasUnavailableSelection(for: current, source: source, scope: requestedScope)
+                                || (requestedIntent.audioTrack != nil && requested.audioStreamIndex == nil)
+                                || (requestedIntent.subtitleIntent == .explicit && requestedIntent.subtitleTrack != nil && requested.subtitleStreamIndex == nil)
+                            let remembered = PlaybackTrackMemory.shared.selection(for: current, source: source, scope: requestedScope)
+                            if requestedIntent.audioTrack == nil {
+                                selection.audioStreamIndex = selection.audioStreamIndex ?? remembered.audioStreamIndex
+                            }
+                            if requestedIntent.subtitleIntent == .automatic {
+                                selection.subtitleStreamIndex = selection.subtitleStreamIndex ?? remembered.subtitleStreamIndex
+                            }
+                        }
+                        let ticks = MediaPlaybackIdentity.resumeTicks(requested: startTimeTicks, originalID: originalID, current: current)
+                        let requestedPresentation = Media3DDetector.presentation(for: current, mediaSourceID: selection.mediaSourceID, viewingMode: requestedMode)
+                        let remote = try await provider.resolvePlayback(
+                            for: currentID,
+                            maxStreamingBitrate: requestedIntent.maxStreamingBitrate ?? PlaybackQuality.stored.maxStreamingBitrate,
+                            streamSelection: selection,
+                            startTimeTicks: ticks,
+                            stereoLayout: requestedPresentation.resolutionStereoLayout
+                        )
+                        return ResolvedPlayback(item: current, resolution: remote, selection: selection, startTicks: ticks, unavailableTrack: unavailableTrack)
+                    }
                 }
-                resolution = remoteResolution
+                guard generation == preparationGeneration, session.isActive, !Task.isCancelled else {
+                    if let resource = resolved.resolution.resource {
+                        await Self.release(resource, provider: provider)
+                    }
+                    return
+                }
+                let remoteResolution = resolved.resolution
+                effectiveStartTicks = resolved.startTicks
+                item = resolved.item
+                itemID = resolved.item.id ?? itemID
+                streamSelection = resolved.selection
+                trackSelectionNotice = resolved.unavailableTrack ? String(localized: "A selected track is unavailable in this version. Using the player defaults.") : nil
+                item.runTimeTicks = MediaPlaybackIdentity.runTimeTicks(for: resolved.item, mediaSourceID: remoteResolution.mediaSourceID ?? resolved.selection.mediaSourceID, resolvedSource: remoteResolution.mediaSource)
                 if let source = remoteResolution.mediaSource {
                     item.mediaSources = [source] + item.mediaSources.filter { $0.id != source.id }
+                    streamSelection.audioStreamIndex = streamSelection.audioStreamIndex ?? source.defaultAudioStreamIndex
+                    streamSelection.subtitleStreamIndex = streamSelection.subtitleStreamIndex ?? source.defaultSubtitleStreamIndex
                 }
+                playbackResource = remoteResolution.resource
+                playbackIsLive = remoteResolution.isLive || item.type == .liveChannel
+                // Keep the canonical primary source when interpreting item-level
+                // metadata; the presentation item above puts the chosen source first.
+                let requestedPresentation = Media3DDetector.presentation(for: resolved.item, mediaSourceID: resolved.selection.mediaSourceID, resolvedSource: remoteResolution.mediaSource, viewingMode: viewingMode)
+                resolution = remoteResolution
                 playbackURL = remoteResolution.url
-                stereoPresentation = effectiveStereoPresentation(
-                    requested: requestedPresentation,
-                    resolution: remoteResolution
-                )
+                stereoPresentation = effectiveStereoPresentation(requested: requestedPresentation, resolution: remoteResolution)
                 stereoFallbackNotice = fallbackNotice(
                     requested: requestedPresentation,
                     resolution: remoteResolution
                 )
             }
             try Task.checkCancellation()
-            guard generation == preparationGeneration else { return }
+            guard session.isActive, generation == preparationGeneration else { return }
             logger.info("Playing \(self.item.name ?? "item", privacy: .private) (local: \(localURL != nil, privacy: .public), transcoding: \(resolution?.isTranscoding == true, privacy: .public))")
 
             let playerItem = AVPlayerItem(url: playbackURL)
-            #if !os(macOS)
+            #if os(iOS) || os(tvOS) || os(visionOS)
                 // System title/info chrome; AVPlayerItem has no externalMetadata on
                 // macOS (AVPlayerView's floating controls don't present it).
                 playerItem.externalMetadata = item.externalPlayerMetadata
@@ -397,7 +637,7 @@ final class PlaybackStore {
             } else {
                 player = AVPlayer(playerItem: playerItem)
             }
-            #if !os(visionOS)
+            #if os(iOS) || os(tvOS) || os(macOS)
                 player.allowsExternalPlayback = true // AirPlay; not available on visionOS
             #endif
             player.automaticallyWaitsToMinimizeStalling = true
@@ -407,51 +647,86 @@ final class PlaybackStore {
             installPauseObservation(on: player)
             let context = PlaybackReportContext(
                 itemID: itemID,
-                mediaSourceID: resolution?.mediaSourceID,
+                mediaSourceID: localURL != nil ? playingDownload?.mediaSourceID : resolution?.mediaSourceID,
                 playSessionID: resolution?.playSessionID,
                 playMethod: localURL != nil ? .directPlay : resolution?.playMethod ?? .directStream,
                 streamSelection: streamSelection
             )
             reportContext = context
+            reportContext?.liveStreamID = playbackResource?.liveStreamID
+            reportContext?.canSeek = !playbackIsLive && (playerItem.duration.isNumeric || !playerItem.seekableTimeRanges.isEmpty)
 
-            if let resumeTicks = effectiveStartTicks {
-                await initialSeek(player, resumeTicks)
-            }
+            let requestedTracks = streamSelection
+            try await NativePlaybackPreparation.prepare(
+                player,
+                item: playerItem,
+                startTicks: playbackIsLive ? nil : effectiveStartTicks,
+                finishing: {
+                    if !self.isTranscodedPlayback {
+                        if let audio = requestedTracks.audioStreamIndex {
+                            _ = await self.applyInPlaceMediaSelection(kind: .audio, streamIndex: audio)
+                        }
+                        if let subtitle = requestedTracks.subtitleStreamIndex {
+                            _ = await self.applyInPlaceMediaSelection(kind: .subtitle, streamIndex: subtitle >= 0 ? subtitle : nil)
+                        }
+                    }
+                    await self.refreshNativeTrackSelection(for: playerItem, generation: generation)
+                },
+                seek: initialSeek
+            )
 
             try Task.checkCancellation()
-            guard generation == preparationGeneration else { return }
+            guard session.isActive, generation == preparationGeneration else { return }
             // AVPlayer can fail while the initial seek suspends this preparation.
             // Preserve an observer's error and check the item itself in case its
             // status callback has not reached the main actor yet.
             if case .failed = state {
-                diagnostics.endInterval("PlaybackStartup", startupInterval)
                 return
             }
             if playerItem.status == .failed {
-                diagnostics.endInterval("PlaybackStartup", startupInterval)
                 handlePlayerFailure(playerItem.error)
                 return
             }
-            nowPlaying.startVideo(
-                player: player,
-                item: item,
-                artworkURL: isLocalPlayback
-                    ? downloads?.localArtworkURL(for: item, serverID: session.server.id, userID: session.user.id)
-                    : session.mediaProvider.primaryImageURL(for: item, context: .nowPlayingArtwork)
-            )
+            if isLocalPlayback, item.runTimeTicks == nil, playerItem.duration.seconds.isFinite, playerItem.duration.seconds > 0 {
+                item.runTimeTicks = PlaybackTime.ticks(fromSeconds: playerItem.duration.seconds)
+            }
+            #if os(watchOS)
+                nowPlaying.start(
+                    player: player,
+                    item: item,
+                    artworkURL: isLocalPlayback
+                        ? downloads?.localArtworkURL(for: item, serverID: session.server.id, userID: session.user.id)
+                        : session.mediaProvider.artworkURLs(for: item, request: .init(role: .poster, maxWidth: 600)).first,
+                    fallbackArtworkURLs: isLocalPlayback ? [] : Array(session.mediaProvider.artworkURLs(for: item, request: .init(role: .poster, maxWidth: 600)).dropFirst()),
+                    artworkSession: session.artworkTransport.session
+                )
+            #else
+                nowPlaying.startVideo(
+                    player: player,
+                    item: item,
+                    artworkURL: isLocalPlayback
+                        ? downloads?.localArtworkURL(for: item, serverID: session.server.id, userID: session.user.id)
+                        : session.mediaProvider.artworkURLs(for: item, request: .init(role: .poster, maxWidth: 600)).first,
+                    fallbackArtworkURLs: isLocalPlayback ? [] : Array(session.mediaProvider.artworkURLs(for: item, request: .init(role: .poster, maxWidth: 600)).dropFirst()),
+                    artworkSession: session.artworkTransport.session
+                )
+            #endif
             if progressObserver == nil {
                 addProgressObserver(player: player)
             }
             state = .ready
-            hasStartedPlayback = true
-            diagnostics.endInterval("PlaybackStartup", startupInterval)
-            diagnostics.record(.playbackStarted(
+            #if !os(watchOS)
+                nativeNavigationTask?.cancel()
+                let navigationItem = item
+                let navigationSession = session
+                nativeNavigationTask = Task { await NativePlayerNavigation.install(on: playerItem, item: navigationItem, session: navigationSession) }
+            #endif
+            diagnostics.record(.playbackPrepared(
                 usingTranscoding: resolution?.isTranscoding == true,
                 usingLocalFile: localURL != nil
             ))
+            retryPositionTicks = nil
             player.rate = presentationIsActive ? resumeRate : 0
-            reportPlaybackStart(context: context, player: player)
-            NextUpActivityStore.shared.recordPlayback(item: item, scope: accountScope)
             if usesPlaylistOrder {
                 nextUpItem = nil
             } else if isLocalPlayback {
@@ -462,14 +737,21 @@ final class PlaybackStore {
                 await loadNextUpIfNeeded()
             }
         } catch {
-            diagnostics.endInterval("PlaybackStartup", startupInterval)
             guard generation == preparationGeneration else { return }
             let gusError = GusError(from: error)
-            guard !gusError.isCancellation else { return } // dismissed before playback resolved
+            guard !gusError.isCancellation else { teardown(reportStopped: true); return }
             diagnostics.record(.playbackFailed)
             logger.error("Playback prepare failed: \(gusError.localizedDescription, privacy: .private)")
-            state = .failed(gusError.localizedDescription)
+            handlePlayerFailure(error)
         }
+    }
+
+    private struct ResolvedPlayback: Sendable {
+        let item: MediaItem
+        let resolution: PlaybackSourceResolution
+        let selection: PlaybackStreamSelection
+        let startTicks: Int?
+        let unavailableTrack: Bool
     }
 
     func teardown() {
@@ -480,9 +762,13 @@ final class PlaybackStore {
         // Automatic next-episode preparation is independent of the view's task.
         // Invalidate its pending results even when its caller was not canceled.
         preparationGeneration += 1
-        lastReportTask?.cancel()
         let finalTicks = currentPositionTicks()
         let context = hasStartedPlayback ? reportContext : nil
+        let resource = playbackResource
+        playbackResource = nil
+        nativeNavigationTask?.cancel()
+        nativeNavigationTask = nil
+        finishFirstPlayingInterval()
         hasStartedPlayback = false
         removeProgressObserver()
         removeEndObserver()
@@ -490,7 +776,13 @@ final class PlaybackStore {
         pauseStateObservation = nil
         didReportPause = false
         isTranscodedPlayback = false
+        #if !os(watchOS)
+            if let player {
+                SharePlayCoordinator.shared.detachPlayer(player)
+            }
+        #endif
         player?.pause()
+        player?.replaceCurrentItem(with: nil)
         nowPlaying.stop()
         player = nil
         playingDownload = nil
@@ -505,7 +797,10 @@ final class PlaybackStore {
         if reportStopped, let context, !didReportStopped {
             NextUpActivityStore.shared.recordPlayback(item: item, scope: accountScope)
             didReportStopped = true
-            reportPlaybackStopped(context: context, positionTicks: finalTicks)
+            reportPlaybackStopped(context: context, positionTicks: finalTicks, resource: resource)
+        } else if let resource {
+            let provider = session.mediaProvider
+            Task { await Self.release(resource, provider: provider) }
         }
     }
 
@@ -524,6 +819,14 @@ final class PlaybackStore {
                       ObjectIdentifier(currentItem) == itemIdentity,
                       currentItem.status == .failed else { return }
                 self.handlePlayerFailure(currentItem.error)
+            }
+        }
+        mediaSelectionObserver = NotificationCenter.default.addObserver(
+            forName: AVPlayerItem.mediaSelectionDidChangeNotification, object: playerItem, queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor [weak self] in
+                guard let self, state == .ready else { return }
+                await refreshNativeTrackSelection(for: playerItem, generation: generation)
             }
         }
         endObserver = NotificationCenter.default.addObserver(
@@ -576,10 +879,20 @@ final class PlaybackStore {
         DiagnosticsHub.shared.record(.playbackItemFailed(errorCode: failure?.code ?? 0, errorDomain: domain))
         let message = error.map { GusError(from: $0).localizedDescription }
             ?? String(localized: "Playback stopped unexpectedly.", comment: "Generic playback failure message")
+        retryPositionTicks = hasStartedPlayback ? currentPositionTicks() : retryPositionTicks
+        if var context = reportContext, hasStartedPlayback {
+            context.isFailed = true
+            reportContext = context
+        }
+        teardown(reportStopped: true)
         state = .failed(message)
     }
 
     private func removeEndObserver() {
+        if let mediaSelectionObserver {
+            NotificationCenter.default.removeObserver(mediaSelectionObserver)
+        }
+        mediaSelectionObserver = nil
         if let stalledObserver {
             NotificationCenter.default.removeObserver(stalledObserver)
         }
@@ -597,20 +910,24 @@ final class PlaybackStore {
     }
 
     private func handlePlaybackEnded() {
-        NextUpActivityStore.shared.recordCompletion(item: item, scope: accountScope)
-        // Retire the observer before dispatching an asynchronous queue transition.
-        removeEndObserver()
+        guard hasStartedPlayback, !playbackIsLive else { return }
+        let completed = item
+        let next = nextUpItem
+        let playlist = usesPlaylistOrder
         downloads?.deleteAfterCompletion(playingDownload)
         playingDownload = nil
-        if usesPlaylistOrder {
+        teardown(reportStopped: true)
+        NextUpActivityStore.shared.recordCompletion(item: completed, scope: accountScope)
+        if playlist {
             naturalCompletionRevision += 1
-            return
-        }
-        if PlaybackPreferences.autoPlaysNextEpisode, nextUpItem != nil {
+        } else if PlaybackPreferences.autoPlaysNextEpisode, let next {
             let generation = preparationGeneration
-            Task {
-                guard preparationGeneration == generation, state == .ready else { return }
-                await playNextUp()
+            Task { [weak self] in
+                guard let self, session.isActive, preparationGeneration == generation else { return }
+                item = next
+                playbackIntent = PlaybackRequest(item: next)
+                streamSelection = .none
+                await prepare()
             }
         } else {
             didFinishPlayback = true
@@ -628,7 +945,22 @@ final class PlaybackStore {
         pauseStateObservation = player.observe(\.timeControlStatus, options: [.new]) { [weak self] player, _ in
             let status = player.timeControlStatus
             Task { @MainActor in
-                guard let self, self.player === player, self.state == .ready else { return }
+                guard let self, self.session.isActive, self.player === player, self.state == .ready else { return }
+                if status == .playing, !self.didObservePlaying {
+                    self.didObservePlaying = true
+                    self.hasStartedPlayback = true
+                    self.playbackIntent.start = .automatic
+                    self.playbackIntent.startPositionTicks = nil
+                    if let context = self.reportContext {
+                        self.reportPlaybackStart(context: context, player: player)
+                    }
+                    NextUpActivityStore.shared.recordPlayback(item: self.item, scope: self.accountScope)
+                    self.finishFirstPlayingInterval()
+                    let elapsed = self.startupRequestedAt.duration(to: .now)
+                    let milliseconds = Int(elapsed.components.seconds * 1000 + elapsed.components.attoseconds / 1_000_000_000_000_000)
+                    DiagnosticsHub.shared.record(.playbackFirstPlaying(elapsedMilliseconds: milliseconds))
+                    DiagnosticsHub.shared.record(.playbackStarted(usingTranscoding: self.isTranscodedPlayback, usingLocalFile: self.isLocalPlayback))
+                }
                 let reason: Int
                 switch player.reasonForWaitingToPlay {
                 case .toMinimizeStalls: reason = 1
@@ -661,7 +993,7 @@ final class PlaybackStore {
         let interval = CMTime(seconds: 10, preferredTimescale: 1)
         progressObserver = player.addPeriodicTimeObserver(forInterval: interval, queue: .main) { [weak self, weak player] time in
             MainActor.assumeIsolated {
-                guard let self, let player else { return }
+                guard let self, let player, self.session.isActive, self.player === player, self.state == .ready else { return }
                 self.reportPlaybackProgress(
                     positionTicks: PlaybackTime.ticks(fromSeconds: time.seconds),
                     isPaused: player.rate == 0
@@ -684,61 +1016,82 @@ final class PlaybackStore {
     }
 
     private func reportPlaybackStart(context: PlaybackReportContext, player: AVPlayer) {
+        let ticks = currentPositionTicks()
+        localProgress.checkpoint(itemID: context.itemID, positionTicks: ticks, scope: accountScope, writerToken: progressWriterToken, item: item, mediaSourceID: context.mediaSourceID)
         if isLocalPlayback {
-            localProgress.checkpoint(itemID: context.itemID, positionTicks: currentPositionTicks(), scope: accountScope, writerToken: progressWriterToken, item: item)
             return
         }
+        let provider = session.mediaProvider
         let paused = player.rate == 0
-        sendReport("start") { [self] in
-            try await self.session.mediaProvider.reportPlaybackStart(
-                context: context,
-                positionTicks: PlaybackTime.ticks(fromSeconds: player.currentTime().seconds),
-                isPaused: paused
-            )
+        session.playbackReports.enqueue(.start, sessionID: context.reportID, onFailure: handleReportFailure) {
+            try await provider.reportPlaybackStart(context: context, positionTicks: ticks, isPaused: paused)
         }
     }
 
     private func reportPlaybackProgress(positionTicks: Int, isPaused: Bool) {
-        guard hasStartedPlayback, let reportContext else { return }
+        guard session.isActive, hasStartedPlayback, var context = reportContext else { return }
+        context.canSeek = !playbackIsLive && !(player?.currentItem?.seekableTimeRanges.isEmpty ?? true)
+        localProgress.checkpoint(itemID: context.itemID, positionTicks: positionTicks, scope: accountScope, writerToken: progressWriterToken, item: item, mediaSourceID: context.mediaSourceID)
         if isLocalPlayback {
-            localProgress.checkpoint(itemID: reportContext.itemID, positionTicks: positionTicks, scope: accountScope, writerToken: progressWriterToken, item: item)
             return
         }
-        sendReport("progress") { [self] in
-            try await self.session.mediaProvider.reportPlaybackProgress(
-                context: reportContext,
-                positionTicks: positionTicks,
-                isPaused: isPaused
-            )
+        let snapshot = context
+        let provider = session.mediaProvider
+        session.playbackReports.enqueue(.progress, sessionID: context.reportID, onFailure: handleReportFailure) {
+            try await provider.reportPlaybackProgress(context: snapshot, positionTicks: positionTicks, isPaused: isPaused)
         }
     }
 
-    private func reportPlaybackStopped(context: PlaybackReportContext, positionTicks: Int) {
+    private func reportPlaybackStopped(context: PlaybackReportContext, positionTicks: Int, resource: PlaybackResource? = nil) {
+        localProgress.checkpoint(itemID: context.itemID, positionTicks: positionTicks, scope: accountScope, writerToken: progressWriterToken, item: item, mediaSourceID: context.mediaSourceID)
         if isLocalPlayback {
-            localProgress.checkpoint(itemID: context.itemID, positionTicks: positionTicks, scope: accountScope, writerToken: progressWriterToken, item: item)
             playbackRefresh.markPlaybackProgressChanged()
             return
         }
-        sendReport("stopped") { [self] in
-            try await self.session.mediaProvider.reportPlaybackStopped(context: context, positionTicks: positionTicks)
-            await MainActor.run {
-                self.playbackRefresh.markPlaybackProgressChanged()
+        let provider = session.mediaProvider
+        let refresh = playbackRefresh
+        session.playbackReports.enqueue(.stop, sessionID: context.reportID, onFailure: handleReportFailure, completion: { reportSucceeded in
+            // Jellyfin Stop already releases the live-stream consumer belonging to
+            // this session. A second raw Close can decrement another consumer.
+            // A lost Stop response is ambiguous: it may have released the
+            // consumer already. Do not repeat that non-idempotent write.
+            if let resource, resource.liveStreamID == nil {
+                await Self.release(resource, provider: provider)
+            } else if resource != nil, !reportSucceeded {
+                DiagnosticsHub.shared.record(.playbackResourceCleanupUnconfirmed)
             }
+        }) {
+            try await provider.reportPlaybackStopped(context: context, positionTicks: positionTicks)
+            refresh.markPlaybackProgressChanged()
         }
     }
 
-    private func sendReport(_ kind: String, operation: @escaping () async throws -> Void) {
-        lastReportTask?.cancel()
-        lastReportTask = Task {
-            do {
-                try await operation()
-            } catch {
-                let gusError = GusError(from: error)
-                guard !gusError.isCancellation else { return }
-                gusError.handleIfUnauthorized(session: session)
-                logger.error("Playback \(kind, privacy: .public) report failed: \(gusError.localizedDescription, privacy: .private)")
-            }
+    private func handleReportFailure(_ error: Error) {
+        let failure = GusError(from: error)
+        guard !failure.isCancellation else { return }
+        failure.handleIfUnauthorized(session: session)
+        logger.error("Playback report failed: \(failure.localizedDescription, privacy: .private)")
+    }
+
+    private static func release(_ resource: PlaybackResource, provider: any MediaProviderSession) async {
+        do {
+            try await PlaybackDeadline.run(for: .seconds(5)) { try await provider.releasePlaybackResource(resource) }
+            DiagnosticsHub.shared.record(.playbackResourceCleanup(succeeded: true))
+        } catch { DiagnosticsHub.shared.record(.playbackResourceCleanup(succeeded: false)) }
+    }
+
+    func recordFirstRenderReadiness(for nativeItem: AVPlayerItem) {
+        guard session.isActive, player?.currentItem === nativeItem, !didObserveFirstRender else { return }
+        didObserveFirstRender = true
+        let elapsed = startupRequestedAt.duration(to: .now)
+        DiagnosticsHub.shared.record(.playbackFirstRender(elapsedMilliseconds: Int(elapsed.components.seconds * 1000 + elapsed.components.attoseconds / 1_000_000_000_000_000)))
+    }
+
+    private func finishFirstPlayingInterval() {
+        if let firstPlayingInterval {
+            DiagnosticsHub.shared.endInterval("PlaybackFirstPlaying", firstPlayingInterval)
         }
+        firstPlayingInterval = nil
     }
 
     private func effectiveStereoPresentation(

@@ -12,6 +12,7 @@ import SwiftUI
 /// injected via `@Environment`; on visionOS an `ImmersiveSpace` hosts the "Gus Cinema".
 @main
 struct GusApp: App {
+    @Environment(\.scenePhase) private var scenePhase
     @State private var appModel = AppModel.shared
     @State private var appNavigation = AppNavigationModel.shared
     @State private var playbackRefresh = PlaybackRefreshStore()
@@ -20,7 +21,7 @@ struct GusApp: App {
     #endif
     @State private var offlineDownloads = OfflineDownloadStore.shared
     @State private var upNext = UpNextStore(syncStore: .shared)
-    @State private var videoPlaylists = VideoPlaylistsStore.shared
+    @State private var videoPlaylists = SavedMediaStore.shared
     @State private var serverLists = ServerMediaListsStore.shared
     @State private var navigationPreferences = NavigationPreferencesStore()
     @State private var sharedWithYou = SharedWithYouStore()
@@ -35,7 +36,8 @@ struct GusApp: App {
     #endif
 
     init() {
-        // Route `AsyncImage` (which uses `URLSession.shared`) through our tuned cache.
+        // SDK/public fallback transport retains its existing native cache. OS27
+        // signed-in AsyncImage views inject their credential lease's own session.
         OfflineDownloadStore.shared.bootstrapBackgroundTransfers()
         URLCache.shared = JellyfinClientFactory.urlCache
         DiagnosticsHub.shared.record(.appLaunched)
@@ -110,7 +112,7 @@ struct GusApp: App {
                     SharePlayCoordinator.shared.startListening(appModel: appModel, navigation: appNavigation)
                     #if DEBUG
                         if shouldInstallDebugPreviewSession {
-                            appModel.installDebugPreviewSession()
+                            await appModel.installDebugPreviewSession()
                             return
                         }
                         if shouldConnectToDemoServer {
@@ -122,7 +124,12 @@ struct GusApp: App {
                         }
                     #endif
                     guard shouldRestoreLastSession else { return }
-                    appModel.restoreLastSession()
+                    await appModel.restoreLastSession()
+                }
+                .onChange(of: scenePhase) { _, phase in
+                    if phase == .background {
+                        Task { try? await DiagnosticsHub.shared.flush() }
+                    }
                 }
                 .onOpenURL { url in
                     appNavigation.open(url: url)

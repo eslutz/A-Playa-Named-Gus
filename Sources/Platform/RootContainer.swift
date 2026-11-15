@@ -152,7 +152,7 @@ private struct TabRootView: View {
 
     var body: some View {
         #if os(iOS)
-            let search = state.searchState(for: RootNavigationState.searchID, session: session)
+            let search = state.searchState(for: RootNavigationState.searchID)
         #endif
         TabView(selection: selection) {
             #if os(tvOS)
@@ -185,7 +185,7 @@ private struct TabRootView: View {
         #endif
         .onChange(of: state.selectedSectionID) { _, id in
             if id == RootNavigationState.searchID {
-                state.searchState(for: id, session: session).isPresented = true
+                state.searchState(for: id).isPresented = true
             }
         }
     }
@@ -305,7 +305,7 @@ private struct SectionStack: View {
                 if sectionID == RootNavigationState.searchID {
                     #if os(iOS)
                         if widthClass == .compact {
-                            GlobalSearchContent(state: state.searchState(for: sectionID, session: session))
+                            GlobalSearchContent(state: state.searchState(for: sectionID))
                                 .navigationTitle("Search")
                         } else {
                             standaloneSearch
@@ -314,7 +314,7 @@ private struct SectionStack: View {
                         standaloneSearch
                     #endif
                 } else if sectionID == "gus.tv.search" {
-                    SearchRootView(state: state.searchState(for: sectionID, session: session)) {
+                    SearchRootView(state: state.searchState(for: sectionID)) {
                         ContentUnavailableView("Search Library", systemImage: "magnifyingglass")
                     }
                     .navigationTitle("Search")
@@ -333,14 +333,14 @@ private struct SectionStack: View {
                             if widthClass == .compact || DeviceIdentity.usesIPadPresentation {
                                 RootSectionDestination(section: section, home: home)
                             } else {
-                                SearchRootView(state: state.searchState(for: section.id, session: session)) {
+                                SearchRootView(state: state.searchState(for: section.id)) {
                                     RootSectionDestination(section: section, home: home)
                                 }
                             }
                         #elseif os(tvOS)
                             RootSectionDestination(section: section, home: home)
                         #else
-                            SearchRootView(state: state.searchState(for: section.id, session: session)) {
+                            SearchRootView(state: state.searchState(for: section.id)) {
                                 RootSectionDestination(section: section, home: home)
                             }
                         #endif
@@ -354,7 +354,7 @@ private struct SectionStack: View {
                 #if os(iOS)
                     if sectionID == RootNavigationState.searchID, DeviceIdentity.usesIPadPresentation {
                         ToolbarItem(placement: .primaryAction) {
-                            let search = state.searchState(for: sectionID, session: session)
+                            let search = state.searchState(for: sectionID)
                             Button {
                                 search.showsList.toggle()
                             } label: {
@@ -381,7 +381,7 @@ private struct SectionStack: View {
     }
 
     private var standaloneSearch: some View {
-        SearchRootView(state: state.searchState(for: sectionID, session: session)) {
+        SearchRootView(state: state.searchState(for: sectionID)) {
             ContentUnavailableView("Search Library", systemImage: "magnifyingglass")
         }
         .navigationTitle("Search")
@@ -414,10 +414,6 @@ private struct RootSectionDestination: View {
 private struct GlobalSearchContent: View {
     let state: SectionSearchState
     var body: some View {
-        if state.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            ContentUnavailableView("Search Library", systemImage: "magnifyingglass")
-        } else if let store = state.store {
-            SearchResultsView(store: store)
-        }
+        OwnedSearchResults(state: state).id(ObjectIdentifier(state))
     }
 }

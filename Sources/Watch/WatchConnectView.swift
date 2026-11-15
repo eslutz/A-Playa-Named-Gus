@@ -47,6 +47,10 @@ struct WatchConnectView: View {
         .navigationDestination(item: $server) { server in
             WatchSignInView(server: server)
         }
+        .task(id: appModel.reauthentication) {
+            guard let recovery = appModel.reauthentication else { return }
+            server = recovery.server
+        }
     }
 
     private func connect() {
@@ -78,6 +82,10 @@ private struct WatchSignInView: View {
 
     var body: some View {
         List {
+            if let recovery = appModel.reauthentication, recovery.server.id == server.id {
+                Text("Sign in again as \(recovery.user.name). Your saved content is preserved.")
+                    .font(.footnote)
+            }
             if let quickConnect, quickConnect.isAvailable {
                 Section("Quick Connect") {
                     switch quickConnect.state {
@@ -133,6 +141,9 @@ private struct WatchSignInView: View {
         }
         .navigationTitle(server.name)
         .task {
+            if username.isEmpty, let recovery = appModel.reauthentication, recovery.server.id == server.id {
+                username = recovery.user.name
+            }
             if quickConnect == nil {
                 quickConnect = QuickConnectStore(server: server, appModel: appModel)
             }

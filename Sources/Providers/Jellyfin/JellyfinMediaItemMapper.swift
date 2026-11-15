@@ -168,7 +168,12 @@ enum JellyfinMediaItemMapper {
             supportsDirectPlay: source.isSupportsDirectPlay,
             transcodingURL: source.transcodingURL,
             video3DFormat: media3DFormat(from: source.video3DFormat),
-            videoType: mediaVideoType(from: source.videoType)
+            videoType: mediaVideoType(from: source.videoType),
+            name: source.name,
+            liveStreamID: source.liveStreamID,
+            defaultAudioStreamIndex: source.defaultAudioStreamIndex,
+            defaultSubtitleStreamIndex: source.defaultSubtitleStreamIndex,
+            runTimeTicks: source.runTimeTicks
         )
     }
 
@@ -202,7 +207,10 @@ enum JellyfinMediaItemMapper {
             channels: stream.channels,
             width: stream.width,
             height: stream.height,
-            videoRange: stream.videoRange?.rawValue
+            videoRange: stream.videoRange?.rawValue,
+            isForced: stream.isForced,
+            isHearingImpaired: stream.isHearingImpaired,
+            isExternal: stream.isExternal
         )
     }
 
@@ -249,7 +257,8 @@ enum JellyfinMediaItemMapper {
     private static func mediaChapter(from chapter: ChapterInfo) -> MediaChapterInfo {
         MediaChapterInfo(
             name: chapter.name,
-            startPositionTicks: chapter.startPositionTicks
+            startPositionTicks: chapter.startPositionTicks,
+            imageTag: chapter.imageTag
         )
     }
 }

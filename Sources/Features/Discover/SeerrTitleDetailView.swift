@@ -25,12 +25,19 @@ final class SeerrTitleDetailStore {
     func load(store: SeerrStore) async {
         let revision = store.revision
         let restrictions = String(describing: store.restrictionRevision)
+        if self.revision != revision || self.restrictions != restrictions {
+            title = nil
+        }
         self.revision = revision
         self.restrictions = restrictions
         generation = UUID()
         let operation = generation
-        title = nil
         state = .loading
+        defer {
+            if generation == operation, Task.isCancelled {
+                state = title == nil ? .idle : .loaded
+            }
+        }
         do {
             guard mediaType == .movie || mediaType == .tv else { throw SeerrClientError.invalidPayload }
             let result = try await store.requireClient().details(mediaType: mediaType, id: id)
@@ -84,7 +91,7 @@ struct SeerrTitleDetailView: View {
             if detail.state == .loaded, authorizedTitle == nil {
                 RestrictedContentView()
             } else {
-                LoadingStateView(state: detail.state, retryAction: { Task { await detail.load(store: store) } }) {
+                LoadingStateView(state: detail.state, retryAction: { Task { await detail.load(store: store) } }, preservesContent: authorizedTitle != nil) {
                     if let title = authorizedTitle {
                         content(title)
                     }

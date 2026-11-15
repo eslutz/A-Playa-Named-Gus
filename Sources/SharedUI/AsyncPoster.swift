@@ -1,6 +1,7 @@
 import SwiftUI
 
-/// Image loader built on `AsyncImage` + the shared tuned `URLCache`.
+/// Native image rendering; OS27 inherits the account-owned system session/cache.
+/// OS26 retains AsyncImage's native transport because session injection is unavailable.
 ///
 /// Replaces Swiftfin's Nuke usage. Uses system Materials + an SF Symbol for the
 /// placeholder/failure states so it feels first-party everywhere.
@@ -31,8 +32,9 @@ struct AsyncPoster: View {
                 image
                     .resizable()
                     .aspectRatio(contentMode: contentMode)
-            case .failure:
+            case let .failure(error):
                 placeholder.task(id: selectedURL) {
+                    guard !Task.isCancelled, !GusError(from: error).isCancellation else { return }
                     if candidateIndex + 1 < urls.count {
                         DiagnosticsHub.shared.record(.artworkFallback)
                         candidateIndex += 1

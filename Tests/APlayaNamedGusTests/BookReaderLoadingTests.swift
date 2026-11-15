@@ -73,6 +73,37 @@
             #expect(model.publication == nil)
         }
 
+        @Test("resource errors preserve last good location and coalesce reader notices")
+        func resourceRecovery() async throws {
+            let model = try makeModel(url: fixtureURL())
+            await model.open()
+            let publication = try #require(model.publication)
+            let href = try #require(publication.readingOrder.last?.url())
+            let location = Locator(href: href, mediaType: .xhtml, locations: .init(progression: 0.5, totalProgression: 0.75))
+            model.saveLocation(location)
+            model.resourceFailed(GusError.offline)
+            let notice = try #require(model.readerNotice)
+            model.resourceFailed(GusError.timeout)
+            #expect(model.state == .loaded)
+            #expect(model.readerNotice == notice)
+            #expect(model.canRetryResource)
+            #expect(model.actionOutcome == .failed(.offline))
+            #expect(model.initialLocation?.href.isEquivalentTo(location.href) == true)
+            model.clearNotice()
+            #expect(model.readerNotice == nil)
+            #expect(model.actionOutcome == nil)
+        }
+
+        @Test("navigator construction failure is visible and retryable")
+        func navigatorRecovery() async throws {
+            let model = try makeModel(url: fixtureURL())
+            await model.open()
+            model.navigatorConstructionFailed()
+            guard case .failed = model.state else { Issue.record("Construction failure remained blank"); return }
+            await model.retry()
+            #expect(model.state == .loaded)
+        }
+
         private func makeModel(url: URL) -> BookReaderModel {
             BookReaderModel(
                 item: MediaItem(id: "reader-fixture", name: "Reader fixture", type: .book),

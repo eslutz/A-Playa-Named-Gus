@@ -33,53 +33,15 @@ struct DownloadedLibraryView: View {
     }
 
     var body: some View {
-        Group {
-            if sections.isEmpty {
-                ContentUnavailableView {
-                    Label(search.isEmpty ? "No Downloaded Media" : "No Results", systemImage: "arrow.down.circle")
-                } description: {
-                    Text(search.isEmpty ? "Completed downloads available on this device appear here." : "Try another title, series, or artist.")
-                } actions: {
-                    NavigationLink("Manage Downloads", value: AppScreen.downloads)
-                        .frame(minWidth: 44, minHeight: 44)
-                        .contentShape(Rectangle())
-                }
-            } else {
-                List {
-                    ForEach(sections) { section in
-                        Section(section.title) {
-                            ForEach(section.records) { record in
-                                Button { play(record.item) } label: {
-                                    HStack(spacing: 12) {
-                                        OfflineArtwork(url: downloads.localArtworkURL(
-                                            for: record.item, serverID: session.server.id, userID: session.user.id
-                                        ), systemImage: record.item.isAudioPlayable ? "music.note" : record.item.type == .book ? "book" : "film")
-                                            .frame(width: 48, height: 64)
-                                        VStack(alignment: .leading, spacing: 4) {
-                                            Text(record.item.displayTitle).font(.headline)
-                                            if let episode = DownloadedLibrary.episodeLabel(record.item) {
-                                                Text(episode).font(.subheadline).foregroundStyle(.secondary)
-                                            } else if let artist = record.item.albumArtist ?? record.item.artists.first {
-                                                Text(artist).font(.subheadline).foregroundStyle(.secondary)
-                                            }
-                                        }
-                                        Spacer()
-                                        Image(systemName: record.item.type == .book ? "book" : "play.fill")
-                                            .accessibilityHidden(true)
-                                    }
-                                    .contentShape(Rectangle())
-                                }
-                                .buttonStyle(.plain)
-                                .gusDownloadSwipeDelete {
-                                    downloads.delete(record, serverID: session.server.id, userID: session.user.id)
-                                }
-                                .accessibilityHint(record.item.type == .book ? "Opens the downloaded book" : "Plays the downloaded file")
-                            }
-                        }
-                    }
-                }
-            }
+        LoadingStateView(
+            state: downloads.loadState,
+            retryAction: { reload() },
+            preservesContent: !sections.isEmpty
+        ) {
+            libraryContent
         }
+        .task { reload() }
+        .refreshable { reload() }
         .navigationTitle("Downloaded")
         .gusSearchable(text: Bindable(rootState).projectedValue.downloadSearch, isPresented: Bindable(rootState).projectedValue.isDownloadSearchPresented, isFocused: $isSearchFocused, prompt: Text("Search Downloaded"))
         .onChange(of: navigation.searchFocusRequest) { _, request in
@@ -113,18 +75,76 @@ struct DownloadedLibraryView: View {
         }
     }
 
+    @ViewBuilder private var libraryContent: some View {
+        if sections.isEmpty {
+            ContentUnavailableView {
+                Label(search.isEmpty ? "No Downloaded Media" : "No Results", systemImage: "arrow.down.circle")
+            } description: {
+                Text(search.isEmpty ? "Completed downloads available on this device appear here." : "Try another title, series, or artist.")
+            } actions: {
+                NavigationLink("Manage Downloads", value: AppScreen.downloads)
+                    .frame(minWidth: 44, minHeight: 44)
+                    .contentShape(Rectangle())
+            }
+        } else {
+            List {
+                ForEach(sections) { section in
+                    Section(section.title) {
+                        ForEach(section.records) { record in
+                            let item = record.playbackItem
+                            Button { play(record) } label: {
+                                HStack(spacing: 12) {
+                                    OfflineArtwork(url: downloads.localArtworkURL(
+                                        for: item, serverID: session.server.id, userID: session.user.id
+                                    ), systemImage: item.isAudioPlayable ? "music.note" : item.type == .book ? "book" : "film")
+                                        .frame(width: 48, height: 64)
+                                    VStack(alignment: .leading, spacing: 4) {
+                                        Text(item.displayTitle).font(.headline)
+                                        if let episode = DownloadedLibrary.episodeLabel(item) {
+                                            Text(episode).font(.subheadline).foregroundStyle(.secondary)
+                                        } else if let artist = record.item.albumArtist ?? record.item.artists.first {
+                                            Text(artist).font(.subheadline).foregroundStyle(.secondary)
+                                        }
+                                    }
+                                    Spacer()
+                                    Image(systemName: item.type == .book ? "book" : "play.fill")
+                                        .accessibilityHidden(true)
+                                }
+                                .contentShape(Rectangle())
+                            }
+                            .buttonStyle(.plain)
+                            .accessibilityElement(children: .ignore)
+                            .accessibilityLabel(item.mediaAccessibility.label)
+                            .accessibilityValue([item.mediaAccessibility.value, String(localized: "Downloaded")].filter { !$0.isEmpty }.joined(separator: ", "))
+                            .gusDownloadSwipeDelete {
+                                downloads.delete(record, serverID: session.server.id, userID: session.user.id)
+                            }
+                            .accessibilityHint(item.type == .book ? "Opens the downloaded book" : "Plays the downloaded file")
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private func reload() {
+        downloads.load(serverID: session.server.id, userID: session.user.id)
+    }
+
     private var mediaTypePicker: some View {
         Picker("Media Type", selection: Bindable(rootState).projectedValue.downloadFilter) {
             ForEach(DownloadedLibraryFilter.allCases) { value in Text(value.title).tag(value) }
         }
     }
 
-    private func play(_ item: MediaItem) {
+    private func play(_ record: OfflineDownloadRecord) {
+        let request = record.playbackRequest
+        let item = request.item
         guard ContentRatingGate.admitsStored(item) else { return }
-        guard downloads.localFileURL(for: item, serverID: session.server.id, userID: session.user.id) != nil else {
+        guard downloads.localFileURL(for: item, serverID: session.server.id, userID: session.user.id, mediaSourceID: record.mediaSourceID) != nil else {
             missingFile = true
             return
         }
-        playerItem = ItemRef(item: item, localOnly: true, serverID: session.server.id, userID: session.user.id)
+        playerItem = ItemRef(item: item, localOnly: true, serverID: session.server.id, userID: session.user.id, playbackRequest: request)
     }
 }

@@ -12,7 +12,7 @@ struct HomeView: View {
     @Environment(PlaybackRefreshStore.self) private var playbackRefresh
     @Environment(SharedWithYouStore.self) private var sharedWithYou
     @Environment(UpNextStore.self) private var upNext
-    @Environment(VideoPlaylistsStore.self) private var playlists
+    @Environment(SavedMediaStore.self) private var playlists
     @Environment(ServerMediaListsStore.self) private var serverLists
     private let activity = NextUpActivityStore.shared
     let store: HomeStore?
@@ -49,8 +49,12 @@ struct HomeView: View {
         })) {
             Button("OK", role: .cancel) { upNext.clearError() }
         } message: { Text(upNext.errorMessage ?? "") }
+        .gusVisibleContent(.home, isLoading: store?.state.isLoading ?? true)
         .gusTVHomeTitle()
         .task {
+            if let store, store.state == .idle {
+                await store.load()
+            }
             await upNext.refresh(session: session)
         }
         .task(id: "\(upNext.revision)-\(playlists.revision)-\(serverLists.revision)-\(activity.revision)") {
@@ -255,7 +259,7 @@ private struct NextUpDestination: View {
     @Environment(UpNextStore.self) private var upNext
     let entry: NextUpEntry
     var usesArtwork = false
-    @Environment(VideoPlaylistsStore.self) private var playlists
+    @Environment(SavedMediaStore.self) private var playlists
     @State private var replacement: UpNextEntry?
 
     var body: some View {
@@ -303,7 +307,7 @@ private struct NextUpDestination: View {
         } else {
             VStack(alignment: .leading, spacing: 6) {
                 if usesArtwork {
-                    ArtworkTile(url: entry.item.flatMap { session.mediaProvider.backdropImageURL(for: $0, maxWidth: 560) }, aspectRatio: 16.0 / 9.0, contentMode: .fit, placeholderSymbol: entry.playlist == nil ? "play.rectangle" : "list.bullet.rectangle", fallbackURLs: entry.item.map { session.mediaProvider.artworkURLs(for: $0, maxWidth: 560) } ?? [])
+                    ArtworkTile(url: entry.item.flatMap { session.mediaProvider.backdropImageURL(for: $0, maxWidth: 560) }, aspectRatio: 16.0 / 9.0, contentMode: .fit, placeholderSymbol: entry.playlist == nil ? "play.rectangle" : "list.bullet.rectangle", fallbackURLs: entry.item.map { session.mediaProvider.artworkURLs(for: $0, request: .init(role: $0.type == .episode ? .episodeStill : .backdrop, maxWidth: 560)) } ?? [])
                         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                         .posterHoverEffect()
                         .gusTVArtworkStatus(item: entry.item, progressID: "NextUp.progress." + entry.id)
@@ -325,6 +329,9 @@ private struct NextUpDestination: View {
                 .gusTVCardCaption()
             }
             .contentShape(Rectangle())
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel([entry.playlist?.name, entry.item?.mediaAccessibility.label].compactMap { $0 }.joined(separator: ", "))
+            .accessibilityValue([entry.item?.mediaAccessibility.value, reasonText].compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: ", "))
         }
     }
 
@@ -368,12 +375,13 @@ struct MediaRail: View {
                 Spacer()
                 if let latestKind {
                     NavigationLink("Show All") { LibraryGridView(scope: .latest(latestKind)) }
-                        .gusIPhoneOrIPadOnly()
+                        .gusTVFocus(id: "all", section: (focusKey ?? "latest:" + latestKind.rawValue) + ":control", ids: ["all"], context: focusContext ?? root.selectedSectionID)
                 } else if let library {
                     NavigationLink("Show All") { LibraryGridView(library: library) }
-                        .gusIPhoneOrIPadOnly()
+                        .gusTVFocus(id: "all", section: (focusKey ?? "library:" + (library.id ?? title)) + ":control", ids: ["all"], context: focusContext ?? root.selectedSectionID)
                 }
             }
+            .tvFocusSection()
 
             ScrollView(.horizontal, showsIndicators: false) {
                 LazyHStack(alignment: .top, spacing: style.spacing) {
@@ -385,7 +393,7 @@ struct MediaRail: View {
                                 PosterCard(
                                     item: item,
                                     imageURL: session.mediaProvider.primaryImageURL(for: item, context: .posterRail),
-                                    fallbackURLs: session.mediaProvider.artworkURLs(for: item, maxWidth: 260),
+                                    fallbackURLs: session.mediaProvider.artworkURLs(for: item, request: .init(role: .poster, maxWidth: 260)),
                                     onExhausted: { _ = try? await session.references.currentItem(item) }
                                 )
                                 .gusPhoneRailWidth(backdrop: style == .backdrop, fallback: style.itemWidth)
@@ -393,7 +401,7 @@ struct MediaRail: View {
                                 BackdropCard(
                                     item: item,
                                     imageURL: session.mediaProvider.backdropImageURL(for: item, maxWidth: 560),
-                                    fallbackURLs: session.mediaProvider.artworkURLs(for: item, maxWidth: 560),
+                                    fallbackURLs: session.mediaProvider.artworkURLs(for: item, request: .init(role: item.type == .episode ? .episodeStill : .backdrop, maxWidth: 560)),
                                     onExhausted: {
                                         _ = try? await session.references.currentItem(item)
                                         await upNext.refresh(session: session)
@@ -499,7 +507,8 @@ private struct BackdropCard: View {
         }
         .contentShape(Rectangle())
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(accessibilityLabel)
+        .accessibilityLabel(item.mediaAccessibility.label)
+        .accessibilityValue(item.mediaAccessibility.value)
     }
 
     private var title: String {
@@ -511,14 +520,6 @@ private struct BackdropCard: View {
             return item.episodeLocator ?? item.name
         }
         return item.runtimeText ?? item.productionYear.map(String.init)
-    }
-
-    private var accessibilityLabel: Text {
-        if let subtitle {
-            Text("\(title), \(subtitle)")
-        } else {
-            Text(title)
-        }
     }
 }
 
@@ -577,7 +578,8 @@ struct LibrariesLandingView: View {
             isEmpty: store.libraries.isEmpty,
             emptyTitle: "No Libraries",
             emptySymbol: "rectangle.stack",
-            retryAction: { Task { await store.load() } }
+            retryAction: { Task { await store.load() } },
+            preservesContent: true
         ) {
             Group {
                 if usesList {

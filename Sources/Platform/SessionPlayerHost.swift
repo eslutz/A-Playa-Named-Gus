@@ -145,7 +145,7 @@ extension View {
         let enabled: Bool
         func body(content: Content) -> some View {
             content.fullScreenCover(item: Binding(get: { enabled ? state.playerItem : nil }, set: { state.playerItem = $0 })) { ref in
-                PresentedPlayer(item: ref.item, localOnly: ref.localOnly == true, playlistID: ref.playlistID, playlistEntryID: ref.playlistEntryID, playlistFromBeginning: ref.playlistFromBeginning == true, playlistShuffled: ref.playlistShuffled == true, playbackStart: ref.playbackStart, close: { state.playerItem = nil })
+                PresentedPlayer(item: ref.item, localOnly: ref.localOnly == true, playlistID: ref.playlistID, playlistEntryID: ref.playlistEntryID, playlistFromBeginning: ref.playlistFromBeginning == true, playlistShuffled: ref.playlistShuffled == true, playbackRequest: ref.resolvedPlaybackRequest, close: { state.playerItem = nil })
             }
         }
     }
@@ -241,21 +241,21 @@ private struct NowPlayingReturnView: View {
             if widthClass == .compact || DeviceIdentity.usesIPadPresentation {
                 compactLabel
             } else {
-                legacyLabel
+                fallbackLabel
             }
         #else
-            legacyLabel
+            fallbackLabel
         #endif
     }
 
-    private var legacyLabel: some View {
+    private var fallbackLabel: some View {
         Label(store.currentTrack?.displayTitle ?? String(localized: "Now Playing"), systemImage: "music.note")
             .lineLimit(1).frame(minHeight: 44)
     }
 
     private var compactLabel: some View {
         HStack(spacing: 12) {
-            ArtworkTile(url: store.currentTrack.flatMap { session.mediaProvider.primaryImageURL(for: $0, context: .posterGrid) }, aspectRatio: 1, placeholderSymbol: "music.note")
+            ArtworkTile(url: store.currentTrack.flatMap { session.mediaProvider.primaryImageURL(for: $0, context: .posterGrid) }, aspectRatio: 1, placeholderSymbol: "music.note", fallbackURLs: store.currentTrack.map { session.mediaProvider.artworkURLs(for: $0, request: .init(role: .square, maxWidth: 360)) } ?? [])
                 .frame(width: 40, height: 40).clipShape(RoundedRectangle(cornerRadius: 6))
             VStack(alignment: .leading, spacing: 2) {
                 Text(store.currentTrack?.displayTitle ?? String(localized: "Now Playing")).font(.subheadline.weight(.medium))
@@ -285,7 +285,7 @@ struct SessionPlayerRequest: ViewModifier {
             guard ref.serverID == nil || ref.serverID == session.server.id,
                   ref.userID == nil || ref.userID == session.user.id else { item = nil; return }
             if ref.item.isAudioPlayable, ContentRatingGate.admitsStored(ref.item) {
-                audio.play(tracks: [ref.item], localOnly: ref.localOnly == true, playbackStart: ref.playbackStart, session: session, downloads: downloads)
+                audio.play(tracks: [ref.item], localOnly: ref.localOnly == true, request: ref.resolvedPlaybackRequest, session: session, downloads: downloads)
             } else {
                 audio.stop()
                 navigation.playerItem = ref

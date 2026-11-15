@@ -42,13 +42,15 @@ extension View {
                                     reauthenticationServer = server
                                     return
                                 }
-                                do {
-                                    // AppModel validates the destination before committing; root identity
-                                    // replacement cancels video and clears the old navigation/focus tree.
-                                    try app.switchToStoredUser(user)
-                                    audio.stop()
-                                    root.playerItem = nil
-                                } catch { errorMessage = error.localizedDescription }
+                                Task {
+                                    do {
+                                        // AppModel validates the destination before committing; root identity
+                                        // replacement cancels video and clears the old navigation/focus tree.
+                                        try await app.switchToStoredUser(user)
+                                        audio.stop()
+                                        root.playerItem = nil
+                                    } catch { errorMessage = error.localizedDescription }
+                                }
                             } label: {
                                 Label(user.name, systemImage: user.id == session.user.id && user.serverID == session.server.id ? "checkmark.circle.fill" : "person.circle")
                             }

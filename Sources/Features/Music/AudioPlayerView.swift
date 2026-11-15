@@ -8,6 +8,7 @@ struct AudioPlayerView: View {
     let store: AudioPlayerStore
 
     @State private var showingQueue = false
+    @State private var pendingSource: MediaSource?
     #if os(iOS)
         @Environment(\.horizontalSizeClass) private var widthClass
     #endif
@@ -38,17 +39,79 @@ struct AudioPlayerView: View {
     }
 
     var body: some View {
-        LoadingStateView(state: store.state, retryAction: { audio.retry() }) {
-            #if os(tvOS)
-                if let player = store.nativePlayer {
-                    TVAudioPlayerSurface(player: player, store: store, onClose: { audio.close() }, onStop: { audio.stop() }, artworkURL: track.flatMap { session.mediaProvider.primaryImageURL(for: $0, context: .nowPlayingArtwork) })
-                } else {
-                    ContentUnavailableView("Playback Finished", systemImage: "music.note", description: Text("Choose another track from your library."))
-                }
-            #else
-                AdaptiveAudioLayout { artwork } controls: { controls }
-            #endif
+        LoadingStateView(state: !store.hasPreparedContent && (store.isCollectingShuffle || store.queueErrorMessage != nil) ? .loaded : store.state, retryAction: { audio.retry() }, preservesContent: store.hasPreparedContent) {
+            if !store.hasPreparedContent, store.isCollectingShuffle || store.queueErrorMessage != nil {
+                VStack(spacing: 16) {
+                    if store.isCollectingShuffle {
+                        ProgressView("Preparing Shuffle")
+                        Text("\(store.queue.tracks.count) tracks loaded")
+                        Button("Cancel", role: .cancel) { audio.stop() }
+                    } else if let message = store.queueErrorMessage {
+                        Text(message).foregroundStyle(.secondary)
+                        Button("Try Again") { audio.retry() }
+                        Button("Close") { audio.stop() }
+                    }
+                }.padding()
+            } else {
+                #if os(tvOS)
+                    if store.state == .loaded, let player = store.nativePlayer {
+                        TVAudioPlayerSurface(player: player, store: store, onClose: { audio.close() }, onStop: { audio.stop() }, artworkURL: track.flatMap { session.mediaProvider.primaryImageURL(for: $0, context: .nowPlayingArtwork) })
+                    } else {
+                        VStack { artwork; titleBlock }
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    }
+                #else
+                    AdaptiveAudioLayout { artwork } controls: { controls.disabled(store.state != .loaded) }
+                #endif
+            }
         }
+        .safeAreaInset(edge: .top, spacing: 0) {
+            if store.state == .loaded, store.mediaSourceOptions.count > 1 || store.audioOptions.count > 1 {
+                Menu("Playback Options", systemImage: "slider.horizontal.3") {
+                    if store.mediaSourceOptions.count > 1 {
+                        Menu("Version") {
+                            ForEach(Array(store.mediaSourceOptions.enumerated()), id: \.element.id) { offset, source in
+                                Button(source.name ?? String(localized: "Version \(offset + 1)")) { pendingSource = source }
+                                    .disabled(source.id == store.selectedMediaSourceID)
+                            }
+                        }
+                    }
+                    if store.audioOptions.count > 1 {
+                        Picker("Audio", selection: Binding(get: { store.audioMenuSelection }, set: { selection in
+                            guard let selection else { return }
+                            switch selection {
+                            case .automatic: Task { await store.selectAudioStream(index: nil) }
+                            case let .stream(index): Task { await store.selectAudioStream(index: index) }
+                            case .off: break
+                            }
+                        })) {
+                            if store.audioMenuSelection == nil {
+                                Text("Unavailable").tag(nil as PlaybackTrackMenuSelection?).disabled(true)
+                            }
+                            Text("Automatic").tag(PlaybackTrackMenuSelection.automatic as PlaybackTrackMenuSelection?)
+                            ForEach(store.audioOptions) { option in
+                                Text(option.title).tag(PlaybackTrackMenuSelection.stream(option.id) as PlaybackTrackMenuSelection?)
+                            }
+                        }.pickerStyle(.menu)
+                    }
+                }.buttonStyle(.bordered)
+                    .frame(maxWidth: .infinity, alignment: .trailing)
+                    .padding()
+                    .background(.regularMaterial)
+            }
+        }
+        .confirmationDialog("Switch Version", isPresented: Binding(get: { pendingSource != nil }, set: {
+            if !$0 {
+                pendingSource = nil
+            }
+        }), titleVisibility: .visible) {
+            if let source = pendingSource, let id = source.id {
+                Button("Start Over") { pendingSource = nil; Task { await store.selectMediaSource(id: id, fromBeginning: true) } }
+                Button("Resume at \(PlaybackTime.accessibilityDuration(seconds: store.currentTime))") { pendingSource = nil; Task { await store.selectMediaSource(id: id, fromBeginning: false) } }
+                    .disabled(source.runTimeTicks.map { $0 > 0 && PlaybackTime.ticks(fromSeconds: store.currentTime) >= $0 } ?? false)
+                Button("Cancel", role: .cancel) { pendingSource = nil }
+            }
+        } message: { Text("Choose where playback should begin in this version. Versions may have different timelines.") }
         .toolbar {
             #if os(tvOS)
                 ToolbarItem { Button { showingQueue = true } label: { GusToolbarLabel("Queue", systemImage: "list.bullet") }.accessibilityLabel("Queue").gusTVToolbarIcon() }
@@ -56,24 +119,52 @@ struct AudioPlayerView: View {
         }
         .gusTVTask(isPresented: $showingQueue) {
             NavigationStack {
-                List(store.queue.order, id: \.self) { index in
-                    let queuedTrack = store.queue.tracks[index]
-                    Button {
-                        if let id = queuedTrack.id {
-                            Task { await store.select(trackID: id) }
-                        }
-                    } label: {
-                        HStack {
-                            Text(queuedTrack.displayTitle)
-                            Spacer()
-                            if store.queue.order.indices.contains(store.queue.position), index == store.queue.order[store.queue.position] {
-                                Image(systemName: "speaker.wave.2.fill").accessibilityLabel("Now Playing")
+                List {
+                    ForEach(store.queue.order, id: \.self) { index in
+                        let queuedTrack = store.queue.tracks[index]
+                        Button {
+                            if let id = queuedTrack.id {
+                                Task { await store.select(trackID: id) }
                             }
+                        } label: {
+                            HStack {
+                                Text(queuedTrack.displayTitle)
+                                Spacer()
+                                if store.queue.order.indices.contains(store.queue.position), index == store.queue.order[store.queue.position] {
+                                    Image(systemName: "speaker.wave.2.fill").accessibilityLabel("Now Playing")
+                                }
+                            }
+                        }
+                    }
+                    if store.isCollectingShuffle {
+                        ProgressView("Preparing Shuffle")
+                        Text("\(store.queue.tracks.count) tracks loaded")
+                        Button("Cancel") { store.cancelShuffleCollection() }
+                    } else {
+                        if store.isLoadingQueue {
+                            ProgressView("Loading Queue")
+                        }
+                        if let message = store.queueErrorMessage {
+                            Text(message).foregroundStyle(.secondary)
+                        }
+                        if store.queueContinuation != nil {
+                            Button(store.queueErrorMessage == nil ? "Load More" : "Try Again") { Task { await store.loadMoreQueue() } }.disabled(store.isLoadingQueue)
                         }
                     }
                 }
                 .navigationTitle("Queue")
                 .toolbar { ToolbarItem(placement: .cancellationAction) { GusCloseButton { showingQueue = false }.labelStyle(.iconOnly) } }
+            }
+        }
+        .safeAreaInset(edge: .top) {
+            if let notice = store.trackSelectionNotice {
+                HStack { Text(notice); Button("OK") { store.trackSelectionNotice = nil } }
+                    .padding().background(.regularMaterial)
+            }
+        }
+        .onChange(of: SharePlayCoordinator.shared.isSharing) { _, _ in
+            if let player = store.nativePlayer, let request = store.request {
+                SharePlayCoordinator.shared.attachPlayer(player, request: request, session: session)
             }
         }
         .onChange(of: store.currentTime, initial: true) { _, time in
@@ -102,7 +193,8 @@ struct AudioPlayerView: View {
         ArtworkTile(
             url: track.flatMap { session.mediaProvider.primaryImageURL(for: $0, context: .posterGrid) },
             aspectRatio: 1,
-            placeholderSymbol: track?.type == .audioBook ? "book" : "music.note"
+            placeholderSymbol: track?.type == .audioBook ? "book" : "music.note",
+            fallbackURLs: track.map { session.mediaProvider.artworkURLs(for: $0, request: .init(role: .square, maxWidth: 360)) } ?? []
         )
         .frame(maxWidth: audioArtworkWidth)
         .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
@@ -220,10 +312,10 @@ struct AudioPlayerView: View {
         Button {
             store.playPause()
         } label: {
-            AudioTransportGlyph(isPlaying: store.isPlaying)
+            AudioTransportGlyph(isPlaying: store.isPlaybackRequested)
         }
         .accessibilityLabel(
-            store.isPlaying
+            store.isPlaybackRequested
                 ? String(localized: "Pause", comment: "Accessibility label for the pause button")
                 : String(localized: "Play", comment: "Accessibility label for the play button")
         )
@@ -235,7 +327,7 @@ struct AudioPlayerView: View {
         } label: {
             Image(systemName: "forward.fill")
         }
-        .disabled(!store.queue.hasNext)
+        .disabled(!store.hasNext)
         .accessibilityLabel(String(localized: "Next Track", comment: "Accessibility label for the next track button"))
     }
 
@@ -342,7 +434,7 @@ struct AudioPlayerScreen: View {
     @Environment(OfflineDownloadStore.self) private var downloads
     let item: MediaItem
     var localOnly = false
-    var playbackStart: PlaybackStartIntent = .automatic
+    var playbackRequest: PlaybackRequest? = nil
     var body: some View {
         Group {
             if let store = audio.store {
@@ -351,10 +443,8 @@ struct AudioPlayerScreen: View {
                 ProgressView()
             }
         }
-        .task {
-            if audio.store == nil {
-                audio.play(tracks: [item], localOnly: localOnly, playbackStart: playbackStart, session: session, downloads: downloads)
-            }
+        .task(id: PlaybackPresentationIdentity(request: playbackRequest ?? PlaybackRequest(item: item), sessionGeneration: session.lease.generation, localOnly: localOnly)) {
+            audio.play(tracks: [item], localOnly: localOnly, request: playbackRequest, session: session, downloads: downloads)
         }
     }
 }

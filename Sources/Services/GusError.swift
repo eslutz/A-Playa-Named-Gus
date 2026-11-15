@@ -1,17 +1,17 @@
 import Foundation
+import Get
 
 /// A small, typed error surface for A Playa Named Gus. Lower-level errors (cancellation, URL/network
 /// failures, and anything the Jellyfin SDK throws) are mapped into user-presentable
 /// messages via `init(from:)`.
 ///
-/// The Jellyfin SDK's transport layer (`Get.APIError`) surfaces HTTP status codes. JellyfinAPI
-/// does not re-export Get, so `init(from:)` detects `APIError` by its fully-qualified type name
-/// and extracts the status code through reflection — avoiding a direct `import Get`. See ADR 0011.
+/// The Jellyfin SDK's existing Get transport exposes typed HTTP status errors.
 enum GusError: LocalizedError, Equatable {
     case network(String)
     case offline
     case timeout
     case unauthorized
+    case forbidden
     case server(String)
     case notFound
     case cancelled
@@ -27,6 +27,8 @@ enum GusError: LocalizedError, Equatable {
             return String(localized: "The server took too long to respond. Try again in a moment.", comment: "Timeout network error")
         case .unauthorized:
             return String(localized: "Your session has expired. Please sign in again.", comment: "401 / unauthorized error")
+        case .forbidden:
+            return String(localized: "You do not have permission to do that.", comment: "403 / permission denied error")
         case let .server(message):
             return message
         case .notFound:
@@ -44,11 +46,11 @@ enum GusError: LocalizedError, Equatable {
         self == .cancelled
     }
 
-    /// Triggers sign-out if this error represents an expired or revoked session.
+    /// Requests identity-bound recovery for an expired or revoked session.
     @MainActor
     func handleIfUnauthorized(session: SessionStore) {
         if self == .unauthorized {
-            session.onUnauthorized()
+            session.handleUnauthorized()
         }
     }
 
@@ -66,11 +68,7 @@ enum GusError: LocalizedError, Equatable {
             default:
                 self = .network(urlError.localizedDescription)
             }
-        } else if String(reflecting: type(of: error)) == "Get.APIError",
-                  let statusCode = Mirror(reflecting: error).children.compactMap({ $0.value as? Int }).first
-        {
-            // Get.APIError is `enum APIError { case unacceptableStatusCode(Int) }`.
-            // Mirror gives one child whose value is the associated Int — the HTTP status code.
+        } else if case let APIError.unacceptableStatusCode(statusCode) = error {
             self = Self.fromHTTPStatusCode(statusCode)
         } else if let gusError = error as? GusError {
             self = gusError
@@ -81,8 +79,10 @@ enum GusError: LocalizedError, Equatable {
 
     static func fromHTTPStatusCode(_ statusCode: Int) -> GusError {
         switch statusCode {
-        case 401, 403:
+        case 401:
             return .unauthorized
+        case 403:
+            return .forbidden
         case 404:
             return .notFound
         case 500...:

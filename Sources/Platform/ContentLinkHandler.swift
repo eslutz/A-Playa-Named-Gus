@@ -67,10 +67,11 @@ private struct ContentLinkHandler: ViewModifier {
 
     private func resolve(_ link: ContentLink) async {
         do {
-            guard link.accepts(server: session.server) else { throw GusError.notFound }
+            guard session.isActive, link.accepts(server: session.server) else { throw GusError.notFound }
             let item = try await session.references.currentItem(MediaItem(providerKind: session.server.providerKind, id: link.itemID))
             guard ContentRatingGate.admitsStored(item) else { throw GusError.notFound }
             try Task.checkCancellation()
+            guard session.isActive else { return }
             switch link {
             case .item:
                 #if os(tvOS)
@@ -89,11 +90,13 @@ private struct ContentLinkHandler: ViewModifier {
                     rootState.detailItem = ItemRef(item: item)
                 #endif
             case .play:
-                playerItem = ItemRef(item: item)
+                var request = link.playbackRequest ?? PlaybackRequest(item: item)
+                request.item = item
+                playerItem = ItemRef(item: item, serverID: session.server.id, userID: session.user.id, playbackRequest: request)
             }
         } catch {
             let gusError = GusError(from: error)
-            guard !gusError.isCancellation else { return }
+            guard session.isActive, !gusError.isCancellation else { return }
             errorMessage = gusError.localizedDescription
         }
     }

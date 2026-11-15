@@ -234,9 +234,14 @@ State objects are `@Observable @MainActor` classes (Observation framework — no
 - `RootView` switches on `AppModel.currentSession`: `nil` → `ConnectFlowView`; otherwise
   injects a `SessionStore` (authenticated `JellyfinClient` + user + server) into the signed-in tree.
 - Feature stores take a `SessionStore` and use its media provider. `RootNavigationState`
-  owns Home, cached library/detail stores, per-section search, navigation paths,
+  owns Home, weak library/detail store lookups, per-section search state, navigation paths,
   per-library display choices, profile presentation, and scroll anchors for the signed-in account; adaptive view replacement reuses that state.
   `RootView` owns `AudioPlaybackCoordinator` and stops it when the account changes.
+- `SavedMediaStore` owns supplemental Gus intent, cursors, activity and its CloudKit
+  journal. `ServerMediaListsStore` owns the account-scoped native-list cache and offline
+  edit journal; Jellyfin owns names, membership and ordering. Current serialized paths,
+  cloud IDs and offline-draft reconciliation stay stable. Retired local-playlist formats
+  are rejected per record instead of imported.
 
 ### Auth & session flow
 
@@ -247,6 +252,13 @@ returned access token. The token is stored in the **Keychain** (`KeychainStore`,
 `"<serverID>:<userID>"`); a token-free `StoredUser` is persisted via `ServerStore`
 (Codable JSON in Application Support). On launch, `AppModel.restoreLastSession()` rebuilds
 an authenticated client from the stored token silently.
+
+Every authenticated activation uses the same async AppModel installation path and
+immutable `SessionLease`. Credential or endpoint changes retire the old lease;
+profile-only changes keep it. Retirement checkpoints players and gives their
+originating report queue up to five seconds to flush. Typed authenticated 401
+recovery locks the expired account while preserving current data; 403 is a permission
+failure. Explicit Sign Out retains its separate deletion policy.
 
 ### Navigation
 
@@ -267,7 +279,7 @@ resolves the id through the session's provider. iPad and tvOS item links push in
 section's normal stack; iPad photos open the fullscreen session viewer. Other platforms present a detail sheet. Session player hosts sit
 above adaptive layout replacement, with the detail sheet hosting playback while it is open.
 Content links are the shared entry point for: **Handoff** (`Platform/UserActivities.swift`
-— detail/player surfaces publish `NSUserActivity` with ids only, never tokens), **Core
+— detail/player surfaces publish identity and sanitized playback intent, never tokens), **Core
 Spotlight** (`Services/SpotlightIndexer.swift` — donates browsed items, refuses
 other-account continuations, deindexes on sign-out; no watchOS/tvOS), **Siri/App Intents**
 (`App/GusAppIntents.swift` — "Play media" provider search), and the **content-aware tvOS
@@ -275,6 +287,12 @@ Top Shelf** (Continue Watching snapshot via the `group.dev.ericslutz.gus` App Gr
 written by `HomeStore`, read by the credential-free `GusTopShelf` extension).
 
 ### Playback
+
+`PlaybackRequest` carries source, semantic track/subtitle intent, start position and
+presentation through local/remote playback, queues, Watch, Mac windows, Handoff and
+SharePlay. Version changes require Start Over or explicit timestamp reuse. Per-account
+track remembering is opt-in and same-series only; persisted preferences contain no
+source-local indexes. Missing/ambiguous named tracks use defaults with a notice.
 
 **Video:** `StreamURLBuilder` POSTs `Paths.getPostedPlaybackInfo` with a `DeviceProfile`
 that leans **direct play** for everything the device's hardware decodes
@@ -285,7 +303,8 @@ falling back to HEVC-preferred fMP4 HLS transcoding with 8-channel audio and
 `enableSubtitlesInManifest` (bitmap subs burn in; text subs ride the manifest).
 `PlaybackStore` owns the `AVPlayer` and tears it down on dismiss; it sets
 `AVPlayerItem.externalMetadata` (not on macOS — no API), auto-plays next episodes or
-dismisses at natural end (`PlaybackPreferences`), reports pause/resume immediately, and
+dismisses at natural end (`PlaybackPreferences`), enqueues pause/resume snapshots on the
+session-owned `PlaybackReportQueue`, and
 reads the Settings-backed `PlaybackQuality` bitrate cap. Track switching is in-place via
 `AVMediaSelection` for direct play (`PlaybackMediaSelectionMatcher`, ordinal+language)
 with a server-side rebuild fallback. Surfaces: `AVPlayerViewController` on iOS
@@ -296,8 +315,9 @@ immersive playback controls), and `AVPlayerView` on macOS (video opens in the de
 feeds `MPNowPlayingInfoCenter` / `MPRemoteCommandCenter`. `AVAudioSession` is guarded
 (`#if os(iOS) || os(tvOS) || os(visionOS)` — doesn't exist on macOS).
 
-**Audio:** songs and audiobooks play through `AudioPlayerStore` + `AudioPlayerView` (queue,
-shuffle/repeat, speed, chapters) over the Jellyfin universal audio endpoint.
+**Audio:** songs and audiobooks play through `AudioPlayerStore` + `AudioPlayerView` (paged
+queue, full-collection shuffle, repeat, speed, chapters) using provider-negotiated audio
+with the selected source and track intent.
 `playerPresentation` routes by `MediaItem.isAudioPlayable`.
 `AudioPlaybackCoordinator` owns the queue and preparation task independently of the player
 presentation. Close dismisses prepared iOS and tvOS audio while playback continues; the persistent Now
@@ -306,6 +326,12 @@ the task. Audio/video stores reject late results after cancellation or teardown;
 and failed player states expose cancellation and retry. The Watch companion uses its own
 scrollable audio sheet and tears down playback when leaving that sheet.
 
+One 30-second resolution budget includes metadata, safe read retries and fallbacks;
+allocating requests are not blindly repeated. Native readiness has a separate
+45-second bound. Reports and known-resource cleanup have five-second request bounds.
+Terminal work retains its originating transport after lease retirement. Unknown
+allocation IDs cannot be claimed closed; see `Documentation/app-wide-refinement.md`.
+
 **visionOS 3D:** `Media3DDetector` maps Jellyfin SBS/TAB/MVC metadata into a
 `Stereo3DPresentation`; non-visionOS always resolves to 2D. SBS/TAB use Gus Cinema
 `ImmersiveSpace` (`StereoFrameRenderer` splits packed frames into per-eye `CVPixelBuffer`s
@@ -313,14 +339,24 @@ via `CMTaggedBufferGroup`). MV-HEVC uses AVKit directly with `preferredViewingMo
 
 **Downloads** (`OfflineDownloadStore` + `DownloadSessionCoordinator`): background
 `URLSessionConfiguration.background` download session. AVPlayer-native originals use
-`Paths.getDownload`; incompatible sources use server-side progressive MP4 transcoding.
+`Paths.getDownload` for the primary source or source-qualified static streams for
+alternate versions. Incompatible video uses progressive MP4 conversion; incompatible
+audio uses MP3, with explicit tracks sent through the source-qualified audio endpoint.
+Records and local checkpoints retain known source identity. File preparation/finalization
+runs on a serial worker with a generation-checked metadata commit before completion
+acknowledgment. Unreadable metadata preserves files and exposes native retry UI.
 Platform availability routed through `Platform/DownloadsAvailability.swift`. tvOS excluded.
+
+**Artwork:** shared role/rendition requests feed native AsyncImage and ordered fallbacks.
+OS 26 keeps its native transport; OS 27 inherits `NativeArtworkTransport` from the
+credential lease, using a memory-only cache cleared when the lease retires. Do not claim
+that OS 26 AsyncImage uses the Jellyfin SDK's URLSession or cache.
 
 ### watchOS companion
 
 `GusWatch` is a second application target (`WKRunsIndependentlyOfCompanionApp`), embedded
 in `Watch/`. Compiles the shared subset — `Models/`, `Providers/`, `Services/`, and
-non-video `Stores` (no `PlaybackStore`) — plus `Sources/Watch`. Remote
+selected `Stores`, including the shared `PlaybackStore` lifecycle — plus `Sources/Watch`. Remote
 control rides `RemoteSessionsStore` + `SessionsSocket`; credentials hand off from iPhone
 via `WatchSessionRelay` / `WatchCredentialReceiver`.
 
@@ -356,7 +392,7 @@ via `WatchSessionRelay` / `WatchCredentialReceiver`.
 | Navigation/routing | `NavigationStack` / `NavigationSplitView` / `TabView` |
 | State / DI | Observation `@Observable` + `@Environment` |
 | Playback | AVKit (`VideoPlayer`, `AVPlayerViewController`); no VLCKit |
-| Images | `AsyncImage` + tuned shared `URLCache` |
+| Images | Native `AsyncImage`; lease-owned memory cache on OS 27, native transport on OS 26 |
 | Secrets | Security framework `SecItem*` |
 | Persistence | `Codable` + `FileManager`; `UserDefaults`/`@AppStorage` for prefs |
 | Theming | `AccentColor`, semantic colors, system Materials, SF Symbols, Dynamic Type |
@@ -395,8 +431,7 @@ dark `#0B2E33`), and cinema colorsets all share this palette.
 platform-specific background/G/play stacks generated from the approved SVGs by
 `swift Scripts/generate-platform-icons.swift`. This also refreshes static tvOS Top Shelf
 artwork and the review page in `Documentation/AppStore/platform-icon-review/`.
-`Scripts/generate-app-icon.swift` draws an older
-pineapple design and is **not** a source for the current icon. For the modern icon, edit
+For the modern icon, edit
 `Resources/AppIcon.icon` in Icon Composer and preserve the Gus palette and G/play identity. The modern geometry is an intentional
 adaptation of the website mark.
 
@@ -459,8 +494,8 @@ wiki, not here.
 ## Swiftfin reference policy
 
 The mature [Swiftfin](https://github.com/eslutz/Swiftfin) app is **reference only** —
-mirror its *patterns* and SDK call shapes, **never copy its code**. Swiftfin is built on
-VLCKit, a custom coordinator/router, Factory DI, Combine, and ~30 dependencies; A Playa
+mirror its *patterns* and SDK call shapes, **never copy its code**. The inspected Swiftfin main uses
+MPVUI and AVPlayer with custom controls, routing, DI and other dependencies; A Playa
 Named Gus deliberately re-expresses those patterns on the Apple-first stack above.
 
 ### iOS review iteration 2

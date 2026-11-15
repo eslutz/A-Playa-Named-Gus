@@ -42,7 +42,7 @@ struct PosterCard: View {
         .contentShape(Rectangle())
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(accessibilityLabel)
-        .gusTVPosterStatusValue(item: statusItem)
+        .accessibilityValue(statusItem?.mediaAccessibility.value ?? "")
     }
 
     private var usesIPhoneLayout: Bool {
@@ -68,7 +68,9 @@ struct PosterCard: View {
     }
 
     private var accessibilityLabel: Text {
-        if let subtitle {
+        if let statusItem {
+            Text(statusItem.mediaAccessibility.label)
+        } else if let subtitle {
             Text("\(title), \(subtitle)")
         } else {
             Text(title)

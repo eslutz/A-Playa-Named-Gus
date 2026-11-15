@@ -5,7 +5,7 @@ struct MediaItemPage: Sendable {
     var totalRecordCount: Int?
 }
 
-struct MediaItemQuery {
+struct MediaItemQuery: Sendable {
     var parentID: String?
     var searchTerm: String?
     /// Restricts results to albums by this artist (provider-mapped, e.g. Jellyfin `artistIds`).
@@ -41,7 +41,7 @@ struct MediaItemQuery {
     }
 }
 
-struct PlaybackSourceResolution {
+struct PlaybackSourceResolution: Sendable {
     var url: URL
     var playSessionID: String?
     var mediaSourceID: String?
@@ -49,10 +49,19 @@ struct PlaybackSourceResolution {
     var stereoLayout: Stereo3DLayout
     var stereoFallbackReason: StreamURLBuilder.StereoFallbackReason?
     var mediaSource: MediaSource? = nil
+    var resource: PlaybackResource? = nil
+    var isLive = false
 
     var isTranscoding: Bool {
         playMethod == .transcode
     }
+}
+
+/// Opaque server allocation owned by one negotiated playback generation.
+struct PlaybackResource: Hashable, Sendable {
+    let liveStreamID: String?
+    let playSessionID: String?
+    var isTranscoding = false
 }
 
 struct DownloadSourceResolution {
@@ -60,14 +69,23 @@ struct DownloadSourceResolution {
     var fileExtension: String
     var requiresTranscoding: Bool
     var operation: DownloadActivity.SourceOperation? = nil
+    var mediaSourceID: String? = nil
 }
 
-struct PlaybackReportContext {
+struct PlaybackReportContext: Sendable {
     let itemID: String
     let mediaSourceID: String?
     let playSessionID: String?
     let playMethod: MediaPlaybackMethod
-    let streamSelection: PlaybackStreamSelection
+    var streamSelection: PlaybackStreamSelection
+    var reportID = UUID()
+    var liveStreamID: String? = nil
+    var canSeek = false
+    var isFailed = false
+}
+
+enum LiveTVAvailability: Equatable, Sendable {
+    case enabled, notConfigured, restricted
 }
 
 /// A scheduled Live TV recording.
@@ -94,13 +112,13 @@ protocol MediaProviderSession: AnyObject, Sendable {
     func similarItems(itemID: String, limit: Int) async throws -> [MediaItem]
     func specialFeatures(itemID: String) async throws -> [MediaItem]
     func seasons(seriesID: String) async throws -> [MediaItem]
-    func episodes(seriesID: String, seasonID: String, limit: Int) async throws -> MediaItemPage
+    func episodesPage(seriesID: String, seasonID: String, startIndex: Int, limit: Int) async throws -> MediaItemPage
 
     func primaryImageURL(for item: MediaItem, context: ImageURLBuilder.ImageContext) -> URL?
     func primaryImageURL(for item: MediaItem, maxWidth: Int) -> URL?
     func backdropImageURL(for item: MediaItem, context: ImageURLBuilder.ImageContext) -> URL?
     func backdropImageURL(for item: MediaItem, maxWidth: Int) -> URL?
-    func artworkURLs(for item: MediaItem, maxWidth: Int) -> [URL]
+    func artworkURLs(for item: MediaItem, request: MediaArtworkRequest) -> [URL]
     func personImageURL(for person: MediaPerson, maxWidth: Int) -> URL?
 
     func resolvePlayback(
@@ -113,15 +131,19 @@ protocol MediaProviderSession: AnyObject, Sendable {
 
     /// Resolves a playable URL for a song or audiobook; the provider direct-plays
     /// AVPlayer-native audio containers and transcodes the rest server-side.
-    func resolveAudioPlayback(for itemID: String) async throws -> PlaybackSourceResolution
+    func resolveAudioPlayback(for itemID: String, streamSelection: PlaybackStreamSelection) async throws -> PlaybackSourceResolution
+    /// Releases an allocated resource that has not been handed to terminal
+    /// reporting. Live-stream Stop owns its consumer release; repeating a raw
+    /// Close after an ambiguous Stop response can close another consumer.
+    func releasePlaybackResource(_ resource: PlaybackResource) async throws
 
-    func downloadSource(for item: MediaItem) async throws -> DownloadSourceResolution
+    func downloadSource(for item: MediaItem, streamSelection: PlaybackStreamSelection) async throws -> DownloadSourceResolution
 
     // MARK: Live TV (no-tuner servers report unavailable)
 
-    func liveTVIsEnabled() async -> Bool
+    func liveTVAvailability() async throws -> LiveTVAvailability
     func liveTVChannels(startIndex: Int, limit: Int) async throws -> MediaItemPage
-    func liveTVRecordings(limit: Int) async throws -> [MediaItem]
+    func liveTVRecordingsPage(startIndex: Int, limit: Int) async throws -> MediaItemPage
     func liveTVTimers() async throws -> [LiveTVTimer]
     func cancelLiveTVTimer(id: String) async throws
 
@@ -172,6 +194,8 @@ protocol MediaProviderSession: AnyObject, Sendable {
 }
 
 extension MediaProviderSession {
+    func releasePlaybackResource(_ resource: PlaybackResource) async throws {}
+
     func collectionCapabilities(id: String?) async throws -> CollectionCapabilities {
         throw unsupportedCollections()
     }
@@ -252,23 +276,93 @@ extension MediaProviderSession {
         GusError.server(String(localized: "This server does not support playlists.", comment: "Unsupported native media lists"))
     }
 
-    /// Fallback for providers without server pagination. Request the prefix needed
-    /// by this page so compatibility does not introduce a hidden fixed ceiling.
-    func resumeItemsPage(startIndex: Int, limit: Int) async throws -> MediaItemPage {
-        let items = try await resumeItems(limit: startIndex + limit)
-        return MediaItemPage(items: Array(items.dropFirst(startIndex).prefix(limit)), totalRecordCount: items.count < startIndex + limit ? items.count : nil)
-    }
-
-    func nextUpItemsPage(startIndex: Int, limit: Int) async throws -> MediaItemPage {
-        let items = try await nextUpItems(seriesID: nil, limit: startIndex + limit)
-        return MediaItemPage(items: Array(items.dropFirst(startIndex).prefix(limit)), totalRecordCount: items.count < startIndex + limit ? items.count : nil)
-    }
-
-    func artworkURLs(for item: MediaItem, maxWidth: Int) -> [URL] {
-        ArtworkRequestSequence.unique([backdropImageURL(for: item, maxWidth: maxWidth), primaryImageURL(for: item, maxWidth: maxWidth)].compactMap { $0 })
+    func artworkURLs(for item: MediaItem, request: MediaArtworkRequest) -> [URL] {
+        let primary = primaryImageURL(for: item, maxWidth: request.maxWidth)
+        let backdrop = backdropImageURL(for: item, maxWidth: request.maxWidth)
+        switch request.role {
+        case .photo, .avatar: return primary.map { [$0] } ?? []
+        case .chapter: return []
+        case .poster, .square: return ArtworkRequestSequence.unique([primary, backdrop].compactMap { $0 })
+        case .episodeStill, .backdrop: return ArtworkRequestSequence.unique([backdrop, primary].compactMap { $0 })
+        }
     }
 
     func updatePlaybackPosition(itemID: String, positionTicks: Int) async throws {
         throw GusError.server(String(localized: "This server does not support saved playback progress.", comment: "Unsupported offline progress sync"))
+    }
+}
+
+/// Paging for complete, ordered item collections such as album queues. Preview
+/// shelves retain their own explicit limits. Offsets always count raw server rows.
+extension MediaProviderSession {
+    func allItems(query: MediaItemQuery) async throws -> [MediaItem] {
+        try await MediaPageLoader.collect(pageSize: query.limit) { offset, limit in
+            var pageQuery = query
+            pageQuery.startIndex = query.startIndex + offset
+            pageQuery.limit = limit
+            var page = try await self.items(query: pageQuery)
+            page.totalRecordCount = page.totalRecordCount.map { max(0, $0 - query.startIndex) }
+            return page
+        }
+    }
+}
+
+/// A browsing result belongs to one fixed provider/connection/profile session.
+/// Playlist occurrences deliberately do not use this item-identity deduplication.
+enum MediaPageLoader {
+    /// Omitted totals retain the last server count. An empty page below that
+    /// count is a retryable failure, not proof that a full list is complete.
+    static func validatedTotal(for page: MediaItemPage, startIndex: Int, previousTotal: Int? = nil) throws -> Int? {
+        let total = page.totalRecordCount ?? previousTotal
+        if page.items.isEmpty, let total, startIndex < total {
+            throw GusError.server(String(localized: "The server returned an incomplete collection. Try again."))
+        }
+        return total
+    }
+
+    static func unique(_ items: [MediaItem], after existing: [MediaItem] = []) -> [MediaItem] {
+        struct Identity: Hashable { let provider: MediaProviderKind; let id: String }
+        var seen = Set(existing.compactMap { item in item.id.map { Identity(provider: item.providerKind, id: $0) } })
+        return items.filter { item in
+            guard let id = item.id else { return true }
+            return seen.insert(Identity(provider: item.providerKind, id: id)).inserted
+        }
+    }
+
+    /// Publishes validated nonempty pages for incremental readers; an incomplete
+    /// later page throws without replacing the content already presented.
+    @MainActor
+    static func collect(pageSize: Int = 200, didLoadPage: (([MediaItem]) -> Void)? = nil, page: (Int, Int) async throws -> MediaItemPage) async throws -> [MediaItem] {
+        let size = max(1, pageSize)
+        var offset = 0
+        var items: [MediaItem] = []
+        var previousPage: [MediaItem]? = nil
+        var advertisedTotal: Int?
+        while true {
+            try Task.checkCancellation()
+            let result = try await page(offset, size)
+            try Task.checkCancellation()
+            // A server ignoring startIndex must fail visibly, rather than spin
+            // forever or silently claim a partial collection is complete.
+            if !result.items.isEmpty, result.items == previousPage {
+                throw GusError.server(String(localized: "The server did not advance to the next page. Try again."))
+            }
+            previousPage = result.items
+            advertisedTotal = try validatedTotal(for: result, startIndex: offset, previousTotal: advertisedTotal)
+            items += unique(result.items, after: items)
+            offset += result.items.count
+            if result.items.isEmpty {
+                break
+            }
+            didLoadPage?(items)
+            if let total = advertisedTotal {
+                if offset >= total {
+                    break
+                }
+            } else if result.items.count < size {
+                break
+            }
+        }
+        return items
     }
 }

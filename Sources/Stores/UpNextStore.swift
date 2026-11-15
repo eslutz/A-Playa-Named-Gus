@@ -8,7 +8,7 @@ struct UpNextEntry: Codable, Identifiable, Equatable, Sendable {
     var reference: MediaReference
     var availability: Availability = .unverified
     var version: UUID = UUID()
-    /// Only explicit saving updates this date; legacy intents keep an unknown date.
+    /// Only explicit saving updates this date; undated saved intents keep an unknown date.
     var activityAt: Date? = nil
 }
 
@@ -27,44 +27,22 @@ struct UpNextPersistence {
         self.init(directory: Self.defaultDirectory(applicationSupportDirectory: applicationSupportDirectory))
     }
 
-    func loadEntries(scope: AccountScope, identityKey: String? = nil, migrateLocalData: Bool = false) throws -> [UpNextEntry] {
+    func loadEntries(scope: AccountScope, identityKey: String = "local", claimLocalData: Bool = false) throws -> [UpNextEntry] {
         let url = fileURL(for: scope, identityKey: identityKey)
-        if let identityKey, !FileManager.default.fileExists(atPath: url.path) {
-            let marker = directory.appendingPathComponent("\(scope.storageKey).identity-migrated")
-            // The initial local load already consumed the unscoped migration.
-            // Preserve its canonical IDs and order for the account that claimed
-            // it, without allowing later accounts to repeat that migration.
-            if migrateLocalData, identityKey != "local", FileManager.default.fileExists(atPath: fileURL(for: scope, identityKey: "local").path) {
+        guard FileManager.default.fileExists(atPath: url.path) else {
+            if claimLocalData, identityKey != "local" {
                 let local = try loadEntries(scope: scope, identityKey: "local")
                 try saveEntries(local, scope: scope, identityKey: identityKey)
-                try Data(identityKey.utf8).write(to: marker, options: .atomic)
                 return local
             }
-            if !FileManager.default.fileExists(atPath: marker.path) {
-                let legacy = try loadEntries(scope: scope)
-                try saveEntries(legacy, scope: scope, identityKey: identityKey)
-                try Data(identityKey.utf8).write(to: marker, options: .atomic)
-                return legacy
-            }
+            return []
         }
-        guard FileManager.default.fileExists(atPath: url.path) else { return [] }
-        let data = try Data(contentsOf: url)
-        if data.first(where: { ![9, 10, 13, 32].contains($0) }) == 91 {
-            let legacy = try JSONDecoder().decode([MediaItem].self, from: data)
-            let entries = legacy.map { UpNextEntry(id: UUID(), reference: MediaReference(item: $0, scope: scope)) }
-            let backup = url.appendingPathExtension("legacy-backup")
-            if !FileManager.default.fileExists(atPath: backup.path) {
-                try data.write(to: backup, options: .atomic)
-            }
-            try saveEntries(entries, scope: scope, identityKey: identityKey)
-            return entries
-        }
-        let envelope = try JSONDecoder().decode(Envelope.self, from: data)
+        let envelope = try JSONDecoder().decode(Envelope.self, from: Data(contentsOf: url))
         guard envelope.schemaVersion == 1, envelope.entries.allSatisfy({ $0.reference.scope == scope }) else { throw GusError.notFound }
         return envelope.entries
     }
 
-    func saveEntries(_ entries: [UpNextEntry], scope: AccountScope, identityKey: String? = nil) throws {
+    func saveEntries(_ entries: [UpNextEntry], scope: AccountScope, identityKey: String = "local") throws {
         let url = fileURL(for: scope, identityKey: identityKey)
         try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
         let encoder = JSONEncoder()
@@ -76,8 +54,8 @@ struct UpNextPersistence {
         AppStorageLocation.appDirectory(applicationSupportDirectory: applicationSupportDirectory).appendingPathComponent("UpNext", isDirectory: true)
     }
 
-    private func fileURL(for scope: AccountScope, identityKey: String? = nil) -> URL {
-        let base = identityKey.map { directory.appendingPathComponent($0, isDirectory: true) } ?? directory
+    private func fileURL(for scope: AccountScope, identityKey: String = "local") -> URL {
+        let base = directory.appendingPathComponent(identityKey, isDirectory: true)
         return base.appendingPathComponent("\(scope.storageKey).json")
     }
 }
@@ -93,12 +71,12 @@ final class UpNextStore {
     private var refreshingScopes: Set<AccountScope> = []
     private var candidatesByEntry: [UUID: [MediaItem]] = [:]
     private let persistence: UpNextPersistence
-    private let syncStore: VideoPlaylistsStore?
+    private let syncStore: SavedMediaStore?
     private let progressStore: OfflinePlaybackProgressStore
-    private var identityKey: String?
+    private var identityKey = "local"
     private let logger = Logger(category: .home)
 
-    init(persistence: UpNextPersistence = UpNextPersistence(), syncStore: VideoPlaylistsStore? = nil, progressStore: OfflinePlaybackProgressStore = .shared) {
+    init(persistence: UpNextPersistence = UpNextPersistence(), syncStore: SavedMediaStore? = nil, progressStore: OfflinePlaybackProgressStore = .shared) {
         self.persistence = persistence
         self.syncStore = syncStore
         self.progressStore = progressStore
@@ -113,7 +91,7 @@ final class UpNextStore {
         updateIdentity()
         guard !loadedScopes.contains(scope) else { return }
         do {
-            let restored = try persistence.loadEntries(scope: scope, identityKey: identityKey, migrateLocalData: syncStore?.canMigrateLocalData == true)
+            let restored = try persistence.loadEntries(scope: scope, identityKey: identityKey, claimLocalData: syncStore?.canClaimLocalData == true)
             let entries = canonicalEntries(restored)
             entriesByScope[scope] = entries
             if entries != restored {
@@ -153,7 +131,7 @@ final class UpNextStore {
         } else {
             let reference = MediaReference(item: item, scope: scope)
             let existingID = syncStore?.savedIntents(scope: scope).first { $0.reference.item.id == id && $0.reference.item.providerKind == item.providerKind }?.id
-            let entryID = existingID ?? (syncStore == nil ? UUID() : VideoPlaylistsStore.canonicalIntentID(reference: reference))
+            let entryID = existingID ?? (syncStore == nil ? UUID() : SavedMediaStore.canonicalIntentID(reference: reference))
             entries.insert(UpNextEntry(id: entryID, reference: reference, activityAt: Date()), at: 0)
         }
         let old = entriesByScope[scope] ?? []
@@ -176,27 +154,29 @@ final class UpNextStore {
     /// explicit, idempotent position reset; watched history is left unchanged.
     func removeFromNextUp(_ item: MediaItem, session: SessionStore, activity: NextUpActivityStore = .shared, progress: OfflinePlaybackProgressStore = .shared) async throws {
         guard let id = item.id, item.providerKind == session.mediaProvider.providerKind else { throw GusError.notFound }
+        try Task.checkCancellation()
+        guard session.isActive else { throw CancellationError() }
         var itemIDs = [id]
         if item.type == .series {
             // A saved show represents its episodes in Continue Watching. Collect
             // before resetting so removing rows cannot shift subsequent pages.
-            var start = 0
-            while true {
-                let page = try await session.mediaProvider.resumeItemsPage(startIndex: start, limit: 100)
-                itemIDs += page.items.filter { $0.seriesID == id }.compactMap(\.id)
-                start += page.items.count
-                if page.items.isEmpty || start >= (page.totalRecordCount ?? Int.max) {
-                    break
-                }
+            let resumable = try await MediaPageLoader.collect(pageSize: 100) { offset, limit in
+                guard session.isActive else { throw CancellationError() }
+                return try await session.mediaProvider.resumeItemsPage(startIndex: offset, limit: limit)
             }
+            itemIDs += resumable.filter { $0.seriesID == id }.compactMap(\.id)
         }
         for itemID in Set(itemIDs) {
+            try Task.checkCancellation()
+            guard session.isActive else { throw CancellationError() }
             do {
                 try await session.mediaProvider.updatePlaybackPosition(itemID: itemID, positionTicks: 0)
             } catch {
                 // A confirmed missing item has no server resume entry to clear.
                 guard GusError(from: error) == .notFound else { throw error }
             }
+            try Task.checkCancellation()
+            guard session.isActive else { throw CancellationError() }
             progress.resetCheckpoint(itemID: itemID, scope: session.references.scope)
         }
         try dismissLocally(item, scope: session.references.scope, activity: activity)
@@ -274,7 +254,7 @@ final class UpNextStore {
                         update(entry, availability: .requiresSelection)
                     case let .failure(error):
                         if error == .unauthorized {
-                            session.onUnauthorized()
+                            session.handleUnauthorized()
                         }
                         // Keep snapshots and prior availability on retryable failures.
                     }
@@ -325,7 +305,7 @@ final class UpNextStore {
     }
 
     /// Imports field-merged saved intents, including deletion tombstones. Only
-    /// missing IDs are exported on first migration; known tombstones always win.
+    /// missing IDs are exported when enabling sync; known tombstones always win.
     func reconcileSyncedIntents(scope: AccountScope) {
         updateIdentity()
         guard let syncStore else { return }
@@ -368,14 +348,14 @@ final class UpNextStore {
         let knownIDs = Set(entries.first.map { syncStore.savedIntents(scope: $0.reference.scope).map(\.id) } ?? [])
         var seen = Set<UUID>()
         return entries.compactMap { entry in
-            let id = knownIDs.contains(entry.id) ? entry.id : VideoPlaylistsStore.canonicalIntentID(reference: entry.reference)
+            let id = knownIDs.contains(entry.id) ? entry.id : SavedMediaStore.canonicalIntentID(reference: entry.reference)
             guard seen.insert(id).inserted else { return nil }
             return UpNextEntry(id: id, reference: entry.reference, availability: entry.availability, version: entry.version, activityAt: entry.activityAt)
         }
     }
 
     private func updateIdentity() {
-        let current = syncStore?.identityKey
+        let current = syncStore?.identityKey ?? "local"
         guard current != identityKey else { return }
         identityKey = current
         loadedScopes.removeAll()

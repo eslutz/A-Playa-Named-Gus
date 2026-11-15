@@ -10,7 +10,7 @@ struct MediaLibraryRow: View {
 
     var body: some View {
         HStack(spacing: 16) {
-            ArtworkTile(url: item.flatMap { session.mediaProvider.primaryImageURL(for: $0, context: .posterGrid) }, aspectRatio: 2.0 / 3.0, placeholderSymbol: item?.artworkPlaceholderSymbol ?? "list.bullet.rectangle")
+            ArtworkTile(url: item.flatMap { session.mediaProvider.primaryImageURL(for: $0, context: .posterGrid) }, aspectRatio: 2.0 / 3.0, placeholderSymbol: item?.artworkPlaceholderSymbol ?? "list.bullet.rectangle", fallbackURLs: item.map { session.mediaProvider.artworkURLs(for: $0, request: .init(role: .poster, maxWidth: 360)) } ?? [])
                 .frame(width: 44, height: 66)
                 .clipShape(RoundedRectangle(cornerRadius: 6))
                 .accessibilityHidden(true)
@@ -34,6 +34,17 @@ struct MediaLibraryRow: View {
         .padding(.vertical, 8)
         .frame(maxWidth: .infinity, alignment: .leading)
         .contentShape(Rectangle())
-        .accessibilityElement(children: .combine)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(rowAccessibilityLabel)
+        .accessibilityValue([item?.mediaAccessibility.value, status].compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: ", "))
+    }
+
+    private var rowAccessibilityLabel: String {
+        guard let item else { return [title, subtitle].compactMap { $0 }.joined(separator: ", ") }
+        let identity = item.mediaAccessibility.label
+        if let title, title != item.displayTitle, title != item.seriesName {
+            return title + ", " + identity
+        }
+        return identity
     }
 }

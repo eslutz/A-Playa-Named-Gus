@@ -5,7 +5,7 @@ import OSLog
 
 /// The SharePlay payload for one Gus playback item.
 ///
-/// The activity carries item metadata only. Jellyfin access tokens, stream URLs, and
+/// The activity carries sanitized playback intent and display metadata only. Jellyfin access tokens, stream URLs, and
 /// server credentials stay local to each participant's signed-in Gus session.
 struct GusPlaybackActivity: Codable, GroupActivity, Hashable {
     enum ActivityKind: String, Codable {
@@ -14,15 +14,19 @@ struct GusPlaybackActivity: Codable, GroupActivity, Hashable {
         case read
     }
 
+    let request: PlaybackRequest
     let itemID: String
+
     let title: String
     let subtitle: String?
     let serverID: String
     let activityKind: ActivityKind
 
-    init?(item: MediaItem, session: SessionStore) {
-        guard let itemID = item.id else { return nil }
+    @MainActor init?(request: PlaybackRequest, session: SessionStore) {
+        let item = request.item
+        guard let itemID = item.id, session.isActive else { return nil }
         self.itemID = itemID
+        self.request = request.sharingIntent
         title = item.displayTitle
         subtitle = item.yearText
         serverID = session.server.id
@@ -36,7 +40,7 @@ struct GusPlaybackActivity: Codable, GroupActivity, Hashable {
             metadata.title = title
             metadata.subtitle = subtitle ?? String(localized: "A Playa Named Gus", comment: "SharePlay activity subtitle fallback")
             metadata.supportsContinuationOnTV = true
-            metadata.fallbackURL = ContentLink.play(id: itemID, serverID: serverID, provider: .jellyfin).url
+            metadata.fallbackURL = ContentLink.play(id: itemID, serverID: serverID, provider: request.item.providerKind, request: request).url
             metadata.lifetimePolicy = .endsWhenInitiatorLeaves
             return metadata
         }
@@ -102,41 +106,31 @@ final class SharePlayCoordinator {
         }
     }
 
-    func activity(for item: MediaItem, session: SessionStore) -> GusPlaybackActivity? {
-        guard Self.canShare(item),
-              let activity = GusPlaybackActivity(item: item, session: session)
+    func activity(for request: PlaybackRequest, session: SessionStore) -> GusPlaybackActivity? {
+        guard Self.canShare(request.item),
+              let activity = GusPlaybackActivity(request: request, session: session)
         else {
             return nil
         }
         return activity
     }
 
-    func startSharing(item: MediaItem, session: SessionStore) async {
-        guard let activity = activity(for: item, session: session) else {
-            errorMessage = String(localized: "This item can't be shared with SharePlay.", comment: "SharePlay error when an item has no stable identifier")
-            return
-        }
-
-        do {
-            _ = try await activity.activate()
-        } catch {
-            let gusError = GusError(from: error)
-            logger.error("SharePlay activation failed: \(gusError.localizedDescription, privacy: .private)")
-            errorMessage = gusError.localizedDescription
-        }
-    }
-
-    func attachPlayer(_ player: AVPlayer?, item: MediaItem) {
+    func attachPlayer(_ player: AVPlayer?, request: PlaybackRequest, session: SessionStore) {
         guard let player,
-              let itemID = item.id,
+              let itemID = request.item.id,
+              session.isActive,
               let currentSession,
-              currentSession.activity.itemID == itemID
+              currentSession.activity.serverID == session.server.id,
+              currentSession.activity.request.item.providerKind == session.server.providerKind,
+              currentSession.activity.itemID == itemID,
+              currentSession.activity.request.streamSelection.mediaSourceID == nil || currentSession.activity.request.streamSelection.mediaSourceID == request.streamSelection.mediaSourceID
         else { return }
 
         if coordinatedPlayer !== player || coordinatedItemID != itemID {
             player.playbackCoordinator.coordinateWithSession(currentSession)
             coordinatedPlayer = player
             coordinatedItemID = itemID
+            session.onInvalidation(of: self) { owner in owner.leaveCurrentSession() }
         }
     }
 
@@ -145,17 +139,30 @@ final class SharePlayCoordinator {
         clearCurrentSession()
     }
 
+    func detachPlayer(_ player: AVPlayer) {
+        guard coordinatedPlayer === player else { return }
+        leaveCurrentSession()
+    }
+
     private func join(
         _ session: GroupSession<GusPlaybackActivity>,
         appModel: AppModel,
         navigation: AppNavigationModel
     ) {
+        if currentSession !== session {
+            currentSession?.leave()
+        }
         currentSession = session
         coordinatedPlayer = nil
         coordinatedItemID = nil
         isSharing = true
 
         let activity = session.activity
+        guard activity.request.item.id == activity.itemID, Self.canShare(activity.request.item) else {
+            session.leave()
+            clearCurrentSession()
+            return
+        }
         if let activeServerID = appModel.currentSession?.server.id,
            activeServerID != activity.serverID
         {
@@ -166,8 +173,9 @@ final class SharePlayCoordinator {
             return
         }
 
+        appModel.currentSession?.onInvalidation(of: self) { owner in owner.leaveCurrentSession() }
         session.join()
-        navigation.open(.play(id: activity.itemID, serverID: activity.serverID, provider: .jellyfin))
+        navigation.open(.play(id: activity.itemID, serverID: activity.serverID, provider: activity.request.item.providerKind, request: activity.request))
     }
 
     private func clearCurrentSession() {

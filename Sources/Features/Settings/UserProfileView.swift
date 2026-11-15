@@ -14,6 +14,24 @@ struct UserProfileView: View {
     #endif
 
     var body: some View {
+        Group {
+            if !ready, session.profile.isLoading {
+                ProgressView("Loading Profile")
+            } else if !ready, let message = session.profile.errorMessage {
+                ContentUnavailableView {
+                    Label("Profile Unavailable", systemImage: "person.crop.circle.badge.exclamationmark")
+                } description: { Text(message) } actions: {
+                    Button("Try Again") { Task { await load() } }
+                }
+            } else {
+                profileForm
+            }
+        }
+        .navigationTitle("Profile")
+        .task { await load() }
+    }
+
+    private var profileForm: some View {
         Form {
             Section("Profile") {
                 ProfileAvatar(data: session.profile.imageData)
@@ -27,6 +45,9 @@ struct UserProfileView: View {
             if let message = session.profile.errorMessage {
                 Section {
                     Text(message)
+                    if let currentUsername = session.profile.currentUsernameAfterPartialSave {
+                        LabeledContent("Current Jellyfin Username", value: currentUsername)
+                    }
                     Button("Reload Profile") {
                         if hasDraftChanges {
                             confirmingReload = true
@@ -37,16 +58,16 @@ struct UserProfileView: View {
                 }
             }
             #if !os(iOS) && !os(tvOS)
-                if saved {
+                if saved, !hasDraftChanges {
                     Text("Profile saved to Jellyfin.")
                 }
                 Button("Save Changes") {
                     Task {
-                        saved = await session.profile.save(name: name, audioLanguage: audioLanguage, subtitleLanguage: subtitleLanguage)
+                        saved = await session.profile.save(name: name, audioLanguage: audioLanguage, subtitleLanguage: subtitleLanguage) == .confirmed
                         app.synchronizeProfile(from: session)
                     }
                 }
-                .disabled(!ready || name.trimmedNilIfEmpty == nil || session.profile.isSaving || session.profile.isLoading)
+                .disabled(!ready || name.trimmedNilIfEmpty == nil || session.profile.isSaving || session.profile.isLoading || session.profile.needsSaveReadback)
             #endif
         }
         .disabled(session.profile.isSaving || session.profile.isLoading)
@@ -59,8 +80,9 @@ struct UserProfileView: View {
                 ToolbarItem(placement: .confirmationAction) {
                     Button {
                         Task {
-                            if await session.profile.save(name: name, audioLanguage: audioLanguage, subtitleLanguage: subtitleLanguage) {
-                                app.synchronizeProfile(from: session)
+                            let outcome = await session.profile.save(name: name, audioLanguage: audioLanguage, subtitleLanguage: subtitleLanguage)
+                            app.synchronizeProfile(from: session)
+                            if outcome == .confirmed {
                                 dismiss()
                             }
                         }
@@ -71,7 +93,7 @@ struct UserProfileView: View {
                             Text("Save")
                         }
                     }
-                    .disabled(!ready || name.trimmedNilIfEmpty == nil || session.profile.isSaving || session.profile.isLoading)
+                    .disabled(!ready || name.trimmedNilIfEmpty == nil || session.profile.isSaving || session.profile.isLoading || session.profile.needsSaveReadback)
                     .accessibilityIdentifier("Profile.save")
                 }
             #else
@@ -85,7 +107,6 @@ struct UserProfileView: View {
             Text("Reloading replaces your unsaved profile changes with the current server profile.")
         }
         .interactiveDismissDisabled(session.profile.isSaving)
-        .task { await load() }
         .onChange(of: session.profile.profile) { _, _ in
             if !ready {
                 populateFields()

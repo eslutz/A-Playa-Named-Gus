@@ -43,7 +43,7 @@ struct BookFileProvider {
         }
 
         let current = try await session.references.currentItem(item)
-        let source = try await session.mediaProvider.downloadSource(for: current)
+        let source = try await session.mediaProvider.downloadSource(for: current, streamSelection: .none)
         let destination = try Self.cacheDestination(
             for: item,
             fileExtension: source.fileExtension,

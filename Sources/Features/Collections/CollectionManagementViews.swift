@@ -20,7 +20,7 @@ struct CollectionEditor: View {
         let creating = collectionID == nil && createdID == nil
         let allowed = creating ? store.capabilities.create : store.capabilities.permitsEdit(artworkIncluded: artwork != nil)
         let validName = (!creating && !store.capabilities.editMetadata) || !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-        return allowed && validName && !store.isMutating && CollectionPlatform.canManage
+        return allowed && validName && store.canSubmitMutations && CollectionPlatform.canManage
     }
 
     var body: some View {
@@ -109,7 +109,7 @@ struct AddToMediaCollectionView: View {
                             Spacer(); Image(systemName: "checkmark")
                         }
                     } }
-                    .disabled(existing || !store.capabilities.addMembers || store.isMutating || !CollectionPlatform.canAddMembers)
+                    .disabled(existing || !store.capabilities.addMembers || !store.canSubmitMutations || !CollectionPlatform.canAddMembers)
                 }
             }
             if store.capabilities.create && CollectionPlatform.canManage {
@@ -120,7 +120,7 @@ struct AddToMediaCollectionView: View {
                         if await store.mutate({ try await session.mediaProvider.createCollection(name: name.trimmingCharacters(in: .whitespacesAndNewlines), itemIDs: [id]) }) {
                             dismiss()
                         }
-                    } }.disabled(name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || store.isMutating)
+                    } }.disabled(name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || !store.canSubmitMutations)
                 }
             }
         }
@@ -192,7 +192,7 @@ struct CollectionMoviePicker: View {
                 if await store.mutate({ try await session.mediaProvider.addCollectionMembers(id: collectionID, itemIDs: selected.sorted()); return nil }) {
                     dismiss()
                 }
-            } }.disabled(selected.isEmpty || store.isMutating || !store.capabilities.addMembers || !CollectionPlatform.canManage) }
+            } }.disabled(selected.isEmpty || !store.canSubmitMutations || !store.capabilities.addMembers || !CollectionPlatform.canManage) }
         }
     }
 }

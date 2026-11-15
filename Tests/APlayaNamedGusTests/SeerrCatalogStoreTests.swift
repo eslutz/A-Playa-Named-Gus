@@ -166,6 +166,23 @@ struct SeerrCatalogStoreTests {
         #expect(fixture.store.isConnected)
     }
 
+    @Test("a failed detail refresh retains the last authorized title")
+    func failedDetailRefresh() async throws {
+        let json = Self.movie(1, title: "Retained title", rating: "G")
+        let fixture = try await CatalogStoreFixture(replies: [.init(json: json), .init(json: "{}", status: 503)])
+        defer { fixture.cleanUp() }
+        var seed = try JSONDecoder().decode(SeerrTitle.self, from: Data(json.utf8))
+        seed.mediaType = .movie
+        let detail = SeerrTitleDetailStore(title: seed)
+        await detail.load(store: fixture.store)
+        await detail.load(store: fixture.store)
+        #expect(detail.title?.displayTitle == "Retained title")
+        if case .failed = detail.state {} else {
+            Issue.record("The retained title still needs refresh error feedback")
+        }
+        #expect(fixture.store.isConnected)
+    }
+
     private static func query(_ request: URLRequest, key: String) -> String? {
         request.url.flatMap { URLComponents(url: $0, resolvingAgainstBaseURL: false) }?.queryItems?.first { $0.name == key }?.value
     }

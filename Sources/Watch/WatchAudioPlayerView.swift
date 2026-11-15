@@ -8,14 +8,34 @@ struct WatchAudioPlayerView: View {
     @Environment(OfflineDownloadStore.self) private var downloads
     let tracks: [MediaItem]
     let startIndex: Int
+    var request: PlaybackRequest? = nil
+    var continuation: AudioQueueContinuation? = nil
+    var localOnly = false
 
     @State private var store: AudioPlayerStore?
+    @State private var pendingSourceID: String?
+    @State private var confirmingVersion = false
 
     var body: some View {
         ScrollView {
             if let store {
-                LoadingStateView(state: store.state, retryAction: { Task { await store.start() } }) {
-                    playerControls(store)
+                if let notice = store.trackSelectionNotice {
+                    VStack(spacing: 4) {
+                        Text(notice).font(.footnote).foregroundStyle(.secondary)
+                        Button("OK") { store.trackSelectionNotice = nil }
+                    }
+                }
+                LoadingStateView(state: store.state, retryAction: { Task { await store.start() } }, preservesContent: store.hasPreparedContent) {
+                    VStack {
+                        playerControls(store).disabled(store.state != .loaded)
+                        if store.isLoadingQueue {
+                            ProgressView().accessibilityLabel("Loading Queue")
+                        }
+                        if let message = store.queueErrorMessage {
+                            Text(message).foregroundStyle(.secondary)
+                            Button("Try Again") { Task { await store.loadMoreQueue() } }
+                        }
+                    }
                 }
             } else {
                 ProgressView()
@@ -24,13 +44,20 @@ struct WatchAudioPlayerView: View {
         .padding(.horizontal, 4)
         .task {
             if store == nil {
-                let store = AudioPlayerStore(session: session, tracks: tracks, startIndex: startIndex, downloads: downloads)
+                let store = AudioPlayerStore(session: session, tracks: tracks, startIndex: startIndex, request: request, continuation: continuation, downloads: downloads, localOnly: localOnly)
                 self.store = store
                 await store.start()
             }
         }
         .onDisappear {
             store?.teardown()
+        }
+        .confirmationDialog("Change Version?", isPresented: $confirmingVersion) {
+            Button("Start Over") { changeVersion(fromBeginning: true) }
+            Button("Resume at Timestamp") { changeVersion(fromBeginning: false) }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Different versions may have different timelines.")
         }
     }
 
@@ -40,6 +67,43 @@ struct WatchAudioPlayerView: View {
                 .font(.headline)
                 .lineLimit(2)
                 .multilineTextAlignment(.center)
+
+            if store.mediaSourceOptions.count > 1 {
+                Picker("Version", selection: Binding(get: { store.selectedMediaSourceID ?? "" }, set: { id in
+                    guard id != store.selectedMediaSourceID else { return }
+                    pendingSourceID = id
+                    if store.currentTime > 0 {
+                        confirmingVersion = true
+                    } else {
+                        changeVersion(fromBeginning: true)
+                    }
+                })) {
+                    ForEach(Array(store.mediaSourceOptions.enumerated()), id: \.offset) { index, source in
+                        if let id = source.id {
+                            Text(source.name ?? String(localized: "Version \(index + 1)")).tag(id)
+                        }
+                    }
+                }
+            }
+
+            if store.audioOptions.count > 1 {
+                Picker("Audio", selection: Binding(get: { store.audioMenuSelection }, set: { selection in
+                    guard let selection else { return }
+                    switch selection {
+                    case .automatic: Task { await store.selectAudioStream(index: nil) }
+                    case let .stream(index): Task { await store.selectAudioStream(index: index) }
+                    case .off: break
+                    }
+                })) {
+                    if store.audioMenuSelection == nil {
+                        Text("Unavailable").tag(nil as PlaybackTrackMenuSelection?).disabled(true)
+                    }
+                    Text("Automatic").tag(PlaybackTrackMenuSelection.automatic as PlaybackTrackMenuSelection?)
+                    ForEach(store.audioOptions) { option in
+                        Text(option.title).tag(PlaybackTrackMenuSelection.stream(option.id) as PlaybackTrackMenuSelection?)
+                    }
+                }
+            }
 
             if store.duration > 0 {
                 ProgressView(value: min(store.currentTime, store.duration), total: store.duration)
@@ -63,17 +127,17 @@ struct WatchAudioPlayerView: View {
                 Button {
                     store.playPause()
                 } label: {
-                    Image(systemName: store.isPlaying ? "pause.circle.fill" : "play.circle.fill")
+                    Image(systemName: store.isPlaybackRequested ? "pause.circle.fill" : "play.circle.fill")
                         .font(.title)
                 }
-                .accessibilityLabel(store.isPlaying ? String(localized: "Pause", comment: "Accessibility label for the pause button") : String(localized: "Play", comment: "Accessibility label for the play button"))
+                .accessibilityLabel(store.isPlaybackRequested ? String(localized: "Pause", comment: "Accessibility label for the pause button") : String(localized: "Play", comment: "Accessibility label for the play button"))
 
                 Button {
                     Task { await store.next() }
                 } label: {
                     Image(systemName: "forward.fill")
                 }
-                .disabled(!store.queue.hasNext)
+                .disabled(!store.hasNext)
                 .accessibilityLabel(String(localized: "Next Track", comment: "Accessibility label for the next track button"))
             }
             .buttonStyle(.plain)
@@ -94,5 +158,10 @@ struct WatchAudioPlayerView: View {
         } set: { rate in
             store.playbackRate = rate
         }
+    }
+
+    private func changeVersion(fromBeginning: Bool) {
+        guard let id = pendingSourceID, let store else { return }
+        Task { await store.selectMediaSource(id: id, fromBeginning: fromBeginning) }
     }
 }

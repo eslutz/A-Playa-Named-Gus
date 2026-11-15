@@ -5,6 +5,61 @@ import Testing
 
 @Suite("Downloaded library")
 struct DownloadedLibraryTests {
+    @Test("download playback projects its recorded source and never guesses missing source metadata")
+    func downloadedSourceProjection() {
+        let sources = [MediaSource(id: "default", mediaStreams: [MediaStreamInfo(index: 2, language: "eng", type: .audio)], runTimeTicks: 10_000_000), MediaSource(id: "alternate", mediaStreams: [MediaStreamInfo(index: 9, language: "fra", type: .audio)], runTimeTicks: 40_000_000)]
+        let item = MediaItem(id: "projection", mediaSources: sources, runTimeTicks: 10_000_000, type: .movie, userData: MediaUserData(playbackPositionTicks: 5_000_000))
+        var downloaded = record(item)
+        downloaded.mediaSourceID = "alternate"
+        #expect(downloaded.playbackRequest.streamSelection.mediaSourceID == "alternate")
+        #expect(downloaded.playbackItem.mediaSources.map(\.id) == ["alternate"])
+        #expect(downloaded.playbackItem.runTimeTicks == 40_000_000)
+        #expect(downloaded.playbackItem.userData?.playbackPositionTicks == nil)
+        downloaded.mediaSourceID = "missing-source"
+        #expect(downloaded.playbackRequest.streamSelection.mediaSourceID == "missing-source")
+        #expect(downloaded.playbackItem.mediaSources.isEmpty)
+        #expect(downloaded.playbackItem.runTimeTicks == nil)
+        downloaded.mediaSourceID = nil
+        #expect(downloaded.playbackRequest.streamSelection.mediaSourceID == nil)
+        #expect(downloaded.playbackItem.mediaSources.isEmpty)
+        #expect(downloaded.playbackItem.runTimeTicks == nil)
+        #expect(downloaded.item.mediaSources == sources)
+        #expect(downloaded.item.userData?.playbackPositionTicks == 5_000_000)
+    }
+
+    @Test("converted downloads never expose original track indexes or defaults as local choices")
+    @MainActor
+    func convertedDownloadCatalog() {
+        let source = MediaSource(
+            id: "alternate",
+            mediaStreams: [MediaStreamInfo(index: 2, language: "eng", type: .audio), MediaStreamInfo(index: 9, language: "fra", type: .audio), MediaStreamInfo(index: 11, language: "eng", type: .subtitle)],
+            defaultAudioStreamIndex: 2,
+            defaultSubtitleStreamIndex: 11,
+            runTimeTicks: 40_000_000
+        )
+        var downloaded = record(MediaItem(mediaSources: [source], runTimeTicks: 40_000_000))
+        downloaded.mediaSourceID = "alternate"
+        let explicitRequest = PlaybackRequest(item: downloaded.item, streamSelection: PlaybackStreamSelection(audioStreamIndex: 9, subtitleStreamIndex: 11, mediaSourceID: "alternate"))
+        for operation in [DownloadActivity.SourceOperation.remuxed, .transcoded] {
+            downloaded.activity = DownloadActivity(phase: .complete, sourceOperation: operation)
+            let projected = downloaded.playbackItem.mediaSources.first
+            #expect(downloaded.playbackRequest.streamSelection.mediaSourceID == "alternate")
+            #expect(downloaded.playbackItem.runTimeTicks == 40_000_000)
+            #expect(projected?.mediaStreams.isEmpty == true)
+            #expect(projected?.defaultAudioStreamIndex == nil)
+            #expect(projected?.defaultSubtitleStreamIndex == nil)
+            #expect(downloaded.playbackSelection(for: explicitRequest).audioStreamIndex == nil)
+            #expect(downloaded.playbackSelection(for: explicitRequest).subtitleStreamIndex == nil)
+            #expect(PlaybackTrackMenuSelection.audio(for: explicitRequest, source: projected) == nil)
+            #expect(PlaybackMediaSelectionMatcher.candidatePosition(forStreamIndex: 9, kind: .audio, streams: projected?.mediaStreams ?? [], candidates: [MediaSelectionCandidate(position: 0, languageTag: "fra")]) == nil)
+        }
+        downloaded.activity = DownloadActivity(phase: .complete, sourceOperation: .original)
+        #expect(downloaded.playbackItem.mediaSources.first == source)
+        #expect(downloaded.playbackSelection(for: explicitRequest).audioStreamIndex == 9)
+        #expect(downloaded.playbackSelection(for: explicitRequest).subtitleStreamIndex == 11)
+        #expect(downloaded.item.mediaSources.first == source)
+    }
+
     private func record(_ item: MediaItem, status: DownloadStatus = .complete) -> OfflineDownloadRecord {
         OfflineDownloadRecord(
             id: item.id ?? "unknown",
@@ -120,6 +175,31 @@ struct OfflinePlaybackProgressTests {
         #expect(store.positionTicks(forItemID: "movie", scope: scope) == 200)
     }
 
+    @Test("Different cuts retain separate positions and only the latest cut uploads item progress")
+    func sourceSpecificCheckpoints() async {
+        let directory = makeDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let store = OfflinePlaybackProgressStore(directory: directory)
+        store.checkpoint(itemID: "movie", positionTicks: 10, scope: scope)
+        store.checkpoint(itemID: "movie", positionTicks: 100, scope: scope, mediaSourceID: "theatrical")
+        store.checkpoint(itemID: "movie", positionTicks: 250, scope: scope, mediaSourceID: "extended")
+        let restored = OfflinePlaybackProgressStore(directory: directory)
+        #expect(restored.positionTicks(forItemID: "movie", scope: scope) == 10)
+        #expect(restored.positionTicks(forItemID: "movie", scope: scope, mediaSourceID: "theatrical") == 100)
+        #expect(restored.positionTicks(forItemID: "movie", scope: scope, mediaSourceID: "extended") == 250)
+        #expect(restored.positionTicks(forItemID: "movie", scope: scope, mediaSourceID: "unknown") == nil)
+        #expect(restored.pendingCheckpoints(scope: scope).map(\.mediaSourceID) == ["extended"])
+        await restored.sync(scope: scope, isCurrentScope: { true }) { entry in
+            #expect(entry.mediaSourceID == "extended")
+            restored.checkpoint(itemID: "movie", positionTicks: 125, scope: scope, mediaSourceID: "theatrical")
+        }
+        #expect(restored.pendingCheckpoints(scope: scope).map(\.mediaSourceID) == ["theatrical"])
+        restored.resetCheckpoint(itemID: "movie", scope: scope)
+        #expect(restored.positionTicks(forItemID: "movie", scope: scope, mediaSourceID: "extended") == 0)
+        #expect(restored.positionTicks(forItemID: "movie", scope: scope, mediaSourceID: "theatrical") == 0)
+        #expect(restored.pendingCheckpoints(scope: scope).isEmpty)
+    }
+
     @Test("Purging an account rejects writes from existing players but admits a new writer")
     func purgeInvalidatesWriters() {
         let directory = makeDirectory()
@@ -197,12 +277,59 @@ extension PlaybackIntegrationTests {
     @MainActor
     @Suite("Local playback routing")
     struct LocalPlaybackRoutingTests {
+        @Test("alternate downloaded video and audio retain source duration, catalogs and source checkpoint")
+        func alternateDownloadedSourcePlayback() async throws {
+            let directory = FileManager.default.temporaryDirectory.appendingPathComponent("gus-local-source-\(UUID().uuidString)")
+            defer { try? FileManager.default.removeItem(at: directory) }
+            let fileStore = OfflineDownloadFileStore(directory: directory)
+            let sources = [MediaSource(id: "default", mediaStreams: [MediaStreamInfo(index: 2, language: "eng", type: .audio)], runTimeTicks: 10_000_000), MediaSource(id: "alternate", mediaStreams: [MediaStreamInfo(index: 9, language: "fra", type: .audio)], runTimeTicks: 40_000_000)]
+            let movie = MediaItem(id: "alternate-video", mediaSources: sources, officialRating: "G", runTimeTicks: 10_000_000, type: .movie)
+            let song = MediaItem(id: "alternate-audio", mediaSources: sources, officialRating: "G", runTimeTicks: 10_000_000, type: .audio)
+            for item in [movie, song] {
+                let source = directory.appendingPathComponent("\(item.id!).mov")
+                try FileManager.default.copyItem(at: RepositoryTestFixtures.url(for: "Tests/Fixtures/OfflinePlaylist.mov"), to: source)
+                _ = try fileStore.persistDownloadedFile(source, item: item, serverID: "s", userID: "u", fileExtension: "mov", mediaSourceID: "alternate")
+            }
+            let downloads = OfflineDownloadStore(fileStore: fileStore, coordinator: LocalRoutingDownloadCoordinator())
+            downloads.load(serverID: "s", userID: "u")
+            let progress = OfflinePlaybackProgressStore(directory: directory.appendingPathComponent("progress"))
+            let scope = AccountScope(serverID: "s", userID: "u")
+            for item in [movie, song] {
+                try progress.checkpoint(itemID: #require(item.id), positionTicks: 20_000_000, scope: scope, mediaSourceID: "alternate")
+            }
+            let provider = FakeMediaProviderSession(capabilities: ProviderCapabilities())
+            let session = makeSession(provider: provider)
+            var videoSeek: Int?
+            // Intentionally use an item-only caller too: the local resolver must
+            // recover B before clamping its2s checkpoint against default A's1s.
+            let video = PlaybackStore(request: PlaybackRequest(item: movie), session: session, playbackRefresh: PlaybackRefreshStore(), downloads: downloads, localOnly: true, localProgress: progress, initialSeek: { _, ticks in videoSeek = ticks })
+            defer { video.teardown() }
+            video.setPresentationActive(false)
+            await video.prepare()
+            #expect(video.state == .ready)
+            #expect(videoSeek == 20_000_000)
+            #expect(video.request.streamSelection.mediaSourceID == "alternate")
+            #expect(video.item.runTimeTicks == 40_000_000)
+            #expect(video.audioOptions.map(\.id) == [9])
+            let audio = AudioPlayerStore(session: session, tracks: [song], downloads: downloads, localOnly: true, localProgress: progress)
+            defer { audio.teardown() }
+            await audio.start()
+            #expect(audio.state == .loaded)
+            #expect(audio.request?.streamSelection.mediaSourceID == "alternate")
+            #expect(audio.duration == 4)
+            #expect(audio.currentTime >= 2)
+            #expect(audio.audioOptions.map(\.id) == [9])
+            #expect(provider.playbackResolutionCallCount == 0)
+            #expect(provider.audioResolutionCallCount == 0)
+            #expect(try fileStore.record(forItemID: #require(movie.id), serverID: "s", userID: "u")?.item.mediaSources.map(\.id) == ["default", "alternate"])
+        }
+
         @Test("Missing local-only files fail without resolving a server URL")
         func missingFileNeverStreams() async {
             let provider = FakeMediaProviderSession(capabilities: ProviderCapabilities())
             let session = makeSession(provider: provider)
             let video = PlaybackStore(
-                item: MediaItem(id: "missing-video", type: .movie),
+                request: PlaybackRequest(item: MediaItem(id: "missing-video", type: .movie)),
                 session: session,
                 playbackRefresh: PlaybackRefreshStore(),
                 localOnly: true
@@ -229,15 +356,15 @@ extension PlaybackIntegrationTests {
             defer { try? FileManager.default.removeItem(at: directory) }
             let fileStore = OfflineDownloadFileStore(directory: directory)
             let item = MediaItem(id: "local", indexNumber: 1, name: "Local episode", officialRating: "G", parentIndexNumber: 1, seriesID: "show", type: .episode)
-            let source = directory.appendingPathComponent("source.mp4")
-            try Data("local-routing-fixture".utf8).write(to: source)
-            _ = try fileStore.persistDownloadedFile(source, item: item, serverID: "s", userID: "u")
+            let source = directory.appendingPathComponent("source.mov")
+            try FileManager.default.copyItem(at: RepositoryTestFixtures.url(for: "Tests/Fixtures/OfflinePlaylist.mov"), to: source)
+            _ = try fileStore.persistDownloadedFile(source, item: item, serverID: "s", userID: "u", fileExtension: "mov")
             let downloads = OfflineDownloadStore(fileStore: fileStore, coordinator: LocalRoutingDownloadCoordinator())
             downloads.load(serverID: "s", userID: "u")
             let progress = OfflinePlaybackProgressStore(directory: directory)
             let provider = FakeMediaProviderSession(capabilities: ProviderCapabilities())
             let store = PlaybackStore(
-                item: item,
+                request: PlaybackRequest(item: item),
                 session: makeSession(provider: provider),
                 playbackRefresh: PlaybackRefreshStore(),
                 downloads: downloads,
@@ -245,7 +372,12 @@ extension PlaybackIntegrationTests {
                 localProgress: progress
             )
             await store.prepare()
-            // This fixture exercises source selection only. Codec decoding belongs to device acceptance.
+            // Native readiness must precede success; a real renderer start owns progress.
+            let deadline = ContinuousClock.now + .seconds(45)
+            while !store.hasStartedPlayback, ContinuousClock.now < deadline {
+                try await Task.sleep(for: .milliseconds(20))
+            }
+            #expect(store.hasStartedPlayback)
             #expect(store.player != nil)
             #expect(provider.playbackResolutionCallCount == 0)
             #expect(provider.nextUpCallCount == 0)

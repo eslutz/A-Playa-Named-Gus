@@ -26,6 +26,8 @@ final class NowPlayingController {
         player: AVPlayer,
         item: MediaItem,
         artworkURL: URL?,
+        fallbackArtworkURLs: [URL] = [],
+        artworkSession: URLSession = .shared,
         onNextTrack: (() -> Void)? = nil,
         onPreviousTrack: (() -> Void)? = nil
     ) {
@@ -48,10 +50,10 @@ final class NowPlayingController {
             info[MPMediaItemPropertyPlaybackDuration] = Double(ticks) / 10_000_000
         }
         info[MPNowPlayingInfoPropertyMediaType] = Self.mediaType(for: item).rawValue
-        info[MPNowPlayingInfoPropertyElapsedPlaybackTime] = 0.0
-        info[MPNowPlayingInfoPropertyPlaybackRate] = 1.0
+        info[MPNowPlayingInfoPropertyElapsedPlaybackTime] = player.currentTime().seconds.isFinite ? player.currentTime().seconds : 0
+        info[MPNowPlayingInfoPropertyPlaybackRate] = player.timeControlStatus == .playing ? Double(player.rate) : 0
         MPNowPlayingInfoCenter.default().nowPlayingInfo = info
-        loadArtwork(from: artworkURL)
+        loadArtwork(from: [artworkURL].compactMap { $0 } + fallbackArtworkURLs, session: artworkSession)
 
         configureRemoteCommands(for: player, onNextTrack: onNextTrack, onPreviousTrack: onPreviousTrack)
 
@@ -103,31 +105,35 @@ final class NowPlayingController {
         MPNowPlayingInfoCenter.default().nowPlayingInfo = info
     }
 
-    private func loadArtwork(from url: URL?) {
-        guard let url else { return }
+    private func loadArtwork(from urls: [URL], session: URLSession) {
+        guard !urls.isEmpty else { return }
         artworkTask = Task { [weak self] in
-            do {
-                let data: Data
-                if url.isFileURL {
-                    data = try Data(contentsOf: url)
-                } else {
-                    data = try await URLSession.shared.data(from: url).0
-                }
-                guard !Task.isCancelled, let artwork = NowPlayingArtworkFactory.artwork(from: data) else { return }
-                await MainActor.run {
-                    guard let self, Self.activeController === self else { return }
+            for url in urls {
+                guard !Task.isCancelled else { return }
+                do {
+                    let data: Data
+                    if url.isFileURL {
+                        data = try Data(contentsOf: url)
+                    } else {
+                        let result = try await session.data(from: url)
+                        guard let response = result.1 as? HTTPURLResponse, (200 ..< 300).contains(response.statusCode), response.mimeType?.hasPrefix("image/") == true else { continue }
+                        data = result.0
+                    }
+                    guard !Task.isCancelled else { return }
+                    guard let artwork = NowPlayingArtworkFactory.artwork(from: data), let self, Self.activeController === self else { continue }
                     var info = MPNowPlayingInfoCenter.default().nowPlayingInfo ?? [:]
                     info[MPMediaItemPropertyArtwork] = artwork
                     MPNowPlayingInfoCenter.default().nowPlayingInfo = info
+                    return
+                } catch {
+                    if Task.isCancelled || GusError(from: error).isCancellation {
+                        return
+                    }
                 }
-            } catch {
-                // Artwork is polish; playback and transport controls should continue.
             }
         }
     }
 
-    /// Command targets capture the player weakly: the command center is process-global,
-    /// so a strong capture would keep a torn-down player alive until the next start().
     private func configureRemoteCommands(
         for player: AVPlayer,
         onNextTrack: (() -> Void)?,

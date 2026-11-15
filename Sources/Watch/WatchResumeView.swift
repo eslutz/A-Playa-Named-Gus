@@ -16,7 +16,8 @@ struct WatchResumeView: View {
             isEmpty: items.isEmpty,
             emptyTitle: "Nothing In Progress",
             emptySymbol: "clock",
-            retryAction: { Task { await load() } }
+            retryAction: { Task { await load() } },
+            preservesContent: true
         ) {
             List(items, id: \.id) { item in
                 Button {
@@ -38,6 +39,9 @@ struct WatchResumeView: View {
                                 .lineLimit(2)
                         }
                     }
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityLabel(item.mediaAccessibility.label)
+                    .accessibilityValue(item.mediaAccessibility.value)
                 }
             }
         }
@@ -46,7 +50,7 @@ struct WatchResumeView: View {
             await load()
         }
         .sheet(item: $targetPickerItem) { item in
-            WatchPlayTargetPicker(item: item, startPositionTicks: PlaybackTime.resumePositionTicks(for: item))
+            WatchPlayTargetPicker(request: PlaybackRequest(item: item, startPositionTicks: PlaybackTime.resumePositionTicks(for: item)))
         }
     }
 
@@ -70,10 +74,15 @@ struct WatchResumeView: View {
 struct WatchPlayTargetPicker: View {
     @Environment(SessionStore.self) private var session
     @Environment(\.dismiss) private var dismiss
-    let item: MediaItem
-    var startPositionTicks: Int?
+    let request: PlaybackRequest
+    private var item: MediaItem {
+        request.item
+    }
 
     @State private var store: RemoteSessionsStore?
+    @State private var commandError: String?
+    @State private var commandTask: Task<Void, Never>?
+    @State private var acceptedNotice: String?
 
     var body: some View {
         NavigationStack {
@@ -96,8 +105,12 @@ struct WatchPlayTargetPicker: View {
                                     Text(remote.client)
                                         .font(.footnote)
                                         .foregroundStyle(.secondary)
+                                    if store.pendingSessionIDs.contains(remote.id) {
+                                        ProgressView("Sending Request")
+                                    }
                                 }
                             }
+                            .disabled(!store.pendingSessionIDs.isEmpty || !remote.canPlay(item))
                         }
                     }
                 } else {
@@ -105,6 +118,13 @@ struct WatchPlayTargetPicker: View {
                 }
             }
             .navigationTitle("Play On")
+            .safeAreaInset(edge: .bottom) {
+                if let commandError {
+                    Label(commandError, systemImage: "exclamationmark.triangle")
+                        .font(.footnote)
+                        .padding()
+                }
+            }
         }
         .task {
             if store == nil {
@@ -112,13 +132,37 @@ struct WatchPlayTargetPicker: View {
             }
             await store?.refresh()
         }
+        .alert("Playback Requested", isPresented: Binding(get: { acceptedNotice != nil }, set: {
+            if !$0 {
+                dismiss()
+            }
+        })) {
+            Button("Done") { dismiss() }
+        } message: {
+            Text(acceptedNotice ?? "")
+        }
+        .onDisappear {
+            commandTask?.cancel()
+            store?.stopLiveUpdates()
+        }
     }
 
     private func play(on sessionID: String) {
-        guard let itemID = item.id, let store else { return }
-        Task {
-            await store.play(itemID: itemID, on: sessionID, startPositionTicks: startPositionTicks)
-            dismiss()
+        guard item.id != nil, let store else { return }
+        commandError = nil
+        commandTask = Task {
+            do {
+                _ = try await store.play(request, on: sessionID)
+                guard !Task.isCancelled else { return }
+                if let notice = store.commandNotices[sessionID] {
+                    acceptedNotice = notice
+                } else {
+                    dismiss()
+                }
+            } catch {
+                guard !Task.isCancelled, !GusError(from: error).isCancellation else { return }
+                commandError = error.localizedDescription
+            }
         }
     }
 }

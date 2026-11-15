@@ -10,16 +10,16 @@ enum GusUserActivity {
     private static let itemIDKey = "itemID"
     private static let serverIDKey = "serverID"
     private static let userIDKey = "userID"
+    private static let playbackIntentKey = "playbackIntent"
 
-    /// Fills an activity for Handoff. The payload carries only ids — never tokens or
-    /// titles beyond the visible activity title. Resume position is intentionally not
-    /// carried: playback progress reports to the server every few seconds, so the
-    /// continuing device resumes from server-side position.
+    /// Handoff preserves sanitized source, track, and resume intent. File locations,
+    /// artwork, stream URLs and credentials never leave the signed-in device.
     static func configure(
         _ activity: NSUserActivity,
         item: MediaItem,
         serverID: String,
-        userID: String
+        userID: String,
+        playbackRequest: PlaybackRequest? = nil
     ) {
         guard ContentRatingGate.admitsStored(item) else {
             activity.resignCurrent()
@@ -32,6 +32,9 @@ enum GusUserActivity {
         var userInfo: [String: Any] = [serverIDKey: serverID, userIDKey: userID]
         if let id = item.id {
             userInfo[itemIDKey] = id
+        }
+        if let playbackRequest, let data = try? JSONEncoder().encode(playbackRequest.sharingIntent) {
+            userInfo[playbackIntentKey] = data
         }
         activity.addUserInfoEntries(from: userInfo)
     }
@@ -56,9 +59,11 @@ enum GusUserActivity {
             return nil
         }
 
+        let request = (userInfo[playbackIntentKey] as? Data).flatMap { try? JSONDecoder().decode(PlaybackRequest.self, from: $0) }
+        guard request == nil || request?.item.id == itemID else { return nil }
         switch activity.activityType {
         case playback:
-            return .play(id: itemID, serverID: userInfo[serverIDKey] as? String, provider: .jellyfin)
+            return .play(id: itemID, serverID: userInfo[serverIDKey] as? String, provider: .jellyfin, request: request?.sharingIntent)
         case itemDetail:
             return .item(id: itemID, serverID: userInfo[serverIDKey] as? String, provider: .jellyfin)
         default:

@@ -1,9 +1,10 @@
 import Foundation
 import ImageIO
 import Observation
+import os
 import OSLog
 
-enum DownloadStatus: Codable, Equatable {
+enum DownloadStatus: Codable, Equatable, Sendable {
     case queued
     case downloading(Double)
     case paused
@@ -70,9 +71,19 @@ enum DownloadStatus: Codable, Equatable {
     var isComplete: Bool {
         self == .complete
     }
+
+    var actionOutcome: ActionOutcome? {
+        switch self {
+        case .queued: .queued
+        case .downloading: .pending
+        case .paused: nil
+        case .complete: .confirmed
+        case let .failed(message): .failed(.unknown(message))
+        }
+    }
 }
 
-struct OfflineDownloadRecord: Codable, Equatable, Identifiable {
+struct OfflineDownloadRecord: Codable, Equatable, Identifiable, Sendable {
     let id: String
     let item: MediaItem
     let filePath: String
@@ -82,6 +93,8 @@ struct OfflineDownloadRecord: Codable, Equatable, Identifiable {
     let downloadedAt: Date
     var remoteReference: MediaReference? = nil
     var remoteUnavailable: Bool? = nil
+    /// Nil identifies a preexisting download whose precise server source is unknown.
+    var mediaSourceID: String? = nil
     var status: DownloadStatus
     var progress: Double
     var resumeData: Data?
@@ -96,6 +109,7 @@ struct OfflineDownloadRecord: Codable, Equatable, Identifiable {
         case userID
         case downloadedAt
         case remoteUnavailable
+        case mediaSourceID
         case remoteReference
         case status
         case progress
@@ -114,7 +128,8 @@ struct OfflineDownloadRecord: Codable, Equatable, Identifiable {
         status: DownloadStatus = .complete,
         progress: Double = 1,
         resumeData: Data? = nil,
-        activity: DownloadActivity? = nil
+        activity: DownloadActivity? = nil,
+        mediaSourceID: String? = nil
     ) {
         self.id = id
         self.item = item
@@ -127,6 +142,7 @@ struct OfflineDownloadRecord: Codable, Equatable, Identifiable {
         self.progress = progress
         self.resumeData = resumeData
         self.activity = activity
+        self.mediaSourceID = mediaSourceID
     }
 
     init(from decoder: Decoder) throws {
@@ -140,6 +156,7 @@ struct OfflineDownloadRecord: Codable, Equatable, Identifiable {
         downloadedAt = try container.decode(Date.self, forKey: .downloadedAt)
         remoteReference = try container.decodeIfPresent(MediaReference.self, forKey: .remoteReference)
         remoteUnavailable = try container.decodeIfPresent(Bool.self, forKey: .remoteUnavailable)
+        mediaSourceID = try container.decodeIfPresent(String.self, forKey: .mediaSourceID)
         status = try container.decode(DownloadStatus.self, forKey: .status)
         progress = try container.decode(Double.self, forKey: .progress)
         resumeData = try container.decodeIfPresent(Data.self, forKey: .resumeData)
@@ -213,14 +230,45 @@ enum OfflineDownloadEligibility {
     }
 }
 
-struct OfflineDownloadFileStore {
+/// Every handle for the same canonical directory serializes its filesystem transactions.
+private final class DownloadFileLock: @unchecked Sendable {
+    let lock = NSRecursiveLock()
+}
+
+private final class WeakDownloadFileLock: @unchecked Sendable {
+    weak var value: DownloadFileLock?
+    init(_ value: DownloadFileLock) {
+        self.value = value
+    }
+}
+
+private enum DownloadFileLocks {
+    private static let locks = OSAllocatedUnfairLock(initialState: [String: WeakDownloadFileLock]())
+
+    static func shared(for directory: URL) -> DownloadFileLock {
+        let key = directory.standardizedFileURL.resolvingSymlinksInPath().path
+        return locks.withLock { values in
+            values = values.filter { $0.value.value != nil }
+            if let current = values[key]?.value {
+                return current
+            }
+            let current = DownloadFileLock()
+            values[key] = WeakDownloadFileLock(current)
+            return current
+        }
+    }
+}
+
+struct OfflineDownloadFileStore: Sendable {
     static let shared = OfflineDownloadFileStore()
 
     private let directory: URL
     private let recordsFileName = "records.json"
+    private let fileLock: DownloadFileLock
 
     init(directory: URL = Self.defaultDirectory()) {
         self.directory = directory
+        self.fileLock = DownloadFileLocks.shared(for: directory)
         try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
     }
 
@@ -229,18 +277,39 @@ struct OfflineDownloadFileStore {
     }
 
     func records(serverID: String, userID: String) -> [OfflineDownloadRecord] {
-        loadRecords().filter { $0.serverID == serverID && $0.userID == userID }
+        fileLock.lock.lock()
+        defer { fileLock.lock.unlock() }
+        return loadRecords().filter { $0.serverID == serverID && $0.userID == userID }
+    }
+
+    func readRecords(serverID: String, userID: String) throws -> [OfflineDownloadRecord] {
+        fileLock.lock.lock()
+        defer { fileLock.lock.unlock() }
+        return try loadRecordsStrictly().filter { $0.serverID == serverID && $0.userID == userID }
     }
 
     func record(forItemID itemID: String, serverID: String, userID: String) -> OfflineDownloadRecord? {
-        records(serverID: serverID, userID: userID).first { $0.item.id == itemID }
+        fileLock.lock.lock()
+        defer { fileLock.lock.unlock() }
+        return records(serverID: serverID, userID: userID).first { $0.item.id == itemID }
     }
 
     func record(forRecordID id: String) -> OfflineDownloadRecord? {
-        loadRecords().first { $0.id == id }
+        fileLock.lock.lock()
+        defer { fileLock.lock.unlock() }
+        return loadRecords().first { $0.id == id }
+    }
+
+    /// Finalization must distinguish explicit deletion from unreadable metadata.
+    func readRecord(forRecordID id: String) throws -> OfflineDownloadRecord? {
+        fileLock.lock.lock()
+        defer { fileLock.lock.unlock() }
+        return try loadRecordsStrictly().first { $0.id == id }
     }
 
     func localArtworkURL(for record: OfflineDownloadRecord) -> URL? {
+        fileLock.lock.lock()
+        defer { fileLock.lock.unlock() }
         let url = artworkURL(for: record)
         guard let source = CGImageSourceCreateWithURL(url as CFURL, nil),
               CGImageSourceCreateImageAtIndex(source, 0, nil) != nil else { return nil }
@@ -248,6 +317,8 @@ struct OfflineDownloadFileStore {
     }
 
     func persistArtwork(_ data: Data, for record: OfflineDownloadRecord) throws {
+        fileLock.lock.lock()
+        defer { fileLock.lock.unlock() }
         guard !data.isEmpty, data.count <= 4 * 1024 * 1024,
               let source = CGImageSourceCreateWithData(data as CFData, nil),
               CGImageSourceCreateImageAtIndex(source, 0, nil) != nil,
@@ -265,6 +336,8 @@ struct OfflineDownloadFileStore {
     }
 
     func localFileURL(for record: OfflineDownloadRecord) -> URL? {
+        fileLock.lock.lock()
+        defer { fileLock.lock.unlock() }
         guard record.status.isComplete else { return nil }
         let url = URL(fileURLWithPath: record.filePath)
         let fallback = accountDirectory(serverID: record.serverID, userID: record.userID)
@@ -277,7 +350,9 @@ struct OfflineDownloadFileStore {
     }
 
     func totalByteCount(serverID: String, userID: String) -> Int64 {
-        records(serverID: serverID, userID: userID).reduce(0) { $0 + $1.byteCount }
+        fileLock.lock.lock()
+        defer { fileLock.lock.unlock() }
+        return records(serverID: serverID, userID: userID).reduce(0) { $0 + $1.byteCount }
     }
 
     func persistDownloadedFile(
@@ -286,8 +361,14 @@ struct OfflineDownloadFileStore {
         serverID: String,
         userID: String,
         fileExtension: String? = nil,
-        downloadedAt: Date = Date()
+        downloadedAt: Date = Date(),
+        mediaSourceID: String? = nil,
+        activity: DownloadActivity? = nil,
+        remoteReference: MediaReference? = nil,
+        remoteUnavailable: Bool? = nil
     ) throws -> OfflineDownloadRecord {
+        fileLock.lock.lock()
+        defer { fileLock.lock.unlock() }
         guard let itemID = item.id else { throw CocoaError(.fileNoSuchFile) }
         let resolvedExtension = fileExtension ?? (sourceURL.pathExtension.isEmpty ? "mp4" : sourceURL.pathExtension)
         let destination = try destinationURL(itemID: itemID, serverID: serverID, userID: userID, fileExtension: resolvedExtension)
@@ -301,7 +382,11 @@ struct OfflineDownloadFileStore {
 
             let values = try destination.resourceValues(forKeys: [.fileSizeKey])
             let byteCount = Int64(values.fileSize ?? 0)
-            let record = OfflineDownloadRecord(
+            var completedActivity = activity
+            completedActivity?.transition(to: .complete)
+            completedActivity?.receivedBytes = byteCount
+            completedActivity?.expectedBytes = byteCount > 0 ? byteCount : nil
+            var record = OfflineDownloadRecord(
                 id: Self.recordID(itemID: itemID, serverID: serverID, userID: userID),
                 item: item,
                 filePath: destination.path,
@@ -310,8 +395,12 @@ struct OfflineDownloadFileStore {
                 userID: userID,
                 downloadedAt: downloadedAt,
                 status: .complete,
-                progress: 1
+                progress: 1,
+                activity: completedActivity,
+                mediaSourceID: mediaSourceID
             )
+            record.remoteReference = remoteReference
+            record.remoteUnavailable = remoteUnavailable
             try persist(record)
             return record
         } catch {
@@ -325,6 +414,38 @@ struct OfflineDownloadFileStore {
         }
     }
 
+    func finalizeDownloadedFile(_ sourceURL: URL, expected: OfflineDownloadRecord, ownership: DownloadCompletionOwnership) throws -> OfflineDownloadRecord? {
+        fileLock.lock.lock()
+        defer { fileLock.lock.unlock() }
+        guard ownership.isCurrent,
+              let current = try readRecord(forRecordID: expected.id), current.downloadedAt == expected.downloadedAt,
+              !current.status.isComplete else { return nil }
+        return try persistDownloadedFile(
+            sourceURL,
+            item: current.item,
+            serverID: current.serverID,
+            userID: current.userID,
+            fileExtension: URL(fileURLWithPath: current.filePath).pathExtension,
+            downloadedAt: current.downloadedAt,
+            mediaSourceID: current.mediaSourceID,
+            activity: current.activity,
+            remoteReference: current.remoteReference,
+            remoteUnavailable: current.remoteUnavailable
+        )
+    }
+
+    func failFinalization(expected: OfflineDownloadRecord, ownership: DownloadCompletionOwnership, message: String) throws -> OfflineDownloadRecord? {
+        fileLock.lock.lock()
+        defer { fileLock.lock.unlock() }
+        guard ownership.isCurrent,
+              var current = try readRecord(forRecordID: expected.id), current.downloadedAt == expected.downloadedAt,
+              !current.status.isComplete else { return nil }
+        current.status = .failed(message)
+        current.activity?.transition(to: .failed)
+        try persist(current)
+        return current
+    }
+
     @discardableResult
     func prepareDownloadRecord(
         item: MediaItem,
@@ -334,8 +455,11 @@ struct OfflineDownloadFileStore {
         status: DownloadStatus,
         progress: Double,
         resumeData: Data? = nil,
-        downloadedAt: Date = Date()
+        downloadedAt: Date = Date(),
+        mediaSourceID: String? = nil
     ) -> OfflineDownloadRecord {
+        fileLock.lock.lock()
+        defer { fileLock.lock.unlock() }
         guard let itemID = item.id,
               let destination = try? destinationURL(itemID: itemID, serverID: serverID, userID: userID, fileExtension: fileExtension)
         else {
@@ -349,7 +473,8 @@ struct OfflineDownloadFileStore {
                 downloadedAt: downloadedAt,
                 status: status,
                 progress: progress,
-                resumeData: resumeData
+                resumeData: resumeData,
+                mediaSourceID: mediaSourceID
             )
             upsert(record)
             return record
@@ -365,7 +490,8 @@ struct OfflineDownloadFileStore {
             downloadedAt: downloadedAt,
             status: status,
             progress: progress,
-            resumeData: resumeData
+            resumeData: resumeData,
+            mediaSourceID: mediaSourceID
         )
         upsert(record)
         return record
@@ -373,7 +499,9 @@ struct OfflineDownloadFileStore {
 
     /// Throwing persistence is required before acknowledging system background events.
     func persist(_ record: OfflineDownloadRecord) throws {
-        var records = loadRecords()
+        fileLock.lock.lock()
+        defer { fileLock.lock.unlock() }
+        var records = try loadRecordsStrictly()
         records.removeAll { $0.id == record.id }
         records.append(record)
         let encoder = JSONEncoder()
@@ -382,24 +510,39 @@ struct OfflineDownloadFileStore {
         try data.write(to: recordsURL, options: .atomic)
     }
 
-    func update(_ record: OfflineDownloadRecord) {
-        upsert(record)
+    enum UpdateCondition { case incomplete, complete }
+
+    /// The status/generation check and write share the canonical-directory lock.
+    /// Native observations cannot overwrite completion, deletion, or replacement.
+    @discardableResult
+    func updateExisting(_ record: OfflineDownloadRecord, when condition: UpdateCondition) throws -> Bool {
+        fileLock.lock.lock()
+        defer { fileLock.lock.unlock() }
+        guard let current = try readRecord(forRecordID: record.id), current.downloadedAt == record.downloadedAt,
+              current.status.isComplete == (condition == .complete) else { return false }
+        try persist(record)
+        return true
     }
 
     func delete(_ record: OfflineDownloadRecord) throws {
-        if let fileURL = localFileURL(for: record) {
+        fileLock.lock.lock()
+        defer { fileLock.lock.unlock() }
+        guard let current = try readRecord(forRecordID: record.id), current.downloadedAt == record.downloadedAt else { return }
+        if let fileURL = localFileURL(for: current) {
             try FileManager.default.removeItem(at: fileURL)
         }
-        try? FileManager.default.removeItem(at: artworkURL(for: record))
-        var records = loadRecords()
+        try? FileManager.default.removeItem(at: artworkURL(for: current))
+        var records = try loadRecordsStrictly()
         records.removeAll { $0.id == record.id }
-        saveRecords(records)
+        try saveRecords(records)
     }
 
     func deleteRecords(serverID: String, userID: String) throws {
-        var records = loadRecords()
+        fileLock.lock.lock()
+        defer { fileLock.lock.unlock() }
+        var records = try loadRecordsStrictly()
         records.removeAll { $0.serverID == serverID && $0.userID == userID }
-        saveRecords(records)
+        try saveRecords(records)
 
         let accountDirectory = accountDirectory(serverID: serverID, userID: userID)
         if FileManager.default.fileExists(atPath: accountDirectory.path) {
@@ -438,23 +581,32 @@ struct OfflineDownloadFileStore {
     }
 
     private func loadRecords() -> [OfflineDownloadRecord] {
-        guard let data = try? Data(contentsOf: recordsURL) else { return [] }
-        let decoder = JSONDecoder()
-        return (try? decoder.decode([OfflineDownloadRecord].self, from: data)) ?? []
+        fileLock.lock.lock()
+        defer { fileLock.lock.unlock() }
+        return (try? loadRecordsStrictly()) ?? []
     }
 
-    private func saveRecords(_ records: [OfflineDownloadRecord]) {
+    private func loadRecordsStrictly() throws -> [OfflineDownloadRecord] {
+        do {
+            return try JSONDecoder().decode([OfflineDownloadRecord].self, from: Data(contentsOf: recordsURL))
+        } catch CocoaError.fileReadNoSuchFile {
+            return []
+        }
+    }
+
+    private func saveRecords(_ records: [OfflineDownloadRecord]) throws {
+        fileLock.lock.lock()
+        defer { fileLock.lock.unlock() }
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
-        guard let data = try? encoder.encode(records) else { return }
-        try? data.write(to: recordsURL, options: .atomic)
+        let data = try encoder.encode(records)
+        try data.write(to: recordsURL, options: .atomic)
     }
 
     private func upsert(_ record: OfflineDownloadRecord) {
-        var records = loadRecords()
-        records.removeAll { $0.id == record.id }
-        records.append(record)
-        saveRecords(records.sorted { $0.downloadedAt > $1.downloadedAt })
+        fileLock.lock.lock()
+        defer { fileLock.lock.unlock() }
+        try? persist(record)
     }
 
     private func excludeFromBackup(_ url: URL) throws {
@@ -482,6 +634,8 @@ final class OfflineDownloadStore: DownloadSessionCoordinatorEventHandler {
     static let minimumFreeBytes: Int64 = 1 * 1024 * 1024 * 1024
 
     private(set) var records: [OfflineDownloadRecord] = []
+    private(set) var loadState: LoadState = .idle
+    private(set) var loadErrorMessage: String?
     private(set) var activeItemIDs: Set<String> = []
     private(set) var activities: [String: DownloadActivity] = [:]
     private var lastCheckpoint: [String: Date] = [:]
@@ -493,14 +647,20 @@ final class OfflineDownloadStore: DownloadSessionCoordinatorEventHandler {
 
     private let fileStore: OfflineDownloadFileStore
     private let coordinator: DownloadSessionCoordinating
+    private let progressStore: OfflinePlaybackProgressStore
+    private let prepareFile: @Sendable (URL, String) async throws -> Void
+    private let readCompletionRecord: @Sendable (String, OfflineDownloadFileStore) async throws -> OfflineDownloadRecord?
     private let logger = Logger(category: .downloads)
     private var loadedServerID: String?
     private var loadedUserID: String?
 
-    init(fileStore: OfflineDownloadFileStore = .shared, coordinator: DownloadSessionCoordinating = DownloadSessionCoordinator.shared, defaults: UserDefaults = .standard) {
+    init(fileStore: OfflineDownloadFileStore = .shared, coordinator: DownloadSessionCoordinating = DownloadSessionCoordinator.shared, defaults: UserDefaults = .standard, progressStore: OfflinePlaybackProgressStore = .shared, prepareFile: @escaping @Sendable (URL, String) async throws -> Void = { try await DownloadFilePreparation.shared.prepare($0, fileExtension: $1) }, readCompletionRecord: @escaping @Sendable (String, OfflineDownloadFileStore) async throws -> OfflineDownloadRecord? = { try await DownloadFilePreparation.shared.record(id: $0, in: $1) }) {
         self.fileStore = fileStore
         self.defaults = defaults
         self.coordinator = coordinator
+        self.progressStore = progressStore
+        self.prepareFile = prepareFile
+        self.readCompletionRecord = readCompletionRecord
         coordinator.setEventHandler(self)
     }
 
@@ -510,14 +670,37 @@ final class OfflineDownloadStore: DownloadSessionCoordinatorEventHandler {
     }
 
     func load(serverID: String, userID: String) {
+        if loadedServerID != serverID || loadedUserID != userID {
+            records = []
+        }
         loadedServerID = serverID
         loadedUserID = userID
+        loadState = .loading
         reloadRecords(serverID: serverID, userID: userID)
         coordinator.reconnectActiveTasks()
     }
 
     private func reloadRecords(serverID: String, userID: String) {
-        records = fileStore.records(serverID: serverID, userID: userID)
+        do {
+            let loaded = try fileStore.readRecords(serverID: serverID, userID: userID)
+            records = loaded.map { record in
+                // A readable old checkpoint must not discard resume data from a
+                // completed native pause whose metadata write failed.
+                if record.status.isActive,
+                   let observed = records.first(where: { $0.id == record.id && $0.downloadedAt == record.downloadedAt }),
+                   observed.status == .paused
+                {
+                    return observed
+                }
+                return record
+            }
+            loadState = .loaded
+            loadErrorMessage = nil
+        } catch {
+            let message = String(localized: "Your downloads could not be read. The saved files and metadata have been preserved. Try loading them again.")
+            loadErrorMessage = message
+            loadState = .failed(message)
+        }
         for record in records where activities[record.id] == nil {
             if var activity = record.activity {
                 activity.resetTransferSampling()
@@ -529,13 +712,15 @@ final class OfflineDownloadStore: DownloadSessionCoordinatorEventHandler {
         })
     }
 
-    func record(for item: MediaItem, serverID: String, userID: String) -> OfflineDownloadRecord? {
-        guard let itemID = item.id else { return nil }
-        return fileStore.record(forItemID: itemID, serverID: serverID, userID: userID)
+    func record(for item: MediaItem, serverID: String, userID: String, mediaSourceID: String? = nil) -> OfflineDownloadRecord? {
+        guard let itemID = item.id,
+              let record = fileStore.record(forItemID: itemID, serverID: serverID, userID: userID),
+              mediaSourceID == nil || record.mediaSourceID == mediaSourceID else { return nil }
+        return record
     }
 
-    func localFileURL(for item: MediaItem, serverID: String, userID: String) -> URL? {
-        guard let record = record(for: item, serverID: serverID, userID: userID) else { return nil }
+    func localFileURL(for item: MediaItem, serverID: String, userID: String, mediaSourceID: String? = nil) -> URL? {
+        guard let record = record(for: item, serverID: serverID, userID: userID, mediaSourceID: mediaSourceID) else { return nil }
         return fileStore.localFileURL(for: record)
     }
 
@@ -556,7 +741,15 @@ final class OfflineDownloadStore: DownloadSessionCoordinatorEventHandler {
         errorMessage = nil
     }
 
-    func download(_ saved: MediaItem, session: SessionStore) async {
+    func download(_ request: PlaybackRequest, session: SessionStore) async {
+        do {
+            _ = try fileStore.readRecords(serverID: session.server.id, userID: session.user.id)
+        } catch {
+            load(serverID: session.server.id, userID: session.user.id)
+            errorMessage = loadErrorMessage
+            return
+        }
+        let saved = request.item
         let item: MediaItem
         do {
             item = try await session.references.currentItem(saved)
@@ -571,7 +764,16 @@ final class OfflineDownloadStore: DownloadSessionCoordinatorEventHandler {
             errorMessage = String(localized: "This item is not available for download.", comment: "Download unavailable message")
             return
         }
-        guard !activeItemIDs.contains(itemID) else { return }
+        guard session.isActive, !activeItemIDs.contains(itemID) else { return }
+        if let sourceID = request.streamSelection.mediaSourceID,
+           let existing = fileStore.record(forItemID: itemID, serverID: session.server.id, userID: session.user.id),
+           existing.status.isComplete, existing.mediaSourceID != sourceID
+        {
+            errorMessage = String(localized: "Another version is already downloaded. Delete it before downloading this version.")
+            return
+        }
+        let selectedSource = request.streamSelection.mediaSourceID.flatMap { id in item.mediaSources.first { $0.id == id } } ?? (request.streamSelection.mediaSourceID == nil ? item.mediaSources.first : nil)
+        let selection = selectedSource.map { request.selection(in: $0) } ?? request.streamSelection
 
         var generation: Date?
         do {
@@ -586,8 +788,8 @@ final class OfflineDownloadStore: DownloadSessionCoordinatorEventHandler {
             coordinator.cancel(recordID: restartingID)
             var record = fileStore.prepareDownloadRecord(
                 item: item, serverID: session.server.id, userID: session.user.id,
-                fileExtension: item.mediaSources.first?.container?.split(separator: ",").first.map(String.init) ?? "mp4",
-                status: .queued, progress: 0
+                fileExtension: selectedSource?.container?.split(separator: ",").first.map(String.init) ?? "mp4",
+                status: .queued, progress: 0, mediaSourceID: selectedSource?.id
             )
             generation = record.downloadedAt
             record.activity = DownloadActivity(phase: .resolving)
@@ -600,13 +802,13 @@ final class OfflineDownloadStore: DownloadSessionCoordinatorEventHandler {
                 }
             }
             refreshDisplayedRecords()
-            let source = try await session.mediaProvider.downloadSource(for: item)
+            let source = try await session.mediaProvider.downloadSource(for: item, streamSelection: selection)
             // Deletion or account switching may happen while source resolution awaits.
-            guard let pending = fileStore.record(forRecordID: record.id), pending.status == .queued,
+            guard session.isActive, !Task.isCancelled, let pending = fileStore.record(forRecordID: record.id), pending.status == .queued,
                   pending.downloadedAt == record.downloadedAt else { return }
             record = fileStore.prepareDownloadRecord(
                 item: item, serverID: session.server.id, userID: session.user.id,
-                fileExtension: source.fileExtension, status: .downloading(0), progress: 0, downloadedAt: record.downloadedAt
+                fileExtension: source.fileExtension, status: .downloading(0), progress: 0, downloadedAt: record.downloadedAt, mediaSourceID: source.mediaSourceID
             )
             record.activity = DownloadActivity(phase: .waitingForServer, sourceOperation: source.operation)
             try fileStore.persist(record)
@@ -618,21 +820,23 @@ final class OfflineDownloadStore: DownloadSessionCoordinatorEventHandler {
             coordinator.startDownload(from: source.url, recordID: record.id)
         } catch {
             let currentID = OfflineDownloadFileStore.recordID(itemID: itemID, serverID: session.server.id, userID: session.user.id)
-            guard generation == nil || fileStore.record(forRecordID: currentID)?.downloadedAt == generation else { return }
+            let current = fileStore.record(forRecordID: currentID)
+            guard generation == nil || current == nil || current?.downloadedAt == generation else { return }
             activeItemIDs.remove(itemID)
+            if current == nil {
+                refreshDisplayedRecords()
+            }
             let gusError = GusError(from: error)
             let recordID = OfflineDownloadFileStore.recordID(itemID: itemID, serverID: session.server.id, userID: session.user.id)
             if var failed = fileStore.record(forRecordID: recordID), failed.downloadedAt == generation {
                 failed.status = .failed(gusError.localizedDescription)
                 failed.activity?.transition(to: .failed)
-                fileStore.update(failed)
-                activities[recordID] = failed.activity
-                refreshDisplayedRecords()
+                guard persistObservedRecord(failed) == .persisted else { return }
             }
             guard !gusError.isCancellation else { return }
             logger.error("Download failed: \(gusError.localizedDescription, privacy: .private)")
             if loadedServerID == session.server.id, loadedUserID == session.user.id,
-               fileStore.record(forRecordID: recordID)?.downloadedAt == generation || generation == nil
+               current == nil || current?.downloadedAt == generation || generation == nil
             {
                 errorMessage = gusError.localizedDescription
             }
@@ -654,12 +858,10 @@ final class OfflineDownloadStore: DownloadSessionCoordinatorEventHandler {
                           latest.downloadedAt == record.downloadedAt else { continuation.resume(); return }
                     paused.activity = self.activities[record.id] ?? paused.activity
                     paused.activity?.transition(to: .paused)
-                    self.activities[record.id] = paused.activity
                     paused.status = .paused
                     paused.resumeData = resumeData
                     paused.progress = paused.activity?.progress ?? record.progress
-                    self.fileStore.update(paused)
-                    self.refreshDisplayedRecords()
+                    guard self.persistObservedRecord(paused) != .declined else { continuation.resume(); return }
                     DiagnosticsHub.shared.record(.downloadPaused)
                     continuation.resume()
                 }
@@ -667,24 +869,42 @@ final class OfflineDownloadStore: DownloadSessionCoordinatorEventHandler {
         }
     }
 
-    func resume(itemID: String, session: SessionStore) async {
-        guard var record = records.first(where: { $0.item.id == itemID }),
+    func resume(_ snapshot: OfflineDownloadRecord, session: SessionStore) async {
+        guard session.isActive, var record = fileStore.record(forRecordID: snapshot.id),
+              record.downloadedAt == snapshot.downloadedAt, record.mediaSourceID == snapshot.mediaSourceID,
+              !record.status.isComplete,
               record.serverID == session.server.id, record.userID == session.user.id,
               loadedServerID == session.server.id, loadedUserID == session.user.id else { return }
 
+        // A native pause can finish while saving its resume data fails. Keep the
+        // observed value in memory so a retry can commit it once storage recovers.
+        if let observed = records.first(where: { $0.id == record.id && $0.downloadedAt == record.downloadedAt }),
+           observed.status == .paused
+        {
+            record = observed
+        }
+        guard !record.status.isActive else { return }
+
         guard let resumeData = record.resumeData else {
             errorMessage = String(localized: "Not enough resume data — restarting download.", comment: "Download resume fallback message")
-            await download(record.item, session: session)
+            await download(PlaybackRequest(item: record.item, streamSelection: .init(audioStreamIndex: nil, subtitleStreamIndex: nil, mediaSourceID: record.mediaSourceID)), session: session)
             return
         }
 
         record.activity = activities[record.id] ?? record.activity ?? DownloadActivity()
         record.activity?.transition(to: .waitingForServer)
-        activities[record.id] = record.activity
         record.status = .downloading(record.progress)
         record.progress = record.activity?.progress ?? record.progress
         record.resumeData = nil
-        fileStore.update(record)
+        do {
+            guard try fileStore.updateExisting(record, when: .incomplete) else { return }
+        } catch {
+            reportPersistenceFailure(error, record: record)
+            return
+        }
+        errorMessage = nil
+        activities[record.id] = record.activity
+        publishRecord(record)
         refreshDisplayedRecords()
         coordinator.resumeDownload(with: resumeData, recordID: record.id)
     }
@@ -752,10 +972,8 @@ final class OfflineDownloadStore: DownloadSessionCoordinatorEventHandler {
             record.status = .failed(String(localized: "Transfer interrupted. Resume or restart the download."))
             record.activity = activities[record.id] ?? record.activity
             record.activity?.transition(to: .failed)
-            activities[record.id] = record.activity
-            fileStore.update(record)
+            _ = persistObservedRecord(record)
         }
-        refreshDisplayedRecords()
     }
 
     func downloadSessionCoordinator(
@@ -773,17 +991,15 @@ final class OfflineDownloadStore: DownloadSessionCoordinatorEventHandler {
         }
         observed.startedAt = activities[recordID]?.startedAt ?? record.activity?.startedAt ?? activity.startedAt
         observed.sourceOperation = activities[recordID]?.sourceOperation ?? record.activity?.sourceOperation ?? activity.sourceOperation
-        activities[recordID] = observed
         record.activity = observed
         if let progress = observed.progress {
             record.progress = progress
         }
-        if let index = records.firstIndex(where: { $0.id == recordID }) {
-            records[index] = record
-        }
         if Date().timeIntervalSince(lastCheckpoint[recordID] ?? .distantPast) >= 5 {
-            fileStore.update(record)
+            guard persistObservedRecord(record) != .declined else { return }
             lastCheckpoint[recordID] = Date()
+        } else {
+            publishRecord(record)
         }
     }
 
@@ -794,50 +1010,89 @@ final class OfflineDownloadStore: DownloadSessionCoordinatorEventHandler {
     func downloadSessionCoordinator(
         _ coordinator: DownloadSessionCoordinating,
         finalizeDownloadedFileAt location: URL,
-        recordID: String
-    ) -> Bool {
-        guard var record = fileStore.record(forRecordID: recordID) else { return true }
-        if record.status.isComplete || record.status == .paused {
-            return true
+        recordID: String,
+        ownership: DownloadCompletionOwnership
+    ) async -> Bool {
+        guard ownership.isCurrent else { return true }
+        let record: OfflineDownloadRecord
+        do {
+            let current = try await readCompletionRecord(recordID, fileStore)
+            guard ownership.isCurrent, let current, !current.status.isComplete else { return true }
+            record = current
+        } catch {
+            guard ownership.isCurrent else { return true }
+            errorMessage = String(localized: "The download could not be finalized. Its staged file has been preserved.")
+            DiagnosticsHub.shared.record(.downloadFailed)
+            return false
         }
-        // A retained staged file can be retried after a failed finalization.
-        if case .failed = record.status {
-            record.status = .downloading(record.progress)
-            fileStore.update(record)
-        }
-        downloadSessionCoordinator(coordinator, didFinishDownloadingTo: location, recordID: recordID)
-        return fileStore.record(forRecordID: recordID)?.status.isComplete == true
-    }
-
-    func downloadSessionCoordinator(
-        _ coordinator: DownloadSessionCoordinating,
-        didFinishDownloadingTo location: URL,
-        recordID: String
-    ) {
-        guard let record = record(forRecordID: recordID), record.status.isActive else { return }
         activities[recordID]?.transition(to: .saving)
         do {
             let fileExtension = URL(fileURLWithPath: record.filePath).pathExtension
-            if ["mp4", "m4v", "mov"].contains(fileExtension.lowercased()) {
-                try OfflineMP4Compatibility.normalizeHEVCTag(in: location)
-            }
-            _ = try fileStore.persistDownloadedFile(
-                location,
-                item: record.item,
-                serverID: record.serverID,
-                userID: record.userID,
-                fileExtension: fileExtension.isEmpty ? "mp4" : fileExtension,
-                downloadedAt: record.downloadedAt
-            )
-            if let itemID = record.item.id {
-                activeItemIDs.remove(itemID)
-            }
-            activities.removeValue(forKey: recordID)
-            lastCheckpoint.removeValue(forKey: recordID)
-            refreshDisplayedRecords()
+            try await prepareFile(location, fileExtension)
+            guard ownership.isCurrent,
+                  let completed = try await DownloadFilePreparation.shared.finalize(location, expected: record, ownership: ownership, in: fileStore),
+                  ownership.isCurrent else { return true }
+            publishRecord(completed)
             DiagnosticsHub.shared.record(.downloadCompleted)
+            return true
         } catch {
-            downloadSessionCoordinator(coordinator, didFailWith: error, resumeData: nil, recordID: recordID)
+            guard ownership.isCurrent else { return true }
+            let failure = GusError(from: error)
+            // Keep the coordinator's staged source until failure metadata is durable.
+            if let failed = try? await DownloadFilePreparation.shared.fail(expected: record, ownership: ownership, message: failure.localizedDescription, in: fileStore), ownership.isCurrent {
+                publishRecord(failed)
+                if loadedServerID == failed.serverID, loadedUserID == failed.userID {
+                    errorMessage = failure.localizedDescription
+                }
+            }
+            guard ownership.isCurrent else { return true }
+            DiagnosticsHub.shared.record(.downloadFailed)
+            return false
+        }
+    }
+
+    /// Update only this exact presentation generation. Native transfer observations
+    /// remain truthful even when their metadata commit fails; that failure is visible.
+    private func publishRecord(_ record: OfflineDownloadRecord) {
+        guard let index = records.firstIndex(where: { $0.id == record.id && $0.downloadedAt == record.downloadedAt }) else { return }
+        records[index] = record
+        if let itemID = record.item.id {
+            activeItemIDs.remove(itemID)
+        }
+        if record.status.isActive, let itemID = record.item.id {
+            activeItemIDs.insert(itemID)
+        }
+        if record.status.isComplete {
+            activities.removeValue(forKey: record.id)
+        } else {
+            activities[record.id] = record.activity
+        }
+        if !record.status.isActive {
+            lastCheckpoint.removeValue(forKey: record.id)
+        }
+    }
+
+    private enum RecordPersistenceResult { case persisted, declined, failed }
+
+    /// Paused/failed/progress callbacks describe the native task's observed state.
+    /// A storage error must remain visible and must not discard fresh resume data.
+    @discardableResult
+    private func persistObservedRecord(_ record: OfflineDownloadRecord) -> RecordPersistenceResult {
+        do {
+            guard try fileStore.updateExisting(record, when: .incomplete) else { return .declined }
+            publishRecord(record)
+            return .persisted
+        } catch {
+            publishRecord(record)
+            reportPersistenceFailure(error, record: record)
+            return .failed
+        }
+    }
+
+    private func reportPersistenceFailure(_ error: Error, record: OfflineDownloadRecord) {
+        logger.error("Download metadata could not be saved: \(error.localizedDescription, privacy: .private)")
+        if loadedServerID == record.serverID, loadedUserID == record.userID {
+            errorMessage = GusError(from: error).localizedDescription
         }
     }
 
@@ -851,17 +1106,17 @@ final class OfflineDownloadStore: DownloadSessionCoordinatorEventHandler {
         let gusError = GusError(from: error)
         record.activity = activities[recordID] ?? record.activity
         record.activity?.transition(to: .failed)
-        activities[recordID] = record.activity
         record.status = .failed(gusError.localizedDescription)
         record.resumeData = resumeData
-        fileStore.update(record)
-        if let itemID = record.item.id {
-            activeItemIDs.remove(itemID)
-        }
-        refreshDisplayedRecords()
+        let persisted = persistObservedRecord(record)
+        guard persisted != .declined else { return }
         DiagnosticsHub.shared.record(.downloadFailed)
-        if loadedServerID == record.serverID, loadedUserID == record.userID {
+        if persisted == .persisted, loadedServerID == record.serverID, loadedUserID == record.userID {
             errorMessage = gusError.localizedDescription
+        }
+        if gusError == .unauthorized {
+            let scope = AccountScope(serverID: record.serverID, userID: record.userID)
+            Task { await AppModel.shared.verifyAuthentication(for: scope) }
         }
     }
 
@@ -883,9 +1138,9 @@ final class OfflineDownloadStore: DownloadSessionCoordinatorEventHandler {
                   loadedServerID == scope.serverID, loadedUserID == scope.userID else { return false }
             record.remoteReference = MediaReference(item: item, scope: scope)
             record.remoteUnavailable = false
-            try fileStore.persist(record)
+            guard try fileStore.updateExisting(record, when: .complete) else { return false }
             session.references.recordReplacement(from: snapshot.remoteReference ?? MediaReference(item: snapshot.item, scope: scope), to: item)
-            OfflinePlaybackProgressStore.shared.offerTransfer(from: record.item.id, to: item, scope: scope)
+            progressStore.offerTransfer(from: record.item.id, to: item, scope: scope, mediaSourceID: record.mediaSourceID)
             refreshDisplayedRecords()
             return true
         } catch { errorMessage = GusError(from: error).localizedDescription; return false }
@@ -904,18 +1159,20 @@ final class OfflineDownloadStore: DownloadSessionCoordinatorEventHandler {
                       loadedServerID == scope.serverID, loadedUserID == scope.userID else { continue }
                 guard case let .resolved(item) = result else {
                     record.remoteUnavailable = true
-                    try fileStore.persist(record)
+                    do { _ = try fileStore.updateExisting(record, when: .complete) }
+                    catch { reportPersistenceFailure(error, record: record) }
                     continue
                 }
                 record.remoteReference = MediaReference(item: item, scope: scope)
                 record.remoteUnavailable = false
-                try fileStore.persist(record)
+                do { guard try fileStore.updateExisting(record, when: .complete) else { continue } }
+                catch { reportPersistenceFailure(error, record: record); continue }
                 if item.id != snapshot.item.id {
-                    OfflinePlaybackProgressStore.shared.offerTransfer(from: snapshot.item.id, to: item, scope: scope)
+                    progressStore.offerTransfer(from: snapshot.item.id, to: item, scope: scope, mediaSourceID: snapshot.mediaSourceID)
                 }
             } catch {
                 if GusError(from: error) == .unauthorized {
-                    session.onUnauthorized(); return
+                    session.handleUnauthorized(); return
                 }
             }
         }
@@ -932,29 +1189,41 @@ final class OfflineDownloadStore: DownloadSessionCoordinatorEventHandler {
     }
 
     private func cacheArtwork(for record: OfflineDownloadRecord, session: SessionStore) async {
-        guard fileStore.localArtworkURL(for: record) == nil,
+        guard session.isActive, fileStore.localArtworkURL(for: record) == nil,
               fileStore.record(forRecordID: record.id)?.downloadedAt == record.downloadedAt,
-              !artworkRequests.contains(record.id),
-              let url = session.mediaProvider.primaryImageURL(for: record.remoteReference?.item ?? record.item, context: .posterRail) else { return }
+              !artworkRequests.contains(record.id) else { return }
+        let urls = session.mediaProvider.artworkURLs(for: record.remoteReference?.item ?? record.item, request: .init(role: .poster, maxWidth: 260))
+        guard !urls.isEmpty else { return }
         artworkRequests.insert(record.id)
         defer { artworkRequests.remove(record.id) }
-        do {
-            var request = URLRequest(url: url)
-            request.timeoutInterval = 15
-            if let token = session.client.accessToken {
-                request.setValue("MediaBrowser Token=\"\(token)\"", forHTTPHeaderField: "Authorization")
+        for url in urls {
+            guard session.isActive, !Task.isCancelled else { return }
+            do {
+                var request = URLRequest(url: url)
+                request.timeoutInterval = 15
+                if let token = session.client.accessToken {
+                    request.setValue("MediaBrowser Token=\"\(token)\"", forHTTPHeaderField: "Authorization")
+                }
+                let (data, response) = try await session.artworkTransport.session.data(for: request)
+                guard session.isActive, !Task.isCancelled else { return }
+                guard let http = response as? HTTPURLResponse else { continue }
+                if http.statusCode == 401 {
+                    session.handleUnauthorized(); return
+                }
+                guard (200 ..< 300).contains(http.statusCode), http.mimeType?.hasPrefix("image/") == true,
+                      data.count <= 4 * 1024 * 1024,
+                      fileStore.record(forRecordID: record.id)?.downloadedAt == record.downloadedAt else { continue }
+                try fileStore.persistArtwork(data, for: record)
+                if fileStore.localArtworkURL(for: record) != nil {
+                    refreshDisplayedRecords()
+                    return
+                }
+            } catch {
+                guard !Task.isCancelled, !GusError(from: error).isCancellation else { return }
+                // A bad candidate must not prevent trying the next role-aware fallback.
             }
-            let (data, response) = try await URLSession.shared.data(for: request)
-            try Task.checkCancellation()
-            guard let http = response as? HTTPURLResponse, (200 ..< 300).contains(http.statusCode),
-                  http.mimeType?.hasPrefix("image/") == true,
-                  fileStore.record(forRecordID: record.id)?.downloadedAt == record.downloadedAt else { return }
-            try fileStore.persistArtwork(data, for: record)
-            refreshDisplayedRecords()
-        } catch {
-            // A failed thumbnail never invalidates downloaded media. Foreground entry retries.
-            logger.debug("Download artwork remains unavailable")
         }
+        logger.debug("Download artwork remains unavailable")
     }
 
     private func ensureDiskBudget(serverID: String, userID: String) throws {

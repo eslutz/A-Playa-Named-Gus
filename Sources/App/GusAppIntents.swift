@@ -38,6 +38,8 @@ struct PlayMediaIntent: AppIntent {
             limit: 10,
             isRecursive: true
         ))
+        try Task.checkCancellation()
+        guard session.isActive, AppModel.shared.currentSession?.lease == session.lease else { throw GusError.cancelled }
         let candidates = ContentRatingGate.filter(page.items)
 
         // Prefer something directly playable; fall back to opening a container's detail.
@@ -51,10 +53,10 @@ struct PlayMediaIntent: AppIntent {
         }
 
         if let playable, let id = playable.id {
-            AppNavigationModel.shared.open(.play(id: id, serverID: session.server.id, provider: session.server.providerKind))
+            AppNavigationModel.shared.open(.play(id: id, serverID: session.server.id, provider: session.server.providerKind, request: PlaybackRequest(item: playable)))
             return .result(dialog: IntentDialog(stringLiteral: String(
-                localized: "Playing \(playable.displayTitle).",
-                comment: "Siri/Shortcuts response when playback starts"
+                localized: "Opening \(playable.displayTitle).",
+                comment: "Siri/Shortcuts acknowledges opening the player before playback begins"
             )))
         }
 

@@ -20,17 +20,36 @@ struct DiagnosticsTests {
     }
 
     @Test("client events survive relaunch and remain bounded")
-    func retainedClientEvents() {
+    func retainedClientEvents() async throws {
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: directory) }
         let hub = DiagnosticsHub(directory: directory)
         for index in 0 ..< 205 {
             hub.record(.libraryLoadFinished(itemCount: index), date: Date(timeIntervalSince1970: Double(index)))
         }
+        try await hub.flush()
         let restored = DiagnosticsHub(directory: directory).recentEvents()
         #expect(restored.count == 200)
         #expect(restored.first?.attributes["itemCount"] == "5")
         #expect(restored.last?.attributes["itemCount"] == "204")
+    }
+
+    @Test("a flush barrier retains the final concurrent events without reordering snapshots")
+    func concurrentFlush() async throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let hub = DiagnosticsHub(directory: directory)
+        await withTaskGroup(of: Void.self) { group in
+            for index in 0 ..< 100 {
+                group.addTask { hub.record(.libraryLoadFinished(itemCount: index)) }
+            }
+        }
+        hub.record(.playbackResourceCleanup(succeeded: true))
+        try await hub.flush()
+        let restored = DiagnosticsHub(directory: directory).recentEvents()
+        #expect(restored == hub.recentEvents())
+        #expect(restored.count == 101)
+        #expect(restored.last?.name == "playback.resource.cleanup")
     }
 
     @Test("support export contains typed events and replaces the previous export")

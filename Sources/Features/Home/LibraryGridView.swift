@@ -96,6 +96,15 @@ struct LibraryGridView: View {
                     MovieCollectionsShelf(libraryID: scope.parentID)
                 }
                 if let store {
+                    if store.isRefreshing {
+                        ProgressView().accessibilityLabel("Refreshing")
+                    }
+                    if let message = store.refreshError {
+                        VStack(spacing: 8) {
+                            Text(message).foregroundStyle(.secondary)
+                            Button("Try Again") { Task { await store.load() } }
+                        }
+                    }
                     LoadingStateView(state: store.state, isEmpty: store.items.isEmpty && !store.canLoadMore, emptyTitle: "Empty Library", emptySymbol: "rectangle.on.rectangle", retryAction: { Task { await store.load() } }) {
                         grid(store)
                     }
@@ -139,7 +148,14 @@ struct LibraryGridView: View {
                 .gusIPhoneOrIPadOnly()
             }
         }
-        .task(id: effectiveScope.storeIdentity) { store = navigationState.libraryStore(for: effectiveScope, session: session) }
+        .task(id: effectiveScope.storeIdentity) {
+            let store = navigationState.libraryStore(for: effectiveScope, session: session)
+            self.store = store
+            if store.state == .idle {
+                await store.load()
+            }
+        }
+        .gusVisibleContent(.library(effectiveScope.storeIdentity), isLoading: store?.isLoading ?? true)
         .scrollPosition(id: navigationState.scrollBinding(for: "library:" + scope.storeIdentity))
         .lookToScroll()
         .refreshable {
@@ -235,7 +251,7 @@ struct LibraryGridView: View {
                 LazyVGrid(columns: PosterGrid.columns, alignment: .leading, spacing: PosterGrid.spacing) {
                     ForEach(albums, id: \.id) { album in
                         NavigationLink(value: ItemRef(item: album)) {
-                            PosterCard(title: album.displayTitle, subtitle: musicSubtitle(album), imageURL: session.mediaProvider.primaryImageURL(for: album, context: .posterGrid), aspectRatio: 1, placeholderSymbol: "music.note")
+                            PosterCard(title: album.displayTitle, subtitle: musicSubtitle(album), statusItem: album, imageURL: session.mediaProvider.primaryImageURL(for: album, context: .posterGrid), aspectRatio: 1, placeholderSymbol: "music.note", fallbackURLs: session.mediaProvider.artworkURLs(for: album, request: .init(role: .square, maxWidth: 360)))
                         }
                         .posterNavigationStyle()
                         .mediaItemContextMenu(item: album)
@@ -289,7 +305,7 @@ struct LibraryGridView: View {
     private func posterGrid(_ store: LibraryStore) -> some View {
         LazyVGrid(columns: PosterGrid.columns, alignment: .leading, spacing: PosterGrid.spacing) {
             ForEach(store.items, id: \.id) { item in
-                MediaItemNavigationLink(item: item) { PosterCard(item: item, imageURL: session.mediaProvider.primaryImageURL(for: item, context: .posterGrid)) }
+                MediaItemNavigationLink(item: item) { PosterCard(item: item, imageURL: session.mediaProvider.primaryImageURL(for: item, context: .posterGrid), fallbackURLs: session.mediaProvider.artworkURLs(for: item, request: .init(role: .poster, maxWidth: 360))) }
                     .id(ItemRef(item: item).id)
                     .posterNavigationStyle()
                     .mediaItemContextMenu(item: item)

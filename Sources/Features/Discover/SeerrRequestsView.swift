@@ -255,6 +255,19 @@ private struct SeerrRequestDetailView: View {
         SeerrHistoryAction.allCases.first { store.hasPendingSupportMutation(key: journalKey($0)) }
     }
 
+    private var actionOutcome: ActionOutcome? {
+        if mutation != nil {
+            return .pending
+        }
+        if needsReadback != nil {
+            return .uncertain
+        }
+        if wasRemoved || statusMessage != nil {
+            return .confirmed
+        }
+        return errorMessage.map { .failed(.unknown($0)) }
+    }
+
     private var cancellationAcknowledged: Bool {
         store.hasPendingSupportMutation(key: journalKey(.cancel) + ":acknowledged")
     }
@@ -392,6 +405,7 @@ private struct SeerrRequestDetailView: View {
             Button("Refresh Request") { Task { await load() } }
         }
         .disabled(isLoading || mutation != nil || needsReadback != nil)
+        .accessibilityValue(actionOutcome?.accessibilityValue ?? "")
     }
 
     @MainActor

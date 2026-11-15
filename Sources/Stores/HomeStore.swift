@@ -40,9 +40,12 @@ final class HomeStore {
     private let activity: NextUpActivityStore
     private var resumeOffset = 0
     private var nextOffset = 0
+    private var resumeTotal: Int?
+    private var nextTotal: Int?
     private var resumeHasMore = false
     private var nextHasMore = false
     private var loadGeneration = UUID()
+    private var sharedWithYouGeneration = UUID()
     private(set) var isLoadingMore = false
     var hasMoreNextUp: Bool {
         resumeHasMore || nextHasMore
@@ -79,6 +82,9 @@ final class HomeStore {
     }
 
     func loadSharedWithYou(links: [ContentLink], title: String) async {
+        guard session.isActive, !Task.isCancelled else { return }
+        let generation = UUID()
+        sharedWithYouGeneration = generation
         sharedWithYouTitle = title
         guard !links.isEmpty else {
             sharedWithYouItems = []
@@ -109,6 +115,7 @@ final class HomeStore {
             return collected
         }
 
+        guard !Task.isCancelled, session.isActive, session.references.isActive, generation == sharedWithYouGeneration else { return }
         sharedWithYouItems = ContentRatingGate.filter(
             indexedItems.sorted { $0.0 < $1.0 }.map(\.1)
         )
@@ -137,6 +144,11 @@ final class HomeStore {
     private func load(showsLoadingState: Bool) async {
         let generation = UUID()
         loadGeneration = generation
+        defer {
+            if generation == loadGeneration, Task.isCancelled, state == .loading {
+                state = unifiedNextUp.isEmpty && latestSections.isEmpty && sharedWithYouItems.isEmpty ? .idle : .loaded
+            }
+        }
         isLoadingMore = false
         if showsLoadingState {
             state = .loading
@@ -159,6 +171,7 @@ final class HomeStore {
         case let .success(page):
             resumeItems = ContentRatingGate.filter(page.items)
             resumeOffset = page.items.count
+            resumeTotal = page.totalRecordCount
             resumeHasMore = Self.hasMore(page: page, offset: resumeOffset, requested: resumeLimit)
         case let .failure(error): errors.append(error)
         }
@@ -166,6 +179,7 @@ final class HomeStore {
         case let .success(page):
             nextUpItems = ContentRatingGate.filter(page.items)
             nextOffset = page.items.count
+            nextTotal = page.totalRecordCount
             nextHasMore = Self.hasMore(page: page, offset: nextOffset, requested: nextLimit)
         case let .failure(error): errors.append(error)
         }
@@ -175,7 +189,7 @@ final class HomeStore {
         guard !Task.isCancelled, session.references.isActive, loadGeneration == generation else { return }
         errorMessage = errors.first(where: { !$0.isCancellation })?.localizedDescription ?? errorMessage
         if errors.contains(.unauthorized) {
-            session.onUnauthorized()
+            session.handleUnauthorized()
         }
         // HomeView renders a banner if usable content survives, otherwise its
         // usual unavailable screen. Local Next Up can arrive after this request.
@@ -189,14 +203,20 @@ final class HomeStore {
         catch { return .failure(GusError(from: error)) }
     }
 
-    private func resumeResult(startIndex: Int, limit: Int) async -> Result<MediaItemPage, GusError> {
-        do { return try .success(await session.mediaProvider.resumeItemsPage(startIndex: startIndex, limit: limit)) }
-        catch { return .failure(GusError(from: error)) }
+    private func resumeResult(startIndex: Int, limit: Int, previousTotal: Int? = nil) async -> Result<MediaItemPage, GusError> {
+        do {
+            var page = try await session.mediaProvider.resumeItemsPage(startIndex: startIndex, limit: limit)
+            page.totalRecordCount = try MediaPageLoader.validatedTotal(for: page, startIndex: startIndex, previousTotal: previousTotal)
+            return .success(page)
+        } catch { return .failure(GusError(from: error)) }
     }
 
-    private func nextUpResult(startIndex: Int, limit: Int) async -> Result<MediaItemPage, GusError> {
-        do { return try .success(await session.mediaProvider.nextUpItemsPage(startIndex: startIndex, limit: limit)) }
-        catch { return .failure(GusError(from: error)) }
+    private func nextUpResult(startIndex: Int, limit: Int, previousTotal: Int? = nil) async -> Result<MediaItemPage, GusError> {
+        do {
+            var page = try await session.mediaProvider.nextUpItemsPage(startIndex: startIndex, limit: limit)
+            page.totalRecordCount = try MediaPageLoader.validatedTotal(for: page, startIndex: startIndex, previousTotal: previousTotal)
+            return .success(page)
+        } catch { return .failure(GusError(from: error)) }
     }
 
     private static func hasMore(page: MediaItemPage, offset: Int, requested: Int) -> Bool {
@@ -218,8 +238,8 @@ final class HomeStore {
         }
         let resumeStart = resumeOffset, nextStart = nextOffset
         let fetchResume = resumeHasMore, fetchNext = nextHasMore
-        async let resume: Result<MediaItemPage, GusError>? = fetchResume ? resumeResult(startIndex: resumeStart, limit: nextUpPageSize) : nil
-        async let next: Result<MediaItemPage, GusError>? = fetchNext ? nextUpResult(startIndex: nextStart, limit: nextUpPageSize) : nil
+        async let resume: Result<MediaItemPage, GusError>? = fetchResume ? resumeResult(startIndex: resumeStart, limit: nextUpPageSize, previousTotal: resumeTotal) : nil
+        async let next: Result<MediaItemPage, GusError>? = fetchNext ? nextUpResult(startIndex: nextStart, limit: nextUpPageSize, previousTotal: nextTotal) : nil
         let results = await(resume, next)
         guard !Task.isCancelled, session.references.isActive, generation == loadGeneration else { return }
         var errors: [GusError] = []
@@ -227,8 +247,9 @@ final class HomeStore {
             switch result {
             case let .success(page):
                 resumeOffset = resumeStart + page.items.count
+                resumeTotal = page.totalRecordCount
                 resumeHasMore = Self.hasMore(page: page, offset: resumeOffset, requested: nextUpPageSize)
-                resumeItems += ContentRatingGate.filter(page.items)
+                resumeItems += MediaPageLoader.unique(ContentRatingGate.filter(page.items), after: resumeItems)
             case let .failure(error): errors.append(error)
             }
         }
@@ -236,16 +257,15 @@ final class HomeStore {
             switch result {
             case let .success(page):
                 nextOffset = nextStart + page.items.count
+                nextTotal = page.totalRecordCount
                 nextHasMore = Self.hasMore(page: page, offset: nextOffset, requested: nextUpPageSize)
-                nextUpItems += ContentRatingGate.filter(page.items)
+                nextUpItems += MediaPageLoader.unique(ContentRatingGate.filter(page.items), after: nextUpItems)
             case let .failure(error): errors.append(error)
             }
         }
-        if let error = errors.first(where: { !$0.isCancellation }) {
-            errorMessage = error.localizedDescription
-        }
+        errorMessage = errors.first(where: { !$0.isCancellation })?.localizedDescription
         if errors.contains(.unauthorized) {
-            session.onUnauthorized()
+            session.handleUnauthorized()
         }
         rebuildNextUp()
         donateToSystemSearch()

@@ -6,12 +6,12 @@ import Foundation
 /// state serialization cannot lose an upload.
 @MainActor
 final class SavedMediaSyncEngine: CKSyncEngineDelegate {
-    private weak var owner: VideoPlaylistsStore?
+    private weak var owner: SavedMediaStore?
     private let container: CKContainer
     private var engine: CKSyncEngine?
     private let zoneID = CKRecordZone.ID(zoneName: "SavedMedia-v1", ownerName: CKCurrentUserDefaultName)
 
-    init(owner: VideoPlaylistsStore, container: CKContainer) {
+    init(owner: SavedMediaStore, container: CKContainer) {
         self.owner = owner
         self.container = container
     }
@@ -76,7 +76,7 @@ final class SavedMediaSyncEngine: CKSyncEngineDelegate {
         case let .accountChange(change):
             switch change.changeType {
             case let .signIn(currentUser):
-                if VideoPlaylistsStore.digest(currentUser.recordName) != owner.identityKey {
+                if SavedMediaStore.digest(currentUser.recordName) != owner.identityKey {
                     owner.accountChanged(self)
                 }
             case .signOut, .switchAccounts:
@@ -89,7 +89,7 @@ final class SavedMediaSyncEngine: CKSyncEngineDelegate {
                     try Self.merge(change.record, into: &state)
                 }
                 // Retain local intent tombstones, otherwise the queue cache
-                // could interpret a deleted record as an unmigrated local item.
+                // could interpret a deleted record as unsynchronized local intent.
                 try state.applyExternalDeletion(recordIDs: Set(changes.deletions.map { $0.recordID.recordName }))
             }
             if success {
@@ -176,9 +176,8 @@ final class SavedMediaSyncEngine: CKSyncEngineDelegate {
         return records.isEmpty ? nil : CKSyncEngine.RecordZoneChangeBatch(recordsToSave: records)
     }
 
-    private static func merge(_ cloud: CKRecord, into state: inout VideoPlaylistsStore.Envelope) throws {
-        guard cloud.recordType == "SavedMediaRecord", let payload = cloud["payload"] as? Data else { return }
-        let incoming = try JSONDecoder().decode(SavedMediaRecord.self, from: payload)
+    private static func merge(_ cloud: CKRecord, into state: inout SavedMediaStore.Envelope) throws {
+        guard cloud.recordType == "SavedMediaRecord", let payload = cloud["payload"] as? Data, let incoming = try JSONDecoder().decode(CurrentSavedMediaRecord.self, from: payload).record else { return }
         guard incoming.id == cloud.recordID.recordName else { throw CocoaError(.coderReadCorrupt) }
         if let current = state.records[incoming.id], current.scope != incoming.scope || current.kind != incoming.kind {
             throw CocoaError(.coderReadCorrupt)

@@ -40,7 +40,7 @@ struct PlaybackActionTests {
     @Test func nativeWindowIdentityIgnoresRestartAndOccurrenceCommands() throws {
         let normal = ItemRef(item: MediaItem(id: "movie", type: .movie), serverID: "server", userID: "user")
         var restart = normal
-        restart.playbackStart = .fromBeginning
+        restart.playbackRequest = PlaybackRequest(item: restart.item, start: .fromBeginning)
         #expect(PlayerWindowRef(normal) == PlayerWindowRef(restart))
         let playlist = UUID()
         var first = normal
@@ -54,7 +54,7 @@ struct PlaybackActionTests {
         other = restart; other.localOnly = true
         #expect(PlayerWindowRef(other) != PlayerWindowRef(normal))
         let restored = try JSONDecoder().decode(PlayerWindowRef.self, from: JSONEncoder().encode(PlayerWindowRef(first)))
-        #expect(restored.fallback.playbackStart == .automatic)
+        #expect(restored.fallback.resolvedPlaybackRequest.start == .automatic)
         #expect(restored.fallback.playlistEntryID == nil)
         #expect(restored.fallback.playlistFromBeginning == nil)
     }
@@ -63,10 +63,10 @@ struct PlaybackActionTests {
         let item = MediaItem(id: "movie", type: .movie)
         let normal = ItemRef(item: item)
         var restart = normal
-        restart.playbackStart = .fromBeginning
+        restart.playbackRequest = PlaybackRequest(item: restart.item, start: .fromBeginning)
         #expect(restart != normal)
         let restored = try JSONDecoder().decode(ItemRef.self, from: JSONEncoder().encode(restart))
-        #expect(restored.playbackStart == .fromBeginning)
+        #expect(restored.resolvedPlaybackRequest.start == .fromBeginning)
         #expect(restored == restart)
     }
 
@@ -98,7 +98,7 @@ struct ItemRestartPreparationTests {
         let progress = OfflinePlaybackProgressStore(directory: directory)
         progress.checkpoint(itemID: "movie", positionTicks: 60_000_000, scope: scope, item: item)
         let checkpoint = progress.pendingCheckpoints(scope: scope)
-        let player = PlaybackStore(item: item, session: session, playbackRefresh: PlaybackRefreshStore(), localOnly: localOnly, localProgress: progress)
+        let player = PlaybackStore(request: PlaybackRequest(item: item), session: session, playbackRefresh: PlaybackRefreshStore(), localOnly: localOnly, localProgress: progress)
         defer { player.teardown() }
         await player.prepare(startTimeTicks: PlaybackStartIntent.fromBeginning.startTimeTicks)
         #expect(provider.playbackRequestedStartTicks == (localOnly ? [] : [0]))
@@ -111,18 +111,51 @@ struct ItemRestartPreparationTests {
 }
 
 @MainActor struct PlayerWindowRequestTests {
+    @Test func sameItemSourceAndTimestampCommandsReplaceTheActiveWindowPlayer() throws {
+        let requests = PlayerWindowRequests()
+        var ref = ItemRef(item: MediaItem(id: "movie", type: .movie), serverID: "s", userID: "u")
+        let window = requests.request(ref)
+        requests.activate(window)
+        let original = try #require(requests.requests[window]?.id)
+        ref.playbackRequest = PlaybackRequest(item: ref.item, streamSelection: .init(audioStreamIndex: nil, subtitleStreamIndex: nil, mediaSourceID: "alternate"), startPositionTicks: 90_000_000)
+        #expect(requests.request(ref) == window)
+        let sourceChange = try #require(requests.requests[window])
+        #expect(sourceChange.id != original)
+        #expect(sourceChange.ref.resolvedPlaybackRequest.streamSelection.mediaSourceID == "alternate")
+        #expect(sourceChange.ref.resolvedPlaybackRequest.requestedStartTicks == 90_000_000)
+        _ = requests.request(ref)
+        #expect(requests.requests[window]?.id == sourceChange.id)
+        ref.playbackRequest?.startPositionTicks = 120_000_000
+        _ = requests.request(ref)
+        #expect(requests.requests[window]?.id != sourceChange.id)
+    }
+
+    @Test func presentationIdentityChangesForIncomingIntentAndCredentialLease() {
+        let item = MediaItem(id: "same-item", type: .movie)
+        let lease = UUID()
+        let initial = PlaybackPresentationIdentity(request: PlaybackRequest(item: item), sessionGeneration: lease)
+        var changed = initial.request
+        changed.streamSelection.mediaSourceID = "other-cut"
+        #expect(initial != PlaybackPresentationIdentity(request: changed, sessionGeneration: lease))
+        changed = initial.request
+        changed.startPositionTicks = 300_000_000
+        #expect(initial != PlaybackPresentationIdentity(request: changed, sessionGeneration: lease))
+        #expect(initial != PlaybackPresentationIdentity(request: initial.request, sessionGeneration: UUID()))
+        #expect(initial == PlaybackPresentationIdentity(request: initial.request, sessionGeneration: lease))
+    }
+
     @Test func repeatedRestartIssuesFreshCommandsWhileNormalOpenFocusesActiveWindow() throws {
         let requests = PlayerWindowRequests()
         var ref = ItemRef(item: MediaItem(id: "movie", type: .movie), serverID: "s", userID: "u")
-        ref.playbackStart = .fromBeginning
+        ref.playbackRequest = PlaybackRequest(item: ref.item, start: .fromBeginning)
         let window = requests.request(ref)
         let first = try #require(requests.requests[window])
         requests.activate(window)
         #expect(requests.request(ref) == window)
         let second = try #require(requests.requests[window])
         #expect(first.id != second.id)
-        #expect(second.ref.playbackStart == .fromBeginning)
-        ref.playbackStart = .automatic
+        #expect(second.ref.resolvedPlaybackRequest.start == .fromBeginning)
+        ref.playbackRequest = PlaybackRequest(item: ref.item)
         #expect(requests.request(ref) == window)
         #expect(requests.requests[window]?.id == second.id)
         requests.deactivate(window)

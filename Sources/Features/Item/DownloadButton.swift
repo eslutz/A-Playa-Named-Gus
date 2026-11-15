@@ -6,13 +6,19 @@ struct DownloadButton: View {
     @Environment(SessionStore.self) private var session
     @Environment(OfflineDownloadStore.self) private var downloads
 
-    let item: MediaItem
+    let request: PlaybackRequest
+    private var item: MediaItem {
+        request.item
+    }
+
     var iconOnly = false
 
     var body: some View {
-        if let record = downloads.record(for: item, serverID: session.server.id, userID: session.user.id) {
+        if downloads.loadErrorMessage != nil {
+            statusLabel("Downloads Unavailable", systemImage: "exclamationmark.triangle")
+        } else if let record = downloads.record(for: item, serverID: session.server.id, userID: session.user.id, mediaSourceID: request.streamSelection.mediaSourceID) {
             switch record.status {
-            case .complete where downloads.localFileURL(for: item, serverID: session.server.id, userID: session.user.id) != nil:
+            case .complete where downloads.localFileURL(for: item, serverID: session.server.id, userID: session.user.id, mediaSourceID: request.streamSelection.mediaSourceID) != nil:
                 statusLabel("Downloaded", systemImage: "checkmark.circle.fill")
                     .foregroundStyle(.secondary)
                     .accessibilityLabel("Downloaded")
@@ -37,7 +43,7 @@ struct DownloadButton: View {
                     .accessibilityValue(progressValue(for: record))
             case .paused:
                 Button {
-                    Task { await downloads.resume(itemID: item.id ?? "", session: session) }
+                    Task { await downloads.resume(record, session: session) }
                 } label: {
                     downloadLabel("Resume", systemImage: "play.fill")
                 }
@@ -74,7 +80,7 @@ struct DownloadButton: View {
 
     private func downloadAction(itemID: String?) -> some View {
         Button {
-            Task { await downloads.download(item, session: session) }
+            Task { await downloads.download(request, session: session) }
         } label: {
             if let itemID, downloads.activeItemIDs.contains(itemID) {
                 downloadLabel("Downloading", systemImage: "arrow.down.circle")

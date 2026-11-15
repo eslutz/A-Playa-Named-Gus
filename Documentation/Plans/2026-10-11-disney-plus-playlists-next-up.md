@@ -17,7 +17,7 @@
 | Scope | Current status and source of truth |
 |---|---|
 | Unified Jellyfin Next Up, Home and Top Shelf | Implemented; see [Next Up ledger](../Reviews/README.md). Cross-provider identity, ordering and Disney progress remain proposed. |
-| Jellyfin playlists and collections | Implemented with native server ownership, account-scoped offline cache/journal, and supplemental Gus cursor/Next Up state; see [native-list ledger](../Reviews/README.md). The verified server deduplicates repeated titles; legacy repeated-title imports are blocked with originals preserved. |
+| Jellyfin playlists and collections | Implemented with native server ownership, account-scoped offline cache/journal, and supplemental Gus cursor/Next Up state; see [native-list ledger](../Reviews/README.md). The server deduplicates repeated titles. Retired local-playlist import and CRUD have been removed; current offline drafts, projections and journals remain supported. |
 | Private CloudKit supplemental state | Implemented for Gus saved intent, cursors and activity. Signing/container provisioning is enabled and Cloud distribution succeeded; physical multi-device sync, account-change and conflict acceptance remain separate open gates. |
 | Native TV presentation | Merged through [PR #22](https://github.com/eslutz/A-Playa-Named-Gus/pull/22); see [TV integration](../Reviews/README.md) and [runtime evidence](../Reviews/README.md). |
 | Disney+ and mixed-provider lists | Remaining proposal: authenticated access proof, profile isolation, catalog/reference contracts, external playback handoff, progress semantics, and a separately approved mixed-list authority. |
@@ -209,9 +209,9 @@ Task 1 is the Disney go/no-go checkpoint. Shared models and Jellyfin-only featur
 
 ### Task 6 — Playlist editing and persistence
 
-**Create:** `Sources/Models/{VideoPlaylist,PlaylistCursor}.swift`, `Sources/Stores/VideoPlaylistsStore.swift`, `Sources/Features/Playlists/{PlaylistsView,PlaylistDetailView,AddToPlaylistView}.swift`.
+**Create:** `Sources/Models/{VideoPlaylist,PlaylistCursor}.swift`, `Sources/Stores/SavedMediaStore.swift`, `Sources/Features/Playlists/{PlaylistsView,PlaylistDetailView,AddToPlaylistView}.swift`.
 **Modify:** `Sources/Features/Item/ItemDetailView.swift`, `Sources/Stores/NavigationPreferencesStore.swift`, `Sources/Platform/{RootNavigationState,NavigationDestinations}.swift`. Task 5 wires the editor into its new streaming detail views.
-**Test:** `Tests/APlayaNamedGusTests/VideoPlaylistsStoreTests.swift`.
+**Test:** `Tests/APlayaNamedGusTests/SavedMediaStoreTests.swift`.
 
 **Consumes:** Canonical titles and saved-media persistence. **Produces:** Durable playlist CRUD, ordered entry IDs, and persisted cursor.
 
@@ -272,7 +272,7 @@ Task 1 is the Disney go/no-go checkpoint. Shared models and Jellyfin-only featur
 **Options:** (1) CloudKit private database — recommended native approach; (2) versioned JSON import/export — simpler, manual; (3) Gus backend — larger operating/auth scope, deferred. Jellyfin playlists cannot represent Disney-only entries reliably and are not the mixed-list authority.
 
 **Create if selected:** `Sources/Services/{SavedMediaSyncEngine,SavedMediaConflictResolver}.swift`, `Sources/Features/Settings/SavedMediaSyncView.swift`.
-**Modify:** `VideoPlaylistsStore.swift`, `SavedWatchlistStore.swift`, relevant `Config/*.entitlements`, `project.yml`, and signing-capability documentation.
+**Modify:** `SavedMediaStore.swift`, `SavedWatchlistStore.swift`, relevant `Config/*.entitlements`, `project.yml`, and signing-capability documentation.
 **Test:** `SavedMediaSyncTests.swift`, `SavedMediaConflictResolverTests.swift`.
 
 - [ ] Write failing tests `offlineEditsSurviveSyncFailure`, `deleteTombstonePreventsResurrection`, `concurrentAddsKeepBothEntries`, `accountSwitchDoesNotMixLists`, `relinkReusesVerifiedLogicalConnection`, and `credentialsAreExcludedFromSyncRecords`.

@@ -1,8 +1,71 @@
+import Foundation
 @testable import Gus
 import Testing
 
 @Suite("Search store helpers")
 struct SearchStoreTests {
+    @Test("an empty continuation below the remembered total preserves search results and retries the raw offset")
+    @MainActor func incompleteContinuationRetry() async throws {
+        let provider = FakeMediaProviderSession(capabilities: .init())
+        var fail = true
+        var offsets: [Int] = []
+        provider.itemsHandler = { query in
+            offsets.append(query.startIndex)
+            if query.startIndex == 0 {
+                return .init(items: [.init(id: "a"), .init(id: "b")], totalRecordCount: 3)
+            }
+            return .init(items: fail ? [] : [.init(id: "c")], totalRecordCount: nil)
+        }
+        let url = try #require(URL(string: "https://example.invalid"))
+        let session = SessionStore(client: JellyfinClientFactory.makeClient(url: url), user: .init(id: "u", name: "User", serverID: "s"), server: .init(id: "s", name: "Server", url: url), mediaProvider: provider)
+        let store = SearchStore(session: session, limit: 2, admits: { _ in true })
+        await store.search("Psych")
+        await store.continueSearching()
+        #expect(store.results.compactMap(\.id) == ["a", "b"])
+        #expect(store.state == .loaded && store.canLoadMore && store.pageError != nil)
+        fail = false
+        await store.continueSearching()
+        #expect(offsets == [0, 2, 2])
+        #expect(store.results.compactMap(\.id) == ["a", "b", "c"])
+        #expect(!store.canLoadMore && store.pageError == nil)
+    }
+
+    @Test("failed same-query refresh retains complete results and retries from the first page")
+    @MainActor func retainedRefreshRetry() async throws {
+        let provider = FakeMediaProviderSession(capabilities: .init())
+        var phase = 0
+        var offsets: [Int] = []
+        provider.itemsHandler = { query in
+            offsets.append(query.startIndex)
+            if phase == 1 {
+                throw URLError(.notConnectedToInternet)
+            }
+            let ids = phase == 2 ? ["updated-a", "updated-b"] : ["a", "b", "c"]
+            let end = min(query.startIndex + query.limit, ids.count)
+            return .init(items: ids[query.startIndex ..< end].map { .init(id: $0, type: .movie) }, totalRecordCount: ids.count)
+        }
+        let url = try #require(URL(string: "https://example.invalid"))
+        let session = SessionStore(client: JellyfinClientFactory.makeClient(url: url), user: .init(id: "u", name: "User", serverID: "s"), server: .init(id: "s", name: "Server", url: url), mediaProvider: provider)
+        let store = SearchStore(session: session, limit: 2, admits: { _ in true })
+        await store.search("Psych")
+        await store.continueSearching()
+        #expect(store.results.compactMap(\.id) == ["a", "b", "c"])
+        #expect(!store.canLoadMore)
+
+        phase = 1
+        await store.search(store.query)
+        #expect(store.state == .loaded && !store.isRefreshing)
+        #expect(store.refreshError != nil && store.pageError == nil)
+        #expect(store.results.compactMap(\.id) == ["a", "b", "c"])
+        #expect(!store.canLoadMore)
+
+        phase = 2
+        await store.search(store.query)
+        #expect(offsets == [0, 2, 0, 0])
+        #expect(store.results.compactMap(\.id) == ["updated-a", "updated-b"])
+        #expect(store.refreshError == nil && store.pageError == nil && !store.canLoadMore)
+    }
+
     @Test("builds recursive provider search queries")
     func buildsSearchQuery() {
         let query = MediaItemQuery(

@@ -24,10 +24,10 @@ struct CinematicDetailHero<Accessory: View>: View {
             if DeviceIdentity.usesIPadPresentation {
                 iPadHero
             } else {
-                legacyHero
+                platformHero
             }
         #else
-            legacyHero
+            platformHero
         #endif
     }
 
@@ -55,7 +55,7 @@ struct CinematicDetailHero<Accessory: View>: View {
                 AsyncPoster(
                     url: item.type == .book ? session.mediaProvider.primaryImageURL(for: item, context: .posterGrid) : backdropURL,
                     placeholderSymbol: item.artworkPlaceholderSymbol,
-                    fallbackURLs: session.mediaProvider.artworkURLs(for: item, maxWidth: 1280)
+                    fallbackURLs: session.mediaProvider.artworkURLs(for: item, request: .init(role: item.type == .book ? .poster : .backdrop, maxWidth: 1280))
                 )
                 .aspectRatio(item.type == .book ? 2.0 / 3.0 : 16.0 / 9.0, contentMode: .fit)
                 .clipShape(RoundedRectangle(cornerRadius: 12))
@@ -77,7 +77,7 @@ struct CinematicDetailHero<Accessory: View>: View {
         }
     #endif
 
-    private var legacyHero: some View {
+    private var platformHero: some View {
         standardHero.gusTVDetailHero(item: item, backdropURL: backdropURL) {
             VStack(alignment: .leading, spacing: 24) {
                 playButton.frame(maxWidth: .infinity)
@@ -113,7 +113,7 @@ struct CinematicDetailHero<Accessory: View>: View {
         .frame(maxWidth: .infinity, minHeight: baseHeroHeight, alignment: .bottomLeading)
         .background {
             GeometryReader { geometry in
-                AsyncPoster(url: backdropURL, placeholderSymbol: item.artworkPlaceholderSymbol, fallbackURLs: session.mediaProvider.artworkURLs(for: item, maxWidth: 1280), onExhausted: { _ = try? await session.references.currentItem(item) })
+                AsyncPoster(url: backdropURL, placeholderSymbol: item.artworkPlaceholderSymbol, fallbackURLs: session.mediaProvider.artworkURLs(for: item, request: .init(role: item.type == .book ? .poster : .backdrop, maxWidth: 1280)), onExhausted: { _ = try? await session.references.currentItem(item) })
                     .frame(width: geometry.size.width, height: geometry.size.height)
                     .clipped()
                     .overlay {

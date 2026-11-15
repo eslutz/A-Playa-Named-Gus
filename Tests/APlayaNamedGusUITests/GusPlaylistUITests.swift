@@ -38,8 +38,10 @@
                         XCTAssertTrue(card.waitForExistence(timeout: 30))
                     }
                     app.swipeUp()
-                    XCTAssertEqual(cards[0].value as? String, watched ? "Watched" : "Unwatched")
-                    XCTAssertEqual(cards[1].value as? String, "Unwatched")
+                    // Shared media semantics include duration and other status
+                    // components. Require the exact watched-state component.
+                    XCTAssertTrue((cards[0].value as? String)?.components(separatedBy: ", ").contains(watched ? "Watched" : "Unwatched") == true)
+                    XCTAssertTrue((cards[1].value as? String)?.components(separatedBy: ", ").contains("Unwatched") == true)
                     XCTAssertEqual(cards[0].frame.minY, cards[1].frame.minY, accuracy: 1)
                     XCTAssertEqual(cards[0].frame.height, cards[1].frame.height, accuracy: 1)
                     if original.isEmpty {

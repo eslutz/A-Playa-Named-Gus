@@ -6,12 +6,13 @@ struct SettingsView: View {
     @Environment(RootNavigationState.self) private var navigationState
     @Environment(SessionStore.self) private var session
     @Environment(OfflineDownloadStore.self) private var downloads
-    @Environment(VideoPlaylistsStore.self) private var videoPlaylists
+    @Environment(SavedMediaStore.self) private var videoPlaylists
 
     #if os(iOS)
         @Environment(\.horizontalSizeClass) private var widthClass
     #endif
 
+    @State private var rememberPlaybackTracks = false
     @State private var showingTVAccentEditor = false
     @State private var reauthenticationServer: ServerConnection?
     @State private var switchErrorMessage: String?
@@ -61,7 +62,8 @@ struct SettingsView: View {
 
             if DownloadsAvailability.isSupported, session.mediaProvider.capabilities.supportsDownloads {
                 DownloadsSettingsSection(
-                    byteCount: downloads.totalByteCount(serverID: session.server.id, userID: session.user.id)
+                    byteCount: downloads.totalByteCount(serverID: session.server.id, userID: session.user.id),
+                    isUnavailable: downloads.loadErrorMessage != nil
                 )
             }
 
@@ -72,6 +74,13 @@ struct SettingsView: View {
                     }
                 }
                 Toggle("Auto-Play Next Episode", isOn: $autoPlayNextEpisode)
+                Toggle("Remember Episode Tracks for This Account", isOn: $rememberPlaybackTracks)
+                    .onChange(of: rememberPlaybackTracks) { _, enabled in
+                        PlaybackTrackMemory.shared.setEnabled(enabled, scope: AccountScope(serverID: session.server.id, userID: session.user.id))
+                    }
+                    .task(id: session.user.id + session.server.id) {
+                        rememberPlaybackTracks = PlaybackTrackMemory.shared.isEnabled(scope: AccountScope(serverID: session.server.id, userID: session.user.id))
+                    }
             } header: {
                 Text("Playback")
             } footer: {
@@ -127,7 +136,7 @@ struct SettingsView: View {
 
             Section {
                 Button("Sign Out", role: .destructive) {
-                    appModel.signOut()
+                    Task { await appModel.signOut() }
                 }
                 .gusKeyboardShortcut("q", modifiers: [.command, .shift])
             }
@@ -208,7 +217,7 @@ struct SettingsView: View {
                     .foregroundStyle(.secondary)
             } else if appModel.hasStoredToken(for: user) {
                 Button("Switch") {
-                    switchToStoredUser(user)
+                    Task { await switchToStoredUser(user) }
                 }
             } else {
                 Button("Sign In Again") {
@@ -218,9 +227,9 @@ struct SettingsView: View {
         }
     }
 
-    private func switchToStoredUser(_ user: StoredUser) {
+    private func switchToStoredUser(_ user: StoredUser) async {
         do {
-            try appModel.switchToStoredUser(user)
+            try await appModel.switchToStoredUser(user)
         } catch {
             switchErrorMessage = error.localizedDescription
         }
@@ -244,9 +253,10 @@ private extension View {
 
 private struct DownloadsSettingsSection: View {
     let byteCount: Int64
+    let isUnavailable: Bool
 
     private var formattedByteCount: String {
-        ByteCountFormatter.string(fromByteCount: byteCount, countStyle: .file)
+        isUnavailable ? String(localized: "Unavailable") : ByteCountFormatter.string(fromByteCount: byteCount, countStyle: .file)
     }
 
     var body: some View {

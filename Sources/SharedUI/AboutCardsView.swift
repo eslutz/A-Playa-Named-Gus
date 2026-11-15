@@ -2,6 +2,7 @@ import SwiftUI
 
 /// Full-width synopsis and adaptive, roomy metadata cards.
 struct AboutCardsView: View {
+    @Environment(SessionStore.self) private var session
     let item: MediaItem
     let posterURL: URL?
     @State private var showsFullSynopsis = false
@@ -78,7 +79,7 @@ struct AboutCardsView: View {
     private var posterSummaryCard: some View {
         DetailInfoCard(title: LocalizedStringKey(item.displayTitle)) {
             HStack(alignment: .top, spacing: 12) {
-                ArtworkTile(url: posterURL, placeholderSymbol: item.artworkPlaceholderSymbol)
+                ArtworkTile(url: posterURL, placeholderSymbol: item.artworkPlaceholderSymbol, fallbackURLs: session.mediaProvider.artworkURLs(for: item, request: .init(role: .poster, maxWidth: 360)))
                     .frame(width: AboutCardMetrics.posterSize.width, height: AboutCardMetrics.posterSize.height)
                     .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
                     .accessibilityHidden(true)

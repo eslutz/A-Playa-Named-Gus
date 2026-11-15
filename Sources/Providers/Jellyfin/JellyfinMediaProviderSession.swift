@@ -156,12 +156,12 @@ final class JellyfinMediaProviderSession: MediaProviderSession {
         return JellyfinMediaItemMapper.mediaItems(from: response.value.items ?? [])
     }
 
-    func episodes(seriesID: String, seasonID: String, limit: Int) async throws -> MediaItemPage {
+    func episodesPage(seriesID: String, seasonID: String, startIndex: Int, limit: Int) async throws -> MediaItemPage {
         let parameters = Paths.GetEpisodesParameters(
             userID: userID,
             fields: Self.metadataFields,
             seasonID: seasonID,
-            startIndex: 0,
+            startIndex: startIndex,
             limit: limit,
             enableImages: true,
             enableUserData: true,
@@ -192,8 +192,8 @@ final class JellyfinMediaProviderSession: MediaProviderSession {
         imageBuilder.backdropImageURL(for: item, maxWidth: maxWidth)
     }
 
-    func artworkURLs(for item: MediaItem, maxWidth: Int) -> [URL] {
-        imageBuilder.artworkURLs(for: item, maxWidth: maxWidth)
+    func artworkURLs(for item: MediaItem, request: MediaArtworkRequest) -> [URL] {
+        imageBuilder.artworkURLs(for: item, request: request)
     }
 
     func personImageURL(for person: MediaPerson, maxWidth: Int) -> URL? {
@@ -218,27 +218,36 @@ final class JellyfinMediaProviderSession: MediaProviderSession {
             url: resolution.url,
             playSessionID: resolution.playSessionID,
             mediaSourceID: resolution.mediaSourceID,
-            playMethod: resolution.isTranscoding ? .transcode : .directStream,
+            playMethod: resolution.isTranscoding ? .transcode : resolution.isDirectPlay ? .directPlay : .directStream,
             stereoLayout: resolution.stereoLayout,
             stereoFallbackReason: resolution.stereoFallbackReason,
-            mediaSource: resolution.mediaSource.map(JellyfinMediaItemMapper.mediaSource)
+            mediaSource: resolution.mediaSource.map(JellyfinMediaItemMapper.mediaSource),
+            resource: resolution.resource,
+            isLive: resolution.mediaSource?.liveStreamID != nil
         )
     }
 
-    func resolveAudioPlayback(for itemID: String) async throws -> PlaybackSourceResolution {
-        let url = try streamBuilder.universalAudioURL(for: itemID)
+    func releasePlaybackResource(_ resource: PlaybackResource) async throws {
+        try await streamBuilder.release(resource: resource)
+    }
+
+    func resolveAudioPlayback(for itemID: String, streamSelection: PlaybackStreamSelection) async throws -> PlaybackSourceResolution {
+        let resolution = try await streamBuilder.resolveAudioPlayback(for: itemID, streamSelection: streamSelection)
         return PlaybackSourceResolution(
-            url: url,
-            playSessionID: nil,
-            mediaSourceID: nil,
-            playMethod: .directStream,
+            url: resolution.url,
+            playSessionID: resolution.playSessionID,
+            mediaSourceID: resolution.mediaSourceID,
+            playMethod: resolution.isTranscoding ? .transcode : .directStream,
             stereoLayout: .none,
-            stereoFallbackReason: nil
+            stereoFallbackReason: nil,
+            mediaSource: resolution.mediaSource.map(JellyfinMediaItemMapper.mediaSource),
+            resource: resolution.resource,
+            isLive: resolution.mediaSource?.liveStreamID != nil
         )
     }
 
-    func downloadSource(for item: MediaItem) async throws -> DownloadSourceResolution {
-        let source = try await DownloadSourceResolver(client: client, userID: userID).resolve(for: item)
+    func downloadSource(for item: MediaItem, streamSelection: PlaybackStreamSelection) async throws -> DownloadSourceResolution {
+        let source = try await DownloadSourceResolver(client: client, userID: userID).resolve(for: item, streamSelection: streamSelection)
         guard let url = client.url(with: source.request, queryAPIKey: true) else {
             throw DownloadSourceResolver.ResolverError.noMediaSource
         }
@@ -246,18 +255,28 @@ final class JellyfinMediaProviderSession: MediaProviderSession {
             url: url,
             fileExtension: source.fileExtension,
             requiresTranscoding: source.kind == .transcoded,
-            operation: DownloadActivity.SourceOperation(rawValue: source.kind.rawValue)
+            operation: DownloadActivity.SourceOperation(rawValue: source.kind.rawValue),
+            mediaSourceID: source.mediaSourceID
         )
     }
 
     // MARK: - Live TV
 
-    func liveTVIsEnabled() async -> Bool {
-        guard let info = try? await client.send(Paths.getLiveTvInfo).value, info.isEnabled == true else { return false }
-        if let enabledUsers = info.enabledUsers, !enabledUsers.isEmpty {
-            return enabledUsers.contains(userID)
+    func liveTVAvailability() async throws -> LiveTVAvailability {
+        do {
+            let info = try await client.send(Paths.getLiveTvInfo).value
+            guard info.isEnabled == true else { return .notConfigured }
+            if let users = info.enabledUsers, !users.isEmpty, !users.contains(userID) {
+                return .restricted
+            }
+            return .enabled
+        } catch {
+            let failure = GusError(from: error)
+            if failure == .forbidden {
+                return .restricted
+            }
+            throw failure
         }
-        return true
     }
 
     func liveTVChannels(startIndex: Int, limit: Int) async throws -> MediaItemPage {
@@ -276,16 +295,18 @@ final class JellyfinMediaProviderSession: MediaProviderSession {
         )
     }
 
-    func liveTVRecordings(limit: Int) async throws -> [MediaItem] {
+    func liveTVRecordingsPage(startIndex: Int, limit: Int) async throws -> MediaItemPage {
         let parameters = Paths.GetRecordingsParameters(
             userID: userID,
+            startIndex: startIndex,
             limit: limit,
-            fields: Self.playbackMetadataFields
+            fields: Self.playbackMetadataFields,
+            enableTotalRecordCount: true
         )
         let response = try await NetworkRetryPolicy.idempotent.run {
             try await client.send(Paths.getRecordings(parameters: parameters))
         }
-        return JellyfinMediaItemMapper.mediaItems(from: response.value.items ?? [])
+        return MediaItemPage(items: JellyfinMediaItemMapper.mediaItems(from: response.value.items ?? []), totalRecordCount: response.value.totalRecordCount)
     }
 
     func liveTVTimers() async throws -> [LiveTVTimer] {
@@ -343,8 +364,9 @@ final class JellyfinMediaProviderSession: MediaProviderSession {
         _ = try await client.send(
             Paths.reportPlaybackStopped(
                 PlaybackStopInfo(
-                    isFailed: false,
+                    isFailed: context.isFailed,
                     itemID: context.itemID,
+                    liveStreamID: context.liveStreamID,
                     mediaSourceID: context.mediaSourceID,
                     playSessionID: context.playSessionID,
                     positionTicks: positionTicks
@@ -509,9 +531,7 @@ final class JellyfinMediaProviderSession: MediaProviderSession {
     /// A list ACL rejection is not an expired session. Keep this mapping scoped
     /// to native lists so read-only sharing never signs a valid user out.
     private func mediaListError(_ error: any Error) -> any Error {
-        if String(reflecting: type(of: error)) == "Get.APIError",
-           Mirror(reflecting: error).children.compactMap({ $0.value as? Int }).first == 403
-        {
+        if GusError(from: error) == .forbidden {
             return GusError.server(String(localized: "You do not have permission to edit this server list.", comment: "Native server media list permission denied"))
         }
         return error
@@ -603,7 +623,7 @@ final class JellyfinMediaProviderSession: MediaProviderSession {
             let result = try await client.send(Paths.createCollection(parameters: .init(name: name, ids: itemIDs))).value
             guard let id = result.id else { throw GusError.notFound }
             return id
-        } catch { throw await collectionMutationError(error) }
+        } catch { throw collectionMutationError(error) }
     }
 
     func updateCollection(id: String, name: String, overview: String) async throws {
@@ -611,7 +631,7 @@ final class JellyfinMediaProviderSession: MediaProviderSession {
             var header = try await collectionHeader(id)
             header.name = name; header.overview = overview
             _ = try await client.send(Paths.updateItem(itemID: id, header))
-        } catch { throw await collectionMutationError(error) }
+        } catch { throw collectionMutationError(error) }
     }
 
     func deleteCollection(id: String) async throws {
@@ -619,7 +639,7 @@ final class JellyfinMediaProviderSession: MediaProviderSession {
             let header = try await collectionHeader(id)
             guard header.canDelete == true else { throw GusError.server(String(localized: "You do not have permission to delete this collection.")) }
             _ = try await client.send(Paths.deleteItem(itemID: id))
-        } catch { throw await collectionMutationError(error) }
+        } catch { throw collectionMutationError(error) }
     }
 
     func addCollectionMembers(id: String, itemIDs: [String]) async throws {
@@ -629,7 +649,7 @@ final class JellyfinMediaProviderSession: MediaProviderSession {
             guard unique.count == Set(itemIDs).count else { throw GusError.notFound }
             guard !unique.isEmpty else { return }
             _ = try await client.send(Paths.addToCollection(collectionID: id, ids: unique))
-        } catch { throw await collectionMutationError(error) }
+        } catch { throw collectionMutationError(error) }
     }
 
     func removeCollectionMembers(id: String, itemIDs: [String]) async throws {
@@ -637,7 +657,7 @@ final class JellyfinMediaProviderSession: MediaProviderSession {
             _ = try await collectionHeader(id)
             guard !itemIDs.isEmpty else { return }
             _ = try await client.send(Paths.removeFromCollection(collectionID: id, ids: itemIDs))
-        } catch { throw await collectionMutationError(error) }
+        } catch { throw collectionMutationError(error) }
     }
 
     func setCollectionArtwork(id: String, jpeg: Data) async throws {
@@ -650,21 +670,14 @@ final class JellyfinMediaProviderSession: MediaProviderSession {
                 request.setValue("image/jpeg", forHTTPHeaderField: "Content-Type")
             }
             _ = try await client.send(Paths.setItemImage(itemID: id, imageType: "Primary"), configure: configure)
-        } catch { throw await collectionMutationError(error) }
+        } catch { throw collectionMutationError(error) }
     }
 
-    /// DeleteItem can return 401 for a policy rejection. Confirm auth separately so
-    /// a valid user is not signed out by a revoked collection permission.
-    private func collectionMutationError(_ error: any Error) async -> any Error {
-        if String(reflecting: type(of: error)) == "Get.APIError",
-           let status = Mirror(reflecting: error).children.compactMap({ $0.value as? Int }).first
-        {
-            if status == 403 {
-                return GusError.server(String(localized: "You do not have permission to edit this collection."))
-            }
-            if status == 401, (try? await client.send(Paths.getUserByID(userID: userID))) != nil {
-                return GusError.server(String(localized: "You do not have permission to edit this collection."))
-            }
+    /// The authenticated transport owns the DeleteItem 401 policy probe; this
+    /// adapter only supplies the contextual collection permission message.
+    private func collectionMutationError(_ error: any Error) -> any Error {
+        if GusError(from: error) == .forbidden {
+            return GusError.server(String(localized: "You do not have permission to edit this collection."))
         }
         return error
     }
@@ -806,10 +819,11 @@ final class JellyfinMediaProviderSession: MediaProviderSession {
     ) -> PlaybackStateInfo {
         PlaybackStateInfo(
             audioStreamIndex: context.streamSelection.audioStreamIndex,
-            canSeek: true,
+            canSeek: context.canSeek,
             isMuted: false,
             isPaused: isPaused,
             itemID: context.itemID,
+            liveStreamID: context.liveStreamID,
             mediaSourceID: context.mediaSourceID,
             playMethod: playMethod(for: context.playMethod),
             playSessionID: context.playSessionID,

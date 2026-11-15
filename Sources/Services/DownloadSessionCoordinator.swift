@@ -15,8 +15,7 @@ protocol DownloadSessionCoordinatorEventHandler: AnyObject {
     func downloadSessionCoordinator(_ coordinator: DownloadSessionCoordinating, didReconnectActiveRecordIDs recordIDs: Set<String>)
     func downloadSessionCoordinator(_ coordinator: DownloadSessionCoordinating, didUpdateActivity activity: DownloadActivity, recordID: String)
     func downloadSessionCoordinatorDidFinishBackgroundEvents(_ coordinator: DownloadSessionCoordinating) async
-    func downloadSessionCoordinator(_ coordinator: DownloadSessionCoordinating, didFinishDownloadingTo location: URL, recordID: String)
-    func downloadSessionCoordinator(_ coordinator: DownloadSessionCoordinating, finalizeDownloadedFileAt location: URL, recordID: String) -> Bool
+    func downloadSessionCoordinator(_ coordinator: DownloadSessionCoordinating, finalizeDownloadedFileAt location: URL, recordID: String, ownership: DownloadCompletionOwnership) async -> Bool
     func downloadSessionCoordinator(_ coordinator: DownloadSessionCoordinating, didFailWith error: Error, resumeData: Data?, recordID: String)
 }
 
@@ -25,13 +24,23 @@ extension DownloadSessionCoordinatorEventHandler {
     func downloadSessionCoordinator(_ coordinator: DownloadSessionCoordinating, didUpdateActivity activity: DownloadActivity, recordID: String) {}
 
     func downloadSessionCoordinatorDidFinishBackgroundEvents(_ coordinator: DownloadSessionCoordinating) async {}
-    func downloadSessionCoordinator(_ coordinator: DownloadSessionCoordinating, didFinishDownloadingTo location: URL, recordID: String) {}
-    func downloadSessionCoordinator(_ coordinator: DownloadSessionCoordinating, finalizeDownloadedFileAt location: URL, recordID: String) -> Bool {
-        downloadSessionCoordinator(coordinator, didFinishDownloadingTo: location, recordID: recordID)
-        return true
-    }
 
     func downloadSessionCoordinator(_ coordinator: DownloadSessionCoordinating, didFailWith error: Error, resumeData: Data?, recordID: String) {}
+}
+
+/// One popped completion owns its work until cancellation. The private lock lets
+/// file transactions check retirement without calling back into the coordinator.
+final class DownloadCompletionOwnership: @unchecked Sendable {
+    private let lock = NSLock()
+    private var current = true
+
+    var isCurrent: Bool {
+        lock.withLock { current }
+    }
+
+    func invalidate() {
+        lock.withLock { current = false }
+    }
 }
 
 /// URLSession invokes this delegate off the main actor. Mutable event/task state is
@@ -58,6 +67,7 @@ final class DownloadSessionCoordinator: NSObject, DownloadSessionCoordinating, U
     private var pendingEvents: [Event] = []
     private var isDeliveringEvents = false
     private var queuedStagedURLs: Set<URL> = []
+    private var completionOwnerships: [String: DownloadCompletionOwnership] = [:]
 
     private enum Event {
         case reconnected(Set<String>)
@@ -140,6 +150,7 @@ final class DownloadSessionCoordinator: NSObject, DownloadSessionCoordinating, U
     func cancel(recordID: String) {
         let cancellation = lock.withLock { () -> (URLSessionDownloadTask?, ((Data?) -> Void)?, [URL]) in
             invalidatedRecordIDs.insert(recordID)
+            completionOwnerships.removeValue(forKey: recordID)?.invalidate()
             let task = tasksByRecordID[recordID]
             if let task {
                 pausingTaskIDs.remove(task.taskIdentifier)
@@ -293,7 +304,7 @@ final class DownloadSessionCoordinator: NSObject, DownloadSessionCoordinating, U
     /// become local media merely because transporting the response body succeeded.
     static func validateResponse(_ response: URLResponse?) throws {
         guard let response = response as? HTTPURLResponse else { return }
-        guard (200 ..< 300).contains(response.statusCode) else { throw URLError(.badServerResponse) }
+        guard (200 ..< 300).contains(response.statusCode) else { throw GusError.fromHTTPStatusCode(response.statusCode) }
     }
 
     private func updateActivity(recordID: String, taskID: Int? = nil, update: (inout DownloadActivity) -> Void) {
@@ -325,7 +336,7 @@ final class DownloadSessionCoordinator: NSObject, DownloadSessionCoordinating, U
         }
         guard shouldStart else { return }
         Task { @MainActor [self] in
-            while let (event, handler) = nextEvent() {
+            while let (event, handler, ownership) = nextEvent() {
                 switch event {
                 case let .reconnected(ids):
                     // A foreground start may occur after getAllTasks took its
@@ -339,11 +350,18 @@ final class DownloadSessionCoordinator: NSObject, DownloadSessionCoordinating, U
                 case let .activity(activity, recordID):
                     handler.downloadSessionCoordinator(self, didUpdateActivity: activity, recordID: recordID)
                 case let .finished(location, recordID):
-                    if handler.downloadSessionCoordinator(self, finalizeDownloadedFileAt: location, recordID: recordID) {
+                    guard let ownership else { continue }
+                    if await handler.downloadSessionCoordinator(self, finalizeDownloadedFileAt: location, recordID: recordID, ownership: ownership) {
                         try? FileManager.default.removeItem(at: location)
                         try? FileManager.default.removeItem(at: manifestURL(for: location))
                     }
-                    _ = lock.withLock { queuedStagedURLs.remove(location) }
+                    lock.withLock {
+                        ownership.invalidate()
+                        queuedStagedURLs.remove(location)
+                        if completionOwnerships[recordID] === ownership {
+                            completionOwnerships.removeValue(forKey: recordID)
+                        }
+                    }
                 case let .failed(error, resumeData, recordID):
                     handler.downloadSessionCoordinator(self, didFailWith: error, resumeData: resumeData, recordID: recordID)
                 case .backgroundFinished:
@@ -353,13 +371,24 @@ final class DownloadSessionCoordinator: NSObject, DownloadSessionCoordinating, U
         }
     }
 
-    private func nextEvent() -> (Event, DownloadSessionCoordinatorEventHandler)? {
+    private func nextEvent() -> (Event, DownloadSessionCoordinatorEventHandler, DownloadCompletionOwnership?)? {
         lock.withLock {
             guard let eventHandler, !pendingEvents.isEmpty else {
                 isDeliveringEvents = false
                 return nil
             }
-            return (pendingEvents.removeFirst(), eventHandler)
+            let event = pendingEvents.removeFirst()
+            var ownership: DownloadCompletionOwnership?
+            if case let .finished(_, recordID) = event {
+                let token = DownloadCompletionOwnership()
+                if invalidatedRecordIDs.contains(recordID) {
+                    token.invalidate()
+                }
+                completionOwnerships[recordID]?.invalidate()
+                completionOwnerships[recordID] = token
+                ownership = token
+            }
+            return (event, eventHandler, ownership)
         }
     }
 

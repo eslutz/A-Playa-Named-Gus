@@ -67,7 +67,7 @@ extension View {
             .frame(maxWidth: .infinity, minHeight: 940, alignment: .bottomLeading)
             .background {
                 GeometryReader { geometry in
-                    AsyncPoster(url: backdropURL, placeholderSymbol: item.artworkPlaceholderSymbol, fallbackURLs: session.mediaProvider.artworkURLs(for: item, maxWidth: 1920))
+                    AsyncPoster(url: backdropURL, placeholderSymbol: item.artworkPlaceholderSymbol, fallbackURLs: session.mediaProvider.artworkURLs(for: item, request: .init(role: item.type == .episode ? .episodeStill : .backdrop, maxWidth: 1920)))
                         .frame(width: geometry.size.width, height: geometry.size.height).clipped()
                         .overlay {
                             LinearGradient(colors: [.black.opacity(0.55), .clear], startPoint: .top, endPoint: .center)

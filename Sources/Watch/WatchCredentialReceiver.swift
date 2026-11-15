@@ -6,10 +6,20 @@
     /// Watch-side WatchConnectivity receiver: adopts the session credential the iPhone
     /// app publishes after sign-in/restore, so the watch is signed in without typing.
     /// Standalone Quick Connect sign-in works without this — it is an accelerator.
-    final class WatchCredentialReceiver: NSObject, WCSessionDelegate, Sendable {
+    final class WatchCredentialReceiver: NSObject, WCSessionDelegate, @unchecked Sendable {
         static let shared = WatchCredentialReceiver()
 
         private let logger = Logger(subsystem: Logger.subsystem, category: "WatchRelay")
+        private let lock = NSLock()
+        private var adoptionGeneration = 0
+
+        private func nextGeneration() -> Int {
+            lock.withLock { adoptionGeneration += 1; return adoptionGeneration }
+        }
+
+        private func isCurrent(_ generation: Int) -> Bool {
+            lock.withLock { adoptionGeneration == generation }
+        }
 
         func activate() {
             guard WCSession.isSupported() else { return }
@@ -47,8 +57,10 @@
                let serverID = context["serverID"] as? String,
                let userID = context["userID"] as? String
             {
+                let generation = nextGeneration()
                 Task { @MainActor in
-                    AppModel.shared.clearHandedOffSession(serverID: serverID, userID: userID)
+                    guard self.isCurrent(generation) else { return }
+                    await AppModel.shared.clearHandedOffSession(serverID: serverID, userID: userID)
                 }
                 return
             }
@@ -60,8 +72,10 @@
                   let user = try? JSONDecoder().decode(StoredUser.self, from: userData)
             else { return }
 
+            let generation = nextGeneration()
             Task { @MainActor in
-                AppModel.shared.adoptHandedOffSession(server: server, user: user, token: token)
+                guard self.isCurrent(generation) else { return }
+                await AppModel.shared.adoptHandedOffSession(server: server, user: user, token: token)
             }
         }
     }

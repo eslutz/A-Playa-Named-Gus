@@ -158,6 +158,9 @@ struct MediaStreamInfo: Codable, Hashable, Sendable {
     var width: Int?
     var height: Int?
     var videoRange: String?
+    var isForced: Bool?
+    var isHearingImpaired: Bool?
+    var isExternal: Bool?
 
     init(
         codec: String? = nil,
@@ -173,7 +176,10 @@ struct MediaStreamInfo: Codable, Hashable, Sendable {
         channels: Int? = nil,
         width: Int? = nil,
         height: Int? = nil,
-        videoRange: String? = nil
+        videoRange: String? = nil,
+        isForced: Bool? = nil,
+        isHearingImpaired: Bool? = nil,
+        isExternal: Bool? = nil
     ) {
         self.codecTag = codecTag
         self.codec = codec
@@ -189,6 +195,9 @@ struct MediaStreamInfo: Codable, Hashable, Sendable {
         self.width = width
         self.height = height
         self.videoRange = videoRange
+        self.isForced = isForced
+        self.isHearingImpaired = isHearingImpaired
+        self.isExternal = isExternal
     }
 }
 
@@ -200,6 +209,11 @@ struct MediaSource: Codable, Hashable, Identifiable, Sendable {
     var transcodingURL: String?
     var video3DFormat: Media3DFormat?
     var videoType: MediaVideoType?
+    var name: String?
+    var liveStreamID: String?
+    var defaultAudioStreamIndex: Int?
+    var defaultSubtitleStreamIndex: Int?
+    var runTimeTicks: Int?
 
     init(
         container: String? = nil,
@@ -208,7 +222,12 @@ struct MediaSource: Codable, Hashable, Identifiable, Sendable {
         supportsDirectPlay: Bool? = nil,
         transcodingURL: String? = nil,
         video3DFormat: Media3DFormat? = nil,
-        videoType: MediaVideoType? = nil
+        videoType: MediaVideoType? = nil,
+        name: String? = nil,
+        liveStreamID: String? = nil,
+        defaultAudioStreamIndex: Int? = nil,
+        defaultSubtitleStreamIndex: Int? = nil,
+        runTimeTicks: Int? = nil
     ) {
         self.container = container
         self.id = id
@@ -217,16 +236,23 @@ struct MediaSource: Codable, Hashable, Identifiable, Sendable {
         self.transcodingURL = transcodingURL
         self.video3DFormat = video3DFormat
         self.videoType = videoType
+        self.name = name
+        self.liveStreamID = liveStreamID
+        self.defaultAudioStreamIndex = defaultAudioStreamIndex
+        self.defaultSubtitleStreamIndex = defaultSubtitleStreamIndex
+        self.runTimeTicks = runTimeTicks
     }
 }
 
 struct MediaChapterInfo: Codable, Hashable, Sendable {
     var name: String?
     var startPositionTicks: Int?
+    var imageTag: String?
 
-    init(name: String? = nil, startPositionTicks: Int? = nil) {
+    init(name: String? = nil, startPositionTicks: Int? = nil, imageTag: String? = nil) {
         self.name = name
         self.startPositionTicks = startPositionTicks
+        self.imageTag = imageTag
     }
 }
 
