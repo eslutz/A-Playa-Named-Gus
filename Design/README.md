@@ -17,6 +17,15 @@ both appearances live in `Gus-Shared-Library.sketch`.
   Dark sources and their color/style dependencies. iPad Dark instances link to
   this library rather than flattened images.
 
+- `Gus-visionOS.sketch`: representative editable snapshot with 32 Screens, 10
+  States and six local product symbols, plus linked Apple visionOS controls.
+  Includes one Settings Light/Dark pair and a large-text form; other appearance
+  pairs remain incomplete. [Coverage and limitations](visionos-coverage.json)
+  maps the saved frames. Backdrop glass is approximate. The captured app baseline
+  has no verified source commit, and parity with current main remains unverified.
+  Cinema, Live TV, expanded playback, resizing and physical-device acceptance
+  need separate validation.
+
 `appearance-coverage.json` maps the iPad appearance partners by persistent layer
 ID. Screens, States, and Components remain the document's three pages.
 
