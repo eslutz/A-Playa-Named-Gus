@@ -295,10 +295,10 @@ struct SeerrCreditsSection: View {
                         .posterNavigationStyle()
                     }
                 }
-                .tvFocusSection()
                 .padding(.vertical, 8)
             }
             .lookToScroll(.horizontal)
+            .gusTVRailViewport()
         }
     }
 }
@@ -336,10 +336,10 @@ private struct SeerrRecommendationsSection: View {
                                     .frame(width: MediaRailMetrics.itemWidth(for: .poster))
                             }
                         }
-                        .tvFocusSection()
                         .padding(.vertical, 8)
                     }
                     .lookToScroll(.horizontal)
+                    .gusTVRailViewport()
                 }
             }
         }

@@ -80,7 +80,6 @@ struct MovieCollectionsShelf: View {
                     }
                 }
                 .gusTVRailPadding()
-                .tvFocusSection()
             }
             .gusTVRailViewport()
         }

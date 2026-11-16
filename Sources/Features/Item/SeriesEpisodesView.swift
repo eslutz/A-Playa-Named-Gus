@@ -53,7 +53,6 @@ struct SeriesEpisodesView: View {
                         }
                         .scrollTargetLayout()
                         .gusTVRailPadding()
-                        .tvFocusSection()
                     }
                     .scrollPosition(id: root.scrollBinding(for: "episodes:" + (store.selectedSeasonID ?? "")))
                     .lookToScroll(.horizontal)

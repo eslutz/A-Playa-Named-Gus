@@ -249,10 +249,10 @@ private struct SeerrDiscoveryShelf: View {
                                 .frame(width: MediaRailMetrics.itemWidth(for: .poster))
                         }
                     }
-                    .tvFocusSection()
                     .padding(.vertical, 8)
                 }
                 .lookToScroll(.horizontal)
+                .gusTVRailViewport()
                 if let error = catalog.errorMessage {
                     Text(error).font(.footnote).foregroundStyle(.secondary)
                     Button("Retry Shelf") { Task { await catalog.load(store: store, refresh: true) } }

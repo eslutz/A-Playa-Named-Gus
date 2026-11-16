@@ -172,7 +172,6 @@ private struct NextUpRail: View {
                 }
                 .scrollTargetLayout()
                 .gusTVRailPadding()
-                .tvFocusSection()
             }
             .scrollPosition(id: root.scrollBinding(for: "home.next"))
             .lookToScroll(.horizontal)
@@ -417,7 +416,6 @@ struct MediaRail: View {
                 }
                 .scrollTargetLayout()
                 .gusTVRailPadding()
-                .tvFocusSection()
             }
             .scrollPosition(id: root.scrollBinding(for: focusKey ?? (root.selectedSectionID + ":rail:" + title)))
             .lookToScroll(.horizontal)

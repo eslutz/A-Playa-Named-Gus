@@ -168,6 +168,8 @@ extension View {
     @ViewBuilder func gusTVRailViewport() -> some View {
         #if os(tvOS)
             scrollClipDisabled()
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .focusSection()
         #else
             self
         #endif

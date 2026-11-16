@@ -25,6 +25,8 @@ page deduplication. Gus retains AVPlayer/AVKit and current OS 26 fallbacks.
 - tvOS dismissal and navigation returns request the saved focus target immediately.
   One native fallback may reissue that request; a subsequent different choice wins.
   Playlist and collection tasks return to their More opener using the same action order.
+  Horizontal TV rails use their full scroll viewport as the native focus section,
+  keeping short rows reachable from trailing header controls without changing card layout.
 - Foreground refresh retains usable content. Query generation rejects stale
   results. Full-content views and queues continue pages and deduplicate by scoped
   media identity; intentional preview limits remain explicit. Advertised totals
