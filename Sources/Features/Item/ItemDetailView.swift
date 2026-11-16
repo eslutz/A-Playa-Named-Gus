@@ -232,6 +232,7 @@ struct ItemDetailView: View {
                                 } label: {
                                     Label("More", systemImage: "ellipsis").gusDetailActionLabel()
                                 }
+                                .gusDetailActionControlStyle()
                                 .accessibilityIdentifier("Detail.more")
                                 .gusTVDetailActionFocus(id: "more", item: store.item)
                             }
@@ -384,6 +385,7 @@ struct ItemDetailView: View {
                     }.disabled(selectedSourceItemID == target.id && selectedSourceID == source.id)
                 }
             } label: { Label("Version", systemImage: "square.stack").gusDetailActionLabel() }
+                .gusDetailActionControlStyle()
                 .accessibilityIdentifier("Detail.version")
                 .gusTVDetailActionFocus(id: "version", item: focusItem)
         }

@@ -329,13 +329,19 @@ struct ItemUserActionButton: View {
         Button(action: action) {
             Label(visibleTitle, systemImage: systemImage)
                 .gusDetailActionLabel()
-                .frame(maxWidth: .infinity, minHeight: DetailActionMetrics.minimumLabelHeight)
         }
-        .gusGlassButtonStyle()
-        .controlSize(.regular)
-        .frame(minWidth: 44, minHeight: 44)
-        .visionHoverEffect(Capsule())
+        .gusDetailActionControlStyle()
         .accessibilityLabel(title)
+    }
+}
+
+extension View {
+    /// Secondary detail buttons and menu triggers share native sizing and treatment.
+    func gusDetailActionControlStyle() -> some View {
+        gusGlassButtonStyle()
+            .controlSize(.regular)
+            .frame(minWidth: 44, minHeight: 44)
+            .visionHoverEffect(Capsule())
     }
 }
 

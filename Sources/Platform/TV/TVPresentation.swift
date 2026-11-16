@@ -187,8 +187,10 @@ extension View {
     @ViewBuilder func gusDetailActionLabel() -> some View {
         #if os(tvOS)
             labelStyle(TVDetailActionLabelStyle())
+                .frame(maxWidth: .infinity, minHeight: DetailActionMetrics.minimumLabelHeight)
         #else
             labelStyle(.iconOnly)
+                .frame(maxWidth: .infinity, minHeight: DetailActionMetrics.minimumLabelHeight)
         #endif
     }
 
