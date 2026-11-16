@@ -40,8 +40,9 @@ page deduplication. Gus retains AVPlayer/AVKit and current OS 26 fallbacks.
   in the visible detail's context, including series headers that play an episode.
   Horizontal TV rails use their full scroll viewport as the native focus section,
   keeping short rows reachable from trailing header controls without changing card layout.
-  Native TV controls retain the system's untinted bordered focus treatment on all
-  supported releases; hero foreground and theme tint must not override focused labels or platters.
+  Native TV controls inherit the system's untinted bordered focus treatment from
+  the themed app root and independent native-hosted queue boundary. Hero foreground
+  and theme tint must not override focused labels or platters.
 - Foreground refresh retains usable content. Query generation rejects stale
   results. Full-content views and queues continue pages and deduplicate by scoped
   media identity; intentional preview limits remain explicit. Advertised totals

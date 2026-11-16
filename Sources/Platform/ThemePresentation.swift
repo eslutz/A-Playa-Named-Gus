@@ -40,6 +40,9 @@ private struct GusThemeModifier: ViewModifier {
             let fill: Color = preference == .gus ? Color("AccentColor") : preference == .apple ? .blue : accent.color
             let tint: Color = preference == .custom ? accent.readable(onDark: colorScheme == .dark).color : fill
             let foreground: Color = preference == .gus ? .gusProminentActionForeground : preference == .custom && accent.usesBlackForeground ? .black : .white
+            #if os(tvOS)
+                let content = content.gusTVNativeControls()
+            #endif
             content.tint(tint)
                 .accentColor(tint)
                 .environment(\.gusThemeFill, fill)

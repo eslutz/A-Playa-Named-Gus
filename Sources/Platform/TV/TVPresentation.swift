@@ -35,7 +35,7 @@ extension View {
 
     @ViewBuilder func gusTVToolbarIcon() -> some View {
         #if os(tvOS)
-            labelStyle(.iconOnly).gusTVNativeControls()
+            labelStyle(.iconOnly)
         #else
             self
         #endif
