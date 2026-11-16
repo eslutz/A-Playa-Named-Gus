@@ -1055,9 +1055,9 @@ final class GusAuthenticatedUITests: XCTestCase {
                 let deadline = ContinuousClock.now + .seconds(20)
                 var speech = try service.currentSpeech().utterance
                 var seen: Set<String> = []
-                var utterances: [String] = []
+                let utterances = OSAllocatedUnfairLock(initialState: [String]())
                 addTeardownBlock { @MainActor in
-                    let attachment = XCTAttachment(string: utterances.joined(separator: "\n"))
+                    let attachment = XCTAttachment(string: utterances.withLock { $0.joined(separator: "\n") })
                     attachment.name = requiresArtwork ? "native-chapter-card-voiceover" : "native-chapters-tab-voiceover"
                     attachment.lifetime = .keepAlways
                     self.add(attachment)
@@ -1075,7 +1075,8 @@ final class GusAuthenticatedUITests: XCTestCase {
                         // Gus's separate flat Chapters custom menu is not this target.
                         candidates = infoMenu.descendants(matching: .any).matching(named).allElementsBoundByIndex.filter { $0.exists && $0.isHittable && !$0.frame.isEmpty }
                     }
-                    utterances.append("speech=\(speech)\ncandidateCount=\(candidates.count)")
+                    let observation = "speech=\(speech)\ncandidateCount=\(candidates.count)"
+                    utterances.withLock { $0.append(observation) }
                     if nativeChapterSpeech(speech, names: title), candidates.count == 1 {
                         try requireNativeChapter(ContinuousClock.now < deadline, "Unverified: native AX target read exceeded traversal deadline")
                         return candidates[0]
