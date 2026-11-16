@@ -106,7 +106,7 @@
         }
 
         @Test("declared missing and failing resources are observable without replacing bytes or reporting cancellation")
-        func resourceDecorator() async throws {
+        nonisolated func resourceDecorator() async throws {
             let events = OSAllocatedUnfairLock(initialState: [BookResourceFailure]())
             let link = Link(href: "chapter.xhtml", mediaType: .xhtml)
             let missing = BookReportingContainer(upstream: EmptyContainer(), declared: [link]) { event in
