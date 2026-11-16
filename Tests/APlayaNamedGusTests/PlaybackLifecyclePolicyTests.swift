@@ -3,6 +3,9 @@ import Foundation
 @testable import Gus
 import JellyfinAPI
 import Testing
+#if os(iOS) || os(tvOS) || os(visionOS)
+    import UIKit
+#endif
 #if GUS_PLAYBACK_SOAK && os(macOS)
     import Darwin
     import OSLog
@@ -141,6 +144,19 @@ struct PlaybackLifecyclePolicyTests {
 
     @Test("thirty real native open/close cycles retire every item and report boundary")
     func nativeOpenCloseCycles() async throws {
+        #if os(iOS) || os(tvOS) || os(visionOS)
+            // Physical QA opts into a measured foreground precondition; production
+            // background/Now Playing eligibility is deliberately not changed.
+            if ProcessInfo.processInfo.environment["GUS_REQUIRE_ACTIVE_PLAYBACK_TEST_HOST"] == "1" {
+                let requestedAt = Date()
+                let initialState = UIApplication.shared.applicationState.rawValue
+                let active = await ActivePlaybackTestHostPrerequisite().wait(timeout: .seconds(15))
+                let observedAt = Date()
+                let observedState = UIApplication.shared.applicationState.rawValue
+                print("Native playback host prerequisite: requested=\(requestedAt) initialState=\(initialState) observed=\(observedAt) observedState=\(observedState) active=\(active)")
+                try #require(active, "Physical playback host must become active before native activation; requested=\(requestedAt), observed=\(observedAt), initialState=\(initialState), observedState=\(observedState)")
+            }
+        #endif
         let provider = FakeMediaProviderSession(capabilities: ProviderCapabilities())
         let item = MediaItem(id: "native-cycle", type: .movie)
         provider.itemHandler = { _ in item }
@@ -150,6 +166,11 @@ struct PlaybackLifecyclePolicyTests {
         for cycle in 0 ..< 30 {
             let store = PlaybackStore(request: PlaybackRequest(item: item), session: session, playbackRefresh: PlaybackRefreshStore())
             await store.prepare()
+            #if (os(iOS) || os(tvOS) || os(visionOS)) && DEBUG
+                if cycle == 0, ProcessInfo.processInfo.environment["GUS_REQUIRE_ACTIVE_PLAYBACK_TEST_HOST"] == "1" {
+                    print("First native preparation completed: observed=\(Date()) state=\(UIApplication.shared.applicationState.rawValue) activation=\(String(describing: PlaybackAudioSession.lastActivationResult)) playbackState=\(store.state)")
+                }
+            #endif
             let deadline = ContinuousClock.now + .seconds(45)
             while !store.hasStartedPlayback, ContinuousClock.now < deadline {
                 try await Task.sleep(for: .milliseconds(20))
@@ -541,6 +562,66 @@ struct PlaybackLifecyclePolicyTests {
         #expect(provider.releasedPlaybackResources == [resource])
     }
 
+    @Test("audio session refusal fails before resolution and explicit retry can prepare", arguments: [false, true])
+    func audioSessionRefusal(audio: Bool) async throws {
+        let provider = FakeMediaProviderSession(capabilities: ProviderCapabilities())
+        let item = MediaItem(id: "session-refusal", type: audio ? .audio : .movie)
+        provider.itemHandler = { _ in item }
+        let fixture = try RepositoryTestFixtures.url(for: "Tests/Fixtures/OfflinePlaylist.mov")
+        let resolution = PlaybackSourceResolution(url: fixture, playSessionID: "session-retry", mediaSourceID: "source", playMethod: .directPlay, stereoLayout: .none, stereoFallbackReason: nil)
+        provider.playbackHandler = { resolution }
+        provider.audioHandler = { resolution }
+        let session = makeSession(provider)
+        var activationArguments: [Bool] = []
+        var denied = true
+        let activate: @MainActor (Bool) async throws -> Void = { video in
+            activationArguments.append(video)
+            let shouldDeny = denied
+            try await PlaybackAudioSession.activate(video: video, configureCategory: { _ in }, activateSession: {
+                if shouldDeny {
+                    throw NSError(domain: NSOSStatusErrorDomain, code: 560_557_684, userInfo: [NSLocalizedDescriptionKey: "Audio session activation denied"])
+                }
+            })
+        }
+        let message = String(localized: "Couldn't start audio playback. Try again.")
+        let video = audio ? nil : PlaybackStore(request: PlaybackRequest(item: item), session: session, playbackRefresh: PlaybackRefreshStore(), activateAudioSession: activate)
+        let music = audio ? AudioPlayerStore(session: session, tracks: [item], activateAudioSession: activate) : nil
+        defer { video?.teardown(); music?.teardown() }
+        video?.setPresentationActive(false)
+        await video?.prepare()
+        await music?.start()
+        if let video {
+            #expect(video.state == .failed(message))
+            #expect(!video.hasStartedPlayback)
+            #expect(video.player == nil)
+        }
+        if let music {
+            #expect(music.state == .failed(message))
+            #expect(!music.isPlaying)
+            #expect(!music.hasPreparedContent)
+            #expect(music.nativePlayer == nil)
+        }
+        await session.playbackReports.flush()
+        #expect(activationArguments == [!audio])
+        #expect(provider.playbackResolutionCallCount == 0)
+        #expect(provider.audioResolutionCallCount == 0)
+        #expect(provider.playbackReports.isEmpty)
+        #expect(provider.releasedPlaybackResources.isEmpty)
+
+        denied = false
+        await video?.prepare()
+        await music?.start()
+        #expect(activationArguments == [!audio, !audio])
+        #expect(provider.playbackResolutionCallCount == (audio ? 0 : 1))
+        #expect(provider.audioResolutionCallCount == (audio ? 1 : 0))
+        if let video {
+            #expect(video.state == .ready); #expect(video.player != nil)
+        }
+        if let music {
+            #expect(music.state == .loaded); #expect(music.nativePlayer != nil)
+        }
+    }
+
     @Test("live Stop owns release even when its response is lost", arguments: [false, true])
     func liveStopDoesNotDoubleClose(responseLost: Bool) async throws {
         let provider = FakeMediaProviderSession(capabilities: ProviderCapabilities())
@@ -793,3 +874,59 @@ struct PlaybackLifecyclePolicyTests {
         )
     }
 }
+
+#if os(iOS) || os(tvOS) || os(visionOS)
+    /// Notification-owned wait avoids racing unit-host startup or polling/sleeping
+    /// before activation. Expiry/cancellation removes the observer and reports failure.
+    @MainActor
+    private final class ActivePlaybackTestHostPrerequisite {
+        private var observer: NSObjectProtocol?
+        private var deadlineTask: Task<Void, Never>?
+        private var continuation: CheckedContinuation<Bool, Never>?
+
+        func wait(timeout: Duration) async -> Bool {
+            if Task.isCancelled {
+                return false
+            }
+            if UIApplication.shared.applicationState == .active {
+                return true
+            }
+            return await withTaskCancellationHandler {
+                await withCheckedContinuation { continuation in
+                    self.continuation = continuation
+                    observer = NotificationCenter.default.addObserver(forName: UIApplication.didBecomeActiveNotification, object: nil, queue: .main) { [weak self] _ in
+                        Task { @MainActor in
+                            if UIApplication.shared.applicationState == .active {
+                                self?.complete()
+                            }
+                        }
+                    }
+                    deadlineTask = Task<Void, Never> { [weak self] in
+                        do { try await Task.sleep(for: timeout) } catch { return }
+                        self?.complete()
+                    }
+                    // Subscribe before rechecking so activation between the initial
+                    // observation and registration cannot be lost.
+                    if Task.isCancelled || UIApplication.shared.applicationState == .active {
+                        complete()
+                    }
+                }
+            } onCancel: {
+                Task { @MainActor [weak self] in self?.complete(cancelled: true) }
+            }
+        }
+
+        private func complete(cancelled: Bool = false) {
+            guard let continuation else { return }
+            let active = !cancelled && !Task.isCancelled && UIApplication.shared.applicationState == .active
+            self.continuation = nil
+            if let observer {
+                NotificationCenter.default.removeObserver(observer)
+            }
+            observer = nil
+            deadlineTask?.cancel()
+            deadlineTask = nil
+            continuation.resume(returning: active)
+        }
+    }
+#endif

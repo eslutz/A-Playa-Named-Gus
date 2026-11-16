@@ -42,13 +42,18 @@ final class GusAuthenticatedUITests: XCTestCase {
         let app = try launch("play/" + required("Audio"))
         #if os(tvOS)
             XCTAssertTrue(app.cells["AVAudibleSettings"].waitForExistence(timeout: 30))
+        #elseif os(iOS)
+            XCTAssertTrue(app.buttons["AudioPlayer.close"].waitForExistence(timeout: 30))
+            XCTAssertTrue(app.buttons["Pause"].waitForExistence(timeout: 30))
+            XCTAssertTrue(app.buttons["Pause"].isEnabled)
         #else
             XCTAssertTrue(app.buttons["Done"].waitForExistence(timeout: 30))
         #endif
         capture(app, "audio-open")
         #if os(iOS)
             rotateToLandscape(app)
-            XCTAssertTrue(app.buttons["Done"].waitForExistence(timeout: 5))
+            XCTAssertTrue(app.buttons["AudioPlayer.close"].waitForExistence(timeout: 5))
+            XCTAssertTrue(app.buttons["AudioPlayer.close"].isHittable)
             capture(app, "audio-landscape")
         #endif
         #if os(tvOS)
@@ -58,6 +63,8 @@ final class GusAuthenticatedUITests: XCTestCase {
                     break
                 }
             }
+        #elseif os(iOS)
+            app.buttons["AudioPlayer.close"].tap()
         #else
             app.buttons["Done"].firstMatch.tap()
         #endif
@@ -73,12 +80,20 @@ final class GusAuthenticatedUITests: XCTestCase {
         #endif
         #if os(tvOS)
             XCTAssertTrue(app.cells["AVAudibleSettings"].waitForExistence(timeout: 10))
+        #elseif os(iOS)
+            XCTAssertTrue(app.buttons["AudioPlayer.close"].waitForExistence(timeout: 10))
+            XCTAssertTrue(app.buttons["AudioPlayer.close"].isHittable)
+            XCTAssertTrue(app.buttons["Pause"].waitForExistence(timeout: 10))
+            XCTAssertTrue(app.buttons["Pause"].isEnabled)
         #else
             XCTAssertTrue(app.buttons["Stop"].waitForExistence(timeout: 10))
         #endif
         capture(app, "audio-reopened")
         #if os(tvOS)
             XCUIRemote.shared.press(.menu)
+        #elseif os(iOS)
+            app.buttons["AudioPlayer.close"].tap()
+            XCTAssertTrue(reopen.waitForExistence(timeout: 10))
         #else
             app.buttons["Stop"].firstMatch.tap()
         #endif
@@ -97,6 +112,10 @@ final class GusAuthenticatedUITests: XCTestCase {
         for (type, action) in details {
             let app = try launch("item/" + required(type))
             XCTAssertTrue(app.buttons[action].firstMatch.waitForExistence(timeout: 30))
+            if type == "Movie" {
+                XCTAssertEqual(app.buttons.matching(identifier: "Detail.play").count, 1, app.debugDescription)
+                XCTAssertEqual(app.buttons.matching(identifier: "Detail.nextUp").count, 1, app.debugDescription)
+            }
             capture(app, type.lowercased() + "-detail")
             #if os(iOS)
                 let window = app.windows.firstMatch.frame
@@ -108,6 +127,10 @@ final class GusAuthenticatedUITests: XCTestCase {
                 rotateToLandscape(app)
                 reveal(button, in: app)
                 XCTAssertTrue(button.isHittable)
+                if type == "Movie" {
+                    XCTAssertEqual(app.buttons.matching(identifier: "Detail.play").count, 1, app.debugDescription)
+                    XCTAssertEqual(app.buttons.matching(identifier: "Detail.nextUp").count, 1, app.debugDescription)
+                }
                 capture(app, type.lowercased() + "-landscape")
                 XCUIDevice.shared.orientation = .portrait
             #endif
@@ -894,7 +917,10 @@ final class GusAuthenticatedUITests: XCTestCase {
             XCTAssertTrue(app.buttons["BookReader.done"].waitForExistence(timeout: 5))
             capture(app, "book-reader-landscape")
             app.buttons["BookReader.done"].tap()
-            XCTAssertFalse(app.webViews.firstMatch.exists)
+            let dismissed = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+                !app.buttons["BookReader.done"].exists && !app.webViews.firstMatch.exists && read.exists
+            }, object: nil)
+            XCTAssertEqual(XCTWaiter.wait(for: [dismissed], timeout: 30), .completed)
             reveal(app.buttons["Read"].firstMatch, in: app)
             capture(app, "book-reader-dismissed")
             XCTAssertTrue(app.buttons["Read"].firstMatch.isHittable)
@@ -971,7 +997,7 @@ final class GusAuthenticatedUITests: XCTestCase {
             XCTAssertTrue(readerDone.isHittable)
             readerDone.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
             let dismissed = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
-                read.isHittable && !readerDone.isHittable
+                read.exists && !readerDone.exists && !app.webViews.firstMatch.exists
             }, object: nil)
             let dismissalResult = XCTWaiter.wait(for: [dismissed], timeout: 30)
             capture(app, "book-reader-close-result")
@@ -1191,13 +1217,21 @@ final class GusAuthenticatedUITests: XCTestCase {
         private func reveal(_ element: XCUIElement, in app: XCUIApplication) {
             for _ in 0 ..< 10 {
                 let window = app.windows.firstMatch.frame
-                if element.isHittable, element.frame.height >= 44,
-                   element.frame.minY >= window.minY + 44,
-                   element.frame.maxY <= window.maxY - 24
+                let frame = element.frame
+                if element.exists, frame.height >= 44,
+                   frame.minY >= window.minY + 44,
+                   frame.maxY <= window.maxY - 24,
+                   element.isHittable
                 {
                     return
                 }
-                app.swipeUp()
+                // A landscape transition or modal dismissal can leave the
+                // action above the viewport. Scroll toward its current frame
+                // instead of repeatedly pushing it farther offscreen.
+                let aboveViewport = frame.height > 0 && frame.minY < window.minY + 44
+                let start = app.windows.firstMatch.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: aboveViewport ? 0.35 : 0.75))
+                let end = app.windows.firstMatch.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: aboveViewport ? 0.65 : 0.45))
+                start.press(forDuration: 0.05, thenDragTo: end)
             }
         }
 

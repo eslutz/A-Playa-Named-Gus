@@ -159,6 +159,7 @@ final class AudioPlayerStore {
     private let nowPlaying = NowPlayingController()
     private let logger = Logger(category: .playback)
     private let playerFactory: @MainActor () -> AVPlayer
+    private let activateAudioSession: @MainActor (Bool) async throws -> Void
     private var player: AVPlayer?
     private var preparedTrack: MediaItem?
     private var audioSelection = PlaybackStreamSelection.none
@@ -186,17 +187,18 @@ final class AudioPlayerStore {
     private var reportContext: PlaybackReportContext?
     private var lastProgressReportTime: Double = 0
 
-    convenience init(session: SessionStore, tracks: [MediaItem], startIndex: Int = 0, request: PlaybackRequest? = nil, continuation: AudioQueueContinuation? = nil, downloads: OfflineDownloadStore? = nil, localOnly: Bool = false, localProgress: OfflinePlaybackProgressStore? = nil) {
-        self.init(session: session, tracks: tracks, startIndex: startIndex, request: request, continuation: continuation, downloads: downloads, localOnly: localOnly, localProgress: localProgress, playerFactory: { AVPlayer() })
+    convenience init(session: SessionStore, tracks: [MediaItem], startIndex: Int = 0, request: PlaybackRequest? = nil, continuation: AudioQueueContinuation? = nil, downloads: OfflineDownloadStore? = nil, localOnly: Bool = false, localProgress: OfflinePlaybackProgressStore? = nil, activateAudioSession: @escaping @MainActor (Bool) async throws -> Void = { try await PlaybackAudioSession.activate(video: $0) }) {
+        self.init(session: session, tracks: tracks, startIndex: startIndex, request: request, continuation: continuation, downloads: downloads, localOnly: localOnly, localProgress: localProgress, activateAudioSession: activateAudioSession, playerFactory: { AVPlayer() })
     }
 
-    init(session: SessionStore, tracks: [MediaItem], startIndex: Int = 0, request: PlaybackRequest? = nil, continuation: AudioQueueContinuation? = nil, downloads: OfflineDownloadStore? = nil, localOnly: Bool = false, localProgress: OfflinePlaybackProgressStore? = nil, playerFactory: @escaping @MainActor () -> AVPlayer) {
+    init(session: SessionStore, tracks: [MediaItem], startIndex: Int = 0, request: PlaybackRequest? = nil, continuation: AudioQueueContinuation? = nil, downloads: OfflineDownloadStore? = nil, localOnly: Bool = false, localProgress: OfflinePlaybackProgressStore? = nil, activateAudioSession: @escaping @MainActor (Bool) async throws -> Void = { try await PlaybackAudioSession.activate(video: $0) }, playerFactory: @escaping @MainActor () -> AVPlayer) {
         self.session = session
         queueContinuation = continuation
         playbackIntent = request ?? (tracks.indices.contains(startIndex) ? PlaybackRequest(item: tracks[startIndex]) : nil)
         self.downloads = downloads
         self.localOnly = localOnly
         self.playerFactory = playerFactory
+        self.activateAudioSession = activateAudioSession
         let progress = localProgress ?? .shared
         self.localProgress = progress
         progressWriterToken = progress.writerToken(for: AccountScope(serverID: session.server.id, userID: session.user.id))
@@ -544,7 +546,7 @@ final class AudioPlayerStore {
         defer { diagnostics.endInterval("PlaybackPreparation", startupInterval) }
 
         do {
-            await PlaybackAudioSession.activate(video: false)
+            try await activateAudioSession(false)
             try Task.checkCancellation()
             guard session.isActive, generation == preparationGeneration else { return }
             let requestedSourceID = playbackIntent?.item.id == track.id ? playbackIntent?.streamSelection.mediaSourceID : nil
@@ -982,6 +984,9 @@ final class AudioPlayerStore {
             reportStopped(failed: true)
             releaseNativePlayer()
             DiagnosticsHub.shared.record(.playbackFailed)
+            if let activationError = error as? PlaybackAudioSessionActivationError {
+                DiagnosticsHub.shared.record(.playbackItemFailed(errorCode: activationError.underlyingError?.code ?? 0, errorDomain: activationError.diagnosticDomain))
+            }
             state = .failed(GusError(from: error).localizedDescription)
             return
         }

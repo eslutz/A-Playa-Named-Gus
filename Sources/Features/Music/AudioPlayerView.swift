@@ -5,6 +5,7 @@ import SwiftUI
 struct AudioPlayerView: View {
     @Environment(AudioPlaybackCoordinator.self) private var audio
     @Environment(SessionStore.self) private var session
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     let store: AudioPlayerStore
 
     @State private var showingQueue = false
@@ -257,27 +258,17 @@ struct AudioPlayerView: View {
     }
 
     private var transportControls: some View {
-        ViewThatFits(in: .horizontal) {
-            HStack(spacing: usesInlineTransport ? 4 : 12) {
-                if usesInlineTransport {
-                    queueButton
-                }
-                shuffleButton; previousButton; playPauseButton; nextButton; repeatButton
-                if usesInlineTransport {
-                    AirPlayRoutePicker().frame(width: 44, height: 44)
-                }
+        AudioTransportLayout(singleRowSpacing: usesInlineTransport ? 4 : 12, prefersGroupedRows: dynamicTypeSize.isAccessibilitySize) {
+            if usesInlineTransport {
+                queueButton
             }
-            VStack(spacing: 12) {
-                HStack(spacing: 12) { previousButton; playPauseButton; nextButton }
-                HStack(spacing: 12) {
-                    if usesInlineTransport {
-                        queueButton
-                    }
-                    shuffleButton; repeatButton
-                    if usesInlineTransport {
-                        AirPlayRoutePicker().frame(width: 44, height: 44)
-                    }
-                }
+            shuffleButton
+            previousButton.layoutValue(key: AudioTransportPrimaryKey.self, value: true)
+            playPauseButton.layoutValue(key: AudioTransportPrimaryKey.self, value: true)
+            nextButton.layoutValue(key: AudioTransportPrimaryKey.self, value: true)
+            repeatButton
+            if usesInlineTransport {
+                AirPlayRoutePicker().frame(width: 44, height: 44)
             }
         }
         .font(.title2)
@@ -446,6 +437,76 @@ struct AudioPlayerScreen: View {
         .task(id: PlaybackPresentationIdentity(request: playbackRequest ?? PlaybackRequest(item: item), sessionGeneration: session.lease.generation, localOnly: localOnly)) {
             audio.play(tracks: [item], localOnly: localOnly, request: playbackRequest, session: session, downloads: downloads)
         }
+    }
+}
+
+private struct AudioTransportPrimaryKey: LayoutValueKey {
+    static let defaultValue = false
+}
+
+/// Measures and repositions the same native controls, retaining Play/Pause identity
+/// when a narrow window or larger text requires primary and ancillary rows.
+private struct AudioTransportLayout: Layout {
+    let singleRowSpacing: CGFloat
+    let prefersGroupedRows: Bool
+    private let groupedSpacing: CGFloat = 12
+
+    private struct Row {
+        let indices: [Int]
+        let width: CGFloat
+        let height: CGFloat
+        let spacing: CGFloat
+    }
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let rows = rows(width: proposal.width, subviews: subviews)
+        return CGSize(width: rows.map(\.width).max() ?? 0, height: rows.map(\.height).reduce(0, +) + CGFloat(max(0, rows.count - 1)) * groupedSpacing)
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        let rows = rows(width: bounds.width, subviews: subviews)
+        var y = bounds.minY
+        for row in rows {
+            var x = bounds.midX - row.width / 2
+            for index in row.indices {
+                let size = subviews[index].sizeThatFits(.unspecified)
+                subviews[index].place(at: CGPoint(x: x, y: y + (row.height - size.height) / 2), anchor: .topLeading, proposal: ProposedViewSize(size))
+                x += size.width + row.spacing
+            }
+            y += row.height + groupedSpacing
+        }
+    }
+
+    private func rows(width: CGFloat?, subviews: Subviews) -> [Row] {
+        let sizes = subviews.map { $0.sizeThatFits(.unspecified) }
+        let availableWidth = width.flatMap { $0.isFinite ? max(0, $0) : nil } ?? .infinity
+        let all = Array(subviews.indices)
+        let singleRow = row(all, sizes: sizes, spacing: singleRowSpacing)
+        if !prefersGroupedRows, singleRow.width <= availableWidth {
+            return all.isEmpty ? [] : [singleRow]
+        }
+        let primary = all.filter { subviews[$0][AudioTransportPrimaryKey.self] }
+        let ancillary = all.filter { !subviews[$0][AudioTransportPrimaryKey.self] }
+        var rows: [Row] = []
+        for group in [primary, ancillary] {
+            var current: [Int] = []
+            for index in group {
+                let proposed = current + [index]
+                if !current.isEmpty, row(proposed, sizes: sizes, spacing: groupedSpacing).width > availableWidth {
+                    rows.append(row(current, sizes: sizes, spacing: groupedSpacing))
+                    current = []
+                }
+                current.append(index)
+            }
+            if !current.isEmpty {
+                rows.append(row(current, sizes: sizes, spacing: groupedSpacing))
+            }
+        }
+        return rows
+    }
+
+    private func row(_ indices: [Int], sizes: [CGSize], spacing: CGFloat) -> Row {
+        Row(indices: indices, width: indices.reduce(0) { $0 + sizes[$1].width } + CGFloat(max(0, indices.count - 1)) * spacing, height: indices.map { sizes[$0].height }.max() ?? 0, spacing: spacing)
     }
 }
 

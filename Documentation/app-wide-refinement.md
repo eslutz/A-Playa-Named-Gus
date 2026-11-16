@@ -11,6 +11,8 @@ page deduplication. Gus retains AVPlayer/AVKit and current OS 26 fallbacks.
   forbidden operations remain distinct from expired credentials.
 - Playback preparation, actual playing, progress and terminal outcomes are
   separate. One per-session reporter orders audio/video lifecycle boundaries.
+  Native audio-session category or activation failures stop preparation and expose
+  the existing failure/Retry state before media resolution or reporting begins.
   Resolution has a 30-second total budget; native preparation has 45 seconds.
   Safe reads have at most three attempts; allocating requests are never blindly
   retried. Reports and known-resource cleanup each have five seconds.

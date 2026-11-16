@@ -7,6 +7,7 @@ struct AlbumDetailView: View {
     @Environment(SessionStore.self) private var session
     @Environment(OfflineDownloadStore.self) private var downloads
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    @ScaledMetric(relativeTo: .body) private var actionsMinimumWidth: CGFloat = 240
     let album: MediaItem
 
     #if os(iOS)
@@ -46,34 +47,16 @@ struct AlbumDetailView: View {
 
     @ViewBuilder private var albumContent: some View {
         #if os(iOS)
-            if DeviceIdentity.usesIPadPresentation, widthClass == .regular, !dynamicTypeSize.isAccessibilitySize {
-                ViewThatFits(in: .horizontal) {
-                    HStack(alignment: .top, spacing: 32) {
-                        VStack(alignment: .leading, spacing: 16) {
-                            albumArtwork
-                            if let artist = album.albumArtist ?? album.artists.first {
-                                Text(artist).font(.subheadline).foregroundStyle(.secondary)
-                            }
-                            if let year = album.productionYear {
-                                Text(String(year)).font(.subheadline).foregroundStyle(.secondary)
-                            }
-                            Text(continuation == nil ? String(localized: "\(tracks.count) tracks") : String(localized: "\(tracks.count) tracks loaded")).font(.subheadline).foregroundStyle(.secondary)
-                            ViewThatFits(in: .horizontal) {
-                                HStack(spacing: 12) { albumActions }
-                                VStack(alignment: .leading, spacing: 12) { albumActions }
-                            }
-                        }
-                        .frame(width: 240, alignment: .leading)
-                        VStack(alignment: .leading, spacing: 16) {
-                            Text("Tracks").font(.headline)
-                            trackList
-                        }
-                        .frame(minWidth: 280, maxWidth: .infinity, alignment: .leading)
+            AdaptiveStack(horizontalMinimumWidth: 240 + 32 + 280, horizontalAlignment: .top, horizontalSpacing: 32, verticalSpacing: 24, prefersVertical: !usesIPadColumns) { horizontal in
+                header(isColumn: horizontal)
+                    .frame(width: horizontal ? 240 : nil, alignment: .leading)
+                VStack(alignment: .leading, spacing: 16) {
+                    if horizontal {
+                        Text("Tracks").font(.headline)
                     }
-                    stackedContent
+                    trackList
                 }
-            } else {
-                stackedContent
+                .frame(minWidth: horizontal ? 280 : nil, maxWidth: .infinity, alignment: .leading)
             }
         #elseif os(tvOS)
             HStack(alignment: .top, spacing: 64) {
@@ -97,41 +80,58 @@ struct AlbumDetailView: View {
 
     private var stackedContent: some View {
         VStack(alignment: .leading, spacing: 24) {
-            header
+            header()
             trackList
         }
     }
 
-    @ViewBuilder private var header: some View {
+    private var isCompactHeader: Bool {
         #if os(iOS)
-            if widthClass == .compact {
-                VStack(alignment: .leading, spacing: 24) {
-                    HStack(spacing: 6) {
-                        if let artist = album.albumArtist ?? album.artists.first {
-                            Text(artist)
-                        }
-                        if let year = album.productionYear {
-                            Text(String(year))
-                        }
-                        Text(continuation == nil ? String(localized: "\(tracks.count) tracks") : String(localized: "\(tracks.count) tracks loaded"))
-                    }
-                    .font(.subheadline).foregroundStyle(.secondary)
-                    albumArtwork
-                    HStack(spacing: 12) { albumActions }
-                }
-            } else {
-                adaptiveHeader
-            }
+            widthClass == .compact
         #else
-            adaptiveHeader
+            false
         #endif
     }
 
-    private var adaptiveHeader: some View {
-        ViewThatFits(in: .horizontal) {
-            HStack(alignment: .top, spacing: 20) { albumArtwork; albumInfo }
-            VStack(alignment: .leading, spacing: 20) { albumArtwork; albumInfo }
+    private var usesIPadColumns: Bool {
+        #if os(iOS)
+            DeviceIdentity.usesIPadPresentation && widthClass == .regular && !dynamicTypeSize.isAccessibilitySize
+        #else
+            false
+        #endif
+    }
+
+    private func header(isColumn: Bool = false) -> some View {
+        VStack(alignment: .leading, spacing: isCompactHeader ? 24 : 0) {
+            if isCompactHeader {
+                HStack(spacing: 6) {
+                    if let artist = album.albumArtist ?? album.artists.first {
+                        Text(artist)
+                    }
+                    if let year = album.productionYear {
+                        Text(String(year))
+                    }
+                    Text(trackCount)
+                }
+                .font(.subheadline).foregroundStyle(.secondary)
+            }
+            AdaptiveStack(horizontalMinimumWidth: artworkWidth + 20 + 280, horizontalAlignment: .top, horizontalSpacing: 20, verticalSpacing: isCompactHeader ? 24 : (isColumn ? 16 : 20), prefersVertical: isCompactHeader || isColumn) { _ in
+                albumArtwork
+                VStack(alignment: .leading, spacing: isColumn ? 16 : 8) {
+                    if !isCompactHeader {
+                        albumMetadata(isColumn: isColumn)
+                    }
+                    AdaptiveStack(horizontalMinimumWidth: actionsMinimumWidth, horizontalSpacing: 12, verticalSpacing: 12) { _ in
+                        albumActions
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
         }
+    }
+
+    private var trackCount: String {
+        continuation == nil ? String(localized: "\(tracks.count) tracks") : String(localized: "\(tracks.count) tracks loaded")
     }
 
     private var artworkWidth: CGFloat {
@@ -150,18 +150,20 @@ struct AlbumDetailView: View {
             .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 
-    private var albumInfo: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(album.displayTitle).font(.title.bold()).fixedSize(horizontal: false, vertical: true)
+    private func albumMetadata(isColumn: Bool) -> some View {
+        VStack(alignment: .leading, spacing: isColumn ? 16 : 8) {
+            if !isColumn {
+                Text(album.displayTitle).font(.title.bold()).fixedSize(horizontal: false, vertical: true)
+            }
             if let artist = album.albumArtist ?? album.artists.first {
-                Text(artist).font(.title3)
+                Text(artist).font(isColumn ? .subheadline : .title3)
+                    .foregroundStyle(isColumn ? .secondary : .primary)
             }
             if let year = album.productionYear {
-                Text(String(year)).foregroundStyle(.secondary)
+                Text(String(year)).font(isColumn ? .subheadline : .body).foregroundStyle(.secondary)
             }
-            ViewThatFits(in: .horizontal) {
-                HStack(spacing: 12) { albumActions }
-                VStack(alignment: .leading, spacing: 12) { albumActions }
+            if isColumn {
+                Text(trackCount).font(.subheadline).foregroundStyle(.secondary)
             }
         }
     }

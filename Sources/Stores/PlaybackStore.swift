@@ -45,6 +45,7 @@ final class PlaybackStore {
     private let localProgress: OfflinePlaybackProgressStore
     private let progressWriterToken: UUID
     private let initialSeek: @MainActor (AVPlayer, Int) async throws -> Void
+    private let activateAudioSession: @MainActor (Bool) async throws -> Void
     private var isLocalPlayback = false
     private var playingDownload: OfflineDownloadRecord?
     private let nowPlaying = NowPlayingController()
@@ -72,7 +73,7 @@ final class PlaybackStore {
     private var preparationGeneration = 0
     private var presentationIsActive = true
 
-    init(request: PlaybackRequest, session: SessionStore, playbackRefresh: PlaybackRefreshStore, downloads: OfflineDownloadStore? = nil, localOnly: Bool = false, localProgress: OfflinePlaybackProgressStore? = nil, initialSeek: @escaping @MainActor (AVPlayer, Int) async throws -> Void = { player, ticks in
+    init(request: PlaybackRequest, session: SessionStore, playbackRefresh: PlaybackRefreshStore, downloads: OfflineDownloadStore? = nil, localOnly: Bool = false, localProgress: OfflinePlaybackProgressStore? = nil, activateAudioSession: @escaping @MainActor (Bool) async throws -> Void = { try await PlaybackAudioSession.activate(video: $0) }, initialSeek: @escaping @MainActor (AVPlayer, Int) async throws -> Void = { player, ticks in
         let finished = await player.seek(to: CMTime(seconds: PlaybackTime.seconds(fromTicks: ticks), preferredTimescale: 600), toleranceBefore: .zero, toleranceAfter: .zero)
         guard finished else { throw URLError(.cannotDecodeContentData) }
     }) {
@@ -81,6 +82,7 @@ final class PlaybackStore {
         streamSelection = request.streamSelection
         viewingMode = request.presentation
         self.initialSeek = initialSeek
+        self.activateAudioSession = activateAudioSession
         self.session = session
         self.playbackRefresh = playbackRefresh
         self.downloads = downloads
@@ -512,7 +514,7 @@ final class PlaybackStore {
 
         var effectiveStartTicks = startTimeTicks
         do {
-            await PlaybackAudioSession.activate(video: true)
+            try await activateAudioSession(true)
             try Task.checkCancellation()
             guard session.isActive, generation == preparationGeneration else { return }
             playingDownload = downloads?.record(for: item, serverID: session.server.id, userID: session.user.id, mediaSourceID: streamSelection.mediaSourceID)
@@ -868,7 +870,7 @@ final class PlaybackStore {
 
     private func handlePlayerFailure(_ error: Error?) {
         DiagnosticsHub.shared.record(.playbackFailed)
-        let failure = error as NSError?
+        let failure = (error as? PlaybackAudioSessionActivationError)?.underlyingError ?? (error as NSError?)
         let domain: Int
         switch failure?.domain {
         case NSURLErrorDomain: domain = 1

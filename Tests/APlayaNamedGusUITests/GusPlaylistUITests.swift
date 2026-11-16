@@ -375,7 +375,11 @@
             XCTAssertTrue(after.isEmpty)
             app.navigationBars.buttons["More"].firstMatch.tap(); app.buttons["Delete Collection"].tap()
             app.buttons["Delete Collection"].firstMatch.tap()
-            XCTAssertTrue(app.navigationBars[title].waitForExistence(timeout: 10))
+            let returnedToMovie = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+                let play = app.buttons["Detail.play"]
+                return play.exists && play.isHittable && app.staticTexts[title].firstMatch.exists && !app.buttons["Delete Collection"].exists && !app.staticTexts[name].exists
+            }, object: nil)
+            XCTAssertEqual(XCTWaiter.wait(for: [returnedToMovie], timeout: 10), .completed)
             let deleted = try await nativeList(named: name, kind: "BoxSet")
             XCTAssertNil(deleted)
         }

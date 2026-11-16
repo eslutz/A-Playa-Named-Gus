@@ -1767,6 +1767,17 @@
       "comment": "Network error with detail",
       "extractionState": "manual"
     },
+    "Couldn't start audio playback. Try again.": {
+      "comment": "Audio session activation failure",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn't start audio playback. Try again."
+          }
+        }
+      }
+    },
     "Create": {
       "comment": "Next Up and video playlist interface."
     },

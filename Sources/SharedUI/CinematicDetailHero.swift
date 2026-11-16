@@ -4,7 +4,6 @@ import SwiftUI
 /// title block, play/up-next actions, and a caller-supplied accessory slot.
 struct CinematicDetailHero<Accessory: View>: View {
     @Environment(SessionStore.self) private var session
-    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     #if os(iOS)
         @Environment(\.horizontalSizeClass) private var widthClass
     #endif
@@ -33,17 +32,17 @@ struct CinematicDetailHero<Accessory: View>: View {
 
     #if os(iOS)
         private var iPadHero: some View {
-            ViewThatFits(in: .horizontal) {
-                if !dynamicTypeSize.isAccessibilitySize {
-                    HStack(alignment: .top, spacing: 32) {
-                        iPadArtworkAndActions.frame(width: item.type == .book ? 240 : 400)
-                        iPadOverview.frame(minWidth: 280, maxWidth: 680, alignment: .leading)
-                    }
-                }
-                VStack(alignment: .leading, spacing: 24) {
-                    iPadArtworkAndActions.frame(maxWidth: item.type == .book ? 240 : 400, alignment: .leading)
-                    iPadOverview
-                }
+            AdaptiveStack(
+                horizontalMinimumWidth: (item.type == .book ? 240 : 400) + 280 + 32,
+                horizontalAlignment: .top,
+                horizontalSpacing: 32,
+                verticalSpacing: 24
+            ) { horizontal in
+                iPadArtworkAndActions
+                    .frame(width: horizontal ? (item.type == .book ? 240 : 400) : nil)
+                    .frame(maxWidth: item.type == .book ? 240 : 400, alignment: .leading)
+                iPadOverview
+                    .frame(minWidth: horizontal ? 280 : nil, maxWidth: horizontal ? 680 : .infinity, alignment: .leading)
             }
             .padding(24)
             .frame(maxWidth: PageContentMetrics.maxWidth, alignment: .leading)
@@ -96,17 +95,14 @@ struct CinematicDetailHero<Accessory: View>: View {
     }
 
     private var standardHero: some View {
-        ViewThatFits(in: .horizontal) {
-            HStack(alignment: .bottom, spacing: 28) {
-                titleBlock
-                    .frame(maxWidth: 760, alignment: .leading)
-                actionStack
-                    .frame(width: DetailActionMetrics.maximumRowWidth)
-            }
-            VStack(alignment: .leading, spacing: 18) {
-                titleBlock
-                actionStack
-            }
+        AdaptiveStack(
+            horizontalMinimumWidth: 320 + DetailActionMetrics.maximumRowWidth + 28,
+            horizontalAlignment: .bottom,
+            horizontalSpacing: 28,
+            verticalSpacing: 18
+        ) { horizontal in
+            titleBlock.frame(maxWidth: horizontal ? 760 : .infinity, alignment: .leading)
+            actionStack.frame(width: horizontal ? DetailActionMetrics.maximumRowWidth : nil, alignment: .leading)
         }
         .padding(heroPadding)
         .frame(maxWidth: PageContentMetrics.maxWidth, alignment: .leading)
@@ -352,18 +348,46 @@ struct DetailActionRow<Content: View>: View {
 
     var body: some View {
         GusGlassControlGroup {
-            ViewThatFits(in: .horizontal) {
-                HStack(spacing: 8) { content }
-                Grid(alignment: .leading, horizontalSpacing: 8, verticalSpacing: 8) {
-                    Group(subviews: content) { actions in
-                        ForEach(Array(stride(from: 0, to: actions.count, by: 2)), id: \.self) { start in
-                            GridRow {
-                                ForEach(actions[start ..< min(start + 2, actions.count)]) { action in action }
-                            }
-                        }
-                    }
-                }
+            DetailActionLayout { content }
+        }
+    }
+}
+
+/// A single realized set of controls, arranged as a row or a two-column grid.
+/// A Layout is needed because changing GridRow parents would replace control identity.
+private struct DetailActionLayout: Layout {
+    private let spacing: CGFloat = 8
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache _: inout ()) -> CGSize {
+        let metrics = measurements(width: proposal.width, subviews: subviews)
+        return CGSize(width: metrics.width, height: metrics.heights.reduce(0, +) + spacing * CGFloat(max(0, metrics.heights.count - 1)))
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal _: ProposedViewSize, subviews: Subviews, cache _: inout ()) {
+        let metrics = measurements(width: bounds.width, subviews: subviews)
+        guard metrics.columns > 0 else { return }
+        let cellWidth = (metrics.width - spacing * CGFloat(metrics.columns - 1)) / CGFloat(metrics.columns)
+        var y = bounds.minY
+        for (index, view) in subviews.enumerated() {
+            let row = index / metrics.columns
+            let column = index % metrics.columns
+            view.place(at: CGPoint(x: bounds.minX + CGFloat(column) * (cellWidth + spacing), y: y), anchor: .topLeading, proposal: ProposedViewSize(width: cellWidth, height: metrics.heights[row]))
+            if column == metrics.columns - 1 {
+                y += metrics.heights[row] + spacing
             }
         }
+    }
+
+    private func measurements(width: CGFloat?, subviews: Subviews) -> (width: CGFloat, columns: Int, heights: [CGFloat]) {
+        guard !subviews.isEmpty else { return (0, 0, []) }
+        let idealWidth = subviews.reduce(CGFloat.zero) { $0 + $1.sizeThatFits(.unspecified).width } + spacing * CGFloat(subviews.count - 1)
+        let width = max(0, width.flatMap { $0.isFinite ? $0 : nil } ?? idealWidth)
+        let columns = idealWidth <= width ? subviews.count : min(width >= 96 ? 2 : 1, subviews.count)
+        let cellWidth = max(0, (width - spacing * CGFloat(columns - 1)) / CGFloat(columns))
+        var heights = Array(repeating: CGFloat.zero, count: (subviews.count + columns - 1) / columns)
+        for (index, view) in subviews.enumerated() {
+            heights[index / columns] = max(heights[index / columns], view.sizeThatFits(ProposedViewSize(width: cellWidth, height: nil)).height)
+        }
+        return (width, columns, heights)
     }
 }

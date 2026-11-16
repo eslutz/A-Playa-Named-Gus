@@ -200,18 +200,12 @@ struct LibraryGridView: View {
         let albums = store.items.filter { $0.type == .musicAlbum }
         let artists = store.items.filter { $0.type == .musicArtist }
         return VStack(alignment: .leading, spacing: 24) {
-            ViewThatFits(in: .horizontal) {
-                if usesMusicColumns && !artists.isEmpty {
-                    HStack(alignment: .top, spacing: 32) {
-                        musicAlbums(albums, store: store).frame(minWidth: 360, maxWidth: .infinity)
-                        musicArtists(artists, store: store).frame(width: 240)
-                    }
-                }
-                VStack(alignment: .leading, spacing: 24) {
-                    musicAlbums(albums, store: store)
-                    if !artists.isEmpty {
-                        musicArtists(artists, store: store)
-                    }
+            AdaptiveStack(horizontalMinimumWidth: 360 + 32 + 240, horizontalAlignment: .top, horizontalSpacing: 32, verticalSpacing: 24, prefersVertical: !usesMusicColumns || artists.isEmpty) { horizontal in
+                musicAlbums(albums, store: store)
+                    .frame(minWidth: horizontal ? 360 : nil, maxWidth: .infinity, alignment: .leading)
+                if !artists.isEmpty {
+                    musicArtists(artists, store: store)
+                        .frame(width: horizontal ? 240 : nil, alignment: .leading)
                 }
             }
             if let error = store.pageError {

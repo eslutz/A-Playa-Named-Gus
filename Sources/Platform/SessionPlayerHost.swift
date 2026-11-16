@@ -27,21 +27,7 @@ struct AdaptiveAudioLayout<Artwork: View, Controls: View>: View {
 
     private func continuousLayout(geometry: GeometryProxy) -> some View {
         ScrollView {
-            #if os(iOS)
-                if geometry.size.width < 600, geometry.size.height > geometry.size.width {
-                    VStack(spacing: 24) {
-                        artwork.frame(width: min(geometry.size.width - 48, 320))
-                        Spacer(minLength: 24)
-                        controls
-                    }
-                    .frame(minHeight: max(0, geometry.size.height - 48))
-                    .padding(24)
-                } else {
-                    adaptiveContent(geometry: geometry)
-                }
-            #else
-                adaptiveContent(geometry: geometry)
-            #endif
+            adaptiveContent(geometry: geometry)
         }
     }
 
@@ -56,15 +42,27 @@ struct AdaptiveAudioLayout<Artwork: View, Controls: View>: View {
     }
 
     private func adaptiveContent(geometry: GeometryProxy) -> some View {
-        ViewThatFits(in: .horizontal) {
-            HStack(alignment: .center, spacing: 24) {
-                artwork.frame(width: min(geometry.size.height * 0.5, artworkLimit))
-                controls.frame(minWidth: 280, maxWidth: 560)
+        let compactPortrait = usesCompactPortrait(in: geometry)
+        let artworkWidth = min(geometry.size.height * 0.5, artworkLimit)
+        let portraitArtworkWidth: CGFloat? = compactPortrait ? min(max(0, geometry.size.width - 48), 320) : nil
+        return AdaptiveStack(horizontalMinimumWidth: artworkWidth + 24 + 280, verticalAlignment: .center, horizontalSpacing: 24, verticalSpacing: 24, prefersVertical: compactPortrait, containerAlignment: .center) { horizontal in
+            artwork.frame(width: horizontal ? artworkWidth : portraitArtworkWidth)
+            if compactPortrait {
+                Spacer(minLength: 24)
             }
-            VStack(spacing: 24) { artwork; controls }
+            controls.frame(minWidth: horizontal ? 280 : nil, maxWidth: horizontal ? 560 : nil)
         }
+        .frame(minHeight: compactPortrait ? max(0, geometry.size.height - 48) : nil)
         .padding(24)
         .frame(maxWidth: .infinity, minHeight: minimumContentHeight(geometry))
+    }
+
+    private func usesCompactPortrait(in geometry: GeometryProxy) -> Bool {
+        #if os(iOS)
+            geometry.size.width < 600 && geometry.size.height > geometry.size.width
+        #else
+            false
+        #endif
     }
 
     private func minimumContentHeight(_ geometry: GeometryProxy) -> CGFloat {
