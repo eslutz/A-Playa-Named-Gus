@@ -574,7 +574,7 @@ struct PlaybackLifecyclePolicyTests {
         let session = makeSession(provider)
         var activationArguments: [Bool] = []
         var denied = true
-        let activate: @MainActor (Bool) async throws -> Void = { video in
+        let activate: @MainActor @Sendable (Bool) async throws -> Void = { video in
             activationArguments.append(video)
             let shouldDeny = denied
             try await PlaybackAudioSession.activate(video: video, configureCategory: { _ in }, activateSession: {
