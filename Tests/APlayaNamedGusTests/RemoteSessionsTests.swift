@@ -194,11 +194,12 @@ struct RemoteSessionLifecycleTests {
             startPositionTicks: targetTicks
         )
         var confirmations = 0
-        #expect(try await store.play(request, on: "remote", onConfirmed: { sent, observed in
+        let outcome = try await store.play(request, on: "remote", onConfirmed: { sent, observed in
             #expect(sent.requestedStartTicks == targetTicks)
             #expect(observed.mediaSourceID == source.id)
             confirmations += 1
-        }) == .accepted)
+        })
+        #expect(outcome == .accepted)
         #expect(store.commandOutcomes["remote"] == .accepted)
         #expect(confirmations == 0)
 
