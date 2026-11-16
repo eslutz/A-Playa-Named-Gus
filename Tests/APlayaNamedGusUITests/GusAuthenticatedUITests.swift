@@ -137,9 +137,11 @@ final class GusAuthenticatedUITests: XCTestCase {
             capture(app, "ready-video-close-landscape")
             close.tap()
             let returned = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
-                !close.exists && !video.exists && app.buttons["Detail.play"].isHittable
+                !close.exists && !video.exists && app.buttons["Detail.play"].exists
             }, object: nil)
             XCTAssertEqual(XCTWaiter.wait(for: [returned], timeout: 10), .completed, app.debugDescription)
+            reveal(app.buttons["Detail.play"], in: app)
+            XCTAssertTrue(app.buttons["Detail.play"].isHittable, app.debugDescription)
             capture(app, "ready-video-dismissed")
         }
     #endif
@@ -156,7 +158,8 @@ final class GusAuthenticatedUITests: XCTestCase {
         #endif
         for (type, action) in details {
             let app = try launch("item/" + required(type))
-            XCTAssertTrue(app.buttons[action].firstMatch.waitForExistence(timeout: 30))
+            let button = type == "Movie" ? app.buttons["Detail.play"] : app.buttons[action].firstMatch
+            XCTAssertTrue(button.waitForExistence(timeout: 30))
             if type == "Movie" {
                 XCTAssertEqual(app.buttons.matching(identifier: "Detail.play").count, 1, app.debugDescription)
                 XCTAssertEqual(app.buttons.matching(identifier: "Detail.nextUp").count, 1, app.debugDescription)
@@ -164,7 +167,6 @@ final class GusAuthenticatedUITests: XCTestCase {
             capture(app, type.lowercased() + "-detail")
             #if os(iOS)
                 let window = app.windows.firstMatch.frame
-                let button = app.buttons[action].firstMatch
                 if button.isHittable {
                     XCTAssertLessThanOrEqual(button.frame.maxX, window.maxX + 1)
                     XCTAssertGreaterThanOrEqual(button.frame.minX, window.minX - 1)
@@ -389,10 +391,19 @@ final class GusAuthenticatedUITests: XCTestCase {
             try prepare()
             defer { finish() }
             let app = try launch("play/" + required("Audio"))
-            XCTAssertTrue(app.cells["AVAudibleSettings"].waitForExistence(timeout: 30))
+            let nativeAudio = app.cells["AVAudibleSettings"]
+            let prepared = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+                nativeAudio.exists || app.buttons["Try Again"].allElementsBoundByIndex.contains { $0.isEnabled && $0.isHittable }
+            }, object: nil)
+            // Resolution can use 30s and native preparation 45s. Wait through those
+            // bounded phases plus launch, but surface a visible failure promptly.
+            XCTAssertEqual(XCTWaiter.wait(for: [prepared], timeout: 90), .completed, app.debugDescription)
+            XCTAssertTrue(nativeAudio.exists, app.debugDescription)
+            let marker = app.otherElements["AXElapsedTime"]
+            XCTAssertTrue(marker.waitForExistence(timeout: 5))
+            let initialElapsed = marker.label
             let advancing = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
-                let marker = app.otherElements["AXElapsedTime"]
-                return marker.exists && marker.label != "00:00"
+                marker.exists && marker.label != initialElapsed
             }, object: nil)
             XCTAssertEqual(XCTWaiter.wait(for: [advancing], timeout: 30), .completed)
             XCUIRemote.shared.press(.playPause)
@@ -757,7 +768,8 @@ final class GusAuthenticatedUITests: XCTestCase {
                     "light",
                 ]
                 app.launch()
-                XCTAssertTrue(app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", landmark)).firstMatch.waitForExistence(timeout: 30))
+                let element = landmark == "Play" ? app.buttons["Detail.play"] : app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", landmark)).firstMatch
+                XCTAssertTrue(element.waitForExistence(timeout: 30))
                 capture(app, name)
                 app.terminate()
             }
@@ -796,10 +808,26 @@ final class GusAuthenticatedUITests: XCTestCase {
             try prepare()
             defer { finish() }
             let app = try launch("play/" + required("SynopsisMovie"))
+            let surface = app.descendants(matching: .any).matching(identifier: "VideoPlayer.surface").firstMatch
+            let prepared = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+                surface.exists
+                    || app.staticTexts["Can't Play This"].allElementsBoundByIndex.contains(where: \.isHittable)
+                    || app.buttons["Try Again"].allElementsBoundByIndex.contains { $0.isEnabled && $0.isHittable }
+            }, object: nil)
+            // Resolution can use 30 seconds and native preparation 45 seconds;
+            // allow launch overhead while failing promptly on actionable errors.
+            XCTAssertEqual(XCTWaiter.wait(for: [prepared], timeout: 90), .completed, app.debugDescription)
+            XCTAssertTrue(surface.exists, app.debugDescription)
+            let window = app.windows.firstMatch.frame
+            let viewport = surface.frame
+            XCTAssertGreaterThan(window.width, 0)
+            XCTAssertGreaterThan(window.height, 0)
+            XCTAssertGreaterThanOrEqual(viewport.width, window.width * 0.9, app.debugDescription)
+            XCTAssertGreaterThanOrEqual(viewport.height, window.height * 0.9, app.debugDescription)
+            capture(app, "tv-native-video-viewport")
             let infoMenu = app.collectionViews["AVInfoMenuCollection"]
-            // Open the hidden native Info chrome before waiting for it. Only
-            // that observed AVKit collection establishes readiness: the absence
-            // of a preparing Close button also occurs before/after playback.
+            // Open the hidden native Info chrome only after preparation and the
+            // viewport check. Its availability and interaction also exercise AVKit.
             for _ in 0 ..< 12 {
                 XCUIRemote.shared.press(.down)
                 if infoMenu.waitForExistence(timeout: 1) {
@@ -829,7 +857,7 @@ final class GusAuthenticatedUITests: XCTestCase {
             try prepare()
             defer { finish() }
             let app = try launch("item/" + required("SynopsisMovie"))
-            let play = app.buttons["Play"].firstMatch
+            let play = app.buttons["Detail.play"]
             XCTAssertTrue(play.waitForExistence(timeout: 30))
             let focused = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in play.hasFocus }, object: nil)
             XCTAssertEqual(XCTWaiter.wait(for: [focused], timeout: 10), .completed)
@@ -942,7 +970,7 @@ final class GusAuthenticatedUITests: XCTestCase {
                     "YES",
                 ]
                 app.launch()
-                let button = app.buttons[action].firstMatch
+                let button = type == "Movie" ? app.buttons["Detail.play"] : app.buttons[action].firstMatch
                 XCTAssertTrue(button.waitForExistence(timeout: 30))
                 reveal(button, in: app)
                 XCTAssertTrue(button.isHittable)
@@ -1114,7 +1142,7 @@ final class GusAuthenticatedUITests: XCTestCase {
             try prepare()
             defer { finish() }
             let app = try launch("item/" + required("SynopsisMovie"))
-            XCTAssertTrue(app.buttons["Play"].firstMatch.waitForExistence(timeout: 30))
+            XCTAssertTrue(app.buttons["Detail.play"].waitForExistence(timeout: 30))
             let more = app.buttons["Detail.fullSynopsis"].firstMatch
             for _ in 0 ..< 10 {
                 if more.isHittable {
@@ -1154,7 +1182,7 @@ final class GusAuthenticatedUITests: XCTestCase {
                     UIContentSizeCategory.accessibilityExtraExtraExtraLarge.rawValue,
                 ]
                 app.launch()
-                let button = app.buttons[action].firstMatch
+                let button = type == "Movie" ? app.buttons["Detail.play"] : app.buttons[action].firstMatch
                 XCTAssertTrue(button.waitForExistence(timeout: 30))
                 reveal(button, in: app)
                 XCTAssertTrue(button.isHittable)
@@ -1168,7 +1196,7 @@ final class GusAuthenticatedUITests: XCTestCase {
             try prepare()
             defer { finish() }
             let app = try launch("item/" + required("SynopsisMovie"))
-            XCTAssertTrue(app.buttons["Play"].firstMatch.waitForExistence(timeout: 30))
+            XCTAssertTrue(app.buttons["Detail.play"].waitForExistence(timeout: 30))
             capture(app, "movie-audit")
             if UIDevice.current.userInterfaceIdiom == .pad {
                 // Xcode 27's form-sheet contrast scanner samples clipped/offscreen
@@ -1176,7 +1204,7 @@ final class GusAuthenticatedUITests: XCTestCase {
                 // native geometry/description auditing and independent rendered
                 // checks; record native iPad contrast as blocked, never as passed.
                 try app.performAccessibilityAudit(for: [.hitRegion, .sufficientElementDescription])
-                for element in [app.buttons["ContentLink.detailDone"], app.buttons["Play"].firstMatch] {
+                for element in [app.buttons["ContentLink.detailDone"], app.buttons["Detail.play"]] {
                     XCTAssertTrue(element.isEnabled)
                     XCTAssertTrue(element.isHittable)
                     XCTAssertGreaterThanOrEqual(try renderedLabelContrast(element), 4.5)
@@ -1198,7 +1226,7 @@ final class GusAuthenticatedUITests: XCTestCase {
                     renderedChecks["ContentLink.detailDone"] = done
                     return true
                 }
-                let play = app.buttons["Play"].firstMatch
+                let play = app.buttons["Detail.play"]
                 if issue.element?.identifier == "Detail.play",
                    issue.element?.label == "Play", play.isEnabled
                 {

@@ -20,6 +20,8 @@ page deduplication. Gus retains AVPlayer/AVKit and current OS 26 fallbacks.
   failure and ready playback, including sources without playback options. Close
   cancels preparation, stops playlist activity and tears down playback before dismissing;
   AVKit keeps its transport area. Other platforms retain their existing dismissal.
+  tvOS explicitly fills the presentation viewport during preparation and native playback;
+  the native UI regression checks its bounds before opening Playback Details.
 - Foreground refresh retains usable content. Query generation rejects stale
   results. Full-content views and queues continue pages and deduplicate by scoped
   media identity; intentional preview limits remain explicit. Advertised totals

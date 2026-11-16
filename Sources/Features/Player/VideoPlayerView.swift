@@ -52,6 +52,10 @@ struct VideoPlayerView: View {
                     }
                 #else
                     PlayerSurface(player: player, store: store, onSelectSource: { pendingSource = $0 })
+                    #if os(tvOS)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .accessibilityIdentifier("VideoPlayer.surface")
+                    #endif
                         .ignoresSafeArea(edges: [.horizontal, .bottom])
                 #endif
             } else if let message = playlist?.errorMessage {
@@ -85,6 +89,12 @@ struct VideoPlayerView: View {
                     .tint(.white)
             }
         }
+        #if os(tvOS)
+        // Let the presentation set AVKit's viewport during both preparation
+        // and playback.
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .ignoresSafeArea()
+        #endif
         .overlay(alignment: .topLeading) {
             #if !os(iOS)
                 if store?.state != .ready {
@@ -95,6 +105,7 @@ struct VideoPlayerView: View {
                 }
             #endif
         }
+        #if !os(tvOS)
         .safeAreaInset(edge: .top, spacing: 0) {
             #if os(iOS)
                 HStack {
@@ -111,7 +122,7 @@ struct VideoPlayerView: View {
                 .padding(.horizontal)
                 .padding(.vertical, 8)
                 .background(.bar)
-            #elseif !os(tvOS)
+            #else
                 if let store, store.state == .ready, hasPlaybackOptions(store) {
                     playbackOptions(store)
                         .frame(maxWidth: .infinity, alignment: .trailing)
@@ -120,6 +131,7 @@ struct VideoPlayerView: View {
                 }
             #endif
         }
+        #endif
         .confirmationDialog("Switch Version", isPresented: Binding(get: { pendingSource != nil }, set: {
             if !$0 {
                 pendingSource = nil
