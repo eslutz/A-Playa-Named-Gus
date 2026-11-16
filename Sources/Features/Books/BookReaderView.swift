@@ -539,10 +539,7 @@
                     // Check the actual target before a native transition can replace
                     // the last readable page. Do not read an entire chapter here.
                     guard let resource = publication.get(link) else { throw GusError.notFound }
-                    _ = try await PlaybackDeadline.run(for: timeout) {
-                        _ = try await resource.read(range: 0 ..< 1).get()
-                        return true
-                    }
+                    _ = try await resource.read(range: 0 ..< 1).get()
                     guard self?.owns(generation: generation) == true,
                           self?.chapterRequest?.id == requestID, !Task.isCancelled,
                           ContinuousClock.now < deadline, let navigator else { return }
