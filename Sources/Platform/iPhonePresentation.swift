@@ -122,7 +122,7 @@ private struct IPhoneCanvasModifier: ViewModifier {
 
 extension View {
     func gusIPhoneOrIPadOnly() -> some View {
-        modifier(IPhoneOnlyModifier(includesIPad: true))
+        modifier(IPhoneOrIPadOnlyModifier())
     }
 
     @ViewBuilder func gusIPadIconOnly() -> some View {
@@ -135,10 +135,6 @@ extension View {
         #else
             self
         #endif
-    }
-
-    func gusIPhoneOnly() -> some View {
-        modifier(IPhoneOnlyModifier())
     }
 
     func gusPhonePagePadding() -> some View {
@@ -158,14 +154,13 @@ extension View {
     }
 }
 
-private struct IPhoneOnlyModifier: ViewModifier {
-    var includesIPad = false
+private struct IPhoneOrIPadOnlyModifier: ViewModifier {
     #if os(iOS)
         @Environment(\.horizontalSizeClass) private var widthClass
     #endif
     func body(content: Content) -> some View {
         #if os(iOS)
-            if widthClass == .compact || (includesIPad && DeviceIdentity.usesIPadPresentation) {
+            if widthClass == .compact || DeviceIdentity.usesIPadPresentation {
                 content
             }
         #endif

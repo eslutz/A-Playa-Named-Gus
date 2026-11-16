@@ -223,10 +223,6 @@ final class RootNavigationState {
         Binding(get: { self.scrollAnchors[id] }, set: { self.scrollAnchors[id] = $0 })
     }
 
-    static func directSectionIDs(_ ids: [String]) -> [String] {
-        ids.count > 5 ? Array(ids.prefix(4)) : ids
-    }
-
     /// Leave room for the native More and search tabs without losing account customization.
     static func iPhoneDirectSectionIDs(_ ids: [String], usesSavedOrder: Bool) -> [String] {
         let preferred = [NavigationSectionPreference.homeID, NavigationCategory.movies.id, NavigationCategory.tvshows.id]

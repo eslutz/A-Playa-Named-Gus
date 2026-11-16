@@ -45,14 +45,6 @@ extension View {
         #endif
     }
 
-    @ViewBuilder func gusTVHomeTitle() -> some View {
-        #if os(tvOS)
-            navigationTitle("Home")
-        #else
-            navigationTitle("Home")
-        #endif
-    }
-
     /// Keep TV presentation and focus divergence outside the shared feature views.
     @ViewBuilder func gusTVFocus(id: String, section: String, ids: [String], initial: Bool = false, item: MediaItem? = nil, entry: NextUpEntry? = nil, context: String? = nil) -> some View {
         #if os(tvOS)
@@ -60,14 +52,6 @@ extension View {
         #else
             self
         #endif
-    }
-
-    func gusTVNextUpHero(entries: [NextUpEntry]) -> some View {
-        self
-    }
-
-    func gusTVFallbackHero(items: [MediaItem], enabled: Bool) -> some View {
-        self
     }
 
     @ViewBuilder func gusTVBrowsingBackdrop() -> some View {
@@ -118,14 +102,6 @@ extension View {
             padding(.vertical, 32).padding(.horizontal, 24)
         #else
             padding(.vertical, 4)
-        #endif
-    }
-
-    @ViewBuilder func gusTVSingleContentTitle() -> some View {
-        #if os(tvOS)
-            navigationTitle("")
-        #else
-            self
         #endif
     }
 
@@ -203,16 +179,6 @@ extension View {
         #else
             labelStyle(.iconOnly)
         #endif
-    }
-
-    @ViewBuilder func gusTVPosterStatusValue(item: MediaItem?) -> some View {
-        if let progress = item?.playbackProgress, progress > 0, progress < 1 {
-            accessibilityValue(Text("Playback progress \(Int(progress * 100))%"))
-        } else if let watched = item?.userData?.isWatched {
-            accessibilityValue(watched ? Text("Watched") : Text("Unwatched"))
-        } else {
-            self
-        }
     }
 
     /// Share focus order across the primary action, common icons, overflow and synopsis.

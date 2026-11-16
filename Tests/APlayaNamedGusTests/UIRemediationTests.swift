@@ -278,8 +278,6 @@ extension PlaybackIntegrationTests {
             #expect(same === search && same.text == "Psych")
             #expect(state.paths["category.movies"]?.count == 1)
             #expect(state.libraryStore(for: .category(.movies), session: activeSession) === state.libraryStore(for: .category(.movies), session: activeSession))
-            #expect(RootNavigationState.directSectionIDs(["a", "b", "c", "d", "e", "f"]) == ["a", "b", "c", "d"])
-            #expect(RootNavigationState.directSectionIDs(["a", "b", "c", "d", "e"]).count == 5)
             let otherAccount = RootNavigationState()
             #expect(otherAccount.paths.isEmpty && otherAccount !== state)
         }

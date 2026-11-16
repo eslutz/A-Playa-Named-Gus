@@ -50,7 +50,7 @@ struct HomeView: View {
             Button("OK", role: .cancel) { upNext.clearError() }
         } message: { Text(upNext.errorMessage ?? "") }
         .gusVisibleContent(.home, isLoading: store?.state.isLoading ?? true)
-        .gusTVHomeTitle()
+        .navigationTitle("Home")
         .task {
             if let store, store.state == .idle {
                 await store.load()
@@ -120,7 +120,7 @@ struct HomeView: View {
                         }
                     }
                     if !store.unifiedNextUp.isEmpty {
-                        NextUpRail(store: store).gusTVNextUpHero(entries: store.unifiedNextUp).id("next")
+                        NextUpRail(store: store).id("next")
                     }
                     if !store.sharedWithYouItems.isEmpty {
                         MediaRail(title: store.sharedWithYouTitle, items: store.sharedWithYouItems).id("shared")
@@ -128,7 +128,6 @@ struct HomeView: View {
                     ProgressTransferView()
                     ForEach(store.latestSections) { section in
                         MediaRail(title: section.title, items: section.items, latestKind: section.kind, requestsInitialFocus: store.unifiedNextUp.isEmpty && section.id == store.latestSections.first?.id)
-                            .gusTVFallbackHero(items: section.items, enabled: store.unifiedNextUp.isEmpty && section.id == store.latestSections.first?.id)
                             .id(section.id)
                     }
                 }

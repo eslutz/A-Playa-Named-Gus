@@ -56,11 +56,15 @@ page deduplication. Gus retains AVPlayer/AVKit and current OS 26 fallbacks.
   callbacks cannot overwrite completion or recreate deleted records. Completion
   ownership is captured before worker reads and invalidated by cancellation;
   completed records retain their conversion activity and current remote reference.
-- Native previews use compatible I-frame HLS and tvOS chapter artwork. Jellyfin
+- Compatible I-frame HLS remains intact for AVKit's platform-provided previews;
+  tvOS chapter artwork uses separate native navigation metadata. Actual scrubber
+  thumbnail appearance requires platform-specific runtime verification. Jellyfin
   JPEG image playlists do not imply AVKit scrubber support; no custom scrubber.
 - Retired readers/imports/CRUD are removed without a migration bridge. Current
   format data, current offline draft reconciliation and first verified iCloud
   identity ownership remain supported.
+  Obsolete hero no-ops, unused presentation adapters and the superseded tab-count
+  policy are removed along with their callers and obsolete assertions.
 
 ## Finding ledger
 
@@ -128,13 +132,15 @@ and real tuner fault-injection evidence; Gus makes no such guarantee.
 
 ## Acceptance
 
-Build all six platform destinations without warnings; execute shared unit suites
-and affected authenticated UI/Watch regressions. Measure 30 cold/warm samples,
-10 browse cycles, 30 player open/close cycles and a one-hour playback soak on
-available representative hardware. Compare same-device p95 latency with a 10%
-regression ceiling, retaining any stricter existing gate. Missing physical
-hardware and explicitly deferred Duo checks remain separate open acceptance
-items. Completed diagnostics flushes establish durability; abrupt termination
+Build all six platform destinations without warnings. For this refinement run,
+the user's simulator-only constraint limits runtime validation to simulators:
+shared unit suites, affected authenticated UI/Watch regressions, 30 cold/warm
+samples, 10 browse cycles, 30 player open/close cycles and a one-hour playback
+soak. Compare same-simulator p95 latency with a 10% regression ceiling, retaining
+any stricter existing gate. Physical acceptance, including the previously
+deferred Duo checks, is excluded from this run and remains unverified. Native
+macOS runtime testing is also held under that constraint. Completed diagnostics
+flushes establish durability; abrupt termination
 can lose events not yet flushed. Lost responses with unknown server resource IDs
 require server cancellation/TTL validation, not a claim of client-side closure.
 

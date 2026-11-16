@@ -22,10 +22,11 @@ def intel_build_line(line):
 
 
 def diagnostic_lines(text):
-    """Match build diagnostics while excluding timestamped runtime service logs."""
+    """Match build and missing-symbol diagnostics, excluding runtime service noise."""
     pattern = (r"^(?:.+:\d+(?::\d+)?:\s*|[^:\n]+:\s*)?(?:warning|error):|"
                r"(?:appintentsmetadataprocessor|appintentsnltraining).*\b(?:warning|error):|"
-               r"\bxcodebuild\[[^\]]+\].*\bDVTAssertions:\s*(?:warning|error)\b")
+               r"\bxcodebuild\[[^\]]+\].*\bDVTAssertions:\s*(?:warning|error)\b|"
+               r"\bNo symbol named .+ found in system symbol set\b")
     return [line for line in text.splitlines() if re.search(pattern, line, re.IGNORECASE) or intel_build_line(line)]
 
 
@@ -141,8 +142,7 @@ def destinations():
         platform, major, minor = match.groups()
         platform = "visionOS" if platform == "xrOS" else platform
         version = (int(major), int(minor))
-        minimum = {"iOS": 18, "tvOS": 18, "watchOS": 11, "visionOS": 2}[platform]
-        if version[0] < minimum:
+        if version[0] < 26:
             continue
         for device in devices:
             if not device.get("isAvailable", True):

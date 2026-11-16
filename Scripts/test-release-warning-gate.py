@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 """Prove release validation rejects diagnostics even when the tool exits zero."""
 import importlib.util
+import json
 from pathlib import Path
 import sys
 import subprocess
 import tempfile
 import unittest
+from unittest.mock import patch
 
 spec = importlib.util.spec_from_file_location("release_validation", Path(__file__).with_name("validate-release.py"))
 validation = importlib.util.module_from_spec(spec)
@@ -60,7 +62,8 @@ class WarningGateTests(unittest.TestCase):
 
     def test_warning_zero_exit_fails(self):
         for message in ("file.swift:12: warning: ambiguous closure", "ld: warning: duplicate library", "warning: asset issue", "2026-10-13 appintentsmetadataprocessor[1:2] warning: metadata issue",
-                        "2026-11-16 04:54:51.263 xcodebuild[9535:28731] [MT] DVTAssertions: Warning in DVTiPhoneSimulator.m:661"):
+                        "2026-11-16 04:54:51.263 xcodebuild[9535:28731] [MT] DVTAssertions: Warning in DVTiPhoneSimulator.m:661",
+                        "2026-11-16 05:39:37.000 Gus[123:456] No symbol named 'person.crop.circle.badge.gearshape' found in system symbol set"):
             with self.subTest(message=message):
                 command, output, results = self.run_tool(message)
                 with self.assertRaises(RuntimeError):
@@ -100,6 +103,42 @@ class WarningGateTests(unittest.TestCase):
         with self.assertRaises(RuntimeError):
             validation.run(command, output, output, "reject-error", results)
         self.assertEqual(results[0]["exitCode"], 1)
+
+
+class SimulatorSelectionTests(unittest.TestCase):
+    def inventory(self, version):
+        return {"devices": {
+            f"com.apple.CoreSimulator.SimRuntime.iOS-{version}-0": [
+                {"name": "iPhone 17", "udid": f"phone-{version}"},
+                {"name": "iPad Pro", "udid": f"ipad-{version}"},
+            ],
+            f"com.apple.CoreSimulator.SimRuntime.tvOS-{version}-0": [
+                {"name": "Apple TV 4K", "udid": f"tv-{version}"},
+            ],
+            f"com.apple.CoreSimulator.SimRuntime.watchOS-{version}-0": [
+                {"name": "Apple Watch 40mm", "udid": f"watch-{version}"},
+            ],
+            f"com.apple.CoreSimulator.SimRuntime.xrOS-{version}-0": [
+                {"name": "Apple Vision Pro", "udid": f"vision-{version}"},
+            ],
+        }}
+
+    def test_older_installed_runtimes_cannot_satisfy_os26_floor(self):
+        with patch.object(validation.subprocess, "check_output", return_value=json.dumps(self.inventory(25)).encode()):
+            with self.assertRaisesRegex(RuntimeError, "below deployment target"):
+                validation.destinations()
+
+    def test_os26_is_eligible_without_selecting_other_projects_simulators(self):
+        inventory = self.inventory(25)
+        inventory["devices"].update(self.inventory(26)["devices"])
+        inventory["devices"]["com.apple.CoreSimulator.SimRuntime.iOS-27-0"] = [
+            {"name": "PumpSync Audit iPhone", "udid": "unrelated"},
+        ]
+        with patch.object(validation.subprocess, "check_output", return_value=json.dumps(inventory).encode()):
+            selected = validation.destinations()
+        self.assertEqual({key: item["udid"] for key, item in selected.items()}, {
+            "ios": "phone-26", "ipad": "ipad-26", "tv": "tv-26", "watch": "watch-26", "vision": "vision-26",
+        })
 
 
 if __name__ == "__main__":

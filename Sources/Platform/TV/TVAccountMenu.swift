@@ -57,7 +57,7 @@ extension View {
                         }
                     }
                 }
-                Button("Manage Accounts", systemImage: "person.crop.circle.badge.gearshape") { navigation.open(.settings) }
+                Button("Manage Accounts", systemImage: "gearshape") { navigation.open(.settings) }
             } label: {
                 HStack {
                     ProfileAvatar(data: session.profile.imageData)
