@@ -798,7 +798,18 @@ final class GusAuthenticatedUITests: XCTestCase {
             defer { finish() }
             let app = launch("home")
             XCTAssertTrue(app.staticTexts["Recently Added Movies"].firstMatch.waitForExistence(timeout: 30))
+            try focusTV(app, identifier: "NextUp.showAll")
+            guard app.state == .runningForeground else {
+                XCTFail("Gus left the foreground before opening the sidebar\n" + app.debugDescription)
+                throw FixtureError.missingMedia
+            }
+            let showAll = app.buttons["NextUp.showAll"].firstMatch
+            XCTAssertTrue(showAll.hasFocus || showAll.descendants(matching: .any).allElementsBoundByIndex.contains(where: \.hasFocus), app.debugDescription)
             XCUIRemote.shared.press(.menu)
+            guard app.state == .runningForeground else {
+                XCTFail("Opening the sidebar left Gus in the background\n" + app.debugDescription)
+                throw FixtureError.missingMedia
+            }
             let account = app.buttons["Account"].firstMatch
             XCTAssertTrue(account.waitForExistence(timeout: 5), app.debugDescription)
             for _ in 0 ..< 12 {
