@@ -22,8 +22,9 @@ page deduplication. Gus retains AVPlayer/AVKit and current OS 26 fallbacks.
   AVKit keeps its transport area. Other platforms retain their existing dismissal.
   tvOS explicitly fills the presentation viewport during preparation and native playback;
   the native UI regression checks its bounds before opening Playback Details.
-- tvOS dismissal and navigation returns request the saved focus target immediately.
-  One native fallback may reissue that request; a subsequent different choice wins.
+- tvOS dismissal and navigation returns use native focus scopes and an immutable
+  request for the saved target. Native fallback does not reissue that request;
+  target acknowledgement clears it without another focus reset or task scheduling.
   Playlist and collection tasks return to their More opener using the same action order.
   Horizontal TV rails use their full scroll viewport as the native focus section,
   keeping short rows reachable from trailing header controls without changing card layout.

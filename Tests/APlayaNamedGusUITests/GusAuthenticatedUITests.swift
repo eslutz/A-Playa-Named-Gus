@@ -870,6 +870,20 @@ final class GusAuthenticatedUITests: XCTestCase {
                 XCTAssertTrue(button.exists)
                 XCTAssertGreaterThan(button.frame.minY, play.frame.maxY)
             }
+            let actionWindow = app.windows.firstMatch.frame
+            let actionFrames = ["Detail.nextUp", "Detail.version", "Detail.favorite", "Detail.more"].compactMap { id -> (String, CGRect)? in
+                let button = app.buttons[id]
+                return button.exists ? (id, button.frame) : nil
+            }
+            for (id, frame) in actionFrames {
+                XCTAssertFalse(frame.isEmpty, id)
+                XCTAssertTrue(actionWindow.contains(frame), "\(id) extends beyond the window: \(frame)")
+            }
+            for first in actionFrames.indices {
+                for second in actionFrames.indices where second > first {
+                    XCTAssertFalse(actionFrames[first].1.intersects(actionFrames[second].1), "\(actionFrames[first].0) overlaps \(actionFrames[second].0)")
+                }
+            }
             for (index, button) in common.enumerated() {
                 try focusTV(app, identifier: button.identifier)
                 if index == 1 {

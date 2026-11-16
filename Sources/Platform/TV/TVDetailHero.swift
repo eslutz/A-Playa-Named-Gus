@@ -36,7 +36,8 @@ extension View {
                 Spacer(minLength: 300)
                 HStack(alignment: .top, spacing: 56) {
                     controls()
-                        .frame(width: 528, alignment: .leading)
+                        .fixedSize(horizontal: true, vertical: false)
+                        .frame(minWidth: 528, alignment: .leading)
                         .focusSection()
                     VStack(alignment: .leading, spacing: 20) {
                         if let overview = item.overview?.trimmedNilIfEmpty {

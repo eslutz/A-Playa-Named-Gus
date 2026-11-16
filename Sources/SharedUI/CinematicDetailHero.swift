@@ -79,16 +79,12 @@ struct CinematicDetailHero<Accessory: View>: View {
     private var platformHero: some View {
         standardHero.gusTVDetailHero(item: item, backdropURL: backdropURL) {
             VStack(alignment: .leading, spacing: 24) {
-                playButton.frame(maxWidth: .infinity)
+                playButton.frame(width: primaryActionWidth)
                 HStack(spacing: 24) {
                     upNextButton
-                        .frame(maxWidth: .infinity)
                         .gusTVDetailActionFocus(id: "nextUp", item: item)
-                    Group(subviews: accessory) { actions in
-                        ForEach(actions) { action in action.frame(maxWidth: .infinity) }
-                    }
+                    accessory
                 }
-                .frame(width: primaryActionWidth)
                 .tvFocusSection()
             }
         }

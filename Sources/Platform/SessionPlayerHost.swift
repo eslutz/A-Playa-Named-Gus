@@ -232,6 +232,7 @@ private struct NowPlayingReturnView: View {
         }
         .frame(maxWidth: .infinity, minHeight: 44)
         .tvFocusSection()
+        .gusTVFocusScope()
     }
 
     @ViewBuilder private var returnLabel: some View {

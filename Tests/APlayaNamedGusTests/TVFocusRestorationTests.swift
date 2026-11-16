@@ -39,7 +39,7 @@ struct TVFocusRestorationTests {
         #expect(memory.restoredID(section: "next", context: "home", ids: ["new-card"], initial: true) == nil, "New rails do not override existing screen focus")
     }
 
-    @Test("task dismissal requests its opener immediately and retries one native fallback")
+    @Test("task dismissal keeps one immutable request through native fallback")
     func taskDismissal() throws {
         var memory = TVFocusMemory()
         memory.remember(id: "more", index: 1, section: "actions", context: "detail")
@@ -48,32 +48,40 @@ struct TVFocusRestorationTests {
         let initialRequest = try #require(memory.restorationRequest(context: "detail"))
         let acceptedFallback = memory.remember(id: "play", index: 0, section: "actions", context: "detail", ids: ["play", "more"])
         #expect(!acceptedFallback)
-        let fallbackRequest = try #require(memory.restorationRequest(context: "detail"))
-        #expect(fallbackRequest != initialRequest)
+        #expect(memory.restorationRequest(context: "detail") == initialRequest)
+        let acceptedSecondFallback = memory.remember(id: "other", index: 0, section: "other", context: "detail")
+        #expect(!acceptedSecondFallback)
+        #expect(memory.restorationRequest(context: "detail") == initialRequest)
         #expect(memory.bookmarks["actions"]?.id == "more")
         #expect(memory.restoredID(section: "actions", context: "detail", ids: ["play", "more"], initial: false) == "more")
         memory.remember(id: "more", index: 1, section: "actions", context: "detail", ids: ["play", "more"])
         #expect(memory.restorationRequest(context: "detail") == nil)
+        #expect(memory.bookmarks["actions"]?.id == "more")
         memory.requestRestoration(context: "missing")
         #expect(memory.restorationRequest(context: "missing") == nil)
     }
 
-    @Test("dismissal after native fallback still emits a new opener request")
+    @Test("an explicit opener and a replacement generation survive earlier focus callbacks")
     func fallbackBeforeDismissal() throws {
         var memory = TVFocusMemory()
         memory.remember(id: "more", index: 1, section: "actions", context: "detail")
         memory.remember(id: "play", index: 0, section: "actions", context: "detail")
         #expect(memory.bookmarks["actions"]?.id == "play")
         // The dismissing task explicitly identifies its More opener.
-        memory.remember(id: "more", index: 1, section: "actions", context: "detail")
-        memory.requestRestoration(context: "detail")
+        memory.requestRestoration(context: "detail", section: "actions", bookmark: TVFocusBookmark(id: "more", index: 1))
         let firstRequest = try #require(memory.restorationRequest(context: "detail"))
+        #expect(memory.bookmarks["actions"]?.id == "play", "An explicit return target is not an observed focus change")
         #expect(memory.restoredID(section: "actions", context: "detail", ids: ["play", "more"], initial: false) == "more")
-        memory.requestRestoration(context: "detail")
-        #expect(memory.restorationRequest(context: "detail") != firstRequest)
+        memory.requestRestoration(context: "detail", section: "actions", bookmark: TVFocusBookmark(id: "favorite", index: 2))
+        let replacementRequest = try #require(memory.restorationRequest(context: "detail"))
+        #expect(replacementRequest != firstRequest)
+        let acceptedOldTarget = memory.remember(id: "more", index: 1, section: "actions", context: "detail", ids: ["play", "more", "favorite"])
+        #expect(!acceptedOldTarget)
+        #expect(memory.restorationRequest(context: "detail") == replacementRequest)
+        #expect(memory.restoredID(section: "actions", context: "detail", ids: ["play", "more", "favorite"], initial: false) == "favorite")
     }
 
-    @Test("a second different focus choice cancels restoration without stealing focus")
+    @Test("target acknowledgement clears the request and later navigation only updates history")
     func subsequentUserChoice() {
         var memory = TVFocusMemory()
         let ids = ["play", "favorite", "more"]
@@ -81,6 +89,9 @@ struct TVFocusRestorationTests {
         memory.requestRestoration(context: "detail")
         let acceptedFallback = memory.remember(id: "play", index: 0, section: "actions", context: "detail", ids: ids)
         #expect(!acceptedFallback)
+        let acceptedTarget = memory.remember(id: "more", index: 2, section: "actions", context: "detail", ids: ids)
+        #expect(acceptedTarget)
+        #expect(memory.restorationRequest(context: "detail") == nil)
         let acceptedChoice = memory.remember(id: "favorite", index: 1, section: "actions", context: "detail", ids: ids)
         #expect(acceptedChoice)
         #expect(memory.restorationRequest(context: "detail") == nil)
@@ -118,6 +129,7 @@ struct TVFocusRestorationTests {
             root.tvFocus.remember(id: "play", index: 0, section: context, context: context)
             root.restoreTVDetailFocus(item: item)
             _ = try #require(root.tvFocus.restorationRequest(context: context))
+            #expect(root.tvFocus.bookmarks[context]?.id == "play")
             #expect(root.tvFocus.restoredID(section: context, context: context, ids: ["play", "version", "nextUp", "favorite", "more", "synopsis"], initial: false) == "more")
             #expect(root.tvFocus.restoredID(section: context, context: context, ids: ["play", "version", "nextUp", "favorite", "synopsis"], initial: false) == "synopsis")
         }

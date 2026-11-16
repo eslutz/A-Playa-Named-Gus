@@ -54,6 +54,15 @@ extension View {
         #endif
     }
 
+    /// Each navigation stack and independent presentation owns its native defaults.
+    @ViewBuilder func gusTVFocusScope() -> some View {
+        #if os(tvOS)
+            modifier(TVFocusScopeModifier())
+        #else
+            self
+        #endif
+    }
+
     @ViewBuilder func gusTVBrowsingBackdrop() -> some View {
         #if os(tvOS)
             gusTVCanvas()
@@ -190,6 +199,29 @@ extension View {
 }
 
 #if os(tvOS)
+    private struct TVFocusNamespaceKey: EnvironmentKey {
+        static var defaultValue: Namespace.ID? {
+            nil
+        }
+    }
+
+    private extension EnvironmentValues {
+        var gusTVFocusNamespace: Namespace.ID? {
+            get { self[TVFocusNamespaceKey.self] }
+            set { self[TVFocusNamespaceKey.self] = newValue }
+        }
+    }
+
+    private struct TVFocusScopeModifier: ViewModifier {
+        @Namespace private var namespace
+
+        func body(content: Content) -> some View {
+            content
+                .focusScope(namespace)
+                .environment(\.gusTVFocusNamespace, namespace)
+        }
+    }
+
     private struct TVDetailActionLabelStyle: LabelStyle {
         func makeBody(configuration: Configuration) -> some View {
             VStack(spacing: 10) {
@@ -218,6 +250,8 @@ extension View {
 
     private struct TVFocusModifier: ViewModifier {
         @Environment(RootNavigationState.self) private var root
+        @Environment(\.gusTVFocusNamespace) private var namespace
+        @Environment(\.resetFocus) private var resetFocus
         @FocusState private var focused: Bool
         let id: String
         let section: String
@@ -228,24 +262,37 @@ extension View {
         let context: String
 
         func body(content: Content) -> some View {
+            nativePreference(observedContent(content))
+        }
+
+        private var prefersFocus: Bool {
+            root.tvFocus.restoredID(section: section, context: context, ids: ids, initial: initial) == id
+        }
+
+        private var resetRequest: UUID? {
+            prefersFocus ? root.tvFocus.restorationRequest(context: context) : nil
+        }
+
+        @ViewBuilder private func nativePreference<FocusContent: View>(_ content: FocusContent) -> some View {
+            if let namespace {
+                content
+                    .prefersDefaultFocus(prefersFocus, in: namespace)
+                    .onChange(of: resetRequest, initial: true) { _, request in
+                        guard let request,
+                              root.tvFocus.restorationRequest(context: context) == request,
+                              prefersFocus else { return }
+                        resetFocus(in: namespace)
+                    }
+            } else {
+                content
+            }
+        }
+
+        private func observedContent(_ content: Content) -> some View {
             content
                 .focused($focused)
                 .focusedValue(\.gusTVMedia, item)
                 .focusedValue(\.gusTVEntry, entry)
-                .task(id: root.tvFocus.restorationRequest(context: context)) {
-                    let request = root.tvFocus.restorationRequest(context: context)
-                    // Realize the native link before requesting a saved focus target.
-                    await Task.yield()
-                    guard !Task.isCancelled,
-                          root.tvFocus.restorationRequest(context: context) == request,
-                          root.tvFocus.restoredID(section: section, context: context, ids: ids, initial: initial) == id else { return }
-                    focused = false
-                    await Task.yield()
-                    guard !Task.isCancelled,
-                          root.tvFocus.restorationRequest(context: context) == request,
-                          root.tvFocus.restoredID(section: section, context: context, ids: ids, initial: initial) == id else { return }
-                    focused = true
-                }
                 .onChange(of: focused) { _, value in
                     guard value, let index = ids.firstIndex(of: id) else { return }
                     if root.tvFocus.remember(id: id, index: index, section: section, context: context, ids: ids) {
@@ -273,8 +320,7 @@ extension View {
     func restoreTVDetailFocus(item: MediaItem) {
         #if os(tvOS)
             let context = "detail:" + ItemRef(item: item).id
-            tvFocus.remember(id: TVDetailActionOrder.moreID, index: TVDetailActionOrder.moreIndex, section: context, context: context)
-            tvFocus.requestRestoration(context: context)
+            tvFocus.requestRestoration(context: context, section: context, bookmark: TVFocusBookmark(id: TVDetailActionOrder.moreID, index: TVDetailActionOrder.moreIndex))
         #endif
     }
 }
