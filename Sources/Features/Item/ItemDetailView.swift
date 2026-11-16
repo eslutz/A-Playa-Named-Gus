@@ -21,6 +21,7 @@ struct ItemDetailView: View {
     @State private var startOverride: PlaybackStartOverride?
     @State private var pendingSource: MediaSource?
     @State private var pendingSourceItem: MediaItem?
+    @State private var pendingSourceFocusItem: MediaItem?
     @State private var sharePlay = SharePlayCoordinator.shared
     @State private var addingToPlaylist = false
     @State private var addingToCollection = false
@@ -81,6 +82,11 @@ struct ItemDetailView: View {
                     Button("Cancel", role: .cancel) { pendingSource = nil; pendingSourceItem = nil }
                 }
             } message: { Text("Choose where playback should begin in this version. Versions may have different timelines.") }
+            .onChange(of: pendingSource != nil) { wasPresented, isPresented in
+                guard wasPresented, !isPresented, let focusItem = pendingSourceFocusItem else { return }
+                pendingSourceFocusItem = nil
+                navigationState.restoreTVDetailFocus(item: focusItem, openerID: "version")
+            }
             .playerPresentation(item: $playerItem)
             .gusTVTask(isPresented: $addingToCollection, onDismiss: { navigationState.restoreTVDetailFocus(item: store?.item ?? item) }) {
                 NavigationStack { AddToMediaCollectionView(item: store?.item ?? item) }
@@ -368,10 +374,12 @@ struct ItemDetailView: View {
                 ForEach(Array(sources.enumerated()), id: \.element.id) { offset, source in
                     Button(source.name ?? String(localized: "Version \(offset + 1)")) {
                         if (resumeTicks(for: target) ?? 0) > 0 {
-                            pendingSource = source
+                            pendingSourceFocusItem = focusItem
                             pendingSourceItem = target
+                            pendingSource = source
                         } else {
                             selectSource(source, for: target, position: 0)
+                            navigationState.restoreTVDetailFocus(item: focusItem, openerID: "version")
                         }
                     }.disabled(selectedSourceItemID == target.id && selectedSourceID == source.id)
                 }

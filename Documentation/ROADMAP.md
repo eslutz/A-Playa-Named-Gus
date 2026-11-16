@@ -29,8 +29,9 @@ constrain *how* each item is built.
   semantic track-memory, native preview and retired-code cleanup scope. Track
   shared contracts, individual findings and acceptance in
   [the implementation ledger](app-wide-refinement.md).
-- [ ] Complete the final-revision build, regression, physical interaction,
-  accessibility and performance matrix before marking this work accepted.
+- [ ] Complete the final-revision build, simulator regression, accessibility
+  and performance matrix before marking this work accepted. Runtime validation
+  for this implementation is simulator-only; physical-device testing is excluded.
 
 ## Playback reliability
 

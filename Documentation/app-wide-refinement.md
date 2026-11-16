@@ -27,12 +27,17 @@ page deduplication. Gus retains AVPlayer/AVKit and current OS 26 fallbacks.
   tvOS explicitly fills the presentation viewport during preparation and native playback;
   the native UI regression checks its bounds before opening Playback Details.
 - tvOS dismissal and navigation returns use native focus scopes and an immutable
-  request for the saved target. Native fallback does not reissue that request;
-  target acknowledgement clears it without another focus reset or task scheduling.
+  request for the saved target. A non-nil request moves the target's native
+  FocusState once, or acknowledges an already focused binding without a write;
+  default preferences govern initial focus. Native fallback does
+  not reissue the request, and the target's SwiftUI focus binding acknowledges
+  it without another focus write or task scheduling. Native remote interaction
+  separately verifies where focus actually lands.
   Pushed destinations own their scope explicitly, including direct Show All and
   Discover detail routes; the navigation root's custom namespace does not reach
   every pushed page.
-  Playlist and collection tasks return to their More opener using the same action order.
+  Playlist and collection tasks return to More; version choices return to Version
+  in the visible detail's context, including series headers that play an episode.
   Horizontal TV rails use their full scroll viewport as the native focus section,
   keeping short rows reachable from trailing header controls without changing card layout.
 - Foreground refresh retains usable content. Query generation rejects stale

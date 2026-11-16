@@ -17,7 +17,6 @@ struct TVFocusBookmark: Equatable {
 enum TVDetailActionOrder {
     private static let leadingIDs = ["play", "version", "nextUp", "favorite"]
     static let moreID = "more"
-    static let moreIndex = leadingIDs.count
     static let ids = leadingIDs + [moreID, "synopsis"]
 }
 
@@ -70,7 +69,7 @@ struct TVFocusMemory {
             if section == frame.section, id == target {
                 returning.removeValue(forKey: context)
             } else {
-                // Native focus callbacks do not identify user input. Preserve the
+                // SwiftUI focus changes do not identify user input. Preserve the
                 // immutable return target until it receives focus; never reissue it.
                 return false
             }

@@ -251,7 +251,6 @@ extension View {
     private struct TVFocusModifier: ViewModifier {
         @Environment(RootNavigationState.self) private var root
         @Environment(\.gusTVFocusNamespace) private var namespace
-        @Environment(\.resetFocus) private var resetFocus
         @FocusState private var focused: Bool
         let id: String
         let section: String
@@ -263,13 +262,25 @@ extension View {
 
         func body(content: Content) -> some View {
             nativePreference(observedContent(content))
+                .onChange(of: restorationRequest, initial: true) { _, request in
+                    guard let request,
+                          root.tvFocus.restorationRequest(context: context) == request,
+                          prefersFocus else { return }
+                    if focused {
+                        // An unchanged binding will not emit another onChange.
+                        rememberFocusedTarget()
+                    } else {
+                        // Native focus is verified separately from this request.
+                        focused = true
+                    }
+                }
         }
 
         private var prefersFocus: Bool {
             root.tvFocus.restoredID(section: section, context: context, ids: ids, initial: initial) == id
         }
 
-        private var resetRequest: UUID? {
+        private var restorationRequest: UUID? {
             prefersFocus ? root.tvFocus.restorationRequest(context: context) : nil
         }
 
@@ -277,12 +288,6 @@ extension View {
             if let namespace {
                 content
                     .prefersDefaultFocus(prefersFocus, in: namespace)
-                    .onChange(of: resetRequest, initial: true) { _, request in
-                        guard let request,
-                              root.tvFocus.restorationRequest(context: context) == request,
-                              prefersFocus else { return }
-                        resetFocus(in: namespace)
-                    }
             } else {
                 content
             }
@@ -294,11 +299,16 @@ extension View {
                 .focusedValue(\.gusTVMedia, item)
                 .focusedValue(\.gusTVEntry, entry)
                 .onChange(of: focused) { _, value in
-                    guard value, let index = ids.firstIndex(of: id) else { return }
-                    if root.tvFocus.remember(id: id, index: index, section: section, context: context, ids: ids) {
-                        root.scrollAnchors[section] = id
-                    }
+                    guard value else { return }
+                    rememberFocusedTarget()
                 }
+        }
+
+        private func rememberFocusedTarget() {
+            guard let index = ids.firstIndex(of: id) else { return }
+            if root.tvFocus.remember(id: id, index: index, section: section, context: context, ids: ids) {
+                root.scrollAnchors[section] = id
+            }
         }
     }
 
@@ -317,10 +327,11 @@ extension View {
 #endif
 
 @MainActor extension RootNavigationState {
-    func restoreTVDetailFocus(item: MediaItem) {
+    func restoreTVDetailFocus(item: MediaItem, openerID: String = TVDetailActionOrder.moreID) {
         #if os(tvOS)
+            guard let index = TVDetailActionOrder.ids.firstIndex(of: openerID) else { return }
             let context = "detail:" + ItemRef(item: item).id
-            tvFocus.requestRestoration(context: context, section: context, bookmark: TVFocusBookmark(id: TVDetailActionOrder.moreID, index: TVDetailActionOrder.moreIndex))
+            tvFocus.requestRestoration(context: context, section: context, bookmark: TVFocusBookmark(id: openerID, index: index))
         #endif
     }
 }

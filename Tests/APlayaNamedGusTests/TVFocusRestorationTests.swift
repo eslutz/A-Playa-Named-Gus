@@ -121,17 +121,34 @@ struct TVFocusRestorationTests {
 
     #if os(tvOS)
         @MainActor
-        @Test("detail task restores More after fallback and keeps its nearest surviving action")
+        @Test("detail returns to its explicit More or Version opener in the visible header context")
         func detailOpenerRestoration() throws {
-            let root = RootNavigationState()
-            let item = MediaItem(id: "movie", type: .movie)
-            let context = "detail:" + ItemRef(item: item).id
-            root.tvFocus.remember(id: "play", index: 0, section: context, context: context)
-            root.restoreTVDetailFocus(item: item)
-            _ = try #require(root.tvFocus.restorationRequest(context: context))
-            #expect(root.tvFocus.bookmarks[context]?.id == "play")
-            #expect(root.tvFocus.restoredID(section: context, context: context, ids: ["play", "version", "nextUp", "favorite", "more", "synopsis"], initial: false) == "more")
-            #expect(root.tvFocus.restoredID(section: context, context: context, ids: ["play", "version", "nextUp", "favorite", "synopsis"], initial: false) == "synopsis")
+            for opener in ["more", "version"] {
+                let root = RootNavigationState()
+                let header = MediaItem(id: "series", type: .series)
+                let target = MediaItem(id: "episode", type: .episode)
+                let context = "detail:" + ItemRef(item: header).id
+                let episodeContext = "detail:" + ItemRef(item: target).id
+                root.tvFocus.remember(id: "play", index: 0, section: context, context: context)
+                if opener == "more" {
+                    root.restoreTVDetailFocus(item: header)
+                } else {
+                    root.restoreTVDetailFocus(item: header, openerID: opener)
+                }
+                let request = try #require(root.tvFocus.restorationRequest(context: context))
+                #expect(root.tvFocus.restorationRequest(context: episodeContext) == nil)
+                #expect(root.tvFocus.bookmarks[context]?.id == "play")
+                #expect(root.tvFocus.restoredID(section: context, context: context, ids: TVDetailActionOrder.ids, initial: false) == opener)
+                let fallback = opener == "more" ? "synopsis" : "nextUp"
+                #expect(root.tvFocus.restoredID(section: context, context: context, ids: TVDetailActionOrder.ids.filter { $0 != opener }, initial: false) == fallback)
+                let acceptedFallback = root.tvFocus.remember(id: "play", index: 0, section: context, context: context, ids: TVDetailActionOrder.ids)
+                #expect(!acceptedFallback)
+                #expect(root.tvFocus.restorationRequest(context: context) == request)
+                let openerIndex = try #require(TVDetailActionOrder.ids.firstIndex(of: opener))
+                let acceptedTarget = root.tvFocus.remember(id: opener, index: openerIndex, section: context, context: context, ids: TVDetailActionOrder.ids)
+                #expect(acceptedTarget)
+                #expect(root.tvFocus.restorationRequest(context: context) == nil)
+            }
         }
 
         @MainActor
