@@ -86,70 +86,33 @@ struct VideoPlayerView: View {
             }
         }
         .overlay(alignment: .topLeading) {
-            if store?.state != .ready {
-                Button("Close", systemImage: "xmark") {
-                    preparation?.cancel()
-                    if let store {
-                        playlist?.stop(store)
-                    }
-                    store?.teardown()
-                    dismiss()
+            #if !os(iOS)
+                if store?.state != .ready {
+                    Button("Close", systemImage: "xmark") { closePlayback() }
+                        .frame(minWidth: 44, minHeight: 44)
+                        .padding()
+                        .foregroundStyle(.white)
                 }
-                .frame(minWidth: 44, minHeight: 44)
-                .padding()
-                .foregroundStyle(.white)
-            }
+            #endif
         }
         .safeAreaInset(edge: .top, spacing: 0) {
-            #if !os(tvOS)
-                if let store, store.state == .ready, store.mediaSourceOptions.count > 1 || store.audioOptions.count > 1 || !store.subtitleOptions.isEmpty {
-                    Menu("Playback Options", systemImage: "slider.horizontal.3") {
-                        if store.mediaSourceOptions.count > 1 {
-                            Menu("Version") {
-                                ForEach(store.mediaSourceOptions) { source in
-                                    Button(source.title) { pendingSource = source }
-                                        .disabled(source.id == store.selectedMediaSourceID)
-                                }
-                            }
-                        }
-                        if store.audioOptions.count > 1 {
-                            Picker("Audio", selection: Binding(get: { store.audioMenuSelection }, set: { selection in
-                                guard let selection else { return }
-                                switch selection {
-                                case .automatic: Task { await store.selectAudioStream(index: nil) }
-                                case let .stream(index): Task { await store.selectAudioStream(index: index) }
-                                case .off: break
-                                }
-                            })) {
-                                if store.audioMenuSelection == nil {
-                                    Text("Unavailable").tag(nil as PlaybackTrackMenuSelection?).disabled(true)
-                                }
-                                Text("Automatic").tag(PlaybackTrackMenuSelection.automatic as PlaybackTrackMenuSelection?)
-                                ForEach(store.audioOptions) { option in
-                                    Text(option.title).tag(PlaybackTrackMenuSelection.stream(option.id) as PlaybackTrackMenuSelection?)
-                                }
-                            }.pickerStyle(.menu)
-                        }
-                        if !store.subtitleOptions.isEmpty {
-                            Picker("Subtitles", selection: Binding(get: { store.subtitleMenuSelection }, set: { selection in
-                                guard let selection else { return }
-                                switch selection {
-                                case .automatic: Task { await store.selectAutomaticSubtitles() }
-                                case .off: Task { await store.selectSubtitleStream(index: nil) }
-                                case let .stream(index): Task { await store.selectSubtitleStream(index: index) }
-                                }
-                            })) {
-                                if store.subtitleMenuSelection == nil {
-                                    Text("Unavailable").tag(nil as PlaybackTrackMenuSelection?).disabled(true)
-                                }
-                                Text("Automatic").tag(PlaybackTrackMenuSelection.automatic as PlaybackTrackMenuSelection?)
-                                Text("Off").tag(PlaybackTrackMenuSelection.off as PlaybackTrackMenuSelection?)
-                                ForEach(store.subtitleOptions) { option in
-                                    Text(option.title).tag(PlaybackTrackMenuSelection.stream(option.id) as PlaybackTrackMenuSelection?)
-                                }
-                            }.pickerStyle(.menu)
-                        }
-                    }.buttonStyle(.bordered)
+            #if os(iOS)
+                HStack {
+                    GusCloseButton { closePlayback() }
+                        .buttonStyle(.bordered)
+                        .frame(minWidth: 44, minHeight: 44)
+                        .accessibilityIdentifier("VideoPlayer.close")
+                    Spacer(minLength: 12)
+                    if let store, store.state == .ready, hasPlaybackOptions(store) {
+                        playbackOptions(store)
+                    }
+                }
+                .padding(.horizontal)
+                .padding(.vertical, 8)
+                .background(.bar)
+            #elseif !os(tvOS)
+                if let store, store.state == .ready, hasPlaybackOptions(store) {
+                    playbackOptions(store)
                         .frame(maxWidth: .infinity, alignment: .trailing)
                         .padding()
                         .background(.bar)
@@ -183,12 +146,7 @@ struct VideoPlayerView: View {
         }
         .gusTVVideoLifecycle(store: store)
         .accessibilityAction(.escape) {
-            preparation?.cancel()
-            if let store {
-                playlist?.stop(store)
-            }
-            store?.teardown()
-            dismiss()
+            closePlayback()
         }
         #if os(visionOS)
         .overlay(alignment: .topTrailing) {
@@ -313,6 +271,73 @@ struct VideoPlayerView: View {
             )
         }
     }
+
+    private func closePlayback() {
+        preparation?.cancel()
+        if let store {
+            playlist?.stop(store)
+        }
+        store?.teardown()
+        dismiss()
+    }
+
+    #if !os(tvOS)
+        private func hasPlaybackOptions(_ store: PlaybackStore) -> Bool {
+            store.mediaSourceOptions.count > 1 || store.audioOptions.count > 1 || !store.subtitleOptions.isEmpty
+        }
+
+        private func playbackOptions(_ store: PlaybackStore) -> some View {
+            Menu("Playback Options", systemImage: "slider.horizontal.3") {
+                if store.mediaSourceOptions.count > 1 {
+                    Menu("Version") {
+                        ForEach(store.mediaSourceOptions) { source in
+                            Button(source.title) { pendingSource = source }
+                                .disabled(source.id == store.selectedMediaSourceID)
+                        }
+                    }
+                }
+                if store.audioOptions.count > 1 {
+                    Picker("Audio", selection: Binding(get: { store.audioMenuSelection }, set: { selection in
+                        guard let selection else { return }
+                        switch selection {
+                        case .automatic: Task { await store.selectAudioStream(index: nil) }
+                        case let .stream(index): Task { await store.selectAudioStream(index: index) }
+                        case .off: break
+                        }
+                    })) {
+                        if store.audioMenuSelection == nil {
+                            Text("Unavailable").tag(nil as PlaybackTrackMenuSelection?).disabled(true)
+                        }
+                        Text("Automatic").tag(PlaybackTrackMenuSelection.automatic as PlaybackTrackMenuSelection?)
+                        ForEach(store.audioOptions) { option in
+                            Text(option.title).tag(PlaybackTrackMenuSelection.stream(option.id) as PlaybackTrackMenuSelection?)
+                        }
+                    }.pickerStyle(.menu)
+                }
+                if !store.subtitleOptions.isEmpty {
+                    Picker("Subtitles", selection: Binding(get: { store.subtitleMenuSelection }, set: { selection in
+                        guard let selection else { return }
+                        switch selection {
+                        case .automatic: Task { await store.selectAutomaticSubtitles() }
+                        case .off: Task { await store.selectSubtitleStream(index: nil) }
+                        case let .stream(index): Task { await store.selectSubtitleStream(index: index) }
+                        }
+                    })) {
+                        if store.subtitleMenuSelection == nil {
+                            Text("Unavailable").tag(nil as PlaybackTrackMenuSelection?).disabled(true)
+                        }
+                        Text("Automatic").tag(PlaybackTrackMenuSelection.automatic as PlaybackTrackMenuSelection?)
+                        Text("Off").tag(PlaybackTrackMenuSelection.off as PlaybackTrackMenuSelection?)
+                        ForEach(store.subtitleOptions) { option in
+                            Text(option.title).tag(PlaybackTrackMenuSelection.stream(option.id) as PlaybackTrackMenuSelection?)
+                        }
+                    }.pickerStyle(.menu)
+                }
+            }.buttonStyle(.bordered)
+                .accessibilityIdentifier("VideoPlayer.options")
+        }
+
+    #endif
 
     private func attachSharePlayPlayer() {
         guard let store else { return }

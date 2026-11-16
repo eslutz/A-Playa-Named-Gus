@@ -99,6 +99,51 @@ final class GusAuthenticatedUITests: XCTestCase {
         #endif
     }
 
+    #if os(iOS)
+        func testReadyVideoCloseReturnsToDetail() throws {
+            try prepare()
+            defer { finish() }
+            let app = try launch("item/" + required("SynopsisMovie"))
+            let restart = app.buttons["Detail.restart"]
+            XCTAssertTrue(restart.waitForExistence(timeout: 30))
+            reveal(restart, in: app)
+            restart.tap()
+
+            let video = app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", "Video")).firstMatch
+            XCTAssertTrue(video.waitForExistence(timeout: 45), app.debugDescription)
+            let transport = app.buttons["Play/Pause"]
+            if !transport.waitForExistence(timeout: 2) {
+                video.tap()
+            }
+            XCTAssertTrue(transport.waitForExistence(timeout: 5), app.debugDescription)
+            if transport.label == "Pause" {
+                // Keep the short rights-cleared fixture on its actual ready
+                // surface while checking Close and rotating the viewport.
+                transport.tap()
+            }
+
+            let close = app.buttons["VideoPlayer.close"]
+            XCTAssertTrue(close.waitForExistence(timeout: 5))
+            XCTAssertTrue(close.isHittable)
+            XCTAssertEqual(app.buttons.matching(identifier: "VideoPlayer.close").count, 1)
+            XCTAssertGreaterThanOrEqual(close.frame.width, 44)
+            XCTAssertGreaterThanOrEqual(close.frame.height, 44)
+            capture(app, "ready-video-close")
+
+            rotateToLandscape(app)
+            XCTAssertTrue(video.waitForExistence(timeout: 10))
+            XCTAssertTrue(close.isHittable)
+            XCTAssertGreaterThanOrEqual(video.frame.minY, close.frame.maxY - 1)
+            capture(app, "ready-video-close-landscape")
+            close.tap()
+            let returned = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+                !close.exists && !video.exists && app.buttons["Detail.play"].isHittable
+            }, object: nil)
+            XCTAssertEqual(XCTWaiter.wait(for: [returned], timeout: 10), .completed, app.debugDescription)
+            capture(app, "ready-video-dismissed")
+        }
+    #endif
+
     func testLoadedDetailLayouts() throws {
         try prepare()
         defer { finish() }
@@ -615,7 +660,15 @@ final class GusAuthenticatedUITests: XCTestCase {
                     return
                 }
                 let direction: XCUIRemote.Button
-                if destination.midY > current.maxY {
+                let overlap = min(destination.maxY, current.maxY) - max(destination.minY, current.minY)
+                // A poster's combined accessibility frame includes its caption,
+                // while native focus may cover only the artwork. Move across
+                // that shared row before comparing their different midpoints.
+                if overlap > min(destination.height, current.height) * 0.5, destination.minX > current.maxX {
+                    direction = .right
+                } else if overlap > min(destination.height, current.height) * 0.5, destination.maxX < current.minX {
+                    direction = .left
+                } else if destination.midY > current.maxY {
                     direction = .down
                 } else if destination.midY < current.minY {
                     direction = .up
@@ -744,11 +797,21 @@ final class GusAuthenticatedUITests: XCTestCase {
             defer { finish() }
             let app = try launch("play/" + required("SynopsisMovie"))
             let infoMenu = app.collectionViews["AVInfoMenuCollection"]
-            XCTAssertTrue(infoMenu.waitForExistence(timeout: 30), app.debugDescription)
+            // Open the hidden native Info chrome before waiting for it. Only
+            // that observed AVKit collection establishes readiness: the absence
+            // of a preparing Close button also occurs before/after playback.
+            for _ in 0 ..< 12 {
+                XCUIRemote.shared.press(.down)
+                if infoMenu.waitForExistence(timeout: 1) {
+                    break
+                }
+            }
+            XCTAssertTrue(infoMenu.exists, app.debugDescription)
+            // Pause the short fixture after native readiness, before spending
+            // time navigating its tabs and recording the details content.
             XCUIRemote.shared.press(.playPause)
             // Down opens the native Info panel; Up returns from its content to
             // the tab strip, where the next tab is our custom details panel.
-            XCUIRemote.shared.press(.down)
             XCUIRemote.shared.press(.down)
             XCUIRemote.shared.press(.up)
             // AVKit delegates focus to a full-viewport container, so its tab

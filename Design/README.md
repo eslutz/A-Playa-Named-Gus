@@ -65,6 +65,7 @@ the canonical document; do not invent frame IDs or duplicate every picker value.
 |---|---|
 | Detail version choice | Eligible multiversion menu; Start Over / Resume at Timestamp / Cancel; single-source default |
 | Playback choices | Native player menu without AVKit overlap; Automatic / Off / explicit or unavailable track; Watch and eligible CarPlay choices |
+| Video dismissal | iOS/iPadOS native Close above AVKit in preparation, failure and ready states, with or without Playback Options; portrait and landscape safe areas |
 | Foreground recovery | Initial failure, retained-content refresh failure, page retry, recording cancellation accepted/uncertain/confirmed |
 | Unconfirmed edits | Collection server-state review; partial profile save and canceled transmitted save requiring reload; preserved draft |
 | Download recovery | Unreadable metadata retry; storage failure during pause/resume; recorded version identity and converted-file track limits |

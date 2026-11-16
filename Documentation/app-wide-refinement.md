@@ -16,6 +16,10 @@ page deduplication. Gus retains AVPlayer/AVKit and current OS 26 fallbacks.
   Resolution has a 30-second total budget; native preparation has 45 seconds.
   Safe reads have at most three attempts; allocating requests are never blindly
   retried. Reports and known-resource cleanup each have five seconds.
+- iOS and iPadOS video retain a native Close button above AVKit during preparation,
+  failure and ready playback, including sources without playback options. Close
+  cancels preparation, stops playlist activity and tears down playback before dismissing;
+  AVKit keeps its transport area. Other platforms retain their existing dismissal.
 - Foreground refresh retains usable content. Query generation rejects stale
   results. Full-content views and queues continue pages and deduplicate by scoped
   media identity; intentional preview limits remain explicit. Advertised totals
@@ -60,7 +64,7 @@ page deduplication. Gus retains AVPlayer/AVKit and current OS 26 fallbacks.
 | F01 | Identity-bound activation and recoverable expiry | AppModel, SessionLease, SessionAuthentication | SessionAuthenticationTests, AppModelSessionTests; physical account acceptance pending |
 | F02 | Distinct forbidden/unauthorized outcomes | Typed Get status adapter; canonical auth probe for ambiguous delete policy | SessionAuthenticationTests, GusErrorTests |
 | F03 | Ordered shared playback reports | Session-owned PlaybackReportQueue and immutable snapshots | PlaybackLifecyclePolicyTests; response-loss limits below |
-| F04 | Truthful playback lifecycle and finalization | Shared native preparation; audio/video/Watch finalization and actual-playing observations | PlaybackLifecyclePolicyTests, TVPlaybackLifecycleTests; physical output pending |
+| F04 | Truthful playback lifecycle and finalization | Shared native preparation; audio/video/Watch finalization, actual-playing observations and persistent iOS/iPadOS video dismissal | PlaybackLifecyclePolicyTests, TVPlaybackLifecycleTests, GusAuthenticatedUITests.testReadyVideoCloseReturnsToDetail; physical output pending |
 | F05 | One resolution deadline/retry owner | PlaybackDeadline and StreamURLBuilder | PlaybackLifecyclePolicyTests, StreamURLBuilderTests |
 | F06 | Watch credential and endpoint rotation | Central AppModel installation and lease invalidation | AppModelSessionTests; paired Watch acceptance pending |
 | F07 | Truthful independent Live TV loading | Typed availability and independent channel/recording/timer phases | BrowseRefinementTests; configured tuner acceptance pending |
