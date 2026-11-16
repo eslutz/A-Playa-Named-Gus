@@ -69,6 +69,8 @@ page deduplication. Gus retains AVPlayer/AVKit and current OS 26 fallbacks.
   invalidate pending choices without changing the saved checkpoint format.
   Watch remote requests expose accepted versus confirmed readback; confirmation
   can consume the matching command choice without claiming local playback.
+  Watch item actions use one item-driven native sheet whose immutable request,
+  destination and start-choice identity are captured together at the tap.
   Track memory is opt-in per device/account, including a native Watch setting, and
   carries semantic preferences within a
   series. Persisted preferences contain no source-local indexes; missing or ambiguous

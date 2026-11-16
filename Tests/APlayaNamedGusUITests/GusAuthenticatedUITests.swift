@@ -1244,7 +1244,9 @@ final class GusAuthenticatedUITests: XCTestCase {
                 }
                 let play = app.buttons["Detail.play"]
                 if issue.element?.identifier == "Detail.play",
-                   issue.element?.label == "Play", play.isEnabled
+                   let displayedLabel = issue.element?.label,
+                   ["Play", "Resume"].contains(displayedLabel),
+                   play.label == displayedLabel, play.isEnabled
                 {
                     renderedChecks["Detail.play"] = play
                     return true

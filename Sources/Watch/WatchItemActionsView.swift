@@ -11,8 +11,7 @@ struct WatchItemActionsView: View {
     @State private var startOverride: PlaybackStartOverride?
     // A presented child keeps the tap's request even when its first checkpoint
     // consumes the parent's draft override for the next presentation.
-    @State private var presentedRequest: PlaybackRequest?
-    @State private var presentedOverrideID: UUID?
+    @State private var presentation: WatchItemPresentation?
     @State private var localProgress = OfflinePlaybackProgressStore.shared
     @State private var pendingSourceID: String?
     @State private var confirmingSourceChange = false
@@ -22,10 +21,6 @@ struct WatchItemActionsView: View {
         self.item = item
         _request = State(initialValue: PlaybackRequest(item: item))
     }
-
-    @State private var isAudioPlayerPresented = false
-    @State private var isVideoPlayerPresented = false
-    @State private var isTargetPickerPresented = false
 
     var body: some View {
         List {
@@ -57,8 +52,7 @@ struct WatchItemActionsView: View {
             Section {
                 if item.isAudioPlayable {
                     Button {
-                        freezeRequest()
-                        isAudioPlayerPresented = true
+                        presentation = .audio(freezeRequest())
                     } label: {
                         Label("Play on Watch", systemImage: "applewatch")
                     }
@@ -69,14 +63,12 @@ struct WatchItemActionsView: View {
                         .foregroundStyle(.secondary)
                 } else {
                     Button {
-                        freezeRequest()
-                        isTargetPickerPresented = true
+                        presentation = .remote(freezeRequest())
                     } label: {
                         Label("Play On…", systemImage: "play.tv")
                     }
                     Button {
-                        freezeRequest()
-                        isVideoPlayerPresented = true
+                        presentation = .video(freezeRequest())
                     } label: {
                         Label("Play on Watch", systemImage: "applewatch")
                     }
@@ -84,19 +76,16 @@ struct WatchItemActionsView: View {
             }
         }
         .navigationTitle(item.displayTitle)
-        .sheet(isPresented: $isAudioPlayerPresented) {
-            if let presentedRequest {
-                WatchAudioPlayerView(tracks: [presentedRequest.item], startIndex: 0, request: presentedRequest)
-            }
-        }
-        .sheet(isPresented: $isVideoPlayerPresented) {
-            if let presentedRequest {
-                WatchVideoPlayerView(request: presentedRequest)
-            }
-        }
-        .sheet(isPresented: $isTargetPickerPresented) {
-            if let presentedRequest {
-                WatchPlayTargetPicker(request: presentedRequest, onConfirmed: acceptRemoteReadback)
+        .sheet(item: $presentation) { presented in
+            switch presented {
+            case let .audio(snapshot):
+                WatchAudioPlayerView(tracks: [snapshot.request.item], startIndex: 0, request: snapshot.request)
+            case let .video(snapshot):
+                WatchVideoPlayerView(request: snapshot.request)
+            case let .remote(snapshot):
+                WatchPlayTargetPicker(request: snapshot.request, onConfirmed: { sent, observed in
+                    acceptRemoteReadback(sent, observed, overrideID: snapshot.overrideID)
+                })
             }
         }
         .task {
@@ -130,13 +119,12 @@ struct WatchItemActionsView: View {
         return PlaybackActionPosition.canResume(at: resumeTicks, durationTicks: MediaPlaybackIdentity.runTimeTicks(for: request.item, mediaSourceID: id))
     }
 
-    private func freezeRequest() {
-        presentedRequest = effectiveRequest
-        presentedOverrideID = startOverride?.id
+    private func freezeRequest() -> WatchItemPresentation.Snapshot {
+        WatchItemPresentation.Snapshot(request: effectiveRequest, overrideID: startOverride?.id)
     }
 
-    private func acceptRemoteReadback(_ sent: PlaybackRequest, _ observed: RemoteSession) {
-        guard let startOverride, startOverride.id == presentedOverrideID,
+    private func acceptRemoteReadback(_ sent: PlaybackRequest, _ observed: RemoteSession, overrideID: UUID?) {
+        guard let startOverride, startOverride.id == overrideID,
               startOverride.matchesRemoteReadback(request: sent, observed: observed, session: session, progress: localProgress, downloads: downloads) else { return }
         self.startOverride = nil
     }
@@ -251,6 +239,25 @@ struct WatchItemActionsView: View {
             Task { await downloads.download(request, session: session) }
         } label: {
             Label("Download", systemImage: "arrow.down.circle")
+        }
+    }
+}
+
+/// One item supplies both the presentation identity and its immutable payload.
+private enum WatchItemPresentation: Identifiable {
+    struct Snapshot {
+        let id = UUID()
+        let request: PlaybackRequest
+        let overrideID: UUID?
+    }
+
+    case audio(Snapshot)
+    case video(Snapshot)
+    case remote(Snapshot)
+
+    var id: UUID {
+        switch self {
+        case let .audio(snapshot), let .video(snapshot), let .remote(snapshot): snapshot.id
         }
     }
 }
