@@ -299,7 +299,7 @@ struct StreamURLBuilder {
     // MARK: - Device profile
 
     /// An AVKit-honest profile: direct-play every container/codec combination this
-    /// device's hardware decodes, otherwise transcode to HLS with fMP4 segments —
+    /// device's hardware decodes, otherwise transcode to HLS, preferring fMP4 segments —
     /// HEVC-preferred where supported, up to 7.1 audio (AVFoundation downmixes for the
     /// active output), and text subtitles delivered in the manifest instead of burned in.
     static func avPlayerProfile(
@@ -314,7 +314,7 @@ struct StreamURLBuilder {
             maxStreamingBitrate: maxStreamingBitrate,
             name: DeviceIdentity.clientName,
             subtitleProfiles: subtitleProfiles(),
-            transcodingProfiles: [hlsTranscodingProfile(capabilities: capabilities)]
+            transcodingProfiles: [hlsTranscodingProfile(capabilities: capabilities), liveHLSCompatibilityProfile()]
         )
     }
 
@@ -400,6 +400,23 @@ struct StreamURLBuilder {
             minSegments: 2,
             type: .video,
             videoCodec: capabilities.supportsHEVCDecode ? "hevc,h264" : "h264"
+        )
+    }
+
+    /// Jellyfin restricts compatibility-mode Live TV to TS profiles. Keep this
+    /// after fMP4 so ordinary sources retain the preferred HLS container.
+    private static func liveHLSCompatibilityProfile() -> TranscodingProfile {
+        TranscodingProfile(
+            protocol: .hls,
+            audioCodec: "aac,ac3,eac3",
+            container: "ts",
+            context: .streaming,
+            enableSubtitlesInManifest: true,
+            isBreakOnNonKeyFrames: true,
+            maxAudioChannels: "8",
+            minSegments: 2,
+            type: .video,
+            videoCodec: "h264"
         )
     }
 

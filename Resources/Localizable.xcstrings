@@ -7163,6 +7163,17 @@
         }
       }
     },
+    "Some content in this book couldn't be loaded. Try again from your saved reading position, or dismiss this notice to keep reading.": {
+      "comment": "Book reader resource recovery.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Some content in this book couldn't be loaded. Try again from your saved reading position, or dismiss this notice to keep reading."
+          }
+        }
+      }
+    },
     "Something Went Wrong": {
       "comment": "Generic loading failure title",
       "extractionState": "manual"
@@ -7897,17 +7908,6 @@
         }
       }
     },
-    "This chapter couldn't be opened. Your last reading position is preserved.": {
-      "comment": "Native media presentation and recovery.",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "This chapter couldn't be opened. Your last reading position is preserved."
-          }
-        }
-      }
-    },
     "This deletes the collection from Jellyfin. Its movies and watched history remain.": {
       "extractionState": "manual",
       "localizations": {
@@ -8008,17 +8008,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "This item is restricted."
-          }
-        }
-      }
-    },
-    "This page couldn't be loaded. Try again or keep reading from the last available page.": {
-      "comment": "Native media presentation, recovery or accessible metadata.",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "This page couldn't be loaded. Try again or keep reading from the last available page."
           }
         }
       }

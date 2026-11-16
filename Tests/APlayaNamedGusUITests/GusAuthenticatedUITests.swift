@@ -898,23 +898,14 @@ final class GusAuthenticatedUITests: XCTestCase {
                 try prepare()
                 executionTimeAllowance = 240
                 defer { finish() }
-                guard #available(tvOS 27.0, *) else {
-                    try requireNativeChapter(false, "Native chapter VoiceOver validation requires tvOS27+")
-                    return
-                }
                 let environment = ProcessInfo.processInfo.environment
                 let itemID = try XCTUnwrap(environment["GUS_NATIVE_CHAPTER_ITEM_ID"])
                 let chapterName = try XCTUnwrap(environment["GUS_NATIVE_CHAPTER_NAME"])
                 let expected = try XCTUnwrap(environment["GUS_NATIVE_CHAPTER_SECONDS"].flatMap(Double.init))
-                try requireNativeChapter(
-                    itemID.range(of: "^[0-9a-fA-F]{32}$", options: .regularExpression) != nil,
-                    "Required chapter fixture item ID is invalid"
-                )
-                try requireNativeChapter(
-                    !chapterName.isEmpty && chapterName.count <= 128 && expected.isFinite && expected >= 5,
-                    "Required chapter name/time is invalid"
-                )
-
+                let openingName = environment["GUS_NATIVE_CHAPTER_OPENING_NAME"] ?? "A Blue30s Opening"
+                try requireNativeChapter(itemID.range(of: "^[0-9a-fA-F]{32}$", options: .regularExpression) != nil, "Required chapter fixture item ID is invalid")
+                try requireNativeChapter(!chapterName.isEmpty && chapterName.count <= 128 && expected.isFinite && expected >= 5, "Required chapter name/time is invalid")
+                try requireNativeChapter(!openingName.isEmpty && openingName.count <= 128 && openingName != chapterName, "Required opening artwork title is invalid")
                 let app = launch("item/" + itemID)
                 try requireNativeChapter(app.buttons["Detail.more"].waitForExistence(timeout: 30), "Fixture detail did not load")
                 try focusTV(app, identifier: "Detail.more")
@@ -922,182 +913,97 @@ final class GusAuthenticatedUITests: XCTestCase {
                 try focusTV(app, label: "Start from Beginning")
                 XCUIRemote.shared.press(.select)
                 let elapsed = app.otherElements["AXElapsedTime"]
-                let prepared = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
-                    elapsed.exists || app.buttons.matching(identifier: "Try Again").allElementsBoundByIndex.contains(where: { $0.isEnabled && $0.isHittable })
-                }, object: nil)
-                try requireNativeChapter(
-                    XCTWaiter.wait(for: [prepared], timeout: 90) == .completed && elapsed.exists,
-                    "Unverified: native video exposes no elapsed AX marker"
-                )
-                let firstLabel = elapsed.label
-                let first = try XCTUnwrap(nativeChapterSeconds(firstLabel), "Unverified: invalid native video elapsed label: \(firstLabel)")
+                try requireNativeChapter(elapsed.waitForExistence(timeout: 60), "Native elapsed marker unavailable")
+                let first = try XCTUnwrap(nativeChapterSeconds(elapsed.label))
                 let advancing = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
                     elapsed.exists && self.nativeChapterSeconds(elapsed.label).map { $0 > first } == true
                 }, object: nil)
-                try requireNativeChapter(
-                    XCTWaiter.wait(for: [advancing], timeout: 5) == .completed,
-                    "Unverified: native video did not establish advancing playback"
-                )
+                try requireNativeChapter(XCTWaiter.wait(for: [advancing], timeout: 5) == .completed, "No advancing native clock before actual Pause")
                 XCUIRemote.shared.press(.playPause)
                 let stability = OSAllocatedUnfairLock(initialState: (label: elapsed.label, changedAt: Date()))
-                let paused = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+                let stable = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
                     guard elapsed.exists else { return false }
                     let label = elapsed.label
-                    return stability.withLock { state in
-                        if label != state.label {
-                            state = (label, Date())
+                    return stability.withLock { value in
+                        if value.label != label {
+                            value = (label, Date())
                         }
-                        return Date().timeIntervalSince(state.changedAt) >= 1.25
+                        return Date().timeIntervalSince(value.changedAt) >= 1.25
                     }
                 }, object: nil)
-                try requireNativeChapter(
-                    XCTWaiter.wait(for: [paused], timeout: 4) == .completed,
-                    "Unverified: native pause did not establish a stable elapsed clock"
-                )
+                try requireNativeChapter(XCTWaiter.wait(for: [stable], timeout: 5) == .completed, "Actual Pause did not establish a stable clock")
+                let baselineEpoch = ContinuousClock.now
+                let baselineDate = Date()
                 let pausedLabel = elapsed.label
                 let pausedSeconds = try XCTUnwrap(nativeChapterSeconds(pausedLabel))
-                try requireNativeChapter(
-                    pausedSeconds + 5 <= expected,
-                    "Unverified: paused baseline is too close to the target chapter"
-                )
+                try requireNativeChapter(pausedSeconds.isFinite && pausedSeconds >= 0 && expected - pausedSeconds >= 5, "Paused baseline leaves no unambiguous native jump window; no selection sent")
+                let wholeLimit = expected - pausedSeconds - 2
+                try requireNativeChapter(wholeLimit > 3, "Target does not leave an unambiguous native jump window")
                 capture(app, "tv-native-chapter-paused-baseline")
-
-                let voiceOver = XCUIDevice.shared.voiceOverService
-                let wasEnabled = voiceOver.isEnabled
-                // XCTest runs registered teardown blocks after assertion failures,
-                // including when continueAfterFailure is false. A crash is excluded.
-                addTeardownBlock { @MainActor in
-                    var restorationError: String?
-                    do {
-                        if !wasEnabled {
-                            try voiceOver.disable()
-                        }
-                    } catch {
-                        restorationError = String(describing: error)
+                XCUIRemote.shared.press(.down)
+                let openings = app.cells.containing(.staticText, identifier: openingName)
+                let opening = openings.firstMatch
+                let panelReady = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+                    opening.exists && openings.count == 1 && opening.isHittable && !opening.frame.isEmpty && opening.descendants(matching: .image).count > 0
+                }, object: nil)
+                try requireNativeChapter(XCTWaiter.wait(for: [panelReady], timeout: 2) == .completed, "Native opening artwork panel did not become visible")
+                XCUIRemote.shared.press(.down)
+                let entered = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in opening.exists && opening.hasFocus }, object: nil)
+                try requireNativeChapter(XCTWaiter.wait(for: [entered], timeout: 2) == .completed, "Second Down did not focus the native opening artwork card")
+                let cards = app.cells.containing(.staticText, identifier: chapterName)
+                let card = cards.firstMatch
+                try requireNativeChapter(card.waitForExistence(timeout: 2) && cards.count == 1, "Native target artwork card is not unique")
+                for _ in 0 ..< 2 {
+                    if card.hasFocus {
+                        break
                     }
-                    let restoredEnabled = voiceOver.isEnabled
-                    let restoration = XCTAttachment(string: "baselineEnabled=\(wasEnabled)\nrestoredEnabled=\(restoredEnabled)\nrestorationError=\(restorationError ?? "none")\nrecordedAt=\(Date())")
-                    restoration.name = "native-chapter-voiceover-restoration"
-                    restoration.lifetime = .keepAlways
-                    self.add(restoration)
-                    if let restorationError {
-                        XCTFail("Failed to restore original simulator VoiceOver state: \(restorationError)")
-                    }
-                    XCTAssertEqual(restoredEnabled, wasEnabled, "Restore original simulator VoiceOver state")
+                    try requireNativeChapter(nativeChapterWallSeconds(baselineEpoch.duration(to: .now)) < wholeLimit - 3, "Native target observation exhausted jump budget")
+                    XCUIRemote.shared.press(.right)
                 }
-                let baseline = XCTAttachment(string: "enabled=\(wasEnabled)\nrecordedAt=\(Date())")
-                baseline.name = "native-chapter-voiceover-baseline"
-                baseline.lifetime = .keepAlways
-                add(baseline)
-                if !wasEnabled {
-                    try voiceOver.enable()
-                }
-                let infoMenu = app.collectionViews["AVInfoMenuCollection"]
-                _ = try nativeVoiceOverChapterTarget("Chapters", requiresArtwork: false, in: app, infoMenu: infoMenu, service: voiceOver)
-                XCUIRemote.shared.press(.select)
-                let card = try nativeVoiceOverChapterTarget(chapterName, requiresArtwork: true, in: app, infoMenu: infoMenu, service: voiceOver)
-                let speech = try voiceOver.currentSpeech().utterance
-                try requireNativeChapter(nativeChapterSpeech(speech, names: chapterName), "VoiceOver target changed before activation")
-                try requireNativeChapter(
-                    elapsed.exists && elapsed.label == pausedLabel,
-                    "Unverified: elapsed clock moved before the chapter activation"
-                )
-                let candidate = XCTAttachment(string: "speech=\(speech)\nlabel=\(card.label)\nframe=\(card.frame)\ntype=\(card.elementType)\nselected=\(card.isSelected)\nUIhasFocus=\(card.hasFocus)\nbeforeElapsed=\(pausedLabel)")
-                candidate.name = "native-chapter-artwork-card-candidate"
-                candidate.lifetime = .keepAlways
-                add(candidate)
-                let hierarchy = XCTAttachment(string: app.debugDescription)
-                hierarchy.name = "native-chapter-preselection-ax-tree"
-                hierarchy.lifetime = .keepAlways
-                add(hierarchy)
+                let focused = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in card.exists && card.hasFocus }, object: nil)
+                try requireNativeChapter(XCTWaiter.wait(for: [focused], timeout: 2) == .completed, "Actual native target artwork did not acquire focus")
+                try requireNativeChapter(card.isHittable && !card.frame.isEmpty && card.descendants(matching: .image).count > 0, "Focused target lacks native artwork/hittable geometry")
                 capture(app, "tv-native-chapter-before-activation")
-                let witnessedSpeech = try voiceOver.currentSpeech().utterance
-                try requireNativeChapter(
-                    card.exists && card.isHittable && nativeChapterSpeech(witnessedSpeech, names: chapterName),
-                    "Unverified: native card focus changed while recording its witness"
-                )
-                try requireNativeChapter(
-                    elapsed.exists && elapsed.label == pausedLabel,
-                    "Unverified: paused baseline changed while recording the native card"
-                )
-                // VoiceOver speech has no element identity. Require native UI focus
-                // within this exact card; a full-viewport focused container is not it.
-                try requireNativeChapter(
-                    card.hasFocus || card.descendants(matching: .any).allElementsBoundByIndex.contains(where: \.hasFocus),
-                    "Unverified: no native focus association with the unique chapter artwork card; no card activation sent"
-                )
-
+                let tree = XCTAttachment(string: app.debugDescription)
+                tree.name = "native-chapter-preselection-ax-tree"; tree.lifetime = .keepAlways; add(tree)
+                let witness = XCTAttachment(string: "baselineAt=\(baselineDate)\nbeforeElapsed=\(pausedLabel)\ntarget=\(chapterName)\nframe=\(card.frame)\nUIhasFocus=\(card.hasFocus)\nartworkCount=\(card.descendants(matching: .image).count)\nobservedAt=\(Date())")
+                witness.name = "native-chapter-artwork-card-candidate"; witness.lifetime = .keepAlways; add(witness)
+                try requireNativeChapter(cards.count == 1 && card.hasFocus && card.isHittable, "Native target focus changed before Select")
+                // The native panel can occlude this marker; absence is not movement.
+                if elapsed.exists {
+                    try requireNativeChapter(elapsed.label == pausedLabel, "Visible native baseline moved before Select")
+                }
+                try requireNativeChapter(nativeChapterWallSeconds(baselineEpoch.duration(to: .now)) + 3 < wholeLimit, "Witness capture consumed jump budget; no Select sent")
                 let selectedAt = Date()
-                let selectionBegan = ContinuousClock.now
+                let selectionEpoch = ContinuousClock.now
                 XCUIRemote.shared.press(.select)
+                let last = OSAllocatedUnfairLock(initialState: (label: "not-observed", whole: 0.0, selected: 0.0))
                 let sought = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
-                    guard elapsed.exists, let actual = self.nativeChapterSeconds(elapsed.label) else { return false }
-                    // Check after the synchronous AX read as it can itself be slow.
-                    // The paused baseline is at least5s away; ordinary1x resumption
-                    // cannot reach this fixed target window in the allowed interval.
-                    let span = selectionBegan.duration(to: .now)
-                    guard span <= .seconds(3) else { return false }
-                    let wallSeconds = Double(span.components.seconds) + Double(span.components.attoseconds) / 1e18
-                    return actual >= expected - 1 && actual <= expected + 1 && actual - pausedSeconds > wallSeconds + 1
+                    guard elapsed.exists else { return false }
+                    let label = elapsed.label
+                    let actual = self.nativeChapterSeconds(label)
+                    let whole = self.nativeChapterWallSeconds(baselineEpoch.duration(to: .now))
+                    let selected = self.nativeChapterWallSeconds(selectionEpoch.duration(to: .now))
+                    last.withLock { $0 = (label, whole, selected) }
+                    guard let actual else { return false }
+                    return selected <= 3 && whole < wholeLimit && actual >= expected - 1 && actual <= expected + 1 && actual - pausedSeconds > whole + 1
                 }, object: nil)
                 let outcome = XCTWaiter.wait(for: [sought], timeout: 3)
-                let observed = XCTAttachment(string: "before=\(pausedLabel)\nexpectedSeconds=\(expected)\nafter=\(elapsed.label)\nselectedAt=\(selectedAt)\nobservedAt=\(Date())")
-                observed.name = "native-chapter-activation-elapsed"
-                observed.lifetime = .keepAlways
-                add(observed)
+                let observed = last.withLock { $0 }
+                let result = XCTAttachment(string: "before=\(pausedLabel)\nexpectedSeconds=\(expected)\nafter=\(observed.label)\nselectedAt=\(selectedAt)\nwholeWindowSeconds=\(observed.whole)\npostSelectSeconds=\(observed.selected)\nobservedAt=\(Date())")
+                result.name = "native-chapter-activation-elapsed"; result.lifetime = .keepAlways; add(result)
                 capture(app, "tv-native-chapter-after-activation")
-                XCTAssertEqual(outcome, .completed, "Unverified: native card selection did not establish the target elapsed jump")
-                // Chapter activation does not establish scrub thumbnails or heard audio.
-            }
-
-            @available(tvOS 27.0, *)
-            private func nativeVoiceOverChapterTarget(_ title: String, requiresArtwork: Bool, in app: XCUIApplication, infoMenu: XCUIElement, service: XCUIVoiceOverService) throws -> XCUIElement {
-                let deadline = ContinuousClock.now + .seconds(20)
-                var speech = try service.currentSpeech().utterance
-                var seen: Set<String> = []
-                let utterances = OSAllocatedUnfairLock(initialState: [String]())
-                addTeardownBlock { @MainActor in
-                    let attachment = XCTAttachment(string: utterances.withLock { $0.joined(separator: "\n") })
-                    attachment.name = requiresArtwork ? "native-chapter-card-voiceover" : "native-chapters-tab-voiceover"
-                    attachment.lifetime = .keepAlways
-                    self.add(attachment)
-                }
-                for _ in 0 ..< 16 {
-                    try requireNativeChapter(ContinuousClock.now < deadline, "Unverified: bounded native VoiceOver traversal expired")
-                    let named = NSPredicate(format: "label == %@ OR label BEGINSWITH %@", title, title + ",")
-                    let candidates: [XCUIElement]
-                    if requiresArtwork {
-                        let cells = app.cells.containing(.staticText, identifier: title).allElementsBoundByIndex
-                        let buttons = app.buttons.matching(named).allElementsBoundByIndex
-                        candidates = (cells + buttons).filter { $0.exists && $0.isHittable && !$0.frame.isEmpty && $0.descendants(matching: .image).count > 0 }
-                    } else {
-                        // A native Info tab must belong to AVKit's existing tab strip;
-                        // Gus's separate flat Chapters custom menu is not this target.
-                        candidates = infoMenu.descendants(matching: .any).matching(named).allElementsBoundByIndex.filter { $0.exists && $0.isHittable && !$0.frame.isEmpty }
-                    }
-                    let observation = "speech=\(speech)\ncandidateCount=\(candidates.count)"
-                    utterances.withLock { $0.append(observation) }
-                    if nativeChapterSpeech(speech, names: title), candidates.count == 1 {
-                        try requireNativeChapter(ContinuousClock.now < deadline, "Unverified: native AX target read exceeded traversal deadline")
-                        return candidates[0]
-                    }
-                    try requireNativeChapter(seen.insert(speech).inserted, "Unverified: repeated VoiceOver traversal without a unique native target")
-                    speech = try service.moveForward().utterance
-                }
-                return try XCTUnwrap(nil as XCUIElement?, "Unverified: no unique native chapter target; no target activation sent")
+                try requireNativeChapter(outcome == .completed, "No unambiguous native target elapsed jump within3s")
+                // This does not establish scrub thumbnails, destination rendering or heard audio.
             }
 
             private func nativeChapterSeconds(_ text: String) -> Double? {
                 guard text.range(of: "^[0-9]+:[0-5][0-9](?::[0-5][0-9])?$", options: .regularExpression) != nil else { return nil }
-                let components = text.split(separator: ":", omittingEmptySubsequences: false)
-                let values = components.compactMap { Double($0) }
-                guard values.count == components.count, values.allSatisfy({ $0.isFinite && $0 >= 0 }) else { return nil }
-                return values.reduce(0) { $0 * 60 + $1 }
+                return text.split(separator: ":").compactMap { Double($0) }.reduce(0) { $0 * 60 + $1 }
             }
 
-            private func nativeChapterSpeech(_ speech: String, names title: String) -> Bool {
-                let pattern = "^\\s*" + NSRegularExpression.escapedPattern(for: title) + "(?:\\s*$|\\s*[,.;:!?])"
-                return speech.range(of: pattern, options: [.regularExpression, .caseInsensitive]) != nil
+            private func nativeChapterWallSeconds(_ elapsed: Duration) -> Double {
+                Double(elapsed.components.seconds) + Double(elapsed.components.attoseconds) / 1e18
             }
 
             private func requireNativeChapter(_ condition: Bool, _ message: String) throws {

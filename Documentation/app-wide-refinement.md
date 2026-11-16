@@ -95,6 +95,12 @@ page deduplication. Gus retains AVPlayer/AVKit and current OS 26 fallbacks.
   tvOS chapter artwork uses separate native navigation metadata. Actual scrubber
   thumbnail appearance requires platform-specific runtime verification. Jellyfin
   JPEG image playlists do not imply AVKit scrubber support; no custom scrubber.
+- EPUB container reads report missing or unreadable content through Readium's public
+  extension points. A coalesced inline notice keeps reading available; Retry opens a
+  new native navigator from the saved locator. Chapter selection checks its target
+  before leaving the current page and has one 30-second readiness deadline.
+  Close and account retirement reject late callbacks. Canceling a task does not
+  prove immediate release of a suspended Readium operation.
 - Retired readers/imports/CRUD are removed without a migration bridge. Current
   format data, current offline draft reconciliation and first verified iCloud
   identity ownership remain supported.
@@ -122,7 +128,7 @@ page deduplication. Gus retains AVPlayer/AVKit and current OS 26 fallbacks.
 | F15 | Retained-content refresh | ForegroundLoadPhase plus domain-specific refresh/page errors; strict download metadata errors/retry | LibraryStoreTests, ItemDetailActionTests, SeerrCatalogStoreTests, BrowseRefinementTests, DownloadStoreIntegrationTests.unreadableMetadataLoading |
 | F16 | Full-content continuation | Raw-offset paging, ordered queue continuation, full shuffle collection; incomplete advertised collections fail visibly | BrowseRefinementTests, including incompleteCollection; PlaybackLifecyclePolicyTests |
 | F17 | Superseding first-page query changes | Immutable query identity and generation cancellation | LibraryStoreTests, BrowseRefinementTests |
-| F18 | Reader construction/resource recovery | Readium errors preserve locator and expose retry | BookReaderLoadingTests; authenticated reader runtime acceptance pending |
+| F18 | Reader construction/resource recovery | Public container read observation, inline recovery, bounded chapter selection and generation-scoped Retry | BookReaderLoadingTests; authenticated reader runtime acceptance pending |
 | F19 | Every PR triggers required CI | Always-triggered workflow, fail-closed classifier, explicit documentation-only success | test-classify-changes.py; hosted required checks pending |
 | F20 | Measured performance and justified retention/I/O fixes | Non-owning heavy-store lookup, owner/lease cancellation, visibility refresh, serial diagnostics and download workers | NavigationOwnershipTests, including replacementDetailOwnership and seriesLeaseCancellation; DiagnosticsTests, DownloadStoreIntegrationTests; comparable runtime measurements pending |
 | F21 | Current platform visual/interaction/accessibility acceptance | Native controls retained; editable handoff reconciliation inventory in Design/README.md | Runtime/device matrix and saved editable handoff verification remain open |
@@ -149,6 +155,12 @@ snapshots; they never present an unreadable catalog as an empty download library
 | Retirement | SavedMediaStore replaces local-playlist CRUD/import; current-format record filtering, draft journal and CloudKit ownership retained; VideoPlaylistTests, MediaReferencePersistenceTests, ServerMediaListsStoreTests |
 
 ## Server cleanup boundary
+
+Video playback prefers native MP4 direct delivery and fMP4 HLS. A secondary
+H.264 TS HLS profile supports Live TV compatibility mode:
+[Jellyfin 10.11.11 filters those profiles to TS containers](https://github.com/jellyfin/jellyfin/blob/v10.11.11/MediaBrowser.Model/Dlna/StreamBuilder.cs#L852-L855).
+This advertises segmented HLS without disabling compatible file direct streaming
+or retrying allocating PlaybackInfo requests.
 
 Jellyfin 10.11.11's [PlaybackStopped path](https://github.com/jellyfin/jellyfin/blob/v10.11.11/Emby.Server.Implementations/Session/SessionManager.cs#L1090-L1093)
 releases the authenticated session's live-stream mapping. Its [raw Close endpoint](https://github.com/jellyfin/jellyfin/blob/v10.11.11/Jellyfin.Api/Controllers/MediaInfoController.cs#L314-L319)

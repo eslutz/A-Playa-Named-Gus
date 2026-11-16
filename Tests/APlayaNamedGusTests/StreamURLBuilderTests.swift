@@ -62,6 +62,25 @@ struct StreamURLBuilderTests {
         #expect(hls.audioCodec?.split(separator: ",").contains("dts") == false)
     }
 
+    @Test("compatibility-mode Live TV has an H.264 TS HLS option after preferred fMP4", arguments: [false, true])
+    func liveHLSCompatibilityProfile(supportsHEVC: Bool) throws {
+        let capabilities = DevicePlaybackCapabilities(supportsHEVCDecode: supportsHEVC, supportsAV1Decode: false, supportsHDRPlayback: false)
+        let profile = StreamURLBuilder.avPlayerProfile(maxStreamingBitrate: 42_000_000, capabilities: capabilities)
+        let profiles = try #require(profile.transcodingProfiles)
+        #expect(profiles.map(\.container) == ["mp4", "ts"])
+        #expect(profiles.first?.protocol == .hls)
+        #expect(profiles.first?.videoCodec == (supportsHEVC ? "hevc,h264" : "h264"))
+        // Jellyfin's UseMostCompatibleTranscodingProfile filters on this container.
+        let live = try #require(profiles.first { $0.container == "ts" })
+        #expect(live.protocol == .hls)
+        #expect(live.videoCodec == "h264")
+        #expect(live.audioCodec == "aac,ac3,eac3")
+        #expect(live.type == .video)
+        #expect(live.context == .streaming)
+        #expect(live.enableSubtitlesInManifest == true)
+        #expect(live.minSegments == 2)
+    }
+
     @Test("text subtitles ride the HLS manifest; bitmap subtitles burn in")
     func avPlayerProfileDeclaresSubtitleDelivery() throws {
         let profile = StreamURLBuilder.avPlayerProfile(maxStreamingBitrate: 42_000_000, capabilities: fullCapabilities)
@@ -163,6 +182,53 @@ struct StreamURLBuilderTests {
         #expect(resolution.mediaSource?.id == "hls-source")
         #expect(queryItems.contains(URLQueryItem(name: "MediaSourceId", value: "hls-source")))
         #expect(queryItems.contains(URLQueryItem(name: "api_key", value: "token")))
+    }
+
+    @MainActor
+    @Test("Live TV advertises TS HLS and retains the negotiated live resource without another allocation")
+    func liveHLSNegotiationRetainsResource() async throws {
+        let source = MediaSourceInfo(
+            container: "ts",
+            id: "live-source",
+            isInfiniteStream: true,
+            isSupportsDirectPlay: false,
+            liveStreamID: "live-allocation",
+            transcodingContainer: "ts",
+            transcodingSubProtocol: .hls,
+            transcodingURL: "/Videos/channel/master.m3u8?LiveStreamId=live-allocation"
+        )
+        let fixture = try makePlaybackInfoFixture(responses: [PlaybackInfoResponse(mediaSources: [source], playSessionID: "live-session")])
+        let resolution = try await StreamURLBuilder(client: fixture.client, userID: "user").resolvePlayback(for: "channel")
+        let body = try #require(fixture.recordedPlaybackInfoBodies.first)
+        #expect(body.deviceProfile?.transcodingProfiles?.contains { $0.container == "ts" && $0.protocol == .hls && $0.videoCodec == "h264" } == true)
+        #expect(body.enableDirectPlay == true)
+        #expect(body.enableDirectStream == true)
+        #expect(body.isAutoOpenLiveStream == true)
+        #expect(resolution.url.path == "/Videos/channel/master.m3u8")
+        #expect(resolution.isTranscoding)
+        #expect(resolution.mediaSourceID == "live-source")
+        #expect(resolution.playSessionID == "live-session")
+        #expect(resolution.resource == PlaybackResource(liveStreamID: "live-allocation", playSessionID: "live-session", isTranscoding: true))
+        // No second PlaybackInfo POST or premature Close of the retained allocation.
+        #expect(fixture.recordedRequestCount == 1)
+    }
+
+    @MainActor
+    @Test("the Live TV compatibility profile preserves compatible MP4 direct delivery")
+    func compatibleMP4StillDirectStreams() async throws {
+        let fixture = try makePlaybackInfoFixture(responses: [PlaybackInfoResponse(mediaSources: [MediaSourceInfo(container: "mp4", id: "mp4-source", isSupportsDirectPlay: true)], playSessionID: "mp4-session")])
+        let resolution = try await StreamURLBuilder(client: fixture.client, userID: "user").resolvePlayback(for: "movie")
+        let body = try #require(fixture.recordedPlaybackInfoBodies.first)
+        #expect(body.enableDirectPlay == true)
+        #expect(body.enableDirectStream == true)
+        #expect(body.deviceProfile?.directPlayProfiles?.first?.container == "mp4,m4v,mov")
+        #expect(body.deviceProfile?.transcodingProfiles?.first?.container == "mp4")
+        #expect(resolution.url.path == "/Videos/movie/stream")
+        #expect(resolution.mediaSourceID == "mp4-source")
+        #expect(resolution.playSessionID == "mp4-session")
+        #expect(!resolution.isTranscoding)
+        #expect(resolution.resource == nil)
+        #expect(fixture.recordedRequestCount == 1)
     }
 
     @Test("resolvePlayback retries in 2D when a stereo source cannot direct play")

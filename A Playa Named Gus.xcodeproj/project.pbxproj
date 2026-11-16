@@ -416,6 +416,7 @@
 		8FD187C5AB61A4E12A06772D /* ItemDetailActionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A06E566445820AD3A77CC7A /* ItemDetailActionTests.swift */; };
 		90453D6D90FC8440B543376A /* ThemeAccentPreset.swift in Sources */ = {isa = PBXBuildFile; fileRef = 233823B5E01899DDD0F4B0CC /* ThemeAccentPreset.swift */; };
 		90D81F786AF1DA1E98B19FA2 /* SeerrRequestsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C24DD016F4BECF1F78EF4731 /* SeerrRequestsView.swift */; };
+		9237C8898DF078BEB0D439D6 /* BookResourceRecovery.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F90684DC29119A8A59B99EE /* BookResourceRecovery.swift */; };
 		9375FA17E0ABC65DF506DF3B /* JellyfinMediaItemMapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC189031D654AE642629F984 /* JellyfinMediaItemMapper.swift */; };
 		939273696D06F01D226390BB /* DiagnosticSummary.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA4B0EBACD8B70CDF8A40C8C /* DiagnosticSummary.swift */; };
 		93A73FF0D015735145B8DE3D /* TopShelfSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47993D483BC650FAFA81EB6B /* TopShelfSnapshot.swift */; };
@@ -1032,6 +1033,7 @@
 		8DD6EC8D93C96C4E81BC5F07 /* GusMacOSUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = GusMacOSUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		8E6BE6FC65C46A9319391702 /* CinematicDetailHero.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CinematicDetailHero.swift; sourceTree = "<group>"; };
 		8EEC93F51B528B5404E897F2 /* LibraryStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryStore.swift; sourceTree = "<group>"; };
+		8F90684DC29119A8A59B99EE /* BookResourceRecovery.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookResourceRecovery.swift; sourceTree = "<group>"; };
 		8FE532694172C737A1A8F07C /* QuickConnectStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickConnectStore.swift; sourceTree = "<group>"; };
 		900574CB1AB51B19393E858D /* GusTopShelf.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = GusTopShelf.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		90F6CEF7F768C221B3872DB9 /* PlaybackStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaybackStore.swift; sourceTree = "<group>"; };
@@ -1751,6 +1753,7 @@
 			children = (
 				BA899EA13CD353547F85FCDD /* BookActions.swift */,
 				4D689BDA9EBFAEC5030814DA /* BookReaderView.swift */,
+				8F90684DC29119A8A59B99EE /* BookResourceRecovery.swift */,
 			);
 			path = Books;
 			sourceTree = "<group>";
@@ -2862,6 +2865,7 @@
 				7699000054034DD0054C3483 /* BookActions.swift in Sources */,
 				5F8E269B0A5829EEC6411823 /* BookFileProvider.swift in Sources */,
 				378AAB373B8968E87E2022EE /* BookReaderView.swift in Sources */,
+				9237C8898DF078BEB0D439D6 /* BookResourceRecovery.swift in Sources */,
 				C34A63379FCA0F14138E2F3F /* CarPlaySceneDelegate.swift in Sources */,
 				B99B06A7965341C2E9B50EC4 /* CastRail.swift in Sources */,
 				E1941790B8D90B042797E0B9 /* CinemaModel.swift in Sources */,
