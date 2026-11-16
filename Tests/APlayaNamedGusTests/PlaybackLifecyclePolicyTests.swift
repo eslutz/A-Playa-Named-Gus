@@ -572,11 +572,10 @@ struct PlaybackLifecyclePolicyTests {
         provider.playbackHandler = { resolution }
         provider.audioHandler = { resolution }
         let session = makeSession(provider)
-        var activationArguments: [Bool] = []
-        var denied = true
+        let activationState = AudioSessionRefusalState()
         let activate: @MainActor @Sendable (Bool) async throws -> Void = { video in
-            activationArguments.append(video)
-            let shouldDeny = denied
+            activationState.arguments.append(video)
+            let shouldDeny = activationState.denied
             try await PlaybackAudioSession.activate(video: video, configureCategory: { _ in }, activateSession: {
                 if shouldDeny {
                     throw NSError(domain: NSOSStatusErrorDomain, code: 560_557_684, userInfo: [NSLocalizedDescriptionKey: "Audio session activation denied"])
@@ -602,16 +601,16 @@ struct PlaybackLifecyclePolicyTests {
             #expect(music.nativePlayer == nil)
         }
         await session.playbackReports.flush()
-        #expect(activationArguments == [!audio])
+        #expect(activationState.arguments == [!audio])
         #expect(provider.playbackResolutionCallCount == 0)
         #expect(provider.audioResolutionCallCount == 0)
         #expect(provider.playbackReports.isEmpty)
         #expect(provider.releasedPlaybackResources.isEmpty)
 
-        denied = false
+        activationState.denied = false
         await video?.prepare()
         await music?.start()
-        #expect(activationArguments == [!audio, !audio])
+        #expect(activationState.arguments == [!audio, !audio])
         #expect(provider.playbackResolutionCallCount == (audio ? 0 : 1))
         #expect(provider.audioResolutionCallCount == (audio ? 1 : 0))
         if let video {
@@ -862,6 +861,12 @@ struct PlaybackLifecyclePolicyTests {
         #expect(Set(store.queue.tracks.compactMap(\.id)) == ["a", "b", "c"])
         #expect(!store.isCollectingShuffle)
         #expect(provider.playbackReportCallCount == 0)
+    }
+
+    @MainActor
+    private final class AudioSessionRefusalState {
+        var arguments: [Bool] = []
+        var denied = true
     }
 
     private func makeSession(_ provider: FakeMediaProviderSession) -> SessionStore {
