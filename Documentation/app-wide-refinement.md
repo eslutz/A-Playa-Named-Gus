@@ -40,9 +40,10 @@ page deduplication. Gus retains AVPlayer/AVKit and current OS 26 fallbacks.
   in the visible detail's context, including series headers that play an episode.
   Horizontal TV rails use their full scroll viewport as the native focus section,
   keeping short rows reachable from trailing header controls without changing card layout.
-  Native TV controls inherit the system's untinted bordered focus treatment from
-  the themed app root and independent native-hosted queue boundary. Hero foreground
-  and theme tint must not override focused labels or platters.
+  The themed TV app root removes theme tint while retaining native TabView row styles.
+  Page content and the independent native-hosted queue use the system's untinted
+  bordered focus treatment. Hero foreground and theme tint must not override
+  focused labels or platters.
 - Foreground refresh retains usable content. Query generation rejects stale
   results. Full-content views and queues continue pages and deduplicate by scoped
   media identity; intentional preview limits remain explicit. Advertised totals
@@ -110,7 +111,7 @@ page deduplication. Gus retains AVPlayer/AVKit and current OS 26 fallbacks.
 | F04 | Truthful playback lifecycle and finalization | Shared native preparation; audio/video/Watch finalization, actual-playing observations and persistent iOS/iPadOS video dismissal | PlaybackLifecyclePolicyTests, TVPlaybackLifecycleTests, GusAuthenticatedUITests.testReadyVideoCloseReturnsToDetail; physical output pending |
 | F05 | One resolution deadline/retry owner | PlaybackDeadline and StreamURLBuilder | PlaybackLifecyclePolicyTests, StreamURLBuilderTests |
 | F06 | Watch credential and endpoint rotation | Central AppModel installation and lease invalidation | AppModelSessionTests; paired Watch acceptance pending |
-| F07 | Truthful independent Live TV loading | Typed availability and independent channel/recording/timer phases | BrowseRefinementTests; configured tuner acceptance pending |
+| F07 | Truthful independent Live TV loading | Current-account permission plus explicit server membership; independent channel/recording/timer phases | BrowseRefinementTests, JellyfinLiveTVProviderTests (real HTTP JSON, cancellation and combined read budget); populated local M3U/native acceptance pending |
 | F08 | Live resource ownership and seekability | Origin-owned allocation; Stop owns started-live release | PlaybackLifecyclePolicyTests; real tuner response-loss test pending |
 | F09 | Remote action feedback | Shared ActionOutcome and capability/duplicate/explicit-position guards | RemoteSessionsTests, including explicitPositionConfirmation; physical target acceptance pending |
 | F10 | Bounded invalidations and stale-response rejection | One remote refresh plus one follow-up, lease/generation/visibility checks | RemoteSessionsTests |

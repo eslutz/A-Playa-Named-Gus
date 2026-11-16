@@ -807,6 +807,11 @@ final class GusAuthenticatedUITests: XCTestCase {
                 }
                 XCUIRemote.shared.press(.up)
             }
+            capture(app, "tv-sidebar-account-before-focus-assertion")
+            let focus = XCTAttachment(string: "Application state: \(app.state.rawValue)\nNative focus frame: \(String(describing: try? focusedTVFrame(app)))\n" + app.debugDescription)
+            focus.name = "tv-sidebar-account-focus-diagnostic"
+            focus.lifetime = .keepAlways
+            add(focus)
             XCTAssertTrue(account.hasFocus || account.descendants(matching: .any).allElementsBoundByIndex.contains(where: \.hasFocus), app.debugDescription)
             capture(app, "tv-sidebar-profile")
             XCUIRemote.shared.press(.select)

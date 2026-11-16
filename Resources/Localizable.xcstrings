@@ -3340,6 +3340,17 @@
         }
       }
     },
+    "Live TV availability could not be checked. Try again.": {
+      "comment": "Incomplete Live TV permission or capability response.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Live TV availability could not be checked. Try again."
+          }
+        }
+      }
+    },
     "Load More": {
       "comment": "Next Up and video playlist interface."
     },

@@ -163,6 +163,155 @@ struct JellyfinMediaListProviderTests {
 }
 
 @MainActor
+@Suite("Native Jellyfin Live TV availability")
+struct JellyfinLiveTVProviderTests {
+    enum Capability: CaseIterable, Sendable {
+        case member, noTuner, otherUsers, noService, denied
+    }
+
+    enum Missing: CaseIterable, Sendable {
+        case policy, permission, identity, wrongIdentity, enabledFlag, enabledUsers, nullUsers, malformedUsers
+    }
+
+    enum Status: CaseIterable, Sendable {
+        case userUnauthorized, userForbidden, infoUnauthorized, infoForbidden
+    }
+
+    enum HeldRead: CaseIterable, Sendable {
+        case user, info
+        var path: String {
+            self == .user ? "/Users/user" : "/LiveTv/Info"
+        }
+    }
+
+    private let allowedUser = #"{"Id":"user","Policy":{"AuthenticationProviderId":"fixture-provider","PasswordResetProviderId":"fixture-reset","EnableLiveTvAccess":true,"EnableLiveTvManagement":false}}"#
+    private let enabledInfo = #"{"IsEnabled":true,"EnabledUsers":["user"],"Services":[{"Name":"Emby"}]}"#
+
+    @Test("Live TV capability uses actual permission and enabled-user JSON", arguments: Capability.allCases)
+    func availabilityJSON(_ scenario: Capability) async throws {
+        let user = scenario == .denied ? allowedUser.replacingOccurrences(of: "\"EnableLiveTvAccess\":true", with: "\"EnableLiveTvAccess\":false") : allowedUser
+        let info: String = switch scenario {
+        case .noTuner: #"{"IsEnabled":true,"EnabledUsers":[],"Services":[{"Name":"Emby"}]}"#
+        case .otherUsers: #"{"IsEnabled":true,"EnabledUsers":["other"]}"#
+        case .noService: #"{"IsEnabled":false,"EnabledUsers":[]}"#
+        default: enabledInfo
+        }
+        let fixture = try NativeListFixture(jsonResponses: scenario == .denied ? [(user, 200)] : [(user, 200), (info, 200)])
+        defer { fixture.finish() }
+        let result = try await fixture.provider.liveTVAvailability()
+        let expected: LiveTVAvailability = switch scenario {
+        case .member: .enabled
+        case .noTuner, .noService: .notConfigured
+        case .otherUsers, .denied: .restricted
+        }
+        #expect(result == expected)
+        #expect(fixture.state.requests.map { $0.url?.path } == (scenario == .denied ? ["/Users/user"] : ["/Users/user", "/LiveTv/Info"]))
+        #expect(fixture.state.requests.allSatisfy { $0.httpMethod == "GET" })
+    }
+
+    @Test("Missing or malformed Live TV metadata never becomes a capability result", arguments: Missing.allCases)
+    func incompleteJSON(_ scenario: Missing) async throws {
+        var user = allowedUser
+        var info = enabledInfo
+        let failsDuringUser: Bool
+        switch scenario {
+        case .policy: user = #"{"Id":"user"}"#; failsDuringUser = true
+        case .permission: user = allowedUser.replacingOccurrences(of: ",\"EnableLiveTvAccess\":true", with: ""); failsDuringUser = true
+        case .identity: user = allowedUser.replacingOccurrences(of: "\"Id\":\"user\",", with: ""); failsDuringUser = true
+        case .wrongIdentity: user = allowedUser.replacingOccurrences(of: "\"Id\":\"user\"", with: "\"Id\":\"other\""); failsDuringUser = true
+        case .enabledFlag: info = #"{"EnabledUsers":["user"]}"#; failsDuringUser = false
+        case .enabledUsers: info = #"{"IsEnabled":true}"#; failsDuringUser = false
+        case .nullUsers: info = #"{"IsEnabled":true,"EnabledUsers":null}"#; failsDuringUser = false
+        case .malformedUsers: info = #"{"IsEnabled":true,"EnabledUsers":"user"}"#; failsDuringUser = false
+        }
+        let fixture = try NativeListFixture(jsonResponses: failsDuringUser ? [(user, 200)] : [(user, 200), (info, 200)])
+        defer { fixture.finish() }
+        do {
+            _ = try await fixture.provider.liveTVAvailability()
+            Issue.record("Incomplete data must not become enabled, restricted or not configured")
+        } catch {
+            #expect(error is GusError)
+            let failure = GusError(from: error)
+            if scenario == .malformedUsers {
+                guard case .unknown = failure else { Issue.record("Expected the SDK decoding failure"); return }
+            } else {
+                guard case .server = failure else { Issue.record("Expected an unverified server response"); return }
+            }
+        }
+        #expect(fixture.state.requests.count == (failsDuringUser ? 1 : 2))
+    }
+
+    @Test("Live TV permission denial stays distinct from expired credentials", arguments: Status.allCases)
+    func statusErrors(_ scenario: Status) async throws {
+        let duringInfo = scenario == .infoUnauthorized || scenario == .infoForbidden
+        let forbidden = scenario == .userForbidden || scenario == .infoForbidden
+        let replies = (duringInfo ? [(allowedUser, 200)] : []) + [("", forbidden ? 403 : 401)]
+        let fixture = try NativeListFixture(jsonResponses: replies)
+        defer { fixture.finish() }
+        if forbidden {
+            #expect(try await fixture.provider.liveTVAvailability() == .restricted)
+        } else {
+            await #expect(throws: GusError.unauthorized) { try await fixture.provider.liveTVAvailability() }
+        }
+        #expect(fixture.state.requests.count == (duringInfo ? 2 : 1))
+    }
+
+    @Test("Canceling either Live TV read stops the transport and further capability work", arguments: HeldRead.allCases)
+    func canceledRead(_ held: HeldRead) async throws {
+        let fixture = try NativeListFixture(jsonResponses: [(allowedUser, 200), (enabledInfo, 200)], suspendedPaths: [held.path])
+        let operation = Task { try await fixture.provider.liveTVAvailability() }
+        defer { operation.cancel(); fixture.finish() }
+        try await waitUntil { fixture.state.hasPending(path: held.path) }
+        operation.cancel()
+        do {
+            _ = try await operation.value
+            Issue.record("A canceled read must not publish availability")
+        } catch { #expect(GusError(from: error) == .cancelled) }
+        try await waitUntil { fixture.state.hasStopped(path: held.path) }
+        #expect(fixture.state.requests.count == (held == .user ? 1 : 2))
+    }
+
+    @Test("Live TV reads share one 30-second budget instead of sequential read budgets")
+    func combinedReadDeadline() async throws {
+        let fixture = try NativeListFixture(jsonResponses: [(allowedUser, 200), (enabledInfo, 200)], suspendedPaths: ["/Users/user", "/LiveTv/Info"])
+        let outcome = OSAllocatedUnfairLock(initialState: Result<LiveTVAvailability, GusError>?.none)
+        let started = ContinuousClock.now
+        let operation = Task {
+            do {
+                let value = try await fixture.provider.liveTVAvailability()
+                outcome.withLock { $0 = .success(value) }
+            } catch { outcome.withLock { $0 = .failure(GusError(from: error)) } }
+        }
+        defer { operation.cancel(); fixture.finish() }
+        try await waitUntil { fixture.state.hasPending(path: "/Users/user") }
+        // Spend part of the shared budget on the first actual HTTP read. An
+        // instant first read cannot distinguish a total 30s from per-read 30s cap.
+        try await Task.sleep(for: .seconds(10))
+        fixture.state.release(path: "/Users/user")
+        try await waitUntil { fixture.state.hasPending(path: "/LiveTv/Info") }
+        let deadline = started + .seconds(35)
+        while outcome.withLock({ $0 == nil }), ContinuousClock.now < deadline {
+            try await Task.sleep(for: .milliseconds(20))
+        }
+        let elapsed = started.duration(to: .now)
+        let result = try #require(outcome.withLock { $0 }, "The total Live TV read budget did not finish by 35s")
+        guard case let .failure(error) = result else { Issue.record("A held transport cannot confirm availability"); return }
+        #expect(error == .timeout)
+        #expect(elapsed >= .seconds(29) && elapsed < .seconds(35))
+        try await waitUntil { fixture.state.hasStopped(path: "/LiveTv/Info") }
+        #expect(fixture.state.requests.map { $0.url?.path } == ["/Users/user", "/LiveTv/Info"])
+    }
+
+    private func waitUntil(_ condition: () -> Bool) async throws {
+        let deadline = ContinuousClock.now + .seconds(5)
+        while !condition(), ContinuousClock.now < deadline {
+            try await Task.sleep(for: .milliseconds(10))
+        }
+        try #require(condition(), "The expected HTTP fixture phase was not reached")
+    }
+}
+
+@MainActor
 private struct NativeListFixture {
     let provider: JellyfinMediaProviderSession
     let state: NativeListResponseState
@@ -181,8 +330,12 @@ private struct NativeListFixture {
         try self.init(data: [Data()], statusCodes: [statusCode])
     }
 
-    private init(data: [Data], statusCodes: [Int]? = nil) throws {
-        let fixtureState = NativeListResponseState(responses: data, statusCodes: statusCodes)
+    init(jsonResponses: [(String, Int)], suspendedPaths: Set<String> = []) throws {
+        try self.init(data: jsonResponses.map { Data($0.0.utf8) }, statusCodes: jsonResponses.map(\.1), suspendedPaths: suspendedPaths)
+    }
+
+    private init(data: [Data], statusCodes: [Int]? = nil, suspendedPaths: Set<String> = []) throws {
+        let fixtureState = NativeListResponseState(responses: data, statusCodes: statusCodes, suspendedPaths: suspendedPaths)
         let fixtureID = UUID().uuidString
         state = fixtureState
         stateID = fixtureID
@@ -192,11 +345,17 @@ private struct NativeListFixture {
         configuration.httpAdditionalHeaders = [NativeListURLProtocol.header: stateID]
         provider = try JellyfinMediaProviderSession(client: JellyfinClient(configuration: .init(url: #require(URL(string: "https://jellyfin.example.com")), accessToken: "token", client: "GusTests", deviceName: "Tests", deviceID: "device", version: "1"), sessionConfiguration: configuration), userID: "user")
     }
+
+    func finish() {
+        state.releaseAll()
+        NativeListURLProtocol.states.withLock { $0[stateID] = nil }
+    }
 }
 
 private final class NativeListURLProtocol: URLProtocol {
     static let header = "X-Gus-Native-List-Fixture"
     static let states = OSAllocatedUnfairLock(initialState: [String: NativeListResponseState]())
+    private let stopped = OSAllocatedUnfairLock(initialState: false)
 
     override class func canInit(with request: URLRequest) -> Bool {
         request.url?.host == "jellyfin.example.com"
@@ -206,13 +365,29 @@ private final class NativeListURLProtocol: URLProtocol {
         request
     }
 
-    override func stopLoading() {}
+    override func stopLoading() {
+        stopped.withLock { $0 = true }
+        if let stateID = request.value(forHTTPHeaderField: Self.header), let state = Self.states.withLock({ $0[stateID] }) {
+            state.recordStop(path: request.url?.path ?? "")
+        }
+    }
 
     override func startLoading() {
         do {
             let stateID = try #require(request.value(forHTTPHeaderField: Self.header))
             let state = try #require(Self.states.withLock { $0[stateID] })
-            let (data, statusCode) = try state.response(for: request)
+            let response = try state.response(for: request)
+            if state.suspendIfNeeded(path: request.url?.path ?? "", response: response, deliver: { [weak self] in self?.deliver($0) }) {
+                return
+            }
+            deliver(.success(response))
+        } catch { client?.urlProtocol(self, didFailWithError: error) }
+    }
+
+    private func deliver(_ result: Result<(Data, Int), Error>) {
+        guard !stopped.withLock({ $0 }) else { return }
+        do {
+            let (data, statusCode) = try result.get()
             let url = try #require(request.url)
             let response = try #require(HTTPURLResponse(url: url, statusCode: statusCode, httpVersion: nil, headerFields: ["Content-Type": "application/json"]))
             client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
@@ -227,9 +402,59 @@ private final class NativeListResponseState: @unchecked Sendable {
     private var responses: [Data]
     private var recorded: [URLRequest] = []
     private var statusCodes: [Int]
-    init(responses: [Data], statusCodes: [Int]?) {
+    private var suspendedPaths: Set<String>
+    private var stoppedPaths: Set<String> = []
+    private var pending: [String: (response: (Data, Int), deliver: (Result<(Data, Int), Error>) -> Void)] = [:]
+
+    init(responses: [Data], statusCodes: [Int]?, suspendedPaths: Set<String> = []) {
         self.responses = responses
         self.statusCodes = statusCodes ?? responses.map { $0.isEmpty ? 204 : 200 }
+        self.suspendedPaths = suspendedPaths
+    }
+
+    func suspendIfNeeded(path: String, response: (Data, Int), deliver: @escaping (Result<(Data, Int), Error>) -> Void) -> Bool {
+        lock.lock()
+        defer { lock.unlock() }
+        guard suspendedPaths.contains(path), !stoppedPaths.contains(path) else { return false }
+        pending[path] = (response, deliver)
+        return true
+    }
+
+    func hasPending(path: String) -> Bool {
+        lock.lock(); defer { lock.unlock() }
+        return pending[path] != nil
+    }
+
+    func hasStopped(path: String) -> Bool {
+        lock.lock(); defer { lock.unlock() }
+        return stoppedPaths.contains(path)
+    }
+
+    func recordStop(path: String) {
+        lock.lock(); defer { lock.unlock() }
+        stoppedPaths.insert(path)
+        pending.removeValue(forKey: path)
+    }
+
+    func release(path: String) {
+        lock.lock()
+        let reply = pending.removeValue(forKey: path)
+        suspendedPaths.remove(path)
+        lock.unlock()
+        if let reply {
+            reply.deliver(.success(reply.response))
+        }
+    }
+
+    func releaseAll() {
+        lock.lock()
+        let replies = Array(pending.values)
+        pending.removeAll()
+        suspendedPaths.removeAll()
+        lock.unlock()
+        for reply in replies {
+            reply.deliver(.failure(URLError(.cancelled)))
+        }
     }
 
     var requests: [URLRequest] {

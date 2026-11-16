@@ -263,14 +263,37 @@ final class JellyfinMediaProviderSession: MediaProviderSession {
     // MARK: - Live TV
 
     func liveTVAvailability() async throws -> LiveTVAvailability {
+        let incomplete = GusError.server(String(
+            localized: "Live TV availability could not be checked. Try again.",
+            comment: "Incomplete Live TV permission or capability response"
+        ))
         do {
-            let info = try await client.send(Paths.getLiveTvInfo).value
-            guard info.isEnabled == true else { return .notConfigured }
-            if let users = info.enabledUsers, !users.isEmpty, !users.contains(userID) {
-                return .restricted
+            // IsEnabled reports service registration, not configured tuners.
+            // Account permission distinguishes an empty EnabledUsers list from
+            // a server whose users are all denied Live TV access.
+            let availability: LiveTVAvailability = try await PlaybackDeadline.run(for: .seconds(30)) { [client, userID] in
+                try Task.checkCancellation()
+                let user = try await client.send(Paths.getUserByID(userID: userID)).value
+                try Task.checkCancellation()
+                guard user.id == userID, let allowed = user.policy?.enableLiveTvAccess else { throw incomplete }
+                guard allowed else { return .restricted }
+                let info = try await client.send(Paths.getLiveTvInfo).value
+                try Task.checkCancellation()
+                guard let enabled = info.isEnabled else { throw incomplete }
+                guard enabled else { return .notConfigured }
+                guard let users = info.enabledUsers else { throw incomplete }
+                if users.contains(userID) {
+                    return .enabled
+                }
+                return users.isEmpty ? .notConfigured : .restricted
             }
-            return .enabled
+            try Task.checkCancellation()
+            return availability
         } catch {
+            try Task.checkCancellation()
+            if error is PlaybackDeadline.Timeout {
+                throw GusError.timeout
+            }
             let failure = GusError(from: error)
             if failure == .forbidden {
                 return .restricted

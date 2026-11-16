@@ -373,6 +373,7 @@ private struct SectionStack: View {
             }
         }
         #if os(tvOS)
+        .gusTVNativeControls()
         .gusTVFocusScope()
         #endif
         #if os(visionOS)
