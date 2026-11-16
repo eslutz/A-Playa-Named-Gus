@@ -964,16 +964,31 @@ final class GusAuthenticatedUITests: XCTestCase {
 
                 let voiceOver = XCUIDevice.shared.voiceOverService
                 let wasEnabled = voiceOver.isEnabled
-                defer {
+                // XCTest runs registered teardown blocks after assertion failures,
+                // including when continueAfterFailure is false. A crash is excluded.
+                addTeardownBlock { @MainActor in
+                    var restorationError: String?
                     do {
                         if !wasEnabled {
                             try voiceOver.disable()
                         }
-                        XCTAssertEqual(voiceOver.isEnabled, wasEnabled, "Restore original simulator VoiceOver state")
                     } catch {
-                        XCTFail("Failed to restore original simulator VoiceOver state: \(error)")
+                        restorationError = String(describing: error)
                     }
+                    let restoredEnabled = voiceOver.isEnabled
+                    let restoration = XCTAttachment(string: "baselineEnabled=\(wasEnabled)\nrestoredEnabled=\(restoredEnabled)\nrestorationError=\(restorationError ?? "none")\nrecordedAt=\(Date())")
+                    restoration.name = "native-chapter-voiceover-restoration"
+                    restoration.lifetime = .keepAlways
+                    self.add(restoration)
+                    if let restorationError {
+                        XCTFail("Failed to restore original simulator VoiceOver state: \(restorationError)")
+                    }
+                    XCTAssertEqual(restoredEnabled, wasEnabled, "Restore original simulator VoiceOver state")
                 }
+                let baseline = XCTAttachment(string: "enabled=\(wasEnabled)\nrecordedAt=\(Date())")
+                baseline.name = "native-chapter-voiceover-baseline"
+                baseline.lifetime = .keepAlways
+                add(baseline)
                 if !wasEnabled {
                     try voiceOver.enable()
                 }
@@ -1041,15 +1056,14 @@ final class GusAuthenticatedUITests: XCTestCase {
                 var speech = try service.currentSpeech().utterance
                 var seen: Set<String> = []
                 var utterances: [String] = []
-                defer {
+                addTeardownBlock { @MainActor in
                     let attachment = XCTAttachment(string: utterances.joined(separator: "\n"))
                     attachment.name = requiresArtwork ? "native-chapter-card-voiceover" : "native-chapters-tab-voiceover"
                     attachment.lifetime = .keepAlways
-                    add(attachment)
+                    self.add(attachment)
                 }
                 for _ in 0 ..< 16 {
                     try requireNativeChapter(ContinuousClock.now < deadline, "Unverified: bounded native VoiceOver traversal expired")
-                    utterances.append(speech)
                     let named = NSPredicate(format: "label == %@ OR label BEGINSWITH %@", title, title + ",")
                     let candidates: [XCUIElement]
                     if requiresArtwork {
@@ -1061,6 +1075,7 @@ final class GusAuthenticatedUITests: XCTestCase {
                         // Gus's separate flat Chapters custom menu is not this target.
                         candidates = infoMenu.descendants(matching: .any).matching(named).allElementsBoundByIndex.filter { $0.exists && $0.isHittable && !$0.frame.isEmpty }
                     }
+                    utterances.append("speech=\(speech)\ncandidateCount=\(candidates.count)")
                     if nativeChapterSpeech(speech, names: title), candidates.count == 1 {
                         try requireNativeChapter(ContinuousClock.now < deadline, "Unverified: native AX target read exceeded traversal deadline")
                         return candidates[0]
