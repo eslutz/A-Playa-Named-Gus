@@ -175,12 +175,13 @@
             let publication = try #require(model.publication)
             let first = try #require(publication.readingOrder.first)
             let last = try #require(model.tableOfContents.last)
-            let preloaded = try #require(publication.get(last))
-            _ = await preloaded.read(range: 0 ..< 1)
-            let preloadDeadline = ContinuousClock.now + .seconds(2)
-            while model.resourceNotice == nil && ContinuousClock.now < preloadDeadline {
-                try await Task.sleep(for: .milliseconds(10))
-            }
+            // Resource reads are covered independently without transferring the
+            // actor-owned publication. Exercise its generation-checked failure relay
+            // before an actual missing-member chapter preflight for the same target.
+            model.acceptResourceFailure(
+                BookResourceFailure(href: BookReportingContainer.canonical(last.url()).string, error: GusError.notFound),
+                generation: model.navigatorIdentity
+            )
             try #require(model.resourceNotice != nil)
             model.dismissResourceNotice()
             #expect(model.resourceNotice == nil)

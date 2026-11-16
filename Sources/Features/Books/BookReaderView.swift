@@ -517,10 +517,11 @@
         }
 
         func go(to link: ReadiumShared.Link) {
-            guard let navigator, let publication, owns(generation: navigatorIdentity), chapterRequest == nil else { return }
+            guard let navigator, publication != nil, owns(generation: navigatorIdentity), chapterRequest == nil else { return }
             let generation = navigatorIdentity
             let requestID = UUID()
             let href = BookReportingContainer.canonical(link.url())
+            let fileURL = fileURL
             let timeout = chapterTimeout
             let deadline = ContinuousClock.now + timeout
             let navigate = navigate
@@ -538,8 +539,7 @@
                 do {
                     // Check the actual target before a native transition can replace
                     // the last readable page. Do not read an entire chapter here.
-                    guard let resource = publication.get(link) else { throw GusError.notFound }
-                    _ = try await resource.read(range: 0 ..< 1).get()
+                    try await Self.preflightChapter(at: fileURL, href: href.string)
                     guard self?.owns(generation: generation) == true,
                           self?.chapterRequest?.id == requestID, !Task.isCancelled,
                           ContinuousClock.now < deadline, let navigator else { return }
@@ -556,6 +556,22 @@
                     resourceFailed(error, href: href.string)
                 }
             }
+        }
+
+        /// Readium resources are not Sendable. An explicit chapter check owns a
+        /// separate local archive rather than transferring the visible publication.
+        /// The navigation deadline above owns cancellation and late-result rejection.
+        @concurrent
+        private nonisolated static func preflightChapter(at fileURL: URL, href: String) async throws {
+            try Task.checkCancellation()
+            guard fileURL.isFileURL, let url = FileURL(url: fileURL),
+                  let target = AnyURL(string: href) else { throw GusError.notFound }
+            let retriever = AssetRetriever(httpClient: DefaultHTTPClient())
+            let asset = try await retriever.retrieve(url: url, mediaType: .epub).get()
+            guard case let .container(archive) = asset,
+                  let resource = archive.container[BookReportingContainer.canonical(target)] else { throw GusError.notFound }
+            _ = try await resource.read(range: 0 ..< 1).get()
+            try Task.checkCancellation()
         }
     }
 
