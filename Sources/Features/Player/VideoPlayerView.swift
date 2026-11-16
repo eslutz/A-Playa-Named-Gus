@@ -100,6 +100,7 @@ struct VideoPlayerView: View {
                 HStack {
                     GusCloseButton { closePlayback() }
                         .buttonStyle(.bordered)
+                        .controlSize(.large)
                         .frame(minWidth: 44, minHeight: 44)
                         .accessibilityIdentifier("VideoPlayer.close")
                     Spacer(minLength: 12)
