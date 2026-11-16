@@ -55,6 +55,7 @@
         /// changes the active player until the user selects Play.
         @MainActor private final class PlaybackChoices {
             var request: PlaybackRequest
+            var startOverride: PlaybackStartOverride?
             var isStarting = false
             var tracks: [MediaItem]
             let startIndex: Int
@@ -77,6 +78,21 @@
             var source: MediaSource? {
                 let sources = CarPlayPlaybackChoices.sources(for: request.item)
                 return sources.first { $0.id == request.streamSelection.mediaSourceID } ?? sources.first
+            }
+
+            var effectiveRequest: PlaybackRequest {
+                startOverride?.applying(to: request, session: session, progress: .shared) ?? request
+            }
+
+            var positionTicks: Int {
+                PlaybackChoicePosition.ticks(for: effectiveRequest, session: session, progress: .shared) ?? 0
+            }
+
+            func selectSource(_ selected: PlaybackRequest, ticks: Int, fromBeginning: Bool) {
+                request = selected
+                request.start = .automatic
+                request.startPositionTicks = nil
+                startOverride = PlaybackStartOverride(request: request, ticks: ticks, fromBeginning: fromBeginning, session: session, progress: .shared)
             }
         }
 
@@ -311,7 +327,8 @@
                 guard let self, let template, self.isCurrent(choices), !choices.isStarting else { return }
                 choices.isStarting = true
                 defer { choices.isStarting = false }
-                await self.play(tracks: choices.tracks, startIndex: choices.startIndex, request: choices.request, origin: template, continuation: choices.continuation, session: choices.session)
+                let request = choices.effectiveRequest
+                await self.play(tracks: choices.tracks, startIndex: choices.startIndex, request: request, origin: template, continuation: choices.continuation, session: choices.session)
             }]
             let sources = CarPlayPlaybackChoices.sources(for: choices.request.item)
             if sources.count > 1 {
@@ -369,22 +386,22 @@
 
         private func chooseSource(_ source: MediaSource, choices: PlaybackChoices, offset: Int) {
             guard isCurrent(choices), let template = choices.template, source.id != choices.source?.id else { return }
-            let ticks = PlaybackActionPosition.ticks(for: choices.request.item, localTicks: choices.request.requestedStartTicks) ?? 0
+            let ticks = choices.positionTicks
             guard ticks > 0 else {
                 if let request = CarPlayPlaybackChoices.selectingSource(source, request: choices.request, startTicks: 0) {
-                    choices.request = request
+                    choices.selectSource(request, ticks: 0, fromBeginning: true)
                 }
                 showPlaybackChoices(choices)
                 return
             }
             let startOver = pageItem("Start Over") { [weak self] in
                 guard let self, self.isCurrent(choices), let request = CarPlayPlaybackChoices.selectingSource(source, request: choices.request, startTicks: 0) else { return }
-                choices.request = request
+                choices.selectSource(request, ticks: 0, fromBeginning: true)
                 self.showPlaybackChoices(choices)
             }
             let resume = pageItem("Resume at Timestamp", detail: PlaybackTime.accessibilityDuration(seconds: PlaybackTime.seconds(fromTicks: ticks))) { [weak self] in
                 guard let self, self.isCurrent(choices), let request = CarPlayPlaybackChoices.selectingSource(source, request: choices.request, startTicks: ticks) else { return }
-                choices.request = request
+                choices.selectSource(request, ticks: ticks, fromBeginning: false)
                 self.showPlaybackChoices(choices)
             }
             resume.isEnabled = CarPlayPlaybackChoices.selectingSource(source, request: choices.request, startTicks: ticks) != nil
@@ -559,10 +576,7 @@ enum CarPlayPlaybackChoices {
     }
 
     static func selectingSource(_ source: MediaSource, request: PlaybackRequest, startTicks: Int) -> PlaybackRequest? {
-        guard let id = source.id, !id.isEmpty, startTicks >= 0 else { return nil }
-        if startTicks > 0, let duration = source.runTimeTicks, duration > 0, startTicks >= duration {
-            return nil
-        }
+        guard let id = source.id, !id.isEmpty, startTicks >= 0, PlaybackActionPosition.canResume(at: startTicks, durationTicks: source.runTimeTicks) else { return nil }
         return request.selectingMediaSource(id, startPositionTicks: startTicks)
     }
 

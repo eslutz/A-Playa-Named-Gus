@@ -100,6 +100,7 @@ struct SeerrTitleDetailView: View {
         }
         .navigationTitle(authorizedTitle?.displayTitle ?? String(localized: "Title"))
         .gusTVDetailTitle()
+        .gusTVFocusScope()
         .task(id: accessRevision) {
             requestTitle = nil
             reportTitle = nil

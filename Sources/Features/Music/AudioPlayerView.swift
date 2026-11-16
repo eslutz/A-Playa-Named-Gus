@@ -109,7 +109,7 @@ struct AudioPlayerView: View {
             if let source = pendingSource, let id = source.id {
                 Button("Start Over") { pendingSource = nil; Task { await store.selectMediaSource(id: id, fromBeginning: true) } }
                 Button("Resume at \(PlaybackTime.accessibilityDuration(seconds: store.currentTime))") { pendingSource = nil; Task { await store.selectMediaSource(id: id, fromBeginning: false) } }
-                    .disabled(source.runTimeTicks.map { $0 > 0 && PlaybackTime.ticks(fromSeconds: store.currentTime) >= $0 } ?? false)
+                    .disabled(!PlaybackActionPosition.canResume(at: PlaybackTime.ticks(fromSeconds: store.currentTime), durationTicks: source.runTimeTicks))
                 Button("Cancel", role: .cancel) { pendingSource = nil }
             }
         } message: { Text("Choose where playback should begin in this version. Versions may have different timelines.") }

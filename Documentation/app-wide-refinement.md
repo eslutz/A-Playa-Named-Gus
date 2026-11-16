@@ -25,6 +25,9 @@ page deduplication. Gus retains AVPlayer/AVKit and current OS 26 fallbacks.
 - tvOS dismissal and navigation returns use native focus scopes and an immutable
   request for the saved target. Native fallback does not reissue that request;
   target acknowledgement clears it without another focus reset or task scheduling.
+  Pushed destinations own their scope explicitly, including direct Show All and
+  Discover detail routes; the navigation root's custom namespace does not reach
+  every pushed page.
   Playlist and collection tasks return to their More opener using the same action order.
   Horizontal TV rails use their full scroll viewport as the native focus section,
   keeping short rows reachable from trailing header controls without changing card layout.
@@ -48,6 +51,13 @@ page deduplication. Gus retains AVPlayer/AVKit and current OS 26 fallbacks.
   Standard hero copy uses opaque backing at every width so artwork and text height
   cannot reduce its foreground/background contrast.
 - Version changes ask whether to start over or resume at the saved timestamp.
+  A retained start choice expires after matching actual playback checkpoints it;
+  canceled preparation preserves it. Detail, Watch and CarPlay derive the next
+  request from the selected source's checkpoint and duration. Active players keep
+  their original request identity. Account retirement and progress deletion
+  invalidate pending choices without changing the saved checkpoint format.
+  Watch remote requests expose accepted versus confirmed readback; confirmation
+  can consume the matching command choice without claiming local playback.
   Track memory is opt-in per device/account, including a native Watch setting, and
   carries semantic preferences within a
   series. Persisted preferences contain no source-local indexes; missing or ambiguous

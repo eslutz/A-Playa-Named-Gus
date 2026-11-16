@@ -147,7 +147,14 @@ final class RemoteSessionsStore {
     private let transport: any RemoteSessionsTransport
     private var generation = UUID()
     private var refreshVersion = 0
-    private var observations: [String: (command: RemoteSessionCommand, previous: RemoteSession)] = [:]
+    private struct CommandObservation {
+        let command: RemoteSessionCommand
+        let previous: RemoteSession
+        let onConfirmedPlay: (@MainActor (PlaybackRequest, RemoteSession) -> Void)?
+        var minimumRefreshVersion: Int?
+    }
+
+    private var observations: [String: CommandObservation] = [:]
     private var socket: SessionsSocket?
     private var socketTask: Task<Void, Never>?
     private var pollingTask: Task<Void, Never>?
@@ -174,9 +181,14 @@ final class RemoteSessionsStore {
             let loaded = try await transport.sessions(userID: session.user.id)
             guard !Task.isCancelled, session.isActive, generation == self.generation, version == refreshVersion else { return }
             sessions = loaded
-            for (target, observation) in observations where Self.confirms(observation.command, previous: observation.previous, current: loaded.first { $0.id == target }) {
+            for (target, observation) in observations {
+                guard let minimum = observation.minimumRefreshVersion, version >= minimum,
+                      let current = loaded.first(where: { $0.id == target }), Self.confirms(observation.command, previous: observation.previous, current: current) else { continue }
                 commandOutcomes[target] = .confirmed
                 observations.removeValue(forKey: target)
+                if case let .play(request) = observation.command {
+                    observation.onConfirmedPlay?(request, current)
+                }
             }
             state = .loaded
             refreshErrorMessage = nil
@@ -196,7 +208,7 @@ final class RemoteSessionsStore {
     }
 
     func startLiveUpdates() {
-        guard isSupported, session.isActive, socketTask == nil, pollingTask == nil else { return }
+        guard !Task.isCancelled, isSupported, session.isActive, socketTask == nil, pollingTask == nil else { return }
         let generation = generation
         if let token = session.client.accessToken,
            let url = SessionsSocket.socketURL(serverURL: session.server.url, accessToken: token, deviceID: DeviceIdentity.deviceID)
@@ -223,6 +235,7 @@ final class RemoteSessionsStore {
     func stopLiveUpdates() {
         generation = UUID()
         refreshVersion += 1
+        observations.removeAll()
         socketTask?.cancel()
         socketTask = nil
         socket?.disconnect()
@@ -283,11 +296,11 @@ final class RemoteSessionsStore {
         return try await perform(.seek(target), on: sessionID)
     }
 
-    func play(_ request: PlaybackRequest, on sessionID: String) async throws -> ActionOutcome {
-        try await perform(.play(request), on: sessionID, resolvingItem: true)
+    func play(_ request: PlaybackRequest, on sessionID: String, onConfirmed: (@MainActor (PlaybackRequest, RemoteSession) -> Void)? = nil) async throws -> ActionOutcome {
+        try await perform(.play(request), on: sessionID, resolvingItem: true, onConfirmedPlay: onConfirmed)
     }
 
-    private func perform(_ requested: RemoteSessionCommand, on target: String, resolvingItem: Bool = false) async throws -> ActionOutcome {
+    private func perform(_ requested: RemoteSessionCommand, on target: String, resolvingItem: Bool = false, onConfirmedPlay: (@MainActor (PlaybackRequest, RemoteSession) -> Void)? = nil) async throws -> ActionOutcome {
         guard session.isActive, !Task.isCancelled else { throw GusError.cancelled }
         guard let previous = sessions.first(where: { $0.id == target }) else {
             throw GusError.server(String(localized: "This player is no longer active."))
@@ -327,19 +340,25 @@ final class RemoteSessionsStore {
             }
             guard session.isActive, !Task.isCancelled, generation == self.generation else { throw GusError.cancelled }
             sent = true
-            observations[target] = (command, previous)
+            observations[target] = CommandObservation(command: command, previous: previous, onConfirmedPlay: onConfirmedPlay)
             try await transport.send(command, to: target)
             guard session.isActive, !Task.isCancelled, generation == self.generation else { throw GusError.cancelled }
+            observations[target]?.minimumRefreshVersion = refreshVersion + 1
             commandOutcomes[target] = .accepted
             await refresh()
             guard session.isActive, !Task.isCancelled, generation == self.generation else { throw GusError.cancelled }
-            let outcome: ActionOutcome = refreshErrorMessage == nil && Self.confirms(command, previous: previous, current: sessions.first { $0.id == target }) ? .confirmed : .accepted
+            // Only an eligible post-send readback can confirm. A superseded GET
+            // may return without publishing, leaving an older matching snapshot.
+            let outcome: ActionOutcome = commandOutcomes[target] == .confirmed ? .confirmed : .accepted
             commandOutcomes[target] = outcome
             return outcome
         } catch {
             let failure = GusError(from: error)
             failure.handleIfUnauthorized(session: session)
             if sent, Self.isAmbiguous(failure), session.isActive, generation == self.generation {
+                // Only a later readback may resolve an uncertain command. While
+                // send was suspended, an old matching snapshot proved nothing.
+                observations[target]?.minimumRefreshVersion = refreshVersion + 1
                 commandOutcomes[target] = .uncertain
                 throw GusError.server(ActionOutcome.uncertain.remoteMessage)
             }

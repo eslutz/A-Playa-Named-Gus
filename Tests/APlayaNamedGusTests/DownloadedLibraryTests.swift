@@ -299,6 +299,8 @@ extension PlaybackIntegrationTests {
             }
             let provider = FakeMediaProviderSession(capabilities: ProviderCapabilities())
             let session = makeSession(provider: provider)
+            #expect(PlaybackChoicePosition.ticks(for: PlaybackRequest(item: movie), session: session, progress: progress, downloads: downloads) == 20_000_000)
+            #expect(PlaybackChoicePosition.ticks(for: PlaybackRequest(item: song), session: session, progress: progress, downloads: downloads) == 20_000_000)
             var videoSeek: Int?
             // Intentionally use an item-only caller too: the local resolver must
             // recover B before clamping its2s checkpoint against default A's1s.

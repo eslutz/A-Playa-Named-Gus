@@ -193,8 +193,14 @@ struct RemoteSessionLifecycleTests {
             start: fromBeginning ? .fromBeginning : .automatic,
             startPositionTicks: targetTicks
         )
-        #expect(try await store.play(request, on: "remote") == .accepted)
+        var confirmations = 0
+        #expect(try await store.play(request, on: "remote", onConfirmed: { sent, observed in
+            #expect(sent.requestedStartTicks == targetTicks)
+            #expect(observed.mediaSourceID == source.id)
+            confirmations += 1
+        }) == .accepted)
         #expect(store.commandOutcomes["remote"] == .accepted)
+        #expect(confirmations == 0)
 
         let matching = RemoteSession(
             id: snapshot.id,
@@ -217,6 +223,134 @@ struct RemoteSessionLifecycleTests {
         transport.values = [matching]
         await store.refresh()
         #expect(store.commandOutcomes["remote"] == .confirmed)
+        #expect(confirmations == 1)
+        await store.refresh()
+        #expect(confirmations == 1)
+        #expect(transport.sent.count == 1)
+    }
+
+    @Test("remote acceptance or unknown source does not consume a retained start", arguments: [false, true])
+    func remoteStartReadback(knownSource: Bool) async throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let progress = OfflinePlaybackProgressStore(directory: directory)
+        let source = MediaSource(id: knownSource ? "B" : nil)
+        let item = MediaItem(id: "movie", mediaSources: [source], officialRating: "G", type: .movie)
+        let provider = FakeMediaProviderSession(capabilities: ProviderCapabilities())
+        provider.itemHandler = { _ in item }
+        let (store, transport, session) = try fixture(provider: provider)
+        await store.refresh()
+        let base = PlaybackRequest(item: item, streamSelection: .init(mediaSourceID: source.id))
+        var pending: PlaybackStartOverride? = PlaybackStartOverride(request: base, ticks: 0, fromBeginning: true, session: session, progress: progress)
+        let frozen = try #require(pending).applying(to: base, session: session, progress: progress)
+        let outcome = try await store.play(frozen, on: "remote", onConfirmed: { sent, observed in
+            if pending?.matchesRemoteReadback(request: sent, observed: observed, session: session, progress: progress) == true {
+                pending = nil
+            }
+        })
+        #expect(outcome == .accepted)
+        #expect(pending != nil)
+        #expect(progress.pendingCheckpoints(scope: session.references.scope).isEmpty)
+        transport.values = [Self.remote(item: item, positionTicks: 20_000_000, mediaSourceID: source.id)]
+        await store.refresh()
+        #expect(store.commandOutcomes["remote"] == .confirmed)
+        #expect((pending == nil) == knownSource)
+        // Confirmed command/readback is never fabricated into local playback history.
+        #expect(progress.pendingCheckpoints(scope: session.references.scope).isEmpty)
+        #expect(progress.playbackGeneration(forItemID: "movie", scope: session.references.scope, mediaSourceID: source.id) == nil)
+    }
+
+    @Test("remote receipt callbacks end with the picker visibility lifetime")
+    func retiredRemoteReceipt() async throws {
+        let item = MediaItem(id: "movie", mediaSources: [.init(id: "B")], officialRating: "G", type: .movie)
+        let provider = FakeMediaProviderSession(capabilities: ProviderCapabilities())
+        provider.itemHandler = { _ in item }
+        let (store, transport, _) = try fixture(provider: provider)
+        await store.refresh()
+        var confirmations = 0
+        let request = PlaybackRequest(item: item, streamSelection: .init(mediaSourceID: "B"), start: .fromBeginning)
+        #expect(try await store.play(request, on: "remote", onConfirmed: { _, _ in confirmations += 1 }) == .accepted)
+        store.stopLiveUpdates()
+        transport.values = [Self.remote(item: item, positionTicks: 10_000_000, mediaSourceID: "B")]
+        await store.refresh()
+        #expect(confirmations == 0)
+        #expect(transport.sent.count == 1)
+    }
+
+    @Test("matching snapshots cannot confirm a suspended write that may still fail", arguments: [false, true])
+    func confirmationWaitsForSendOutcome(ambiguous: Bool) async throws {
+        let item = MediaItem(id: "movie", mediaSources: [.init(id: "B")], officialRating: "G", type: .movie)
+        let provider = FakeMediaProviderSession(capabilities: ProviderCapabilities())
+        provider.itemHandler = { _ in item }
+        let (store, transport, _) = try fixture(provider: provider)
+        await store.refresh()
+        let gate = RemoteGate<Void>()
+        transport.sendCommand = { _, _ in
+            await gate.suspend()
+            if ambiguous {
+                throw URLError(.timedOut)
+            }
+            throw GusError.forbidden
+        }
+        var confirmations = 0
+        let request = PlaybackRequest(item: item, streamSelection: .init(mediaSourceID: "B"), start: .fromBeginning)
+        let command = Task { try await store.play(request, on: "remote", onConfirmed: { _, _ in confirmations += 1 }) }
+        await gate.waitUntilStarted()
+        let matching = Self.remote(item: item, positionTicks: 10_000_000, mediaSourceID: "B")
+        transport.values = [matching]
+        await store.refresh()
+        #expect(store.commandOutcomes["remote"] == .pending)
+        #expect(confirmations == 0)
+        // This read starts before the send outcome, but returns afterward. It
+        // cannot resolve uncertainty merely because the send has now finished.
+        let readbackGate = RemoteGate<[RemoteSession]>()
+        transport.fetch = { await readbackGate.suspend() }
+        let oldReadback = Task { await store.refresh() }
+        await readbackGate.waitUntilStarted()
+        gate.finish(())
+        await #expect(throws: GusError.self) { try await command.value }
+        #expect(store.commandOutcomes["remote"] == (ambiguous ? .uncertain : .failed(.forbidden)))
+        #expect(confirmations == 0)
+        readbackGate.finish([matching])
+        await oldReadback.value
+        #expect(store.commandOutcomes["remote"] == (ambiguous ? .uncertain : .failed(.forbidden)))
+        #expect(confirmations == 0)
+        transport.fetch = nil
+        await store.refresh()
+        #expect(confirmations == (ambiguous ? 1 : 0))
+        #expect(transport.sent.count == 1)
+    }
+
+    @Test("a superseded post-send GET cannot confirm from an older matching snapshot")
+    func supersededCommandReadback() async throws {
+        let item = MediaItem(id: "movie", mediaSources: [.init(id: "B")], officialRating: "G", type: .movie)
+        let provider = FakeMediaProviderSession(capabilities: ProviderCapabilities())
+        provider.itemHandler = { _ in item }
+        let (store, transport, _) = try fixture(provider: provider)
+        let matching = Self.remote(item: item, positionTicks: 0, mediaSourceID: "B")
+        transport.values = [matching]
+        await store.refresh()
+        let first = RemoteGate<[RemoteSession]>()
+        let newer = RemoteGate<[RemoteSession]>()
+        var reads = 0
+        transport.fetch = {
+            reads += 1
+            return await(reads == 1 ? first : newer).suspend()
+        }
+        var confirmations = 0
+        let request = PlaybackRequest(item: item, streamSelection: .init(mediaSourceID: "B"), start: .fromBeginning)
+        let command = Task { try await store.play(request, on: "remote", onConfirmed: { _, _ in confirmations += 1 }) }
+        await first.waitUntilStarted()
+        let freshRead = Task { await store.refresh() }
+        await newer.waitUntilStarted()
+        first.finish([matching])
+        #expect(try await command.value == .accepted)
+        #expect(store.commandOutcomes["remote"] == .accepted)
+        #expect(confirmations == 0)
+        newer.finish([matching])
+        await freshRead.value
+        #expect(store.commandOutcomes["remote"] == .confirmed)
+        #expect(confirmations == 1)
         #expect(transport.sent.count == 1)
     }
 
@@ -231,8 +365,8 @@ struct RemoteSessionLifecycleTests {
         return (RemoteSessionsStore(session: session, transport: transport), transport, session)
     }
 
-    private static func remote(name: String = "Player", paused: Bool = false, controls: Bool = true, seekable: Bool = true, commands: Set<String> = ["VolumeUp", "VolumeDown", "ToggleMute"]) -> RemoteSession {
-        RemoteSession(id: "remote", deviceName: name, client: "Gus", userName: "Gus", nowPlaying: MediaItem(id: "video"), positionTicks: 0, isPaused: paused, volumeLevel: 50, isMuted: false, supportsMediaControl: controls, canSeek: seekable, supportedCommands: commands, playableMediaTypes: ["Video", "Audio"], mediaSourceID: nil, audioStreamIndex: nil, subtitleStreamIndex: nil)
+    private static func remote(name: String = "Player", paused: Bool = false, controls: Bool = true, seekable: Bool = true, commands: Set<String> = ["VolumeUp", "VolumeDown", "ToggleMute"], item: MediaItem? = MediaItem(id: "video"), positionTicks: Int? = 0, mediaSourceID: String? = nil) -> RemoteSession {
+        RemoteSession(id: "remote", deviceName: name, client: "Gus", userName: "Gus", nowPlaying: item, positionTicks: positionTicks, isPaused: paused, volumeLevel: 50, isMuted: false, supportsMediaControl: controls, canSeek: seekable, supportedCommands: commands, playableMediaTypes: ["Video", "Audio"], mediaSourceID: mediaSourceID, audioStreamIndex: nil, subtitleStreamIndex: nil)
     }
 }
 

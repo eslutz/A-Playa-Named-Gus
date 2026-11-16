@@ -157,7 +157,7 @@ private struct NextUpRail: View {
             HStack {
                 Text("Next Up").gusPhoneRailHeading().accessibilityAddTraits(.isHeader)
                 Spacer()
-                NavigationLink("Show All") { NextUpListView(store: store) }
+                NavigationLink("Show All") { NextUpListView(store: store).gusTVFocusScope() }
                     .accessibilityIdentifier("NextUp.showAll")
                     .gusTVFocus(id: "all", section: "home.next.control", ids: ["all"], context: root.selectedSectionID)
             }
@@ -372,10 +372,10 @@ struct MediaRail: View {
                     .accessibilityAddTraits(.isHeader)
                 Spacer()
                 if let latestKind {
-                    NavigationLink("Show All") { LibraryGridView(scope: .latest(latestKind)) }
+                    NavigationLink("Show All") { LibraryGridView(scope: .latest(latestKind)).gusTVFocusScope() }
                         .gusTVFocus(id: "all", section: (focusKey ?? "latest:" + latestKind.rawValue) + ":control", ids: ["all"], context: focusContext ?? root.selectedSectionID)
                 } else if let library {
-                    NavigationLink("Show All") { LibraryGridView(library: library) }
+                    NavigationLink("Show All") { LibraryGridView(library: library).gusTVFocusScope() }
                         .gusTVFocus(id: "all", section: (focusKey ?? "library:" + (library.id ?? title)) + ":control", ids: ["all"], context: focusContext ?? root.selectedSectionID)
                 }
             }

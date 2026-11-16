@@ -140,7 +140,7 @@ struct VideoPlayerView: View {
             if let source = pendingSource, let store {
                 Button("Start Over") { pendingSource = nil; Task { await store.selectMediaSource(id: source.id, fromBeginning: true) } }
                 Button("Resume at \(PlaybackTime.accessibilityDuration(seconds: PlaybackTime.seconds(fromTicks: store.positionTicks)))") { pendingSource = nil; Task { await store.selectMediaSource(id: source.id, fromBeginning: false) } }
-                    .disabled(source.runTimeTicks.map { $0 > 0 && store.positionTicks >= $0 } ?? false)
+                    .disabled(!PlaybackActionPosition.canResume(at: store.positionTicks, durationTicks: source.runTimeTicks))
                 Button("Cancel", role: .cancel) { pendingSource = nil }
             }
         } message: {

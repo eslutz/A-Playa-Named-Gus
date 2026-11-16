@@ -378,7 +378,7 @@ final class PlaybackStore {
     func selectMediaSource(id: String, fromBeginning: Bool) async {
         guard session.isActive, mediaSourceOptions.contains(where: { $0.id == id }), id != selectedMediaSourceID else { return }
         let ticks = fromBeginning ? 0 : currentPositionTicks()
-        if !fromBeginning, let duration = mediaSourceOptions.first(where: { $0.id == id })?.runTimeTicks, duration > 0, ticks >= duration {
+        if !PlaybackActionPosition.canResume(at: ticks, durationTicks: mediaSourceOptions.first(where: { $0.id == id })?.runTimeTicks) {
             trackSelectionNotice = String(localized: "This timestamp is beyond this version. Choose Start Over.")
             return
         }

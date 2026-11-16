@@ -8,6 +8,12 @@ struct WatchItemActionsView: View {
     @Environment(OfflineDownloadStore.self) private var downloads
     let item: MediaItem
     @State private var request: PlaybackRequest
+    @State private var startOverride: PlaybackStartOverride?
+    // A presented child keeps the tap's request even when its first checkpoint
+    // consumes the parent's draft override for the next presentation.
+    @State private var presentedRequest: PlaybackRequest?
+    @State private var presentedOverrideID: UUID?
+    @State private var localProgress = OfflinePlaybackProgressStore.shared
     @State private var pendingSourceID: String?
     @State private var confirmingSourceChange = false
     @State private var metadataError: String?
@@ -51,6 +57,7 @@ struct WatchItemActionsView: View {
             Section {
                 if item.isAudioPlayable {
                     Button {
+                        freezeRequest()
                         isAudioPlayerPresented = true
                     } label: {
                         Label("Play on Watch", systemImage: "applewatch")
@@ -62,11 +69,13 @@ struct WatchItemActionsView: View {
                         .foregroundStyle(.secondary)
                 } else {
                     Button {
+                        freezeRequest()
                         isTargetPickerPresented = true
                     } label: {
                         Label("Play On…", systemImage: "play.tv")
                     }
                     Button {
+                        freezeRequest()
                         isVideoPlayerPresented = true
                     } label: {
                         Label("Play on Watch", systemImage: "applewatch")
@@ -76,13 +85,19 @@ struct WatchItemActionsView: View {
         }
         .navigationTitle(item.displayTitle)
         .sheet(isPresented: $isAudioPlayerPresented) {
-            WatchAudioPlayerView(tracks: [request.item], startIndex: 0, request: request)
+            if let presentedRequest {
+                WatchAudioPlayerView(tracks: [presentedRequest.item], startIndex: 0, request: presentedRequest)
+            }
         }
         .sheet(isPresented: $isVideoPlayerPresented) {
-            WatchVideoPlayerView(request: request)
+            if let presentedRequest {
+                WatchVideoPlayerView(request: presentedRequest)
+            }
         }
         .sheet(isPresented: $isTargetPickerPresented) {
-            WatchPlayTargetPicker(request: request)
+            if let presentedRequest {
+                WatchPlayTargetPicker(request: presentedRequest, onConfirmed: acceptRemoteReadback)
+            }
         }
         .task {
             downloads.load(serverID: session.server.id, userID: session.user.id)
@@ -91,6 +106,7 @@ struct WatchItemActionsView: View {
         .confirmationDialog("Change Version?", isPresented: $confirmingSourceChange) {
             Button("Start Over") { applySource(pendingSourceID, fromBeginning: true) }
             Button("Resume at Timestamp") { applySource(pendingSourceID, fromBeginning: false) }
+                .disabled(!canResumePendingSource)
             Button("Cancel", role: .cancel) {}
         } message: {
             Text("Different versions may have different timelines.")
@@ -99,6 +115,30 @@ struct WatchItemActionsView: View {
 
     private var selectedSource: MediaSource? {
         request.streamSelection.mediaSourceID.flatMap { id in request.item.mediaSources.first { $0.id == id } } ?? request.item.mediaSources.first
+    }
+
+    private var effectiveRequest: PlaybackRequest {
+        startOverride?.applying(to: request, session: session, progress: localProgress, downloads: downloads) ?? request
+    }
+
+    private var resumeTicks: Int {
+        PlaybackChoicePosition.ticks(for: effectiveRequest, session: session, progress: localProgress, downloads: downloads) ?? 0
+    }
+
+    private var canResumePendingSource: Bool {
+        let id = pendingSourceID ?? request.item.mediaSources.first?.id
+        return PlaybackActionPosition.canResume(at: resumeTicks, durationTicks: MediaPlaybackIdentity.runTimeTicks(for: request.item, mediaSourceID: id))
+    }
+
+    private func freezeRequest() {
+        presentedRequest = effectiveRequest
+        presentedOverrideID = startOverride?.id
+    }
+
+    private func acceptRemoteReadback(_ sent: PlaybackRequest, _ observed: RemoteSession) {
+        guard let startOverride, startOverride.id == presentedOverrideID,
+              startOverride.matchesRemoteReadback(request: sent, observed: observed, session: session, progress: localProgress, downloads: downloads) else { return }
+        self.startOverride = nil
     }
 
     @ViewBuilder private var playbackChoices: some View {
@@ -140,7 +180,7 @@ struct WatchItemActionsView: View {
         let next = id ?? request.item.mediaSources.first?.id
         guard current != next else { return }
         pendingSourceID = id
-        if (request.requestedStartTicks ?? PlaybackTime.resumePositionTicks(for: request.item) ?? 0) > 0 {
+        if resumeTicks > 0 {
             confirmingSourceChange = true
         } else {
             applySource(id, fromBeginning: true)
@@ -148,12 +188,12 @@ struct WatchItemActionsView: View {
     }
 
     private func applySource(_ id: String?, fromBeginning: Bool) {
-        let ticks = request.requestedStartTicks ?? PlaybackTime.resumePositionTicks(for: request.item)
+        let ticks = fromBeginning ? 0 : resumeTicks
+        guard fromBeginning || canResumePendingSource else { return }
         request.streamSelection.mediaSourceID = id
         request.streamSelection.audioStreamIndex = nil
         request.streamSelection.subtitleStreamIndex = request.subtitleIntent == .off ? -1 : nil
-        request.start = fromBeginning ? .fromBeginning : .automatic
-        request.startPositionTicks = fromBeginning ? 0 : ticks
+        startOverride = PlaybackStartOverride(request: request, ticks: ticks, fromBeginning: fromBeginning, session: session, progress: localProgress, downloads: downloads)
     }
 
     private func selectAudio(_ index: Int?, source: MediaSource) {

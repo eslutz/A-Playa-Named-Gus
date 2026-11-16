@@ -525,8 +525,14 @@ struct PlaybackLifecyclePolicyTests {
         var metadata: CheckedContinuation<MediaItem, Never>?
         provider.itemHandler = { _ in await withCheckedContinuation { metadata = $0 } }
         let session = makeSession(provider)
-        let video = audio ? nil : PlaybackStore(request: PlaybackRequest(item: item), session: session, playbackRefresh: PlaybackRefreshStore())
-        let music = audio ? AudioPlayerStore(session: session, tracks: [item]) : nil
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let progress = OfflinePlaybackProgressStore(directory: directory)
+        let base = PlaybackRequest(item: item)
+        let pending = PlaybackStartOverride(request: base, ticks: 0, fromBeginning: true, session: session, progress: progress)
+        let frozen = pending.applying(to: base, session: session, progress: progress)
+        let video = audio ? nil : PlaybackStore(request: frozen, session: session, playbackRefresh: PlaybackRefreshStore(), localProgress: progress)
+        let music = audio ? AudioPlayerStore(session: session, tracks: [item], request: frozen, localProgress: progress) : nil
         let preparation = Task {
             if let video {
                 await video.prepare()
@@ -548,6 +554,7 @@ struct PlaybackLifecyclePolicyTests {
         #expect(provider.playbackReports.isEmpty)
         #expect(video?.player == nil)
         #expect(music?.nativePlayer == nil)
+        #expect(pending.applying(to: base, session: session, progress: progress).start == .fromBeginning)
     }
 
     @Test("prepared paused video has no started event, report or viewing activity")
@@ -559,7 +566,12 @@ struct PlaybackLifecyclePolicyTests {
         let resource = PlaybackResource(liveStreamID: "unstarted-live", playSessionID: "paused", isTranscoding: false)
         provider.playbackHandler = { PlaybackSourceResolution(url: fixture, playSessionID: "paused", mediaSourceID: "source", playMethod: .directPlay, stereoLayout: .none, stereoFallbackReason: nil, resource: resource, isLive: true) }
         let session = makeSession(provider)
-        let store = PlaybackStore(request: PlaybackRequest(item: item), session: session, playbackRefresh: PlaybackRefreshStore())
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let progress = OfflinePlaybackProgressStore(directory: directory)
+        let base = PlaybackRequest(item: item, streamSelection: .init(mediaSourceID: "source"))
+        let pending = PlaybackStartOverride(request: base, ticks: 0, fromBeginning: true, session: session, progress: progress)
+        let store = PlaybackStore(request: pending.applying(to: base, session: session, progress: progress), session: session, playbackRefresh: PlaybackRefreshStore(), localProgress: progress)
         store.setPresentationActive(false)
         await store.prepare()
         #expect(store.state == .ready)
@@ -567,11 +579,53 @@ struct PlaybackLifecyclePolicyTests {
         #expect(store.player?.rate == 0)
         await session.playbackReports.flush()
         #expect(provider.playbackReports.isEmpty)
+        #expect(pending.applying(to: base, session: session, progress: progress).start == .fromBeginning)
         store.teardown()
         for _ in 0 ..< 100 where provider.releasedPlaybackResources.isEmpty {
             await Task.yield()
         }
         #expect(provider.releasedPlaybackResources == [resource])
+        #expect(pending.applying(to: base, session: session, progress: progress).start == .fromBeginning)
+    }
+
+    @Test("first actual playing consumes only the next-launch override and keeps the current player", arguments: [false, true])
+    func startOverrideAfterActualPlaying(audio: Bool) async throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let progress = OfflinePlaybackProgressStore(directory: directory)
+        let provider = FakeMediaProviderSession(capabilities: ProviderCapabilities())
+        let item = MediaItem(id: "start-override", mediaSources: [.init(id: "source")], officialRating: "G", type: audio ? .audio : .movie)
+        provider.itemHandler = { _ in item }
+        let fixture = try RepositoryTestFixtures.url(for: "Tests/Fixtures/OfflinePlaylist.mov")
+        let resolution = PlaybackSourceResolution(url: fixture, playSessionID: "override", mediaSourceID: "source", playMethod: .directPlay, stereoLayout: .none, stereoFallbackReason: nil)
+        provider.playbackHandler = { resolution }
+        provider.audioHandler = { resolution }
+        let session = makeSession(provider)
+        let base = PlaybackRequest(item: item, streamSelection: .init(mediaSourceID: "source"), subtitleIntent: .off)
+        let pending = PlaybackStartOverride(request: base, ticks: 0, fromBeginning: true, session: session, progress: progress)
+        let frozen = pending.applying(to: base, session: session, progress: progress)
+        let identity = PlaybackPresentationIdentity(request: frozen, sessionGeneration: session.lease.generation)
+        let video = audio ? nil : PlaybackStore(request: frozen, session: session, playbackRefresh: PlaybackRefreshStore(), localProgress: progress)
+        let music = audio ? AudioPlayerStore(session: session, tracks: [item], request: frozen, localProgress: progress) : nil
+        defer { video?.teardown(); music?.teardown() }
+        if let video {
+            await video.prepare()
+        }
+        if let music {
+            await music.start()
+        }
+        let player = try #require(video?.player ?? music?.nativePlayer)
+        let deadline = ContinuousClock.now + .seconds(45)
+        while pending.applying(to: base, session: session, progress: progress).requestedStartTicks != nil, ContinuousClock.now < deadline {
+            try await Task.sleep(for: .milliseconds(20))
+        }
+        #expect(pending.applying(to: base, session: session, progress: progress).requestedStartTicks == nil)
+        #expect(frozen.start == .fromBeginning && frozen.requestedStartTicks == 0)
+        #expect(PlaybackPresentationIdentity(request: frozen, sessionGeneration: session.lease.generation) == identity)
+        #expect((video?.player ?? music?.nativePlayer) === player)
+        #expect(provider.playbackResolutionCallCount + provider.audioResolutionCallCount == 1)
+        #expect(pending.applying(to: base, session: session, progress: progress).streamSelection.mediaSourceID == "source")
+        #expect(pending.applying(to: base, session: session, progress: progress).subtitleIntent == .off)
     }
 
     @Test("audio session refusal fails before resolution and explicit retry can prepare", arguments: [false, true])

@@ -27,6 +27,9 @@ final class OfflinePlaybackProgressStore {
     private var checkpoints: [String: Checkpoint] = [:]
     private var syncingScopes: Set<AccountScope> = []
     private var writerTokens: [AccountScope: UUID] = [:]
+    // Ephemeral receipts distinguish actual player checkpoints from sync/reference edits.
+    // They share the writer-token purge lifetime and never enter the persisted format.
+    private var playbackGenerations: [String: UUID] = [:]
     private let fileURL: URL
     private let logger = Logger(category: .playback)
 
@@ -42,6 +45,10 @@ final class OfflinePlaybackProgressStore {
 
     func positionTicks(forItemID itemID: String, scope: AccountScope, mediaSourceID: String? = nil) -> Int? {
         checkpoints[key(itemID: itemID, scope: scope, mediaSourceID: mediaSourceID)]?.positionTicks
+    }
+
+    func playbackGeneration(forItemID itemID: String, scope: AccountScope, mediaSourceID: String?) -> UUID? {
+        playbackGenerations[key(itemID: itemID, scope: scope, mediaSourceID: mediaSourceID)]
     }
 
     /// A player captures this token when it opens. Purging an account rotates it so
@@ -69,6 +76,7 @@ final class OfflinePlaybackProgressStore {
             positionTicks: max(0, positionTicks), mediaSourceID: mediaSourceID, version: UUID(), needsSync: true,
             reference: item.map { MediaReference(item: $0, scope: scope) }
         )
+        playbackGenerations[key(itemID: itemID, scope: scope, mediaSourceID: mediaSourceID)] = UUID()
         persist()
         revision += 1
     }
@@ -258,6 +266,9 @@ final class OfflinePlaybackProgressStore {
 
     func deleteCheckpoints(scope: AccountScope) {
         writerTokens[scope] = UUID()
+        for (id, entry) in checkpoints where entry.serverID == scope.serverID && entry.userID == scope.userID {
+            playbackGenerations.removeValue(forKey: id)
+        }
         checkpoints = checkpoints.filter { _, value in
             value.serverID != scope.serverID || value.userID != scope.userID
         }

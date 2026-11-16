@@ -55,6 +55,7 @@ struct WatchAudioPlayerView: View {
         .confirmationDialog("Change Version?", isPresented: $confirmingVersion) {
             Button("Start Over") { changeVersion(fromBeginning: true) }
             Button("Resume at Timestamp") { changeVersion(fromBeginning: false) }
+                .disabled(!canResumePendingSource)
             Button("Cancel", role: .cancel) {}
         } message: {
             Text("Different versions may have different timelines.")
@@ -163,5 +164,10 @@ struct WatchAudioPlayerView: View {
     private func changeVersion(fromBeginning: Bool) {
         guard let id = pendingSourceID, let store else { return }
         Task { await store.selectMediaSource(id: id, fromBeginning: fromBeginning) }
+    }
+
+    private var canResumePendingSource: Bool {
+        guard let store, let source = store.mediaSourceOptions.first(where: { $0.id == pendingSourceID }) else { return false }
+        return PlaybackActionPosition.canResume(at: PlaybackTime.ticks(fromSeconds: store.currentTime), durationTicks: source.runTimeTicks)
     }
 }

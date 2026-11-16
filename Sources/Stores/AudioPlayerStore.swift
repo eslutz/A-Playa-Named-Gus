@@ -432,7 +432,7 @@ final class AudioPlayerStore {
         guard session.isActive, let track = currentTrack, mediaSourceOptions.contains(where: { $0.id == id }), selectedMediaSourceID != id else { return }
         let startsPlaying = isPlaybackRequested
         let ticks = fromBeginning ? 0 : PlaybackTime.ticks(fromSeconds: currentTime)
-        if !fromBeginning, let duration = mediaSourceOptions.first(where: { $0.id == id })?.runTimeTicks, duration > 0, ticks >= duration {
+        if !PlaybackActionPosition.canResume(at: ticks, durationTicks: mediaSourceOptions.first(where: { $0.id == id })?.runTimeTicks) {
             trackSelectionNotice = String(localized: "This timestamp is beyond this version. Choose Start Over.")
             return
         }

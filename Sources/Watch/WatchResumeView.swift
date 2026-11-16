@@ -75,6 +75,7 @@ struct WatchPlayTargetPicker: View {
     @Environment(SessionStore.self) private var session
     @Environment(\.dismiss) private var dismiss
     let request: PlaybackRequest
+    var onConfirmed: (@MainActor (PlaybackRequest, RemoteSession) -> Void)? = nil
     private var item: MediaItem {
         request.item
     }
@@ -83,6 +84,7 @@ struct WatchPlayTargetPicker: View {
     @State private var commandError: String?
     @State private var commandTask: Task<Void, Never>?
     @State private var acceptedNotice: String?
+    @State private var selectedSessionID: String?
 
     var body: some View {
         NavigationStack {
@@ -131,6 +133,16 @@ struct WatchPlayTargetPicker: View {
                 store = RemoteSessionsStore(session: session)
             }
             await store?.refresh()
+            store?.startLiveUpdates()
+        }
+        .onChange(of: selectedOutcome) { _, outcome in
+            guard let outcome else { return }
+            if outcome == .confirmed, commandError != nil {
+                commandError = nil
+                acceptedNotice = notice(for: outcome)
+            } else if acceptedNotice != nil {
+                acceptedNotice = notice(for: outcome)
+            }
         }
         .alert("Playback Requested", isPresented: Binding(get: { acceptedNotice != nil }, set: {
             if !$0 {
@@ -150,19 +162,36 @@ struct WatchPlayTargetPicker: View {
     private func play(on sessionID: String) {
         guard item.id != nil, let store else { return }
         commandError = nil
+        selectedSessionID = sessionID
+        // Keep the exact command stable while readback updates observable draft state.
+        let request = request
+        let onConfirmed = onConfirmed
         commandTask = Task {
             do {
-                _ = try await store.play(request, on: sessionID)
+                let outcome = try await store.play(request, on: sessionID, onConfirmed: onConfirmed)
                 guard !Task.isCancelled else { return }
-                if let notice = store.commandNotices[sessionID] {
-                    acceptedNotice = notice
-                } else {
-                    dismiss()
-                }
+                acceptedNotice = notice(for: outcome)
             } catch {
                 guard !Task.isCancelled, !GusError(from: error).isCancellation else { return }
-                commandError = error.localizedDescription
+                // Readback can resolve an uncertain send before this suspended
+                // caller resumes its catch; do not overwrite that confirmation.
+                if store.commandOutcomes[sessionID] == .confirmed {
+                    commandError = nil
+                    acceptedNotice = notice(for: .confirmed)
+                } else {
+                    commandError = error.localizedDescription
+                }
             }
         }
+    }
+
+    private var selectedOutcome: ActionOutcome? {
+        guard let selectedSessionID else { return nil }
+        return store?.commandOutcomes[selectedSessionID]
+    }
+
+    private func notice(for outcome: ActionOutcome) -> String {
+        let trackNotice = selectedSessionID.flatMap { store?.commandNotices[$0] }
+        return [outcome.remoteMessage, trackNotice].compactMap { $0 }.joined(separator: "\n")
     }
 }

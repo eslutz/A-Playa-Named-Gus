@@ -84,6 +84,115 @@ struct PlaybackActionTests {
 }
 
 @MainActor
+struct PlaybackStartOverrideTests {
+    @Test("only a same-account/item/source player checkpoint consumes a retained start", arguments: [false, true])
+    func scopedConsumption(fromBeginning: Bool) {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let progress = OfflinePlaybackProgressStore(directory: directory)
+        let session = makeSession()
+        let source = MediaSource(id: "B", mediaStreams: [.init(index: 7, language: "eng", title: "Commentary", type: .audio)], runTimeTicks: 450_000_000)
+        let item = MediaItem(id: "movie", mediaSources: [MediaSource(id: "A", runTimeTicks: 300_000_000), source], runTimeTicks: 300_000_000, type: .movie)
+        let base = PlaybackRequest(item: item, streamSelection: .init(audioStreamIndex: 7, subtitleStreamIndex: -1, mediaSourceID: "B"), audioTrack: source.mediaStreams.first, subtitleIntent: .off, presentation: .twoD)
+        let scope = session.references.scope
+        progress.checkpoint(itemID: "movie", positionTicks: 100, scope: scope, mediaSourceID: "B")
+        let ticks = fromBeginning ? 0 : 200
+        let pending = PlaybackStartOverride(request: base, ticks: ticks, fromBeginning: fromBeginning, session: session, progress: progress)
+        let frozen = pending.applying(to: base, session: session, progress: progress)
+        let identity = PlaybackPresentationIdentity(request: frozen, sessionGeneration: session.lease.generation)
+        progress.checkpoint(itemID: "movie", positionTicks: 1, scope: scope, mediaSourceID: "A")
+        progress.checkpoint(itemID: "other", positionTicks: 1, scope: scope, mediaSourceID: "B")
+        progress.checkpoint(itemID: "movie", positionTicks: 1, scope: AccountScope(serverID: "other", userID: scope.userID), mediaSourceID: "B")
+        #expect(pending.applying(to: base, session: session, progress: progress).requestedStartTicks == ticks)
+        // A same-position checkpoint still proves actual playback occurred.
+        progress.checkpoint(itemID: "movie", positionTicks: ticks, scope: scope, mediaSourceID: "B")
+        let next = pending.applying(to: base, session: session, progress: progress)
+        #expect(next.start == .automatic && next.startPositionTicks == nil)
+        #expect(next.streamSelection == base.streamSelection)
+        #expect(next.audioTrack == base.audioTrack && next.subtitleIntent == .off && next.presentation == .twoD)
+        #expect(frozen.requestedStartTicks == ticks)
+        #expect(PlaybackPresentationIdentity(request: frozen, sessionGeneration: session.lease.generation) == identity)
+        let fresh = PlaybackStartOverride(request: base, ticks: 0, fromBeginning: true, session: session, progress: progress)
+        #expect(fresh.applying(to: base, session: session, progress: progress).start == .fromBeginning)
+    }
+
+    @Test("reference and sync mutations are not playback receipts")
+    func metadataDoesNotConsume() async {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let progress = OfflinePlaybackProgressStore(directory: directory)
+        let session = makeSession()
+        let base = PlaybackRequest(item: MediaItem(id: "movie", mediaSources: [.init(id: "B")]), streamSelection: .init(mediaSourceID: "B"))
+        let scope = session.references.scope
+        progress.checkpoint(itemID: "movie", positionTicks: 60, scope: scope, mediaSourceID: "B")
+        let pending = PlaybackStartOverride(request: base, ticks: 0, fromBeginning: true, session: session, progress: progress)
+        await progress.sync(scope: scope, isCurrentScope: { true }) { _ in }
+        #expect(pending.applying(to: base, session: session, progress: progress).start == .fromBeginning)
+        progress.checkpoint(itemID: "movie", positionTicks: 60, scope: scope, mediaSourceID: "B")
+        let refreshed = PlaybackStartOverride(request: base, ticks: 0, fromBeginning: true, session: session, progress: progress)
+        progress.offerTransfer(from: "movie", to: MediaItem(id: "replacement"), scope: scope, mediaSourceID: "B")
+        progress.resetCheckpoint(itemID: "movie", scope: scope)
+        #expect(refreshed.applying(to: base, session: session, progress: progress).start == .fromBeginning)
+        #expect(pending.applying(to: base, session: session, progress: progress).start == .automatic)
+    }
+
+    @Test("purge, retired lease and unknown source cannot reactivate or falsely consume a start")
+    func invalidation() throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let progress = OfflinePlaybackProgressStore(directory: directory)
+        let session = makeSession()
+        let base = PlaybackRequest(item: MediaItem(id: "movie", mediaSources: [.init(id: "B")]), streamSelection: .init(mediaSourceID: "B"))
+        let scope = session.references.scope
+        let pending = PlaybackStartOverride(request: base, ticks: 0, fromBeginning: true, session: session, progress: progress)
+        let oldWriter = progress.writerToken(for: scope)
+        progress.checkpoint(itemID: "movie", positionTicks: 5, scope: scope, mediaSourceID: "B")
+        #expect(pending.applying(to: base, session: session, progress: progress).requestedStartTicks == nil)
+        progress.deleteCheckpoints(scope: scope)
+        progress.checkpoint(itemID: "movie", positionTicks: 9, scope: scope, writerToken: oldWriter, mediaSourceID: "B")
+        #expect(progress.playbackGeneration(forItemID: "movie", scope: scope, mediaSourceID: "B") == nil)
+        #expect(pending.applying(to: base, session: session, progress: progress).requestedStartTicks == nil)
+        let unknown = PlaybackRequest(item: MediaItem(id: "unknown"))
+        let unknownStart = PlaybackStartOverride(request: unknown, ticks: 0, fromBeginning: true, session: session, progress: progress)
+        progress.checkpoint(itemID: "unknown", positionTicks: 10, scope: scope, mediaSourceID: "different")
+        #expect(unknownStart.applying(to: unknown, session: session, progress: progress).start == .fromBeginning)
+        let otherLease = makeSession()
+        #expect(unknownStart.applying(to: unknown, session: otherLease, progress: progress).start == .automatic)
+        session.invalidate()
+        #expect(unknownStart.applying(to: unknown, session: session, progress: progress).start == .automatic)
+        let restored = OfflinePlaybackProgressStore(directory: directory)
+        #expect(restored.playbackGeneration(forItemID: "unknown", scope: scope, mediaSourceID: "different") == nil)
+        let json = try String(contentsOf: directory.appendingPathComponent("offline-playback-progress.json"), encoding: .utf8)
+        #expect(!json.contains("playbackGeneration"))
+    }
+
+    @Test("online source checkpoints use the selected duration and shared resume bounds")
+    func selectedSourcePosition() {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let progress = OfflinePlaybackProgressStore(directory: directory)
+        let session = makeSession()
+        let item = MediaItem(id: "movie", mediaSources: [.init(id: "A", runTimeTicks: 300_000_000), .init(id: "B", runTimeTicks: 450_000_000), .init(id: "unknown-duration")], runTimeTicks: 300_000_000, userData: MediaUserData(playbackPositionTicks: 331_980_000))
+        progress.checkpoint(itemID: "movie", positionTicks: 331_980_000, scope: session.references.scope, mediaSourceID: "B")
+        progress.checkpoint(itemID: "movie", positionTicks: 331_980_000, scope: session.references.scope, mediaSourceID: "unknown-duration")
+        #expect(PlaybackChoicePosition.ticks(for: PlaybackRequest(item: item, streamSelection: .init(mediaSourceID: "B")), session: session, progress: progress) == 331_980_000)
+        #expect(PlaybackChoicePosition.ticks(for: PlaybackRequest(item: item, streamSelection: .init(mediaSourceID: "A")), session: session, progress: progress) == 0)
+        #expect(PlaybackChoicePosition.ticks(for: PlaybackRequest(item: item, streamSelection: .init(mediaSourceID: "unknown-duration")), session: session, progress: progress) == 331_980_000)
+        #expect(PlaybackChoicePosition.ticks(for: PlaybackRequest(item: item), session: session, progress: progress) == 0)
+        #expect(!PlaybackActionPosition.canResume(at: 331_980_000, durationTicks: 300_000_000))
+        #expect(PlaybackActionPosition.canResume(at: 331_980_000, durationTicks: 450_000_000))
+        #expect(PlaybackActionPosition.canResume(at: 331_980_000, durationTicks: nil))
+        #expect(PlaybackActionPosition.canResume(at: 331_980_000, durationTicks: 0))
+        #expect(!PlaybackActionPosition.canResume(at: -1, durationTicks: nil))
+    }
+
+    private func makeSession() -> SessionStore {
+        let url = URL(string: "https://example.invalid")!
+        return SessionStore(client: JellyfinClientFactory.makeClient(url: url), user: StoredUser(id: "u", name: "User", serverID: "s"), server: ServerConnection(id: "s", name: "Server", url: url))
+    }
+}
+
+@MainActor
 struct ItemRestartPreparationTests {
     @Test(arguments: [false, true]) func failedRestartPreservesCheckpointAndWatchedState(localOnly: Bool) async throws {
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
@@ -98,7 +207,9 @@ struct ItemRestartPreparationTests {
         let progress = OfflinePlaybackProgressStore(directory: directory)
         progress.checkpoint(itemID: "movie", positionTicks: 60_000_000, scope: scope, item: item)
         let checkpoint = progress.pendingCheckpoints(scope: scope)
-        let player = PlaybackStore(request: PlaybackRequest(item: item), session: session, playbackRefresh: PlaybackRefreshStore(), localOnly: localOnly, localProgress: progress)
+        let base = PlaybackRequest(item: item)
+        let pending = PlaybackStartOverride(request: base, ticks: 0, fromBeginning: true, session: session, progress: progress)
+        let player = PlaybackStore(request: pending.applying(to: base, session: session, progress: progress), session: session, playbackRefresh: PlaybackRefreshStore(), localOnly: localOnly, localProgress: progress)
         defer { player.teardown() }
         await player.prepare(startTimeTicks: PlaybackStartIntent.fromBeginning.startTimeTicks)
         #expect(provider.playbackRequestedStartTicks == (localOnly ? [] : [0]))
@@ -107,6 +218,7 @@ struct ItemRestartPreparationTests {
         #expect(progress.pendingCheckpoints(scope: scope) == checkpoint)
         #expect(player.item.userData?.isWatched == localOnly)
         #expect(player.item.userData?.playbackPositionTicks == 40_000_000)
+        #expect(pending.applying(to: base, session: session, progress: progress).start == .fromBeginning)
     }
 }
 

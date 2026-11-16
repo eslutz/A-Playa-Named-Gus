@@ -18,7 +18,7 @@ struct ItemDetailView: View {
     @State private var playerItem: ItemRef?
     @State private var selectedSourceID: String?
     @State private var selectedSourceItemID: String?
-    @State private var selectedStartTicks: Int?
+    @State private var startOverride: PlaybackStartOverride?
     @State private var pendingSource: MediaSource?
     @State private var pendingSourceItem: MediaItem?
     @State private var sharePlay = SharePlayCoordinator.shared
@@ -76,7 +76,7 @@ struct ItemDetailView: View {
                     Button("Start Over") { selectSource(source, for: target, position: 0) }
                     if let ticks = resumeTicks(for: target), ticks > 0 {
                         Button("Resume at \(Duration.seconds(PlaybackTime.seconds(fromTicks: ticks)).formatted(.time(pattern: .hourMinuteSecond)))") { selectSource(source, for: target, position: ticks) }
-                            .disabled(source.runTimeTicks.map { ticks >= $0 } ?? false)
+                            .disabled(!PlaybackActionPosition.canResume(at: ticks, durationTicks: source.runTimeTicks))
                     }
                     Button("Cancel", role: .cancel) { pendingSource = nil; pendingSourceItem = nil }
                 }
@@ -145,13 +145,7 @@ struct ItemDetailView: View {
     }
 
     private func resumeTicks(for item: MediaItem) -> Int? {
-        if selectedSourceItemID == item.id, let selectedStartTicks {
-            return selectedStartTicks
-        }
-        let sourceID = selectedSourceItemID == item.id ? selectedSourceID : nil
-        let hasDownload = downloads.localFileURL(for: item, serverID: session.server.id, userID: session.user.id, mediaSourceID: sourceID) != nil
-        let localTicks = hasDownload ? item.id.flatMap { localProgress.positionTicks(forItemID: $0, scope: session.references.scope, mediaSourceID: sourceID) } : nil
-        return PlaybackActionPosition.ticks(for: item, localTicks: localTicks)
+        PlaybackChoicePosition.ticks(for: selectedRequest(for: item), session: session, progress: localProgress, downloads: downloads)
     }
 
     private func detailContent(for store: ItemDetailStore) -> some View {
@@ -346,7 +340,8 @@ struct ItemDetailView: View {
     private func selectedRequest(for target: MediaItem) -> PlaybackRequest {
         let matches = selectedSourceItemID == target.id
         let sourceID = matches ? selectedSourceID : nil
-        return PlaybackRequest(item: target, streamSelection: .init(audioStreamIndex: nil, subtitleStreamIndex: nil, mediaSourceID: sourceID), startPositionTicks: matches ? selectedStartTicks : nil)
+        let request = PlaybackRequest(item: target, streamSelection: .init(audioStreamIndex: nil, subtitleStreamIndex: nil, mediaSourceID: sourceID))
+        return startOverride?.applying(to: request, session: session, progress: localProgress, downloads: downloads) ?? request
     }
 
     private func playbackReference(for target: MediaItem, fromBeginning: Bool = false) -> ItemRef {
@@ -360,7 +355,8 @@ struct ItemDetailView: View {
     private func selectSource(_ source: MediaSource, for target: MediaItem, position: Int?) {
         selectedSourceID = source.id
         selectedSourceItemID = target.id
-        selectedStartTicks = position
+        let request = PlaybackRequest(item: target, streamSelection: .init(audioStreamIndex: nil, subtitleStreamIndex: nil, mediaSourceID: source.id))
+        startOverride = PlaybackStartOverride(request: request, ticks: position ?? 0, fromBeginning: position == 0, session: session, progress: localProgress, downloads: downloads)
         pendingSource = nil
         pendingSourceItem = nil
     }
