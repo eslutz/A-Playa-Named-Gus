@@ -59,7 +59,8 @@ class WarningGateTests(unittest.TestCase):
         self.assertEqual(results[0]["exitCode"], 0)
 
     def test_warning_zero_exit_fails(self):
-        for message in ("file.swift:12: warning: ambiguous closure", "ld: warning: duplicate library", "warning: asset issue", "2026-10-13 appintentsmetadataprocessor[1:2] warning: metadata issue"):
+        for message in ("file.swift:12: warning: ambiguous closure", "ld: warning: duplicate library", "warning: asset issue", "2026-10-13 appintentsmetadataprocessor[1:2] warning: metadata issue",
+                        "2026-11-16 04:54:51.263 xcodebuild[9535:28731] [MT] DVTAssertions: Warning in DVTiPhoneSimulator.m:661"):
             with self.subTest(message=message):
                 command, output, results = self.run_tool(message)
                 with self.assertRaises(RuntimeError):
@@ -73,6 +74,14 @@ class WarningGateTests(unittest.TestCase):
                                  "print('warning: compiler diagnostic')"], capture_output=True, text=True)
         self.assertEqual(result.returncode, 1)
         self.assertIn("warning: compiler diagnostic", result.stdout)
+
+    def test_ci_wrapper_rejects_timestamped_xcode_assertion_warning(self):
+        wrapper = Path(__file__).with_name("run-warning-free.py")
+        message = "2026-11-16 04:54:51.263 xcodebuild[9535:28731] [MT] DVTAssertions: Warning in DVTiPhoneSimulator.m:661"
+        result = subprocess.run([sys.executable, str(wrapper), sys.executable, "-c",
+                                 "import sys; print(sys.argv[1])", message], capture_output=True, text=True)
+        self.assertEqual(result.returncode, 1)
+        self.assertIn(message, result.stdout)
 
     def test_ci_wrapper_rejects_intel_before_launching_xcode(self):
         wrapper = Path(__file__).with_name("run-warning-free.py")

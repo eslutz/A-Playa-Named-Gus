@@ -79,11 +79,14 @@ struct TVFocusRestorationTests {
         let ids = ["play", "favorite", "more"]
         memory.remember(id: "more", index: 2, section: "actions", context: "detail")
         memory.requestRestoration(context: "detail")
-        #expect(!memory.remember(id: "play", index: 0, section: "actions", context: "detail", ids: ids))
-        #expect(memory.remember(id: "favorite", index: 1, section: "actions", context: "detail", ids: ids))
+        let acceptedFallback = memory.remember(id: "play", index: 0, section: "actions", context: "detail", ids: ids)
+        #expect(!acceptedFallback)
+        let acceptedChoice = memory.remember(id: "favorite", index: 1, section: "actions", context: "detail", ids: ids)
+        #expect(acceptedChoice)
         #expect(memory.restorationRequest(context: "detail") == nil)
         #expect(memory.restoredID(section: "actions", context: "detail", ids: ids, initial: false) == "favorite")
-        #expect(memory.remember(id: "play", index: 0, section: "actions", context: "detail", ids: ids))
+        let acceptedLaterChoice = memory.remember(id: "play", index: 0, section: "actions", context: "detail", ids: ids)
+        #expect(acceptedLaterChoice)
         #expect(memory.restorationRequest(context: "detail") == nil)
     }
 
@@ -95,7 +98,8 @@ struct TVFocusRestorationTests {
         memory.remember(id: "play", index: 0, section: "actions", context: "detail")
         memory.navigationChanged(section: "home", from: 1, to: 0)
         _ = try #require(memory.restorationRequest(context: "home"))
-        #expect(!memory.remember(id: "book", index: 0, section: "books", context: "home"))
+        let acceptedFallback = memory.remember(id: "book", index: 0, section: "books", context: "home")
+        #expect(!acceptedFallback)
         #expect(memory.restoredID(section: "latest", context: "home", ids: ["a", "c"], initial: false) == "c")
     }
 

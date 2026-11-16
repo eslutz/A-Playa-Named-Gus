@@ -24,7 +24,8 @@ def intel_build_line(line):
 def diagnostic_lines(text):
     """Match build diagnostics while excluding timestamped runtime service logs."""
     pattern = (r"^(?:.+:\d+(?::\d+)?:\s*|[^:\n]+:\s*)?(?:warning|error):|"
-               r"(?:appintentsmetadataprocessor|appintentsnltraining).*\b(?:warning|error):")
+               r"(?:appintentsmetadataprocessor|appintentsnltraining).*\b(?:warning|error):|"
+               r"\bxcodebuild\[[^\]]+\].*\bDVTAssertions:\s*(?:warning|error)\b")
     return [line for line in text.splitlines() if re.search(pattern, line, re.IGNORECASE) or intel_build_line(line)]
 
 
