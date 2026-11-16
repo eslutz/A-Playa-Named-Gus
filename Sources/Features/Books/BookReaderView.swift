@@ -463,7 +463,7 @@
         func saveLocation(_ locator: Locator) {
             initialLocation = locator
             if let request = chapterRequest {
-                if BookReportingContainer.canonical(locator.href.anyURL) == request.href {
+                if BookReportingContainer.canonical(locator.href.anyURL).isEquivalentTo(request.href) {
                     cancelNavigation()
                     actionOutcome = .confirmed
                 }
