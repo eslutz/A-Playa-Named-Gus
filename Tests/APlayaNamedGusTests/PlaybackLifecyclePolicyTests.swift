@@ -588,6 +588,46 @@ struct PlaybackLifecyclePolicyTests {
         #expect(pending.applying(to: base, session: session, progress: progress).start == .fromBeginning)
     }
 
+    @Test("native video preparation exposes one stable paused player before ready")
+    func stablePlayerDuringPreparation() async throws {
+        let provider = FakeMediaProviderSession(capabilities: ProviderCapabilities())
+        let item = MediaItem(id: "early-surface", officialRating: "G", type: .movie)
+        provider.itemHandler = { _ in item }
+        let fixture = try RepositoryTestFixtures.url(for: "Tests/Fixtures/OfflinePlaylist.mov")
+        provider.playbackHandler = { PlaybackSourceResolution(url: fixture, playSessionID: "early", mediaSourceID: "source", playMethod: .directPlay, stereoLayout: .none, stereoFallbackReason: nil) }
+        let session = makeSession(provider)
+        let seek = PreparationSeekGate()
+        let store = PlaybackStore(request: PlaybackRequest(item: item, start: .fromBeginning), session: session, playbackRefresh: PlaybackRefreshStore(), initialSeek: { _, _ in
+            await seek.suspend()
+        })
+        store.setPresentationActive(false)
+        let preparation = Task { await store.prepare() }
+        defer {
+            preparation.cancel()
+            seek.release()
+            store.teardown()
+        }
+        let deadline = ContinuousClock.now + .seconds(45)
+        while !seek.entered, ContinuousClock.now < deadline {
+            try await Task.sleep(for: .milliseconds(20))
+        }
+        guard seek.entered else {
+            Issue.record("Native preparation did not reach its initial seek")
+            return
+        }
+        let player = try #require(store.player)
+        let nativeItem = try #require(player.currentItem)
+        #expect(store.state == .loading)
+        #expect(player.rate == 0 && !store.hasStartedPlayback)
+        #expect(provider.playbackReports.isEmpty)
+        seek.release()
+        await preparation.value
+        #expect(store.state == .ready)
+        #expect(store.player === player && player.currentItem === nativeItem)
+        #expect(player.rate == 0 && !store.hasStartedPlayback)
+        #expect(provider.playbackReports.isEmpty)
+    }
+
     @Test("first actual playing consumes only the next-launch override and keeps the current player", arguments: [false, true])
     func startOverrideAfterActualPlaying(audio: Bool) async throws {
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
@@ -933,6 +973,27 @@ struct PlaybackLifecyclePolicyTests {
     private final class AudioSessionRefusalState {
         var arguments: [Bool] = []
         var denied = true
+    }
+
+    @MainActor private final class PreparationSeekGate {
+        private(set) var entered = false
+        private var continuation: CheckedContinuation<Void, Never>?
+
+        func suspend() async {
+            await withTaskCancellationHandler {
+                await withCheckedContinuation { continuation in
+                    guard !Task.isCancelled else { continuation.resume(); return }
+                    self.continuation = continuation
+                    entered = true
+                }
+            } onCancel: { Task { @MainActor in self.release() } }
+        }
+
+        func release() {
+            let continuation = continuation
+            self.continuation = nil
+            continuation?.resume()
+        }
     }
 
     private func makeSession(_ provider: FakeMediaProviderSession) -> SessionStore {

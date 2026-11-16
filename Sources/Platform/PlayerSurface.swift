@@ -1,5 +1,8 @@
 import AVKit
 import SwiftUI
+#if os(macOS)
+    import OSLog
+#endif
 
 #if os(tvOS)
     /// tvOS-native `AVPlayerViewController`, which provides the full focus-engine
@@ -8,11 +11,14 @@ import SwiftUI
     struct TVPlayerSurface: UIViewControllerRepresentable {
         let player: AVPlayer
         let store: PlaybackStore
+        let controlsEnabled: Bool
         let onSelectSource: (PlaybackStore.SourceOption) -> Void
 
         func makeUIViewController(context: Context) -> AVPlayerViewController {
             let controller = AVPlayerViewController()
             controller.player = player
+            controller.showsPlaybackControls = controlsEnabled
+            controller.view.isUserInteractionEnabled = controlsEnabled
             controller.delegate = context.coordinator
             controller.allowsPictureInPicturePlayback = false
             // tvOS AVKit always owns system video transport; its publishing toggle is unavailable.
@@ -26,6 +32,8 @@ import SwiftUI
         }
 
         func updateUIViewController(_ controller: AVPlayerViewController, context: Context) {
+            controller.showsPlaybackControls = controlsEnabled
+            controller.view.isUserInteractionEnabled = controlsEnabled
             if controller.player !== player {
                 controller.player = player
             }
@@ -175,6 +183,7 @@ import SwiftUI
     struct PiPCapablePlayerSurface: UIViewControllerRepresentable {
         let player: AVPlayer
         let store: PlaybackStore
+        let controlsEnabled: Bool
 
         func makeCoordinator() -> NativeRenderObserver {
             NativeRenderObserver()
@@ -183,6 +192,8 @@ import SwiftUI
         func makeUIViewController(context: Context) -> AVPlayerViewController {
             let controller = AVPlayerViewController()
             controller.player = player
+            controller.showsPlaybackControls = controlsEnabled
+            controller.view.isUserInteractionEnabled = controlsEnabled
             controller.allowsPictureInPicturePlayback = true
             controller.canStartPictureInPictureAutomaticallyFromInline = true
             // NowPlayingController owns the lock-screen transport; leaving AVKit's
@@ -194,6 +205,8 @@ import SwiftUI
         }
 
         func updateUIViewController(_ controller: AVPlayerViewController, context: Context) {
+            controller.showsPlaybackControls = controlsEnabled
+            controller.view.isUserInteractionEnabled = controlsEnabled
             if controller.player !== player {
                 controller.player = player
             }
@@ -206,11 +219,13 @@ import SwiftUI
     /// including expanded and immersive experience controls where the OS supports them.
     struct VisionPlayerSurface: UIViewControllerRepresentable {
         let player: AVPlayer
+        let controlsEnabled: Bool
 
         func makeUIViewController(context _: Context) -> AVPlayerViewController {
             let controller = AVPlayerViewController()
             controller.player = player
-            controller.showsPlaybackControls = true
+            controller.showsPlaybackControls = controlsEnabled
+            controller.view.isUserInteractionEnabled = controlsEnabled
             controller.allowsPictureInPicturePlayback = false
             controller.canStartPictureInPictureAutomaticallyFromInline = false
             controller.updatesNowPlayingInfoCenter = false
@@ -223,6 +238,8 @@ import SwiftUI
         }
 
         func updateUIViewController(_ controller: AVPlayerViewController, context _: Context) {
+            controller.showsPlaybackControls = controlsEnabled
+            controller.view.isUserInteractionEnabled = controlsEnabled
             if controller.player !== player {
                 controller.player = player
             }
@@ -234,6 +251,7 @@ import SwiftUI
     struct PiPCapablePlayerSurface: NSViewRepresentable {
         let player: AVPlayer
         let store: PlaybackStore
+        let controlsEnabled: Bool
 
         func makeCoordinator() -> NativeRenderObserver {
             NativeRenderObserver()
@@ -243,12 +261,22 @@ import SwiftUI
             let view = AVPlayerView()
             view.player = player
             view.allowsPictureInPicturePlayback = true
-            view.controlsStyle = .floating
+            view.controlsStyle = controlsEnabled ? .floating : .none
             context.coordinator.bind(view: view, player: player, store: store)
             return view
         }
 
         func updateNSView(_ view: AVPlayerView, context: Context) {
+            view.controlsStyle = controlsEnabled ? .floating : .none
+            // AVPlayerView keyboard shortcuts also work without visible chrome.
+            // Resign only its own retained focus while preparation owns transport.
+            if !controlsEnabled, let window = view.window,
+               let responder = window.firstResponder as? NSView,
+               responder === view || responder.isDescendant(of: view),
+               !window.makeFirstResponder(nil)
+            {
+                Logger(category: .playback).debug("Native player declined keyboard-focus handoff during preparation")
+            }
             if view.player !== player {
                 view.player = player
             }

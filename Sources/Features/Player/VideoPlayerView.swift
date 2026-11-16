@@ -41,7 +41,9 @@ struct VideoPlayerView: View {
         ZStack {
             Color.black.ignoresSafeArea()
 
-            if let store, store.state == .ready, let player = store.player {
+            // Keep the native renderer attached through preparation → ready.
+            // Readiness changes chrome/overlays, never the surface's identity.
+            if let store, let player = store.player {
                 #if os(visionOS)
                     if store.isFramePackedImmersivePlaybackActive {
                         Color.black
@@ -58,13 +60,17 @@ struct VideoPlayerView: View {
                     #endif
                         .ignoresSafeArea(edges: [.horizontal, .bottom])
                 #endif
-            } else if let message = playlist?.errorMessage {
+            }
+
+            if let message = playlist?.errorMessage {
                 ContentUnavailableView {
                     Label("Playlist Paused", systemImage: "exclamationmark.triangle")
                 } description: { Text(message) } actions: {
                     playlistRecoveryActions
                 }
                 .foregroundStyle(.white)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background(.black)
             } else if case let .failed(message)? = store?.state {
                 ContentUnavailableView {
                     Label("Can't Play This", systemImage: "exclamationmark.triangle")
@@ -83,10 +89,14 @@ struct VideoPlayerView: View {
                     }
                 }
                 .foregroundStyle(.white)
-            } else {
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background(.black)
+            } else if store?.state != .ready {
                 ProgressView()
                     .controlSize(.large)
                     .tint(.white)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .background(.black)
             }
         }
         #if os(tvOS)
@@ -479,12 +489,20 @@ private struct PlayerSurface: View {
     let onSelectSource: (PlaybackStore.SourceOption) -> Void
 
     var body: some View {
+        let controlsEnabled = store.state == .ready
+        platformSurface(controlsEnabled: controlsEnabled)
+            .disabled(!controlsEnabled)
+            .allowsHitTesting(controlsEnabled)
+            .accessibilityHidden(!controlsEnabled)
+    }
+
+    @ViewBuilder private func platformSurface(controlsEnabled: Bool) -> some View {
         #if os(tvOS)
-            TVPlayerSurface(player: player, store: store, onSelectSource: onSelectSource)
+            TVPlayerSurface(player: player, store: store, controlsEnabled: controlsEnabled, onSelectSource: onSelectSource)
         #elseif os(visionOS)
-            VisionPlayerSurface(player: player)
+            VisionPlayerSurface(player: player, controlsEnabled: controlsEnabled)
         #else
-            PiPCapablePlayerSurface(player: player, store: store)
+            PiPCapablePlayerSurface(player: player, store: store, controlsEnabled: controlsEnabled)
         #endif
     }
 }

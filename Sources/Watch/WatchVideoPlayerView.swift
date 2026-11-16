@@ -14,10 +14,14 @@ struct WatchVideoPlayerView: View {
     @State private var isTargetPickerPresented = false
 
     var body: some View {
-        Group {
-            if let store, store.state == .ready, let player = store.player {
+        ZStack {
+            if let store, let player = store.player {
                 VideoPlayer(player: player)
-            } else if case let .failed(message)? = store?.state {
+                    .disabled(store.state != .ready)
+                    .allowsHitTesting(store.state == .ready)
+                    .accessibilityHidden(store.state != .ready)
+            }
+            if case let .failed(message)? = store?.state {
                 ScrollView {
                     VStack(spacing: 8) {
                         Text("Can't Play on Watch").font(.headline)
@@ -26,13 +30,17 @@ struct WatchVideoPlayerView: View {
                         Button("Play On…", systemImage: "play.tv") { isTargetPickerPresented = true }
                     }
                 }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background(.background)
             } else if store?.state == .idle {
                 Button("Play", systemImage: "play.fill") { Task { await store?.prepare() } }
-            } else {
+            } else if store?.state != .ready {
                 VStack {
                     ProgressView()
                     Button("Cancel", role: .cancel) { store?.teardown(); dismiss() }
                 }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background(.background)
             }
         }
         .safeAreaInset(edge: .top) {

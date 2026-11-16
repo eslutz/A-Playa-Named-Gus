@@ -20,6 +20,10 @@ page deduplication. Gus retains AVPlayer/AVKit and current OS 26 fallbacks.
   failure and ready playback, including sources without playback options. Close
   cancels preparation, stops playlist activity and tears down playback before dismissing;
   AVKit keeps its transport area. Other platforms retain their existing dismissal.
+  Video hosts attach their native surface when the player becomes available,
+  retain that surface through readiness, and keep preparation controls above it.
+  Native transport remains unavailable until preparation succeeds. Rendering is
+  observed independently from the player's advancing clock.
   tvOS explicitly fills the presentation viewport during preparation and native playback;
   the native UI regression checks its bounds before opening Playback Details.
 - tvOS dismissal and navigation returns use native focus scopes and an immutable

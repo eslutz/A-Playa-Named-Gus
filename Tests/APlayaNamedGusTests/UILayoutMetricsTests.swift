@@ -137,7 +137,7 @@ struct UILayoutMetricsTests {
         let platformSource = try sourceFile(named: "PlayerSurface.swift", under: "Sources/Platform")
 
         #expect(!playerSource.contains("VideoPlayer(player: player)"))
-        #expect(playerSource.contains("VisionPlayerSurface(player: player)"))
+        #expect(playerSource.contains("VisionPlayerSurface(player: player, controlsEnabled: controlsEnabled)"))
         #expect(platformSource.contains("#elseif os(visionOS)"))
         #expect(platformSource.contains("struct VisionPlayerSurface: UIViewControllerRepresentable"))
         #expect(platformSource.contains("AVPlayerViewController"))
