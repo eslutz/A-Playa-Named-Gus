@@ -71,6 +71,7 @@ the canonical document; do not invent frame IDs or duplicate every picker value.
 | Audio collection | Ordered queue continuation; complete Shuffle collection progress/cancel/retry; disabled unavailable transport |
 | Browsing context | Resume-aligned season/episode; latest-feed expansion; Back/resize/focus restoration |
 | Artwork and semantics | Role-specific missing/stale artwork, unchanged bounds, full episode identity/status, larger text and RTL |
+| Responsive details | Retained control/card focus through resizing; compact hero copy uses the existing opaque backing, with wrapped titles and synopses |
 | Reader recovery | Navigator construction failure; resource retry/keep reading; retained last valid locator |
 | Native previews | Compatible HLS scrubber preview; tvOS chapter navigation with deferred or missing artwork; unsupported JPEG trickplay |
 

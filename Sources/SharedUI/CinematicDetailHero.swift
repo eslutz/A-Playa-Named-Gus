@@ -142,8 +142,10 @@ struct CinematicDetailHero<Accessory: View>: View {
             }
         }
         .foregroundStyle(.white)
-        // The iPhone's full hero scrim provides contrast; wider layouts keep their copy panel.
-        .gusPhoneHeroCopy()
+        // Artwork and adaptive text height must not determine text contrast.
+        // Keep the same opaque copy surface at every standard-hero width.
+        .padding(12)
+        .background(.black, in: RoundedRectangle(cornerRadius: 8))
     }
 
     private var heroScrim: [Color] {

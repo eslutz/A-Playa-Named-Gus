@@ -149,10 +149,6 @@ extension View {
         modifier(IPhoneRailWidthModifier(backdrop: backdrop, fallback: fallback))
     }
 
-    func gusPhoneHeroCopy() -> some View {
-        modifier(IPhoneHeroCopyModifier())
-    }
-
     func gusPhoneProminentForeground() -> some View {
         modifier(IPhoneProminentForegroundModifier())
     }
@@ -200,23 +196,6 @@ private struct IPhoneRailWidthModifier: ViewModifier {
             content.frame(width: widthClass == .compact ? (backdrop ? 260 : 160) : fallback)
         #else
             content.frame(width: fallback)
-        #endif
-    }
-}
-
-private struct IPhoneHeroCopyModifier: ViewModifier {
-    #if os(iOS)
-        @Environment(\.horizontalSizeClass) private var widthClass
-    #endif
-    func body(content: Content) -> some View {
-        #if os(iOS)
-            if widthClass == .compact {
-                content
-            } else {
-                content.padding(12).background(.black, in: RoundedRectangle(cornerRadius: 8))
-            }
-        #else
-            content.padding(12).background(.black, in: RoundedRectangle(cornerRadius: 8))
         #endif
     }
 }

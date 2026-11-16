@@ -32,6 +32,9 @@ page deduplication. Gus retains AVPlayer/AVKit and current OS 26 fallbacks.
 - Semantic artwork, accessibility identity and localized metadata are shared.
   OS 26 retains native AsyncImage transport. OS 27 uses a credential-lease-owned,
   memory-only native image session/cache that is canceled and cleared on retirement.
+  Responsive controls and focusable information cards retain one content tree.
+  Standard hero copy uses opaque backing at every width so artwork and text height
+  cannot reduce its foreground/background contrast.
 - Version changes ask whether to start over or resume at the saved timestamp.
   Track memory is opt-in per device/account, including a native Watch setting, and
   carries semantic preferences within a
