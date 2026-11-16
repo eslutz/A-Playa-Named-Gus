@@ -60,7 +60,6 @@ extension View {
                     .focusSection()
                 }
             }
-            .foregroundStyle(.white)
             .environment(\.colorScheme, .dark)
             .padding(.horizontal, 80)
             .padding(.top, 64)
