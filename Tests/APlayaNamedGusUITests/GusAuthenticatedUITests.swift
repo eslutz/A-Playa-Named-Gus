@@ -142,7 +142,18 @@ final class GusAuthenticatedUITests: XCTestCase {
             XCTAssertEqual(XCTWaiter.wait(for: [returned], timeout: 10), .completed, app.debugDescription)
             reveal(app.buttons["Detail.play"], in: app)
             XCTAssertTrue(app.buttons["Detail.play"].isHittable, app.debugDescription)
+            assertHorizontallyContained(app.buttons["Detail.play"], in: app)
             capture(app, "ready-video-dismissed")
+            rotateToPortrait(app)
+            reveal(app.buttons["Detail.play"], in: app)
+            XCTAssertTrue(app.buttons["Detail.play"].isHittable, app.debugDescription)
+            assertHorizontallyContained(app.buttons["Detail.play"], in: app)
+            if UIDevice.current.userInterfaceIdiom == .pad {
+                let overview = app.staticTexts.matching(identifier: "Detail.heroOverview").firstMatch
+                XCTAssertTrue(overview.exists, "The iPad SynopsisMovie hero must expose its overview")
+                assertHorizontallyContained(overview, in: app)
+            }
+            capture(app, "ready-video-dismissed-portrait")
         }
     #endif
 
@@ -164,22 +175,27 @@ final class GusAuthenticatedUITests: XCTestCase {
                 XCTAssertEqual(app.buttons.matching(identifier: "Detail.play").count, 1, app.debugDescription)
                 XCTAssertEqual(app.buttons.matching(identifier: "Detail.nextUp").count, 1, app.debugDescription)
             }
+            #if os(iOS)
+                reveal(button, in: app)
+                XCTAssertTrue(button.isHittable)
+                assertHorizontallyContained(button, in: app)
+            #endif
             capture(app, type.lowercased() + "-detail")
             #if os(iOS)
-                let window = app.windows.firstMatch.frame
-                if button.isHittable {
-                    XCTAssertLessThanOrEqual(button.frame.maxX, window.maxX + 1)
-                    XCTAssertGreaterThanOrEqual(button.frame.minX, window.minX - 1)
-                }
                 rotateToLandscape(app)
                 reveal(button, in: app)
                 XCTAssertTrue(button.isHittable)
+                assertHorizontallyContained(button, in: app)
                 if type == "Movie" {
                     XCTAssertEqual(app.buttons.matching(identifier: "Detail.play").count, 1, app.debugDescription)
                     XCTAssertEqual(app.buttons.matching(identifier: "Detail.nextUp").count, 1, app.debugDescription)
                 }
                 capture(app, type.lowercased() + "-landscape")
-                XCUIDevice.shared.orientation = .portrait
+                rotateToPortrait(app)
+                reveal(button, in: app)
+                XCTAssertTrue(button.isHittable)
+                assertHorizontallyContained(button, in: app)
+                capture(app, type.lowercased() + "-portrait-restored")
             #endif
             app.terminate()
         }
@@ -990,7 +1006,7 @@ final class GusAuthenticatedUITests: XCTestCase {
                 XCTAssertTrue(button.waitForExistence(timeout: 30))
                 reveal(button, in: app)
                 XCTAssertTrue(button.isHittable)
-                XCTAssertGreaterThan(app.buttons["ContentLink.detailDone"].frame.midX, app.windows.firstMatch.frame.midX)
+                XCTAssertGreaterThan(app.buttons["ContentLink.detailDone"].frame.midX, app.frame.midX)
                 capture(app, type.lowercased() + "-rtl")
                 rotateToLandscape(app)
                 reveal(button, in: app)
@@ -1325,11 +1341,11 @@ final class GusAuthenticatedUITests: XCTestCase {
 
         private func reveal(_ element: XCUIElement, in app: XCUIApplication) {
             for _ in 0 ..< 10 {
-                let window = app.windows.firstMatch.frame
+                let viewport = app.frame
                 let frame = element.frame
                 if element.exists, frame.height >= 44,
-                   frame.minY >= window.minY + 44,
-                   frame.maxY <= window.maxY - 24,
+                   frame.minY >= viewport.minY + 44,
+                   frame.maxY <= viewport.maxY - 24,
                    element.isHittable
                 {
                     return
@@ -1337,20 +1353,38 @@ final class GusAuthenticatedUITests: XCTestCase {
                 // A landscape transition or modal dismissal can leave the
                 // action above the viewport. Scroll toward its current frame
                 // instead of repeatedly pushing it farther offscreen.
-                let aboveViewport = frame.height > 0 && frame.minY < window.minY + 44
-                let start = app.windows.firstMatch.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: aboveViewport ? 0.35 : 0.75))
-                let end = app.windows.firstMatch.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: aboveViewport ? 0.65 : 0.45))
+                let aboveViewport = frame.height > 0 && frame.minY < viewport.minY + 44
+                let start = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: aboveViewport ? 0.35 : 0.75))
+                let end = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: aboveViewport ? 0.65 : 0.45))
                 start.press(forDuration: 0.05, thenDragTo: end)
             }
         }
 
         private func rotateToLandscape(_ app: XCUIApplication) {
-            XCUIDevice.shared.orientation = .landscapeLeft
-            let deadline = Date().addingTimeInterval(10)
-            while app.windows.firstMatch.frame.width <= app.windows.firstMatch.frame.height, Date() < deadline {
-                Thread.sleep(forTimeInterval: 0.2)
-            }
-            XCTAssertGreaterThan(app.windows.firstMatch.frame.width, app.windows.firstMatch.frame.height)
+            rotate(app, to: .landscapeLeft)
+        }
+
+        private func rotateToPortrait(_ app: XCUIApplication) {
+            rotate(app, to: .portrait)
+        }
+
+        private func rotate(_ app: XCUIApplication, to orientation: UIDeviceOrientation) {
+            XCUIDevice.shared.orientation = orientation
+            let settled = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+                let viewport = app.frame
+                return app.state == .runningForeground && viewport.width > 0 && viewport.height > 0
+                    && (orientation.isLandscape ? viewport.width > viewport.height : viewport.height > viewport.width)
+            }, object: nil)
+            XCTAssertEqual(XCTWaiter.wait(for: [settled], timeout: 10), .completed, app.debugDescription)
+        }
+
+        private func assertHorizontallyContained(_ element: XCUIElement, in app: XCUIApplication, file: StaticString = #filePath, line: UInt = #line) {
+            let viewport = app.frame
+            let frame = element.frame
+            XCTAssertFalse(viewport.isEmpty, "Application viewport is empty", file: file, line: line)
+            XCTAssertFalse(frame.isEmpty, "Element frame is empty: \(element.identifier)", file: file, line: line)
+            XCTAssertGreaterThanOrEqual(frame.minX, viewport.minX - 1, file: file, line: line)
+            XCTAssertLessThanOrEqual(frame.maxX, viewport.maxX + 1, file: file, line: line)
         }
     #endif
 

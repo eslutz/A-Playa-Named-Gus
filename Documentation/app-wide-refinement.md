@@ -57,6 +57,8 @@ page deduplication. Gus retains AVPlayer/AVKit and current OS 26 fallbacks.
   OS 26 retains native AsyncImage transport. OS 27 uses a credential-lease-owned,
   memory-only native image session/cache that is canceled and cleared on retirement.
   Responsive controls and focusable information cards retain one content tree.
+  Adaptive stacks measure the parent's available width with explicit frame bounds,
+  allowing horizontal content to return to vertical when its pane narrows.
   Secondary detail buttons and native menu triggers share the same label sizing,
   minimum control bounds and system button treatment across main platforms.
   Standard hero copy uses opaque backing at every width so artwork and text height
