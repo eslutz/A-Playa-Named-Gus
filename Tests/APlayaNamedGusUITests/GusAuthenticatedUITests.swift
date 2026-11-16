@@ -393,7 +393,7 @@ final class GusAuthenticatedUITests: XCTestCase {
             let app = try launch("play/" + required("Audio"))
             let nativeAudio = app.cells["AVAudibleSettings"]
             let prepared = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
-                nativeAudio.exists || app.buttons["Try Again"].allElementsBoundByIndex.contains { $0.isEnabled && $0.isHittable }
+                nativeAudio.exists || app.buttons.matching(identifier: "Try Again").allElementsBoundByIndex.contains(where: { $0.isEnabled && $0.isHittable })
             }, object: nil)
             // Resolution can use 30s and native preparation 45s. Wait through those
             // bounded phases plus launch, but surface a visible failure promptly.
@@ -811,8 +811,8 @@ final class GusAuthenticatedUITests: XCTestCase {
             let surface = app.descendants(matching: .any).matching(identifier: "VideoPlayer.surface").firstMatch
             let prepared = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
                 surface.exists
-                    || app.staticTexts["Can't Play This"].allElementsBoundByIndex.contains(where: \.isHittable)
-                    || app.buttons["Try Again"].allElementsBoundByIndex.contains { $0.isEnabled && $0.isHittable }
+                    || app.staticTexts.matching(identifier: "Can't Play This").allElementsBoundByIndex.contains(where: \.isHittable)
+                    || app.buttons.matching(identifier: "Try Again").allElementsBoundByIndex.contains(where: { $0.isEnabled && $0.isHittable })
             }, object: nil)
             // Resolution can use 30 seconds and native preparation 45 seconds;
             // allow launch overhead while failing promptly on actionable errors.
