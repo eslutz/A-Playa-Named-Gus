@@ -81,20 +81,52 @@ final class PlaybackTrackMemory {
         }
     }
 
-    func selection(for item: MediaItem, source: MediaSource, scope: AccountScope) -> PlaybackStreamSelection {
-        guard isEnabled(scope: scope), item.type == .episode, let series = item.seriesID,
-              let choice = stored(scope)[series], choice.itemID != item.id else { return .none }
-        return PlaybackStreamSelection(
-            audioStreamIndex: choice.audio.flatMap { Self.match($0.stream, in: source.mediaStreams) },
-            subtitleStreamIndex: choice.subtitlesOff ? -1 : choice.subtitle.flatMap { Self.match($0.stream, in: source.mediaStreams) }
-        )
+    struct Resolution {
+        let selection: PlaybackStreamSelection
+        let hasUnavailableSelection: Bool
     }
 
-    func hasUnavailableSelection(for item: MediaItem, source: MediaSource, scope: AccountScope) -> Bool {
+    /// Resolve effective tracks without changing the incoming Automatic/Explicit intent.
+    /// Local callers supply only their projected downloaded catalog, never the original
+    /// remote catalog of a converted or unidentified file.
+    func resolve(request: PlaybackRequest, item: MediaItem, source: MediaSource?, baseSelection: PlaybackStreamSelection, scope: AccountScope) -> Resolution {
+        let streams = source?.mediaStreams ?? []
+        let choice = applicableChoice(for: item, scope: scope)
+        func available(_ index: Int?, kind: MediaStreamKind) -> Int? {
+            index.flatMap { value in
+                guard value >= 0, streams.contains(where: { $0.type == kind && $0.index == value }) else { return nil }
+                return value
+            }
+        }
+
+        var selection = baseSelection
+        var unavailable = false
+        // Raw indexes without a semantic snapshot are also explicit. A sanitized
+        // missing index must not silently become a remembered, different role.
+        if request.audioTrack != nil || request.streamSelection.audioStreamIndex != nil {
+            selection.audioStreamIndex = available(baseSelection.audioStreamIndex, kind: .audio)
+            unavailable = selection.audioStreamIndex == nil
+        } else {
+            selection.audioStreamIndex = choice?.audio.flatMap { Self.match($0.stream, in: streams) }
+            unavailable = choice?.audio != nil && selection.audioStreamIndex == nil
+        }
+        switch request.subtitleIntent {
+        case .off:
+            selection.subtitleStreamIndex = -1
+        case .explicit:
+            selection.subtitleStreamIndex = available(baseSelection.subtitleStreamIndex, kind: .subtitle)
+            unavailable = unavailable || selection.subtitleStreamIndex == nil
+        case .automatic:
+            selection.subtitleStreamIndex = choice?.subtitlesOff == true ? -1 : choice?.subtitle.flatMap { Self.match($0.stream, in: streams) }
+            unavailable = unavailable || (choice?.subtitle != nil && selection.subtitleStreamIndex == nil)
+        }
+        return Resolution(selection: selection, hasUnavailableSelection: unavailable)
+    }
+
+    private func applicableChoice(for item: MediaItem, scope: AccountScope) -> Choice? {
         guard isEnabled(scope: scope), item.type == .episode, let series = item.seriesID,
-              let choice = stored(scope)[series], choice.itemID != item.id else { return false }
-        return (choice.audio != nil && Self.match(choice.audio!.stream, in: source.mediaStreams) == nil)
-            || (choice.subtitle != nil && Self.match(choice.subtitle!.stream, in: source.mediaStreams) == nil)
+              let choice = stored(scope)[series], choice.itemID != item.id else { return nil }
+        return choice
     }
 
     private func stored(_ scope: AccountScope) -> [String: Choice] {

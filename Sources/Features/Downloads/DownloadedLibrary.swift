@@ -13,6 +13,17 @@ extension OfflineDownloadRecord {
                 source.mediaStreams = []
                 source.defaultAudioStreamIndex = nil
                 source.defaultSubtitleStreamIndex = nil
+            } else {
+                // An original download saves the media container, not its separate
+                // subtitle/audio sidecars. Only embedded tracks remain local choices.
+                let externalIndexes = Set(source.mediaStreams.filter { $0.isExternal == true }.compactMap(\.index))
+                source.mediaStreams.removeAll { $0.isExternal == true }
+                if let index = source.defaultAudioStreamIndex, externalIndexes.contains(index) {
+                    source.defaultAudioStreamIndex = nil
+                }
+                if let index = source.defaultSubtitleStreamIndex, externalIndexes.contains(index) {
+                    source.defaultSubtitleStreamIndex = nil
+                }
             }
             result.mediaSources = [source]
             result.runTimeTicks = source.runTimeTicks ?? (item.mediaSources.count == 1 ? item.runTimeTicks : nil)

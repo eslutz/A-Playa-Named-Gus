@@ -77,6 +77,9 @@ page deduplication. Gus retains AVPlayer/AVKit and current OS 26 fallbacks.
   carries semantic preferences within a
   series. Persisted preferences contain no source-local indexes; missing or ambiguous
   named tracks fall back to defaults with a notice.
+  Online and downloaded episodes share the effective-track policy; explicit choices
+  override memory without changing Automatic intent. Original downloads advertise
+  embedded tracks only, so missing external sidecars use defaults with feedback.
 - Downloaded playback projects its recorded source rather than the item's primary
   version. Unknown source metadata remains unknown; converted files do not advertise
   the original source's unverified track catalog. Native transfer observations update

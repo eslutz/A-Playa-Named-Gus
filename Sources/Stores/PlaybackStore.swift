@@ -533,7 +533,15 @@ final class PlaybackStore {
                     item = downloaded.playbackItem; itemID = downloaded.item.id ?? itemID
                     playbackIntent.item = item
                     playbackIntent.streamSelection.mediaSourceID = downloaded.mediaSourceID
-                    streamSelection = downloaded.playbackSelection(for: playbackIntent)
+                    let tracks = PlaybackTrackMemory.shared.resolve(
+                        request: playbackIntent,
+                        item: item,
+                        source: item.mediaSources.first,
+                        baseSelection: downloaded.playbackSelection(for: playbackIntent),
+                        scope: accountScope
+                    )
+                    streamSelection = tracks.selection
+                    trackSelectionNotice = tracks.hasUnavailableSelection ? String(localized: "A selected track is unavailable in this version. Using the player defaults.") : nil
                 }
                 resolution = nil
                 playbackIsLive = false
@@ -562,23 +570,15 @@ final class PlaybackStore {
                         try Task.checkCancellation()
                         guard activeSession.isActive else { throw CancellationError() }
                         guard let currentID = current.id, ContentRatingGate.admitsStored(current) else { throw GusError.notFound }
-                        var selection = requestedSelection
-                        var unavailableTrack = false
-                        if let source = current.mediaSources.first(where: { $0.id == selection.mediaSourceID }) ?? current.mediaSources.first {
-                            let requested = requestedIntent.selection(in: source)
-                            selection.audioStreamIndex = requested.audioStreamIndex
-                            selection.subtitleStreamIndex = requested.subtitleStreamIndex
-                            unavailableTrack = PlaybackTrackMemory.shared.hasUnavailableSelection(for: current, source: source, scope: requestedScope)
-                                || (requestedIntent.audioTrack != nil && requested.audioStreamIndex == nil)
-                                || (requestedIntent.subtitleIntent == .explicit && requestedIntent.subtitleTrack != nil && requested.subtitleStreamIndex == nil)
-                            let remembered = PlaybackTrackMemory.shared.selection(for: current, source: source, scope: requestedScope)
-                            if requestedIntent.audioTrack == nil {
-                                selection.audioStreamIndex = selection.audioStreamIndex ?? remembered.audioStreamIndex
-                            }
-                            if requestedIntent.subtitleIntent == .automatic {
-                                selection.subtitleStreamIndex = selection.subtitleStreamIndex ?? remembered.subtitleStreamIndex
-                            }
-                        }
+                        let source = current.mediaSources.first(where: { $0.id == requestedSelection.mediaSourceID }) ?? current.mediaSources.first
+                        let tracks = PlaybackTrackMemory.shared.resolve(
+                            request: requestedIntent,
+                            item: current,
+                            source: source,
+                            baseSelection: source.map { requestedIntent.selection(in: $0) } ?? requestedSelection,
+                            scope: requestedScope
+                        )
+                        let selection = tracks.selection
                         let ticks = MediaPlaybackIdentity.resumeTicks(requested: startTimeTicks, originalID: originalID, current: current)
                         let requestedPresentation = Media3DDetector.presentation(for: current, mediaSourceID: selection.mediaSourceID, viewingMode: requestedMode)
                         let remote = try await provider.resolvePlayback(
@@ -588,7 +588,7 @@ final class PlaybackStore {
                             startTimeTicks: ticks,
                             stereoLayout: requestedPresentation.resolutionStereoLayout
                         )
-                        return ResolvedPlayback(item: current, resolution: remote, selection: selection, startTicks: ticks, unavailableTrack: unavailableTrack)
+                        return ResolvedPlayback(item: current, resolution: remote, selection: selection, startTicks: ticks, unavailableTrack: tracks.hasUnavailableSelection)
                     }
                 }
                 guard generation == preparationGeneration, session.isActive, !Task.isCancelled else {

@@ -266,17 +266,91 @@ struct PlaybackLifecyclePolicyTests {
         let other = AccountScope(serverID: "server-b", userID: "same-user")
         let memory = PlaybackTrackMemory(defaults: defaults)
         let item = MediaItem(id: "episode-a", seriesID: "series", type: .episode)
+        let nextItem = MediaItem(id: "episode-b", seriesID: "series", type: .episode)
         let source = MediaSource(mediaStreams: [MediaStreamInfo(codec: "aac", index: 2, language: "eng", title: "Main", type: .audio)])
         memory.remember(item: item, source: source, selection: PlaybackStreamSelection(audioStreamIndex: 2, subtitleStreamIndex: -1), scope: first)
-        #expect(memory.selection(for: MediaItem(id: "episode-b", seriesID: "series", type: .episode), source: source, scope: first) == .none)
+        #expect(memory.resolve(request: PlaybackRequest(item: nextItem), item: nextItem, source: source, baseSelection: .none, scope: first).selection == .none)
         memory.setEnabled(true, scope: first)
         memory.remember(item: item, source: source, selection: PlaybackStreamSelection(audioStreamIndex: 2, subtitleStreamIndex: -1), scope: first)
         let next = MediaSource(mediaStreams: [MediaStreamInfo(codec: "aac", index: 19, language: "en-US", title: "Main", type: .audio)])
-        let remembered = memory.selection(for: MediaItem(id: "episode-b", seriesID: "series", type: .episode), source: next, scope: first)
+        let remembered = memory.resolve(request: PlaybackRequest(item: nextItem), item: nextItem, source: next, baseSelection: .none, scope: first).selection
         #expect(remembered.audioStreamIndex == 19)
         #expect(remembered.subtitleStreamIndex == -1)
-        #expect(memory.selection(for: MediaItem(id: "episode-b", seriesID: "series", type: .episode), source: next, scope: other) == .none)
-        #expect(memory.selection(for: MediaItem(id: "episode-b", seriesID: "other-series", type: .episode), source: next, scope: first) == .none)
+        let otherAccount = memory.resolve(request: PlaybackRequest(item: nextItem), item: nextItem, source: next, baseSelection: .none, scope: other)
+        #expect(otherAccount.selection == .none)
+        #expect(!otherAccount.hasUnavailableSelection)
+        let otherSeries = MediaItem(id: "episode-b", seriesID: "other-series", type: .episode)
+        #expect(memory.resolve(request: PlaybackRequest(item: otherSeries), item: otherSeries, source: next, baseSelection: .none, scope: first).selection == .none)
+        #expect(memory.resolve(request: PlaybackRequest(item: item), item: item, source: source, baseSelection: .none, scope: first).selection == .none)
+        memory.setEnabled(false, scope: first)
+        let disabled = memory.resolve(request: PlaybackRequest(item: nextItem), item: nextItem, source: next, baseSelection: .none, scope: first)
+        #expect(disabled.selection == .none)
+        #expect(!disabled.hasUnavailableSelection)
+    }
+
+    @Test("explicit track intent wins memory and only unavailable applied choices produce a notice")
+    func trackMemoryIntentPrecedence() throws {
+        let suite = UUID().uuidString
+        let defaults = try #require(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let memory = PlaybackTrackMemory(defaults: defaults)
+        let scope = AccountScope(serverID: "server", userID: "user")
+        let previous = MediaItem(id: "first", seriesID: "series", type: .episode)
+        let next = MediaItem(id: "second", seriesID: "series", type: .episode)
+        let oldSource = MediaSource(mediaStreams: [
+            MediaStreamInfo(index: 2, language: "eng", title: "Commentary", type: .audio),
+            MediaStreamInfo(index: 3, language: "eng", title: "SDH", type: .subtitle, isHearingImpaired: true),
+        ])
+        let main = MediaStreamInfo(index: 9, language: "eng", title: "Main", type: .audio)
+        let source = MediaSource(mediaStreams: [
+            main,
+            MediaStreamInfo(index: 19, language: "eng", title: "Commentary", type: .audio),
+            MediaStreamInfo(index: 27, language: "eng", title: "SDH", type: .subtitle, isHearingImpaired: true),
+            MediaStreamInfo(index: 28, language: "eng", title: "Signs", type: .subtitle, isForced: true),
+        ])
+        memory.setEnabled(true, scope: scope)
+        memory.remember(item: previous, source: oldSource, selection: .init(audioStreamIndex: 2, subtitleStreamIndex: 3), scope: scope)
+        func resolve(_ request: PlaybackRequest, catalog: MediaSource?) -> PlaybackTrackMemory.Resolution {
+            memory.resolve(request: request, item: next, source: catalog, baseSelection: catalog.map { request.selection(in: $0) } ?? request.streamSelection, scope: scope)
+        }
+        let automatic = resolve(PlaybackRequest(item: next), catalog: source)
+        #expect(automatic.selection.audioStreamIndex == 19)
+        #expect(automatic.selection.subtitleStreamIndex == 27)
+        #expect(!automatic.hasUnavailableSelection)
+
+        let explicit = PlaybackRequest(item: next, streamSelection: .init(audioStreamIndex: 9, subtitleStreamIndex: -1), audioTrack: main, subtitleIntent: .off)
+        let overridden = resolve(explicit, catalog: MediaSource(mediaStreams: [main]))
+        #expect(overridden.selection.audioStreamIndex == 9)
+        #expect(overridden.selection.subtitleStreamIndex == -1)
+        #expect(!overridden.hasUnavailableSelection)
+        let rawExplicit = resolve(PlaybackRequest(item: next, streamSelection: .init(audioStreamIndex: 9, subtitleStreamIndex: 28)), catalog: source)
+        #expect(rawExplicit.selection.audioStreamIndex == 9)
+        #expect(rawExplicit.selection.subtitleStreamIndex == 28)
+        #expect(!rawExplicit.hasUnavailableSelection)
+
+        let invalidRaw = resolve(PlaybackRequest(item: next, streamSelection: .init(audioStreamIndex: 999), subtitleIntent: .off), catalog: source)
+        #expect(invalidRaw.selection.audioStreamIndex == nil)
+        #expect(invalidRaw.hasUnavailableSelection)
+        let missingAudio = resolve(PlaybackRequest(item: next, audioTrack: MediaStreamInfo(language: "fra", title: "Description", type: .audio), subtitleIntent: .off), catalog: source)
+        #expect(missingAudio.selection.audioStreamIndex == nil)
+        #expect(missingAudio.hasUnavailableSelection)
+        let missingSubtitle = resolve(PlaybackRequest(item: next, streamSelection: .init(audioStreamIndex: 9, subtitleStreamIndex: 999)), catalog: source)
+        #expect(missingSubtitle.selection.audioStreamIndex == 9)
+        #expect(missingSubtitle.selection.subtitleStreamIndex == nil)
+        #expect(missingSubtitle.hasUnavailableSelection)
+        let missingSemanticSubtitle = resolve(PlaybackRequest(item: next, streamSelection: .init(audioStreamIndex: 9), subtitleTrack: MediaStreamInfo(language: "fra", title: "Captions", type: .subtitle), subtitleIntent: .explicit), catalog: source)
+        #expect(missingSemanticSubtitle.selection.subtitleStreamIndex == nil)
+        #expect(missingSemanticSubtitle.hasUnavailableSelection)
+        let unknown = resolve(PlaybackRequest(item: next), catalog: nil)
+        #expect(unknown.selection.audioStreamIndex == nil)
+        #expect(unknown.selection.subtitleStreamIndex == nil)
+        #expect(unknown.hasUnavailableSelection)
+
+        memory.remember(item: previous, source: oldSource, selection: .init(subtitleStreamIndex: -1), scope: scope)
+        let rememberedOff = resolve(PlaybackRequest(item: next), catalog: nil)
+        #expect(rememberedOff.selection.audioStreamIndex == nil)
+        #expect(rememberedOff.selection.subtitleStreamIndex == -1)
+        #expect(!rememberedOff.hasUnavailableSelection)
     }
 
     @Test("persisted audio and subtitle preferences contain semantic identity without source indexes")
@@ -309,7 +383,8 @@ struct PlaybackLifecyclePolicyTests {
             MediaStreamInfo(codec: "ac3", index: 19, language: "en-US", title: "Main", type: .audio),
             MediaStreamInfo(codec: "ass", index: 27, language: "en-US", title: "SDH", type: .subtitle, isForced: false, isHearingImpaired: true),
         ])
-        let restored = PlaybackTrackMemory(defaults: defaults).selection(for: MediaItem(id: "episode-b", seriesID: "series", type: .episode), source: next, scope: scope)
+        let nextItem = MediaItem(id: "episode-b", seriesID: "series", type: .episode)
+        let restored = PlaybackTrackMemory(defaults: defaults).resolve(request: PlaybackRequest(item: nextItem), item: nextItem, source: next, baseSelection: .none, scope: scope).selection
         #expect(restored.audioStreamIndex == 19)
         #expect(restored.subtitleStreamIndex == 27)
     }
@@ -475,8 +550,9 @@ struct PlaybackLifecyclePolicyTests {
             scope: scope
         )
         let next = MediaItem(id: "episode-b", seriesID: "series", type: .episode)
-        #expect(memory.selection(for: next, source: MediaSource(mediaStreams: [main]), scope: scope).audioStreamIndex == nil)
-        #expect(memory.hasUnavailableSelection(for: next, source: MediaSource(mediaStreams: [main]), scope: scope))
+        let unavailable = memory.resolve(request: PlaybackRequest(item: next), item: next, source: MediaSource(mediaStreams: [main]), baseSelection: .none, scope: scope)
+        #expect(unavailable.selection.audioStreamIndex == nil)
+        #expect(unavailable.hasUnavailableSelection)
 
         let generatedBefore = MediaStreamInfo(displayTitle: "English - AAC - Stereo", index: 3, language: "eng", type: .audio)
         let generatedAfter = MediaStreamInfo(displayTitle: "English - AC3 - 5.1", index: 12, language: "eng", type: .audio)

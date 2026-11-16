@@ -262,8 +262,9 @@ failure. Explicit Sign Out retains its separate deletion policy.
 
 ### Navigation
 
-Navigation divergence is isolated in `Platform/RootContainer.swift`: `TabView`
-(compact iPhone, tvOS) vs `NavigationSplitView` (iPad, macOS, visionOS). Item and library
+Navigation divergence is isolated in `Platform/RootContainer.swift`: compact-width
+iOS uses `TabView`; tvOS and visionOS use `TabView` with `.sidebarAdaptable`;
+regular-width iOS and macOS use `NavigationSplitView`. Item and library
 navigation destinations are registered once at each `NavigationStack` root via
 `.gusItemDestinations()`; feature views push typed `LibraryRef`/`ItemRef` values. Fixed
 app destinations use `AppRoute` + `AppNavigationModel` for `gus://home`, `gus://search`,
