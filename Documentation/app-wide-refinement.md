@@ -22,6 +22,9 @@ page deduplication. Gus retains AVPlayer/AVKit and current OS 26 fallbacks.
   AVKit keeps its transport area. Other platforms retain their existing dismissal.
   tvOS explicitly fills the presentation viewport during preparation and native playback;
   the native UI regression checks its bounds before opening Playback Details.
+- tvOS dismissal and navigation returns request the saved focus target immediately.
+  One native fallback may reissue that request; a subsequent different choice wins.
+  Playlist and collection tasks return to their More opener using the same action order.
 - Foreground refresh retains usable content. Query generation rejects stale
   results. Full-content views and queues continue pages and deduplicate by scoped
   media identity; intentional preview limits remain explicit. Advertised totals

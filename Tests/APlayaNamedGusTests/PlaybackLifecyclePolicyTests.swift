@@ -6,7 +6,7 @@ import Testing
 #if os(iOS) || os(tvOS) || os(visionOS)
     import UIKit
 #endif
-#if GUS_PLAYBACK_SOAK && os(macOS)
+#if GUS_PLAYBACK_SOAK && (os(macOS) || (os(iOS) && targetEnvironment(simulator)))
     import Darwin
     import OSLog
 #endif
@@ -14,7 +14,7 @@ import Testing
 @MainActor
 @Suite("Playback lifecycle policies")
 struct PlaybackLifecyclePolicyTests {
-    #if GUS_PLAYBACK_SOAK && os(macOS)
+    #if GUS_PLAYBACK_SOAK && (os(macOS) || (os(iOS) && targetEnvironment(simulator)))
         /// Explicit opt-in only. Run this case alone so RSS includes no parallel tests.
         @Test("native audio wall-clock soak")
         func nativeAudioWallClockSoak() async throws {
@@ -22,7 +22,18 @@ struct PlaybackLifecyclePolicyTests {
                 Issue.record("GUS_PLAYBACK_SOAK_SECONDS must be a finite duration of at least one second")
                 return
             }
-            let output = URL(fileURLWithPath: ProcessInfo.processInfo.environment["GUS_PLAYBACK_SOAK_OUTPUT"] ?? "/private/tmp/gus-native-playback-soak.json")
+            #if os(iOS) && targetEnvironment(simulator)
+                let requestedAt = Date()
+                let initialState = UIApplication.shared.applicationState.rawValue
+                let active = await ActivePlaybackTestHostPrerequisite().wait(timeout: .seconds(15))
+                let observedAt = Date()
+                let observedState = UIApplication.shared.applicationState.rawValue
+                print("Simulator soak host prerequisite: requested=\(requestedAt) initialState=\(initialState) observed=\(observedAt) observedState=\(observedState) active=\(active)")
+                try #require(active, "Simulator playback host must become active before the soak; requested=\(requestedAt), observed=\(observedAt), initialState=\(initialState), observedState=\(observedState)")
+            #endif
+            // The test host owns this path on every platform. The result attachment
+            // remains authoritative; runners never need access to the app container.
+            let output = FileManager.default.temporaryDirectory.appendingPathComponent("gus-native-playback-soak-\(UUID().uuidString).json")
             let provider = FakeMediaProviderSession(capabilities: ProviderCapabilities())
             let item = MediaItem(id: "native-soak", type: .audio)
             provider.itemHandler = { _ in item }
@@ -91,6 +102,7 @@ struct PlaybackLifecyclePolicyTests {
             #expect(report.starts == report.stops)
             #expect(report.failedReports == 0)
             #expect(report.timedOutReports == 0)
+            #expect(report.playersStillReferencedAfterClose == 0)
             if seconds >= 60 {
                 #expect(report.createdPlayers > 1)
             }
@@ -145,7 +157,7 @@ struct PlaybackLifecyclePolicyTests {
     @Test("thirty real native open/close cycles retire every item and report boundary")
     func nativeOpenCloseCycles() async throws {
         #if os(iOS) || os(tvOS) || os(visionOS)
-            // Physical QA opts into a measured foreground precondition; production
+            // Explicit native checks opt into a measured foreground precondition; production
             // background/Now Playing eligibility is deliberately not changed.
             if ProcessInfo.processInfo.environment["GUS_REQUIRE_ACTIVE_PLAYBACK_TEST_HOST"] == "1" {
                 let requestedAt = Date()
@@ -154,7 +166,7 @@ struct PlaybackLifecyclePolicyTests {
                 let observedAt = Date()
                 let observedState = UIApplication.shared.applicationState.rawValue
                 print("Native playback host prerequisite: requested=\(requestedAt) initialState=\(initialState) observed=\(observedAt) observedState=\(observedState) active=\(active)")
-                try #require(active, "Physical playback host must become active before native activation; requested=\(requestedAt), observed=\(observedAt), initialState=\(initialState), observedState=\(observedState)")
+                try #require(active, "Playback test host must become active before native activation; requested=\(requestedAt), observed=\(observedAt), initialState=\(initialState), observedState=\(observedState)")
             }
         #endif
         let provider = FakeMediaProviderSession(capabilities: ProviderCapabilities())

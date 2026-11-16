@@ -844,7 +844,9 @@ final class GusAuthenticatedUITests: XCTestCase {
             XCUIRemote.shared.press(.up)
             // AVKit delegates focus to a full-viewport container, so its tab
             // strip uses native remote movement rather than SwiftUI frame matching.
-            XCTAssertTrue(app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", "Playback Details")).firstMatch.waitForExistence(timeout: 5))
+            // Its visibly rendered tab titles are not exposed as labeled AX nodes.
+            XCTAssertTrue(infoMenu.exists, app.debugDescription)
+            capture(app, "tv-native-info-tabs")
             XCUIRemote.shared.press(.right)
             XCUIRemote.shared.press(.select)
             XCTAssertTrue(app.staticTexts["How this video is being played"].waitForExistence(timeout: 5), app.debugDescription)

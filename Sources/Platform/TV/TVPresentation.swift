@@ -217,9 +217,7 @@ extension View {
 
     /// Share focus order across the primary action, common icons, overflow and synopsis.
     func gusTVDetailActionFocus(id: String, item: MediaItem, initial: Bool = false) -> some View {
-        var ids = ["play", "version", "nextUp", "favorite"]
-        ids += ["more", "synopsis"]
-        return gusTVFocus(id: id, section: "detail:" + ItemRef(item: item).id, ids: ids, initial: initial, item: item)
+        gusTVFocus(id: id, section: "detail:" + ItemRef(item: item).id, ids: TVDetailActionOrder.ids, initial: initial, item: item)
     }
 }
 
@@ -267,15 +265,18 @@ extension View {
                 .focusedValue(\.gusTVMedia, item)
                 .focusedValue(\.gusTVEntry, entry)
                 .task(id: root.tvFocus.restorationRequest(context: context)) {
+                    let request = root.tvFocus.restorationRequest(context: context)
                     // Realize the native link before requesting a saved focus target.
                     await Task.yield()
-                    guard !Task.isCancelled else { return }
-                    if root.tvFocus.restoredID(section: section, context: context, ids: ids, initial: initial) == id {
-                        focused = false
-                        await Task.yield()
-                        guard !Task.isCancelled else { return }
-                        focused = true
-                    }
+                    guard !Task.isCancelled,
+                          root.tvFocus.restorationRequest(context: context) == request,
+                          root.tvFocus.restoredID(section: section, context: context, ids: ids, initial: initial) == id else { return }
+                    focused = false
+                    await Task.yield()
+                    guard !Task.isCancelled,
+                          root.tvFocus.restorationRequest(context: context) == request,
+                          root.tvFocus.restoredID(section: section, context: context, ids: ids, initial: initial) == id else { return }
+                    focused = true
                 }
                 .onChange(of: focused) { _, value in
                     guard value, let index = ids.firstIndex(of: id) else { return }
@@ -304,7 +305,7 @@ extension View {
     func restoreTVDetailFocus(item: MediaItem) {
         #if os(tvOS)
             let context = "detail:" + ItemRef(item: item).id
-            tvFocus.remember(id: "more", index: 3, section: context, context: context)
+            tvFocus.remember(id: TVDetailActionOrder.moreID, index: TVDetailActionOrder.moreIndex, section: context, context: context)
             tvFocus.requestRestoration(context: context)
         #endif
     }

@@ -82,8 +82,11 @@ struct ItemDetailView: View {
                 }
             } message: { Text("Choose where playback should begin in this version. Versions may have different timelines.") }
             .playerPresentation(item: $playerItem)
-            .gusTVTask(isPresented: $addingToCollection) { NavigationStack { AddToMediaCollectionView(item: store?.item ?? item) } }
-            .gusTVTask(isPresented: $addingToPlaylist, onDismiss: { navigationState.restoreTVDetailFocus(item: item) }) {
+            .gusTVTask(isPresented: $addingToCollection, onDismiss: { navigationState.restoreTVDetailFocus(item: store?.item ?? item) }) {
+                NavigationStack { AddToMediaCollectionView(item: store?.item ?? item) }
+                    .gusTVExitTask { addingToCollection = false }
+            }
+            .gusTVTask(isPresented: $addingToPlaylist, onDismiss: { navigationState.restoreTVDetailFocus(item: store?.item ?? item) }) {
                 NavigationStack { AddToVideoPlaylistView(item: store?.item ?? item) }
                     .gusTVExitTask { addingToPlaylist = false }
             }
