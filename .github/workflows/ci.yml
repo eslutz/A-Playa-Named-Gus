@@ -135,12 +135,15 @@ jobs:
           - name: macOS
             destination: platform=macOS,arch=arm64
           - name: tvOS
-            destination: generic/platform=tvOS Simulator
+            simulator_platform: tvOS
+            simulator_sdk: appletvsimulator
           - name: visionOS
-            destination: generic/platform=visionOS Simulator
+            simulator_platform: visionOS
+            simulator_sdk: xrsimulator
           - name: watchOS
             scheme: Gus watchOS
-            destination: generic/platform=watchOS Simulator
+            simulator_platform: watchOS
+            simulator_sdk: watchsimulator
 
     steps:
       - name: Require successful change classification
@@ -192,11 +195,33 @@ jobs:
         if: needs.changes.outputs.full == 'true'
         run: python3 Scripts/run-warning-free.py xcodebuild -onlyUsePackageVersionsFromResolvedFile -resolvePackageDependencies -project 'A Playa Named Gus.xcodeproj' -scheme 'A Playa Named Gus'
 
+      - name: Pick concrete build simulator
+        id: build-sim
+        if: needs.changes.outputs.full == 'true' && matrix.simulator_platform
+        env:
+          SIMULATOR_PLATFORM: ${{ matrix.simulator_platform }}
+          SIMULATOR_SDK: ${{ matrix.simulator_sdk }}
+        run: |
+          set -euo pipefail
+          sdk_version="$(xcrun --sdk "$SIMULATOR_SDK" --show-sdk-version)"
+          destination="$(xcrun simctl list --json | python3 Scripts/select-simulator.py --platform "$SIMULATOR_PLATFORM" --sdk-version "$sdk_version")"
+          echo "destination=$destination" >> "$GITHUB_OUTPUT"
+
       - name: Build ${{ matrix.name }}
         if: needs.changes.outputs.full == 'true'
         # Compile validation does not require production capability profiles.
         # Xcode Cloud owns provisioned distribution signing and release tests.
-        run: python3 Scripts/run-warning-free.py xcodebuild -project 'A Playa Named Gus.xcodeproj' -scheme '${{ matrix.scheme || 'A Playa Named Gus' }}' -destination '${{ matrix.destination }}' CODE_SIGNING_ALLOWED=NO build
+        run: |
+          set -euo pipefail
+          destination='${{ matrix.destination }}'
+          if [ -n '${{ matrix.simulator_platform }}' ]; then
+            destination='${{ steps.build-sim.outputs.destination }}'
+          fi
+          if [ -z "$destination" ]; then
+            echo "A concrete build destination is required."
+            exit 1
+          fi
+          python3 Scripts/run-warning-free.py xcodebuild -project 'A Playa Named Gus.xcodeproj' -scheme '${{ matrix.scheme || 'A Playa Named Gus' }}' -destination "$destination" CODE_SIGNING_ALLOWED=NO build
 
       - name: Capture simulator state after failure
         if: needs.changes.outputs.full == 'true' && failure()
@@ -312,7 +337,7 @@ jobs:
         run: |
           set -euo pipefail
           sdk_version="$(xcrun --sdk appletvsimulator --show-sdk-version)"
-          destination="$(xcrun simctl list --json | python3 Scripts/select-simulator.py --sdk-version "$sdk_version")"
+          destination="$(xcrun simctl list --json | python3 Scripts/select-simulator.py --platform tvOS --sdk-version "$sdk_version")"
           echo "destination=$destination" >> "$GITHUB_OUTPUT"
 
       - name: Pick visionOS simulator
@@ -320,15 +345,9 @@ jobs:
         if: needs.changes.outputs.full == 'true' && matrix.name == 'visionOS'
         run: |
           set -euo pipefail
-          sim_id="$(
-            xcrun simctl list devices available |
-              awk -F '[()]' '/Apple Vision Pro/ { id=$2 } END { print id }'
-          )"
-          if [ -z "$sim_id" ]; then
-            echo "No available Apple Vision Pro simulator found"
-            exit 1
-          fi
-          echo "destination=platform=visionOS Simulator,id=$sim_id" >> "$GITHUB_OUTPUT"
+          sdk_version="$(xcrun --sdk xrsimulator --show-sdk-version)"
+          destination="$(xcrun simctl list --json | python3 Scripts/select-simulator.py --platform visionOS --sdk-version "$sdk_version")"
+          echo "destination=$destination" >> "$GITHUB_OUTPUT"
 
       - name: Test ${{ matrix.name }}
         if: needs.changes.outputs.full == 'true'

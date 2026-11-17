@@ -212,6 +212,8 @@ automated build verification. (Covers priority: *polish & testing*.)
   diagnostics. Live cryptex-preferred duplicate mounts are a temporal risk signal,
   also seen at the start of successful jobs; this mitigation is not a proven image fix
   ([upstream investigation](https://github.com/actions/runner-images/issues/14946)).
+  TV, Watch and Vision compile lanes select available simulator UUIDs compatible
+  with their SDKs instead of generic destinations; these remain build-only actions.
   The refinement PR requires all 14 current-head checks; the
   earlier results below do not qualify it. Historical run `38192282611` at `edd06e6636cd32b877622dbcb4ccb34524a1b3c1` passed **13/13 jobs**:
   six builds, five unit lanes, lint and docs. Each unit lane passed 288 Swift Testing

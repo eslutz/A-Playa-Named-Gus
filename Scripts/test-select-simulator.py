@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Offline regressions for CI's tvOS simulator selection."""
+"""Offline regressions for CI simulator family and SDK selection."""
 import importlib.util
 from pathlib import Path
 import unittest
@@ -9,10 +9,10 @@ selector = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(selector)
 
 
-def fixture(versions):
+def fixture(versions, runtime_family="tvOS"):
     inventory = {"runtimes": [], "devices": {}}
     for number, (version, name) in enumerate(versions, 1):
-        identifier = "com.apple.CoreSimulator.SimRuntime.tvOS-" + version.replace(".", "-")
+        identifier = f"com.apple.CoreSimulator.SimRuntime.{runtime_family}-" + version.replace(".", "-")
         inventory["runtimes"].append({"identifier": identifier, "version": version, "isAvailable": True})
         inventory["devices"][identifier] = [{"name": name, "isAvailable": True, "udid": f"00000000-0000-0000-0000-{number:012d}"}]
     return inventory
@@ -61,6 +61,40 @@ class SimulatorSelectionTests(unittest.TestCase):
         inventory["runtimes"][0]["identifier"] = "com.apple.CoreSimulator.SimRuntime.iOS-27-2"
         with self.assertRaises(ValueError):
             selector.select_destination(inventory)
+
+    def test_watch_uses_latest_available_sdk_compatible_uuid(self):
+        inventory = fixture([("26.5", "Apple Watch Series 11"), ("27.2", "Apple Watch Series 12"), ("27.3", "Apple Watch Ultra 4")], "watchOS")
+        self.assertEqual(selector.select_destination(inventory, "27.2", "watchOS"), "platform=watchOS Simulator,id=00000000-0000-0000-0000-000000000002")
+        with self.assertRaises(ValueError):
+            selector.select_destination(fixture([("27.3", "Apple Watch")], "watchOS"), "27.2", "watchOS")
+
+    def test_vision_maps_xros_runtime_to_visionos_destination(self):
+        inventory = fixture([("26.5", "Apple Vision Pro"), ("27.2", "Apple Vision Pro")], "xrOS")
+        self.assertEqual(selector.select_destination(inventory, "27.2", "visionOS"), "platform=visionOS Simulator,id=00000000-0000-0000-0000-000000000002")
+        with self.assertRaises(ValueError):
+            selector.select_destination(fixture([("27.2", "Apple Vision Pro")], "visionOS"), "27.2", "visionOS")
+
+    def test_watch_rejects_other_runtime_families_and_device_types(self):
+        for family, name in (("tvOS", "Apple Watch"), ("iOS", "Apple Watch"), ("watchOS", "Apple TV")):
+            with self.subTest(family=family, name=name), self.assertRaises(ValueError):
+                selector.select_destination(fixture([("27.2", name)], family), "27.2", "watchOS")
+
+    def test_watch_unavailable_old_runtime_and_invalid_uuid_are_excluded(self):
+        inventory = fixture([("26.5", "Apple Watch"), ("27.2", "Apple Watch"), ("27.3", "Apple Watch")], "watchOS")
+        inventory["runtimes"][1]["isAvailable"] = False
+        inventory["devices"][inventory["runtimes"][2]["identifier"]][0]["isAvailable"] = False
+        self.assertTrue(selector.select_destination(inventory, "27.3", "watchOS").endswith("000000000001"))
+        inventory["devices"][inventory["runtimes"][0]["identifier"]][0]["udid"] = "invalid"
+        with self.assertRaises(ValueError):
+            selector.select_destination(inventory, "27.3", "watchOS")
+        with self.assertRaises(ValueError):
+            selector.select_destination(fixture([("25.0", "Apple Watch")], "watchOS"), "27.2", "watchOS")
+
+    def test_invalid_platform_or_sdk_has_no_generic_fallback(self):
+        with self.assertRaises(ValueError):
+            selector.select_destination(fixture([]), "27.2", "iOS")
+        with self.assertRaises(ValueError):
+            selector.select_destination(fixture([]), "invalid", "watchOS")
 
 
 if __name__ == "__main__":
