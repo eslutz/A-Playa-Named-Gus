@@ -35,7 +35,7 @@ constrain *how* each item is built.
 
 ## Playback reliability
 
-- [~] Route standalone transport-stream sources through HLS and surface AVPlayer startup failures in retained diagnostics. Local stream-format and unit regressions are separate from physical Apple TV acceptance; a second stalled HLS session still requires a verified cause.
+- [~] Negotiate transport-stream video through segmented HLS while retaining compatible MP4 direct delivery. Prefer fMP4 HLS and advertise an H.264 TS HLS option for Jellyfin Live TV compatibility mode. Preserve startup-failure diagnostics, bounded known-resource cleanup and the no-retry boundary for allocating requests; native continuous output and started-live Stop response-loss acceptance remain separate gates.
 
 ## October 2026 UI remediation
 
@@ -290,8 +290,9 @@ automated build verification. (Covers priority: *polish & testing*.)
   (Hi10P/interlaced H.264 excluded via codec conditions); a shared container policy
   routes `hev1` MP4 originals through lossless HLS/fMP4 remuxing to `hvc1`, matching
   offline-download eligibility and tag normalization. Physical Idle Hands playback
-  acceptance remains pending. The transcode target is
-  HEVC-preferred fMP4 HLS with 8-channel audio and `enableSubtitlesInManifest` (text
+  acceptance remains pending. The preferred transcode target is
+  HEVC-capable fMP4 HLS, with H.264 TS HLS available for Live TV compatibility mode.
+  Both profiles retain up to 8-channel audio and `enableSubtitlesInManifest` (text
   subs ride the manifest, only bitmap subs burn in); `AVPlayerItem.externalMetadata`
   feeds the system title/info chrome (sans macOS, which lacks the API);
   `updatesNowPlayingInfoCenter = false` on iOS so `NowPlayingController` is the single
@@ -628,7 +629,7 @@ milestone once it becomes the active focus and is ready to carry a hard acceptan
 | Music library support | `[~]` In app; genre browse + live-library validation remain |
 | Books & audiobooks | `[~]` In app; visionOS reader blocked on an upstream Readium fix |
 | Photos | `[~]` In app; favorites + casting remain |
-| Live TV & DVR | `[~]` In app; full EPG grid + tuner-equipped validation remain |
+| Live TV & DVR | `[~]` In app; full EPG grid and configured Live TV playback/release acceptance remain |
 | CarPlay audio companion | `[~]` In app; entitlement + Siri intents + vehicle test remain |
 | SharePlay | `[x]` Native Group Activities integration with item-detail system launch |
 | Family safety controls & age assurance | `[~]` In app; Declared Age Range entitlement wired, device verification remains |
@@ -688,7 +689,10 @@ milestone once it becomes the active focus and is ready to carry a hard acceptan
  including tvOS focus; all three roots (tabs, visionOS sidebar, split view) render the
  customized sections dynamically; removed categories drop gracefully and newly available
  categories append visible; `gus://` routes map onto
- the customized layout with a Home fallback when Libraries is hidden.)*
+ the customized layout with a Home fallback when Libraries is hidden. visionOS keeps
+ up to eight sections direct; above eight it shows the first seven in resolved order
+ plus More, retaining each section's navigation history. Removing overflow returns a
+ selected More root to the first direct section.)*
 
 - [x] **Content deep links & system integration.** Deep-link individual library items and
  surface them through the system features that depend on it. *Acceptance:* `gus://item/
@@ -774,8 +778,9 @@ milestone once it becomes the active focus and is ready to carry a hard acceptan
  the server has no tuner/DVR configured. *(Started: `LiveTVView` serves channels with
  now-airing info, recordings, and cancellable scheduled recordings behind a Live TV
  availability probe, with a clear no-tuner state; channel playback rides the normal
- playback pipeline. A full EPG grid and recording creation remain; validation needs a
- tuner-equipped server.)*
+ playback pipeline. A full EPG grid and recording creation remain. Client playback
+ and resource-release validation can use a configured local M3U source; hardware-tuner
+ compatibility is a separate scope.)*
 
 - [~] **Family safety controls and age assurance.** Add parent-friendly content controls
  using Apple-provided safety APIs rather than a custom age-verification or child-profile

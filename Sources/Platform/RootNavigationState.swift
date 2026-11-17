@@ -233,6 +233,18 @@ final class RootNavigationState {
         return Array((initial + ids.filter { !initial.contains($0) }).prefix(3))
     }
 
+    #if os(visionOS)
+        /// visionOS supports eight native tabs; reserve the last for More only when needed.
+        static func visionDirectSectionIDs(_ ids: [String]) -> [String] {
+            ids.count > 8 ? Array(ids.prefix(7)) : ids
+        }
+
+        func reconcileVisionMoreSelection(sectionIDs: [String]) {
+            guard selectedSectionID == Self.moreID, sectionIDs.count <= 8 else { return }
+            selectedSectionID = sectionIDs.first ?? NavigationSectionPreference.homeID
+        }
+    #endif
+
     func adopt(_ route: AppRoute) {
         switch route {
         case .home: selectedSectionID = NavigationSectionPreference.homeID

@@ -135,6 +135,9 @@ private struct TabRootView: View {
         #if os(iOS)
             let ids = RootNavigationState.iPhoneDirectSectionIDs(sections.map(\.id), usesSavedOrder: preferences.hasSavedPreferences(serverID: session.server.id, userID: session.user.id))
             return ids.compactMap { id in sections.first { $0.id == id } }
+        #elseif os(visionOS)
+            let ids = RootNavigationState.visionDirectSectionIDs(sections.map(\.id))
+            return ids.compactMap { id in sections.first { $0.id == id } }
         #else
             return sections
         #endif
@@ -146,7 +149,13 @@ private struct TabRootView: View {
 
     private var selection: Binding<String> {
         Binding(get: {
-            (direct.contains { $0.id == state.selectedSectionID } || state.selectedSectionID == "gus.tv.search" || state.selectedSectionID == RootNavigationState.searchID) ? state.selectedSectionID : RootNavigationState.moreID
+            #if os(visionOS)
+                // Keep the native selection valid during the same update that removes More.
+                if state.selectedSectionID == RootNavigationState.moreID, overflow.isEmpty {
+                    return direct.first?.id ?? NavigationSectionPreference.homeID
+                }
+            #endif
+            return (direct.contains { $0.id == state.selectedSectionID } || state.selectedSectionID == "gus.tv.search" || state.selectedSectionID == RootNavigationState.searchID) ? state.selectedSectionID : RootNavigationState.moreID
         }, set: { state.selectedSectionID = $0 })
     }
 
@@ -179,11 +188,19 @@ private struct TabRootView: View {
                 }
             #endif
         }
+        #if os(visionOS)
+        .onChange(of: sections.map(\.id), initial: true) { _, ids in
+            state.reconcileVisionMoreSelection(sectionIDs: ids)
+        }
+        #endif
         #if os(iOS)
         .tabViewSearchActivation(.searchTabSelection)
         .onChange(of: search.text) { _, _ in search.updateQuery() }
         #endif
         .onChange(of: state.selectedSectionID) { _, id in
+            #if os(visionOS)
+                state.reconcileVisionMoreSelection(sectionIDs: sections.map(\.id))
+            #endif
             if id == RootNavigationState.searchID {
                 state.searchState(for: id).isPresented = true
             }

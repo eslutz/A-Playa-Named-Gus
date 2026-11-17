@@ -272,7 +272,13 @@ and `gus://settings`, shared by URL opens, menu commands, and the tvOS Top Shelf
 All section stacks bind their paths to `RootNavigationState`. Compact iPhone navigation
 uses three content tabs plus an explicit More list and a native Search tab, keeping
 one stack per section. The default content tabs are Home, Movies and Series when
-available; a saved account-specific order keeps its first three visible sections. Settings/Downloads children use the typed `AppScreen` destinations.
+available; a saved account-specific order keeps its first three visible sections.
+visionOS shows all configured sections directly when there are at most eight; above
+eight it shows the first seven in resolved order plus More. Overflow uses the same
+section selection and navigation histories, and Search follows the configured order.
+When More becomes unnecessary, its selection returns to the first direct section
+without clearing those histories. Settings/Downloads children use the typed
+`AppScreen` destinations.
 
 **Content deep links** (`gus://item/<id>`, `gus://play/<id>` — `Models/ContentLink.swift`)
 ride `AppNavigationModel` via a consume-once pending-link; `Platform/ContentLinkHandler.swift`

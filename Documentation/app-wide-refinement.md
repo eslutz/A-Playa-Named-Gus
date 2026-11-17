@@ -67,6 +67,11 @@ page deduplication. Gus retains AVPlayer/AVKit and current OS 26 fallbacks.
   minimum control bounds and system button treatment across main platforms.
   Standard hero copy uses opaque backing at every width so artwork and text height
   cannot reduce its foreground/background contrast.
+- visionOS root navigation respects the native eight-tab limit. Up to eight visible
+  sections remain direct; larger configurations show the first seven in resolved
+  order plus More. Overflow preserves section selection and navigation histories;
+  Search follows the configured order. If More becomes unnecessary while selected,
+  the root returns to the first direct section without resetting those histories.
 - Version changes ask whether to start over or resume at the saved timestamp.
   A retained start choice expires after matching actual playback checkpoints it;
   canceled preparation preserves it. Detail, Watch and CarPlay derive the next
