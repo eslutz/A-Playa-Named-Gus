@@ -2,6 +2,7 @@ import SwiftUI
 
 /// Full-width synopsis and adaptive, roomy metadata cards.
 struct AboutCardsView: View {
+    @Environment(SessionStore.self) private var session
     let item: MediaItem
     let posterURL: URL?
     @State private var showsFullSynopsis = false
@@ -21,13 +22,8 @@ struct AboutCardsView: View {
                     }
                     .tvFocusSection()
                 }
-                ViewThatFits(in: .horizontal) {
-                    HStack(alignment: .top, spacing: 32) {
-                        informationCards.frame(minWidth: 320, maxWidth: .infinity)
-                    }
-                    VStack(alignment: .leading, spacing: 24) {
-                        informationCards
-                    }
+                AdaptiveStack(horizontalMinimumWidth: 320 + 32 + 320, horizontalAlignment: .top, horizontalSpacing: 32, verticalSpacing: 24) { horizontal in
+                    informationCards(horizontal: horizontal)
                 }
             }
             .accessibilityElement(children: .contain)
@@ -59,8 +55,10 @@ struct AboutCardsView: View {
         }
     }
 
-    @ViewBuilder private var informationCards: some View {
-        posterSummaryCard.gusTVFocusableInfo()
+    @ViewBuilder private func informationCards(horizontal: Bool) -> some View {
+        posterSummaryCard
+            .frame(minWidth: horizontal ? 320 : nil, maxWidth: .infinity, alignment: .topLeading)
+            .gusTVFocusableInfo()
         DetailInfoCard(title: "Media") {
             if let runtime = item.runtimeText {
                 LabeledContent("Duration", value: runtime)
@@ -72,13 +70,15 @@ struct AboutCardsView: View {
                 LabeledContent("Container", value: container.uppercased().replacingOccurrences(of: ",", with: ", "))
                     .fixedSize(horizontal: false, vertical: true)
             }
-        }.gusTVFocusableInfo()
+        }
+        .frame(minWidth: horizontal ? 320 : nil, maxWidth: .infinity, alignment: .topLeading)
+        .gusTVFocusableInfo()
     }
 
     private var posterSummaryCard: some View {
         DetailInfoCard(title: LocalizedStringKey(item.displayTitle)) {
             HStack(alignment: .top, spacing: 12) {
-                ArtworkTile(url: posterURL, placeholderSymbol: item.artworkPlaceholderSymbol)
+                ArtworkTile(url: posterURL, placeholderSymbol: item.artworkPlaceholderSymbol, fallbackURLs: session.mediaProvider.artworkURLs(for: item, request: .init(role: .poster, maxWidth: 360)))
                     .frame(width: AboutCardMetrics.posterSize.width, height: AboutCardMetrics.posterSize.height)
                     .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
                     .accessibilityHidden(true)

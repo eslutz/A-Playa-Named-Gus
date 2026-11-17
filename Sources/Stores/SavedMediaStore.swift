@@ -3,20 +3,20 @@ import CryptoKit
 import Foundation
 import Observation
 
-/// Local mutations and their upload intent share a single atomic file. CloudKit
-/// is a replica: unavailable iCloud never prevents local playlist editing.
+/// Supplemental playback intent and its upload journal share one atomic file.
+/// Jellyfin owns playlist names, membership and order; iCloud replicates Gus intent.
 @MainActor
 @Observable
-final class VideoPlaylistsStore {
-    static let shared = VideoPlaylistsStore()
+final class SavedMediaStore {
+    static let shared = SavedMediaStore()
     private(set) var revision = 0
     private(set) var identityRevision = 0
     private(set) var identityKey = "local"
     /// Binds pre-sync local caches to the first verified account only, including
     /// lazy loads after relaunch. Later accounts must never claim those caches.
-    private(set) var localMigrationIdentityKey: String?
-    var canMigrateLocalData: Bool {
-        localMigrationIdentityKey == identityKey
+    private(set) var localClaimIdentityKey: String?
+    var canClaimLocalData: Bool {
+        localClaimIdentityKey == identityKey
     }
 
     private(set) var errorMessage: String?
@@ -40,6 +40,24 @@ final class VideoPlaylistsStore {
         var pending: Set<String> = []
         var engineState: CKSyncEngine.State.Serialization?
         var systemFields: [String: Data] = [:]
+
+        private enum CodingKeys: String, CodingKey {
+            case schemaVersion, deviceID, clock, records, pending, engineState, systemFields
+        }
+
+        init() {}
+
+        init(from decoder: Decoder) throws {
+            let values = try decoder.container(keyedBy: CodingKeys.self)
+            schemaVersion = try values.decode(Int.self, forKey: .schemaVersion)
+            deviceID = try values.decode(String.self, forKey: .deviceID)
+            clock = try values.decode(UInt64.self, forKey: .clock)
+            records = try values.decode([String: CurrentSavedMediaRecord].self, forKey: .records).compactMapValues(\.record)
+            let supported = Set(records.keys)
+            pending = try values.decode(Set<String>.self, forKey: .pending).intersection(supported)
+            engineState = try values.decodeIfPresent(CKSyncEngine.State.Serialization.self, forKey: .engineState)
+            systemFields = try values.decode([String: Data].self, forKey: .systemFields).filter { supported.contains($0.key) }
+        }
 
         /// CloudKit deletion is also an explicit removal of saved intent. Keep
         /// a local tombstone so a still-cached queue entry cannot migrate back
@@ -74,7 +92,7 @@ final class VideoPlaylistsStore {
     private var transport: SavedMediaSyncEngine?
     @ObservationIgnored private nonisolated(unsafe) var accountObserver: NSObjectProtocol?
 
-    init(directory: URL = VideoPlaylistsStore.defaultDirectory(), syncEnabled: Bool = UserDefaults.standard.object(forKey: "savedMediaSyncEnabled") as? Bool ?? true) {
+    init(directory: URL = SavedMediaStore.defaultDirectory(), syncEnabled: Bool = UserDefaults.standard.object(forKey: "savedMediaSyncEnabled") as? Bool ?? true) {
         self.directory = directory
         self.syncEnabled = syncEnabled
         // Keep the last account's data local while offline, but never upload it
@@ -84,10 +102,10 @@ final class VideoPlaylistsStore {
         {
             identityKey = identity
         }
-        if let data = try? Data(contentsOf: localMigrationIdentityURL()),
+        if let data = try? Data(contentsOf: localClaimIdentityURL()),
            let identity = try? JSONDecoder().decode(String.self, from: data)
         {
-            localMigrationIdentityKey = identity
+            localClaimIdentityKey = identity
         }
         accountObserver = NotificationCenter.default.addObserver(forName: .CKAccountChanged, object: nil, queue: .main) { [weak self] _ in
             Task { @MainActor [weak self] in self?.cloudAccountNotification() }
@@ -126,12 +144,6 @@ final class VideoPlaylistsStore {
         }
     }
 
-    func playlists(scope: AccountScope) -> [VideoPlaylist] {
-        envelope.records.values.filter { $0.scope == scope && $0.kind == .playlist && $0.value("serverBacked", as: Bool.self) != true }
-            .compactMap { record in UUID(uuidString: record.id).flatMap { playlist(id: $0, scope: scope) } }
-            .sorted { $0.name == $1.name ? $0.id.uuidString < $1.id.uuidString : $0.name.localizedStandardCompare($1.name) == .orderedAscending }
-    }
-
     /// Server lists synchronize only Gus playback intent. Jellyfin remains the
     /// sole authority for names, membership and ordering.
     @discardableResult
@@ -156,7 +168,7 @@ final class VideoPlaylistsStore {
         return (envelope.records["cursor-" + key]?.value("cursor"), record.value("queued") ?? false, record.value("activity"))
     }
 
-    /// Atomically restores imported playback intent without inventing activity.
+    /// Atomically stores native-list playback intent without inventing activity.
     @discardableResult
     func setServerPlaylistState(id: UUID, cursor: PlaylistCursor?, queued: Bool, activityAt: Date?, scope: AccountScope) -> Bool {
         load(scope: scope)
@@ -177,7 +189,7 @@ final class VideoPlaylistsStore {
     /// A local offline draft is assigned a Jellyfin identity after reconnecting.
     /// Copy only its Gus intent; names and entries are never written here.
     @discardableResult
-    func migrateServerPlaylistState(from oldID: UUID, to newID: UUID, scope: AccountScope) -> Bool {
+    func remapServerPlaylistState(from oldID: UUID, to newID: UUID, scope: AccountScope) -> Bool {
         guard oldID != newID else { return true }
         load(scope: scope)
         let oldKey = serverPlaylistKey(id: oldID, scope: scope)
@@ -191,7 +203,7 @@ final class VideoPlaylistsStore {
             try new.set("migratedFrom", value: oldID, revision: stamp)
             for key in ["serverBacked", "queued", "activity"] {
                 if let field = old.fields[key] {
-                    // Migration expresses this intent under its native identity;
+                    // Reconciliation expresses this intent under its native identity;
                     // a delayed registration default must not undo the copy.
                     new.fields[key] = SavedMediaField(revision: stamp, data: field.data)
                 }
@@ -209,135 +221,17 @@ final class VideoPlaylistsStore {
         "server-" + Self.digest(scope.serverID + "\u{0}" + scope.userID) + "-" + id.uuidString
     }
 
-    private func playlistRecordKey(id: UUID, scope: AccountScope) -> String {
-        let native = serverPlaylistKey(id: id, scope: scope)
-        return envelope.records[native]?.scope == scope ? native : id.uuidString
-    }
-
     func playlist(id: UUID, scope: AccountScope) -> VideoPlaylist? {
-        let nativeKey = serverPlaylistKey(id: id, scope: scope)
-        if envelope.records[nativeKey]?.scope == scope {
-            let state = serverPlaylistState(id: id, scope: scope)
-            return VideoPlaylist(id: id, name: "", scope: scope, entries: [], cursor: state.cursor, queued: state.queued, activityAt: state.activityAt)
-        }
-        guard let record = envelope.records[id.uuidString], record.scope == scope,
-              record.kind == .playlist, record.value("deleted", as: Bool.self) != true else { return nil }
-        let entries = entryRecords(id: id, scope: scope).compactMap { entry -> VideoPlaylistEntry? in
-            guard let id = UUID(uuidString: entry.id), let ref = entry.value("reference", as: SavedMediaReference.self), ref.scope == scope else { return nil }
-            return VideoPlaylistEntry(id: id, reference: ref.reference)
-        }
-        return VideoPlaylist(
-            id: id,
-            name: record.value("name") ?? "",
-            scope: scope,
-            entries: entries,
-            cursor: Self.repairedCursor(envelope.records["cursor-\(id)"]?.value("cursor"), orderedEntries: entryRecords(id: id, scope: scope, includingDeleted: true)),
-            queued: record.value("queued") ?? false,
-            activityAt: record.value("activity")
-        )
-    }
-
-    @discardableResult
-    func create(name: String, scope: AccountScope) -> UUID? {
-        let name = name.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !name.isEmpty else { return nil }
-        let id = UUID()
-        return mutate(scope: scope) { state, stamp in
-            var record = SavedMediaRecord(id: id.uuidString, scope: scope, kind: .playlist)
-            try record.set("name", value: name, revision: stamp)
-            try record.set("queued", value: false, revision: stamp)
-            Self.put(record, in: &state)
-        } ? id : nil
-    }
-
-    func rename(id: UUID, name: String, scope: AccountScope) {
-        let name = name.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !name.isEmpty else { return }
-        editPlaylist(id: id, scope: scope, key: "name", value: name)
-    }
-
-    func delete(id: UUID, scope: AccountScope) {
-        editPlaylist(id: id, scope: scope, key: "deleted", value: true)
-    }
-
-    @discardableResult
-    func add(item: MediaItem, to id: UUID, scope: AccountScope) -> Bool {
         load(scope: scope)
-        guard item.id != nil, item.type == .movie || item.type == .episode,
-              playlist(id: id, scope: scope) != nil else { return false }
-        let order = (entryRecords(id: id, scope: scope).last?.value("order", as: Double.self) ?? 0) + 1
-        return mutate(scope: scope) { state, stamp in
-            var record = SavedMediaRecord(id: UUID().uuidString, scope: scope, kind: .entry)
-            try record.set("playlist", value: id, revision: stamp)
-            try record.set("reference", value: SavedMediaReference(MediaReference(item: item, scope: scope)), revision: stamp)
-            try record.set("order", value: order, revision: stamp)
-            Self.put(record, in: &state)
-        }
-    }
-
-    func remove(entryID: UUID, from id: UUID, scope: AccountScope) {
-        guard entryRecords(id: id, scope: scope).contains(where: { $0.id == entryID.uuidString }) else { return }
-        let ordered = entryRecords(id: id, scope: scope, includingDeleted: true)
-        mutate(scope: scope) { state, stamp in
-            guard var record = state.records[entryID.uuidString] else { return }
-            try record.set("deleted", value: true, revision: stamp)
-            Self.put(record, in: &state)
-            if var cursorRecord = state.records["cursor-\(id)"],
-               let cursor = cursorRecord.value("cursor", as: PlaylistCursor.self), cursor.entryID == entryID
-            {
-                let repaired = Self.repairedCursor(cursor, orderedEntries: ordered.map { $0.id == record.id ? record : $0 })
-                try cursorRecord.set("cursor", value: repaired, revision: stamp)
-                Self.put(cursorRecord, in: &state)
-            }
-        }
-    }
-
-    @discardableResult
-    func replace(entryID: UUID, in playlistID: UUID, with item: MediaItem, scope: AccountScope) -> Bool {
-        guard item.id != nil, item.type == .movie || item.type == .episode,
-              entryRecords(id: playlistID, scope: scope).contains(where: { $0.id == entryID.uuidString }) else { return false }
-        return mutate(scope: scope) { state, stamp in
-            guard var record = state.records[entryID.uuidString] else { return }
-            try record.set("reference", value: SavedMediaReference(MediaReference(item: item, scope: scope)), revision: stamp)
-            Self.put(record, in: &state)
-        }
-    }
-
-    func move(entryID: UUID, in id: UUID, before: UUID?, scope: AccountScope) {
-        let entries = entryRecords(id: id, scope: scope)
-        guard let moving = entries.first(where: { $0.id == entryID.uuidString }), before != entryID else { return }
-        var rest = entries.filter { $0.id != entryID.uuidString }
-        let index: Int
-        if let before {
-            guard let found = rest.firstIndex(where: { $0.id == before.uuidString }) else { return }
-            index = found
-        } else {
-            index = rest.count
-        }
-        let lower = index > 0 ? rest[index - 1].value("order", as: Double.self) ?? 0 : (rest.first?.value("order", as: Double.self) ?? 0) - 2
-        let upper = index < rest.count ? rest[index].value("order", as: Double.self) ?? lower + 2 : lower + 2
-        let order = (lower + upper) / 2
-        mutate(scope: scope) { state, stamp in
-            if lower < order, order < upper {
-                var record = moving
-                try record.set("order", value: order, revision: stamp)
-                Self.put(record, in: &state)
-            } else {
-                // Floating point positions eventually run out of space. A rare
-                // deterministic rebalance retains entry IDs and deletion markers.
-                rest.insert(moving, at: index)
-                for (offset, var record) in rest.enumerated() {
-                    try record.set("order", value: Double(offset), revision: stamp)
-                    Self.put(record, in: &state)
-                }
-            }
-        }
+        guard envelope.records[serverPlaylistKey(id: id, scope: scope)]?.scope == scope else { return nil }
+        let state = serverPlaylistState(id: id, scope: scope)
+        return VideoPlaylist(id: id, name: "", scope: scope, entries: [], cursor: state.cursor, queued: state.queued, activityAt: state.activityAt)
     }
 
     func setQueued(id: UUID, queued: Bool, scope: AccountScope) {
         load(scope: scope)
         guard playlist(id: id, scope: scope) != nil else { return }
-        let playlistKey = playlistRecordKey(id: id, scope: scope)
+        let playlistKey = serverPlaylistKey(id: id, scope: scope)
         guard envelope.records[playlistKey]?.scope == scope else { return }
         _ = mutate(scope: scope) { state, stamp in
             guard var record = state.records[playlistKey] else { return }
@@ -363,7 +257,7 @@ final class VideoPlaylistsStore {
     func setCursor(id: UUID, entryID: UUID?, positionTicks: Int?, finished: Bool, scope: AccountScope, activity: Bool = true) -> Bool {
         guard playlist(id: id, scope: scope) != nil else { return false }
         return mutate(scope: scope) { state, stamp in
-            let playlistKey = playlistRecordKey(id: id, scope: scope)
+            let playlistKey = serverPlaylistKey(id: id, scope: scope)
             let key = "cursor-" + playlistKey
             var record = state.records[key] ?? SavedMediaRecord(id: key, scope: scope, kind: .cursor)
             try record.set("cursor", value: PlaylistCursor(entryID: entryID, positionTicks: positionTicks.map { max(0, $0) }, finished: finished), revision: stamp)
@@ -584,9 +478,9 @@ final class VideoPlaylistsStore {
             merged.clock = max(merged.clock, local.clock)
             try persist(merged)
             envelope = merged
-            if localMigrationIdentityKey == nil {
-                try JSONEncoder().encode(key).write(to: localMigrationIdentityURL(), options: .atomic)
-                localMigrationIdentityKey = key
+            if localClaimIdentityKey == nil {
+                try JSONEncoder().encode(key).write(to: localClaimIdentityURL(), options: .atomic)
+                localClaimIdentityKey = key
             }
         }
         try persistIdentity()
@@ -599,50 +493,6 @@ final class VideoPlaylistsStore {
         transport = nil
         previous?.stop()
         syncStatus = String(localized: "Saved on this device")
-    }
-
-    private func entryRecords(id: UUID, scope: AccountScope, includingDeleted: Bool = false) -> [SavedMediaRecord] {
-        envelope.records.values.filter {
-            $0.scope == scope && $0.kind == .entry && $0.value("playlist", as: UUID.self) == id && (includingDeleted || $0.value("deleted", as: Bool.self) != true)
-        }.sorted {
-            let a = $0.value("order", as: Double.self) ?? 0, b = $1.value("order", as: Double.self) ?? 0
-            return a == b ? $0.id < $1.id : a < b
-        }
-    }
-
-    /// Projection also repairs cursors whose entry was deleted by another
-    /// device, without generating an edit merely because a screen read it.
-    private static func repairedCursor(_ cursor: PlaylistCursor?, orderedEntries: [SavedMediaRecord]) -> PlaylistCursor? {
-        guard let cursor else { return nil }
-        let survivors = orderedEntries.filter { $0.value("deleted", as: Bool.self) != true }
-        guard !survivors.isEmpty else { return nil }
-        guard let current = cursor.entryID else { return cursor }
-        if survivors.contains(where: { $0.id == current.uuidString }) {
-            return cursor
-        }
-        let successor: SavedMediaRecord?
-        if let removedIndex = orderedEntries.firstIndex(where: { $0.id == current.uuidString }) {
-            successor = orderedEntries.dropFirst(removedIndex + 1).first { $0.value("deleted", as: Bool.self) != true }
-                ?? orderedEntries.prefix(removedIndex).last { $0.value("deleted", as: Bool.self) != true }
-        } else {
-            successor = survivors.first
-        }
-        guard let successor, let id = UUID(uuidString: successor.id) else { return nil }
-        return PlaylistCursor(entryID: id, positionTicks: 0, finished: false)
-    }
-
-    private func editPlaylist<T: Encodable>(id: UUID, scope: AccountScope, key: String, value: T, activity: Bool = false) {
-        load(scope: scope)
-        guard playlist(id: id, scope: scope) != nil else { return }
-        let recordKey = playlistRecordKey(id: id, scope: scope)
-        mutate(scope: scope) { state, stamp in
-            guard var record = state.records[recordKey] else { return }
-            try record.set(key, value: value, revision: stamp)
-            if activity {
-                try record.set("activity", value: Date(), revision: stamp)
-            }
-            Self.put(record, in: &state)
-        }
     }
 
     @discardableResult
@@ -674,7 +524,8 @@ final class VideoPlaylistsStore {
         try JSONEncoder().encode(identityKey).write(to: directory.appendingPathComponent("identity.json"), options: .atomic)
     }
 
-    private func localMigrationIdentityURL() -> URL {
+    /// This is the current identity-ownership marker, not a format importer.
+    private func localClaimIdentityURL() -> URL {
         directory.appendingPathComponent("local-migration-identity.json")
     }
 

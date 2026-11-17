@@ -32,6 +32,28 @@ struct CollectionStoreTests {
         #expect(store.relevant(to: "other").isEmpty)
     }
 
+    @Test func libraryMembershipSurvivesInFlightAndFailedRefresh() async {
+        let provider = FakeMediaProviderSession(capabilities: .init())
+        provider.collectionPageHandler = { _, _ in .init(items: [.init(id: "collection", type: .boxSet)], totalRecordCount: 1) }
+        provider.collectionItemHandler = { .init(id: $0, type: .boxSet) }
+        provider.collectionMembersHandler = { _, _, _ in .init(items: [.init(id: "movie", type: .movie)], totalRecordCount: 1) }
+        provider.itemsHandler = { _ in .init(items: [.init(id: "movie", type: .movie)], totalRecordCount: 1) }
+        let store = CollectionStore(session: session(provider))
+        await store.loadLibrary("library")
+        #expect(store.relevant(to: "library").map(\.id) == ["collection"])
+        var continuation: CheckedContinuation<MediaItemPage, Error>?
+        provider.collectionPageHandler = { _, _ in try await withCheckedThrowingContinuation { continuation = $0 } }
+        let refresh = Task { await store.load(force: true) }
+        while continuation == nil {
+            await Task.yield()
+        }
+        #expect(store.relevant(to: "library").map(\.id) == ["collection"])
+        continuation?.resume(throwing: GusError.offline)
+        await refresh.value
+        #expect(store.relevant(to: "library").map(\.id) == ["collection"])
+        #expect(store.errorMessage != nil)
+    }
+
     @Test func discoverySurvivesPermissionLookupFailure() async {
         let provider = FakeMediaProviderSession(capabilities: .init())
         provider.collectionCapabilitiesHandler = { _ in throw GusError.server("Permissions unavailable") }
@@ -56,6 +78,97 @@ struct CollectionStoreTests {
         #expect(store.errorMessage != nil)
     }
 
+    @Test("an uncertain collection create requires fresh server review before another write", arguments: [GusError.timeout, .offline, .network("Lost response")])
+    func uncertainCreateRequiresReview(failure: GusError) async {
+        let provider = FakeMediaProviderSession(capabilities: .init())
+        provider.collectionCapabilitiesHandler = { _ in .init(create: true) }
+        var writes = 0
+        var remote: [MediaItem] = []
+        provider.createCollectionHandler = { name, _ in
+            writes += 1
+            remote = [MediaItem(id: "created", name: name, type: .boxSet)]
+            throw failure
+        }
+        provider.collectionPageHandler = { _, _ in .init(items: remote, totalRecordCount: remote.count) }
+        provider.collectionItemHandler = { id in remote.first { $0.id == id } ?? MediaItem(id: id, type: .boxSet) }
+        let store = CollectionStore(session: session(provider))
+        #expect(await store.mutate { try await provider.createCollection(name: "Favorites", itemIDs: []) } == false)
+        #expect(store.actionOutcome == .uncertain)
+        #expect(store.needsMutationReview)
+        #expect(!store.canSubmitMutations)
+        #expect(await store.mutate { try await provider.createCollection(name: "Favorites", itemIDs: []) } == false)
+        #expect(writes == 1)
+        store.keepCurrentServerState()
+        #expect(store.needsMutationReview)
+
+        await store.load(force: true)
+        #expect(store.collections.map(\.id) == ["created"])
+        #expect(store.canKeepCurrentServerState)
+        #expect(!store.canSubmitMutations)
+        store.keepCurrentServerState()
+        #expect(store.canSubmitMutations)
+        #expect(store.actionOutcome == nil)
+        #expect(writes == 1)
+    }
+
+    @Test func deniedCollectionMutationIsFailedWithoutReviewOrSessionExpiry() async {
+        let provider = FakeMediaProviderSession(capabilities: .init())
+        let active = session(provider)
+        let store = CollectionStore(session: active)
+        #expect(await store.mutate { throw GusError.forbidden } == false)
+        #expect(store.actionOutcome == .failed(.forbidden))
+        #expect(!store.needsMutationReview)
+        #expect(store.canSubmitMutations)
+        #expect(active.isActive)
+    }
+
+    @Test("leaving collection content does not discard an in-flight write outcome", arguments: [true, false])
+    func hiddenCollectionRetainsMutationOutcome(accepted: Bool) async {
+        let provider = FakeMediaProviderSession(capabilities: .init())
+        let store = CollectionStore(session: session(provider))
+        var continuation: CheckedContinuation<String?, Error>?
+        var writes = 0
+        let task = Task {
+            await store.mutate {
+                writes += 1
+                return try await withCheckedThrowingContinuation { continuation = $0 }
+            }
+        }
+        while continuation == nil {
+            await Task.yield()
+        }
+        store.cancelForegroundLoads()
+        if accepted {
+            continuation?.resume(returning: "created")
+        } else {
+            continuation?.resume(throwing: GusError.timeout)
+        }
+        #expect(await task.value == accepted)
+        #expect(store.actionOutcome == (accepted ? .accepted : .uncertain))
+        if !accepted {
+            #expect(store.needsMutationReview)
+            #expect(!store.canSubmitMutations)
+            #expect(await store.mutate { writes += 1; return "duplicate" } == false)
+        }
+        #expect(writes == 1)
+    }
+
+    @Test func retiredSessionCannotPublishLateCollectionWriteOutcome() async {
+        let provider = FakeMediaProviderSession(capabilities: .init())
+        let active = session(provider)
+        let store = CollectionStore(session: active)
+        var continuation: CheckedContinuation<String?, Never>?
+        let task = Task { await store.mutate { await withCheckedContinuation { continuation = $0 } } }
+        while continuation == nil {
+            await Task.yield()
+        }
+        active.invalidate()
+        continuation?.resume(returning: "created")
+        #expect(await task.value == false)
+        #expect(store.actionOutcome == nil)
+        #expect(!store.canSubmitMutations)
+    }
+
     @Test func mutationRefreshFailureIsReportedAsSavedWithoutRetry() async {
         let provider = FakeMediaProviderSession(capabilities: .init())
         provider.collectionPageHandler = { _, _ in throw URLError(.notConnectedToInternet) }
@@ -65,6 +178,8 @@ struct CollectionStoreTests {
         #expect(result)
         #expect(calls == 1)
         #expect(store.statusMessage != nil)
+        #expect(store.actionOutcome == .accepted)
+        #expect(store.needsMutationReview)
         provider.collectionPageHandler = { _, _ in .init(items: [], totalRecordCount: 0) }
         await store.load(force: true)
         #expect(store.statusMessage == nil)
@@ -264,6 +379,8 @@ struct CollectionStoreTests {
         #expect(store.collection("a")?.item.name == "New")
         #expect(store.statusMessage != nil)
         #expect(store.errorMessage == "Artwork denied")
+        #expect(store.actionOutcome == .uncertain)
+        #expect(store.needsMutationReview)
     }
 
     @Test func teardownBetweenEditPhasesDoesNotDispatchArtwork() async {

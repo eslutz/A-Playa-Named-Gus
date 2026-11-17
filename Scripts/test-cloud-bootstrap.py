@@ -102,26 +102,60 @@ class BootstrapTests(unittest.TestCase):
         return subprocess.run(["/bin/sh", "ci_pre_xcodebuild.sh"], cwd=self.root / "ci_scripts",
                               env=env, capture_output=True, text=True)
 
-    def test_cloud_test_execution_does_not_require_checkout_or_build_configuration(self):
+    def test_cloud_mac_test_execution_does_not_require_checkout_or_build_configuration(self):
         # Cloud distributes compiled products and ci_scripts to separate test runners.
         # Neither the repository nor its global build configuration is needed there.
         shutil.rmtree(self.root / "Config")
         self.env["CI_PRIMARY_REPOSITORY_PATH"] = str(self.root / "absent-checkout")
-        for platform in ("iOS", "macOS", "tvOS", "visionOS"):
-            for configuration in (None, str(self.root / "Config/Architecture.xcconfig")):
-                with self.subTest(platform=platform, configuration=configuration):
-                    if configuration is None:
-                        self.env.pop("XCODE_XCCONFIG_FILE", None)
-                    else:
-                        self.env["XCODE_XCCONFIG_FILE"] = configuration
-                    result = self.run_pre_build(platform=platform, action="test-without-building")
-                    self.assertEqual(result.returncode, 0, result.stderr)
-                    self.assertFalse((self.root / "Config/Local.xcconfig").exists())
+        for configuration in (None, str(self.root / "Config/Architecture.xcconfig")):
+            with self.subTest(configuration=configuration):
+                if configuration is None:
+                    self.env.pop("XCODE_XCCONFIG_FILE", None)
+                else:
+                    self.env["XCODE_XCCONFIG_FILE"] = configuration
+                result = self.run_pre_build(action="test-without-building")
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertFalse((self.root / "Config/Local.xcconfig").exists())
+
+    def test_cloud_simulator_execution_is_rejected_without_a_checkout(self):
+        shutil.rmtree(self.root / "Config")
+        self.env["CI_PRIMARY_REPOSITORY_PATH"] = str(self.root / "absent-checkout")
+        self.env.pop("XCODE_XCCONFIG_FILE")
+        for platform in ("iOS", "tvOS", "visionOS", "watchOS", ""):
+            with self.subTest(platform=platform):
+                result = self.run_pre_build(platform=platform, action="test-without-building")
+                self.assertEqual(result.returncode, 65)
+                self.assertIn("Simulator builds and tests must run locally", result.stderr)
+                self.assertNotIn("absent-checkout", result.stderr)
+
+    def test_cloud_simulator_builds_and_tests_are_rejected_before_signing_changes(self):
+        self.assertEqual(self.run_script().returncode, 0)
+        before = (self.root / "Config/Local.xcconfig").read_bytes()
+        for platform in ("iOS", "tvOS", "visionOS", "watchOS"):
+            for action in ("build", "build-for-testing", "test", "test-without-building"):
+                with self.subTest(platform=platform, action=action):
+                    result = self.run_pre_build(platform=platform, action=action)
+                    self.assertEqual(result.returncode, 65)
+                    self.assertIn("Simulator builds and tests must run locally", result.stderr)
+                    self.assertEqual((self.root / "Config/Local.xcconfig").read_bytes(), before)
+
+    def test_cloud_unknown_action_or_platform_is_rejected(self):
+        for platform, action in (("", "archive"), ("unknown", "archive"), ("macOS", ""), ("macOS", "unknown")):
+            with self.subTest(platform=platform, action=action):
+                result = self.run_pre_build(platform=platform, action=action)
+                self.assertEqual(result.returncode, 65)
+                self.assertIn("Simulator builds and tests must run locally", result.stderr)
+
+    def test_local_pre_build_does_not_restrict_simulator_actions(self):
+        self.env.pop("CI_XCODE_CLOUD")
+        self.env.pop("XCODE_XCCONFIG_FILE")
+        self.assertEqual(self.run_pre_build(platform="iOS").returncode, 0)
 
     def test_cloud_compilation_actions_still_require_architecture_configuration(self):
         self.env.pop("XCODE_XCCONFIG_FILE")
-        for platform in ("iOS", "macOS", "tvOS", "visionOS"):
-            for action in ("build", "build-for-testing", "archive", "analyze"):
+        for platform in ("iOS", "macOS", "tvOS", "visionOS", "watchOS"):
+            actions = ("build", "build-for-testing", "test", "archive", "analyze") if platform == "macOS" else ("archive", "analyze")
+            for action in actions:
                 with self.subTest(platform=platform, action=action):
                     result = self.run_pre_build(platform=platform, action=action)
                     self.assertEqual(result.returncode, 65)
@@ -129,7 +163,9 @@ class BootstrapTests(unittest.TestCase):
 
     def test_cloud_rejects_wrong_global_configuration(self):
         self.env["XCODE_XCCONFIG_FILE"] = "/tmp/other.xcconfig"
-        self.assertEqual(self.run_pre_build(platform="iOS").returncode, 65)
+        result = self.run_pre_build()
+        self.assertEqual(result.returncode, 65)
+        self.assertIn("Apple Silicon enforcement missing", result.stderr)
 
     def test_cloud_rejects_missing_architecture_file(self):
         (self.root / "Config/Architecture.xcconfig").unlink()
@@ -143,7 +179,9 @@ class BootstrapTests(unittest.TestCase):
 
     def test_cloud_rejects_missing_global_architecture_configuration(self):
         self.env.pop("XCODE_XCCONFIG_FILE")
-        self.assertEqual(self.run_pre_build(platform="iOS").returncode, 65)
+        result = self.run_pre_build()
+        self.assertEqual(result.returncode, 65)
+        self.assertIn("Apple Silicon enforcement missing", result.stderr)
 
     def test_cloud_mac_unit_host_uses_unrestricted_sandbox_entitlements(self):
         self.assertEqual(self.run_script().returncode, 0)
@@ -159,14 +197,11 @@ class BootstrapTests(unittest.TestCase):
     def test_cloud_archives_keep_production_signing(self):
         self.assertEqual(self.run_script().returncode, 0)
         before = (self.root / "Config/Local.xcconfig").read_bytes()
-        self.assertEqual(self.run_pre_build(action="archive").returncode, 0)
-        self.assertEqual((self.root / "Config/Local.xcconfig").read_bytes(), before)
-
-    def test_cloud_ios_tests_keep_platform_signing(self):
-        self.assertEqual(self.run_script().returncode, 0)
-        before = (self.root / "Config/Local.xcconfig").read_bytes()
-        self.assertEqual(self.run_pre_build(platform="iOS").returncode, 0)
-        self.assertEqual((self.root / "Config/Local.xcconfig").read_bytes(), before)
+        for platform in ("iOS", "macOS", "tvOS", "visionOS", "watchOS"):
+            for action in ("archive", "analyze"):
+                with self.subTest(platform=platform, action=action):
+                    self.assertEqual(self.run_pre_build(platform=platform, action=action).returncode, 0)
+                    self.assertEqual((self.root / "Config/Local.xcconfig").read_bytes(), before)
 
     def test_cloud_mac_test_preparation_requires_bootstrap(self):
         self.assertEqual(self.run_pre_build().returncode, 66)

@@ -122,7 +122,7 @@ private struct IPhoneCanvasModifier: ViewModifier {
 
 extension View {
     func gusIPhoneOrIPadOnly() -> some View {
-        modifier(IPhoneOnlyModifier(includesIPad: true))
+        modifier(IPhoneOrIPadOnlyModifier())
     }
 
     @ViewBuilder func gusIPadIconOnly() -> some View {
@@ -137,20 +137,12 @@ extension View {
         #endif
     }
 
-    func gusIPhoneOnly() -> some View {
-        modifier(IPhoneOnlyModifier())
-    }
-
     func gusPhonePagePadding() -> some View {
         modifier(IPhonePagePaddingModifier())
     }
 
     func gusPhoneRailWidth(backdrop: Bool, fallback: CGFloat) -> some View {
         modifier(IPhoneRailWidthModifier(backdrop: backdrop, fallback: fallback))
-    }
-
-    func gusPhoneHeroCopy() -> some View {
-        modifier(IPhoneHeroCopyModifier())
     }
 
     func gusPhoneProminentForeground() -> some View {
@@ -162,14 +154,13 @@ extension View {
     }
 }
 
-private struct IPhoneOnlyModifier: ViewModifier {
-    var includesIPad = false
+private struct IPhoneOrIPadOnlyModifier: ViewModifier {
     #if os(iOS)
         @Environment(\.horizontalSizeClass) private var widthClass
     #endif
     func body(content: Content) -> some View {
         #if os(iOS)
-            if widthClass == .compact || (includesIPad && DeviceIdentity.usesIPadPresentation) {
+            if widthClass == .compact || DeviceIdentity.usesIPadPresentation {
                 content
             }
         #endif
@@ -200,23 +191,6 @@ private struct IPhoneRailWidthModifier: ViewModifier {
             content.frame(width: widthClass == .compact ? (backdrop ? 260 : 160) : fallback)
         #else
             content.frame(width: fallback)
-        #endif
-    }
-}
-
-private struct IPhoneHeroCopyModifier: ViewModifier {
-    #if os(iOS)
-        @Environment(\.horizontalSizeClass) private var widthClass
-    #endif
-    func body(content: Content) -> some View {
-        #if os(iOS)
-            if widthClass == .compact {
-                content
-            } else {
-                content.padding(12).background(.black, in: RoundedRectangle(cornerRadius: 8))
-            }
-        #else
-            content.padding(12).background(.black, in: RoundedRectangle(cornerRadius: 8))
         #endif
     }
 }

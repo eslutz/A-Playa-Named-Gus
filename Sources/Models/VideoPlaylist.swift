@@ -102,10 +102,10 @@ struct SavedMediaField: Codable, Equatable, Sendable {
     var data: Data
 }
 
-/// Each entity has independent registers. Entry UUIDs preserve concurrent adds;
-/// cursor and activity records never compete with name or ordering edits.
+/// Supplemental intent, cursor and activity registers merge independently.
+/// Jellyfin owns list membership and ordering.
 struct SavedMediaRecord: Codable, Equatable, Identifiable, Sendable {
-    enum Kind: String, Codable, Sendable { case playlist, entry, cursor, intent, activity }
+    enum Kind: String, Codable, Sendable { case playlist, cursor, intent, activity }
     let id: String
     let scope: AccountScope
     let kind: Kind
@@ -137,5 +137,31 @@ struct SavedMediaRecord: Codable, Equatable, Identifiable, Sendable {
             }
         }
         return result
+    }
+}
+
+/// Decodes only supported supplemental records. Unknown/retired record kinds are
+/// dropped without discarding current records stored beside them. Malformed
+/// supported records still fail decoding and preserve the original file.
+struct CurrentSavedMediaRecord: Decodable {
+    let record: SavedMediaRecord?
+    private enum CodingKeys: String, CodingKey { case kind }
+
+    init(from decoder: Decoder) throws {
+        let values = try decoder.container(keyedBy: CodingKeys.self)
+        let kind = try values.decode(String.self, forKey: .kind)
+        guard SavedMediaRecord.Kind(rawValue: kind) != nil else {
+            record = nil
+            return
+        }
+        let candidate = try SavedMediaRecord(from: decoder)
+        switch candidate.kind {
+        case .playlist:
+            record = candidate.id.hasPrefix("server-") && candidate.value("serverBacked", as: Bool.self) == true ? candidate : nil
+        case .cursor:
+            record = candidate.id.hasPrefix("cursor-server-") ? candidate : nil
+        case .intent, .activity:
+            record = candidate
+        }
     }
 }

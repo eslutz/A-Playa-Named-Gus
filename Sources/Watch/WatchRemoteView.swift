@@ -65,6 +65,8 @@ struct WatchRemoteView: View {
 struct WatchRemoteDetailView: View {
     let sessionID: String
     let store: RemoteSessionsStore
+    @State private var commandError: String?
+    @State private var commandTask: Task<Void, Never>?
 
     private var remote: RemoteSession? {
         store.sessions.first { $0.id == sessionID }
@@ -73,6 +75,21 @@ struct WatchRemoteDetailView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 8) {
+                if let message = store.refreshErrorMessage {
+                    Label(message, systemImage: "exclamationmark.triangle")
+                        .font(.footnote)
+                    Button("Refresh") { Task { await store.refresh() } }
+                }
+                if let commandError {
+                    Label(commandError, systemImage: "exclamationmark.triangle")
+                        .font(.footnote)
+                }
+                if let outcome = store.commandOutcomes[sessionID] {
+                    Text(outcome.remoteMessage).font(.footnote).foregroundStyle(.secondary)
+                }
+                if store.pendingSessionIDs.contains(sessionID) {
+                    ProgressView("Sending Command")
+                }
                 if let remote {
                     VStack(spacing: 2) {
                         Text(remote.nowPlaying?.displayTitle ?? String(localized: "Nothing Playing", comment: "Remote session idle state"))
@@ -93,74 +110,83 @@ struct WatchRemoteDetailView: View {
 
                     HStack(spacing: 12) {
                         Button {
-                            Task { await store.seek(sessionID: sessionID, bySeconds: -15) }
+                            run { try await store.seek(sessionID: sessionID, bySeconds: -15) }
                         } label: {
                             Image(systemName: "gobackward.15")
                         }
                         .accessibilityLabel(String(localized: "Back 15 seconds", comment: "Accessibility label for the seek-back 15 seconds button"))
+                        .disabled(!remote.supports(.seek(0)))
 
                         Button {
-                            Task { await store.togglePlayPause(sessionID: sessionID) }
+                            run { try await store.togglePlayPause(sessionID: sessionID) }
                         } label: {
                             Image(systemName: remote.isPaused ? "play.circle.fill" : "pause.circle.fill")
                                 .font(.title2)
                         }
                         .accessibilityLabel(remote.isPaused ? String(localized: "Play", comment: "Accessibility label for the play button") : String(localized: "Pause", comment: "Accessibility label for the pause button"))
+                        .disabled(!remote.supports(.playPause))
 
                         Button {
-                            Task { await store.seek(sessionID: sessionID, bySeconds: 15) }
+                            run { try await store.seek(sessionID: sessionID, bySeconds: 15) }
                         } label: {
                             Image(systemName: "goforward.15")
                         }
                         .accessibilityLabel(String(localized: "Forward 15 seconds", comment: "Accessibility label for the seek-forward 15 seconds button"))
+                        .disabled(!remote.supports(.seek(0)))
                     }
                     .buttonStyle(.plain)
 
                     HStack(spacing: 12) {
                         Button {
-                            Task { await store.previousTrack(sessionID: sessionID) }
+                            run { try await store.previousTrack(sessionID: sessionID) }
                         } label: {
                             Image(systemName: "backward.fill")
                         }
                         .accessibilityLabel(String(localized: "Previous Track", comment: "Accessibility label for the previous track button"))
+                        .disabled(!remote.supports(.previousTrack))
 
                         Button {
-                            Task { await store.toggleMute(sessionID: sessionID) }
+                            run { try await store.toggleMute(sessionID: sessionID) }
                         } label: {
                             Image(systemName: remote.isMuted ? "speaker.slash.fill" : "speaker.fill")
                         }
                         .accessibilityLabel(remote.isMuted ? String(localized: "Unmute", comment: "Accessibility label for the unmute button") : String(localized: "Mute", comment: "Accessibility label for the mute button"))
+                        .disabled(!remote.supports(.toggleMute))
 
                         Button {
-                            Task { await store.nextTrack(sessionID: sessionID) }
+                            run { try await store.nextTrack(sessionID: sessionID) }
                         } label: {
                             Image(systemName: "forward.fill")
                         }
                         .accessibilityLabel(String(localized: "Next Track", comment: "Accessibility label for the next track button"))
+                        .disabled(!remote.supports(.nextTrack))
                     }
                     .buttonStyle(.plain)
 
                     HStack(spacing: 12) {
                         Button {
-                            Task { await store.volumeDown(sessionID: sessionID) }
+                            run { try await store.volumeDown(sessionID: sessionID) }
                         } label: {
                             Image(systemName: "speaker.minus.fill")
                         }
                         .accessibilityLabel(String(localized: "Volume down", comment: "Accessibility label for the volume-down button"))
+                        .disabled(!remote.supports(.volumeDown))
 
                         Button {
-                            Task { await store.volumeUp(sessionID: sessionID) }
+                            run { try await store.volumeUp(sessionID: sessionID) }
                         } label: {
                             Image(systemName: "speaker.plus.fill")
                         }
                         .accessibilityLabel(String(localized: "Volume up", comment: "Accessibility label for the volume-up button"))
+                        .disabled(!remote.supports(.volumeUp))
 
                         Button(role: .destructive) {
-                            Task { await store.stopPlayback(sessionID: sessionID) }
+                            run { try await store.stopPlayback(sessionID: sessionID) }
                         } label: {
                             Image(systemName: "stop.fill")
                         }
                         .accessibilityLabel(String(localized: "Stop", comment: "Accessibility label for the stop playback button"))
+                        .disabled(!remote.supports(.stop))
                     }
                     .buttonStyle(.plain)
                 } else {
@@ -172,12 +198,26 @@ struct WatchRemoteDetailView: View {
                 }
             }
         }
+        .disabled(store.pendingSessionIDs.contains(sessionID))
         .navigationTitle(remote?.deviceName ?? "Remote")
         .task {
             store.startLiveUpdates()
         }
         .onDisappear {
+            commandTask?.cancel()
             store.stopLiveUpdates()
+        }
+    }
+
+    private func run(_ operation: @escaping @MainActor () async throws -> ActionOutcome) {
+        guard !store.pendingSessionIDs.contains(sessionID) else { return }
+        commandError = nil
+        commandTask = Task {
+            do { _ = try await operation() }
+            catch {
+                guard !Task.isCancelled, !GusError(from: error).isCancellation else { return }
+                commandError = error.localizedDescription
+            }
         }
     }
 }

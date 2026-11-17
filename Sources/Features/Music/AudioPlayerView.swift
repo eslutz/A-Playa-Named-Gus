@@ -5,9 +5,11 @@ import SwiftUI
 struct AudioPlayerView: View {
     @Environment(AudioPlaybackCoordinator.self) private var audio
     @Environment(SessionStore.self) private var session
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     let store: AudioPlayerStore
 
     @State private var showingQueue = false
+    @State private var pendingSource: MediaSource?
     #if os(iOS)
         @Environment(\.horizontalSizeClass) private var widthClass
     #endif
@@ -38,17 +40,79 @@ struct AudioPlayerView: View {
     }
 
     var body: some View {
-        LoadingStateView(state: store.state, retryAction: { audio.retry() }) {
-            #if os(tvOS)
-                if let player = store.nativePlayer {
-                    TVAudioPlayerSurface(player: player, store: store, onClose: { audio.close() }, onStop: { audio.stop() }, artworkURL: track.flatMap { session.mediaProvider.primaryImageURL(for: $0, context: .nowPlayingArtwork) })
-                } else {
-                    ContentUnavailableView("Playback Finished", systemImage: "music.note", description: Text("Choose another track from your library."))
-                }
-            #else
-                AdaptiveAudioLayout { artwork } controls: { controls }
-            #endif
+        LoadingStateView(state: !store.hasPreparedContent && (store.isCollectingShuffle || store.queueErrorMessage != nil) ? .loaded : store.state, retryAction: { audio.retry() }, preservesContent: store.hasPreparedContent) {
+            if !store.hasPreparedContent, store.isCollectingShuffle || store.queueErrorMessage != nil {
+                VStack(spacing: 16) {
+                    if store.isCollectingShuffle {
+                        ProgressView("Preparing Shuffle")
+                        Text("\(store.queue.tracks.count) tracks loaded")
+                        Button("Cancel", role: .cancel) { audio.stop() }
+                    } else if let message = store.queueErrorMessage {
+                        Text(message).foregroundStyle(.secondary)
+                        Button("Try Again") { audio.retry() }
+                        Button("Close") { audio.stop() }
+                    }
+                }.padding()
+            } else {
+                #if os(tvOS)
+                    if store.state == .loaded, let player = store.nativePlayer {
+                        TVAudioPlayerSurface(player: player, store: store, onClose: { audio.close() }, onStop: { audio.stop() }, artworkURL: track.flatMap { session.mediaProvider.primaryImageURL(for: $0, context: .nowPlayingArtwork) })
+                    } else {
+                        VStack { artwork; titleBlock }
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    }
+                #else
+                    AdaptiveAudioLayout { artwork } controls: { controls.disabled(store.state != .loaded) }
+                #endif
+            }
         }
+        .safeAreaInset(edge: .top, spacing: 0) {
+            if store.state == .loaded, store.mediaSourceOptions.count > 1 || store.audioOptions.count > 1 {
+                Menu("Playback Options", systemImage: "slider.horizontal.3") {
+                    if store.mediaSourceOptions.count > 1 {
+                        Menu("Version") {
+                            ForEach(Array(store.mediaSourceOptions.enumerated()), id: \.element.id) { offset, source in
+                                Button(source.name ?? String(localized: "Version \(offset + 1)")) { pendingSource = source }
+                                    .disabled(source.id == store.selectedMediaSourceID)
+                            }
+                        }
+                    }
+                    if store.audioOptions.count > 1 {
+                        Picker("Audio", selection: Binding(get: { store.audioMenuSelection }, set: { selection in
+                            guard let selection else { return }
+                            switch selection {
+                            case .automatic: Task { await store.selectAudioStream(index: nil) }
+                            case let .stream(index): Task { await store.selectAudioStream(index: index) }
+                            case .off: break
+                            }
+                        })) {
+                            if store.audioMenuSelection == nil {
+                                Text("Unavailable").tag(nil as PlaybackTrackMenuSelection?).disabled(true)
+                            }
+                            Text("Automatic").tag(PlaybackTrackMenuSelection.automatic as PlaybackTrackMenuSelection?)
+                            ForEach(store.audioOptions) { option in
+                                Text(option.title).tag(PlaybackTrackMenuSelection.stream(option.id) as PlaybackTrackMenuSelection?)
+                            }
+                        }.pickerStyle(.menu)
+                    }
+                }.buttonStyle(.bordered)
+                    .frame(maxWidth: .infinity, alignment: .trailing)
+                    .padding()
+                    .background(.regularMaterial)
+            }
+        }
+        .confirmationDialog("Switch Version", isPresented: Binding(get: { pendingSource != nil }, set: {
+            if !$0 {
+                pendingSource = nil
+            }
+        }), titleVisibility: .visible) {
+            if let source = pendingSource, let id = source.id {
+                Button("Start Over") { pendingSource = nil; Task { await store.selectMediaSource(id: id, fromBeginning: true) } }
+                Button("Resume at \(PlaybackTime.accessibilityDuration(seconds: store.currentTime))") { pendingSource = nil; Task { await store.selectMediaSource(id: id, fromBeginning: false) } }
+                    .disabled(!PlaybackActionPosition.canResume(at: PlaybackTime.ticks(fromSeconds: store.currentTime), durationTicks: source.runTimeTicks))
+                Button("Cancel", role: .cancel) { pendingSource = nil }
+            }
+        } message: { Text("Choose where playback should begin in this version. Versions may have different timelines.") }
         .toolbar {
             #if os(tvOS)
                 ToolbarItem { Button { showingQueue = true } label: { GusToolbarLabel("Queue", systemImage: "list.bullet") }.accessibilityLabel("Queue").gusTVToolbarIcon() }
@@ -56,24 +120,52 @@ struct AudioPlayerView: View {
         }
         .gusTVTask(isPresented: $showingQueue) {
             NavigationStack {
-                List(store.queue.order, id: \.self) { index in
-                    let queuedTrack = store.queue.tracks[index]
-                    Button {
-                        if let id = queuedTrack.id {
-                            Task { await store.select(trackID: id) }
-                        }
-                    } label: {
-                        HStack {
-                            Text(queuedTrack.displayTitle)
-                            Spacer()
-                            if store.queue.order.indices.contains(store.queue.position), index == store.queue.order[store.queue.position] {
-                                Image(systemName: "speaker.wave.2.fill").accessibilityLabel("Now Playing")
+                List {
+                    ForEach(store.queue.order, id: \.self) { index in
+                        let queuedTrack = store.queue.tracks[index]
+                        Button {
+                            if let id = queuedTrack.id {
+                                Task { await store.select(trackID: id) }
                             }
+                        } label: {
+                            HStack {
+                                Text(queuedTrack.displayTitle)
+                                Spacer()
+                                if store.queue.order.indices.contains(store.queue.position), index == store.queue.order[store.queue.position] {
+                                    Image(systemName: "speaker.wave.2.fill").accessibilityLabel("Now Playing")
+                                }
+                            }
+                        }
+                    }
+                    if store.isCollectingShuffle {
+                        ProgressView("Preparing Shuffle")
+                        Text("\(store.queue.tracks.count) tracks loaded")
+                        Button("Cancel") { store.cancelShuffleCollection() }
+                    } else {
+                        if store.isLoadingQueue {
+                            ProgressView("Loading Queue")
+                        }
+                        if let message = store.queueErrorMessage {
+                            Text(message).foregroundStyle(.secondary)
+                        }
+                        if store.queueContinuation != nil {
+                            Button(store.queueErrorMessage == nil ? "Load More" : "Try Again") { Task { await store.loadMoreQueue() } }.disabled(store.isLoadingQueue)
                         }
                     }
                 }
                 .navigationTitle("Queue")
                 .toolbar { ToolbarItem(placement: .cancellationAction) { GusCloseButton { showingQueue = false }.labelStyle(.iconOnly) } }
+            }
+        }
+        .safeAreaInset(edge: .top) {
+            if let notice = store.trackSelectionNotice {
+                HStack { Text(notice); Button("OK") { store.trackSelectionNotice = nil } }
+                    .padding().background(.regularMaterial)
+            }
+        }
+        .onChange(of: SharePlayCoordinator.shared.isSharing) { _, _ in
+            if let player = store.nativePlayer, let request = store.request {
+                SharePlayCoordinator.shared.attachPlayer(player, request: request, session: session)
             }
         }
         .onChange(of: store.currentTime, initial: true) { _, time in
@@ -102,7 +194,8 @@ struct AudioPlayerView: View {
         ArtworkTile(
             url: track.flatMap { session.mediaProvider.primaryImageURL(for: $0, context: .posterGrid) },
             aspectRatio: 1,
-            placeholderSymbol: track?.type == .audioBook ? "book" : "music.note"
+            placeholderSymbol: track?.type == .audioBook ? "book" : "music.note",
+            fallbackURLs: track.map { session.mediaProvider.artworkURLs(for: $0, request: .init(role: .square, maxWidth: 360)) } ?? []
         )
         .frame(maxWidth: audioArtworkWidth)
         .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
@@ -165,27 +258,17 @@ struct AudioPlayerView: View {
     }
 
     private var transportControls: some View {
-        ViewThatFits(in: .horizontal) {
-            HStack(spacing: usesInlineTransport ? 4 : 12) {
-                if usesInlineTransport {
-                    queueButton
-                }
-                shuffleButton; previousButton; playPauseButton; nextButton; repeatButton
-                if usesInlineTransport {
-                    AirPlayRoutePicker().frame(width: 44, height: 44)
-                }
+        AudioTransportLayout(singleRowSpacing: usesInlineTransport ? 4 : 12, prefersGroupedRows: dynamicTypeSize.isAccessibilitySize) {
+            if usesInlineTransport {
+                queueButton
             }
-            VStack(spacing: 12) {
-                HStack(spacing: 12) { previousButton; playPauseButton; nextButton }
-                HStack(spacing: 12) {
-                    if usesInlineTransport {
-                        queueButton
-                    }
-                    shuffleButton; repeatButton
-                    if usesInlineTransport {
-                        AirPlayRoutePicker().frame(width: 44, height: 44)
-                    }
-                }
+            shuffleButton
+            previousButton.layoutValue(key: AudioTransportPrimaryKey.self, value: true)
+            playPauseButton.layoutValue(key: AudioTransportPrimaryKey.self, value: true)
+            nextButton.layoutValue(key: AudioTransportPrimaryKey.self, value: true)
+            repeatButton
+            if usesInlineTransport {
+                AirPlayRoutePicker().frame(width: 44, height: 44)
             }
         }
         .font(.title2)
@@ -220,10 +303,10 @@ struct AudioPlayerView: View {
         Button {
             store.playPause()
         } label: {
-            AudioTransportGlyph(isPlaying: store.isPlaying)
+            AudioTransportGlyph(isPlaying: store.isPlaybackRequested)
         }
         .accessibilityLabel(
-            store.isPlaying
+            store.isPlaybackRequested
                 ? String(localized: "Pause", comment: "Accessibility label for the pause button")
                 : String(localized: "Play", comment: "Accessibility label for the play button")
         )
@@ -235,7 +318,7 @@ struct AudioPlayerView: View {
         } label: {
             Image(systemName: "forward.fill")
         }
-        .disabled(!store.queue.hasNext)
+        .disabled(!store.hasNext)
         .accessibilityLabel(String(localized: "Next Track", comment: "Accessibility label for the next track button"))
     }
 
@@ -342,7 +425,7 @@ struct AudioPlayerScreen: View {
     @Environment(OfflineDownloadStore.self) private var downloads
     let item: MediaItem
     var localOnly = false
-    var playbackStart: PlaybackStartIntent = .automatic
+    var playbackRequest: PlaybackRequest? = nil
     var body: some View {
         Group {
             if let store = audio.store {
@@ -351,11 +434,79 @@ struct AudioPlayerScreen: View {
                 ProgressView()
             }
         }
-        .task {
-            if audio.store == nil {
-                audio.play(tracks: [item], localOnly: localOnly, playbackStart: playbackStart, session: session, downloads: downloads)
+        .task(id: PlaybackPresentationIdentity(request: playbackRequest ?? PlaybackRequest(item: item), sessionGeneration: session.lease.generation, localOnly: localOnly)) {
+            audio.play(tracks: [item], localOnly: localOnly, request: playbackRequest, session: session, downloads: downloads)
+        }
+    }
+}
+
+private struct AudioTransportPrimaryKey: LayoutValueKey {
+    static let defaultValue = false
+}
+
+/// Measures and repositions the same native controls, retaining Play/Pause identity
+/// when a narrow window or larger text requires primary and ancillary rows.
+private struct AudioTransportLayout: Layout {
+    let singleRowSpacing: CGFloat
+    let prefersGroupedRows: Bool
+    private let groupedSpacing: CGFloat = 12
+
+    private struct Row {
+        let indices: [Int]
+        let width: CGFloat
+        let height: CGFloat
+        let spacing: CGFloat
+    }
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let rows = rows(width: proposal.width, subviews: subviews)
+        return CGSize(width: rows.map(\.width).max() ?? 0, height: rows.map(\.height).reduce(0, +) + CGFloat(max(0, rows.count - 1)) * groupedSpacing)
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        let rows = rows(width: bounds.width, subviews: subviews)
+        var y = bounds.minY
+        for row in rows {
+            var x = bounds.midX - row.width / 2
+            for index in row.indices {
+                let size = subviews[index].sizeThatFits(.unspecified)
+                subviews[index].place(at: CGPoint(x: x, y: y + (row.height - size.height) / 2), anchor: .topLeading, proposal: ProposedViewSize(size))
+                x += size.width + row.spacing
+            }
+            y += row.height + groupedSpacing
+        }
+    }
+
+    private func rows(width: CGFloat?, subviews: Subviews) -> [Row] {
+        let sizes = subviews.map { $0.sizeThatFits(.unspecified) }
+        let availableWidth = width.flatMap { $0.isFinite ? max(0, $0) : nil } ?? .infinity
+        let all = Array(subviews.indices)
+        let singleRow = row(all, sizes: sizes, spacing: singleRowSpacing)
+        if !prefersGroupedRows, singleRow.width <= availableWidth {
+            return all.isEmpty ? [] : [singleRow]
+        }
+        let primary = all.filter { subviews[$0][AudioTransportPrimaryKey.self] }
+        let ancillary = all.filter { !subviews[$0][AudioTransportPrimaryKey.self] }
+        var rows: [Row] = []
+        for group in [primary, ancillary] {
+            var current: [Int] = []
+            for index in group {
+                let proposed = current + [index]
+                if !current.isEmpty, row(proposed, sizes: sizes, spacing: groupedSpacing).width > availableWidth {
+                    rows.append(row(current, sizes: sizes, spacing: groupedSpacing))
+                    current = []
+                }
+                current.append(index)
+            }
+            if !current.isEmpty {
+                rows.append(row(current, sizes: sizes, spacing: groupedSpacing))
             }
         }
+        return rows
+    }
+
+    private func row(_ indices: [Int], sizes: [CGSize], spacing: CGFloat) -> Row {
+        Row(indices: indices, width: indices.reduce(0) { $0 + sizes[$1].width } + CGFloat(max(0, indices.count - 1)) * spacing, height: indices.map { sizes[$0].height }.max() ?? 0, spacing: spacing)
     }
 }
 

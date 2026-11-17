@@ -64,34 +64,46 @@ extension View {
     /// `NavigationStack`. Feature views push `LibraryRef`/`ItemRef` values via
     /// `NavigationLink(value:)`; centralizing the destinations here avoids duplicate
     /// `navigationDestination` declarations on the same stack.
+    /// Each pushed page owns its TV focus scope; the stack's root scope does not
+    /// supply the custom namespace to destination content.
     func gusItemDestinations() -> some View {
         navigationDestination(for: LibraryRef.self) { ref in
-            if ref.item.collectionType == .livetv {
-                LiveTVView()
-            } else if ref.item.collectionType == .boxsets {
-                CollectionsView()
-            } else {
-                LibraryGridView(library: ref.item)
+            Group {
+                if ref.item.collectionType == .livetv {
+                    LiveTVView()
+                } else if ref.item.collectionType == .boxsets {
+                    CollectionsView()
+                } else {
+                    LibraryGridView(library: ref.item)
+                }
             }
+            .gusTVFocusScope()
         }
         .navigationDestination(for: ItemRef.self) { ref in
             ItemRouteDestination(item: ref.item)
+                .gusTVFocusScope()
         }
         .navigationDestination(for: VideoPlaylistRef.self) { ref in
             VideoPlaylistDetailView(id: ref.id)
+                .gusTVFocusScope()
         }
         .navigationDestination(for: MediaCollectionRef.self) { ref in
             ScopedCollectionDestination(ref: ref)
+                .gusTVFocusScope()
         }
         .navigationDestination(for: CollectionsRef.self) { ref in
             ScopedCollectionsDestination(ref: ref)
+                .gusTVFocusScope()
         }
         .navigationDestination(for: AppScreen.self) { screen in
-            switch screen {
-            case .downloads: DownloadsView()
-            case .navigationSettings: NavigationSettingsView()
-            case .seerrRequests: SeerrRequestsView()
+            Group {
+                switch screen {
+                case .downloads: DownloadsView()
+                case .navigationSettings: NavigationSettingsView()
+                case .seerrRequests: SeerrRequestsView()
+                }
             }
+            .gusTVFocusScope()
         }
     }
 }
@@ -141,17 +153,17 @@ struct SeerrRequestHistoryLink: View {
                 NavigationLink(value: AppScreen.seerrRequests) { Label("My Requests", systemImage: "clock") }
                     .labelStyle(.iconOnly)
             } else {
-                legacyLink
+                standardLink
             }
         #elseif os(tvOS)
             NavigationLink { SeerrRequestsView() } label: { Image(systemName: "clock") }
                 .accessibilityLabel("My Requests")
         #else
-            legacyLink
+            standardLink
         #endif
     }
 
-    private var legacyLink: some View {
+    private var standardLink: some View {
         NavigationLink("My Requests") { SeerrRequestsView() }
     }
 }

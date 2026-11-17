@@ -14,6 +14,12 @@ struct TVFocusBookmark: Equatable {
     }
 }
 
+enum TVDetailActionOrder {
+    private static let leadingIDs = ["play", "version", "nextUp", "favorite"]
+    static let moreID = "more"
+    static let ids = leadingIDs + [moreID, "synopsis"]
+}
+
 /// Focus history belongs to each screen context, not the most recently pushed child.
 struct TVFocusMemory {
     private(set) var bookmarks: [String: TVFocusBookmark] = [:]
@@ -24,7 +30,7 @@ struct TVFocusMemory {
         let context: String
         let section: String
         let bookmark: TVFocusBookmark
-        var request: UUID?
+        let request: UUID?
     }
 
     private var frames: [FrameKey: Frame] = [:]
@@ -34,9 +40,9 @@ struct TVFocusMemory {
         if newDepth > oldDepth, let context = lastContext,
            let focusedSection = sectionsByContext[context], let bookmark = bookmarks[focusedSection]
         {
-            frames[FrameKey(section: section, depth: oldDepth)] = Frame(context: context, section: focusedSection, bookmark: bookmark)
+            frames[FrameKey(section: section, depth: oldDepth)] = Frame(context: context, section: focusedSection, bookmark: bookmark, request: nil)
         } else if newDepth < oldDepth, let frame = frames.removeValue(forKey: FrameKey(section: section, depth: newDepth)) {
-            returning[frame.context] = frame
+            returning[frame.context] = Frame(context: frame.context, section: frame.section, bookmark: frame.bookmark, request: UUID())
             frames = frames.filter { $0.key.section != section || $0.key.depth < newDepth }
         }
     }
@@ -44,7 +50,12 @@ struct TVFocusMemory {
     /// A dismissed task returns to the control that opened it in the same context.
     mutating func requestRestoration(context: String) {
         guard let section = sectionsByContext[context], let bookmark = bookmarks[section] else { return }
-        returning[context] = Frame(context: context, section: section, bookmark: bookmark)
+        requestRestoration(context: context, section: section, bookmark: bookmark)
+    }
+
+    /// An explicit opener is a return preference, not an observed focus change.
+    mutating func requestRestoration(context: String, section: String, bookmark: TVFocusBookmark) {
+        returning[context] = Frame(context: context, section: section, bookmark: bookmark, request: UUID())
     }
 
     func restorationRequest(context: String) -> UUID? {
@@ -53,20 +64,14 @@ struct TVFocusMemory {
 
     @discardableResult
     mutating func remember(id: String, index: Int, section: String, context: String, ids: [String]? = nil) -> Bool {
-        if var frame = returning[context] {
+        if let frame = returning[context] {
             let target = ids.flatMap { frame.bookmark.restoredID(in: $0) } ?? frame.bookmark.id
             if section == frame.section, id == target {
                 returning.removeValue(forKey: context)
-            } else if frame.request == nil {
-                // The retained parent is now focusable. Its automatic first-card
-                // fallback must not replace the saved rail before the native request.
-                frame.request = UUID()
-                returning[context] = frame
-                return false
             } else {
-                // A subsequent different focus choice belongs to the user/engine;
-                // cancel the old request instead of repeatedly stealing focus.
-                returning.removeValue(forKey: context)
+                // SwiftUI focus changes do not identify user input. Preserve the
+                // immutable return target until it receives focus; never reissue it.
+                return false
             }
         }
         bookmarks[section] = TVFocusBookmark(id: id, index: index)

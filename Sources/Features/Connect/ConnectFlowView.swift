@@ -5,6 +5,7 @@ import SwiftUI
 /// Replaces Swiftfin's Stinsen coordinator for this flow with a plain `NavigationStack`
 /// + `navigationDestination`.
 struct ConnectFlowView: View {
+    @Environment(AppModel.self) private var appModel
     @State private var path: [ServerConnection] = []
 
     var body: some View {
@@ -13,8 +14,12 @@ struct ConnectFlowView: View {
                 path.append(server)
             }
             .navigationDestination(for: ServerConnection.self) { server in
-                SignInView(server: server)
+                SignInView(server: server, initialUsername: appModel.reauthentication?.server.id == server.id ? appModel.reauthentication?.user.name ?? "" : "")
             }
+        }
+        .task(id: appModel.reauthentication) {
+            guard let recovery = appModel.reauthentication else { return }
+            path = [recovery.server]
         }
     }
 }

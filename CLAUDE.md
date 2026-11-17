@@ -63,11 +63,16 @@ exports and dated validation artifacts locally outside the tracked source tree.
 Keep durable decisions, actionable limitations and reproducible instructions in
 concise documentation; historical results do not establish current release readiness.
 
-Changes to protected `main` require a pull request and all required GitHub CI checks;
-do not push directly or bypass protection. GitHub runs CI on PRs targeting `main`.
-Xcode Cloud uses manual-only main workflows: cached single-iPhone validation and a separate
-full-matrix internal TestFlight release. Release-candidate tests remain required; see
-`Documentation/AppStore/pipeline-policy.md` for the saved release gates.
+Changes to `main` require a pull request and five GitHub checks: Validation Scope,
+Lint, Docs and Config, Build macOS, and Test macOS. This is project policy;
+server-side main protection is currently disabled and has not been restored by this change.
+All simulator builds and tests run locally. Hosted native macOS unit execution has
+an explicit exception; local native macOS runtime and physical-device testing remain
+excluded from the current validation scope. Release qualification requires local
+exact-candidate simulator evidence plus authorized native archives. Cloud workflows
+containing simulator actions must not be started. The manual Internal TestFlight
+workflow uses native macOS tests and four device archives; recheck its live actions
+before each release. See `Documentation/AppStore/pipeline-policy.md`.
 
 ## OS compatibility policy
 
@@ -79,7 +84,8 @@ Build validation and actual OS 26 runtime/device acceptance are separate gates.
 
 ## Warning-free build policy
 
-Treat every warning as an error. App, extension, Watch, and test targets must
+Treat every warning as an error, except the owner-authorized, explicitly logged hosted
+native-macOS simulator-discovery exception in `Documentation/AppStore/warning-policy.md`. App, extension, Watch, and test targets must
 compile, test, archive, and export with zero warnings and zero errors across all
 supported platforms. Swift and C-family warnings are errors in project.yml.
 Do not disable diagnostics, lower concurrency checking, or override these gates
@@ -157,15 +163,13 @@ xcrun simctl launch booted dev.ericslutz.gus
 Scope `find` to the right product dir (`Debug-iphonesimulator`, `Debug-appletvsimulator`,
 etc.) — a bare `find build` can grab another platform's product.
 
-Run tests (CI-style schemes):
+Run local simulator tests (platform schemes):
 
 ```sh
 xcodebuild test -project 'A Playa Named Gus.xcodeproj' -scheme 'Gus iOS Unit Tests' \
   -destination 'platform=iOS Simulator,name=iPhone 17'
 xcodebuild test -project 'A Playa Named Gus.xcodeproj' -scheme 'Gus tvOS Unit Tests' \
   -destination 'platform=tvOS Simulator,name=Apple TV 4K (3rd generation)'
-xcodebuild test -project 'A Playa Named Gus.xcodeproj' -scheme 'Gus macOS Unit Tests' \
-  -destination 'platform=macOS'
 xcodebuild test -project 'A Playa Named Gus.xcodeproj' -scheme 'Gus visionOS Unit Tests' \
   -destination 'platform=visionOS Simulator,id=<UUID>'
 ```
@@ -178,11 +182,13 @@ xcodebuild test -project 'A Playa Named Gus.xcodeproj' -scheme 'Gus iOS Unit Tes
   -only-testing:GusTests/<Suite>/<test>
 ```
 
-`GusTests`/`GusTVOSTests`/`GusVisionOSTests`/`GusMacOSTests` cover shared pure logic with
-Swift Testing and are the test bundles run in CI. The matching `Gus iOS Tests`/
+`GusTests`/`GusTVOSTests`/`GusVisionOSTests` cover shared pure logic with
+Swift Testing in local simulators; `GusMacOSTests` runs in authorized native macOS CI.
+The matching `Gus iOS Tests`/
 `Gus tvOS Tests`/etc. schemes also provide local authenticated UI regressions using
 `Scripts/demo-server.sh start`; `Gus watchOS Tests` covers Watch browse/audio.
-`python3 Scripts/validate-release.py --phase all` runs the sequential local matrix.
+`Scripts/validate-release.py` provides local validation tooling. Its `tests`/`all`
+phases include native macOS execution and are outside the current local runtime scope.
 
 Screenshot automation:
 
@@ -234,9 +240,14 @@ State objects are `@Observable @MainActor` classes (Observation framework — no
 - `RootView` switches on `AppModel.currentSession`: `nil` → `ConnectFlowView`; otherwise
   injects a `SessionStore` (authenticated `JellyfinClient` + user + server) into the signed-in tree.
 - Feature stores take a `SessionStore` and use its media provider. `RootNavigationState`
-  owns Home, cached library/detail stores, per-section search, navigation paths,
+  owns Home, weak library/detail store lookups, per-section search state, navigation paths,
   per-library display choices, profile presentation, and scroll anchors for the signed-in account; adaptive view replacement reuses that state.
   `RootView` owns `AudioPlaybackCoordinator` and stops it when the account changes.
+- `SavedMediaStore` owns supplemental Gus intent, cursors, activity and its CloudKit
+  journal. `ServerMediaListsStore` owns the account-scoped native-list cache and offline
+  edit journal; Jellyfin owns names, membership and ordering. Current serialized paths,
+  cloud IDs and offline-draft reconciliation stay stable. Retired local-playlist formats
+  are rejected per record instead of imported.
 
 ### Auth & session flow
 
@@ -248,10 +259,18 @@ returned access token. The token is stored in the **Keychain** (`KeychainStore`,
 (Codable JSON in Application Support). On launch, `AppModel.restoreLastSession()` rebuilds
 an authenticated client from the stored token silently.
 
+Every authenticated activation uses the same async AppModel installation path and
+immutable `SessionLease`. Credential or endpoint changes retire the old lease;
+profile-only changes keep it. Retirement checkpoints players and gives their
+originating report queue up to five seconds to flush. Typed authenticated 401
+recovery locks the expired account while preserving current data; 403 is a permission
+failure. Explicit Sign Out retains its separate deletion policy.
+
 ### Navigation
 
-Navigation divergence is isolated in `Platform/RootContainer.swift`: `TabView`
-(compact iPhone, tvOS) vs `NavigationSplitView` (iPad, macOS, visionOS). Item and library
+Navigation divergence is isolated in `Platform/RootContainer.swift`: compact-width
+iOS uses `TabView`; tvOS and visionOS use `TabView` with `.sidebarAdaptable`;
+regular-width iOS and macOS use `NavigationSplitView`. Item and library
 navigation destinations are registered once at each `NavigationStack` root via
 `.gusItemDestinations()`; feature views push typed `LibraryRef`/`ItemRef` values. Fixed
 app destinations use `AppRoute` + `AppNavigationModel` for `gus://home`, `gus://search`,
@@ -259,7 +278,13 @@ and `gus://settings`, shared by URL opens, menu commands, and the tvOS Top Shelf
 All section stacks bind their paths to `RootNavigationState`. Compact iPhone navigation
 uses three content tabs plus an explicit More list and a native Search tab, keeping
 one stack per section. The default content tabs are Home, Movies and Series when
-available; a saved account-specific order keeps its first three visible sections. Settings/Downloads children use the typed `AppScreen` destinations.
+available; a saved account-specific order keeps its first three visible sections.
+visionOS shows all configured sections directly when there are at most eight; above
+eight it shows the first seven in resolved order plus More. Overflow uses the same
+section selection and navigation histories.
+When More becomes unnecessary, its selection returns to the first direct section
+without clearing those histories. Settings/Downloads children use the typed
+`AppScreen` destinations.
 
 **Content deep links** (`gus://item/<id>`, `gus://play/<id>` — `Models/ContentLink.swift`)
 ride `AppNavigationModel` via a consume-once pending-link; `Platform/ContentLinkHandler.swift`
@@ -267,7 +292,7 @@ resolves the id through the session's provider. iPad and tvOS item links push in
 section's normal stack; iPad photos open the fullscreen session viewer. Other platforms present a detail sheet. Session player hosts sit
 above adaptive layout replacement, with the detail sheet hosting playback while it is open.
 Content links are the shared entry point for: **Handoff** (`Platform/UserActivities.swift`
-— detail/player surfaces publish `NSUserActivity` with ids only, never tokens), **Core
+— detail/player surfaces publish identity and sanitized playback intent, never tokens), **Core
 Spotlight** (`Services/SpotlightIndexer.swift` — donates browsed items, refuses
 other-account continuations, deindexes on sign-out; no watchOS/tvOS), **Siri/App Intents**
 (`App/GusAppIntents.swift` — "Play media" provider search), and the **content-aware tvOS
@@ -275,6 +300,12 @@ Top Shelf** (Continue Watching snapshot via the `group.dev.ericslutz.gus` App Gr
 written by `HomeStore`, read by the credential-free `GusTopShelf` extension).
 
 ### Playback
+
+`PlaybackRequest` carries source, semantic track/subtitle intent, start position and
+presentation through local/remote playback, queues, Watch, Mac windows, Handoff and
+SharePlay. Version changes require Start Over or explicit timestamp reuse. Per-account
+track remembering is opt-in and same-series only; persisted preferences contain no
+source-local indexes. Missing/ambiguous named tracks use defaults with a notice.
 
 **Video:** `StreamURLBuilder` POSTs `Paths.getPostedPlaybackInfo` with a `DeviceProfile`
 that leans **direct play** for everything the device's hardware decodes
@@ -285,7 +316,8 @@ falling back to HEVC-preferred fMP4 HLS transcoding with 8-channel audio and
 `enableSubtitlesInManifest` (bitmap subs burn in; text subs ride the manifest).
 `PlaybackStore` owns the `AVPlayer` and tears it down on dismiss; it sets
 `AVPlayerItem.externalMetadata` (not on macOS — no API), auto-plays next episodes or
-dismisses at natural end (`PlaybackPreferences`), reports pause/resume immediately, and
+dismisses at natural end (`PlaybackPreferences`), enqueues pause/resume snapshots on the
+session-owned `PlaybackReportQueue`, and
 reads the Settings-backed `PlaybackQuality` bitrate cap. Track switching is in-place via
 `AVMediaSelection` for direct play (`PlaybackMediaSelectionMatcher`, ordinal+language)
 with a server-side rebuild fallback. Surfaces: `AVPlayerViewController` on iOS
@@ -296,8 +328,9 @@ immersive playback controls), and `AVPlayerView` on macOS (video opens in the de
 feeds `MPNowPlayingInfoCenter` / `MPRemoteCommandCenter`. `AVAudioSession` is guarded
 (`#if os(iOS) || os(tvOS) || os(visionOS)` — doesn't exist on macOS).
 
-**Audio:** songs and audiobooks play through `AudioPlayerStore` + `AudioPlayerView` (queue,
-shuffle/repeat, speed, chapters) over the Jellyfin universal audio endpoint.
+**Audio:** songs and audiobooks play through `AudioPlayerStore` + `AudioPlayerView` (paged
+queue, full-collection shuffle, repeat, speed, chapters) using provider-negotiated audio
+with the selected source and track intent.
 `playerPresentation` routes by `MediaItem.isAudioPlayable`.
 `AudioPlaybackCoordinator` owns the queue and preparation task independently of the player
 presentation. Close dismisses prepared iOS and tvOS audio while playback continues; the persistent Now
@@ -306,6 +339,12 @@ the task. Audio/video stores reject late results after cancellation or teardown;
 and failed player states expose cancellation and retry. The Watch companion uses its own
 scrollable audio sheet and tears down playback when leaving that sheet.
 
+One 30-second resolution budget includes metadata, safe read retries and fallbacks;
+allocating requests are not blindly repeated. Native readiness has a separate
+45-second bound. Reports and known-resource cleanup have five-second request bounds.
+Terminal work retains its originating transport after lease retirement. Unknown
+allocation IDs cannot be claimed closed; see `Documentation/app-wide-refinement.md`.
+
 **visionOS 3D:** `Media3DDetector` maps Jellyfin SBS/TAB/MVC metadata into a
 `Stereo3DPresentation`; non-visionOS always resolves to 2D. SBS/TAB use Gus Cinema
 `ImmersiveSpace` (`StereoFrameRenderer` splits packed frames into per-eye `CVPixelBuffer`s
@@ -313,14 +352,24 @@ via `CMTaggedBufferGroup`). MV-HEVC uses AVKit directly with `preferredViewingMo
 
 **Downloads** (`OfflineDownloadStore` + `DownloadSessionCoordinator`): background
 `URLSessionConfiguration.background` download session. AVPlayer-native originals use
-`Paths.getDownload`; incompatible sources use server-side progressive MP4 transcoding.
+`Paths.getDownload` for the primary source or source-qualified static streams for
+alternate versions. Incompatible video uses progressive MP4 conversion; incompatible
+audio uses MP3, with explicit tracks sent through the source-qualified audio endpoint.
+Records and local checkpoints retain known source identity. File preparation/finalization
+runs on a serial worker with a generation-checked metadata commit before completion
+acknowledgment. Unreadable metadata preserves files and exposes native retry UI.
 Platform availability routed through `Platform/DownloadsAvailability.swift`. tvOS excluded.
+
+**Artwork:** shared role/rendition requests feed native AsyncImage and ordered fallbacks.
+OS 26 keeps its native transport; OS 27 inherits `NativeArtworkTransport` from the
+credential lease, using a memory-only cache cleared when the lease retires. Do not claim
+that OS 26 AsyncImage uses the Jellyfin SDK's URLSession or cache.
 
 ### watchOS companion
 
 `GusWatch` is a second application target (`WKRunsIndependentlyOfCompanionApp`), embedded
 in `Watch/`. Compiles the shared subset — `Models/`, `Providers/`, `Services/`, and
-non-video `Stores` (no `PlaybackStore`) — plus `Sources/Watch`. Remote
+selected `Stores`, including the shared `PlaybackStore` lifecycle — plus `Sources/Watch`. Remote
 control rides `RemoteSessionsStore` + `SessionsSocket`; credentials hand off from iPhone
 via `WatchSessionRelay` / `WatchCredentialReceiver`.
 
@@ -356,7 +405,7 @@ via `WatchSessionRelay` / `WatchCredentialReceiver`.
 | Navigation/routing | `NavigationStack` / `NavigationSplitView` / `TabView` |
 | State / DI | Observation `@Observable` + `@Environment` |
 | Playback | AVKit (`VideoPlayer`, `AVPlayerViewController`); no VLCKit |
-| Images | `AsyncImage` + tuned shared `URLCache` |
+| Images | Native `AsyncImage`; lease-owned memory cache on OS 27, native transport on OS 26 |
 | Secrets | Security framework `SecItem*` |
 | Persistence | `Codable` + `FileManager`; `UserDefaults`/`@AppStorage` for prefs |
 | Theming | `AccentColor`, semantic colors, system Materials, SF Symbols, Dynamic Type |
@@ -395,8 +444,7 @@ dark `#0B2E33`), and cinema colorsets all share this palette.
 platform-specific background/G/play stacks generated from the approved SVGs by
 `swift Scripts/generate-platform-icons.swift`. This also refreshes static tvOS Top Shelf
 artwork and the review page in `Documentation/AppStore/platform-icon-review/`.
-`Scripts/generate-app-icon.swift` draws an older
-pineapple design and is **not** a source for the current icon. For the modern icon, edit
+For the modern icon, edit
 `Resources/AppIcon.icon` in Icon Composer and preserve the Gus palette and G/play identity. The modern geometry is an intentional
 adaptation of the website mark.
 
@@ -459,8 +507,8 @@ wiki, not here.
 ## Swiftfin reference policy
 
 The mature [Swiftfin](https://github.com/eslutz/Swiftfin) app is **reference only** —
-mirror its *patterns* and SDK call shapes, **never copy its code**. Swiftfin is built on
-VLCKit, a custom coordinator/router, Factory DI, Combine, and ~30 dependencies; A Playa
+mirror its *patterns* and SDK call shapes, **never copy its code**. The inspected Swiftfin main uses
+MPVUI and AVPlayer with custom controls, routing, DI and other dependencies; A Playa
 Named Gus deliberately re-expresses those patterns on the Apple-first stack above.
 
 ### iOS review iteration 2

@@ -70,7 +70,7 @@ final class SessionsSocket: @unchecked Sendable {
     /// Connects, subscribes to session updates, and streams change events until
     /// cancelled or disconnected.
     func events() -> AsyncStream<SessionsSocketEvent> {
-        AsyncStream { continuation in
+        AsyncStream(bufferingPolicy: .bufferingNewest(1)) { continuation in
             let task = URLSession.shared.webSocketTask(with: url)
             lock.withLock { self.task = task }
             task.resume()
@@ -85,12 +85,13 @@ final class SessionsSocket: @unchecked Sendable {
                         {
                             if case let .forceKeepAlive(timeout) = event {
                                 self?.scheduleKeepAlive(timeoutSeconds: timeout)
+                            } else {
+                                continuation.yield(event)
                             }
-                            continuation.yield(event)
                         }
                         receiveNext()
                     case let .failure(error):
-                        self?.logger.info("Sessions socket closed: \(error.localizedDescription, privacy: .private)")
+                        self?.logger.info("Sessions socket closed (code \((error as NSError).code, privacy: .public))")
                         self?.stopKeepAlive()
                         continuation.finish()
                     }

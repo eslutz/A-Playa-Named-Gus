@@ -36,7 +36,8 @@ extension View {
                 Spacer(minLength: 300)
                 HStack(alignment: .top, spacing: 56) {
                     controls()
-                        .frame(width: 528, alignment: .leading)
+                        .fixedSize(horizontal: true, vertical: false)
+                        .frame(minWidth: 528, alignment: .leading)
                         .focusSection()
                     VStack(alignment: .leading, spacing: 20) {
                         if let overview = item.overview?.trimmedNilIfEmpty {
@@ -59,7 +60,6 @@ extension View {
                     .focusSection()
                 }
             }
-            .foregroundStyle(.white)
             .environment(\.colorScheme, .dark)
             .padding(.horizontal, 80)
             .padding(.top, 64)
@@ -67,7 +67,7 @@ extension View {
             .frame(maxWidth: .infinity, minHeight: 940, alignment: .bottomLeading)
             .background {
                 GeometryReader { geometry in
-                    AsyncPoster(url: backdropURL, placeholderSymbol: item.artworkPlaceholderSymbol, fallbackURLs: session.mediaProvider.artworkURLs(for: item, maxWidth: 1920))
+                    AsyncPoster(url: backdropURL, placeholderSymbol: item.artworkPlaceholderSymbol, fallbackURLs: session.mediaProvider.artworkURLs(for: item, request: .init(role: item.type == .episode ? .episodeStill : .backdrop, maxWidth: 1920)))
                         .frame(width: geometry.size.width, height: geometry.size.height).clipped()
                         .overlay {
                             LinearGradient(colors: [.black.opacity(0.55), .clear], startPoint: .top, endPoint: .center)

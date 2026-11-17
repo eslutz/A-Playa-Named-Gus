@@ -9,6 +9,7 @@ import SwiftUI
 struct GusWatchApp: App {
     @State private var appModel = AppModel.shared
     @State private var offlineDownloads = OfflineDownloadStore.shared
+    @Environment(\.scenePhase) private var scenePhase
     private let shouldConnectToDemoServer: Bool
 
     init() {
@@ -28,6 +29,10 @@ struct GusWatchApp: App {
             WatchRootView()
                 .environment(appModel)
                 .environment(offlineDownloads)
+                .onChange(of: scenePhase) { _, phase in
+                    guard phase == .background else { return }
+                    Task { try? await DiagnosticsHub.shared.flush() }
+                }
                 .task {
                     #if DEBUG
                         if shouldConnectToDemoServer {
@@ -35,7 +40,7 @@ struct GusWatchApp: App {
                             return
                         }
                     #endif
-                    appModel.restoreLastSession()
+                    await appModel.restoreLastSession()
                 }
         }
     }
@@ -50,15 +55,21 @@ struct WatchRootView: View {
     var body: some View {
         if let session = appModel.currentSession {
             WatchSignedInView()
-                .id(SessionCredential(user: session.user).account)
+                .id(session.lease)
                 .environment(session)
+                .gusArtworkTransport(session.artworkTransport)
+                .disabled(appModel.isTransitioning)
+                .overlay {
+                    if appModel.isTransitioning {
+                        ProgressView("Finishing Playback…")
+                    }
+                }
                 .task(id: scenePhase) {
                     downloads.load(serverID: session.server.id, userID: session.user.id)
                     guard scenePhase == .active else { return }
                     while !Task.isCancelled {
                         await OfflinePlaybackProgressStore.shared.sync(session: session) {
-                            appModel.currentSession?.server.id == session.server.id &&
-                                appModel.currentSession?.user.id == session.user.id
+                            appModel.currentSession?.lease == session.lease && session.isActive
                         }
                         try? await Task.sleep(for: .seconds(30))
                     }

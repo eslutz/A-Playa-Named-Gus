@@ -140,6 +140,46 @@ struct LibraryStoreTests {
     }
 
     @MainActor
+    @Test("a replacement filter supersedes an in-flight first page")
+    func supersedesFirstPage() async throws {
+        LibraryItemsURLProtocol.configure(responses: [
+            .init(result: BaseItemDtoQueryResult(items: [libraryDTO(id: "old")], totalRecordCount: 1), delayNanoseconds: 200_000_000),
+            .init(result: BaseItemDtoQueryResult(items: [libraryDTO(id: "filtered")], totalRecordCount: 1)),
+        ])
+        let store = try LibraryStore(scope: .category(.movies), session: libraryTestSession())
+        let original = Task { await store.load() }
+        try await LibraryItemsURLProtocol.waitForRecordedRequestCount(1)
+        await store.applyFilter(LibraryFilterState(status: .unplayed))
+        await original.value
+        #expect(store.items.map(\.id) == ["filtered"])
+        #expect(LibraryItemsURLProtocol.recordedRequests.map(\.filters) == [nil, "IsUnplayed"])
+        #expect(!store.isLoading)
+    }
+
+    @MainActor
+    @Test("overlapping pages advance raw offsets and an incomplete page retains retry at the same offset")
+    func deduplicatesPages() async throws {
+        LibraryItemsURLProtocol.configure(responses: [
+            .init(result: BaseItemDtoQueryResult(items: libraryItems(prefix: "item", range: 0 ..< 60), totalRecordCount: 63)),
+            .init(result: BaseItemDtoQueryResult(items: [libraryDTO(id: "item-59"), libraryDTO(id: "new")])),
+            .init(result: BaseItemDtoQueryResult(items: [])),
+            .init(result: BaseItemDtoQueryResult(items: [libraryDTO(id: "last")])),
+        ])
+        let store = try LibraryStore(scope: .category(.movies), session: libraryTestSession())
+        await store.load()
+        await store.continueSearching()
+        #expect(store.items.count == 61)
+        #expect(store.items.filter { $0.id == "item-59" }.count == 1)
+        await store.continueSearching()
+        #expect(store.items.count == 61 && store.canLoadMore)
+        #expect(store.pageError != nil)
+        await store.continueSearching()
+        #expect(LibraryItemsURLProtocol.recordedRequests.map(\.startIndex) == [0, 60, 62, 62])
+        #expect(store.items.count == 62 && !store.canLoadMore)
+        #expect(store.items.last?.id == "last" && store.pageError == nil)
+    }
+
+    @MainActor
     @Test("ignores stale next page responses after filter changes")
     func ignoresStaleNextPageResponsesAfterFilterChanges() async throws {
         LibraryItemsURLProtocol.configure(responses: [

@@ -32,7 +32,7 @@ extension View {
         @Environment(\.colorScheme) private var colorScheme
 
         func body(content: Content) -> some View {
-            content.gusTVCanvas().preferredColorScheme(colorScheme)
+            content.gusTVCanvas().preferredColorScheme(colorScheme).gusTVFocusScope()
         }
     }
 

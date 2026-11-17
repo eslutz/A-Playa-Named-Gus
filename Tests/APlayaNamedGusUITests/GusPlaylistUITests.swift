@@ -38,8 +38,10 @@
                         XCTAssertTrue(card.waitForExistence(timeout: 30))
                     }
                     app.swipeUp()
-                    XCTAssertEqual(cards[0].value as? String, watched ? "Watched" : "Unwatched")
-                    XCTAssertEqual(cards[1].value as? String, "Unwatched")
+                    // Shared media semantics include duration and other status
+                    // components. Require the exact watched-state component.
+                    XCTAssertTrue((cards[0].value as? String)?.components(separatedBy: ", ").contains(watched ? "Watched" : "Unwatched") == true)
+                    XCTAssertTrue((cards[1].value as? String)?.components(separatedBy: ", ").contains("Unwatched") == true)
                     XCTAssertEqual(cards[0].frame.minY, cards[1].frame.minY, accuracy: 1)
                     XCTAssertEqual(cards[0].frame.height, cards[1].frame.height, accuracy: 1)
                     if original.isEmpty {
@@ -373,7 +375,11 @@
             XCTAssertTrue(after.isEmpty)
             app.navigationBars.buttons["More"].firstMatch.tap(); app.buttons["Delete Collection"].tap()
             app.buttons["Delete Collection"].firstMatch.tap()
-            XCTAssertTrue(app.navigationBars[title].waitForExistence(timeout: 10))
+            let returnedToMovie = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+                let play = app.buttons["Detail.play"]
+                return play.exists && play.isHittable && app.staticTexts[title].firstMatch.exists && !app.buttons["Delete Collection"].exists && !app.staticTexts[name].exists
+            }, object: nil)
+            XCTAssertEqual(XCTWaiter.wait(for: [returnedToMovie], timeout: 10), .completed)
             let deleted = try await nativeList(named: name, kind: "BoxSet")
             XCTAssertNil(deleted)
         }

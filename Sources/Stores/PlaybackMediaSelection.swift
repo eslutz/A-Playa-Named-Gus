@@ -23,7 +23,7 @@ enum PlaybackMediaSelectionMatcher {
         candidates: [MediaSelectionCandidate]
     ) -> Int? {
         let sameKind = streams
-            .filter { $0.type == kind }
+            .filter { $0.type == kind && $0.isExternal != true }
             .sorted { ($0.index ?? .max) < ($1.index ?? .max) }
         guard let ordinal = sameKind.firstIndex(where: { $0.index == streamIndex }) else { return nil }
         let stream = sameKind[ordinal]

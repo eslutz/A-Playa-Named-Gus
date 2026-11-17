@@ -5,6 +5,15 @@ import SwiftUI
 struct WatchPoster: View {
     @Environment(SessionStore.self) private var session
     let item: MediaItem
+    @State private var candidateIndex = 0
+
+    private var candidates: [URL] {
+        session.mediaProvider.artworkURLs(for: item, request: .init(role: .poster, maxWidth: 120))
+    }
+
+    private var imageURL: URL? {
+        candidates.indices.contains(candidateIndex) ? candidates[candidateIndex] : nil
+    }
 
     var body: some View {
         // The row owns the thumbnail's geometry, including loaded artwork. Keep the
@@ -12,26 +21,38 @@ struct WatchPoster: View {
         Color.clear
             .frame(width: 36, height: 54)
             .overlay {
-                AsyncImage(url: session.mediaProvider.primaryImageURL(for: item, maxWidth: 120)) { phase in
+                AsyncImage(url: imageURL) { phase in
                     switch phase {
                     case let .success(image):
                         image
                             .resizable()
                             .aspectRatio(contentMode: .fill)
-                    default:
-                        Rectangle()
-                            .fill(.quaternary)
-                            .overlay {
-                                Image(systemName: "photo")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
+                    case let .failure(error):
+                        placeholder.task(id: imageURL) {
+                            guard !Task.isCancelled, !GusError(from: error).isCancellation else { return }
+                            if candidateIndex + 1 < candidates.count {
+                                candidateIndex += 1
                             }
+                        }
+                    default:
+                        placeholder
                     }
                 }
+                .onChange(of: candidates) { _, _ in candidateIndex = 0 }
                 .frame(width: 36, height: 54)
                 .clipped()
             }
             .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
             .accessibilityHidden(true)
+    }
+
+    private var placeholder: some View {
+        Rectangle()
+            .fill(.quaternary)
+            .overlay {
+                Image(systemName: item.artworkPlaceholderSymbol)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
     }
 }

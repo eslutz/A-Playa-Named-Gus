@@ -23,9 +23,24 @@ constrain *how* each item is built.
 - [x] Set the minimum deployment target to 26.0 across iOS/iPadOS, tvOS, visionOS, macOS, watchOS, and Top Shelf, preserving OS 27.x features through availability guards and native OS 26 fallbacks. All six local Debug build lanes passed with zero warnings; tvOS 26.5/27.0 installation and launch passed, with six focused audio/TV playback tests passing on each OS. See [implementation and validation](Reviews/README.md).
 - [ ] Complete exact 26.0 runtime execution, physical Apple TV 26.6 account/focus/playback/Top Shelf acceptance, remaining platform runtime checks, and required signed/hosted release gates.
 
+## App-wide refinement
+
+- [~] Implement all 22 source-review findings and the approved source/version,
+  semantic track-memory, native preview and retired-code cleanup scope. Track
+  shared contracts, individual findings and acceptance in
+  [the implementation ledger](app-wide-refinement.md).
+- [~] Local builds, simulator regressions, accessibility and the Release p95 gate
+  have revision- and artifact-scoped evidence; earlier results are not a full
+  current-revision runtime rerun. Required hosted checks apply to each candidate;
+  Sketch reconciliation is deferred by the owner and is not a release gate. All simulator builds and
+  tests are local-only; the hosted native macOS CI unit job has an explicit
+  exception. Physical-device testing and local native macOS runtime remain excluded.
+- [x] Download recovery summary counts avoid numeric claims when metadata cannot
+  be read. Candidate-specific validation is recorded outside Git.
+
 ## Playback reliability
 
-- [~] Route standalone transport-stream sources through HLS and surface AVPlayer startup failures in retained diagnostics. Local stream-format and unit regressions are separate from physical Apple TV acceptance; a second stalled HLS session still requires a verified cause.
+- [~] Negotiate transport-stream video through segmented HLS while retaining compatible MP4 direct delivery. Prefer fMP4 HLS and advertise an H.264 TS HLS option for Jellyfin Live TV compatibility mode. Preserve startup-failure diagnostics, bounded known-resource cleanup and the no-retry boundary for allocating requests; native continuous output and started-live Stop response-loss acceptance remain separate gates.
 
 ## October 2026 UI remediation
 
@@ -33,7 +48,7 @@ constrain *how* each item is built.
 - [x] Implement remediation for the 24 findings in the October 9–10 review and both addenda: bounded artwork/detail layouts, adaptive actions/audio, persistent audio dismissal/reopening, shared navigation across width changes, explicit iPhone More, tvOS link navigation, cancellation/retry, request identity, filtered paging, and localized accessibility fixes. The earlier candidate passed all six platform builds and four 274-test suites; see [the remediation report](Reviews/README.md) for scoped runtime and contrast evidence.
 - [~] Complete release acceptance: physical acceptance of later source changes, Mac window/keyboard checks, assistive technology and platform input, remaining appearance/metadata/error variants, full iPad contrast acceptance (native Xcode 27 sampler blocked), exact minimum-OS execution, broader Duo video/navigation/sheet transition flows, and signed TestFlight acceptance. The sampled live Duo audio transition/control check passed; see the repair report for its limits. The Watch stall was fixed and retested locally on 40 mm and 46 mm. Simulator checks do not close the remaining gates.
 
-- [x] October 12 stale-reference recovery: shared account-scoped resolution, versioned Next Up migration, explicit legacy replacement, public-artwork fallbacks, scoped system links, preserved downloaded-file identity, and confirmed progress transfer. Source, regression tests, platform builds, and the physical Trespass recovery are verified; evidence and remaining cross-platform runtime limits are recorded in [the validation report](Reviews/README.md).
+- [x] October 12 stale-reference recovery: shared account-scoped resolution, scoped system links, preserved downloaded-file identity, and confirmed progress transfer. The app-wide refinement supersedes its retired-format migration and import support; current-format identity recovery remains. Historical validation and remaining runtime limits are recorded in [the validation report](Reviews/README.md).
 
 ## Apple TV presentation alignment
 
@@ -86,8 +101,7 @@ considered launch and accent, consistent semantic theming.
   `ASSETCATALOG_COMPILER_APPICON_NAME: ""` override in `project.yml`.
   *Acceptance:* actool produces no missing-icon errors on any SDK; icon renders on each
   Home screen / launcher. *(Done: current source-controlled assets use the Gus brand mark;
-  the older `Scripts/generate-app-icon.swift` pineapple generator is retired and must not be
-  used for regeneration.)*
+  the obsolete pineapple generator has been removed.)*
 - [x] **Launch experience.** Confirm `UILaunchScreen` presents cleanly; consider a minimal
   branded launch on platforms that support it. *Acceptance:* no flash of unstyled content;
   consistent first frame. *(Done: iOS/iPadOS use a color-only `UILaunchScreen` backed by
@@ -191,29 +205,21 @@ automated build verification. (Covers priority: *polish & testing*.)
   *Acceptance:* available for local/manual launch validation. *(Done: `GusLaunchUITests`
   verifies the Connect screen renders through native iOS, tvOS, visionOS, and macOS UI
   test bundles; CI keeps these UI smoke tests out of the required PR pipeline.)*
-- [x] **CI pipeline.** GitHub Actions: validate the shared project/pins → resolve →
-  build the iPhone/iPad/macOS/tvOS/visionOS/Watch matrix → run native unit tests → lint.
-  *Acceptance:* successful required checks on the complete current source. *(Configured
-  on the hosted `xcode-27` runner with a minimum iOS simulator SDK of 27.1. Final
-  run `38192282611` at `edd06e6636cd32b877622dbcb4ccb34524a1b3c1` passed **13/13 jobs**:
-  six builds, five unit lanes, lint and docs. Each unit lane passed 288 Swift Testing
-  cases in 49 suites and three separate XCTest measurements. Native audio completion,
-  replay and deletion/no-stream assertions passed with the one-second 48 kHz fixture
-  and unchanged eight-second deadline. The earlier 400 ms fixture failures remain
-  recorded with their cause unresolved; no production workaround was added. See
-  full hosted evidence.
-  This is separate from successful 4/4 Xcode Cloud BUILD and device/release acceptance.
-  Current GUS-UI-040 source `64505d9dfd337c90f390c7c66503912eac252d3f` passed Cloud Build 3 4/4 BUILD
-  actions and [GitHub run `38194318738`, attempt 2](https://github.com/eslutz/A-Playa-Named-Gus/actions/runs/38194318738/attempts/2)
-  completed **13/13 successful checks**. iPad alone reran unchanged; the other 12 successes
-  were carried forward from attempt 1. Each accepted unit lane passed 288 cases/49 suites
-  plus three separate XCTest measurements, including both actual native audio cases.
-  The initial iPad completion failure remains recorded with its cause unresolved; retry
-  acceptance does not establish a reliable fix. Current proof.)*
+- [~] The owner-authorized native macOS CI exception records the identified Xcode
+  nil simulator-architecture warnings while retaining all unrelated warning/error gates.
+  Simulator builds/tests remain local-only.
+- [~] **CI pipeline.** GitHub runs five checks: Validation Scope, Lint, Docs and
+  Config, Build macOS, and Test macOS. All simulator builds/tests run locally;
+  native macOS units have the hosted exception. Existing local evidence remains
+  revision/artifact scoped. Pass the five checks on the intended head before merge;
+  server-side main protection is currently disabled and was not changed here.
+  Old hosted simulator matrices and Cloud test workflows are superseded. No live
+  Cloud settings changed; stale simulator workflows must not be started. Keep
+  warning, architecture and signing gates intact. See [policy](AppStore/pipeline-policy.md).
 - [x] **Update `project.yml` for the test target & schemes.** *Acceptance:* generated
   project includes the test targets; the per-platform `Gus <platform> Unit Tests` test
   actions work (the `A Playa Named Gus` scheme is build-only). *(Done: platform-native
-  unit/UI test targets, CI unit schemes, and local UI-inclusive platform schemes are
+  unit/UI test targets, the native macOS CI scheme, and local simulator schemes are
   generated from `project.yml`.)*
 
 ---
@@ -281,8 +287,9 @@ automated build verification. (Covers priority: *polish & testing*.)
   (Hi10P/interlaced H.264 excluded via codec conditions); a shared container policy
   routes `hev1` MP4 originals through lossless HLS/fMP4 remuxing to `hvc1`, matching
   offline-download eligibility and tag normalization. Physical Idle Hands playback
-  acceptance remains pending. The transcode target is
-  HEVC-preferred fMP4 HLS with 8-channel audio and `enableSubtitlesInManifest` (text
+  acceptance remains pending. The preferred transcode target is
+  HEVC-capable fMP4 HLS, with H.264 TS HLS available for Live TV compatibility mode.
+  Both profiles retain up to 8-channel audio and `enableSubtitlesInManifest` (text
   subs ride the manifest, only bitmap subs burn in); `AVPlayerItem.externalMetadata`
   feeds the system title/info chrome (sans macOS, which lacks the API);
   `updatesNowPlayingInfoCenter = false` on iOS so `NowPlayingController` is the single
@@ -447,7 +454,7 @@ preserving a clean route to future backends such as Emby.
   *Acceptance:* existing Jellyfin users migrate without reauthentication, token lookup
   remains Keychain-backed, and future providers can coexist without account/key collisions.
   *(Done: persisted server/user/session records carry `providerKind`, Keychain accounts
-  use `jellyfin:serverID:userID`, and restore migrates legacy Jellyfin token accounts.)*
+  use `jellyfin:serverID:userID`, and restore uses provider-scoped credential accounts.)*
 - [x] **Capability-driven feature availability.** Add a capability model so UI can show,
   hide, or degrade features based on backend and server configuration. *Acceptance:*
   feature code does not spread `if Jellyfin` / `if Emby` checks; provider-specific behavior
@@ -459,7 +466,7 @@ preserving a clean route to future backends such as Emby.
   capability handling. *Acceptance:* current Jellyfin connect, browse, search, detail,
   playback, progress, downloads, and settings flows behave unchanged across all supported
   platforms. *(Done: ADR 0008 records the boundary; focused tests cover Jellyfin mapping,
-  provider-scoped credentials, legacy token migration, playback reporting/domain
+  provider-scoped credentials, playback reporting/domain
   selection, download source selection, and capability-disabled downloads.)*
 
 ---
@@ -619,7 +626,7 @@ milestone once it becomes the active focus and is ready to carry a hard acceptan
 | Music library support | `[~]` In app; genre browse + live-library validation remain |
 | Books & audiobooks | `[~]` In app; visionOS reader blocked on an upstream Readium fix |
 | Photos | `[~]` In app; favorites + casting remain |
-| Live TV & DVR | `[~]` In app; full EPG grid + tuner-equipped validation remain |
+| Live TV & DVR | `[~]` In app; full EPG grid and configured Live TV playback/release acceptance remain |
 | CarPlay audio companion | `[~]` In app; entitlement + Siri intents + vehicle test remain |
 | SharePlay | `[x]` Native Group Activities integration with item-detail system launch |
 | Family safety controls & age assurance | `[~]` In app; Declared Age Range entitlement wired, device verification remains |
@@ -679,7 +686,10 @@ milestone once it becomes the active focus and is ready to carry a hard acceptan
  including tvOS focus; all three roots (tabs, visionOS sidebar, split view) render the
  customized sections dynamically; removed categories drop gracefully and newly available
  categories append visible; `gus://` routes map onto
- the customized layout with a Home fallback when Libraries is hidden.)*
+ the customized layout with a Home fallback when Libraries is hidden. visionOS keeps
+ up to eight sections direct; above eight it shows the first seven in resolved order
+ plus More, retaining each section's navigation history. Removing overflow returns a
+ selected More root to the first direct section.)*
 
 - [x] **Content deep links & system integration.** Deep-link individual library items and
  surface them through the system features that depend on it. *Acceptance:* `gus://item/
@@ -765,8 +775,9 @@ milestone once it becomes the active focus and is ready to carry a hard acceptan
  the server has no tuner/DVR configured. *(Started: `LiveTVView` serves channels with
  now-airing info, recordings, and cancellable scheduled recordings behind a Live TV
  availability probe, with a clear no-tuner state; channel playback rides the normal
- playback pipeline. A full EPG grid and recording creation remain; validation needs a
- tuner-equipped server.)*
+ playback pipeline. A full EPG grid and recording creation remain. Client playback
+ and resource-release validation can use a configured local M3U source; hardware-tuner
+ compatibility is a separate scope.)*
 
 - [~] **Family safety controls and age assurance.** Add parent-friendly content controls
  using Apple-provided safety APIs rather than a custom age-verification or child-profile
@@ -997,10 +1008,10 @@ October 12 pipeline policy supersedes direct-main publication: main now requires
 
 - [~] Next Up removal clears Jellyfin and local resume checkpoints without changing watched status. Mark Watched also retires saved intent; Mark Unwatched does not resurrect it. Add or a genuine playback start restores a dismissed item. Active playlists suppress individual members except unfinished earlier episodes skipped by the playlist. Tapping a video playlist row starts the sequence at that entry. Runtime and release-candidate validation remain distinct from physical-device acceptance.
 
-- [~] Combine Continue Watching and saved/automatic next episodes into one Next Up list ordered by genuine viewing/list activity; preserve undated legacy order and missing saved references.
+- [~] Combine Continue Watching and saved/automatic next episodes into one Next Up list ordered by genuine viewing/list activity; preserve undated current intent order and missing saved references.
 - [~] Jellyfin owns native playlist and Collection/BoxSet names, IDs, membership, playlist order and permissions. Gus keeps an account-scoped playlist cache and durable per-operation playlist edits. Collections use a separate session store and online-only management. Jellyfin 10.11.11 deduplicates playlist items, so native lists contain each media item once; an uncertain create/add outcome requires review before an explicit retry.
 - [~] Ordered movie/episode/video playback and persistent cursors apply only to all-video playlists, independently of normal episode autoplay. Existing audio playlists remain visible and open the audio player; mixed-media entries open individually. Collections group titles and do not form autoplay queues.
-- [~] Private CloudKit synchronizes supplemental Gus playlist cursors, saved Next Up intent and activity, rather than native list definitions. Previous Gus-owned playlists remain preserved and can be explicitly imported into Jellyfin; import refuses legacy lists with repeated items rather than silently collapsing them. Credentials, server URLs, signed artwork and downloaded files remain excluded.
+- [~] Private CloudKit synchronizes supplemental Gus playlist cursors, saved Next Up intent and activity, rather than native list definitions. Retired Gus-owned playlist definitions and import flows are no longer supported; current server-backed projections, saved intents, cursors and draft reconciliation remain supported. Credentials, server URLs, signed artwork and downloaded files remain excluded.
 - [ ] Signed iCloud container/provisioning and physical iPhone → Apple TV sync, offline/reconnect, playback/cursor and accessibility acceptance. Native list implementation and validation are tracked in [the implementation ledger](Reviews/README.md); no release acceptance is claimed.
 
 ## Native collections — implementation candidate
@@ -1021,19 +1032,23 @@ The subsequent [owner review remediation](tvos-review-remediation.md) restores c
 - [x] Pass warning-free builds for iOS, macOS, tvOS, visionOS and watchOS, the TV unit suite and representative remote-only simulator regressions. These checks do not establish release or physical-device acceptance.
 - [ ] Review the implementation comparisons and complete physical-TV/Siri Remote, VoiceOver, HDR/audio, exact tvOS 26.0, populated Live TV, alternate tracks and signed private-sync acceptance.
 
-Jellyfin continues to own playlists and collections; native membership, permissions, restriction gates and explicit legacy import remain unchanged. No duplicate-entry queue product is introduced. See [TV capabilities](tvos-capabilities.md) for client/service boundaries and isolated validation. Required PR CI, signed release qualification and distribution remain separate gates.
+Jellyfin continues to own playlists and collections; native membership, permissions and restriction gates remain authoritative. Retired local-list import has been removed. No duplicate-entry queue product is introduced. See [TV capabilities](tvos-capabilities.md) for client/service boundaries and isolated validation. Required PR CI, signed release qualification and distribution remain separate gates.
 
-### Xcode Cloud usage optimization — 2026-10-22
+### Historical Xcode Cloud usage optimization — superseded
 
-- [x] Split Cloud into manual-only, main-only Gus Validation (one explicit iPhone 17 / iOS 27.2, cached, no archives/distribution) and Gus Internal TestFlight (unchanged full release test/device/archive matrix, clean). Server configuration verified through API readback; GitHub PR CI remains unchanged.
-- [ ] Measure actual compute usage and cache reuse on subsequent routine runs. Configuration verification does not establish execution or release acceptance. See [pipeline policy](AppStore/pipeline-policy.md#usage-optimization--2026-10-22).
+- [x] The earlier manual Cloud split was configured and read back at the time.
+  Its simulator actions are superseded by the local-only simulator policy; do not
+  start those stale workflows. This correction does not change live Cloud settings.
+- [ ] Reconcile any future authorized archive workflow with the current
+  [pipeline policy](AppStore/pipeline-policy.md) before execution.
 
 ## Seerr integration — October 25, 2026
 
 - [x] Implement the accepted Discovery flow: account-scoped Seerr 3 setup, enabled catalog shelves, search/paging/filters, title/person/season details, exact Jellyfin identity matching, reviewed movie/season requests, history/cancellation and manager decisions.
 - [x] Add permission-gated own issues, blocklist and supported regional/email preferences, with private cookies and persistent unresolved-write safeguards.
 - [x] Complete warning-free local builds, unit tests, iPhone/iPad UI regressions, unsigned Release archives and static qualification.
-- [ ] Pass required PR checks and the full internal TestFlight release workflow.
+- [ ] Pass current PR checks, exact-candidate local simulator qualification, and
+  authorized native archive/distribution gates.
 - [ ] Record live Seerr, physical-device and assistive-input acceptance separately from synthetic contract and simulator checks.
 
 Scope and API evidence: [Seerr contract](Seerr-api-contract.md). The ongoing overall Sketch redesign is outside this feature release.

@@ -17,13 +17,17 @@ private final class SeerrPersonStore {
         let operation = generation
         let revision = store.revision
         let restrictions = String(describing: store.restrictionRevision)
+        if self.revision != revision || self.restrictions != restrictions {
+            person = nil; cast = []; crew = []; creditsState = .idle
+        }
         self.revision = revision
         self.restrictions = restrictions
-        person = nil
-        cast = []
-        crew = []
         state = .loading
-        creditsState = .idle
+        defer {
+            if generation == operation, Task.isCancelled {
+                state = person == nil ? .idle : .loaded
+            }
+        }
         do {
             let result = try await store.requireClient().person(id: id)
             guard isCurrent(operation, revision: revision, restrictions: restrictions, store: store) else { return }
@@ -83,7 +87,7 @@ struct SeerrPersonView: View {
     }
 
     var body: some View {
-        LoadingStateView(state: model.state, retryAction: { Task { await model.load(id: personID, store: store) } }) {
+        LoadingStateView(state: model.state, retryAction: { Task { await model.load(id: personID, store: store) } }, preservesContent: model.person != nil) {
             if model.revision == store.revision, model.restrictions == store.restrictionRevision, let person = model.person {
                 content(person)
             }
@@ -120,7 +124,8 @@ struct SeerrPersonView: View {
         } else if case let .failed(message) = model.creditsState {
             Text(message).foregroundStyle(.secondary)
             Button("Retry Credits") { Task { await model.loadCredits(id: personID, store: store) } }
-        } else if model.creditsState == .loaded {
+        }
+        if model.creditsState == .loaded || !model.cast.isEmpty || !model.crew.isEmpty {
             if model.cast.isEmpty && model.crew.isEmpty {
                 Text("No credits available").foregroundStyle(.secondary)
             }

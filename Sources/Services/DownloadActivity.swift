@@ -2,13 +2,13 @@ import Foundation
 
 /// Observed transfer state. A requested conversion describes intent; it does not
 /// establish that the server is preparing media or expose preparation progress.
-struct DownloadActivity: Codable, Equatable {
-    enum Phase: String, Codable, Equatable {
+struct DownloadActivity: Codable, Equatable, Sendable {
+    enum Phase: String, Codable, Equatable, Sendable {
         case resolving, queued, waitingForServer, downloading, waitingForConnectivity
         case paused, saving, complete, failed
     }
 
-    enum SourceOperation: String, Codable, Equatable {
+    enum SourceOperation: String, Codable, Equatable, Sendable {
         case original, remuxed, transcoded
     }
 

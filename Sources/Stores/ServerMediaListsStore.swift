@@ -25,8 +25,20 @@ final class ServerMediaListsStore {
         var before: UUID? = nil
         var replacementID: UUID? = nil
         var message: String? = nil
+        var outcome: ActionOutcome {
+            switch status {
+            case .queued: .queued
+            case .sending: .pending
+            case .uncertain: .uncertain
+            case .rejected: .failed(.server(message ?? String(localized: "The server rejected this change.")))
+            }
+        }
+
         var needsReview: Bool {
-            status == .uncertain || status == .rejected
+            switch outcome {
+            case .uncertain, .failed: true
+            default: false
+            }
         }
 
         var canDuplicate: Bool {
@@ -34,7 +46,7 @@ final class ServerMediaListsStore {
         }
     }
 
-    struct Migration: Codable {
+    struct DraftResolution: Codable {
         var nativeID: UUID
         var completed = false
     }
@@ -43,32 +55,35 @@ final class ServerMediaListsStore {
         var schemaVersion = 1
         var lists: [ServerMediaList] = []
         var pending: [PendingEdit] = []
-        var migrations: [String: Migration] = [:]
+        var draftResolutions: [String: DraftResolution] = [:]
         var aliases: [String: UUID] = [:]
         var previousEntries: [String: [UUID]] = [:]
         var removalAncestry: [String: [UUID]] = [:]
-        // New aliases use listID:entryID. Unqualified interim cache keys are
-        // retained as ambiguous history, never used to redirect another list.
+        // Occurrence aliases always include the owning list identity.
         var entryAliases: [String: UUID] = [:]
         var temporaryEntries: Set<UUID> = []
 
         private enum CodingKeys: String, CodingKey {
-            case schemaVersion, lists, pending, migrations, aliases, previousEntries, removalAncestry, entryAliases, temporaryEntries
+            case schemaVersion, lists, pending, aliases, previousEntries, removalAncestry, entryAliases, temporaryEntries
+            /// Preserve the current serialized journal key for offline drafts.
+            case draftResolutions = "migrations"
         }
 
         init() {}
 
         init(from decoder: Decoder) throws {
             let values = try decoder.container(keyedBy: CodingKeys.self)
-            schemaVersion = try values.decodeIfPresent(Int.self, forKey: .schemaVersion) ?? 1
-            lists = try values.decodeIfPresent([ServerMediaList].self, forKey: .lists) ?? []
-            pending = try values.decodeIfPresent([PendingEdit].self, forKey: .pending) ?? []
-            migrations = try values.decodeIfPresent([String: Migration].self, forKey: .migrations) ?? [:]
-            aliases = try values.decodeIfPresent([String: UUID].self, forKey: .aliases) ?? [:]
-            previousEntries = try values.decodeIfPresent([String: [UUID]].self, forKey: .previousEntries) ?? [:]
-            removalAncestry = try values.decodeIfPresent([String: [UUID]].self, forKey: .removalAncestry) ?? [:]
-            entryAliases = try values.decodeIfPresent([String: UUID].self, forKey: .entryAliases) ?? [:]
-            temporaryEntries = try values.decodeIfPresent(Set<UUID>.self, forKey: .temporaryEntries) ?? []
+            schemaVersion = try values.decode(Int.self, forKey: .schemaVersion)
+            lists = try values.decode([ServerMediaList].self, forKey: .lists)
+            pending = try values.decode([PendingEdit].self, forKey: .pending)
+            draftResolutions = try values.decode([String: DraftResolution].self, forKey: .draftResolutions)
+            aliases = try values.decode([String: UUID].self, forKey: .aliases)
+            previousEntries = try values.decode([String: [UUID]].self, forKey: .previousEntries)
+            removalAncestry = try values.decode([String: [UUID]].self, forKey: .removalAncestry)
+            entryAliases = try values.decode([String: UUID].self, forKey: .entryAliases)
+            temporaryEntries = try values.decode(Set<UUID>.self, forKey: .temporaryEntries)
+            draftResolutions = draftResolutions.filter { UUID(uuidString: $0.key) != nil }
+            entryAliases = entryAliases.filter { $0.key.contains(":") }
         }
     }
 
@@ -153,33 +168,27 @@ final class ServerMediaListsStore {
         let canonical = resolvedID(listID, scope: scope)
         var resolved = id
         var seen: Set<UUID> = []
-        // Unqualified aliases from interim caches cannot be attributed to a list.
         while seen.insert(resolved).inserted, let next = caches[scope]?.entryAliases[Self.listEntryKey(listID: canonical, entryID: resolved)] {
             resolved = next
         }
         return resolved
     }
 
-    func legacyImportID(for id: UUID, scope: AccountScope) -> UUID? {
-        guard let marker = caches[scope]?.migrations["legacy-" + id.uuidString], marker.completed else { return nil }
-        return marker.nativeID
-    }
-
     func pendingEdits(scope: AccountScope) -> [PendingEdit] {
         caches[scope]?.pending ?? []
     }
 
-    func videoPlaylists(scope: AccountScope, supplemental: VideoPlaylistsStore) -> [VideoPlaylist] {
+    func videoPlaylists(scope: AccountScope, supplemental: SavedMediaStore) -> [VideoPlaylist] {
         lists(kind: .playlist, scope: scope).compactMap { videoPlaylist(id: $0.id, scope: scope, supplemental: supplemental) }
     }
 
-    func videoPlaylist(id: UUID, scope: AccountScope, supplemental: VideoPlaylistsStore) -> VideoPlaylist? {
+    func videoPlaylist(id: UUID, scope: AccountScope, supplemental: SavedMediaStore) -> VideoPlaylist? {
         guard let list = list(id: id, kind: .playlist, scope: scope) else { return nil }
         let canonical = list.id
-        supplemental.migrateServerPlaylistState(from: id, to: canonical, scope: scope)
+        supplemental.remapServerPlaylistState(from: id, to: canonical, scope: scope)
         for (old, native) in caches[scope]?.aliases ?? [:] where native == canonical {
             if let original = UUID(uuidString: old) {
-                supplemental.migrateServerPlaylistState(from: original, to: canonical, scope: scope)
+                supplemental.remapServerPlaylistState(from: original, to: canonical, scope: scope)
             }
         }
         let state = supplemental.serverPlaylistState(id: canonical, scope: scope)
@@ -192,10 +201,7 @@ final class ServerMediaListsStore {
             // another device does not have this device's draft alias cache.
             supplemental.setCursor(id: canonical, entryID: cursor.entryID, positionTicks: cursor.positionTicks, finished: cursor.finished, scope: scope, activity: false)
         }
-        // An old unqualified alias cannot establish removal history for this list.
-        if list.entriesLoaded, let current = cursor?.entryID, !list.entries.contains(where: { $0.id == current }), caches[scope]?.temporaryEntries.contains(current) != true,
-           caches[scope]?.entryAliases[current.uuidString] == nil
-        {
+        if list.entriesLoaded, let current = cursor?.entryID, !list.entries.contains(where: { $0.id == current }), caches[scope]?.temporaryEntries.contains(current) != true {
             let rawIDs = caches[scope]?.lists.first(where: { $0.id == canonical })?.entries.map(\.id) ?? []
             let observed = caches[scope]?.removalAncestry[Self.listEntryKey(listID: canonical, entryID: current)]
             let oldIDs = observed ?? (rawIDs.contains(current) ? rawIDs : caches[scope]?.previousEntries[canonical.uuidString] ?? [])
@@ -307,7 +313,7 @@ final class ServerMediaListsStore {
         )
         guard await enqueue(edit, session: session) else { return nil }
         // The server-assigned identity is saved with the original local edit ID.
-        return caches[session.references.scope]?.migrations[edit.id.uuidString]?.nativeID ?? id
+        return caches[session.references.scope]?.draftResolutions[edit.id.uuidString]?.nativeID ?? id
     }
 
     @discardableResult
@@ -360,8 +366,8 @@ final class ServerMediaListsStore {
         save(scope: scope) { cache in
             if let create = cache.pending.first(where: { $0.id == id && $0.action == .create }) {
                 cache.pending.removeAll { $0.listID == create.listID }
-                for key in Array(cache.migrations.keys) where cache.migrations[key]?.nativeID == create.listID && cache.migrations[key]?.completed != true {
-                    cache.migrations.removeValue(forKey: key)
+                for key in Array(cache.draftResolutions.keys) where cache.draftResolutions[key]?.nativeID == create.listID && cache.draftResolutions[key]?.completed != true {
+                    cache.draftResolutions.removeValue(forKey: key)
                 }
             } else {
                 cache.pending.removeAll { $0.id == id }
@@ -378,60 +384,6 @@ final class ServerMediaListsStore {
             cache.pending[index].message = nil
         }) else { return }
         await refresh(session: session)
-    }
-
-    /// Import is explicit and preserves the source order of unique entries. A durable marker prevents a
-    /// second create after a interrupted import; the original is never modified.
-    func importLegacy(_ legacy: VideoPlaylist, session: SessionStore, supplemental: VideoPlaylistsStore = .shared) async -> UUID? {
-        let scope = session.references.scope
-        guard prepare(scope: scope) else { return nil }
-        guard legacy.scope == scope, legacy.entries.allSatisfy({ $0.reference.scope == scope && $0.reference.item.providerKind == .jellyfin && $0.reference.item.id != nil }) else {
-            errorMessage = String(localized: "This playlist contains entries that cannot be imported into this Jellyfin account.")
-            return nil
-        }
-        guard !Self.hasRepeatedMediaIDs(legacy.entries.compactMap(\.reference.item.id)) else {
-            errorMessage = String(localized: "This Gus playlist contains repeated items. Jellyfin playlists require unique items, so the original Gus playlist has been kept for editing.")
-            return nil
-        }
-        let key = "legacy-" + legacy.id.uuidString
-        var nativeID: UUID
-        if let marker = caches[scope]?.migrations[key] {
-            nativeID = marker.nativeID
-            if marker.completed {
-                return nativeID
-            }
-        } else {
-            let localID = UUID(), editID = UUID()
-            let edit = PendingEdit(
-                id: editID,
-                listID: localID,
-                kind: .playlist,
-                action: .create,
-                name: legacy.name,
-                items: legacy.entries.map(\.reference.item)
-            )
-            guard save(scope: scope, { cache in
-                cache.migrations[key] = Migration(nativeID: localID)
-                cache.pending.append(edit)
-            }) else { return nil }
-            await refresh(session: session)
-            nativeID = caches[scope]?.migrations[key]?.nativeID ?? localID
-        }
-        guard caches[scope]?.pending.contains(where: { $0.listID == nativeID }) != true else { return nil }
-        await refresh(id: nativeID, kind: .playlist, session: session)
-        guard activeScope == scope, let list = list(id: nativeID, kind: .playlist, scope: scope), list.entriesLoaded,
-              list.entries.map(\.item.id) == legacy.entries.map(\.reference.item.id),
-              supplemental.registerServerPlaylist(id: nativeID, scope: scope) else { return nil }
-        if let cursor = legacy.cursor {
-            let index = legacy.entries.firstIndex { $0.id == cursor.entryID }
-            let imported = PlaylistCursor(entryID: index.map { list.entries[$0].id }, positionTicks: cursor.positionTicks, finished: cursor.finished)
-            guard supplemental.setServerPlaylistState(id: nativeID, cursor: imported, queued: legacy.queued, activityAt: legacy.activityAt, scope: scope) else { return nil }
-        }
-        if legacy.cursor == nil {
-            guard supplemental.setServerPlaylistState(id: nativeID, cursor: nil, queued: legacy.queued, activityAt: legacy.activityAt, scope: scope) else { return nil }
-        }
-        guard save(scope: scope, { $0.migrations[key]?.completed = true }) else { return nil }
-        return nativeID
     }
 
     private func enqueue(_ edit: PendingEdit, session: SessionStore) async -> Bool {
@@ -499,7 +451,7 @@ final class ServerMediaListsStore {
                 guard current(scope, token) else { return }
                 let unresolvedRemoval = edit.action == .remove && edit.entryID.map {
                     let resolved = resolvedEntryID($0, inList: edit.listID, scope: scope)
-                    return caches[scope]?.temporaryEntries.contains(resolved) == true || caches[scope]?.entryAliases[resolved.uuidString] != nil
+                    return caches[scope]?.temporaryEntries.contains(resolved) == true
                 } == true
                 if GusError(from: error) == .notFound, edit.action == .delete || (edit.action == .remove && !unresolvedRemoval) {
                     finish(edit: edit, scope: scope)
@@ -528,7 +480,7 @@ final class ServerMediaListsStore {
             let referencedIDs = [edit.entryID, edit.before].compactMap { $0 }
             let nativeIDs = Set(caches[scope]?.lists.first(where: { $0.id == edit.listID && $0.kind == edit.kind })?.entries.map(\.id) ?? [])
             if referencedIDs.contains(where: {
-                !nativeIDs.contains($0) && (caches[scope]?.temporaryEntries.contains($0) == true || caches[scope]?.entryAliases[$0.uuidString] != nil)
+                !nativeIDs.contains($0) && (caches[scope]?.temporaryEntries.contains($0) == true)
             }) {
                 edit.status = .rejected
                 edit.message = String(localized: "This edit refers to a saved occurrence that could not be identified on the server. Review the playlist and select the intended entry.")
@@ -593,10 +545,10 @@ final class ServerMediaListsStore {
             // Save server identity before a follow-up read can fail.
             edit.listID = nativeID
             guard save(scope: scope, { cache in
-                cache.migrations[edit.id.uuidString] = Migration(nativeID: nativeID, completed: true)
+                cache.draftResolutions[edit.id.uuidString] = DraftResolution(nativeID: nativeID, completed: true)
                 cache.aliases[originalID.uuidString] = nativeID
-                for key in Array(cache.migrations.keys) where cache.migrations[key]?.nativeID == originalID {
-                    cache.migrations[key]?.nativeID = nativeID
+                for key in Array(cache.draftResolutions.keys) where cache.draftResolutions[key]?.nativeID == originalID {
+                    cache.draftResolutions[key]?.nativeID = nativeID
                 }
                 for index in cache.pending.indices where cache.pending[index].listID == originalID {
                     cache.pending[index].listID = nativeID
@@ -786,7 +738,7 @@ final class ServerMediaListsStore {
     }
 
     private static func occurrenceID(editID: UUID, index: Int) -> UUID {
-        ServerMediaListID.uuid(String(VideoPlaylistsStore.digest(editID.uuidString + ":" + String(index)).prefix(32)))!
+        ServerMediaListID.uuid(String(SavedMediaStore.digest(editID.uuidString + ":" + String(index)).prefix(32)))!
     }
 
     private func finish(edit: PendingEdit, scope: AccountScope) {
@@ -863,7 +815,7 @@ final class ServerMediaListsStore {
     }
 
     private func fileURL(scope: AccountScope) -> URL {
-        directory.appendingPathComponent(VideoPlaylistsStore.digest(scope.serverID + "\u{0}" + scope.userID) + ".json")
+        directory.appendingPathComponent(SavedMediaStore.digest(scope.serverID + "\u{0}" + scope.userID) + ".json")
     }
 
     private func prepare(scope: AccountScope) -> Bool {

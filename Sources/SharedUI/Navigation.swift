@@ -34,7 +34,11 @@ struct ItemRef: Hashable, Identifiable, Codable {
     var playlistEntryID: UUID? = nil
     var playlistFromBeginning: Bool? = nil
     var playlistShuffled: Bool? = nil
-    var playbackStart: PlaybackStartIntent = .automatic
+    var playbackRequest: PlaybackRequest? = nil
+    var resolvedPlaybackRequest: PlaybackRequest {
+        playbackRequest ?? PlaybackRequest(item: item)
+    }
+
     /// See LibraryRef.id — must stay stable across accesses.
     var id: String {
         if let playlistID, let playlistEntryID {
@@ -44,7 +48,7 @@ struct ItemRef: Hashable, Identifiable, Codable {
     }
 
     static func == (lhs: ItemRef, rhs: ItemRef) -> Bool {
-        lhs.id == rhs.id && lhs.serverID == rhs.serverID && lhs.userID == rhs.userID && lhs.localOnly == rhs.localOnly && lhs.playlistFromBeginning == rhs.playlistFromBeginning && lhs.playlistShuffled == rhs.playlistShuffled && lhs.playbackStart == rhs.playbackStart
+        lhs.id == rhs.id && lhs.serverID == rhs.serverID && lhs.userID == rhs.userID && lhs.localOnly == rhs.localOnly && lhs.playlistFromBeginning == rhs.playlistFromBeginning && lhs.playlistShuffled == rhs.playlistShuffled && lhs.playbackRequest == rhs.playbackRequest
     }
 
     func hash(into hasher: inout Hasher) {
@@ -54,7 +58,7 @@ struct ItemRef: Hashable, Identifiable, Codable {
         hasher.combine(localOnly)
         hasher.combine(playlistFromBeginning)
         hasher.combine(playlistShuffled)
-        hasher.combine(playbackStart)
+        hasher.combine(playbackRequest)
     }
 }
 

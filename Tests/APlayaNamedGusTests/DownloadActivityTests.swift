@@ -127,11 +127,11 @@ struct DownloadActivityTests {
         #expect(restored.preparationProgress == nil)
     }
 
-    @Test("HTTP error response bodies are rejected before offline media finalization", arguments: [401, 404, 500])
+    @Test("HTTP error response bodies are rejected before offline media finalization", arguments: [401, 403, 404, 500])
     func httpErrorResponses(status: Int) throws {
         let url = try #require(URL(string: "https://example.com/media"))
         let response = try #require(HTTPURLResponse(url: url, statusCode: status, httpVersion: nil, headerFields: nil))
-        #expect(throws: URLError.self) { try DownloadSessionCoordinator.validateResponse(response) }
+        #expect(throws: GusError.fromHTTPStatusCode(status)) { try DownloadSessionCoordinator.validateResponse(response) }
     }
 
     @Test("successful HTTP downloads and synthetic delegate callbacks can finalize", arguments: [200, 206])
@@ -301,13 +301,9 @@ private final class ActivityEventTestHandler: DownloadSessionCoordinatorEventHan
         onActivity?(activity)
     }
 
-    func downloadSessionCoordinator(_ coordinator: DownloadSessionCoordinating, didFinishDownloadingTo location: URL, recordID: String) {
+    func downloadSessionCoordinator(_ coordinator: DownloadSessionCoordinating, finalizeDownloadedFileAt location: URL, recordID: String, ownership: DownloadCompletionOwnership) async -> Bool {
         finishedData = try? Data(contentsOf: location)
         events.append("finished")
-    }
-
-    func downloadSessionCoordinator(_ coordinator: DownloadSessionCoordinating, finalizeDownloadedFileAt location: URL, recordID: String) -> Bool {
-        downloadSessionCoordinator(coordinator, didFinishDownloadingTo: location, recordID: recordID)
         return finalizationSucceeds
     }
 

@@ -1,5 +1,8 @@
 import AVKit
 import SwiftUI
+#if os(macOS)
+    import OSLog
+#endif
 
 #if os(tvOS)
     /// tvOS-native `AVPlayerViewController`, which provides the full focus-engine
@@ -8,10 +11,14 @@ import SwiftUI
     struct TVPlayerSurface: UIViewControllerRepresentable {
         let player: AVPlayer
         let store: PlaybackStore
+        let controlsEnabled: Bool
+        let onSelectSource: (PlaybackStore.SourceOption) -> Void
 
         func makeUIViewController(context: Context) -> AVPlayerViewController {
             let controller = AVPlayerViewController()
             controller.player = player
+            controller.showsPlaybackControls = controlsEnabled
+            controller.view.isUserInteractionEnabled = controlsEnabled
             controller.delegate = context.coordinator
             controller.allowsPictureInPicturePlayback = false
             // tvOS AVKit always owns system video transport; its publishing toggle is unavailable.
@@ -25,6 +32,8 @@ import SwiftUI
         }
 
         func updateUIViewController(_ controller: AVPlayerViewController, context: Context) {
+            controller.showsPlaybackControls = controlsEnabled
+            controller.view.isUserInteractionEnabled = controlsEnabled
             if controller.player !== player {
                 controller.player = player
             }
@@ -49,8 +58,9 @@ import SwiftUI
 
         @MainActor final class Coordinator: NSObject, @MainActor AVPlayerViewControllerDelegate {
             private weak var store: PlaybackStore?
+            private let renderer = NativeRenderObserver()
 
-            func playerViewController(_ playerViewController: AVPlayerViewController, didSelect mediaSelectionOption: AVMediaSelectionOption?, in mediaSelectionGroup: AVMediaSelectionGroup) {
+            func playerViewController(_: AVPlayerViewController, didSelect mediaSelectionOption: AVMediaSelectionOption?, in mediaSelectionGroup: AVMediaSelectionGroup) {
                 store?.recordNativeTrackSelection(option: mediaSelectionOption, group: mediaSelectionGroup)
             }
 
@@ -61,6 +71,7 @@ import SwiftUI
 
             func update(controller: AVPlayerViewController, surface: TVPlayerSurface) {
                 store = surface.store
+                renderer.bind(controller: controller, player: surface.player, store: surface.store)
                 guard item !== surface.player.currentItem else {
                     controller.transportBarCustomMenuItems = surface.transportMenuItems(nativeAudio: nativeAudio, nativeSubtitles: nativeSubtitles)
                     return
@@ -82,6 +93,7 @@ import SwiftUI
 
             func cancel() {
                 task?.cancel(); task = nil; item = nil
+                renderer.cancel()
             }
         }
 
@@ -95,10 +107,12 @@ import SwiftUI
                     title: String(localized: "Audio", comment: "Player audio track menu"),
                     image: UIImage(systemName: "waveform"),
                     options: .singleSelection,
-                    children: audioOptions.map { option in
+                    children: [UIAction(title: String(localized: "Automatic"), state: store.audioMenuSelection == .automatic ? .on : .off) { _ in
+                        Task { await store.selectAudioStream(index: nil) }
+                    }] + audioOptions.map { option in
                         UIAction(
                             title: option.title,
-                            state: store.selectedAudioStreamIndex == option.id ? .on : .off
+                            state: store.audioMenuSelection == .stream(option.id) ? .on : .off
                         ) { _ in
                             Task { await store.selectAudioStream(index: option.id) }
                         }
@@ -108,16 +122,19 @@ import SwiftUI
 
             let subtitleOptions = store.subtitleOptions
             if !subtitleOptions.isEmpty, !nativeSubtitles {
+                let automatic = UIAction(title: String(localized: "Automatic"), state: store.subtitleMenuSelection == .automatic ? .on : .off) { _ in
+                    Task { await store.selectAutomaticSubtitles() }
+                }
                 let off = UIAction(
                     title: String(localized: "Off", comment: "Subtitles off"),
-                    state: store.selectedSubtitleStreamIndex == nil ? .on : .off
+                    state: store.subtitleMenuSelection == .off ? .on : .off
                 ) { _ in
                     Task { await store.selectSubtitleStream(index: nil) }
                 }
                 let options = subtitleOptions.map { option in
                     UIAction(
                         title: option.title,
-                        state: store.selectedSubtitleStreamIndex == option.id ? .on : .off
+                        state: store.subtitleMenuSelection == .stream(option.id) ? .on : .off
                     ) { _ in
                         Task { await store.selectSubtitleStream(index: option.id) }
                     }
@@ -126,12 +143,15 @@ import SwiftUI
                     title: String(localized: "Subtitles", comment: "Player subtitles menu"),
                     image: UIImage(systemName: "captions.bubble"),
                     options: .singleSelection,
-                    children: [off] + options
+                    children: [automatic, off] + options
                 ))
             }
 
-            if !menus.isEmpty {
-                menus = [UIMenu(title: String(localized: "Server Tracks"), image: UIImage(systemName: "slider.horizontal.3"), children: menus)]
+            // AVKit explicitly supports only flat UIMenus, not nested menus.
+            if store.mediaSourceOptions.count > 1 {
+                menus.insert(UIMenu(title: String(localized: "Version"), image: UIImage(systemName: "film.stack"), children: store.mediaSourceOptions.map { source in
+                    UIAction(title: source.title, state: source.id == store.selectedMediaSourceID ? .on : .off) { _ in onSelectSource(source) }
+                }), at: 0)
             }
 
             let chapters = store.chapterTargets
@@ -162,23 +182,35 @@ import SwiftUI
     /// declared in Info.plist).
     struct PiPCapablePlayerSurface: UIViewControllerRepresentable {
         let player: AVPlayer
+        let store: PlaybackStore
+        let controlsEnabled: Bool
+
+        func makeCoordinator() -> NativeRenderObserver {
+            NativeRenderObserver()
+        }
 
         func makeUIViewController(context: Context) -> AVPlayerViewController {
             let controller = AVPlayerViewController()
             controller.player = player
+            controller.showsPlaybackControls = controlsEnabled
+            controller.view.isUserInteractionEnabled = controlsEnabled
             controller.allowsPictureInPicturePlayback = true
             controller.canStartPictureInPictureAutomaticallyFromInline = true
             // NowPlayingController owns the lock-screen transport; leaving AVKit's
             // automatic publishing on would race two writers on the process-global
             // MPNowPlayingInfoCenter (flickering metadata/artwork).
             controller.updatesNowPlayingInfoCenter = false
+            context.coordinator.bind(controller: controller, player: player, store: store)
             return controller
         }
 
         func updateUIViewController(_ controller: AVPlayerViewController, context: Context) {
+            controller.showsPlaybackControls = controlsEnabled
+            controller.view.isUserInteractionEnabled = controlsEnabled
             if controller.player !== player {
                 controller.player = player
             }
+            context.coordinator.bind(controller: controller, player: player, store: store)
         }
     }
 
@@ -187,11 +219,13 @@ import SwiftUI
     /// including expanded and immersive experience controls where the OS supports them.
     struct VisionPlayerSurface: UIViewControllerRepresentable {
         let player: AVPlayer
+        let controlsEnabled: Bool
 
-        func makeUIViewController(context: Context) -> AVPlayerViewController {
+        func makeUIViewController(context _: Context) -> AVPlayerViewController {
             let controller = AVPlayerViewController()
             controller.player = player
-            controller.showsPlaybackControls = true
+            controller.showsPlaybackControls = controlsEnabled
+            controller.view.isUserInteractionEnabled = controlsEnabled
             controller.allowsPictureInPicturePlayback = false
             controller.canStartPictureInPictureAutomaticallyFromInline = false
             controller.updatesNowPlayingInfoCenter = false
@@ -203,7 +237,9 @@ import SwiftUI
             return controller
         }
 
-        func updateUIViewController(_ controller: AVPlayerViewController, context: Context) {
+        func updateUIViewController(_ controller: AVPlayerViewController, context _: Context) {
+            controller.showsPlaybackControls = controlsEnabled
+            controller.view.isUserInteractionEnabled = controlsEnabled
             if controller.player !== player {
                 controller.player = player
             }
@@ -214,19 +250,37 @@ import SwiftUI
     /// macOS `AVPlayerView` surface with Picture in Picture enabled.
     struct PiPCapablePlayerSurface: NSViewRepresentable {
         let player: AVPlayer
+        let store: PlaybackStore
+        let controlsEnabled: Bool
+
+        func makeCoordinator() -> NativeRenderObserver {
+            NativeRenderObserver()
+        }
 
         func makeNSView(context: Context) -> AVPlayerView {
             let view = AVPlayerView()
             view.player = player
             view.allowsPictureInPicturePlayback = true
-            view.controlsStyle = .floating
+            view.controlsStyle = controlsEnabled ? .floating : .none
+            context.coordinator.bind(view: view, player: player, store: store)
             return view
         }
 
         func updateNSView(_ view: AVPlayerView, context: Context) {
+            view.controlsStyle = controlsEnabled ? .floating : .none
+            // AVPlayerView keyboard shortcuts also work without visible chrome.
+            // Resign only its own retained focus while preparation owns transport.
+            if !controlsEnabled, let window = view.window,
+               let responder = window.firstResponder as? NSView,
+               responder === view || responder.isDescendant(of: view),
+               !window.makeFirstResponder(nil)
+            {
+                Logger(category: .playback).debug("Native player declined keyboard-focus handoff during preparation")
+            }
             if view.player !== player {
                 view.player = player
             }
+            context.coordinator.bind(view: view, player: player, store: store)
         }
     }
 #endif
@@ -234,9 +288,44 @@ import SwiftUI
 /// tvOS exposes no AVKit publishing toggle. Avoid a second app-owned video writer;
 /// other platforms keep the existing single NowPlayingController owner.
 extension NowPlayingController {
-    func startVideo(player: AVPlayer, item: MediaItem, artworkURL: URL?) {
+    func startVideo(player: AVPlayer, item: MediaItem, artworkURL: URL?, fallbackArtworkURLs: [URL] = [], artworkSession: URLSession = .shared) {
         #if !os(tvOS)
-            start(player: player, item: item, artworkURL: artworkURL)
+            start(player: player, item: item, artworkURL: artworkURL, fallbackArtworkURLs: fallbackArtworkURLs, artworkSession: artworkSession)
         #endif
     }
 }
+
+#if os(iOS) || os(tvOS) || os(macOS)
+    /// Observe the actual native surface; a second layer would measure the wrong renderer.
+    @MainActor
+    final class NativeRenderObserver {
+        private var observation: NSKeyValueObservation?
+        private weak var item: AVPlayerItem?
+        #if os(macOS)
+            func bind(view: AVPlayerView, player: AVPlayer, store: PlaybackStore) {
+                guard item !== player.currentItem, let current = player.currentItem else { return }
+                item = current
+                observation = view.observe(\.isReadyForDisplay, options: [.initial, .new]) { [weak store, weak current] view, _ in
+                    Task { @MainActor in
+                        guard view.isReadyForDisplay, let current else { return }
+                        store?.recordFirstRenderReadiness(for: current)
+                    }
+                }
+            }
+        #else
+            func bind(controller: AVPlayerViewController, player: AVPlayer, store: PlaybackStore) {
+                guard item !== player.currentItem, let current = player.currentItem else { return }
+                item = current
+                observation = controller.observe(\.isReadyForDisplay, options: [.initial, .new]) { [weak store, weak current] controller, _ in
+                    Task { @MainActor in
+                        guard controller.isReadyForDisplay, let current else { return }
+                        store?.recordFirstRenderReadiness(for: current)
+                    }
+                }
+            }
+        #endif
+        func cancel() {
+            observation?.invalidate(); observation = nil; item = nil
+        }
+    }
+#endif

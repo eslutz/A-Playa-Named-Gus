@@ -4,6 +4,18 @@ set -eu
 if [ "${CI_XCODE_CLOUD:-}" != TRUE ]; then
   exit 0
 fi
+# Simulator validation belongs on the local machine. Check before the separate
+# test-runner exit so an old Cloud workflow cannot execute simulator products.
+case "${CI_PRODUCT_PLATFORM:-}:${CI_XCODEBUILD_ACTION:-}" in
+  macOS:build|macOS:build-for-testing|macOS:test|macOS:test-without-building|\
+  macOS:archive|macOS:analyze|iOS:archive|iOS:analyze|tvOS:archive|tvOS:analyze|\
+  visionOS:archive|visionOS:analyze|watchOS:archive|watchOS:analyze)
+    ;;
+  *)
+    echo "Simulator builds and tests must run locally. Xcode Cloud permits only native macOS builds/tests and known-platform device archives/analysis." >&2
+    exit 65
+    ;;
+esac
 # Test runners execute the already-built products in a separate environment.
 # Only ci_scripts is guaranteed there; the source checkout and its build-time
 # xcconfig may be absent. Architecture enforcement belongs to compilation.

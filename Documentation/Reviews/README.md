@@ -46,10 +46,12 @@ in source. Historical records remain in Git history.
 
 ## Release workflow
 
-The saved Cloud workflow configuration and current release gates are described in
-[the pipeline policy](../AppStore/pipeline-policy.md). Routine validation does not
-replace full release qualification. Recheck the live configuration before relying
-on it; Cloud execution and actual tester installation remain separate outcomes.
+The [pipeline policy](../AppStore/pipeline-policy.md) requires local-only simulator
+qualification and five GitHub checks, including the authorized native macOS unit job.
+Existing local evidence retains its original revision/artifact scope. Old Cloud
+simulator configurations are superseded and must not be run; live Cloud settings
+were not changed by this correction. Authorized native archives and actual tester
+installation remain separate outcomes.
 
 ## Reproducing an iPhone design comparison
 

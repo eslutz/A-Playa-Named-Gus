@@ -123,4 +123,35 @@ struct NextUpRemovalTests {
         activity.recordPlayback(item: episode, scope: scope)
         #expect(!activity.isDismissed(episode, scope: scope))
     }
+
+    @Test("an incomplete or nonadvancing resume collection cannot reset progress or remove the saved show", arguments: [true, false])
+    func incompleteSeriesRemoval(repeatsPage: Bool) async {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let queue = UpNextStore(persistence: UpNextPersistence(directory: directory.appendingPathComponent("queue")))
+        let activity = NextUpActivityStore(persistence: NextUpActivityPersistence(directory: directory.appendingPathComponent("activity")))
+        let progress = OfflinePlaybackProgressStore(directory: directory)
+        let scope = AccountScope(serverID: "s", userID: "u")
+        let show = MediaItem(id: "show", type: .series)
+        let episodes = (0 ..< 100).map { MediaItem(id: "episode-\($0)", seriesID: "show", type: .episode) }
+        queue.toggle(show, serverID: "s", userID: "u")
+        progress.checkpoint(itemID: "episode-0", positionTicks: 99, scope: scope)
+        let provider = FakeMediaProviderSession(capabilities: ProviderCapabilities())
+        var offsets: [Int] = []
+        var resetRequests = 0
+        provider.resumePageHandler = { offset, limit in
+            #expect(limit == 100)
+            offsets.append(offset)
+            return MediaItemPage(items: offset == 0 || repeatsPage ? episodes : [], totalRecordCount: repeatsPage ? nil : 101)
+        }
+        provider.progressHandler = { _, _ in resetRequests += 1 }
+        await #expect(throws: GusError.self) {
+            try await queue.removeFromNextUp(show, session: session(provider), activity: activity, progress: progress)
+        }
+        #expect(offsets == [0, 100])
+        #expect(resetRequests == 0)
+        #expect(queue.contains(show, serverID: "s", userID: "u"))
+        #expect(!activity.isDismissed("media:jellyfin:show", scope: scope))
+        #expect(progress.positionTicks(forItemID: "episode-0", scope: scope) == 99)
+    }
 }

@@ -1,5 +1,62 @@
 import Foundation
 
+extension OfflineDownloadRecord {
+    /// A downloaded file carries its own source snapshot. Item-wide defaults and
+    /// server resume data may describe another cut.
+    var playbackItem: MediaItem {
+        var result = item
+        if let mediaSourceID, var source = item.mediaSources.first(where: { $0.id == mediaSourceID }) {
+            if activity?.sourceOperation == .remuxed || activity?.sourceOperation == .transcoded {
+                // Progressive conversions select/copy streams and may burn subtitles.
+                // Original indexes and defaults do not describe the saved file, and
+                // the record has no trustworthy output-track mapping.
+                source.mediaStreams = []
+                source.defaultAudioStreamIndex = nil
+                source.defaultSubtitleStreamIndex = nil
+            } else {
+                // An original download saves the media container, not its separate
+                // subtitle/audio sidecars. Only embedded tracks remain local choices.
+                let externalIndexes = Set(source.mediaStreams.filter { $0.isExternal == true }.compactMap(\.index))
+                source.mediaStreams.removeAll { $0.isExternal == true }
+                if let index = source.defaultAudioStreamIndex, externalIndexes.contains(index) {
+                    source.defaultAudioStreamIndex = nil
+                }
+                if let index = source.defaultSubtitleStreamIndex, externalIndexes.contains(index) {
+                    source.defaultSubtitleStreamIndex = nil
+                }
+            }
+            result.mediaSources = [source]
+            result.runTimeTicks = source.runTimeTicks ?? (item.mediaSources.count == 1 ? item.runTimeTicks : nil)
+        } else {
+            // Unknown existing downloads retain no guessed source or track catalog.
+            result.mediaSources = []
+            result.runTimeTicks = nil
+        }
+        result.userData?.playbackPositionTicks = nil
+        return result
+    }
+
+    var playbackRequest: PlaybackRequest {
+        PlaybackRequest(item: playbackItem, streamSelection: PlaybackStreamSelection(audioStreamIndex: nil, subtitleStreamIndex: nil, mediaSourceID: mediaSourceID))
+    }
+
+    @MainActor
+    func playbackSelection(for request: PlaybackRequest) -> PlaybackStreamSelection {
+        guard let source = playbackItem.mediaSources.first else {
+            return PlaybackStreamSelection(audioStreamIndex: nil, subtitleStreamIndex: request.subtitleIntent == .off ? -1 : nil, mediaSourceID: mediaSourceID)
+        }
+        var selection = request.selection(in: source)
+        selection.mediaSourceID = mediaSourceID
+        if let index = selection.audioStreamIndex, !source.mediaStreams.contains(where: { $0.type == .audio && $0.index == index }) {
+            selection.audioStreamIndex = nil
+        }
+        if let index = selection.subtitleStreamIndex, index >= 0, !source.mediaStreams.contains(where: { $0.type == .subtitle && $0.index == index }) {
+            selection.subtitleStreamIndex = nil
+        }
+        return selection
+    }
+}
+
 /// Local-only projections of the completed download index; no provider requests.
 enum DownloadedLibraryFilter: String, CaseIterable, Identifiable {
     case all, movies, shows, audio, books

@@ -17,6 +17,11 @@ final class AppModel {
     /// account switches.
     static let shared = AppModel()
 
+    struct ReauthenticationRequest: Equatable {
+        let server: ServerConnection
+        let user: StoredUser
+    }
+
     enum ConnectError: LocalizedError {
         case invalidURL
         case unreachable(String)
@@ -70,7 +75,7 @@ final class AppModel {
                 BookProgressStore.shared.flush()
             },
             clearDownloads: { scope in
-                try? OfflineDownloadFileStore.shared.deleteRecords(serverID: scope.serverID, userID: scope.userID)
+                OfflineDownloadStore.shared.deleteAll(serverID: scope.serverID, userID: scope.userID)
             },
             clearWatchCredential: { server, user in
                 #if os(iOS) && canImport(WatchConnectivity)
@@ -90,19 +95,27 @@ final class AppModel {
     private let tokenStore: TokenStore
     private let userDefaults: UserDefaults
     private let accountCleanup: AccountCleanupActions
+    private let clientFactory: @MainActor (URL, String?, SessionAuthentication?) -> JellyfinClient
     private let logger = Logger(category: .appModel)
+    private var activationGeneration = UUID()
+    private var authenticationGeneration = UUID()
+    private var retiringSessions: [SessionLease: Task<Void, Never>] = [:]
+    private var transitionCount = 0
+    var isTransitioning: Bool {
+        transitionCount > 0
+    }
 
     private(set) var servers: [ServerConnection] = []
     private(set) var users: [StoredUser] = []
-    var currentSession: SessionStore? {
+    private(set) var currentSession: SessionStore? {
         didSet {
             if oldValue !== currentSession {
-                oldValue?.seerr.deactivate()
-                oldValue?.references.invalidate()
-                oldValue?.invalidateCollections()
+                oldValue?.invalidate()
             }
         }
     }
+
+    private(set) var reauthentication: ReauthenticationRequest?
 
     private(set) var lastSessionAccount: String? {
         didSet {
@@ -128,12 +141,16 @@ final class AppModel {
         serverStore: ServerStore = .shared,
         tokenStore: TokenStore = KeychainStore.shared,
         userDefaults: UserDefaults = .standard,
-        accountCleanup: AccountCleanupActions = .live
+        accountCleanup: AccountCleanupActions = .live,
+        clientFactory: @escaping @MainActor (URL, String?, SessionAuthentication?) -> JellyfinClient = { url, token, authentication in
+            JellyfinClientFactory.makeClient(url: url, accessToken: token, delegate: authentication)
+        }
     ) {
         self.serverStore = serverStore
         self.tokenStore = tokenStore
         self.userDefaults = userDefaults
         self.accountCleanup = accountCleanup
+        self.clientFactory = clientFactory
         servers = serverStore.loadServers()
         users = serverStore.loadUsers()
         lastSessionAccount = Self.loadLastSessionAccount(from: userDefaults)
@@ -155,36 +172,27 @@ final class AppModel {
     // MARK: - Launch restore
 
     /// Silently restores the last session from the Keychain token + persisted stores.
-    func restoreLastSession() {
+    func restoreLastSession() async {
         guard currentSession == nil,
               let account = lastSessionAccount,
               let user = users.first(where: { SessionCredential(user: $0).account == account })
         else { return }
 
         do {
-            try restoreSavedSession(for: user)
+            try await restoreSavedSession(for: user)
         } catch {
             logger.error("Last-session restore failed: \(error.localizedDescription, privacy: .private)")
         }
     }
 
     /// Restores a saved user's session when its server and Keychain token are present.
-    func restoreSavedSession(for user: StoredUser) throws {
-        try restoreSavedSession(for: user, clearingCurrentAccount: false)
-    }
-
-    private func restoreSavedSession(for user: StoredUser, clearingCurrentAccount: Bool) throws {
+    func restoreSavedSession(for user: StoredUser) async throws {
         guard let server = server(for: user) else { throw SessionSwitchError.missingServer }
         guard let token = storedToken(for: user) else {
             throw SessionSwitchError.missingToken
         }
 
-        if clearingCurrentAccount {
-            clearCurrentAccountDataIfNeeded(replacingWith: user, on: server)
-        }
-        let client = JellyfinClientFactory.makeClient(url: server.url, accessToken: token)
-        currentSession = SessionStore(client: client, user: user, server: server)
-        lastSessionAccount = SessionCredential(user: user).account
+        guard await activateSession(server: server, user: user, token: token) else { throw GusError.cancelled }
         DiagnosticsHub.shared.record(.sessionRestored)
         publishSessionToWatch(server: server, user: user, token: token)
         logger.info("Restored session for user \(user.name, privacy: .private)")
@@ -199,29 +207,36 @@ final class AppModel {
 
     /// Adopts a session handed off from a companion device (the watch side of the
     /// WatchConnectivity relay): persists the credential and signs in if signed out.
-    func adoptHandedOffSession(server: ServerConnection, user: StoredUser, token: String) {
+    func adoptHandedOffSession(server: ServerConnection, user: StoredUser, token: String) async {
+        guard user.serverID == server.id, user.providerKind == server.providerKind, !token.isEmpty else { return }
         tokenStore.setToken(token, for: SessionCredential(user: user))
         upsert(server: server)
         upsert(user: user)
-        lastSessionAccount = SessionCredential(user: user).account
 
-        if let currentSession, currentSession.server.id == server.id,
-           currentSession.user.id == user.id, currentSession.user.providerKind == user.providerKind
-        {
+        if let currentSession {
+            guard currentSession.lease.credential == SessionCredential(user: user) else { return }
+            if !currentSession.isActive || currentSession.client.accessToken != token || currentSession.server.url != server.url {
+                _ = await activateSession(server: server, user: user, token: token)
+                return
+            }
             currentSession.user = user
+            return
         }
-        guard currentSession == nil else { return }
-        let client = JellyfinClientFactory.makeClient(url: server.url, accessToken: token)
-        currentSession = SessionStore(client: client, user: user, server: server)
+        guard await activateSession(server: server, user: user, token: token) else { return }
         logger.info("Adopted handed-off session for user \(user.name, privacy: .private)")
     }
 
-    func switchToStoredUser(_ user: StoredUser) throws {
-        guard currentSession?.user != user else { return }
-        try restoreSavedSession(for: user, clearingCurrentAccount: true)
+    func switchToStoredUser(_ user: StoredUser) async throws {
+        if let currentSession, currentSession.isActive, currentSession.lease.credential == SessionCredential(user: user),
+           currentSession.server.url == server(for: user)?.url,
+           currentSession.client.accessToken == storedToken(for: user)
+        {
+            return
+        }
+        try await restoreSavedSession(for: user)
     }
 
-    func clearHandedOffSession(serverID: String, userID: String) {
+    func clearHandedOffSession(serverID: String, userID: String) async {
         guard let user = users.first(where: { $0.id == userID && $0.serverID == serverID }) else {
             let credential = SessionCredential(serverID: serverID, userID: userID)
             tokenStore.deleteToken(for: credential)
@@ -233,14 +248,20 @@ final class AppModel {
         users.removeAll { $0.id == userID && $0.serverID == serverID }
         serverStore.saveUsers(users)
 
-        guard currentSession?.user == user else {
+        guard currentSession?.lease.credential == credential else {
             if lastSessionAccount == credential.account {
                 lastSessionAccount = nil
             }
             return
         }
 
+        activationGeneration = UUID()
+        authenticationGeneration = UUID()
+        let generation = activationGeneration
+        await retireCurrentSession()
+        guard generation == activationGeneration else { return }
         lastSessionAccount = nil
+        reauthentication = nil
         currentSession = nil
     }
 
@@ -280,7 +301,7 @@ final class AppModel {
 
         /// Installs an in-memory signed-in session for simulator screenshots and UI tests.
         /// This intentionally avoids `ServerStore`, `TokenStore`, and `UserDefaults` writes.
-        func installDebugPreviewSession() {
+        func installDebugPreviewSession() async {
             guard let serverURL = URL(string: "https://preview.jellyfin.invalid") else { return }
 
             let server = ServerConnection(
@@ -294,11 +315,16 @@ final class AppModel {
                 serverID: server.id
             )
 
-            currentSession = SessionStore(
+            let session = SessionStore(
                 client: JellyfinClientFactory.makeClient(url: server.url, accessToken: "debug-preview-token"),
                 user: user,
                 server: server
             )
+            activationGeneration = UUID()
+            let generation = activationGeneration
+            await retireCurrentSession()
+            guard generation == activationGeneration else { return }
+            installSession(session)
         }
     #endif
 
@@ -360,7 +386,9 @@ final class AppModel {
     // MARK: - Sign in
 
     func signIn(to server: ServerConnection, username: String, password: String) async throws {
-        let client = JellyfinClientFactory.makeClient(url: server.url)
+        authenticationGeneration = UUID()
+        let generation = authenticationGeneration
+        let client = clientFactory(server.url, nil, nil)
 
         let result: AuthenticationResult
         do {
@@ -373,11 +401,14 @@ final class AppModel {
         }
 
         try Task.checkCancellation()
-        try completeSignIn(to: server, client: client, result: result, fallbackName: username)
+        guard generation == authenticationGeneration else { throw GusError.cancelled }
+        try await completeSignIn(to: server, result: result, fallbackName: username)
     }
 
     func signIn(to server: ServerConnection, quickConnectSecret: String) async throws {
-        let client = JellyfinClientFactory.makeClient(url: server.url)
+        authenticationGeneration = UUID()
+        let generation = authenticationGeneration
+        let client = clientFactory(server.url, nil, nil)
 
         let result: AuthenticationResult
         do {
@@ -390,9 +421,9 @@ final class AppModel {
         }
 
         try Task.checkCancellation()
-        try completeSignIn(
+        guard generation == authenticationGeneration else { throw GusError.cancelled }
+        try await completeSignIn(
             to: server,
-            client: client,
             result: result,
             fallbackName: String(localized: "Jellyfin User", comment: "Fallback display name for a signed-in Jellyfin user")
         )
@@ -400,15 +431,25 @@ final class AppModel {
 
     // MARK: - Sign out
 
-    func signOut() {
-        signOutCurrentUser()
+    func signOut() async {
+        await signOutCurrentUser()
     }
 
-    func signOutCurrentUser() {
+    func signOutCurrentUser() async {
+        activationGeneration = UUID()
+        authenticationGeneration = UUID()
+        let generation = activationGeneration
         guard let session = currentSession else {
+            if let reauthentication {
+                removeAccount(server: reauthentication.server, user: reauthentication.user)
+                self.reauthentication = nil
+            }
             lastSessionAccount = nil
             return
         }
+
+        await retireCurrentSession()
+        guard generation == activationGeneration else { return }
 
         #if DEBUG
             guard !Self.isDebugPreviewSession(session) else {
@@ -417,15 +458,93 @@ final class AppModel {
             }
         #endif
 
-        let credential = SessionCredential(user: session.user)
         let client = session.client
         Task { try? await client.signOut() } // best-effort server-side revoke
-        clearAccountData(server: session.server, user: session.user)
-        tokenStore.deleteToken(for: credential)
-        users.removeAll { $0.id == session.user.id && $0.serverID == session.user.serverID }
-        serverStore.saveUsers(users)
+        removeAccount(server: session.server, user: session.user)
         lastSessionAccount = nil
+        reauthentication = nil
         currentSession = nil
+    }
+
+    /// Expiry locks this account's content until reauthentication without deleting its
+    /// downloads, checkpoints, book locations, or pending mutation journals.
+    func recoverExpiredSession(lease: SessionLease) {
+        guard let session = currentSession, session.lease == lease else { return }
+        activationGeneration = UUID()
+        authenticationGeneration = UUID()
+        beginRetirement(of: session)
+        reauthentication = ReauthenticationRequest(server: session.server, user: session.user)
+        tokenStore.deleteToken(for: lease.credential)
+        clearAccountData(server: session.server, user: session.user, preservingDownloads: true)
+        currentSession = nil
+    }
+
+    /// Background transfers can finish after credential rotation. Probe the active
+    /// credential rather than interpreting an old transfer's 401 as current expiry.
+    func verifyAuthentication(for scope: AccountScope) async {
+        guard let session = currentSession, session.references.scope == scope else { return }
+        do {
+            _ = try await session.client.send(Paths.getUserByID(userID: session.user.id))
+        } catch {
+            guard currentSession?.lease == session.lease else { return }
+            GusError(from: error).handleIfUnauthorized(session: session)
+        }
+    }
+
+    private func removeAccount(server: ServerConnection, user: StoredUser) {
+        clearAccountData(server: server, user: user)
+        tokenStore.deleteToken(for: SessionCredential(user: user))
+        users.removeAll { SessionCredential(user: $0) == SessionCredential(user: user) }
+        serverStore.saveUsers(users)
+    }
+
+    private func activateSession(server: ServerConnection, user: StoredUser, token: String) async -> Bool {
+        activationGeneration = UUID()
+        authenticationGeneration = UUID()
+        let generation = activationGeneration
+        await retireCurrentSession()
+        guard generation == activationGeneration else { return false }
+        clearCurrentAccountDataIfNeeded(replacingWith: user)
+        let authentication = SessionAuthentication(userID: user.id)
+        let client = clientFactory(server.url, token, authentication)
+        let session = SessionStore(client: client, user: user, server: server)
+        authentication.bind(to: session)
+        installSession(session)
+        lastSessionAccount = SessionCredential(user: user).account
+        return true
+    }
+
+    /// Invalidation synchronously checkpoints players and queues terminal reports on
+    /// the originating transport. All outgoing queues get one shared five-second
+    /// grace window before another account can become visible.
+    private func beginRetirement(of session: SessionStore) {
+        guard retiringSessions[session.lease] == nil else { return }
+        session.invalidate()
+        retiringSessions[session.lease] = Task { @MainActor [weak self] in
+            try? await PlaybackDeadline.run(for: .seconds(5)) {
+                await session.playbackReports.flush()
+            }
+            self?.retiringSessions[session.lease] = nil
+        }
+    }
+
+    private func retireCurrentSession() async {
+        transitionCount += 1
+        defer { transitionCount -= 1 }
+        if let currentSession {
+            beginRetirement(of: currentSession)
+        }
+        let pending = Array(retiringSessions.values)
+        for task in pending {
+            await task.value
+        }
+    }
+
+    /// All authenticated activation paths install the same lease-bound recovery hook.
+    private func installSession(_ session: SessionStore) {
+        session.bindRecovery(to: self)
+        currentSession = session
+        reauthentication = nil
     }
 
     #if DEBUG
@@ -456,8 +575,8 @@ final class AppModel {
         serverStore.saveUsers(users)
     }
 
-    private func clearCurrentAccountDataIfNeeded(replacingWith user: StoredUser, on server: ServerConnection) {
-        guard let session = currentSession, session.user != user || session.server.id != server.id else { return }
+    private func clearCurrentAccountDataIfNeeded(replacingWith user: StoredUser) {
+        guard let session = currentSession, SessionCredential(user: session.user) != SessionCredential(user: user) else { return }
         clearAccountData(server: session.server, user: session.user, preservingDownloads: true)
     }
 
@@ -468,7 +587,6 @@ final class AppModel {
         if !preservingDownloads {
             accountCleanup.clearBookState(scope)
             OfflinePlaybackProgressStore.shared.deleteCheckpoints(scope: scope)
-            OfflineDownloadStore.shared.deleteAll(serverID: server.id, userID: user.id)
             accountCleanup.clearDownloads(scope)
         }
         accountCleanup.clearWatchCredential(server, user)
@@ -477,10 +595,9 @@ final class AppModel {
 
     private func completeSignIn(
         to server: ServerConnection,
-        client: JellyfinClient,
         result: AuthenticationResult,
         fallbackName: String
-    ) throws {
+    ) async throws {
         guard let token = result.accessToken,
               let userDto = result.user,
               let userID = userDto.id
@@ -498,10 +615,7 @@ final class AppModel {
         upsert(user: user)
         lastSessionAccount = SessionCredential(user: user).account
 
-        // SDK sign-in methods already set the access token on this client's configuration.
-        clearCurrentAccountDataIfNeeded(replacingWith: user, on: server)
-        currentSession = SessionStore(client: client, user: user, server: server)
-        currentSession?.onUnauthorized = { [weak self] in self?.signOutCurrentUser() }
+        guard await activateSession(server: server, user: user, token: token) else { throw GusError.cancelled }
         publishSessionToWatch(server: server, user: user, token: token)
         logger.info("Signed in user \(user.name, privacy: .private)")
     }

@@ -1,4 +1,5 @@
 #if canImport(ReadiumNavigator)
+    import OSLog
     import ReadiumNavigator
     import ReadiumShared
     import ReadiumStreamer
@@ -37,6 +38,7 @@
                     .toolbar {
                         ToolbarItem(placement: .cancellationAction) {
                             ImmersiveDismissButton {
+                                model?.close()
                                 // The session host owns this cover; do not dismiss
                                 // an ancestor detail sheet after adaptive relayout.
                                 if let close {
@@ -62,6 +64,27 @@
                     chapterBrowser(model)
                 }
             }
+            .safeAreaInset(edge: .bottom) {
+                if let model, let notice = model.resourceNotice {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text(notice)
+                        HStack {
+                            Button("Try Again") { Task { await model.retryResource() } }
+                            Button("Dismiss", role: .cancel) { model.dismissResourceNotice() }
+                        }
+                    }
+                    .padding()
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(.regularMaterial)
+                }
+            }
+            .alert("Book Reader", isPresented: Binding(get: { model?.readerNotice != nil }, set: {
+                if !$0 {
+                    model?.clearNotice()
+                }
+            })) {
+                Button("Keep Reading", role: .cancel) { model?.clearNotice() }
+            } message: { Text(model?.readerNotice ?? "") }
             .task {
                 if model == nil {
                     openedDownload = downloads.record(for: item, serverID: accountScope.serverID, userID: accountScope.userID)
@@ -72,14 +95,17 @@
                         accountScope: accountScope
                     )
                     self.model = model
-                    await model.open()
                 }
+                await model?.activate()
             }
             .onDisappear {
                 model?.flushProgress()
                 // Presenting the chapter browser does not close the reader.
-                if !showingChapters, model?.isAtEnd == true {
-                    downloads.deleteAfterCompletion(openedDownload)
+                if !showingChapters {
+                    if model?.isAtEnd == true {
+                        downloads.deleteAfterCompletion(openedDownload)
+                    }
+                    model?.close()
                 }
             }
         }
@@ -97,9 +123,11 @@
                     Text(message)
                 } actions: {
                     Button("Try Again") { Task { await model.retry() } }
+                        .disabled(!model.canRetryOpening)
                 }
             case .loaded:
-                EPUBNavigatorRepresentable(model: model)
+                EPUBNavigatorRepresentable(model: model, generation: model.navigatorIdentity)
+                    .id(model.navigatorIdentity)
                     .ignoresSafeArea(edges: .bottom)
             }
         }
@@ -172,6 +200,18 @@
         private(set) var tableOfContents: [ReadiumShared.Link] = []
         private(set) var publication: Publication?
         private(set) var initialLocation: Locator?
+        private(set) var readerNotice: String?
+        private(set) var actionOutcome: ActionOutcome?
+        private(set) var resourceNotice: String?
+        private(set) var navigatorIdentity = UUID()
+        private var reportedResourceHrefs = Set<String>()
+        private var isClosed = false
+        private var navigationTask: Task<Void, Never>?
+        private var navigationDeadlineTask: Task<Void, Never>?
+        private var chapterRequest: (id: UUID, href: AnyURL)?
+        private let chapterTimeout: Duration
+        private let navigate: @MainActor (EPUBNavigatorViewController, ReadiumShared.Link) async -> Bool
+        private let logger = Logger(category: .item)
 
         let item: MediaItem
         let fileURL: URL
@@ -190,8 +230,14 @@
             item: MediaItem,
             fileURL: URL,
             provider: (any MediaProviderSession)?,
-            accountScope: AccountScope
+            accountScope: AccountScope,
+            chapterTimeout: Duration = .seconds(30),
+            navigate: @escaping @MainActor (EPUBNavigatorViewController, ReadiumShared.Link) async -> Bool = { navigator, link in
+                await navigator.go(to: link, options: NavigatorGoOptions(animated: true))
+            }
         ) {
+            self.chapterTimeout = chapterTimeout
+            self.navigate = navigate
             self.item = item
             self.fileURL = fileURL
             self.provider = provider
@@ -209,18 +255,130 @@
             provider?.capabilities.supportsBookProgressSync == true
         }
 
-        func retry() async {
-            guard case .failed = state else { return }
+        func navigatorConstructionFailed() {
+            logger.error("EPUB navigator construction failed")
+            navigator = nil
+            let message = String(localized: "The book reader could not be created. Try again.")
+            state = .failed(message)
+            actionOutcome = .failed(.server(message))
+        }
+
+        func owns(generation: UUID) -> Bool {
+            !isClosed && navigatorIdentity == generation &&
+                OfflinePlaybackProgressStore.shared.writerToken(for: accountScope) == progressWriterToken
+        }
+
+        func accepts(_ navigator: Navigator, generation: UUID) -> Bool {
+            owns(generation: generation) && self.navigator === navigator
+        }
+
+        func resourceFailed(_ error: Error, href: String = "") {
+            guard owns(generation: navigatorIdentity) else { return }
+            let failure = BookResourceFailure(href: href, error: error).error
+            guard !failure.isCancellation else { return }
+            let requested = chapterRequest?.href.string == href
+            let first = reportedResourceHrefs.insert(href).inserted
+            guard first || requested else { return }
+            if requested {
+                cancelNavigation()
+            }
+            logger.error("EPUB resource failure: \(String(reflecting: type(of: error)), privacy: .public)")
+            progressStore.flush()
+            actionOutcome = .failed(failure)
+            resourceNotice = String(localized: "Some content in this book couldn't be loaded. Try again from your saved reading position, or dismiss this notice to keep reading.")
+        }
+
+        func acceptResourceFailure(_ failure: BookResourceFailure, generation: UUID) {
+            guard owns(generation: generation) else { return }
+            resourceFailed(failure.error, href: failure.href)
+        }
+
+        func dismissResourceNotice() {
+            resourceNotice = nil
+        }
+
+        private func cancelNavigation() {
+            navigationTask?.cancel()
+            navigationTask = nil
+            navigationDeadlineTask?.cancel()
+            navigationDeadlineTask = nil
+            chapterRequest = nil
+        }
+
+        var canRetryOpening: Bool {
+            !isClosed && OfflinePlaybackProgressStore.shared.writerToken(for: accountScope) == progressWriterToken
+        }
+
+        func activate() async {
+            guard OfflinePlaybackProgressStore.shared.writerToken(for: accountScope) == progressWriterToken else {
+                state = .failed(String(localized: "The book reader could not be created. Try again."))
+                actionOutcome = .failed(.cancelled)
+                return
+            }
+            if isClosed {
+                isClosed = false
+                publication = nil
+                state = .idle
+                clearNotice()
+                dismissResourceNotice()
+            }
+            await open()
+        }
+
+        func close() {
+            guard !isClosed else { return }
+            isClosed = true
+            cancelNavigation()
+            navigatorIdentity = UUID()
+            navigator = nil
+            publication = nil
+            state = .idle
+            flushProgress()
+        }
+
+        func copyingForbidden() {
+            guard readerNotice == nil else { return }
+            actionOutcome = .failed(.forbidden)
+            readerNotice = String(localized: "This book doesn't allow copying text.")
+        }
+
+        func clearNotice() {
+            readerNotice = nil
+            if resourceNotice == nil {
+                actionOutcome = nil
+            }
+        }
+
+        func retryResource() async {
+            guard !isClosed else { return }
+            cancelNavigation()
+            flushProgress()
+            clearNotice()
+            dismissResourceNotice()
+            navigator = nil
+            publication = nil
             state = .idle
             await open()
         }
 
+        func retry() async {
+            guard case .failed = state, canRetryOpening else { return }
+            state = .idle
+            await activate()
+        }
+
         func open() async {
-            guard state == .idle else { return }
+            guard state == .idle, !isClosed, !Task.isCancelled else { return }
+            navigatorIdentity = UUID()
+            let generation = navigatorIdentity
+            reportedResourceHrefs.removeAll()
             state = .loading
+            actionOutcome = .pending
 
             guard let url = FileURL(url: fileURL) else {
-                state = .failed(String(localized: "The book file is missing.", comment: "Book reader error"))
+                let message = String(localized: "The book file is missing.", comment: "Book reader error")
+                state = .failed(message)
+                actionOutcome = .failed(.notFound)
                 return
             }
 
@@ -231,15 +389,26 @@
                 at: url,
                 locatorJSON: locatorJSON,
                 provider: syncEnabled ? provider : nil,
-                itemID: item.id
+                itemID: item.id,
+                resourceFailure: { [weak self] failure in
+                    Task { @MainActor [weak self] in
+                        self?.acceptResourceFailure(failure, generation: generation)
+                    }
+                }
             ) {
             case let .loaded(publication, tableOfContents, initialLocation):
+                guard owns(generation: generation) else { return }
+                guard !Task.isCancelled else { state = .idle; actionOutcome = nil; return }
                 self.publication = publication
                 self.tableOfContents = tableOfContents
                 self.initialLocation = initialLocation
                 state = .loaded
+                actionOutcome = .confirmed
             case let .failed(message):
+                guard owns(generation: generation) else { return }
+                guard !Task.isCancelled else { state = .idle; actionOutcome = nil; return }
                 state = .failed(message)
+                actionOutcome = .failed(.server(message))
             }
         }
 
@@ -252,7 +421,8 @@
             at url: FileURL,
             locatorJSON: String?,
             provider: (any MediaProviderSession)?,
-            itemID: String?
+            itemID: String?,
+            resourceFailure: @escaping @Sendable (BookResourceFailure) -> Void
         ) async -> sending BookPublicationOpenResult {
             let httpClient = DefaultHTTPClient()
             let assetRetriever = AssetRetriever(httpClient: httpClient)
@@ -267,18 +437,19 @@
 
             switch await assetRetriever.retrieve(url: url) {
             case let .success(asset):
-                switch await opener.open(asset: asset, allowUserInteraction: false, sender: nil) {
+                switch await opener.open(asset: asset, allowUserInteraction: false, onCreatePublication: { manifest, container, _ in
+                    container = BookReportingContainer(upstream: container, declared: manifest.readingOrder + manifest.resources, report: resourceFailure)
+                }, sender: nil) {
                 case let .success(publication):
-                    let tableOfContents = (try? await publication.tableOfContents().get()) ?? []
-                    let initialLocation: Locator?
-                    if let locatorJSON, let locator = try? Locator(jsonString: locatorJSON) {
-                        initialLocation = locator
+                    let tableOfContents = await(try? publication.tableOfContents().get()) ?? []
+                    let initialLocation: Locator? = if let locatorJSON, let locator = try? Locator(jsonString: locatorJSON) {
+                        locator
                     } else if let itemID, let provider,
                               let fraction = try? await provider.bookProgress(itemID: itemID)
                     {
-                        initialLocation = await publication.locate(progression: fraction)
+                        await publication.locate(progression: fraction)
                     } else {
-                        initialLocation = nil
+                        nil
                     }
                     return .loaded(publication, tableOfContents, initialLocation)
                 case let .failure(error):
@@ -290,6 +461,15 @@
         }
 
         func saveLocation(_ locator: Locator) {
+            initialLocation = locator
+            if let request = chapterRequest {
+                if BookReportingContainer.canonical(locator.href.anyURL).isEquivalentTo(request.href) {
+                    cancelNavigation()
+                    actionOutcome = .confirmed
+                }
+            } else if actionOutcome == .pending || actionOutcome == .accepted {
+                actionOutcome = .confirmed
+            }
             if let last = publication?.readingOrder.last?.url(),
                let visible = navigator?.viewport?.resources.last
             {
@@ -337,10 +517,61 @@
         }
 
         func go(to link: ReadiumShared.Link) {
-            guard let navigator else { return }
-            Task {
-                await navigator.go(to: link, options: NavigatorGoOptions(animated: true))
+            guard let navigator, publication != nil, owns(generation: navigatorIdentity), chapterRequest == nil else { return }
+            let generation = navigatorIdentity
+            let requestID = UUID()
+            let href = BookReportingContainer.canonical(link.url())
+            let fileURL = fileURL
+            let timeout = chapterTimeout
+            let deadline = ContinuousClock.now + timeout
+            let navigate = navigate
+            chapterRequest = (requestID, href)
+            actionOutcome = .pending
+            navigationDeadlineTask = Task { [weak self] in
+                do { try await Task.sleep(until: deadline, clock: .continuous) } catch { return }
+                guard let self, owns(generation: generation), chapterRequest?.id == requestID else { return }
+                resourceFailed(GusError.timeout, href: href.string)
             }
+            navigationTask = Task { [weak self, weak navigator] in
+                guard self?.owns(generation: generation) == true,
+                      self?.chapterRequest?.id == requestID, !Task.isCancelled,
+                      ContinuousClock.now < deadline else { return }
+                do {
+                    // Check the actual target before a native transition can replace
+                    // the last readable page. Do not read an entire chapter here.
+                    try await Self.preflightChapter(at: fileURL, href: href.string)
+                    guard self?.owns(generation: generation) == true,
+                          self?.chapterRequest?.id == requestID, !Task.isCancelled,
+                          ContinuousClock.now < deadline, let navigator else { return }
+                    let moved = await navigate(navigator, link)
+                    guard let self, owns(generation: generation), chapterRequest?.id == requestID,
+                          !Task.isCancelled, ContinuousClock.now < deadline else { return }
+                    if moved {
+                        actionOutcome = .accepted // Only a matching location confirms readiness.
+                    } else {
+                        resourceFailed(GusError.notFound, href: href.string)
+                    }
+                } catch {
+                    guard let self, owns(generation: generation), chapterRequest?.id == requestID else { return }
+                    resourceFailed(error, href: href.string)
+                }
+            }
+        }
+
+        /// Readium resources are not Sendable. An explicit chapter check owns a
+        /// separate local archive rather than transferring the visible publication.
+        /// The navigation deadline above owns cancellation and late-result rejection.
+        @concurrent
+        private nonisolated static func preflightChapter(at fileURL: URL, href: String) async throws {
+            try Task.checkCancellation()
+            guard fileURL.isFileURL, let url = FileURL(url: fileURL),
+                  let target = AnyURL(string: href) else { throw GusError.notFound }
+            let retriever = AssetRetriever(httpClient: DefaultHTTPClient())
+            let asset = try await retriever.retrieve(url: url, mediaType: .epub).get()
+            guard case let .container(archive) = asset,
+                  let resource = archive.container[BookReportingContainer.canonical(target)] else { throw GusError.notFound }
+            _ = try await resource.read(range: 0 ..< 1).get()
+            try Task.checkCancellation()
         }
     }
 
@@ -351,8 +582,10 @@
 
     private struct EPUBNavigatorRepresentable: UIViewControllerRepresentable {
         let model: BookReaderModel
+        let generation: UUID
 
         func makeUIViewController(context: Context) -> UIViewController {
+            guard model.owns(generation: generation) else { return UIViewController() }
             guard let publication = model.publication,
                   let navigator = try? EPUBNavigatorViewController(
                       publication: publication,
@@ -360,7 +593,11 @@
                       config: EPUBNavigatorViewController.Configuration()
                   )
             else {
-                return UIViewController()
+                Task { @MainActor in
+                    guard model.owns(generation: generation) else { return }
+                    model.navigatorConstructionFailed()
+                }
+                return UIHostingController(rootView: ContentUnavailableView("Can't Open This Book", systemImage: "book.closed", description: Text("The book reader could not be created. Try again.")))
             }
             navigator.delegate = context.coordinator
             context.coordinator.bindInput(to: navigator)
@@ -368,18 +605,24 @@
             return navigator
         }
 
-        func updateUIViewController(_ controller: UIViewController, context: Context) {}
+        func updateUIViewController(_: UIViewController, context _: Context) {}
+
+        static func dismantleUIViewController(_ controller: UIViewController, coordinator _: Coordinator) {
+            (controller as? EPUBNavigatorViewController)?.delegate = nil
+        }
 
         func makeCoordinator() -> Coordinator {
-            Coordinator(model: model)
+            Coordinator(model: model, generation: generation)
         }
 
         @MainActor final class Coordinator: NSObject, EPUBNavigatorDelegate {
-            private let model: BookReaderModel
+            private weak var model: BookReaderModel?
+            private let generation: UUID
             private let directionalNavigation = DirectionalNavigationAdapter()
 
-            init(model: BookReaderModel) {
+            init(model: BookReaderModel, generation: UUID) {
                 self.model = model
+                self.generation = generation
             }
 
             func bindInput(to navigator: EPUBNavigatorViewController) {
@@ -388,12 +631,23 @@
 
             func navigator(_ navigator: Navigator, locationDidChange locator: Locator) {
                 MainActor.assumeIsolated {
+                    guard let model, model.accepts(navigator, generation: generation) else { return }
                     model.saveLocation(locator)
                 }
             }
 
-            func navigator(_ navigator: Navigator, presentError error: NavigatorError) {
-                // Readium surfaces resource errors here; the reader keeps the last good page.
+            func navigator(_ navigator: Navigator, presentError _: NavigatorError) {
+                MainActor.assumeIsolated {
+                    guard let model, model.accepts(navigator, generation: generation) else { return }
+                    model.copyingForbidden()
+                }
+            }
+
+            func navigator(_ navigator: Navigator, didFailToLoadResourceAt href: RelativeURL, withError error: ReadError) {
+                MainActor.assumeIsolated {
+                    guard let model, model.accepts(navigator, generation: generation) else { return }
+                    model.resourceFailed(error, href: href.string)
+                }
             }
         }
     }

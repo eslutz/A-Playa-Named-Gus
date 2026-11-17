@@ -194,6 +194,47 @@ struct OfflineDownloadTests {
 
     private static let modernCapabilities = DevicePlaybackCapabilities(supportsHEVCDecode: true, supportsAV1Decode: true, supportsHDRPlayback: true)
 
+    @Test("an alternate native version downloads its selected source instead of the primary file")
+    func alternateNativeDownload() throws {
+        let item = MediaItem(canDownload: true, id: "movie", mediaSources: [
+            MediaSource(container: "mp4", id: "theatrical", mediaStreams: [MediaStreamInfo(codec: "h264", type: .video)]),
+            MediaSource(container: "mp4", id: "extended", mediaStreams: [MediaStreamInfo(codec: "h264", type: .video)]),
+        ], type: .movie)
+        let selection = PlaybackStreamSelection(audioStreamIndex: nil, subtitleStreamIndex: nil, mediaSourceID: "extended")
+        let source = try DownloadSourceResolver.localSource(for: item, streamSelection: selection, capabilities: Self.modernCapabilities)
+        #expect(source.request.id == "GetVideoStream")
+        #expect(source.request.query?.value(for: "mediaSourceId") == "extended")
+        #expect(source.mediaSourceID == "extended")
+        var missing = selection
+        missing.mediaSourceID = "missing"
+        #expect(throws: DownloadSourceResolver.ResolverError.self) {
+            try DownloadSourceResolver.localSource(for: item, streamSelection: missing, capabilities: Self.modernCapabilities)
+        }
+    }
+
+    @Test("transcoded audio downloads retain the selected source and audio track")
+    func selectedAudioTranscodeDownload() throws {
+        let item = MediaItem(canDownload: true, id: "book", mediaSources: [
+            MediaSource(container: "ogg", id: "source", mediaStreams: [
+                MediaStreamInfo(codec: "opus", index: 1, language: "eng", type: .audio),
+                MediaStreamInfo(codec: "opus", index: 8, language: "fra", type: .audio),
+            ]),
+        ], type: .audioBook)
+        let source = try DownloadSourceResolver.localSource(for: item, streamSelection: .init(audioStreamIndex: 8, mediaSourceID: "source"))
+        #expect(source.kind == .transcoded)
+        #expect(source.fileExtension == "mp3")
+        #expect(source.request.id == "GetAudioStreamByContainer")
+        #expect(source.request.url?.path == "/Audio/book/stream.mp3")
+        #expect(source.request.query?.value(for: "mediaSourceId") == "source")
+        #expect(source.request.query?.value(for: "audioStreamIndex") == "8")
+        #expect(source.request.query?.value(for: "audioCodec") == "mp3")
+        #expect(source.request.query?.value(for: "allowAudioStreamCopy") == "false")
+
+        let automatic = try DownloadSourceResolver.localSource(for: item)
+        #expect(automatic.request.id == "GetUniversalAudioStream")
+        #expect(automatic.mediaSourceID == "source")
+    }
+
     @Test("HEVC Main 10 and surround AAC in MKV remux without encoding or downscaling")
     func compatibleMKVRemuxes() throws {
         let source = try DownloadSourceResolver.convertedSource(
@@ -391,7 +432,7 @@ struct OfflineDownloadTests {
         #expect(store.records.first?.status == .paused)
         #expect(store.records.first?.resumeData == Data("resume".utf8))
 
-        await store.resume(itemID: "item-1", session: .testSession)
+        await store.resume(record, session: .testSession)
 
         #expect(coordinator.resumedRecordIDs == [record.id])
         #expect(store.records.first?.status == .downloading(0.4))
@@ -485,7 +526,7 @@ struct OfflineDownloadTests {
             ]
         )
 
-        await store.download(item, session: session)
+        await store.download(PlaybackRequest(item: item), session: session)
 
         #expect(provider.downloadSourceCallCount == 0)
         #expect(coordinator.startedRecordIDs.isEmpty)
@@ -498,8 +539,9 @@ private final class DownloadCompletionTestHandler: DownloadSessionCoordinatorEve
     var onFinish: ((URL) -> Void)?
     var onFailure: ((Error) -> Void)?
 
-    func downloadSessionCoordinator(_ coordinator: DownloadSessionCoordinating, didFinishDownloadingTo location: URL, recordID: String) {
+    func downloadSessionCoordinator(_ coordinator: DownloadSessionCoordinating, finalizeDownloadedFileAt location: URL, recordID: String, ownership: DownloadCompletionOwnership) async -> Bool {
         onFinish?(location)
+        return true
     }
 
     func downloadSessionCoordinator(_ coordinator: DownloadSessionCoordinating, didFailWith error: Error, resumeData: Data?, recordID: String) {

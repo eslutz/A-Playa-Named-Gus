@@ -237,6 +237,23 @@ final class MediaReferenceResolver {
 
 /// Do not silently transplant a saved position when the remote identity changes.
 enum MediaPlaybackIdentity {
+    /// Source duration may be omitted by a negotiated response. Fall back only to
+    /// the same source snapshot, or item-wide metadata for the primary source.
+    static func runTimeTicks(for item: MediaItem, mediaSourceID: String? = nil, resolvedSource: MediaSource? = nil) -> Int? {
+        let sourceID = resolvedSource?.id ?? mediaSourceID
+        let snapshot: MediaSource?
+        if let sourceID {
+            snapshot = item.mediaSources.first { $0.id == sourceID }
+        } else {
+            snapshot = item.mediaSources.first
+        }
+        if let ticks = resolvedSource?.runTimeTicks ?? snapshot?.runTimeTicks {
+            return ticks
+        }
+        guard sourceID == nil || sourceID == item.mediaSources.first?.id else { return nil }
+        return item.runTimeTicks
+    }
+
     static func resumeTicks(requested: Int?, originalID: String, current: MediaItem) -> Int? {
         if current.id == originalID || requested == 0 {
             return requested

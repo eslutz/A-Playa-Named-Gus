@@ -47,11 +47,11 @@ struct DevicePlaybackCapabilities {
 /// transcoding — HEVC-preferred, surround preserved, text subtitles in the manifest —
 /// only when the source needs it.
 struct StreamURLBuilder {
-    enum StereoFallbackReason: Equatable {
+    enum StereoFallbackReason: Equatable, Sendable {
         case directPlayUnavailable(Stereo3DLayout)
     }
 
-    struct Resolution {
+    struct Resolution: Sendable {
         let url: URL
         let playSessionID: String?
         let mediaSourceID: String?
@@ -60,6 +60,8 @@ struct StreamURLBuilder {
         let stereoLayout: Stereo3DLayout
         let stereoFallbackReason: StereoFallbackReason?
         var mediaSource: JellyfinAPI.MediaSourceInfo? = nil
+        var resource: PlaybackResource? = nil
+        var isDirectPlay = false
 
         func fallingBackTo2D(from layout: Stereo3DLayout) -> Resolution {
             Resolution(
@@ -69,7 +71,9 @@ struct StreamURLBuilder {
                 isTranscoding: isTranscoding,
                 stereoLayout: .none,
                 stereoFallbackReason: .directPlayUnavailable(layout),
-                mediaSource: mediaSource
+                mediaSource: mediaSource,
+                resource: resource,
+                isDirectPlay: isDirectPlay
             )
         }
     }
@@ -93,20 +97,27 @@ struct StreamURLBuilder {
 
     private let logger = Logger(category: .stream)
 
+    @MainActor
     func resolvePlayback(
         for itemID: String,
         maxStreamingBitrate: Int = 120_000_000,
         streamSelection: PlaybackStreamSelection = .none,
         startTimeTicks: Int? = nil,
-        stereoLayout: Stereo3DLayout = .none
+        stereoLayout: Stereo3DLayout = .none,
+        allowOriginalHLS: Bool = true
     ) async throws -> Resolution {
-        let body = Self.playbackInfoBody(
+        try PlaybackResolutionBudget.check()
+        var body = Self.playbackInfoBody(
             userID: userID,
             maxStreamingBitrate: maxStreamingBitrate,
             streamSelection: streamSelection,
             startTimeTicks: startTimeTicks,
             stereoLayout: stereoLayout
         )
+        if !allowOriginalHLS {
+            body.enableDirectPlay = false
+            body.enableDirectStream = false
+        }
 
         let request = Paths.getPostedPlaybackInfo(
             itemID: itemID,
@@ -119,12 +130,39 @@ struct StreamURLBuilder {
             body
         )
 
-        let response = try await NetworkRetryPolicy.idempotent.run {
-            try await client.send(request).value
-        }
+        // Playback negotiation may allocate a live/transcode resource. A lost response
+        // cannot be retried safely because its allocation ID may never reach us.
+        let response = try await client.send(request).value
+        var ownsResponse = true
+        do {
+            try PlaybackResolutionBudget.check()
 
-        guard let source = response.mediaSources?.first else {
-            if stereoLayout.requiresDirectPlay {
+            let sources = response.mediaSources ?? []
+            let source = streamSelection.mediaSourceID.flatMap { requested in sources.first { $0.id == requested } }
+                ?? (streamSelection.mediaSourceID == nil || sources.contains(where: { $0.liveStreamID != nil }) ? sources.first : nil)
+            guard let source else {
+                if stereoLayout.requiresDirectPlay {
+                    await releaseResources(in: response)
+                    ownsResponse = false
+                    return try await resolvePlayback(
+                        for: itemID,
+                        maxStreamingBitrate: maxStreamingBitrate,
+                        streamSelection: streamSelection,
+                        startTimeTicks: startTimeTicks,
+                        stereoLayout: .none
+                    )
+                    .fallingBackTo2D(from: stereoLayout)
+                }
+                throw StreamError.noMediaSource
+            }
+
+            let playSessionID = response.playSessionID
+            let resource: PlaybackResource? = source.liveStreamID != nil || source.transcodingURL != nil
+                ? PlaybackResource(liveStreamID: source.liveStreamID, playSessionID: playSessionID, isTranscoding: source.transcodingURL != nil) : nil
+
+            if stereoLayout.requiresDirectPlay, source.isSupportsDirectPlay == false {
+                await releaseResources(in: response)
+                ownsResponse = false
                 return try await resolvePlayback(
                     for: itemID,
                     maxStreamingBitrate: maxStreamingBitrate,
@@ -134,70 +172,134 @@ struct StreamURLBuilder {
                 )
                 .fallingBackTo2D(from: stereoLayout)
             }
-            throw StreamError.noMediaSource
-        }
 
-        let playSessionID = response.playSessionID
+            if Self.isHLS(source), source.transcodingURL == nil {
+                if allowOriginalHLS, let url = Self.originalHLSURL(source) {
+                    await releaseUnselected(in: response, keeping: source.liveStreamID)
+                    return Resolution(url: url, playSessionID: playSessionID, mediaSourceID: source.id, isTranscoding: false, stereoLayout: stereoLayout, stereoFallbackReason: nil, mediaSource: source, resource: resource, isDirectPlay: true)
+                }
+                // The static Jellyfin endpoint proxies master bytes without rewriting
+                // relative renditions. Unsupported headers/local masters need server
+                // HLS; this is a new negotiation after a known response, never a retry
+                // of an allocation whose response was lost.
+                guard allowOriginalHLS else { throw StreamError.noURL }
+                await releaseResources(in: response)
+                ownsResponse = false
+                let fallback = try await resolvePlayback(for: itemID, maxStreamingBitrate: maxStreamingBitrate, streamSelection: streamSelection, startTimeTicks: startTimeTicks, stereoLayout: .none, allowOriginalHLS: false)
+                return stereoLayout.requiresDirectPlay ? fallback.fallingBackTo2D(from: stereoLayout) : fallback
+            }
 
-        if stereoLayout.requiresDirectPlay, source.isSupportsDirectPlay == false {
-            return try await resolvePlayback(
-                for: itemID,
-                maxStreamingBitrate: maxStreamingBitrate,
-                streamSelection: streamSelection,
-                startTimeTicks: startTimeTicks,
-                stereoLayout: .none
+            // The server negotiates the play method against the device profile: it returns a
+            // transcoding URL only when the source genuinely needs server-side work for this
+            // device/selection. Absent one, the file direct-streams below.
+            if !stereoLayout.requiresDirectPlay, let transcodingURL = source.transcodingURL, let url = authenticatedPlaybackURL(path: transcodingURL) {
+                logger.debug("Resolved HLS transcoding URL for item \(itemID, privacy: .private)")
+                await releaseUnselected(in: response, keeping: source.liveStreamID)
+                return Resolution(
+                    url: url,
+                    playSessionID: playSessionID,
+                    mediaSourceID: source.id,
+                    isTranscoding: true,
+                    stereoLayout: .none,
+                    stereoFallbackReason: nil,
+                    mediaSource: source,
+                    resource: resource
+                )
+            }
+
+            // Otherwise direct-stream the file (AVPlayer-native container).
+            let streamParameters = Paths.GetVideoStreamParameters(
+                isStatic: true,
+                tag: source.eTag,
+                playSessionID: playSessionID,
+                mediaSourceID: source.id,
+                deviceID: DeviceIdentity.deviceID,
+                subtitleStreamIndex: streamSelection.subtitleStreamIndex,
+                liveStreamID: source.liveStreamID,
+                audioStreamIndex: streamSelection.audioStreamIndex
             )
-            .fallingBackTo2D(from: stereoLayout)
-        }
+            let streamRequest = Paths.getVideoStream(itemID: itemID, parameters: streamParameters)
 
-        // The server negotiates the play method against the device profile: it returns a
-        // transcoding URL only when the source genuinely needs server-side work for this
-        // device/selection. Absent one, the file direct-streams below.
-        if !stereoLayout.requiresDirectPlay, let transcodingURL = source.transcodingURL, let url = authenticatedPlaybackURL(path: transcodingURL) {
-            logger.debug("Resolved HLS transcoding URL for item \(itemID, privacy: .private)")
+            guard let url = client.url(with: streamRequest, queryAPIKey: true) else {
+                throw StreamError.noURL
+            }
+
+            logger.debug("Resolved direct-stream URL for item \(itemID, privacy: .private)")
+            await releaseUnselected(in: response, keeping: source.liveStreamID)
             return Resolution(
                 url: url,
                 playSessionID: playSessionID,
                 mediaSourceID: source.id,
-                isTranscoding: true,
-                stereoLayout: .none,
+                isTranscoding: false,
+                stereoLayout: stereoLayout,
                 stereoFallbackReason: nil,
-                mediaSource: source
+                mediaSource: source,
+                resource: resource
             )
+        } catch {
+            if ownsResponse {
+                await releaseResources(in: response)
+            }
+            throw error
         }
+    }
 
-        // Otherwise direct-stream the file (AVPlayer-native container).
-        let streamParameters = Paths.GetVideoStreamParameters(
-            isStatic: true,
-            tag: source.eTag,
-            playSessionID: playSessionID,
-            mediaSourceID: source.id,
-            deviceID: DeviceIdentity.deviceID,
-            subtitleStreamIndex: streamSelection.subtitleStreamIndex,
-            audioStreamIndex: streamSelection.audioStreamIndex
-        )
-        let streamRequest = Paths.getVideoStream(itemID: itemID, parameters: streamParameters)
+    private static func isHLS(_ source: MediaSourceInfo) -> Bool {
+        (source.container ?? "").lowercased().split(separator: ",").contains { $0 == "hls" || $0 == "m3u8" }
+    }
 
-        guard let url = client.url(with: streamRequest, queryAPIKey: true) else {
-            throw StreamError.noURL
+    /// Preserve the actual manifest origin/base URL and never append Jellyfin
+    /// credentials to a foreign origin. AVPlayer receives no undocumented headers.
+    static func originalHLSURL(_ source: MediaSourceInfo) -> URL? {
+        guard isHLS(source), source.isSupportsDirectPlay == true, source.isRemote == true,
+              source.protocol == .http, source.requiredHTTPHeaders?.isEmpty != false,
+              let path = source.path, let url = URL(string: path),
+              ["http", "https"].contains(url.scheme?.lowercased() ?? ""), url.host != nil else { return nil }
+        return url
+    }
+
+    @MainActor
+    func release(resource: PlaybackResource) async throws {
+        let client = client
+        try await PlaybackDeadline.run(for: .seconds(5)) {
+            if let id = resource.liveStreamID {
+                _ = try await client.send(Paths.closeLiveStream(liveStreamID: id))
+            } else if resource.isTranscoding, let id = resource.playSessionID {
+                _ = try await client.send(Paths.stopEncodingProcess(deviceID: DeviceIdentity.deviceID, playSessionID: id))
+            }
         }
+    }
 
-        logger.debug("Resolved direct-stream URL for item \(itemID, privacy: .private)")
-        return Resolution(
-            url: url,
-            playSessionID: playSessionID,
-            mediaSourceID: source.id,
-            isTranscoding: false,
-            stereoLayout: stereoLayout,
-            stereoFallbackReason: nil,
-            mediaSource: source
-        )
+    @MainActor
+    private func releaseUnselected(in response: PlaybackInfoResponse, keeping liveStreamID: String?) async {
+        let ids = Set((response.mediaSources ?? []).compactMap(\.liveStreamID)).filter { $0 != liveStreamID }
+        guard !ids.isEmpty else { return }
+        let client = client
+        try? await PlaybackDeadline.run(for: .seconds(5)) {
+            for id in ids {
+                _ = try? await client.send(Paths.closeLiveStream(liveStreamID: id))
+            }
+        }
+    }
+
+    @MainActor
+    private func releaseResources(in response: PlaybackInfoResponse) async {
+        let ids = Set((response.mediaSources ?? []).compactMap(\.liveStreamID))
+        let client = client
+        try? await PlaybackDeadline.run(for: .seconds(5)) {
+            for id in ids {
+                _ = try? await client.send(Paths.closeLiveStream(liveStreamID: id))
+            }
+            if ids.isEmpty, (response.mediaSources ?? []).contains(where: { $0.transcodingURL != nil }), let id = response.playSessionID {
+                _ = try? await client.send(Paths.stopEncodingProcess(deviceID: DeviceIdentity.deviceID, playSessionID: id))
+            }
+        }
     }
 
     // MARK: - Device profile
 
     /// An AVKit-honest profile: direct-play every container/codec combination this
-    /// device's hardware decodes, otherwise transcode to HLS with fMP4 segments —
+    /// device's hardware decodes, otherwise transcode to HLS, preferring fMP4 segments —
     /// HEVC-preferred where supported, up to 7.1 audio (AVFoundation downmixes for the
     /// active output), and text subtitles delivered in the manifest instead of burned in.
     static func avPlayerProfile(
@@ -212,7 +314,7 @@ struct StreamURLBuilder {
             maxStreamingBitrate: maxStreamingBitrate,
             name: DeviceIdentity.clientName,
             subtitleProfiles: subtitleProfiles(),
-            transcodingProfiles: [hlsTranscodingProfile(capabilities: capabilities)]
+            transcodingProfiles: [hlsTranscodingProfile(capabilities: capabilities), liveHLSCompatibilityProfile()]
         )
     }
 
@@ -232,6 +334,7 @@ struct StreamURLBuilder {
                 type: .video,
                 videoCodec: mp4Video.joined(separator: ",")
             ),
+            DirectPlayProfile(audioCodec: "aac,mp3,ac3,eac3,alac,flac", container: "hls,m3u8", type: .video, videoCodec: mp4Video.joined(separator: ",")),
             // Standalone TS/M2TS is not an AVPlayer direct-play contract. Jellyfin
             // can approve a file because *another* audio track matches this profile,
             // while the selected Blu-ray DTS track remains unsupported. Use HLS so
@@ -300,6 +403,23 @@ struct StreamURLBuilder {
         )
     }
 
+    /// Jellyfin restricts compatibility-mode Live TV to TS profiles. Keep this
+    /// after fMP4 so ordinary sources retain the preferred HLS container.
+    private static func liveHLSCompatibilityProfile() -> TranscodingProfile {
+        TranscodingProfile(
+            protocol: .hls,
+            audioCodec: "aac,ac3,eac3",
+            container: "ts",
+            context: .streaming,
+            enableSubtitlesInManifest: true,
+            isBreakOnNonKeyFrames: true,
+            maxAudioChannels: "8",
+            minSegments: 2,
+            type: .video,
+            videoCodec: "h264"
+        )
+    }
+
     static func directPlayOnlyProfile(
         maxStreamingBitrate: Int,
         capabilities: DevicePlaybackCapabilities = .current
@@ -325,7 +445,9 @@ struct StreamURLBuilder {
             enableDirectPlay: true,
             enableDirectStream: true,
             enableTranscoding: !requiresDirectPlay,
+            isAutoOpenLiveStream: true,
             maxStreamingBitrate: maxStreamingBitrate,
+            mediaSourceID: streamSelection.mediaSourceID,
             startTimeTicks: startTimeTicks,
             subtitleStreamIndex: streamSelection.subtitleStreamIndex,
             userID: userID
@@ -343,27 +465,59 @@ struct StreamURLBuilder {
             maxStreamingBitrate: maxStreamingBitrate,
             startTimeTicks: startTimeTicks,
             audioStreamIndex: streamSelection.audioStreamIndex,
-            subtitleStreamIndex: streamSelection.subtitleStreamIndex
+            subtitleStreamIndex: streamSelection.subtitleStreamIndex,
+            mediaSourceID: streamSelection.mediaSourceID
         )
     }
 
-    /// Builds an authenticated `/Audio/{id}/universal` URL. The endpoint direct-plays
-    /// AVPlayer-native audio containers and transparently transcodes everything else,
-    /// so `AVPlayer` always receives playable audio.
-    func universalAudioURL(for itemID: String) throws -> URL {
-        let parameters = Paths.GetUniversalAudioStreamParameters(
-            container: ["mp3", "aac", "m4a", "m4b", "flac", "alac", "wav"],
-            deviceID: DeviceIdentity.deviceID,
-            userID: userID,
+    /// Negotiate audio once so delivery/session telemetry describes the selected stream.
+    @MainActor
+    func resolveAudioPlayback(for itemID: String, streamSelection: PlaybackStreamSelection = .none) async throws -> Resolution {
+        try PlaybackResolutionBudget.check()
+        let profile = DeviceProfile(
+            directPlayProfiles: [DirectPlayProfile(audioCodec: "aac,mp3,ac3,eac3,alac,flac,pcm_s16le,pcm_s24le", container: "mp3,aac,m4a,m4b,mp4,flac,alac,wav", type: .audio)],
             maxStreamingBitrate: 12_000_000,
-            transcodingContainer: "mp3",
-            transcodingProtocol: .http
+            transcodingProfiles: [TranscodingProfile(protocol: .http, audioCodec: "mp3", container: "mp3", context: .streaming, type: .audio)]
         )
-        let request = Paths.getUniversalAudioStream(itemID: itemID, parameters: parameters)
-        guard let url = client.url(with: request, queryAPIKey: true) else {
-            throw StreamError.noURL
+        let response = try await client.send(Paths.getPostedPlaybackInfo(
+            itemID: itemID,
+            PlaybackInfoDto(audioStreamIndex: streamSelection.audioStreamIndex, deviceProfile: profile, isAutoOpenLiveStream: true, maxStreamingBitrate: 12_000_000, mediaSourceID: streamSelection.mediaSourceID, userID: userID)
+        )).value
+        do {
+            try PlaybackResolutionBudget.check()
+            let sources = response.mediaSources ?? []
+            guard let source = streamSelection.mediaSourceID.flatMap({ id in sources.first { $0.id == id } }) ?? (streamSelection.mediaSourceID == nil ? sources.first : nil) else { throw StreamError.noMediaSource }
+            let url: URL?
+            if let path = source.transcodingURL {
+                url = authenticatedPlaybackURL(path: path)
+            } else {
+                url = client.url(with: Paths.getAudioStream(itemID: itemID, parameters: .init(
+                    isStatic: true,
+                    tag: source.eTag,
+                    playSessionID: response.playSessionID,
+                    mediaSourceID: source.id,
+                    deviceID: DeviceIdentity.deviceID,
+                    liveStreamID: source.liveStreamID,
+                    audioStreamIndex: streamSelection.audioStreamIndex
+                )), queryAPIKey: true)
+            }
+            guard let url else { throw StreamError.noURL }
+            await releaseUnselected(in: response, keeping: source.liveStreamID)
+            return Resolution(
+                url: url,
+                playSessionID: response.playSessionID,
+                mediaSourceID: source.id,
+                isTranscoding: source.transcodingURL != nil,
+                stereoLayout: .none,
+                stereoFallbackReason: nil,
+                mediaSource: source,
+                resource: source.liveStreamID != nil || source.transcodingURL != nil
+                    ? PlaybackResource(liveStreamID: source.liveStreamID, playSessionID: response.playSessionID, isTranscoding: source.transcodingURL != nil) : nil
+            )
+        } catch {
+            await releaseResources(in: response)
+            throw error
         }
-        return url
     }
 
     /// Threat model note: the access token rides in the URL query (`api_key`) because

@@ -6,9 +6,10 @@ struct SeerrArtworkView: View {
     var aspectRatio: CGFloat = 2.0 / 3.0
     var symbol = "film"
     var width = "w500"
+    var fallbackPaths: [String] = []
 
     var body: some View {
-        ArtworkTile(url: SeerrArtwork.url(path: path, width: width), aspectRatio: aspectRatio, placeholderSymbol: symbol)
+        ArtworkTile(url: SeerrArtwork.url(path: path, width: width), aspectRatio: aspectRatio, placeholderSymbol: symbol, fallbackURLs: fallbackPaths.compactMap { SeerrArtwork.url(path: $0, width: width) })
             .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
             .accessibilityHidden(true)
     }
@@ -24,7 +25,8 @@ struct SeerrTitleCard: View {
                 title: title.displayTitle,
                 subtitle: title.seerrIdentityDescription,
                 imageURL: title.imageURL(),
-                placeholderSymbol: title.mediaType == .person ? "person" : "film"
+                placeholderSymbol: title.mediaType == .person ? "person" : "film",
+                fallbackURLs: [title.backdropPath].compactMap { SeerrArtwork.url(path: $0, width: "w500") }
             )
             if title.mediaType != .person {
                 Text(title.seerrAvailabilityDescription)
@@ -34,7 +36,8 @@ struct SeerrTitleCard: View {
             }
         }
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(title.seerrAccessibilityDescription)
+        .accessibilityLabel(title.mediaAccessibility.label)
+        .accessibilityValue(title.mediaAccessibility.value)
     }
 }
 
@@ -45,7 +48,8 @@ struct SeerrTitleRow: View {
         HStack(alignment: .top, spacing: 12) {
             SeerrArtworkView(
                 path: title.mediaType == .person ? title.profilePath : title.posterPath,
-                symbol: title.mediaType == .person ? "person" : "film"
+                symbol: title.mediaType == .person ? "person" : "film",
+                fallbackPaths: [title.backdropPath].compactMap { $0 }
             )
             .frame(width: 64)
             VStack(alignment: .leading, spacing: 4) {
@@ -59,7 +63,8 @@ struct SeerrTitleRow: View {
             Spacer(minLength: 0)
         }
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(title.seerrAccessibilityDescription)
+        .accessibilityLabel(title.mediaAccessibility.label)
+        .accessibilityValue(title.mediaAccessibility.value)
     }
 }
 
@@ -111,9 +116,12 @@ extension SeerrTitle {
         return status.seerrDescription
     }
 
-    var seerrAccessibilityDescription: String {
-        [displayTitle, seerrIdentityDescription, mediaType == .person ? nil : seerrAvailabilityDescription]
-            .compactMap { $0 }.joined(separator: ", ")
+    /// Provider-specific projection: TMDB/Seerr identity never becomes a Jellyfin ID.
+    var mediaAccessibility: MediaItemAccessibility {
+        MediaItemAccessibility(
+            label: [displayTitle, seerrIdentityDescription].joined(separator: ", "),
+            value: mediaType == .person ? "" : seerrAvailabilityDescription
+        )
     }
 }
 

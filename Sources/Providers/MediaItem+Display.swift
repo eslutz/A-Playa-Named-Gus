@@ -11,9 +11,9 @@ extension MediaItem {
     var episodeLocator: String? {
         guard let episode = indexNumber else { return nil }
         if let season = parentIndexNumber {
-            return "S\(season)·E\(episode)"
+            return String(localized: "S\(season.formatted(.number.grouping(.never)))·E\(episode.formatted(.number.grouping(.never)))")
         }
-        return "E\(episode)"
+        return String(localized: "E\(episode.formatted(.number.grouping(.never)))")
     }
 
     var yearText: String? {
@@ -35,13 +35,13 @@ extension MediaItem {
     }
 
     var communityRatingText: String? {
-        guard let rating = communityRating else { return nil }
-        return String(format: "★ %.1f", rating)
+        guard let rating = communityRating, rating.isFinite else { return nil }
+        return String(localized: "★ \(rating.formatted(.number.precision(.fractionLength(1))))")
     }
 
     var criticRatingText: String? {
-        guard let rating = criticRating else { return nil }
-        return "\(Int(rating.rounded()))%"
+        guard let rating = criticRating, rating.isFinite else { return nil }
+        return (rating / 100).formatted(.percent.precision(.fractionLength(0)))
     }
 
     var genreText: String? {
@@ -65,7 +65,7 @@ extension MediaItem {
             if let role = person.role?.trimmingCharacters(in: .whitespacesAndNewlines),
                !role.isEmpty
             {
-                return "\(name) as \(role)"
+                return String(localized: "\(name) as \(role)")
             }
             return name
         }
@@ -73,8 +73,8 @@ extension MediaItem {
 
     /// Fractional playback progress (0...1) from resume data, if any.
     var playbackProgress: Double? {
-        guard let percentage = userData?.playedPercentage else { return nil }
-        return percentage / 100.0
+        guard let percentage = userData?.playedPercentage, percentage.isFinite else { return nil }
+        return min(1, max(0, percentage / 100.0))
     }
 
     /// Decorative artwork fallback for the item's media type.
@@ -135,5 +135,60 @@ extension MediaItem {
             .filter { !$0.isEmpty }
         guard !cleaned.isEmpty else { return nil }
         return cleaned.joined(separator: ", ")
+    }
+}
+
+/// Spoken identity is independent of compact visual captions and artwork.
+struct MediaItemAccessibility: Equatable {
+    let label: String
+    let value: String
+}
+
+extension MediaItem {
+    var mediaAccessibility: MediaItemAccessibility {
+        var identity: [String] = []
+        if type == .episode {
+            if let seriesName {
+                identity.append(seriesName)
+            }
+            if let season = parentIndexNumber {
+                identity.append(String(localized: "Season \(season.formatted())"))
+            }
+            if let episode = indexNumber {
+                identity.append(String(localized: "Episode \(episode.formatted())"))
+            }
+        }
+        identity.append(displayTitle)
+        if let program = currentProgramName {
+            identity.append(String(localized: "Now playing \(program)"))
+        }
+        var details: [String] = []
+        if let ticks = runTimeTicks, ticks > 0 {
+            let duration = Duration.seconds(Double(ticks) / 10_000_000).formatted(.units(allowed: [.hours, .minutes, .seconds], width: .wide))
+            details.append(String(localized: "Duration: \(duration)"))
+        }
+        let position = max(0, userData?.playbackPositionTicks ?? 0)
+        let progress = playbackProgress ?? 0
+        if type == .liveChannel || type == .liveProgram {
+            details.append(String(localized: "Live"))
+        } else if position > 0 || (progress > 0 && progress < 1) {
+            details.append(userData?.isWatched == true ? (isAudioPlayable ? String(localized: "Listening Again") : String(localized: "Rewatching")) : String(localized: "In Progress"))
+            if let ticks = runTimeTicks, ticks > position, position > 0 {
+                let remaining = Duration.seconds(Double(ticks - position) / 10_000_000).formatted(.units(allowed: [.hours, .minutes, .seconds], width: .wide))
+                details.append(String(localized: "\(remaining) remaining"))
+            } else if progress.isFinite, progress > 0, progress < 1 {
+                details.append(String(localized: "Playback progress \(progress.formatted(.percent.precision(.fractionLength(0))))"))
+            }
+        } else if let watched = userData?.isWatched, [MediaItemType.movie, .episode, .audio, .audioBook, .video, .recording].contains(type ?? .unknown) {
+            details.append(watched ? (isAudioPlayable ? String(localized: "Played") : String(localized: "Watched")) : (isAudioPlayable ? String(localized: "Unplayed") : String(localized: "Unwatched")))
+        }
+        if userData?.isFavorite == true {
+            details.append(String(localized: "Favorite"))
+        }
+        func joined(_ components: [String]) -> String {
+            var seen = Set<String>()
+            return components.map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }.filter { !$0.isEmpty && seen.insert($0).inserted }.joined(separator: ", ")
+        }
+        return MediaItemAccessibility(label: joined(identity), value: joined(details))
     }
 }

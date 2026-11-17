@@ -7,7 +7,8 @@ struct PlayerWindowRef: Hashable, Codable {
 
     init(_ request: ItemRef) {
         var restored = request
-        restored.playbackStart = .automatic
+        restored.playbackRequest?.start = .automatic
+        restored.playbackRequest?.startPositionTicks = nil
         restored.playlistEntryID = nil
         restored.playlistFromBeginning = nil
         restored.playlistShuffled = nil
@@ -44,8 +45,11 @@ struct PlayerWindowRequest {
 
     func request(_ ref: ItemRef) -> PlayerWindowRef {
         let window = PlayerWindowRef(ref)
-        let restart = ref.playbackStart == .fromBeginning || ref.playlistFromBeginning == true
-        if !active.contains(window) || restart {
+        let restart = ref.resolvedPlaybackRequest.start == .fromBeginning || ref.playlistFromBeginning == true
+        let explicitChange = ref.playbackRequest.map { request in
+            request != PlaybackRequest(item: request.item) && request != requests[window]?.ref.playbackRequest
+        } ?? false
+        if !active.contains(window) || restart || explicitChange {
             requests[window] = PlayerWindowRequest(ref: ref)
         }
         return window

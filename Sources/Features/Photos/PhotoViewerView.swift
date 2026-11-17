@@ -11,6 +11,8 @@ struct PhotoViewerView: View {
     @State private var state: LoadState = .idle
     @State private var selectedID: String?
     @State private var isSlideshowActive = false
+    @State private var isLoadingSiblings = false
+    @State private var siblingError: String?
 
     var body: some View {
         LoadingStateView(
@@ -54,9 +56,18 @@ struct PhotoViewerView: View {
                     .accessibilityLabel(isSlideshowActive ? "Pause Slideshow" : "Play Slideshow")
                 }
             }
-            .task {
-                await loadSiblings()
+            .safeAreaInset(edge: .bottom) {
+                if isLoadingSiblings {
+                    ProgressView().accessibilityLabel("Loading Photos")
+                }
+                if let siblingError {
+                    VStack(spacing: 8) {
+                        Text(siblingError).foregroundStyle(.secondary)
+                        Button("Try Again") { Task { await loadSiblings() } }
+                    }.padding().background(.regularMaterial)
+                }
             }
+            .task { await loadSiblings() }
             .task(id: isSlideshowActive) {
                 guard isSlideshowActive else { return }
                 await runSlideshow()
@@ -69,36 +80,46 @@ struct PhotoViewerView: View {
 
     private func photoPage(for item: MediaItem) -> some View {
         AsyncPoster(
-            url: session.mediaProvider.primaryImageURL(for: item, maxWidth: 2048),
+            url: session.mediaProvider.artworkURLs(for: item, request: .init(role: .photo, maxWidth: 2048)).first,
             contentMode: .fit,
             placeholderSymbol: "photo"
         )
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color.black)
-        .accessibilityLabel(item.displayTitle)
+        .accessibilityLabel(item.mediaAccessibility.label)
+        .accessibilityValue(item.mediaAccessibility.value)
     }
 
     private func loadSiblings() async {
-        guard state != .loading, siblings.isEmpty else { return }
-        state = .loading
-        do {
-            let page = try await session.mediaProvider.items(query: MediaItemQuery(
-                parentID: photo.parentID,
-                startIndex: 0,
-                limit: 500,
-                sort: .name
-            ))
-            let photos = page.items.filter { $0.type == .photo }
-            siblings = PhotoSelection.includingOpened(photo, in: photos)
-            selectedID = photo.id
-            state = .loaded
-        } catch {
-            let gusError = GusError(from: error)
-            guard !gusError.isCancellation else { return }
-            // Fall back to showing just the opened photo rather than failing the screen.
+        guard !isLoadingSiblings else { return }
+        isLoadingSiblings = true
+        siblingError = nil
+        if siblings.isEmpty {
             siblings = [photo]
             selectedID = photo.id
             state = .loaded
+        }
+        defer { isLoadingSiblings = false }
+        do {
+            _ = try await MediaPageLoader.collect(pageSize: 200, didLoadPage: { loaded in
+                let selected = siblings.first { $0.id == selectedID }
+                var visible = PhotoSelection.includingOpened(photo, in: ContentRatingGate.filter(loaded))
+                if let selected, selected.id != photo.id {
+                    visible = PhotoSelection.includingOpened(selected, in: visible)
+                }
+                siblings = visible
+                state = .loaded
+            }) { offset, limit in
+                guard session.isActive else { throw CancellationError() }
+                let page = try await session.mediaProvider.items(query: MediaItemQuery(parentID: photo.parentID, includeTypes: [.photo], startIndex: offset, limit: limit, sort: .name))
+                try Task.checkCancellation()
+                guard session.isActive else { throw CancellationError() }
+                return page
+            }
+        } catch {
+            let failure = GusError(from: error)
+            guard !failure.isCancellation, session.isActive else { return }
+            siblingError = failure.localizedDescription
         }
     }
 
@@ -132,10 +153,10 @@ struct PhotoViewerView: View {
 /// Preserve the item that opened the gallery even when it is outside the sibling page.
 enum PhotoSelection {
     static func includingOpened(_ photo: MediaItem, in siblings: [MediaItem]) -> [MediaItem] {
-        var seen = Set<String>()
-        return ([photo] + siblings).filter { item in
-            guard let id = item.id else { return false }
-            return seen.insert(id).inserted
+        let ordered = MediaPageLoader.unique(siblings).filter { $0.id != nil }
+        if ordered.contains(where: { $0.id == photo.id && $0.providerKind == photo.providerKind }) {
+            return ordered
         }
+        return MediaPageLoader.unique([photo] + ordered).filter { $0.id != nil }
     }
 }

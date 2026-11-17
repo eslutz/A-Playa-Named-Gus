@@ -32,16 +32,17 @@ SDK-supported ARM variants.
 Regenerate `A Playa Named Gus.xcodeproj` after adding, renaming, or deleting
 source and resource files.
 
-Changes now require a pull request into protected `main`, with all 13 GitHub
-checks passing. Xcode Cloud tests merged `main` on iPhone, iPad, Duo, Mac, Apple TV
-and Vision before internal TestFlight distribution. The old compile-only Cloud
-workflow is deleted. [Pipeline policy](Documentation/AppStore/pipeline-policy.md).
+Changes to `main` require a PR and five GitHub checks: Validation Scope, Lint,
+Docs and Config, Build macOS, and Test macOS. Simulator builds and tests run locally;
+hosted native macOS unit tests have an explicit exception. Server-side main protection
+is currently disabled; the PR/check requirement remains project policy.
+[Pipeline policy](Documentation/AppStore/pipeline-policy.md).
 
-The native Icon Composer source is restored at `Resources/AppIcon.icon` and
-passed four-platform Cloud Build 8 with zero issues. Its GitHub matrix passed
-12/13 jobs; iPad retained the recurring native audio end-notification failure.
-The failure is recorded and a successful PR/Cloud release gate is still required
-before tester installation access is claimed.
+The native Icon Composer source is restored at `Resources/AppIcon.icon`.
+Historical Cloud results do not establish current release or tester access.
+Release qualification requires exact-candidate local simulator evidence, current
+PR checks, and authorized native archive/signing/distribution gates. Old Cloud
+workflows containing simulator actions must not be started.
 [Release report](Documentation/AppStore/internal-testflight-release.md).
 
 ## Designs

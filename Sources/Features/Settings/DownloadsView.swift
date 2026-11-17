@@ -18,10 +18,10 @@ struct DownloadsView: View {
         List {
             ProgressTransferView()
             Section {
-                LabeledContent("Storage Used", value: ByteCountFormatter.string(fromByteCount: downloads.totalByteCount(serverID: session.server.id, userID: session.user.id), countStyle: .file))
+                LabeledContent("Storage Used", value: downloads.loadErrorMessage == nil ? ByteCountFormatter.string(fromByteCount: downloads.totalByteCount(serverID: session.server.id, userID: session.user.id), countStyle: .file) : String(localized: "Unavailable"))
                 LabeledContent("Soft Cap", value: ByteCountFormatter.string(fromByteCount: OfflineDownloadStore.softCapBytes, countStyle: .file))
-                LabeledContent("Active Downloads", value: "\(records.filter { $0.status.isActive }.count)")
-                LabeledContent("Paused Downloads", value: "\(records.filter { $0.status == .paused }.count)")
+                LabeledContent("Active Downloads", value: downloads.loadErrorMessage == nil ? "\(records.filter { $0.status.isActive }.count)" : String(localized: "Unavailable"))
+                LabeledContent("Paused Downloads", value: downloads.loadErrorMessage == nil ? "\(records.filter { $0.status == .paused }.count)" : String(localized: "Unavailable"))
             } footer: {
                 Text("Downloads use system background transfers. Avoid force-quitting Gus while downloading. Saved media stays on this device and is excluded from backup.")
             }
@@ -31,9 +31,15 @@ struct DownloadsView: View {
             } footer: {
                 Text("Automatically remove finished downloads from this device without asking. Video and audio are removed after playback ends; books are removed when you close the reader at the end. Repeated audio is kept until playback stops. Books opened in other apps are not removed automatically.")
             }
-            if records.isEmpty {
+            if let failure = downloads.loadErrorMessage {
+                Section {
+                    Text(failure).foregroundStyle(.secondary)
+                    Button("Try Again") { downloads.load(serverID: session.server.id, userID: session.user.id) }
+                }
+            }
+            if records.isEmpty, downloads.loadErrorMessage == nil {
                 ContentUnavailableView("No Downloads", systemImage: "arrow.down.circle", description: Text("Downloaded items from this server and user will appear here."))
-            } else {
+            } else if !records.isEmpty {
                 if selecting {
                     Section {
                         Button(selection.count == records.count ? "Deselect All" : "Select All") {
@@ -72,6 +78,7 @@ struct DownloadsView: View {
             }
         }
         .task { downloads.load(serverID: session.server.id, userID: session.user.id) }
+        .refreshable { downloads.load(serverID: session.server.id, userID: session.user.id) }
         .onChange(of: records.map(\.id)) { _, ids in selection.formIntersection(ids) }
         .alert("Delete Downloads?", isPresented: $confirmingDeletion) {
             Button(pendingDeletion.count == 1 ? String(localized: "Delete Download") : String(localized: "Delete \(pendingDeletion.count) Downloads"), role: .destructive) {
@@ -132,7 +139,7 @@ struct DownloadsView: View {
                             } delete: { requestDeletion([record]) }
                         case .paused:
                             DownloadPausedRow(record: record, activity: downloads.activities[record.id] ?? record.activity) {
-                                Task { await downloads.resume(itemID: record.item.id ?? "", session: session) }
+                                Task { await downloads.resume(record, session: session) }
                             } delete: { requestDeletion([record]) }
                         case .failed:
                             DownloadFailedRow(record: record) { requestDeletion([record]) }

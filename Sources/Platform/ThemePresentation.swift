@@ -40,6 +40,10 @@ private struct GusThemeModifier: ViewModifier {
             let fill: Color = preference == .gus ? Color("AccentColor") : preference == .apple ? .blue : accent.color
             let tint: Color = preference == .custom ? accent.readable(onDark: colorScheme == .dark).color : fill
             let foreground: Color = preference == .gus ? .gusProminentActionForeground : preference == .custom && accent.usesBlackForeground ? .black : .white
+            #if os(tvOS)
+                // TabView owns its native row styles; only remove the inherited theme tint here.
+                let content = content.tint(nil)
+            #endif
             content.tint(tint)
                 .accentColor(tint)
                 .environment(\.gusThemeFill, fill)

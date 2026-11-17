@@ -8,7 +8,7 @@ import OSLog
 /// titles, tokens, or other values that could identify a person, server, or media item.
 /// Keep new cases to that contract; it is what satisfies the redaction requirement in
 /// `Documentation/AppStore/diagnostics-reliability.md`.
-enum DiagnosticEvent: Equatable {
+enum DiagnosticEvent: Equatable, Sendable {
     case referenceUnavailable
     case referenceReplaced
     case artworkFallback
@@ -23,6 +23,12 @@ enum DiagnosticEvent: Equatable {
     case searchRequested
     case playbackStartRequested
     case playbackStarted(usingTranscoding: Bool, usingLocalFile: Bool)
+    case playbackPrepared(usingTranscoding: Bool, usingLocalFile: Bool)
+    case playbackFirstPlaying(elapsedMilliseconds: Int)
+    case playbackFirstRender(elapsedMilliseconds: Int)
+    case playbackReportResult(kind: Int, outcome: Int)
+    case playbackResourceCleanup(succeeded: Bool)
+    case playbackResourceCleanupUnconfirmed
     case playbackFailed
     /// Domain codes: 0 unknown, 1 URL, 2 AVFoundation, 3 OSStatus. Never raw error text.
     case playbackItemFailed(errorCode: Int, errorDomain: Int)
@@ -52,6 +58,12 @@ enum DiagnosticEvent: Equatable {
         case .searchRequested: return "search.requested"
         case .playbackStartRequested: return "playback.start.requested"
         case .playbackStarted: return "playback.started"
+        case .playbackPrepared: return "playback.prepared"
+        case .playbackFirstPlaying: return "playback.first.playing"
+        case .playbackFirstRender: return "playback.first.render"
+        case .playbackReportResult: return "playback.report.result"
+        case .playbackResourceCleanup: return "playback.resource.cleanup"
+        case .playbackResourceCleanupUnconfirmed: return "playback.resource.cleanup.unconfirmed"
         case .playbackFailed: return "playback.failed"
         case .playbackItemFailed: return "playback.item.failed"
         case .playbackTimeControl: return "playback.time.control"
@@ -80,7 +92,13 @@ enum DiagnosticEvent: Equatable {
             return ["errorCode": String(errorCode), "errorDomain": String((0 ... 3).contains(errorDomain) ? errorDomain : 0)]
         case let .libraryLoadFinished(itemCount):
             return ["itemCount": String(itemCount)]
-        case let .playbackStarted(usingTranscoding, usingLocalFile):
+        case let .playbackFirstPlaying(elapsedMilliseconds), let .playbackFirstRender(elapsedMilliseconds):
+            return ["elapsedMilliseconds": String(max(0, elapsedMilliseconds))]
+        case let .playbackReportResult(kind, outcome):
+            return ["kind": String(min(2, max(0, kind))), "outcome": String(min(2, max(0, outcome)))]
+        case let .playbackResourceCleanup(succeeded):
+            return ["succeeded": String(succeeded)]
+        case let .playbackStarted(usingTranscoding, usingLocalFile), let .playbackPrepared(usingTranscoding, usingLocalFile):
             return [
                 "transcoding": String(usingTranscoding),
                 "localFile": String(usingLocalFile),
@@ -92,7 +110,7 @@ enum DiagnosticEvent: Equatable {
 }
 
 /// A recorded diagnostic event with its capture time.
-struct DiagnosticEventRecord: Codable, Equatable {
+struct DiagnosticEventRecord: Codable, Equatable, Sendable {
     let name: String
     let attributes: [String: String]
     let date: Date
@@ -111,7 +129,14 @@ final class DiagnosticsHub: Sendable {
 
     private let logger = Logger(category: .diagnostics)
     private let signposter = OSSignposter(subsystem: Logger.subsystem, category: "Diagnostics")
-    private let recentEventStorage: OSAllocatedUnfairLock<[DiagnosticEventRecord]>
+    private struct Storage: Sendable {
+        var events: [DiagnosticEventRecord]
+        var pending: [DiagnosticEventRecord]?
+        var isWriting = false
+    }
+
+    private let recentEventStorage: OSAllocatedUnfairLock<Storage>
+    private let persistenceQueue = DispatchQueue(label: "dev.ericslutz.gus.diagnostics.persistence", qos: .utility)
     private let persistenceURL: URL?
 
     /// A nil directory gives tests an isolated, in-memory recorder.
@@ -119,32 +144,69 @@ final class DiagnosticsHub: Sendable {
         persistenceURL = directory?.appendingPathComponent("client-events.json")
         let saved = persistenceURL.flatMap { try? Data(contentsOf: $0) }
             .flatMap { try? JSONDecoder().decode([DiagnosticEventRecord].self, from: $0) } ?? []
-        recentEventStorage = OSAllocatedUnfairLock(initialState: Array(saved.suffix(Self.maxRecentEvents)))
+        recentEventStorage = OSAllocatedUnfairLock(initialState: Storage(events: Array(saved.suffix(Self.maxRecentEvents))))
     }
 
     /// Records a lifecycle marker into the ring buffer and the unified log.
     func record(_ event: DiagnosticEvent, date: Date = .now) {
         let record = DiagnosticEventRecord(name: event.name, attributes: event.attributes, date: date)
-        recentEventStorage.withLock { events in
-            events.append(record)
-            if events.count > Self.maxRecentEvents {
-                events.removeFirst(events.count - Self.maxRecentEvents)
+        let schedule = recentEventStorage.withLock { storage in
+            storage.events.append(record)
+            if storage.events.count > Self.maxRecentEvents {
+                storage.events.removeFirst(storage.events.count - Self.maxRecentEvents)
             }
-            if let persistenceURL {
-                do {
-                    try FileManager.default.createDirectory(at: persistenceURL.deletingLastPathComponent(), withIntermediateDirectories: true)
-                    try JSONEncoder().encode(events).write(to: persistenceURL, options: .atomic)
-                } catch {
-                    logger.error("Client event persistence failed")
-                }
-            }
+            guard persistenceURL != nil else { return false }
+            storage.pending = storage.events
+            guard !storage.isWriting else { return false }
+            storage.isWriting = true
+            return true
+        }
+        if schedule {
+            persistenceQueue.async { self.drainPendingSnapshots() }
         }
         logger.debug("\(event.name, privacy: .public) \(event.attributes, privacy: .public)")
     }
 
     /// The most recent lifecycle markers, oldest first.
     func recentEvents() -> [DiagnosticEventRecord] {
-        recentEventStorage.withLock { $0 }
+        recentEventStorage.withLock { $0.events }
+    }
+
+    /// Persists all events observed before this barrier completes. An abrupt
+    /// process exit can still lose events which have not reached a flush barrier.
+    func flush() async throws {
+        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+            persistenceQueue.async {
+                do {
+                    try self.persist(self.recentEvents())
+                    continuation.resume()
+                } catch {
+                    continuation.resume(throwing: error)
+                }
+            }
+        }
+    }
+
+    /// Only one worker exists. Producers replace its pending snapshot rather
+    /// than enqueueing one disk write per event or waiting for disk under a lock.
+    private func drainPendingSnapshots() {
+        while let snapshot = recentEventStorage.withLock({ storage -> [DiagnosticEventRecord]? in
+            guard let pending = storage.pending else {
+                storage.isWriting = false
+                return nil
+            }
+            storage.pending = nil
+            return pending
+        }) {
+            do { try persist(snapshot) }
+            catch { logger.error("Client event persistence failed") }
+        }
+    }
+
+    private func persist(_ events: [DiagnosticEventRecord]) throws {
+        guard let persistenceURL else { return }
+        try FileManager.default.createDirectory(at: persistenceURL.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try JSONEncoder().encode(events).write(to: persistenceURL, options: .atomic)
     }
 
     /// Begins an Instruments-visible signpost interval; pair with `endInterval`.

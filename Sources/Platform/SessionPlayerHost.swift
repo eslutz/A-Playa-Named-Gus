@@ -27,21 +27,7 @@ struct AdaptiveAudioLayout<Artwork: View, Controls: View>: View {
 
     private func continuousLayout(geometry: GeometryProxy) -> some View {
         ScrollView {
-            #if os(iOS)
-                if geometry.size.width < 600, geometry.size.height > geometry.size.width {
-                    VStack(spacing: 24) {
-                        artwork.frame(width: min(geometry.size.width - 48, 320))
-                        Spacer(minLength: 24)
-                        controls
-                    }
-                    .frame(minHeight: max(0, geometry.size.height - 48))
-                    .padding(24)
-                } else {
-                    adaptiveContent(geometry: geometry)
-                }
-            #else
-                adaptiveContent(geometry: geometry)
-            #endif
+            adaptiveContent(geometry: geometry)
         }
     }
 
@@ -56,15 +42,27 @@ struct AdaptiveAudioLayout<Artwork: View, Controls: View>: View {
     }
 
     private func adaptiveContent(geometry: GeometryProxy) -> some View {
-        ViewThatFits(in: .horizontal) {
-            HStack(alignment: .center, spacing: 24) {
-                artwork.frame(width: min(geometry.size.height * 0.5, artworkLimit))
-                controls.frame(minWidth: 280, maxWidth: 560)
+        let compactPortrait = usesCompactPortrait(in: geometry)
+        let artworkWidth = min(geometry.size.height * 0.5, artworkLimit)
+        let portraitArtworkWidth: CGFloat? = compactPortrait ? min(max(0, geometry.size.width - 48), 320) : nil
+        return AdaptiveStack(horizontalMinimumWidth: artworkWidth + 24 + 280, verticalAlignment: .center, horizontalSpacing: 24, verticalSpacing: 24, prefersVertical: compactPortrait, containerAlignment: .center) { horizontal in
+            artwork.frame(width: horizontal ? artworkWidth : portraitArtworkWidth)
+            if compactPortrait {
+                Spacer(minLength: 24)
             }
-            VStack(spacing: 24) { artwork; controls }
+            controls.frame(minWidth: horizontal ? 280 : nil, maxWidth: horizontal ? 560 : nil)
         }
+        .frame(minHeight: compactPortrait ? max(0, geometry.size.height - 48) : nil)
         .padding(24)
         .frame(maxWidth: .infinity, minHeight: minimumContentHeight(geometry))
+    }
+
+    private func usesCompactPortrait(in geometry: GeometryProxy) -> Bool {
+        #if os(iOS)
+            geometry.size.width < 600 && geometry.size.height > geometry.size.width
+        #else
+            false
+        #endif
     }
 
     private func minimumContentHeight(_ geometry: GeometryProxy) -> CGFloat {
@@ -145,7 +143,7 @@ extension View {
         let enabled: Bool
         func body(content: Content) -> some View {
             content.fullScreenCover(item: Binding(get: { enabled ? state.playerItem : nil }, set: { state.playerItem = $0 })) { ref in
-                PresentedPlayer(item: ref.item, localOnly: ref.localOnly == true, playlistID: ref.playlistID, playlistEntryID: ref.playlistEntryID, playlistFromBeginning: ref.playlistFromBeginning == true, playlistShuffled: ref.playlistShuffled == true, playbackStart: ref.playbackStart, close: { state.playerItem = nil })
+                PresentedPlayer(item: ref.item, localOnly: ref.localOnly == true, playlistID: ref.playlistID, playlistEntryID: ref.playlistEntryID, playlistFromBeginning: ref.playlistFromBeginning == true, playlistShuffled: ref.playlistShuffled == true, playbackRequest: ref.resolvedPlaybackRequest, close: { state.playerItem = nil })
             }
         }
     }
@@ -234,6 +232,7 @@ private struct NowPlayingReturnView: View {
         }
         .frame(maxWidth: .infinity, minHeight: 44)
         .tvFocusSection()
+        .gusTVFocusScope()
     }
 
     @ViewBuilder private var returnLabel: some View {
@@ -241,21 +240,21 @@ private struct NowPlayingReturnView: View {
             if widthClass == .compact || DeviceIdentity.usesIPadPresentation {
                 compactLabel
             } else {
-                legacyLabel
+                fallbackLabel
             }
         #else
-            legacyLabel
+            fallbackLabel
         #endif
     }
 
-    private var legacyLabel: some View {
+    private var fallbackLabel: some View {
         Label(store.currentTrack?.displayTitle ?? String(localized: "Now Playing"), systemImage: "music.note")
             .lineLimit(1).frame(minHeight: 44)
     }
 
     private var compactLabel: some View {
         HStack(spacing: 12) {
-            ArtworkTile(url: store.currentTrack.flatMap { session.mediaProvider.primaryImageURL(for: $0, context: .posterGrid) }, aspectRatio: 1, placeholderSymbol: "music.note")
+            ArtworkTile(url: store.currentTrack.flatMap { session.mediaProvider.primaryImageURL(for: $0, context: .posterGrid) }, aspectRatio: 1, placeholderSymbol: "music.note", fallbackURLs: store.currentTrack.map { session.mediaProvider.artworkURLs(for: $0, request: .init(role: .square, maxWidth: 360)) } ?? [])
                 .frame(width: 40, height: 40).clipShape(RoundedRectangle(cornerRadius: 6))
             VStack(alignment: .leading, spacing: 2) {
                 Text(store.currentTrack?.displayTitle ?? String(localized: "Now Playing")).font(.subheadline.weight(.medium))
@@ -285,7 +284,7 @@ struct SessionPlayerRequest: ViewModifier {
             guard ref.serverID == nil || ref.serverID == session.server.id,
                   ref.userID == nil || ref.userID == session.user.id else { item = nil; return }
             if ref.item.isAudioPlayable, ContentRatingGate.admitsStored(ref.item) {
-                audio.play(tracks: [ref.item], localOnly: ref.localOnly == true, playbackStart: ref.playbackStart, session: session, downloads: downloads)
+                audio.play(tracks: [ref.item], localOnly: ref.localOnly == true, request: ref.resolvedPlaybackRequest, session: session, downloads: downloads)
             } else {
                 audio.stop()
                 navigation.playerItem = ref

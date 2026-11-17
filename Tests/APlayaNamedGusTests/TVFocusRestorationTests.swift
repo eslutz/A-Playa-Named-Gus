@@ -39,21 +39,79 @@ struct TVFocusRestorationTests {
         #expect(memory.restoredID(section: "next", context: "home", ids: ["new-card"], initial: true) == nil, "New rails do not override existing screen focus")
     }
 
-    @Test("task dismissal restores its opener without borrowing another context")
-    func taskDismissal() {
+    @Test("task dismissal keeps one immutable request through native fallback")
+    func taskDismissal() throws {
         var memory = TVFocusMemory()
-        memory.remember(id: "more", index: 3, section: "actions", context: "detail")
+        memory.remember(id: "more", index: 1, section: "actions", context: "detail")
         memory.remember(id: "other-card", index: 0, section: "latest", context: "home")
         memory.requestRestoration(context: "detail")
-        #expect(memory.restorationRequest(context: "detail") == nil)
+        let initialRequest = try #require(memory.restorationRequest(context: "detail"))
         let acceptedFallback = memory.remember(id: "play", index: 0, section: "actions", context: "detail", ids: ["play", "more"])
         #expect(!acceptedFallback)
-        #expect(memory.restorationRequest(context: "detail") != nil)
+        #expect(memory.restorationRequest(context: "detail") == initialRequest)
+        let acceptedSecondFallback = memory.remember(id: "other", index: 0, section: "other", context: "detail")
+        #expect(!acceptedSecondFallback)
+        #expect(memory.restorationRequest(context: "detail") == initialRequest)
+        #expect(memory.bookmarks["actions"]?.id == "more")
         #expect(memory.restoredID(section: "actions", context: "detail", ids: ["play", "more"], initial: false) == "more")
         memory.remember(id: "more", index: 1, section: "actions", context: "detail", ids: ["play", "more"])
         #expect(memory.restorationRequest(context: "detail") == nil)
+        #expect(memory.bookmarks["actions"]?.id == "more")
         memory.requestRestoration(context: "missing")
         #expect(memory.restorationRequest(context: "missing") == nil)
+    }
+
+    @Test("an explicit opener and a replacement generation survive earlier focus callbacks")
+    func fallbackBeforeDismissal() throws {
+        var memory = TVFocusMemory()
+        memory.remember(id: "more", index: 1, section: "actions", context: "detail")
+        memory.remember(id: "play", index: 0, section: "actions", context: "detail")
+        #expect(memory.bookmarks["actions"]?.id == "play")
+        // The dismissing task explicitly identifies its More opener.
+        memory.requestRestoration(context: "detail", section: "actions", bookmark: TVFocusBookmark(id: "more", index: 1))
+        let firstRequest = try #require(memory.restorationRequest(context: "detail"))
+        #expect(memory.bookmarks["actions"]?.id == "play", "An explicit return target is not an observed focus change")
+        #expect(memory.restoredID(section: "actions", context: "detail", ids: ["play", "more"], initial: false) == "more")
+        memory.requestRestoration(context: "detail", section: "actions", bookmark: TVFocusBookmark(id: "favorite", index: 2))
+        let replacementRequest = try #require(memory.restorationRequest(context: "detail"))
+        #expect(replacementRequest != firstRequest)
+        let acceptedOldTarget = memory.remember(id: "more", index: 1, section: "actions", context: "detail", ids: ["play", "more", "favorite"])
+        #expect(!acceptedOldTarget)
+        #expect(memory.restorationRequest(context: "detail") == replacementRequest)
+        #expect(memory.restoredID(section: "actions", context: "detail", ids: ["play", "more", "favorite"], initial: false) == "favorite")
+    }
+
+    @Test("target acknowledgement clears the request and later navigation only updates history")
+    func subsequentUserChoice() {
+        var memory = TVFocusMemory()
+        let ids = ["play", "favorite", "more"]
+        memory.remember(id: "more", index: 2, section: "actions", context: "detail")
+        memory.requestRestoration(context: "detail")
+        let acceptedFallback = memory.remember(id: "play", index: 0, section: "actions", context: "detail", ids: ids)
+        #expect(!acceptedFallback)
+        let acceptedTarget = memory.remember(id: "more", index: 2, section: "actions", context: "detail", ids: ids)
+        #expect(acceptedTarget)
+        #expect(memory.restorationRequest(context: "detail") == nil)
+        let acceptedChoice = memory.remember(id: "favorite", index: 1, section: "actions", context: "detail", ids: ids)
+        #expect(acceptedChoice)
+        #expect(memory.restorationRequest(context: "detail") == nil)
+        #expect(memory.restoredID(section: "actions", context: "detail", ids: ids, initial: false) == "favorite")
+        let acceptedLaterChoice = memory.remember(id: "play", index: 0, section: "actions", context: "detail", ids: ids)
+        #expect(acceptedLaterChoice)
+        #expect(memory.restorationRequest(context: "detail") == nil)
+    }
+
+    @Test("a retained parent pop immediately requests its saved rail")
+    func popRequestsImmediately() throws {
+        var memory = TVFocusMemory()
+        memory.remember(id: "b", index: 1, section: "latest", context: "home")
+        memory.navigationChanged(section: "home", from: 0, to: 1)
+        memory.remember(id: "play", index: 0, section: "actions", context: "detail")
+        memory.navigationChanged(section: "home", from: 1, to: 0)
+        _ = try #require(memory.restorationRequest(context: "home"))
+        let acceptedFallback = memory.remember(id: "book", index: 0, section: "books", context: "home")
+        #expect(!acceptedFallback)
+        #expect(memory.restoredID(section: "latest", context: "home", ids: ["a", "c"], initial: false) == "c")
     }
 
     @Test("invalid fallback positions are clamped")
@@ -62,6 +120,37 @@ struct TVFocusRestorationTests {
     }
 
     #if os(tvOS)
+        @MainActor
+        @Test("detail returns to its explicit More or Version opener in the visible header context")
+        func detailOpenerRestoration() throws {
+            for opener in ["more", "version"] {
+                let root = RootNavigationState()
+                let header = MediaItem(id: "series", type: .series)
+                let target = MediaItem(id: "episode", type: .episode)
+                let context = "detail:" + ItemRef(item: header).id
+                let episodeContext = "detail:" + ItemRef(item: target).id
+                root.tvFocus.remember(id: "play", index: 0, section: context, context: context)
+                if opener == "more" {
+                    root.restoreTVDetailFocus(item: header)
+                } else {
+                    root.restoreTVDetailFocus(item: header, openerID: opener)
+                }
+                let request = try #require(root.tvFocus.restorationRequest(context: context))
+                #expect(root.tvFocus.restorationRequest(context: episodeContext) == nil)
+                #expect(root.tvFocus.bookmarks[context]?.id == "play")
+                #expect(root.tvFocus.restoredID(section: context, context: context, ids: TVDetailActionOrder.ids, initial: false) == opener)
+                let fallback = opener == "more" ? "synopsis" : "nextUp"
+                #expect(root.tvFocus.restoredID(section: context, context: context, ids: TVDetailActionOrder.ids.filter { $0 != opener }, initial: false) == fallback)
+                let acceptedFallback = root.tvFocus.remember(id: "play", index: 0, section: context, context: context, ids: TVDetailActionOrder.ids)
+                #expect(!acceptedFallback)
+                #expect(root.tvFocus.restorationRequest(context: context) == request)
+                let openerIndex = try #require(TVDetailActionOrder.ids.firstIndex(of: opener))
+                let acceptedTarget = root.tvFocus.remember(id: opener, index: openerIndex, section: context, context: context, ids: TVDetailActionOrder.ids)
+                #expect(acceptedTarget)
+                #expect(root.tvFocus.restorationRequest(context: context) == nil)
+            }
+        }
+
         @MainActor
         @Test("retained parent preserves its rail through native fallback after a pop")
         func retainedParentPop() {

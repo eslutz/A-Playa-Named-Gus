@@ -1,76 +1,78 @@
-import AVFoundation
 import AVKit
 import SwiftUI
 
-/// Constrained direct video playback per the watchOS brief: user-initiated, foreground
-/// only, conservative bitrate, native `VideoPlayer` surface — a novelty path, never the
-/// primary use case. Failures offer remote playback to another client instead.
+/// Foreground-only, conservative native video uses the same session ownership,
+/// reporting, preparation and cancellation rules as the primary Apple platforms.
 struct WatchVideoPlayerView: View {
-    /// Conservative streaming bitrate for the watch (cellular/Wi-Fi friendly).
-    private static let maxStreamingBitrate = 3_000_000
-
     @Environment(SessionStore.self) private var session
-    let item: MediaItem
-
-    @State private var player: AVPlayer?
-    @State private var errorMessage: String?
+    @Environment(OfflineDownloadStore.self) private var downloads
+    @Environment(\.scenePhase) private var phase
+    @Environment(\.dismiss) private var dismiss
+    let request: PlaybackRequest
+    @State private var store: PlaybackStore?
+    @State private var refresh = PlaybackRefreshStore()
     @State private var isTargetPickerPresented = false
 
     var body: some View {
-        Group {
-            if let player {
+        ZStack {
+            if let store, let player = store.player {
                 VideoPlayer(player: player)
-            } else if let errorMessage {
+                    .disabled(store.state != .ready)
+                    .allowsHitTesting(store.state == .ready)
+                    .accessibilityHidden(store.state != .ready)
+            }
+            if case let .failed(message)? = store?.state {
                 ScrollView {
                     VStack(spacing: 8) {
-                        Text("Can't Play on Watch")
-                            .font(.headline)
-                        Text(errorMessage)
-                            .font(.footnote)
-                            .foregroundStyle(.secondary)
-                        Button {
-                            isTargetPickerPresented = true
-                        } label: {
-                            Label("Play On…", systemImage: "play.tv")
-                        }
+                        Text("Can't Play on Watch").font(.headline)
+                        Text(message).font(.footnote).foregroundStyle(.secondary)
+                        Button("Try Again") { Task { await store?.prepare() } }
+                        Button("Play On…", systemImage: "play.tv") { isTargetPickerPresented = true }
                     }
                 }
-            } else {
-                ProgressView()
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background(.background)
+            } else if store?.state == .idle {
+                Button("Play", systemImage: "play.fill") { Task { await store?.prepare() } }
+            } else if store?.state != .ready {
+                VStack {
+                    ProgressView()
+                    Button("Cancel", role: .cancel) { store?.teardown(); dismiss() }
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background(.background)
+            }
+        }
+        .safeAreaInset(edge: .top) {
+            if let notice = store?.trackSelectionNotice {
+                VStack(spacing: 4) {
+                    Text(notice).font(.footnote).foregroundStyle(.secondary)
+                    Button("OK") { store?.trackSelectionNotice = nil }
+                }
             }
         }
         .task {
-            await prepare()
+            guard store == nil else { return }
+            var constrained = request
+            constrained.maxStreamingBitrate = min(request.maxStreamingBitrate ?? 3_000_000, 3_000_000)
+            constrained.presentation = .twoD
+            let player = PlaybackStore(request: constrained, session: session, playbackRefresh: refresh, downloads: downloads)
+            store = player
+            player.setPresentationActive(phase == .active)
+            await player.prepare()
         }
-        .onDisappear {
-            player?.pause()
-            player = nil
+        .onChange(of: phase) { _, phase in
+            store?.setPresentationActive(phase == .active)
+            if phase == .background {
+                store?.teardown()
+            }
         }
-        .sheet(isPresented: $isTargetPickerPresented) {
-            WatchPlayTargetPicker(item: item, startPositionTicks: PlaybackTime.resumePositionTicks(for: item))
+        .onChange(of: store?.didFinishPlayback ?? false) {
+            _, ended in if ended {
+                dismiss()
+            }
         }
-    }
-
-    private func prepare() async {
-        guard player == nil, item.id != nil else { return }
-        do {
-            let current = try await session.references.currentItem(item)
-            guard let itemID = current.id, ContentRatingGate.admitsStored(current) else { throw GusError.notFound }
-            let resolution = try await session.mediaProvider.resolvePlayback(
-                for: itemID,
-                maxStreamingBitrate: Self.maxStreamingBitrate,
-                streamSelection: .none,
-                startTimeTicks: PlaybackTime.resumePositionTicks(for: current),
-                stereoLayout: .none
-            )
-            try Task.checkCancellation()
-            let player = AVPlayer(url: resolution.url)
-            self.player = player
-            player.play()
-        } catch {
-            let gusError = GusError(from: error)
-            guard !gusError.isCancellation else { return }
-            errorMessage = gusError.localizedDescription
-        }
+        .onDisappear { store?.teardown() }
+        .sheet(isPresented: $isTargetPickerPresented) { WatchPlayTargetPicker(request: store?.request ?? request) }
     }
 }

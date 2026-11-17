@@ -9,6 +9,7 @@ struct SeerrSeasonView: View {
     @State private var loadedSeason: SeerrSeason?
     @State private var state: LoadState = .idle
     @State private var revision: UUID?
+    @State private var loadedRestrictions: String?
     @State private var generation = UUID()
     @AppStorage(ContentRatingGate.limitDefaultsKey) private var contentLimitRawValue = ContentRatingGate.Limit.off.rawValue
     @AppStorage(ContentRatingGate.hideUnratedDefaultsKey) private var hideUnratedContent = false
@@ -28,7 +29,7 @@ struct SeerrSeasonView: View {
             if !isAuthorized {
                 RestrictedContentView()
             } else {
-                LoadingStateView(state: state, retryAction: { Task { await load() } }) {
+                LoadingStateView(state: state, retryAction: { Task { await load() } }, preservesContent: loadedSeason != nil) {
                     if let loadedSeason {
                         content(loadedSeason)
                     }
@@ -79,9 +80,17 @@ struct SeerrSeasonView: View {
         let operation = generation
         let connectionRevision = store.revision
         let restrictions = String(describing: store.restrictionRevision)
+        if revision != connectionRevision || loadedRestrictions != restrictions {
+            loadedSeason = nil
+        }
         revision = connectionRevision
-        loadedSeason = nil
+        loadedRestrictions = restrictions
         state = .loading
+        defer {
+            if generation == operation, Task.isCancelled {
+                state = loadedSeason == nil ? .idle : .loaded
+            }
+        }
         guard store.admits(series) else { state = .loaded; return }
         do {
             let result = try await store.requireClient().season(tvID: series.id, number: season.seasonNumber)

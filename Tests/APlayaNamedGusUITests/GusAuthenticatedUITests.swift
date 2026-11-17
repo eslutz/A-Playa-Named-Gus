@@ -42,13 +42,18 @@ final class GusAuthenticatedUITests: XCTestCase {
         let app = try launch("play/" + required("Audio"))
         #if os(tvOS)
             XCTAssertTrue(app.cells["AVAudibleSettings"].waitForExistence(timeout: 30))
+        #elseif os(iOS)
+            XCTAssertTrue(app.buttons["AudioPlayer.close"].waitForExistence(timeout: 30))
+            XCTAssertTrue(app.buttons["Pause"].waitForExistence(timeout: 30))
+            XCTAssertTrue(app.buttons["Pause"].isEnabled)
         #else
             XCTAssertTrue(app.buttons["Done"].waitForExistence(timeout: 30))
         #endif
         capture(app, "audio-open")
         #if os(iOS)
             rotateToLandscape(app)
-            XCTAssertTrue(app.buttons["Done"].waitForExistence(timeout: 5))
+            XCTAssertTrue(app.buttons["AudioPlayer.close"].waitForExistence(timeout: 5))
+            XCTAssertTrue(app.buttons["AudioPlayer.close"].isHittable)
             capture(app, "audio-landscape")
         #endif
         #if os(tvOS)
@@ -58,6 +63,8 @@ final class GusAuthenticatedUITests: XCTestCase {
                     break
                 }
             }
+        #elseif os(iOS)
+            app.buttons["AudioPlayer.close"].tap()
         #else
             app.buttons["Done"].firstMatch.tap()
         #endif
@@ -73,16 +80,82 @@ final class GusAuthenticatedUITests: XCTestCase {
         #endif
         #if os(tvOS)
             XCTAssertTrue(app.cells["AVAudibleSettings"].waitForExistence(timeout: 10))
+        #elseif os(iOS)
+            XCTAssertTrue(app.buttons["AudioPlayer.close"].waitForExistence(timeout: 10))
+            XCTAssertTrue(app.buttons["AudioPlayer.close"].isHittable)
+            XCTAssertTrue(app.buttons["Pause"].waitForExistence(timeout: 10))
+            XCTAssertTrue(app.buttons["Pause"].isEnabled)
         #else
             XCTAssertTrue(app.buttons["Stop"].waitForExistence(timeout: 10))
         #endif
         capture(app, "audio-reopened")
         #if os(tvOS)
             XCUIRemote.shared.press(.menu)
+        #elseif os(iOS)
+            app.buttons["AudioPlayer.close"].tap()
+            XCTAssertTrue(reopen.waitForExistence(timeout: 10))
         #else
             app.buttons["Stop"].firstMatch.tap()
         #endif
     }
+
+    #if os(iOS)
+        func testReadyVideoCloseReturnsToDetail() throws {
+            try prepare()
+            defer { finish() }
+            let app = try launch("item/" + required("SynopsisMovie"))
+            let restart = app.buttons["Detail.restart"]
+            XCTAssertTrue(restart.waitForExistence(timeout: 30))
+            reveal(restart, in: app)
+            restart.tap()
+
+            let video = app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", "Video")).firstMatch
+            XCTAssertTrue(video.waitForExistence(timeout: 45), app.debugDescription)
+            let transport = app.buttons["Play/Pause"]
+            if !transport.waitForExistence(timeout: 2) {
+                video.tap()
+            }
+            XCTAssertTrue(transport.waitForExistence(timeout: 5), app.debugDescription)
+            if transport.label == "Pause" {
+                // Keep the short rights-cleared fixture on its actual ready
+                // surface while checking Close and rotating the viewport.
+                transport.tap()
+            }
+
+            let close = app.buttons["VideoPlayer.close"]
+            XCTAssertTrue(close.waitForExistence(timeout: 5))
+            XCTAssertTrue(close.isHittable)
+            XCTAssertEqual(app.buttons.matching(identifier: "VideoPlayer.close").count, 1)
+            XCTAssertGreaterThanOrEqual(close.frame.width, 44)
+            XCTAssertGreaterThanOrEqual(close.frame.height, 44)
+            capture(app, "ready-video-close")
+
+            rotateToLandscape(app)
+            XCTAssertTrue(video.waitForExistence(timeout: 10))
+            XCTAssertTrue(close.isHittable)
+            XCTAssertGreaterThanOrEqual(video.frame.minY, close.frame.maxY - 1)
+            capture(app, "ready-video-close-landscape")
+            close.tap()
+            let returned = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+                !close.exists && !video.exists && app.buttons["Detail.play"].exists
+            }, object: nil)
+            XCTAssertEqual(XCTWaiter.wait(for: [returned], timeout: 10), .completed, app.debugDescription)
+            reveal(app.buttons["Detail.play"], in: app)
+            XCTAssertTrue(app.buttons["Detail.play"].isHittable, app.debugDescription)
+            assertHorizontallyContained(app.buttons["Detail.play"], in: app)
+            capture(app, "ready-video-dismissed")
+            rotateToPortrait(app)
+            reveal(app.buttons["Detail.play"], in: app)
+            XCTAssertTrue(app.buttons["Detail.play"].isHittable, app.debugDescription)
+            assertHorizontallyContained(app.buttons["Detail.play"], in: app)
+            if UIDevice.current.userInterfaceIdiom == .pad {
+                let overview = app.staticTexts.matching(identifier: "Detail.heroOverview").firstMatch
+                XCTAssertTrue(overview.exists, "The iPad SynopsisMovie hero must expose its overview")
+                assertHorizontallyContained(overview, in: app)
+            }
+            capture(app, "ready-video-dismissed-portrait")
+        }
+    #endif
 
     func testLoadedDetailLayouts() throws {
         try prepare()
@@ -96,20 +169,33 @@ final class GusAuthenticatedUITests: XCTestCase {
         #endif
         for (type, action) in details {
             let app = try launch("item/" + required(type))
-            XCTAssertTrue(app.buttons[action].firstMatch.waitForExistence(timeout: 30))
+            let button = type == "Movie" ? app.buttons["Detail.play"] : app.buttons[action].firstMatch
+            XCTAssertTrue(button.waitForExistence(timeout: 30))
+            if type == "Movie" {
+                XCTAssertEqual(app.buttons.matching(identifier: "Detail.play").count, 1, app.debugDescription)
+                XCTAssertEqual(app.buttons.matching(identifier: "Detail.nextUp").count, 1, app.debugDescription)
+            }
+            #if os(iOS)
+                reveal(button, in: app)
+                XCTAssertTrue(button.isHittable)
+                assertHorizontallyContained(button, in: app)
+            #endif
             capture(app, type.lowercased() + "-detail")
             #if os(iOS)
-                let window = app.windows.firstMatch.frame
-                let button = app.buttons[action].firstMatch
-                if button.isHittable {
-                    XCTAssertLessThanOrEqual(button.frame.maxX, window.maxX + 1)
-                    XCTAssertGreaterThanOrEqual(button.frame.minX, window.minX - 1)
-                }
                 rotateToLandscape(app)
                 reveal(button, in: app)
                 XCTAssertTrue(button.isHittable)
+                assertHorizontallyContained(button, in: app)
+                if type == "Movie" {
+                    XCTAssertEqual(app.buttons.matching(identifier: "Detail.play").count, 1, app.debugDescription)
+                    XCTAssertEqual(app.buttons.matching(identifier: "Detail.nextUp").count, 1, app.debugDescription)
+                }
                 capture(app, type.lowercased() + "-landscape")
-                XCUIDevice.shared.orientation = .portrait
+                rotateToPortrait(app)
+                reveal(button, in: app)
+                XCTAssertTrue(button.isHittable)
+                assertHorizontallyContained(button, in: app)
+                capture(app, type.lowercased() + "-portrait-restored")
             #endif
             app.terminate()
         }
@@ -321,10 +407,19 @@ final class GusAuthenticatedUITests: XCTestCase {
             try prepare()
             defer { finish() }
             let app = try launch("play/" + required("Audio"))
-            XCTAssertTrue(app.cells["AVAudibleSettings"].waitForExistence(timeout: 30))
+            let nativeAudio = app.cells["AVAudibleSettings"]
+            let prepared = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+                nativeAudio.exists || app.buttons.matching(identifier: "Try Again").allElementsBoundByIndex.contains(where: { $0.isEnabled && $0.isHittable })
+            }, object: nil)
+            // Resolution can use 30s and native preparation 45s. Wait through those
+            // bounded phases plus launch, but surface a visible failure promptly.
+            XCTAssertEqual(XCTWaiter.wait(for: [prepared], timeout: 90), .completed, app.debugDescription)
+            XCTAssertTrue(nativeAudio.exists, app.debugDescription)
+            let marker = app.otherElements["AXElapsedTime"]
+            XCTAssertTrue(marker.waitForExistence(timeout: 5))
+            let initialElapsed = marker.label
             let advancing = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
-                let marker = app.otherElements["AXElapsedTime"]
-                return marker.exists && marker.label != "00:00"
+                marker.exists && marker.label != initialElapsed
             }, object: nil)
             XCTAssertEqual(XCTWaiter.wait(for: [advancing], timeout: 30), .completed)
             XCUIRemote.shared.press(.playPause)
@@ -498,6 +593,8 @@ final class GusAuthenticatedUITests: XCTestCase {
             app.launch()
             XCTAssertTrue(app.staticTexts["Let’s connect."].waitForExistence(timeout: 20))
             capture(app, "tv-connect-aligned")
+            try focusTV(app, label: "Find a local server")
+            capture(app, "tv-connect-secondary-action-focused")
             try focusTV(app, identifier: "ConnectServerView.serverAddress")
             XCUIRemote.shared.press(.select)
             XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 10))
@@ -592,7 +689,15 @@ final class GusAuthenticatedUITests: XCTestCase {
                     return
                 }
                 let direction: XCUIRemote.Button
-                if destination.midY > current.maxY {
+                let overlap = min(destination.maxY, current.maxY) - max(destination.minY, current.minY)
+                // A poster's combined accessibility frame includes its caption,
+                // while native focus may cover only the artwork. Move across
+                // that shared row before comparing their different midpoints.
+                if overlap > min(destination.height, current.height) * 0.5, destination.minX > current.maxX {
+                    direction = .right
+                } else if overlap > min(destination.height, current.height) * 0.5, destination.maxX < current.minX {
+                    direction = .left
+                } else if destination.midY > current.maxY {
                     direction = .down
                 } else if destination.midY < current.minY {
                     direction = .up
@@ -681,7 +786,8 @@ final class GusAuthenticatedUITests: XCTestCase {
                     "light",
                 ]
                 app.launch()
-                XCTAssertTrue(app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", landmark)).firstMatch.waitForExistence(timeout: 30))
+                let element = landmark == "Play" ? app.buttons["Detail.play"] : app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", landmark)).firstMatch
+                XCTAssertTrue(element.waitForExistence(timeout: 30))
                 capture(app, name)
                 app.terminate()
             }
@@ -692,7 +798,18 @@ final class GusAuthenticatedUITests: XCTestCase {
             defer { finish() }
             let app = launch("home")
             XCTAssertTrue(app.staticTexts["Recently Added Movies"].firstMatch.waitForExistence(timeout: 30))
+            try focusTV(app, identifier: "NextUp.showAll")
+            guard app.state == .runningForeground else {
+                XCTFail("Gus left the foreground before opening the sidebar\n" + app.debugDescription)
+                throw FixtureError.missingMedia
+            }
+            let showAll = app.buttons["NextUp.showAll"].firstMatch
+            XCTAssertTrue(showAll.hasFocus || showAll.descendants(matching: .any).allElementsBoundByIndex.contains(where: \.hasFocus), app.debugDescription)
             XCUIRemote.shared.press(.menu)
+            guard app.state == .runningForeground else {
+                XCTFail("Opening the sidebar left Gus in the background\n" + app.debugDescription)
+                throw FixtureError.missingMedia
+            }
             let account = app.buttons["Account"].firstMatch
             XCTAssertTrue(account.waitForExistence(timeout: 5), app.debugDescription)
             for _ in 0 ..< 12 {
@@ -701,6 +818,11 @@ final class GusAuthenticatedUITests: XCTestCase {
                 }
                 XCUIRemote.shared.press(.up)
             }
+            capture(app, "tv-sidebar-account-before-focus-assertion")
+            let focus = XCTAttachment(string: "Application state: \(app.state.rawValue)\nNative focus frame: \(String(describing: try? focusedTVFrame(app)))\n" + app.debugDescription)
+            focus.name = "tv-sidebar-account-focus-diagnostic"
+            focus.lifetime = .keepAlways
+            add(focus)
             XCTAssertTrue(account.hasFocus || account.descendants(matching: .any).allElementsBoundByIndex.contains(where: \.hasFocus), app.debugDescription)
             capture(app, "tv-sidebar-profile")
             XCUIRemote.shared.press(.select)
@@ -711,6 +833,10 @@ final class GusAuthenticatedUITests: XCTestCase {
             XCTAssertTrue(username.waitForExistence(timeout: 10), app.debugDescription)
             XCTAssertEqual(username.value as? String, "gus")
             try focusTV(app, label: "Save")
+            capture(app, "tv-profile-save-focused")
+            try focusTV(app, label: "Cancel")
+            capture(app, "tv-profile-save-unfocused-cancel-focused")
+            try focusTV(app, label: "Save")
             XCUIRemote.shared.press(.select)
             XCTAssertFalse(app.textFields["Username"].waitForExistence(timeout: 2))
             capture(app, "tv-profile-saved")
@@ -720,17 +846,45 @@ final class GusAuthenticatedUITests: XCTestCase {
             try prepare()
             defer { finish() }
             let app = try launch("play/" + required("SynopsisMovie"))
+            let surface = app.descendants(matching: .any).matching(identifier: "VideoPlayer.surface").firstMatch
+            let prepared = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+                surface.exists
+                    || app.staticTexts.matching(identifier: "Can't Play This").allElementsBoundByIndex.contains(where: \.isHittable)
+                    || app.buttons.matching(identifier: "Try Again").allElementsBoundByIndex.contains(where: { $0.isEnabled && $0.isHittable })
+            }, object: nil)
+            // Resolution can use 30 seconds and native preparation 45 seconds;
+            // allow launch overhead while failing promptly on actionable errors.
+            XCTAssertEqual(XCTWaiter.wait(for: [prepared], timeout: 90), .completed, app.debugDescription)
+            XCTAssertTrue(surface.exists, app.debugDescription)
+            let window = app.windows.firstMatch.frame
+            let viewport = surface.frame
+            XCTAssertGreaterThan(window.width, 0)
+            XCTAssertGreaterThan(window.height, 0)
+            XCTAssertGreaterThanOrEqual(viewport.width, window.width * 0.9, app.debugDescription)
+            XCTAssertGreaterThanOrEqual(viewport.height, window.height * 0.9, app.debugDescription)
+            capture(app, "tv-native-video-viewport")
             let infoMenu = app.collectionViews["AVInfoMenuCollection"]
-            XCTAssertTrue(infoMenu.waitForExistence(timeout: 30), app.debugDescription)
+            // Open the hidden native Info chrome only after preparation and the
+            // viewport check. Its availability and interaction also exercise AVKit.
+            for _ in 0 ..< 12 {
+                XCUIRemote.shared.press(.down)
+                if infoMenu.waitForExistence(timeout: 1) {
+                    break
+                }
+            }
+            XCTAssertTrue(infoMenu.exists, app.debugDescription)
+            // Pause the short fixture after native readiness, before spending
+            // time navigating its tabs and recording the details content.
             XCUIRemote.shared.press(.playPause)
             // Down opens the native Info panel; Up returns from its content to
             // the tab strip, where the next tab is our custom details panel.
             XCUIRemote.shared.press(.down)
-            XCUIRemote.shared.press(.down)
             XCUIRemote.shared.press(.up)
             // AVKit delegates focus to a full-viewport container, so its tab
             // strip uses native remote movement rather than SwiftUI frame matching.
-            XCTAssertTrue(app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", "Playback Details")).firstMatch.waitForExistence(timeout: 5))
+            // Its visibly rendered tab titles are not exposed as labeled AX nodes.
+            XCTAssertTrue(infoMenu.exists, app.debugDescription)
+            capture(app, "tv-native-info-tabs")
             XCUIRemote.shared.press(.right)
             XCUIRemote.shared.press(.select)
             XCTAssertTrue(app.staticTexts["How this video is being played"].waitForExistence(timeout: 5), app.debugDescription)
@@ -738,12 +892,140 @@ final class GusAuthenticatedUITests: XCTestCase {
             capture(app, "tv-playback-details")
         }
 
+        #if GUS_NATIVE_CHAPTER_VALIDATION
+            /// Explicit native fixture validation, absent from the ordinary UI bundle.
+            func testTVNativeChapterCardActivation() throws {
+                try prepare()
+                executionTimeAllowance = 240
+                defer { finish() }
+                let environment = ProcessInfo.processInfo.environment
+                let itemID = try XCTUnwrap(environment["GUS_NATIVE_CHAPTER_ITEM_ID"])
+                let chapterName = try XCTUnwrap(environment["GUS_NATIVE_CHAPTER_NAME"])
+                let expected = try XCTUnwrap(environment["GUS_NATIVE_CHAPTER_SECONDS"].flatMap(Double.init))
+                let openingName = environment["GUS_NATIVE_CHAPTER_OPENING_NAME"] ?? "A Blue30s Opening"
+                try requireNativeChapter(itemID.range(of: "^[0-9a-fA-F]{32}$", options: .regularExpression) != nil, "Required chapter fixture item ID is invalid")
+                try requireNativeChapter(!chapterName.isEmpty && chapterName.count <= 128 && expected.isFinite && expected >= 5, "Required chapter name/time is invalid")
+                try requireNativeChapter(!openingName.isEmpty && openingName.count <= 128 && openingName != chapterName, "Required opening artwork title is invalid")
+                let app = launch("item/" + itemID)
+                try requireNativeChapter(app.buttons["Detail.more"].waitForExistence(timeout: 30), "Fixture detail did not load")
+                try focusTV(app, identifier: "Detail.more")
+                XCUIRemote.shared.press(.select)
+                try focusTV(app, label: "Start from Beginning")
+                XCUIRemote.shared.press(.select)
+                let elapsed = app.otherElements["AXElapsedTime"]
+                try requireNativeChapter(elapsed.waitForExistence(timeout: 60), "Native elapsed marker unavailable")
+                let first = try XCTUnwrap(nativeChapterSeconds(elapsed.label))
+                let advancing = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+                    elapsed.exists && self.nativeChapterSeconds(elapsed.label).map { $0 > first } == true
+                }, object: nil)
+                try requireNativeChapter(XCTWaiter.wait(for: [advancing], timeout: 5) == .completed, "No advancing native clock before actual Pause")
+                XCUIRemote.shared.press(.playPause)
+                let stability = OSAllocatedUnfairLock(initialState: (label: elapsed.label, changedAt: Date()))
+                let stable = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+                    guard elapsed.exists else { return false }
+                    let label = elapsed.label
+                    return stability.withLock { value in
+                        if value.label != label {
+                            value = (label, Date())
+                        }
+                        return Date().timeIntervalSince(value.changedAt) >= 1.25
+                    }
+                }, object: nil)
+                try requireNativeChapter(XCTWaiter.wait(for: [stable], timeout: 5) == .completed, "Actual Pause did not establish a stable clock")
+                let baselineEpoch = ContinuousClock.now
+                let baselineDate = Date()
+                let pausedLabel = elapsed.label
+                let pausedSeconds = try XCTUnwrap(nativeChapterSeconds(pausedLabel))
+                try requireNativeChapter(pausedSeconds.isFinite && pausedSeconds >= 0 && expected - pausedSeconds >= 5, "Paused baseline leaves no unambiguous native jump window; no selection sent")
+                let wholeLimit = expected - pausedSeconds - 2
+                try requireNativeChapter(wholeLimit > 3, "Target does not leave an unambiguous native jump window")
+                capture(app, "tv-native-chapter-paused-baseline")
+                XCUIRemote.shared.press(.down)
+                let openings = app.cells.containing(.staticText, identifier: openingName)
+                let opening = openings.firstMatch
+                let panelReady = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+                    opening.exists && openings.count == 1 && opening.isHittable && !opening.frame.isEmpty && opening.descendants(matching: .image).count > 0
+                }, object: nil)
+                try requireNativeChapter(XCTWaiter.wait(for: [panelReady], timeout: 2) == .completed, "Native opening artwork panel did not become visible")
+                XCUIRemote.shared.press(.down)
+                let entered = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in opening.exists && opening.hasFocus }, object: nil)
+                try requireNativeChapter(XCTWaiter.wait(for: [entered], timeout: 2) == .completed, "Second Down did not focus the native opening artwork card")
+                let cards = app.cells.containing(.staticText, identifier: chapterName)
+                let card = cards.firstMatch
+                try requireNativeChapter(card.waitForExistence(timeout: 2) && cards.count == 1, "Native target artwork card is not unique")
+                for _ in 0 ..< 2 {
+                    if card.hasFocus {
+                        break
+                    }
+                    try requireNativeChapter(nativeChapterWallSeconds(baselineEpoch.duration(to: .now)) < wholeLimit - 3, "Native target observation exhausted jump budget")
+                    XCUIRemote.shared.press(.right)
+                }
+                let focused = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in card.exists && card.hasFocus }, object: nil)
+                try requireNativeChapter(XCTWaiter.wait(for: [focused], timeout: 2) == .completed, "Actual native target artwork did not acquire focus")
+                try requireNativeChapter(card.isHittable && !card.frame.isEmpty && card.descendants(matching: .image).count > 0, "Focused target lacks native artwork/hittable geometry")
+                capture(app, "tv-native-chapter-before-activation")
+                let tree = XCTAttachment(string: app.debugDescription)
+                tree.name = "native-chapter-preselection-ax-tree"; tree.lifetime = .keepAlways; add(tree)
+                let witness = XCTAttachment(string: "baselineAt=\(baselineDate)\nbeforeElapsed=\(pausedLabel)\ntarget=\(chapterName)\nframe=\(card.frame)\nUIhasFocus=\(card.hasFocus)\nartworkCount=\(card.descendants(matching: .image).count)\nobservedAt=\(Date())")
+                witness.name = "native-chapter-artwork-card-candidate"; witness.lifetime = .keepAlways; add(witness)
+                try requireNativeChapter(cards.count == 1 && card.hasFocus && card.isHittable, "Native target focus changed before Select")
+                // The native panel can occlude this marker; absence is not movement.
+                if elapsed.exists {
+                    try requireNativeChapter(elapsed.label == pausedLabel, "Visible native baseline moved before Select")
+                }
+                try requireNativeChapter(nativeChapterWallSeconds(baselineEpoch.duration(to: .now)) + 3 < wholeLimit, "Witness capture consumed jump budget; no Select sent")
+                let selectedAt = Date()
+                let selectionEpoch = ContinuousClock.now
+                XCUIRemote.shared.press(.select)
+                let last = OSAllocatedUnfairLock(initialState: (label: "not-observed", whole: 0.0, selected: 0.0))
+                let sought = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+                    guard elapsed.exists else { return false }
+                    let label = elapsed.label
+                    let actual = self.nativeChapterSeconds(label)
+                    let whole = self.nativeChapterWallSeconds(baselineEpoch.duration(to: .now))
+                    let selected = self.nativeChapterWallSeconds(selectionEpoch.duration(to: .now))
+                    last.withLock { $0 = (label, whole, selected) }
+                    guard let actual else { return false }
+                    return selected <= 3 && whole < wholeLimit && actual >= expected - 1 && actual <= expected + 1 && actual - pausedSeconds > whole + 1
+                }, object: nil)
+                let outcome = XCTWaiter.wait(for: [sought], timeout: 3)
+                let observed = last.withLock { $0 }
+                let result = XCTAttachment(string: "before=\(pausedLabel)\nexpectedSeconds=\(expected)\nafter=\(observed.label)\nselectedAt=\(selectedAt)\nwholeWindowSeconds=\(observed.whole)\npostSelectSeconds=\(observed.selected)\nobservedAt=\(Date())")
+                result.name = "native-chapter-activation-elapsed"; result.lifetime = .keepAlways; add(result)
+                capture(app, "tv-native-chapter-after-activation")
+                try requireNativeChapter(outcome == .completed, "No unambiguous native target elapsed jump within3s")
+                // This does not establish scrub thumbnails, destination rendering or heard audio.
+            }
+
+            private func nativeChapterSeconds(_ text: String) -> Double? {
+                guard text.range(of: "^[0-9]+:[0-5][0-9](?::[0-5][0-9])?$", options: .regularExpression) != nil else { return nil }
+                return text.split(separator: ":").compactMap { Double($0) }.reduce(0) { $0 * 60 + $1 }
+            }
+
+            private func nativeChapterWallSeconds(_ elapsed: Duration) -> Double {
+                Double(elapsed.components.seconds) + Double(elapsed.components.attoseconds) / 1e18
+            }
+
+            private func requireNativeChapter(_ condition: Bool, _ message: String) throws {
+                _ = try XCTUnwrap(condition ? true : nil, message)
+            }
+        #endif
+
         /// Exercise the native remote through the hero and the lower detail content.
         func testTVDetailFocusAndAboutLayout() throws {
             try prepare()
             defer { finish() }
+            let home = launch("home")
+            let showAll = home.buttons["NextUp.showAll"]
+            XCTAssertTrue(showAll.waitForExistence(timeout: 30))
+            try focusTV(home, identifier: "NextUp.showAll")
+            capture(home, "tv-home-show-all-focused")
+            XCUIRemote.shared.press(.down)
+            XCTAssertFalse(showAll.hasFocus || showAll.descendants(matching: .any).allElementsBoundByIndex.contains(where: \.hasFocus))
+            capture(home, "tv-home-show-all-unfocused")
+            home.terminate()
             let app = try launch("item/" + required("SynopsisMovie"))
-            let play = app.buttons["Play"].firstMatch
+            let play = app.buttons["Detail.play"]
             XCTAssertTrue(play.waitForExistence(timeout: 30))
             let focused = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in play.hasFocus }, object: nil)
             XCTAssertEqual(XCTWaiter.wait(for: [focused], timeout: 10), .completed)
@@ -753,6 +1035,20 @@ final class GusAuthenticatedUITests: XCTestCase {
             for button in common {
                 XCTAssertTrue(button.exists)
                 XCTAssertGreaterThan(button.frame.minY, play.frame.maxY)
+            }
+            let actionWindow = app.windows.firstMatch.frame
+            let actionFrames = ["Detail.nextUp", "Detail.version", "Detail.favorite", "Detail.more"].compactMap { id -> (String, CGRect)? in
+                let button = app.buttons[id]
+                return button.exists ? (id, button.frame) : nil
+            }
+            for (id, frame) in actionFrames {
+                XCTAssertFalse(frame.isEmpty, id)
+                XCTAssertTrue(actionWindow.contains(frame), "\(id) extends beyond the window: \(frame)")
+            }
+            for first in actionFrames.indices {
+                for second in actionFrames.indices where second > first {
+                    XCTAssertFalse(actionFrames[first].1.intersects(actionFrames[second].1), "\(actionFrames[first].0) overlaps \(actionFrames[second].0)")
+                }
             }
             for (index, button) in common.enumerated() {
                 try focusTV(app, identifier: button.identifier)
@@ -856,11 +1152,11 @@ final class GusAuthenticatedUITests: XCTestCase {
                     "YES",
                 ]
                 app.launch()
-                let button = app.buttons[action].firstMatch
+                let button = type == "Movie" ? app.buttons["Detail.play"] : app.buttons[action].firstMatch
                 XCTAssertTrue(button.waitForExistence(timeout: 30))
                 reveal(button, in: app)
                 XCTAssertTrue(button.isHittable)
-                XCTAssertGreaterThan(app.buttons["ContentLink.detailDone"].frame.midX, app.windows.firstMatch.frame.midX)
+                XCTAssertGreaterThan(app.buttons["ContentLink.detailDone"].frame.midX, app.frame.midX)
                 capture(app, type.lowercased() + "-rtl")
                 rotateToLandscape(app)
                 reveal(button, in: app)
@@ -894,7 +1190,10 @@ final class GusAuthenticatedUITests: XCTestCase {
             XCTAssertTrue(app.buttons["BookReader.done"].waitForExistence(timeout: 5))
             capture(app, "book-reader-landscape")
             app.buttons["BookReader.done"].tap()
-            XCTAssertFalse(app.webViews.firstMatch.exists)
+            let dismissed = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+                !app.buttons["BookReader.done"].exists && !app.webViews.firstMatch.exists && read.exists
+            }, object: nil)
+            XCTAssertEqual(XCTWaiter.wait(for: [dismissed], timeout: 30), .completed)
             reveal(app.buttons["Read"].firstMatch, in: app)
             capture(app, "book-reader-dismissed")
             XCTAssertTrue(app.buttons["Read"].firstMatch.isHittable)
@@ -971,7 +1270,7 @@ final class GusAuthenticatedUITests: XCTestCase {
             XCTAssertTrue(readerDone.isHittable)
             readerDone.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
             let dismissed = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
-                read.isHittable && !readerDone.isHittable
+                read.exists && !readerDone.exists && !app.webViews.firstMatch.exists
             }, object: nil)
             let dismissalResult = XCTWaiter.wait(for: [dismissed], timeout: 30)
             capture(app, "book-reader-close-result")
@@ -1025,7 +1324,7 @@ final class GusAuthenticatedUITests: XCTestCase {
             try prepare()
             defer { finish() }
             let app = try launch("item/" + required("SynopsisMovie"))
-            XCTAssertTrue(app.buttons["Play"].firstMatch.waitForExistence(timeout: 30))
+            XCTAssertTrue(app.buttons["Detail.play"].waitForExistence(timeout: 30))
             let more = app.buttons["Detail.fullSynopsis"].firstMatch
             for _ in 0 ..< 10 {
                 if more.isHittable {
@@ -1065,7 +1364,7 @@ final class GusAuthenticatedUITests: XCTestCase {
                     UIContentSizeCategory.accessibilityExtraExtraExtraLarge.rawValue,
                 ]
                 app.launch()
-                let button = app.buttons[action].firstMatch
+                let button = type == "Movie" ? app.buttons["Detail.play"] : app.buttons[action].firstMatch
                 XCTAssertTrue(button.waitForExistence(timeout: 30))
                 reveal(button, in: app)
                 XCTAssertTrue(button.isHittable)
@@ -1079,7 +1378,7 @@ final class GusAuthenticatedUITests: XCTestCase {
             try prepare()
             defer { finish() }
             let app = try launch("item/" + required("SynopsisMovie"))
-            XCTAssertTrue(app.buttons["Play"].firstMatch.waitForExistence(timeout: 30))
+            XCTAssertTrue(app.buttons["Detail.play"].waitForExistence(timeout: 30))
             capture(app, "movie-audit")
             if UIDevice.current.userInterfaceIdiom == .pad {
                 // Xcode 27's form-sheet contrast scanner samples clipped/offscreen
@@ -1087,7 +1386,7 @@ final class GusAuthenticatedUITests: XCTestCase {
                 // native geometry/description auditing and independent rendered
                 // checks; record native iPad contrast as blocked, never as passed.
                 try app.performAccessibilityAudit(for: [.hitRegion, .sufficientElementDescription])
-                for element in [app.buttons["ContentLink.detailDone"], app.buttons["Play"].firstMatch] {
+                for element in [app.buttons["ContentLink.detailDone"], app.buttons["Detail.play"]] {
                     XCTAssertTrue(element.isEnabled)
                     XCTAssertTrue(element.isHittable)
                     XCTAssertGreaterThanOrEqual(try renderedLabelContrast(element), 4.5)
@@ -1109,9 +1408,11 @@ final class GusAuthenticatedUITests: XCTestCase {
                     renderedChecks["ContentLink.detailDone"] = done
                     return true
                 }
-                let play = app.buttons["Play"].firstMatch
+                let play = app.buttons["Detail.play"]
                 if issue.element?.identifier == "Detail.play",
-                   issue.element?.label == "Play", play.isEnabled
+                   let displayedLabel = issue.element?.label,
+                   ["Play", "Resume"].contains(displayedLabel),
+                   play.label == displayedLabel, play.isEnabled
                 {
                     renderedChecks["Detail.play"] = play
                     return true
@@ -1190,24 +1491,50 @@ final class GusAuthenticatedUITests: XCTestCase {
 
         private func reveal(_ element: XCUIElement, in app: XCUIApplication) {
             for _ in 0 ..< 10 {
-                let window = app.windows.firstMatch.frame
-                if element.isHittable, element.frame.height >= 44,
-                   element.frame.minY >= window.minY + 44,
-                   element.frame.maxY <= window.maxY - 24
+                let viewport = app.frame
+                let frame = element.frame
+                if element.exists, frame.height >= 44,
+                   frame.minY >= viewport.minY + 44,
+                   frame.maxY <= viewport.maxY - 24,
+                   element.isHittable
                 {
                     return
                 }
-                app.swipeUp()
+                // A landscape transition or modal dismissal can leave the
+                // action above the viewport. Scroll toward its current frame
+                // instead of repeatedly pushing it farther offscreen.
+                let aboveViewport = frame.height > 0 && frame.minY < viewport.minY + 44
+                let start = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: aboveViewport ? 0.35 : 0.75))
+                let end = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: aboveViewport ? 0.65 : 0.45))
+                start.press(forDuration: 0.05, thenDragTo: end)
             }
         }
 
         private func rotateToLandscape(_ app: XCUIApplication) {
-            XCUIDevice.shared.orientation = .landscapeLeft
-            let deadline = Date().addingTimeInterval(10)
-            while app.windows.firstMatch.frame.width <= app.windows.firstMatch.frame.height, Date() < deadline {
-                Thread.sleep(forTimeInterval: 0.2)
-            }
-            XCTAssertGreaterThan(app.windows.firstMatch.frame.width, app.windows.firstMatch.frame.height)
+            rotate(app, to: .landscapeLeft)
+        }
+
+        private func rotateToPortrait(_ app: XCUIApplication) {
+            rotate(app, to: .portrait)
+        }
+
+        private func rotate(_ app: XCUIApplication, to orientation: UIDeviceOrientation) {
+            XCUIDevice.shared.orientation = orientation
+            let settled = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+                let viewport = app.frame
+                return app.state == .runningForeground && viewport.width > 0 && viewport.height > 0
+                    && (orientation.isLandscape ? viewport.width > viewport.height : viewport.height > viewport.width)
+            }, object: nil)
+            XCTAssertEqual(XCTWaiter.wait(for: [settled], timeout: 10), .completed, app.debugDescription)
+        }
+
+        private func assertHorizontallyContained(_ element: XCUIElement, in app: XCUIApplication, file: StaticString = #filePath, line: UInt = #line) {
+            let viewport = app.frame
+            let frame = element.frame
+            XCTAssertFalse(viewport.isEmpty, "Application viewport is empty", file: file, line: line)
+            XCTAssertFalse(frame.isEmpty, "Element frame is empty: \(element.identifier)", file: file, line: line)
+            XCTAssertGreaterThanOrEqual(frame.minX, viewport.minX - 1, file: file, line: line)
+            XCTAssertLessThanOrEqual(frame.maxX, viewport.maxX + 1, file: file, line: line)
         }
     #endif
 

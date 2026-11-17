@@ -9,7 +9,7 @@ struct VideoPlayerView: View {
     @Environment(SessionStore.self) private var session
     @Environment(PlaybackRefreshStore.self) private var playbackRefresh
     @Environment(OfflineDownloadStore.self) private var downloads
-    @Environment(VideoPlaylistsStore.self) private var playlists
+    @Environment(SavedMediaStore.self) private var playlists
     @Environment(ServerMediaListsStore.self) private var serverLists
     @Environment(\.dismiss) private var dismiss
     @Environment(\.scenePhase) private var scenePhase
@@ -24,12 +24,13 @@ struct VideoPlayerView: View {
     var playlistEntryID: UUID? = nil
     var playlistFromBeginning = false
     var playlistShuffled = false
-    var playbackStart: PlaybackStartIntent = .automatic
+    var playbackRequest: PlaybackRequest? = nil
 
     @State private var store: PlaybackStore?
     @State private var playlist: VideoPlaylistPlaybackCoordinator?
     @State private var preparation: Task<Void, Never>?
     @State private var retryGeneration = 0
+    @State private var pendingSource: PlaybackStore.SourceOption?
     @State private var sharePlay = SharePlayCoordinator.shared
     #if os(visionOS)
         @State private var openedFramePackedCinema = false
@@ -40,26 +41,36 @@ struct VideoPlayerView: View {
         ZStack {
             Color.black.ignoresSafeArea()
 
-            if let store, store.state == .ready, let player = store.player {
+            // Keep the native renderer attached through preparation → ready.
+            // Readiness changes chrome/overlays, never the surface's identity.
+            if let store, let player = store.player {
                 #if os(visionOS)
                     if store.isFramePackedImmersivePlaybackActive {
                         Color.black
-                            .ignoresSafeArea()
+                            .ignoresSafeArea(edges: [.horizontal, .bottom])
                     } else {
-                        PlayerSurface(player: player, store: store)
-                            .ignoresSafeArea()
+                        PlayerSurface(player: player, store: store, onSelectSource: { pendingSource = $0 })
+                            .ignoresSafeArea(edges: [.horizontal, .bottom])
                     }
                 #else
-                    PlayerSurface(player: player, store: store)
-                        .ignoresSafeArea()
+                    PlayerSurface(player: player, store: store, onSelectSource: { pendingSource = $0 })
+                    #if os(tvOS)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .accessibilityIdentifier("VideoPlayer.surface")
+                    #endif
+                        .ignoresSafeArea(edges: [.horizontal, .bottom])
                 #endif
-            } else if let message = playlist?.errorMessage {
+            }
+
+            if let message = playlist?.errorMessage {
                 ContentUnavailableView {
                     Label("Playlist Paused", systemImage: "exclamationmark.triangle")
                 } description: { Text(message) } actions: {
                     playlistRecoveryActions
                 }
                 .foregroundStyle(.white)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background(.black)
             } else if case let .failed(message)? = store?.state {
                 ContentUnavailableView {
                     Label("Can't Play This", systemImage: "exclamationmark.triangle")
@@ -71,47 +82,94 @@ struct VideoPlayerView: View {
                     } else {
                         Button("Try Again") {
                             preparation?.cancel()
-                            store?.teardown()
-                            self.store = nil
-                            retryGeneration += 1
+                            if let store {
+                                Task { await store.prepare() }
+                            }
                         }
                     }
                 }
                 .foregroundStyle(.white)
-            } else {
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background(.black)
+            } else if store?.state != .ready {
                 ProgressView()
                     .controlSize(.large)
                     .tint(.white)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .background(.black)
             }
         }
+        #if os(tvOS)
+        // Let the presentation set AVKit's viewport during both preparation
+        // and playback.
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .ignoresSafeArea()
+        #endif
         .overlay(alignment: .topLeading) {
-            if store?.state != .ready {
-                Button("Close", systemImage: "xmark") {
-                    preparation?.cancel()
-                    if let store {
-                        playlist?.stop(store)
-                    }
-                    store?.teardown()
-                    dismiss()
+            #if !os(iOS)
+                if store?.state != .ready {
+                    Button("Close", systemImage: "xmark") { closePlayback() }
+                        .frame(minWidth: 44, minHeight: 44)
+                        .padding()
+                        .foregroundStyle(.white)
                 }
-                .frame(minWidth: 44, minHeight: 44)
-                .padding()
-                .foregroundStyle(.white)
+            #endif
+        }
+        #if !os(tvOS)
+        .safeAreaInset(edge: .top, spacing: 0) {
+            #if os(iOS)
+                HStack {
+                    GusCloseButton { closePlayback() }
+                        .buttonStyle(.bordered)
+                        .controlSize(.large)
+                        .frame(minWidth: 44, minHeight: 44)
+                        .accessibilityIdentifier("VideoPlayer.close")
+                    Spacer(minLength: 12)
+                    if let store, store.state == .ready, hasPlaybackOptions(store) {
+                        playbackOptions(store)
+                    }
+                }
+                .padding(.horizontal)
+                .padding(.vertical, 8)
+                .background(.bar)
+            #else
+                if let store, store.state == .ready, hasPlaybackOptions(store) {
+                    playbackOptions(store)
+                        .frame(maxWidth: .infinity, alignment: .trailing)
+                        .padding()
+                        .background(.bar)
+                }
+            #endif
+        }
+        #endif
+        .confirmationDialog("Switch Version", isPresented: Binding(get: { pendingSource != nil }, set: {
+            if !$0 {
+                pendingSource = nil
             }
+        }), titleVisibility: .visible) {
+            if let source = pendingSource, let store {
+                Button("Start Over") { pendingSource = nil; Task { await store.selectMediaSource(id: source.id, fromBeginning: true) } }
+                Button("Resume at \(PlaybackTime.accessibilityDuration(seconds: PlaybackTime.seconds(fromTicks: store.positionTicks)))") { pendingSource = nil; Task { await store.selectMediaSource(id: source.id, fromBeginning: false) } }
+                    .disabled(!PlaybackActionPosition.canResume(at: store.positionTicks, durationTicks: source.runTimeTicks))
+                Button("Cancel", role: .cancel) { pendingSource = nil }
+            }
+        } message: {
+            Text("Choose where playback should begin in this version. Versions may have different timelines.")
         }
         .safeAreaInset(edge: .top) {
+            if let store, let notice = store.trackSelectionNotice {
+                HStack {
+                    Text(notice)
+                    Button("OK") { store.trackSelectionNotice = nil }
+                }.padding().background(.regularMaterial)
+            }
             if playlistID != nil {
                 SavedPlaylistErrorBanner()
             }
         }
         .gusTVVideoLifecycle(store: store)
         .accessibilityAction(.escape) {
-            preparation?.cancel()
-            if let store {
-                playlist?.stop(store)
-            }
-            store?.teardown()
-            dismiss()
+            closePlayback()
         }
         #if os(visionOS)
         .overlay(alignment: .topTrailing) {
@@ -131,7 +189,7 @@ struct VideoPlayerView: View {
         #endif
         .task(id: retryGeneration) {
             if store == nil {
-                let store = PlaybackStore(item: item, session: session, playbackRefresh: playbackRefresh, downloads: downloads, localOnly: localOnly)
+                let store = PlaybackStore(request: playbackRequest ?? PlaybackRequest(item: item), session: session, playbackRefresh: playbackRefresh, downloads: downloads, localOnly: localOnly)
                 store.gusSetTVPresentationActive(scenePhase == .active)
                 self.store = store
                 if let playlistID {
@@ -141,11 +199,16 @@ struct VideoPlayerView: View {
                     if let playlist {
                         await playlist.start(store)
                     } else {
-                        await store.prepare(startTimeTicks: playbackStart.startTimeTicks)
+                        await store.prepare()
                     }
                 }
                 preparation = task
                 await withTaskCancellationHandler { await task.value } onCancel: { task.cancel() }
+            }
+        }
+        .onChange(of: store?.hasStartedPlayback ?? false) { _, started in
+            if started, let store {
+                playlist?.checkpoint(store, activity: true)
             }
         }
         .task(id: store?.naturalCompletionRevision) {
@@ -226,14 +289,82 @@ struct VideoPlayerView: View {
                 activity,
                 item: store?.item ?? item,
                 serverID: session.server.id,
-                userID: session.user.id
+                userID: session.user.id,
+                playbackRequest: store?.request
             )
         }
     }
 
+    private func closePlayback() {
+        preparation?.cancel()
+        if let store {
+            playlist?.stop(store)
+        }
+        store?.teardown()
+        dismiss()
+    }
+
+    #if !os(tvOS)
+        private func hasPlaybackOptions(_ store: PlaybackStore) -> Bool {
+            store.mediaSourceOptions.count > 1 || store.audioOptions.count > 1 || !store.subtitleOptions.isEmpty
+        }
+
+        private func playbackOptions(_ store: PlaybackStore) -> some View {
+            Menu("Playback Options", systemImage: "slider.horizontal.3") {
+                if store.mediaSourceOptions.count > 1 {
+                    Menu("Version") {
+                        ForEach(store.mediaSourceOptions) { source in
+                            Button(source.title) { pendingSource = source }
+                                .disabled(source.id == store.selectedMediaSourceID)
+                        }
+                    }
+                }
+                if store.audioOptions.count > 1 {
+                    Picker("Audio", selection: Binding(get: { store.audioMenuSelection }, set: { selection in
+                        guard let selection else { return }
+                        switch selection {
+                        case .automatic: Task { await store.selectAudioStream(index: nil) }
+                        case let .stream(index): Task { await store.selectAudioStream(index: index) }
+                        case .off: break
+                        }
+                    })) {
+                        if store.audioMenuSelection == nil {
+                            Text("Unavailable").tag(nil as PlaybackTrackMenuSelection?).disabled(true)
+                        }
+                        Text("Automatic").tag(PlaybackTrackMenuSelection.automatic as PlaybackTrackMenuSelection?)
+                        ForEach(store.audioOptions) { option in
+                            Text(option.title).tag(PlaybackTrackMenuSelection.stream(option.id) as PlaybackTrackMenuSelection?)
+                        }
+                    }.pickerStyle(.menu)
+                }
+                if !store.subtitleOptions.isEmpty {
+                    Picker("Subtitles", selection: Binding(get: { store.subtitleMenuSelection }, set: { selection in
+                        guard let selection else { return }
+                        switch selection {
+                        case .automatic: Task { await store.selectAutomaticSubtitles() }
+                        case .off: Task { await store.selectSubtitleStream(index: nil) }
+                        case let .stream(index): Task { await store.selectSubtitleStream(index: index) }
+                        }
+                    })) {
+                        if store.subtitleMenuSelection == nil {
+                            Text("Unavailable").tag(nil as PlaybackTrackMenuSelection?).disabled(true)
+                        }
+                        Text("Automatic").tag(PlaybackTrackMenuSelection.automatic as PlaybackTrackMenuSelection?)
+                        Text("Off").tag(PlaybackTrackMenuSelection.off as PlaybackTrackMenuSelection?)
+                        ForEach(store.subtitleOptions) { option in
+                            Text(option.title).tag(PlaybackTrackMenuSelection.stream(option.id) as PlaybackTrackMenuSelection?)
+                        }
+                    }.pickerStyle(.menu)
+                }
+            }.buttonStyle(.bordered)
+                .accessibilityIdentifier("VideoPlayer.options")
+        }
+
+    #endif
+
     private func attachSharePlayPlayer() {
         guard let store else { return }
-        sharePlay.attachPlayer(store.player, item: store.item)
+        sharePlay.attachPlayer(store.player, request: store.request, session: session)
     }
 
     @ViewBuilder private var playlistRecoveryActions: some View {
@@ -355,14 +486,23 @@ struct VideoPlayerView: View {
 private struct PlayerSurface: View {
     let player: AVPlayer
     let store: PlaybackStore
+    let onSelectSource: (PlaybackStore.SourceOption) -> Void
 
     var body: some View {
+        let controlsEnabled = store.state == .ready
+        platformSurface(controlsEnabled: controlsEnabled)
+            .disabled(!controlsEnabled)
+            .allowsHitTesting(controlsEnabled)
+            .accessibilityHidden(!controlsEnabled)
+    }
+
+    @ViewBuilder private func platformSurface(controlsEnabled: Bool) -> some View {
         #if os(tvOS)
-            TVPlayerSurface(player: player, store: store)
+            TVPlayerSurface(player: player, store: store, controlsEnabled: controlsEnabled, onSelectSource: onSelectSource)
         #elseif os(visionOS)
-            VisionPlayerSurface(player: player)
+            VisionPlayerSurface(player: player, controlsEnabled: controlsEnabled)
         #else
-            PiPCapablePlayerSurface(player: player)
+            PiPCapablePlayerSurface(player: player, store: store, controlsEnabled: controlsEnabled)
         #endif
     }
 }

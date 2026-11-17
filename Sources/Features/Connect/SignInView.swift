@@ -16,6 +16,12 @@ struct SignInView: View {
     @State private var quickConnectStore: QuickConnectStore?
     @State private var signInStore: SignInStore?
     @State private var signInTask: Task<Void, Never>?
+
+    init(server: ServerConnection, initialUsername: String = "") {
+        self.server = server
+        _username = State(initialValue: initialUsername)
+    }
+
     #if os(iOS)
         @Environment(\.horizontalSizeClass) private var widthClass
     #endif
@@ -43,6 +49,15 @@ struct SignInView: View {
             #else
                 signInForm
             #endif
+        }
+        .safeAreaInset(edge: .top) {
+            if let recovery = appModel.reauthentication, recovery.server.id == server.id {
+                Label(String(localized: "Sign in again as \(recovery.user.name). Your saved content is preserved."), systemImage: "person.crop.circle.badge.exclamationmark")
+                    .font(.callout)
+                    .padding()
+                    .frame(maxWidth: .infinity)
+                    .background(.regularMaterial)
+            }
         }
         #if os(iOS)
         .sheet(isPresented: $showingSignInOptions) {

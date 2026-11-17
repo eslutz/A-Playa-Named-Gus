@@ -7,6 +7,23 @@ import Testing
 struct MediaReferenceTests {
     let scope = AccountScope(serverID: "server", userID: "user")
 
+    @Test("alternate playback duration never falls back to the primary cut")
+    func sourceSpecificDuration() {
+        let primary = MediaSource(id: "primary", runTimeTicks: 10_000_000)
+        let alternate = MediaSource(id: "alternate", runTimeTicks: 40_000_000)
+        let unknown = MediaSource(id: "unknown")
+        let item = MediaItem(mediaSources: [primary, alternate, unknown], runTimeTicks: 10_000_000)
+        #expect(MediaPlaybackIdentity.runTimeTicks(for: item) == 10_000_000)
+        #expect(MediaPlaybackIdentity.runTimeTicks(for: item, mediaSourceID: "alternate") == 40_000_000)
+        #expect(MediaPlaybackIdentity.runTimeTicks(for: item, mediaSourceID: "alternate", resolvedSource: MediaSource(id: "alternate")) == 40_000_000)
+        #expect(MediaPlaybackIdentity.runTimeTicks(for: item, mediaSourceID: "unknown") == nil)
+        #expect(MediaPlaybackIdentity.runTimeTicks(for: item, mediaSourceID: "missing") == nil)
+        #expect(MediaPlaybackIdentity.runTimeTicks(for: item, resolvedSource: unknown) == nil)
+        #expect(MediaPlaybackIdentity.runTimeTicks(for: item, resolvedSource: MediaSource(id: "alternate", runTimeTicks: 50_000_000)) == 50_000_000)
+        let primaryWithoutSourceDuration = MediaItem(mediaSources: [MediaSource(id: "primary")], runTimeTicks: 10_000_000)
+        #expect(MediaPlaybackIdentity.runTimeTicks(for: primaryWithoutSourceDuration, mediaSourceID: "primary") == 10_000_000)
+    }
+
     @Test("unique external identity repairs a missing ID")
     func repairsIdentity() async throws {
         let provider = FakeMediaProviderSession(capabilities: ProviderCapabilities())
@@ -29,8 +46,8 @@ struct MediaReferenceTests {
         #expect(item.id == "new")
     }
 
-    @Test("legacy title matches never reconnect automatically")
-    func legacyRequiresSelection() async throws {
+    @Test("title-only references never reconnect automatically")
+    func titleOnlyRequiresSelection() async throws {
         let provider = FakeMediaProviderSession(capabilities: ProviderCapabilities())
         provider.itemHandler = { _ in throw GusError.notFound }
         provider.itemsHandler = { _ in MediaItemPage(items: [MediaItem(id: "new", name: "Trespass", type: .movie)], totalRecordCount: 1) }

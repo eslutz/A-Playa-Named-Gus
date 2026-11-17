@@ -197,20 +197,6 @@ struct AudioPlaybackTests {
         #expect(fallback.kind == .original)
         #expect(fallback.fileExtension == "epub")
     }
-
-    @Test("universal audio URL is authenticated and targets the universal endpoint")
-    func universalAudioURLBuilds() throws {
-        let client = try JellyfinClientFactory.makeClient(
-            url: #require(URL(string: "https://demo.example.com")),
-            accessToken: "token-123"
-        )
-        let builder = StreamURLBuilder(client: client, userID: "user-1")
-
-        let url = try builder.universalAudioURL(for: "song-1")
-        #expect(url.path.contains("/Audio/song-1/universal"))
-        let components = URLComponents(url: url, resolvingAgainstBaseURL: false)
-        #expect(components?.queryItems?.contains { $0.name == "api_key" && $0.value == "token-123" } == true)
-    }
 }
 
 /// Audio/video lifecycle suites share the process-global audio session and Now Playing.

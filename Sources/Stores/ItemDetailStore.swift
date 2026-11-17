@@ -3,8 +3,16 @@ import Observation
 import OSLog
 
 enum SeriesRequest {
-    static func initialSeasonID(from seasons: [MediaItem]) -> String? {
-        seasons.first { ($0.indexNumber ?? 0) > 0 }?.id ?? seasons.first?.id
+    static func initialSeasonID(from seasons: [MediaItem], preferredEpisode: MediaItem? = nil) -> String? {
+        if let episode = preferredEpisode {
+            if let parentID = episode.parentID, seasons.contains(where: { $0.id == parentID }) {
+                return parentID
+            }
+            if let number = episode.parentIndexNumber, let match = seasons.first(where: { $0.indexNumber == number }) {
+                return match.id
+            }
+        }
+        return seasons.first { ($0.indexNumber ?? 0) > 0 }?.id ?? seasons.first?.id
     }
 }
 
@@ -12,43 +20,66 @@ enum SeriesRequest {
 @Observable
 final class ItemDetailStore {
     private(set) var state: LoadState = .idle
+    private(set) var hasLoadedContent = false
     private(set) var item: MediaItem
     private(set) var seriesStore: SeriesDetailStore?
     private(set) var similarItems: [MediaItem] = []
     private(set) var specialFeatures: [MediaItem] = []
+    private(set) var relatedContentError: String?
     private(set) var isUpdatingUserData = false
     private(set) var needsUserDataRefresh = false
     var actionError: String?
+    private(set) var actionOutcome: ActionOutcome?
+    private var expectedWatched: Bool?
+    private var expectedFavorite: Bool?
+    private(set) var canKeepCurrentUserData = false
 
     private let session: SessionStore
+    private let initialSeasonID: String?
+    private let onSeasonSelected: ((String) -> Void)?
     private let logger = Logger(category: .item)
     private var loadGeneration = 0
-    @ObservationIgnored private var relatedContentTask: Task<Void, Never>?
+    @ObservationIgnored private var foregroundTask: Task<Void, Never>?
 
-    init(item: MediaItem, session: SessionStore) {
+    init(item: MediaItem, session: SessionStore, initialSeasonID: String? = nil, onSeasonSelected: ((String) -> Void)? = nil) {
         self.item = item
         self.session = session
+        self.initialSeasonID = initialSeasonID
+        self.onSeasonSelected = onSeasonSelected
+        session.onInvalidation(of: self) { _ = $0.cancelForegroundLoads() }
     }
 
     func load() async {
-        guard state != .loading else { return }
-        relatedContentTask?.cancel()
+        guard session.isActive, state != .loading else { return }
+        foregroundTask?.cancel()
         loadGeneration += 1
         let generation = loadGeneration
         state = .loading
+        let task = Task { [weak self] in
+            guard let self else { return }
+            await performLoad(generation: generation)
+        }
+        foregroundTask = task
+        await withTaskCancellationHandler { await task.value } onCancel: { task.cancel() }
+        if generation == loadGeneration {
+            foregroundTask = nil
+        }
+    }
 
+    private func performLoad(generation: Int) async {
         do {
             if item.id != nil {
                 let loaded = try await session.references.currentItem(item)
                 try Task.checkCancellation()
-                guard generation == loadGeneration else { return }
+                guard generation == loadGeneration, session.isActive else { return }
                 item = loaded
             }
 
             state = .loaded
+            hasLoadedContent = true
             await loadRelatedContent(for: item, generation: generation)
         } catch {
-            guard generation == loadGeneration else { return }
+            guard generation == loadGeneration, session.isActive else { return }
             let gusError = GusError(from: error)
             guard !gusError.isCancellation else { state = .idle; return }
             logger.error("Item detail load failed: \(gusError.localizedDescription, privacy: .private)")
@@ -57,18 +88,24 @@ final class ItemDetailStore {
     }
 
     func acceptResolvedMetadata(_ current: MediaItem) {
-        guard !isUpdatingUserData else { return }
+        guard session.isActive, !isUpdatingUserData else { return }
         if item.id != current.id {
-            relatedContentTask?.cancel()
+            foregroundTask?.cancel()
             loadGeneration += 1
             similarItems = []
             specialFeatures = []
+            relatedContentError = nil
             seriesStore = nil
             state = .loaded
+            hasLoadedContent = true
             item = current
             let generation = loadGeneration
-            relatedContentTask = Task { [weak self] in
-                await self?.loadRelatedContent(for: current, generation: generation)
+            foregroundTask = Task { [weak self] in
+                guard let self else { return }
+                await loadRelatedContent(for: current, generation: generation)
+                if generation == loadGeneration {
+                    foregroundTask = nil
+                }
             }
         } else if case .failed = state {
             state = .loaded
@@ -82,18 +119,39 @@ final class ItemDetailStore {
 
     /// Explicit menu actions do not toggle against potentially stale displayed metadata.
     func setWatched(_ watched: Bool, localProgress: OfflinePlaybackProgressStore = .shared, nextUp: UpNextStore? = nil, activity: NextUpActivityStore = .shared) async {
-        guard !isUpdatingUserData, item.id != nil else { return }
+        guard session.isActive, !isUpdatingUserData, item.id != nil else { return }
+        if needsUserDataRefresh {
+            await refreshUserData(); return
+        }
         isUpdatingUserData = true
         actionError = nil
+        actionOutcome = .pending
+        canKeepCurrentUserData = false
+        var attemptedWrite = false
+        var acceptedWrite = false
+        var acceptedProgressReset = false
         defer { isUpdatingUserData = false }
         do {
-            item = try await session.references.currentItem(item)
+            let refreshed = try await session.references.currentItem(item)
+            try Task.checkCancellation()
+            guard session.isActive else { return }
+            item = refreshed
             guard let id = item.id, ContentRatingGate.admitsStored(item) else { throw GusError.notFound }
+            expectedWatched = watched
+            expectedFavorite = nil
             needsUserDataRefresh = true
+            attemptedWrite = true
             try await session.mediaProvider.updatePlaybackPosition(itemID: id, positionTicks: 0)
+            acceptedProgressReset = true
+            try Task.checkCancellation()
+            guard session.isActive else { return }
             localProgress.resetCheckpoint(itemID: id, scope: session.references.scope)
             // This provider API selects an endpoint; the inverse requests the desired status.
             try await session.mediaProvider.toggleWatched(itemID: id, currentlyWatched: !watched)
+            acceptedWrite = true
+            actionOutcome = .accepted
+            try Task.checkCancellation()
+            guard session.isActive else { return }
             if watched {
                 if let nextUp {
                     try nextUp.dismissLocally(item, scope: session.references.scope, activity: activity)
@@ -101,13 +159,9 @@ final class ItemDetailStore {
                     throw GusError.server(activity.errorMessage ?? String(localized: "Your queue change couldn't be saved. Try again."))
                 }
             }
-            item = try await session.references.currentItem(item)
-            needsUserDataRefresh = false
+            try await reconcileUserData()
         } catch {
-            let failure = GusError(from: error)
-            if !failure.isCancellation {
-                actionError = failure.localizedDescription
-            }
+            finishActionFailure(error, attempted: attemptedWrite, accepted: acceptedWrite, partiallyAccepted: acceptedProgressReset && !acceptedWrite)
         }
     }
 
@@ -117,15 +171,15 @@ final class ItemDetailStore {
 
     /// A failed refresh after a successful mutation must be reconciled before toggling again.
     func refreshUserData() async {
-        guard !isUpdatingUserData, item.id != nil else { return }
+        guard session.isActive, !isUpdatingUserData, item.id != nil else { return }
         isUpdatingUserData = true
         defer { isUpdatingUserData = false }
         do {
-            item = try await session.references.currentItem(item)
-            needsUserDataRefresh = false
-            actionError = nil
+            try await reconcileUserData()
         } catch {
+            guard session.isActive else { return }
             let failure = GusError(from: error)
+            failure.handleIfUnauthorized(session: session)
             if !failure.isCancellation {
                 actionError = failure.localizedDescription
             }
@@ -133,30 +187,136 @@ final class ItemDetailStore {
     }
 
     private func updateUserData(watched: Bool) async {
-        guard !isUpdatingUserData, item.id != nil else { return }
+        guard session.isActive, !isUpdatingUserData, item.id != nil else { return }
         if needsUserDataRefresh {
             await refreshUserData(); return
         }
+        // Preserve the action the displayed control offered before refreshing metadata.
+        let intendedWatched = watched ? !(item.userData?.isWatched == true) : nil
+        let intendedFavorite = watched ? nil : !(item.userData?.isFavorite == true)
         isUpdatingUserData = true
         actionError = nil
+        actionOutcome = .pending
+        canKeepCurrentUserData = false
+        var attemptedWrite = false
+        var acceptedWrite = false
         defer { isUpdatingUserData = false }
         do {
-            item = try await session.references.currentItem(item)
+            let refreshed = try await session.references.currentItem(item)
+            try Task.checkCancellation()
+            guard session.isActive else { return }
+            item = refreshed
             guard let id = item.id else { throw GusError.notFound }
-            if watched {
-                try await session.mediaProvider.toggleWatched(itemID: id, currentlyWatched: item.userData?.isWatched == true)
-            } else {
-                try await session.mediaProvider.toggleFavorite(itemID: id, currentlyFavorite: item.userData?.isFavorite == true)
-            }
+            expectedWatched = intendedWatched
+            expectedFavorite = intendedFavorite
+            attemptedWrite = true
             needsUserDataRefresh = true
-            item = try await session.references.currentItem(item)
-            needsUserDataRefresh = false
-        } catch {
-            let failure = GusError(from: error)
-            if !failure.isCancellation {
-                actionError = failure.localizedDescription
+            if watched {
+                try await session.mediaProvider.toggleWatched(itemID: id, currentlyWatched: intendedWatched != true)
+            } else {
+                try await session.mediaProvider.toggleFavorite(itemID: id, currentlyFavorite: intendedFavorite != true)
             }
+            acceptedWrite = true
+            actionOutcome = .accepted
+            try await reconcileUserData()
+        } catch {
+            finishActionFailure(error, attempted: attemptedWrite, accepted: acceptedWrite)
         }
+    }
+
+    private func reconcileUserData() async throws {
+        let refreshed = try await session.references.currentItem(item)
+        try Task.checkCancellation()
+        guard session.isActive else { throw GusError.cancelled }
+        item = refreshed
+        let matches = (expectedWatched == nil || expectedWatched == (item.userData?.isWatched == true))
+            && (expectedFavorite == nil || expectedFavorite == (item.userData?.isFavorite == true))
+        guard matches else {
+            needsUserDataRefresh = true
+            canKeepCurrentUserData = true
+            actionError = String(localized: "The server has not confirmed this change. Refresh Status before making another change.")
+            return
+        }
+        needsUserDataRefresh = false
+        canKeepCurrentUserData = false
+        expectedWatched = nil
+        expectedFavorite = nil
+        actionOutcome = .confirmed
+        actionError = nil
+    }
+
+    private func finishActionFailure(_ error: Error, attempted: Bool, accepted: Bool, partiallyAccepted: Bool = false) {
+        let failure = GusError(from: error)
+        failure.handleIfUnauthorized(session: session)
+        guard session.isActive else { actionOutcome = nil; return }
+        if failure.isCancellation {
+            actionOutcome = nil; return
+        }
+        if partiallyAccepted {
+            actionOutcome = .uncertain
+            actionError = String(localized: "Playback progress was reset, but the watched status was not confirmed. Refresh Status before making another change.")
+        } else if accepted {
+            actionOutcome = .accepted
+            actionError = String(localized: "Saved; refresh unavailable. Pull to refresh before making another change.")
+        } else if attempted, Self.isUncertainWrite(failure) {
+            actionOutcome = .uncertain
+            actionError = String(localized: "The change may have been saved. Refresh Status before trying again.")
+        } else {
+            actionOutcome = .failed(failure)
+            expectedWatched = nil
+            expectedFavorite = nil
+            needsUserDataRefresh = false
+            actionError = failure.localizedDescription
+        }
+    }
+
+    /// An explicit acknowledgement of freshly read server state clears uncertainty;
+    /// it never resubmits the previous write or toggles a possibly stale value.
+    func keepCurrentUserData() {
+        guard canKeepCurrentUserData, !isUpdatingUserData else { return }
+        expectedWatched = nil
+        expectedFavorite = nil
+        needsUserDataRefresh = false
+        canKeepCurrentUserData = false
+        actionOutcome = nil
+        actionError = nil
+    }
+
+    private static func isUncertainWrite(_ failure: GusError) -> Bool {
+        switch failure {
+        case .timeout, .offline, .network: true
+        default: false
+        }
+    }
+
+    func retryRelatedContent() async {
+        guard session.isActive else { return }
+        foregroundTask?.cancel()
+        loadGeneration += 1
+        let generation = loadGeneration
+        let task = Task { [weak self] in
+            guard let self else { return }
+            await loadRelatedContent(for: item, generation: generation)
+        }
+        foregroundTask = task
+        await withTaskCancellationHandler { await task.value } onCancel: { task.cancel() }
+        if generation == loadGeneration {
+            foregroundTask = nil
+        }
+    }
+
+    /// Leaving the last visible destination cancels its work without discarding content.
+    @discardableResult
+    func cancelForegroundLoads() -> Bool {
+        let canceled = foregroundTask != nil || state.isLoading
+        loadGeneration += 1
+        foregroundTask?.cancel()
+        foregroundTask = nil
+        let canceledSeries = seriesStore?.cancelForegroundLoads() == true
+        if state.isLoading {
+            state = hasLoadedContent ? .loaded : .idle
+        }
+        return canceled || canceledSeries
     }
 
     private func loadRelatedContent(for item: MediaItem, generation: Int) async {
@@ -165,36 +325,48 @@ final class ItemDetailStore {
 
         let (loadedSimilar, loadedSpecial) = await(similar, special)
         guard generation == loadGeneration, !Task.isCancelled, session.references.isActive else { return }
-        similarItems = ContentRatingGate.filter(loadedSimilar)
-        specialFeatures = ContentRatingGate.filter(loadedSpecial)
+        var failures: [String] = []
+        switch loadedSimilar {
+        case let .success(items): similarItems = ContentRatingGate.filter(items)
+        case let .failure(error): if !error.isCancellation {
+                failures.append(error.localizedDescription)
+            }
+        }
+        switch loadedSpecial {
+        case let .success(items): specialFeatures = ContentRatingGate.filter(items)
+        case let .failure(error): if !error.isCancellation {
+                failures.append(error.localizedDescription)
+            }
+        }
+        relatedContentError = failures.first
         if item.type == .series {
-            let store = SeriesDetailStore(series: item, session: session)
+            let store = seriesStore ?? SeriesDetailStore(series: item, session: session, initialSeasonID: initialSeasonID, onSeasonSelected: onSeasonSelected)
             seriesStore = store
             await store.loadSeasons()
         }
     }
 
-    private func loadSimilarItems(for item: MediaItem) async -> [MediaItem] {
-        guard let itemID = item.id else { return [] }
+    private func loadSimilarItems(for item: MediaItem) async -> Result<[MediaItem], GusError> {
+        guard let itemID = item.id else { return .success([]) }
         do {
-            return try await session.mediaProvider.similarItems(itemID: itemID, limit: 12)
+            return try await .success(session.mediaProvider.similarItems(itemID: itemID, limit: 12))
         } catch {
             let gusError = GusError(from: error)
-            guard !gusError.isCancellation else { return [] }
+            guard !gusError.isCancellation else { return .failure(gusError) }
             logger.debug("Similar items load failed: \(gusError.localizedDescription, privacy: .private)")
-            return []
+            return .failure(gusError)
         }
     }
 
-    private func loadSpecialFeatures(for item: MediaItem) async -> [MediaItem] {
-        guard let itemID = item.id else { return [] }
+    private func loadSpecialFeatures(for item: MediaItem) async -> Result<[MediaItem], GusError> {
+        guard let itemID = item.id else { return .success([]) }
         do {
-            return try await session.mediaProvider.specialFeatures(itemID: itemID)
+            return try await .success(session.mediaProvider.specialFeatures(itemID: itemID))
         } catch {
             let gusError = GusError(from: error)
-            guard !gusError.isCancellation else { return [] }
+            guard !gusError.isCancellation else { return .failure(gusError) }
             logger.debug("Special features load failed: \(gusError.localizedDescription, privacy: .private)")
-            return []
+            return .failure(gusError)
         }
     }
 }
@@ -214,26 +386,47 @@ final class SeriesDetailStore {
     private let logger = Logger(category: .item)
     private var seasonGeneration = 0
     private var episodeGeneration = 0
-    private var episodeTask: Task<MediaItemPage, Error>?
+    private var seasonTask: Task<[MediaItem], Error>?
+    private var episodeTask: Task<[MediaItem], Error>?
+    private var loadedSeasonID: String?
+    private var preferredEpisode: MediaItem?
+    private var hasUserSelectedSeason = false
+    private var didApplyPreferredEpisode = false
+    private(set) var preferredEpisodeID: String?
 
-    init(series: MediaItem, session: SessionStore) {
+    private let onSeasonSelected: ((String) -> Void)?
+
+    init(series: MediaItem, session: SessionStore, initialSeasonID: String? = nil, onSeasonSelected: ((String) -> Void)? = nil) {
         self.series = series
         self.session = session
+        selectedSeasonID = initialSeasonID
+        hasUserSelectedSeason = initialSeasonID != nil
+        self.onSeasonSelected = onSeasonSelected
+        session.onInvalidation(of: self) { _ = $0.cancelForegroundLoads() }
     }
 
     func loadSeasons() async {
-        guard seasonsState != .loading, let seriesID = series.id else { return }
+        guard session.isActive, seasonsState != .loading, let seriesID = series.id else { return }
         seasonGeneration += 1
         let generation = seasonGeneration
         seasonsState = .loading
 
         do {
-            let loaded = try await session.mediaProvider.seasons(seriesID: seriesID)
+            let provider = session.mediaProvider
+            let task = Task { try await provider.seasons(seriesID: seriesID) }
+            seasonTask = task
+            defer {
+                if generation == seasonGeneration {
+                    seasonTask = nil
+                }
+            }
+            let loaded = try await withTaskCancellationHandler { try await task.value } onCancel: { task.cancel() }
             try Task.checkCancellation()
-            guard generation == seasonGeneration else { return }
+            guard generation == seasonGeneration, session.isActive else { return }
             seasons = loaded
             if !seasons.contains(where: { $0.id == selectedSeasonID }) {
-                selectedSeasonID = SeriesRequest.initialSeasonID(from: seasons)
+                hasUserSelectedSeason = false
+                selectedSeasonID = SeriesRequest.initialSeasonID(from: seasons, preferredEpisode: preferredEpisode)
             }
             seasonsState = .loaded
 
@@ -241,7 +434,7 @@ final class SeriesDetailStore {
                 await loadEpisodes(seasonID: selectedSeasonID)
             }
         } catch {
-            guard generation == seasonGeneration else { return }
+            guard generation == seasonGeneration, session.isActive else { return }
             let gusError = GusError(from: error)
             guard !gusError.isCancellation else { seasonsState = .idle; return }
             logger.error("Series seasons load failed: \(gusError.localizedDescription, privacy: .private)")
@@ -249,7 +442,24 @@ final class SeriesDetailStore {
         }
     }
 
+    /// Initial resume alignment never overrides a deliberate season selection.
+    func preferInitialEpisode(_ episode: MediaItem?) async {
+        guard !hasUserSelectedSeason, !didApplyPreferredEpisode,
+              let episode, episode.type == .episode, episode.seriesID == series.id else { return }
+        preferredEpisode = episode
+        preferredEpisodeID = episode.id
+        guard !seasons.isEmpty, let seasonID = SeriesRequest.initialSeasonID(from: seasons, preferredEpisode: episode) else { return }
+        didApplyPreferredEpisode = true
+        if selectedSeasonID != seasonID {
+            selectedSeasonID = seasonID
+            await loadEpisodes(seasonID: seasonID)
+        }
+    }
+
     func selectSeason(id: String) async {
+        guard seasons.contains(where: { $0.id == id }) else { return }
+        hasUserSelectedSeason = true
+        onSeasonSelected?(id)
         guard selectedSeasonID != id || episodesState != .loaded else { return }
         selectedSeasonID = id
         await loadEpisodes(seasonID: id)
@@ -260,29 +470,57 @@ final class SeriesDetailStore {
         await loadEpisodes(seasonID: selectedSeasonID)
     }
 
+    @discardableResult
+    func cancelForegroundLoads() -> Bool {
+        let canceled = seasonTask != nil || episodeTask != nil
+        seasonGeneration += 1
+        episodeGeneration += 1
+        seasonTask?.cancel()
+        seasonTask = nil
+        episodeTask?.cancel()
+        episodeTask = nil
+        if seasonsState.isLoading {
+            seasonsState = seasons.isEmpty ? .idle : .loaded
+        }
+        if episodesState.isLoading {
+            episodesState = episodes.isEmpty ? .idle : .loaded
+        }
+        return canceled
+    }
+
     private func loadEpisodes(seasonID: String) async {
-        guard let seriesID = series.id else { return }
+        guard session.isActive, let seriesID = series.id else { return }
         episodeGeneration += 1
         let generation = episodeGeneration
         episodeTask?.cancel()
         episodesState = .loading
-        episodes = []
+        if loadedSeasonID != seasonID {
+            episodes = []
+        }
 
         do {
-            let task = Task { try await session.mediaProvider.episodes(seriesID: seriesID, seasonID: seasonID, limit: 1000) }
+            let provider = session.mediaProvider
+            let task = Task {
+                try await MediaPageLoader.collect { offset, size in
+                    try await provider.episodesPage(seriesID: seriesID, seasonID: seasonID, startIndex: offset, limit: size)
+                }
+            }
             episodeTask = task
+            defer {
+                if generation == episodeGeneration {
+                    episodeTask = nil
+                }
+            }
             let page = try await withTaskCancellationHandler { try await task.value } onCancel: { task.cancel() }
             try Task.checkCancellation()
-            guard generation == episodeGeneration, selectedSeasonID == seasonID else { return }
-            if let totalRecordCount = page.totalRecordCount, totalRecordCount > 1000 {
-                logger.warning("Episode list truncated: series has \(totalRecordCount) episodes but only 1000 were fetched")
-            }
-            episodes = page.items
+            guard generation == episodeGeneration, selectedSeasonID == seasonID, session.isActive else { return }
+            episodes = ContentRatingGate.filter(page)
+            loadedSeasonID = seasonID
             episodesState = .loaded
         } catch {
-            guard generation == episodeGeneration, selectedSeasonID == seasonID else { return }
+            guard generation == episodeGeneration, selectedSeasonID == seasonID, session.isActive else { return }
             let gusError = GusError(from: error)
-            guard !gusError.isCancellation else { episodesState = .idle; return }
+            guard !gusError.isCancellation else { episodesState = episodes.isEmpty ? .idle : .loaded; return }
             logger.error("Series episodes load failed: \(gusError.localizedDescription, privacy: .private)")
             episodesState = .failed(gusError.localizedDescription)
         }

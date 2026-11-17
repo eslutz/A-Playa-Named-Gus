@@ -164,13 +164,15 @@ extension PlaybackIntegrationTests {
         @Test("reversed season responses cannot overwrite selected episodes")
         func staleSeasons() async {
             let p = provider(), delayed = PendingPage()
+            p.seasonsHandler = { [.init(id: "A", indexNumber: 1), .init(id: "B", indexNumber: 2)] }
             p.episodesHandler = { id in
                 if id == "A" {
                     return try await delayed.value()
                 }
                 return MediaItemPage(items: [MediaItem(id: "B-episode")], totalRecordCount: 1)
             }
-            let store = SeriesDetailStore(series: MediaItem(id: "show"), session: session(p))
+            let store = SeriesDetailStore(series: MediaItem(id: "show"), session: session(p), initialSeasonID: "B")
+            await store.loadSeasons()
             let a = Task { await store.selectSeason(id: "A") }
             await waitFor { delayed.isWaiting }
             await store.selectSeason(id: "B")
@@ -183,6 +185,7 @@ extension PlaybackIntegrationTests {
         @Test("selected season can retry after failure")
         func retrySeason() async {
             let p = provider()
+            p.seasonsHandler = { [.init(id: "A", indexNumber: 1)] }
             var calls = 0
             p.episodesHandler = { _ in
                 calls += 1
@@ -192,7 +195,7 @@ extension PlaybackIntegrationTests {
                 return MediaItemPage(items: [MediaItem(id: "episode")], totalRecordCount: 1)
             }
             let store = SeriesDetailStore(series: MediaItem(id: "show"), session: session(p))
-            await store.selectSeason(id: "A")
+            await store.loadSeasons()
             await store.retryEpisodes()
             #expect(calls == 2 && store.episodesState == .loaded)
             #expect(store.episodes.first?.id == "episode")
@@ -201,13 +204,15 @@ extension PlaybackIntegrationTests {
         @Test("late season failure does not fail the current season")
         func staleSeasonFailure() async {
             let p = provider(), delayed = PendingPage()
+            p.seasonsHandler = { [.init(id: "A", indexNumber: 1), .init(id: "B", indexNumber: 2)] }
             p.episodesHandler = { id in
                 if id == "A" {
                     return try await delayed.value()
                 }
                 return MediaItemPage(items: [MediaItem(id: "B")], totalRecordCount: 1)
             }
-            let store = SeriesDetailStore(series: MediaItem(id: "show"), session: session(p))
+            let store = SeriesDetailStore(series: MediaItem(id: "show"), session: session(p), initialSeasonID: "B")
+            await store.loadSeasons()
             let a = Task { await store.selectSeason(id: "A") }
             await waitFor { delayed.isWaiting }
             await store.selectSeason(id: "B")
@@ -226,7 +231,7 @@ extension PlaybackIntegrationTests {
                 if refreshes == 2 {
                     throw URLError(.badServerResponse)
                 }
-                return MediaItem(id: id)
+                return MediaItem(id: id, userData: MediaUserData(isWatched: mutations > 0))
             }
             let store = ItemDetailStore(item: MediaItem(id: "item"), session: session(p))
             await store.toggleWatched()
@@ -249,14 +254,16 @@ extension PlaybackIntegrationTests {
             delayed.fail()
             await watched.value
             #expect(favorites == 0 && store.actionError != nil)
-            #expect(!store.isUpdatingUserData && !store.needsUserDataRefresh)
+            #expect(!store.isUpdatingUserData && store.needsUserDataRefresh)
+            #expect(store.actionOutcome == .uncertain)
         }
 
         @Test("opened photo survives an unrelated first page and is deduplicated")
         func selectedPhoto() {
             let opened = MediaItem(id: "501", name: "Opened", type: .photo)
             let first = MediaItem(id: "1", name: "First", type: .photo)
-            #expect(PhotoSelection.includingOpened(opened, in: [first, opened, first]).map(\.id) == ["501", "1"])
+            #expect(PhotoSelection.includingOpened(opened, in: [first, opened, first]).map(\.id) == ["1", "501"])
+            #expect(PhotoSelection.includingOpened(opened, in: [first]).map(\.id) == ["501", "1"])
         }
 
         @Test("section navigation, stores, and search survive layout ownership changes")
@@ -265,14 +272,12 @@ extension PlaybackIntegrationTests {
             let state = RootNavigationState()
             state.selectedSectionID = "category.movies"
             state.paths["category.movies", default: NavigationPath()].append(AppScreen.downloads)
-            let search = state.searchState(for: "category.movies", session: activeSession)
+            let search = state.searchState(for: "category.movies")
             search.text = "Psych"
-            let same = state.searchState(for: "category.movies", session: activeSession)
+            let same = state.searchState(for: "category.movies")
             #expect(same === search && same.text == "Psych")
             #expect(state.paths["category.movies"]?.count == 1)
             #expect(state.libraryStore(for: .category(.movies), session: activeSession) === state.libraryStore(for: .category(.movies), session: activeSession))
-            #expect(RootNavigationState.directSectionIDs(["a", "b", "c", "d", "e", "f"]) == ["a", "b", "c", "d"])
-            #expect(RootNavigationState.directSectionIDs(["a", "b", "c", "d", "e"]).count == 5)
             let otherAccount = RootNavigationState()
             #expect(otherAccount.paths.isEmpty && otherAccount !== state)
         }
@@ -301,7 +306,7 @@ extension PlaybackIntegrationTests {
         func cancelledVideo() async {
             let p = provider(), delayed = PendingResolution()
             p.playbackHandler = { try await delayed.value() }
-            let store = PlaybackStore(item: MediaItem(id: "video", type: .movie), session: session(p), playbackRefresh: PlaybackRefreshStore())
+            let store = PlaybackStore(request: PlaybackRequest(item: MediaItem(id: "video", type: .movie)), session: session(p), playbackRefresh: PlaybackRefreshStore())
             let task = Task { await store.prepare() }
             await waitFor { delayed.isWaiting }
             task.cancel()
@@ -315,7 +320,7 @@ extension PlaybackIntegrationTests {
         func tornDownVideoPreparation() async {
             let p = provider(), delayed = PendingResolution()
             p.playbackHandler = { try await delayed.value() }
-            let store = PlaybackStore(item: MediaItem(id: "video", type: .movie), session: session(p), playbackRefresh: PlaybackRefreshStore())
+            let store = PlaybackStore(request: PlaybackRequest(item: MediaItem(id: "video", type: .movie)), session: session(p), playbackRefresh: PlaybackRefreshStore())
             let task = Task { await store.prepare() }
             await waitFor { delayed.isWaiting }
             store.teardown()
@@ -335,8 +340,8 @@ extension PlaybackIntegrationTests {
             let second = MediaItem(id: "second", indexNumber: 2, parentIndexNumber: 1, seriesID: "show", type: .episode)
             for item in [first, second] {
                 let source = directory.appendingPathComponent(UUID().uuidString)
-                try Data("playback lifecycle fixture".utf8).write(to: source)
-                _ = try files.persistDownloadedFile(source, item: item, serverID: "s", userID: "u", fileExtension: "mp4")
+                try FileManager.default.copyItem(at: RepositoryTestFixtures.url(for: "Tests/Fixtures/OfflinePlaylist.mov"), to: source)
+                _ = try files.persistDownloadedFile(source, item: item, serverID: "s", userID: "u", fileExtension: "mov")
             }
             downloads.load(serverID: "s", userID: "u")
             let defaults = UserDefaults.standard
@@ -349,8 +354,13 @@ extension PlaybackIntegrationTests {
                     defaults.removeObject(forKey: PlaybackPreferences.autoPlayNextEpisodeKey)
                 }
             }
-            let store = PlaybackStore(item: first, session: session(provider()), playbackRefresh: PlaybackRefreshStore(), downloads: downloads)
+            let store = PlaybackStore(request: PlaybackRequest(item: first), session: session(provider()), playbackRefresh: PlaybackRefreshStore(), downloads: downloads)
             await store.prepare()
+            let deadline = ContinuousClock.now + .seconds(45)
+            while !store.hasStartedPlayback, ContinuousClock.now < deadline {
+                try await Task.sleep(for: .milliseconds(20))
+            }
+            #expect(store.hasStartedPlayback)
             let endedItem = try #require(store.player?.currentItem)
             #expect(store.nextUpItem?.id == second.id)
             NotificationCenter.default.post(name: AVPlayerItem.didPlayToEndTimeNotification, object: endedItem)
@@ -391,15 +401,18 @@ extension PlaybackIntegrationTests {
             let p = provider(), delayed = PendingPage()
             var calls = 0
             p.itemsHandler = { _ in calls += 1; return try await delayed.value() }
-            let store = SearchStore(session: session(p), admits: { _ in true })
-            let search = SectionSearchState(store: store)
+            let search = SectionSearchState()
+            let firstOwner = UUID(), replacementOwner = UUID()
             search.text = "Psych"
-            search.updateQuery()
+            let store = search.acquireStore(session: session(p), owner: firstOwner)
             await waitFor { delayed.isWaiting }
+            search.retain(store, owner: replacementOwner)
+            search.release(owner: firstOwner)
             search.updateQuery()
             delayed.succeed([MediaItem(id: "result")])
             await waitFor { store.state == .loaded }
             #expect(calls == 1 && store.results.first?.id == "result")
+            search.release(owner: replacementOwner)
         }
     }
 }

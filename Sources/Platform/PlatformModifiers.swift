@@ -116,16 +116,6 @@ extension View {
         #endif
     }
 
-    /// visionOS glass panel background; no-op on other platforms.
-    @ViewBuilder
-    func glassBackground() -> some View {
-        #if os(visionOS)
-            glassBackgroundEffect()
-        #else
-            self
-        #endif
-    }
-
     /// Account identifiers must preserve the typed case on software keyboards.
     @ViewBuilder
     func gusAccountNameInput() -> some View {

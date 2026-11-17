@@ -10,15 +10,15 @@ struct NextUpActivityPersistence {
     struct Snapshot: Codable, Equatable {
         var activity: [String: Date] = [:]
         var firstSeenIDs: [String] = []
-        /// Optional for compatibility with snapshots written before dismissals existed.
+        /// Current snapshots omit these optional fields until the first dismissal.
         var dismissedIDs: Set<String>? = nil
         var dismissedAt: [String: Date]? = nil
     }
 
-    func load(scope: AccountScope, identityKey: String, migrateLocalData: Bool = false) throws -> Snapshot {
+    func load(scope: AccountScope, identityKey: String, claimLocalData: Bool = false) throws -> Snapshot {
         let url = fileURL(scope: scope, identityKey: identityKey)
         guard FileManager.default.fileExists(atPath: url.path) else {
-            if migrateLocalData, identityKey != "local" {
+            if claimLocalData, identityKey != "local" {
                 let local = try load(scope: scope, identityKey: "local")
                 try save(local, scope: scope, identityKey: identityKey)
                 return local
@@ -51,9 +51,9 @@ final class NextUpActivityStore {
     private var blockedScopes = Set<AccountScope>()
     private var identityKey = "local"
     private let persistence: NextUpActivityPersistence
-    private let syncStore: VideoPlaylistsStore?
+    private let syncStore: SavedMediaStore?
 
-    init(persistence: NextUpActivityPersistence = NextUpActivityPersistence(), syncStore: VideoPlaylistsStore? = nil) {
+    init(persistence: NextUpActivityPersistence = NextUpActivityPersistence(), syncStore: SavedMediaStore? = nil) {
         self.persistence = persistence
         self.syncStore = syncStore
     }
@@ -216,7 +216,7 @@ final class NextUpActivityStore {
             revision += 1
         }
         guard snapshots[scope] == nil, !blockedScopes.contains(scope) else { return }
-        do { snapshots[scope] = try persistence.load(scope: scope, identityKey: identityKey, migrateLocalData: syncStore?.canMigrateLocalData == true) }
+        do { snapshots[scope] = try persistence.load(scope: scope, identityKey: identityKey, claimLocalData: syncStore?.canClaimLocalData == true) }
         catch {
             blockedScopes.insert(scope)
             errorMessage = String(localized: "Recent activity couldn't be read. It has been preserved.", comment: "Next Up activity read failure")

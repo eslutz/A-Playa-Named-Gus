@@ -8,6 +8,7 @@ struct WatchSettingsView: View {
     @Environment(SessionStore.self) private var session
 
     @State private var connectionState: ConnectionState = .checking
+    @State private var rememberPlaybackTracks = false
 
     private enum ConnectionState {
         case checking
@@ -39,8 +40,19 @@ struct WatchSettingsView: View {
             }
 
             Section {
+                Toggle("Remember Episode Tracks for This Account", isOn: $rememberPlaybackTracks)
+                    .onChange(of: rememberPlaybackTracks) { _, enabled in
+                        PlaybackTrackMemory.shared.setEnabled(enabled, scope: session.references.scope)
+                    }
+            } header: {
+                Text("Playback")
+            } footer: {
+                Text("Saved on this Apple Watch for this Jellyfin account. Choices apply to later episodes in the same series.")
+            }
+
+            Section {
                 Button("Sign Out", role: .destructive) {
-                    appModel.signOut()
+                    Task { await appModel.signOut() }
                 }
             }
 
@@ -50,6 +62,7 @@ struct WatchSettingsView: View {
         }
         .navigationTitle("Settings")
         .task {
+            rememberPlaybackTracks = PlaybackTrackMemory.shared.isEnabled(scope: session.references.scope)
             await checkConnection()
         }
     }

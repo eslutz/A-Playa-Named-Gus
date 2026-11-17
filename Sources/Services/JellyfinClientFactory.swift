@@ -1,4 +1,5 @@
 import Foundation
+import Get
 import JellyfinAPI
 
 /// Builds `JellyfinClient` instances from a server URL (and optional access token),
@@ -8,7 +9,7 @@ import JellyfinAPI
 /// `JellyfinClient.Configuration` the same way; A Playa Named Gus centralizes it here.
 enum JellyfinClientFactory {
     /// Shared cache, sized generously for poster/backdrop images served with cache headers.
-    /// `AsyncImage` requests flow through the same `URLSession`, so they hit this cache.
+    /// SDK requests use this cache; system image-request cache behavior is verified separately.
     /// Distinct `maxWidth` values create distinct cache entries and server renders; A Playa Named Gus
     /// keeps those values to a fixed set in `ImageURLBuilder.ImageContext`.
     static let urlCache: URLCache = {
@@ -43,7 +44,7 @@ enum JellyfinClientFactory {
 
     /// Builds a client. Pass `accessToken` to construct an already-authenticated client
     /// (e.g. when restoring a session from the Keychain); omit it for connect / sign-in.
-    static func makeClient(url: URL, accessToken: String? = nil) -> JellyfinClient {
+    static func makeClient(url: URL, accessToken: String? = nil, delegate: (any APIClientDelegate)? = nil) -> JellyfinClient {
         let configuration = JellyfinClient.Configuration(
             url: url,
             accessToken: accessToken,
@@ -54,6 +55,7 @@ enum JellyfinClientFactory {
         )
         return JellyfinClient(
             configuration: configuration,
+            delegate: delegate,
             sessionConfiguration: makeSessionConfiguration()
         )
     }

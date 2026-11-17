@@ -18,5 +18,6 @@ native framework for launching and inspecting the app.
 
 ## Consequences
 
-Unit tests remain concise and Apple-native. XCUITest stays limited to launch smoke coverage
-for now, keeping CI useful without turning it into a broad UI regression suite.
+Unit tests remain concise and Apple-native. Simulator unit and XCUITest flows run
+locally; the explicitly authorized hosted native macOS unit job is the runtime CI
+exception. See the [current pipeline policy](../AppStore/pipeline-policy.md).

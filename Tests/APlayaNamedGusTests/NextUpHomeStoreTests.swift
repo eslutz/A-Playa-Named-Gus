@@ -105,8 +105,8 @@ struct NextUpHomeStoreTests {
         #expect(!activity.isDismissed("media:jellyfin:movie", scope: scope))
     }
 
-    @Test("legacy activity snapshots remain readable after adding dismissals")
-    func legacyActivitySnapshot() throws {
+    @Test("current snapshots allow an omitted dismissal set until first dismissal")
+    func snapshotWithoutDismissals() throws {
         let snapshot = try JSONDecoder().decode(NextUpActivityPersistence.Snapshot.self, from: Data(#"{"activity":{},"firstSeenIDs":["media:jellyfin:legacy"]}"#.utf8))
         #expect(snapshot.firstSeenIDs == ["media:jellyfin:legacy"])
         #expect(snapshot.dismissedIDs == nil)
@@ -149,14 +149,17 @@ struct NextUpHomeStoreTests {
         #expect(store.unifiedNextUp.allSatisfy { $0.activityAt == nil })
     }
 
-    @Test("a failed next page keeps existing cards and retries the same provider offset")
-    func pageFailureRetry() async {
+    @Test("a failed or incomplete next page keeps existing cards and retries the same provider offset", arguments: [true, false])
+    func pageFailureRetry(incomplete: Bool) async {
         let provider = FakeMediaProviderSession(capabilities: ProviderCapabilities())
         var fail = true
         var offsets: [Int] = []
         provider.nextPageHandler = { start, limit in
             offsets.append(start)
             if start > 0, fail {
+                if incomplete {
+                    return MediaItemPage(items: [], totalRecordCount: nil)
+                }
                 throw GusError.offline
             }
             return MediaItemPage(items: (start ..< min(start + limit, 51)).map { MediaItem(id: "e\($0)", seriesID: "s\($0)", type: .episode) }, totalRecordCount: 51)
@@ -166,10 +169,12 @@ struct NextUpHomeStoreTests {
         await store.loadMoreNextUp()
         #expect(store.unifiedNextUp.count == 50)
         #expect(store.hasMoreNextUp)
+        #expect(store.errorMessage != nil)
         fail = false
         await store.loadMoreNextUp()
         #expect(offsets == [0, 50, 50])
         #expect(store.unifiedNextUp.count == 51)
+        #expect(!store.hasMoreNextUp && store.errorMessage == nil)
     }
 
     @Test("a failed latest rail keeps its cache while another rail refreshes")

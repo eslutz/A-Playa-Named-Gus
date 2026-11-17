@@ -4,6 +4,7 @@ import SwiftUI
 struct SeriesEpisodesView: View {
     @Environment(RootNavigationState.self) private var root
     let store: SeriesDetailStore
+    var preferredEpisode: MediaItem? = nil
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -26,14 +27,16 @@ struct SeriesEpisodesView: View {
                 isEmpty: store.seasons.isEmpty,
                 emptyTitle: "No Seasons",
                 emptySymbol: "rectangle.stack",
-                retryAction: { Task { await store.loadSeasons() } }
+                retryAction: { Task { await store.loadSeasons() } },
+                preservesContent: true
             ) {
                 LoadingStateView(
                     state: store.episodesState,
                     isEmpty: store.episodes.isEmpty,
                     emptyTitle: "No Episodes",
                     emptySymbol: "play.rectangle",
-                    retryAction: { Task { await store.retryEpisodes() } }
+                    retryAction: { Task { await store.retryEpisodes() } },
+                    preservesContent: true
                 ) {
                     ScrollView(.horizontal, showsIndicators: false) {
                         LazyHStack(alignment: .top, spacing: 18) {
@@ -50,12 +53,21 @@ struct SeriesEpisodesView: View {
                         }
                         .scrollTargetLayout()
                         .gusTVRailPadding()
-                        .tvFocusSection()
                     }
                     .scrollPosition(id: root.scrollBinding(for: "episodes:" + (store.selectedSeasonID ?? "")))
                     .lookToScroll(.horizontal)
                     .gusTVRailViewport()
                 }
+            }
+        }
+        .task(id: preferredEpisode?.id) { await store.preferInitialEpisode(preferredEpisode) }
+        .task(id: store.seasons.map(\.id)) { await store.preferInitialEpisode(preferredEpisode) }
+        .task(id: store.episodes.map(\.id)) {
+            let key = "episodes:" + (store.selectedSeasonID ?? "")
+            if root.scrollAnchors[key] == nil, let id = store.preferredEpisodeID,
+               let episode = store.episodes.first(where: { $0.id == id })
+            {
+                root.scrollAnchors[key] = ItemRef(item: episode).id
             }
         }
     }
@@ -119,7 +131,8 @@ private struct EpisodeCard: View {
                 url: session.mediaProvider.backdropImageURL(for: episode, maxWidth: artworkWidth),
                 aspectRatio: 16.0 / 9.0,
                 contentMode: .fit,
-                placeholderSymbol: "play.rectangle"
+                placeholderSymbol: "play.rectangle",
+                fallbackURLs: session.mediaProvider.artworkURLs(for: episode, request: .init(role: .episodeStill, maxWidth: artworkWidth))
             )
 
             .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
@@ -155,8 +168,8 @@ private struct EpisodeCard: View {
         }
         .contentShape(Rectangle())
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(episodeAccessibilityLabel)
-        .gusTVPosterStatusValue(item: episode)
+        .accessibilityLabel(episode.mediaAccessibility.label)
+        .accessibilityValue(episode.mediaAccessibility.value)
     }
 
     private var artworkWidth: Int {
@@ -173,17 +186,5 @@ private struct EpisodeCard: View {
         #else
             2
         #endif
-    }
-
-    private var episodeAccessibilityLabel: String {
-        var parts: [String] = []
-        if let locator = episode.episodeLocator {
-            parts.append(locator)
-        }
-        parts.append(episode.displayTitle)
-        if let runtime = episode.runtimeText {
-            parts.append(runtime)
-        }
-        return parts.joined(separator: ", ")
     }
 }

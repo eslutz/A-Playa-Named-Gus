@@ -20,27 +20,27 @@ struct MediaReferencePersistenceTests {
         )
     }
 
-    @Test("legacy migration preserves order and stable queue identities on relaunch")
-    func legacyMigration() throws {
+    @Test("retired unscoped queues are ignored without importing or rewriting them")
+    func retiredQueueIsNotImported() throws {
         let dir = directory()
+        defer { try? FileManager.default.removeItem(at: dir) }
         try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         let url = dir.appendingPathComponent(scope.storageKey + ".json")
-        let old = [MediaItem(id: "a", name: "Trespass", type: .movie), MediaItem(id: "b", type: .episode)]
-        let bytes = try JSONEncoder().encode(old)
+        let bytes = try JSONEncoder().encode([MediaItem(id: "old", type: .movie)])
         try bytes.write(to: url)
         let persistence = UpNextPersistence(directory: dir)
-        let first = try persistence.loadEntries(scope: scope)
-        let second = try persistence.loadEntries(scope: scope)
-        #expect(first.map(\.reference.item.id) == ["a", "b"])
-        #expect(first.map(\.id) == second.map(\.id))
-        #expect(try Data(contentsOf: url.appendingPathExtension("legacy-backup")) == bytes)
+        #expect(try persistence.loadEntries(scope: scope).isEmpty)
+        #expect(try Data(contentsOf: url) == bytes)
+        #expect(!FileManager.default.fileExists(atPath: url.appendingPathExtension("legacy-backup").path))
     }
 
     @Test("unreadable queue is never overwritten by a toggle")
     func corruptQueue() throws {
         let dir = directory()
         try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-        let url = dir.appendingPathComponent(scope.storageKey + ".json")
+        let local = dir.appendingPathComponent("local", isDirectory: true)
+        try FileManager.default.createDirectory(at: local, withIntermediateDirectories: true)
+        let url = local.appendingPathComponent(scope.storageKey + ".json")
         let bytes = Data("corrupt".utf8)
         try bytes.write(to: url)
         let store = UpNextStore(persistence: UpNextPersistence(directory: dir))

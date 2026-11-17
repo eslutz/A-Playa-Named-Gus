@@ -16,6 +16,12 @@ struct ItemDetailView: View {
     @State private var updatingNextUp = false
     @State private var nextUpError: String?
     @State private var playerItem: ItemRef?
+    @State private var selectedSourceID: String?
+    @State private var selectedSourceItemID: String?
+    @State private var startOverride: PlaybackStartOverride?
+    @State private var pendingSource: MediaSource?
+    @State private var pendingSourceItem: MediaItem?
+    @State private var pendingSourceFocusItem: MediaItem?
     @State private var sharePlay = SharePlayCoordinator.shared
     @State private var addingToPlaylist = false
     @State private var addingToCollection = false
@@ -32,7 +38,7 @@ struct ItemDetailView: View {
             if isRestricted {
                 RestrictedContentView()
             } else if let store {
-                LoadingStateView(state: store.state, retryAction: { Task { await store.load() } }) {
+                LoadingStateView(state: store.state, retryAction: { Task { await store.load() } }, preservesContent: store.hasLoadedContent) {
                     detailContent(for: store)
                 }
             } else {
@@ -40,6 +46,7 @@ struct ItemDetailView: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
+        .gusVisibleContent(.detail(ItemRef(item: store?.item ?? item).id), isLoading: store?.state.isLoading ?? true)
         .navigationTitle(detailNavigationTitle)
         .gusTVDetailTitle()
         #if os(iOS)
@@ -49,6 +56,11 @@ struct ItemDetailView: View {
                 if store == nil {
                     let store = navigationState.detailStore(for: item, session: session)
                     self.store = store
+                    if store.state == .idle {
+                        await store.load()
+                    }
+                } else if store?.state == .idle {
+                    await store?.load()
                 }
             }
             .onChange(of: session.references.revision) { _, _ in
@@ -56,9 +68,31 @@ struct ItemDetailView: View {
                     store.acceptResolvedMetadata(current)
                 }
             }
+            .confirmationDialog("Switch Version", isPresented: Binding(get: { pendingSource != nil }, set: {
+                if !$0 {
+                    pendingSource = nil; pendingSourceItem = nil
+                }
+            }), titleVisibility: .visible) {
+                if let source = pendingSource, let target = pendingSourceItem {
+                    Button("Start Over") { selectSource(source, for: target, position: 0) }
+                    if let ticks = resumeTicks(for: target), ticks > 0 {
+                        Button("Resume at \(Duration.seconds(PlaybackTime.seconds(fromTicks: ticks)).formatted(.time(pattern: .hourMinuteSecond)))") { selectSource(source, for: target, position: ticks) }
+                            .disabled(!PlaybackActionPosition.canResume(at: ticks, durationTicks: source.runTimeTicks))
+                    }
+                    Button("Cancel", role: .cancel) { pendingSource = nil; pendingSourceItem = nil }
+                }
+            } message: { Text("Choose where playback should begin in this version. Versions may have different timelines.") }
+            .onChange(of: pendingSource != nil) { wasPresented, isPresented in
+                guard wasPresented, !isPresented, let focusItem = pendingSourceFocusItem else { return }
+                pendingSourceFocusItem = nil
+                navigationState.restoreTVDetailFocus(item: focusItem, openerID: "version")
+            }
             .playerPresentation(item: $playerItem)
-            .gusTVTask(isPresented: $addingToCollection) { NavigationStack { AddToMediaCollectionView(item: store?.item ?? item) } }
-            .gusTVTask(isPresented: $addingToPlaylist, onDismiss: { navigationState.restoreTVDetailFocus(item: item) }) {
+            .gusTVTask(isPresented: $addingToCollection, onDismiss: { navigationState.restoreTVDetailFocus(item: store?.item ?? item) }) {
+                NavigationStack { AddToMediaCollectionView(item: store?.item ?? item) }
+                    .gusTVExitTask { addingToCollection = false }
+            }
+            .gusTVTask(isPresented: $addingToPlaylist, onDismiss: { navigationState.restoreTVDetailFocus(item: store?.item ?? item) }) {
                 NavigationStack { AddToVideoPlaylistView(item: store?.item ?? item) }
                     .gusTVExitTask { addingToPlaylist = false }
             }
@@ -117,9 +151,7 @@ struct ItemDetailView: View {
     }
 
     private func resumeTicks(for item: MediaItem) -> Int? {
-        let hasDownload = downloads.localFileURL(for: item, serverID: session.server.id, userID: session.user.id) != nil
-        let localTicks = hasDownload ? item.id.flatMap { localProgress.positionTicks(forItemID: $0, scope: session.references.scope) } : nil
-        return PlaybackActionPosition.ticks(for: item, localTicks: localTicks)
+        PlaybackChoicePosition.ticks(for: selectedRequest(for: item), session: session, progress: localProgress, downloads: downloads)
     }
 
     private func detailContent(for store: ItemDetailStore) -> some View {
@@ -134,13 +166,13 @@ struct ItemDetailView: View {
                         playbackHasProgress: target.map { (resumeTicks(for: $0) ?? 0) > 0 } ?? false,
                         startFromBeginning: {
                             if let target, ContentRatingGate.admitsStored(target) {
-                                playerItem = ItemRef(item: target, serverID: session.server.id, userID: session.user.id, playbackStart: .fromBeginning)
+                                playerItem = playbackReference(for: target, fromBeginning: true)
                             }
                         },
                         backdropURL: session.mediaProvider.backdropImageURL(for: store.item, context: .backdrop),
                         play: {
                             if let target, ContentRatingGate.admitsStored(target) {
-                                playerItem = ItemRef(item: target, serverID: session.server.id, userID: session.user.id)
+                                playerItem = playbackReference(for: target)
                             }
                         },
                         isInUpNext: upNext.contains(store.item, serverID: session.server.id, userID: session.user.id),
@@ -160,6 +192,9 @@ struct ItemDetailView: View {
                             }
                         }
                     ) {
+                        if let target {
+                            versionMenu(for: target, focusItem: store.item)
+                        }
                         ItemUserActionButton(
                             title: store.item.userData?.isFavorite == true
                                 ? "Remove from Favorites"
@@ -185,7 +220,7 @@ struct ItemDetailView: View {
                                     .accessibilityIdentifier("Detail.watched")
                                     if let target, ContentRatingGate.admitsStored(target) {
                                         Button("Start from Beginning", systemImage: "arrow.counterclockwise") {
-                                            playerItem = ItemRef(item: target, serverID: session.server.id, userID: session.user.id, playbackStart: .fromBeginning)
+                                            playerItem = playbackReference(for: target, fromBeginning: true)
                                         }
                                     }
                                     if store.item.type == .movie || store.item.type == .episode {
@@ -197,6 +232,7 @@ struct ItemDetailView: View {
                                 } label: {
                                     Label("More", systemImage: "ellipsis").gusDetailActionLabel()
                                 }
+                                .gusDetailActionControlStyle()
                                 .accessibilityIdentifier("Detail.more")
                                 .gusTVDetailActionFocus(id: "more", item: store.item)
                             }
@@ -207,13 +243,13 @@ struct ItemDetailView: View {
                                     title: "SharePlay",
                                     systemImage: "shareplay",
                                     action: {
-                                        startSharePlay(for: store.item)
+                                        startSharePlay(for: selectedRequest(for: store.item))
                                     }
                                 )
                             }
                         #endif
                         if DownloadsAvailability.isSupported, session.mediaProvider.capabilities.supportsDownloads {
-                            DownloadButton(item: store.item, iconOnly: true)
+                            DownloadButton(request: selectedRequest(for: store.item), iconOnly: true)
                                 .accessibilityIdentifier("Detail.download")
                         }
                     }
@@ -232,6 +268,15 @@ struct ItemDetailView: View {
                                         store.actionError = nil
                                     }
                                 }
+                                if store.canKeepCurrentUserData {
+                                    Button("Keep Current Status") { store.keepCurrentUserData() }
+                                }
+                            }
+                        }
+                        if let failure = store.relatedContentError {
+                            VStack(alignment: .leading) {
+                                Text(failure).foregroundStyle(.secondary)
+                                Button("Retry Related Content") { Task { await store.retryRelatedContent() } }
                             }
                         }
                         if let itemID = store.item.id {
@@ -239,7 +284,7 @@ struct ItemDetailView: View {
                         }
 
                         if let seriesStore = store.seriesStore {
-                            SeriesEpisodesView(store: seriesStore).id("episodes")
+                            SeriesEpisodesView(store: seriesStore, preferredEpisode: target).id("episodes")
                         }
 
                         if store.item.type == .movie, let id = store.item.id {
@@ -299,6 +344,53 @@ struct ItemDetailView: View {
         }
     }
 
+    private func selectedRequest(for target: MediaItem) -> PlaybackRequest {
+        let matches = selectedSourceItemID == target.id
+        let sourceID = matches ? selectedSourceID : nil
+        let request = PlaybackRequest(item: target, streamSelection: .init(audioStreamIndex: nil, subtitleStreamIndex: nil, mediaSourceID: sourceID))
+        return startOverride?.applying(to: request, session: session, progress: localProgress, downloads: downloads) ?? request
+    }
+
+    private func playbackReference(for target: MediaItem, fromBeginning: Bool = false) -> ItemRef {
+        var request = selectedRequest(for: target)
+        if fromBeginning {
+            request.start = .fromBeginning; request.startPositionTicks = 0
+        }
+        return ItemRef(item: target, serverID: session.server.id, userID: session.user.id, playbackRequest: request)
+    }
+
+    private func selectSource(_ source: MediaSource, for target: MediaItem, position: Int?) {
+        selectedSourceID = source.id
+        selectedSourceItemID = target.id
+        let request = PlaybackRequest(item: target, streamSelection: .init(audioStreamIndex: nil, subtitleStreamIndex: nil, mediaSourceID: source.id))
+        startOverride = PlaybackStartOverride(request: request, ticks: position ?? 0, fromBeginning: position == 0, session: session, progress: localProgress, downloads: downloads)
+        pendingSource = nil
+        pendingSourceItem = nil
+    }
+
+    @ViewBuilder private func versionMenu(for target: MediaItem, focusItem: MediaItem) -> some View {
+        let sources = target.mediaSources.filter { $0.id != nil }
+        if sources.count > 1 {
+            Menu {
+                ForEach(Array(sources.enumerated()), id: \.element.id) { offset, source in
+                    Button(source.name ?? String(localized: "Version \(offset + 1)")) {
+                        if (resumeTicks(for: target) ?? 0) > 0 {
+                            pendingSourceFocusItem = focusItem
+                            pendingSourceItem = target
+                            pendingSource = source
+                        } else {
+                            selectSource(source, for: target, position: 0)
+                            navigationState.restoreTVDetailFocus(item: focusItem, openerID: "version")
+                        }
+                    }.disabled(selectedSourceItemID == target.id && selectedSourceID == source.id)
+                }
+            } label: { Label("Version", systemImage: "square.stack").gusDetailActionLabel() }
+                .gusDetailActionControlStyle()
+                .accessibilityIdentifier("Detail.version")
+                .gusTVDetailActionFocus(id: "version", item: focusItem)
+        }
+    }
+
     private var isRestricted: Bool {
         guard let limit = ContentRatingGate.Limit(rawValue: contentLimitRawValue), limit != .off else {
             return false
@@ -318,8 +410,16 @@ struct ItemDetailView: View {
     }
 
     #if !os(tvOS)
-        private func startSharePlay(for item: MediaItem) {
-            guard let activity = sharePlay.activity(for: item, session: session) else {
+        private func startSharePlay(for request: PlaybackRequest) {
+            var sharedRequest = request
+            if sharedRequest.streamSelection.mediaSourceID == nil {
+                sharedRequest.streamSelection.mediaSourceID = request.item.mediaSources.first?.id
+            }
+            guard request.item.mediaSources.count <= 1 || sharedRequest.streamSelection.mediaSourceID != nil else {
+                sharePlayErrorMessage = String(localized: "The playback version could not be identified. Reload this item before sharing.")
+                return
+            }
+            guard let activity = sharePlay.activity(for: sharedRequest, session: session) else {
                 sharePlayErrorMessage = String(localized: "This item can't be shared with SharePlay.", comment: "SharePlay error when an item cannot create a Group Activity")
                 return
             }

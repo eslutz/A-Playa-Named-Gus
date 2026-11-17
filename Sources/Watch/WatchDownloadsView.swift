@@ -6,17 +6,17 @@ struct WatchDownloadsView: View {
     @Environment(SessionStore.self) private var session
     @Environment(OfflineDownloadStore.self) private var downloads
 
-    @State private var playerItem: MediaItem?
+    @State private var playerRecord: OfflineDownloadRecord?
 
     var body: some View {
         List {
             Section {
                 LabeledContent(
                     "Used",
-                    value: ByteCountFormatter.string(
+                    value: downloads.loadErrorMessage == nil ? ByteCountFormatter.string(
                         fromByteCount: downloads.totalByteCount(serverID: session.server.id, userID: session.user.id),
                         countStyle: .file
-                    )
+                    ) : String(localized: "Unavailable")
                 )
                 LabeledContent(
                     "Limit",
@@ -24,18 +24,22 @@ struct WatchDownloadsView: View {
                 )
             }
 
-            if downloads.records.isEmpty {
+            if let failure = downloads.loadErrorMessage {
+                Text(failure).foregroundStyle(.secondary)
+                Button("Try Again") { downloads.load(serverID: session.server.id, userID: session.user.id) }
+            }
+            if downloads.records.isEmpty, downloads.loadErrorMessage == nil {
                 ContentUnavailableView {
                     Label("No Downloads", systemImage: "arrow.down.circle")
                 } description: {
                     Text("Download music and audiobooks from Browse for offline listening.")
                 }
-            } else {
+            } else if !downloads.records.isEmpty {
                 Section("Audio") {
                     ForEach(downloads.records) { record in
                         Button {
                             if record.status.isComplete, record.item.isAudioPlayable {
-                                playerItem = record.item
+                                playerRecord = record
                             }
                         } label: {
                             VStack(alignment: .leading, spacing: 2) {
@@ -46,8 +50,8 @@ struct WatchDownloadsView: View {
                                     .foregroundStyle(.secondary)
                             }
                         }
-                        .accessibilityLabel(record.item.displayTitle)
-                        .accessibilityValue(statusText(for: record))
+                        .accessibilityLabel(record.playbackItem.mediaAccessibility.label)
+                        .accessibilityValue([record.playbackItem.mediaAccessibility.value, statusText(for: record)].filter { !$0.isEmpty }.joined(separator: ", "))
                         .swipeActions {
                             Button(role: .destructive) {
                                 downloads.delete(record, serverID: session.server.id, userID: session.user.id)
@@ -63,8 +67,9 @@ struct WatchDownloadsView: View {
         .task {
             downloads.load(serverID: session.server.id, userID: session.user.id)
         }
-        .sheet(item: $playerItem) { item in
-            WatchAudioPlayerView(tracks: [item], startIndex: 0)
+        .refreshable { downloads.load(serverID: session.server.id, userID: session.user.id) }
+        .sheet(item: $playerRecord) { record in
+            WatchAudioPlayerView(tracks: [record.playbackItem], startIndex: 0, request: record.playbackRequest, localOnly: true)
         }
     }
 

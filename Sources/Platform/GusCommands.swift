@@ -37,7 +37,7 @@
 
             CommandMenu("Account") {
                 Button(role: .destructive) {
-                    appModel.signOut()
+                    Task { await appModel.signOut() }
                 } label: {
                     Label("Sign Out", systemImage: "rectangle.portrait.and.arrow.right")
                 }

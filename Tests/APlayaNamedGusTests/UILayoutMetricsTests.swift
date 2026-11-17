@@ -98,14 +98,15 @@ struct UILayoutMetricsTests {
         #expect(!streamTestsSource.contains("try StreamURLBuilder("))
     }
 
-    @Test("video player relies on system close and options chrome")
+    @Test("video keeps native transport while supplementing source and semantic track choices")
     func videoPlayerReliesOnSystemCloseAndOptionsChrome() throws {
         let source = try sourceFile(named: "VideoPlayerView.swift", under: "Sources/Features/Player")
 
         #expect(!source.contains("Close Player"))
         #expect(!source.contains("chevron.backward"))
         #expect(!source.contains(".cancellationAction"))
-        #expect(!source.contains("Playback Options"))
+        // Native Menu/confirmationDialog choices are now approved; a replacement timeline is not.
+        #expect(!source.contains("Slider("))
         #expect(!source.contains("ellipsis.circle.fill"))
     }
 
@@ -136,7 +137,7 @@ struct UILayoutMetricsTests {
         let platformSource = try sourceFile(named: "PlayerSurface.swift", under: "Sources/Platform")
 
         #expect(!playerSource.contains("VideoPlayer(player: player)"))
-        #expect(playerSource.contains("VisionPlayerSurface(player: player)"))
+        #expect(playerSource.contains("VisionPlayerSurface(player: player, controlsEnabled: controlsEnabled)"))
         #expect(platformSource.contains("#elseif os(visionOS)"))
         #expect(platformSource.contains("struct VisionPlayerSurface: UIViewControllerRepresentable"))
         #expect(platformSource.contains("AVPlayerViewController"))

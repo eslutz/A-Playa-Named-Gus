@@ -7,10 +7,20 @@ struct WatchItemActionsView: View {
     @Environment(SessionStore.self) private var session
     @Environment(OfflineDownloadStore.self) private var downloads
     let item: MediaItem
+    @State private var request: PlaybackRequest
+    @State private var startOverride: PlaybackStartOverride?
+    // A presented child keeps the tap's request even when its first checkpoint
+    // consumes the parent's draft override for the next presentation.
+    @State private var presentation: WatchItemPresentation?
+    @State private var localProgress = OfflinePlaybackProgressStore.shared
+    @State private var pendingSourceID: String?
+    @State private var confirmingSourceChange = false
+    @State private var metadataError: String?
 
-    @State private var isAudioPlayerPresented = false
-    @State private var isVideoPlayerPresented = false
-    @State private var isTargetPickerPresented = false
+    init(item: MediaItem) {
+        self.item = item
+        _request = State(initialValue: PlaybackRequest(item: item))
+    }
 
     var body: some View {
         List {
@@ -30,10 +40,19 @@ struct WatchItemActionsView: View {
                 }
             }
 
+            if let metadataError {
+                Section {
+                    Text(metadataError)
+                    Button("Reload Media") { Task { await loadMetadata() } }
+                }
+            }
+            if !request.item.mediaSources.isEmpty, item.type != .book {
+                Section("Playback Choices") { playbackChoices }
+            }
             Section {
                 if item.isAudioPlayable {
                     Button {
-                        isAudioPlayerPresented = true
+                        presentation = .audio(freezeRequest())
                     } label: {
                         Label("Play on Watch", systemImage: "applewatch")
                     }
@@ -44,12 +63,12 @@ struct WatchItemActionsView: View {
                         .foregroundStyle(.secondary)
                 } else {
                     Button {
-                        isTargetPickerPresented = true
+                        presentation = .remote(freezeRequest())
                     } label: {
                         Label("Play On…", systemImage: "play.tv")
                     }
                     Button {
-                        isVideoPlayerPresented = true
+                        presentation = .video(freezeRequest())
                     } label: {
                         Label("Play on Watch", systemImage: "applewatch")
                     }
@@ -57,24 +76,146 @@ struct WatchItemActionsView: View {
             }
         }
         .navigationTitle(item.displayTitle)
-        .sheet(isPresented: $isAudioPlayerPresented) {
-            WatchAudioPlayerView(tracks: [item], startIndex: 0)
-        }
-        .sheet(isPresented: $isVideoPlayerPresented) {
-            WatchVideoPlayerView(item: item)
-        }
-        .sheet(isPresented: $isTargetPickerPresented) {
-            WatchPlayTargetPicker(item: item, startPositionTicks: PlaybackTime.resumePositionTicks(for: item))
+        .sheet(item: $presentation) { presented in
+            switch presented {
+            case let .audio(snapshot):
+                WatchAudioPlayerView(tracks: [snapshot.request.item], startIndex: 0, request: snapshot.request)
+            case let .video(snapshot):
+                WatchVideoPlayerView(request: snapshot.request)
+            case let .remote(snapshot):
+                WatchPlayTargetPicker(request: snapshot.request, onConfirmed: { sent, observed in
+                    acceptRemoteReadback(sent, observed, overrideID: snapshot.overrideID)
+                })
+            }
         }
         .task {
             downloads.load(serverID: session.server.id, userID: session.user.id)
+            await loadMetadata()
+        }
+        .confirmationDialog("Change Version?", isPresented: $confirmingSourceChange) {
+            Button("Start Over") { applySource(pendingSourceID, fromBeginning: true) }
+            Button("Resume at Timestamp") { applySource(pendingSourceID, fromBeginning: false) }
+                .disabled(!canResumePendingSource)
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Different versions may have different timelines.")
+        }
+    }
+
+    private var selectedSource: MediaSource? {
+        request.streamSelection.mediaSourceID.flatMap { id in request.item.mediaSources.first { $0.id == id } } ?? request.item.mediaSources.first
+    }
+
+    private var effectiveRequest: PlaybackRequest {
+        startOverride?.applying(to: request, session: session, progress: localProgress, downloads: downloads) ?? request
+    }
+
+    private var resumeTicks: Int {
+        PlaybackChoicePosition.ticks(for: effectiveRequest, session: session, progress: localProgress, downloads: downloads) ?? 0
+    }
+
+    private var canResumePendingSource: Bool {
+        let id = pendingSourceID ?? request.item.mediaSources.first?.id
+        return PlaybackActionPosition.canResume(at: resumeTicks, durationTicks: MediaPlaybackIdentity.runTimeTicks(for: request.item, mediaSourceID: id))
+    }
+
+    private func freezeRequest() -> WatchItemPresentation.Snapshot {
+        WatchItemPresentation.Snapshot(request: effectiveRequest, overrideID: startOverride?.id)
+    }
+
+    private func acceptRemoteReadback(_ sent: PlaybackRequest, _ observed: RemoteSession, overrideID: UUID?) {
+        guard let startOverride, startOverride.id == overrideID,
+              startOverride.matchesRemoteReadback(request: sent, observed: observed, session: session, progress: localProgress, downloads: downloads) else { return }
+        self.startOverride = nil
+    }
+
+    @ViewBuilder private var playbackChoices: some View {
+        if request.item.mediaSources.count > 1 {
+            Picker("Version", selection: Binding(get: { request.streamSelection.mediaSourceID }, set: chooseSource)) {
+                Text("Automatic").tag(nil as String?)
+                ForEach(Array(request.item.mediaSources.enumerated()), id: \.offset) { index, source in
+                    if let id = source.id {
+                        Text(source.name ?? String(localized: "Version \(index + 1)")).tag(id as String?)
+                    }
+                }
+            }
+        }
+        if let source = selectedSource {
+            let audio = source.mediaStreams.filter { $0.type == .audio && $0.index != nil }
+            if !audio.isEmpty {
+                Picker("Audio", selection: Binding(get: { request.selection(in: source).audioStreamIndex }, set: { selectAudio($0, source: source) })) {
+                    Text("Automatic").tag(nil as Int?)
+                    ForEach(audio, id: \.index) { stream in
+                        Text(stream.displayTitle ?? stream.title ?? stream.language ?? String(localized: "Audio")).tag(stream.index)
+                    }
+                }
+            }
+            let subtitles = source.mediaStreams.filter { $0.type == .subtitle && $0.index != nil }
+            if !subtitles.isEmpty {
+                Picker("Subtitles", selection: Binding(get: { request.selection(in: source).subtitleStreamIndex }, set: { selectSubtitle($0, source: source) })) {
+                    Text("Automatic").tag(nil as Int?)
+                    Text("Off").tag(-1 as Int?)
+                    ForEach(subtitles, id: \.index) { stream in
+                        Text(stream.displayTitle ?? stream.title ?? stream.language ?? String(localized: "Subtitles")).tag(stream.index)
+                    }
+                }
+            }
+        }
+    }
+
+    private func chooseSource(_ id: String?) {
+        let current = selectedSource?.id
+        let next = id ?? request.item.mediaSources.first?.id
+        guard current != next else { return }
+        pendingSourceID = id
+        if resumeTicks > 0 {
+            confirmingSourceChange = true
+        } else {
+            applySource(id, fromBeginning: true)
+        }
+    }
+
+    private func applySource(_ id: String?, fromBeginning: Bool) {
+        let ticks = fromBeginning ? 0 : resumeTicks
+        guard fromBeginning || canResumePendingSource else { return }
+        request.streamSelection.mediaSourceID = id
+        request.streamSelection.audioStreamIndex = nil
+        request.streamSelection.subtitleStreamIndex = request.subtitleIntent == .off ? -1 : nil
+        startOverride = PlaybackStartOverride(request: request, ticks: ticks, fromBeginning: fromBeginning, session: session, progress: localProgress, downloads: downloads)
+    }
+
+    private func selectAudio(_ index: Int?, source: MediaSource) {
+        request.streamSelection.audioStreamIndex = index
+        request.audioTrack = source.mediaStreams.first { $0.type == .audio && $0.index == index }
+        PlaybackTrackMemory.shared.remember(item: request.item, source: source, selection: request.selection(in: source), scope: session.references.scope, audioExplicit: true, subtitleExplicit: false)
+    }
+
+    private func selectSubtitle(_ index: Int?, source: MediaSource) {
+        request.streamSelection.subtitleStreamIndex = index
+        request.subtitleTrack = source.mediaStreams.first { $0.type == .subtitle && $0.index == index }
+        request.subtitleIntent = index == nil ? .automatic : index == -1 ? .off : .explicit
+        PlaybackTrackMemory.shared.remember(item: request.item, source: source, selection: request.selection(in: source), scope: session.references.scope, audioExplicit: false, subtitleExplicit: true)
+    }
+
+    private func loadMetadata() async {
+        do {
+            let current = try await session.references.currentItem(item)
+            guard session.isActive, !Task.isCancelled else { return }
+            request.item = current
+            metadataError = nil
+        } catch {
+            guard session.isActive, !Task.isCancelled else { return }
+            metadataError = GusError(from: error).localizedDescription
         }
     }
 
     /// Offline audio per the brief: audio-only, conservative budget, clear states.
     @ViewBuilder
     private var downloadRow: some View {
-        if let record = downloads.record(for: item, serverID: session.server.id, userID: session.user.id) {
+        if let failure = downloads.loadErrorMessage {
+            Text(failure).font(.footnote).foregroundStyle(.secondary)
+            Button("Try Again") { downloads.load(serverID: session.server.id, userID: session.user.id) }
+        } else if let record = downloads.record(for: request.item, serverID: session.server.id, userID: session.user.id, mediaSourceID: request.streamSelection.mediaSourceID) {
             switch record.status {
             case .complete:
                 Label("Downloaded", systemImage: "checkmark.circle.fill")
@@ -88,13 +229,35 @@ struct WatchItemActionsView: View {
         } else if OfflineDownloadEligibility.canDownload(item) {
             retryDownloadButton
         }
+        if let failure = downloads.errorMessage {
+            Text(failure).font(.footnote).foregroundStyle(.secondary)
+        }
     }
 
     private var retryDownloadButton: some View {
         Button {
-            Task { await downloads.download(item, session: session) }
+            Task { await downloads.download(request, session: session) }
         } label: {
             Label("Download", systemImage: "arrow.down.circle")
+        }
+    }
+}
+
+/// One item supplies both the presentation identity and its immutable payload.
+private enum WatchItemPresentation: Identifiable {
+    struct Snapshot {
+        let id = UUID()
+        let request: PlaybackRequest
+        let overrideID: UUID?
+    }
+
+    case audio(Snapshot)
+    case video(Snapshot)
+    case remote(Snapshot)
+
+    var id: UUID {
+        switch self {
+        case let .audio(snapshot), let .video(snapshot), let .remote(snapshot): snapshot.id
         }
     }
 }

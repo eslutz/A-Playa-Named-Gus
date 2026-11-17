@@ -15,7 +15,8 @@ struct WatchBrowseView: View {
             isEmpty: libraries.isEmpty,
             emptyTitle: "No Libraries",
             emptySymbol: "rectangle.stack",
-            retryAction: { Task { await load() } }
+            retryAction: { Task { await load() } },
+            preservesContent: true
         ) {
             List(libraries, id: \.id) { library in
                 if let id = library.id {
@@ -30,6 +31,7 @@ struct WatchBrowseView: View {
                 WatchLibraryView(library: library)
             }
         }
+        .refreshable { await load() }
         .navigationTitle("Browse")
         .task {
             await load()
@@ -37,11 +39,12 @@ struct WatchBrowseView: View {
     }
 
     private func load() async {
-        guard state != .loading else { return }
+        guard session.isActive, state != .loading else { return }
         state = .loading
         do {
             let loadedLibraries = try await session.mediaProvider.userViews()
             try Task.checkCancellation()
+            guard session.isActive else { return }
             libraries = loadedLibraries
             state = .loaded
         } catch {
@@ -67,7 +70,8 @@ struct WatchLibraryView: View {
             isEmpty: items.isEmpty,
             emptyTitle: "Nothing Recent",
             emptySymbol: library.librarySymbol,
-            retryAction: { Task { await load() } }
+            retryAction: { Task { await load() } },
+            preservesContent: true
         ) {
             List(items, id: \.id) { item in
                 WatchItemRow(item: item)
@@ -82,6 +86,7 @@ struct WatchLibraryView: View {
                 }
             }
         }
+        .refreshable { await load() }
         .navigationTitle(library.name ?? "Library")
         .task {
             await load()
@@ -89,7 +94,7 @@ struct WatchLibraryView: View {
     }
 
     private func load() async {
-        guard state != .loading else { return }
+        guard session.isActive, state != .loading else { return }
         state = .loading
         do {
             let page = try await session.mediaProvider.items(query: MediaItemQuery(
@@ -101,6 +106,7 @@ struct WatchLibraryView: View {
                 sort: .recentlyAdded
             ))
             try Task.checkCancellation()
+            guard session.isActive else { return }
             items = ContentRatingGate.filter(page.items)
             state = .loaded
         } catch {
@@ -160,6 +166,9 @@ struct WatchItemRow: View {
                 }
             }
         }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(item.mediaAccessibility.label)
+        .accessibilityValue(item.mediaAccessibility.value)
     }
 }
 
@@ -170,51 +179,108 @@ struct WatchAlbumView: View {
 
     @State private var tracks: [MediaItem] = []
     @State private var state: LoadState = .idle
+    @State private var continuation: AudioQueueContinuation?
+    @State private var loadingMore = false
+    @State private var pageError: String?
+    @State private var refreshError: String?
     @State private var playerQueue: WatchAudioQueueRef?
 
     var body: some View {
         LoadingStateView(
             state: state,
-            isEmpty: tracks.isEmpty,
+            isEmpty: tracks.isEmpty && continuation == nil,
             emptyTitle: "No Tracks",
             emptySymbol: "music.note",
-            retryAction: { Task { await load() } }
+            retryAction: { Task { await load() } },
+            preservesContent: true
         ) {
-            List(Array(tracks.enumerated()), id: \.element.id) { index, track in
-                Button {
-                    playerQueue = WatchAudioQueueRef(tracks: tracks, startIndex: index)
-                } label: {
-                    Text(track.displayTitle)
-                        .lineLimit(2)
+            List {
+                ForEach(Array(tracks.enumerated()), id: \.element.id) { index, track in
+                    Button {
+                        playerQueue = WatchAudioQueueRef(tracks: tracks, startIndex: index, continuation: continuation)
+                    } label: {
+                        Text(track.displayTitle)
+                            .lineLimit(2)
+                    }
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityLabel(track.mediaAccessibility.label)
+                    .accessibilityValue(track.mediaAccessibility.value)
+                }
+                if let refreshError {
+                    Text(refreshError).foregroundStyle(.secondary)
+                    Button("Try Again") { Task { await load() } }.disabled(state == .loading)
+                }
+                if let pageError {
+                    Text(pageError).foregroundStyle(.secondary)
+                }
+                if continuation != nil {
+                    Button("Load More") { Task { await load(reset: false) } }.disabled(loadingMore)
+                }
+                if loadingMore {
+                    ProgressView()
                 }
             }
         }
+        .refreshable { await load() }
         .navigationTitle(album.displayTitle)
         .task {
             await load()
         }
         .sheet(item: $playerQueue) { queue in
-            WatchAudioPlayerView(tracks: queue.tracks, startIndex: queue.startIndex)
+            WatchAudioPlayerView(tracks: queue.tracks, startIndex: queue.startIndex, continuation: queue.continuation)
         }
     }
 
-    private func load() async {
-        guard state != .loading else { return }
-        state = .loading
+    private func load(reset: Bool = true) async {
+        guard session.isActive, state != .loading, !loadingMore, reset || continuation != nil else { return }
+        let previousTracks = tracks
+        let previousContinuation = continuation
+        if reset {
+            state = .loading
+        } else {
+            loadingMore = true
+        }
+        defer { loadingMore = false }
+        pageError = nil
+        refreshError = nil
+        var query = continuation?.query ?? MediaItemQuery(parentID: album.id, startIndex: 0, limit: 100, sort: .trackOrder)
+        query.startIndex = reset ? 0 : continuation?.nextStartIndex ?? 0
+        var replacing = reset
         do {
-            let page = try await session.mediaProvider.items(query: MediaItemQuery(
-                parentID: album.id,
-                startIndex: 0,
-                limit: 1000,
-                sort: .trackOrder
-            ))
-            try Task.checkCancellation()
-            tracks = page.items.filter(\.isAudioPlayable)
-            state = .loaded
+            for _ in 0 ..< 3 {
+                let page = try await session.mediaProvider.items(query: query)
+                try Task.checkCancellation()
+                guard session.isActive else { return }
+                let total = try MediaPageLoader.validatedTotal(for: page, startIndex: query.startIndex, previousTotal: replacing ? nil : continuation?.totalRecordCount)
+                let eligible = ContentRatingGate.filter(page.items).filter(\.isAudioPlayable)
+                tracks = (replacing ? [] : tracks) + MediaPageLoader.unique(eligible, after: replacing ? [] : tracks)
+                replacing = false
+                query.startIndex += page.items.count
+                let more = !page.items.isEmpty && (total.map { query.startIndex < $0 } ?? (page.items.count >= query.limit))
+                continuation = more ? .init(query: query, nextStartIndex: query.startIndex, totalRecordCount: total) : nil
+                state = .loaded
+                if !eligible.isEmpty || !more {
+                    return
+                }
+            }
         } catch {
-            let gusError = GusError(from: error)
-            guard !gusError.isCancellation else { state = .idle; return }
-            state = .failed(gusError.localizedDescription)
+            let failure = GusError(from: error)
+            guard session.isActive else { return }
+            if reset, !previousTracks.isEmpty {
+                tracks = previousTracks
+                continuation = previousContinuation
+            }
+            guard !failure.isCancellation else { state = tracks.isEmpty ? .idle : .loaded; return }
+            if tracks.isEmpty {
+                state = .failed(failure.localizedDescription)
+            } else {
+                state = .loaded
+                if reset {
+                    refreshError = failure.localizedDescription
+                } else {
+                    pageError = failure.localizedDescription
+                }
+            }
         }
     }
 }
@@ -223,6 +289,7 @@ struct WatchAlbumView: View {
 struct WatchAudioQueueRef: Identifiable {
     let tracks: [MediaItem]
     let startIndex: Int
+    var continuation: AudioQueueContinuation? = nil
 
     var id: String {
         "\(tracks.first?.id ?? "queue")-\(startIndex)"

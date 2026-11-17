@@ -55,7 +55,6 @@ struct CastRail: View {
                     }
                 }
                 .gusTVRailPadding()
-                .tvFocusSection()
             }
             .lookToScroll(.horizontal)
             .gusTVRailViewport()

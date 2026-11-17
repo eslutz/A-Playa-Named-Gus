@@ -8,9 +8,35 @@ struct LoadingStateView<Content: View>: View {
     var emptyTitle: String = "Nothing Here Yet"
     var emptySymbol: String = "tray"
     var retryAction: (() -> Void)?
+    var preservesContent = false
     @ViewBuilder var content: () -> Content
 
+    private var phase: ForegroundLoadPhase {
+        state.foregroundPhase(hasContent: preservesContent && !isEmpty)
+    }
+
     var body: some View {
+        if preservesContent, !isEmpty {
+            VStack(spacing: 8) {
+                if phase == .loading(.refresh) {
+                    ProgressView().accessibilityLabel("Refreshing")
+                } else if case let .failed(.refresh, message) = phase {
+                    VStack(spacing: 8) {
+                        Text(message).foregroundStyle(.secondary)
+                        if let retryAction {
+                            Button("Try Again", action: retryAction)
+                        }
+                    }
+                    .padding()
+                }
+                content()
+            }
+        } else {
+            initialContent
+        }
+    }
+
+    @ViewBuilder private var initialContent: some View {
         switch state {
         case .idle, .loading:
             ProgressView()
