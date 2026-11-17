@@ -121,7 +121,7 @@ class BootstrapTests(unittest.TestCase):
         shutil.rmtree(self.root / "Config")
         self.env["CI_PRIMARY_REPOSITORY_PATH"] = str(self.root / "absent-checkout")
         self.env.pop("XCODE_XCCONFIG_FILE")
-        for platform in ("iOS", "tvOS", "visionOS", "watchOS", ""):
+        for platform in ("iOS", "tvOS", "xrOS", "visionOS", "watchOS", ""):
             with self.subTest(platform=platform):
                 result = self.run_pre_build(platform=platform, action="test-without-building")
                 self.assertEqual(result.returncode, 65)
@@ -131,7 +131,7 @@ class BootstrapTests(unittest.TestCase):
     def test_cloud_simulator_builds_and_tests_are_rejected_before_signing_changes(self):
         self.assertEqual(self.run_script().returncode, 0)
         before = (self.root / "Config/Local.xcconfig").read_bytes()
-        for platform in ("iOS", "tvOS", "visionOS", "watchOS"):
+        for platform in ("iOS", "tvOS", "xrOS", "visionOS", "watchOS"):
             for action in ("build", "build-for-testing", "test", "test-without-building"):
                 with self.subTest(platform=platform, action=action):
                     result = self.run_pre_build(platform=platform, action=action)
@@ -140,7 +140,7 @@ class BootstrapTests(unittest.TestCase):
                     self.assertEqual((self.root / "Config/Local.xcconfig").read_bytes(), before)
 
     def test_cloud_unknown_action_or_platform_is_rejected(self):
-        for platform, action in (("", "archive"), ("unknown", "archive"), ("macOS", ""), ("macOS", "unknown")):
+        for platform, action in (("", "archive"), ("unknown", "archive"), ("visionOS", "archive"), ("macOS", ""), ("macOS", "unknown")):
             with self.subTest(platform=platform, action=action):
                 result = self.run_pre_build(platform=platform, action=action)
                 self.assertEqual(result.returncode, 65)
@@ -153,7 +153,7 @@ class BootstrapTests(unittest.TestCase):
 
     def test_cloud_compilation_actions_still_require_architecture_configuration(self):
         self.env.pop("XCODE_XCCONFIG_FILE")
-        for platform in ("iOS", "macOS", "tvOS", "visionOS", "watchOS"):
+        for platform in ("iOS", "macOS", "tvOS", "xrOS", "watchOS"):
             actions = ("build", "build-for-testing", "test", "archive", "analyze") if platform == "macOS" else ("archive", "analyze")
             for action in actions:
                 with self.subTest(platform=platform, action=action):
@@ -197,7 +197,8 @@ class BootstrapTests(unittest.TestCase):
     def test_cloud_archives_keep_production_signing(self):
         self.assertEqual(self.run_script().returncode, 0)
         before = (self.root / "Config/Local.xcconfig").read_bytes()
-        for platform in ("iOS", "macOS", "tvOS", "visionOS", "watchOS"):
+        # Cloud uses xrOS rather than the visionOS display name.
+        for platform in ("iOS", "macOS", "tvOS", "xrOS", "watchOS"):
             for action in ("archive", "analyze"):
                 with self.subTest(platform=platform, action=action):
                     self.assertEqual(self.run_pre_build(platform=platform, action=action).returncode, 0)
