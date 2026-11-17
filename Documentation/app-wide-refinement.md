@@ -69,8 +69,8 @@ page deduplication. Gus retains AVPlayer/AVKit and current OS 26 fallbacks.
   cannot reduce its foreground/background contrast.
 - visionOS root navigation respects the native eight-tab limit. Up to eight visible
   sections remain direct; larger configurations show the first seven in resolved
-  order plus More. Overflow preserves section selection and navigation histories;
-  Search follows the configured order. If More becomes unnecessary while selected,
+  order plus More. Overflow preserves section selection and navigation histories.
+  If More becomes unnecessary while selected,
   the root returns to the first direct section without resetting those histories.
 - Version changes ask whether to start over or resume at the saved timestamp.
   A retained start choice expires after matching actual playback checkpoints it;
@@ -122,22 +122,22 @@ page deduplication. Gus retains AVPlayer/AVKit and current OS 26 fallbacks.
 | F04 | Truthful playback lifecycle and finalization | Shared native preparation; audio/video/Watch finalization, actual-playing observations and persistent iOS/iPadOS video dismissal | PlaybackLifecyclePolicyTests, TVPlaybackLifecycleTests, GusAuthenticatedUITests.testReadyVideoCloseReturnsToDetail; physical output pending |
 | F05 | One resolution deadline/retry owner | PlaybackDeadline and StreamURLBuilder | PlaybackLifecyclePolicyTests, StreamURLBuilderTests |
 | F06 | Watch credential and endpoint rotation | Central AppModel installation and lease invalidation | AppModelSessionTests; paired Watch acceptance pending |
-| F07 | Truthful independent Live TV loading | Current-account permission plus explicit server membership; independent channel/recording/timer phases | BrowseRefinementTests, JellyfinLiveTVProviderTests (real HTTP JSON, cancellation and combined read budget); populated local M3U/native acceptance pending |
-| F08 | Live resource ownership and seekability | Origin-owned allocation; Stop owns started-live release | PlaybackLifecyclePolicyTests; real tuner response-loss test pending |
+| F07 | Truthful independent Live TV loading | Current-account permission plus explicit server membership; independent channel/recording/timer phases | BrowseRefinementTests, JellyfinLiveTVProviderTests (real HTTP JSON, cancellation and combined read budget); scoped local M3U/native evidence recorded in the external revision manifest; hardware-tuner compatibility separate |
+| F08 | Live resource ownership and seekability | Origin-owned allocation; Stop owns started-live release | PlaybackLifecyclePolicyTests; local M3U Stop/lost-reply evidence recorded externally; hardware and unknown-ID limits below |
 | F09 | Remote action feedback | Shared ActionOutcome and capability/duplicate/explicit-position guards | RemoteSessionsTests, including explicitPositionConfirmation; physical target acceptance pending |
 | F10 | Bounded invalidations and stale-response rejection | One remote refresh plus one follow-up, lease/generation/visibility checks | RemoteSessionsTests |
-| F11 | Role-aware artwork and fallback adoption | MediaArtworkRequest, ordered URL candidates and lease-owned OS 27 native image transport; OS 26 native fallback | BrowseRefinementTests; exact-revision cache behavior and physical appearance remain validation gates |
+| F11 | Role-aware artwork and fallback adoption | MediaArtworkRequest, ordered URL candidates and lease-owned OS 27 native image transport; OS 26 native fallback | BrowseRefinementTests; scoped native per-lease reuse/cancellation evidence recorded externally |
 | F12 | Complete shared accessible media identity | Shared Jellyfin and Seerr metadata projections | BrowseRefinementTests; physical VoiceOver acceptance pending |
-| F13 | Resume-aligned initial series selection | Initial preferred season/episode, explicit-selection retention | BrowseRefinementTests, UIRemediationTests; remote focus acceptance pending |
-| F14 | Latest-feed expansion on every main platform | Native Show All routes shared across main platforms | Source/caller coverage; device interaction matrix pending |
+| F13 | Resume-aligned initial series selection | Initial preferred season/episode, explicit-selection retention | BrowseRefinementTests, UIRemediationTests; scoped TV focus observations recorded externally |
+| F14 | Latest-feed expansion on every main platform | Native Show All routes shared across main platforms | Source/caller coverage; representative interaction evidence and applicability limits recorded in the external revision manifest |
 | F15 | Retained-content refresh | ForegroundLoadPhase plus domain-specific refresh/page errors; strict download metadata errors/retry | LibraryStoreTests, ItemDetailActionTests, SeerrCatalogStoreTests, BrowseRefinementTests, DownloadStoreIntegrationTests.unreadableMetadataLoading |
 | F16 | Full-content continuation | Raw-offset paging, ordered queue continuation, full shuffle collection; incomplete advertised collections fail visibly | BrowseRefinementTests, including incompleteCollection; PlaybackLifecyclePolicyTests |
 | F17 | Superseding first-page query changes | Immutable query identity and generation cancellation | LibraryStoreTests, BrowseRefinementTests |
-| F18 | Reader construction/resource recovery | Public container read observation, inline recovery, bounded chapter selection and generation-scoped Retry | BookReaderLoadingTests; authenticated reader runtime acceptance pending |
+| F18 | Reader construction/resource recovery | Public container read observation, inline recovery, bounded chapter selection and generation-scoped Retry | BookReaderLoadingTests; scoped native missing-resource/Retry and semantic-locator restoration evidence recorded externally |
 | F19 | Every PR triggers required CI | Always-triggered workflow, fail-closed classifier, explicit documentation-only success | test-classify-changes.py; hosted required checks pending |
-| F20 | Measured performance and justified retention/I/O fixes | Non-owning heavy-store lookup, owner/lease cancellation, visibility refresh, serial diagnostics and download workers | NavigationOwnershipTests, including replacementDetailOwnership and seriesLeaseCancellation; DiagnosticsTests, DownloadStoreIntegrationTests; comparable runtime measurements pending |
-| F21 | Current platform visual/interaction/accessibility acceptance | Native controls retained; editable handoff reconciliation inventory in Design/README.md | Runtime/device matrix and saved editable handoff verification remain open |
-| F22 | Catalog and native semantic formatting | Shared localized metadata and native duration/count formatting | Catalog validation and BrowseRefinementTests; RTL/largest-text runtime matrix pending |
+| F20 | Measured performance and justified retention/I/O fixes | Non-owning heavy-store lookup, owner/lease cancellation, visibility refresh, serial diagnostics and download workers | NavigationOwnershipTests, including replacementDetailOwnership and seriesLeaseCancellation; DiagnosticsTests, DownloadStoreIntegrationTests; local same-simulator Release p95 gate accepted, with exact revision, one-pair scope and host-condition limits recorded externally |
+| F21 | Current platform visual/interaction/accessibility acceptance | Native controls retained; editable handoff reconciliation inventory in Design/README.md | Platform-scoped interaction evidence recorded externally; saved editable handoff verification remains open |
+| F22 | Catalog and native semantic formatting | Shared localized metadata and native duration/count formatting | Catalog validation and BrowseRefinementTests; targeted RTL/largest-text observations recorded externally |
 
 The named tests are coverage pointers, not a claim that a particular revision has
 passed. Exact revision, destinations, results and runtime artifacts belong in the
@@ -155,7 +155,7 @@ snapshots; they never present an unreadable catalog as an empty download library
 | Source/version selection | PlaybackRequest across local/remote/Watch/CarPlay/deep-link/Handoff/SharePlay/Mac entry points; PlaybackActionTests, ContentLinkTests, RemoteSessionsTests |
 | Semantic track continuation | Account opt-in, semantic-only persisted preferences and conservative same-series matching; Automatic/Off/Explicit intent; PlaybackLifecyclePolicyTests.semanticPreferencePersistence and customTrackRoleIdentity |
 | Different-cut progress | Native choice before reusing time; exact-source checkpoints and download selection; DownloadedLibraryTests.sourceSpecificCheckpoints, DownloadStoreIntegrationTests.sourceQualifiedProgressTransfer, OfflineDownloadTests.selectedAudioTranscodeDownload |
-| Native previews | Unmodified compatible I-frame HLS, deferred bounded tvOS chapter metadata; actual AVKit scrubber appearance remains a runtime gate |
+| Native previews | Unmodified compatible I-frame HLS, deferred bounded tvOS chapter metadata; platform-scoped native preview/Select observations recorded externally; no synthesized JPEG scrubber |
 | Page deduplication | Scoped media identity with raw server offsets; playlist occurrences preserve ordering and duplicates; BrowseRefinementTests |
 | Retirement | SavedMediaStore replaces local-playlist CRUD/import; current-format record filtering, draft journal and CloudKit ownership retained; VideoPlaylistTests, MediaReferencePersistenceTests, ServerMediaListsStoreTests |
 

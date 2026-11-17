@@ -275,7 +275,7 @@ one stack per section. The default content tabs are Home, Movies and Series when
 available; a saved account-specific order keeps its first three visible sections.
 visionOS shows all configured sections directly when there are at most eight; above
 eight it shows the first seven in resolved order plus More. Overflow uses the same
-section selection and navigation histories, and Search follows the configured order.
+section selection and navigation histories.
 When More becomes unnecessary, its selection returns to the first direct section
 without clearing those histories. Settings/Downloads children use the typed
 `AppScreen` destinations.
