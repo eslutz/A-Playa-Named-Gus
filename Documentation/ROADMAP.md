@@ -32,9 +32,9 @@ constrain *how* each item is built.
 - [~] Local builds, simulator regressions, accessibility and the Release p95 gate
   have revision- and artifact-scoped evidence; earlier results are not a full
   current-revision runtime rerun. Editable Sketch reconciliation and required
-  hosted checks remain open before overall acceptance. Local runtime validation
-  is simulator-only; the required hosted macOS CI unit job has an explicit
-  exception. Physical-device testing remains excluded.
+  hosted checks remain open before overall acceptance. All simulator builds and
+  tests are local-only; the hosted native macOS CI unit job has an explicit
+  exception. Physical-device testing and local native macOS runtime remain excluded.
 
 ## Playback reliability
 
@@ -203,37 +203,18 @@ automated build verification. (Covers priority: *polish & testing*.)
   *Acceptance:* available for local/manual launch validation. *(Done: `GusLaunchUITests`
   verifies the Connect screen renders through native iOS, tvOS, visionOS, and macOS UI
   test bundles; CI keeps these UI smoke tests out of the required PR pipeline.)*
-- [x] **CI pipeline.** GitHub Actions: validate the shared project/pins → resolve →
-  build the iPhone/iPad/macOS/tvOS/visionOS/Watch matrix → run native unit tests → lint.
-  *Acceptance:* successful required checks on the complete current source. *(Configured
-  on the hosted `xcode-27` runner, pinned to stable Xcode 27.2 and an iOS simulator
-  SDK of at least 27.2. Before Xcode discovery, a read-only gate waits up to 120 seconds
-  for coherent runtime mounts and 10 seconds of stability, retaining startup/failure
-  diagnostics. Live cryptex-preferred duplicate mounts are a temporal risk signal,
-  also seen at the start of successful jobs; this mitigation is not a proven image fix
-  ([upstream investigation](https://github.com/actions/runner-images/issues/14946)).
-  TV, Watch and Vision compile lanes select available simulator UUIDs compatible
-  with their SDKs instead of generic destinations; these remain build-only actions.
-  The refinement PR requires all 14 current-head checks; the
-  earlier results below do not qualify it. Historical run `38192282611` at `edd06e6636cd32b877622dbcb4ccb34524a1b3c1` passed **13/13 jobs**:
-  six builds, five unit lanes, lint and docs. Each unit lane passed 288 Swift Testing
-  cases in 49 suites and three separate XCTest measurements. Native audio completion,
-  replay and deletion/no-stream assertions passed with the one-second 48 kHz fixture
-  and unchanged eight-second deadline. The earlier 400 ms fixture failures remain
-  recorded with their cause unresolved; no production workaround was added. See
-  full hosted evidence.
-  This is separate from successful 4/4 Xcode Cloud BUILD and device/release acceptance.
-  Current GUS-UI-040 source `64505d9dfd337c90f390c7c66503912eac252d3f` passed Cloud Build 3 4/4 BUILD
-  actions and [GitHub run `38194318738`, attempt 2](https://github.com/eslutz/A-Playa-Named-Gus/actions/runs/38194318738/attempts/2)
-  completed **13/13 successful checks**. iPad alone reran unchanged; the other 12 successes
-  were carried forward from attempt 1. Each accepted unit lane passed 288 cases/49 suites
-  plus three separate XCTest measurements, including both actual native audio cases.
-  The initial iPad completion failure remains recorded with its cause unresolved; retry
-  acceptance does not establish a reliable fix. Current proof.)*
+- [~] **CI pipeline.** GitHub runs five checks: Validation Scope, Lint, Docs and
+  Config, Build macOS, and Test macOS. All simulator builds/tests run locally;
+  native macOS units have the hosted exception. Existing local evidence remains
+  revision/artifact scoped. Pass the five checks on the intended head before merge;
+  server-side main protection is currently disabled and was not changed here.
+  Old hosted simulator matrices and Cloud test workflows are superseded. No live
+  Cloud settings changed; stale simulator workflows must not be started. Keep
+  warning, architecture and signing gates intact. See [policy](AppStore/pipeline-policy.md).
 - [x] **Update `project.yml` for the test target & schemes.** *Acceptance:* generated
   project includes the test targets; the per-platform `Gus <platform> Unit Tests` test
   actions work (the `A Playa Named Gus` scheme is build-only). *(Done: platform-native
-  unit/UI test targets, CI unit schemes, and local UI-inclusive platform schemes are
+  unit/UI test targets, the native macOS CI scheme, and local simulator schemes are
   generated from `project.yml`.)*
 
 ---
@@ -1048,17 +1029,21 @@ The subsequent [owner review remediation](tvos-review-remediation.md) restores c
 
 Jellyfin continues to own playlists and collections; native membership, permissions and restriction gates remain authoritative. Retired local-list import has been removed. No duplicate-entry queue product is introduced. See [TV capabilities](tvos-capabilities.md) for client/service boundaries and isolated validation. Required PR CI, signed release qualification and distribution remain separate gates.
 
-### Xcode Cloud usage optimization — 2026-10-22
+### Historical Xcode Cloud usage optimization — superseded
 
-- [x] Split Cloud into manual-only, main-only Gus Validation (one explicit iPhone 17 / iOS 27.2, cached, no archives/distribution) and Gus Internal TestFlight (unchanged full release test/device/archive matrix, clean). Server configuration verified through API readback; GitHub PR CI remains unchanged.
-- [ ] Measure actual compute usage and cache reuse on subsequent routine runs. Configuration verification does not establish execution or release acceptance. See [pipeline policy](AppStore/pipeline-policy.md#usage-optimization--2026-10-22).
+- [x] The earlier manual Cloud split was configured and read back at the time.
+  Its simulator actions are superseded by the local-only simulator policy; do not
+  start those stale workflows. This correction does not change live Cloud settings.
+- [ ] Reconcile any future authorized archive workflow with the current
+  [pipeline policy](AppStore/pipeline-policy.md) before execution.
 
 ## Seerr integration — October 25, 2026
 
 - [x] Implement the accepted Discovery flow: account-scoped Seerr 3 setup, enabled catalog shelves, search/paging/filters, title/person/season details, exact Jellyfin identity matching, reviewed movie/season requests, history/cancellation and manager decisions.
 - [x] Add permission-gated own issues, blocklist and supported regional/email preferences, with private cookies and persistent unresolved-write safeguards.
 - [x] Complete warning-free local builds, unit tests, iPhone/iPad UI regressions, unsigned Release archives and static qualification.
-- [ ] Pass required PR checks and the full internal TestFlight release workflow.
+- [ ] Pass current PR checks, exact-candidate local simulator qualification, and
+  authorized native archive/distribution gates.
 - [ ] Record live Seerr, physical-device and assistive-input acceptance separately from synthetic contract and simulator checks.
 
 Scope and API evidence: [Seerr contract](Seerr-api-contract.md). The ongoing overall Sketch redesign is outside this feature release.

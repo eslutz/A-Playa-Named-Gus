@@ -63,11 +63,15 @@ exports and dated validation artifacts locally outside the tracked source tree.
 Keep durable decisions, actionable limitations and reproducible instructions in
 concise documentation; historical results do not establish current release readiness.
 
-Changes to protected `main` require a pull request and all required GitHub CI checks;
-do not push directly or bypass protection. GitHub runs CI on PRs targeting `main`.
-Xcode Cloud uses manual-only main workflows: cached single-iPhone validation and a separate
-full-matrix internal TestFlight release. Release-candidate tests remain required; see
-`Documentation/AppStore/pipeline-policy.md` for the saved release gates.
+Changes to `main` require a pull request and five GitHub checks: Validation Scope,
+Lint, Docs and Config, Build macOS, and Test macOS. This is project policy;
+server-side main protection is currently disabled and has not been restored by this change.
+All simulator builds and tests run locally. Hosted native macOS unit execution has
+an explicit exception; local native macOS runtime and physical-device testing remain
+excluded from the current validation scope. Release qualification requires local
+exact-candidate simulator evidence plus authorized native archives. Old Cloud workflows
+containing simulator actions must not be started; their live settings were not changed
+by this correction. See `Documentation/AppStore/pipeline-policy.md`.
 
 ## OS compatibility policy
 
@@ -157,15 +161,13 @@ xcrun simctl launch booted dev.ericslutz.gus
 Scope `find` to the right product dir (`Debug-iphonesimulator`, `Debug-appletvsimulator`,
 etc.) — a bare `find build` can grab another platform's product.
 
-Run tests (CI-style schemes):
+Run local simulator tests (platform schemes):
 
 ```sh
 xcodebuild test -project 'A Playa Named Gus.xcodeproj' -scheme 'Gus iOS Unit Tests' \
   -destination 'platform=iOS Simulator,name=iPhone 17'
 xcodebuild test -project 'A Playa Named Gus.xcodeproj' -scheme 'Gus tvOS Unit Tests' \
   -destination 'platform=tvOS Simulator,name=Apple TV 4K (3rd generation)'
-xcodebuild test -project 'A Playa Named Gus.xcodeproj' -scheme 'Gus macOS Unit Tests' \
-  -destination 'platform=macOS'
 xcodebuild test -project 'A Playa Named Gus.xcodeproj' -scheme 'Gus visionOS Unit Tests' \
   -destination 'platform=visionOS Simulator,id=<UUID>'
 ```
@@ -178,11 +180,13 @@ xcodebuild test -project 'A Playa Named Gus.xcodeproj' -scheme 'Gus iOS Unit Tes
   -only-testing:GusTests/<Suite>/<test>
 ```
 
-`GusTests`/`GusTVOSTests`/`GusVisionOSTests`/`GusMacOSTests` cover shared pure logic with
-Swift Testing and are the test bundles run in CI. The matching `Gus iOS Tests`/
+`GusTests`/`GusTVOSTests`/`GusVisionOSTests` cover shared pure logic with
+Swift Testing in local simulators; `GusMacOSTests` runs in authorized native macOS CI.
+The matching `Gus iOS Tests`/
 `Gus tvOS Tests`/etc. schemes also provide local authenticated UI regressions using
 `Scripts/demo-server.sh start`; `Gus watchOS Tests` covers Watch browse/audio.
-`python3 Scripts/validate-release.py --phase all` runs the sequential local matrix.
+`Scripts/validate-release.py` provides local validation tooling. Its `tests`/`all`
+phases include native macOS execution and are outside the current local runtime scope.
 
 Screenshot automation:
 

@@ -68,9 +68,8 @@ jobs:
         run: |
           python3 Scripts/test-cloud-bootstrap.py
           python3 Scripts/test-release-warning-gate.py
-          python3 Scripts/test-select-simulator.py
-          python3 Scripts/test-runtime-readiness.py
           python3 Scripts/test-classify-changes.py
+          ruby Scripts/check-hosted-validation.rb
           python3 Scripts/check-app-icons.py
           swift Scripts/app-store-connect.swift self-test
 
@@ -119,31 +118,11 @@ jobs:
           RUBY
 
   build:
-    if: always()
+    if: ${{ !cancelled() }}
     needs: changes
-    name: Build ${{ matrix.name }}
+    name: Build macOS
     runs-on: xcode-27
     timeout-minutes: 45
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - name: iOS
-            destination: platform=iOS Simulator,name=iPhone 17
-          - name: iPadOS
-            destination: platform=iOS Simulator,name=iPad Pro 11-inch (M5)
-          - name: macOS
-            destination: platform=macOS,arch=arm64
-          - name: tvOS
-            simulator_platform: tvOS
-            simulator_sdk: appletvsimulator
-          - name: visionOS
-            simulator_platform: visionOS
-            simulator_sdk: xrsimulator
-          - name: watchOS
-            scheme: Gus watchOS
-            simulator_platform: watchOS
-            simulator_sdk: watchsimulator
 
     steps:
       - name: Require successful change classification
@@ -157,23 +136,19 @@ jobs:
         if: needs.changes.outputs.full != 'true'
         run: echo "Documentation-only change; lightweight validation runs in separate required jobs."
 
-      - name: Select Xcode 27.2 and verify iOS SDK
+      - name: Select Xcode 27.2 and verify macOS SDK
         if: needs.changes.outputs.full == 'true'
-        env:
-          GUS_RUNNER_ENVIRONMENT: ${{ runner.environment }}
         run: |
           set -euo pipefail
           if [ ! -d "$XCODE_APP" ]; then
             echo "Required Xcode not found at $XCODE_APP"
-            ls -1 /Applications | grep '^Xcode' || true
             exit 1
           fi
           sudo xcode-select -s "$XCODE_APP/Contents/Developer"
-          python3 Scripts/run-warning-free.py python3 Scripts/wait-for-simulator-runtimes.py
           xcodebuild -version
-          ios_sdk_version="$(xcrun --sdk iphonesimulator --show-sdk-version)"
-          if ! printf '%s\n' "$ios_sdk_version" | awk -F. '/^[0-9]+\.[0-9]+(\.[0-9]+)?$/ { ok = ($1 > 27 || ($1 == 27 && $2 >= 2)) } END { exit !ok }'; then
-            echo "iOS Simulator SDK $ios_sdk_version is too old; CI requires 27.2 or later."
+          macos_sdk_version="$(xcrun --sdk macosx --show-sdk-version)"
+          if ! printf '%s\n' "$macos_sdk_version" | awk -F. '/^[0-9]+\.[0-9]+(\.[0-9]+)?$/ { ok = ($1 > 27 || ($1 == 27 && $2 >= 2)) } END { exit !ok }'; then
+            echo "macOS SDK $macos_sdk_version is too old; CI requires 27.2 or later."
             exit 1
           fi
 
@@ -185,76 +160,21 @@ jobs:
         if: needs.changes.outputs.full == 'true'
         run: python3 Scripts/check-cloud-project.py
 
-      - name: Capture simulator state before package resolution
-        if: needs.changes.outputs.full == 'true'
-        env:
-          GUS_RUNNER_ENVIRONMENT: ${{ runner.environment }}
-        run: python3 Scripts/run-warning-free.py python3 Scripts/simulator-diagnostics.py --phase before-resolve
-
       - name: Resolve packages
         if: needs.changes.outputs.full == 'true'
-        run: python3 Scripts/run-warning-free.py xcodebuild -onlyUsePackageVersionsFromResolvedFile -resolvePackageDependencies -project 'A Playa Named Gus.xcodeproj' -scheme 'A Playa Named Gus'
+        run: python3 Scripts/run-warning-free.py xcodebuild -onlyUsePackageVersionsFromResolvedFile -resolvePackageDependencies -project 'A Playa Named Gus.xcodeproj' -scheme 'Gus macOS Unit Tests'
 
-      - name: Pick concrete build simulator
-        id: build-sim
-        if: needs.changes.outputs.full == 'true' && matrix.simulator_platform
-        env:
-          SIMULATOR_PLATFORM: ${{ matrix.simulator_platform }}
-          SIMULATOR_SDK: ${{ matrix.simulator_sdk }}
-        run: |
-          set -euo pipefail
-          sdk_version="$(xcrun --sdk "$SIMULATOR_SDK" --show-sdk-version)"
-          destination="$(xcrun simctl list --json | python3 Scripts/select-simulator.py --platform "$SIMULATOR_PLATFORM" --sdk-version "$sdk_version")"
-          echo "destination=$destination" >> "$GITHUB_OUTPUT"
-
-      - name: Build ${{ matrix.name }}
+      - name: Build macOS
         if: needs.changes.outputs.full == 'true'
-        # Compile validation does not require production capability profiles.
-        # Xcode Cloud owns provisioned distribution signing and release tests.
-        run: |
-          set -euo pipefail
-          destination='${{ matrix.destination }}'
-          if [ -n '${{ matrix.simulator_platform }}' ]; then
-            destination='${{ steps.build-sim.outputs.destination }}'
-          fi
-          if [ -z "$destination" ]; then
-            echo "A concrete build destination is required."
-            exit 1
-          fi
-          python3 Scripts/run-warning-free.py xcodebuild -project 'A Playa Named Gus.xcodeproj' -scheme '${{ matrix.scheme || 'A Playa Named Gus' }}' -destination "$destination" CODE_SIGNING_ALLOWED=NO build
-
-      - name: Capture simulator state after failure
-        if: needs.changes.outputs.full == 'true' && failure()
-        continue-on-error: true
-        env:
-          GUS_RUNNER_ENVIRONMENT: ${{ runner.environment }}
-        run: python3 Scripts/run-warning-free.py python3 Scripts/simulator-diagnostics.py --phase after-failure
+        # Native compile validation does not require production capability profiles.
+        run: python3 Scripts/run-warning-free.py xcodebuild -project 'A Playa Named Gus.xcodeproj' -scheme 'A Playa Named Gus' -destination 'platform=macOS,arch=arm64' CODE_SIGNING_ALLOWED=NO build
 
   test:
-    if: always()
+    if: ${{ !cancelled() }}
     needs: changes
-    name: Test ${{ matrix.name }}
+    name: Test macOS
     runs-on: xcode-27
     timeout-minutes: 60
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - name: iPhone
-            scheme: Gus iOS Unit Tests
-            destination: platform=iOS Simulator,name=iPhone 17
-          - name: iPad
-            scheme: Gus iOS Unit Tests
-            destination: platform=iOS Simulator,name=iPad Pro 11-inch (M5)
-          - name: tvOS
-            scheme: Gus tvOS Unit Tests
-            destination: ""
-          - name: visionOS
-            scheme: Gus visionOS Unit Tests
-            destination: ""
-          - name: macOS
-            scheme: Gus macOS Unit Tests
-            destination: platform=macOS,arch=arm64
 
     steps:
       - name: Require successful change classification
@@ -268,23 +188,19 @@ jobs:
         if: needs.changes.outputs.full != 'true'
         run: echo "Documentation-only change; lightweight validation runs in separate required jobs."
 
-      - name: Select Xcode 27.2 and verify iOS SDK
+      - name: Select Xcode 27.2 and verify macOS SDK
         if: needs.changes.outputs.full == 'true'
-        env:
-          GUS_RUNNER_ENVIRONMENT: ${{ runner.environment }}
         run: |
           set -euo pipefail
           if [ ! -d "$XCODE_APP" ]; then
             echo "Required Xcode not found at $XCODE_APP"
-            ls -1 /Applications | grep '^Xcode' || true
             exit 1
           fi
           sudo xcode-select -s "$XCODE_APP/Contents/Developer"
-          python3 Scripts/run-warning-free.py python3 Scripts/wait-for-simulator-runtimes.py
           xcodebuild -version
-          ios_sdk_version="$(xcrun --sdk iphonesimulator --show-sdk-version)"
-          if ! printf '%s\n' "$ios_sdk_version" | awk -F. '/^[0-9]+\.[0-9]+(\.[0-9]+)?$/ { ok = ($1 > 27 || ($1 == 27 && $2 >= 2)) } END { exit !ok }'; then
-            echo "iOS Simulator SDK $ios_sdk_version is too old; CI requires 27.2 or later."
+          macos_sdk_version="$(xcrun --sdk macosx --show-sdk-version)"
+          if ! printf '%s\n' "$macos_sdk_version" | awk -F. '/^[0-9]+\.[0-9]+(\.[0-9]+)?$/ { ok = ($1 > 27 || ($1 == 27 && $2 >= 2)) } END { exit !ok }'; then
+            echo "macOS SDK $macos_sdk_version is too old; CI requires 27.2 or later."
             exit 1
           fi
 
@@ -297,7 +213,7 @@ jobs:
         run: python3 Scripts/check-cloud-project.py
 
       - name: Prepare Mac unit test signing
-        if: needs.changes.outputs.full == 'true' && (matrix.name == 'macOS')
+        if: needs.changes.outputs.full == 'true'
         run: |
           set -euo pipefail
           if [ -e Config/Local.xcconfig ] || [ -L Config/Local.xcconfig ]; then
@@ -321,55 +237,16 @@ jobs:
           # credential-free unit host keeps the sandbox and networking permissions.
           printf 'CODE_SIGN_ENTITLEMENTS[sdk=macosx*] = %s\n' "$RUNNER_TEMP/gus-macos-unit.entitlements" > Config/Local.xcconfig
 
-      - name: Capture simulator state before package resolution
-        if: needs.changes.outputs.full == 'true'
-        env:
-          GUS_RUNNER_ENVIRONMENT: ${{ runner.environment }}
-        run: python3 Scripts/run-warning-free.py python3 Scripts/simulator-diagnostics.py --phase before-resolve
-
       - name: Resolve packages
         if: needs.changes.outputs.full == 'true'
-        run: python3 Scripts/run-warning-free.py xcodebuild -onlyUsePackageVersionsFromResolvedFile -resolvePackageDependencies -project 'A Playa Named Gus.xcodeproj' -scheme '${{ matrix.scheme }}'
+        run: python3 Scripts/run-warning-free.py xcodebuild -onlyUsePackageVersionsFromResolvedFile -resolvePackageDependencies -project 'A Playa Named Gus.xcodeproj' -scheme 'Gus macOS Unit Tests'
 
-      - name: Pick tvOS simulator
-        id: tv-sim
-        if: needs.changes.outputs.full == 'true' && matrix.name == 'tvOS'
-        run: |
-          set -euo pipefail
-          sdk_version="$(xcrun --sdk appletvsimulator --show-sdk-version)"
-          destination="$(xcrun simctl list --json | python3 Scripts/select-simulator.py --platform tvOS --sdk-version "$sdk_version")"
-          echo "destination=$destination" >> "$GITHUB_OUTPUT"
-
-      - name: Pick visionOS simulator
-        id: vision-sim
-        if: needs.changes.outputs.full == 'true' && matrix.name == 'visionOS'
-        run: |
-          set -euo pipefail
-          sdk_version="$(xcrun --sdk xrsimulator --show-sdk-version)"
-          destination="$(xcrun simctl list --json | python3 Scripts/select-simulator.py --platform visionOS --sdk-version "$sdk_version")"
-          echo "destination=$destination" >> "$GITHUB_OUTPUT"
-
-      - name: Test ${{ matrix.name }}
+      - name: Test macOS
         if: needs.changes.outputs.full == 'true'
-        run: |
-          set -euo pipefail
-          destination='${{ matrix.destination }}'
-          if [ '${{ matrix.name }}' = 'tvOS' ]; then
-            destination='${{ steps.tv-sim.outputs.destination }}'
-          elif [ '${{ matrix.name }}' = 'visionOS' ]; then
-            destination='${{ steps.vision-sim.outputs.destination }}'
-          fi
-          python3 Scripts/run-warning-free.py xcodebuild test -project 'A Playa Named Gus.xcodeproj' -scheme '${{ matrix.scheme }}' -destination "$destination"
-
-      - name: Capture simulator state after failure
-        if: needs.changes.outputs.full == 'true' && failure()
-        continue-on-error: true
-        env:
-          GUS_RUNNER_ENVIRONMENT: ${{ runner.environment }}
-        run: python3 Scripts/run-warning-free.py python3 Scripts/simulator-diagnostics.py --phase after-failure
+        run: python3 Scripts/run-warning-free.py xcodebuild test -project 'A Playa Named Gus.xcodeproj' -scheme 'Gus macOS Unit Tests' -destination 'platform=macOS,arch=arm64'
 
       - name: Diagnose Mac unit test launch failure
-        if: needs.changes.outputs.full == 'true' && (failure() && matrix.name == 'macOS')
+        if: needs.changes.outputs.full == 'true' && failure()
         continue-on-error: true
         run: |
           set -euo pipefail

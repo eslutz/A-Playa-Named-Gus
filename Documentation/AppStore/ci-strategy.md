@@ -1,59 +1,22 @@
-# CI Strategy
+# CI strategy
 
-GitHub Actions protects source quality. Xcode Cloud produces distributable Apple
-builds.
+The [pipeline policy](pipeline-policy.md) defines the current validation and release
+boundaries. Simulator builds and tests run locally, one simulator at a time.
+Reuse valid revision-scoped evidence when the relevant inputs are unchanged;
+do not repeat disruptive runs merely to obtain a newer timestamp.
 
-## GitHub Actions
+GitHub Actions runs on pull requests targeting `main`, with five checks:
+Validation Scope, Lint, Docs and Config, Build macOS, and Test macOS.
+The native macOS unit job is the authorized hosted runtime exception.
+The shared project and dependency pins are verified before native build/test work;
+warning-free and Apple Silicon enforcement remain mandatory.
 
-Run on every pull request and every push to `main`:
+Xcode Cloud is reserved for separately authorized native archive/signing/distribution
+work after exact-candidate local simulator qualification. Old Cloud workflows with
+simulator test actions must not be started. Their live settings have not been changed
+by this correction; review and reconcile them before any future archive run.
+The source preflight rejects simulator actions when that revision is selected.
 
-| Task | Owner |
-|---|---|
-| PR build checks (iOS, iPadOS, tvOS, visionOS, macOS, watchOS) | GitHub Actions |
-| Unit tests | GitHub Actions |
-| SwiftFormat lint | GitHub Actions |
-| String catalog validation | GitHub Actions |
-| Markdown/docs validation | GitHub Actions |
-| Plist, entitlement, and workflow syntax validation | GitHub Actions |
-| Swift package dependency resolution | GitHub Actions |
-| GitHub issue/PR automation | GitHub Actions |
-| AI coding-agent validation loops | GitHub Actions |
-| Cross-platform or non-Apple tooling | GitHub Actions |
-| Backend/API test jobs | GitHub Actions |
-
-Secret scanning should stay in GitHub's repository security settings rather than
-as a signing workflow. Do not store Apple signing certificates or provisioning
-profiles as GitHub Actions secrets for Gus release builds.
-
-## Xcode Cloud
-
-Use Xcode Cloud for Apple-distributable work:
-
-| Task | Owner |
-|---|---|
-| Signed iOS, iPadOS, tvOS, visionOS, and macOS builds (watch ships in the iOS archive) | Xcode Cloud |
-| Code signing and provisioning | Xcode Cloud |
-| Internal TestFlight builds | Xcode Cloud |
-| External beta TestFlight builds | Xcode Cloud |
-| App Store release archives | Xcode Cloud |
-| Notarized Mac app builds | Xcode Cloud |
-| Apple device and simulator matrix testing | Xcode Cloud |
-| UI tests on Apple targets | Xcode Cloud |
-| Release candidate validation | Xcode Cloud |
-
-The shared generated project, shared schemes, and `Package.resolved` must be committed
-before Cloud onboarding. `project.yml` remains authoritative; GitHub Actions checks
-snapshot drift with `Scripts/check-cloud-project.py` and resolves only pinned versions.
-
-`ci_scripts/ci_post_clone.sh` handles Apple's `ci_scripts` working directory, validates
-Team ID `QS3GC3CT43`, and writes the automatic-signing override. In Cloud it requires the
-existing project and lockfile and does not regenerate them. Outside Cloud it retains
-local XcodeGen convenience. See [API preparation](api-access.md) for authentication
-and the remaining portal steps. These are prepared local changes, not a live workflow.
-
-## Default Triggers
-
-- Every PR: GitHub Actions.
-- Every merge to `main`: GitHub Actions, plus optional Xcode Cloud build.
-- Every tagged beta or release candidate: Xcode Cloud.
-- Every TestFlight or App Store build: Xcode Cloud.
+The PR and five-check requirement is project policy. Live main-branch protection is
+currently disabled; workflow YAML does not establish server-side enforcement.
+No merge, archive, distribution or permission change follows from this policy update.

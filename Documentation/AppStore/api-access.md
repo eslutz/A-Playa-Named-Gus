@@ -1,6 +1,6 @@
 # App Store Connect API preparation
 
-**Current policy (October 12):** protected main requires PRs and all GitHub checks. The saved main-only Cloud release tests iPhone/iPad/Duo, Mac, TV and Vision before internal distribution. Native Icon Composer source is restored and Cloud Build 8 passed without issues; CI run 38242041231 retained one iPad native audio completion failure. Tester availability remains unconfirmed until the new gates pass. [Pipeline policy](pipeline-policy.md), [release status](internal-testflight-release.md).
+**Current policy:** simulator builds and tests are local-only. GitHub retains five static/native-macOS checks, including the authorized hosted macOS unit exception. The PR/check requirement is project policy; server-side main protection is currently disabled. Old Cloud simulator workflows must not be started, and this correction changes no live Cloud settings. Release qualification requires exact-candidate local simulator evidence and authorized native archives. [Pipeline policy](pipeline-policy.md), [release history](internal-testflight-release.md).
 
 
 API authentication is configured account-wide for the authorized App Manager
@@ -10,7 +10,7 @@ is **1.0.0**, with a separate integer build number managed by Cloud.
 
 The user authorized internal TestFlight distribution and access for their existing
 account. The manual internal-only workflow and `Gus Internal` group are configured.
-Current runtime code passed CI `38230709289` **13/13**; Cloud Build 6 reported zero
+The historical candidate passed CI `38230709289` **13/13**; Cloud Build 6 reported zero
 issues on all platforms. Build 7 successfully exported signed products, but iOS
 preparation failed and all group post-actions were skipped. Independent Apple
 upload-tool validation identified default iOS/Watch icon alpha channels as the

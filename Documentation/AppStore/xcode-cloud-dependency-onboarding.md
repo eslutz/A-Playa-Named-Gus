@@ -1,6 +1,6 @@
 # Xcode Cloud dependency onboarding diagnosis
 
-**Current policy (October 12):** protected main requires PRs and all GitHub checks. The saved main-only Cloud release tests iPhone/iPad/Duo, Mac, TV and Vision before internal distribution. Native Icon Composer source is restored and Cloud Build 8 passed without issues; CI run 38242041231 retained one iPad native audio completion failure. Tester availability remains unconfirmed until the new gates pass. [Pipeline policy](pipeline-policy.md), [release status](internal-testflight-release.md).
+**Current policy:** simulator builds and tests are local-only. GitHub retains five static/native-macOS checks, including the authorized hosted macOS unit exception. The PR/check requirement is project policy; server-side main protection is currently disabled. Old Cloud simulator workflows must not be started, and this correction changes no live Cloud settings. Release qualification requires exact-candidate local simulator evidence and authorized native archives. [Pipeline policy](pipeline-policy.md), [release history](internal-testflight-release.md).
 
 
 Assessment date: **2026-10-11**. Initial Gus Cloud onboarding with package references

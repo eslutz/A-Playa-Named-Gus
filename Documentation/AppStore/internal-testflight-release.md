@@ -1,19 +1,22 @@
 # Internal TestFlight release
 
-The internal release is not yet available to the tester. The native Icon Composer source at `f1a387f` passed Cloud Build 8 without issues, but its GitHub matrix passed 12/13: the iPad audio completion test received no native end notification within its wait. The icon/EPUB tests passed. No failed attempt is counted as acceptance.
-
-The October 12 policy now requires PRs into protected main. GitHub runs the full PR matrix; the saved main-only Cloud workflow has four required unit-test actions (six device types) plus four internal-only archives. All required actions must pass before group post-actions distribute. The separate compile-only workflow is deleted. [Policy and saved proof](pipeline-policy.md).
+This page records historical release attempts, not current tester availability.
+Current release qualification requires five PR checks, exact-candidate local simulator
+evidence, and authorized native archives with signing/raw-log review. Simulator work
+must not run in pipelines. The old Cloud test matrix is superseded; stale workflows
+must not be started, and no live Cloud settings were changed by this correction.
+[Current policy](pipeline-policy.md).
 
 
 Historical Xcode Cloud Build 4 (`33eae093-33a9-4dd9-a12e-b8b9a306054a`) completed **FAILED** at `2026-10-12T03:10:29Z` for exact source `64505d9dfd337c90f390c7c66503912eac252d3f`. iOS export and Mac App Store Connect preparation failed; tvOS and visionOS uploads are valid, but all four distribution post-actions were skipped and `Gus Internal` has no builds. Group access, invitation delivery, and installation remain unaccepted. Final release summary.
 
-## Preceding candidate prerequisite
+## Historical candidate prerequisite
 
-Current-source [GitHub run 38194318738, attempt 2](https://github.com/eslutz/A-Playa-Named-Gus/actions/runs/38194318738/attempts/2) has **13/13 successful checks**: six builds, five unit lanes, lint, and docs. Each accepted unit lane passed 288 Swift Testing cases in 49 suites plus three distinct XCTest performance measurements. Only iPad reran; the other 12 successes were carried forward from attempt 1. Its unchanged-source retry passed actual native completion/replay and deletion/no-stream cases; the first iPad completion failure remains recorded with an unresolved cause. Matrix, accepted lane counts, first failure.
+That candidate's [GitHub run 38194318738, attempt 2](https://github.com/eslutz/A-Playa-Named-Gus/actions/runs/38194318738/attempts/2) had **13/13 successful checks**: six builds, five unit lanes, lint, and docs. Each accepted unit lane passed 288 Swift Testing cases in 49 suites plus three distinct XCTest performance measurements. Only iPad reran; the other 12 successes were carried forward from attempt 1. Its unchanged-source retry passed actual native completion/replay and deletion/no-stream cases; the first iPad completion failure remains recorded with an unresolved cause. Matrix, accepted lane counts, first failure.
 
 Cloud Build 3 independently passed all four iOS/macOS/tvOS/visionOS **BUILD** actions at the same source on Xcode 27.1 RC, with zero errors and seven unchanged warnings. This satisfied the user's all-pipelines-pass prerequisite for proceeding with internal distribution. Cloud result, results image.
 
-## Saved release configuration
+## Historical saved release configuration
 
 | Setting | Verified configuration |
 |---|---|
