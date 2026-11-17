@@ -32,8 +32,9 @@ constrain *how* each item is built.
 - [~] Local builds, simulator regressions, accessibility and the Release p95 gate
   have revision- and artifact-scoped evidence; earlier results are not a full
   current-revision runtime rerun. Editable Sketch reconciliation and required
-  hosted checks remain open before overall acceptance. Runtime validation for
-  this implementation is simulator-only; physical-device testing is excluded.
+  hosted checks remain open before overall acceptance. Local runtime validation
+  is simulator-only; the required hosted macOS CI unit job has an explicit
+  exception. Physical-device testing remains excluded.
 
 ## Playback reliability
 

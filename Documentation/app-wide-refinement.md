@@ -190,9 +190,11 @@ shared unit suites, affected authenticated UI/Watch regressions, 30 cold/warm
 samples, 10 browse cycles, 30 player open/close cycles and a one-hour playback
 soak. Compare same-simulator p95 latency with a 10% regression ceiling, retaining
 any stricter existing gate. Physical acceptance, including the previously
-deferred Duo checks, is excluded from this run and remains unverified. Native
-macOS runtime testing is also held under that constraint. Completed diagnostics
-flushes establish durability; abrupt termination
+deferred Duo checks, is excluded from this run and remains unverified. Local native
+macOS runtime testing is also held under that constraint. The user approved an
+exception for the required hosted macOS CI unit job; that exception does not
+authorize physical-device or local native macOS runtime tests. Completed
+diagnostics flushes establish durability; abrupt termination
 can lose events not yet flushed. Lost responses with unknown server resource IDs
 require server cancellation/TTL validation, not a claim of client-side closure.
 

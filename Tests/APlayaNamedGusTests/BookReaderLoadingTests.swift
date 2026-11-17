@@ -202,7 +202,8 @@
             #expect(model.navigatorIdentity == identity)
             #expect(model.initialLocation?.href.isEquivalentTo(saved.href) == true)
             #expect(!native.isViewLoaded) // Preflight did not ask an unmounted native renderer to navigate.
-            let savedJSON = try #require(BookProgressStore.shared.locatorJSON(forItemID: item.id!, scope: scope))
+            let itemID = try #require(item.id)
+            let savedJSON = try #require(BookProgressStore.shared.locatorJSON(forItemID: itemID, scope: scope))
             let actual = try Locator(jsonString: savedJSON)
             #expect(actual.href.isEquivalentTo(saved.href))
         }
