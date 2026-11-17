@@ -69,9 +69,10 @@ server-side main protection is currently disabled and has not been restored by t
 All simulator builds and tests run locally. Hosted native macOS unit execution has
 an explicit exception; local native macOS runtime and physical-device testing remain
 excluded from the current validation scope. Release qualification requires local
-exact-candidate simulator evidence plus authorized native archives. Old Cloud workflows
-containing simulator actions must not be started; their live settings were not changed
-by this correction. See `Documentation/AppStore/pipeline-policy.md`.
+exact-candidate simulator evidence plus authorized native archives. Cloud workflows
+containing simulator actions must not be started. The manual Internal TestFlight
+workflow uses native macOS tests and four device archives; recheck its live actions
+before each release. See `Documentation/AppStore/pipeline-policy.md`.
 
 ## OS compatibility policy
 

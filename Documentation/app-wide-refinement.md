@@ -134,9 +134,9 @@ page deduplication. Gus retains AVPlayer/AVKit and current OS 26 fallbacks.
 | F16 | Full-content continuation | Raw-offset paging, ordered queue continuation, full shuffle collection; incomplete advertised collections fail visibly | BrowseRefinementTests, including incompleteCollection; PlaybackLifecyclePolicyTests |
 | F17 | Superseding first-page query changes | Immutable query identity and generation cancellation | LibraryStoreTests, BrowseRefinementTests |
 | F18 | Reader construction/resource recovery | Public container read observation, inline recovery, bounded chapter selection and generation-scoped Retry | BookReaderLoadingTests; scoped native missing-resource/Retry and semantic-locator restoration evidence recorded externally |
-| F19 | Every PR triggers required CI | Always-triggered workflow, fail-closed classifier, explicit documentation-only success | test-classify-changes.py; hosted required checks pending |
+| F19 | Every PR triggers required CI | Always-triggered workflow, fail-closed classifier, explicit documentation-only success | test-classify-changes.py; all five hosted checks required for each candidate |
 | F20 | Measured performance and justified retention/I/O fixes | Non-owning heavy-store lookup, owner/lease cancellation, visibility refresh, serial diagnostics and download workers | NavigationOwnershipTests, including replacementDetailOwnership and seriesLeaseCancellation; DiagnosticsTests, DownloadStoreIntegrationTests; local same-simulator Release p95 gate accepted, with exact revision, one-pair scope and host-condition limits recorded externally |
-| F21 | Current platform visual/interaction/accessibility acceptance | Native controls retained; editable handoff reconciliation inventory in Design/README.md | Platform-scoped interaction evidence recorded externally; saved editable handoff verification remains open |
+| F21 | Current platform visual/interaction/accessibility acceptance | Native controls retained; platform interaction checks | Platform-scoped evidence recorded externally; owner deferred Sketch reconciliation outside this release scope |
 | F22 | Catalog and native semantic formatting | Shared localized metadata and native duration/count formatting | Catalog validation and BrowseRefinementTests; targeted RTL/largest-text observations recorded externally |
 
 The named tests are coverage pointers, not a claim that a particular revision has
@@ -149,6 +149,8 @@ CollectionStoreTests.uncertainCreateRequiresReview checks that an ambiguous crea
 cannot be submitted again before fresh readback and explicit acceptance of the
 server state. Download metadata read failures preserve files and same-account
 snapshots; they never present an unreadable catalog as an empty download library.
+Storage usage and active/paused counts show Unavailable while metadata is unreadable,
+rather than treating retained or missing records as a current inventory.
 
 | Accepted enhancement | Implementation and coverage |
 |---|---|
@@ -198,8 +200,12 @@ diagnostics flushes establish durability; abrupt termination
 can lose events not yet flushed. Lost responses with unknown server resource IDs
 require server cancellation/TTL validation, not a claim of client-side closure.
 
+Sketch-specific comparison and handoff work is deferred by the owner and is not
+a gate for the Swiftfin-pattern release. Existing platform interaction evidence
+retains its original scope; deferral does not establish visual acceptance.
+
 Keep raw logs, traces, screenshots and result bundles outside Git. Regenerate the
-XcodeGen project after file changes. Update ADRs, the roadmap, editable design
-handoffs, wiki and affected website claims with the delivered behavior. Protected
+XcodeGen project after file changes. Update ADRs, the roadmap,
+wiki and affected website claims with the delivered behavior. Protected
 main changes require a PR and required checks. Local validation, physical device
 acceptance, hosted CI, archives and distribution are separate gates.

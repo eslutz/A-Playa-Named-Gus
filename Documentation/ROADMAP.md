@@ -31,10 +31,12 @@ constrain *how* each item is built.
   [the implementation ledger](app-wide-refinement.md).
 - [~] Local builds, simulator regressions, accessibility and the Release p95 gate
   have revision- and artifact-scoped evidence; earlier results are not a full
-  current-revision runtime rerun. Editable Sketch reconciliation and required
-  hosted checks remain open before overall acceptance. All simulator builds and
+  current-revision runtime rerun. Required hosted checks apply to each candidate;
+  Sketch reconciliation is deferred by the owner and is not a release gate. All simulator builds and
   tests are local-only; the hosted native macOS CI unit job has an explicit
   exception. Physical-device testing and local native macOS runtime remain excluded.
+- [x] Download recovery summary counts avoid numeric claims when metadata cannot
+  be read. Candidate-specific validation is recorded outside Git.
 
 ## Playback reliability
 

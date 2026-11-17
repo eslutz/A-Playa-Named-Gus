@@ -43,13 +43,14 @@ of current successful execution.
 ## Superseded hosted simulator configuration
 
 Earlier 13/14-job GitHub matrices and the manual **Gus Validation** single-iPhone
-workflow are superseded. The saved **Gus Internal TestFlight** workflow also contained
-simulator test actions. Do not start either stale Cloud configuration. This correction
-starts no Cloud workflow and changes no live Cloud settings; re-read and reconcile the
-remote actions before any future authorized archive run. The Cloud pre-build hook
+workflow are superseded. **Gus Internal TestFlight** uses one required native macOS
+test action, four internal-only device archives and four distributions to Gus Internal.
+Its former iOS, tvOS and visionOS simulator test actions have been removed. Keep the
+workflow manual, main-only and clean, with the global architecture override intact.
+Do not start the stale Gus Validation workflow. Re-read remote actions and distribution
+groups before every authorized archive run. The Cloud pre-build hook
 rejects non-macOS build/test actions while retaining native macOS and archive support
-when Cloud selects a source revision containing the hook. Unmerged main does not yet
-contain this correction.
+when Cloud selects a source revision containing the hook.
 
 Prior dated CI/Cloud outcomes are historical, revision-scoped evidence, not current
 pipeline instructions or release acceptance. See [release history](internal-testflight-release.md).

@@ -20,8 +20,8 @@ struct DownloadsView: View {
             Section {
                 LabeledContent("Storage Used", value: downloads.loadErrorMessage == nil ? ByteCountFormatter.string(fromByteCount: downloads.totalByteCount(serverID: session.server.id, userID: session.user.id), countStyle: .file) : String(localized: "Unavailable"))
                 LabeledContent("Soft Cap", value: ByteCountFormatter.string(fromByteCount: OfflineDownloadStore.softCapBytes, countStyle: .file))
-                LabeledContent("Active Downloads", value: "\(records.filter { $0.status.isActive }.count)")
-                LabeledContent("Paused Downloads", value: "\(records.filter { $0.status == .paused }.count)")
+                LabeledContent("Active Downloads", value: downloads.loadErrorMessage == nil ? "\(records.filter { $0.status.isActive }.count)" : String(localized: "Unavailable"))
+                LabeledContent("Paused Downloads", value: downloads.loadErrorMessage == nil ? "\(records.filter { $0.status == .paused }.count)" : String(localized: "Unavailable"))
             } footer: {
                 Text("Downloads use system background transfers. Avoid force-quitting Gus while downloading. Saved media stays on this device and is excluded from backup.")
             }
