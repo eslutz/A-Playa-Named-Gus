@@ -69,6 +69,7 @@ jobs:
           python3 Scripts/test-cloud-bootstrap.py
           python3 Scripts/test-release-warning-gate.py
           python3 Scripts/test-select-simulator.py
+          python3 Scripts/test-runtime-readiness.py
           python3 Scripts/test-classify-changes.py
           python3 Scripts/check-app-icons.py
           swift Scripts/app-store-connect.swift self-test
@@ -155,6 +156,8 @@ jobs:
 
       - name: Select Xcode 27.2 and verify iOS SDK
         if: needs.changes.outputs.full == 'true'
+        env:
+          GUS_RUNNER_ENVIRONMENT: ${{ runner.environment }}
         run: |
           set -euo pipefail
           if [ ! -d "$XCODE_APP" ]; then
@@ -163,6 +166,7 @@ jobs:
             exit 1
           fi
           sudo xcode-select -s "$XCODE_APP/Contents/Developer"
+          python3 Scripts/run-warning-free.py python3 Scripts/wait-for-simulator-runtimes.py
           xcodebuild -version
           ios_sdk_version="$(xcrun --sdk iphonesimulator --show-sdk-version)"
           if ! printf '%s\n' "$ios_sdk_version" | awk -F. '/^[0-9]+\.[0-9]+(\.[0-9]+)?$/ { ok = ($1 > 27 || ($1 == 27 && $2 >= 2)) } END { exit !ok }'; then
@@ -241,6 +245,8 @@ jobs:
 
       - name: Select Xcode 27.2 and verify iOS SDK
         if: needs.changes.outputs.full == 'true'
+        env:
+          GUS_RUNNER_ENVIRONMENT: ${{ runner.environment }}
         run: |
           set -euo pipefail
           if [ ! -d "$XCODE_APP" ]; then
@@ -249,6 +255,7 @@ jobs:
             exit 1
           fi
           sudo xcode-select -s "$XCODE_APP/Contents/Developer"
+          python3 Scripts/run-warning-free.py python3 Scripts/wait-for-simulator-runtimes.py
           xcodebuild -version
           ios_sdk_version="$(xcrun --sdk iphonesimulator --show-sdk-version)"
           if ! printf '%s\n' "$ios_sdk_version" | awk -F. '/^[0-9]+\.[0-9]+(\.[0-9]+)?$/ { ok = ($1 > 27 || ($1 == 27 && $2 >= 2)) } END { exit !ok }'; then

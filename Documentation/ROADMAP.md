@@ -207,7 +207,12 @@ automated build verification. (Covers priority: *polish & testing*.)
   build the iPhone/iPad/macOS/tvOS/visionOS/Watch matrix → run native unit tests → lint.
   *Acceptance:* successful required checks on the complete current source. *(Configured
   on the hosted `xcode-27` runner, pinned to stable Xcode 27.2 and an iOS simulator
-  SDK of at least 27.2. The refinement PR requires all 14 current-head checks; the
+  SDK of at least 27.2. Before Xcode discovery, a read-only gate waits up to 120 seconds
+  for coherent runtime mounts and 10 seconds of stability, retaining startup/failure
+  diagnostics. Live cryptex-preferred duplicate mounts are a temporal risk signal,
+  also seen at the start of successful jobs; this mitigation is not a proven image fix
+  ([upstream investigation](https://github.com/actions/runner-images/issues/14946)).
+  The refinement PR requires all 14 current-head checks; the
   earlier results below do not qualify it. Historical run `38192282611` at `edd06e6636cd32b877622dbcb4ccb34524a1b3c1` passed **13/13 jobs**:
   six builds, five unit lanes, lint and docs. Each unit lane passed 288 Swift Testing
   cases in 49 suites and three separate XCTest measurements. Native audio completion,
