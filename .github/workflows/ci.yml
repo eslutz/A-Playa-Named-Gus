@@ -13,7 +13,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  XCODE_APP: /Applications/Xcode_27.1.app
+  XCODE_APP: /Applications/Xcode_27.2.app
 
 jobs:
   changes:
@@ -69,7 +69,6 @@ jobs:
           python3 Scripts/test-cloud-bootstrap.py
           python3 Scripts/test-release-warning-gate.py
           python3 Scripts/test-select-simulator.py
-          python3 Scripts/test-prepare-hosted-simulators.py
           python3 Scripts/test-classify-changes.py
           python3 Scripts/check-app-icons.py
           swift Scripts/app-store-connect.swift self-test
@@ -154,7 +153,7 @@ jobs:
         if: needs.changes.outputs.full != 'true'
         run: echo "Documentation-only change; lightweight validation runs in separate required jobs."
 
-      - name: Select Xcode 27.1 and verify iOS SDK
+      - name: Select Xcode 27.2 and verify iOS SDK
         if: needs.changes.outputs.full == 'true'
         run: |
           set -euo pipefail
@@ -166,8 +165,8 @@ jobs:
           sudo xcode-select -s "$XCODE_APP/Contents/Developer"
           xcodebuild -version
           ios_sdk_version="$(xcrun --sdk iphonesimulator --show-sdk-version)"
-          if ! printf '%s\n' "$ios_sdk_version" | awk -F. '/^[0-9]+\.[0-9]+(\.[0-9]+)?$/ { ok = ($1 > 27 || ($1 == 27 && $2 >= 1)) } END { exit !ok }'; then
-            echo "iOS Simulator SDK $ios_sdk_version is too old; Duo ArrangementView requires 27.1 or later."
+          if ! printf '%s\n' "$ios_sdk_version" | awk -F. '/^[0-9]+\.[0-9]+(\.[0-9]+)?$/ { ok = ($1 > 27 || ($1 == 27 && $2 >= 2)) } END { exit !ok }'; then
+            echo "iOS Simulator SDK $ios_sdk_version is too old; CI requires 27.2 or later."
             exit 1
           fi
 
@@ -179,11 +178,11 @@ jobs:
         if: needs.changes.outputs.full == 'true'
         run: python3 Scripts/check-cloud-project.py
 
-      - name: Prepare hosted simulator inventory
+      - name: Capture simulator state before package resolution
         if: needs.changes.outputs.full == 'true'
         env:
           GUS_RUNNER_ENVIRONMENT: ${{ runner.environment }}
-        run: python3 Scripts/run-warning-free.py python3 Scripts/prepare-hosted-simulators.py
+        run: python3 Scripts/run-warning-free.py python3 Scripts/simulator-diagnostics.py --phase before-resolve
 
       - name: Resolve packages
         if: needs.changes.outputs.full == 'true'
@@ -194,6 +193,13 @@ jobs:
         # Compile validation does not require production capability profiles.
         # Xcode Cloud owns provisioned distribution signing and release tests.
         run: python3 Scripts/run-warning-free.py xcodebuild -project 'A Playa Named Gus.xcodeproj' -scheme '${{ matrix.scheme || 'A Playa Named Gus' }}' -destination '${{ matrix.destination }}' CODE_SIGNING_ALLOWED=NO build
+
+      - name: Capture simulator state after failure
+        if: needs.changes.outputs.full == 'true' && failure()
+        continue-on-error: true
+        env:
+          GUS_RUNNER_ENVIRONMENT: ${{ runner.environment }}
+        run: python3 Scripts/run-warning-free.py python3 Scripts/simulator-diagnostics.py --phase after-failure
 
   test:
     if: always()
@@ -233,7 +239,7 @@ jobs:
         if: needs.changes.outputs.full != 'true'
         run: echo "Documentation-only change; lightweight validation runs in separate required jobs."
 
-      - name: Select Xcode 27.1 and verify iOS SDK
+      - name: Select Xcode 27.2 and verify iOS SDK
         if: needs.changes.outputs.full == 'true'
         run: |
           set -euo pipefail
@@ -245,8 +251,8 @@ jobs:
           sudo xcode-select -s "$XCODE_APP/Contents/Developer"
           xcodebuild -version
           ios_sdk_version="$(xcrun --sdk iphonesimulator --show-sdk-version)"
-          if ! printf '%s\n' "$ios_sdk_version" | awk -F. '/^[0-9]+\.[0-9]+(\.[0-9]+)?$/ { ok = ($1 > 27 || ($1 == 27 && $2 >= 1)) } END { exit !ok }'; then
-            echo "iOS Simulator SDK $ios_sdk_version is too old; Duo ArrangementView requires 27.1 or later."
+          if ! printf '%s\n' "$ios_sdk_version" | awk -F. '/^[0-9]+\.[0-9]+(\.[0-9]+)?$/ { ok = ($1 > 27 || ($1 == 27 && $2 >= 2)) } END { exit !ok }'; then
+            echo "iOS Simulator SDK $ios_sdk_version is too old; CI requires 27.2 or later."
             exit 1
           fi
 
@@ -283,11 +289,11 @@ jobs:
           # credential-free unit host keeps the sandbox and networking permissions.
           printf 'CODE_SIGN_ENTITLEMENTS[sdk=macosx*] = %s\n' "$RUNNER_TEMP/gus-macos-unit.entitlements" > Config/Local.xcconfig
 
-      - name: Prepare hosted simulator inventory
+      - name: Capture simulator state before package resolution
         if: needs.changes.outputs.full == 'true'
         env:
           GUS_RUNNER_ENVIRONMENT: ${{ runner.environment }}
-        run: python3 Scripts/run-warning-free.py python3 Scripts/prepare-hosted-simulators.py
+        run: python3 Scripts/run-warning-free.py python3 Scripts/simulator-diagnostics.py --phase before-resolve
 
       - name: Resolve packages
         if: needs.changes.outputs.full == 'true'
@@ -328,6 +334,13 @@ jobs:
             destination='${{ steps.vision-sim.outputs.destination }}'
           fi
           python3 Scripts/run-warning-free.py xcodebuild test -project 'A Playa Named Gus.xcodeproj' -scheme '${{ matrix.scheme }}' -destination "$destination"
+
+      - name: Capture simulator state after failure
+        if: needs.changes.outputs.full == 'true' && failure()
+        continue-on-error: true
+        env:
+          GUS_RUNNER_ENVIRONMENT: ${{ runner.environment }}
+        run: python3 Scripts/run-warning-free.py python3 Scripts/simulator-diagnostics.py --phase after-failure
 
       - name: Diagnose Mac unit test launch failure
         if: needs.changes.outputs.full == 'true' && (failure() && matrix.name == 'macOS')

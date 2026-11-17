@@ -206,8 +206,9 @@ automated build verification. (Covers priority: *polish & testing*.)
 - [x] **CI pipeline.** GitHub Actions: validate the shared project/pins → resolve →
   build the iPhone/iPad/macOS/tvOS/visionOS/Watch matrix → run native unit tests → lint.
   *Acceptance:* successful required checks on the complete current source. *(Configured
-  on the hosted `xcode-27` runner with a minimum iOS simulator SDK of 27.1. Final
-  run `38192282611` at `edd06e6636cd32b877622dbcb4ccb34524a1b3c1` passed **13/13 jobs**:
+  on the hosted `xcode-27` runner, pinned to stable Xcode 27.2 and an iOS simulator
+  SDK of at least 27.2. The refinement PR requires all 14 current-head checks; the
+  earlier results below do not qualify it. Historical run `38192282611` at `edd06e6636cd32b877622dbcb4ccb34524a1b3c1` passed **13/13 jobs**:
   six builds, five unit lanes, lint and docs. Each unit lane passed 288 Swift Testing
   cases in 49 suites and three separate XCTest measurements. Native audio completion,
   replay and deletion/no-stream assertions passed with the one-second 48 kHz fixture
