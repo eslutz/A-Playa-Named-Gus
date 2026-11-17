@@ -83,7 +83,8 @@ Build validation and actual OS 26 runtime/device acceptance are separate gates.
 
 ## Warning-free build policy
 
-Treat every warning as an error. App, extension, Watch, and test targets must
+Treat every warning as an error, except the owner-authorized, explicitly logged hosted
+native-macOS simulator-discovery exception in `Documentation/AppStore/warning-policy.md`. App, extension, Watch, and test targets must
 compile, test, archive, and export with zero warnings and zero errors across all
 supported platforms. Swift and C-family warnings are errors in project.yml.
 Do not disable diagnostics, lower concurrency checking, or override these gates

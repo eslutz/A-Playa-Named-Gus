@@ -18,7 +18,7 @@ jobs.each do |id, job|
   abort("Unexpected hosted job name: #{id}") unless job.fetch("name") == expected_names.fetch(id)
   abort("Hosted platform matrices are prohibited: #{id}") if job.key?("strategy")
   commands = job.fetch("steps").filter_map { |step| step["run"] }.join("\n")
-  if commands.match?(/simctl|simulator|validate-release\.py|screenshots\.sh/i)
+  if commands.gsub("--waive-ci-simulator-discovery", "").match?(/simctl|simulator|validate-release\.py|screenshots\.sh/i)
     abort("Hosted simulator work is prohibited: #{id}")
   end
   commands.lines.grep(/\bxcodebuild\b/).each do |command|

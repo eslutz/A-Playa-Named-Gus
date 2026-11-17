@@ -67,3 +67,14 @@ and all eight static release checks passed.
 
 Hosted required CI and a new provisioned Xcode Cloud run must still verify the
 reviewed fix commit. Local compilation does not qualify a Cloud release.
+
+## Authorized hosted simulator-discovery exception
+
+The owner waived CI simulator-related warnings on November 17, 2026. The implemented
+exception is narrower: only the observed Xcode `DVTiPhoneSimulator.m:661` warning
+immediately followed by a nil SimDevice architecture detail with a null simulator
+runtime is waived. Native hosted macOS commands must explicitly opt in and select
+`platform=macOS,arch=arm64`. Each occurrence and the final count remain in raw logs.
+Unknown/malformed assertions, compiler/linker/asset warnings, errors, Intel output,
+and nonzero tool exits still fail. Local validation and archives retain strict gates;
+this exception does not authorize hosted simulator builds or tests.

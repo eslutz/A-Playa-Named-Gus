@@ -162,12 +162,12 @@ jobs:
 
       - name: Resolve packages
         if: needs.changes.outputs.full == 'true'
-        run: python3 Scripts/run-warning-free.py xcodebuild -onlyUsePackageVersionsFromResolvedFile -resolvePackageDependencies -project 'A Playa Named Gus.xcodeproj' -scheme 'Gus macOS Unit Tests'
+        run: python3 Scripts/run-warning-free.py --waive-ci-simulator-discovery xcodebuild -onlyUsePackageVersionsFromResolvedFile -resolvePackageDependencies -project 'A Playa Named Gus.xcodeproj' -scheme 'Gus macOS Unit Tests' -destination 'platform=macOS,arch=arm64'
 
       - name: Build macOS
         if: needs.changes.outputs.full == 'true'
         # Native compile validation does not require production capability profiles.
-        run: python3 Scripts/run-warning-free.py xcodebuild -project 'A Playa Named Gus.xcodeproj' -scheme 'A Playa Named Gus' -destination 'platform=macOS,arch=arm64' CODE_SIGNING_ALLOWED=NO build
+        run: python3 Scripts/run-warning-free.py --waive-ci-simulator-discovery xcodebuild -project 'A Playa Named Gus.xcodeproj' -scheme 'A Playa Named Gus' -destination 'platform=macOS,arch=arm64' CODE_SIGNING_ALLOWED=NO build
 
   test:
     if: ${{ !cancelled() }}
@@ -239,11 +239,11 @@ jobs:
 
       - name: Resolve packages
         if: needs.changes.outputs.full == 'true'
-        run: python3 Scripts/run-warning-free.py xcodebuild -onlyUsePackageVersionsFromResolvedFile -resolvePackageDependencies -project 'A Playa Named Gus.xcodeproj' -scheme 'Gus macOS Unit Tests'
+        run: python3 Scripts/run-warning-free.py --waive-ci-simulator-discovery xcodebuild -onlyUsePackageVersionsFromResolvedFile -resolvePackageDependencies -project 'A Playa Named Gus.xcodeproj' -scheme 'Gus macOS Unit Tests' -destination 'platform=macOS,arch=arm64'
 
       - name: Test macOS
         if: needs.changes.outputs.full == 'true'
-        run: python3 Scripts/run-warning-free.py xcodebuild test -project 'A Playa Named Gus.xcodeproj' -scheme 'Gus macOS Unit Tests' -destination 'platform=macOS,arch=arm64'
+        run: python3 Scripts/run-warning-free.py --waive-ci-simulator-discovery xcodebuild test -project 'A Playa Named Gus.xcodeproj' -scheme 'Gus macOS Unit Tests' -destination 'platform=macOS,arch=arm64'
 
       - name: Diagnose Mac unit test launch failure
         if: needs.changes.outputs.full == 'true' && failure()

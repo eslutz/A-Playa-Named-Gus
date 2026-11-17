@@ -141,5 +141,67 @@ class SimulatorSelectionTests(unittest.TestCase):
         })
 
 
+class SimulatorWaiverTests(unittest.TestCase):
+    def setUp(self):
+        import io
+        self.io = io
+        spec = importlib.util.spec_from_file_location("warning_wrapper", Path(__file__).with_name("run-warning-free.py"))
+        self.wrapper = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(self.wrapper)
+        self.header = "2026-11-17 13:50:38.097 xcodebuild[4126:15620] [MT] DVTAssertions: Warning in DVTiOSFrameworks/IDEiOSSupportCore/DVTiPhoneSimulator.m:661\n"
+        self.detail = "Details:  SimDevice native architecture is nil. Device: SimDevice : Apple TV (00000000-0000-0000-0000-000000000001) : state={ Shutdown } runtime={ com.apple.CoreSimulator.SimRuntime.tvOS-27-0: (null) }, supportedArches: (\n"
+        self.command = ["xcodebuild", "-destination", "platform=macOS,arch=arm64", "build"]
+        self.env = {"GITHUB_ACTIONS": "true", "RUNNER_ENVIRONMENT": "github-hosted"}
+
+    def invoke(self, output, code=0, enabled=True, command=None, env=None):
+        from unittest.mock import Mock
+        process = Mock(stdout=self.io.StringIO(output))
+        process.wait.return_value = code
+        process.poll.return_value = code
+        args = ["wrapper"] + ([self.wrapper.FLAG] if enabled else []) + (command or self.command)
+        stream = self.io.StringIO()
+        with patch.object(sys, "argv", args), patch.dict(self.wrapper.os.environ, self.env if env is None else env, clear=True), patch.object(self.wrapper.subprocess, "Popen", return_value=process) as launch, patch("sys.stdout", stream), patch("sys.stderr", stream):
+            result = self.wrapper.main()
+        return result, stream.getvalue(), launch.called
+
+    def test_known_pair_is_logged_and_waived_only_with_opt_in(self):
+        result, log, launched = self.invoke(self.header + self.detail)
+        self.assertEqual(result, 0)
+        self.assertTrue(launched)
+        self.assertIn(self.header, log)
+        self.assertIn(self.detail, log)
+        self.assertIn("waiver: 1 occurrence", log)
+        self.assertEqual(self.invoke(self.header + self.detail, enabled=False)[0], 1)
+
+    def test_unrelated_warnings_errors_and_intel_remain_fatal(self):
+        for diagnostic in ("warning: compiler problem", "ld: warning: library problem", "error: test failure", "SwiftCompile normal x86_64 file.swift"):
+            with self.subTest(diagnostic=diagnostic):
+                self.assertEqual(self.invoke(self.header + self.detail + diagnostic + "\n")[0], 1)
+
+    def test_unknown_assertions_and_incomplete_pairs_remain_fatal(self):
+        for output in (self.header, self.header + "Details: another assertion\n", self.header.replace(":661", ":662") + self.detail, self.header.replace("Warning", "Error") + self.detail, self.header + self.detail.replace("(null)", "ready")):
+            with self.subTest(output=output):
+                self.assertEqual(self.invoke(output)[0], 1)
+
+    def test_tool_failure_is_never_waived(self):
+        self.assertEqual(self.invoke(self.header + self.detail, code=65)[0], 65)
+
+    def test_local_or_non_native_commands_are_rejected_before_launch(self):
+        for command in (["python3", "fixture.py"], ["xcodebuild", "build"], ["xcodebuild", "-destination"], ["xcodebuild", "-destination", "platform=iOS Simulator,name=iPhone 17"], self.command + ["archive"], self.command + ["-destination", "platform=macOS"]):
+            with self.subTest(command=command):
+                result, _, launched = self.invoke("", command=command)
+                self.assertEqual(result, 64)
+                self.assertFalse(launched)
+        for env in ({}, {"GITHUB_ACTIONS": "true", "RUNNER_ENVIRONMENT": "self-hosted"}):
+            result, _, launched = self.invoke("", env=env)
+            self.assertEqual(result, 64)
+            self.assertFalse(launched)
+
+    def test_multiple_occurrences_are_counted(self):
+        result, log, _ = self.invoke((self.header + self.detail) * 2)
+        self.assertEqual(result, 0)
+        self.assertIn("waiver: 2 occurrence", log)
+
+
 if __name__ == "__main__":
     unittest.main()

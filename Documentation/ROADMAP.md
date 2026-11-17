@@ -203,6 +203,9 @@ automated build verification. (Covers priority: *polish & testing*.)
   *Acceptance:* available for local/manual launch validation. *(Done: `GusLaunchUITests`
   verifies the Connect screen renders through native iOS, tvOS, visionOS, and macOS UI
   test bundles; CI keeps these UI smoke tests out of the required PR pipeline.)*
+- [~] The owner-authorized native macOS CI exception records the identified Xcode
+  nil simulator-architecture warnings while retaining all unrelated warning/error gates.
+  Simulator builds/tests remain local-only.
 - [~] **CI pipeline.** GitHub runs five checks: Validation Scope, Lint, Docs and
   Config, Build macOS, and Test macOS. All simulator builds/tests run locally;
   native macOS units have the hosted exception. Existing local evidence remains
