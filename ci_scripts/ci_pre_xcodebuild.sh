@@ -9,9 +9,10 @@ fi
 case "${CI_PRODUCT_PLATFORM:-}:${CI_XCODEBUILD_ACTION:-}" in
   macOS:build|macOS:build-for-testing|macOS:test|macOS:test-without-building|\
   macOS:archive|macOS:analyze|iOS:archive|iOS:analyze|tvOS:archive|tvOS:analyze|\
-  visionOS:archive|visionOS:analyze|watchOS:archive|watchOS:analyze)
+  xrOS:archive|xrOS:analyze|watchOS:archive|watchOS:analyze)
     ;;
   *)
+    printf 'Rejected Cloud platform/action: %s/%s\n' "${CI_PRODUCT_PLATFORM:-<unset>}" "${CI_XCODEBUILD_ACTION:-<unset>}" >&2
     echo "Simulator builds and tests must run locally. Xcode Cloud permits only native macOS builds/tests and known-platform device archives/analysis." >&2
     exit 65
     ;;

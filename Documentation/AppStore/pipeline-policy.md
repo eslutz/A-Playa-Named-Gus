@@ -51,6 +51,9 @@ Do not start the stale Gus Validation workflow. Re-read remote actions and distr
 groups before every authorized archive run. The Cloud pre-build hook
 rejects non-macOS build/test actions while retaining native macOS and archive support
 when Cloud selects a source revision containing the hook.
+The visionOS archive uses Apple's `CI_PRODUCT_PLATFORM=xrOS` identifier; the
+pre-build guard accepts its archive/analysis actions and rejects its simulator
+build/test actions. Rejections log only the platform and action identifiers.
 
 Prior dated CI/Cloud outcomes are historical, revision-scoped evidence, not current
 pipeline instructions or release acceptance. See [release history](internal-testflight-release.md).
