@@ -15,6 +15,18 @@ spec = importlib.util.spec_from_file_location("runtime_readiness", Path(__file__
 gate = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(gate)
 
+# Copying can precede runtime identity and architecture metadata.
+COPYING_IMAGE = {
+    "deletable": True,
+    "identifier": "00000000-0000-0000-0000-000000000001",
+    "kind": "Patchable Cryptex Disk Image",
+    "parentMountPath": "/System/Library/AssetsV2/com_apple_MobileAsset_watchOSSimulatorRuntime/example.asset/AssetData",
+    "path": "/System/Library/AssetsV2/com_apple_MobileAsset_watchOSSimulatorRuntime/example.asset/AssetData",
+    "signatureState": "Unknown",
+    "sizeBytes": 3814435665,
+    "state": "Copying",
+}
+
 
 def fixture(retired=False):
     identifier, build = "com.apple.CoreSimulator.SimRuntime.watchOS-27-0", "24R362"
@@ -84,6 +96,35 @@ class RuntimeReadinessTests(unittest.TestCase):
         with patch.dict(gate.os.environ, {}, clear=True), patch.object(gate.subprocess, "run") as query, contextlib.redirect_stderr(io.StringIO()):
             self.assertEqual(gate.main(), 1)
         query.assert_not_called()
+
+    def test_observed_incomplete_copying_row_waits_without_exception_or_false_pass(self):
+        images, inventory, probe = fixture(retired=True)
+        images[COPYING_IMAGE["identifier"]] = dict(COPYING_IMAGE)
+        result = gate.readiness(images, inventory, probe)
+        self.assertFalse(result["ready"])
+        self.assertTrue(any("Copying" in reason for reason in result["reasons"]))
+        with self.assertRaisesRegex(RuntimeError, "120 seconds"):
+            self.run_wait(lambda _: gate.readiness(images, inventory, probe))
+
+    def test_copying_then_ready_restarts_full_stability_period(self):
+        def sample(now):
+            images, inventory, probe = fixture(retired=True)
+            if now[0] == 8:
+                images[COPYING_IMAGE["identifier"]] = dict(COPYING_IMAGE)
+            elif now[0] >= 10:
+                images[COPYING_IMAGE["identifier"]] = images.pop("ready-id")
+            return gate.readiness(images, inventory, probe)
+        result, elapsed, _, _ = self.run_wait(sample)
+        self.assertEqual(elapsed, 20)
+        self.assertEqual(result["stableSeconds"], 10)
+
+    def test_ready_and_alias_identity_and_state_remain_strict(self):
+        for image_id, field, value in (("ready-id", "runtimeIdentifier", None), ("alias-id", "build", None),
+                                        ("ready-id", "state", None), ("ready-id", "state", ""), ("ready-id", "state", 1)):
+            images, inventory, probe = fixture(retired=True)
+            images[image_id][field] = value
+            with self.subTest(image_id=image_id, field=field, value=value), self.assertRaises(ValueError):
+                gate.readiness(images, inventory, probe)
 
     def run_wait(self, samples):
         now, deadlines, emitted = [0], [], []

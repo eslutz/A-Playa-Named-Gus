@@ -54,6 +54,13 @@ def readiness(images, inventory, probe=diagnostics.path_status):
                 reasons.append(f"Duplicate available runtime: {identity}")
             available[identity] = runtime
     for image_id, image in images.items():
+        if not isinstance(image, dict) or not isinstance(image.get("state"), str) or not image["state"]:
+            raise ValueError("Runtime image state is missing or malformed")
+        if image["state"] not in ("Ready", "Unusable"):
+            # Copying rows can legitimately precede runtime identity/architecture
+            # metadata. They reset stability and can never qualify as Ready.
+            reasons.append(f"Runtime image transitioning ({image['state']}): {image_id}")
+            continue
         identity = key(image, "runtimeIdentifier", "build")
         if image.get("state") == "Unusable":
             continue
@@ -91,7 +98,7 @@ def readiness(images, inventory, probe=diagnostics.path_status):
             if identity not in ready or status(image.get("mountPath")).get("isMount") is not False:
                 reasons.append(f"Cryptex-preferred alias mount not retired: {identity}")
     fingerprint = {
-        "images": sorted((identifier, image["runtimeIdentifier"], image["build"], image.get("state"), image.get("unusableSubstate"), image.get("mountPath"), image.get("runtimeBundlePath")) for identifier, image in images.items()),
+        "images": sorted((identifier, image.get("runtimeIdentifier"), image.get("build"), image.get("state"), image.get("unusableSubstate"), image.get("mountPath"), image.get("runtimeBundlePath")) for identifier, image in images.items()),
         "runtimes": sorted((identity, runtime.get("bundlePath"), runtime.get("runtimeRoot")) for identity, runtime in available.items()),
         "paths": sorted((path, value.get("exists"), value.get("isMount"), value.get("deviceID"), value.get("inode")) for path, value in paths.items()),
     }
