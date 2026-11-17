@@ -71,7 +71,7 @@ an explicit exception; local native macOS runtime and physical-device testing re
 excluded from the current validation scope. Release qualification requires local
 exact-candidate simulator evidence plus authorized native archives. Cloud workflows
 containing simulator actions must not be started. The manual Internal TestFlight
-workflow uses native macOS tests and four device archives; recheck its live actions
+workflow uses four device archives after required GitHub native macOS tests; recheck its live actions
 before each release. See `Documentation/AppStore/pipeline-policy.md`.
 
 ## OS compatibility policy

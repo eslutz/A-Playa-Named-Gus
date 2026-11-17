@@ -43,9 +43,13 @@ of current successful execution.
 ## Superseded hosted simulator configuration
 
 Earlier 13/14-job GitHub matrices and the manual **Gus Validation** single-iPhone
-workflow are superseded. **Gus Internal TestFlight** uses one required native macOS
-test action, four internal-only device archives and four distributions to Gus Internal.
-Its former iOS, tvOS and visionOS simulator test actions have been removed. Keep the
+workflow are superseded. **Gus Internal TestFlight** uses four internal-only device
+archives and four distributions to Gus Internal after all five required GitHub checks
+pass for the release inputs. GitHub's explicit-arm64 native macOS tests supply the
+native test gate; Cloud does not repeat them. Apple's Cloud test runner used an
+ambiguous Mac destination and emitted an unwaived warning, so its duplicate test
+action was removed without expanding the warning exception.
+Its former iOS, tvOS and visionOS simulator test actions have also been removed. Keep the
 workflow manual, main-only and clean, with the global architecture override intact.
 Do not start the stale Gus Validation workflow. Re-read remote actions and distribution
 groups before every authorized archive run. The Cloud pre-build hook
