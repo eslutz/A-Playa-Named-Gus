@@ -33,7 +33,7 @@ struct PosterCard: View {
                 Text(subtitle ?? " ")
                     .font(.caption)
                     .foregroundStyle(.secondary)
-                    .lineLimit(1)
+                    .lineLimit(statusItem?.isBookFormat == true ? 2 : 1)
                     .accessibilityHidden(subtitle == nil)
                 statusCaption
             }
@@ -60,7 +60,7 @@ struct PosterCard: View {
     private var statusCaption: some View {
         // Keep identical caption geometry when watched status changes, including
         // localized text and Dynamic Type. Invisible status is not announced.
-        Text("Watched")
+        Text(statusItem?.completedStatusTitle ?? String(localized: "Watched"))
             .font(.caption).foregroundStyle(.secondary)
             .lineLimit(1)
             .opacity(statusItem?.userData?.isWatched == true ? 1 : 0)
@@ -100,7 +100,7 @@ extension PosterCard {
             subtitle = String(localized: "Collection")
         } else {
             title = item.name ?? "Untitled"
-            subtitle = item.productionYear.map(String.init)
+            subtitle = item.bookBrowseSubtitle ?? item.yearText
         }
 
         self.init(

@@ -92,7 +92,7 @@ struct LibraryFilterState: Equatable {
     }
 }
 
-enum LibraryGridScope: Equatable {
+enum LibraryGridScope: Hashable {
     case library(MediaItem)
     case category(NavigationCategory)
     case photoLibrary(parentID: String?, albums: Bool)
@@ -138,10 +138,18 @@ enum LibraryGridScope: Equatable {
         }
     }
 
+    var groupsBookSeries: Bool {
+        switch self {
+        case let .library(library): library.collectionType == .books
+        case let .category(category): category == .books || category == .audiobooks
+        default: false
+        }
+    }
+
     var includeTypes: [MediaItemType]? {
         switch self {
         case .library:
-            return nil
+            return groupsBookSeries ? [.book, .audioBook] : nil
         case let .category(category):
             return category.includeTypes
         case let .photoLibrary(_, albums):
@@ -155,7 +163,7 @@ enum LibraryGridScope: Equatable {
     var isRecursive: Bool {
         switch self {
         case .library:
-            return false
+            return groupsBookSeries
         case .category, .photoLibrary, .musicLibrary, .latest:
             return true
         }
@@ -205,6 +213,10 @@ enum LibraryRequest {
 final class LibraryStore {
     private(set) var state: LoadState = .idle
     private(set) var items: [MediaItem] = []
+    private(set) var bookCatalog = BookSeriesCatalog([])
+    private(set) var bookEntries: [BookShelfEntry] = []
+    private(set) var hasCompleteBookCatalog = false
+
     private(set) var isLoadingNextPage = false
     private(set) var isRefreshing = false
     private(set) var refreshError: String?
@@ -237,6 +249,7 @@ final class LibraryStore {
     }
 
     private func invalidate() {
+        hasCompleteBookCatalog = false
         loadGeneration += 1
         pageTask?.cancel()
         isRefreshing = false
@@ -274,6 +287,7 @@ final class LibraryStore {
             state = .loading
         }
         paging.reset()
+        hasCompleteBookCatalog = false
         defer {
             if generation == loadGeneration {
                 isRefreshing = false
@@ -283,14 +297,25 @@ final class LibraryStore {
         diagnostics.record(.libraryLoadStarted)
         let loadInterval = diagnostics.beginInterval("LibraryLoad")
         do {
-            try await scanPages(replaceResults: true, generation: generation)
+            if scope.groupsBookSeries {
+                // Opening a stack can remove the launching view's task. The
+                // session/generation still owns this read for the pushed page.
+                try await Task { try await self.loadBookCatalog(generation: generation) }.value
+            } else {
+                try await scanPages(replaceResults: true, generation: generation)
+            }
             diagnostics.endInterval("LibraryLoad", loadInterval)
             diagnostics.record(.libraryLoadFinished(itemCount: items.count))
         } catch {
             diagnostics.endInterval("LibraryLoad", loadInterval)
             guard generation == loadGeneration, session.isActive else { return }
             diagnostics.record(.libraryLoadFailed)
-            if hasContent {
+            if scope.groupsBookSeries, !hasContent, !items.isEmpty, !GusError(from: error).isCancellation {
+                bookCatalog = BookSeriesCatalog(items)
+                bookEntries = bookCatalog.entries(visible: items, sortByName: filter.sort == .name)
+                state = .loaded
+                refreshError = GusError(from: error).localizedDescription
+            } else if hasContent {
                 items = previousItems
                 paging = previousPaging
                 let failure = GusError(from: error)
@@ -313,6 +338,8 @@ final class LibraryStore {
         self.filter = filter
         onFilterChanged?(filter)
         items = []
+        bookCatalog = BookSeriesCatalog([])
+        bookEntries = []
         await load(superseding: true)
     }
 
@@ -343,6 +370,73 @@ final class LibraryStore {
                 pageError = failure.localizedDescription
             }
         }
+    }
+
+    /// An inline series can span pages. Keep a complete unfiltered catalog for
+    /// navigation and editing even when the visible shelf has a status filter.
+    private func loadBookCatalog(generation: Int) async throws {
+        let selection = filter
+        let savePartial = items.isEmpty
+        var received = 0
+        defer {
+            if generation == loadGeneration {
+                isLoadingNextPage = false
+            }
+        }
+        var queryFilter = selection
+        if queryFilter.sort == .random {
+            queryFilter.sort = .name
+        }
+        let visible = try await bookPages(filter: queryFilter, generation: generation) { page in
+            guard savePartial, generation == self.loadGeneration else { return }
+            let additions = page.dropFirst(received).filter(self.admits)
+            received = page.count
+            let needsPreview = self.items.isEmpty
+            self.items.append(contentsOf: additions)
+            if needsPreview, !self.items.isEmpty {
+                self.bookCatalog = BookSeriesCatalog(self.items)
+                self.bookEntries = self.bookCatalog.entries(visible: self.items, sortByName: selection.sort == .name)
+                self.isLoadingNextPage = true
+                self.state = .loaded
+            }
+        }
+        let catalog = selection.status == .all ? visible : try await bookPages(filter: .default, generation: generation)
+        try Task.checkCancellation()
+        guard generation == loadGeneration, session.isActive else { throw CancellationError() }
+        bookCatalog = BookSeriesCatalog(catalog.filter(admits))
+        if selection.status == .all {
+            items = bookCatalog.books
+        } else {
+            let byID = Dictionary(uniqueKeysWithValues: bookCatalog.books.compactMap { item in item.id.map { ($0, item) } })
+            items = visible.compactMap { item in item.id.flatMap { byID[$0] } }
+        }
+        bookEntries = bookCatalog.entries(visible: items, sortByName: selection.sort == .name)
+        if selection.sort == .random {
+            bookEntries.shuffle()
+        }
+        state = .loaded
+        hasCompleteBookCatalog = true
+        index(items)
+    }
+
+    private func bookPages(filter: LibraryFilterState, generation: Int, didLoadPage: (([MediaItem]) -> Void)? = nil) async throws -> [MediaItem] {
+        var count = 0
+        let catalog = try await MediaPageLoader.collect(didLoadPage: didLoadPage) { offset, limit in
+            try Task.checkCancellation()
+            guard generation == self.loadGeneration, self.session.isActive else { throw CancellationError() }
+            var query = LibraryRequest.parameters(scope: self.scope, startIndex: offset, limit: limit, filter: filter)
+            query.isBookCatalog = true
+            let task = Task { try await self.session.mediaProvider.items(query: query) }
+            self.pageTask = task
+            let page = try await withTaskCancellationHandler { try await task.value } onCancel: { task.cancel() }
+            guard generation == self.loadGeneration, self.session.isActive else { throw CancellationError() }
+            count += page.items.count
+            return page
+        }
+        guard catalog.count == count, catalog.allSatisfy({ $0.id != nil }) else {
+            throw GusError.server(String(localized: "The server returned an incomplete collection. Try again."))
+        }
+        return catalog
     }
 
     private func scanPages(replaceResults: Bool, generation: Int) async throws {
@@ -389,6 +483,10 @@ final class LibraryStore {
             paging.appendResults(receivedCount: page.items.count, totalRecordCount: total)
         }
         state = .loaded
+        index(admitted)
+    }
+
+    private func index(_ admitted: [MediaItem]) {
         let serverID = session.server.id
         let userID = session.user.id
         Task.detached(priority: .background) {

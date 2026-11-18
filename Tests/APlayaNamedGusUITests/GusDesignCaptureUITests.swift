@@ -918,13 +918,40 @@
 
     @MainActor
     final class GusBookDetailUITests: XCTestCase {
+        func testAudiobookSynopsisAtLargestTextSize() throws {
+            continueAfterFailure = false
+            let app = XCUIApplication()
+            app.launchEnvironment["GUS_DEMO_URL"] = "http://127.0.0.1:5058"
+            app.launchArguments = [
+                "--gus-skip-session-restore", "--gus-disable-cloud-sync", "--gus-demo-server",
+                "--gus-route", "item/42000000000000000000000000000002",
+                "-dev.ericslutz.gus.contentRatingLimit", "off",
+                "-UIPreferredContentSizeCategoryName", UIContentSizeCategory.accessibilityExtraExtraExtraLarge.rawValue,
+            ]
+            app.launch()
+            defer { app.terminate() }
+            let byline = app.staticTexts["Narrated by Fixture Reader"].firstMatch
+            XCTAssertTrue(byline.waitForExistence(timeout: 25))
+            let showMore = app.buttons["Detail.fullSynopsis"].firstMatch
+            for _ in 0 ..< 8 where !showMore.isHittable {
+                app.swipeUp()
+            }
+            XCTAssertTrue(showMore.isHittable)
+            showMore.tap()
+            let heading = app.staticTexts["Synopsis.heading"].firstMatch
+            XCTAssertTrue(heading.waitForExistence(timeout: 10))
+            XCTAssertEqual(heading.label, "Fixture Audiobook")
+            XCTAssertTrue(app.staticTexts["Synopsis.body"].firstMatch.label.contains("A second paragraph."))
+            try app.performAccessibilityAudit(for: [.sufficientElementDescription])
+        }
+
         func testMixedLibraryBookAndAudiobookDetails() {
             continueAfterFailure = false
             let app = XCUIApplication()
             defer { app.terminate() }
-            for (index, title, action, credit) in [
-                (1, "Fixture Printed Book", "Continue Reading", "Illustrator"),
-                (2, "Fixture Audiobook", "Resume", "Narrator"),
+            for (index, title, action) in [
+                (1, "Fixture Printed Book", "Continue Reading"),
+                (2, "Fixture Audiobook", "Resume"),
             ] {
                 app.terminate()
                 app.launchEnvironment["GUS_DEMO_URL"] = "http://127.0.0.1:5058"
@@ -944,25 +971,214 @@
                 XCTAssertFalse(app.staticTexts["Cast & Crew"].exists)
                 XCTAssertFalse(app.staticTexts["Fixture Studio"].exists)
 
+                XCTAssertFalse(app.staticTexts["Credits"].exists)
+                XCTAssertTrue(app.staticTexts["By Fixture Author"].exists)
+                if index == 2 {
+                    XCTAssertTrue(app.staticTexts["Narrated by Fixture Reader"].exists)
+                    XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@ AND label CONTAINS %@", "Released 2025", "Duration")).firstMatch.exists)
+                } else {
+                    XCTAssertTrue(app.staticTexts["Published 2024"].exists)
+                    XCTAssertFalse(app.buttons["Share"].exists)
+                }
+
+                let menu = app.buttons["Detail.actions"].firstMatch
+                menu.tap()
+                XCTAssertTrue(app.buttons[index == 1 ? "Mark as Read" : "Mark as Finished"].firstMatch.exists)
+                XCTAssertEqual(app.buttons["Book.openExternally"].exists, index == 1)
+                app.coordinate(withNormalizedOffset: CGVector(dx: 0.1, dy: 0.8)).tap()
+
+                let preview = app.staticTexts["Detail.heroOverview"].firstMatch
+                XCTAssertFalse(preview.label.contains(#"\n"#))
+                let showMore = app.buttons["Detail.fullSynopsis"].firstMatch
+                for _ in 0 ..< 4 where !showMore.isHittable {
+                    app.swipeUp()
+                }
+                showMore.tap()
+                XCTAssertTrue(app.staticTexts["Synopsis.heading"].firstMatch.waitForExistence(timeout: 5))
+                let end = index == 1 ? "Second printed paragraph." : "A second paragraph."
+                let fullText = app.staticTexts["Synopsis.body"].firstMatch
+                XCTAssertTrue(fullText.label.contains("\n\n" + end))
+                app.buttons["Synopsis.done"].tap()
+
                 let genre = app.staticTexts[index == 1 ? "Fantasy" : "Movie, TV & Video Game Tie-Ins"].firstMatch
                 for _ in 0 ..< 5 where !genre.exists {
                     app.swipeUp()
                 }
                 XCTAssertTrue(genre.exists)
                 XCTAssertTrue(app.staticTexts["Adventure"].exists)
-                let role = app.staticTexts[credit].firstMatch
-                for _ in 0 ..< 4 where !role.exists {
-                    app.swipeUp()
-                }
-                XCTAssertTrue(role.exists)
-                let preview = app.staticTexts["Detail.heroOverview"].firstMatch
-                XCTAssertFalse(preview.label.contains(#"\n"#))
-                XCTAssertTrue(preview.label.contains(index == 1 ? "Second printed paragraph." : "A second paragraph."))
             }
         }
 
-        func testFormatsBrowseTheSameMixedLibrarySeparately() throws {
+        private func openShelf(_ destination: String, in app: XCUIApplication) {
+            if UIDevice.current.userInterfaceIdiom == .pad {
+                let show = app.buttons["Navigation.showSidebar"]
+                if show.isHittable {
+                    show.tap()
+                }
+                let row = app.descendants(matching: .any).matching(NSPredicate(
+                    format: "identifier BEGINSWITH %@ AND label == %@", "Navigation.section.", destination
+                )).firstMatch
+                let sidebar = app.collectionViews.firstMatch
+                XCTAssertTrue(sidebar.waitForExistence(timeout: 25))
+                for _ in 0 ..< 5 where !row.isHittable {
+                    sidebar.swipeUp()
+                }
+                XCTAssertTrue(row.isHittable)
+                row.tap()
+                XCTAssertTrue(app.navigationBars[destination].waitForExistence(timeout: 10))
+                return
+            }
+            let home = app.tabBars.buttons["Home"].firstMatch
+            XCTAssertTrue(home.waitForExistence(timeout: 25))
+            home.tap()
+            let tab = app.tabBars.buttons[destination].firstMatch
+            if tab.isHittable {
+                tab.tap()
+            } else {
+                let more = app.tabBars.buttons["More"].firstMatch
+                XCTAssertTrue(more.waitForExistence(timeout: 25))
+                more.tap()
+                let entry = app.buttons[destination].firstMatch
+                XCTAssertTrue(entry.waitForExistence(timeout: 15))
+                entry.tap()
+            }
+            XCTAssertTrue(app.navigationBars[destination].waitForExistence(timeout: 10))
+        }
+
+        func testEditBookSeriesAndReviewPartialSave() throws {
             guard UIDevice.current.userInterfaceIdiom == .phone else { throw XCTSkip("Uses the compact navigation tabs") }
+            continueAfterFailure = false
+            let app = XCUIApplication()
+            app.launchEnvironment["GUS_DEMO_URL"] = "http://127.0.0.1:5059"
+            app.launchArguments = [
+                "--gus-skip-session-restore", "--gus-disable-cloud-sync", "--gus-demo-server",
+                "-dev.ericslutz.gus.contentRatingLimit", "off",
+            ]
+            app.launch()
+            defer { app.terminate() }
+            openShelf("Books", in: app)
+
+            let new = app.buttons["New Series"].firstMatch
+            XCTAssertTrue(new.waitForExistence(timeout: 15))
+            new.tap()
+            let bookID = "42000000000000000000000000000001"
+            let member = app.buttons["BookSeries.member." + bookID].firstMatch
+            XCTAssertTrue(member.waitForExistence(timeout: 10))
+            member.tap()
+            XCTAssertTrue(member.isSelected)
+            let name = app.textFields["Name"].firstMatch
+            name.tap()
+            name.typeText("Created Series")
+            XCTAssertEqual(name.value as? String, "Created Series")
+            let review = app.buttons["Review Changes"].firstMatch
+            XCTAssertTrue(review.isEnabled)
+            review.tap()
+            let save = app.buttons["Save"].firstMatch
+            XCTAssertTrue(save.waitForExistence(timeout: 8))
+            XCTAssertTrue(save.isEnabled)
+            let preview = app.descendants(matching: .any)["BookSeries.review." + bookID].firstMatch
+            XCTAssertTrue(preview.waitForExistence(timeout: 5))
+            XCTAssertTrue(preview.label.contains("Fixture Printed Book"))
+            XCTAssertTrue(preview.label.contains("Created Series"))
+            save.tap()
+            let created = app.buttons["Created Series"].firstMatch
+            XCTAssertTrue(created.waitForExistence(timeout: 20))
+
+            app.buttons["Fixture Saga"].firstMatch.tap()
+            let edit = app.buttons["Edit Series"].firstMatch
+            XCTAssertTrue(edit.waitForExistence(timeout: 12))
+            edit.tap()
+            name.tap()
+            name.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: "Fixture Saga".count) + "Interrupted Series")
+            XCTAssertEqual(name.value as? String, "Interrupted Series")
+            XCTAssertTrue(review.isEnabled)
+            review.tap()
+            XCTAssertTrue(save.waitForExistence(timeout: 8))
+            save.tap()
+
+            let confirmed = app.staticTexts.matching(NSPredicate(format: "identifier BEGINSWITH %@", "BookSeries.confirmed.")).firstMatch
+            let unconfirmed = app.staticTexts.matching(NSPredicate(format: "identifier BEGINSWITH %@", "BookSeries.unconfirmed.")).firstMatch
+            XCTAssertTrue(confirmed.waitForExistence(timeout: 20))
+            XCTAssertTrue(unconfirmed.exists)
+            XCTAssertEqual(Set([confirmed.label, unconfirmed.label]), ["First Volume", "Second Volume"])
+            app.buttons["Done"].firstMatch.tap()
+            XCTAssertTrue(app.navigationBars["Fixture Saga"].waitForExistence(timeout: 10))
+        }
+
+        func testCustomCollectionAcrossBookShelves() {
+            continueAfterFailure = false
+            let app = XCUIApplication()
+            app.launchEnvironment["GUS_DEMO_URL"] = "http://127.0.0.1:5059"
+            app.launchArguments = [
+                "--gus-skip-session-restore", "--gus-disable-cloud-sync", "--gus-demo-server",
+                "-dev.ericslutz.gus.contentRatingLimit", "off",
+            ]
+            app.launch()
+            defer { app.terminate() }
+            openShelf("Books", in: app)
+            let book = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "Fixture Printed Book")).firstMatch
+            XCTAssertTrue(book.waitForExistence(timeout: 12))
+            book.press(forDuration: 1)
+            app.buttons["Add to Collection"].firstMatch.tap()
+            let name = "Reading Together"
+            let field = app.textFields["Name"].firstMatch
+            XCTAssertTrue(field.waitForExistence(timeout: 10))
+            field.tap()
+            field.typeText(name)
+            XCTAssertEqual(field.value as? String, name)
+            let hideKeyboard = app.keyboards.buttons["Hide keyboard"].firstMatch
+            if hideKeyboard.isHittable {
+                hideKeyboard.tap()
+                XCTAssertTrue(app.keyboards.firstMatch.waitForNonExistence(timeout: 5))
+            }
+            let create = app.buttons["Create and Add"].firstMatch
+            XCTAssertTrue(create.isEnabled)
+            create.tap()
+            XCTAssertTrue(field.waitForNonExistence(timeout: 10))
+
+            let link = app.buttons["Library.collections"].firstMatch
+            XCTAssertTrue(link.waitForExistence(timeout: 10))
+            link.tap()
+            let collection = app.staticTexts[name].firstMatch
+            XCTAssertTrue(collection.waitForExistence(timeout: 10))
+            XCTAssertFalse(app.staticTexts["Empty Collection"].firstMatch.exists)
+            collection.tap()
+            XCTAssertTrue(app.staticTexts["Fixture Printed Book"].firstMatch.waitForExistence(timeout: 10))
+            app.navigationBars.buttons["More"].firstMatch.tap()
+            app.buttons["Add Titles"].firstMatch.tap()
+            app.buttons["Audiobooks"].firstMatch.tap()
+            let search = app.searchFields.firstMatch
+            XCTAssertTrue(search.waitForExistence(timeout: 10))
+            search.tap()
+            search.typeText("Fixture Audiobook")
+            let audio = app.buttons["Fixture Audiobook"].firstMatch
+            XCTAssertTrue(audio.waitForExistence(timeout: 12))
+            audio.tap()
+            let add = app.navigationBars.buttons["Add"].firstMatch
+            if !add.isHittable {
+                let closeSearch = app.buttons["close"].firstMatch
+                XCTAssertTrue(closeSearch.waitForExistence(timeout: 5))
+                closeSearch.tap()
+            }
+            add.tap()
+            XCTAssertTrue(app.staticTexts["Fixture Audiobook"].firstMatch.waitForExistence(timeout: 15))
+            openShelf("Audiobooks", in: app)
+            link.tap()
+            XCTAssertTrue(collection.waitForExistence(timeout: 10))
+            XCTAssertFalse(app.staticTexts["Empty Collection"].firstMatch.exists)
+            app.buttons["All"].firstMatch.tap()
+            XCTAssertTrue(app.staticTexts["Empty Collection"].firstMatch.waitForExistence(timeout: 10))
+        }
+
+        func testFormatsBrowseTheSameMixedLibrarySeparately() {
+            if UIDevice.current.userInterfaceIdiom == .pad {
+                XCUIDevice.shared.orientation = .landscapeLeft
+            }
+            defer {
+                if UIDevice.current.userInterfaceIdiom == .pad {
+                    XCUIDevice.shared.orientation = .portrait
+                }
+            }
             continueAfterFailure = false
             let app = XCUIApplication()
             app.launchEnvironment["GUS_DEMO_URL"] = "http://127.0.0.1:5058"
@@ -976,24 +1192,29 @@
                 ("Books", "Fixture Printed Book", "Fixture Audiobook"),
                 ("Audiobooks", "Fixture Audiobook", "Fixture Printed Book"),
             ] {
-                let home = app.tabBars.buttons["Home"].firstMatch
-                XCTAssertTrue(home.waitForExistence(timeout: 25))
-                home.tap()
-                let tab = app.tabBars.buttons[destination].firstMatch
-                if tab.isHittable {
-                    tab.tap()
-                } else {
-                    let more = app.tabBars.buttons["More"].firstMatch
-                    XCTAssertTrue(more.waitForExistence(timeout: 25))
-                    more.tap()
-                    let entry = app.buttons[destination].firstMatch
-                    XCTAssertTrue(entry.waitForExistence(timeout: 15))
-                    entry.tap()
-                }
-                XCTAssertTrue(app.navigationBars[destination].waitForExistence(timeout: 10))
+                openShelf(destination, in: app)
                 let card = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", title)).firstMatch
                 XCTAssertTrue(card.waitForExistence(timeout: 12))
                 XCTAssertFalse(app.buttons.matching(NSPredicate(format: "label CONTAINS %@", other)).firstMatch.exists)
+                XCTAssertTrue(card.label.contains("Fixture Author"))
+                XCTAssertTrue(card.label.contains(destination == "Books" ? "2024" : "2025"))
+
+                let stack = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "Fixture Saga")).firstMatch
+                XCTAssertTrue(stack.waitForExistence(timeout: 10))
+                if destination == "Books" {
+                    app.buttons["Library.displayMode"].tap()
+                    XCTAssertTrue(card.label.contains("Fixture Author"))
+                    XCTAssertTrue(card.label.contains("2024"))
+                    XCTAssertFalse(app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "First Volume")).firstMatch.exists)
+                }
+                stack.tap()
+                let member = destination == "Books" ? "First Volume" : "Spoken Volume"
+                let memberButton = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", member)).firstMatch
+                XCTAssertTrue(memberButton.waitForExistence(timeout: 10))
+                XCTAssertTrue(memberButton.label.contains("Fixture Author"))
+                memberButton.tap()
+                XCTAssertTrue(app.staticTexts[member].firstMatch.waitForExistence(timeout: 10))
+                XCTAssertFalse(app.buttons["Detail.fullSynopsis"].exists)
             }
         }
     }

@@ -1,16 +1,21 @@
 #!/usr/bin/env python3
 """Loopback Jellyfin fixture for GusBookDetailUITests. No external requests."""
 
+import argparse
 import json
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlsplit
+from uuid import uuid4
 
 USER = {"Id": "11111111111111111111111111111111", "Name": "Book Fixture"}
 SERVER = "77777777777777777777777777777777"
 BOOK = {
     "Id": "42000000000000000000000000000001", "Type": "Book",
     "Name": "Fixture Printed Book", "ProductionYear": 2024,
-    "Overview": "First printed paragraph.\\n\\nSecond printed paragraph.",
+    "Overview": ("First printed paragraph. The station librarian finds a book due back a century earlier. "
+                 "Its notes send her through the closed wing, where every shelf holds a different account "
+                 "of the same voyage. She must discover which account the missing reader wanted her to find."
+                 "\\n\\nSecond printed paragraph."),
     "RunTimeTicks": 10000000, "UserData": {"PlaybackPositionTicks": 2500000, "PlayedPercentage": 25},
     "Genres": ["Fantasy", "Adventure"],
     "Studios": [{"Name": "Fixture Studio"}],
@@ -19,17 +24,34 @@ BOOK = {
 AUDIOBOOK = {
     "Id": "42000000000000000000000000000002", "Type": "AudioBook",
     "Name": "Fixture Audiobook", "ProductionYear": 2025,
-    "Overview": "A spoken opening.\\n\\nA second paragraph.",
+    "Overview": ("A spoken opening. A radio operator hears a familiar voice on a silent channel. "
+                 "As she follows the signal along the coast, the story unfolds through recordings, "
+                 "letters and fragments of the last broadcast from the island lighthouse."
+                 "\\n\\nA second paragraph."),
     "RunTimeTicks": 72000000000, "UserData": {"PlaybackPositionTicks": 18000000000, "PlayedPercentage": 25},
     "Genres": ["Movie, TV & Video Game Tie-Ins, Adventure, Contemporary Fantasy"],
     "People": [{"Name": "Fixture Author", "Type": "Author"}, {"Name": "Fixture Reader", "Type": "Narrator"}],
 }
-ITEMS = [BOOK, AUDIOBOOK]
+
+
+def volume(template, number, title, index):
+    return {**template, "Id": f"4200000000000000000000000000{number:04d}",
+            "Name": title, "SeriesName": "Fixture Saga", "IndexNumber": index,
+            "Overview": "", "UserData": {"Played": False}}
+
+
+ITEMS = [BOOK, AUDIOBOOK, volume(BOOK, 3, "Second Volume", 2),
+         volume(BOOK, 4, "First Volume", 1), volume(AUDIOBOOK, 5, "Spoken Volume", 1)]
 
 
 class Handler(BaseHTTPRequestHandler):
+    user = USER
+    server_id = SERVER
+    version = "10.11.11"
+    items = ITEMS
+
     def respond(self, response, status=200):
-        data = json.dumps(response).encode()
+        data = b"" if status == 204 else json.dumps(response).encode()
         self.send_response(status)
         self.send_header("Content-Type", "application/json")
         self.send_header("Content-Length", str(len(data)))
@@ -39,7 +61,7 @@ class Handler(BaseHTTPRequestHandler):
     def do_POST(self):
         if self.path == "/Users/AuthenticateByName":
             self.rfile.read(int(self.headers.get("Content-Length", 0)))
-            self.respond({"User": USER, "AccessToken": "gus-book-fixture", "ServerId": SERVER})
+            self.respond({"User": self.user, "AccessToken": "gus-book-fixture", "ServerId": self.server_id})
         else:
             self.respond({}, 404)
 
@@ -50,25 +72,100 @@ class Handler(BaseHTTPRequestHandler):
         if path == "/health":
             self.respond({"fixture": "gus-book-details"})
         elif path == "/System/Info/Public":
-            self.respond({"Id": SERVER, "ServerName": "Book Fixture", "Version": "10.11.11"})
-        elif path in ("/Users/Me", "/Users/" + USER["Id"]):
-            self.respond(USER)
+            self.respond({"Id": self.server_id, "ServerName": "Book Fixture", "Version": self.version})
+        elif path in ("/Users/Me", "/Users/" + self.user["Id"]):
+            self.respond(self.user)
         elif path == "/UserViews" or path.endswith("/Views"):
             self.respond({"Items": [{"Id": "42000000000000000000000000000000", "Name": "Mixed Library", "Type": "CollectionFolder", "CollectionType": "books"}], "TotalRecordCount": 1})
         elif path.endswith("/Latest"):
-            self.respond(ITEMS)
+            self.respond(self.items)
         elif path.endswith("/SpecialFeatures"):
             self.respond([])
         elif path.endswith(("/Items", "/Resume", "/NextUp", "/Similar", "/AdditionalParts")):
             kinds = [kind for value in query.get("includeitemtypes", []) for kind in value.split(",")]
-            items = [item for item in ITEMS if item["Type"] in kinds]
+            items = [item for item in self.items if item["Type"] in kinds]
+            if not kinds and query.get("parentid") == ["42000000000000000000000000000000"]:
+                items = self.items
             limit = int(query.get("limit", ["60"])[0])
             offset = int(query.get("startindex", ["0"])[0])
             self.respond({"Items": items[offset:offset + limit], "TotalRecordCount": len(items), "StartIndex": offset})
         else:
-            item = next((item for item in ITEMS if path.endswith("/Items/" + item["Id"])), None)
+            item = next((item for item in self.items if path.endswith("/Items/" + item["Id"])), None)
             self.respond(item or {}, 200 if item else 404)
 
 
+class AdminHandler(Handler):
+    """Disposable series-edit account. Each sign-in begins with the original catalog."""
+    user = {**USER, "Policy": {"IsAdministrator": True, "AuthenticationProviderId": "fixture",
+                               "PasswordResetProviderId": "fixture"}}
+    server_id = "88888888888888888888888888888888"
+    version = "12.4.0"
+    collections = {}
+
+    def do_GET(self):
+        url = urlsplit(self.path)
+        query = {k.lower(): v for k, v in parse_qs(url.query).items()}
+        collection_id = url.path.rsplit("/", 1)[-1].replace("-", "")
+        if "/Items/" in url.path and collection_id in self.collections:
+            return self.respond(self.collections[collection_id][0])
+        if url.path.endswith("/Items"):
+            parent = query.get("parentid", [""])[0].replace("-", "")
+            if "BoxSet" in query.get("includeitemtypes", []):
+                items = [header for header, _ in self.collections.values()]
+            elif parent in self.collections:
+                members = self.collections[parent][1]
+                items = [item for item in self.items if item["Id"] in members]
+            else:
+                return super().do_GET()
+            offset = int(query.get("startindex", ["0"])[0])
+            limit = int(query.get("limit", ["60"])[0])
+            return self.respond({"Items": items[offset:offset + limit], "TotalRecordCount": len(items)})
+        super().do_GET()
+
+    def do_POST(self):
+        url = urlsplit(self.path)
+        path = url.path
+        if path == "/Users/AuthenticateByName":
+            type(self).items = [dict(item) for item in ITEMS]
+            empty_id = "44000000000000000000000000000001"
+            type(self).collections = {empty_id: ({"Id": empty_id, "Type": "BoxSet",
+                                                  "Name": "Empty Collection", "CanDelete": True}, set())}
+            return super().do_POST()
+        if path == "/Collections" or path.startswith("/Collections/"):
+            query = {k.lower(): v for k, v in parse_qs(url.query).items()}
+            members = {i.replace("-", "") for ids in query.get("ids", []) for i in ids.split(",") if i}
+            if not members.issubset({item["Id"] for item in self.items}):
+                return self.respond({}, 400)
+            if path == "/Collections":
+                collection_id = uuid4().hex
+                header = {"Id": collection_id, "Type": "BoxSet", "Name": query["name"][0], "CanDelete": True}
+                self.collections[collection_id] = (header, members)
+                return self.respond({"Id": collection_id})
+            parts = path.strip("/").split("/")
+            if len(parts) != 3 or parts[2] != "Items":
+                return self.respond({}, 404)
+            collection = self.collections.get(parts[1].replace("-", ""))
+            if collection is None:
+                return self.respond({}, 404)
+            collection[1].update(members)
+            return self.respond(None, 204)
+        book = next((item for item in self.items if path == "/Items/" + item["Id"]
+                     and item["Type"] == "Book"), None)
+        if book is None:
+            return self.respond({}, 404)
+        update = json.loads(self.rfile.read(int(self.headers["Content-Length"])))
+        if "SeriesName" not in update or update != {**book, "SeriesName": update["SeriesName"]}:
+            return self.respond({}, 400)
+        # Exercise a server that accepts the second edit but fails to persist it.
+        interrupted = "Interrupted Series"
+        if update["SeriesName"] != interrupted or not any(item.get("SeriesName") == interrupted for item in self.items):
+            book["SeriesName"] = update["SeriesName"]
+        self.respond(None, 204)
+
+
 if __name__ == "__main__":
-    ThreadingHTTPServer(("127.0.0.1", 5058), Handler).serve_forever()
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--series-editor", action="store_true", help="Serve the editable 12.4 fixture on port 5059")
+    args = parser.parse_args()
+    port, handler = (5059, AdminHandler) if args.series_editor else (5058, Handler)
+    ThreadingHTTPServer(("127.0.0.1", port), handler).serve_forever()

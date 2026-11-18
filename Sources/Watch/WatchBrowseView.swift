@@ -159,8 +159,8 @@ struct WatchItemRow: View {
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
-                } else if let year = item.yearText {
-                    Text(year)
+                } else if let subtitle = item.bookBrowseSubtitle ?? item.yearText {
+                    Text(subtitle)
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                 }

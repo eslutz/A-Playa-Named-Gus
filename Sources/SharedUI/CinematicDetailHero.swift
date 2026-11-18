@@ -54,21 +54,25 @@ struct CinematicDetailHero<Accessory: View>: View {
 
             VStack(alignment: .leading, spacing: 12) {
                 Text(item.displayTitle).font(.largeTitle.bold()).accessibilityAddTraits(.isHeader)
-                bookCredit("Author")
-                if item.type == .audioBook {
-                    bookCredit("Narrator")
-                }
-                HStack {
-                    if let year = item.yearText {
-                        Text(year)
+                VStack(alignment: .leading, spacing: 4) {
+                    if let authors = item.bookAuthorText {
+                        Text("By \(authors)")
                     }
-                    if item.type == .audioBook, let runtime = item.runtimeText {
-                        Text(runtime)
+                    if item.type == .audioBook, !item.bookNarratorNames.isEmpty {
+                        Text("Narrated by \(item.bookNarratorNames.formatted(.list(type: .and)))")
+                    }
+                    if let publicationDetails {
+                        Text(publicationDetails)
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
                     }
                 }
-                .foregroundStyle(.secondary)
                 if let overview = item.overview {
-                    Text(overview).lineLimit(4).accessibilityIdentifier("Detail.heroOverview")
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(overview).lineLimit(4).accessibilityIdentifier("Detail.heroOverview")
+                        FullSynopsisButton(title: item.displayTitle, overview: overview)
+                            .gusTVDetailActionFocus(id: "synopsis", item: item)
+                    }
                 }
                 actionStack
             }
@@ -81,13 +85,15 @@ struct CinematicDetailHero<Accessory: View>: View {
         .tvFocusSection()
     }
 
-    @ViewBuilder private func bookCredit(_ role: String.LocalizationValue) -> some View {
-        let label = String(localized: role)
-        let names = item.people.filter { BookDetailMetadata.credit(for: $0) == label }
-            .compactMap { $0.name?.trimmedNilIfEmpty }
-        if !names.isEmpty {
-            LabeledContent(label, value: names.formatted(.list(type: .and)))
+    private var publicationDetails: String? {
+        let year = item.yearText.map { year in
+            item.type == .book ? String(localized: "Published \(year)") : String(localized: "Released \(year)")
         }
+        let duration = item.type == .audioBook ? item.runtimeText.map { String(localized: "Duration \($0)") } : nil
+        if let year, let duration {
+            return String(localized: "\(year) · \(duration)")
+        }
+        return year ?? duration
     }
 
     #if os(iOS)

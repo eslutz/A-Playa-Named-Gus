@@ -157,6 +157,47 @@ final class GusAuthenticatedUITests: XCTestCase {
         }
     #endif
 
+    #if os(tvOS) || os(visionOS)
+        /// Uses the same loopback book fixture as the iPhone detail regressions.
+        func testBookFullSynopsis() throws {
+            continueAfterFailure = false
+            let app = XCUIApplication()
+            app.launchEnvironment["GUS_DEMO_URL"] = "http://127.0.0.1:5058"
+            app.launchArguments = [
+                "--gus-demo-server",
+                "--gus-skip-session-restore",
+                "--gus-disable-cloud-sync",
+                "--gus-route",
+                "item/42000000000000000000000000000002",
+            ]
+            app.launch()
+            XCTAssertTrue(app.staticTexts["By Fixture Author"].firstMatch.waitForExistence(timeout: 25))
+            XCTAssertTrue(app.staticTexts["Narrated by Fixture Reader"].firstMatch.exists)
+            XCTAssertFalse(app.staticTexts["Credits"].exists)
+            let showMore = app.buttons["Detail.fullSynopsis"].firstMatch
+            #if os(tvOS)
+                try focusTV(app, identifier: "Detail.fullSynopsis")
+                XCUIRemote.shared.press(.select)
+            #else
+                showMore.tap()
+            #endif
+            let heading = app.staticTexts["Synopsis.heading"].firstMatch
+            XCTAssertTrue(heading.waitForExistence(timeout: 10))
+            XCTAssertEqual(heading.label, "Fixture Audiobook")
+            let synopsis = app.staticTexts["Synopsis.body"].firstMatch
+            XCTAssertTrue(synopsis.label.contains("\n\nA second paragraph."))
+            capture(app, "book-full-synopsis")
+            #if os(tvOS)
+                XCUIRemote.shared.press(.menu)
+            #else
+                app.buttons["Synopsis.done"].tap()
+            #endif
+            XCTAssertTrue(showMore.waitForExistence(timeout: 5))
+            XCTAssertTrue(heading.waitForNonExistence(timeout: 5))
+            capture(app, "book-details")
+        }
+    #endif
+
     func testLoadedDetailLayouts() throws {
         try prepare()
         defer { finish() }
@@ -165,7 +206,7 @@ final class GusAuthenticatedUITests: XCTestCase {
         #elseif os(tvOS)
             let details = [("Movie", "Play"), ("MusicAlbum", "Play")]
         #else
-            let details = [("Movie", "Play"), ("MusicAlbum", "Play"), ("Book", "Share")]
+            let details = [("Movie", "Play"), ("MusicAlbum", "Play"), ("Book", "Detail.actions")]
         #endif
         for (type, action) in details {
             let app = try launch("item/" + required(type))

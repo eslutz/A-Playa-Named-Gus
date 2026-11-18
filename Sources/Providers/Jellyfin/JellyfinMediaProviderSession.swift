@@ -10,6 +10,8 @@ final class JellyfinMediaProviderSession: MediaProviderSession {
     private let userID: String
     private let imageBuilder: ImageURLBuilder
     private let streamBuilder: StreamURLBuilder
+    private var bookSeriesEditingEnabled = false
+    private var editingBookIDs = Set<UUID>()
 
     init(client: JellyfinClient, userID: String) {
         self.client = client
@@ -99,7 +101,7 @@ final class JellyfinMediaProviderSession: MediaProviderSession {
             searchTerm: query.searchTerm,
             sortOrder: sortOrder(for: query.sort),
             parentID: query.parentID,
-            fields: Self.playbackMetadataFields,
+            fields: query.isBookCatalog ? Self.metadataFields : Self.playbackMetadataFields,
             includeItemTypes: includeItemKinds(for: query),
             filters: filters(for: query.statusFilter),
             sortBy: sortBy(for: query.sort),
@@ -635,6 +637,9 @@ final class JellyfinMediaProviderSession: MediaProviderSession {
     private func collectionQuery(parentID: String?, startIndex: Int, limit: Int) async throws -> MediaItemPage {
         let parameters = Paths.GetItemsParameters(userID: userID, startIndex: startIndex, limit: limit, isRecursive: parentID == nil, parentID: parentID, fields: parentID == nil ? Self.metadataFields : Self.playbackMetadataFields, includeItemTypes: parentID == nil ? [.boxSet] : nil, sortBy: parentID == nil ? [.sortName] : nil, enableUserData: true, enableTotalRecordCount: true, enableImages: true)
         let page = try await NetworkRetryPolicy.idempotent.run { try await client.browse(Paths.getItems(parameters: parameters)) }.value
+        guard page.items != nil || page.totalRecordCount == 0 else {
+            throw GusError.server(String(localized: "The server returned an incomplete collection. Try again."))
+        }
         return MediaItemPage(items: JellyfinMediaItemMapper.mediaItems(from: page.items ?? []), totalRecordCount: page.totalRecordCount)
     }
 
@@ -648,7 +653,11 @@ final class JellyfinMediaProviderSession: MediaProviderSession {
     func createCollection(name: String, itemIDs: [String]) async throws -> String {
         do {
             let result = try await client.send(Paths.createCollection(parameters: .init(name: name, ids: itemIDs))).value
-            guard let id = result.id else { throw GusError.notFound }
+            // The server may already have created the collection. An unusable
+            // response requires readback and review before another creation.
+            guard let id = result.id, ServerMediaListID.uuid(id) != nil else {
+                throw DecodingError.dataCorrupted(.init(codingPath: [], debugDescription: "Missing or invalid created collection ID"))
+            }
             return id
         } catch { throw collectionMutationError(error) }
     }
@@ -714,6 +723,105 @@ final class JellyfinMediaProviderSession: MediaProviderSession {
             throw GusError.server(String(localized: "The server returned an invalid list identifier.", comment: "Invalid native media list identifier"))
         }
         return id
+    }
+
+    // MARK: - Book series metadata
+
+    func canEditBookSeries() async throws -> Bool {
+        // 10.x accepts an item update but ignores SeriesName. Verify support on
+        // each editor opening/save so a downgrade or role change takes effect.
+        do {
+            let info = try await client.send(Paths.getPublicSystemInfo).value
+            guard let version = info.version?.split(separator: ".", omittingEmptySubsequences: false),
+                  version.count >= 2, version.first == "12",
+                  version.allSatisfy({ !$0.isEmpty && $0.allSatisfy(\.isNumber) })
+            else {
+                bookSeriesEditingEnabled = false
+                return false
+            }
+            bookSeriesEditingEnabled = try await collectionCapabilities(id: nil).editMetadata
+            return bookSeriesEditingEnabled
+        } catch {
+            bookSeriesEditingEnabled = false
+            throw error
+        }
+    }
+
+    func setBookSeries(itemID: String, from expectedName: String?, to newName: String?) async throws {
+        guard bookSeriesEditingEnabled else { throw GusError.forbidden }
+        guard let uuid = ServerMediaListID.uuid(itemID) else { throw GusError.notFound }
+        guard editingBookIDs.insert(uuid).inserted else {
+            throw GusError.server(String(localized: "This book already has a series update in progress."))
+        }
+        defer { editingBookIDs.remove(uuid) }
+
+        let id = ServerMediaListID.string(uuid)
+        var header = try await bookSeriesHeader(uuid)
+        let current = Self.seriesName(in: header)
+        let desired = newName?.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard desired != "" else {
+            throw GusError.server(String(localized: "Enter a series name."))
+        }
+        if current == desired {
+            return
+        }
+        guard current == expectedName else {
+            throw GusError.server(String(localized: "The series for this book changed. Refresh the library and review it again."))
+        }
+
+        // The endpoint updates the full item. Preserve fields the SDK does not
+        // model, including server-specific person kinds, dates and metadata locks.
+        header["SeriesName"] = desired ?? ""
+        let body = try JSONSerialization.data(withJSONObject: header)
+        let configure: @Sendable (inout URLRequest) -> Void = { request in
+            request.httpBody = body
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        }
+        try Task.checkCancellation()
+        do {
+            _ = try await client.send(Paths.updateItem(itemID: id, BaseItemDto()), configure: configure)
+        } catch {
+            let failure = GusError(from: error)
+            switch failure {
+            case .offline, .network, .timeout, .server:
+                // A response can be lost after commit. Reconcile before any retry.
+                if let observed = try? await bookSeriesHeader(uuid), Self.seriesName(in: observed) == desired {
+                    return
+                }
+            default: break
+            }
+            throw error
+        }
+        guard try await Self.seriesName(in: bookSeriesHeader(uuid)) == desired else {
+            throw GusError.server(String(localized: "Jellyfin did not confirm the new series for this book."))
+        }
+    }
+
+    private func bookSeriesHeader(_ uuid: UUID) async throws -> [String: Any] {
+        let id = ServerMediaListID.string(uuid)
+        let data = try await NetworkRetryPolicy.idempotent.run {
+            try await client.data(for: Paths.getItem(itemID: id, userID: userID)).value
+        }
+        guard let header = try JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let itemID = header["Id"] as? String, ServerMediaListID.uuid(itemID) == uuid,
+              header["Type"] as? String == "Book", header["Name"] is String,
+              header["SeriesName"] == nil || header["SeriesName"] is NSNull || header["SeriesName"] is String,
+              header["OfficialRating"] == nil || header["OfficialRating"] is NSNull || header["OfficialRating"] is String,
+              ContentRatingGate.admitsStored(MediaItem(officialRating: header["OfficialRating"] as? String, type: .book))
+        else { throw GusError.notFound }
+        // This route accepts a name but cannot reassign or detach a real
+        // series ID. Check both the fresh header and the post-write readback.
+        if let value = header["SeriesId"], !(value is NSNull) {
+            guard let id = value as? String, BookSeriesKey.explicitID(id) == nil else {
+                throw GusError.server(String(localized: "Jellyfin manages this book’s series by ID. Refresh the library to see its membership."))
+            }
+        }
+        return header
+    }
+
+    private static func seriesName(in header: [String: Any]) -> String? {
+        guard let value = header["SeriesName"] as? String, !value.isEmpty else { return nil }
+        return value
     }
 
     // MARK: - Book reading progress

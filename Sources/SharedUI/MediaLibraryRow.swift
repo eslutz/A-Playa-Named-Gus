@@ -16,7 +16,7 @@ struct MediaLibraryRow: View {
                 .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 6) {
                 Text(title ?? item?.displayTitle ?? "Video").font(.body.weight(.medium))
-                if let subtitle {
+                if let subtitle = subtitle ?? item?.bookBrowseSubtitle {
                     Text(subtitle).font(.subheadline).foregroundStyle(.secondary)
                 } else if let year = item?.productionYear {
                     Text(String(year)).font(.subheadline).foregroundStyle(.secondary)

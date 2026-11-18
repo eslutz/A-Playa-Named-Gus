@@ -11,6 +11,47 @@ struct MediaCollection: Identifiable, Equatable, Sendable {
     var membersLoaded = false
 }
 
+/// A browse filter describes visible members. A Jellyfin collection can contain
+/// several formats, and an empty collection is reachable through All.
+enum CollectionFormat: CaseIterable, Hashable {
+    case all, movies, books, audiobooks
+
+    var title: String {
+        switch self {
+        case .all: String(localized: "All")
+        case .movies: String(localized: "Movies")
+        case .books: String(localized: "Books")
+        case .audiobooks: String(localized: "Audiobooks")
+        }
+    }
+
+    var mediaType: MediaItemType? {
+        switch self {
+        case .all: nil
+        case .movies: .movie
+        case .books: .book
+        case .audiobooks: .audioBook
+        }
+    }
+
+    init(type: MediaItemType?) {
+        switch type {
+        case .movie: self = .movies
+        case .book: self = .books
+        case .audioBook: self = .audiobooks
+        default: self = .all
+        }
+    }
+
+    func includes(_ collection: MediaCollection, admitting: (MediaItem) -> Bool = { ContentRatingGate.admitsStored($0) }) -> Bool {
+        guard admitting(collection.item) else { return false }
+        guard let mediaType else { return true }
+        return collection.membersLoaded && collection.members.contains {
+            $0.type == mediaType && admitting($0)
+        }
+    }
+}
+
 struct CollectionCapabilities: Equatable, Sendable {
     var create = false
     var editMetadata = false

@@ -49,6 +49,14 @@ struct LibraryGridView: View {
         }
     }
 
+    private var bookCollectionFormat: CollectionFormat {
+        switch scope {
+        case .category(.books): .books
+        case .category(.audiobooks): .audiobooks
+        default: .all // A Jellyfin Books library may contain both formats.
+        }
+    }
+
     private var isMusic: Bool {
         switch scope {
         case let .library(item): item.collectionType == .music
@@ -94,6 +102,11 @@ struct LibraryGridView: View {
                 #endif
                 if isMovies {
                     MovieCollectionsShelf(libraryID: scope.parentID)
+                } else if scope.groupsBookSeries {
+                    NavigationLink(value: CollectionsRef(scope: session.references.scope, format: bookCollectionFormat)) {
+                        Label("Collections", systemImage: "rectangle.stack")
+                    }
+                    .accessibilityIdentifier("Library.collections")
                 }
                 if let store {
                     if store.isRefreshing {
@@ -136,6 +149,7 @@ struct LibraryGridView: View {
                 }
             #endif
         }
+        .modifier(BookSeriesManagement(store: store))
         .safeAreaInset(edge: .top) {
             if isPhotos {
                 Picker("Photos", selection: photoAlbumsSelection) {
@@ -167,7 +181,12 @@ struct LibraryGridView: View {
     }
 
     @ViewBuilder private func grid(_ store: LibraryStore) -> some View {
-        if usesMusicLayout {
+        if scope.groupsBookSeries {
+            BookShelfView(store: store, showsList: showsList)
+            if store.isLoadingNextPage {
+                ProgressView().accessibilityLabel("Loading series")
+            }
+        } else if usesMusicLayout {
             musicContent(store)
         } else if showsList {
             LazyVStack(spacing: 0) {
