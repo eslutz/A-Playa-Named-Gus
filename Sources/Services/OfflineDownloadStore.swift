@@ -296,7 +296,9 @@ struct OfflineDownloadFileStore: Sendable {
     }
 
     func availableCapacity() -> Int64? {
-        #if os(watchOS)
+        #if os(tvOS)
+            return nil
+        #elseif os(watchOS)
             let values = try? directory.resourceValues(forKeys: [.volumeAvailableCapacityKey])
             return values?.volumeAvailableCapacity.map(Int64.init)
         #else
