@@ -915,4 +915,86 @@
             add(attachment)
         }
     }
+
+    @MainActor
+    final class GusBookDetailUITests: XCTestCase {
+        func testMixedLibraryBookAndAudiobookDetails() {
+            continueAfterFailure = false
+            let app = XCUIApplication()
+            defer { app.terminate() }
+            for (index, title, action, credit) in [
+                (1, "Fixture Printed Book", "Continue Reading", "Illustrator"),
+                (2, "Fixture Audiobook", "Resume", "Narrator"),
+            ] {
+                app.terminate()
+                app.launchEnvironment["GUS_DEMO_URL"] = "http://127.0.0.1:5058"
+                app.launchArguments = [
+                    "--gus-skip-session-restore", "--gus-disable-cloud-sync", "--gus-demo-server",
+                    "--gus-route", "item/4200000000000000000000000000000\(index)",
+                    "-dev.ericslutz.gus.contentRatingLimit", "off",
+                ]
+                app.launch()
+                XCTAssertTrue(app.staticTexts[title].firstMatch.waitForExistence(timeout: 25))
+                XCTAssertTrue(app.buttons[action].firstMatch.exists)
+                XCTAssertTrue(app.descendants(matching: .any)["Detail.bookProgress"].firstMatch.exists)
+                let screenshot = XCTAttachment(screenshot: app.screenshot())
+                screenshot.name = title
+                screenshot.lifetime = .keepAlways
+                add(screenshot)
+                XCTAssertFalse(app.staticTexts["Cast & Crew"].exists)
+                XCTAssertFalse(app.staticTexts["Fixture Studio"].exists)
+
+                let genre = app.staticTexts[index == 1 ? "Fantasy" : "Movie, TV & Video Game Tie-Ins"].firstMatch
+                for _ in 0 ..< 5 where !genre.exists {
+                    app.swipeUp()
+                }
+                XCTAssertTrue(genre.exists)
+                XCTAssertTrue(app.staticTexts["Adventure"].exists)
+                let role = app.staticTexts[credit].firstMatch
+                for _ in 0 ..< 4 where !role.exists {
+                    app.swipeUp()
+                }
+                XCTAssertTrue(role.exists)
+                let preview = app.staticTexts["Detail.heroOverview"].firstMatch
+                XCTAssertFalse(preview.label.contains(#"\n"#))
+                XCTAssertTrue(preview.label.contains(index == 1 ? "Second printed paragraph." : "A second paragraph."))
+            }
+        }
+
+        func testFormatsBrowseTheSameMixedLibrarySeparately() throws {
+            guard UIDevice.current.userInterfaceIdiom == .phone else { throw XCTSkip("Uses the compact navigation tabs") }
+            continueAfterFailure = false
+            let app = XCUIApplication()
+            app.launchEnvironment["GUS_DEMO_URL"] = "http://127.0.0.1:5058"
+            app.launchArguments = [
+                "--gus-skip-session-restore", "--gus-disable-cloud-sync", "--gus-demo-server",
+                "-dev.ericslutz.gus.contentRatingLimit", "off",
+            ]
+            app.launch()
+            defer { app.terminate() }
+            for (destination, title, other) in [
+                ("Books", "Fixture Printed Book", "Fixture Audiobook"),
+                ("Audiobooks", "Fixture Audiobook", "Fixture Printed Book"),
+            ] {
+                let home = app.tabBars.buttons["Home"].firstMatch
+                XCTAssertTrue(home.waitForExistence(timeout: 25))
+                home.tap()
+                let tab = app.tabBars.buttons[destination].firstMatch
+                if tab.isHittable {
+                    tab.tap()
+                } else {
+                    let more = app.tabBars.buttons["More"].firstMatch
+                    XCTAssertTrue(more.waitForExistence(timeout: 25))
+                    more.tap()
+                    let entry = app.buttons[destination].firstMatch
+                    XCTAssertTrue(entry.waitForExistence(timeout: 15))
+                    entry.tap()
+                }
+                XCTAssertTrue(app.navigationBars[destination].waitForExistence(timeout: 10))
+                let card = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", title)).firstMatch
+                XCTAssertTrue(card.waitForExistence(timeout: 12))
+                XCTAssertFalse(app.buttons.matching(NSPredicate(format: "label CONTAINS %@", other)).firstMatch.exists)
+            }
+        }
+    }
 #endif

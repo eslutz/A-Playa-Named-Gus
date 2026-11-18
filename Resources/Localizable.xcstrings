@@ -836,6 +836,10 @@
     "Audiobooks": {
       "comment": "CarPlay audiobooks tab"
     },
+    "Author": {
+      "comment": "Book and audiobook detail presentation",
+      "extractionState": "manual"
+    },
     "Authorization code": {
       "comment": "iPhone Sketch presentation.",
       "localizations": {
@@ -1765,6 +1769,10 @@
     "Continue Playlist": {
       "comment": "Next Up and video playlist interface."
     },
+    "Continue Reading": {
+      "comment": "Book and audiobook detail presentation",
+      "extractionState": "manual"
+    },
     "Continue Searching": {
       "extractionState": "manual",
       "localizations": {
@@ -1790,6 +1798,10 @@
           }
         }
       }
+    },
+    "Contributor": {
+      "comment": "Book and audiobook detail presentation",
+      "extractionState": "manual"
     },
     "Could not build a playable URL for this item.": {
       "comment": "Playback error: URL build failed",
@@ -1833,6 +1845,10 @@
         }
       }
     },
+    "Cover Artist": {
+      "comment": "Book and audiobook detail presentation",
+      "extractionState": "manual"
+    },
     "Create": {
       "comment": "Next Up and video playlist interface."
     },
@@ -1852,6 +1868,10 @@
     },
     "Create and Add": {
       "comment": "Next Up and video playlist interface."
+    },
+    "Credits": {
+      "comment": "Book and audiobook detail presentation",
+      "extractionState": "manual"
     },
     "Crew": {
       "extractionState": "manual",
@@ -2533,6 +2553,10 @@
         }
       }
     },
+    "Editor": {
+      "comment": "Book and audiobook detail presentation",
+      "extractionState": "manual"
+    },
     "Eligible requests are automatically approved by Seerr.": {
       "extractionState": "manual",
       "localizations": {
@@ -3003,6 +3027,10 @@
     "I couldn't find \"%@\" in your library.": {
       "comment": "Siri/Shortcuts response when search finds nothing"
     },
+    "Illustrator": {
+      "comment": "Book and audiobook detail presentation",
+      "extractionState": "manual"
+    },
     "In Progress": {
       "comment": "Downloads view active downloads section title and library filter option for in-progress media",
       "extractionState": "manual"
@@ -3017,6 +3045,10 @@
           }
         }
       }
+    },
+    "In progress · percentage unavailable": {
+      "comment": "Book and audiobook detail presentation",
+      "extractionState": "manual"
     },
     "Includes the latest 200 app events and available performance summaries. Names, media titles, server addresses and sign-in details are excluded. Gus does not upload logs automatically. Apple TV storage may be purged by the system.": {
       "extractionState": "manual",
@@ -3878,6 +3910,10 @@
         }
       }
     },
+    "Narrator": {
+      "comment": "Book and audiobook detail presentation",
+      "extractionState": "manual"
+    },
     "Navigate": {
       "comment": "Menu title for navigation commands",
       "extractionState": "manual"
@@ -4113,6 +4149,10 @@
     },
     "No Servers Found": {
       "comment": "Local server discovery empty-state title",
+      "extractionState": "manual"
+    },
+    "No synopsis available": {
+      "comment": "Book and audiobook detail presentation",
       "extractionState": "manual"
     },
     "No Titles": {
@@ -5127,6 +5167,10 @@
           }
         }
       }
+    },
+    "Progress": {
+      "comment": "Book and audiobook detail presentation",
+      "extractionState": "manual"
     },
     "Public Profiles": {
       "comment": "Sign-in section title for public Jellyfin user profiles",
@@ -7575,6 +7619,10 @@
           }
         }
       }
+    },
+    "Translator": {
+      "comment": "Book and audiobook detail presentation",
+      "extractionState": "manual"
     },
     "TV Genres": {
       "comment": "Discover catalog navigation and related titles.",

@@ -18,7 +18,7 @@ enum JellyfinMediaItemMapper {
             container: item.container,
             criticRating: item.criticRating.map { Double($0) },
             currentProgramName: item.currentProgram?.name,
-            genres: item.genres ?? [],
+            genres: bookGenres(from: item),
             id: item.id,
             imageTags: item.imageTags ?? [:],
             indexNumber: item.indexNumber,
@@ -139,12 +139,26 @@ enum JellyfinMediaItemMapper {
         }
     }
 
+    private static func bookGenres(from item: BaseItemDto) -> [String] {
+        let genres = item.genres ?? []
+        guard item.type == .book || item.type == .audioBook else { return genres }
+        let structured = item.genreItems?.compactMap(\.name).map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }.filter { !$0.isEmpty } ?? []
+        if structured.count > 1 {
+            return structured
+        }
+        if genres.count > 1 {
+            return genres
+        }
+        return BookDetailMetadata.genres(structured.isEmpty ? genres : structured)
+    }
+
     private static func mediaPerson(from person: BaseItemPerson) -> MediaPerson {
         MediaPerson(
             id: person.id,
             name: person.name,
             primaryImageTag: person.primaryImageTag,
-            role: person.role
+            role: person.role,
+            creditType: person.type == .unknown ? nil : person.type?.rawValue
         )
     }
 

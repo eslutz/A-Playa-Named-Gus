@@ -9,21 +9,30 @@ struct AboutCardsView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("About")
+            Text(item.isBookFormat ? "Synopsis" : "About")
                 .font(.title2.bold())
                 .accessibilityAddTraits(.isHeader)
 
             VStack(alignment: .leading, spacing: 24) {
                 if let overview = item.overview?.trimmedNilIfEmpty {
-                    DetailInfoCard(title: "Synopsis") {
+                    if item.isBookFormat {
                         Text(overview).fixedSize(horizontal: false, vertical: true)
-                        Button("Show More") { showsFullSynopsis = true }
-                            .accessibilityIdentifier("Detail.fullSynopsis")
+                            .gusTVFocusableInfo()
+                    } else {
+                        DetailInfoCard(title: "Synopsis") {
+                            Text(overview).fixedSize(horizontal: false, vertical: true)
+                            Button("Show More") { showsFullSynopsis = true }
+                                .accessibilityIdentifier("Detail.fullSynopsis")
+                        }
+                        .tvFocusSection()
                     }
-                    .tvFocusSection()
+                } else if item.isBookFormat {
+                    Text("No synopsis available").foregroundStyle(.secondary)
                 }
-                AdaptiveStack(horizontalMinimumWidth: 320 + 32 + 320, horizontalAlignment: .top, horizontalSpacing: 32, verticalSpacing: 24) { horizontal in
-                    informationCards(horizontal: horizontal)
+                if !item.isBookFormat {
+                    AdaptiveStack(horizontalMinimumWidth: 320 + 32 + 320, horizontalAlignment: .top, horizontalSpacing: 32, verticalSpacing: 24) { horizontal in
+                        informationCards(horizontal: horizontal)
+                    }
                 }
             }
             .accessibilityElement(children: .contain)

@@ -265,8 +265,8 @@ extension View {
         modifier(IPhoneActionLabelHeightModifier())
     }
 
-    func gusPhoneHeroAccessoryStyle() -> some View {
-        modifier(IPhoneHeroAccessoryModifier())
+    func gusPhoneHeroAccessoryStyle(onArtwork: Bool = true) -> some View {
+        modifier(IPhoneHeroAccessoryModifier(onArtwork: onArtwork))
     }
 
     func gusPhoneAudioTransportColor() -> some View {
@@ -305,13 +305,14 @@ private struct IPhoneActionLabelHeightModifier: ViewModifier {
 }
 
 private struct IPhoneHeroAccessoryModifier: ViewModifier {
+    let onArtwork: Bool
     #if os(iOS)
         @Environment(\.horizontalSizeClass) private var widthClass
     #endif
     func body(content: Content) -> some View {
         #if os(iOS)
             if widthClass == .compact {
-                content.tint(.white).buttonBorderShape(.circle)
+                content.tint(onArtwork ? .white : .accentColor).buttonBorderShape(.circle)
             } else {
                 content.buttonBorderShape(.capsule)
             }

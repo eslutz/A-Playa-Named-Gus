@@ -163,7 +163,7 @@ extension MediaItem {
             identity.append(String(localized: "Now playing \(program)"))
         }
         var details: [String] = []
-        if let ticks = runTimeTicks, ticks > 0 {
+        if type != .book, let ticks = runTimeTicks, ticks > 0 {
             let duration = Duration.seconds(Double(ticks) / 10_000_000).formatted(.units(allowed: [.hours, .minutes, .seconds], width: .wide))
             details.append(String(localized: "Duration: \(duration)"))
         }
@@ -173,7 +173,7 @@ extension MediaItem {
             details.append(String(localized: "Live"))
         } else if position > 0 || (progress > 0 && progress < 1) {
             details.append(userData?.isWatched == true ? (isAudioPlayable ? String(localized: "Listening Again") : String(localized: "Rewatching")) : String(localized: "In Progress"))
-            if let ticks = runTimeTicks, ticks > position, position > 0 {
+            if type != .book, let ticks = runTimeTicks, ticks > position, position > 0 {
                 let remaining = Duration.seconds(Double(ticks - position) / 10_000_000).formatted(.units(allowed: [.hours, .minutes, .seconds], width: .wide))
                 details.append(String(localized: "\(remaining) remaining"))
             } else if progress.isFinite, progress > 0, progress < 1 {
@@ -190,5 +190,78 @@ extension MediaItem {
             return components.map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }.filter { !$0.isEmpty && seen.insert($0).inserted }.joined(separator: ", ")
         }
         return MediaItemAccessibility(label: joined(identity), value: joined(details))
+    }
+}
+
+enum BookDetailMetadata {
+    static func synopsis(_ value: String?) -> String? {
+        let cleaned = value?.replacingOccurrences(of: #"\r\n"#, with: "\n")
+            .replacingOccurrences(of: #"\n"#, with: "\n")
+            .replacingOccurrences(of: "\r\n", with: "\n")
+        return nonblank(cleaned)
+    }
+
+    static func genres(_ values: [String]) -> [String] {
+        let values = values.compactMap { nonblank($0) }
+        guard values.count == 1, let packed = values.first else { return uniqueGenres(values) }
+
+        // The source catalog uses commas both as a separator and inside this genre name.
+        let compound = "Movie, TV & Video Game Tie-Ins"
+        let protected = packed.replacingOccurrences(of: compound, with: "Movie\u{1F} TV & Video Game Tie-Ins", options: .caseInsensitive)
+        var quoted = false
+        var names: [String] = []
+        var name = ""
+        for character in protected {
+            if character == "\"" {
+                quoted.toggle()
+            } else if !quoted, character == "," || character == ";" || character.isNewline {
+                names.append(name)
+                name = ""
+            } else {
+                name.append(character)
+            }
+        }
+        guard !quoted else { return values }
+        names.append(name)
+        return uniqueGenres(names.map { $0.replacingOccurrences(of: "\u{1F}", with: ",") })
+    }
+
+    private static func uniqueGenres(_ values: [String]) -> [String] {
+        var seen = Set<String>()
+        return values.compactMap { nonblank($0) }.filter { seen.insert($0.lowercased()).inserted }
+    }
+
+    private static func nonblank(_ value: String?) -> String? {
+        guard let value = value?.trimmingCharacters(in: .whitespacesAndNewlines), !value.isEmpty else { return nil }
+        return value
+    }
+
+    static func epubFraction(locator: String?) -> Double? {
+        guard let data = locator?.data(using: .utf8),
+              let object = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any],
+              let locations = object["locations"] as? [String: Any] else { return nil }
+        return locations["totalProgression"] as? Double
+    }
+
+    static func credit(for person: MediaPerson) -> String {
+        let role = nonblank(person.role)
+        if role?.caseInsensitiveCompare("Narrator") == .orderedSame {
+            return String(localized: "Narrator")
+        }
+        switch person.creditType?.lowercased() {
+        case "author", "writer": return String(localized: "Author")
+        case "narrator": return String(localized: "Narrator")
+        case "illustrator": return String(localized: "Illustrator")
+        case "translator": return String(localized: "Translator")
+        case "coverartist": return String(localized: "Cover Artist")
+        case "editor": return String(localized: "Editor")
+        default: return role ?? String(localized: "Contributor")
+        }
+    }
+}
+
+extension MediaItem {
+    var isBookFormat: Bool {
+        type == .book || type == .audioBook
     }
 }

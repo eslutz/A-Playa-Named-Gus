@@ -7,10 +7,10 @@ struct DetailMetadataRows: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             if let genres = item.genres.nonEmptyStrings, !genres.isEmpty {
-                MetadataPillRow(title: "Genres", values: genres, identifier: "Detail.metadataGenres")
+                MetadataPillRow(title: "Genres", values: genres, identifier: "Detail.metadataGenres", usesBookPills: item.isBookFormat)
             }
 
-            if let studios = item.studios.compactMap(\.name).nonEmptyStrings, !studios.isEmpty {
+            if !item.isBookFormat, let studios = item.studios.compactMap(\.name).nonEmptyStrings, !studios.isEmpty {
                 MetadataPillRow(title: "Studios", values: studios, identifier: "Detail.metadataStudios")
             }
         }
@@ -23,6 +23,7 @@ private struct MetadataPillRow: View {
     let title: LocalizedStringKey
     let values: [String]
     let identifier: String
+    var usesBookPills = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -32,27 +33,36 @@ private struct MetadataPillRow: View {
                 .accessibilityIdentifier(identifier)
 
             #if os(tvOS)
-                Text(values.joined(separator: " · "))
-                    .font(.body)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .gusTVFocusableInfo()
-            #else
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 10) {
-                        ForEach(values, id: \.self) { value in
-                            Text(value)
-                                .font(.subheadline.weight(.medium))
-                                .padding(.horizontal, 12)
-                                .padding(.vertical, 7)
-                                .background(.thinMaterial, in: Capsule())
-                        }
-                    }
-                    .padding(.vertical, 2)
+                if usesBookPills {
+                    pills
+                } else {
+                    Text(values.joined(separator: " · "))
+                        .font(.body)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .gusTVFocusableInfo()
                 }
-                .lookToScroll(.horizontal)
-                .gusTVRailViewport()
+            #else
+                pills
             #endif
         }
+    }
+
+    private var pills: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 10) {
+                ForEach(values, id: \.self) { value in
+                    Text(value)
+                        .font(.subheadline.weight(.medium))
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 7)
+                        .background(.thinMaterial, in: Capsule())
+                        .gusTVFocusableInfo()
+                }
+            }
+            .padding(.vertical, 2)
+        }
+        .lookToScroll(.horizontal)
+        .gusTVRailViewport()
     }
 }

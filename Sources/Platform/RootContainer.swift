@@ -50,6 +50,10 @@ struct RootContainer: View {
             }
             .task(id: scenePhase) {
                 guard scenePhase == .active else { return }
+                await preferences.refreshBookFormats(session: session)
+            }
+            .task(id: scenePhase) {
+                guard scenePhase == .active else { return }
                 await session.profile.load()
                 app.synchronizeProfile(from: session)
                 session.references.beginRefresh()
