@@ -556,6 +556,11 @@ struct LibrariesLandingView: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
+        .task(id: store != nil) {
+            if let store, store.libraryState == .idle {
+                await store.loadLibraries()
+            }
+        }
         .navigationTitle("Libraries")
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
@@ -571,11 +576,11 @@ struct LibrariesLandingView: View {
 
     private func content(_ store: HomeStore) -> some View {
         LoadingStateView(
-            state: store.state,
+            state: store.libraryState,
             isEmpty: store.libraries.isEmpty,
             emptyTitle: "No Libraries",
             emptySymbol: "rectangle.stack",
-            retryAction: { Task { await store.load() } },
+            retryAction: { Task { await store.loadLibraries() } },
             preservesContent: true
         ) {
             Group {
@@ -603,7 +608,7 @@ struct LibrariesLandingView: View {
                     .lookToScroll()
                 }
             }
-            .refreshable { await store.refresh() }
+            .refreshable { await store.loadLibraries() }
         }
     }
 }

@@ -406,6 +406,7 @@
                 XCTAssertTrue(search.waitForExistence(timeout: 10)); search.tap(); search.typeText(query)
                 let result = app.buttons[title].firstMatch
                 XCTAssertTrue(result.waitForExistence(timeout: 20)); result.tap()
+                XCTAssertTrue(search.waitForNonExistence(timeout: 20))
             }
             XCTAssertTrue(app.buttons["Playlist.more"].waitForExistence(timeout: 10))
             XCTAssertFalse(app.staticTexts["Entries"].exists)

@@ -214,6 +214,7 @@ struct MediaSource: Codable, Hashable, Identifiable, Sendable {
     var defaultAudioStreamIndex: Int?
     var defaultSubtitleStreamIndex: Int?
     var runTimeTicks: Int?
+    var sizeBytes: Int64?
 
     init(
         container: String? = nil,
@@ -227,7 +228,8 @@ struct MediaSource: Codable, Hashable, Identifiable, Sendable {
         liveStreamID: String? = nil,
         defaultAudioStreamIndex: Int? = nil,
         defaultSubtitleStreamIndex: Int? = nil,
-        runTimeTicks: Int? = nil
+        runTimeTicks: Int? = nil,
+        sizeBytes: Int64? = nil
     ) {
         self.container = container
         self.id = id
@@ -241,6 +243,7 @@ struct MediaSource: Codable, Hashable, Identifiable, Sendable {
         self.defaultAudioStreamIndex = defaultAudioStreamIndex
         self.defaultSubtitleStreamIndex = defaultSubtitleStreamIndex
         self.runTimeTicks = runTimeTicks
+        self.sizeBytes = sizeBytes
     }
 }
 
@@ -260,6 +263,8 @@ struct MediaItem: Codable, Hashable, Identifiable, Sendable {
     var providerKind: MediaProviderKind
     var album: String?
     var albumArtist: String?
+    var albumID: String?
+    var albumPrimaryImageTag: String?
     var artists: [String]
     var backdropImageTags: [String]
     var canDownload: Bool?
@@ -301,6 +306,8 @@ struct MediaItem: Codable, Hashable, Identifiable, Sendable {
         case providerKind
         case album
         case albumArtist
+        case albumID
+        case albumPrimaryImageTag
         case artists
         case backdropImageTags
         case canDownload
@@ -342,6 +349,8 @@ struct MediaItem: Codable, Hashable, Identifiable, Sendable {
         providerKind: MediaProviderKind = .jellyfin,
         album: String? = nil,
         albumArtist: String? = nil,
+        albumID: String? = nil,
+        albumPrimaryImageTag: String? = nil,
         artists: [String] = [],
         backdropImageTags: [String] = [],
         canDownload: Bool? = nil,
@@ -380,6 +389,8 @@ struct MediaItem: Codable, Hashable, Identifiable, Sendable {
         self.providerKind = providerKind
         self.album = album
         self.albumArtist = albumArtist
+        self.albumID = albumID
+        self.albumPrimaryImageTag = albumPrimaryImageTag
         self.artists = artists
         self.backdropImageTags = backdropImageTags
         self.canDownload = canDownload
@@ -422,6 +433,8 @@ struct MediaItem: Codable, Hashable, Identifiable, Sendable {
         providerKind = try values.decode(MediaProviderKind.self, forKey: .providerKind)
         album = try values.decodeIfPresent(String.self, forKey: .album)
         albumArtist = try values.decodeIfPresent(String.self, forKey: .albumArtist)
+        albumID = try values.decodeIfPresent(String.self, forKey: .albumID)
+        albumPrimaryImageTag = try values.decodeIfPresent(String.self, forKey: .albumPrimaryImageTag)
         artists = try values.decodeIfPresent([String].self, forKey: .artists) ?? []
         backdropImageTags = try values.decodeIfPresent([String].self, forKey: .backdropImageTags) ?? []
         canDownload = try values.decodeIfPresent(Bool.self, forKey: .canDownload)

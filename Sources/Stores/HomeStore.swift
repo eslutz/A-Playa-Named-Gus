@@ -52,6 +52,9 @@ final class HomeStore {
     }
 
     private let nextUpPageSize = 50
+    private typealias FeedFailure = (title: String, cause: GusError)
+    private var libraryGeneration = UUID()
+    private(set) var libraryState: LoadState = .idle
     private(set) var libraries: [MediaItem] = []
     private(set) var resumeItems: [MediaItem] = []
     private(set) var nextUpItems: [MediaItem] = []
@@ -155,40 +158,38 @@ final class HomeStore {
         }
         // Independent failures preserve successful responses and usable cached
         // content. A failed latest-media rail cannot hide saved/offline intents.
-        async let views = libraryResult()
+        async let views: Void = loadLibraries()
         let resumeLimit = max(resumeOffset, nextUpPageSize)
         let nextLimit = max(nextOffset, nextUpPageSize)
         async let resume = resumeResult(startIndex: 0, limit: resumeLimit)
         async let next = nextUpResult(startIndex: 0, limit: nextLimit)
-        let results = await(views, resume, next)
+        let results = await(resume, next)
         guard !Task.isCancelled, session.references.isActive, loadGeneration == generation else { return }
-        var errors: [GusError] = []
+        var errors: [FeedFailure] = []
         switch results.0 {
-        case let .success(items): libraries = items
-        case let .failure(error): errors.append(error)
-        }
-        switch results.1 {
         case let .success(page):
             resumeItems = ContentRatingGate.filter(page.items)
             resumeOffset = page.items.count
             resumeTotal = page.totalRecordCount
             resumeHasMore = Self.hasMore(page: page, offset: resumeOffset, requested: resumeLimit)
-        case let .failure(error): errors.append(error)
+        case let .failure(error): errors.append((String(localized: "Continue Watching"), error))
         }
-        switch results.2 {
+        switch results.1 {
         case let .success(page):
             nextUpItems = ContentRatingGate.filter(page.items)
             nextOffset = page.items.count
             nextTotal = page.totalRecordCount
             nextHasMore = Self.hasMore(page: page, offset: nextOffset, requested: nextLimit)
-        case let .failure(error): errors.append(error)
+        case let .failure(error): errors.append((String(localized: "Next Up"), error))
         }
-        errorMessage = nil
-        do { latestSections = try await loadLatestSections(for: libraries) }
-        catch { errors.append(GusError(from: error)) }
+        let latest = await loadLatestSections()
         guard !Task.isCancelled, session.references.isActive, loadGeneration == generation else { return }
-        errorMessage = errors.first(where: { !$0.isCancellation })?.localizedDescription ?? errorMessage
-        if errors.contains(.unauthorized) {
+        latestSections = latest.sections
+        errors += latest.errors
+        errorMessage = errors.first(where: { !$0.cause.isCancellation }).map { failure in
+            String(localized: "Couldn’t refresh \(failure.title). \(failure.cause.localizedDescription)")
+        }
+        if errors.contains(where: { $0.cause == .unauthorized }) {
             session.handleUnauthorized()
         }
         // HomeView renders a banner if usable content survives, otherwise its
@@ -196,11 +197,31 @@ final class HomeStore {
         state = errorMessage.map { .failed($0) } ?? .loaded
         rebuildNextUp()
         donateToSystemSearch()
+        await views
     }
 
-    private func libraryResult() async -> Result<[MediaItem], GusError> {
-        do { return try .success(await session.mediaProvider.userViews()) }
-        catch { return .failure(GusError(from: error)) }
+    func loadLibraries() async {
+        guard !Task.isCancelled, session.references.isActive else { return }
+        let generation = UUID()
+        libraryGeneration = generation
+        let previous = libraryState == .loading ? (libraries.isEmpty ? LoadState.idle : .loaded) : libraryState
+        libraryState = .loading
+        defer {
+            if generation == libraryGeneration, libraryState == .loading {
+                libraryState = previous
+            }
+        }
+        do {
+            let items = try await session.mediaProvider.userViews()
+            guard !Task.isCancelled, session.references.isActive, generation == libraryGeneration else { return }
+            libraries = items
+            libraryState = .loaded
+        } catch {
+            let failure = GusError(from: error)
+            guard !Task.isCancelled, session.references.isActive, generation == libraryGeneration, !failure.isCancellation else { return }
+            libraryState = .failed(failure.localizedDescription)
+            failure.handleIfUnauthorized(session: session)
+        }
     }
 
     private func resumeResult(startIndex: Int, limit: Int, previousTotal: Int? = nil) async -> Result<MediaItemPage, GusError> {
@@ -296,10 +317,11 @@ final class HomeStore {
     }
 
     /// Each feed is globally sorted by the signed-in user's provider.
-    private func loadLatestSections(for _: [MediaItem]) async throws -> [HomeLatestSection] {
+    private func loadLatestSections() async -> (sections: [HomeLatestSection], errors: [FeedFailure]) {
         let provider = session.mediaProvider
         let cached = Dictionary(latestSections.map { ($0.kind, $0) }, uniquingKeysWith: { _, new in new })
         var result: [LatestMediaKind: HomeLatestSection] = [:]
+        var errors: [LatestMediaKind: GusError] = [:]
         await withTaskGroup(of: (LatestMediaKind, [MediaItem]?, GusError?).self) { group in
             for kind in LatestMediaKind.allCases {
                 group.addTask {
@@ -323,7 +345,7 @@ final class HomeStore {
             }
             for await(kind, items, error) in group {
                 if let error, !error.isCancellation {
-                    errorMessage = error.localizedDescription
+                    errors[kind] = error
                 }
                 if let items, !items.isEmpty {
                     result[kind] = HomeLatestSection(id: "latest:" + kind.rawValue, title: kind.title, items: items, kind: kind)
@@ -332,6 +354,9 @@ final class HomeStore {
                 }
             }
         }
-        return LatestMediaKind.allCases.compactMap { result[$0] }.filter { !$0.items.isEmpty }
+        let failures: [FeedFailure] = LatestMediaKind.allCases.compactMap { kind in
+            errors[kind].map { (kind.title, $0) }
+        }
+        return (LatestMediaKind.allCases.compactMap { result[$0] }.filter { !$0.items.isEmpty }, failures)
     }
 }

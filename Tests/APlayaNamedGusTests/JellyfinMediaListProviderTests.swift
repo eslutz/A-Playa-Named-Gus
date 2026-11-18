@@ -11,6 +11,48 @@ struct JellyfinMediaListProviderTests {
     let itemID = "c0000000000000000000000000000001"
     let entryID = UUID(uuidString: "B0000000-0000-0000-0000-000000000001")!
 
+    @Test("Virtual library types outside the OpenAPI enum keep every visible library")
+    func extendedLibraryTypes() async throws {
+        let fixture = try NativeListFixture(jsonResponses: [(#"""
+        {"Items":[
+          {"Id":"one","Name":"Movies","Type":"CollectionFolder","CollectionType":"movies"},
+          {"Id":"two","Name":"Collections","Type":"UserView","CollectionType":"moviecollection","ImageTags":{"Primary":"art"},"MediaType":"PluginMedia"}
+        ],"TotalRecordCount":2}
+        """#, 200)])
+        let libraries = try await fixture.provider.userViews()
+        #expect(libraries.compactMap(\.id) == ["one", "two"])
+        #expect(libraries.map(\.collectionType) == [.movies, .unknown])
+        #expect(libraries.last?.imageTags["Primary"] == "art")
+        #expect(fixture.state.requests.count == 1)
+    }
+
+    @Test("A newer person kind and an offset-less timestamp preserve collection members and ratings")
+    func compatibleMemberMetadata() async throws {
+        let fixture = try NativeListFixture(jsonResponses: [(#"""
+        {"Items":[
+          {"Id":"one","Name":"Feature","Type":"Movie","OfficialRating":"R","PremiereDate":"2025-08-03T18:24:59.1234567",
+           "People":[{"Name":"Reader","Type":"Narrator","Role":"Narration"}],"UserData":{"PlayedPercentage":30}},
+          {"Id":"two","Type":"Series","PremiereDate":"2025-08-03T14:24:59.1234567-04:00"}
+        ],"TotalRecordCount":2}
+        """#, 200)])
+        let page = try await fixture.provider.collectionMembers(id: itemID, startIndex: 0, limit: 200)
+        #expect(page.items.compactMap(\.id) == ["one", "two"])
+        #expect(page.totalRecordCount == 2)
+        #expect(page.items.first?.officialRating == "R")
+        #expect(page.items.first?.people.first?.name == "Reader")
+        #expect(page.items.first?.userData?.playedPercentage == 30)
+        #expect(try page.items.first?.premiereDate == Date("2025-08-03T18:24:59.1234567Z", strategy: .iso8601))
+        #expect(fixture.state.requests.count == 1)
+    }
+
+    @Test("Compatibility never conceals malformed rating data")
+    func malformedMemberFailsPage() async throws {
+        let fixture = try NativeListFixture(jsonResponses: [(#"{"Items":[{"Id":"one","CollectionType":"moviecollection","OfficialRating":false}]}"#, 200)])
+        await #expect(throws: DecodingError.self) {
+            try await fixture.provider.collectionMembers(id: itemID, startIndex: 0, limit: 200)
+        }
+    }
+
     @Test("Playlist loading fetches every page and preserves duplicate occurrence order")
     func playlistPagination() async throws {
         let list = ServerMediaListID.string(listID)
@@ -18,12 +60,14 @@ struct JellyfinMediaListProviderTests {
             BaseItemDto(id: itemID, playlistItemID: String(format: "b%031x", index + 1), type: .movie)
         }
         let fixture = try NativeListFixture(responses: [
-            BaseItemDto(id: list, name: "Weekend", type: .playlist),
+            BaseItemDto(id: list, imageTags: ["Primary": "cover-tag"], name: "Weekend", type: .playlist),
             PlaylistUserPermissions(canEdit: true, userID: "user"),
             BaseItemDtoQueryResult(items: members, totalRecordCount: 201),
             BaseItemDtoQueryResult(items: [BaseItemDto(id: itemID, playlistItemID: String(format: "b%031x", 255), type: .audio)], totalRecordCount: 201),
         ])
         let result = try await fixture.provider.mediaList(id: listID, kind: .playlist)
+        #expect(result.coverItem.id == list)
+        #expect(result.coverItem.imageTags["Primary"] == "cover-tag")
         #expect(result.canEdit)
         #expect(result.entriesLoaded)
         #expect(result.entries.count == 201)

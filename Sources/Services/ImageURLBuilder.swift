@@ -73,6 +73,11 @@ struct ImageURLBuilder {
     /// An episode still never inherits a parent portrait. A portrait episode card
     /// represents its series before trying the episode's own landscape primary.
     func artworkURLs(for item: MediaItem, request: MediaArtworkRequest) -> [URL] {
+        // Generic search and library cards have no membership snapshot from which
+        // to choose an admitted fallback. Never fetch an unverified playlist mosaic.
+        if item.type == .playlist, ContentRatingGate.storedLimit() != .off {
+            return []
+        }
         let role = request.role
         let maxWidth = request.maxWidth
         if case let .chapter(index, tag) = role {
@@ -96,7 +101,10 @@ struct ImageURLBuilder {
         case .backdrop:
             candidates = [ownBackdrop, parentBackdrop, thumb, ownPrimary]
         case .square:
-            candidates = [ownPrimary, thumb, ownBackdrop]
+            let albumCover = item.albumID.flatMap { id in
+                item.albumPrimaryImageTag.flatMap { imageURL(itemID: id, type: .primary, tag: $0, maxWidth: maxWidth) }
+            }
+            candidates = item.imageTags["Primary"] == nil ? [albumCover, ownPrimary, thumb, ownBackdrop] : [ownPrimary, albumCover, thumb, ownBackdrop]
         case .photo, .avatar:
             candidates = [ownPrimary]
         case .chapter:

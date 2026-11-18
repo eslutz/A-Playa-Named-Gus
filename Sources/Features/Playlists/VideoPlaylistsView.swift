@@ -103,7 +103,7 @@ struct VideoPlaylistsView: View {
     private func label(_ list: ServerMediaList) -> some View {
         HStack(spacing: 24) {
             #if os(tvOS)
-                AsyncPoster(url: session.mediaProvider.primaryImageURL(for: MediaItem(id: ServerMediaListID.string(list.id), name: list.name, type: .playlist), context: .posterGrid), placeholderSymbol: "list.and.film")
+                PlaylistCoverArtwork(playlist: list.coverItem, entries: list.entries.map(\.item), maxWidth: 360, aspectRatio: 1.5)
                     .frame(width: 96, height: 64).clipShape(RoundedRectangle(cornerRadius: 8))
                     .accessibilityHidden(true)
             #endif
@@ -155,12 +155,13 @@ struct VideoPlaylistDetailView: View {
                         editingContents(playlist, serverList: serverList)
                     } else {
                         List {
+                            Section { cover(serverList) }
                             if serverList.entriesLoaded {
                                 if serverList.entries.allSatisfy({ $0.item.isAudioPlayable }) && !serverList.entries.isEmpty {
                                     Section {
                                         Text("\(playlist.entries.count) items").font(.subheadline).foregroundStyle(.secondary)
                                         NavigationLink("Open Audio Playlist") {
-                                            AlbumDetailView(album: MediaItem(id: ServerMediaListID.string(serverList.id), name: serverList.name, type: .playlist))
+                                            AlbumDetailView(album: serverList.coverItem)
                                         }
                                     }
                                 } else {
@@ -266,6 +267,15 @@ struct VideoPlaylistDetailView: View {
         .refreshable { await lists.refresh(id: id, kind: .playlist, session: session) }
     }
 
+    private func cover(_ list: ServerMediaList) -> some View {
+        PlaylistCoverArtwork(playlist: list.coverItem, entries: list.entries.map(\.item), maxWidth: 480)
+            .frame(width: 160)
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+            .frame(maxWidth: .infinity)
+            .listRowBackground(Color.clear)
+            .accessibilityHidden(true)
+    }
+
     private func playbackControls(_ playlist: VideoPlaylist) -> some View {
         Section { playbackSummary(playlist) }
     }
@@ -330,6 +340,7 @@ struct VideoPlaylistDetailView: View {
         #if os(iOS)
             return ScrollView {
                 VStack(alignment: .leading, spacing: 24) {
+                    cover(serverList)
                     playbackSummary(playlist)
                         .padding(16)
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -363,6 +374,7 @@ struct VideoPlaylistDetailView: View {
             .background(Color(uiColor: .systemGroupedBackground))
         #else
             return List {
+                Section { cover(serverList) }
                 playbackControls(playlist)
                 Section {
                     #if os(tvOS)
@@ -425,6 +437,9 @@ struct VideoPlaylistDetailView: View {
                 PlaylistReorderHandle(title: title, moveUp: { move(index, by: -1, in: playlist) }, moveDown: { move(index, by: 1, in: playlist) }, canMoveUp: index > 0, canMoveDown: index + 1 < playlist.entries.count)
             #endif
             Text("\(index + 1)").monospacedDigit().frame(width: max(28, CGFloat(String(max(playlist.entries.count, 1)).count) * numberDigitWidth), alignment: .trailing).foregroundStyle(.secondary)
+            if ContentRatingGate.admitsStored(entry.reference.item) {
+                PlaylistEntryThumbnail(item: entry.reference.item)
+            }
             VStack(alignment: .leading) {
                 Text(title)
                 if ContentRatingGate.admitsStored(entry.reference.item), let series = entry.reference.item.seriesName {
@@ -479,10 +494,13 @@ struct VideoPlaylistDetailView: View {
                 Button {
                     play(entry, fromBeginning: true)
                 } label: {
-                    VStack(alignment: .leading) {
-                        Text(entry.reference.item.displayTitle)
-                        if let series = entry.reference.item.seriesName {
-                            Text([series, entry.reference.item.episodeLocator].compactMap { $0 }.joined(separator: " · ")).font(.caption).foregroundStyle(.secondary)
+                    HStack(spacing: 12) {
+                        PlaylistEntryThumbnail(item: entry.reference.item)
+                        VStack(alignment: .leading) {
+                            Text(entry.reference.item.displayTitle)
+                            if let series = entry.reference.item.seriesName {
+                                Text([series, entry.reference.item.episodeLocator].compactMap { $0 }.joined(separator: " · ")).font(.caption).foregroundStyle(.secondary)
+                            }
                         }
                     }
                 }
@@ -490,7 +508,12 @@ struct VideoPlaylistDetailView: View {
                 .accessibilityIdentifier("Playlist.entry." + entry.id.uuidString)
                 .accessibilityHint("Plays the playlist starting with this item")
             } else if admitted {
-                NavigationLink(value: ItemRef(item: entry.reference.item)) { Text(entry.reference.item.displayTitle) }
+                NavigationLink(value: ItemRef(item: entry.reference.item)) {
+                    HStack(spacing: 12) {
+                        PlaylistEntryThumbnail(item: entry.reference.item)
+                        Text(entry.reference.item.displayTitle)
+                    }
+                }
             } else {
                 Label("Restricted Content", systemImage: "lock")
             }
@@ -525,6 +548,39 @@ struct VideoPlaylistDetailView: View {
         let entry = entries.remove(at: index)
         let destination = min(max(index + offset, 0), entries.count)
         mutate { _ = await lists.move(entryID: entry.id, in: id, before: destination < entries.count ? entries[destination].id : nil, session: session) }
+    }
+}
+
+struct PlaylistCoverArtwork: View {
+    @Environment(SessionStore.self) private var session
+    @AppStorage(ContentRatingGate.limitDefaultsKey) private var limit = ContentRatingGate.Limit.off
+    @AppStorage(ContentRatingGate.hideUnratedDefaultsKey) private var hideUnrated = false
+    let playlist: MediaItem
+    let entries: [MediaItem]
+    let maxWidth: Int
+    var aspectRatio: CGFloat = 1
+
+    var body: some View {
+        let items = ContentRatingGate.playlistCoverItems(playlist: playlist, entries: entries, limit: limit, hideUnrated: hideUnrated)
+        let urls = items.flatMap { session.mediaProvider.artworkURLs(for: $0, request: .init(role: .square, maxWidth: maxWidth)) }
+        ArtworkTile(url: urls.first, aspectRatio: aspectRatio, placeholderSymbol: "list.and.film", fallbackURLs: Array(urls.dropFirst()))
+            .accessibilityHidden(true)
+    }
+}
+
+/// Keep the row stable while the server supplies an episode still, cover, or poster.
+struct PlaylistEntryThumbnail: View {
+    @Environment(SessionStore.self) private var session
+    let item: MediaItem
+
+    var body: some View {
+        let role: MediaArtworkRole = item.type == .episode ? .episodeStill : (item.isAudioPlayable ? .square : .poster)
+        let ratio: CGFloat = role == .episodeStill ? 16 / 9 : (role == .square ? 1 : 2 / 3)
+        let urls = session.mediaProvider.artworkURLs(for: item, request: .init(role: role, maxWidth: 240))
+        ArtworkTile(url: urls.first, aspectRatio: ratio, placeholderSymbol: item.artworkPlaceholderSymbol, fallbackURLs: Array(urls.dropFirst()))
+            .frame(width: min(72, 48 * ratio))
+            .clipShape(RoundedRectangle(cornerRadius: 5))
+            .accessibilityHidden(true)
     }
 }
 

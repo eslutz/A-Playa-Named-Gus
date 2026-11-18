@@ -155,6 +155,21 @@ enum ContentRatingGate {
         return admits(item, limit: limit, hideUnrated: userDefaults.bool(forKey: hideUnratedDefaultsKey))
     }
 
+    /// Server artwork can be a mosaic of current playlist members. Cached or
+    /// locally edited membership can never establish which images are in it.
+    static func playlistCoverItems(playlist: MediaItem, entries: [MediaItem], limit: Limit, hideUnrated: Bool) -> [MediaItem] {
+        let admitted = entries.lazy.filter { item in
+            guard item.id != nil, item.type != nil,
+                  ![.playlist, .boxSet, .collectionFolder, .folder].contains(item.type)
+            else { return false }
+            return admits(item, limit: limit, hideUnrated: hideUnrated)
+        }
+        let fallback = admitted.first {
+            $0.imageTags["Primary"] != nil || $0.imageTags["Thumb"] != nil || !$0.backdropImageTags.isEmpty || $0.albumPrimaryImageTag != nil
+        } ?? admitted.first
+        return [limit == .off ? playlist : nil, fallback].compactMap { $0 }
+    }
+
     static func storedLimit(userDefaults: UserDefaults = .standard) -> Limit {
         userDefaults.string(forKey: limitDefaultsKey).flatMap(Limit.init(rawValue:)) ?? .off
     }

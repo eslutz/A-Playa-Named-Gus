@@ -135,6 +135,33 @@ struct BrowseRefinementTests {
         #expect(!stills.contains { $0.path.contains("/Items/series/Images/Primary") })
     }
 
+    @Test("Cached and locally edited playlist membership never authorizes a server mosaic under restrictions")
+    func restrictedPlaylistCover() {
+        let playlist = MediaItem(id: "playlist", imageTags: ["Primary": "new-server-mosaic"], type: .playlist)
+        let allowed = MediaItem(id: "allowed", officialRating: "G", type: .movie)
+        let artwork = MediaItem(id: "art", imageTags: ["Primary": "still"], officialRating: "G", type: .episode)
+        let restricted = MediaItem(id: "restricted", imageTags: ["Primary": "poster"], officialRating: "R", type: .movie)
+        let cached = [allowed, restricted, artwork]
+        let draft = [allowed, artwork]
+        for entries in [cached, draft] {
+            let covers = ContentRatingGate.playlistCoverItems(playlist: playlist, entries: entries, limit: .general, hideUnrated: true)
+            #expect(covers.map(\.id) == ["art"])
+        }
+        #expect(ContentRatingGate.playlistCoverItems(playlist: playlist, entries: [restricted, playlist], limit: .general, hideUnrated: true).isEmpty)
+        #expect(ContentRatingGate.playlistCoverItems(playlist: playlist, entries: draft, limit: .off, hideUnrated: true).first == playlist)
+    }
+
+    @Test("playlist audio rows use the tagged album cover when the track has no cover")
+    func playlistAudioArtwork() throws {
+        let dto = BaseItemDto(albumID: "album", albumPrimaryImageTag: "cover", id: "song", type: .audio)
+        let track = JellyfinMediaItemMapper.mediaItem(from: dto)
+        let client = try JellyfinClientFactory.makeClient(url: #require(URL(string: "https://example.com")))
+        let urls = ImageURLBuilder(client: client).artworkURLs(for: track, request: .init(role: .square, maxWidth: 240))
+        let cover = try #require(urls.first)
+        #expect(cover.path.hasSuffix("/Items/album/Images/Primary"))
+        #expect(URLComponents(url: cover, resolvingAgainstBaseURL: false)?.queryItems?.contains(.init(name: "tag", value: "cover")) == true)
+    }
+
     @Test("portrait-only episode primary never becomes a landscape still")
     func excludesPortraitFromStill() throws {
         let client = try JellyfinClientFactory.makeClient(url: #require(URL(string: "https://example.com")))

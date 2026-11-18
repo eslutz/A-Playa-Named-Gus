@@ -177,6 +177,30 @@ struct NextUpHomeStoreTests {
         #expect(!store.hasMoreNextUp && store.errorMessage == nil)
     }
 
+    @Test("Libraries and Home report and recover from their own failures")
+    func libraryAndHomeFailuresAreIndependent() async {
+        let provider = FakeMediaProviderSession(capabilities: .init())
+        provider.userViewsHandler = { throw GusError.network("Library unavailable") }
+        provider.itemsHandler = { query in
+            let items: [MediaItem] = query.includeTypes == [.movie] ? [.init(id: "movie", type: .movie)] : []
+            return .init(items: items, totalRecordCount: items.count)
+        }
+        let store = home(provider, activity: activityStore())
+        await store.load()
+        #expect(store.state == .loaded)
+        #expect(store.errorMessage == nil)
+        #expect(store.libraryState == .failed(GusError.network("Library unavailable").localizedDescription))
+        #expect(store.latestSections.flatMap(\.items).compactMap(\.id) == ["movie"])
+
+        provider.userViewsHandler = { [MediaItem(id: "library")] }
+        await store.loadLibraries()
+        provider.itemsHandler = { _ in throw GusError.offline }
+        await store.refresh()
+        #expect(store.libraryState == .loaded)
+        #expect(store.libraries.compactMap(\.id) == ["library"])
+        #expect(store.errorMessage != nil)
+    }
+
     @Test("a failed latest rail keeps its cache while another rail refreshes")
     func latestRailsFailIndependently() async {
         let provider = FakeMediaProviderSession(capabilities: ProviderCapabilities())
@@ -203,7 +227,8 @@ struct NextUpHomeStoreTests {
         }
         await store.refresh()
         #expect(store.latestSections.flatMap(\.items).compactMap(\.id) == ["a0", "b1"])
-        #expect(store.errorMessage != nil)
+        #expect(store.errorMessage?.contains(LatestMediaKind.movies.title) == true)
+        #expect(store.errorMessage?.contains(GusError.offline.localizedDescription) == true)
     }
 
     @Test("explicit playback activity persists per account while discovery preserves unknown dates")
