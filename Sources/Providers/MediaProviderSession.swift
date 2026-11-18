@@ -172,6 +172,10 @@ protocol MediaProviderSession: AnyObject, Sendable {
     func addToMediaList(id: UUID, kind: ServerMediaListKind, itemIDs: [String]) async throws
     func removeFromMediaList(id: UUID, kind: ServerMediaListKind, entryIDs: [UUID]) async throws
     func moveMediaListEntry(id: UUID, entryID: UUID, to index: Int) async throws
+    func canEditMediaListMetadata(_ list: EditableMediaList) async throws -> Bool
+    func canEditMediaListCover(_ list: EditableMediaList) async throws -> Bool
+    func editMediaListMetadata(_ list: EditableMediaList, name: String?, expectedName: String, overview: String?, expectedOverview: String) async throws
+    func editMediaListCover(_ list: EditableMediaList, change: MediaListCoverEdit, expectedTag: String?) async throws
 
     // MARK: Library collections
 
@@ -180,11 +184,9 @@ protocol MediaProviderSession: AnyObject, Sendable {
     func collectionItem(id: String) async throws -> MediaItem
     func collectionMembers(id: String, startIndex: Int, limit: Int) async throws -> MediaItemPage
     func createCollection(name: String, itemIDs: [String]) async throws -> String
-    func updateCollection(id: String, name: String, overview: String) async throws
     func deleteCollection(id: String) async throws
     func addCollectionMembers(id: String, itemIDs: [String]) async throws
     func removeCollectionMembers(id: String, itemIDs: [String]) async throws
-    func setCollectionArtwork(id: String, jpeg: Data) async throws
 
     /// A server-confirmable series metadata edit on an ebook. A collection-management
     /// grant alone does not grant permission to change book metadata.
@@ -202,6 +204,22 @@ protocol MediaProviderSession: AnyObject, Sendable {
 }
 
 extension MediaProviderSession {
+    func canEditMediaListMetadata(_ list: EditableMediaList) async throws -> Bool {
+        false
+    }
+
+    func canEditMediaListCover(_ list: EditableMediaList) async throws -> Bool {
+        false
+    }
+
+    func editMediaListMetadata(_ list: EditableMediaList, name: String?, expectedName: String, overview: String?, expectedOverview: String) async throws {
+        throw GusError.forbidden
+    }
+
+    func editMediaListCover(_ list: EditableMediaList, change: MediaListCoverEdit, expectedTag: String?) async throws {
+        throw GusError.forbidden
+    }
+
     func releasePlaybackResource(_ resource: PlaybackResource) async throws {}
 
     func canEditBookSeries() async throws -> Bool {
@@ -232,10 +250,6 @@ extension MediaProviderSession {
         throw unsupportedCollections()
     }
 
-    func updateCollection(id: String, name: String, overview: String) async throws {
-        throw unsupportedCollections()
-    }
-
     func deleteCollection(id: String) async throws {
         throw unsupportedCollections()
     }
@@ -245,10 +259,6 @@ extension MediaProviderSession {
     }
 
     func removeCollectionMembers(id: String, itemIDs: [String]) async throws {
-        throw unsupportedCollections()
-    }
-
-    func setCollectionArtwork(id: String, jpeg: Data) async throws {
         throw unsupportedCollections()
     }
 

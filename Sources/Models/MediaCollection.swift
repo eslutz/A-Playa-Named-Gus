@@ -78,11 +78,6 @@ struct CollectionCapabilities: Equatable, Sendable {
     var delete = false
     var addMembers = false
     var removeMembers = false
-
-    /// Never report a draft as saved while silently omitting its selected artwork.
-    func permitsEdit(artworkIncluded: Bool) -> Bool {
-        (!artworkIncluded || editArtwork) && (editMetadata || (artworkIncluded && editArtwork))
-    }
 }
 
 enum CollectionSort: String, CaseIterable, Identifiable {

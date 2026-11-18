@@ -242,7 +242,7 @@
             app.staticTexts[name].tap()
             XCTAssertTrue(app.buttons["Add Items"].waitForExistence(timeout: 5))
             app.buttons["Playlist.more"].tap()
-            app.buttons["Rename"].tap()
+            app.buttons["Edit"].tap()
             let renameField = app.textFields["Name"].firstMatch
             renameField.tap()
             // Native select-all replacement is more reliable than a string of
@@ -258,13 +258,19 @@
             XCTAssertEqual(renameField.value as? String, renamed)
             let screenshot = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
             screenshot.name = "playlist-rename-input"; screenshot.lifetime = .keepAlways; add(screenshot)
-            app.buttons["Save"].tap()
+            let description = app.descendants(matching: .any)["MediaListEditor.description"].firstMatch
+            XCTAssertTrue(description.waitForExistence(timeout: 5))
+            description.tap()
+            description.typeText("A description saved from Edit.")
+            let save = app.buttons["MediaListEditor.save"]
+            save.tap()
+            XCTAssertTrue(save.waitForNonExistence(timeout: 20))
             app.terminate(); app.launch()
             openPlaylists(app)
             let row = revealPlaylistRow(named: renamed, in: app)
             XCTAssertTrue(row.exists)
             let persisted = try await nativeList(named: renamed, kind: "Playlist")
-            XCTAssertNotNil(persisted)
+            XCTAssertEqual(persisted?["Overview"] as? String, "A description saved from Edit.")
             row.press(forDuration: 1)
             app.buttons["Delete"].firstMatch.tap()
             let confirmation = app.buttons["Delete"].firstMatch
@@ -328,8 +334,10 @@
             app.launchArguments = ["--gus-skip-session-restore", "--gus-demo-server", "--gus-disable-cloud-sync"]
             let name = "Collection Acceptance " + UUID().uuidString.prefix(8)
             app.launch()
-            let movies = app.buttons["Movies"].firstMatch
-            if !movies.exists {
+            let movies = UIDevice.current.userInterfaceIdiom == .pad
+                ? app.staticTexts["Navigation.section.category.movies"].firstMatch
+                : app.buttons["Movies"].firstMatch
+            if UIDevice.current.userInterfaceIdiom != .pad, !movies.exists {
                 let more = app.buttons["More"].firstMatch
                 XCTAssertTrue(more.waitForExistence(timeout: 20)); more.tap()
             }
@@ -362,6 +370,17 @@
             let id = try XCTUnwrap(collection?["Id"] as? String)
             let before = try await nativeEntries(listID: id, playlist: false)
             XCTAssertEqual(before.count, 1)
+            app.navigationBars.buttons["More"].firstMatch.tap()
+            app.buttons["Edit"].tap()
+            let description = app.descendants(matching: .any)["MediaListEditor.description"].firstMatch
+            XCTAssertTrue(description.waitForExistence(timeout: 10))
+            description.tap()
+            let note = "Saved from the collection editor."
+            description.typeText(note)
+            let save = app.buttons["MediaListEditor.save"]
+            save.tap()
+            XCTAssertTrue(save.waitForNonExistence(timeout: 20))
+            XCTAssertTrue(app.staticTexts[note].waitForExistence(timeout: 10))
             app.staticTexts[title].firstMatch.tap()
             let membership = app.staticTexts[name].firstMatch
             XCTAssertTrue(membership.waitForExistence(timeout: 10)); membership.tap()
@@ -387,82 +406,71 @@
         func testPlaylistEditModeReordersRemovesAndConfirmsDeletion() async throws {
             continueAfterFailure = false
             executionTimeAllowance = 240
-            let app = XCUIApplication()
-            app.launchArguments = ["--gus-skip-session-restore", "--gus-demo-server", "--gus-disable-cloud-sync"]
             let name = "Actions " + UUID().uuidString.prefix(8)
             let auth = try await demoRequest("/Users/AuthenticateByName", body: ["Username": "gus", "Pw": "playa-demo"])
             let token = try XCTUnwrap(auth["AccessToken"] as? String)
-            let user = try XCTUnwrap(auth["User"] as? [String: Any])
-            let userID = try XCTUnwrap(user["Id"] as? String)
-            _ = try await demoRequest("/Playlists", token: token, body: ["Name": name, "UserId": userID, "MediaType": "Video", "IsPublic": false])
+            let userID = try XCTUnwrap((auth["User"] as? [String: Any])?["Id"] as? String)
+            var movieIDs: [String] = []
+            for (query, title) in [("Sneeze", "Edison Kinetoscopic Record of a Sneeze (1894)"), ("May%20Irwin", "May Irwin Kiss (1896)")] {
+                let result = try await demoRequest("/Items?userId=" + userID + "&recursive=true&includeItemTypes=Movie&searchTerm=" + query, token: token)
+                let items = try XCTUnwrap(result["Items"] as? [[String: Any]])
+                try movieIDs.append(XCTUnwrap(items.first { $0["Name"] as? String == title }?["Id"] as? String))
+            }
+            let native = try await demoRequest("/Playlists", token: token, body: ["Name": name, "UserId": userID, "MediaType": "Video", "IsPublic": false, "Ids": movieIDs])
+            let id = try XCTUnwrap(native["Id"] as? String)
+            let app = XCUIApplication()
+            app.launchArguments = ["--gus-skip-session-restore", "--gus-demo-server", "--gus-disable-cloud-sync", "--gus-route", "item/" + id]
             app.launch()
             defer { app.terminate() }
-            openPlaylists(app)
-            let row = revealPlaylistRow(named: name, in: app)
-            XCTAssertTrue(row.exists); row.tap()
-            for (query, title) in [("Sneeze", "Edison Kinetoscopic Record of a Sneeze (1894)"), ("May Irwin", "May Irwin Kiss (1896)")] {
-                XCTAssertTrue(app.buttons["Add Items"].waitForExistence(timeout: 10)); app.buttons["Add Items"].tap()
-                let search = app.searchFields.firstMatch
-                XCTAssertTrue(search.waitForExistence(timeout: 10)); search.tap(); search.typeText(query)
-                let result = app.buttons[title].firstMatch
-                XCTAssertTrue(result.waitForExistence(timeout: 20)); result.tap()
-                XCTAssertTrue(search.waitForNonExistence(timeout: 20))
-            }
-            XCTAssertTrue(app.buttons["Playlist.more"].waitForExistence(timeout: 10))
+            XCTAssertTrue(app.buttons["Playlist.more"].waitForExistence(timeout: 25))
             XCTAssertFalse(app.staticTexts["Entries"].exists)
-            let fetched = try await nativeList(named: name, kind: "Playlist")
-            let native = try XCTUnwrap(fetched)
-            let id = try XCTUnwrap(native["Id"] as? String)
             let original = try await nativeEntries(listID: id, playlist: true)
             XCTAssertEqual(original.count, 2)
-            XCTAssertTrue(app.buttons["Playlist.shuffle"].exists)
+            XCTAssertTrue(app.buttons["Playlist.shuffle"].waitForExistence(timeout: 20))
             XCTAssertEqual(app.buttons["Playlist.shuffle"].frame.height, app.buttons["Playlist.restart"].frame.height, accuracy: 1)
             XCTAssertLessThan(app.buttons["Playlist.restart"].frame.width, app.buttons["Playlist.play"].frame.width)
             let controlsCapture = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
             controlsCapture.name = "design-playlist-playback-controls"; controlsCapture.lifetime = .keepAlways; add(controlsCapture)
             XCTAssertEqual(app.buttons.matching(identifier: "Playlist.addItems").count, 1)
             XCTAssertFalse(app.buttons["Playlist.nextUp"].exists)
-            app.buttons["Playlist.more"].tap(); app.buttons["Edit Items"].tap()
-            XCTAssertTrue(app.buttons["Playlist.done"].waitForExistence(timeout: 5))
             let handles = app.descendants(matching: .any).matching(NSPredicate(format: "identifier BEGINSWITH %@", "Playlist.reorder."))
             XCTAssertEqual(handles.count, 2)
-            XCTAssertFalse(app.buttons["Playlist.play"].isEnabled)
-            // Cross the first row's midpoint so UIKit inserts above it rather than at the same boundary.
             let destination = handles.element(boundBy: 0).coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.05))
-            handles.element(boundBy: 1).coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).press(forDuration: 1.5, thenDragTo: destination, withVelocity: .slow, thenHoldForDuration: 1.5)
-            let dragCapture = XCTAttachment(string: app.debugDescription)
-            dragCapture.name = "playlist-drag-receiver-hierarchy"; dragCapture.lifetime = .keepAlways; add(dragCapture)
+            handles.element(boundBy: 1).coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
+                .press(forDuration: 1.5, thenDragTo: destination, withVelocity: .slow, thenHoldForDuration: 1.2)
             let changed = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
                 app.staticTexts["May Irwin Kiss (1896)"].firstMatch.frame.minY < app.staticTexts["Edison Kinetoscopic Record of a Sneeze (1894)"].firstMatch.frame.minY
             }, object: nil)
-            XCTAssertEqual(XCTWaiter.wait(for: [changed], timeout: 10), .completed)
-            let settledMove = XCTNSPredicateExpectation(predicate: NSPredicate(format: "enabled == true"), object: app.buttons["Playlist.done"])
-            XCTAssertEqual(XCTWaiter.wait(for: [settledMove], timeout: 15), .completed)
-            let hierarchy = XCTAttachment(string: app.debugDescription)
-            hierarchy.name = "playlist-after-drag-hierarchy"; hierarchy.lifetime = .keepAlways; add(hierarchy)
+            XCTAssertEqual(XCTWaiter.wait(for: [changed], timeout: 15), .completed)
             let reordered = try await nativeEntries(listID: id, playlist: true)
             XCTAssertEqual(reordered.map { $0["Id"] as? String }, original.reversed().map { $0["Id"] as? String })
-            let lowerTarget = handles.element(boundBy: 1).coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
-            handles.element(boundBy: 0).coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).press(forDuration: 1.5, thenDragTo: lowerTarget, withVelocity: .slow, thenHoldForDuration: 1.5)
-            let movedDown = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
-                app.staticTexts["Edison Kinetoscopic Record of a Sneeze (1894)"].firstMatch.frame.minY < app.staticTexts["May Irwin Kiss (1896)"].firstMatch.frame.minY
-            }, object: nil)
-            XCTAssertEqual(XCTWaiter.wait(for: [movedDown], timeout: 10), .completed)
-            XCTAssertEqual(XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: NSPredicate(format: "enabled == true"), object: app.buttons["Playlist.done"])], timeout: 15), .completed)
-            let restoredOrder = try await nativeEntries(listID: id, playlist: true)
-            XCTAssertEqual(restoredOrder.map { $0["Id"] as? String }, original.map { $0["Id"] as? String })
-            let capture = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
-            capture.name = "design-playlist-native-row-reordering"; capture.lifetime = .keepAlways; add(capture)
-            let trash = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@", "Playlist.remove.")).firstMatch
-            XCTAssertTrue(trash.waitForExistence(timeout: 5)); trash.tap()
-            let settledRemoval = XCTNSPredicateExpectation(predicate: NSPredicate(format: "enabled == true"), object: app.buttons["Playlist.done"])
-            XCTAssertEqual(XCTWaiter.wait(for: [settledRemoval], timeout: 15), .completed)
-            let oneRemainingHandle = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in handles.count == 1 }, object: nil)
-            XCTAssertEqual(XCTWaiter.wait(for: [oneRemainingHandle], timeout: 5), .completed)
+
+            let firstEntry = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@ AND label CONTAINS %@", "Playlist.entry.", "May Irwin")).firstMatch
+            firstEntry.swipeLeft()
+            let swipeRemove = app.buttons["Remove May Irwin Kiss (1896)"].firstMatch
+            XCTAssertTrue(swipeRemove.waitForExistence(timeout: 5))
+            swipeRemove.tap()
+            XCTAssertTrue(firstEntry.waitForNonExistence(timeout: 15))
+
+            app.buttons["Playlist.more"].tap(); app.buttons["Edit"].tap()
+            let save = app.buttons["MediaListEditor.save"]
+            XCTAssertTrue(save.waitForExistence(timeout: 5))
+            let removal = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@", "MediaListEditor.remove.")).firstMatch
+            XCTAssertTrue(removal.waitForExistence(timeout: 5)); removal.tap()
+            let staged = try await nativeEntries(listID: id, playlist: true)
+            XCTAssertEqual(staged.count, 1)
+            app.buttons["Cancel"].firstMatch.tap()
+            app.buttons["Discard Changes"].firstMatch.tap()
+            XCTAssertTrue(save.waitForNonExistence(timeout: 5))
+            let afterCancel = try await nativeEntries(listID: id, playlist: true)
+            XCTAssertEqual(afterCancel.count, 1)
+
+            app.buttons["Playlist.more"].tap(); app.buttons["Edit"].tap()
+            XCTAssertTrue(removal.waitForExistence(timeout: 5)); removal.tap()
+            save.tap()
+            XCTAssertTrue(save.waitForNonExistence(timeout: 15))
             let remaining = try await nativeEntries(listID: id, playlist: true)
-            XCTAssertEqual(remaining.count, 1)
-            app.buttons["Playlist.done"].tap()
-            XCTAssertFalse(app.buttons["Playlist.done"].exists)
+            XCTAssertTrue(remaining.isEmpty)
             app.buttons["Playlist.more"].tap(); app.buttons["Delete Playlist"].tap()
             XCTAssertTrue(app.alerts["Delete Playlist?"].waitForExistence(timeout: 5))
             app.alerts.buttons["Cancel"].tap()
@@ -470,7 +478,7 @@
             XCTAssertNotNil(retained)
             app.buttons["Playlist.more"].tap(); app.buttons["Delete Playlist"].tap()
             app.alerts.buttons["Delete"].tap()
-            XCTAssertTrue(app.buttons["Playlist.create"].waitForExistence(timeout: 10))
+            XCTAssertTrue(app.buttons["Playlist.more"].waitForNonExistence(timeout: 10))
             let deleted = try await nativeList(named: name, kind: "Playlist")
             XCTAssertNil(deleted)
         }
@@ -579,7 +587,7 @@
         private func nativeList(named name: String, kind: String) async throws -> [String: Any]? {
             let auth = try await demoRequest("/Users/AuthenticateByName", body: ["Username": "gus", "Pw": "playa-demo"])
             let token = try XCTUnwrap(auth["AccessToken"] as? String)
-            let result = try await demoRequest("/Items?recursive=true&includeItemTypes=" + kind, token: token)
+            let result = try await demoRequest("/Items?recursive=true&fields=Overview&includeItemTypes=" + kind, token: token)
             let items = try XCTUnwrap(result["Items"] as? [[String: Any]])
             return items.first { $0["Name"] as? String == name }
         }

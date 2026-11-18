@@ -4,14 +4,8 @@ struct CollectionEditor: View {
     @Environment(RootNavigationState.self) private var root
     @Environment(SessionStore.self) private var session
     @Environment(\.dismiss) private var dismiss
-    var collectionID: String?
     var onCreate: () -> Void = {}
     @State private var name = ""
-    @State private var overview = ""
-    @State private var importing = false
-    @State private var artwork: Data?
-    @State private var artworkError: String?
-    @State private var initialized = false
     @State private var createdID: String?
     private var store: CollectionStore {
         root.collectionStore(session: session)
@@ -19,10 +13,7 @@ struct CollectionEditor: View {
 
     private var canSave: Bool {
         guard createdID == nil else { return false }
-        let creating = collectionID == nil
-        let allowed = creating ? store.capabilities.create : store.capabilities.permitsEdit(artworkIncluded: artwork != nil)
-        let validName = (!creating && !store.capabilities.editMetadata) || !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-        return allowed && validName && store.canSubmitMutations && CollectionPlatform.canManage
+        return store.capabilities.create && name.trimmedNilIfEmpty != nil && store.canSubmitMutations && CollectionPlatform.canManage
     }
 
     var body: some View {
@@ -34,26 +25,12 @@ struct CollectionEditor: View {
                 } else if !store.isMutating && !store.needsMutationReview {
                     Text("This collection is no longer visible on Jellyfin.")
                 }
-            } else if collectionID == nil || store.capabilities.editMetadata {
+            } else {
                 TextField("Name", text: $name)
-                if collectionID == nil {
-                    Text("Collections are shared on this Jellyfin server.").font(.footnote).foregroundStyle(.secondary)
-                }
-                if collectionID != nil {
-                    TextField("Description", text: $overview, axis: .vertical).lineLimit(3 ... 8)
-                }
-            }
-            if collectionID != nil && store.capabilities.editArtwork {
-                Button("Change Artwork", systemImage: "photo") { importing = true }
-                if artwork != nil {
-                    Text("New artwork selected")
-                }
-                if let artworkError {
-                    Text(artworkError).foregroundStyle(.secondary)
-                }
+                Text("Collections are shared on this Jellyfin server.").font(.footnote).foregroundStyle(.secondary)
             }
         }
-        .navigationTitle(collectionID == nil ? "New Collection" : "Edit Collection")
+        .navigationTitle("New Collection")
         .toolbar {
             ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() }.disabled(store.isMutating) }
             ToolbarItem(placement: .confirmationAction) {
@@ -69,29 +46,12 @@ struct CollectionEditor: View {
                 }
             }
         }
-        .collectionArtworkImporter(isPresented: $importing) { result in
-            do { artwork = try CollectionArtwork.jpeg(from: result.get()); artworkError = nil }
-            catch { artworkError = error.localizedDescription }
-        }
-        .task {
-            guard !initialized else { return }; initialized = true
-            await store.load()
-            if let collectionID {
-                await store.loadDetail(id: collectionID); name = store.collection(collectionID)?.item.name ?? ""; overview = store.collection(collectionID)?.item.overview ?? ""
-            }
-        }
+        .task { await store.load() }
         .interactiveDismissDisabled(store.isMutating)
     }
 
     private func save() async {
         guard canSave else { return }
-        if let id = collectionID {
-            if await store.saveEdits(id: id, name: name.trimmingCharacters(in: .whitespacesAndNewlines), overview: overview, artwork: artwork) {
-                artwork = nil
-                dismiss()
-            }
-            return
-        }
         let saved = await store.mutate(verifying: .contains([])) {
             let id = try await session.mediaProvider.createCollection(name: name.trimmingCharacters(in: .whitespacesAndNewlines), itemIDs: [])
             createdID = id

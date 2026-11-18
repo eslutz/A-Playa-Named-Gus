@@ -20,10 +20,29 @@ struct ServerMediaList: Identifiable, Codable, Equatable, Sendable {
     var canEdit: Bool
     var entriesLoaded: Bool
     var primaryImageTag: String?
+    var overview: String? = nil
 
     var coverItem: MediaItem {
         MediaItem(id: ServerMediaListID.string(id), imageTags: primaryImageTag.map { ["Primary": $0] } ?? [:], name: name, type: .playlist)
     }
+}
+
+enum EditableMediaList: Equatable {
+    case playlist(UUID)
+    case collection(String)
+
+    var itemID: String {
+        switch self {
+        case let .playlist(id): ServerMediaListID.string(id)
+        case let .collection(id): id
+        }
+    }
+}
+
+enum MediaListCoverEdit: Equatable {
+    case unchanged
+    case replace(Data)
+    case remove
 }
 
 /// Jellyfin uses both dashed GUIDs and compact GUIDs. Playlist occurrence APIs compare

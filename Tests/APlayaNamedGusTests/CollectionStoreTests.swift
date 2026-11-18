@@ -528,12 +528,15 @@ struct CollectionStoreTests {
         #expect(calls == 2)
     }
 
-    @Test func editPermissionDoesNotSilentlyDropAnArtworkDraft() {
-        #expect(!CollectionCapabilities().permitsEdit(artworkIncluded: false))
-        #expect(CollectionCapabilities(editMetadata: true).permitsEdit(artworkIncluded: false))
-        #expect(!CollectionCapabilities(editMetadata: true).permitsEdit(artworkIncluded: true))
-        #expect(CollectionCapabilities(editArtwork: true).permitsEdit(artworkIncluded: true))
-        #expect(!CollectionCapabilities(editArtwork: true).permitsEdit(artworkIncluded: false))
+    @Test func collectionMetadataPermissionDoesNotGrantArtworkWrites() async {
+        let provider = FakeMediaProviderSession(capabilities: .init())
+        provider.collectionCapabilitiesHandler = { _ in .init(editMetadata: true) }
+        var writes = 0
+        provider.editMediaListCoverHandler = { _, _ in writes += 1 }
+        let store = CollectionStore(session: session(provider))
+        await store.loadPermissions()
+        #expect(await !store.saveCover(id: "a", change: .remove, expectedTag: "old"))
+        #expect(writes == 0)
     }
 
     @Test func partialMetadataSuccessRefreshesBeforeReportingArtworkFailure() async {
@@ -543,18 +546,16 @@ struct CollectionStoreTests {
         provider.collectionCapabilitiesHandler = { _ in .init(editMetadata: true, editArtwork: true) }
         provider.collectionPageHandler = { _, _ in .init(items: [MediaItem(id: "a", name: title, type: .boxSet)], totalRecordCount: 1) }
         provider.collectionItemHandler = { MediaItem(id: $0, name: title, type: .boxSet) }
-        provider.updateCollectionHandler = { _, name, _ in title = name; metadataWrites += 1 }
-        provider.setCollectionArtworkHandler = { _, _ in artworkWrites += 1; throw GusError.server("Artwork denied") }
+        provider.editMediaListMetadataHandler = { _, name, _ in title = name ?? title; metadataWrites += 1 }
+        provider.editMediaListCoverHandler = { _, _ in artworkWrites += 1; throw GusError.server("Artwork denied") }
         let store = CollectionStore(session: session(provider))
         await store.load()
-        let saved = await store.saveEdits(id: "a", name: "New", overview: "Description", artwork: Data([1]))
-        #expect(!saved)
+        #expect(await store.saveMetadata(id: "a", name: "New", expectedName: "Old", overview: "Description", expectedOverview: ""))
+        #expect(await !store.saveCover(id: "a", change: .replace(Data([1])), expectedTag: "old"))
         #expect(metadataWrites == 1 && artworkWrites == 1)
         #expect(store.collection("a")?.item.name == "New")
-        #expect(store.statusMessage != nil)
         #expect(store.errorMessage == "Artwork denied")
-        #expect(store.actionOutcome == .uncertain)
-        #expect(store.needsMutationReview)
+        #expect(store.actionOutcome == .failed(.server("Artwork denied")))
     }
 
     @Test func teardownBetweenEditPhasesDoesNotDispatchArtwork() async {
@@ -563,10 +564,10 @@ struct CollectionStoreTests {
         let store = CollectionStore(session: session(provider))
         await store.load()
         var artworkWrites = 0
-        provider.updateCollectionHandler = { [weak store] _, _, _ in store?.invalidate() }
-        provider.setCollectionArtworkHandler = { _, _ in artworkWrites += 1 }
-        let saved = await store.saveEdits(id: "a", name: "New", overview: "", artwork: Data([1]))
-        #expect(!saved)
+        provider.editMediaListMetadataHandler = { [weak store] _, _, _ in store?.invalidate() }
+        provider.editMediaListCoverHandler = { _, _ in artworkWrites += 1 }
+        #expect(await !store.saveMetadata(id: "a", name: "New", expectedName: "Old", overview: nil, expectedOverview: ""))
+        #expect(await !store.saveCover(id: "a", change: .replace(Data([1])), expectedTag: nil))
         #expect(artworkWrites == 0)
     }
 }

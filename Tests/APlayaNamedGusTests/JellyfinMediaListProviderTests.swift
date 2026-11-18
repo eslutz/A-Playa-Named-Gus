@@ -140,9 +140,22 @@ struct JellyfinMediaListProviderTests {
 
     @Test("Collection metadata updates preserve unedited fields")
     func collectionMetadataPreservation() async throws {
-        let fixture = try NativeListFixture(responses: [BaseItemDto(genres: ["Fantasy"], id: ServerMediaListID.string(listID), name: "Old", overview: "Old description", taglines: ["Preserved"], type: .boxSet)], emptyResponses: 1)
-        try await fixture.provider.updateCollection(id: ServerMediaListID.string(listID), name: "New", overview: "New description")
-        let body = try JSONSerialization.jsonObject(with: bodyData(fixture.state.requests[1])) as? [String: Any]
+        let id = ServerMediaListID.string(listID)
+        let original = """
+        {"Id":"\(id)","Name":"Old","Type":"BoxSet","Overview":"Old description","Genres":["Fantasy"],"Taglines":["Preserved"]}
+        """
+        let updated = original.replacingOccurrences(of: "Old", with: "New")
+        let fixture = try NativeListFixture(jsonResponses: [seriesUser(admin: true), (original, 200), ("", 204), (updated, 200)])
+        defer { fixture.finish() }
+        try await fixture.provider.editMediaListMetadata(
+            .collection(id),
+            name: "New",
+            expectedName: "Old",
+            overview: "New description",
+            expectedOverview: "Old description"
+        )
+        let write = try #require(fixture.state.requests.first { $0.httpMethod == "POST" })
+        let body = try JSONSerialization.jsonObject(with: bodyData(write)) as? [String: Any]
         #expect(body?["Name"] as? String == "New")
         #expect(body?["Overview"] as? String == "New description")
         #expect(body?["Genres"] as? [String] == ["Fantasy"])
@@ -152,6 +165,67 @@ struct JellyfinMediaListProviderTests {
     private func seriesUser(admin: Bool) throws -> (String, Int) {
         let user = UserDto(policy: UserPolicy(authenticationProviderID: "provider", enableCollectionManagement: true, isAdministrator: admin, passwordResetProviderID: "reset"))
         return try (String(decoding: JSONEncoder().encode(user), as: UTF8.self), 200)
+    }
+
+    @Test("Playlist descriptions use elevated item metadata and preserve unrelated fields")
+    func playlistDescriptionWrite() async throws {
+        let id = ServerMediaListID.string(listID)
+        let original = """
+        {"Id":"\(id)","Name":"Playlist","Type":"Playlist","Overview":"Before","FutureMetadata":{"Field":"Preserved"}}
+        """
+        let cleared = original.replacingOccurrences(of: "Before", with: "")
+        let fixture = try NativeListFixture(jsonResponses: [
+            seriesUser(admin: true), (#"{"CanEdit":true}"#, 200), (original, 200), ("", 204), (cleared, 200),
+        ])
+        defer { fixture.finish() }
+        try await fixture.provider.editMediaListMetadata(
+            .playlist(listID),
+            name: nil,
+            expectedName: "Playlist",
+            overview: "",
+            expectedOverview: "Before"
+        )
+        let write = try #require(fixture.state.requests.first { $0.httpMethod == "POST" })
+        #expect(write.url?.path == "/Items/\(id)")
+        let body = try #require(JSONSerialization.jsonObject(with: bodyData(write)) as? NSDictionary)
+        let expected = try #require(JSONSerialization.jsonObject(with: Data(cleared.utf8)) as? NSDictionary)
+        #expect(body == expected)
+    }
+
+    @Test("A changed collection description is preserved without a write")
+    func collectionDescriptionConflict() async throws {
+        let original = """
+        {"Id":"\(itemID)","Name":"Collection","Type":"BoxSet","Overview":"Someone else's update"}
+        """
+        let fixture = try NativeListFixture(jsonResponses: [seriesUser(admin: true), (original, 200)])
+        defer { fixture.finish() }
+        await #expect(throws: GusError.self) {
+            try await fixture.provider.editMediaListMetadata(
+                .collection(itemID),
+                name: nil,
+                expectedName: "Collection",
+                overview: "My edit",
+                expectedOverview: "Before"
+            )
+        }
+        #expect(fixture.state.requests.allSatisfy { $0.httpMethod == "GET" })
+    }
+
+    @Test("Removing a playlist cover deletes only Primary and confirms the updated tag")
+    func playlistCoverRemoval() async throws {
+        let id = ServerMediaListID.string(listID)
+        let original = """
+        {"Id":"\(id)","Name":"Playlist","Type":"Playlist","ImageTags":{"Primary":"old","Thumb":"kept"}}
+        """
+        let cleared = original.replacingOccurrences(of: #""Primary":"old","#, with: "")
+        let fixture = try NativeListFixture(jsonResponses: [
+            seriesUser(admin: true), (#"{"CanEdit":true}"#, 200), (original, 200), ("", 204), (cleared, 200),
+        ])
+        defer { fixture.finish() }
+        try await fixture.provider.editMediaListCover(.playlist(listID), change: .remove, expectedTag: "old")
+        let write = try #require(fixture.state.requests.first { $0.httpMethod == "DELETE" })
+        #expect(write.url?.path == "/Items/\(id)/Images/Primary")
+        #expect(fixture.state.requests.last?.httpMethod == "GET")
     }
 
     @Test("Ebook series writes preserve the full item and confirm Jellyfin's response")
@@ -274,10 +348,18 @@ struct JellyfinMediaListProviderTests {
 
     @Test("Artwork uses base64 JPEG through the SDK transport")
     func collectionArtworkRequest() async throws {
-        let fixture = try NativeListFixture(responses: [BaseItemDto(id: ServerMediaListID.string(listID), type: .boxSet)], emptyResponses: 1)
+        let id = ServerMediaListID.string(listID)
+        let original = """
+        {"Id":"\(id)","Name":"Collection","Type":"BoxSet"}
+        """
+        let updated = """
+        {"Id":"\(id)","Name":"Collection","Type":"BoxSet","ImageTags":{"Primary":"uploaded"}}
+        """
+        let fixture = try NativeListFixture(jsonResponses: [seriesUser(admin: true), (original, 200), ("", 204), (updated, 200)])
+        defer { fixture.finish() }
         let jpeg = Data([0xFF, 0xD8, 0xFF, 0xD9])
-        try await fixture.provider.setCollectionArtwork(id: ServerMediaListID.string(listID), jpeg: jpeg)
-        let request = fixture.state.requests[1]
+        try await fixture.provider.editMediaListCover(.collection(id), change: .replace(jpeg), expectedTag: nil)
+        let request = try #require(fixture.state.requests.first { $0.httpMethod == "POST" })
         #expect(request.url?.path == "/Items/\(ServerMediaListID.string(listID))/Images/Primary")
         #expect(request.value(forHTTPHeaderField: "Content-Type") == "image/jpeg")
         #expect(try bodyData(request) == jpeg.base64EncodedData())

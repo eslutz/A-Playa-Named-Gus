@@ -349,6 +349,81 @@ final class ServerMediaListsStore {
         return await enqueue(PendingEdit(id: UUID(), listID: id, kind: .playlist, action: .move, entryID: entryID, before: before), session: session)
     }
 
+    /// Persist all locally staged playlist operations together before replaying
+    /// any of them. The existing journal still resolves provisional occurrences.
+    func savePlaylistEdit(id: UUID, expectedName: String, name: String?, expectedOrder: [UUID], order: [UUID]?, session: SessionStore) async throws -> ActionOutcome {
+        let scope = session.references.scope
+        guard session.isActive, prepare(scope: scope) else { throw GusError.cancelled }
+        let token = generation
+        await acquire()
+        defer { release() }
+        try Task.checkCancellation()
+        guard session.isActive, current(scope, token) else { throw GusError.cancelled }
+        let id = resolvedID(id, scope: scope)
+        let pending = pendingEdits(scope: scope).filter { resolvedID($0.listID, scope: scope) == id }
+        if pending.contains(where: \.needsReview) {
+            throw GusError.server(String(localized: "Review the pending playlist changes before editing it again."))
+        }
+        if pending.isEmpty {
+            do {
+                try await fetch(id: id, kind: .playlist, session: session, token: token)
+            } catch {
+                switch GusError(from: error) {
+                case .offline, .timeout, .network: break // The journal can safely queue these intents.
+                default: throw error
+                }
+            }
+        }
+        guard session.isActive, current(scope, token), let latest = list(id: id, kind: .playlist, scope: scope), latest.canEdit else {
+            throw GusError.forbidden
+        }
+        let entryIDs = latest.entries.map(\.id)
+        let resolve: (UUID) -> UUID = { self.resolvedEntryID($0, inList: id, scope: scope) }
+        guard name == nil || latest.name == expectedName || latest.name == name,
+              order == nil || (latest.entriesLoaded && expectedOrder.map(resolve) == entryIDs)
+        else { throw GusError.server(String(localized: "The playlist changed in Jellyfin. Reopen Edit to review it.")) }
+        let normalizedName = name?.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard normalizedName != "" else { throw GusError.server(String(localized: "Enter a playlist name.")) }
+        var edits: [PendingEdit] = []
+        if let normalizedName, latest.name != normalizedName {
+            edits.append(PendingEdit(id: UUID(), listID: id, kind: .playlist, action: .rename, name: normalizedName))
+        }
+        if let order {
+            let desired = order.map(resolve)
+            guard let membershipEdits = Self.playlistOrderEdits(listID: id, existing: entryIDs, desired: desired) else {
+                throw GusError.server(String(localized: "The playlist entries changed. Reopen Edit to review them."))
+            }
+            edits += membershipEdits
+        }
+        guard !edits.isEmpty else { return .confirmed }
+        guard save(scope: scope, { $0.pending += edits }) else {
+            throw GusError.server(String(localized: "The server list changes couldn't be saved on this device."))
+        }
+        let submitted = Set(edits.map(\.id))
+        await replay(session: session, token: token)
+        let remaining = pendingEdits(scope: scope).filter { submitted.contains($0.id) }
+        if remaining.contains(where: \.needsReview) {
+            return .uncertain
+        }
+        return remaining.isEmpty ? .accepted : .queued
+    }
+
+    static func playlistOrderEdits(listID: UUID, existing: [UUID], desired: [UUID]) -> [PendingEdit]? {
+        let kept = Set(desired)
+        guard kept.count == desired.count, kept.isSubset(of: Set(existing)) else { return nil }
+        var edits = existing.filter { !kept.contains($0) }.map {
+            PendingEdit(id: UUID(), listID: listID, kind: .playlist, action: .remove, entryID: $0)
+        }
+        var current = existing.filter(kept.contains)
+        for (index, entry) in desired.enumerated() where current[index] != entry {
+            guard let source = current.firstIndex(of: entry) else { return nil }
+            edits.append(PendingEdit(id: UUID(), listID: listID, kind: .playlist, action: .move, entryID: entry, before: current[index]))
+            current.remove(at: source)
+            current.insert(entry, at: index)
+        }
+        return edits
+    }
+
     @discardableResult
     func replace(entryID: UUID, in id: UUID, with item: MediaItem, session: SessionStore) async -> Bool {
         guard let itemID = item.id, prepare(scope: session.references.scope) else { return false }

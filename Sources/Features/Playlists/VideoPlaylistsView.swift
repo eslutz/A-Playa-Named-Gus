@@ -100,13 +100,19 @@ struct VideoPlaylistsView: View {
         }
     }
 
+    private var rowCoverWidth: CGFloat {
+        #if os(tvOS)
+            72
+        #else
+            52
+        #endif
+    }
+
     private func label(_ list: ServerMediaList) -> some View {
         HStack(spacing: 24) {
-            #if os(tvOS)
-                PlaylistCoverArtwork(playlist: list.coverItem, entries: list.entries.map(\.item), maxWidth: 360, aspectRatio: 1.5)
-                    .frame(width: 96, height: 64).clipShape(RoundedRectangle(cornerRadius: 8))
-                    .accessibilityHidden(true)
-            #endif
+            PlaylistCoverArtwork(playlist: list.coverItem, entries: list.entries.map(\.item), maxWidth: Int(rowCoverWidth * 3))
+                .frame(width: rowCoverWidth, height: rowCoverWidth)
+                .clipShape(RoundedRectangle(cornerRadius: 8))
             VStack(alignment: .leading, spacing: 8) {
                 Text(list.name)
                 if list.entriesLoaded {
@@ -124,7 +130,6 @@ struct VideoPlaylistDetailView: View {
     @Environment(AudioPlaybackCoordinator.self) private var audio
     @Environment(OfflineDownloadStore.self) private var downloads
     let id: UUID
-    @State private var renaming = false
     @State private var adding = false
     @State private var replacing: VideoPlaylistEntry?
     @State private var player: ItemRef?
@@ -133,7 +138,6 @@ struct VideoPlaylistDetailView: View {
     @State private var deletingPlaylist = false
     @State private var mutating = false
     @ScaledMetric(relativeTo: .body) private var numberDigitWidth: CGFloat = 10.5
-    @State private var editingEntryIDs: [UUID]?
     @Environment(\.dismiss) private var dismiss
     private var scope: AccountScope {
         session.references.scope
@@ -150,41 +154,42 @@ struct VideoPlaylistDetailView: View {
     var body: some View {
         Group {
             if let playlist, let serverList {
-                Group {
-                    if editing {
-                        editingContents(playlist, serverList: serverList)
-                    } else {
-                        List {
-                            Section { cover(serverList) }
-                            if serverList.entriesLoaded {
-                                if serverList.entries.allSatisfy({ $0.item.isAudioPlayable }) && !serverList.entries.isEmpty {
-                                    Section {
-                                        Text("\(playlist.entries.count) items").font(.subheadline).foregroundStyle(.secondary)
-                                        NavigationLink("Open Audio Playlist") {
-                                            AlbumDetailView(album: serverList.coverItem)
-                                        }
-                                    }
-                                } else {
-                                    playbackControls(playlist)
+                List {
+                    Section { cover(serverList) }
+                    if let overview = serverList.overview, !overview.isEmpty {
+                        Section { Text(overview).foregroundStyle(.secondary) }
+                    }
+                    if serverList.entriesLoaded {
+                        if serverList.entries.allSatisfy({ $0.item.isAudioPlayable }) && !serverList.entries.isEmpty {
+                            Section {
+                                Text("\(playlist.entries.count) items").font(.subheadline).foregroundStyle(.secondary)
+                                NavigationLink("Open Audio Playlist") {
+                                    AlbumDetailView(album: serverList.coverItem)
                                 }
-                                Section {
-                                    if playlist.entries.isEmpty {
-                                        Text("Add movies or individual episodes to get started.").foregroundStyle(.secondary)
-                                    }
-                                    ForEach(Array(playlist.entries.enumerated()), id: \.element.id) { index, entry in
-                                        entryRow(entry, index: index, playlist: playlist, canEdit: serverList.canEdit)
-                                    }
-                                }
-                            } else if loadingEntries {
-                                ProgressView()
-                            } else {
-                                ContentUnavailableView("Playlist Entries Unavailable", systemImage: "wifi.slash", description: Text("Connect to Jellyfin to load the entries for this playlist."))
-                                Button("Try Again") { Task { loadingEntries = true; await lists.refresh(id: id, kind: .playlist, session: session); loadingEntries = false } }
                             }
-                            if let message = lists.statusMessage, !message.isEmpty {
-                                Text(message).foregroundStyle(.secondary)
+                        } else {
+                            playbackControls(playlist)
+                        }
+                        Section {
+                            if playlist.entries.isEmpty {
+                                Text("Add movies or individual episodes to get started.").foregroundStyle(.secondary)
+                            }
+                            ForEach(Array(playlist.entries.enumerated()), id: \.element.id) { index, entry in
+                                entryRow(entry, index: index, playlist: playlist, canEdit: serverList.canEdit)
+                            }
+                            .gusPlaylistMove(enabled: serverList.canEdit && !mutating) { indices, destination in
+                                guard indices.count == 1, let source = indices.first else { return }
+                                move(source, by: destination > source ? destination - source - 1 : destination - source, in: playlist)
                             }
                         }
+                    } else if loadingEntries {
+                        ProgressView()
+                    } else {
+                        ContentUnavailableView("Playlist Entries Unavailable", systemImage: "wifi.slash", description: Text("Connect to Jellyfin to load the entries for this playlist."))
+                        Button("Try Again") { Task { loadingEntries = true; await lists.refresh(id: id, kind: .playlist, session: session); loadingEntries = false } }
+                    }
+                    if let message = lists.statusMessage, !message.isEmpty {
+                        Text(message).foregroundStyle(.secondary)
                     }
                 }
                 .navigationTitle(playlist.name)
@@ -198,32 +203,25 @@ struct VideoPlaylistDetailView: View {
                             .accessibilityLabel("Add Items")
                     }
                     ToolbarItem(placement: .primaryAction) {
-                        if editing {
-                            Button("Done") { editing = false; editingEntryIDs = nil }
-                                .disabled(mutating)
-                                .accessibilityIdentifier("Playlist.done")
-                        } else {
-                            Menu {
-                                Button("Rename", systemImage: "pencil") { renaming = true }.disabled(!serverList.canEdit)
-                                Button("Edit Items", systemImage: "line.3.horizontal") { editing = true }.disabled(!serverList.canEdit || !serverList.entriesLoaded)
-                                if serverList.entriesLoaded, serverList.entries.isEmpty || !serverList.entries.allSatisfy({ $0.item.isAudioPlayable }) {
-                                    let key = "playlist:" + lists.resolvedID(id, scope: scope).uuidString
-                                    let isInNextUp = playlist.appearsInNextUp && !NextUpActivityStore.shared.isDismissed(key, scope: scope)
-                                    Button(isInNextUp ? "Remove from Next Up" : "Add to Next Up", systemImage: isInNextUp ? MediaActionSymbols.removeFromNextUp : MediaActionSymbols.addToNextUp) {
-                                        let resolved = lists.resolvedID(id, scope: scope)
-                                        supplemental.setQueued(id: resolved, queued: !isInNextUp, scope: scope)
-                                        NextUpActivityStore.shared.setDismissed(key, dismissed: isInNextUp, scope: scope)
-                                    }
+                        Menu {
+                            Button("Edit", systemImage: "pencil") { editing = true }.disabled(!serverList.canEdit)
+                            if serverList.entriesLoaded, serverList.entries.isEmpty || !serverList.entries.allSatisfy({ $0.item.isAudioPlayable }) {
+                                let key = "playlist:" + lists.resolvedID(id, scope: scope).uuidString
+                                let isInNextUp = playlist.appearsInNextUp && !NextUpActivityStore.shared.isDismissed(key, scope: scope)
+                                Button(isInNextUp ? "Remove from Next Up" : "Add to Next Up", systemImage: isInNextUp ? MediaActionSymbols.removeFromNextUp : MediaActionSymbols.addToNextUp) {
+                                    let resolved = lists.resolvedID(id, scope: scope)
+                                    supplemental.setQueued(id: resolved, queued: !isInNextUp, scope: scope)
+                                    NextUpActivityStore.shared.setDismissed(key, dismissed: isInNextUp, scope: scope)
                                 }
-                                Divider()
-                                Button("Delete Playlist", systemImage: "trash", role: .destructive) { deletingPlaylist = true }.disabled(!serverList.canEdit)
-                            } label: { GusToolbarLabel("More", systemImage: "ellipsis") }
-                                .gusIPadIconOnly()
-                                .disabled(mutating)
-                                .gusTVToolbarIcon()
-                                .accessibilityIdentifier("Playlist.more")
-                                .accessibilityLabel("More")
-                        }
+                            }
+                            Divider()
+                            Button("Delete Playlist", systemImage: "trash", role: .destructive) { deletingPlaylist = true }.disabled(!serverList.canEdit)
+                        } label: { GusToolbarLabel("More", systemImage: "ellipsis") }
+                            .gusIPadIconOnly()
+                            .disabled(mutating)
+                            .gusTVToolbarIcon()
+                            .accessibilityIdentifier("Playlist.more")
+                            .accessibilityLabel("More")
                     }
                 }
             } else {
@@ -240,12 +238,8 @@ struct VideoPlaylistDetailView: View {
                 }
             }
         } message: { Text("Delete “\(playlist?.name ?? "")”? The media will remain in your library.") }
-        .gusTVTask(isPresented: $renaming) {
-            NavigationStack {
-                ServerListNameEditor(initialName: playlist?.name ?? "", title: "Rename Playlist", saveTitle: "Save") { name in
-                    await lists.rename(id: id, kind: .playlist, name: name, session: session)
-                }
-            }
+        .gusTVTask(isPresented: $editing) {
+            NavigationStack { MediaListEditor(list: .playlist(id)) }
         }
         .gusTVTask(isPresented: $adding) { NavigationStack { ServerListSearchView(listID: id, kind: .playlist) } }
         .gusTVTask(item: $replacing) { entry in
@@ -334,151 +328,6 @@ struct VideoPlaylistDetailView: View {
         }
     }
 
-    /// iOS uses a native scroll container because List owns its trailing reorder affordance.
-    private func editingContents(_ playlist: VideoPlaylist, serverList: ServerMediaList) -> some View {
-        let entries = editingEntryIDs.map { ids in ids.compactMap { id in playlist.entries.first { $0.id == id } } } ?? playlist.entries
-        #if os(iOS)
-            return ScrollView {
-                VStack(alignment: .leading, spacing: 24) {
-                    cover(serverList)
-                    playbackSummary(playlist)
-                        .padding(16)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(Color(uiColor: .secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 24))
-                    LazyVStack(spacing: 0) {
-                        ForEach(Array(entries.enumerated()), id: \.element.id) { index, entry in
-                            editingRow(entry, index: index, playlist: playlist)
-                                .padding(.horizontal, 16).padding(.vertical, 10)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .contentShape(Rectangle())
-                                .dropDestination(for: String.self) { payloads, _ in
-                                    _ = acceptMove(payloads, before: entry.id, playlist: playlist)
-                                }
-                            if index + 1 < entries.count {
-                                Divider().padding(.leading, 16)
-                            }
-                        }
-                        Color.clear.frame(height: 24)
-                            .accessibilityHidden(true)
-                            .dropDestination(for: String.self) { payloads, _ in
-                                _ = acceptMove(payloads, before: nil, playlist: playlist)
-                            }
-                    }
-                    .background(Color(uiColor: .secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 24))
-                    if let message = lists.statusMessage, !message.isEmpty {
-                        Text(message).foregroundStyle(.secondary)
-                    }
-                }
-                .padding(.horizontal, 20).padding(.vertical, 16)
-            }
-            .background(Color(uiColor: .systemGroupedBackground))
-        #else
-            return List {
-                Section { cover(serverList) }
-                playbackControls(playlist)
-                Section {
-                    #if os(tvOS)
-                        ForEach(Array(entries.enumerated()), id: \.element.id) { index, entry in
-                            editingRow(entry, index: index, playlist: playlist)
-                        }
-                    #else
-                        ForEach(Array(entries.enumerated()), id: \.element.id) { index, entry in
-                            editingRow(entry, index: index, playlist: playlist)
-                                .moveDisabled(!serverList.canEdit || mutating)
-                        }
-                        .onMove { offsets, destination in
-                            guard offsets.count == 1, let source = offsets.first, !mutating, serverList.canEdit else { return }
-                            var reordered = entries
-                            reordered.move(fromOffsets: offsets, toOffset: destination)
-                            guard reordered.map(\.id) != entries.map(\.id) else { return }
-                            editingEntryIDs = reordered.map(\.id)
-                            let moved = entries[source]
-                            let newIndex = reordered.firstIndex { $0.id == moved.id }!
-                            let before = reordered.indices.contains(newIndex + 1) ? reordered[newIndex + 1].id : nil
-                            mutate {
-                                _ = await lists.move(entryID: moved.id, in: id, before: before, session: session)
-                                editingEntryIDs = nil
-                            }
-                        }
-                    #endif
-                }
-                if let message = lists.statusMessage, !message.isEmpty {
-                    Text(message).foregroundStyle(.secondary)
-                }
-            }
-            #if os(iOS) || os(visionOS)
-            .environment(\.editMode, .constant(.active))
-            #endif
-        #endif
-    }
-
-    private func editingRow(_ entry: VideoPlaylistEntry, index: Int, playlist: VideoPlaylist) -> some View {
-        let title = ContentRatingGate.admitsStored(entry.reference.item) ? entry.reference.item.displayTitle : String(localized: "Restricted Content")
-        return HStack(spacing: 16) {
-            #if os(iOS)
-                Image(systemName: "line.3.horizontal")
-                    .foregroundStyle(.secondary)
-                    .frame(width: 44, height: 44)
-                    .contentShape(Rectangle())
-                    .draggable(dragPayload(entry))
-                    .accessibilityLabel("Reorder \(title)")
-                    .accessibilityIdentifier("Playlist.reorder." + entry.id.uuidString)
-                    .accessibilityAction(named: "Move Up") {
-                        if index > 0 {
-                            move(index, by: -1, in: playlist)
-                        }
-                    }
-                    .accessibilityAction(named: "Move Down") {
-                        if index + 1 < playlist.entries.count {
-                            move(index, by: 1, in: playlist)
-                        }
-                    }
-            #elseif os(tvOS)
-                PlaylistReorderHandle(title: title, moveUp: { move(index, by: -1, in: playlist) }, moveDown: { move(index, by: 1, in: playlist) }, canMoveUp: index > 0, canMoveDown: index + 1 < playlist.entries.count)
-            #endif
-            Text("\(index + 1)").monospacedDigit().frame(width: max(28, CGFloat(String(max(playlist.entries.count, 1)).count) * numberDigitWidth), alignment: .trailing).foregroundStyle(.secondary)
-            if ContentRatingGate.admitsStored(entry.reference.item) {
-                PlaylistEntryThumbnail(item: entry.reference.item)
-            }
-            VStack(alignment: .leading) {
-                Text(title)
-                if ContentRatingGate.admitsStored(entry.reference.item), let series = entry.reference.item.seriesName {
-                    Text([series, entry.reference.item.episodeLocator].compactMap { $0 }.joined(separator: " · ")).font(.caption).foregroundStyle(.secondary)
-                }
-            }
-            Spacer(minLength: 8)
-            Button(role: .destructive) {
-                mutate { _ = await lists.remove(entryID: entry.id, from: id, kind: .playlist, session: session) }
-            } label: { Label("Remove \(title)", systemImage: "trash").labelStyle(.iconOnly).frame(minWidth: 44, minHeight: 44) }
-                .buttonStyle(.borderless)
-                .accessibilityIdentifier("Playlist.remove." + entry.id.uuidString)
-        }
-        .disabled(mutating)
-    }
-
-    private func dragPayload(_ entry: VideoPlaylistEntry) -> String {
-        let payload = PlaylistItemDrag(scope: scope, playlistID: id, entryID: entry.id)
-        return (try? JSONEncoder().encode(payload)).flatMap { String(data: $0, encoding: .utf8) } ?? ""
-    }
-
-    private func acceptMove(_ payloads: [String], before target: UUID?, playlist: VideoPlaylist) -> Bool {
-        guard !mutating, serverList?.canEdit == true, payloads.count == 1,
-              let data = payloads.first?.data(using: .utf8),
-              let payload = try? JSONDecoder().decode(PlaylistItemDrag.self, from: data),
-              payload.scope == scope, payload.playlistID == id else { return false }
-        let entries = playlist.entries.map(\.id)
-        var before = target
-        // A downward drop passes the target; an upward drop inserts before it.
-        if let target, let sourceIndex = entries.firstIndex(of: payload.entryID),
-           let targetIndex = entries.firstIndex(of: target), sourceIndex < targetIndex
-        {
-            before = entries.indices.contains(targetIndex + 1) ? entries[targetIndex + 1] : nil
-        }
-        guard let move = payload.destination(in: entries, scope: scope, playlistID: id, before: before) else { return false }
-        mutate { _ = await lists.move(entryID: move.entryID, in: id, before: move.before, session: session) }
-        return true
-    }
-
     private func mutate(_ action: @escaping @MainActor () async -> Void) {
         guard !mutating, serverList?.canEdit == true else { return }
         mutating = true
@@ -488,44 +337,63 @@ struct VideoPlaylistDetailView: View {
     private func entryRow(_ entry: VideoPlaylistEntry, index: Int, playlist: VideoPlaylist, canEdit: Bool) -> some View {
         let admitted = ContentRatingGate.admitsStored(entry.reference.item)
         let isPlayable = [.movie, .episode, .video].contains(entry.reference.item.type) || entry.reference.item.isAudioPlayable
+        let title = admitted ? entry.reference.item.displayTitle : String(localized: "Restricted Content")
         return HStack(spacing: 16) {
+            if canEdit, !mutating, playlist.entries.count > 1 {
+                PlaylistDragHandle(
+                    title: title,
+                    moveUp: { move(index, by: -1, in: playlist) },
+                    moveDown: { move(index, by: 1, in: playlist) },
+                    canMoveUp: index > 0, canMoveDown: index + 1 < playlist.entries.count
+                )
+                .accessibilityIdentifier("Playlist.reorder." + entry.id.uuidString)
+            }
             Text("\(index + 1)").monospacedDigit().frame(width: max(28, CGFloat(String(max(playlist.entries.count, 1)).count) * numberDigitWidth), alignment: .trailing).foregroundStyle(.secondary)
-            if admitted && isPlayable {
-                Button {
-                    play(entry, fromBeginning: true)
-                } label: {
-                    HStack(spacing: 12) {
-                        PlaylistEntryThumbnail(item: entry.reference.item)
-                        VStack(alignment: .leading) {
-                            Text(entry.reference.item.displayTitle)
-                            if let series = entry.reference.item.seriesName {
-                                Text([series, entry.reference.item.episodeLocator].compactMap { $0 }.joined(separator: " · ")).font(.caption).foregroundStyle(.secondary)
-                            }
+            entryContent(entry, admitted: admitted, isPlayable: isPlayable)
+                .mediaItemContextMenu(item: admitted ? entry.reference.item : nil, groupName: playlist.name, canRemove: canEdit && !mutating, remove: { remove(entry) }) {
+                    Button("Play from Here") { play(entry, fromBeginning: true) }.disabled(!admitted || !isPlayable || editing || mutating)
+                    Button("Move Up") { move(index, by: -1, in: playlist) }.disabled(!canEdit || index == 0)
+                    Button("Move Down") { move(index, by: 1, in: playlist) }.disabled(!canEdit || index == playlist.entries.count - 1)
+                    Button("Choose Replacement") { replacing = entry }.disabled(!admitted || !canEdit)
+                }
+        }
+        .gusPlaylistSwipeRemove(title: title, enabled: canEdit && !mutating) {
+            remove(entry)
+        }
+    }
+
+    @ViewBuilder private func entryContent(_ entry: VideoPlaylistEntry, admitted: Bool, isPlayable: Bool) -> some View {
+        if admitted && isPlayable {
+            Button {
+                play(entry, fromBeginning: true)
+            } label: {
+                HStack(spacing: 12) {
+                    PlaylistEntryThumbnail(item: entry.reference.item)
+                    VStack(alignment: .leading) {
+                        Text(entry.reference.item.displayTitle)
+                        if let series = entry.reference.item.seriesName {
+                            Text([series, entry.reference.item.episodeLocator].compactMap { $0 }.joined(separator: " · ")).font(.caption).foregroundStyle(.secondary)
                         }
                     }
                 }
-                .disabled(editing || mutating)
-                .accessibilityIdentifier("Playlist.entry." + entry.id.uuidString)
-                .accessibilityHint("Plays the playlist starting with this item")
-            } else if admitted {
-                NavigationLink(value: ItemRef(item: entry.reference.item)) {
-                    HStack(spacing: 12) {
-                        PlaylistEntryThumbnail(item: entry.reference.item)
-                        Text(entry.reference.item.displayTitle)
-                    }
-                }
-            } else {
-                Label("Restricted Content", systemImage: "lock")
             }
+            .disabled(editing || mutating)
+            .accessibilityIdentifier("Playlist.entry." + entry.id.uuidString)
+            .accessibilityHint("Plays the playlist starting with this item")
+        } else if admitted {
+            NavigationLink(value: ItemRef(item: entry.reference.item)) {
+                HStack(spacing: 12) {
+                    PlaylistEntryThumbnail(item: entry.reference.item)
+                    Text(entry.reference.item.displayTitle)
+                }
+            }
+        } else {
+            Label("Restricted Content", systemImage: "lock")
         }
-        .mediaItemContextMenu(item: admitted ? entry.reference.item : nil, groupName: playlist.name, canRemove: canEdit, remove: {
-            _ = await lists.remove(entryID: entry.id, from: id, kind: .playlist, session: session)
-        }) {
-            Button("Play from Here") { play(entry, fromBeginning: true) }.disabled(!admitted || !isPlayable || editing || mutating)
-            Button("Move Up") { move(index, by: -1, in: playlist) }.disabled(!canEdit || index == 0)
-            Button("Move Down") { move(index, by: 1, in: playlist) }.disabled(!canEdit || index == playlist.entries.count - 1)
-            Button("Choose Replacement") { replacing = entry }.disabled(!admitted || !canEdit)
-        }
+    }
+
+    private func remove(_ entry: VideoPlaylistEntry) {
+        mutate { _ = await lists.remove(entryID: entry.id, from: id, kind: .playlist, session: session) }
     }
 
     private func play(_ entry: VideoPlaylistEntry?, fromBeginning: Bool, shuffled: Bool = false) {
@@ -544,6 +412,7 @@ struct VideoPlaylistDetailView: View {
     }
 
     private func move(_ index: Int, by offset: Int, in playlist: VideoPlaylist) {
+        guard offset != 0, playlist.entries.indices.contains(index) else { return }
         var entries = playlist.entries
         let entry = entries.remove(at: index)
         let destination = min(max(index + offset, 0), entries.count)

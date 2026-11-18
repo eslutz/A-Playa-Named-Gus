@@ -508,11 +508,11 @@
             XCTAssertTrue(row.waitForExistence(timeout: 10)); row.tap()
             XCTAssertTrue(app.buttons["Playlist.more"].waitForExistence(timeout: 10))
             capture("ordered-native-playlist")
-            app.buttons["Playlist.more"].tap(); app.buttons["Edit Items"].tap()
-            XCTAssertTrue(app.buttons["Playlist.done"].waitForExistence(timeout: 5))
+            app.buttons["Playlist.more"].tap(); app.buttons["Edit"].tap()
+            XCTAssertTrue(app.buttons["MediaListEditor.save"].waitForExistence(timeout: 5))
             capture("playlist-edit")
-            XCTAssertEqual(app.buttons.matching(identifier: "Playlist.addItems").count, 1)
-            app.buttons["Playlist.done"].tap()
+            app.buttons["Cancel"].firstMatch.tap()
+            XCTAssertTrue(app.buttons["Playlist.addItems"].exists)
         }
 
         func testSettingsMenusAndDownloads() {
@@ -626,10 +626,10 @@
                     capture("playlist-pushed")
                     if let more = button("Playlist.more", playlists) {
                         more.tap()
-                        if let edit = button("Edit Items", playlists) {
+                        if let edit = button("Edit", playlists) {
                             edit.tap()
                             capture("playlist-edit")
-                            if let done = button("Playlist.done", playlists) {
+                            if let done = button("Cancel", playlists) {
                                 done.tap()
                             }
                         }

@@ -107,7 +107,7 @@ struct ItemCollectionMemberships: View {
                     NavigationLink(value: MediaCollectionRef(id: collection.id, scope: session.references.scope, format: format)) {
                         Label(collection.item.displayTitle, systemImage: "rectangle.stack")
                     }
-                    .mediaItemContextMenu(item: nil, groupName: collection.item.displayTitle, canRemove: CollectionPlatform.canManage && store.capabilities.removeMembers && store.canSubmitMutations && store.memberErrors[collection.id] == nil, remove: {
+                    .mediaItemContextMenu(item: nil, groupName: collection.item.displayTitle, canRemove: store.capabilities.removeMembers && store.canSubmitMutations && store.memberErrors[collection.id] == nil, remove: {
                         await store.mutate(collectionID: collection.id, verifying: .excludes([itemID])) {
                             try await session.mediaProvider.removeCollectionMembers(id: collection.id, itemIDs: [itemID])
                             return collection.id
@@ -227,7 +227,7 @@ struct MediaCollectionDetailView: View {
                 ToolbarItem { collectionActions }
             #endif
         }
-        .sheet(isPresented: $editing) { NavigationStack { CollectionEditor(collectionID: id) } }
+        .gusTVTask(isPresented: $editing) { NavigationStack { MediaListEditor(list: .collection(id)) } }
         .sheet(isPresented: $adding) { NavigationStack { CollectionTitlePicker(collectionID: id, initialFormat: format) } }
         .confirmationDialog("Delete Collection?", isPresented: $deleting) {
             Button("Delete Collection", role: .destructive) { Task {
@@ -244,13 +244,14 @@ struct MediaCollectionDetailView: View {
     private var collectionActions: some View {
         Menu {
             Picker("Sort", selection: $sort) { ForEach(CollectionSort.allCases) { Text($0.title).tag($0) } }
+            if store.capabilities.editMetadata || store.capabilities.editArtwork || store.capabilities.removeMembers {
+                Button("Edit", systemImage: "pencil") { editing = true }
+                    .collectionShortcut("e").disabled(!store.canSubmitMutations)
+            }
             if CollectionPlatform.canManage {
                 if store.capabilities.addMembers {
                     Button("Add Titles", systemImage: "plus") { adding = true }
                         .disabled(!store.canSubmitMutations || collection?.membersLoaded != true || store.memberErrors[id] != nil)
-                }
-                if store.capabilities.editMetadata || store.capabilities.editArtwork {
-                    Button("Edit", systemImage: "pencil") { editing = true }.collectionShortcut("e").disabled(!store.canSubmitMutations)
                 }
                 if store.permissions(for: id).delete {
                     Button("Delete Collection", systemImage: "trash", role: .destructive) { deleting = true }.disabled(!store.canSubmitMutations)
@@ -272,7 +273,7 @@ struct MediaCollectionDetailView: View {
                     NavigationLink(value: ItemRef(item: item)) { PosterCard(item: item, imageURL: urls.first, fallbackURLs: Array(urls.dropFirst())) }
                         .posterNavigationStyle()
                         .gusTVFocus(id: item.id ?? "", section: "collection:" + id, ids: sort.sorted(members).compactMap(\.id), item: item)
-                        .mediaItemContextMenu(item: item, groupName: collection.item.displayTitle, canRemove: CollectionPlatform.canManage && store.capabilities.removeMembers && store.canSubmitMutations && store.memberErrors[id] == nil, remove: {
+                        .mediaItemContextMenu(item: item, groupName: collection.item.displayTitle, canRemove: store.capabilities.removeMembers && store.canSubmitMutations && store.memberErrors[id] == nil, remove: {
                             if let itemID = item.id {
                                 await store.mutate(collectionID: id, verifying: .excludes([itemID])) {
                                     try await session.mediaProvider.removeCollectionMembers(id: id, itemIDs: [itemID])

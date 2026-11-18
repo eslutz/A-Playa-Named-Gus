@@ -421,7 +421,7 @@ final class JellyfinMediaProviderSession: MediaProviderSession {
             for header in headers {
                 let id = try nativeListID(header.id)
                 let canEdit = await canEditPlaylist(id: id)
-                lists.append(ServerMediaList(id: id, name: header.name ?? String(localized: "Untitled", comment: "Fallback item title"), kind: kind, entries: [], canEdit: canEdit, entriesLoaded: false, primaryImageTag: header.imageTags?["Primary"]))
+                lists.append(ServerMediaList(id: id, name: header.name ?? String(localized: "Untitled", comment: "Fallback item title"), kind: kind, entries: [], canEdit: canEdit, entriesLoaded: false, primaryImageTag: header.imageTags?["Primary"], overview: header.overview))
             }
             return lists
         } catch {
@@ -456,7 +456,7 @@ final class JellyfinMediaProviderSession: MediaProviderSession {
             } else {
                 members = []
             }
-            return try ServerMediaList(id: id, name: header.name ?? String(localized: "Untitled", comment: "Fallback item title"), kind: kind, entries: JellyfinMediaItemMapper.mediaListEntries(from: members, kind: kind), canEdit: canEdit, entriesLoaded: true, primaryImageTag: header.imageTags?["Primary"])
+            return try ServerMediaList(id: id, name: header.name ?? String(localized: "Untitled", comment: "Fallback item title"), kind: kind, entries: JellyfinMediaItemMapper.mediaListEntries(from: members, kind: kind), canEdit: canEdit, entriesLoaded: true, primaryImageTag: header.imageTags?["Primary"], overview: header.overview)
         } catch {
             throw mediaListError(error)
         }
@@ -603,6 +603,135 @@ final class JellyfinMediaProviderSession: MediaProviderSession {
         return permission?.canEdit == true
     }
 
+    func canEditMediaListMetadata(_ list: EditableMediaList) async throws -> Bool {
+        guard try await collectionCapabilities(id: nil).editMetadata else { return false }
+        if case let .playlist(id) = list {
+            return await canEditPlaylist(id: id)
+        }
+        return true
+    }
+
+    func canEditMediaListCover(_ list: EditableMediaList) async throws -> Bool {
+        guard try await collectionCapabilities(id: nil).editArtwork else { return false }
+        if case let .playlist(id) = list {
+            return await canEditPlaylist(id: id)
+        }
+        return true
+    }
+
+    func editMediaListMetadata(_ list: EditableMediaList, name: String?, expectedName: String, overview: String?, expectedOverview: String) async throws {
+        guard name != nil || overview != nil else { return }
+        guard try await canEditMediaListMetadata(list) else { throw GusError.forbidden }
+        var header = try await editableListHeader(list)
+        let currentName = header["Name"] as? String ?? ""
+        let currentOverview = header["Overview"] as? String ?? ""
+        func matches(_ header: [String: Any]) -> Bool {
+            (name == nil || header["Name"] as? String == name) &&
+                (overview == nil || (header["Overview"] as? String ?? "") == overview)
+        }
+        if matches(header) {
+            return
+        }
+        guard name == nil || currentName == expectedName || currentName == name,
+              overview == nil || currentOverview == expectedOverview || currentOverview == overview
+        else { throw GusError.server(String(localized: "The list details changed in Jellyfin. Reopen Edit to review them.")) }
+        if let name {
+            header["Name"] = name
+        }
+        if let overview {
+            header["Overview"] = overview
+        }
+        // Jellyfin's generic editor accepts the full DTO. Keep fields the SDK
+        // doesn't model and never send a synthesized partial item.
+        let body = try JSONSerialization.data(withJSONObject: header)
+        try Task.checkCancellation()
+        do {
+            _ = try await client.send(Paths.updateItem(itemID: list.itemID, BaseItemDto()), configure: { @Sendable request in
+                request.httpBody = body
+                request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            })
+        } catch {
+            if let observed = try? await editableListHeader(list), matches(observed) {
+                return
+            }
+            throw error
+        }
+        guard try matches(await editableListHeader(list)) else {
+            throw GusError.server(String(localized: "Jellyfin did not confirm the updated list details."))
+        }
+    }
+
+    func editMediaListCover(_ list: EditableMediaList, change: MediaListCoverEdit, expectedTag: String?) async throws {
+        guard change != .unchanged else { return }
+        guard try await canEditMediaListCover(list) else { throw GusError.forbidden }
+        let tag = try await primaryImageTag(list)
+        if change == .remove, tag == nil {
+            return
+        }
+        if case let .replace(jpeg) = change, tag != nil, await listCoverMatches(list, jpeg: jpeg) {
+            return
+        }
+        guard tag == expectedTag else {
+            throw GusError.server(String(localized: "The cover changed in Jellyfin. Reopen Edit to review it."))
+        }
+        try Task.checkCancellation()
+        do {
+            switch change {
+            case .unchanged: return
+            case let .replace(jpeg): try await uploadPrimaryImage(id: list.itemID, jpeg: jpeg)
+            case .remove: _ = try await client.send(Paths.deleteItemImage(itemID: list.itemID, imageType: "Primary"))
+            }
+        } catch {
+            switch change {
+            case let .replace(jpeg):
+                if await listCoverMatches(list, jpeg: jpeg) {
+                    return
+                }
+            case .remove:
+                do {
+                    if try await primaryImageTag(list) == nil {
+                        return
+                    }
+                } catch {}
+            case .unchanged: break
+            }
+            throw error
+        }
+        let observed = try await primaryImageTag(list)
+        guard observed != tag else {
+            if case let .replace(jpeg) = change, await listCoverMatches(list, jpeg: jpeg) {
+                return
+            }
+            throw GusError.server(String(localized: "Jellyfin did not confirm the cover change."))
+        }
+    }
+
+    private func editableListHeader(_ list: EditableMediaList) async throws -> [String: Any] {
+        let data = try await NetworkRetryPolicy.idempotent.run {
+            try await client.data(for: Paths.getItem(itemID: list.itemID, userID: userID)).value
+        }
+        let type: String
+        switch list {
+        case .playlist: type = "Playlist"
+        case .collection: type = "BoxSet"
+        }
+        guard let header = try JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let id = header["Id"] as? String, let uuid = ServerMediaListID.uuid(id),
+              ServerMediaListID.uuid(list.itemID) == uuid, header["Type"] as? String == type
+        else { throw GusError.notFound }
+        return header
+    }
+
+    private func primaryImageTag(_ list: EditableMediaList) async throws -> String? {
+        let header = try await editableListHeader(list)
+        return (header["ImageTags"] as? [String: String])?["Primary"]
+    }
+
+    private func listCoverMatches(_ list: EditableMediaList, jpeg: Data) async -> Bool {
+        let request = Paths.getItemImage(itemID: list.itemID, imageType: "Primary")
+        return (try? await client.data(for: request).value) == jpeg
+    }
+
     // MARK: Library collections (independent of playlist occurrence APIs)
 
     func collectionCapabilities(id: String?) async throws -> CollectionCapabilities {
@@ -662,14 +791,6 @@ final class JellyfinMediaProviderSession: MediaProviderSession {
         } catch { throw collectionMutationError(error) }
     }
 
-    func updateCollection(id: String, name: String, overview: String) async throws {
-        do {
-            var header = try await collectionHeader(id)
-            header.name = name; header.overview = overview
-            _ = try await client.send(Paths.updateItem(itemID: id, header))
-        } catch { throw collectionMutationError(error) }
-    }
-
     func deleteCollection(id: String) async throws {
         do {
             let header = try await collectionHeader(id)
@@ -696,17 +817,13 @@ final class JellyfinMediaProviderSession: MediaProviderSession {
         } catch { throw collectionMutationError(error) }
     }
 
-    func setCollectionArtwork(id: String, jpeg: Data) async throws {
-        do {
-            _ = try await collectionHeader(id)
-            // Jellyfin decodes the request body from base64, despite its image content type.
-            let body = jpeg.base64EncodedData()
-            let configure: @Sendable (inout URLRequest) -> Void = { request in
-                request.httpBody = body
-                request.setValue("image/jpeg", forHTTPHeaderField: "Content-Type")
-            }
-            _ = try await client.send(Paths.setItemImage(itemID: id, imageType: "Primary"), configure: configure)
-        } catch { throw collectionMutationError(error) }
+    private func uploadPrimaryImage(id: String, jpeg: Data) async throws {
+        // Jellyfin decodes the body from base64 despite the image content type.
+        let body = jpeg.base64EncodedData()
+        _ = try await client.send(Paths.setItemImage(itemID: id, imageType: "Primary"), configure: { @Sendable request in
+            request.httpBody = body
+            request.setValue("image/jpeg", forHTTPHeaderField: "Content-Type")
+        })
     }
 
     /// The authenticated transport owns the DeleteItem 401 policy probe; this
