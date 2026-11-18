@@ -3363,6 +3363,10 @@
         }
       }
     },
+    "Leave Current Password blank to save changes or set your first password.": {
+      "comment": "Profile editor helper for a Jellyfin account that has no existing password.",
+      "extractionState": "manual"
+    },
     "Let’s connect.": {
       "comment": "iPhone Sketch presentation.",
       "localizations": {
