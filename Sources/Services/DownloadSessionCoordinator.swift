@@ -5,9 +5,16 @@ protocol DownloadSessionCoordinating: AnyObject {
     func setEventHandler(_ eventHandler: DownloadSessionCoordinatorEventHandler?)
     func startDownload(from url: URL, recordID: String)
     func resumeDownload(with resumeData: Data, recordID: String)
+    func retryStagedDownload(recordID: String) -> Bool
     func pause(recordID: String, completion: @escaping (Data?) -> Void)
     func cancel(recordID: String)
     func reconnectActiveTasks()
+}
+
+extension DownloadSessionCoordinating {
+    func retryStagedDownload(recordID: String) -> Bool {
+        false
+    }
 }
 
 @MainActor
@@ -199,7 +206,7 @@ final class DownloadSessionCoordinator: NSObject, DownloadSessionCoordinating, U
     }
 
     func reconnectActiveTasks() {
-        recoverStagedFiles()
+        _ = recoverStagedFiles()
         session.getAllTasks { [weak self] tasks in
             guard let self else { return }
             var activeRecordIDs = Set<String>()
@@ -396,7 +403,8 @@ final class DownloadSessionCoordinator: NSObject, DownloadSessionCoordinating, U
         stagedURL.deletingPathExtension().appendingPathExtension("json")
     }
 
-    private func enqueueStagedFile(_ location: URL, recordID: String, taskID: Int? = nil) {
+    @discardableResult
+    private func enqueueStagedFile(_ location: URL, recordID: String, taskID: Int? = nil) -> Bool {
         let accepted = lock.withLock { () -> Bool in
             guard !invalidatedRecordIDs.contains(recordID),
                   taskID.map({ !cancelledTaskIDs.contains($0) }) ?? true,
@@ -413,16 +421,26 @@ final class DownloadSessionCoordinator: NSObject, DownloadSessionCoordinating, U
             try? FileManager.default.removeItem(at: location)
             try? FileManager.default.removeItem(at: manifestURL(for: location))
         }
+        return accepted
     }
 
-    private func recoverStagedFiles() {
-        guard let files = try? FileManager.default.contentsOfDirectory(at: stagingDirectory, includingPropertiesForKeys: nil) else { return }
+    func retryStagedDownload(recordID: String) -> Bool {
+        recoverStagedFiles(for: recordID)
+    }
+
+    private func recoverStagedFiles(for requestedID: String? = nil) -> Bool {
+        guard let files = try? FileManager.default.contentsOfDirectory(at: stagingDirectory, includingPropertiesForKeys: nil) else { return false }
+        var recovered = false
         for file in files where file.pathExtension == "download" {
             guard let data = try? Data(contentsOf: manifestURL(for: file)),
-                  let recordID = try? JSONDecoder().decode(String.self, from: data)
+                  let recordID = try? JSONDecoder().decode(String.self, from: data),
+                  requestedID == nil || requestedID == recordID
             else { continue }
-            enqueueStagedFile(file, recordID: recordID)
+            if enqueueStagedFile(file, recordID: recordID) {
+                recovered = true
+            }
         }
+        return recovered
     }
 
     @discardableResult

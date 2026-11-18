@@ -303,11 +303,13 @@ final class FakeMediaProviderSession: MediaProviderSession {
 
     func downloadSource(for item: MediaItem, streamSelection: PlaybackStreamSelection) async throws -> DownloadSourceResolution {
         downloadSourceCallCount += 1
+        let sourceID = streamSelection.mediaSourceID ?? item.mediaSources.first?.id
         return DownloadSourceResolution(
             url: URL(string: "https://example.com/download.mp4")!,
             fileExtension: "mp4",
             requiresTranscoding: false,
-            mediaSourceID: streamSelection.mediaSourceID ?? item.mediaSources.first?.id
+            mediaSourceID: sourceID,
+            estimatedByteCount: item.mediaSources.first { $0.id == sourceID }?.sizeBytes
         )
     }
 

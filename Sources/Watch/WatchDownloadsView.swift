@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Offline audio on the watch: storage summary against the conservative watch budget,
+/// Offline audio on the watch: storage usage,
 /// playable rows, and clear delete controls.
 struct WatchDownloadsView: View {
     @Environment(SessionStore.self) private var session
@@ -18,10 +18,6 @@ struct WatchDownloadsView: View {
                         countStyle: .file
                     ) : String(localized: "Unavailable")
                 )
-                LabeledContent(
-                    "Limit",
-                    value: ByteCountFormatter.string(fromByteCount: OfflineDownloadStore.softCapBytes, countStyle: .file)
-                )
             }
 
             if let failure = downloads.loadErrorMessage {
@@ -38,8 +34,13 @@ struct WatchDownloadsView: View {
                 Section("Audio") {
                     ForEach(downloads.records) { record in
                         Button {
-                            if record.status.isComplete, record.item.isAudioPlayable {
+                            switch record.status {
+                            case .paused, .failed:
+                                Task { await downloads.resume(record, session: session) }
+                            case .complete where record.item.isAudioPlayable:
                                 playerRecord = record
+                            default:
+                                break
                             }
                         } label: {
                             VStack(alignment: .leading, spacing: 2) {
@@ -48,6 +49,11 @@ struct WatchDownloadsView: View {
                                 Text(statusText(for: record))
                                     .font(.footnote)
                                     .foregroundStyle(.secondary)
+                                if case .failed = record.status {
+                                    Text("Try Again").font(.footnote)
+                                } else if record.status == .paused {
+                                    Text("Resume").font(.footnote)
+                                }
                             }
                         }
                         .accessibilityLabel(record.playbackItem.mediaAccessibility.label)
@@ -68,6 +74,18 @@ struct WatchDownloadsView: View {
             downloads.load(serverID: session.server.id, userID: session.user.id)
         }
         .refreshable { downloads.load(serverID: session.server.id, userID: session.user.id) }
+        .alert("Download", isPresented: .init(
+            get: { downloads.errorMessage != nil },
+            set: {
+                if !$0 {
+                    downloads.clearError()
+                }
+            }
+        )) {
+            Button("OK", role: .cancel) { downloads.clearError() }
+        } message: {
+            Text(downloads.errorMessage ?? "")
+        }
         .sheet(item: $playerRecord) { record in
             WatchAudioPlayerView(tracks: [record.playbackItem], startIndex: 0, request: record.playbackRequest, localOnly: true)
         }
@@ -83,8 +101,8 @@ struct WatchDownloadsView: View {
             return record.progress.formatted(.percent.precision(.fractionLength(0)))
         case .paused:
             return String(localized: "Paused", comment: "Download paused status label")
-        case .failed:
-            return String(localized: "Download Failed", comment: "Failed download status label")
+        case let .failed(message):
+            return message.isEmpty ? String(localized: "Download Failed", comment: "Failed download status label") : message
         }
     }
 }

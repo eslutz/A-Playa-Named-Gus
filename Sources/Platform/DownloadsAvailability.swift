@@ -9,18 +9,30 @@ enum DownloadsAvailability {
         #endif
     }
 
-    /// Storage budget for offline downloads. Conservative on watch hardware per the
-    /// watchOS brief (audio-only content, small system volumes).
-    static var softCapBytes: Int64 {
-        #if os(watchOS)
-            return 2 * 1024 * 1024 * 1024
+    static var selectAllPlacement: ToolbarItemPlacement {
+        #if os(iOS)
+            .topBarLeading
         #else
-            return 20 * 1024 * 1024 * 1024
+            .automatic
         #endif
     }
+
+    #if os(watchOS)
+        static let accountStorageLimitBytes: Int64 = 2 * 1024 * 1024 * 1024
+    #endif
 }
 
 extension View {
+    @ViewBuilder
+    func gusDownloadSelectionMode(_ selecting: Bool) -> some View {
+        #if os(iOS) || os(visionOS)
+            environment(\.editMode, .constant(selecting ? .active : .inactive))
+                .navigationBarBackButtonHidden(selecting)
+        #else
+            self
+        #endif
+    }
+
     @ViewBuilder
     func gusDownloadSwipeDelete(action: @escaping () -> Void) -> some View {
         #if os(tvOS)
