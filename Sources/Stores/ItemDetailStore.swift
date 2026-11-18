@@ -359,7 +359,7 @@ final class ItemDetailStore {
     }
 
     private func loadSpecialFeatures(for item: MediaItem) async -> Result<[MediaItem], GusError> {
-        guard let itemID = item.id else { return .success([]) }
+        guard !item.isBookFormat, let itemID = item.id else { return .success([]) }
         do {
             return try await .success(session.mediaProvider.specialFeatures(itemID: itemID))
         } catch {

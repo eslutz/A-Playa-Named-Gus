@@ -4,11 +4,12 @@ import SwiftUI
 struct CastRail: View {
     @Environment(SessionStore.self) private var session
     let people: [MediaPerson]
+    var usesBookCredits = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
-                Text("Cast & Crew")
+                Text(usesBookCredits ? "Credits" : "Cast & Crew")
                     .font(.title2.bold())
                     .accessibilityAddTraits(.isHeader)
                 Spacer()
@@ -39,7 +40,7 @@ struct CastRail: View {
                                     .font(.caption.weight(.medium))
                                     .multilineTextAlignment(.leading)
                                     .fixedSize(horizontal: false, vertical: true)
-                                if let role = person.role {
+                                if let role = usesBookCredits ? BookDetailMetadata.credit(for: person.source) : person.role {
                                     Text(role)
                                         .font(.caption2)
                                         .foregroundStyle(.secondary)

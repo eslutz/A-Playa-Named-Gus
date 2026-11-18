@@ -63,6 +63,11 @@ struct ItemDetailView: View {
                     await store?.load()
                 }
             }
+            .onChange(of: playbackRefresh.revision) { _, _ in
+                if let store, store.item.isBookFormat {
+                    Task { await store.refreshUserData() }
+                }
+            }
             .onChange(of: session.references.revision) { _, _ in
                 if let store, let id = store.item.id, let current = session.references.updates[id] {
                     store.acceptResolvedMetadata(current)
@@ -155,12 +160,23 @@ struct ItemDetailView: View {
     }
 
     private func detailContent(for store: ItemDetailStore) -> some View {
+        var presentationItem = store.item
+        if presentationItem.isBookFormat {
+            presentationItem.overview = BookDetailMetadata.synopsis(store.item.overview)
+            if presentationItem.id == item.id {
+                presentationItem.overview = presentationItem.overview ?? BookDetailMetadata.synopsis(item.overview)
+                if presentationItem.genres.isEmpty {
+                    presentationItem.genres = item.genres
+                }
+            }
+        }
         let target = store.item.gusTVPlaybackTarget(nextUp: navigationState.home?.unifiedNextUp ?? [], episodes: store.seriesStore?.episodes ?? [])
         return GeometryReader { geometry in
             ScrollView {
                 VStack(alignment: .leading, spacing: 0) {
                     CinematicDetailHero(
-                        item: store.item,
+                        item: presentationItem,
+                        bookProgress: bookDetailProgress(for: store.item),
                         playbackItem: target,
                         primaryPlayEnabled: target.map { ContentRatingGate.admitsStored($0) } ?? false,
                         playbackHasProgress: target.map { (resumeTicks(for: $0) ?? 0) > 0 } ?? false,
@@ -291,12 +307,12 @@ struct ItemDetailView: View {
                             MovieCollectionMemberships(movieID: id).padding(.vertical)
                         }
                         #if !os(tvOS)
-                            DetailMetadataRows(item: store.item).id("metadata")
+                            DetailMetadataRows(item: presentationItem).id("metadata")
                         #endif
 
                         #if !os(tvOS)
                             if !store.item.people.isEmpty {
-                                CastRail(people: store.item.people).id("cast")
+                                CastRail(people: store.item.people, usesBookCredits: store.item.isBookFormat).id("cast")
                             }
 
                         #endif
@@ -311,13 +327,13 @@ struct ItemDetailView: View {
 
                         #if os(tvOS)
                             if !store.item.people.isEmpty {
-                                CastRail(people: store.item.people).id("cast")
+                                CastRail(people: store.item.people, usesBookCredits: store.item.isBookFormat).id("cast")
                             }
-                            DetailMetadataRows(item: store.item).id("metadata")
+                            DetailMetadataRows(item: presentationItem).id("metadata")
                         #endif
 
                         AboutCardsView(
-                            item: store.item,
+                            item: presentationItem,
                             posterURL: session.mediaProvider.primaryImageURL(for: store.item, context: .posterRail)
                         )
                     }
@@ -342,6 +358,27 @@ struct ItemDetailView: View {
                 }
             #endif
         }
+    }
+
+    private func bookDetailProgress(for item: MediaItem) -> BookDetailProgress? {
+        guard item.isBookFormat, let id = item.id else { return nil }
+        let scope = session.references.scope
+        if item.type == .book {
+            let locator = BookProgressStore.shared.locatorJSON(forItemID: id, scope: scope)
+            let ticks = localProgress.positionTicks(forItemID: id, scope: scope)
+            return BookDetailProgress.reading(locator: locator, localTicks: ticks, data: item.userData)
+        }
+        let request = selectedRequest(for: item)
+        let sourceID = PlaybackChoicePosition.sourceID(for: request, session: session, downloads: downloads)
+        let checkpoint = localProgress.positionTicks(forItemID: id, scope: scope, mediaSourceID: sourceID)
+        let downloaded = downloads.record(for: item, serverID: scope.serverID, userID: scope.userID, mediaSourceID: sourceID)
+        return BookDetailProgress.listening(
+            ticks: checkpoint ?? resumeTicks(for: item) ?? item.userData?.playbackPositionTicks,
+            duration: MediaPlaybackIdentity.runTimeTicks(for: downloaded?.playbackItem ?? item, mediaSourceID: sourceID),
+            percent: checkpoint == nil ? item.userData?.playedPercentage : nil,
+            started: checkpoint != nil || item.userData?.lastPlayedAt != nil,
+            completed: item.userData?.isWatched == true
+        )
     }
 
     private func selectedRequest(for target: MediaItem) -> PlaybackRequest {

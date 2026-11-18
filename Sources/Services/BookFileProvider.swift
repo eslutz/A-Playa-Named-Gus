@@ -1,4 +1,5 @@
 import Foundation
+import Observation
 import OSLog
 
 /// Fetches a book's original file (epub/pdf) to local storage for the in-app reader and
@@ -135,12 +136,14 @@ struct BookFileProvider {
 /// disk on a short debounce (and explicitly when the reader closes) instead of
 /// rewriting the file per turn.
 @MainActor
+@Observable
 final class BookProgressStore {
     static let shared = BookProgressStore()
 
     private let directory: URL
-    private var cache: [String: String]?
-    private var writeTask: Task<Void, Never>?
+    private var revision = 0
+    @ObservationIgnored private var cache: [String: String]?
+    @ObservationIgnored private var writeTask: Task<Void, Never>?
 
     init(directory: URL = AppStorageLocation.appDirectory()) {
         self.directory = directory
@@ -166,13 +169,15 @@ final class BookProgressStore {
     }
 
     func locatorJSON(forItemID itemID: String, scope: AccountScope) -> String? {
-        loadAll()[Self.progressKey(forItemID: itemID, scope: scope)]
+        _ = revision
+        return loadAll()[Self.progressKey(forItemID: itemID, scope: scope)]
     }
 
     func save(locatorJSON: String, forItemID itemID: String, scope: AccountScope) {
         var all = loadAll()
         all[Self.progressKey(forItemID: itemID, scope: scope)] = locatorJSON
         cache = all
+        revision += 1
         scheduleWrite()
     }
 
@@ -181,6 +186,7 @@ final class BookProgressStore {
         let prefix = "\(scope.storageKey)__"
         all = all.filter { key, _ in !key.hasPrefix(prefix) }
         cache = all
+        revision += 1
         scheduleWrite()
     }
 

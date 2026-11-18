@@ -201,6 +201,23 @@ struct UserProfileStoreTests {
         #expect(state.verificationRequests.last?.url?.path == "/Sessions/Logout")
     }
 
+    @Test("Passwordless accounts can update their profile or set their first password", arguments: [true, false])
+    func saveWithoutCurrentPassword(rename: Bool) async throws {
+        let user = UserDto(hasPassword: false, id: "user", name: "Eric")
+        let updated = UserDto(hasPassword: false, id: "user", name: "Updated")
+        let original = try JSONEncoder().encode(user)
+        let responses = try [original, original, Data()] + (rename ? [JSONEncoder().encode(updated), Data()] : [])
+        let (store, state) = try fixture(responses, verificationPassword: "")
+        await store.load()
+        #expect(await store.save(name: rename ? "Updated" : "Eric", audioLanguage: "", subtitleLanguage: "", currentPassword: "", newPassword: "first") == .confirmed)
+        #expect(store.profile?.hasPassword == true)
+        #expect(state.verificationRequests.map { $0.url?.path } == (rename ? ["/Users/AuthenticateByName", "/Sessions/Logout"] : []))
+        let request = try #require(state.requests.last)
+        #expect(request.url?.path == "/Users/Password")
+        let body = try JSONDecoder().decode(UpdateUserPassword.self, from: #require(request.httpBody))
+        #expect(body.currentPw == "" && body.newPw == "first")
+    }
+
     @Test("A password-only change uses Jellyfin's current-password check with the active user and token")
     func changePassword() async throws {
         let user = UserDto(id: "user", name: "Eric")
@@ -285,8 +302,8 @@ struct UserProfileStoreTests {
         #expect(upload.httpBody == jpeg.base64EncodedData())
     }
 
-    private func fixture(_ data: [Data], codes: [Int]? = nil, verificationUserID: String = "user") throws -> (UserProfileStore, ProfileResponseState) {
-        let state = ProfileResponseState(responses: data, statusCodes: codes, verificationUserID: verificationUserID)
+    private func fixture(_ data: [Data], codes: [Int]? = nil, verificationUserID: String = "user", verificationPassword: String = "current") throws -> (UserProfileStore, ProfileResponseState) {
+        let state = ProfileResponseState(responses: data, statusCodes: codes, verificationUserID: verificationUserID, verificationPassword: verificationPassword)
         let id = UUID().uuidString
         ProfileURLProtocol.states.withLock { $0[id] = state }
         let configuration = URLSessionConfiguration.ephemeral
@@ -364,6 +381,7 @@ private final class ProfileResponseState: @unchecked Sendable {
     private var recorded: [URLRequest] = []
     private var recordedVerification: [URLRequest] = []
     private let verificationUserID: String
+    private let verificationPassword: String
 
     var verificationRequests: [URLRequest] {
         lock.withLock { recordedVerification }
@@ -372,8 +390,9 @@ private final class ProfileResponseState: @unchecked Sendable {
     private var statusCodes: [Int]
     private var suspendsNextWrite = false
     private var suspendedResponse: ((Data, Int), (Result<(Data, Int), Error>) -> Void)?
-    init(responses: [Data], statusCodes: [Int]?, verificationUserID: String) {
+    init(responses: [Data], statusCodes: [Int]?, verificationUserID: String, verificationPassword: String) {
         self.verificationUserID = verificationUserID
+        self.verificationPassword = verificationPassword
         self.responses = responses
         self.statusCodes = statusCodes ?? responses.map { $0.isEmpty ? 204 : 200 }
     }
@@ -421,7 +440,7 @@ private final class ProfileResponseState: @unchecked Sendable {
         case "/Users/AuthenticateByName":
             recordedVerification.append(request)
             let body = try JSONDecoder().decode(AuthenticateUserByName.self, from: request.httpBody ?? Data())
-            guard body.pw == "current" else { return (Data(), 401) }
+            guard body.pw == verificationPassword else { return (Data(), 401) }
             return try (JSONEncoder().encode(AuthenticationResult(accessToken: "verified", user: UserDto(id: verificationUserID))), 200)
         case "/Sessions/Logout":
             recordedVerification.append(request)

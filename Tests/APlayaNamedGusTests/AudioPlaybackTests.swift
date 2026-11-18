@@ -19,6 +19,30 @@ struct AudioPlaybackTests {
         (0 ..< count).map { MediaItem(id: "track-\($0)", name: "Track \($0)", type: .audio) }
     }
 
+    @Test("book metadata preserves compound genres, paragraph breaks, and explicit credits")
+    func bookDetailMetadata() {
+        let genres = ["Movie, TV & Video Game Tie-Ins, Adventure, \"History, Modern\", adventure"]
+        #expect(BookDetailMetadata.genres(genres) == ["Movie, TV & Video Game Tie-Ins", "Adventure", "History, Modern"])
+        #expect(BookDetailMetadata.synopsis(#"First\r\n\nSecond"#) == "First\n\nSecond")
+        #expect(BookDetailMetadata.credit(for: MediaPerson(name: "Writer", creditType: "Author")) == "Author")
+        #expect(BookDetailMetadata.credit(for: MediaPerson(name: "Reader", role: "Narrator")) == "Narrator")
+        #expect(BookDetailMetadata.credit(for: MediaPerson(name: "Someone")) == "Contributor")
+    }
+
+    @Test("book and audiobook progress use format-specific units")
+    func bookDetailProgress() {
+        let firstPage = #"{"locations":{"totalProgression":0}}"#
+        #expect(BookDetailProgress.reading(locator: firstPage, localTicks: nil, data: nil) == .fraction(0))
+        #expect(BookDetailProgress.reading(locator: nil, localTicks: 4_000_000, data: nil) == .fraction(0.4))
+        #expect(BookDetailProgress.reading(locator: #"{"pdfPage":4}"#, localTicks: nil, data: nil) == .unknown)
+        #expect(BookDetailProgress.reading(locator: nil, localTicks: nil, data: nil) == nil)
+        #expect(BookDetailProgress.listening(ticks: 2, duration: 10, percent: nil) == .fraction(0.2))
+        #expect(BookDetailProgress.listening(ticks: 20, duration: 10, percent: nil) == .fraction(1))
+        #expect(BookDetailProgress.listening(ticks: 5, duration: nil, percent: nil) == .unknown)
+        #expect(BookDetailProgress.listening(ticks: 2, duration: 10, percent: nil, completed: true) == .fraction(0.2))
+        #expect(BookDetailProgress.listening(ticks: 0, duration: 10, percent: nil, started: true, completed: true) == .fraction(1))
+    }
+
     @Test("queue advances forward and stops at the end without repeat")
     func queueAdvancesAndStops() {
         var queue = AudioQueue(tracks: Self.tracks(3))

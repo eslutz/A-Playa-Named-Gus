@@ -93,6 +93,11 @@ private enum JellyfinBrowseResponse {
         if var people = item["People"] as? [[String: Any]] {
             for index in people.indices {
                 if let kind = people[index]["Type"] as? String, PersonKind(rawValue: kind) == nil {
+                    if (item["Type"] as? String) == BaseItemKind.audioBook.rawValue,
+                       kind.caseInsensitiveCompare("Narrator") == .orderedSame
+                    {
+                        people[index]["Role"] = "Narrator"
+                    }
                     people[index]["Type"] = PersonKind.unknown.rawValue
                 }
             }

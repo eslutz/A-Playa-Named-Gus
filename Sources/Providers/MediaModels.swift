@@ -134,12 +134,14 @@ struct MediaPerson: Codable, Hashable, Identifiable, Sendable {
     var name: String?
     var primaryImageTag: String?
     var role: String?
+    var creditType: String?
 
-    init(id: String? = nil, name: String? = nil, primaryImageTag: String? = nil, role: String? = nil) {
+    init(id: String? = nil, name: String? = nil, primaryImageTag: String? = nil, role: String? = nil, creditType: String? = nil) {
         self.id = id
         self.name = name
         self.primaryImageTag = primaryImageTag
         self.role = role
+        self.creditType = creditType
     }
 }
 

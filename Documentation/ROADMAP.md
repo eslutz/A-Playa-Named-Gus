@@ -871,6 +871,7 @@ milestone once it becomes the active focus and is ready to carry a hard acceptan
  advanced features materially improve Gus beyond the launch accessibility baseline without
  adding custom systems that duplicate Apple-provided accessibility behavior.
 
+- [x] **Book and audiobook details.** Separate both formats in main navigation and show cover-led reading and listening details with synopsis, genre tags, credits, and saved progress.
 - [~] **Books and audiobooks.** Add support for Jellyfin book libraries, with special focus
  on audiobooks as an audio-first playback experience. Candidate scope includes book
  browsing, audiobook playback, playback speed, chapter navigation, bookmarks, resume

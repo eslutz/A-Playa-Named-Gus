@@ -33,6 +33,7 @@ struct NavigationPreferencesTests {
             "discover",
             "settings",
             "category.books",
+            "category.audiobooks",
             "category.photos",
             "category.livetv",
         ])
@@ -47,12 +48,59 @@ struct NavigationPreferencesTests {
         ])
         #expect(store.hiddenSections(libraries: Self.libraries, serverID: "s", userID: "u").filter { $0.id != "downloaded" && $0.id != "playlists" }.map(\.id) == [
             "category.books",
+            "category.audiobooks",
             "category.photos",
             "category.livetv",
         ])
         #expect(sections.first { $0.id == "category.movies" }?.title == "Movies")
         #expect(sections.first { $0.id == "category.movies" }?.systemImage == "film")
         #expect(!sections.map(\.title).contains("Family Movies"))
+    }
+
+    @Test("book format discovery is scoped, paged by type, and retains its last result on failure")
+    func bookFormatDiscovery() async throws {
+        let store = Self.makeStore()
+        let libraries = [MediaItem(collectionType: .books, id: "mixed", name: "Library")]
+        let provider = FakeMediaProviderSession(capabilities: .init())
+        let url = try #require(URL(string: "https://jellyfin.example.invalid"))
+        let session = SessionStore(client: JellyfinClientFactory.makeClient(url: url), user: .init(id: "u", name: "Test", serverID: "s"), server: .init(id: "s", name: "Server", url: url), mediaProvider: provider)
+        for types in [[MediaItemType.book, .audioBook], [.book], [.audioBook], []] {
+            provider.itemsHandler = { query in
+                let type = try #require(query.includeTypes?.first)
+                #expect(query.includeTypes?.count == 1)
+                #expect(query.limit == 1)
+                let results = types.contains(type) ? [MediaItem(id: "one", type: type)] : []
+                return MediaItemPage(items: results, totalRecordCount: results.count)
+            }
+            await store.refreshBookFormats(session: session)
+            let detected = store.visibleSections(libraries: libraries, serverID: "s", userID: "u")
+                .compactMap(\.category).filter { $0 == .books || $0 == .audiobooks }
+            #expect(detected == types.map { $0 == .book ? .books : .audiobooks })
+        }
+        provider.itemsHandler = { _ in throw GusError.offline }
+        await store.refreshBookFormats(session: session)
+        #expect(!store.visibleSections(libraries: libraries, serverID: "s", userID: "u").contains { $0.category == .books })
+        #expect(store.visibleSections(libraries: libraries, serverID: "s", userID: "other").contains { $0.category == .books })
+        #expect(LibraryRequest.parameters(scope: .category(.books), startIndex: 60, limit: 60).includeTypes == [.book])
+        #expect(LibraryRequest.parameters(scope: .category(.audiobooks), startIndex: 60, limit: 60).includeTypes == [.audioBook])
+    }
+
+    @Test("the previous Books preference migrates to Audiobooks once")
+    func migrateBookVisibility() throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent("gus-book-nav-" + UUID().uuidString)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let scope = AccountScope(serverID: "s", userID: "u")
+        let saved = [NavigationSectionPreference(id: NavigationCategory.books.id, isVisible: false)]
+        try JSONEncoder().encode(saved).write(to: directory.appendingPathComponent(scope.storageKey + ".json"))
+        let store = NavigationPreferencesStore(directory: directory)
+        store.load(serverID: "s", userID: "u")
+        #expect(store.hiddenSections(libraries: [], serverID: "s", userID: "u").contains { $0.category == .audiobooks })
+        store.setVisibility(true, forSectionID: NavigationCategory.audiobooks.id, libraries: [], serverID: "s", userID: "u")
+        let reopened = NavigationPreferencesStore(directory: directory)
+        reopened.load(serverID: "s", userID: "u")
+        #expect(reopened.visibleSections(libraries: [], serverID: "s", userID: "u").contains { $0.category == .audiobooks })
+        #expect(reopened.hiddenSections(libraries: [], serverID: "s", userID: "u").contains { $0.category == .books })
     }
 
     @Test("Home cannot move or hide, while Settings and Libraries can move but not hide")
@@ -95,7 +143,7 @@ struct NavigationPreferencesTests {
         )
         #expect(
             store.hiddenSections(libraries: Self.libraries, serverID: "s", userID: "u").filter { $0.id != "downloaded" && $0.id != "playlists" }.map(\.id)
-                == ["category.tvshows", "category.photos", "category.livetv"]
+                == ["category.tvshows", "category.audiobooks", "category.photos", "category.livetv"]
         )
         #expect(
             store.resolvedSections(libraries: Self.libraries, serverID: "s", userID: "u")
@@ -128,6 +176,7 @@ struct NavigationPreferencesTests {
             "discover",
             "category.tvshows",
             "category.books",
+            "category.audiobooks",
             "category.photos",
             "category.livetv",
         ])

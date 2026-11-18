@@ -80,7 +80,7 @@ final class UserProfileStore {
         picture: Data? = nil
     ) async -> ActionOutcome? {
         let name = name.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard isActive, !isSaving, !isLoading, !needsSaveReadback, !name.isEmpty, !currentPassword.isEmpty else { return nil }
+        guard isActive, !isSaving, !isLoading, !needsSaveReadback, !name.isEmpty else { return nil }
         isSaving = true
         defer { isSaving = false }
         saveOutcome = .pending
@@ -97,6 +97,9 @@ final class UserProfileStore {
             var current = try await client.send(Paths.getUserByID(userID: userID)).value
             guard isActive, !Task.isCancelled else { return cancelSave(afterTransmission: false) }
             guard current.id == userID, let username = current.name else { throw GusError.forbidden }
+            guard !currentPassword.isEmpty || current.hasPassword == false else {
+                throw GusError.server(String(localized: "Enter your current Jellyfin password to save profile changes."))
+            }
             let preferencesChanged = (current.configuration?.audioLanguagePreference ?? "") != audio
                 || (current.configuration?.subtitleLanguagePreference ?? "") != subtitles
             let profileChanged = username != name || preferencesChanged || picture != nil
@@ -154,6 +157,7 @@ final class UserProfileStore {
                 passwordSubmitted = true
                 try await client.send(Paths.updateUserPassword(userID: userID, .init(currentPw: currentPassword, newPw: newPassword)))
                 guard isActive, !Task.isCancelled else { return cancelSave(afterTransmission: true) }
+                profile?.hasPassword = true
             }
             saveOutcome = .confirmed
             return saveOutcome

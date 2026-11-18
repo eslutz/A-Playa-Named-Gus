@@ -217,6 +217,7 @@ struct NavigationSettingsView: View {
         do {
             libraries = try await session.mediaProvider.userViews()
             state = .loaded
+            await navigationPreferences.refreshBookFormats(session: session)
         } catch {
             let gusError = GusError(from: error)
             guard !gusError.isCancellation else { return }

@@ -7,6 +7,7 @@ enum NavigationCategory: String, CaseIterable, Codable, Hashable, Identifiable {
     case tvshows
     case music
     case books
+    case audiobooks
     case photos
     case livetv
 
@@ -24,6 +25,8 @@ enum NavigationCategory: String, CaseIterable, Codable, Hashable, Identifiable {
             return String(localized: "Music", comment: "Navigation category: music")
         case .books:
             return String(localized: "Books", comment: "Navigation category: books")
+        case .audiobooks:
+            return String(localized: "Audiobooks")
         case .photos:
             return String(localized: "Photos", comment: "Navigation category: photos")
         case .livetv:
@@ -41,6 +44,8 @@ enum NavigationCategory: String, CaseIterable, Codable, Hashable, Identifiable {
             return "music.note"
         case .books:
             return "book"
+        case .audiobooks:
+            return "headphones"
         case .photos:
             return "photo"
         case .livetv:
@@ -56,7 +61,7 @@ enum NavigationCategory: String, CaseIterable, Codable, Hashable, Identifiable {
             return .tvshows
         case .music:
             return .music
-        case .books:
+        case .books, .audiobooks:
             return .books
         case .photos:
             return .photos
@@ -74,7 +79,9 @@ enum NavigationCategory: String, CaseIterable, Codable, Hashable, Identifiable {
         case .music:
             return [.musicArtist, .musicAlbum, .playlist]
         case .books:
-            return [.book, .audioBook]
+            return [.book]
+        case .audiobooks:
+            return [.audioBook]
         case .photos:
             return [.photo]
         case .livetv:
@@ -89,7 +96,7 @@ enum NavigationCategory: String, CaseIterable, Codable, Hashable, Identifiable {
 
     static func available(in libraries: [MediaItem]) -> [NavigationCategory] {
         let collectionTypes = Set(libraries.compactMap(\.collectionType))
-        return allCases.filter { collectionTypes.contains($0.collectionType) }
+        return allCases.filter { $0 != .audiobooks && collectionTypes.contains($0.collectionType) }
     }
 }
 
@@ -140,6 +147,8 @@ final class NavigationPreferencesStore {
     private(set) var revision = 0
 
     private var preferencesByScope: [AccountScope: [NavigationSectionPreference]] = [:]
+    private var bookFormatsByScope: [AccountScope: Set<NavigationCategory>] = [:]
+    @ObservationIgnored private var probingFormats: Set<AccountScope> = []
     private var loadedScopes: Set<AccountScope> = []
     private let directory: URL
     private let logger = Logger(category: .home)
@@ -156,10 +165,43 @@ final class NavigationPreferencesStore {
 
         guard let data = try? Data(contentsOf: fileURL(for: scope)) else { return }
         do {
-            preferencesByScope[scope] = try JSONDecoder().decode([NavigationSectionPreference].self, from: data)
+            var stored = try JSONDecoder().decode([NavigationSectionPreference].self, from: data)
+            if !stored.contains(where: { $0.id == NavigationCategory.audiobooks.id }),
+               let index = stored.firstIndex(where: { $0.id == NavigationCategory.books.id })
+            {
+                let audiobook = NavigationSectionPreference(id: NavigationCategory.audiobooks.id, isVisible: stored[index].isVisible)
+                stored.insert(audiobook, at: index + 1)
+                persist(stored, scope: scope)
+            }
+            preferencesByScope[scope] = stored
             revision += 1
         } catch {
             logger.error("Failed to decode navigation preferences: \(error.localizedDescription, privacy: .private)")
+        }
+    }
+
+    func refreshBookFormats(session: SessionStore) async {
+        let scope = session.references.scope
+        guard session.isActive, probingFormats.insert(scope).inserted else { return }
+        defer { probingFormats.remove(scope) }
+        do {
+            async let books = session.mediaProvider.latestMedia(kind: .books, startIndex: 0, limit: 1)
+            async let audiobooks = session.mediaProvider.latestMedia(kind: .audiobooks, startIndex: 0, limit: 1)
+            let (bookPage, audioPage) = try await(books, audiobooks)
+            guard !Task.isCancelled, session.isActive else { return }
+            var formats = Set<NavigationCategory>()
+            if bookPage.items.contains(where: { $0.type == .book }) {
+                formats.insert(.books)
+            }
+            if audioPage.items.contains(where: { $0.type == .audioBook }) {
+                formats.insert(.audiobooks)
+            }
+            if bookFormatsByScope[scope] != formats {
+                bookFormatsByScope[scope] = formats
+            }
+        } catch {
+            guard !Task.isCancelled, session.isActive else { return }
+            GusError(from: error).handleIfUnauthorized(session: session)
         }
     }
 
@@ -175,18 +217,15 @@ final class NavigationPreferencesStore {
     func resolvedSections(libraries: [MediaItem], serverID: String, userID: String) -> [ResolvedNavigationSection] {
         let scope = AccountScope(serverID: serverID, userID: userID)
         let stored = preferencesByScope[scope] ?? []
-        let availableCategories = Set(NavigationCategory.available(in: libraries))
-        let categoryByID = Dictionary(uniqueKeysWithValues: NavigationCategory.allCases.map { ($0.id, $0) })
-        let librariesByCategory = Dictionary(grouping: libraries.compactMap { library -> (NavigationCategory, MediaItem)? in
-            guard let collectionType = library.collectionType,
-                  let category = NavigationCategory.allCases.first(where: { $0.collectionType == collectionType })
-            else { return nil }
-            return (category, library)
-        }) { pair in
-            pair.0
-        }.mapValues { pairs in
-            pairs.map(\.1)
+        var availableCategories = Set(NavigationCategory.available(in: libraries))
+        if let formats = bookFormatsByScope[scope] {
+            availableCategories.remove(.books)
+            availableCategories.formUnion(formats)
         }
+        let categoryByID = Dictionary(uniqueKeysWithValues: NavigationCategory.allCases.map { ($0.id, $0) })
+        let librariesByCategory = Dictionary(grouping: libraries.compactMap { library in
+            library.collectionType.map { ($0, library) }
+        }) { $0.0 }.mapValues { $0.map(\.1) }
 
         var orderedIDs: [String] = []
         var visibility: [String: Bool] = [:]
@@ -315,7 +354,7 @@ final class NavigationPreferencesStore {
         visibility: [String: Bool],
         availableCategories: Set<NavigationCategory>,
         categoryByID: [String: NavigationCategory],
-        librariesByCategory: [NavigationCategory: [MediaItem]]
+        librariesByCategory: [MediaCollectionType: [MediaItem]]
     ) -> ResolvedNavigationSection? {
         switch id {
         case NavigationSectionPreference.homeID:
@@ -374,7 +413,7 @@ final class NavigationPreferencesStore {
                 systemImage: category.systemImage,
                 isVisible: visibility[id] ?? availableCategories.contains(category),
                 category: category,
-                libraries: librariesByCategory[category] ?? [],
+                libraries: librariesByCategory[category.collectionType] ?? [],
                 canMove: true,
                 canHide: true
             )

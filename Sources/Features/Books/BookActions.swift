@@ -11,6 +11,7 @@ struct BookActionButtons: View {
     @Environment(SessionStore.self) private var session
     @Environment(OfflineDownloadStore.self) private var downloads
     let item: MediaItem
+    var progress: BookDetailProgress? = nil
 
     @State private var shareFileURL: URL?
     @State private var isPreparingShare = false
@@ -19,14 +20,16 @@ struct BookActionButtons: View {
 
     var body: some View {
         #if os(tvOS)
-            EmptyView()
+            if let progress {
+                BookDetailProgressBar(progress: progress)
+            }
         #else
             VStack(alignment: .leading, spacing: 10) {
                 #if canImport(ReadiumNavigator)
                     Button {
                         readerItem = ItemRef(item: item)
                     } label: {
-                        Label("Read", systemImage: "book")
+                        Label(progress?.isInProgress == true ? "Continue Reading" : "Read", systemImage: "book")
                             .gusProminentActionForeground()
                     }
                     .gusProminentGlassButtonStyle()
@@ -35,6 +38,9 @@ struct BookActionButtons: View {
                     .visionHoverEffect(cornerRadius: 10)
                 #endif
 
+                if let progress {
+                    BookDetailProgressBar(progress: progress)
+                }
                 shareControl
             }
             .task(id: item.id) {
@@ -192,3 +198,73 @@ struct BookActionButtons: View {
         }
     }
 #endif
+
+enum BookDetailProgress: Equatable {
+    case fraction(Double)
+    case unknown
+
+    var isInProgress: Bool {
+        self != .fraction(1)
+    }
+
+    static func reading(locator: String?, localTicks: Int?, data: MediaUserData?) -> Self? {
+        if let fraction = BookDetailMetadata.epubFraction(locator: locator), fraction.isFinite {
+            return .fraction(min(max(fraction, 0), 1))
+        }
+        if let ticks = localTicks {
+            return .fraction(JellyfinBookProgress.fraction(forTicks: ticks))
+        }
+        if let percentage = data?.playedPercentage, percentage > 0, percentage.isFinite {
+            return .fraction(min(percentage / 100, 1))
+        }
+        if let ticks = data?.playbackPositionTicks, ticks > 0 {
+            return .fraction(JellyfinBookProgress.fraction(forTicks: ticks))
+        }
+        if locator != nil {
+            return .unknown
+        }
+        if data?.isWatched == true {
+            return .fraction(1)
+        }
+        return data?.lastPlayedAt != nil ? .unknown : nil
+    }
+
+    static func listening(ticks: Int?, duration: Int?, percent: Double?, started: Bool = false, completed: Bool = false) -> Self? {
+        if let ticks, ticks > 0 || (started && !completed), let duration, duration > 0 {
+            return .fraction(min(max(Double(ticks) / Double(duration), 0), 1))
+        }
+        if let percent, percent > 0, percent.isFinite {
+            return .fraction(min(percent / 100, 1))
+        }
+        if (ticks ?? 0) > 0 {
+            return .unknown
+        }
+        if completed {
+            return .fraction(1)
+        }
+        return started ? .unknown : nil
+    }
+}
+
+struct BookDetailProgressBar: View {
+    let progress: BookDetailProgress
+
+    var body: some View {
+        Group {
+            switch progress {
+            case let .fraction(value):
+                ProgressView(value: value) {
+                    Text(value.formatted(.percent.precision(.fractionLength(0))))
+                }
+                .accessibilityLabel("Progress")
+            case .unknown:
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("In progress · percentage unavailable").font(.caption)
+                    Capsule().fill(.quaternary).frame(height: 4).accessibilityHidden(true)
+                }
+            }
+        }
+        .frame(maxWidth: 320, alignment: .leading)
+        .accessibilityIdentifier("Detail.bookProgress")
+    }
+}

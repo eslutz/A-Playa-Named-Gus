@@ -69,7 +69,11 @@ struct UserProfileView: View {
             Section {
                 SecureField("Current Password", text: $currentPassword).textContentType(.password)
             } footer: {
-                Text("Enter your current Jellyfin password to save profile changes.")
+                if session.profile.profile?.hasPassword == false {
+                    Text("Leave Current Password blank to save changes or set your first password.")
+                } else {
+                    Text("Enter your current Jellyfin password to save profile changes.")
+                }
             }
             if let message = session.profile.errorMessage {
                 Section {
@@ -143,7 +147,8 @@ struct UserProfileView: View {
     }
 
     private var canSave: Bool {
-        hasDraftChanges && name.trimmedNilIfEmpty != nil && !currentPassword.isEmpty
+        hasDraftChanges && name.trimmedNilIfEmpty != nil
+            && (!currentPassword.isEmpty || session.profile.profile?.hasPassword == false)
             && newPassword == confirmation && !loadingPicture
             && !session.profile.isSaving && !session.profile.isLoading && !session.profile.needsSaveReadback
     }

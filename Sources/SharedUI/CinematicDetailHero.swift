@@ -8,6 +8,7 @@ struct CinematicDetailHero<Accessory: View>: View {
         @Environment(\.horizontalSizeClass) private var widthClass
     #endif
     let item: MediaItem
+    var bookProgress: BookDetailProgress? = nil
     var playbackItem: MediaItem? = nil
     var primaryPlayEnabled = true
     var playbackHasProgress = false
@@ -19,6 +20,14 @@ struct CinematicDetailHero<Accessory: View>: View {
     @ViewBuilder let accessory: Accessory
 
     var body: some View {
+        if item.isBookFormat {
+            bookHero
+        } else {
+            cinematicHero
+        }
+    }
+
+    @ViewBuilder private var cinematicHero: some View {
         #if os(iOS)
             if DeviceIdentity.usesIPadPresentation {
                 iPadHero
@@ -28,6 +37,57 @@ struct CinematicDetailHero<Accessory: View>: View {
         #else
             platformHero
         #endif
+    }
+
+    private var bookHero: some View {
+        AdaptiveStack(horizontalMinimumWidth: 470, horizontalAlignment: .top, horizontalSpacing: 24, verticalSpacing: 16) { horizontal in
+            AsyncPoster(
+                url: session.mediaProvider.primaryImageURL(for: item, context: .posterGrid),
+                placeholderSymbol: "book",
+                fallbackURLs: session.mediaProvider.artworkURLs(for: item, request: .init(role: .poster, maxWidth: 640))
+            )
+            .aspectRatio(item.type == .book ? 2.0 / 3.0 : 1, contentMode: .fit)
+            .frame(width: horizontal ? 190 : nil)
+            .frame(maxWidth: 220)
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+            .accessibilityHidden(true)
+
+            VStack(alignment: .leading, spacing: 12) {
+                Text(item.displayTitle).font(.largeTitle.bold()).accessibilityAddTraits(.isHeader)
+                bookCredit("Author")
+                if item.type == .audioBook {
+                    bookCredit("Narrator")
+                }
+                HStack {
+                    if let year = item.yearText {
+                        Text(year)
+                    }
+                    if item.type == .audioBook, let runtime = item.runtimeText {
+                        Text(runtime)
+                    }
+                }
+                .foregroundStyle(.secondary)
+                if let overview = item.overview {
+                    Text(overview).lineLimit(4).accessibilityIdentifier("Detail.heroOverview")
+                }
+                actionStack
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .padding(.horizontal)
+        .padding(.vertical, 24)
+        .frame(maxWidth: PageContentMetrics.maxWidth, alignment: .leading)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .tvFocusSection()
+    }
+
+    @ViewBuilder private func bookCredit(_ role: String.LocalizationValue) -> some View {
+        let label = String(localized: role)
+        let names = item.people.filter { BookDetailMetadata.credit(for: $0) == label }
+            .compactMap { $0.name?.trimmedNilIfEmpty }
+        if !names.isEmpty {
+            LabeledContent(label, value: names.formatted(.list(type: .and)))
+        }
     }
 
     #if os(iOS)
@@ -159,7 +219,9 @@ struct CinematicDetailHero<Accessory: View>: View {
             if item.type == .book {
                 // Primary reading actions must stay realized when a short landscape
                 // viewport scrolls the secondary lazy grid in and out of view.
-                BookActionButtons(item: item)
+                BookActionButtons(item: item, progress: bookProgress)
+            } else if let bookProgress {
+                BookDetailProgressBar(progress: bookProgress)
             }
             DetailActionRow {
                 upNextButton
@@ -169,7 +231,7 @@ struct CinematicDetailHero<Accessory: View>: View {
             // These controls have spoken labels rather than visible text. Keep
             // symbols compact so accessibility text sizes cannot overlap peers.
             .dynamicTypeSize(...DynamicTypeSize.large)
-            .gusPhoneHeroAccessoryStyle()
+            .gusPhoneHeroAccessoryStyle(onArtwork: !item.isBookFormat)
             .frame(maxWidth: DetailActionMetrics.maximumRowWidth)
         }
     }
