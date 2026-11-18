@@ -31,6 +31,15 @@ final class SeerrStore {
         state == .connected && client != nil && user != nil
     }
 
+    /// Wait for the local lookup before offering initial setup actions to a returning account.
+    var needsInitialSetup: Bool {
+        restored && serverURL == nil
+    }
+
+    var featuredSelectionDefaultsKey: String {
+        "dev.ericslutz.gus.seerr.featured." + scope.storageKey
+    }
+
     private var credentialAccount: String {
         "seerr:\(scope.serverID):\(scope.userID)"
     }
@@ -121,6 +130,9 @@ final class SeerrStore {
             throw error
         }
         let previous = client
+        if !samePrincipal {
+            defaults.removeObject(forKey: featuredSelectionDefaultsKey)
+        }
         if previous !== candidate {
             previous?.invalidateSession()
         }
@@ -182,6 +194,7 @@ final class SeerrStore {
         client = nil
         user = nil
         serverURL = nil
+        restored = true
         blockedTitles = []
         requestDrafts = [:]
         pendingRequests = [:]
@@ -189,6 +202,7 @@ final class SeerrStore {
         state = .disconnected
         errorMessage = nil
         tokens.deleteToken(account: credentialAccount)
+        defaults.removeObject(forKey: featuredSelectionDefaultsKey)
         try? FileManager.default.removeItem(at: fileURL)
         // Forget this device locally; no unowned network operation may outlive its session.
         Task { await previous?.clearSession() }

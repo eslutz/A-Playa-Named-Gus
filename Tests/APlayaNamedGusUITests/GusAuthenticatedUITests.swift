@@ -499,14 +499,12 @@ final class GusAuthenticatedUITests: XCTestCase {
             XCUIRemote.shared.press(.select)
             XCTAssertTrue(app.staticTexts["Connected"].waitForExistence(timeout: 20))
             capture(app, "tv-seerr-connected")
-            app.terminate()
-            app.launchArguments = ["--gus-demo-server", "--gus-disable-cloud-sync", "--gus-route", "home"]
-            app.launch()
-            XCTAssertTrue(app.staticTexts["Recently Added Movies"].waitForExistence(timeout: 30))
             XCUIRemote.shared.press(.menu)
+            try showTVSidebar(app)
             try focusTV(app, label: "Discover")
             XCUIRemote.shared.press(.select)
-            try focusTV(app, identifier: "Seerr.hero.movie.950000001")
+            try verifyTVTrendingCarousel(app)
+            try focusTV(app, identifier: "Seerr.title.movie.950000001")
             XCUIRemote.shared.press(.select)
             try focusTV(app, identifier: "Seerr.request")
             let request = app.buttons["Seerr.request"]
@@ -525,6 +523,24 @@ final class GusAuthenticatedUITests: XCTestCase {
             XCTAssertTrue(app.descendants(matching: .any)["Seerr.requests.filter"].waitForExistence(timeout: 15), app.debugDescription)
             XCTAssertTrue(app.staticTexts["Gus Fixture Movie"].waitForExistence(timeout: 10), app.debugDescription)
             capture(app, "tv-seerr-request-history")
+        }
+
+        private func verifyTVTrendingCarousel(_ app: XCUIApplication) throws {
+            try focusTV(app, identifier: "Seerr.carousel.pause")
+            XCUIRemote.shared.press(.select)
+            let secondPageID = "Seerr.carousel.page.2"
+            let secondPage = app.buttons[secondPageID]
+            try focusTV(app, identifier: secondPageID)
+            let title = secondPage.label
+            XCTAssertFalse(title.isEmpty)
+            XCUIRemote.shared.press(.select)
+            let hero = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@ AND label BEGINSWITH %@", "Seerr.hero.", title)).firstMatch
+            XCTAssertTrue(hero.waitForExistence(timeout: 10))
+            try focusTV(app, identifier: hero.identifier)
+            XCUIRemote.shared.press(.select)
+            XCTAssertTrue(app.staticTexts[title].firstMatch.waitForExistence(timeout: 10))
+            XCUIRemote.shared.press(.menu)
+            XCTAssertTrue(secondPage.waitForExistence(timeout: 10))
         }
 
         private func enterTV(_ app: XCUIApplication, identifier: String, text: String) throws {
@@ -664,10 +680,13 @@ final class GusAuthenticatedUITests: XCTestCase {
                 let resolved = cells.allElementsBoundByAccessibilityElement.last { !$0.frame.isEmpty } ?? target
                 let destination = resolved.frame
                 guard let current = try? focusedTVFrame(app) else {
+                    // A newly revealed tvOS screen can wait for the first directional
+                    // event before assigning focus, particularly after popping a detail.
+                    XCUIRemote.shared.press(.down)
                     let focused = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
                         (try? self.focusedTVFrame(app)) != nil
                     }, object: nil)
-                    XCTAssertEqual(XCTWaiter.wait(for: [focused], timeout: 5), .completed)
+                    XCTAssertEqual(XCTWaiter.wait(for: [focused], timeout: 5), .completed, app.debugDescription)
                     continue
                 }
                 let currentPoint = CGPoint(x: current.midX, y: current.midY)
@@ -693,9 +712,9 @@ final class GusAuthenticatedUITests: XCTestCase {
                 // A poster's combined accessibility frame includes its caption,
                 // while native focus may cover only the artwork. Move across
                 // that shared row before comparing their different midpoints.
-                if overlap > min(destination.height, current.height) * 0.5, destination.minX > current.maxX {
+                if overlap > min(destination.height, current.height) * 0.5, destination.minX >= current.maxX - 0.5 {
                     direction = .right
-                } else if overlap > min(destination.height, current.height) * 0.5, destination.maxX < current.minX {
+                } else if overlap > min(destination.height, current.height) * 0.5, destination.maxX <= current.minX + 0.5 {
                     direction = .left
                 } else if destination.midY > current.maxY {
                     direction = .down
@@ -832,14 +851,14 @@ final class GusAuthenticatedUITests: XCTestCase {
             let username = app.textFields["Username"]
             XCTAssertTrue(username.waitForExistence(timeout: 10), app.debugDescription)
             XCTAssertEqual(username.value as? String, "gus")
-            try focusTV(app, label: "Save")
-            capture(app, "tv-profile-save-focused")
+            let save = app.buttons["Save"].firstMatch
+            XCTAssertTrue(save.exists)
+            XCTAssertFalse(save.isEnabled)
+            XCTAssertTrue(app.secureTextFields["Current Password"].exists)
             try focusTV(app, label: "Cancel")
-            capture(app, "tv-profile-save-unfocused-cancel-focused")
-            try focusTV(app, label: "Save")
             XCUIRemote.shared.press(.select)
             XCTAssertFalse(app.textFields["Username"].waitForExistence(timeout: 2))
-            capture(app, "tv-profile-saved")
+            capture(app, "tv-profile-closed")
         }
 
         func testTVPlaybackDetails() throws {

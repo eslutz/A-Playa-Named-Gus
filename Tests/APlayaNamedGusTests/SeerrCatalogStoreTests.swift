@@ -6,6 +6,42 @@ import Testing
 @MainActor
 @Suite("Seerr catalog state and isolation", .timeLimit(.minutes(1)))
 struct SeerrCatalogStoreTests {
+    @Test("poster and profile artwork request TMDB sizes valid for that image type")
+    func artworkSizes() {
+        let movie = SeerrTitle(id: 1, mediaType: .movie, posterPath: "/poster.jpg")
+        let person = SeerrTitle(id: 2, mediaType: .person, profilePath: "/portrait.jpg")
+        let detail = SeerrPerson(id: 2, name: "Actor", profilePath: "/portrait.jpg")
+        #expect(movie.imageURL()?.path == "/t/p/w500/poster.jpg")
+        #expect(person.imageURL()?.path == "/t/p/w185/portrait.jpg")
+        #expect(detail.imageURL()?.path == "/t/p/h632/portrait.jpg")
+    }
+
+    @Test("daily featured titles stay stable across reloads and backfill only missing titles")
+    func dailyTrendingSelection() throws {
+        let today = Date(timeIntervalSince1970: 1_797_004_800)
+        let tomorrow = today.addingTimeInterval(86400)
+        let candidates = (1 ... 30).map { "movie:\($0)" } + ["tv:1", "movie:1"]
+        let first = DailyTrendingSelection(day: today, candidates: candidates, previous: nil)
+        #expect(first.ids.count == 8)
+        #expect(Set(first.ids).count == 8)
+        #expect(first == DailyTrendingSelection(day: today, candidates: candidates.reversed(), previous: nil))
+
+        let restored = try JSONDecoder().decode(DailyTrendingSelection.self, from: JSONEncoder().encode(first))
+        #expect(first == DailyTrendingSelection(day: today, candidates: candidates + ["tv:42"], previous: restored))
+        let removed = try #require(first.ids.first)
+        let remaining = candidates.filter { $0 != removed }
+        let updated = DailyTrendingSelection(day: today, candidates: remaining, previous: restored)
+        #expect(updated.ids.count == 8)
+        #expect(Array(updated.ids.prefix(7)) == Array(first.ids.dropFirst()))
+        #expect(!updated.ids.contains(removed))
+
+        let next = DailyTrendingSelection(day: tomorrow, candidates: candidates, previous: restored)
+        #expect(first.ids != next.ids)
+        #expect(next == DailyTrendingSelection(day: tomorrow, candidates: candidates, previous: nil))
+        #expect(Set(DailyTrendingSelection(day: today, candidates: ["movie:1", "tv:1", "movie:1"], previous: restored).ids) == ["movie:1", "tv:1"])
+        #expect(DailyTrendingSelection(day: today, candidates: [], previous: restored).ids.isEmpty)
+    }
+
     @Test("failed next page retains prior titles, retries that page and deduplicates identities")
     func failedPageRetainsContent() async throws {
         let fixture = try await CatalogStoreFixture(replies: [
@@ -29,6 +65,43 @@ struct SeerrCatalogStoreTests {
         #expect(!catalog.hasMore)
         #expect(catalog.errorMessage == nil)
         #expect(fixture.http.requests.map { Self.query($0, key: "page") } == ["1", "2", "2"])
+    }
+
+    @Test("Movie and series detail links page the matching related catalog", arguments: [SeerrMediaType.movie, .tv])
+    func relatedCatalogs(type: SeerrMediaType) async throws {
+        let item = #"{"id":5,"mediaType":"\#(type.rawValue)","title":"First"}"#
+        let next = #"{"id":6,"mediaType":"\#(type.rawValue)","title":"Next"}"#
+        let fixture = try await CatalogStoreFixture(replies: [
+            .init(json: Self.page(1, titles: item)), .init(json: Self.page(1, totalPages: 2, titles: item)), .init(json: Self.page(2, totalPages: 2, titles: next)),
+        ])
+        defer { fixture.cleanUp() }
+        let recommendations = SeerrCatalogStore(source: .recommendations(type, 7))
+        let similar = SeerrCatalogStore(source: .similar(type, 7))
+        await recommendations.load(store: fixture.store)
+        await similar.load(store: fixture.store)
+        await similar.loadMore(store: fixture.store)
+        #expect(recommendations.items.map(\.id) == [5])
+        #expect(similar.items.map(\.id) == [5, 6])
+        #expect(fixture.http.requests.compactMap(\.url?.lastPathComponent) == ["recommendations", "similar", "similar"])
+        #expect(fixture.http.requests.allSatisfy { $0.url?.path.contains("/\(type.rawValue)/7/") == true })
+        #expect(fixture.http.requests.map { Self.query($0, key: "page") } == ["1", "1", "2"])
+    }
+
+    @Test("A movie collection keeps Seerr's member order and omits blocked parts")
+    func collectionParts() async throws {
+        let fixture = try await CatalogStoreFixture(replies: [.init(json: """
+        {"id":7,"name":"Collection","parts":[
+            {"id":3,"mediaType":"movie","title":"Earlier"},
+            {"id":1,"mediaType":"movie","title":"Blocked","mediaInfo":{"id":1,"status":6}},
+            {"id":2,"mediaType":"movie","title":"Later"}
+        ]}
+        """)])
+        defer { fixture.cleanUp() }
+        let collection = SeerrCatalogStore(source: .collection(7))
+        await collection.load(store: fixture.store)
+        #expect(collection.items.map(\.id) == [3, 2])
+        #expect(!collection.hasMore)
+        #expect(fixture.http.requests.first?.url?.path.hasSuffix("/collection/7") == true)
     }
 
     @Test("a delayed previous-account response cannot replace the new connection's catalog")
@@ -136,6 +209,105 @@ struct SeerrCatalogStoreTests {
         #expect(!catalog.hasMore)
     }
 
+    @Test("a new trending day fetches fresh candidates, while a failed refresh retains yesterday's date and manual choices")
+    func trendingDayRefreshes() async throws {
+        let fixture = try await CatalogStoreFixture(replies: [
+            .init(json: Self.page(1, titles: #"{"id":1,"mediaType":"movie","title":"Yesterday"}"#)),
+            .init(json: "{}", status: 503),
+            .init(json: Self.page(1, titles: #"{"id":2,"mediaType":"movie","title":"Today"}"#)),
+        ])
+        defer { fixture.cleanUp() }
+        let calendar = Calendar(identifier: .gregorian)
+        let today = calendar.startOfDay(for: .now)
+        let yesterday = try #require(calendar.date(byAdding: .day, value: -1, to: today))
+        let catalog = SeerrCatalogStore(source: .feed(.trending))
+        await catalog.loadTrending(for: yesterday, calendar: calendar, store: fixture.store)
+        await catalog.loadTrending(for: yesterday, calendar: calendar, store: fixture.store)
+        #expect(fixture.http.requests.count == 1)
+        await catalog.loadTrending(for: today, calendar: calendar, store: fixture.store)
+        #expect(catalog.firstPageRequestedAt == yesterday)
+        #expect(catalog.items.map(\.id) == [1])
+        #expect(catalog.errorMessage != nil)
+        await catalog.loadTrending(for: today, calendar: calendar, store: fixture.store)
+        #expect(catalog.firstPageRequestedAt == today)
+        #expect(catalog.items.map(\.id) == [2])
+        #expect(catalog.errorMessage == nil)
+    }
+
+    @Test("the daily carousel fills from later Trending pages without advancing the ordinary shelf cursor")
+    func trendingCandidatesAcrossPages() async throws {
+        let first = #"{"id":1,"mediaType":"movie"},{"id":1,"mediaType":"tv"},{"id":2,"mediaType":"person"},{"id":9,"mediaType":"movie","mediaInfo":{"id":9,"status":6}}"#
+        let later = (1 ... 7).map { #"{"id":\#($0),"mediaType":"movie"}"# }.joined(separator: ",")
+        let fixture = try await CatalogStoreFixture(replies: [
+            .init(json: Self.page(1, totalPages: 2, titles: first)),
+            .init(json: Self.page(2, totalPages: 2, titles: later)),
+            .init(json: Self.page(2, totalPages: 2, titles: later)),
+        ])
+        defer { fixture.cleanUp() }
+        let catalog = SeerrCatalogStore(source: .feed(.trending))
+        await catalog.loadTrending(for: .now, calendar: .current, store: fixture.store)
+        let featured = try #require(catalog.featuredTrending)
+        #expect(featured.titles.count == 8)
+        #expect(featured.canSaveSelection)
+        #expect(Set(featured.titles.map(\.seerrCatalogID)) == Set((1 ... 7).map { "movie:\($0)" } + ["tv:1"]))
+        #expect(catalog.items.map(\.seerrCatalogID) == ["movie:1", "tv:1", "person:2"])
+        #expect(catalog.hasMore)
+        await catalog.loadMore(store: fixture.store)
+        #expect(!catalog.hasMore)
+        #expect(fixture.http.requests.map { Self.query($0, key: "page") } == ["1", "2", "2"])
+    }
+
+    @Test("only two extra pages are sampled from a sparse or restricted catalog, then viewed pages can fill vacancies")
+    func sparseTrendingBudget() async throws {
+        let calendar = Calendar(identifier: .gregorian)
+        let date = calendar.startOfDay(for: .now)
+        let ordinal = try #require(calendar.ordinality(of: .day, in: .era, for: date))
+        let samplePage = 2 + ordinal % 499
+        let following = samplePage == 500 ? 2 : samplePage + 1
+        let fixture = try await CatalogStoreFixture(replies: [
+            .init(json: Self.page(1, totalPages: 900, titles: #"{"id":1,"mediaType":"person"}"#)),
+            .init(json: Self.page(samplePage, totalPages: 900, titles: "")),
+            .init(json: Self.page(following, totalPages: 900, titles: "")),
+            .init(json: Self.page(1, totalPages: 900, titles: #"{"id":1,"mediaType":"person"}"#)),
+            .init(json: Self.page(2, totalPages: 900, titles: #"{"id":55,"mediaType":"movie"}"#)),
+        ])
+        defer { fixture.cleanUp() }
+        let home = SeerrCatalogStore(source: .feed(.trending))
+        await home.loadTrending(for: date, calendar: calendar, store: fixture.store)
+        #expect(fixture.http.requests.map { Self.query($0, key: "page") } == ["1", String(samplePage), String(following)])
+        #expect(home.featuredTrending?.titles.isEmpty == true)
+        let grid = SeerrCatalogStore(source: .feed(.trending))
+        await grid.load(store: fixture.store)
+        await grid.loadMore(store: fixture.store)
+        home.includeViewedTrending(grid, calendar: calendar, store: fixture.store)
+        #expect(home.featuredTrending?.titles.map(\.id) == [55])
+        #expect(home.items.map(\.id) == [1])
+        #expect(fixture.http.requests.count == 5)
+    }
+
+    @Test("a later-page error displays first-page candidates without replacing the persisted daily sample")
+    func trendingSampleFailureIsProvisional() async throws {
+        let date = Calendar.current.startOfDay(for: .now)
+        let first = (1 ... 8).map { #"{"id":\#($0),"mediaType":"movie"}"# }.joined(separator: ",")
+        let fixture = try await CatalogStoreFixture(replies: [
+            .init(json: Self.page(1, totalPages: 2, titles: first)),
+            .init(json: "{}", status: 503),
+            .init(json: Self.page(1, totalPages: 2, titles: first)),
+            .init(json: Self.page(2, totalPages: 2, titles: #"{"id":9,"mediaType":"movie"}"#)),
+        ])
+        defer { fixture.cleanUp() }
+        let catalog = SeerrCatalogStore(source: .feed(.trending))
+        await catalog.loadTrending(for: date, calendar: .current, store: fixture.store)
+        #expect(catalog.featuredTrending?.titles.count == 8)
+        #expect(catalog.featuredTrending?.canSaveSelection == false)
+        #expect(catalog.featuredError != nil)
+        #expect(catalog.errorMessage == nil)
+        await catalog.loadTrending(for: date, calendar: .current, store: fixture.store)
+        #expect(catalog.featuredTrending?.titles.count == 9)
+        #expect(catalog.featuredTrending?.canSaveSelection == true)
+        #expect(catalog.featuredError == nil)
+    }
+
     @Test("server order and enabled built-in slider capabilities determine available feeds")
     func enabledSupportedFeeds() async throws {
         let fixture = try await CatalogStoreFixture(replies: [
@@ -143,8 +315,85 @@ struct SeerrCatalogStoreTests {
         ])
         defer { fixture.cleanUp() }
         let sliders = try await fixture.store.requireClient().discoverSliders()
-        #expect(sliders.sorted { $0.order < $1.order }.compactMap(\.supportedFeed) == [.popularTV, .trending])
+        #expect(sliders.sorted { $0.order < $1.order }.compactMap(\.supportedSection) == [.titles(.popularTV), .titles(.trending)])
         #expect(fixture.http.requests.first?.url?.path == "/seerr/api/v1/settings/discover")
+    }
+
+    @Test("popular shelves inherit Seerr preferences and only filter original language after an explicit choice", arguments: [SeerrDiscoveryFeed.popularMovies, .popularTV])
+    func popularLanguage(feed: SeerrDiscoveryFeed) async throws {
+        let title = feed == .popularMovies ? #"{"id":22,"mediaType":"movie","title":"Movie"}"# : #"{"id":22,"mediaType":"tv","name":"TV"}"#
+        let fixture = try await CatalogStoreFixture(replies: Array(repeating: .init(json: Self.page(1, titles: title)), count: 2))
+        defer { fixture.cleanUp() }
+        let catalog = SeerrCatalogStore(source: .feed(feed))
+        await catalog.load(store: fixture.store)
+        #expect(catalog.items.map(\.id) == [22])
+        #expect(catalog.filtersOriginalLanguage)
+        let initial = try #require(fixture.http.requests.first)
+        #expect(initial.url?.path == "/seerr/api/v1/" + feed.path)
+        #expect(Self.query(initial, key: "language") == nil)
+
+        await catalog.applyFilters(SeerrCatalogFilters(language: "ja"), store: fixture.store)
+        #expect(try Self.query(#require(fixture.http.requests.last), key: "language") == "ja")
+    }
+
+    @Test("genre directories decode backdrops, retry independently, and open paginated filtered results", arguments: [SeerrCategoryKind.movieGenres, .tvGenres])
+    func genreDirectory(kind: SeerrCategoryKind) async throws {
+        let movie = kind == .movieGenres
+        let genreID = movie ? 28 : 10759
+        let mediaType = movie ? "movie" : "tv"
+        let fixture = try await CatalogStoreFixture(replies: [
+            .init(json: "{}", status: 503),
+            .init(json: #"[{"id":\#(genreID),"name":"Action","backdrops":["/landscape.jpg"]}]"#),
+            .init(json: Self.page(1, totalPages: 2, titles: #"{"id":8,"mediaType":"\#(mediaType)","name":"First"}"#)),
+            .init(json: Self.page(2, totalPages: 2, titles: #"{"id":9,"mediaType":"\#(mediaType)","name":"Next"}"#)),
+        ])
+        defer { fixture.cleanUp() }
+        let directory = SeerrCategoryDirectory(kind: kind)
+        await directory.load(store: fixture.store)
+        #expect(directory.errorMessage != nil)
+        await directory.load(store: fixture.store)
+        let category = try #require(directory.categories.first)
+        #expect(directory.errorMessage == nil)
+        #expect(category.backdrops == ["/landscape.jpg"])
+        #expect(fixture.http.requests.first?.url?.path == "/seerr/api/v1/discover/genreslider/" + mediaType)
+
+        let catalog = SeerrCatalogStore(source: .category(kind, category.id))
+        await catalog.load(store: fixture.store)
+        #expect(catalog.hasMore)
+        await catalog.loadMore(store: fixture.store)
+        #expect(catalog.items.map(\.id) == [8, 9])
+        #expect(!catalog.hasMore)
+        let requests = fixture.http.requests.suffix(2)
+        #expect(requests.allSatisfy { $0.url?.path == "/seerr/api/v1/discover/" + (movie ? "movies" : "tv") })
+        #expect(requests.allSatisfy { Self.query($0, key: "genre") == String(genreID) && Self.query($0, key: "language") == nil })
+        #expect(requests.map { Self.query($0, key: "page") } == ["1", "2"])
+    }
+
+    @Test("Seerr's built-in category types and curated studio and network cards lead to their respective catalogs")
+    func companyDirectories() async throws {
+        let kinds: [SeerrCategoryKind] = [.movieGenres, .studios, .tvGenres, .networks]
+        #expect(zip([6, 8, 10, 12], kinds).allSatisfy { type, kind in
+            SeerrDiscoverSlider(id: type, type: type, order: type, enabled: true, isBuiltIn: true).supportedSection == .categories(kind)
+        })
+        let fixture = try await CatalogStoreFixture(replies: [
+            .init(json: Self.page(1, titles: #"{"id":1,"mediaType":"movie","name":"Disney movie"}"#)),
+            .init(json: Self.page(1, titles: #"{"id":2,"mediaType":"tv","name":"Netflix series"}"#)),
+        ])
+        defer { fixture.cleanUp() }
+        for (kind, expectedName, count) in [(SeerrCategoryKind.studios, "Disney", 11), (.networks, "Netflix", 22)] {
+            let directory = SeerrCategoryDirectory(kind: kind)
+            await directory.load(store: fixture.store)
+            #expect(directory.categories.count == count)
+            let first = try #require(directory.categories.first)
+            #expect(first.name == expectedName)
+            #expect(SeerrArtwork.url(path: first.logoPath) != nil)
+            let catalog = SeerrCatalogStore(source: .category(kind, first.id))
+            await catalog.load(store: fixture.store)
+            #expect(catalog.items.count == 1)
+        }
+        #expect(fixture.http.requests.compactMap { $0.url?.path } == [
+            "/seerr/api/v1/discover/movies/studio/2", "/seerr/api/v1/discover/tv/network/213",
+        ])
     }
 
     @Test("one feed's failure preserves another feed's successful catalog")

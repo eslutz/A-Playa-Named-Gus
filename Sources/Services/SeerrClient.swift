@@ -145,6 +145,29 @@ actor SeerrClient {
         try await get("settings/discover")
     }
 
+    func categories(_ kind: SeerrCategoryKind) async throws -> [SeerrCategory] {
+        switch kind {
+        case .movieGenres: try await get("discover/genreslider/movie")
+        case .tvGenres: try await get("discover/genreslider/tv")
+        case .studios: SeerrCategory.studios
+        case .networks: SeerrCategory.networks
+        }
+    }
+
+    func browseCategory(_ kind: SeerrCategoryKind, id: Int, page: Int = 1) async throws -> SeerrPage {
+        try Self.validateID(id)
+        var query = Self.pageQuery(page)
+        let path: String
+        switch kind {
+        case .movieGenres, .tvGenres:
+            path = kind == .movieGenres ? "discover/movies" : "discover/tv"
+            query.append(URLQueryItem(name: "genre", value: String(id)))
+        case .studios: path = "discover/movies/studio/\(id)"
+        case .networks: path = "discover/tv/network/\(id)"
+        }
+        return try await get(path, query: query)
+    }
+
     func me() async throws -> SeerrUser {
         try await get("auth/me")
     }

@@ -6,6 +6,28 @@ import Testing
 @MainActor
 @Suite("Seerr device session safety", .timeLimit(.minutes(1)))
 struct SeerrStoreTests {
+    @Test("initial setup is offered only after lookup confirms the account has no saved connection")
+    func initialSetupSurvivesReconnectFailures() async throws {
+        let context = try StoreTestContext(replies: [.init(json: "{}", status: 522)])
+        defer { context.cleanUp() }
+        #expect(!context.store.needsInitialSetup)
+        await context.store.restore()
+        #expect(context.store.needsInitialSetup)
+        try await context.store.connect(client: context.http.client(), user: SeerrUser(id: 2, permissions: .request))
+        #expect(!context.store.needsInitialSetup)
+
+        let restored = context.makeStore(scope: context.scope)
+        await restored.restore()
+        #expect(restored.state == .offline)
+        #expect(!restored.needsInitialSetup)
+        context.tokens.deleteToken(account: context.credentialAccount)
+        await restored.retryRestore()
+        #expect(restored.state == .expired)
+        #expect(!restored.needsInitialSetup)
+        restored.disconnect()
+        #expect(restored.needsInitialSetup)
+    }
+
     @Test("an authenticated-user payload without a usable session cookie cannot be committed")
     func rejectsMissingSessionCookie() async throws {
         let context = try StoreTestContext()

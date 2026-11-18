@@ -225,11 +225,6 @@ struct SeerrPage: Codable, Hashable, Sendable {
     var results: [SeerrTitle]
 }
 
-struct SeerrGenre: Codable, Identifiable, Hashable, Sendable {
-    var id: Int
-    var name: String
-}
-
 struct SeerrExternalIDs: Codable, Hashable, Sendable {
     var imdbId: String?
     var tvdbId: Int?
@@ -252,7 +247,9 @@ struct SeerrTitle: Codable, Identifiable, Hashable, Sendable {
     var episodeRunTime: [Int]?
     var tagline: String?
     var numberOfSeasons: Int?
-    var genres: [SeerrGenre]?
+    var genres: [SeerrCategory]?
+    var productionCompanies: [SeerrCategory]?
+    var networks: [SeerrCategory]?
     var credits: SeerrCredits?
     var seasons: [SeerrSeason]?
     var mediaInfo: SeerrMediaInfo?
@@ -284,8 +281,8 @@ struct SeerrTitle: Codable, Identifiable, Hashable, Sendable {
             ?? dates.first(where: { !$0.certification.isEmpty })?.certification
     }
 
-    func imageURL(width: String = "w500") -> URL? {
-        SeerrArtwork.url(path: posterPath ?? profilePath, width: width)
+    func imageURL(width: String? = nil) -> URL? {
+        SeerrArtwork.url(path: posterPath, width: width ?? "w500") ?? SeerrArtwork.url(path: profilePath, width: width ?? "w185")
     }
 }
 
@@ -351,7 +348,7 @@ struct SeerrPerson: Codable, Identifiable, Hashable, Sendable {
     var profilePath: String?
     var birthday: String?
     var placeOfBirth: String?
-    func imageURL(width: String = "w500") -> URL? {
+    func imageURL(width: String = "h632") -> URL? {
         SeerrArtwork.url(path: profilePath, width: width)
     }
 }
@@ -478,6 +475,12 @@ struct SeerrQuotaStatus: Codable, Hashable, Sendable {
 
 enum SeerrDiscoveryFeed: String, CaseIterable, Hashable, Sendable {
     case trending, popularMovies, popularTV, upcomingMovies, upcomingTV
+
+    /// Only the general discovery endpoints use "language" to filter a title's original language.
+    var filtersOriginalLanguage: Bool {
+        self == .popularMovies || self == .popularTV
+    }
+
     var path: String {
         switch self {
         case .trending: "discover/trending"
@@ -622,17 +625,26 @@ struct SeerrDiscoverSlider: Codable, Identifiable, Hashable, Sendable {
     var title: String?
     var data: String?
 
-    var supportedFeed: SeerrDiscoveryFeed? {
+    var supportedSection: SeerrDiscoverSection? {
         guard enabled, isBuiltIn else { return nil }
         switch type {
-        case 4: return .trending
-        case 5: return .popularMovies
-        case 7: return .upcomingMovies
-        case 9: return .popularTV
-        case 11: return .upcomingTV
+        case 4: return .titles(.trending)
+        case 5: return .titles(.popularMovies)
+        case 6: return .categories(.movieGenres)
+        case 7: return .titles(.upcomingMovies)
+        case 8: return .categories(.studios)
+        case 9: return .titles(.popularTV)
+        case 10: return .categories(.tvGenres)
+        case 11: return .titles(.upcomingTV)
+        case 12: return .categories(.networks)
         default: return nil
         }
     }
+}
+
+enum SeerrDiscoverSection: Hashable, Sendable {
+    case titles(SeerrDiscoveryFeed)
+    case categories(SeerrCategoryKind)
 }
 
 struct SeerrServiceServer: Codable, Identifiable, Hashable, Sendable {
@@ -675,7 +687,7 @@ enum SeerrArtwork {
     static func url(path: String?, width: String = "w500") -> URL? {
         guard let path, path.hasPrefix("/"), !path.hasPrefix("//"),
               !path.contains(".."), !path.contains("?"), !path.contains("#"),
-              ["w92", "w154", "w185", "w300", "w342", "w500", "w780", "w1280", "original"].contains(width)
+              ["w92", "w154", "w185", "w300", "w342", "w500", "w780", "w1280", "h632", "original"].contains(width)
         else { return nil }
         return URL(string: "https://image.tmdb.org/t/p/\(width)\(path)")
     }

@@ -99,7 +99,7 @@ struct SeerrPersonView: View {
     private func content(_ person: SeerrPerson) -> some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 28) {
-                SeerrArtworkView(path: person.profilePath, aspectRatio: 4.0 / 5.0, symbol: "person")
+                SeerrArtworkView(path: person.profilePath, aspectRatio: 4.0 / 5.0, symbol: "person", width: "h632")
                     .frame(maxWidth: 240)
                 Text(person.name).font(.largeTitle.bold()).fixedSize(horizontal: false, vertical: true)
                 if let birthplace = person.placeOfBirth?.trimmedNilIfEmpty {

@@ -202,7 +202,9 @@ private struct SeerrRequestHistoryRow: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text(title?.displayTitle ?? String(localized: "Request #\(request.id)")).font(.headline)
                 Text("Request: \(request.status.seerrRequestDescription)")
-                Text("Media: \(request.seerrMediaDescription)")
+                if let availability = request.seerrMediaDescription {
+                    Text("Media: \(availability)")
+                }
                 Text(request.seerrFormatDescription)
                 if let date = seerrRequestDate(request.createdAt) {
                     Text(date, style: .date)
@@ -362,7 +364,9 @@ private struct SeerrRequestDetailView: View {
     private func details(_ request: SeerrRequest) -> some View {
         Section("Request Details") {
             LabeledContent("Request", value: request.status.seerrRequestDescription)
-            LabeledContent("Media Availability", value: request.seerrMediaDescription)
+            if let availability = request.seerrMediaDescription {
+                LabeledContent("Media Availability", value: availability)
+            }
             LabeledContent("Format", value: request.seerrFormatDescription)
             if managing {
                 if let serverID = request.serverId {
@@ -635,8 +639,8 @@ enum SeerrHistoryAction: String, CaseIterable, Sendable {
 }
 
 private extension SeerrRequest {
-    var seerrMediaDescription: String {
-        media?.availability(is4K: is4k == true).seerrDescription ?? String(localized: "Availability unknown")
+    var seerrMediaDescription: String? {
+        media?.availability(is4K: is4k == true).seerrDescription
     }
 
     var seerrFormatDescription: String {

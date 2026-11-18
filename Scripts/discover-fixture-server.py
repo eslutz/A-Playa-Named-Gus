@@ -18,6 +18,7 @@ from urllib.parse import parse_qs, urlsplit
 
 MOVIE_ID = 950000001
 SHOW_ID = 950000002
+FESTIVAL_IDS = range(950000011, 950000021)
 USER = {"id": 12, "displayName": "Gus Fixture Manager", "permissions": 48}
 SESSION = "gus-fixture-session"
 LOCK = threading.RLock()
@@ -48,6 +49,14 @@ def record_model(record):
 
 
 def catalog_item(media_id):
+    if media_id in FESTIVAL_IDS:
+        index = media_id - FESTIVAL_IDS.start
+        is_movie = index % 2 == 0
+        return {
+            "id": media_id, "mediaType": "movie" if is_movie else "tv",
+            "title" if is_movie else "name": f"Fixture Festival {index + 1}",
+            "backdropPath": "/gus-festival-backdrop.png", "overview": "Festival catalog fixture.",
+        }
     is_movie = media_id == MOVIE_ID
     media_type = "movie" if is_movie else "tv"
     info = media(media_id, media_type)
@@ -65,7 +74,9 @@ def catalog_item(media_id):
         "mediaInfo": info,
         "releases": {"results": [{"iso_3166_1": "US", "release_dates": [{"certification": "PG", "type": 3}]}]},
     }
-    if not is_movie:
+    if is_movie:
+        item["collection"] = {"id": 950000010, "name": "Gus Fixture Collection"}
+    else:
         item["externalIds"] = {"tvdbId": 950000003}
         item["contentRatings"] = {"results": [{"iso_3166_1": "US", "rating": "TV-PG"}]}
         item["seasons"] = [
@@ -110,7 +121,10 @@ class Handler(BaseHTTPRequestHandler):
         if not self.authenticated():
             return self.respond({}, 401)
         if path == "/api/v1/settings/discover":
-            return self.respond([{"id": kind, "type": kind, "order": index, "enabled": True, "isBuiltIn": True} for index, kind in enumerate([4, 5, 9])])
+            return self.respond([{"id": kind, "type": kind, "order": index, "enabled": True, "isBuiltIn": True} for index, kind in enumerate([4, 5, 6, 8, 9, 10, 12])])
+        if path in ["/api/v1/discover/genreslider/movie", "/api/v1/discover/genreslider/tv"]:
+            movie = path.endswith("/movie")
+            return self.respond([{"id": 28 if movie else 10759, "name": "Action" if movie else "Action & Adventure", "backdrops": []}])
         if path == "/api/v1/user/12/quota":
             return self.respond({kind: {"days": 7, "limit": 10, "used": len(STATE["requests"]), "remaining": 10-len(STATE["requests"]), "restricted": False} for kind in ["movie", "tv"]})
         if path.startswith("/api/v1/person/"):
@@ -121,11 +135,25 @@ class Handler(BaseHTTPRequestHandler):
             number = int(path.split("/")[-1])
             return self.respond({"seasonNumber": number, "name": f"Season {number}", "episodeCount": 1, "episodes": [{"id": 1, "episodeNumber": 1, "name": "The Fixture", "overview": "Synthetic episode metadata."}]})
         if path.endswith("/recommendations") or path.endswith("/similar"):
-            return self.respond({"page": 1, "totalPages": 1, "totalResults": 1, "results": [catalog_item(SHOW_ID if "/movie/" in path else MOVIE_ID)]})
+            offset = (0 if "/movie/" in path else 1) + (2 if path.endswith("/similar") else 0)
+            return self.respond({"page": 1, "totalPages": 1, "totalResults": 1, "results": [catalog_item(FESTIVAL_IDS[offset])]})
+        if path == "/api/v1/collection/950000010":
+            return self.respond({"id": 950000010, "name": "Gus Fixture Collection", "parts": [catalog_item(MOVIE_ID), catalog_item(FESTIVAL_IDS[0])]})
         if path == "/api/v1/auth/me":
             return self.respond(USER)
-        if path in ["/api/v1/discover/trending", "/api/v1/discover/movies", "/api/v1/discover/tv", "/api/v1/search"]:
-            ids = [SHOW_ID] if path.endswith("/tv") else [MOVIE_ID] if path.endswith("/movies") else [MOVIE_ID, SHOW_ID]
+        movie_catalog = path in ["/api/v1/discover/movies", "/api/v1/discover/movies/studio/2"]
+        tv_catalog = path in ["/api/v1/discover/tv", "/api/v1/discover/tv/network/213"]
+        if movie_catalog or tv_catalog or path in ["/api/v1/discover/trending", "/api/v1/search"]:
+            ids = [MOVIE_ID, SHOW_ID, *FESTIVAL_IDS]
+            if path == "/api/v1/discover/trending":
+                page = int(query.get("page", ["1"])[0])
+                page_ids = ids[:6] if page == 1 else ids[6:] if page == 2 else []
+                return self.respond({"page": page, "totalPages": 2, "totalResults": len(ids), "results": [catalog_item(i) for i in page_ids]})
+            if movie_catalog or tv_catalog:
+                # Seerr applies this query as a TMDB original-language filter.
+                ids = [MOVIE_ID if movie_catalog else SHOW_ID] if query.get("language", ["en"])[0] == "en" else []
+                if "genre" in query and query["genre"] != ["28" if movie_catalog else "10759"]:
+                    ids = []
             items = [catalog_item(media_id) for media_id in ids]
             search = query.get("query", [""])[0].lower()
             items = [item for item in items if search in item.get("title", item.get("name", "")).lower()]
@@ -134,6 +162,12 @@ class Handler(BaseHTTPRequestHandler):
             return self.respond(catalog_item(MOVIE_ID))
         if path == f"/api/v1/tv/{SHOW_ID}":
             return self.respond(catalog_item(SHOW_ID))
+        if path.startswith(("/api/v1/movie/", "/api/v1/tv/")) and path.rsplit("/", 1)[-1].isdigit():
+            item_id = int(path.rsplit("/", 1)[1])
+            if item_id in FESTIVAL_IDS:
+                item = catalog_item(item_id)
+                if path == f"/api/v1/{item['mediaType']}/{item_id}":
+                    return self.respond(item)
         if path in ["/api/v1/request", "/api/v1/user/12/requests"]:
             records = STATE["requests"]
             if query.get("filter") == ["pending"]:

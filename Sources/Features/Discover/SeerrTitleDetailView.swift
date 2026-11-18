@@ -44,6 +44,7 @@ final class SeerrTitleDetailStore {
             guard !Task.isCancelled, store.revision == revision, generation == operation,
                   String(describing: store.restrictionRevision) == restrictions else { return }
             guard store.admits(result) else {
+                title = nil
                 state = .loaded
                 return
             }
@@ -159,9 +160,10 @@ struct SeerrTitleDetailView: View {
         ScrollView {
             GusTVMediaDetailLayout {
                 SeerrArtworkView(
-                    path: title.backdropPath ?? title.posterPath,
+                    path: title.backdropPath,
                     aspectRatio: title.backdropPath == nil ? 2.0 / 3.0 : 16.0 / 9.0,
-                    width: "w1280"
+                    width: "w1280",
+                    fallbackURL: SeerrArtwork.url(path: title.posterPath, width: "w780")
                 )
                 .frame(maxHeight: 520)
                 .clipped()
@@ -175,10 +177,36 @@ struct SeerrTitleDetailView: View {
                 if detail.mediaType == .tv, let seasons = title.seasons, !seasons.isEmpty {
                     seasonList(title, seasons: seasons)
                 }
+                if let genres = title.genres, !genres.isEmpty {
+                    categoryLinks("Genres", items: genres, kind: detail.mediaType == .movie ? .movieGenres : .tvGenres)
+                }
+                if detail.mediaType == .movie, let studios = title.productionCompanies, !studios.isEmpty {
+                    categoryLinks("Studios", items: studios, kind: .studios)
+                }
+                if detail.mediaType == .tv, let networks = title.networks, !networks.isEmpty {
+                    categoryLinks("Networks", items: networks, kind: .networks)
+                }
                 if let credits = title.credits, !credits.cast.isEmpty || !credits.crew.isEmpty {
                     SeerrCreditsSection(credits: credits, store: store)
                 }
-                SeerrRecommendationsSection(title: title, mediaType: detail.mediaType, store: store)
+                if detail.mediaType == .movie, let collection = title.collection, let name = collection.name?.trimmedNilIfEmpty {
+                    NavigationLink {
+                        SeerrCatalogGridView(title: name, source: .collection(collection.id), store: store)
+                    } label: { Label(name, systemImage: "rectangle.stack") }
+                        .accessibilityIdentifier("Seerr.collection." + String(collection.id))
+                }
+                SeerrRelatedTitlesSection(
+                    heading: String(localized: "Recommendations"),
+                    source: .recommendations(detail.mediaType, title.id),
+                    linkID: "Seerr.recommendations.seeAll",
+                    store: store
+                )
+                SeerrRelatedTitlesSection(
+                    heading: detail.mediaType == .movie ? String(localized: "Similar Movies") : String(localized: "Similar Series"),
+                    source: .similar(detail.mediaType, title.id),
+                    linkID: "Seerr.similar.seeAll",
+                    store: store
+                )
             }
             .padding()
             .frame(maxWidth: PageContentMetrics.maxWidth, alignment: .leading)
@@ -186,6 +214,25 @@ struct SeerrTitleDetailView: View {
         }
         .lookToScroll()
         .refreshable { await detail.load(store: store) }
+    }
+
+    private func categoryLinks(_ heading: LocalizedStringKey, items: [SeerrCategory], kind: SeerrCategoryKind) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(heading).font(.headline).accessibilityAddTraits(.isHeader)
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 12) {
+                    ForEach(items) { item in
+                        NavigationLink(item.name) {
+                            SeerrCatalogGridView(title: item.name, source: .category(kind, item.id), store: store)
+                        }
+                        .buttonStyle(.bordered)
+                    }
+                }
+                .padding(.vertical, 8)
+            }
+            .lookToScroll(.horizontal)
+            .gusTVRailViewport()
+        }
     }
 
     private func identity(_ title: SeerrTitle) -> some View {
@@ -201,10 +248,9 @@ struct SeerrTitleDetailView: View {
             if let rating = title.voteAverage, rating > 0 {
                 Text("TMDB \(rating, specifier: "%.1f")/10").font(.subheadline).foregroundStyle(.secondary)
             }
-            if let genres = title.genres, !genres.isEmpty {
-                Text(genres.map(\.name).joined(separator: " · ")).font(.subheadline).foregroundStyle(.secondary)
+            if let availability = title.seerrAvailabilityDescription {
+                Text(availability).font(.headline)
             }
-            Text(title.seerrAvailabilityDescription).font(.headline)
         }
     }
 
@@ -248,10 +294,8 @@ struct SeerrTitleDetailView: View {
                             if let count = season.episodeCount {
                                 Text("\(count) episodes").font(.subheadline).foregroundStyle(.secondary)
                             }
-                            if let state = title.mediaInfo?.seasons?.first(where: { $0.seasonNumber == season.seasonNumber }) {
-                                Text(state.status.seerrDescription).font(.subheadline).foregroundStyle(.secondary)
-                            } else {
-                                Text("Availability unknown").font(.subheadline).foregroundStyle(.secondary)
+                            if let availability = title.mediaInfo?.seasons?.first(where: { $0.seasonNumber == season.seasonNumber })?.status.seerrDescription {
+                                Text(availability).font(.subheadline).foregroundStyle(.secondary)
                             }
                         }
                         Spacer()
@@ -304,32 +348,34 @@ struct SeerrCreditsSection: View {
     }
 }
 
-private struct SeerrRecommendationsSection: View {
-    let title: SeerrTitle
-    let mediaType: SeerrMediaType
+private struct SeerrRelatedTitlesSection: View {
+    let heading: String
+    let source: SeerrCatalogSource
+    let linkID: String
     let store: SeerrStore
     @State private var catalog: SeerrCatalogStore?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                Text("Recommendations").font(.title2.bold()).accessibilityAddTraits(.isHeader)
-                Spacer()
-                if catalog?.items.isEmpty == false {
-                    NavigationLink("See All") {
-                        SeerrCatalogGridView(title: String(localized: "Recommendations"), source: .recommendations(mediaType, title.id), store: store)
+            if let catalog, catalog.isValid(for: store),
+               !catalog.items.isEmpty || catalog.hasMore || catalog.errorMessage != nil
+            {
+                HStack {
+                    Text(heading).font(.title2.bold()).accessibilityAddTraits(.isHeader)
+                    Spacer()
+                    if !catalog.items.isEmpty || catalog.hasMore {
+                        NavigationLink("See All") {
+                            SeerrCatalogGridView(title: heading, source: source, store: store)
+                        }
+                        .accessibilityLabel(String(localized: "See All \(heading)"))
+                        .accessibilityIdentifier(linkID)
                     }
                 }
-            }
-            if let catalog {
-                if catalog.state == .loading {
-                    ProgressView("Loading recommendations")
-                } else if let error = catalog.errorMessage {
+                if let error = catalog.errorMessage {
                     Text(error).foregroundStyle(.secondary)
-                    Button("Retry Recommendations") { Task { await catalog.load(store: store, refresh: true) } }
-                } else if catalog.items.isEmpty {
-                    Text("No recommendations available").foregroundStyle(.secondary)
-                } else {
+                    Button("Try Again") { Task { await catalog.load(store: store, refresh: true) } }
+                }
+                if !catalog.items.isEmpty {
                     ScrollView(.horizontal, showsIndicators: false) {
                         LazyHStack(alignment: .top, spacing: 16) {
                             ForEach(catalog.items.filter { store.admits($0) }, id: \.seerrCatalogID) { item in
@@ -344,8 +390,8 @@ private struct SeerrRecommendationsSection: View {
                 }
             }
         }
-        .task(id: "\(store.revision):\(title.id):\(store.restrictionRevision)") {
-            let catalog = SeerrCatalogStore(source: .recommendations(mediaType, title.id))
+        .task(id: "\(store.revision):\(source):\(store.restrictionRevision)") {
+            let catalog = SeerrCatalogStore(source: source)
             self.catalog = catalog
             await catalog.load(store: store)
         }
