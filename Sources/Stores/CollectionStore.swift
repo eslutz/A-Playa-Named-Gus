@@ -99,13 +99,16 @@ final class CollectionStore {
     /// The last visible collection surface can stop foreground reads without
     /// deleting the last confirmed server snapshot or disabling future visits.
     func cancelForegroundLoads() {
+        let interruptedRefresh = loadTask != nil
         generation += 1
         loadTask?.cancel(); loadTask = nil
         permissionsTask?.cancel(); permissionsTask = nil
         detailTasks.values.forEach { $0.cancel() }; detailTasks = [:]
         libraryTasks.values.forEach { $0.cancel() }; libraryTasks = [:]
         refreshAgain = false
-        state = collections.isEmpty ? .idle : .loaded
+        // Headers become visible before all member pages finish. Re-entering
+        // Movies must resume an interrupted refresh even with a cached shelf.
+        state = interruptedRefresh || collections.isEmpty ? .idle : .loaded
     }
 
     func load(force: Bool = false) async {
@@ -190,17 +193,29 @@ final class CollectionStore {
 
     private func loadIndexedDetail(_ ids: [String], index: Int) async {
         guard index < ids.count, !Task.isCancelled else { return }
-        await loadDetail(id: ids[index], force: true)
+        let id = ids[index]
+        guard let header = collection(id)?.item else { return }
+        await loadMembers(id: id, listedHeader: header, force: true)
     }
 
     func loadDetail(id: String, force: Bool = false) async {
+        let token = generation
+        await loadMembers(id: id, listedHeader: nil, force: force)
+        guard active, !Task.isCancelled, token == generation, collection(id) != nil,
+              force || detailCapabilities[id] == nil else { return }
+        let permissions = (try? await session.mediaProvider.collectionCapabilities(id: id)) ?? .init()
+        guard active, !Task.isCancelled, token == generation, collection(id) != nil else { return }
+        detailCapabilities[id] = permissions
+    }
+
+    private func loadMembers(id: String, listedHeader: MediaItem?, force: Bool) async {
         guard active, !Task.isCancelled else { return }
         if let task = detailTasks[id] {
             await task.value; return
         }
         guard force || collection(id)?.membersLoaded != true else { return }
         let requestGeneration = generation
-        let task = Task { await fetchDetail(id) }
+        let task = Task { await fetchDetail(id, listedHeader: listedHeader) }
         detailTasks[id] = task
         await task.value
         if requestGeneration == generation {
@@ -208,20 +223,25 @@ final class CollectionStore {
         }
     }
 
-    private func fetchDetail(_ id: String) async {
+    private func fetchDetail(_ id: String, listedHeader: MediaItem?) async {
         guard active, !Task.isCancelled else { return }
         let token = generation
         do {
-            let item = try await session.mediaProvider.collectionItem(id: id)
-            let permissions = (try? await session.mediaProvider.collectionCapabilities(id: id)) ?? .init()
+            let item: MediaItem
+            if let listedHeader {
+                item = listedHeader
+            } else {
+                item = try await session.mediaProvider.collectionItem(id: id)
+            }
             let loadedMembers = try await MediaPageLoader.collect { offset, size in
                 try await self.session.mediaProvider.collectionMembers(id: id, startIndex: offset, limit: size)
             }
             try Task.checkCancellation()
             guard active, token == generation else { return }
-            let members = loadedMembers.filter { $0.id != nil }
-            detailCapabilities[id] = permissions
-            let value = MediaCollection(item: item, members: members, membersLoaded: true)
+            guard loadedMembers.allSatisfy({ $0.id != nil }) else {
+                throw GusError.server(String(localized: "The server returned an incomplete collection. Try again."))
+            }
+            let value = MediaCollection(item: item, members: loadedMembers, membersLoaded: true)
             if let index = collections.firstIndex(where: { $0.id == id }) {
                 collections[index] = value
             } else if ContentRatingGate.admitsStored(item) {
@@ -232,7 +252,7 @@ final class CollectionStore {
         } catch {
             if token == generation {
                 let failure = GusError(from: error)
-                if failure == .notFound {
+                if failure == .notFound, listedHeader == nil {
                     collections.removeAll { $0.id == id }; detailCapabilities[id] = nil
                 }
                 memberErrors[id] = failure.localizedDescription; report(error)

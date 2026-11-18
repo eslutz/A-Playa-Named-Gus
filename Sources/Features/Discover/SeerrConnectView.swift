@@ -68,6 +68,7 @@ struct SeerrConnectView: View {
                 }
             }
         }
+        .gusSeerrConnectionSheetSizing()
     }
 
     private func startValidation() {

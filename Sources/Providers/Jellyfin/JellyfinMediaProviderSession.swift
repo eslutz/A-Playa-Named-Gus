@@ -21,9 +21,9 @@ final class JellyfinMediaProviderSession: MediaProviderSession {
     func userViews() async throws -> [MediaItem] {
         let parameters = Paths.GetUserViewsParameters(userID: userID)
         let response = try await NetworkRetryPolicy.idempotent.run {
-            try await client.send(Paths.getUserViews(parameters: parameters))
+            try await client.send(Paths.getUserViews(parameters: parameters).withResponse(JellyfinLibraryViews.self))
         }
-        return JellyfinMediaItemMapper.mediaItems(from: response.value.items ?? [])
+        return response.value.items.map(\.item)
     }
 
     func resumeItems(limit: Int) async throws -> [MediaItem] {
@@ -43,7 +43,7 @@ final class JellyfinMediaProviderSession: MediaProviderSession {
             enableImages: true
         )
         let response = try await NetworkRetryPolicy.idempotent.run {
-            try await client.send(Paths.getResumeItems(parameters: parameters))
+            try await client.browse(Paths.getResumeItems(parameters: parameters))
         }
         return MediaItemPage(items: JellyfinMediaItemMapper.mediaItems(from: response.value.items ?? []), totalRecordCount: response.value.totalRecordCount)
     }
@@ -69,7 +69,7 @@ final class JellyfinMediaProviderSession: MediaProviderSession {
             enableResumable: true
         )
         let response = try await NetworkRetryPolicy.idempotent.run {
-            try await client.send(Paths.getNextUp(parameters: parameters))
+            try await client.browse(Paths.getNextUp(parameters: parameters))
         }
         return MediaItemPage(items: JellyfinMediaItemMapper.mediaItems(from: response.value.items ?? []), totalRecordCount: response.value.totalRecordCount)
     }
@@ -85,7 +85,7 @@ final class JellyfinMediaProviderSession: MediaProviderSession {
             isGroupItems: library.collectionType == .tvshows
         )
         let response = try await NetworkRetryPolicy.idempotent.run {
-            try await client.send(Paths.getLatestMedia(parameters: parameters))
+            try await client.browse(Paths.getLatestMedia(parameters: parameters))
         }
         return JellyfinMediaItemMapper.mediaItems(from: response.value)
     }
@@ -109,7 +109,7 @@ final class JellyfinMediaProviderSession: MediaProviderSession {
             enableImages: true
         )
         let response = try await NetworkRetryPolicy.idempotent.run {
-            try await client.send(Paths.getItems(parameters: parameters))
+            try await client.browse(Paths.getItems(parameters: parameters))
         }
         return MediaItemPage(
             items: JellyfinMediaItemMapper.mediaItems(from: response.value.items ?? []),
@@ -119,7 +119,7 @@ final class JellyfinMediaProviderSession: MediaProviderSession {
 
     func item(id: String) async throws -> MediaItem {
         let response = try await NetworkRetryPolicy.idempotent.run {
-            try await client.send(Paths.getItem(itemID: id, userID: userID))
+            try await client.browse(Paths.getItem(itemID: id, userID: userID))
         }
         return JellyfinMediaItemMapper.mediaItem(from: response.value)
     }
@@ -131,14 +131,14 @@ final class JellyfinMediaProviderSession: MediaProviderSession {
             fields: Self.metadataFields
         )
         let response = try await NetworkRetryPolicy.idempotent.run {
-            try await client.send(Paths.getSimilarItems(itemID: itemID, parameters: parameters))
+            try await client.browse(Paths.getSimilarItems(itemID: itemID, parameters: parameters))
         }
         return JellyfinMediaItemMapper.mediaItems(from: response.value.items ?? [])
     }
 
     func specialFeatures(itemID: String) async throws -> [MediaItem] {
         let response = try await NetworkRetryPolicy.idempotent.run {
-            try await client.send(Paths.getSpecialFeatures(itemID: itemID, userID: userID))
+            try await client.browse(Paths.getSpecialFeatures(itemID: itemID, userID: userID))
         }
         return JellyfinMediaItemMapper.mediaItems(from: response.value)
     }
@@ -151,7 +151,7 @@ final class JellyfinMediaProviderSession: MediaProviderSession {
             enableUserData: true
         )
         let response = try await NetworkRetryPolicy.idempotent.run {
-            try await client.send(Paths.getSeasons(seriesID: seriesID, parameters: parameters))
+            try await client.browse(Paths.getSeasons(seriesID: seriesID, parameters: parameters))
         }
         return JellyfinMediaItemMapper.mediaItems(from: response.value.items ?? [])
     }
@@ -168,7 +168,7 @@ final class JellyfinMediaProviderSession: MediaProviderSession {
             sortBy: .indexNumber
         )
         let response = try await NetworkRetryPolicy.idempotent.run {
-            try await client.send(Paths.getEpisodes(seriesID: seriesID, parameters: parameters))
+            try await client.browse(Paths.getEpisodes(seriesID: seriesID, parameters: parameters))
         }
         return MediaItemPage(
             items: JellyfinMediaItemMapper.mediaItems(from: response.value.items ?? []),
@@ -256,7 +256,8 @@ final class JellyfinMediaProviderSession: MediaProviderSession {
             fileExtension: source.fileExtension,
             requiresTranscoding: source.kind == .transcoded,
             operation: DownloadActivity.SourceOperation(rawValue: source.kind.rawValue),
-            mediaSourceID: source.mediaSourceID
+            mediaSourceID: source.mediaSourceID,
+            estimatedByteCount: source.kind == .original ? item.mediaSources.first { $0.id == source.mediaSourceID }?.sizeBytes : nil
         )
     }
 
@@ -310,7 +311,7 @@ final class JellyfinMediaProviderSession: MediaProviderSession {
             isAddCurrentProgram: true
         )
         let response = try await NetworkRetryPolicy.idempotent.run {
-            try await client.send(Paths.getLiveTvChannels(parameters: parameters))
+            try await client.browse(Paths.getLiveTvChannels(parameters: parameters))
         }
         return MediaItemPage(
             items: JellyfinMediaItemMapper.mediaItems(from: response.value.items ?? []),
@@ -327,7 +328,7 @@ final class JellyfinMediaProviderSession: MediaProviderSession {
             enableTotalRecordCount: true
         )
         let response = try await NetworkRetryPolicy.idempotent.run {
-            try await client.send(Paths.getRecordings(parameters: parameters))
+            try await client.browse(Paths.getRecordings(parameters: parameters))
         }
         return MediaItemPage(items: JellyfinMediaItemMapper.mediaItems(from: response.value.items ?? []), totalRecordCount: response.value.totalRecordCount)
     }
@@ -418,7 +419,7 @@ final class JellyfinMediaProviderSession: MediaProviderSession {
             for header in headers {
                 let id = try nativeListID(header.id)
                 let canEdit = await canEditPlaylist(id: id)
-                lists.append(ServerMediaList(id: id, name: header.name ?? String(localized: "Untitled", comment: "Fallback item title"), kind: kind, entries: [], canEdit: canEdit, entriesLoaded: false))
+                lists.append(ServerMediaList(id: id, name: header.name ?? String(localized: "Untitled", comment: "Fallback item title"), kind: kind, entries: [], canEdit: canEdit, entriesLoaded: false, primaryImageTag: header.imageTags?["Primary"]))
             }
             return lists
         } catch {
@@ -438,7 +439,7 @@ final class JellyfinMediaProviderSession: MediaProviderSession {
                     try Task.checkCancellation()
                     let parameters = Paths.GetPlaylistItemsParameters(userID: userID, startIndex: startIndex, limit: Self.listPageSize, fields: Self.playbackMetadataFields, enableImages: true, enableUserData: true)
                     let page = try await NetworkRetryPolicy.idempotent.run {
-                        try await client.send(Paths.getPlaylistItems(playlistID: ServerMediaListID.string(id), parameters: parameters))
+                        try await client.browse(Paths.getPlaylistItems(playlistID: ServerMediaListID.string(id), parameters: parameters))
                     }.value
                     let items = page.items ?? []
                     results.append(contentsOf: items)
@@ -453,7 +454,7 @@ final class JellyfinMediaProviderSession: MediaProviderSession {
             } else {
                 members = []
             }
-            return try ServerMediaList(id: id, name: header.name ?? String(localized: "Untitled", comment: "Fallback item title"), kind: kind, entries: JellyfinMediaItemMapper.mediaListEntries(from: members, kind: kind), canEdit: canEdit, entriesLoaded: true)
+            return try ServerMediaList(id: id, name: header.name ?? String(localized: "Untitled", comment: "Fallback item title"), kind: kind, entries: JellyfinMediaItemMapper.mediaListEntries(from: members, kind: kind), canEdit: canEdit, entriesLoaded: true, primaryImageTag: header.imageTags?["Primary"])
         } catch {
             throw mediaListError(error)
         }
@@ -569,7 +570,7 @@ final class JellyfinMediaProviderSession: MediaProviderSession {
             try Task.checkCancellation()
             let parameters = Paths.GetItemsParameters(userID: userID, startIndex: startIndex, limit: Self.listPageSize, isRecursive: parentID == nil, parentID: parentID, fields: Self.playbackMetadataFields, includeItemTypes: parentID == nil ? [.playlist] : nil, sortBy: parentID == nil ? [.sortName] : nil, enableUserData: true, enableTotalRecordCount: true, enableImages: true)
             let page = try await NetworkRetryPolicy.idempotent.run {
-                try await client.send(Paths.getItems(parameters: parameters))
+                try await client.browse(Paths.getItems(parameters: parameters))
             }.value
             let items = page.items ?? []
             results.append(contentsOf: items)
@@ -583,7 +584,7 @@ final class JellyfinMediaProviderSession: MediaProviderSession {
 
     private func listHeader(id: UUID, kind: ServerMediaListKind) async throws -> BaseItemDto {
         let header = try await NetworkRetryPolicy.idempotent.run {
-            try await client.send(Paths.getItem(itemID: ServerMediaListID.string(id), userID: userID))
+            try await client.browse(Paths.getItem(itemID: ServerMediaListID.string(id), userID: userID))
         }.value
         guard header.type == .playlist,
               try nativeListID(header.id) == id
@@ -621,7 +622,10 @@ final class JellyfinMediaProviderSession: MediaProviderSession {
     }
 
     func collectionItem(id: String) async throws -> MediaItem {
-        try JellyfinMediaItemMapper.mediaItem(from: await collectionHeader(id))
+        guard let uuid = ServerMediaListID.uuid(id) else { throw GusError.notFound }
+        let header = try await item(id: ServerMediaListID.string(uuid))
+        guard header.type == .boxSet, header.id.flatMap(ServerMediaListID.uuid) == uuid else { throw GusError.notFound }
+        return header
     }
 
     func collectionMembers(id: String, startIndex: Int, limit: Int) async throws -> MediaItemPage {
@@ -629,8 +633,8 @@ final class JellyfinMediaProviderSession: MediaProviderSession {
     }
 
     private func collectionQuery(parentID: String?, startIndex: Int, limit: Int) async throws -> MediaItemPage {
-        let parameters = Paths.GetItemsParameters(userID: userID, startIndex: startIndex, limit: limit, isRecursive: parentID == nil, parentID: parentID, fields: Self.playbackMetadataFields, includeItemTypes: parentID == nil ? [.boxSet] : nil, sortBy: parentID == nil ? [.sortName] : nil, enableUserData: true, enableTotalRecordCount: true, enableImages: true)
-        let page = try await NetworkRetryPolicy.idempotent.run { try await client.send(Paths.getItems(parameters: parameters)) }.value
+        let parameters = Paths.GetItemsParameters(userID: userID, startIndex: startIndex, limit: limit, isRecursive: parentID == nil, parentID: parentID, fields: parentID == nil ? Self.metadataFields : Self.playbackMetadataFields, includeItemTypes: parentID == nil ? [.boxSet] : nil, sortBy: parentID == nil ? [.sortName] : nil, enableUserData: true, enableTotalRecordCount: true, enableImages: true)
+        let page = try await NetworkRetryPolicy.idempotent.run { try await client.browse(Paths.getItems(parameters: parameters)) }.value
         return MediaItemPage(items: JellyfinMediaItemMapper.mediaItems(from: page.items ?? []), totalRecordCount: page.totalRecordCount)
     }
 

@@ -145,9 +145,15 @@ struct AlbumDetailView: View {
     }
 
     private var albumArtwork: some View {
-        ArtworkTile(url: session.mediaProvider.primaryImageURL(for: album, context: .posterGrid), aspectRatio: 1, placeholderSymbol: "music.note", fallbackURLs: session.mediaProvider.artworkURLs(for: album, request: .init(role: .square, maxWidth: 360)))
-            .frame(width: artworkWidth)
-            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        Group {
+            if album.type == .playlist {
+                PlaylistCoverArtwork(playlist: album, entries: tracks, maxWidth: 360)
+            } else {
+                ArtworkTile(url: session.mediaProvider.primaryImageURL(for: album, context: .posterGrid), aspectRatio: 1, placeholderSymbol: "music.note", fallbackURLs: session.mediaProvider.artworkURLs(for: album, request: .init(role: .square, maxWidth: 360)))
+            }
+        }
+        .frame(width: artworkWidth)
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 
     private func albumMetadata(isColumn: Bool) -> some View {
@@ -193,7 +199,7 @@ struct AlbumDetailView: View {
                 Button {
                     play(startingAt: index)
                 } label: {
-                    TrackRow(index: track.indexNumber ?? index + 1, track: track)
+                    TrackRow(index: track.indexNumber ?? index + 1, track: track, showsThumbnail: album.type == .playlist)
                 }
                 .buttonStyle(.plain)
                 .visionHoverEffect(cornerRadius: 8)
@@ -281,6 +287,7 @@ struct AlbumDetailView: View {
 private struct TrackRow: View {
     let index: Int
     let track: MediaItem
+    let showsThumbnail: Bool
 
     var body: some View {
         HStack(spacing: 16) {
@@ -289,6 +296,9 @@ private struct TrackRow: View {
                 .foregroundStyle(.secondary)
                 .frame(width: 32, alignment: .trailing)
 
+            if showsThumbnail {
+                PlaylistEntryThumbnail(item: track)
+            }
             Text(track.displayTitle)
                 .lineLimit(1)
 

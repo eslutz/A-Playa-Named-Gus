@@ -9,6 +9,7 @@
     @MainActor
     final class GusDesignCaptureUITests: XCTestCase {
         private var media: [[String: String]] = []
+        private var demoToken = ""
 
         override func setUp() async throws {
             continueAfterFailure = false
@@ -17,11 +18,13 @@
             var request = URLRequest(url: URL(string: "http://127.0.0.1:8096/Users/AuthenticateByName")!)
             request.httpMethod = "POST"
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-            request.setValue("MediaBrowser Client=\"GusDesignReview\", Device=\"XCTest\", DeviceId=\"gus-design-review\", Version=\"1\"", forHTTPHeaderField: "Authorization")
+            let device = UIDevice.current.identifierForVendor?.uuidString ?? "simulator"
+            request.setValue("MediaBrowser Client=\"GusDesignReview\", Device=\"XCTest\", DeviceId=\"gus-design-review-\(device)\", Version=\"1\"", forHTTPHeaderField: "Authorization")
             request.httpBody = try JSONSerialization.data(withJSONObject: ["Username": "gus", "Pw": "playa-demo"])
             let (data, _) = try await URLSession.shared.data(for: request)
             let auth = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
             let token = try XCTUnwrap(auth["AccessToken"] as? String)
+            demoToken = token
             let user = try XCTUnwrap(auth["User"] as? [String: Any])
             let id = try XCTUnwrap(user["Id"] as? String)
             request = URLRequest(url: URL(string: "http://127.0.0.1:8096/Users/\(id)/Items?Recursive=true&Limit=1000")!)
@@ -258,25 +261,59 @@
             }
         }
 
-        func testProfileCancelAndSave() {
-            let app = launch("settings")
+        func testProfileCancelAndSave() async throws {
+            let testName = "gus-profile-" + UUID().uuidString.prefix(8)
+            let password = "profile-fixture"
+            var create = try URLRequest(url: XCTUnwrap(URL(string: "http://127.0.0.1:8096/Users/New")))
+            create.httpMethod = "POST"
+            create.setValue(demoToken, forHTTPHeaderField: "X-Emby-Token")
+            create.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            create.httpBody = try JSONSerialization.data(withJSONObject: ["Name": testName, "Password": password])
+            let (data, _) = try await URLSession.shared.data(for: create)
+            let user = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
+            let id = try XCTUnwrap(user["Id"] as? String)
+            let userURL = try XCTUnwrap(URL(string: "http://127.0.0.1:8096/Users/" + id))
+            let token = demoToken
+            addTeardownBlock {
+                var remove = URLRequest(url: userURL)
+                remove.httpMethod = "DELETE"
+                remove.setValue(token, forHTTPHeaderField: "X-Emby-Token")
+                let (_, response) = try await URLSession.shared.data(for: remove)
+                XCTAssertEqual((response as? HTTPURLResponse)?.statusCode, 204)
+            }
+
+            let app = launch("settings", environment: ["GUS_DEMO_USERNAME": testName, "GUS_DEMO_PASSWORD": password])
             let profile = app.buttons["View and Edit Profile"].firstMatch
             XCTAssertTrue(profile.waitForExistence(timeout: 30)); profile.tap()
-            let save = app.buttons["Save"].firstMatch
-            let ready = XCTNSPredicateExpectation(predicate: NSPredicate(format: "enabled == true"), object: save)
-            XCTAssertEqual(XCTWaiter.wait(for: [ready], timeout: 15), .completed)
+            let save = app.buttons["Profile.save"]
             let username = app.textFields["Username"]
-            let original = username.value as? String
+            XCTAssertTrue(username.waitForExistence(timeout: 15))
+            let populated = NSPredicate(format: "value == %@ AND enabled == true", testName)
+            await fulfillment(of: [XCTNSPredicateExpectation(predicate: populated, object: username)], timeout: 15)
+            XCTAssertTrue(app.buttons["Change Profile Picture"].exists)
+            XCTAssertFalse(save.exists && save.isEnabled)
             capture("profile")
             username.tap(); username.typeText(" discard")
+            XCTAssertFalse(save.exists && save.isEnabled)
             app.buttons["Cancel"].firstMatch.tap()
             XCTAssertTrue(app.navigationBars["Profile"].waitForNonExistence(timeout: 10))
+
             profile.tap()
-            XCTAssertTrue(save.waitForExistence(timeout: 10))
-            XCTAssertEqual(XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: NSPredicate(format: "enabled == true"), object: save)], timeout: 15), .completed)
-            XCTAssertEqual(username.value as? String, original)
+            await fulfillment(of: [XCTNSPredicateExpectation(predicate: populated, object: username)], timeout: 15)
+            username.tap(); username.typeText(" updated")
+            username.typeText("\n")
+            let current = app.secureTextFields["Current Password"]
+            for _ in 0 ..< 6 where !current.isHittable {
+                app.swipeUp()
+            }
+            XCTAssertTrue(current.isHittable)
+            current.tap(); current.typeText(password)
+            XCTAssertTrue(save.isEnabled)
             save.tap()
             XCTAssertTrue(app.navigationBars["Profile"].waitForNonExistence(timeout: 20))
+            profile.tap()
+            await fulfillment(of: [XCTNSPredicateExpectation(predicate: NSPredicate(format: "value == %@", testName + " updated"), object: username)], timeout: 15)
+            XCTAssertFalse(save.exists && save.isEnabled)
         }
 
         func testLibraryCategories() {
@@ -528,23 +565,32 @@
             }
         }
 
-        func testLibraryDisplayModes() {
-            let app = launch("libraries")
-            XCTAssertTrue(waitForRoot(app))
-            if let mode = button("Libraries.displayMode", app) {
-                mode.tap()
-                capture("libraries-grid")
-            } else {
-                capture("libraries-grid")
-            }
+        func testLibraryDisplayModes() throws {
+            let libraries = launch("libraries")
+            XCTAssertTrue(waitForRoot(libraries))
+            let musicLibrary = libraries.buttons["Music"].firstMatch
+            XCTAssertTrue(musicLibrary.waitForExistence(timeout: 30))
+            let libraryMode = try XCTUnwrap(button("Libraries.displayMode", libraries))
+            libraryMode.tap()
+            XCTAssertTrue(musicLibrary.waitForExistence(timeout: 10))
+            XCTAssertFalse(libraries.staticTexts["Something Went Wrong"].exists)
+            capture("libraries-grid")
+
             let movies = launch("home")
             XCTAssertTrue(waitForRoot(movies))
-            if openDestination("Movies", movies), let mode = button("Library.displayMode", movies) {
-                mode.tap()
-                capture("movies-list")
-                mode.tap()
-                capture("movies-grid")
-            }
+            XCTAssertTrue(movies.staticTexts["Recently Added Movies"].firstMatch.waitForExistence(timeout: 30))
+            XCTAssertFalse(movies.staticTexts["Some Content Could Not Be Refreshed"].exists)
+            XCTAssertTrue(openDestination("Movies", movies))
+            let names = media.filter { $0["type"] == "BoxSet" }.compactMap { $0["name"] }
+            XCTAssertFalse(names.isEmpty)
+            let collection = movies.buttons.matching(NSPredicate(format: "label IN %@", names)).firstMatch
+            XCTAssertTrue(collection.waitForExistence(timeout: 30))
+            XCTAssertFalse(movies.staticTexts["Some collection memberships could not be loaded. Refresh to retry."].exists)
+            let mode = try XCTUnwrap(button("Library.displayMode", movies))
+            mode.tap()
+            capture("movies-list")
+            mode.tap()
+            capture("movies-grid")
         }
 
         func testMusicDisplayModes() {
@@ -606,8 +652,10 @@
             }
         }
 
-        func testDownloadManagementStates() {
-            guard let item = media.first(where: { $0["type"] == "Movie" && ($0["name"] ?? "").contains("May Irwin") }), let id = item["id"], let title = item["name"] else { return }
+        func testDownloadManagementStates() throws {
+            let item = try XCTUnwrap(media.first { $0["type"] == "Movie" && ($0["name"] ?? "").contains("May Irwin") })
+            let id = try XCTUnwrap(item["id"])
+            let title = try XCTUnwrap(item["name"])
             let app = launch("item/" + id)
             XCTAssertTrue(waitForMovieDetail(app))
             let download = app.buttons["Download"].firstMatch
@@ -624,34 +672,38 @@
             let downloaded = launch("downloaded")
             XCTAssertTrue(waitForRoot(downloaded))
             capture("downloads-populated")
-            if let manage = button("Manage Downloads", downloaded) {
-                manage.tap()
-                XCTAssertTrue(downloaded.buttons["Downloads.select"].waitForExistence(timeout: 10))
-                capture("downloads-manager-populated")
-                downloaded.buttons["Downloads.select"].tap()
-                capture("downloads-select-none")
-                let select = downloaded.buttons["Select " + title].firstMatch
-                for _ in 0 ..< 5 where !select.isHittable {
-                    downloaded.swipeUp()
-                }
-                if select.isHittable {
-                    select.tap()
-                    capture("downloads-select-one")
-                    let delete = downloaded.buttons["Downloads.deleteSelected"]
-                    for _ in 0 ..< 5 where !delete.isHittable {
-                        downloaded.swipeDown()
-                    }
-                    if delete.isHittable {
-                        delete.tap()
-                        XCTAssertTrue(downloaded.alerts["Delete Downloads?"].waitForExistence(timeout: 5))
-                        capture("downloads-delete-confirmation")
-                        if createdHere {
-                            downloaded.alerts.buttons["Delete Download"].tap()
-                        } else {
-                            downloaded.alerts.buttons["Cancel"].tap()
-                        }
-                    }
-                }
+            let manage = try XCTUnwrap(button("Manage Downloads", downloaded))
+            manage.tap()
+            XCTAssertTrue(downloaded.buttons["Downloads.select"].waitForExistence(timeout: 10))
+            XCTAssertFalse(downloaded.staticTexts["Soft Cap"].exists)
+            XCTAssertFalse(downloaded.buttons["Downloads.deleteSelected"].exists)
+            capture("downloads-manager-populated")
+            downloaded.buttons["Downloads.select"].tap()
+            XCTAssertFalse(downloaded.buttons["Downloads.deleteSelected"].exists)
+            capture("downloads-select-none")
+            let selectAll = downloaded.buttons["Select All"]
+            XCTAssertTrue(selectAll.waitForExistence(timeout: 5))
+            selectAll.tap()
+            XCTAssertTrue(downloaded.buttons["Downloads.deleteSelected"].exists)
+            downloaded.buttons["Deselect All"].tap()
+            XCTAssertFalse(downloaded.buttons["Downloads.deleteSelected"].exists)
+            let row = downloaded.staticTexts[title].firstMatch
+            for _ in 0 ..< 5 where !row.isHittable {
+                downloaded.swipeUp()
+            }
+            XCTAssertTrue(row.isHittable)
+            row.tap()
+            capture("downloads-select-one")
+            let delete = downloaded.buttons["Downloads.deleteSelected"]
+            XCTAssertTrue(delete.waitForExistence(timeout: 5))
+            XCTAssertTrue(delete.isHittable)
+            delete.tap()
+            XCTAssertTrue(downloaded.alerts["Delete Downloads?"].waitForExistence(timeout: 5))
+            capture("downloads-delete-confirmation")
+            if createdHere {
+                downloaded.alerts.buttons["Delete Download"].tap()
+            } else {
+                downloaded.alerts.buttons["Cancel"].tap()
             }
         }
 
@@ -699,7 +751,7 @@
             if createdHere {
                 normal.buttons["Manage Downloads"].firstMatch.tap()
                 normal.buttons["Downloads.select"].tap()
-                let select = normal.buttons["Select " + title].firstMatch
+                let select = normal.staticTexts[title].firstMatch
                 for _ in 0 ..< 8 where !select.isHittable {
                     normal.swipeUp()
                 }
@@ -759,9 +811,10 @@
             }
         }
 
-        private func launch(_ route: String?, largeText: Bool = false) -> XCUIApplication {
+        private func launch(_ route: String?, largeText: Bool = false, environment: [String: String] = [:]) -> XCUIApplication {
             let app = XCUIApplication()
             app.terminate()
+            app.launchEnvironment.merge(environment) { _, new in new }
             app.launchArguments = ["--gus-skip-session-restore", "--gus-disable-cloud-sync", "-dev.ericslutz.gus.appearance", "light", "-dev.ericslutz.gus.contentRatingLimit", "off"]
             if largeText {
                 app.launchArguments += ["-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXXL"]

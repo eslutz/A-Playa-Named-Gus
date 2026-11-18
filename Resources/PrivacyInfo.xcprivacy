@@ -31,10 +31,10 @@
 		Audited against Sources/ — only two categories apply:
 
 		1. Disk space (NSPrivacyAccessedAPICategoryDiskSpace)
-		   volumeAvailableCapacityForImportantUsage is called in
-		   OfflineDownloadStore.ensureDiskBudget to refuse a download when free
-		   space falls below 1 GB. Reason E174.1: check sufficient space before writing files; refuse
-		   the download with a visible error when free space is too low.
+		   OfflineDownloadFileStore queries volumeAvailableCapacityForImportantUsage
+		   (volumeAvailableCapacity on Watch). Reason E174.1: check sufficient space before
+		   writing files, including known transfer sizes and the device's free-space reserve.
+		   Gus reports a user-visible error when capacity is too low.
 
 		2. User defaults (NSPrivacyAccessedAPICategoryUserDefaults)
 		   UserDefaults.standard is written by:

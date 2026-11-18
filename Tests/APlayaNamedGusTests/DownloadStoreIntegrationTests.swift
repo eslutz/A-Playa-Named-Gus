@@ -5,6 +5,75 @@ import Testing
 @MainActor
 @Suite("Download store integration")
 struct DownloadStoreIntegrationTests {
+    #if !os(tvOS)
+        @Test("capacity allows large offline libraries and accounts for active transfers across accounts")
+        func capacityTracksRemainingBytes() async throws {
+            let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+            defer { try? FileManager.default.removeItem(at: directory) }
+            let files = OfflineDownloadFileStore(directory: directory)
+            let coordinator = IntegrationDownloadCoordinator()
+            let store = OfflineDownloadStore(fileStore: files, coordinator: coordinator, availableCapacity: { OfflineDownloadStore.minimumFreeBytes + 500 })
+            let downloaded = OfflineDownloadRecord(id: "s:u:saved", item: MediaItem(id: "saved"), filePath: "", byteCount: 24 * 1024 * 1024 * 1024, serverID: "s", userID: "u", downloadedAt: .now)
+            try files.persist(downloaded)
+            var active = files.prepareDownloadRecord(item: MediaItem(id: "other"), serverID: "s", userID: "other", fileExtension: "mp4", status: .downloading(0), progress: 0)
+            active.estimatedByteCount = 350
+            try files.persist(active)
+            let item = MediaItem(canDownload: true, id: "new", mediaSources: [MediaSource(id: "original", sizeBytes: 200)], officialRating: "G", type: .audio)
+            let provider = FakeMediaProviderSession(capabilities: .init(supportsDownloads: true))
+            provider.itemHandler = { _ in item }
+            let url = try #require(URL(string: "https://example.invalid"))
+            let session = SessionStore(client: JellyfinClientFactory.makeClient(url: url), user: .init(id: "u", name: "User", serverID: "s"), server: .init(id: "s", name: "Server", url: url), mediaProvider: provider)
+            store.load(serverID: "s", userID: "u")
+
+            await store.download(PlaybackRequest(item: item), session: session)
+            #expect(coordinator.startedRecordIDs.isEmpty)
+            #expect(store.errorMessage?.contains("Free up space") == true)
+
+            // The server's reported length supersedes the estimate and bytes on
+            // disk are already reflected in the volume's available capacity.
+            store.downloadSessionCoordinator(coordinator, didUpdateActivity: DownloadActivity(phase: .downloading, receivedBytes: 50, expectedBytes: 400), recordID: active.id)
+            store.downloadSessionCoordinator(coordinator, didUpdateActivity: DownloadActivity(phase: .downloading, receivedBytes: 100, expectedBytes: 400), recordID: active.id)
+            await store.download(PlaybackRequest(item: item), session: session)
+            let newRecord = try #require(files.record(forItemID: "new", serverID: "s", userID: "u"))
+            #expect(coordinator.startedRecordIDs == [newRecord.id])
+            #expect(newRecord.estimatedByteCount == 200)
+            #expect(store.errorMessage == nil)
+            #expect(files.record(forRecordID: downloaded.id) == downloaded)
+        }
+
+        @Test("disk-full errors retain native resume data and retry after freeing enough space")
+        func retriesAfterDiskFull() async throws {
+            let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+            defer { try? FileManager.default.removeItem(at: directory) }
+            let files = OfflineDownloadFileStore(directory: directory)
+            let coordinator = IntegrationDownloadCoordinator()
+            var available = OfflineDownloadStore.minimumFreeBytes + 299
+            let store = OfflineDownloadStore(fileStore: files, coordinator: coordinator, availableCapacity: { available })
+            var record = files.prepareDownloadRecord(item: MediaItem(id: "item", type: .audio), serverID: "s", userID: "u", fileExtension: "mp3", status: .downloading(0.25), progress: 0.25)
+            record.activity = DownloadActivity(phase: .downloading, receivedBytes: 100, expectedBytes: 400)
+            try files.persist(record)
+            store.load(serverID: "s", userID: "u")
+            let url = try #require(URL(string: "https://example.invalid"))
+            let session = SessionStore(client: JellyfinClientFactory.makeClient(url: url), user: .init(id: "u", name: "User", serverID: "s"), server: .init(id: "s", name: "Server", url: url))
+            let error = NSError(domain: NSURLErrorDomain, code: URLError.cannotWriteToFile.rawValue, userInfo: [NSUnderlyingErrorKey: POSIXError(.ENOSPC)])
+            let resumeData = Data("native resume data".utf8)
+
+            store.downloadSessionCoordinator(coordinator, didFailWith: error, resumeData: resumeData, recordID: record.id)
+            let failed = try #require(store.records.first)
+            #expect(failed.status == .failed("This download ran out of storage space. Free up space on this device and try again."))
+            #expect(failed.resumeData == resumeData)
+            #expect(store.activeItemIDs.isEmpty)
+
+            await store.resume(failed, session: session)
+            #expect(coordinator.resumedRecordIDs.isEmpty)
+            #expect(files.record(forRecordID: record.id)?.resumeData == resumeData)
+            available += 1
+            await store.resume(failed, session: session)
+            #expect(coordinator.resumedRecordIDs == [record.id])
+            #expect(store.errorMessage == nil)
+        }
+    #endif
+
     @Test("independent file handles serialize writes to the same canonical directory")
     func concurrentIndependentHandles() async throws {
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)

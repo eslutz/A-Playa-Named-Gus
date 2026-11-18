@@ -6,10 +6,10 @@ struct SeerrArtworkView: View {
     var aspectRatio: CGFloat = 2.0 / 3.0
     var symbol = "film"
     var width = "w500"
-    var fallbackPaths: [String] = []
+    var fallbackURL: URL?
 
     var body: some View {
-        ArtworkTile(url: SeerrArtwork.url(path: path, width: width), aspectRatio: aspectRatio, placeholderSymbol: symbol, fallbackURLs: fallbackPaths.compactMap { SeerrArtwork.url(path: $0, width: width) })
+        ArtworkTile(url: SeerrArtwork.url(path: path, width: width), aspectRatio: aspectRatio, placeholderSymbol: symbol, fallbackURLs: [fallbackURL].compactMap { $0 })
             .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
             .accessibilityHidden(true)
     }
@@ -26,10 +26,10 @@ struct SeerrTitleCard: View {
                 subtitle: title.seerrIdentityDescription,
                 imageURL: title.imageURL(),
                 placeholderSymbol: title.mediaType == .person ? "person" : "film",
-                fallbackURLs: [title.backdropPath].compactMap { SeerrArtwork.url(path: $0, width: "w500") }
+                fallbackURLs: [title.backdropPath].compactMap { SeerrArtwork.url(path: $0, width: "w780") }
             )
-            if title.mediaType != .person {
-                Text(title.seerrAvailabilityDescription)
+            if let availability = title.seerrAvailabilityDescription {
+                Text(availability)
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -49,14 +49,15 @@ struct SeerrTitleRow: View {
             SeerrArtworkView(
                 path: title.mediaType == .person ? title.profilePath : title.posterPath,
                 symbol: title.mediaType == .person ? "person" : "film",
-                fallbackPaths: [title.backdropPath].compactMap { $0 }
+                width: "w185",
+                fallbackURL: SeerrArtwork.url(path: title.backdropPath, width: "w300")
             )
             .frame(width: 64)
             VStack(alignment: .leading, spacing: 4) {
                 Text(title.displayTitle).font(.headline)
                 Text(title.seerrIdentityDescription).font(.subheadline).foregroundStyle(.secondary)
-                if title.mediaType != .person {
-                    Text(title.seerrAvailabilityDescription).font(.subheadline).foregroundStyle(.secondary)
+                if let availability = title.seerrAvailabilityDescription {
+                    Text(availability).font(.subheadline).foregroundStyle(.secondary)
                 }
             }
             .fixedSize(horizontal: false, vertical: true)
@@ -111,31 +112,30 @@ extension SeerrTitle {
         }
     }
 
-    var seerrAvailabilityDescription: String {
-        guard let status = mediaInfo?.status else { return String(localized: "Availability unknown") }
-        return status.seerrDescription
+    var seerrAvailabilityDescription: String? {
+        guard mediaType == .movie || mediaType == .tv else { return nil }
+        return mediaInfo?.status.seerrDescription
     }
 
     /// Provider-specific projection: TMDB/Seerr identity never becomes a Jellyfin ID.
     var mediaAccessibility: MediaItemAccessibility {
         MediaItemAccessibility(
             label: [displayTitle, seerrIdentityDescription].joined(separator: ", "),
-            value: mediaType == .person ? "" : seerrAvailabilityDescription
+            value: seerrAvailabilityDescription ?? ""
         )
     }
 }
 
 extension SeerrMediaStatus {
-    var seerrDescription: String {
+    var seerrDescription: String? {
         switch self {
-        case .notRequested: String(localized: "Not requested")
+        case .notRequested, .unknown: nil
         case .pending: String(localized: "Pending approval · Not available")
         case .processing: String(localized: "Processing in Seerr")
         case .partiallyAvailable: String(localized: "Partially available in Seerr")
         case .available: String(localized: "Available in Seerr")
         case .blocklisted: String(localized: "Blocked")
         case .deleted: String(localized: "Deleted media record")
-        case .unknown: String(localized: "Availability unknown")
         }
     }
 }

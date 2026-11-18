@@ -70,6 +70,7 @@ struct DownloadSourceResolution {
     var requiresTranscoding: Bool
     var operation: DownloadActivity.SourceOperation? = nil
     var mediaSourceID: String? = nil
+    var estimatedByteCount: Int64? = nil
 }
 
 struct PlaybackReportContext: Sendable {

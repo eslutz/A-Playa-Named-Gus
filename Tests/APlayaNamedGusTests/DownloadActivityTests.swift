@@ -173,7 +173,7 @@ struct DownloadActivityTests {
     }
 
     @MainActor
-    @Test("failed finalization retains staged media and its recovery manifest")
+    @Test("failed finalization can retry its staged media without repeating the transfer")
     func failedFinalizationRetainsFile() async throws {
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
@@ -199,6 +199,18 @@ struct DownloadActivityTests {
         #expect(try Data(contentsOf: staged) == content)
         #expect(try JSONDecoder().decode(String.self, from: Data(contentsOf: manifest)) == "record-1")
         #expect(handler.events == ["saving", "finished", "backgroundFinished"])
+
+        handler.finalizationSucceeds = true
+        #expect(!coordinator.retryStagedDownload(recordID: "another-record"))
+        await withCheckedContinuation { continuation in
+            handler.onBackgroundFinished = { continuation.resume() }
+            #expect(coordinator.retryStagedDownload(recordID: "record-1"))
+            coordinator.urlSessionDidFinishEvents(forBackgroundURLSession: .shared)
+        }
+        #expect(handler.events.suffix(2) == ["finished", "backgroundFinished"])
+        #expect(handler.finishedData == content)
+        #expect(!FileManager.default.fileExists(atPath: staged.path))
+        #expect(!FileManager.default.fileExists(atPath: manifest.path))
     }
 
     @MainActor

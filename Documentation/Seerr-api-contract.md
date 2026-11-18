@@ -38,7 +38,11 @@ account's saved connection. Disappearance or cancellation cannot unlock duplicat
 submission. An authoritative reply clears that journal; otherwise the user must
 check Seerr and explicitly confirm whether another submission is needed.
 
-Browse honors the enabled supported built-in server sliders. Custom sliders and
+Browse follows the order of enabled, supported built-in server sliders. Popular Movies and Popular TV Series leave the original-language filter to the server unless the user chooses one. The movie and TV genre shelves read `discover/genreslider/movie` and `discover/genreslider/tv`. Genres filter the matching movie or TV endpoint by `genre`. Studios and networks use Seerr's published company lists and the paged `discover/movies/studio/{id}` and `discover/tv/network/{id}` endpoints. See the [discovery routes](https://github.com/seerr-team/seerr/blob/v3.5.1/server/routes/discover.ts), [studio slider](https://github.com/seerr-team/seerr/blob/v3.5.1/src/components/Discover/StudioSlider/index.tsx) and [network slider](https://github.com/seerr-team/seerr/blob/v3.5.1/src/components/Discover/NetworkSlider/index.tsx).
+
+Missing, unknown and unrecognized availability values do not produce a catalog badge. Request eligibility still checks the authenticated details, permissions and request state. Movie and TV detail pages use distinct paged `recommendations` and `similar` endpoints. See Seerr's [title card](https://github.com/seerr-team/seerr/blob/v3.5.1/src/components/TitleCard/index.tsx).
+
+Custom sliders and
 unsupported categories are omitted. Issue management currently exposes the
 signed-in user's history and authorized actions, rather than an all-user issue
 administration screen. Notification controls expose supported email events;

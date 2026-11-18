@@ -54,6 +54,25 @@ struct CollectionStoreTests {
         #expect(store.errorMessage != nil)
     }
 
+    @Test func discoveryUsesListedHeadersAndOnlyFetchesEditPermissionsUponOpening() async {
+        let provider = FakeMediaProviderSession(capabilities: .init())
+        provider.collectionPageHandler = { _, _ in .init(items: [.init(id: "box", name: "Films", type: .boxSet)], totalRecordCount: 1) }
+        var detailReads = 0
+        provider.collectionItemHandler = { _ in detailReads += 1; throw GusError.offline }
+        var permissionIDs: [String?] = []
+        provider.collectionCapabilitiesHandler = { id in permissionIDs.append(id); return .init(delete: id != nil) }
+        provider.collectionMembersHandler = { _, _, _ in .init(items: [.init(id: "movie", type: .movie)], totalRecordCount: 1) }
+        let store = CollectionStore(session: session(provider))
+        await store.load()
+        #expect(store.relevant(to: nil).map(\.id) == ["box"])
+        #expect(store.errorMessage == nil)
+        #expect(detailReads == 0)
+        #expect(permissionIDs == [nil])
+        await store.loadDetail(id: "box")
+        #expect(store.permissions(for: "box").delete)
+        #expect(permissionIDs == [nil, "box"])
+    }
+
     @Test func discoverySurvivesPermissionLookupFailure() async {
         let provider = FakeMediaProviderSession(capabilities: .init())
         provider.collectionCapabilitiesHandler = { _ in throw GusError.server("Permissions unavailable") }
@@ -221,17 +240,45 @@ struct CollectionStoreTests {
         let provider = FakeMediaProviderSession(capabilities: .init())
         provider.collectionPageHandler = { _, _ in .init(items: (0 ..< 12).map { MediaItem(id: String($0), type: .boxSet) }, totalRecordCount: 12) }
         var active = 0, maximum = 0
-        provider.collectionItemHandler = { id in
+        provider.collectionMembersHandler = { _, _, _ in
             active += 1; maximum = max(maximum, active)
             await Task.yield()
             active -= 1
-            return MediaItem(id: id, type: .boxSet)
+            return .init(items: [], totalRecordCount: 0)
         }
         let store = CollectionStore(session: session(provider))
         await store.load()
-        #expect(maximum <= 4)
+        #expect((1 ... 4).contains(maximum))
         #expect(store.collections.count == 12)
         #expect(store.collections.allSatisfy { $0.membersLoaded })
+    }
+
+    @Test func returningAfterInterruptedMembershipLoadRetriesFromTheServer() async {
+        let provider = FakeMediaProviderSession(capabilities: .init())
+        provider.collectionPageHandler = { _, _ in .init(items: [.init(id: "box", type: .boxSet)], totalRecordCount: 1) }
+        var suspended: CheckedContinuation<MediaItemPage, Never>?
+        var reads = 0
+        provider.collectionMembersHandler = { _, _, _ in
+            reads += 1
+            if reads == 1 {
+                return await withCheckedContinuation { suspended = $0 }
+            }
+            return .init(items: [.init(id: "movie", type: .movie)], totalRecordCount: 1)
+        }
+        let store = CollectionStore(session: session(provider))
+        let first = Task { await store.load() }
+        while suspended == nil {
+            await Task.yield()
+        }
+        store.cancelForegroundLoads()
+        #expect(store.collection("box") != nil)
+        #expect(store.state == .idle)
+        suspended?.resume(returning: .init(items: [], totalRecordCount: 0))
+        await first.value
+        await store.load()
+        #expect(reads == 2)
+        #expect(store.relevant(to: nil).map(\.id) == ["box"])
+        #expect(store.errorMessage == nil)
     }
 
     @Test func inactiveStoreRejectsChainedDetailAndLibraryLoads() async {

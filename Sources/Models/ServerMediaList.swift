@@ -19,6 +19,11 @@ struct ServerMediaList: Identifiable, Codable, Equatable, Sendable {
     var entries: [ServerMediaListEntry]
     var canEdit: Bool
     var entriesLoaded: Bool
+    var primaryImageTag: String?
+
+    var coverItem: MediaItem {
+        MediaItem(id: ServerMediaListID.string(id), imageTags: primaryImageTag.map { ["Primary": $0] } ?? [:], name: name, type: .playlist)
+    }
 }
 
 /// Jellyfin uses both dashed GUIDs and compact GUIDs. Playlist occurrence APIs compare

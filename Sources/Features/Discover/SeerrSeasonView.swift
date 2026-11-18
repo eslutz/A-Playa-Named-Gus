@@ -50,7 +50,9 @@ struct SeerrSeasonView: View {
                     Text(summary).fixedSize(horizontal: false, vertical: true)
                 }
                 if let availability = series.mediaInfo?.seasons?.first(where: { $0.seasonNumber == season.seasonNumber }) {
-                    Text(availability.status.seerrDescription).font(.headline)
+                    if let description = availability.status.seerrDescription {
+                        Text(description).font(.headline)
+                    }
                     if availability.status == .available || availability.status == .partiallyAvailable {
                         SeerrPlaybackMatchView(title: series, seasonNumber: season.seasonNumber)
                     }

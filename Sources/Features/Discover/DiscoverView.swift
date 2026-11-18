@@ -20,18 +20,23 @@ struct DiscoverView: View {
                 } description: {
                     Text(store.errorMessage ?? String(localized: "Browse movies and shows, request missing titles, and track your requests."))
                 } actions: {
-                    Button(store.serverURL == nil ? "Connect to Seerr" : "Sign In to Seerr") { showingSetup = true }
-                        .gusProminentGlassButtonStyle().gusProminentActionTint()
-                        .controlSize(.large)
-                        .frame(minHeight: 44)
-                        .accessibilityIdentifier("Seerr.connect")
-                    if store.state == .offline {
-                        Button("Retry Connection") { Task { await store.retryRestore() } }
+                    VStack(spacing: 12) {
+                        Button(store.serverURL == nil ? "Connect to Seerr" : "Sign In to Seerr") { showingSetup = true }
+                            .gusProminentGlassButtonStyle().gusProminentActionTint()
+                            .controlSize(.large)
+                            .frame(minHeight: 44)
+                            .accessibilityIdentifier("Seerr.connect")
+                        if store.needsInitialSetup {
+                            Button("Hide Menu Item") { hide() }
+                                .gusSeerrHideButtonStyle()
+                        }
+                        if store.state == .offline {
+                            Button("Retry Connection") { Task { await store.retryRestore() } }
+                        }
+                        #if os(tvOS)
+                            NavigationLink { SeerrSettingsView() } label: { Label("Seerr Settings", systemImage: "gearshape") }
+                        #endif
                     }
-                    #if os(tvOS)
-                        NavigationLink { SeerrSettingsView() } label: { Label("Seerr Settings", systemImage: "gearshape") }
-                    #endif
-                    Button("Hide Menu Item") { hide() }
                 }
             }
         }
@@ -50,11 +55,6 @@ struct DiscoverView: View {
                     }
                     .gusIPadIconOnly()
                     .accessibilityIdentifier("Seerr.menu")
-                }
-                if store.isConnected {
-                    ToolbarItem {
-                        SeerrRequestHistoryLink()
-                    }
                 }
             #endif
         }

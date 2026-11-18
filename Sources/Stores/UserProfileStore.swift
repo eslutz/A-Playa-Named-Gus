@@ -7,6 +7,7 @@ import Observation
 final class UserProfileStore {
     private let client: JellyfinClient
     private let userID: String
+    private let verificationSessionConfiguration: URLSessionConfiguration
     private(set) var profile: UserDto?
     private(set) var imageData: Data?
     private(set) var isLoading = false
@@ -15,9 +16,11 @@ final class UserProfileStore {
     private(set) var saveOutcome: ActionOutcome?
     private(set) var currentUsernameAfterPartialSave: String?
     private(set) var needsSaveReadback = false
+    private(set) var didSavePicture = false
     private var isActive = true
 
-    init(client: JellyfinClient, userID: String) {
+    init(client: JellyfinClient, userID: String, verificationSessionConfiguration: URLSessionConfiguration = .ephemeral) {
+        self.verificationSessionConfiguration = verificationSessionConfiguration
         self.client = client
         self.userID = userID
     }
@@ -28,6 +31,11 @@ final class UserProfileStore {
     }
 
     func load() async {
+        guard !isSaving else { return }
+        await refresh()
+    }
+
+    private func refresh() async {
         guard isActive, !isLoading else { return }
         isLoading = true
         defer { isLoading = false }
@@ -60,47 +68,92 @@ final class UserProfileStore {
         }
     }
 
-    /// Fetch before updating so unrelated server settings are preserved. A write
-    /// response is accepted until canonical profile readback confirms its values.
+    /// Authenticate before the first edit. Change the password last, once the other
+    /// fields have been read back, so a partial save can still use the old password.
     @discardableResult
-    func save(name: String, audioLanguage: String, subtitleLanguage: String) async -> ActionOutcome? {
+    func save(
+        name: String,
+        audioLanguage: String,
+        subtitleLanguage: String,
+        currentPassword: String,
+        newPassword: String = "",
+        picture: Data? = nil
+    ) async -> ActionOutcome? {
         let name = name.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard isActive, !isSaving, !isLoading, !needsSaveReadback, !name.isEmpty else { return nil }
+        guard isActive, !isSaving, !isLoading, !needsSaveReadback, !name.isEmpty, !currentPassword.isEmpty else { return nil }
         isSaving = true
+        defer { isSaving = false }
         saveOutcome = .pending
+        didSavePicture = false
+        errorMessage = nil
         currentUsernameAfterPartialSave = nil
         let audio = audioLanguage.trimmingCharacters(in: .whitespacesAndNewlines)
         let subtitles = subtitleLanguage.trimmingCharacters(in: .whitespacesAndNewlines)
         var transmitted = false
         var usernameAccepted = false
-        defer { isSaving = false }
+        var passwordSubmitted = false
+        var profileEditsConfirmed = false
         do {
             var current = try await client.send(Paths.getUserByID(userID: userID)).value
-            guard isActive, !Task.isCancelled else { return cancelSave(afterTransmission: transmitted) }
-            if current.name != name {
-                current.name = name
-                transmitted = true
-                try await client.send(Paths.updateUser(userID: userID, current))
-                usernameAccepted = true
-                guard isActive, !Task.isCancelled else { return cancelSave(afterTransmission: transmitted) }
+            guard isActive, !Task.isCancelled else { return cancelSave(afterTransmission: false) }
+            guard current.id == userID, let username = current.name else { throw GusError.forbidden }
+            let preferencesChanged = (current.configuration?.audioLanguagePreference ?? "") != audio
+                || (current.configuration?.subtitleLanguagePreference ?? "") != subtitles
+            let profileChanged = username != name || preferencesChanged || picture != nil
+            if profileChanged || newPassword.isEmpty {
+                try await verifyPassword(currentPassword, username: username)
+                guard isActive, !Task.isCancelled else { return cancelSave(afterTransmission: false) }
             }
-            var configuration = current.configuration ?? UserConfiguration()
-            configuration.audioLanguagePreference = audio.isEmpty ? nil : audio
-            configuration.subtitleLanguagePreference = subtitles.isEmpty ? nil : subtitles
-            transmitted = true
-            try await client.send(Paths.updateUserConfiguration(userID: userID, configuration))
-            guard isActive, !Task.isCancelled else { return cancelSave(afterTransmission: transmitted) }
-            saveOutcome = .accepted
-            await load()
-            guard isActive, !Task.isCancelled else { return cancelSave(afterTransmission: transmitted) }
-            guard errorMessage == nil, profile?.name == name,
-                  (profile?.configuration?.audioLanguagePreference ?? "") == audio,
-                  (profile?.configuration?.subtitleLanguagePreference ?? "") == subtitles
-            else {
-                saveOutcome = .uncertain
-                needsSaveReadback = true
-                errorMessage = String(localized: "Jellyfin accepted the changes, but the saved profile could not be confirmed. Reload the profile before trying again.")
-                return saveOutcome
+            if profileChanged {
+                if username != name {
+                    current.name = name
+                    transmitted = true
+                    try await client.send(Paths.updateUser(userID: userID, current))
+                    usernameAccepted = true
+                    guard isActive, !Task.isCancelled else { return cancelSave(afterTransmission: true) }
+                }
+                if preferencesChanged {
+                    var configuration = current.configuration ?? UserConfiguration()
+                    configuration.audioLanguagePreference = audio.isEmpty ? nil : audio
+                    configuration.subtitleLanguagePreference = subtitles.isEmpty ? nil : subtitles
+                    transmitted = true
+                    try await client.send(Paths.updateUserConfiguration(userID: userID, configuration))
+                    guard isActive, !Task.isCancelled else { return cancelSave(afterTransmission: true) }
+                }
+                if let picture {
+                    // Jellyfin's image controller decodes a base64 body with an image MIME type.
+                    let body = picture.base64EncodedData()
+                    let configure: @Sendable (inout URLRequest) -> Void = { request in
+                        request.httpBody = body
+                        request.setValue("image/jpeg", forHTTPHeaderField: "Content-Type")
+                    }
+                    transmitted = true
+                    try await client.send(Paths.postUserImage(userID: userID), configure: configure)
+                    guard isActive, !Task.isCancelled else { return cancelSave(afterTransmission: true) }
+                }
+                saveOutcome = .accepted
+                await refresh()
+                guard isActive, !Task.isCancelled else { return cancelSave(afterTransmission: true) }
+                let pictureConfirmed = picture == nil || (profile?.primaryImageTag != nil
+                    && (profile?.primaryImageTag != current.primaryImageTag || imageData == picture))
+                guard errorMessage == nil, profile?.name == name,
+                      (profile?.configuration?.audioLanguagePreference ?? "") == audio,
+                      (profile?.configuration?.subtitleLanguagePreference ?? "") == subtitles, pictureConfirmed
+                else {
+                    saveOutcome = .uncertain
+                    needsSaveReadback = true
+                    errorMessage = String(localized: "Jellyfin accepted the changes, but the saved profile could not be confirmed. Reload the profile before trying again.")
+                    return saveOutcome
+                }
+                profileEditsConfirmed = true
+                didSavePicture = picture != nil
+            }
+            if !newPassword.isEmpty {
+                // Explicitly identify our own user so Jellyfin checks CurrentPw even for admins.
+                transmitted = true
+                passwordSubmitted = true
+                try await client.send(Paths.updateUserPassword(userID: userID, .init(currentPw: currentPassword, newPw: newPassword)))
+                guard isActive, !Task.isCancelled else { return cancelSave(afterTransmission: true) }
             }
             saveOutcome = .confirmed
             return saveOutcome
@@ -110,35 +163,64 @@ final class UserProfileStore {
             if failure.isCancellation || Task.isCancelled {
                 return cancelSave(afterTransmission: transmitted)
             }
+            guard transmitted else {
+                errorMessage = failure.localizedDescription
+                saveOutcome = .failed(failure)
+                return saveOutcome
+            }
             let uncertain: Bool = switch failure {
-            case .timeout, .offline, .network: transmitted
+            case .timeout, .offline, .network, .server: true
             default: false
             }
-            // A preceding update may have succeeded. Read current values without
-            // converting a rejected or uncertain write into apparent success.
-            await load()
-            guard isActive, !Task.isCancelled else { return cancelSave(afterTransmission: transmitted) }
+            await refresh()
+            guard isActive, !Task.isCancelled else { return cancelSave(afterTransmission: true) }
             let usernameConfirmed = usernameAccepted && errorMessage == nil && profile?.name == name
             let unconfirmedUsername = usernameAccepted && !usernameConfirmed
             let outcome: ActionOutcome = uncertain || unconfirmedUsername ? .uncertain : .failed(failure)
-            let message: String
             if usernameConfirmed {
                 currentUsernameAfterPartialSave = profile?.name
-                message = uncertain
-                    ? String(localized: "Your username was saved, but the playback preferences could not be confirmed. Reload the profile before trying again.")
-                    : String(localized: "Your username was saved. The playback preferences were not saved. Check the current username below before signing in again.") + " " + failure.localizedDescription
-            } else if unconfirmedUsername {
-                message = String(localized: "Jellyfin accepted the username change, but its current profile could not be confirmed. Reload the profile before trying again.")
+            }
+            if passwordSubmitted, uncertain {
+                errorMessage = String(localized: "Jellyfin may have changed your password. Check which password works before trying again.")
+            } else if passwordSubmitted, failure == .forbidden {
+                errorMessage = String(localized: "Jellyfin could not change your password. Check your current password and account permissions.")
+            } else if usernameConfirmed {
+                errorMessage = String(localized: "Your username was saved. Some other changes could not be confirmed.") + " " + failure.localizedDescription
+            } else if unconfirmedUsername || uncertain {
+                errorMessage = String(localized: "Jellyfin may have saved some changes. Reload the profile before trying again.")
             } else {
-                message = uncertain
-                    ? String(localized: "Jellyfin may have saved some changes. Reload the profile before trying again.")
-                    : failure.localizedDescription
+                errorMessage = failure.localizedDescription
+            }
+            if profileEditsConfirmed, let message = errorMessage {
+                errorMessage = String(localized: "Your other profile changes were saved.") + " " + message
             }
             needsSaveReadback = uncertain || unconfirmedUsername
-            errorMessage = message
             saveOutcome = outcome
             return outcome
         }
+    }
+
+    private func verifyPassword(_ password: String, username: String) async throws {
+        // Authenticating the real device ID would revoke its active token. Use a
+        // separate device identity and close that session before editing the profile.
+        let active = client.configuration
+        let verifier = JellyfinClient(configuration: .init(
+            url: active.url, client: active.client, deviceName: active.deviceName,
+            deviceID: active.deviceID + "-profile-verification", version: active.version
+        ), sessionConfiguration: verificationSessionConfiguration)
+        let result: AuthenticationResult
+        do {
+            result = try await verifier.signIn(username: username, password: password)
+        } catch {
+            if GusError(from: error) == .unauthorized {
+                throw GusError.server(String(localized: "Jellyfin could not verify your current password."))
+            }
+            throw error
+        }
+        // Cancellation must not strand the verification token. Sessions/Logout
+        // revokes only this client, unlike the administrative API-key endpoint.
+        _ = try await Task { try await verifier.send(Paths.reportSessionEnded) }.value
+        guard result.user?.id == userID else { throw GusError.forbidden }
     }
 
     private func cancelSave(afterTransmission transmitted: Bool) -> ActionOutcome? {

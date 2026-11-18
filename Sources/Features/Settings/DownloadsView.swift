@@ -15,43 +15,32 @@ struct DownloadsView: View {
     }
 
     var body: some View {
-        List {
-            ProgressTransferView()
-            Section {
-                LabeledContent("Storage Used", value: downloads.loadErrorMessage == nil ? ByteCountFormatter.string(fromByteCount: downloads.totalByteCount(serverID: session.server.id, userID: session.user.id), countStyle: .file) : String(localized: "Unavailable"))
-                LabeledContent("Soft Cap", value: ByteCountFormatter.string(fromByteCount: OfflineDownloadStore.softCapBytes, countStyle: .file))
-                LabeledContent("Active Downloads", value: downloads.loadErrorMessage == nil ? "\(records.filter { $0.status.isActive }.count)" : String(localized: "Unavailable"))
-                LabeledContent("Paused Downloads", value: downloads.loadErrorMessage == nil ? "\(records.filter { $0.status == .paused }.count)" : String(localized: "Unavailable"))
-            } footer: {
-                Text("Downloads use system background transfers. Avoid force-quitting Gus while downloading. Saved media stays on this device and is excluded from backup.")
-            }
-            Section {
-                Toggle("Delete After Finishing", isOn: $deleteFinished)
-                    .accessibilityIdentifier("Downloads.deleteFinished")
-            } footer: {
-                Text("Automatically remove finished downloads from this device without asking. Video and audio are removed after playback ends; books are removed when you close the reader at the end. Repeated audio is kept until playback stops. Books opened in other apps are not removed automatically.")
-            }
-            if let failure = downloads.loadErrorMessage {
+        List(selection: selecting ? $selection : nil) {
+            if !selecting {
+                ProgressTransferView()
                 Section {
-                    Text(failure).foregroundStyle(.secondary)
-                    Button("Try Again") { downloads.load(serverID: session.server.id, userID: session.user.id) }
+                    LabeledContent("Storage Used", value: downloads.loadErrorMessage == nil ? ByteCountFormatter.string(fromByteCount: downloads.totalByteCount(serverID: session.server.id, userID: session.user.id), countStyle: .file) : String(localized: "Unavailable"))
+                    LabeledContent("Active Downloads", value: downloads.loadErrorMessage == nil ? "\(records.filter { $0.status.isActive }.count)" : String(localized: "Unavailable"))
+                    LabeledContent("Paused Downloads", value: downloads.loadErrorMessage == nil ? "\(records.filter { $0.status == .paused }.count)" : String(localized: "Unavailable"))
+                } footer: {
+                    Text("Downloads use system background transfers. Avoid force-quitting Gus while downloading. Saved media stays on this device and is excluded from backup.")
+                }
+                Section {
+                    Toggle("Delete After Finishing", isOn: $deleteFinished)
+                        .accessibilityIdentifier("Downloads.deleteFinished")
+                } footer: {
+                    Text("Automatically remove finished downloads from this device without asking. Video and audio are removed after playback ends; books are removed when you close the reader at the end. Repeated audio is kept until playback stops. Books opened in other apps are not removed automatically.")
+                }
+                if let failure = downloads.loadErrorMessage {
+                    Section {
+                        Text(failure).foregroundStyle(.secondary)
+                        Button("Try Again") { downloads.load(serverID: session.server.id, userID: session.user.id) }
+                    }
                 }
             }
             if records.isEmpty, downloads.loadErrorMessage == nil {
                 ContentUnavailableView("No Downloads", systemImage: "arrow.down.circle", description: Text("Downloaded items from this server and user will appear here."))
             } else if !records.isEmpty {
-                if selecting {
-                    Section {
-                        Button(selection.count == records.count ? "Deselect All" : "Select All") {
-                            selection = selection.count == records.count ? [] : Set(records.map(\.id))
-                        }
-                        Button("Delete Selected (\(selection.count))", role: .destructive) {
-                            requestDeletion(records.filter { selection.contains($0.id) })
-                        }
-                        .disabled(selection.isEmpty)
-                        .accessibilityIdentifier("Downloads.deleteSelected")
-                    }
-                }
                 recordSection("In Progress", records.filter { $0.status.isActive })
                 recordSection("Paused", records.filter { $0.status == .paused })
                 recordSection("Failed", records.filter {
@@ -60,15 +49,29 @@ struct DownloadsView: View {
                     }; return false
                 })
                 recordSection("Downloaded Media", records.filter { $0.status.isComplete })
-                Section {
-                    Button("Delete All Downloads", role: .destructive) { requestDeletion(records) }
-                        .accessibilityIdentifier("Downloads.deleteAll")
-                }
             }
         }
+        .gusDownloadSelectionMode(selecting)
         .navigationTitle("Downloads")
         .toolbar {
-            ToolbarItem {
+            if selecting {
+                ToolbarItem(placement: DownloadsAvailability.selectAllPlacement) {
+                    Button(selection.count == records.count ? "Deselect All" : "Select All") {
+                        selection = selection.count == records.count ? [] : Set(records.map(\.id))
+                    }
+                }
+                if !selection.isEmpty {
+                    ToolbarItem(placement: .primaryAction) {
+                        let title = selection.count == 1 ? String(localized: "Delete Download") : String(localized: "Delete \(selection.count) Downloads")
+                        Button(title, systemImage: "trash", role: .destructive) {
+                            requestDeletion(records.filter { selection.contains($0.id) })
+                        }
+                        .labelStyle(.iconOnly)
+                        .accessibilityIdentifier("Downloads.deleteSelected")
+                    }
+                }
+            }
+            ToolbarItem(placement: .primaryAction) {
                 Button(selecting ? "Done" : "Select") {
                     selecting.toggle()
                     selection.removeAll()
@@ -79,11 +82,17 @@ struct DownloadsView: View {
         }
         .task { downloads.load(serverID: session.server.id, userID: session.user.id) }
         .refreshable { downloads.load(serverID: session.server.id, userID: session.user.id) }
-        .onChange(of: records.map(\.id)) { _, ids in selection.formIntersection(ids) }
+        .onChange(of: records.map(\.id)) { _, ids in
+            selection.formIntersection(ids)
+            if ids.isEmpty {
+                selecting = false
+            }
+        }
         .alert("Delete Downloads?", isPresented: $confirmingDeletion) {
             Button(pendingDeletion.count == 1 ? String(localized: "Delete Download") : String(localized: "Delete \(pendingDeletion.count) Downloads"), role: .destructive) {
                 downloads.delete(pendingDeletion, serverID: session.server.id, userID: session.user.id)
-                selection.subtract(pendingDeletion.map(\.id))
+                selecting = false
+                selection.removeAll()
                 pendingDeletion = []
             }
             Button("Cancel", role: .cancel) { pendingDeletion = [] }
@@ -113,38 +122,36 @@ struct DownloadsView: View {
             Section(title) {
                 ForEach(records) { record in
                     HStack {
-                        if selecting {
-                            Button {
-                                if !selection.insert(record.id).inserted {
-                                    selection.remove(record.id)
-                                }
-                            } label: {
-                                Image(systemName: selection.contains(record.id) ? "checkmark.circle.fill" : "circle")
-                                    .frame(minWidth: 44, minHeight: 44)
-                            }
-                            .buttonStyle(.borderless)
-                            .accessibilityLabel("Select \(record.item.displayTitle)")
-                            .accessibilityValue(selection.contains(record.id) ? "Selected" : "Not Selected")
-                        }
                         if record.remoteUnavailable == true {
                             VStack(alignment: .leading) {
                                 Text("Unavailable on this server").font(.caption)
-                                Button("Choose Replacement") { replacementRecord = record }.buttonStyle(.borderless)
+                                if !selecting {
+                                    Button("Choose Replacement") { replacementRecord = record }.buttonStyle(.borderless)
+                                }
                             }
                         }
                         switch record.status {
                         case .queued, .downloading:
-                            DownloadProgressRow(record: record, activity: downloads.activities[record.id] ?? record.activity) {
+                            DownloadProgressRow(record: record, selecting: selecting, activity: downloads.activities[record.id] ?? record.activity) {
                                 Task { await downloads.pause(itemID: record.item.id ?? "") }
-                            } delete: { requestDeletion([record]) }
+                            }
                         case .paused:
-                            DownloadPausedRow(record: record, activity: downloads.activities[record.id] ?? record.activity) {
+                            DownloadPausedRow(record: record, selecting: selecting, activity: downloads.activities[record.id] ?? record.activity) {
                                 Task { await downloads.resume(record, session: session) }
-                            } delete: { requestDeletion([record]) }
+                            }
                         case .failed:
-                            DownloadFailedRow(record: record) { requestDeletion([record]) }
+                            DownloadFailedRow(record: record, selecting: selecting) {
+                                Task { await downloads.resume(record, session: session) }
+                            }
                         case .complete:
-                            DownloadCompleteRow(record: record) { requestDeletion([record]) }
+                            DownloadCompleteRow(record: record)
+                        }
+                    }
+                    .tag(record.id)
+                    .gusDownloadSwipeDelete { requestDeletion([record]) }
+                    .contextMenu {
+                        if !selecting {
+                            Button("Delete Download", systemImage: "trash", role: .destructive) { requestDeletion([record]) }
                         }
                     }
                 }
@@ -155,9 +162,9 @@ struct DownloadsView: View {
 
 private struct DownloadProgressRow: View {
     let record: OfflineDownloadRecord
+    let selecting: Bool
     let activity: DownloadActivity?
     let pause: () -> Void
-    let delete: () -> Void
 
     var body: some View {
         TimelineView(.periodic(from: .now, by: 1)) { context in
@@ -170,17 +177,14 @@ private struct DownloadProgressRow: View {
                             .foregroundStyle(.secondary)
                     }
                     Spacer()
-                    Button(action: pause) {
-                        Label("Pause", systemImage: "pause.fill")
+                    if !selecting {
+                        Button(action: pause) {
+                            Label("Pause", systemImage: "pause.fill")
+                        }
+                        .buttonStyle(.borderless)
+                        .disabled(activity?.phase == .saving)
+                        .accessibilityLabel("Pause \(record.item.displayTitle)")
                     }
-                    .buttonStyle(.borderless)
-                    .disabled(activity?.phase == .saving)
-                    .accessibilityLabel("Pause \(record.item.displayTitle)")
-                    Button(role: .destructive, action: delete) {
-                        Image(systemName: "trash")
-                    }
-                    .buttonStyle(.borderless)
-                    .accessibilityLabel("Delete \(record.item.displayTitle)")
                 }
 
                 if let progress = displayedProgress {
@@ -294,9 +298,9 @@ private enum DownloadActivityDisplay {
 
 private struct DownloadPausedRow: View {
     let record: OfflineDownloadRecord
+    let selecting: Bool
     let activity: DownloadActivity?
     let resume: () -> Void
-    let delete: () -> Void
 
     var body: some View {
         HStack {
@@ -314,17 +318,13 @@ private struct DownloadPausedRow: View {
 
             Spacer()
 
-            Button(action: resume) {
-                Label("Resume", systemImage: "play.fill")
+            if !selecting {
+                Button(action: resume) {
+                    Label("Resume", systemImage: "play.fill")
+                }
+                .accessibilityLabel("Resume \(record.item.displayTitle)")
+                .buttonStyle(.borderless)
             }
-            .accessibilityLabel("Resume \(record.item.displayTitle)")
-            .buttonStyle(.borderless)
-
-            Button(role: .destructive, action: delete) {
-                Image(systemName: "trash")
-            }
-            .buttonStyle(.borderless)
-            .accessibilityLabel("Delete \(record.item.displayTitle)")
         }
     }
 }
@@ -332,7 +332,6 @@ private struct DownloadPausedRow: View {
 private struct DownloadCompleteRow: View {
     @Environment(OfflineDownloadStore.self) private var downloads
     let record: OfflineDownloadRecord
-    let delete: () -> Void
 
     var body: some View {
         HStack {
@@ -346,19 +345,14 @@ private struct DownloadCompleteRow: View {
             }
 
             Spacer()
-
-            Button(role: .destructive, action: delete) {
-                Image(systemName: "trash")
-            }
-            .buttonStyle(.borderless)
-            .accessibilityLabel("Delete \(record.item.displayTitle)")
         }
     }
 }
 
 private struct DownloadFailedRow: View {
     let record: OfflineDownloadRecord
-    let delete: () -> Void
+    let selecting: Bool
+    let retry: () -> Void
 
     var body: some View {
         HStack {
@@ -371,11 +365,12 @@ private struct DownloadFailedRow: View {
 
             Spacer()
 
-            Button(role: .destructive, action: delete) {
-                Image(systemName: "trash")
+            if !selecting {
+                Button(action: retry) {
+                    Label("Try Again", systemImage: "arrow.clockwise")
+                }
+                .buttonStyle(.borderless)
             }
-            .buttonStyle(.borderless)
-            .accessibilityLabel("Delete \(record.item.displayTitle)")
         }
     }
 

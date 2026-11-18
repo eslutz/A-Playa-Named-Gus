@@ -7,6 +7,8 @@ enum JellyfinMediaItemMapper {
             providerKind: .jellyfin,
             album: item.album,
             albumArtist: item.albumArtist,
+            albumID: item.albumID,
+            albumPrimaryImageTag: item.albumPrimaryImageTag,
             artists: item.artists ?? [],
             backdropImageTags: item.backdropImageTags ?? [],
             canDownload: item.canDownload,
@@ -173,7 +175,8 @@ enum JellyfinMediaItemMapper {
             liveStreamID: source.liveStreamID,
             defaultAudioStreamIndex: source.defaultAudioStreamIndex,
             defaultSubtitleStreamIndex: source.defaultSubtitleStreamIndex,
-            runTimeTicks: source.runTimeTicks
+            runTimeTicks: source.runTimeTicks,
+            sizeBytes: source.size.map(Int64.init)
         )
     }
 

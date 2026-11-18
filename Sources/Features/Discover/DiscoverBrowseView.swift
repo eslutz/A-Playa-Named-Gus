@@ -3,12 +3,13 @@ import SwiftUI
 /// Discover owns its search scope while each supported feed loads and retries independently.
 struct DiscoverBrowseView: View {
     @Environment(AppNavigationModel.self) private var navigation
+    @Environment(\.calendar) private var calendar
+    @Environment(\.scenePhase) private var scenePhase
     @FocusState private var searchFocused: Bool
     @State private var searchPresented = false
     let store: SeerrStore
     let searchOnly: Bool
-    @State private var feeds: [SeerrCatalogStore] = []
-    @State private var enabledFeeds: [SeerrDiscoveryFeed] = []
+    @State private var shelves: [SeerrHomeShelf] = []
     @State private var feedState: LoadState = .idle
     @State private var feedError: String?
     @State private var feedsRevision: String?
@@ -17,6 +18,7 @@ struct DiscoverBrowseView: View {
     @State private var submittedSearch = UUID()
     @State private var submitsImmediately = false
     @State private var scrollID: String?
+    @State private var today = Calendar.current.startOfDay(for: .now)
     @AppStorage(ContentRatingGate.limitDefaultsKey) private var contentLimitRawValue = ContentRatingGate.Limit.off.rawValue
     @AppStorage(ContentRatingGate.hideUnratedDefaultsKey) private var hideUnratedContent = false
 
@@ -27,6 +29,13 @@ struct DiscoverBrowseView: View {
 
     private var normalizedQuery: String {
         query.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private var trending: SeerrCatalogStore? {
+        for case let .titles(.trending, catalog) in shelves {
+            return catalog
+        }
+        return nil
     }
 
     private var accessRevision: String {
@@ -84,8 +93,8 @@ struct DiscoverBrowseView: View {
 
     private var browse: some View {
         LoadingStateView(
-            state: feedsRevision == accessRevision ? (feeds.isEmpty ? feedState : .loaded) : .loading,
-            isEmpty: feeds.isEmpty,
+            state: feedsRevision == accessRevision ? (shelves.isEmpty ? feedState : .loaded) : .loading,
+            isEmpty: shelves.isEmpty,
             emptyTitle: String(localized: "No Discover Feeds"),
             emptySymbol: "rectangle.stack",
             retryAction: { Task { await loadFeeds() } }
@@ -102,20 +111,41 @@ struct DiscoverBrowseView: View {
                             }
                         }.focusSection().padding(.vertical, 24)
                     #endif
-                    if let trending = feeds.first(where: { $0.source == .feed(.trending) }), trending.isValid(for: store),
-                       let hero = trending.items.first(where: { $0.backdropPath != nil && store.admits($0) })
-                    {
-                        SeerrDiscoveryHero(title: hero, store: store)
+                    if let trending, trending.isValid(for: store) {
+                        if let featured = trending.featuredTrending {
+                            SeerrTrendingCarousel(
+                                titles: featured.titles.filter { store.admits($0) },
+                                day: calendar.startOfDay(for: featured.requestedAt),
+                                store: store,
+                                canSaveSelection: featured.canSaveSelection
+                            )
                             .id("discover.hero")
+                        }
+                        if let error = trending.featuredError {
+                            Text(error).foregroundStyle(.secondary)
+                            Button("Retry Trending") {
+                                Task { await trending.loadTrending(for: .now, calendar: calendar, store: store, refresh: true) }
+                            }
+                        }
                     }
                     if let feedError {
                         Text(feedError).foregroundStyle(.secondary)
                         Button("Retry Feeds") { Task { await loadFeeds() } }
                     }
-                    ForEach(Array(zip(enabledFeeds, feeds)), id: \.0) { feed, catalog in
-                        SeerrDiscoveryShelf(feed: feed, catalog: catalog, store: store)
-                            .id(feed.rawValue)
-                            .task(id: accessRevision) { await catalog.load(store: store) }
+                    ForEach(shelves, id: \.id) { shelf in
+                        Group {
+                            switch shelf {
+                            case let .titles(feed, catalog):
+                                SeerrDiscoveryShelf(feed: feed, catalog: catalog, store: store) { await shelf.load(store: store, refresh: true) }
+                            case let .categories(directory): SeerrCategoryShelf(directory: directory, store: store)
+                            }
+                        }
+                        .id(shelf.id)
+                        .task(id: accessRevision) {
+                            if shelf.section != .titles(.trending) {
+                                await shelf.load(store: store)
+                            }
+                        }
                     }
                     Text("Metadata and artwork provided by TMDB. This product uses the TMDB API but is not endorsed or certified by TMDB.")
                         .font(.footnote)
@@ -128,11 +158,23 @@ struct DiscoverBrowseView: View {
             }
             .scrollPosition(id: $scrollID)
             .lookToScroll()
+            // The header needs Trending even when the server puts its shelf well below the viewport.
+            .task(id: TrendingLoadKey(catalog: trending.map(ObjectIdentifier.init), day: today, isActive: scenePhase == .active)) {
+                if scenePhase == .active {
+                    await trending?.loadTrending(for: today, calendar: calendar, store: store)
+                }
+            }
+            .onChange(of: scenePhase, initial: true) { _, phase in
+                if phase == .active {
+                    today = calendar.startOfDay(for: .now)
+                }
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .NSCalendarDayChanged)) { _ in today = calendar.startOfDay(for: .now) }
             .refreshable {
                 await loadFeeds()
                 // Each feed keeps its own successful content and failure state.
-                for catalog in feeds {
-                    await catalog.load(store: store, refresh: true)
+                for shelf in shelves {
+                    await shelf.load(store: store, refresh: true)
                 }
             }
         }
@@ -141,8 +183,7 @@ struct DiscoverBrowseView: View {
     @MainActor private func loadFeeds() async {
         let expected = accessRevision
         if feedsRevision != expected {
-            feeds = []
-            enabledFeeds = []
+            shelves = []
         }
         feedsRevision = expected
         feedState = .loading
@@ -150,67 +191,59 @@ struct DiscoverBrowseView: View {
         do {
             let sliders = try await store.requireClient().discoverSliders()
             guard !Task.isCancelled, accessRevision == expected else { return }
-            var seen: Set<SeerrDiscoveryFeed> = []
-            let selected = sliders.sorted { $0.order < $1.order }.compactMap(\.supportedFeed)
+            var seen: Set<SeerrDiscoverSection> = []
+            let selected = sliders.sorted { $0.order < $1.order }.compactMap(\.supportedSection)
                 .filter { seen.insert($0).inserted }
-            let previous = feeds
-            enabledFeeds = selected
-            feeds = selected.map { feed in
-                previous.first(where: { $0.source == .feed(feed) }) ?? SeerrCatalogStore(source: .feed(feed))
+            shelves = selected.map { section in
+                shelves.first(where: { $0.section == section }) ?? SeerrHomeShelf(section)
             }
             feedState = .loaded
         } catch {
             guard !Task.isCancelled, accessRevision == expected else { return }
             store.handle(error)
             guard accessRevision == expected else { return }
-            feedState = feeds.isEmpty ? .failed(error.localizedDescription) : .loaded
+            feedState = shelves.isEmpty ? .failed(error.localizedDescription) : .loaded
             feedError = error.localizedDescription
         }
     }
 }
 
-private struct SeerrDiscoveryHero: View {
-    let title: SeerrTitle
-    let store: SeerrStore
-    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+private struct TrendingLoadKey: Equatable {
+    let catalog: ObjectIdentifier?
+    let day: Date
+    let isActive: Bool
+}
 
-    var body: some View {
-        #if os(tvOS)
-            GusTVMediaDetailLayout {
-                SeerrArtworkView(path: title.backdropPath, aspectRatio: 16.0 / 9.0, width: "w1280")
-            } summary: {
-                heroText
-            } details: {
-                EmptyView()
-            }
-        #else
-            if dynamicTypeSize.isAccessibilitySize {
-                VStack(alignment: .leading, spacing: 12) {
-                    SeerrArtworkView(path: title.backdropPath, aspectRatio: 16.0 / 9.0, width: "w1280")
-                    heroText
-                }
-            } else {
-                SeerrArtworkView(path: title.backdropPath, aspectRatio: 16.0 / 9.0, width: "w1280")
-                    .overlay(alignment: .bottomLeading) {
-                        ZStack(alignment: .bottomLeading) {
-                            LinearGradient(colors: [.clear, .black.opacity(0.85)], startPoint: .top, endPoint: .bottom)
-                            heroText.padding(20).foregroundStyle(.white)
-                        }
-                        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                    }
-            }
-        #endif
+@MainActor private enum SeerrHomeShelf {
+    case titles(SeerrDiscoveryFeed, SeerrCatalogStore)
+    case categories(SeerrCategoryDirectory)
+
+    init(_ section: SeerrDiscoverSection) {
+        switch section {
+        case let .titles(feed): self = .titles(feed, SeerrCatalogStore(source: .feed(feed)))
+        case let .categories(kind): self = .categories(SeerrCategoryDirectory(kind: kind))
+        }
     }
 
-    private var heroText: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(title.displayTitle).font(.largeTitle.bold()).fixedSize(horizontal: false, vertical: true)
-            Text(title.seerrIdentityDescription).font(.subheadline)
-            NavigationLink {
-                SeerrTitleDetailView(title: title, store: store)
-            } label: { Label("View Title", systemImage: "info.circle") }
-                .gusTVRequestButtonStyle()
-                .accessibilityIdentifier("Seerr.hero." + (title.mediaType?.rawValue ?? "unknown") + "." + String(title.id))
+    var section: SeerrDiscoverSection {
+        switch self {
+        case let .titles(feed, _): .titles(feed)
+        case let .categories(directory): .categories(directory.kind)
+        }
+    }
+
+    var id: String {
+        switch self {
+        case let .titles(feed, _): feed.rawValue
+        case let .categories(directory): directory.kind.rawValue
+        }
+    }
+
+    func load(store: SeerrStore, refresh: Bool = false) async {
+        switch self {
+        case let .titles(.trending, catalog): await catalog.loadTrending(for: .now, calendar: .autoupdatingCurrent, store: store, refresh: refresh)
+        case let .titles(_, catalog): await catalog.load(store: store, refresh: refresh)
+        case let .categories(directory): await directory.load(store: store, refresh: refresh)
         }
     }
 }
@@ -219,6 +252,7 @@ private struct SeerrDiscoveryShelf: View {
     let feed: SeerrDiscoveryFeed
     let catalog: SeerrCatalogStore
     let store: SeerrStore
+    let retry: () async -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -226,7 +260,7 @@ private struct SeerrDiscoveryShelf: View {
                 Text(feed.seerrTitle).font(.title2.bold()).accessibilityAddTraits(.isHeader)
                 Spacer()
                 NavigationLink("See All") {
-                    SeerrCatalogGridView(title: feed.seerrTitle, source: .feed(feed), store: store)
+                    SeerrCatalogGridView(title: feed.seerrTitle, source: .feed(feed), store: store, featuredCatalog: feed == .trending ? catalog : nil)
                 }
                 .accessibilityIdentifier("Seerr.feed.\(feed.rawValue).showAll")
             }
@@ -237,7 +271,7 @@ private struct SeerrDiscoveryShelf: View {
             } else if catalog.items.isEmpty {
                 if case let .failed(message) = catalog.state {
                     Label(message, systemImage: "exclamationmark.triangle").foregroundStyle(.secondary)
-                    Button("Retry Shelf") { Task { await catalog.load(store: store, refresh: true) } }
+                    Button("Retry Shelf") { Task { await retry() } }
                 } else if catalog.state == .loaded {
                     Text("No titles in this feed").foregroundStyle(.secondary)
                 }
@@ -255,7 +289,7 @@ private struct SeerrDiscoveryShelf: View {
                 .gusTVRailViewport()
                 if let error = catalog.errorMessage {
                     Text(error).font(.footnote).foregroundStyle(.secondary)
-                    Button("Retry Shelf") { Task { await catalog.load(store: store, refresh: true) } }
+                    Button("Retry Shelf") { Task { await retry() } }
                 }
             }
         }

@@ -99,6 +99,7 @@ struct OfflineDownloadRecord: Codable, Equatable, Identifiable, Sendable {
     var progress: Double
     var resumeData: Data?
     var activity: DownloadActivity?
+    var estimatedByteCount: Int64? = nil
 
     private enum CodingKeys: String, CodingKey {
         case id
@@ -115,6 +116,7 @@ struct OfflineDownloadRecord: Codable, Equatable, Identifiable, Sendable {
         case progress
         case resumeData
         case activity
+        case estimatedByteCount
     }
 
     init(
@@ -161,6 +163,7 @@ struct OfflineDownloadRecord: Codable, Equatable, Identifiable, Sendable {
         progress = try container.decode(Double.self, forKey: .progress)
         resumeData = try container.decodeIfPresent(Data.self, forKey: .resumeData)
         activity = try container.decodeIfPresent(DownloadActivity.self, forKey: .activity)
+        estimatedByteCount = try container.decodeIfPresent(Int64.self, forKey: .estimatedByteCount)
     }
 
     var itemID: String? {
@@ -283,9 +286,25 @@ struct OfflineDownloadFileStore: Sendable {
     }
 
     func readRecords(serverID: String, userID: String) throws -> [OfflineDownloadRecord] {
+        try readRecords().filter { $0.serverID == serverID && $0.userID == userID }
+    }
+
+    func readRecords() throws -> [OfflineDownloadRecord] {
         fileLock.lock.lock()
         defer { fileLock.lock.unlock() }
-        return try loadRecordsStrictly().filter { $0.serverID == serverID && $0.userID == userID }
+        return try loadRecordsStrictly()
+    }
+
+    func availableCapacity() -> Int64? {
+        #if os(tvOS)
+            return nil
+        #elseif os(watchOS)
+            let values = try? directory.resourceValues(forKeys: [.volumeAvailableCapacityKey])
+            return values?.volumeAvailableCapacity.map(Int64.init)
+        #else
+            let values = try? directory.resourceValues(forKeys: [.volumeAvailableCapacityForImportantUsageKey])
+            return values?.volumeAvailableCapacityForImportantUsage
+        #endif
     }
 
     func record(forItemID itemID: String, serverID: String, userID: String) -> OfflineDownloadRecord? {
@@ -627,9 +646,6 @@ struct OfflineDownloadFileStore: Sendable {
 @Observable
 final class OfflineDownloadStore: DownloadSessionCoordinatorEventHandler {
     static let shared = OfflineDownloadStore()
-    static var softCapBytes: Int64 {
-        DownloadsAvailability.softCapBytes
-    }
 
     static let minimumFreeBytes: Int64 = 1 * 1024 * 1024 * 1024
 
@@ -650,17 +666,19 @@ final class OfflineDownloadStore: DownloadSessionCoordinatorEventHandler {
     private let progressStore: OfflinePlaybackProgressStore
     private let prepareFile: @Sendable (URL, String) async throws -> Void
     private let readCompletionRecord: @Sendable (String, OfflineDownloadFileStore) async throws -> OfflineDownloadRecord?
+    private let availableCapacity: () -> Int64?
     private let logger = Logger(category: .downloads)
     private var loadedServerID: String?
     private var loadedUserID: String?
 
-    init(fileStore: OfflineDownloadFileStore = .shared, coordinator: DownloadSessionCoordinating = DownloadSessionCoordinator.shared, defaults: UserDefaults = .standard, progressStore: OfflinePlaybackProgressStore = .shared, prepareFile: @escaping @Sendable (URL, String) async throws -> Void = { try await DownloadFilePreparation.shared.prepare($0, fileExtension: $1) }, readCompletionRecord: @escaping @Sendable (String, OfflineDownloadFileStore) async throws -> OfflineDownloadRecord? = { try await DownloadFilePreparation.shared.record(id: $0, in: $1) }) {
+    init(fileStore: OfflineDownloadFileStore = .shared, coordinator: DownloadSessionCoordinating = DownloadSessionCoordinator.shared, defaults: UserDefaults = .standard, progressStore: OfflinePlaybackProgressStore = .shared, prepareFile: @escaping @Sendable (URL, String) async throws -> Void = { try await DownloadFilePreparation.shared.prepare($0, fileExtension: $1) }, readCompletionRecord: @escaping @Sendable (String, OfflineDownloadFileStore) async throws -> OfflineDownloadRecord? = { try await DownloadFilePreparation.shared.record(id: $0, in: $1) }, availableCapacity: (() -> Int64?)? = nil) {
         self.fileStore = fileStore
         self.defaults = defaults
         self.coordinator = coordinator
         self.progressStore = progressStore
         self.prepareFile = prepareFile
         self.readCompletionRecord = readCompletionRecord
+        self.availableCapacity = availableCapacity ?? { fileStore.availableCapacity() }
         coordinator.setEventHandler(self)
     }
 
@@ -684,15 +702,7 @@ final class OfflineDownloadStore: DownloadSessionCoordinatorEventHandler {
         do {
             let loaded = try fileStore.readRecords(serverID: serverID, userID: userID)
             records = loaded.map { record in
-                // A readable old checkpoint must not discard resume data from a
-                // completed native pause whose metadata write failed.
-                if record.status.isActive,
-                   let observed = records.first(where: { $0.id == record.id && $0.downloadedAt == record.downloadedAt }),
-                   observed.status == .paused
-                {
-                    return observed
-                }
-                return record
+                latestInactiveRecord(for: record)
             }
             loadState = .loaded
             loadErrorMessage = nil
@@ -765,12 +775,16 @@ final class OfflineDownloadStore: DownloadSessionCoordinatorEventHandler {
             return
         }
         guard session.isActive, !activeItemIDs.contains(itemID) else { return }
-        if let sourceID = request.streamSelection.mediaSourceID,
-           let existing = fileStore.record(forItemID: itemID, serverID: session.server.id, userID: session.user.id),
-           existing.status.isComplete, existing.mediaSourceID != sourceID
+        if let existing = fileStore.record(forItemID: itemID, serverID: session.server.id, userID: session.user.id),
+           existing.status.isComplete
         {
-            errorMessage = String(localized: "Another version is already downloaded. Delete it before downloading this version.")
-            return
+            if let sourceID = request.streamSelection.mediaSourceID, existing.mediaSourceID != sourceID {
+                errorMessage = String(localized: "Another version is already downloaded. Delete it before downloading this version.")
+                return
+            }
+            if fileStore.localFileURL(for: existing) != nil {
+                return
+            }
         }
         let selectedSource = request.streamSelection.mediaSourceID.flatMap { id in item.mediaSources.first { $0.id == id } } ?? (request.streamSelection.mediaSourceID == nil ? item.mediaSources.first : nil)
         let selection = selectedSource.map { request.selection(in: $0) } ?? request.streamSelection
@@ -778,13 +792,18 @@ final class OfflineDownloadStore: DownloadSessionCoordinatorEventHandler {
         var generation: Date?
         do {
             errorMessage = nil
-            try ensureDiskBudget(serverID: session.server.id, userID: session.user.id)
             if loadedServerID == nil || loadedUserID == nil {
                 load(serverID: session.server.id, userID: session.user.id)
             }
+            let restartingID = OfflineDownloadFileStore.recordID(itemID: itemID, serverID: session.server.id, userID: session.user.id)
+            #if os(watchOS)
+                guard totalByteCount(serverID: session.server.id, userID: session.user.id) < DownloadsAvailability.accountStorageLimitBytes else {
+                    throw GusError.server(String(localized: "You’ve reached the download storage limit for this account. Delete a download to make room.", comment: "Download storage limit reached"))
+                }
+            #endif
+            try ensureDiskSpace(excluding: restartingID)
             activeItemIDs.insert(itemID)
 
-            let restartingID = OfflineDownloadFileStore.recordID(itemID: itemID, serverID: session.server.id, userID: session.user.id)
             coordinator.cancel(recordID: restartingID)
             var record = fileStore.prepareDownloadRecord(
                 item: item, serverID: session.server.id, userID: session.user.id,
@@ -806,11 +825,13 @@ final class OfflineDownloadStore: DownloadSessionCoordinatorEventHandler {
             // Deletion or account switching may happen while source resolution awaits.
             guard session.isActive, !Task.isCancelled, let pending = fileStore.record(forRecordID: record.id), pending.status == .queued,
                   pending.downloadedAt == record.downloadedAt else { return }
+            try ensureDiskSpace(excluding: record.id, remainingBytes: source.estimatedByteCount ?? 0)
             record = fileStore.prepareDownloadRecord(
                 item: item, serverID: session.server.id, userID: session.user.id,
                 fileExtension: source.fileExtension, status: .downloading(0), progress: 0, downloadedAt: record.downloadedAt, mediaSourceID: source.mediaSourceID
             )
             record.activity = DownloadActivity(phase: .waitingForServer, sourceOperation: source.operation)
+            record.estimatedByteCount = source.estimatedByteCount
             try fileStore.persist(record)
             activities[record.id] = record.activity
             refreshDisplayedRecords()
@@ -826,7 +847,7 @@ final class OfflineDownloadStore: DownloadSessionCoordinatorEventHandler {
             if current == nil {
                 refreshDisplayedRecords()
             }
-            let gusError = GusError(from: error)
+            let gusError = Self.downloadError(from: error)
             let recordID = OfflineDownloadFileStore.recordID(itemID: itemID, serverID: session.server.id, userID: session.user.id)
             if var failed = fileStore.record(forRecordID: recordID), failed.downloadedAt == generation {
                 failed.status = .failed(gusError.localizedDescription)
@@ -876,17 +897,23 @@ final class OfflineDownloadStore: DownloadSessionCoordinatorEventHandler {
               record.serverID == session.server.id, record.userID == session.user.id,
               loadedServerID == session.server.id, loadedUserID == session.user.id else { return }
 
-        // A native pause can finish while saving its resume data fails. Keep the
-        // observed value in memory so a retry can commit it once storage recovers.
-        if let observed = records.first(where: { $0.id == record.id && $0.downloadedAt == record.downloadedAt }),
-           observed.status == .paused
-        {
-            record = observed
-        }
+        record = latestInactiveRecord(for: record)
         guard !record.status.isActive else { return }
 
+        do {
+            let activity = activities[record.id] ?? record.activity
+            // A restart goes through download(), which checks the full source size.
+            let remaining = record.resumeData == nil ? 0 : Self.remainingBytes(for: record, activity: activity)
+            try ensureDiskSpace(excluding: record.id, remainingBytes: remaining)
+        } catch {
+            errorMessage = Self.downloadError(from: error).localizedDescription
+            return
+        }
+        errorMessage = nil
+        if case .failed = record.status, coordinator.retryStagedDownload(recordID: record.id) {
+            return
+        }
         guard let resumeData = record.resumeData else {
-            errorMessage = String(localized: "Not enough resume data — restarting download.", comment: "Download resume fallback message")
             await download(PlaybackRequest(item: record.item, streamSelection: .init(audioStreamIndex: nil, subtitleStreamIndex: nil, mediaSourceID: record.mediaSourceID)), session: session)
             return
         }
@@ -1037,31 +1064,28 @@ final class OfflineDownloadStore: DownloadSessionCoordinatorEventHandler {
             return true
         } catch {
             guard ownership.isCurrent else { return true }
-            let failure = GusError(from: error)
+            let failure = Self.downloadError(from: error)
             // Keep the coordinator's staged source until failure metadata is durable.
             if let failed = try? await DownloadFilePreparation.shared.fail(expected: record, ownership: ownership, message: failure.localizedDescription, in: fileStore), ownership.isCurrent {
                 publishRecord(failed)
-                if loadedServerID == failed.serverID, loadedUserID == failed.userID {
-                    errorMessage = failure.localizedDescription
-                }
+            } else if ownership.isCurrent, failure == Self.storageFullError {
+                // A full volume can also prevent writing the failure checkpoint.
+                var failed = record
+                failed.status = .failed(failure.localizedDescription)
+                failed.activity?.transition(to: .failed)
+                publishRecord(failed)
             }
             guard ownership.isCurrent else { return true }
+            if loadedServerID == record.serverID, loadedUserID == record.userID {
+                errorMessage = failure.localizedDescription
+            }
             DiagnosticsHub.shared.record(.downloadFailed)
             return false
         }
     }
 
-    /// Update only this exact presentation generation. Native transfer observations
-    /// remain truthful even when their metadata commit fails; that failure is visible.
+    /// Track live bytes across accounts and update the matching visible generation.
     private func publishRecord(_ record: OfflineDownloadRecord) {
-        guard let index = records.firstIndex(where: { $0.id == record.id && $0.downloadedAt == record.downloadedAt }) else { return }
-        records[index] = record
-        if let itemID = record.item.id {
-            activeItemIDs.remove(itemID)
-        }
-        if record.status.isActive, let itemID = record.item.id {
-            activeItemIDs.insert(itemID)
-        }
         if record.status.isComplete {
             activities.removeValue(forKey: record.id)
         } else {
@@ -1069,6 +1093,14 @@ final class OfflineDownloadStore: DownloadSessionCoordinatorEventHandler {
         }
         if !record.status.isActive {
             lastCheckpoint.removeValue(forKey: record.id)
+        }
+        guard let index = records.firstIndex(where: { $0.id == record.id && $0.downloadedAt == record.downloadedAt }) else { return }
+        records[index] = record
+        if let itemID = record.item.id {
+            activeItemIDs.remove(itemID)
+            if record.status.isActive {
+                activeItemIDs.insert(itemID)
+            }
         }
     }
 
@@ -1092,7 +1124,7 @@ final class OfflineDownloadStore: DownloadSessionCoordinatorEventHandler {
     private func reportPersistenceFailure(_ error: Error, record: OfflineDownloadRecord) {
         logger.error("Download metadata could not be saved: \(error.localizedDescription, privacy: .private)")
         if loadedServerID == record.serverID, loadedUserID == record.userID {
-            errorMessage = GusError(from: error).localizedDescription
+            errorMessage = Self.downloadError(from: error).localizedDescription
         }
     }
 
@@ -1103,7 +1135,7 @@ final class OfflineDownloadStore: DownloadSessionCoordinatorEventHandler {
         recordID: String
     ) {
         guard var record = record(forRecordID: recordID), !record.status.isComplete else { return }
-        let gusError = GusError(from: error)
+        let gusError = Self.downloadError(from: error)
         record.activity = activities[recordID] ?? record.activity
         record.activity?.transition(to: .failed)
         record.status = .failed(gusError.localizedDescription)
@@ -1111,7 +1143,7 @@ final class OfflineDownloadStore: DownloadSessionCoordinatorEventHandler {
         let persisted = persistObservedRecord(record)
         guard persisted != .declined else { return }
         DiagnosticsHub.shared.record(.downloadFailed)
-        if persisted == .persisted, loadedServerID == record.serverID, loadedUserID == record.userID {
+        if persisted == .persisted || gusError == Self.storageFullError, loadedServerID == record.serverID, loadedUserID == record.userID {
             errorMessage = gusError.localizedDescription
         }
         if gusError == .unauthorized {
@@ -1226,34 +1258,49 @@ final class OfflineDownloadStore: DownloadSessionCoordinatorEventHandler {
         logger.debug("Download artwork remains unavailable")
     }
 
-    private func ensureDiskBudget(serverID: String, userID: String) throws {
-        #if os(tvOS)
-            return
-        #else
-            let total = totalByteCount(serverID: serverID, userID: userID)
-            guard total < Self.softCapBytes else {
-                throw GusError.server(String(localized: "Downloads are using the 20 GB soft cap. Delete a download before adding more.", comment: "Downloads soft cap error"))
-            }
+    private func latestInactiveRecord(for record: OfflineDownloadRecord) -> OfflineDownloadRecord {
+        // A native pause or failure can be observed even if the index cannot be written.
+        guard record.status.isActive,
+              let observed = records.first(where: { $0.id == record.id && $0.downloadedAt == record.downloadedAt }),
+              !observed.status.isActive, !observed.status.isComplete else { return record }
+        return observed
+    }
 
-            let supportURL = (try? FileManager.default.url(
-                for: .applicationSupportDirectory,
-                in: .userDomainMask,
-                appropriateFor: nil,
-                create: true
-            )) ?? FileManager.default.temporaryDirectory
-            // watchOS has no "important usage" capacity query; plain volume capacity is
-            // the closest available signal there.
-            #if os(watchOS)
-                let values = try supportURL.resourceValues(forKeys: [.volumeAvailableCapacityKey])
-                let available = values.volumeAvailableCapacity.map(Int64.init)
-            #else
-                let values = try supportURL.resourceValues(forKeys: [.volumeAvailableCapacityForImportantUsageKey])
-                let available = values.volumeAvailableCapacityForImportantUsage
-            #endif
-            if let available, available < Self.minimumFreeBytes {
-                throw GusError.server(String(localized: "Not enough free space to start another download.", comment: "Low disk space download error"))
+    private static func remainingBytes(for record: OfflineDownloadRecord, activity: DownloadActivity?) -> Int64 {
+        let expected = max(0, activity?.expectedBytes ?? record.estimatedByteCount ?? 0)
+        return expected - min(expected, max(0, activity?.receivedBytes ?? 0))
+    }
+
+    private func ensureDiskSpace(excluding recordID: String, remainingBytes: Int64 = 0) throws {
+        guard let available = availableCapacity() else { return }
+        let error = GusError.server(String(localized: "There isn’t enough free space for this download. Free up space on this device and try again.", comment: "Low disk space download error"))
+        guard available >= Self.minimumFreeBytes else { throw error }
+        var uncommitted = available - Self.minimumFreeBytes
+        for saved in try fileStore.readRecords() where saved.id != recordID {
+            let record = latestInactiveRecord(for: saved)
+            guard record.status.isActive else { continue }
+            let needed = Self.remainingBytes(for: record, activity: activities[record.id] ?? record.activity)
+            guard needed <= uncommitted else { throw error }
+            uncommitted -= needed
+        }
+        guard remainingBytes <= uncommitted else { throw error }
+    }
+
+    private static var storageFullError: GusError {
+        .server(String(localized: "This download ran out of storage space. Free up space on this device and try again.", comment: "Download failed because the volume is full"))
+    }
+
+    private static func downloadError(from error: Error) -> GusError {
+        var underlying: NSError? = error as NSError
+        while let cause = underlying {
+            if (cause.domain == NSCocoaErrorDomain && cause.code == CocoaError.fileWriteOutOfSpace.rawValue)
+                || (cause.domain == NSPOSIXErrorDomain && cause.code == Int(POSIXErrorCode.ENOSPC.rawValue))
+            {
+                return storageFullError
             }
-        #endif
+            underlying = cause.userInfo[NSUnderlyingErrorKey] as? NSError
+        }
+        return GusError(from: error)
     }
 
     private func record(forRecordID recordID: String) -> OfflineDownloadRecord? {

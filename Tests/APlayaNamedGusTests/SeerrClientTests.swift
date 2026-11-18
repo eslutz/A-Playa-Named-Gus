@@ -5,6 +5,13 @@ import Testing
 
 @Suite("Seerr contracts and isolation")
 struct SeerrClientTests {
+    @Test("TMDB backdrop URLs support list thumbnails, rails, and detail artwork", arguments: ["w300", "w780", "w1280"])
+    func backdropArtwork(width: String) throws {
+        let title = try Self.title(#"{"id":10,"mediaType":"movie","backdropPath":"/landscape.jpg"}"#)
+        let url = try #require(SeerrArtwork.url(path: title.backdropPath, width: width))
+        #expect(url.absoluteString == "https://image.tmdb.org/t/p/\(width)/landscape.jpg")
+    }
+
     @Test("4K-only requesters can open review independently of standard availability", arguments: [SeerrMediaStatus.available, .pending, .processing])
     func fourKReviewEntry(standard: SeerrMediaStatus) throws {
         var title = try Self.title(#"{"id":10,"mediaType":"movie","mediaInfo":{"id":1,"status":5,"status4k":1}}"#)
@@ -55,6 +62,31 @@ struct SeerrClientTests {
         }
         for version in ["2.7.3", "4.0.0", "3.0", "3.5.1-develop", "develop-123", "3..0", "3.5.1+abc"] {
             #expect(!SeerrStatus(version: version).isSupported)
+        }
+    }
+
+    @Test("Only meaningful Seerr availability is displayed and announced")
+    func titleAvailability() throws {
+        let user = SeerrUser(id: 2, permissions: .requestMovie)
+        let noRequestPermission = SeerrUser(id: 3, permissions: [])
+        let missing = try Self.title(#"{"id":7,"mediaType":"movie"}"#)
+        let notRequested = try Self.title(#"{"id":7,"mediaType":"movie","mediaInfo":{"id":7,"status":1}}"#)
+        let future = try Self.title(#"{"id":7,"mediaType":"movie","mediaInfo":{"id":7,"status":90}}"#)
+        for title in [missing, notRequested, future] {
+            #expect(title.seerrAvailabilityDescription == nil)
+            #expect(title.mediaAccessibility.value.isEmpty)
+            #expect(!SeerrRequestEligibility.canOpenReview(title: title, type: .movie, user: noRequestPermission))
+        }
+        #expect(SeerrRequestEligibility.canOpenReview(title: missing, type: .movie, user: user))
+        #expect(SeerrRequestEligibility.canOpenReview(title: notRequested, type: .movie, user: user))
+        #expect(!SeerrRequestEligibility.canOpenReview(title: future, type: .movie, user: user))
+
+        let available = try Self.title(#"{"id":7,"mediaType":"movie","mediaInfo":{"id":7,"status":5}}"#)
+        #expect(available.seerrAvailabilityDescription == SeerrMediaStatus.available.seerrDescription)
+        #expect(!available.mediaAccessibility.value.isEmpty)
+        #expect(!SeerrRequestEligibility.canOpenReview(title: available, type: .movie, user: user))
+        for status: SeerrMediaStatus in [.pending, .processing, .partiallyAvailable, .available, .blocklisted, .deleted] {
+            #expect(status.seerrDescription != nil)
         }
     }
 

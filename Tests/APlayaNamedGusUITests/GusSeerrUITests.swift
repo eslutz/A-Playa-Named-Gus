@@ -7,6 +7,134 @@
     /// All credentials, titles and mutations belong to synthetic loopback fixtures.
     @MainActor
     final class GusSeerrUITests: XCTestCase {
+        func testDailyTrendingCarousel() async throws {
+            let app = try await connectedDiscover()
+            defer { app.terminate() }
+            let carousel = app.descendants(matching: .any).matching(identifier: "Seerr.carousel").firstMatch
+            XCTAssertTrue(carousel.waitForExistence(timeout: 10))
+            let firstPage = app.buttons["Seerr.carousel.page.1"]
+            let secondPage = app.buttons["Seerr.carousel.page.2"]
+            let lastPage = app.buttons["Seerr.carousel.page.8"]
+            XCTAssertTrue(lastPage.waitForExistence(timeout: 10))
+            XCTAssertFalse(app.buttons["Seerr.carousel.page.9"].exists)
+            XCTAssertFalse(app.buttons["View Title"].exists)
+            let pause = app.buttons["Seerr.carousel.pause"].firstMatch
+            if pause.exists {
+                let indicators = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@", "Seerr.carousel.page."))
+                let current = indicators.matching(NSPredicate(format: "selected == true")).firstMatch
+                let page = try XCTUnwrap(current.identifier.split(separator: ".").last.flatMap { Int($0) })
+                waitForSelection(app.buttons["Seerr.carousel.page." + String(page % 8 + 1)], timeout: 20)
+                pause.tap()
+            }
+            firstPage.tap()
+            waitForSelection(firstPage)
+            waitForCenteredCard(firstPage.label, in: carousel, app: app)
+            carousel.swipeLeft()
+            waitForSelection(secondPage)
+            lastPage.tap()
+            waitForSelection(lastPage)
+            let selectedName = lastPage.label
+            waitForCenteredCard(selectedName, in: carousel, app: app)
+            capture("seerr-trending-carousel")
+            carousel.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.4)).tap()
+            XCTAssertTrue(app.navigationBars[selectedName].waitForExistence(timeout: 12))
+            goBack(to: "Discover", in: app)
+            finishConnectedSession(app)
+        }
+
+        func testPopularSimilarAndCategoryDestinations() async throws {
+            let app = try await connectedDiscover()
+            defer { app.terminate() }
+
+            for (feed, id, name, relatedID) in [
+                ("popularMovies", "movie.950000001", "Gus Fixture Movie", "movie.950000013"),
+                ("popularTV", "tv.950000002", "Gus Fixture Show", "tv.950000014"),
+            ] {
+                let seeAll = app.buttons["Seerr.feed." + feed + ".showAll"].firstMatch
+                reveal(seeAll, in: app)
+                seeAll.tap()
+                let row = app.buttons["Seerr.title." + id].firstMatch
+                XCTAssertTrue(row.waitForExistence(timeout: 12))
+                XCTAssertFalse(app.staticTexts["Availability unknown"].exists)
+                row.tap()
+                XCTAssertTrue(app.navigationBars[name].waitForExistence(timeout: 12))
+                let similar = app.buttons["Seerr.similar.seeAll"].firstMatch
+                reveal(similar, in: app)
+                similar.tap()
+                let related = app.buttons["Seerr.title." + relatedID].firstMatch
+                XCTAssertTrue(related.waitForExistence(timeout: 12))
+                related.tap()
+                XCTAssertTrue(app.navigationBars[feed == "popularMovies" ? "Fixture Festival 3" : "Fixture Festival 4"].waitForExistence(timeout: 12))
+                let movie = feed == "popularMovies"
+                for parent in [movie ? "Similar Movies" : "Similar Series", name, movie ? "Popular Movies" : "Popular TV Series", "Discover"] {
+                    goBack(to: parent, in: app)
+                }
+            }
+
+            // Walk the server's shelf order from the top again.
+            let firstPage = app.buttons["Seerr.carousel.page.1"]
+            for _ in 0 ..< 8 where !firstPage.isHittable {
+                app.swipeDown()
+            }
+            for (category, titleID) in [
+                ("movieGenres.28", "movie.950000001"), ("studios.2", "movie.950000001"),
+                ("tvGenres.10759", "tv.950000002"), ("networks.213", "tv.950000002"),
+            ] {
+                let link = app.buttons["Seerr.category." + category].firstMatch
+                reveal(link, in: app)
+                link.tap()
+                XCTAssertTrue(app.buttons["Seerr.title." + titleID].firstMatch.waitForExistence(timeout: 12))
+                goBack(to: "Discover", in: app)
+            }
+            finishConnectedSession(app)
+        }
+
+        private func connectedDiscover() async throws -> XCUIApplication {
+            let app = try await prepare()
+            executionTimeAllowance = 540
+            if !app.staticTexts["Connected"].exists || !app.staticTexts["Gus Fixture Manager"].exists {
+                connect(app)
+            }
+            openDiscover(app)
+            return app
+        }
+
+        private func finishConnectedSession(_ app: XCUIApplication) {
+            app.terminate()
+            app.launch()
+            openIntegration(app)
+            disconnect(app)
+        }
+
+        private func featuredTitle(in app: XCUIApplication) -> XCUIElement {
+            app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@", "Seerr.hero.")).firstMatch
+        }
+
+        private func waitForSelection(_ page: XCUIElement, timeout: TimeInterval = 10) {
+            let selected = XCTNSPredicateExpectation(predicate: NSPredicate(format: "selected == true"), object: page)
+            XCTAssertEqual(XCTWaiter.wait(for: [selected], timeout: timeout), .completed)
+        }
+
+        private func waitForCenteredCard(_ title: String, in carousel: XCUIElement, app: XCUIApplication) {
+            let card = app.buttons.matching(NSPredicate(
+                format: "identifier BEGINSWITH %@ AND label BEGINSWITH %@", "Seerr.hero.", title + ","
+            )).firstMatch
+            let aligned = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+                card.exists && abs(card.frame.midX - carousel.frame.midX) < 3
+            }, object: nil)
+            XCTAssertEqual(XCTWaiter.wait(for: [aligned], timeout: 10), .completed)
+        }
+
+        private func goBack(to title: String, in app: XCUIApplication) {
+            let namedBack = app.navigationBars.buttons[title].firstMatch
+            if namedBack.exists, namedBack.isHittable {
+                namedBack.tap()
+            } else {
+                app.navigationBars.allElementsBoundByIndex.last?.buttons.element(boundBy: 0).tap()
+            }
+            XCTAssertTrue(app.navigationBars[title].waitForExistence(timeout: 8))
+        }
+
         func testConnectPersistRequestHistoryAndCancel() async throws {
             let app = try await prepare()
             defer { app.terminate() }
@@ -60,11 +188,7 @@
             app.terminate()
             app.launch()
             openIntegration(app)
-            let disconnect = app.buttons["Disconnect This Device"].firstMatch
-            reveal(disconnect, in: app)
-            disconnect.tap()
-            confirm("Disconnect", in: app)
-            XCTAssertTrue(app.buttons["Connect to Seerr"].firstMatch.waitForExistence(timeout: 10))
+            disconnect(app)
         }
 
         func testLostSubmissionResponseReadsBackWithoutDuplicatePost() async throws {
@@ -146,6 +270,14 @@
             return app
         }
 
+        private func disconnect(_ app: XCUIApplication) {
+            let button = app.buttons["Disconnect This Device"].firstMatch
+            reveal(button, in: app)
+            button.tap()
+            confirm("Disconnect", in: app)
+            XCTAssertTrue(app.buttons["Connect to Seerr"].firstMatch.waitForExistence(timeout: 10))
+        }
+
         private func openIntegration(_ app: XCUIApplication) {
             if !app.navigationBars["Settings"].waitForExistence(timeout: 20) {
                 XCTAssertTrue(selectSidebarSection("Settings", in: app))
@@ -197,7 +329,13 @@
             XCTAssertEqual(username.value as? String, "fixture@example.invalid")
             let password = app.secureTextFields["Seerr.password"]
             XCTAssertTrue(password.exists)
-            password.tap()
+            // The iPad sign-in sheet moves as the email keyboard appears. Resolve the
+            // current field position again if the first tap leaves focus in the email field.
+            let fieldOffset = CGVector(dx: 0.15, dy: 0.5)
+            password.coordinate(withNormalizedOffset: fieldOffset).tap()
+            if !password.wait(for: \.hasFocus, toEqual: true, timeout: 2) {
+                password.coordinate(withNormalizedOffset: fieldOffset).tap()
+            }
             password.typeText("gus-fixture-only")
             let signIn = app.buttons["Seerr.signIn"].firstMatch
             reveal(signIn, in: app)
@@ -231,7 +369,7 @@
                 discover.tap()
             }
             XCTAssertTrue(app.navigationBars["Discover"].waitForExistence(timeout: 10))
-            XCTAssertTrue(app.buttons["View Title"].firstMatch.waitForExistence(timeout: 20))
+            XCTAssertTrue(featuredTitle(in: app).waitForExistence(timeout: 20))
         }
 
         private func selectSidebarSection(_ title: String, in app: XCUIApplication) -> Bool {
@@ -276,7 +414,7 @@
         }
 
         private func openMovieReview(_ app: XCUIApplication) {
-            let title = app.buttons["View Title"].firstMatch
+            let title = app.buttons["Seerr.title.movie.950000001"].firstMatch
             reveal(title, in: app)
             title.tap()
             XCTAssertTrue(app.navigationBars["Gus Fixture Movie"].waitForExistence(timeout: 15))
@@ -310,7 +448,11 @@
         }
 
         private func openHistory(_ app: XCUIApplication) {
+            let menu = app.buttons["Seerr.menu"].firstMatch
+            XCTAssertTrue(menu.waitForExistence(timeout: 10))
             let history = app.buttons["My Requests"].firstMatch
+            XCTAssertFalse(history.exists, "Discover shows My Requests only inside its menu")
+            menu.tap()
             XCTAssertTrue(history.waitForExistence(timeout: 10))
             history.tap()
             XCTAssertTrue(app.navigationBars["My Requests"].waitForExistence(timeout: 10))
@@ -395,4 +537,38 @@
 
     private struct FixtureRequest: Decodable { let id: Int; let status: Int }
     private struct FixtureEvent: Decodable { let method: String; let path: String }
+#elseif os(macOS)
+    import XCTest
+
+    @MainActor final class GusMacSeerrUITests: XCTestCase {
+        func testDiscoverConnectSheetShowsAddressAndContinueTogether() {
+            continueAfterFailure = false
+            let app = XCUIApplication()
+            app.launchArguments = ["-ApplePersistenceIgnoreState", "YES", "--gus-skip-session-restore", "--gus-debug-preview-session", "--gus-disable-cloud-sync"]
+            app.launch()
+            defer { app.terminate() }
+
+            let discover = app.descendants(matching: .any).matching(identifier: "Discover").firstMatch
+            XCTAssertTrue(discover.waitForExistence(timeout: 20))
+            discover.click()
+            let connect = app.buttons["Seerr.connect"]
+            XCTAssertTrue(connect.waitForExistence(timeout: 10))
+            let hide = app.descendants(matching: .any).matching(identifier: "Hide Menu Item").firstMatch
+            XCTAssertTrue(hide.waitForExistence(timeout: 5))
+            XCTAssertGreaterThanOrEqual(hide.frame.minY, connect.frame.maxY)
+            connect.click()
+
+            let sheet = app.sheets.firstMatch
+            let address = sheet.textFields["Seerr.serverURL"]
+            let next = sheet.buttons["Seerr.continue"]
+            XCTAssertTrue(address.waitForExistence(timeout: 10))
+            XCTAssertTrue(address.isHittable)
+            address.click()
+            address.typeText("http://127.0.0.1:5056")
+            XCTAssertTrue(next.isHittable)
+            let viewport = sheet.scrollViews.firstMatch.frame
+            XCTAssertTrue(viewport.contains(address.frame))
+            XCTAssertTrue(viewport.contains(next.frame))
+        }
+    }
 #endif

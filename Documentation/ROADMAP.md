@@ -42,6 +42,12 @@ constrain *how* each item is built.
 
 - [~] Negotiate transport-stream video through segmented HLS while retaining compatible MP4 direct delivery. Prefer fMP4 HLS and advertise an H.264 TS HLS option for Jellyfin Live TV compatibility mode. Preserve startup-failure diagnostics, bounded known-resource cleanup and the no-retry boundary for allocating requests; native continuous output and started-live Stop response-loss acceptance remain separate gates.
 
+## November device review
+
+- Home and Libraries track refresh failures separately. The Jellyfin browse client accepts additional server metadata values used in library and collection responses.
+- Downloads use native list selection and show the bulk delete action when media is selected. Playlist details show Jellyfin covers and member thumbnails.
+- The profile editor verifies the current password for server changes, including picture and password updates. Discover offers Hide Menu Item during initial setup, and its Mac connection sheet reserves space for the form.
+
 ## October 2026 UI remediation
 
 - [~] October 11 repairs cover sign-in/error feedback, Mac discovery, persistent download artwork, confirmed/selective/bulk management deletion, native swipe deletion, completion cleanup, adaptive hero/actions/sidebar, audio return controls, and playback lifecycle/replay. Physical phone checks finished on **1.0.0 (11)**; management scrolling/Cancel and compact actions passed, and the phone is released with no automation pending. Later source changes have not been installed on it. The landscape Home search repair passed 1/1; full narrow-screen portrait/landscape checks passed 2/2 in light/dark at accessibility XXXL. The final focused playback run passed **23/23** (two real natural-completion/replay checks and 21 UI/lifecycle regressions). Nested EPUB chapter navigation now uses a native sheet/list with recursive disclosure groups and retains Readium’s directional navigation adapter. Its isolated iOS simulator acceptance passed **1/1**, covering chapter selection, readable portrait/landscape pages, forward/backward paging, keyboard absence, and return to book details. See [current repair evidence](Reviews/README.md).
@@ -418,7 +424,7 @@ Build 23 recovery is merged in PR #29. Build 24 passed all 12 Cloud actions with
   completed temporary file before its delegate returns and uses a native background
   `URLSessionDownloadTask`; `OfflineDownloadStore` persists status/progress/resume data,
   stores per-server/user media in Application Support, excludes media from backup,
-  enforces a 20 GB soft cap plus low-space guard, and prefers local playback URLs. ADR
+  checks device space against known transfer sizes and remaining bytes from active downloads, applies a separate 2 GiB account budget on Apple Watch, and prefers local playback URLs. ADR
   0005 records the enhanced background/transcode scope and tvOS exclusion.)*
 - [~] **Download feedback and offline library (#15, #16).** Actual received bytes,
   optional total/percentage, measured speed/ETA, stalled/waiting states, and a main
@@ -1044,6 +1050,7 @@ Jellyfin continues to own playlists and collections; native membership, permissi
 
 ## Seerr integration — October 25, 2026
 
+- [x] Match the browser’s Popular movie and TV queries, add enabled genre/studio/network shelves and title-detail discovery links, and feature a daily eight-title Trending carousel. Surface availability only when Seerr supplies a meaningful status.
 - [x] Implement the accepted Discovery flow: account-scoped Seerr 3 setup, enabled catalog shelves, search/paging/filters, title/person/season details, exact Jellyfin identity matching, reviewed movie/season requests, history/cancellation and manager decisions.
 - [x] Add permission-gated own issues, blocklist and supported regional/email preferences, with private cookies and persistent unresolved-write safeguards.
 - [x] Complete warning-free local builds, unit tests, iPhone/iPad UI regressions, unsigned Release archives and static qualification.

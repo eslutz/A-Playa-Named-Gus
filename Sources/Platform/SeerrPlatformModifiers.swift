@@ -1,6 +1,24 @@
 import SwiftUI
 
 extension View {
+    @ViewBuilder func gusSeerrHideButtonStyle() -> some View {
+        #if os(macOS)
+            buttonStyle(.link)
+        #else
+            self
+        #endif
+    }
+
+    @ViewBuilder func gusSeerrConnectionSheetSizing() -> some View {
+        #if os(macOS)
+            // The scrollable setup pages have no intrinsic height for a fitted sheet.
+            frame(minWidth: 400, idealWidth: 480, minHeight: 360, idealHeight: 520)
+                .presentationSizing(.fitted)
+        #else
+            self
+        #endif
+    }
+
     @ViewBuilder func gusSeerrSetupTitle() -> some View {
         #if os(iOS)
             if DeviceIdentity.usesIPadPresentation {
