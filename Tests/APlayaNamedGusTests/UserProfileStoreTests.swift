@@ -29,8 +29,17 @@ struct UserProfileStoreTests {
         new.configuration?.audioLanguagePreference = "eng"
         new.configuration?.subtitleLanguagePreference = "spa"
         let (store, state) = try fixture([JSONEncoder().encode(old), Data(), Data(), JSONEncoder().encode(new)])
-        #expect(await store.save(name: "Eric Updated", audioLanguage: "eng", subtitleLanguage: "spa") == .confirmed)
+        #expect(await store.save(name: "Eric Updated", audioLanguage: "eng", subtitleLanguage: "spa", currentPassword: "current") == .confirmed)
         #expect(store.profile?.name == "Eric Updated")
+        let verification = try #require(state.verificationRequests.first)
+        let credentials = try JSONDecoder().decode(AuthenticateUserByName.self, from: #require(verification.httpBody))
+        #expect(credentials.username == "Eric")
+        #expect(credentials.pw == "current")
+        #expect(verification.url?.query == nil)
+        #expect(verification.value(forHTTPHeaderField: "Authorization")?.contains("Token=") == false)
+        #expect(verification.value(forHTTPHeaderField: "Authorization")?.contains("device-profile-verification") == true)
+        #expect(state.verificationRequests.map { $0.url?.path } == ["/Users/AuthenticateByName", "/Sessions/Logout"])
+        #expect(state.verificationRequests.last?.value(forHTTPHeaderField: "Authorization")?.contains("Token=verified") == true)
         let request = state.requests[2]
         let sent = try JSONDecoder().decode(UserConfiguration.self, from: #require(request.httpBody))
         #expect(sent.isHidePlayedInLatest == true)
@@ -43,7 +52,7 @@ struct UserProfileStoreTests {
     func failure() async throws {
         let user = UserDto(id: "user", name: "Eric")
         let (store, _) = try fixture([JSONEncoder().encode(user), Data(), JSONEncoder().encode(user)], codes: [200, 403, 200])
-        #expect(await store.save(name: "Changed", audioLanguage: "", subtitleLanguage: "") != .confirmed)
+        #expect(await store.save(name: "Changed", audioLanguage: "", subtitleLanguage: "", currentPassword: "current") != .confirmed)
         #expect(store.profile?.name == "Eric")
         #expect(store.errorMessage != nil)
     }
@@ -54,7 +63,7 @@ struct UserProfileStoreTests {
         var updated = original
         updated.name = "Changed"
         let (store, state) = try fixture([JSONEncoder().encode(original), Data(), Data(), JSONEncoder().encode(updated)], codes: [200, 204, 403, 200])
-        #expect(await store.save(name: "Changed", audioLanguage: "fra", subtitleLanguage: "") == .failed(.forbidden))
+        #expect(await store.save(name: "Changed", audioLanguage: "fra", subtitleLanguage: "", currentPassword: "current") == .failed(.forbidden))
         #expect(store.profile?.name == "Changed")
         #expect(store.profile?.configuration?.audioLanguagePreference == "eng")
         #expect(store.currentUsernameAfterPartialSave == "Changed")
@@ -68,10 +77,10 @@ struct UserProfileStoreTests {
         let original = UserDto(id: "user", name: "Original")
         let updated = UserDto(id: "user", name: "Changed")
         let (store, state) = try fixture([JSONEncoder().encode(original), Data(), Data(), Data(), JSONEncoder().encode(updated)], codes: [200, 204, 403, 503, 200])
-        #expect(await store.save(name: "Changed", audioLanguage: "fra", subtitleLanguage: "") == .uncertain)
+        #expect(await store.save(name: "Changed", audioLanguage: "fra", subtitleLanguage: "", currentPassword: "current") == .uncertain)
         #expect(store.currentUsernameAfterPartialSave == nil)
         #expect(store.needsSaveReadback)
-        #expect(await store.save(name: "Changed", audioLanguage: "fra", subtitleLanguage: "") == nil)
+        #expect(await store.save(name: "Changed", audioLanguage: "fra", subtitleLanguage: "", currentPassword: "current") == nil)
         #expect(state.requests.count == 4)
         await store.load()
         #expect(store.profile?.name == "Changed")
@@ -95,7 +104,7 @@ struct UserProfileStoreTests {
         let (store, state) = try fixture([JSONEncoder().encode(original), JSONEncoder().encode(original), Data(), JSONEncoder().encode(canonical)])
         await store.load()
         state.suspendNextWrite()
-        let saving = Task { await store.save(name: name, audioLanguage: "fra", subtitleLanguage: "") }
+        let saving = Task { await store.save(name: name, audioLanguage: "fra", subtitleLanguage: "", currentPassword: "current") }
         while !state.hasSuspendedWrite {
             await Task.yield()
         }
@@ -109,7 +118,7 @@ struct UserProfileStoreTests {
         #expect(store.profile?.name == "Original")
         #expect(store.profile?.configuration?.audioLanguagePreference == "eng")
         #expect(state.requests.filter { $0.httpMethod == "POST" }.count == 1)
-        #expect(await store.save(name: name, audioLanguage: "fra", subtitleLanguage: "") == nil)
+        #expect(await store.save(name: name, audioLanguage: "fra", subtitleLanguage: "", currentPassword: "current") == nil)
         #expect(state.requests.count == 3)
         if scenario.retires {
             #expect(!store.needsSaveReadback)
@@ -129,7 +138,7 @@ struct UserProfileStoreTests {
     @Test("Blank names never reach the server")
     func invalidName() async throws {
         let (store, state) = try fixture([])
-        #expect(await store.save(name: "  ", audioLanguage: "", subtitleLanguage: "") == nil)
+        #expect(await store.save(name: "  ", audioLanguage: "", subtitleLanguage: "", currentPassword: "current") == nil)
         #expect(state.requests.isEmpty)
     }
 
@@ -140,7 +149,7 @@ struct UserProfileStoreTests {
             [JSONEncoder().encode(original), Data(), Data(), JSONEncoder().encode(original)],
             codes: [200, 204, 204, status]
         )
-        #expect(await store.save(name: "Changed", audioLanguage: "eng", subtitleLanguage: "") == .uncertain)
+        #expect(await store.save(name: "Changed", audioLanguage: "eng", subtitleLanguage: "", currentPassword: "current") == .uncertain)
         #expect(store.saveOutcome == .uncertain)
         #expect(store.errorMessage != nil)
         #expect(state.requests.filter { $0.httpMethod == "POST" }.count == 2)
@@ -156,22 +165,135 @@ struct UserProfileStoreTests {
         )
         await store.load()
         #expect(store.imageData == Data([1]))
-        #expect(await store.save(name: "Updated", audioLanguage: "eng", subtitleLanguage: "") == .confirmed)
+        #expect(await store.save(name: "Updated", audioLanguage: "eng", subtitleLanguage: "", currentPassword: "current") == .confirmed)
         #expect(store.profile?.name == "Updated")
         #expect(store.profile?.configuration?.audioLanguagePreference == "eng")
         #expect(store.imageData == nil)
         #expect(store.errorMessage == nil)
     }
 
-    private func fixture(_ data: [Data], codes: [Int]? = nil) throws -> (UserProfileStore, ProfileResponseState) {
-        let state = ProfileResponseState(responses: data, statusCodes: codes)
+    @Test("Missing or incorrect credentials prevent every profile write", arguments: ["", "incorrect"])
+    func rejectedCredentials(password: String) async throws {
+        let user = UserDto(id: "user", name: "Eric")
+        let (store, state) = try fixture([JSONEncoder().encode(user)])
+        let result = await store.save(
+            name: "New Name",
+            audioLanguage: "eng",
+            subtitleLanguage: "fra",
+            currentPassword: password,
+            newPassword: "new",
+            picture: Data([7])
+        )
+        #expect(result != .confirmed)
+        #expect(state.requests.allSatisfy { $0.httpMethod == "GET" })
+        #expect(state.verificationRequests.count == (password.isEmpty ? 0 : 1))
+        if !password.isEmpty {
+            #expect(store.errorMessage?.contains("current password") == true)
+        }
+    }
+
+    @Test("A verification for another account cannot authorize a write")
+    func wrongIdentity() async throws {
+        let user = UserDto(id: "user", name: "Eric")
+        let (store, state) = try fixture([JSONEncoder().encode(user)], verificationUserID: "different")
+        #expect(await store.save(name: "New Name", audioLanguage: "", subtitleLanguage: "", currentPassword: "current") == .failed(.forbidden))
+        #expect(state.requests.allSatisfy { $0.httpMethod == "GET" })
+        #expect(state.verificationRequests.last?.url?.path == "/Sessions/Logout")
+    }
+
+    @Test("A password-only change uses Jellyfin's current-password check with the active user and token")
+    func changePassword() async throws {
+        let user = UserDto(id: "user", name: "Eric")
+        let (store, state) = try fixture([JSONEncoder().encode(user), Data()])
+        #expect(await store.save(
+            name: "Eric",
+            audioLanguage: "",
+            subtitleLanguage: "",
+            currentPassword: "current",
+            newPassword: " new "
+        ) == .confirmed)
+        #expect(state.verificationRequests.isEmpty)
+        let request = try #require(state.requests.last)
+        #expect(request.url?.path == "/Users/Password")
+        #expect(request.url?.query == "userId=user")
+        #expect(request.value(forHTTPHeaderField: "Authorization")?.contains("Token=token") == true)
+        let body = try JSONDecoder().decode(UpdateUserPassword.self, from: #require(request.httpBody))
+        #expect(body.currentPw == "current" && body.newPw == " new " && body.isResetPassword != true)
+    }
+
+    @Test("A rejected current password for a password-only edit keeps the original account")
+    func deniedPasswordOnly() async throws {
+        let user = UserDto(id: "user", name: "Eric")
+        let json = try JSONEncoder().encode(user)
+        let (store, state) = try fixture([json, Data(), json], codes: [200, 403, 200])
+        #expect(await store.save(
+            name: "Eric",
+            audioLanguage: "",
+            subtitleLanguage: "",
+            currentPassword: "incorrect",
+            newPassword: "new"
+        ) == .failed(.forbidden))
+        #expect(state.verificationRequests.isEmpty)
+        #expect(store.profile?.name == "Eric")
+        #expect(store.errorMessage?.contains("current password") == true)
+        #expect(!store.needsSaveReadback)
+    }
+
+    @Test("When the last password write fails, confirmed preferences and photo remain saved")
+    func passwordDeniedAfterEdits() async throws {
+        let old = UserDto(id: "user", name: "Eric")
+        let updated = UserDto(configuration: .init(audioLanguagePreference: "eng"), id: "user", name: "Eric", primaryImageTag: "new-tag")
+        let saved = try JSONEncoder().encode(updated)
+        let jpeg = Data([1, 2, 3])
+        let (store, _) = try fixture(
+            [JSONEncoder().encode(old), Data(), Data(), saved, jpeg, Data(), saved, jpeg],
+            codes: [200, 204, 204, 200, 200, 403, 200, 200]
+        )
+        #expect(await store.save(
+            name: "Eric",
+            audioLanguage: "eng",
+            subtitleLanguage: "",
+            currentPassword: "current",
+            newPassword: "new",
+            picture: jpeg
+        ) == .failed(.forbidden))
+        #expect(store.profile == updated)
+        #expect(store.didSavePicture)
+        #expect(store.imageData == jpeg)
+        #expect(store.errorMessage?.contains("other profile changes were saved") == true)
+    }
+
+    @Test("Uploads a base64 JPEG, reads the changed image, then changes the password")
+    func changePictureAndPassword() async throws {
+        let old = UserDto(id: "user", name: "Eric")
+        let updated = UserDto(id: "user", name: "Eric", primaryImageTag: "new-tag")
+        let jpeg = Data([1, 2, 3, 4, 5])
+        let (store, state) = try fixture([JSONEncoder().encode(old), Data(), JSONEncoder().encode(updated), jpeg, Data()])
+        #expect(await store.save(
+            name: "Eric",
+            audioLanguage: "",
+            subtitleLanguage: "",
+            currentPassword: "current",
+            newPassword: "new",
+            picture: jpeg
+        ) == .confirmed)
+        #expect(store.imageData == jpeg)
+        #expect(state.requests.map { $0.url?.path } == ["/Users/user", "/UserImage", "/Users/user", "/UserImage", "/Users/Password"])
+        let upload = state.requests[1]
+        #expect(upload.url?.query == "userId=user")
+        #expect(upload.value(forHTTPHeaderField: "Content-Type") == "image/jpeg")
+        #expect(upload.httpBody == jpeg.base64EncodedData())
+    }
+
+    private func fixture(_ data: [Data], codes: [Int]? = nil, verificationUserID: String = "user") throws -> (UserProfileStore, ProfileResponseState) {
+        let state = ProfileResponseState(responses: data, statusCodes: codes, verificationUserID: verificationUserID)
         let id = UUID().uuidString
         ProfileURLProtocol.states.withLock { $0[id] = state }
         let configuration = URLSessionConfiguration.ephemeral
         configuration.protocolClasses = [ProfileURLProtocol.self]
         configuration.httpAdditionalHeaders = [ProfileURLProtocol.header: id]
         let client = try JellyfinClient(configuration: .init(url: #require(URL(string: "https://jellyfin.example.com")), accessToken: "token", client: "GusTests", deviceName: "Tests", deviceID: "device", version: "1"), sessionConfiguration: configuration)
-        return (UserProfileStore(client: client, userID: "user"), state)
+        return (UserProfileStore(client: client, userID: "user", verificationSessionConfiguration: configuration), state)
     }
 }
 
@@ -240,10 +362,18 @@ private final class ProfileResponseState: @unchecked Sendable {
     private let lock = NSLock()
     private var responses: [Data]
     private var recorded: [URLRequest] = []
+    private var recordedVerification: [URLRequest] = []
+    private let verificationUserID: String
+
+    var verificationRequests: [URLRequest] {
+        lock.withLock { recordedVerification }
+    }
+
     private var statusCodes: [Int]
     private var suspendsNextWrite = false
     private var suspendedResponse: ((Data, Int), (Result<(Data, Int), Error>) -> Void)?
-    init(responses: [Data], statusCodes: [Int]?) {
+    init(responses: [Data], statusCodes: [Int]?, verificationUserID: String) {
+        self.verificationUserID = verificationUserID
         self.responses = responses
         self.statusCodes = statusCodes ?? responses.map { $0.isEmpty ? 204 : 200 }
     }
@@ -264,7 +394,8 @@ private final class ProfileResponseState: @unchecked Sendable {
 
     func suspendResponseIfNeeded(for request: URLRequest, response: (Data, Int), deliver: @escaping (Result<(Data, Int), Error>) -> Void) -> Bool {
         lock.withLock {
-            guard suspendsNextWrite, request.httpMethod == "POST" else { return false }
+            guard suspendsNextWrite, request.httpMethod == "POST",
+                  request.url?.path != "/Users/AuthenticateByName", request.url?.path != "/Sessions/Logout" else { return false }
             suspendsNextWrite = false
             suspendedResponse = (response, deliver)
             return true
@@ -286,7 +417,18 @@ private final class ProfileResponseState: @unchecked Sendable {
         defer { lock.unlock() }
         var request = request
         request.httpBody = try bodyData(request)
-        recorded.append(request)
+        switch request.url?.path {
+        case "/Users/AuthenticateByName":
+            recordedVerification.append(request)
+            let body = try JSONDecoder().decode(AuthenticateUserByName.self, from: request.httpBody ?? Data())
+            guard body.pw == "current" else { return (Data(), 401) }
+            return try (JSONEncoder().encode(AuthenticationResult(accessToken: "verified", user: UserDto(id: verificationUserID))), 200)
+        case "/Sessions/Logout":
+            recordedVerification.append(request)
+            return (Data(), 204)
+        default:
+            recorded.append(request)
+        }
         guard !responses.isEmpty else { throw URLError(.badServerResponse) }
         return (responses.removeFirst(), statusCodes.removeFirst())
     }
