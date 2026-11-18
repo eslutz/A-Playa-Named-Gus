@@ -15,6 +15,53 @@ struct ServerMediaListsStoreTests {
         )
     }
 
+    @Test func bulkPlaylistEditQueuesAndReplaysNameRemovalAndOrderTogether() async throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let provider = FakeMediaProviderSession(capabilities: ProviderCapabilities())
+        let id = UUID(), first = UUID(), removed = UUID(), last = UUID()
+        var remote = ServerMediaList(id: id, name: "Original", kind: .playlist, entries: [first, removed, last].map {
+            ServerMediaListEntry(id: $0, item: MediaItem(id: $0.uuidString, type: .movie))
+        }, canEdit: true, entriesLoaded: true, overview: "Preserved")
+        var online = true
+        provider.mediaListsHandler = { _ in [remote] }
+        provider.mediaListHandler = { _, _ in
+            guard online else { throw URLError(.notConnectedToInternet) }
+            return remote
+        }
+        provider.renameMediaListHandler = { _, _, name in remote.name = name }
+        provider.removeFromMediaListHandler = { _, _, ids in remote.entries.removeAll { ids.contains($0.id) } }
+        provider.moveMediaListEntryHandler = { _, entryID, index in
+            let source = try #require(remote.entries.firstIndex(where: { $0.id == entryID }))
+            let entry = remote.entries.remove(at: source)
+            remote.entries.insert(entry, at: index)
+        }
+        let store = ServerMediaListsStore(directory: directory)
+        let session = session(provider)
+        await store.refresh(session: session)
+        online = false
+        let outcome = try await store.savePlaylistEdit(
+            id: id,
+            expectedName: "Original",
+            name: "Edited",
+            expectedOrder: [first, removed, last],
+            order: [last, first],
+            session: session
+        )
+        #expect(outcome == .queued)
+        #expect(remote.entries.map(\.id) == [first, removed, last])
+
+        let restored = ServerMediaListsStore(directory: directory)
+        restored.load(scope: scope)
+        #expect(restored.pendingEdits(scope: scope).map(\.action) == [.rename, .remove, .move])
+        online = true
+        await restored.refresh(session: session)
+        #expect(restored.pendingEdits(scope: scope).isEmpty)
+        #expect(remote.name == "Edited")
+        #expect(remote.entries.map(\.id) == [last, first])
+        #expect(remote.overview == "Preserved")
+    }
+
     @Test func restartRetainsNativeOrderAndAudioWithoutCloudMembership() async throws {
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: directory) }

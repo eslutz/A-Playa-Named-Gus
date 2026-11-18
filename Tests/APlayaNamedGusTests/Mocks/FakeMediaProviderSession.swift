@@ -13,11 +13,11 @@ final class FakeMediaProviderSession: MediaProviderSession {
     var collectionItemHandler: ((String) async throws -> MediaItem)?
     var collectionMembersHandler: ((String, Int, Int) async throws -> MediaItemPage)?
     var createCollectionHandler: ((String, [String]) async throws -> String)?
-    var updateCollectionHandler: ((String, String, String) async throws -> Void)?
+    var editMediaListMetadataHandler: ((EditableMediaList, String?, String?) async throws -> Void)?
     var deleteCollectionHandler: ((String) async throws -> Void)?
     var addCollectionMembersHandler: ((String, [String]) async throws -> Void)?
     var removeCollectionMembersHandler: ((String, [String]) async throws -> Void)?
-    var setCollectionArtworkHandler: ((String, Data) async throws -> Void)?
+    var editMediaListCoverHandler: ((EditableMediaList, MediaListCoverEdit) async throws -> Void)?
     var userViewsHandler: (() async throws -> [MediaItem])?
     var resumePageHandler: ((Int, Int) async throws -> MediaItemPage)?
     var nextPageHandler: ((Int, Int) async throws -> MediaItemPage)?
@@ -129,8 +129,8 @@ final class FakeMediaProviderSession: MediaProviderSession {
         guard let createCollectionHandler else { throw GusError.notFound }; return try await createCollectionHandler(name, itemIDs)
     }
 
-    func updateCollection(id: String, name: String, overview: String) async throws {
-        try await updateCollectionHandler?(id, name, overview)
+    func editMediaListMetadata(_ list: EditableMediaList, name: String?, expectedName: String, overview: String?, expectedOverview: String) async throws {
+        try await editMediaListMetadataHandler?(list, name, overview)
     }
 
     func deleteCollection(id: String) async throws {
@@ -145,8 +145,8 @@ final class FakeMediaProviderSession: MediaProviderSession {
         try await removeCollectionMembersHandler?(id, itemIDs)
     }
 
-    func setCollectionArtwork(id: String, jpeg: Data) async throws {
-        try await setCollectionArtworkHandler?(id, jpeg)
+    func editMediaListCover(_ list: EditableMediaList, change: MediaListCoverEdit, expectedTag: String?) async throws {
+        try await editMediaListCoverHandler?(list, change)
     }
 
     func userViews() async throws -> [MediaItem] {

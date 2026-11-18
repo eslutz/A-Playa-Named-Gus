@@ -1,6 +1,84 @@
 {
   "sourceLanguage": "en",
   "strings": {
+    "Undo Removal": {
+      "comment": "Playlist and collection editing."
+    },
+    "Undo Cover Change": {
+      "comment": "Playlist and collection editing."
+    },
+    "Titles removed.": {
+      "comment": "Playlist and collection editing."
+    },
+    "Review the pending playlist changes before editing it again.": {
+      "comment": "Playlist and collection editing."
+    },
+    "The playlist entries changed. Reopen Edit to review them.": {
+      "comment": "Playlist and collection editing."
+    },
+    "The playlist changed in Jellyfin. Reopen Edit to review it.": {
+      "comment": "Playlist and collection editing."
+    },
+    "The list details changed in Jellyfin. Reopen Edit to review them.": {
+      "comment": "Playlist and collection editing."
+    },
+    "The editable playlist could not be loaded.": {
+      "comment": "Playlist and collection editing."
+    },
+    "The editable collection could not be loaded.": {
+      "comment": "Playlist and collection editing."
+    },
+    "The description and cover can be saved after the pending playlist changes reach Jellyfin.": {
+      "comment": "Playlist and collection editing."
+    },
+    "The cover changed in Jellyfin. Reopen Edit to review it.": {
+      "comment": "Playlist and collection editing."
+    },
+    "Selected Cover": {
+      "comment": "Playlist and collection editing."
+    },
+    "Remove Cover": {
+      "comment": "Playlist and collection editing."
+    },
+    "Playlist changes submitted.": {
+      "comment": "Playlist and collection editing."
+    },
+    "Playlist changes queued on this device.": {
+      "comment": "Playlist and collection editing."
+    },
+    "Playlist changes need server review.": {
+      "comment": "Playlist and collection editing."
+    },
+    "Jellyfin did not confirm the updated list details.": {
+      "comment": "Playlist and collection editing."
+    },
+    "Jellyfin did not confirm the cover change.": {
+      "comment": "Playlist and collection editing."
+    },
+    "Enter a playlist name.": {
+      "comment": "Playlist and collection editing."
+    },
+    "Edit Playlist": {
+      "comment": "Playlist and collection editing."
+    },
+    "Discard Unsaved Changes?": {
+      "comment": "Playlist and collection editing."
+    },
+    "Details saved.": {
+      "comment": "Playlist and collection editing."
+    },
+    "Description saved.": {
+      "comment": "Playlist and collection editing."
+    },
+    "Cover will be removed on Save.": {
+      "comment": "Playlist and collection editing."
+    },
+    "Cover": {
+      "comment": "Playlist and collection editing."
+    },
+    "Contents": {
+      "comment": "Playlist and collection editing."
+    },
     "": {
       "comment": "Native media presentation and recovery.",
       "localizations": {

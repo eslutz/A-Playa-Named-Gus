@@ -344,34 +344,26 @@ final class CollectionStore {
         }
     }
 
-    /// Metadata and artwork use separate server endpoints. Reconcile a confirmed
-    /// metadata save even if the following artwork request fails or is uncertain.
-    func saveEdits(id: String, name: String, overview: String, artwork: Data?) async -> Bool {
-        guard canSubmitMutations, capabilities.permitsEdit(artworkIncluded: artwork != nil) else { return false }
-        let permissions = capabilities
-        var metadataSaved = false
-        let saved = await mutate {
-            if permissions.editMetadata {
-                try await session.mediaProvider.updateCollection(id: id, name: name, overview: overview)
-                metadataSaved = true
-            }
-            try Task.checkCancellation()
-            guard active, session.isActive else { throw GusError.cancelled }
-            if let artwork {
-                try await session.mediaProvider.setCollectionArtwork(id: id, jpeg: artwork)
-            }
+    func saveMetadata(id: String, name: String?, expectedName: String, overview: String?, expectedOverview: String) async -> Bool {
+        guard capabilities.editMetadata else { return false }
+        return await mutate(collectionID: id) {
+            try await session.mediaProvider.editMediaListMetadata(
+                .collection(id),
+                name: name,
+                expectedName: expectedName,
+                overview: overview,
+                expectedOverview: expectedOverview
+            )
             return id
         }
-        if !saved, metadataSaved, active, session.isActive, !Task.isCancelled {
-            let failure = errorMessage
-            needsMutationReview = true
-            actionOutcome = .uncertain
-            await load(force: true)
-            guard active, session.isActive, !Task.isCancelled else { return false }
-            errorMessage = failure
-            statusMessage = String(localized: "Name and description saved. Check artwork in Jellyfin before retrying.")
+    }
+
+    func saveCover(id: String, change: MediaListCoverEdit, expectedTag: String?) async -> Bool {
+        guard capabilities.editArtwork else { return false }
+        return await mutate(collectionID: id) {
+            try await session.mediaProvider.editMediaListCover(.collection(id), change: change, expectedTag: expectedTag)
+            return id
         }
-        return saved
     }
 
     @discardableResult

@@ -451,6 +451,43 @@ final class GusAuthenticatedUITests: XCTestCase {
             }
         }
 
+        func testTVMediaListEditorsOpenAndCancelWithRemote() throws {
+            try prepare()
+            executionTimeAllowance = 180
+            defer { finish() }
+            let collection = try launch("item/" + required("BoxSet"))
+            XCTAssertTrue(try collection.staticTexts[required("BoxSetTitle")].waitForExistence(timeout: 30))
+            XCUIRemote.shared.press(.right)
+            try focusTV(collection, label: "More")
+            XCUIRemote.shared.press(.select)
+            try focusTV(collection, label: "Edit")
+            XCUIRemote.shared.press(.select)
+            XCTAssertTrue(collection.buttons["MediaListEditor.save"].waitForExistence(timeout: 15))
+            XCTAssertTrue(collection.textFields["Name"].exists)
+            capture(collection, "tv-collection-edit")
+            XCUIRemote.shared.press(.menu)
+            XCTAssertTrue(collection.buttons["MediaListEditor.save"].waitForNonExistence(timeout: 10))
+            collection.terminate()
+            let app = launch("libraries")
+            try focusTV(app, label: "Playlists")
+            XCUIRemote.shared.press(.select)
+            let title = try required("PlaylistTitle")
+            let link = app.descendants(matching: .any).matching(NSPredicate(format: "label BEGINSWITH %@", title)).firstMatch
+            XCTAssertTrue(link.waitForExistence(timeout: 20))
+            try focusTV(app, label: link.label)
+            XCUIRemote.shared.press(.select)
+            XCTAssertTrue(app.buttons["Playlist.more"].waitForExistence(timeout: 20))
+            try focusTV(app, identifier: "Playlist.more")
+            XCUIRemote.shared.press(.select)
+            try focusTV(app, label: "Edit")
+            XCUIRemote.shared.press(.select)
+            XCTAssertTrue(app.buttons["MediaListEditor.save"].waitForExistence(timeout: 15))
+            XCTAssertTrue(app.textFields["Name"].exists)
+            capture(app, "tv-playlist-edit")
+            XCUIRemote.shared.press(.menu)
+            XCTAssertTrue(app.buttons["MediaListEditor.save"].waitForNonExistence(timeout: 10))
+        }
+
         func testTVRemediationSupplementaryScreens() throws {
             try prepare()
             executionTimeAllowance = 240
