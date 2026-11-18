@@ -105,6 +105,14 @@ class AdminHandler(Handler):
     def do_GET(self):
         url = urlsplit(self.path)
         query = {k.lower(): v for k, v in parse_qs(url.query).items()}
+        if url.path == "/UserViews" or url.path.endswith("/Views"):
+            views = [
+                {"Id": "42000000000000000000000000000000", "Name": "Mixed Library", "CollectionType": "books"},
+                {"Id": "43000000000000000000000000000000", "Name": "Movie Library", "CollectionType": "movies"},
+                {"Id": "44000000000000000000000000000000", "Name": "Collections", "CollectionType": "boxsets"},
+            ]
+            return self.respond({"Items": [{**view, "Type": "CollectionFolder"} for view in views],
+                                 "TotalRecordCount": len(views)})
         collection_id = url.path.rsplit("/", 1)[-1].replace("-", "")
         if "/Items/" in url.path and collection_id in self.collections:
             return self.respond(self.collections[collection_id][0])

@@ -9,6 +9,25 @@ struct MediaCollection: Identifiable, Equatable, Sendable {
     var item: MediaItem
     var members: [MediaItem] = []
     var membersLoaded = false
+
+    /// The collection ID owns its custom poster. Without one, member artwork is
+    /// selected from the same snapshot for both the browser and the detail page.
+    func coverItems(limit: ContentRatingGate.Limit, hideUnrated: Bool) -> [MediaItem] {
+        let covers = ContentRatingGate.coverMembers(members, limit: limit, hideUnrated: hideUnrated, count: 3)
+        guard limit == .off else { return covers }
+        if item.hasTaggedCoverArtwork {
+            return [item] + covers
+        }
+        // Defer an untagged probe until membership has had a chance to supply
+        // a cover. Some servers can still serve an image when the tag is absent.
+        return membersLoaded ? covers + [item] : covers
+    }
+
+    @MainActor func coverURLs(using provider: any MediaProviderSession, limit: ContentRatingGate.Limit, hideUnrated: Bool) -> [URL] {
+        coverItems(limit: limit, hideUnrated: hideUnrated).flatMap { item in
+            provider.artworkURLs(for: item, request: .init(role: item.coverArtworkRole, maxWidth: ImageURLBuilder.ImageContext.posterGrid.maxWidth))
+        }
+    }
 }
 
 /// A browse filter describes visible members. A Jellyfin collection can contain

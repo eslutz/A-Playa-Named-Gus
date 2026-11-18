@@ -88,25 +88,34 @@ struct NavigationSettingsView: View {
         )
 
         ForEach(sections) { section in
-            if isEditing {
-                HStack {
-                    navigationRow(section)
-                    Spacer()
-                    Button {
-                        show(section)
-                    } label: {
-                        Image(systemName: "plus.circle.fill")
-                            .foregroundStyle(.green)
-                            .frame(minWidth: 44, minHeight: 44)
-                    }
-                    .buttonStyle(.borderless)
-                    .accessibilityLabel(Text("Show \(section.title)"))
-                    .accessibilityIdentifier("Navigation.show." + section.id)
+            #if os(tvOS)
+                Button {
+                    setVisibility(true, for: section)
+                } label: {
+                    Label("Show \(section.title)", systemImage: "plus.circle")
                 }
-                .listRowInsets(EdgeInsets(top: 0, leading: 20, bottom: 0, trailing: 12))
-            } else {
-                navigationRow(section)
-            }
+                .accessibilityIdentifier("Navigation.show." + section.id)
+            #else
+                if isEditing {
+                    HStack {
+                        navigationRow(section)
+                        Spacer()
+                        Button {
+                            setVisibility(true, for: section)
+                        } label: {
+                            Image(systemName: "plus.circle.fill")
+                                .foregroundStyle(.green)
+                                .frame(minWidth: 44, minHeight: 44)
+                        }
+                        .buttonStyle(.borderless)
+                        .accessibilityLabel(Text("Show \(section.title)"))
+                        .accessibilityIdentifier("Navigation.show." + section.id)
+                    }
+                    .listRowInsets(EdgeInsets(top: 0, leading: 20, bottom: 0, trailing: 12))
+                } else {
+                    navigationRow(section)
+                }
+            #endif
         }
     }
 
@@ -136,9 +145,25 @@ struct NavigationSettingsView: View {
     @ViewBuilder
     private func standardSectionRow(_ section: ResolvedNavigationSection, in sections: [ResolvedNavigationSection]) -> some View {
         #if os(tvOS)
-            navigationRow(section)
-                .moveDisabled(!section.canMove)
-                .deleteDisabled(!section.canHide)
+            if section.canMove {
+                let movable = sections.filter(\.canMove)
+                Menu {
+                    if section.canHide {
+                        Button("Hide Menu Item", systemImage: "eye.slash") {
+                            setVisibility(false, for: section)
+                        }
+                    }
+                    Button("Move Up", systemImage: "arrow.up") { moveSection(section, by: -1) }
+                        .disabled(movable.first?.id == section.id)
+                    Button("Move Down", systemImage: "arrow.down") { moveSection(section, by: 1) }
+                        .disabled(movable.last?.id == section.id)
+                } label: {
+                    navigationRow(section)
+                }
+                .accessibilityIdentifier("Navigation.section." + section.id)
+            } else {
+                navigationRow(section)
+            }
         #else
             if section.canMove {
                 navigationRow(section)
@@ -170,6 +195,12 @@ struct NavigationSettingsView: View {
         )
     }
 
+    #if os(tvOS)
+        private func moveSection(_ section: ResolvedNavigationSection, by offset: Int) {
+            navigationPreferences.move(sectionID: section.id, by: offset, libraries: libraries, serverID: session.server.id, userID: session.user.id)
+        }
+    #endif
+
     private func moveDraggedSection(_ draggedID: String?, before targetID: String, in sections: [ResolvedNavigationSection]) -> Bool {
         guard let draggedID,
               draggedID != targetID,
@@ -190,19 +221,13 @@ struct NavigationSettingsView: View {
             userID: session.user.id
         )
         for index in offsets where sections.indices.contains(index) {
-            navigationPreferences.setVisibility(
-                false,
-                forSectionID: sections[index].id,
-                libraries: libraries,
-                serverID: session.server.id,
-                userID: session.user.id
-            )
+            setVisibility(false, for: sections[index])
         }
     }
 
-    private func show(_ section: ResolvedNavigationSection) {
+    private func setVisibility(_ visible: Bool, for section: ResolvedNavigationSection) {
         navigationPreferences.setVisibility(
-            true,
+            visible,
             forSectionID: section.id,
             libraries: libraries,
             serverID: session.server.id,

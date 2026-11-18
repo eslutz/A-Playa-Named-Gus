@@ -10,6 +10,7 @@ enum NavigationCategory: String, CaseIterable, Codable, Hashable, Identifiable {
     case audiobooks
     case photos
     case livetv
+    case collections
 
     var id: String {
         "category.\(rawValue)"
@@ -31,6 +32,8 @@ enum NavigationCategory: String, CaseIterable, Codable, Hashable, Identifiable {
             return String(localized: "Photos", comment: "Navigation category: photos")
         case .livetv:
             return String(localized: "Live TV", comment: "Navigation category: live TV")
+        case .collections:
+            return String(localized: "Collections")
         }
     }
 
@@ -50,6 +53,8 @@ enum NavigationCategory: String, CaseIterable, Codable, Hashable, Identifiable {
             return "photo"
         case .livetv:
             return "antenna.radiowaves.left.and.right"
+        case .collections:
+            return "rectangle.stack"
         }
     }
 
@@ -67,6 +72,8 @@ enum NavigationCategory: String, CaseIterable, Codable, Hashable, Identifiable {
             return .photos
         case .livetv:
             return .livetv
+        case .collections:
+            return .boxsets
         }
     }
 
@@ -86,6 +93,8 @@ enum NavigationCategory: String, CaseIterable, Codable, Hashable, Identifiable {
             return [.photo]
         case .livetv:
             return [.liveChannel, .recording]
+        case .collections:
+            return [.boxSet]
         }
     }
 

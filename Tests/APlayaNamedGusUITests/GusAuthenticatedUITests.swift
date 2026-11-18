@@ -274,6 +274,55 @@ final class GusAuthenticatedUITests: XCTestCase {
     #endif
 
     #if os(tvOS)
+        func testTVRemoteCanHideAndShowCollections() throws {
+            continueAfterFailure = false
+            let app = launch("settings")
+            func descendToRow(_ rows: [XCUIElement]) throws -> XCUIElement {
+                for _ in 0 ..< 30 {
+                    if let row = rows.first(where: { $0.exists && !$0.frame.isEmpty }) {
+                        return row
+                    }
+                    XCUIRemote.shared.press(.down)
+                }
+                XCTFail("Navigation row is unavailable\n" + app.debugDescription)
+                throw FixtureError.missingMedia
+            }
+
+            let controls = app.descendants(matching: .any)
+            let navigation = controls.matching(NSPredicate(format: "label == %@", "Navigation")).firstMatch
+            XCTAssertTrue(app.staticTexts["Settings"].firstMatch.waitForExistence(timeout: 30))
+            XCUIRemote.shared.press(.right)
+            _ = try descendToRow([navigation])
+            try focusTV(app, label: "Navigation")
+            XCUIRemote.shared.press(.select)
+            let visibleID = "Navigation.section.category.collections"
+            let hiddenID = "Navigation.show.category.collections"
+            let visible = controls.matching(identifier: visibleID).firstMatch
+            let hidden = controls.matching(identifier: hiddenID).firstMatch
+            let startedHidden = try descendToRow([visible, hidden]).identifier == hiddenID
+            func selectRow(_ id: String) throws {
+                try focusTV(app, identifier: id)
+                XCUIRemote.shared.press(.select)
+            }
+            func hide() throws {
+                try selectRow(visibleID)
+                try focusTV(app, label: "Hide Menu Item")
+                XCUIRemote.shared.press(.select)
+                _ = try descendToRow([hidden])
+                XCTAssertFalse(visible.exists)
+            }
+            if startedHidden {
+                try selectRow(hiddenID)
+            }
+            try hide()
+            try selectRow(hiddenID)
+            XCTAssertTrue(visible.waitForExistence(timeout: 10))
+            XCTAssertFalse(hidden.exists)
+            if startedHidden {
+                try hide()
+            }
+        }
+
         func testTVToolbarViewModes() throws {
             try prepare()
             executionTimeAllowance = 240

@@ -421,9 +421,12 @@ private struct RootSectionDestination: View {
         } else if section.id == NavigationSectionPreference.settingsID {
             SettingsView()
         } else if let category = section.category {
-            if category == .livetv {
+            switch category {
+            case .livetv:
                 LiveTVView()
-            } else {
+            case .collections:
+                CollectionsView()
+            default:
                 LibraryGridView(scope: .category(category))
             }
         } else {

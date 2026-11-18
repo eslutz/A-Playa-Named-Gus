@@ -334,8 +334,8 @@
                 XCTAssertTrue(more.waitForExistence(timeout: 20)); more.tap()
             }
             XCTAssertTrue(movies.waitForExistence(timeout: 20)); movies.tap()
-            let seeAll = app.buttons["See All"].firstMatch
-            XCTAssertTrue(seeAll.waitForExistence(timeout: 10)); seeAll.tap()
+            let collections = app.buttons["Library.collections"].firstMatch
+            XCTAssertTrue(collections.waitForExistence(timeout: 10)); collections.tap()
             XCTAssertTrue(app.buttons["New Collection"].waitForExistence(timeout: 10))
             app.buttons["New Collection"].tap()
             let field = app.textFields["Name"].firstMatch

@@ -75,4 +75,5 @@ struct MediaCollectionRef: Hashable {
 struct CollectionsRef: Hashable {
     let scope: AccountScope
     var format = CollectionFormat.all
+    var movieLibraryID: String?
 }

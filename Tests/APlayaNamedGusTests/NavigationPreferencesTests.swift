@@ -36,6 +36,7 @@ struct NavigationPreferencesTests {
             "category.audiobooks",
             "category.photos",
             "category.livetv",
+            "category.collections",
         ])
         #expect(store.visibleSections(libraries: Self.libraries, serverID: "s", userID: "u").filter { $0.id != "downloaded" && $0.id != "playlists" }.map(\.id) == [
             "home",
@@ -51,6 +52,7 @@ struct NavigationPreferencesTests {
             "category.audiobooks",
             "category.photos",
             "category.livetv",
+            "category.collections",
         ])
         #expect(sections.first { $0.id == "category.movies" }?.title == "Movies")
         #expect(sections.first { $0.id == "category.movies" }?.systemImage == "film")
@@ -103,6 +105,41 @@ struct NavigationPreferencesTests {
         #expect(reopened.hiddenSections(libraries: [], serverID: "s", userID: "u").contains { $0.category == .books })
     }
 
+    @Test("Collections joins existing navigation and can be pinned, hidden, and restored")
+    func customizeCollections() throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent("gus-collection-nav-" + UUID().uuidString)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let scope = AccountScope(serverID: "s", userID: "u")
+        let previous = ["home", "libraries", "category.music", "downloaded", "settings"]
+            .map { NavigationSectionPreference(id: $0, isVisible: nil) }
+        try JSONEncoder().encode(previous).write(to: directory.appendingPathComponent(scope.storageKey + ".json"))
+
+        let library = MediaItem(collectionType: .boxsets, id: "boxsets", name: "Sets")
+        let libraries = Self.libraries + [library]
+        let id = NavigationCategory.collections.id
+        let store = NavigationPreferencesStore(directory: directory)
+        store.load(serverID: "s", userID: "u")
+        func visible() -> [ResolvedNavigationSection] {
+            store.visibleSections(libraries: libraries, serverID: "s", userID: "u")
+        }
+        let existing = visible()
+        let index = try #require(existing.firstIndex { $0.id == id })
+        #expect(Array(existing.prefix(3).map(\.id)) == ["home", "libraries", "category.music"])
+        #expect(existing[index].libraries == [library])
+        #expect(existing[index].canHide && existing[index].canMove)
+        store.moveVisibleSections(from: IndexSet(integer: index), to: 1, libraries: libraries, serverID: "s", userID: "u")
+        #expect(RootNavigationState.iPhoneDirectSectionIDs(visible().map(\.id), usesSavedOrder: true) == ["home", id, "libraries"])
+
+        store.setVisibility(false, forSectionID: id, libraries: libraries, serverID: "s", userID: "u")
+        let restored = NavigationPreferencesStore(directory: directory)
+        restored.load(serverID: "s", userID: "u")
+        #expect(restored.hiddenSections(libraries: libraries, serverID: "s", userID: "u").contains { $0.id == id })
+        #expect(restored.visibleSections(libraries: libraries, serverID: "s", userID: "other").contains { $0.id == id })
+        restored.setVisibility(true, forSectionID: id, libraries: [], serverID: "s", userID: "u")
+        #expect(restored.visibleSections(libraries: [], serverID: "s", userID: "u").contains { $0.id == id })
+    }
+
     @Test("Home cannot move or hide, while Settings and Libraries can move but not hide")
     func requiredSectionCapabilities() {
         let store = Self.makeStore()
@@ -143,7 +180,7 @@ struct NavigationPreferencesTests {
         )
         #expect(
             store.hiddenSections(libraries: Self.libraries, serverID: "s", userID: "u").filter { $0.id != "downloaded" && $0.id != "playlists" }.map(\.id)
-                == ["category.tvshows", "category.audiobooks", "category.photos", "category.livetv"]
+                == ["category.tvshows", "category.audiobooks", "category.photos", "category.livetv", "category.collections"]
         )
         #expect(
             store.resolvedSections(libraries: Self.libraries, serverID: "s", userID: "u")
@@ -179,6 +216,7 @@ struct NavigationPreferencesTests {
             "category.audiobooks",
             "category.photos",
             "category.livetv",
+            "category.collections",
         ])
         #expect(
             store.visibleSections(libraries: Self.libraries, serverID: "s", userID: "u").filter { $0.id != "downloaded" && $0.id != "playlists" }.map(\.id)

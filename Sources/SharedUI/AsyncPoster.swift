@@ -6,46 +6,48 @@ import SwiftUI
 /// Replaces Swiftfin's Nuke usage. Uses system Materials + an SF Symbol for the
 /// placeholder/failure states so it feels first-party everywhere.
 struct AsyncPoster: View {
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
-
     let url: URL?
     var contentMode: ContentMode = .fill
     var placeholderSymbol: String = "photo"
     var fallbackURLs: [URL] = []
     var onExhausted: (() async -> Void)?
-    @State private var candidateIndex = 0
-    @State private var exhaustedURLs: [URL]?
-
-    private var urls: [URL] {
-        ArtworkRequestSequence.unique([url].compactMap { $0 } + fallbackURLs)
+    var body: some View {
+        let sequence = ArtworkRequestSequence([url].compactMap { $0 } + fallbackURLs)
+        PosterRequest(sequence: sequence, contentMode: contentMode, placeholderSymbol: placeholderSymbol, onExhausted: onExhausted)
+            // A header-only collection can gain its member cover asynchronously.
+            // Give the replacement sequence a fresh attempt, including its first URL.
+            .id(sequence.urls)
     }
+}
 
-    private var selectedURL: URL? {
-        urls.indices.contains(candidateIndex) ? urls[candidateIndex] : urls.first
-    }
+private struct PosterRequest: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    @State var sequence: ArtworkRequestSequence
+    let contentMode: ContentMode
+    let placeholderSymbol: String
+    let onExhausted: (() async -> Void)?
 
     var body: some View {
-        AsyncImage(url: selectedURL, transaction: Transaction(animation: animation)) { phase in
+        let requestedURL = sequence.currentURL
+        AsyncImage(url: requestedURL, transaction: Transaction(animation: animation)) { phase in
             switch phase {
             case let .success(image):
                 image
                     .resizable()
                     .aspectRatio(contentMode: contentMode)
             case let .failure(error):
-                placeholder.task(id: selectedURL) {
-                    guard !Task.isCancelled, !GusError(from: error).isCancellation else { return }
-                    if candidateIndex + 1 < urls.count {
-                        DiagnosticsHub.shared.record(.artworkFallback)
-                        candidateIndex += 1
-                    } else if exhaustedURLs != urls {
-                        exhaustedURLs = urls
-                        await onExhausted?()
+                placeholder.task {
+                    guard let requestedURL, !Task.isCancelled, !GusError(from: error).isCancellation else { return }
+                    switch sequence.failed(requestedURL) {
+                    case .advanced: DiagnosticsHub.shared.record(.artworkFallback)
+                    case .exhausted: await onExhausted?()
+                    case .ignored: break
                     }
                 }
             case .empty:
                 placeholder.overlay {
-                    if selectedURL != nil {
+                    if requestedURL != nil {
                         ProgressView()
                     }
                 }
@@ -53,10 +55,9 @@ struct AsyncPoster: View {
                 placeholder
             }
         }
-        .onChange(of: urls) { _, _ in
-            candidateIndex = 0
-            exhaustedURLs = nil
-        }
+        // AsyncImage may retain its previous phase while changing URLs. Its
+        // failure task must belong to the request which produced that phase.
+        .id(requestedURL)
     }
 
     private var animation: Animation? {

@@ -155,6 +155,8 @@ struct AddToMediaCollectionView: View {
                                     Spacer(); Image(systemName: "checkmark")
                                 }
                             }
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .contentShape(Rectangle())
                         }
                         .disabled(!canAdd(to: collection))
                     }
@@ -327,6 +329,7 @@ private struct CollectionSearchResults: View {
                                 Image(systemName: "checkmark")
                             }
                         }
+                        .contentShape(Rectangle())
                     }
                     .disabled(existing.contains(id))
                     .accessibilityAddTraits(existing.contains(id) || selected[id] != nil ? .isSelected : [])
