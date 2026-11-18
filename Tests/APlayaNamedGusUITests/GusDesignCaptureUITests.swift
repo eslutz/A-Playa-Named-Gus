@@ -581,16 +581,14 @@
             XCTAssertTrue(movies.staticTexts["Recently Added Movies"].firstMatch.waitForExistence(timeout: 30))
             XCTAssertFalse(movies.staticTexts["Some Content Could Not Be Refreshed"].exists)
             XCTAssertTrue(openDestination("Movies", movies))
-            let names = media.filter { $0["type"] == "BoxSet" }.compactMap { $0["name"] }
-            XCTAssertFalse(names.isEmpty)
-            let collection = movies.buttons.matching(NSPredicate(format: "label IN %@", names)).firstMatch
-            XCTAssertTrue(collection.waitForExistence(timeout: 30))
-            XCTAssertFalse(movies.staticTexts["Some collection memberships could not be loaded. Refresh to retry."].exists)
+            let collectionsLink = movies.buttons["Library.collections"]
+            XCTAssertTrue(collectionsLink.waitForExistence(timeout: 10))
             let mode = try XCTUnwrap(button("Library.displayMode", movies))
             mode.tap()
             capture("movies-list")
             mode.tap()
             capture("movies-grid")
+            XCTAssertTrue(collectionsLink.isHittable)
         }
 
         func testMusicDisplayModes() {
@@ -640,8 +638,7 @@
             }
             let collections = launch("home")
             XCTAssertTrue(waitForRoot(collections))
-            if openDestination("Movies", collections), let all = button("See All", collections) {
-                all.tap()
+            if openDestination("Collections", collections) {
                 capture("collections-grid")
                 if let collection = media.first(where: { $0["type"] == "BoxSet" }), let name = collection["name"] {
                     let row = collections.buttons.matching(NSPredicate(format: "label CONTAINS %@", name)).firstMatch
@@ -1126,11 +1123,7 @@
             field.tap()
             field.typeText(name)
             XCTAssertEqual(field.value as? String, name)
-            let hideKeyboard = app.keyboards.buttons["Hide keyboard"].firstMatch
-            if hideKeyboard.isHittable {
-                hideKeyboard.tap()
-                XCTAssertTrue(app.keyboards.firstMatch.waitForNonExistence(timeout: 5))
-            }
+            field.typeText("\n")
             let create = app.buttons["Create and Add"].firstMatch
             XCTAssertTrue(create.isEnabled)
             create.tap()
@@ -1160,6 +1153,7 @@
                 XCTAssertTrue(closeSearch.waitForExistence(timeout: 5))
                 closeSearch.tap()
             }
+            XCTAssertTrue(add.isEnabled)
             add.tap()
             XCTAssertTrue(app.staticTexts["Fixture Audiobook"].firstMatch.waitForExistence(timeout: 15))
             openShelf("Audiobooks", in: app)
@@ -1168,6 +1162,14 @@
             XCTAssertFalse(app.staticTexts["Empty Collection"].firstMatch.exists)
             app.buttons["All"].firstMatch.tap()
             XCTAssertTrue(app.staticTexts["Empty Collection"].firstMatch.waitForExistence(timeout: 10))
+
+            openShelf("Movies", in: app)
+            link.tap()
+            XCTAssertTrue(app.staticTexts["No Matching Collections"].waitForExistence(timeout: 10))
+            XCTAssertFalse(collection.exists)
+            openShelf("Collections", in: app)
+            XCTAssertTrue(collection.waitForExistence(timeout: 10))
+            XCTAssertTrue(app.staticTexts["Empty Collection"].firstMatch.exists)
         }
 
         func testFormatsBrowseTheSameMixedLibrarySeparately() {

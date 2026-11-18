@@ -6,8 +6,10 @@ struct CollectionsView: View {
     @State private var creating = false
     @State private var format: CollectionFormat
     let initialFormat: CollectionFormat
+    let movieLibraryID: String?
 
-    init(initialFormat: CollectionFormat = .all) {
+    init(initialFormat: CollectionFormat = .all, movieLibraryID: String? = nil) {
+        self.movieLibraryID = movieLibraryID
         self.initialFormat = initialFormat
         _format = State(initialValue: initialFormat)
     }
@@ -17,7 +19,12 @@ struct CollectionsView: View {
     }
 
     var body: some View {
-        let visible = store.collections.filter { format.includes($0) }.sorted {
+        let libraryID = format == .movies ? movieLibraryID : nil
+        let libraryReady = libraryID.map(store.hasLibraryMembership) ?? true
+        let libraryError = libraryID.flatMap { store.libraryErrors[$0] }
+        let finishedFiltering = format == .all || (store.hasCompleteMembershipCatalog && libraryReady)
+        let eligible = libraryID.map { store.relevant(to: $0) } ?? store.collections.filter { format.includes($0) }
+        let visible = eligible.sorted {
             $0.item.displayTitle.localizedStandardCompare($1.item.displayTitle) == .orderedAscending
         }
         ScrollView {
@@ -27,10 +34,14 @@ struct CollectionsView: View {
                 }
                 .pickerStyle(.segmented)
                 CollectionFeedback(store: store)
-                if store.state == .loading || (format != .all && store.state == .loaded && !store.hasCompleteMembershipCatalog && store.errorMessage == nil) {
+                if let libraryError, let libraryID {
+                    Text(libraryError).foregroundStyle(.secondary)
+                    Button("Retry") { Task { await store.loadLibrary(libraryID) } }
+                }
+                if store.state == .loading || (store.state == .loaded && !finishedFiltering && store.errorMessage == nil && libraryError == nil) {
                     ProgressView()
                 }
-                if visible.isEmpty, store.state == .loaded, format == .all || store.hasCompleteMembershipCatalog {
+                if visible.isEmpty, store.state == .loaded, finishedFiltering, libraryError == nil {
                     if format == .all {
                         ContentUnavailableView("No Collections", systemImage: "rectangle.stack")
                     } else {
@@ -55,58 +66,27 @@ struct CollectionsView: View {
         .sheet(isPresented: $creating) {
             NavigationStack { CollectionEditor(onCreate: { format = .all }) }
         }
-        .task { await store.load() }
-        .refreshable { await store.load(force: true) }
+        .task(id: libraryID == nil ? nil : store.revision) { await store.loadLibrary(libraryID) }
+        .refreshable {
+            await store.load(force: true)
+            if let libraryID {
+                await store.loadLibrary(libraryID)
+            }
+        }
     }
 }
 
 struct CollectionLink: View {
     @Environment(SessionStore.self) private var session
+    @AppStorage(ContentRatingGate.limitDefaultsKey) private var limit = ContentRatingGate.Limit.off
+    @AppStorage(ContentRatingGate.hideUnratedDefaultsKey) private var hideUnrated = false
     let collection: MediaCollection
     var format = CollectionFormat.all
     var body: some View {
+        let urls = collection.coverURLs(using: session.mediaProvider, limit: limit, hideUnrated: hideUnrated)
         NavigationLink(value: MediaCollectionRef(id: collection.id, scope: session.references.scope, format: format)) {
-            PosterCard(title: collection.item.displayTitle, subtitle: String(localized: "Collection"), statusItem: collection.item, imageURL: session.mediaProvider.primaryImageURL(for: collection.item, context: .posterGrid), placeholderSymbol: "rectangle.stack", fallbackURLs: session.mediaProvider.artworkURLs(for: collection.item, request: .init(role: .poster, maxWidth: 360)))
+            PosterCard(title: collection.item.displayTitle, subtitle: String(localized: "Collection"), statusItem: collection.item, imageURL: urls.first, placeholderSymbol: "rectangle.stack", fallbackURLs: Array(urls.dropFirst()))
         }.posterNavigationStyle()
-    }
-}
-
-/// Discovery loads separately from the movie grid and never replaces its loading state.
-struct MovieCollectionsShelf: View {
-    @Environment(RootNavigationState.self) private var root
-    @Environment(SessionStore.self) private var session
-    let libraryID: String?
-    private var store: CollectionStore {
-        root.collectionStore(session: session)
-    }
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                Text("Collections").font(.title2.bold())
-                Spacer()
-                NavigationLink("See All", value: CollectionsRef(scope: session.references.scope))
-            }
-            if store.state == .loading {
-                ProgressView()
-            }
-            if let message = store.discoveryError(libraryID: libraryID) {
-                Text(message).font(.caption).foregroundStyle(.secondary)
-                Button("Retry") { Task { await store.load(force: true); await store.loadLibrary(libraryID) } }
-            }
-            ScrollView(.horizontal) {
-                LazyHStack(alignment: .top, spacing: PosterGrid.spacing) {
-                    ForEach(store.relevant(to: libraryID)) { collection in
-                        CollectionLink(collection: collection).frame(width: MediaRailMetrics.itemWidth(for: .poster))
-                            .gusTVFocus(id: collection.id, section: "collectionShelf:" + (libraryID ?? "movies"), ids: store.relevant(to: libraryID).map(\.id), item: collection.item)
-                    }
-                }
-                .gusTVRailPadding()
-            }
-            .gusTVRailViewport()
-        }
-        .gusVisibleContent(.collections, isLoading: store.state.isLoading)
-        .task(id: store.revision) { await store.loadLibrary(libraryID) }
     }
 }
 
@@ -172,6 +152,8 @@ struct MediaCollectionDetailView: View {
     @Environment(RootNavigationState.self) private var root
     @Environment(SessionStore.self) private var session
     @Environment(\.dismiss) private var dismiss
+    @AppStorage(ContentRatingGate.limitDefaultsKey) private var limit = ContentRatingGate.Limit.off
+    @AppStorage(ContentRatingGate.hideUnratedDefaultsKey) private var hideUnrated = false
     let id: String
     var format = CollectionFormat.all
     @State private var sort = CollectionSort.serverDefault
@@ -194,8 +176,10 @@ struct MediaCollectionDetailView: View {
                 CollectionFeedback(store: store)
                 if let collection {
                     let members = admitted(collection)
+                    let urls = collection.coverURLs(using: session.mediaProvider, limit: limit, hideUnrated: hideUnrated)
                     HStack(alignment: .top, spacing: 20) {
-                        AsyncPoster(url: session.mediaProvider.primaryImageURL(for: collection.item, context: .posterGrid), fallbackURLs: session.mediaProvider.artworkURLs(for: collection.item, request: .init(role: .poster, maxWidth: 360))).frame(width: artworkWidth, height: artworkWidth * 1.5)
+                        ArtworkTile(url: urls.first, contentMode: .fit, placeholderSymbol: "rectangle.stack", fallbackURLs: Array(urls.dropFirst()))
+                            .frame(width: artworkWidth)
                         VStack(alignment: .leading, spacing: 12) {
                             Text(collection.item.displayTitle).font(collectionTitleFont)
                             if collection.membersLoaded {
@@ -284,7 +268,8 @@ struct MediaCollectionDetailView: View {
             Text(title).font(.title2.bold())
             LazyVGrid(columns: PosterGrid.columns, spacing: PosterGrid.spacing) {
                 ForEach(sort.sorted(members), id: \.id) { item in
-                    NavigationLink(value: ItemRef(item: item)) { PosterCard(item: item, imageURL: session.mediaProvider.primaryImageURL(for: item, context: .posterGrid), fallbackURLs: session.mediaProvider.artworkURLs(for: item, request: .init(role: .poster, maxWidth: 360))) }
+                    let urls = session.mediaProvider.artworkURLs(for: item, request: .init(role: item.coverArtworkRole, maxWidth: 360))
+                    NavigationLink(value: ItemRef(item: item)) { PosterCard(item: item, imageURL: urls.first, fallbackURLs: Array(urls.dropFirst())) }
                         .posterNavigationStyle()
                         .gusTVFocus(id: item.id ?? "", section: "collection:" + id, ids: sort.sorted(members).compactMap(\.id), item: item)
                         .mediaItemContextMenu(item: item, groupName: collection.item.displayTitle, canRemove: CollectionPlatform.canManage && store.capabilities.removeMembers && store.canSubmitMutations && store.memberErrors[id] == nil, remove: {

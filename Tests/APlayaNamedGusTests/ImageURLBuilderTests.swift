@@ -31,6 +31,40 @@ struct ImageURLBuilderTests {
         #expect(url.path.contains("/Items/series/Images/Backdrop"))
     }
 
+    @Test("Library rows prefer a dedicated thumbnail while the grid keeps the primary banner")
+    func libraryThumbnailCandidates() throws {
+        let client = try JellyfinClientFactory.makeClient(url: #require(URL(string: "https://jellyfin.example.com")))
+        let builder = ImageURLBuilder(client: client)
+        var library = MediaItem(backdropImageTags: ["scenery"], id: "library", imageTags: ["Primary": "banner", "Thumb": "thumbnail"])
+        let request = MediaArtworkRequest(role: .libraryThumbnail, maxWidth: 288)
+
+        let candidates = builder.artworkURLs(for: library, request: request)
+        #expect(candidates.map(\.lastPathComponent) == ["Thumb", "Backdrop", "Primary"])
+        #expect(candidates.first?.query?.contains("tag=thumbnail") == true)
+        #expect(builder.primaryImageURL(for: library, context: .posterGrid)?.lastPathComponent == "Primary")
+
+        library.imageTags["Thumb"] = nil
+        library.backdropImageTags = []
+        #expect(builder.artworkURLs(for: library, request: request).map(\.lastPathComponent) == ["Primary"])
+    }
+
+    @Test("A late 404 for a collection header cannot advance its new member cover")
+    func changingCoverCandidates() throws {
+        let header = try #require(URL(string: "https://example.invalid/header"))
+        let cover = try #require(URL(string: "https://example.invalid/member"))
+        var original = ArtworkRequestSequence([header])
+        #expect(original.failed(header) == .exhausted)
+
+        var updated = ArtworkRequestSequence([cover, header, cover])
+        #expect(updated.failed(header) == .ignored)
+        #expect(updated.currentURL == cover)
+        #expect(updated.failed(cover) == .advanced)
+        #expect(updated.currentURL == header)
+        #expect(updated.failed(cover) == .ignored)
+        #expect(updated.failed(header) == .exhausted)
+        #expect(updated.failed(header) == .ignored)
+    }
+
     @Test("builds public user avatar URLs")
     func buildsPublicUserAvatarURLs() throws {
         let client = try JellyfinClientFactory.makeClient(url: #require(URL(string: "https://jellyfin.example.com")))

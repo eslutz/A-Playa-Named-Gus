@@ -1,6 +1,5 @@
 import SwiftUI
 
-/// Movie discovery and its paginated grid keep independent load states.
 struct LibraryGridView: View {
     @Environment(RootNavigationState.self) private var navigationState
     @Environment(SessionStore.self) private var session
@@ -32,14 +31,6 @@ struct LibraryGridView: View {
         self.scope = scope
     }
 
-    private var isMovies: Bool {
-        switch scope {
-        case let .library(item): item.collectionType == .movies
-        case let .category(category): category == .movies
-        case .photoLibrary, .musicLibrary, .latest: false
-        }
-    }
-
     private var isPhotos: Bool {
         switch scope {
         case let .library(item): item.collectionType == .photos
@@ -49,11 +40,14 @@ struct LibraryGridView: View {
         }
     }
 
-    private var bookCollectionFormat: CollectionFormat {
+    private var collectionFormat: CollectionFormat? {
         switch scope {
+        case .category(.movies): .movies
+        case let .library(item) where item.collectionType == .movies: .movies
         case .category(.books): .books
         case .category(.audiobooks): .audiobooks
-        default: .all // A Jellyfin Books library may contain both formats.
+        case let .library(item) where item.collectionType == .books: .all // A library may contain both book formats.
+        default: nil
         }
     }
 
@@ -100,10 +94,8 @@ struct LibraryGridView: View {
                     .focusSection()
                     .padding(.bottom, 24)
                 #endif
-                if isMovies {
-                    MovieCollectionsShelf(libraryID: scope.parentID)
-                } else if scope.groupsBookSeries {
-                    NavigationLink(value: CollectionsRef(scope: session.references.scope, format: bookCollectionFormat)) {
+                if let collectionFormat {
+                    NavigationLink(value: CollectionsRef(scope: session.references.scope, format: collectionFormat, movieLibraryID: collectionFormat == .movies ? scope.parentID : nil)) {
                         Label("Collections", systemImage: "rectangle.stack")
                     }
                     .accessibilityIdentifier("Library.collections")
@@ -172,12 +164,7 @@ struct LibraryGridView: View {
         .gusVisibleContent(.library(effectiveScope.storeIdentity), isLoading: store?.isLoading ?? true)
         .scrollPosition(id: navigationState.scrollBinding(for: "library:" + scope.storeIdentity))
         .lookToScroll()
-        .refreshable {
-            await store?.load()
-            if isMovies {
-                await navigationState.collectionStore(session: session).load(force: true); await navigationState.collectionStore(session: session).loadLibrary(scope.parentID)
-            }
-        }
+        .refreshable { await store?.load() }
     }
 
     @ViewBuilder private func grid(_ store: LibraryStore) -> some View {

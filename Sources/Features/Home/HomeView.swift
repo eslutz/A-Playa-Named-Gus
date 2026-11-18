@@ -523,6 +523,7 @@ private struct BackdropCard: View {
 /// Persistent Libraries destination used by tabs, sidebars, and menu routes.
 /// Shares the root container's `HomeStore` with `HomeView`.
 struct LibrariesLandingView: View {
+    @Environment(SessionStore.self) private var session
     @Environment(RootNavigationState.self) private var navigationState
     private var showsGrid: Bool {
         get { navigationState.librariesShowGrid }
@@ -586,12 +587,16 @@ struct LibrariesLandingView: View {
             Group {
                 if usesList {
                     List(store.libraries, id: \.id) { library in
+                        let urls = session.mediaProvider.artworkURLs(for: library, request: .init(role: .libraryThumbnail, maxWidth: 288))
                         NavigationLink(value: LibraryRef(item: library)) {
                             HStack(spacing: 16) {
-                                Image(systemName: library.librarySymbol)
-                                    .font(.title2).foregroundStyle(.blue)
-                                    .frame(width: 54, height: 54)
-                                    .background(.quaternary, in: RoundedRectangle(cornerRadius: 12))
+                                ArtworkTile(
+                                    url: urls.first, aspectRatio: 16.0 / 9.0, contentMode: .fit,
+                                    placeholderSymbol: library.librarySymbol, fallbackURLs: Array(urls.dropFirst())
+                                )
+                                .frame(width: 96)
+                                .clipShape(RoundedRectangle(cornerRadius: 8))
+                                .accessibilityHidden(true)
                                 Text(library.displayTitle).font(.body.weight(.medium))
                             }
                             .padding(.vertical, 8)

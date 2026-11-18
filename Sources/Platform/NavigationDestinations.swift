@@ -128,7 +128,7 @@ private struct ScopedCollectionsDestination: View {
     let ref: CollectionsRef
     var body: some View {
         if ref.scope == session.references.scope {
-            CollectionsView(initialFormat: ref.format)
+            CollectionsView(initialFormat: ref.format, movieLibraryID: ref.movieLibraryID)
         } else {
             ContentUnavailableView("Collections Unavailable", systemImage: "rectangle.stack")
         }

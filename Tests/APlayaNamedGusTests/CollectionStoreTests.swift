@@ -8,6 +8,34 @@ struct CollectionStoreTests {
         SessionStore(client: JellyfinClientFactory.makeClient(url: URL(string: "https://example.invalid")!), user: StoredUser(id: userID, name: "User", serverID: serverID), server: ServerConnection(id: serverID, name: "Server", url: URL(string: "https://example.invalid")!), mediaProvider: provider)
     }
 
+    @Test func explicitCollectionCoverPrecedesStableMemberFallbacks() {
+        let bare = MediaItem(id: "bare", type: .book)
+        let audio = MediaItem(albumID: "album", albumPrimaryImageTag: "cover", id: "audio", type: .audioBook)
+        let book = MediaItem(id: "book", imageTags: ["Primary": "cover"], type: .book)
+        var collection = MediaCollection(item: .init(id: "box", imageTags: ["Primary": "poster"], type: .boxSet), members: [bare, audio, book], membersLoaded: true)
+        #expect(collection.coverItems(limit: .off, hideUnrated: false).map(\.id) == ["box", "audio", "book"])
+        #expect(audio.coverArtworkRole == .square)
+        collection.item.imageTags = [:]
+        let headerOnly = MediaCollection(item: collection.item)
+        #expect(headerOnly.coverItems(limit: .off, hideUnrated: false).isEmpty)
+        #expect(collection.coverItems(limit: .off, hideUnrated: false).map(\.id) == ["audio", "book", "box"])
+        collection.members = [bare, .init(id: "another", type: .book)]
+        #expect(collection.coverItems(limit: .off, hideUnrated: false).map(\.id) == ["bare", "another", "box"])
+        collection.members = []
+        #expect(collection.coverItems(limit: .off, hideUnrated: false).map(\.id) == ["box"])
+    }
+
+    @Test func restrictedCollectionUsesOnlyAdmittedMemberCovers() {
+        let hidden = MediaItem(id: "hidden", imageTags: ["Primary": "cover"], officialRating: "R", type: .book)
+        let unrated = MediaItem(id: "unrated", imageTags: ["Thumb": "cover"], type: .audioBook)
+        let admitted = MediaItem(id: "visible", imageTags: ["Primary": "cover"], officialRating: "G", type: .book)
+        let header = MediaItem(id: "box", imageTags: ["Primary": "server-mosaic"], type: .boxSet)
+        var collection = MediaCollection(item: header, members: [hidden, unrated, admitted], membersLoaded: true)
+        #expect(collection.coverItems(limit: .general, hideUnrated: true).map(\.id) == ["visible"])
+        collection.members = [hidden, unrated, header]
+        #expect(collection.coverItems(limit: .general, hideUnrated: true).isEmpty)
+    }
+
     @Test func collectionSortPreservesDefaultAndPlacesUnknownDatesLast() {
         let movie = MediaItem(id: "one", name: "Z", premiereDate: Date(timeIntervalSince1970: 100), type: .movie)
         let unknown = MediaItem(id: "two", name: "A", type: .movie)

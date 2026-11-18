@@ -33,7 +33,7 @@ final class CollectionStore {
     private(set) var revision = 0
     private(set) var memberErrors: [String: String] = [:]
     private var libraryMovieIDs: [String: Set<String>] = [:]
-    private var libraryErrors: [String: String] = [:]
+    private(set) var libraryErrors: [String: String] = [:]
     private var staleLibraryIDs: Set<String> = []
     private var libraryTasks: [String: Task<Void, Never>] = [:]
     private var generation = 0
@@ -69,8 +69,8 @@ final class CollectionStore {
         return collections.filter { $0.members.contains { $0.type == .movie && $0.id.map(ids.contains) == true && ContentRatingGate.admitsStored($0) } }
     }
 
-    func discoveryError(libraryID: String?) -> String? {
-        libraryID.flatMap { libraryErrors[$0] } ?? errorMessage
+    func hasLibraryMembership(_ libraryID: String) -> Bool {
+        libraryMovieIDs[libraryID] != nil
     }
 
     func permissions(for id: String) -> CollectionCapabilities {
@@ -130,7 +130,7 @@ final class CollectionStore {
         libraryTasks.values.forEach { $0.cancel() }; libraryTasks = [:]
         refreshAgain = false
         // Headers become visible before all member pages finish. Re-entering
-        // Movies must resume an interrupted refresh even with a cached shelf.
+        // the browser must resume an interrupted refresh even with cached headers.
         state = interruptedRefresh || collections.isEmpty ? .idle : .loaded
     }
 

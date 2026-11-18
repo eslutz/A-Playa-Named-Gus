@@ -4,6 +4,7 @@ import JellyfinAPI
 /// The visual purpose of artwork determines candidate identity and aspect ratio.
 enum MediaArtworkRole: Equatable, Sendable {
     case poster
+    case libraryThumbnail
     case episodeStill
     case backdrop
     case square
@@ -74,8 +75,8 @@ struct ImageURLBuilder {
     /// represents its series before trying the episode's own landscape primary.
     func artworkURLs(for item: MediaItem, request: MediaArtworkRequest) -> [URL] {
         // Generic search and library cards have no membership snapshot from which
-        // to choose an admitted fallback. Never fetch an unverified playlist mosaic.
-        if item.type == .playlist, ContentRatingGate.storedLimit() != .off {
+        // to choose an admitted fallback. Never fetch an unverified member mosaic.
+        if item.type == .playlist || item.type == .boxSet, ContentRatingGate.storedLimit() != .off {
             return []
         }
         let role = request.role
@@ -94,7 +95,17 @@ struct ImageURLBuilder {
         let candidates: [URL?]
         switch role {
         case .poster:
-            candidates = item.type == .episode ? [seriesPrimary, ownPrimary, thumb, ownBackdrop, parentBackdrop] : [ownPrimary, seriesPrimary, thumb, ownBackdrop, parentBackdrop]
+            switch item.type {
+            case .boxSet:
+                candidates = item.imageTags["Primary"] == nil ? [thumb, ownBackdrop, ownPrimary] : [ownPrimary, thumb, ownBackdrop]
+            case .episode:
+                candidates = [seriesPrimary, ownPrimary, thumb, ownBackdrop, parentBackdrop]
+            default:
+                candidates = [ownPrimary, seriesPrimary, thumb, ownBackdrop, parentBackdrop]
+            }
+        case .libraryThumbnail:
+            // A library can supply a separate Thumb without the title baked into its grid banner.
+            candidates = [thumb, ownBackdrop, ownPrimary]
         case .episodeStill:
             let landscapePrimary = item.primaryImageAspectRatio.map { $0 >= 1.33 } ?? true
             candidates = [landscapePrimary ? ownPrimary : nil, thumb, ownBackdrop, parentBackdrop]

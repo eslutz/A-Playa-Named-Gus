@@ -299,7 +299,7 @@ extension MediaProviderSession {
         case .photo, .avatar: return primary.map { [$0] } ?? []
         case .chapter: return []
         case .poster, .square: return ArtworkRequestSequence.unique([primary, backdrop].compactMap { $0 })
-        case .episodeStill, .backdrop: return ArtworkRequestSequence.unique([backdrop, primary].compactMap { $0 })
+        case .episodeStill, .backdrop, .libraryThumbnail: return ArtworkRequestSequence.unique([backdrop, primary].compactMap { $0 })
         }
     }
 

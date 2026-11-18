@@ -58,6 +58,8 @@ struct BookShelfView: View {
 
 private struct BookSeriesLabel: View {
     @Environment(SessionStore.self) private var session
+    @AppStorage(ContentRatingGate.limitDefaultsKey) private var limit = ContentRatingGate.Limit.off
+    @AppStorage(ContentRatingGate.hideUnratedDefaultsKey) private var hideUnrated = false
     let series: BookSeries
     let showsList: Bool
     let complete: Bool
@@ -105,7 +107,7 @@ private struct BookSeriesLabel: View {
 
     private var covers: some View {
         let aspect: CGFloat = series.id.format == .audioBook ? 1 : 2.0 / 3.0
-        let books = Array(series.members.prefix(3))
+        let books = ContentRatingGate.coverMembers(series.members, limit: limit, hideUnrated: hideUnrated, count: 3)
         return Color.clear.aspectRatio(aspect, contentMode: .fit)
             .overlay {
                 GeometryReader { geometry in
@@ -113,7 +115,8 @@ private struct BookSeriesLabel: View {
                     let inset = CGFloat(max(0, books.count - 1)) * step
                     ForEach(books.indices.reversed(), id: \.self) { index in
                         let item = books[index]
-                        ArtworkTile(url: session.mediaProvider.primaryImageURL(for: item, context: .posterGrid), aspectRatio: aspect, placeholderSymbol: "book", fallbackURLs: session.mediaProvider.artworkURLs(for: item, request: .init(role: .poster, maxWidth: 360)))
+                        let urls = session.mediaProvider.artworkURLs(for: item, request: .init(role: item.coverArtworkRole, maxWidth: showsList ? 144 : 360))
+                        ArtworkTile(url: urls.first, aspectRatio: aspect, placeholderSymbol: "book", fallbackURLs: Array(urls.dropFirst()))
                             .clipShape(RoundedRectangle(cornerRadius: showsList ? 4 : 8))
                             .frame(width: max(0, geometry.size.width - inset))
                             .offset(x: CGFloat(index) * step, y: CGFloat(books.count - index - 1) * step)

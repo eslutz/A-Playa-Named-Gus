@@ -329,6 +329,17 @@ extension MediaItem {
         }
     }
 
+    /// Audio covers may belong to the album. Other titles use the poster sequence,
+    /// including the tagged series cover when the item has one.
+    var coverArtworkRole: MediaArtworkRole {
+        isAudioPlayable && albumID != nil && albumPrimaryImageTag != nil ? .square : .poster
+    }
+
+    var hasTaggedCoverArtwork: Bool {
+        imageTags["Primary"] != nil || imageTags["Thumb"] != nil || !backdropImageTags.isEmpty ||
+            (seriesID != nil && seriesPrimaryImageTag != nil) || coverArtworkRole == .square
+    }
+
     var isBookFormat: Bool {
         type == .book || type == .audioBook
     }

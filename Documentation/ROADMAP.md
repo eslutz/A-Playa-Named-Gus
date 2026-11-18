@@ -682,17 +682,17 @@ milestone once it becomes the active focus and is ready to carry a hard acceptan
 
 - [x] **Customizable main navigation.** Let users choose from Settings which sections are
  visible in the primary app menu/tab/sidebar and in what order, while keeping Home fixed at
- the start and Settings fixed at the end. *Acceptance:* users can hide and reorder all
- intermediate navigation items with native edit controls, the preference persists per app
+ the start. *Acceptance:* users can hide optional sections and reorder movable sections
+ with native edit controls, the preference persists per app
  user, unavailable provider sections are handled gracefully, and each platform still
  preserves its native tab, sidebar, or focus behavior. *(Done:
  `NavigationPreferencesStore` persists per-account order/visibility for the Libraries
- grid plus consolidated categories (Movies, Shows, Music, Books, Photos, Live TV);
+ grid plus consolidated categories (Movies, Shows, Music, Books, Audiobooks, Photos, Live TV, Collections);
  Settings → Navigation edits with toggles and move controls that work on every platform
  including tvOS focus; all three roots (tabs, visionOS sidebar, split view) render the
- customized sections dynamically; removed categories drop gracefully and newly available
- categories append visible; `gus://` routes map onto
- the customized layout with a Home fallback when Libraries is hidden. visionOS keeps
+ customized sections dynamically. Visibility follows available library types unless the
+ user explicitly shows or hides a category. Saved order controls the first three
+ direct iPhone tabs. visionOS keeps
  up to eight sections direct; above eight it shows the first seven in resolved order
  plus More, retaining each section's navigation history. Removing overflow returns a
  selected More root to the first direct section.)*
@@ -1023,7 +1023,8 @@ October 12 pipeline policy supersedes direct-main publication: main now requires
 
 ## Native collections — implementation candidate
 
-- [~] Collections appear on Movies shelves and through a Collections link in Books and Audiobooks. Format filters use accessible member titles. All includes empty collections. Mixed collections show each format in its own section.
+- [~] Movies, Books and Audiobooks each link to Collections with the corresponding format selected. A movie library limits the Movies filter to collections with an accessible movie in that library. The customizable Collections tab opens All, including empty and mixed collections.
+- [~] Collection cards and details use Jellyfin collection artwork with a member cover as fallback. When a content-rating limit is active, only permitted member artwork is used. Library list rows prefer the library's Thumb, followed by its backdrop and primary image.
 - [~] Online creation, metadata/artwork edits, multi-select for movies, books and audiobooks, and membership removal respect Jellyfin permissions. Books and audiobooks support collection editing on iPhone, iPad, Mac and Vision Pro, and browsing on Apple TV. Membership changes preserve each title’s series metadata and playback or reading progress.
 - [x] Isolated Jellyfin 10.11.11 and 12.4.0 servers confirmed ebook, audiobook and mixed collection membership after a fresh sign-in. Deleting populated collections preserved the original titles.
 - [x] Authenticated collection create/edit/membership/artwork/delete readbacks passed against the isolated Jellyfin demo, including multiple memberships and preservation of member playback state.
