@@ -97,6 +97,105 @@ struct CollectionStoreTests {
         #expect(store.errorMessage != nil)
     }
 
+    @Test func mixedFormatWritesConfirmOnlyTheRequestedMemberships() async {
+        let provider = FakeMediaProviderSession(capabilities: .init())
+        let store = CollectionStore(session: session(provider))
+        let id = "c0000000000000000000000000000001"
+        let returnedID = "C0000000-0000-0000-0000-000000000001"
+        let book = MediaItem(id: "book", type: .book)
+        let audio = MediaItem(id: "audio", type: .audioBook)
+        var members = [MediaItem]()
+        var headers = [MediaItem]()
+        provider.collectionPageHandler = { _, _ in .init(items: headers, totalRecordCount: headers.count) }
+        provider.collectionMembersHandler = { _, _, _ in .init(items: members, totalRecordCount: members.count) }
+        #expect(await store.mutate(verifying: .contains([])) {
+            headers = [.init(id: id, type: .boxSet)]
+            return returnedID
+        })
+        #expect(store.collection(id)?.members.isEmpty == true)
+        #expect(await store.mutate(collectionID: id, verifying: .contains(["book", "audio"])) {
+            members = [book, audio, MediaItem(id: "another-user-added", type: .movie)]
+            return id
+        })
+        #expect(store.actionOutcome == .confirmed)
+        #expect(store.memberships(for: "audio").map(\.id) == [id])
+        #expect(await store.mutate(collectionID: id, verifying: .excludes(["audio"])) {
+            members.removeAll { $0.id == "audio" }
+            return id
+        })
+        #expect(store.collection(id)?.members.map(\.id) == ["book", "another-user-added"])
+        provider.itemHandler = { _ in throw GusError.notFound }
+        #expect(await store.mutate(collectionID: id, verifying: .deleted) {
+            headers = []
+            return id
+        })
+        #expect(store.collection(id) == nil)
+        #expect(store.actionOutcome == .confirmed)
+    }
+
+    @Test func acknowledgedPartialSeedRequiresReviewWithoutRepeatingTheWrite() async {
+        let provider = FakeMediaProviderSession(capabilities: .init())
+        let store = CollectionStore(session: session(provider))
+        var calls = 0
+        provider.collectionPageHandler = { _, _ in .init(items: [.init(id: "box", type: .boxSet), .init(id: "other", type: .boxSet)], totalRecordCount: 2) }
+        provider.collectionMembersHandler = { id, _, _ in
+            if id == "other" {
+                throw GusError.offline
+            }
+            return .init(items: [.init(id: "book", type: .book)], totalRecordCount: 1)
+        }
+        #expect(await store.mutate(verifying: .contains(["book", "audio"])) { calls += 1; return "box" } == false)
+        #expect(store.actionOutcome == .uncertain)
+        #expect(!store.hasCompleteMembershipCatalog)
+        #expect(store.canKeepCurrentServerState)
+        #expect(store.reviewedCollection?.members.map(\.id) == ["book"])
+        #expect(await store.mutate { calls += 1; return "duplicate" } == false)
+        store.keepCurrentServerState()
+        #expect(await store.mutate(collectionID: "box", verifying: .contains(["book"])) { calls += 1; return "box" })
+        #expect(store.actionOutcome == .confirmed)
+        #expect(calls == 2)
+        #expect(store.reviewCollectionID == nil)
+    }
+
+    @Test func absentFromVisibleCatalogDoesNotProveDeletion() async {
+        let provider = FakeMediaProviderSession(capabilities: .init())
+        provider.collectionPageHandler = { _, _ in .init(items: [], totalRecordCount: 0) }
+        var itemReads = [String]()
+        provider.itemHandler = { id in
+            itemReads.append(id)
+            return MediaItem(id: id, type: .boxSet)
+        }
+        let store = CollectionStore(session: session(provider))
+        #expect(await store.mutate(collectionID: "hidden", verifying: .deleted) { "hidden" } == false)
+        #expect(itemReads == ["hidden"])
+        #expect(store.actionOutcome == .uncertain)
+        #expect(store.needsMutationReview)
+    }
+
+    @Test func staleOrOverlappingMembershipPagesCannotConfirmRemoval() async {
+        let provider = FakeMediaProviderSession(capabilities: .init())
+        let store = CollectionStore(session: session(provider))
+        provider.collectionPageHandler = { _, _ in .init(items: [.init(id: "box", type: .boxSet)], totalRecordCount: 1) }
+        provider.collectionMembersHandler = { _, _, _ in .init(items: [], totalRecordCount: 0) }
+        await store.load()
+        #expect(store.hasCompleteMembershipCatalog)
+        provider.collectionMembersHandler = { _, offset, _ in
+            let ids = offset == 0 ? ["a", "b"] : ["b", "c"]
+            return .init(items: ids.map { .init(id: $0, type: .book) }, totalRecordCount: 4)
+        }
+        #expect(await store.mutate(collectionID: "box", verifying: .excludes(["audio"])) { "box" } == false)
+        #expect(!store.hasCompleteMembershipCatalog)
+        #expect(!store.canKeepCurrentServerState)
+        #expect(store.memberErrors["box"] != nil)
+        provider.collectionMembersHandler = { _, _, _ in .init(items: [.init(id: "audio", type: .audioBook)], totalRecordCount: 1) }
+        await store.load(force: true)
+        #expect(store.canKeepCurrentServerState)
+        #expect(store.reviewedCollection?.members.map(\.id) == ["audio"])
+        store.keepCurrentServerState()
+        #expect(await store.mutate(collectionID: "box", verifying: .deleted) { "box" } == false)
+        #expect(store.actionOutcome == .uncertain)
+    }
+
     @Test("an uncertain collection create requires fresh server review before another write", arguments: [GusError.timeout, .offline, .network("Lost response")])
     func uncertainCreateRequiresReview(failure: GusError) async {
         let provider = FakeMediaProviderSession(capabilities: .init())

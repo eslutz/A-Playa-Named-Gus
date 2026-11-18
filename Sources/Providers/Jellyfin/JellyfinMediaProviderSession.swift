@@ -635,6 +635,9 @@ final class JellyfinMediaProviderSession: MediaProviderSession {
     private func collectionQuery(parentID: String?, startIndex: Int, limit: Int) async throws -> MediaItemPage {
         let parameters = Paths.GetItemsParameters(userID: userID, startIndex: startIndex, limit: limit, isRecursive: parentID == nil, parentID: parentID, fields: parentID == nil ? Self.metadataFields : Self.playbackMetadataFields, includeItemTypes: parentID == nil ? [.boxSet] : nil, sortBy: parentID == nil ? [.sortName] : nil, enableUserData: true, enableTotalRecordCount: true, enableImages: true)
         let page = try await NetworkRetryPolicy.idempotent.run { try await client.browse(Paths.getItems(parameters: parameters)) }.value
+        guard page.items != nil || page.totalRecordCount == 0 else {
+            throw GusError.server(String(localized: "The server returned an incomplete collection. Try again."))
+        }
         return MediaItemPage(items: JellyfinMediaItemMapper.mediaItems(from: page.items ?? []), totalRecordCount: page.totalRecordCount)
     }
 
@@ -648,7 +651,11 @@ final class JellyfinMediaProviderSession: MediaProviderSession {
     func createCollection(name: String, itemIDs: [String]) async throws -> String {
         do {
             let result = try await client.send(Paths.createCollection(parameters: .init(name: name, ids: itemIDs))).value
-            guard let id = result.id else { throw GusError.notFound }
+            // The server may already have created the collection. An unusable
+            // response requires readback and review before another creation.
+            guard let id = result.id, ServerMediaListID.uuid(id) != nil else {
+                throw DecodingError.dataCorrupted(.init(codingPath: [], debugDescription: "Missing or invalid created collection ID"))
+            }
             return id
         } catch { throw collectionMutationError(error) }
     }

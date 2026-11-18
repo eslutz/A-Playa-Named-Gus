@@ -53,6 +53,14 @@ struct JellyfinMediaListProviderTests {
         }
     }
 
+    @Test("A missing collection result cannot confirm an empty collection or a deletion")
+    func missingCollectionRows() async throws {
+        let fixture = try NativeListFixture(jsonResponses: [("{}", 200), (#"{"TotalRecordCount":0}"#, 200)])
+        defer { fixture.finish() }
+        await #expect(throws: GusError.self) { try await fixture.provider.collectionPage(startIndex: 0, limit: 200) }
+        #expect(try await fixture.provider.collectionMembers(id: itemID, startIndex: 0, limit: 200).items.isEmpty)
+    }
+
     @Test("Playlist loading fetches every page and preserves duplicate occurrence order")
     func playlistPagination() async throws {
         let list = ServerMediaListID.string(listID)
@@ -118,6 +126,16 @@ struct JellyfinMediaListProviderTests {
         #expect(!result.editMetadata && !result.editArtwork && !result.delete)
         #expect(fixture.state.requests[0].url?.path == "/Users/user")
         #expect(fixture.state.requests[1].url?.path == "/Items/\(ServerMediaListID.string(listID))")
+    }
+
+    @Test("A successful creation without a usable collection ID has an unknown outcome", arguments: ["{}", "{\"Id\":\"invalid\"}"])
+    func missingCreatedCollectionID(response: String) async throws {
+        let fixture = try NativeListFixture(jsonResponses: [(response, 200)])
+        defer { fixture.finish() }
+        await #expect(throws: DecodingError.self) {
+            try await fixture.provider.createCollection(name: "Reading", itemIDs: [itemID])
+        }
+        #expect(fixture.state.requests.count == 1)
     }
 
     @Test("Collection metadata updates preserve unedited fields")

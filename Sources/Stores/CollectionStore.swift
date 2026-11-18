@@ -1,6 +1,12 @@
 import Foundation
 import Observation
 
+enum CollectionWriteExpectation {
+    case contains([String])
+    case excludes([String])
+    case deleted
+}
+
 /// Session-owned server snapshots. Collection edits are never journaled locally.
 @MainActor @Observable
 final class CollectionStore {
@@ -14,6 +20,12 @@ final class CollectionStore {
     private(set) var actionOutcome: ActionOutcome?
     private(set) var needsMutationReview = false
     private(set) var canKeepCurrentServerState = false
+    private(set) var reviewCollectionID: String?
+    private var finishedCatalogRead = false
+    var hasCompleteMembershipCatalog: Bool {
+        finishedCatalogRead && collections.allSatisfy { $0.membersLoaded && memberErrors[$0.id] == nil }
+    }
+
     var canSubmitMutations: Bool {
         active && session.isActive && !isMutating && !needsMutationReview
     }
@@ -38,11 +50,17 @@ final class CollectionStore {
     }
 
     func collection(_ id: String) -> MediaCollection? {
-        collections.first { $0.id == id }
+        if let exact = collections.first(where: { $0.id == id }) {
+            return exact
+        }
+        guard let uuid = ServerMediaListID.uuid(id) else { return nil }
+        return collections.first { ServerMediaListID.uuid($0.id) == uuid }
     }
 
-    func memberships(for movieID: String) -> [MediaCollection] {
-        collections.filter { $0.members.contains { $0.id == movieID && ContentRatingGate.admitsStored($0) } }
+    func memberships(for itemID: String) -> [MediaCollection] {
+        collections.filter { collection in
+            ContentRatingGate.admitsStored(collection.item) && collection.members.contains { $0.id == itemID && ContentRatingGate.admitsStored($0) }
+        }
     }
 
     func relevant(to libraryID: String?) -> [MediaCollection] {
@@ -88,6 +106,8 @@ final class CollectionStore {
         active = false
         generation += 1
         actionOutcome = nil
+        reviewCollectionID = nil
+        finishedCatalogRead = false
         canKeepCurrentServerState = false
         loadTask?.cancel()
         detailTasks.values.forEach { $0.cancel() }
@@ -100,6 +120,9 @@ final class CollectionStore {
     /// deleting the last confirmed server snapshot or disabling future visits.
     func cancelForegroundLoads() {
         let interruptedRefresh = loadTask != nil
+        if interruptedRefresh {
+            finishedCatalogRead = false
+        }
         generation += 1
         loadTask?.cancel(); loadTask = nil
         permissionsTask?.cancel(); permissionsTask = nil
@@ -138,6 +161,7 @@ final class CollectionStore {
 
     private func refresh() async {
         let token = generation
+        finishedCatalogRead = false
         state = collections.isEmpty ? .loading : state
         errorMessage = nil
         if needsMutationReview {
@@ -149,7 +173,7 @@ final class CollectionStore {
             guard active, token == generation else { return }
             capabilities = permissions
             permissionsLoaded = true
-            let loadedHeaders = try await MediaPageLoader.collect { offset, size in
+            let loadedHeaders = try await readCollectionPages { offset, size in
                 try await self.session.mediaProvider.collectionPage(startIndex: offset, limit: size)
             }
             try Task.checkCancellation()
@@ -172,12 +196,13 @@ final class CollectionStore {
                 async let fourth: Void = loadIndexedDetail(ids, index: start + 3)
                 _ = await(first, second, third, fourth)
             }
-            if token == generation {
+            if token == generation, !Task.isCancelled {
+                finishedCatalogRead = true
+                if needsMutationReview {
+                    canKeepCurrentServerState = hasReviewSnapshot
+                }
                 if memberErrors.isEmpty {
                     statusMessage = nil
-                    if needsMutationReview {
-                        canKeepCurrentServerState = true
-                    }
                 } else {
                     errorMessage = String(localized: "Some collection memberships could not be loaded. Refresh to retry.")
                 }
@@ -199,6 +224,7 @@ final class CollectionStore {
     }
 
     func loadDetail(id: String, force: Bool = false) async {
+        let id = collection(id)?.id ?? id
         let token = generation
         await loadMembers(id: id, listedHeader: nil, force: force)
         guard active, !Task.isCancelled, token == generation, collection(id) != nil,
@@ -233,16 +259,13 @@ final class CollectionStore {
             } else {
                 item = try await session.mediaProvider.collectionItem(id: id)
             }
-            let loadedMembers = try await MediaPageLoader.collect { offset, size in
+            let loadedMembers = try await readCollectionPages { offset, size in
                 try await self.session.mediaProvider.collectionMembers(id: id, startIndex: offset, limit: size)
             }
             try Task.checkCancellation()
             guard active, token == generation else { return }
-            guard loadedMembers.allSatisfy({ $0.id != nil }) else {
-                throw GusError.server(String(localized: "The server returned an incomplete collection. Try again."))
-            }
             let value = MediaCollection(item: item, members: loadedMembers, membersLoaded: true)
-            if let index = collections.firstIndex(where: { $0.id == id }) {
+            if let index = collections.firstIndex(where: { $0.id == value.id }) {
                 collections[index] = value
             } else if ContentRatingGate.admitsStored(item) {
                 collections.append(value)
@@ -258,6 +281,32 @@ final class CollectionStore {
                 memberErrors[id] = failure.localizedDescription; report(error)
             }
         }
+    }
+
+    /// Overlapping pages can conceal skipped members. A snapshot used to verify
+    /// a removal must contain a distinct identity for every row Jellyfin returned.
+    private func readCollectionPages(_ page: (Int, Int) async throws -> MediaItemPage) async throws -> [MediaItem] {
+        var seen = Set<String>()
+        var expectedTotal: Int?
+        return try await MediaPageLoader.collect { offset, size in
+            let result = try await page(offset, size)
+            if let total = result.totalRecordCount {
+                guard total >= offset + result.items.count, expectedTotal == nil || total == expectedTotal else {
+                    throw GusError.server(String(localized: "The server returned an incomplete collection. Try again."))
+                }
+                expectedTotal = total
+            }
+            for item in result.items {
+                guard let id = item.id, !id.isEmpty, seen.insert(Self.identity(id)).inserted else {
+                    throw GusError.server(String(localized: "The server returned an incomplete collection. Try again."))
+                }
+            }
+            return result
+        }
+    }
+
+    private static func identity(_ id: String) -> String {
+        ServerMediaListID.uuid(id).map(ServerMediaListID.string) ?? id
     }
 
     func loadLibrary(_ id: String?) async {
@@ -326,28 +375,53 @@ final class CollectionStore {
     }
 
     @discardableResult
-    func mutate(_ operation: () async throws -> String?) async -> Bool {
+    func mutate(collectionID: String? = nil, verifying expectation: CollectionWriteExpectation? = nil, _ operation: () async throws -> String?) async -> Bool {
         guard canSubmitMutations, !Task.isCancelled else { return false }
         isMutating = true; errorMessage = nil; statusMessage = nil
         actionOutcome = .pending
+        reviewCollectionID = collectionID
         canKeepCurrentServerState = false
         defer { isMutating = false }
         do {
-            _ = try await operation()
+            let returnedID = try await operation()
             // Visibility supersedes reads, but a transmitted write still belongs
             // to this immutable session and must retain its accepted/unknown result.
+            guard active, session.isActive else { actionOutcome = nil; return false }
+            reviewCollectionID = collectionID ?? returnedID
+            guard !Task.isCancelled else {
+                requireMutationReview(cancelled: true)
+                return false
+            }
+            libraryMovieIDs = [:]
+            if expectation != nil {
+                // A detail request started before the write cannot confirm it, even
+                // when its response arrives after Jellyfin acknowledges the edit.
+                cancelForegroundLoads()
+            }
+            await load(force: true)
             guard active, session.isActive else { actionOutcome = nil; return false }
             guard !Task.isCancelled else {
                 requireMutationReview(cancelled: true)
                 return false
             }
-            actionOutcome = .accepted
-            libraryMovieIDs = [:]
-            await load(force: true)
-            guard active, session.isActive, !Task.isCancelled else { return false }
-            if errorMessage != nil {
+            if let expectation {
+                let confirmed = await confirms(expectation)
+                guard active, session.isActive else { actionOutcome = nil; return false }
+                guard !Task.isCancelled else {
+                    requireMutationReview(cancelled: true)
+                    return false
+                }
+                guard confirmed else {
+                    requireMutationReview(cancelled: false, afterReadback: true)
+                    return false
+                }
+            } else if errorMessage != nil {
                 needsMutationReview = true
                 statusMessage = String(localized: "Saved; refresh unavailable. Pull to refresh before making another change.")
+            }
+            actionOutcome = expectation == nil ? .accepted : .confirmed
+            if !needsMutationReview {
+                reviewCollectionID = nil
             }
             revision += 1
             return true
@@ -363,8 +437,11 @@ final class CollectionStore {
             switch failure {
             case .timeout, .offline, .network:
                 requireMutationReview(cancelled: false)
+            case .unknown where expectation != nil && error is DecodingError:
+                requireMutationReview(cancelled: false)
             default:
                 actionOutcome = .failed(failure)
+                reviewCollectionID = nil
             }
             // Authorization can change while a sheet is open. Never retry a write.
             let permissions = (try? await session.mediaProvider.collectionCapabilities(id: nil)) ?? .init()
@@ -374,9 +451,46 @@ final class CollectionStore {
         }
     }
 
-    private func requireMutationReview(cancelled: Bool) {
+    var reviewedCollection: MediaCollection? {
+        guard let reviewCollectionID else { return nil }
+        return collection(reviewCollectionID)
+    }
+
+    private var hasReviewSnapshot: Bool {
+        guard finishedCatalogRead else { return false }
+        guard reviewCollectionID != nil else { return hasCompleteMembershipCatalog }
+        guard let collection = reviewedCollection else { return true }
+        return collection.membersLoaded && memberErrors[collection.id] == nil
+    }
+
+    private func confirms(_ expectation: CollectionWriteExpectation) async -> Bool {
+        guard let reviewCollectionID, hasReviewSnapshot else { return false }
+        let members = reviewedCollection.map { Set($0.members.compactMap(\.id).map(Self.identity)) }
+        switch expectation {
+        case let .contains(added): return members?.isSuperset(of: added.map(Self.identity)) == true
+        case let .excludes(removed): return members?.isDisjoint(with: removed.map(Self.identity)) == true
+        case .deleted:
+            // A collection may disappear from a filtered catalog while the object
+            // still exists. Confirm absence with the current user's item endpoint.
+            guard members == nil else { return false }
+            do {
+                _ = try await session.mediaProvider.item(id: reviewCollectionID)
+                return false
+            } catch {
+                let failure = GusError(from: error)
+                failure.handleIfUnauthorized(session: session)
+                return failure == .notFound
+            }
+        }
+    }
+
+    private func requireMutationReview(cancelled: Bool, afterReadback: Bool = false) {
+        if !afterReadback {
+            cancelForegroundLoads()
+            finishedCatalogRead = false
+        }
         needsMutationReview = true
-        canKeepCurrentServerState = false
+        canKeepCurrentServerState = hasReviewSnapshot
         actionOutcome = cancelled ? nil : .uncertain
         errorMessage = String(localized: "The collection change was not confirmed. Refresh and review the server state before making another change.")
     }
@@ -387,6 +501,7 @@ final class CollectionStore {
         guard canKeepCurrentServerState, !isMutating else { return }
         needsMutationReview = false
         canKeepCurrentServerState = false
+        reviewCollectionID = nil
         actionOutcome = nil
         errorMessage = nil
         statusMessage = nil
