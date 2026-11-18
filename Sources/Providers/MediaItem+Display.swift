@@ -17,7 +17,17 @@ extension MediaItem {
     }
 
     var yearText: String? {
-        productionYear.map(String.init)
+        displayYear.map(String.init)
+    }
+
+    var displayYear: Int? {
+        if let productionYear {
+            return productionYear
+        }
+        guard isBookFormat, let premiereDate else { return nil }
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = .gmt
+        return calendar.component(.year, from: premiereDate)
     }
 
     /// Human runtime, e.g. `1h 47m`, derived from `runTimeTicks` (100 ns units).
@@ -73,7 +83,7 @@ extension MediaItem {
 
     /// Fractional playback progress (0...1) from resume data, if any.
     var playbackProgress: Double? {
-        guard let percentage = userData?.playedPercentage, percentage.isFinite else { return nil }
+        guard type != .boxSet, let percentage = userData?.playedPercentage, percentage.isFinite else { return nil }
         return min(1, max(0, percentage / 100.0))
     }
 
@@ -159,6 +169,9 @@ extension MediaItem {
             }
         }
         identity.append(displayTitle)
+        if isBookFormat {
+            identity += [bookAuthorText, yearText].compactMap { $0 }
+        }
         if let program = currentProgramName {
             identity.append(String(localized: "Now playing \(program)"))
         }
@@ -167,19 +180,30 @@ extension MediaItem {
             let duration = Duration.seconds(Double(ticks) / 10_000_000).formatted(.units(allowed: [.hours, .minutes, .seconds], width: .wide))
             details.append(String(localized: "Duration: \(duration)"))
         }
-        let position = max(0, userData?.playbackPositionTicks ?? 0)
+        let position = type == .boxSet ? 0 : max(0, userData?.playbackPositionTicks ?? 0)
         let progress = playbackProgress ?? 0
         if type == .liveChannel || type == .liveProgram {
             details.append(String(localized: "Live"))
         } else if position > 0 || (progress > 0 && progress < 1) {
-            details.append(userData?.isWatched == true ? (isAudioPlayable ? String(localized: "Listening Again") : String(localized: "Rewatching")) : String(localized: "In Progress"))
+            if userData?.isWatched == true, type == .book {
+                details.append(String(localized: "Reading Again"))
+            } else {
+                details.append(userData?.isWatched == true ? (isAudioPlayable ? String(localized: "Listening Again") : String(localized: "Rewatching")) : String(localized: "In Progress"))
+            }
             if type != .book, let ticks = runTimeTicks, ticks > position, position > 0 {
                 let remaining = Duration.seconds(Double(ticks - position) / 10_000_000).formatted(.units(allowed: [.hours, .minutes, .seconds], width: .wide))
                 details.append(String(localized: "\(remaining) remaining"))
             } else if progress.isFinite, progress > 0, progress < 1 {
-                details.append(String(localized: "Playback progress \(progress.formatted(.percent.precision(.fractionLength(0))))"))
+                let percent = progress.formatted(.percent.precision(.fractionLength(0)))
+                switch type {
+                case .book: details.append(String(localized: "Reading progress \(percent)"))
+                case .audioBook: details.append(String(localized: "Listening progress \(percent)"))
+                default: details.append(String(localized: "Playback progress \(percent)"))
+                }
             }
-        } else if let watched = userData?.isWatched, [MediaItemType.movie, .episode, .audio, .audioBook, .video, .recording].contains(type ?? .unknown) {
+        } else if isBookFormat, let finished = userData?.isWatched {
+            details.append(finished ? completedStatusTitle : (type == .book ? String(localized: "Unread") : String(localized: "Unfinished")))
+        } else if let watched = userData?.isWatched, [MediaItemType.movie, .episode, .audio, .video, .recording].contains(type ?? .unknown) {
             details.append(watched ? (isAudioPlayable ? String(localized: "Played") : String(localized: "Watched")) : (isAudioPlayable ? String(localized: "Unplayed") : String(localized: "Unwatched")))
         }
         if userData?.isFavorite == true {
@@ -243,24 +267,68 @@ enum BookDetailMetadata {
         return locations["totalProgression"] as? Double
     }
 
-    static func credit(for person: MediaPerson) -> String {
-        let role = nonblank(person.role)
-        if role?.caseInsensitiveCompare("Narrator") == .orderedSame {
-            return String(localized: "Narrator")
+    enum Byline { case author, narrator }
+
+    static func byline(for person: MediaPerson) -> Byline? {
+        let role = nonblank(person.role)?.lowercased()
+        let kind = nonblank(person.creditType)?.lowercased()
+        if role == "narrator" || kind == "narrator" {
+            return .narrator
         }
-        switch person.creditType?.lowercased() {
-        case "author", "writer": return String(localized: "Author")
-        case "narrator": return String(localized: "Narrator")
-        case "illustrator": return String(localized: "Illustrator")
-        case "translator": return String(localized: "Translator")
-        case "coverartist": return String(localized: "Cover Artist")
-        case "editor": return String(localized: "Editor")
-        default: return role ?? String(localized: "Contributor")
+        if ["author", "writer"].contains(kind) || ["author", "writer"].contains(role) {
+            return .author
         }
+        return nil
     }
 }
 
 extension MediaItem {
+    private func contributorNames(_ byline: BookDetailMetadata.Byline) -> [String] {
+        var seen: Set<String> = []
+        return people.compactMap { person in
+            guard BookDetailMetadata.byline(for: person) == byline,
+                  let name = person.name?.trimmingCharacters(in: .whitespacesAndNewlines),
+                  !name.isEmpty, seen.insert(name.lowercased()).inserted else { return nil }
+            return name
+        }
+    }
+
+    var bookAuthorNames: [String] {
+        contributorNames(.author)
+    }
+
+    var bookNarratorNames: [String] {
+        contributorNames(.narrator)
+    }
+
+    var bookAuthorText: String? {
+        let names = bookAuthorNames
+        return names.isEmpty ? nil : names.formatted(.list(type: .and))
+    }
+
+    var bookBrowseSubtitle: String? {
+        guard isBookFormat else { return nil }
+        let components = [bookAuthorText, yearText].compactMap { $0 }
+        return components.isEmpty ? nil : components.joined(separator: " · ")
+    }
+
+    var completedStatusTitle: String {
+        switch type {
+        case .book: String(localized: "Read", comment: "Completed reading status")
+        case .audioBook: String(localized: "Finished")
+        default: String(localized: "Watched")
+        }
+    }
+
+    var completionActionTitle: String {
+        let finished = userData?.isWatched == true
+        switch type {
+        case .book: return finished ? String(localized: "Mark as Unread") : String(localized: "Mark as Read")
+        case .audioBook: return finished ? String(localized: "Mark as Unfinished") : String(localized: "Mark as Finished")
+        default: return finished ? String(localized: "Mark as Unwatched") : String(localized: "Mark as Watched")
+        }
+    }
+
     var isBookFormat: Bool {
         type == .book || type == .audioBook
     }

@@ -181,6 +181,15 @@ final class BookProgressStore {
         scheduleWrite()
     }
 
+    /// An explicit completion action resets just this title's precise reader position.
+    func clearLocator(forItemID itemID: String, scope: AccountScope) {
+        var all = loadAll()
+        guard all.removeValue(forKey: Self.progressKey(forItemID: itemID, scope: scope)) != nil else { return }
+        cache = all
+        revision += 1
+        flush()
+    }
+
     func deleteLocators(scope: AccountScope) {
         var all = loadAll()
         let prefix = "\(scope.storageKey)__"

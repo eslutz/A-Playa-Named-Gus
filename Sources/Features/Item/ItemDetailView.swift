@@ -16,6 +16,9 @@ struct ItemDetailView: View {
     @State private var updatingNextUp = false
     @State private var nextUpError: String?
     @State private var playerItem: ItemRef?
+    #if !os(tvOS)
+        @State private var externalBook: ItemRef?
+    #endif
     @State private var selectedSourceID: String?
     @State private var selectedSourceItemID: String?
     @State private var startOverride: PlaybackStartOverride?
@@ -93,6 +96,9 @@ struct ItemDetailView: View {
                 navigationState.restoreTVDetailFocus(item: focusItem, openerID: "version")
             }
             .playerPresentation(item: $playerItem)
+        #if !os(tvOS)
+            .sheet(item: $externalBook) { ref in ExternalBookReaderSheet(item: ref.item) }
+        #endif
             .gusTVTask(isPresented: $addingToCollection, onDismiss: { navigationState.restoreTVDetailFocus(item: store?.item ?? item) }) {
                 NavigationStack { AddToMediaCollectionView(item: store?.item ?? item) }
                     .gusTVExitTask { addingToCollection = false }
@@ -110,11 +116,17 @@ struct ItemDetailView: View {
                                 if store.item.type == .movie || store.item.type == .episode {
                                     Button("Add to Playlist", systemImage: MediaActionSymbols.addToPlaylist) { addingToPlaylist = true }
                                 }
-                                if store.item.type == .movie, CollectionPlatform.canManage && (navigationState.collectionStore(session: session).capabilities.create || navigationState.collectionStore(session: session).capabilities.addMembers) {
+                                if store.item.type == .movie || store.item.isBookFormat, CollectionPlatform.canManage && (navigationState.collectionStore(session: session).capabilities.create || navigationState.collectionStore(session: session).capabilities.addMembers) {
                                     Button("Add to Collection", systemImage: "rectangle.stack.badge.plus") { addingToCollection = true }
                                 }
+                                if store.item.type == .book {
+                                    Button("Open in Another App", systemImage: "square.and.arrow.up") {
+                                        externalBook = ItemRef(item: store.item)
+                                    }
+                                    .accessibilityIdentifier("Book.openExternally")
+                                }
                                 Divider()
-                                Button(markWatched ? "Mark as Watched" : "Mark as Unwatched", systemImage: markWatched ? "checkmark.circle" : "arrow.counterclockwise") {
+                                Button(store.item.completionActionTitle, systemImage: markWatched ? "checkmark.circle" : "arrow.counterclockwise") {
                                     Task { await store.setWatched(markWatched, nextUp: upNext) }
                                 }
                                 .disabled(store.isUpdatingUserData || store.needsUserDataRefresh)
@@ -229,7 +241,7 @@ struct ItemDetailView: View {
                         #if os(tvOS)
                             if store.item.id != nil {
                                 Menu {
-                                    Button(store.item.userData?.isWatched == true ? "Mark as Unwatched" : "Mark as Watched", systemImage: "checkmark.circle") {
+                                    Button(store.item.completionActionTitle, systemImage: "checkmark.circle") {
                                         Task { await store.setWatched(store.item.userData?.isWatched != true, nextUp: upNext) }
                                     }
                                     .disabled(store.isUpdatingUserData || store.needsUserDataRefresh)
@@ -303,16 +315,16 @@ struct ItemDetailView: View {
                             SeriesEpisodesView(store: seriesStore, preferredEpisode: target).id("episodes")
                         }
 
-                        if store.item.type == .movie, let id = store.item.id {
-                            MovieCollectionMemberships(movieID: id).padding(.vertical)
+                        if store.item.type == .movie || store.item.isBookFormat, let id = store.item.id {
+                            ItemCollectionMemberships(itemID: id, format: CollectionFormat(type: store.item.type)).padding(.vertical)
                         }
                         #if !os(tvOS)
                             DetailMetadataRows(item: presentationItem).id("metadata")
                         #endif
 
                         #if !os(tvOS)
-                            if !store.item.people.isEmpty {
-                                CastRail(people: store.item.people, usesBookCredits: store.item.isBookFormat).id("cast")
+                            if !store.item.isBookFormat, !store.item.people.isEmpty {
+                                CastRail(people: store.item.people).id("cast")
                             }
 
                         #endif
@@ -326,16 +338,18 @@ struct ItemDetailView: View {
                         }
 
                         #if os(tvOS)
-                            if !store.item.people.isEmpty {
-                                CastRail(people: store.item.people, usesBookCredits: store.item.isBookFormat).id("cast")
+                            if !store.item.isBookFormat, !store.item.people.isEmpty {
+                                CastRail(people: store.item.people).id("cast")
                             }
                             DetailMetadataRows(item: presentationItem).id("metadata")
                         #endif
 
-                        AboutCardsView(
-                            item: presentationItem,
-                            posterURL: session.mediaProvider.primaryImageURL(for: store.item, context: .posterRail)
-                        )
+                        if !presentationItem.isBookFormat {
+                            AboutCardsView(
+                                item: presentationItem,
+                                posterURL: session.mediaProvider.primaryImageURL(for: store.item, context: .posterRail)
+                            )
+                        }
                     }
                     .scrollTargetLayout()
                     .padding(sectionPadding)
@@ -352,11 +366,9 @@ struct ItemDetailView: View {
         .task {
             downloads.load(serverID: session.server.id, userID: session.user.id)
             upNext.load(serverID: session.server.id, userID: session.user.id)
-            #if os(tvOS)
-                if item.type == .movie {
-                    await navigationState.collectionStore(session: session).loadPermissions()
-                }
-            #endif
+            if store.item.type == .movie || (store.item.isBookFormat && CollectionPlatform.canManage) {
+                await navigationState.collectionStore(session: session).loadPermissions()
+            }
         }
     }
 

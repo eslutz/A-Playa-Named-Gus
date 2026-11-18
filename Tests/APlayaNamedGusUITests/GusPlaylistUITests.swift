@@ -343,7 +343,7 @@
             field.tap(); field.typeText(name); app.buttons["Save"].tap()
             let row = app.staticTexts[name].firstMatch
             XCTAssertTrue(row.waitForExistence(timeout: 10)); row.tap()
-            app.navigationBars.buttons["More"].firstMatch.tap(); app.buttons["Add Movies"].tap()
+            app.navigationBars.buttons["More"].firstMatch.tap(); app.buttons["Add Titles"].tap()
             let search = app.searchFields.firstMatch
             XCTAssertTrue(search.waitForExistence(timeout: 10))
             search.tap(); search.typeText("Sneeze")

@@ -4,24 +4,43 @@ struct CollectionsView: View {
     @Environment(RootNavigationState.self) private var root
     @Environment(SessionStore.self) private var session
     @State private var creating = false
+    @State private var format: CollectionFormat
+    let initialFormat: CollectionFormat
+
+    init(initialFormat: CollectionFormat = .all) {
+        self.initialFormat = initialFormat
+        _format = State(initialValue: initialFormat)
+    }
+
     private var store: CollectionStore {
         root.collectionStore(session: session)
     }
 
     var body: some View {
+        let visible = store.collections.filter { format.includes($0) }.sorted {
+            $0.item.displayTitle.localizedStandardCompare($1.item.displayTitle) == .orderedAscending
+        }
         ScrollView {
-            VStack(alignment: .leading) {
+            VStack(alignment: .leading, spacing: 16) {
+                Picker("Format", selection: $format) {
+                    ForEach(CollectionFormat.allCases, id: \.self) { Text($0.title).tag($0) }
+                }
+                .pickerStyle(.segmented)
                 CollectionFeedback(store: store)
-                if store.state == .loading {
+                if store.state == .loading || (format != .all && store.state == .loaded && !store.hasCompleteMembershipCatalog && store.errorMessage == nil) {
                     ProgressView()
                 }
-                if store.collections.isEmpty, store.state == .loaded {
-                    ContentUnavailableView("No Collections", systemImage: "rectangle.stack", description: Text("Create a collection or add a movie to one."))
+                if visible.isEmpty, store.state == .loaded, format == .all || store.hasCompleteMembershipCatalog {
+                    if format == .all {
+                        ContentUnavailableView("No Collections", systemImage: "rectangle.stack")
+                    } else {
+                        ContentUnavailableView("No Matching Collections", systemImage: "rectangle.stack", description: Text("Choose All to see every collection, including empty ones."))
+                    }
                 }
                 LazyVGrid(columns: PosterGrid.columns, spacing: PosterGrid.spacing) {
-                    ForEach(store.collections.filter { ContentRatingGate.admitsStored($0.item) }.sorted { $0.item.displayTitle.localizedStandardCompare($1.item.displayTitle) == .orderedAscending }) { collection in
-                        CollectionLink(collection: collection)
-                            .gusTVFocus(id: collection.id, section: "collections", ids: store.collections.map(\.id), initial: collection.id == store.collections.first?.id, item: collection.item)
+                    ForEach(visible) { collection in
+                        CollectionLink(collection: collection, format: format == .all ? initialFormat : format)
+                            .gusTVFocus(id: collection.id, section: "collections", ids: visible.map(\.id), initial: collection.id == visible.first?.id, item: collection.item)
                     }
                 }
             }.gusTVPagePadding()
@@ -33,7 +52,9 @@ struct CollectionsView: View {
                 ToolbarItem(placement: .primaryAction) { Button("New Collection", systemImage: "plus") { creating = true }.disabled(!store.canSubmitMutations).gusIPadIconOnly().collectionShortcut("n") }
             }
         }
-        .sheet(isPresented: $creating) { NavigationStack { CollectionEditor() } }
+        .sheet(isPresented: $creating) {
+            NavigationStack { CollectionEditor(onCreate: { format = .all }) }
+        }
         .task { await store.load() }
         .refreshable { await store.load(force: true) }
     }
@@ -42,8 +63,9 @@ struct CollectionsView: View {
 struct CollectionLink: View {
     @Environment(SessionStore.self) private var session
     let collection: MediaCollection
+    var format = CollectionFormat.all
     var body: some View {
-        NavigationLink(value: MediaCollectionRef(id: collection.id, scope: session.references.scope)) {
+        NavigationLink(value: MediaCollectionRef(id: collection.id, scope: session.references.scope, format: format)) {
             PosterCard(title: collection.item.displayTitle, subtitle: String(localized: "Collection"), statusItem: collection.item, imageURL: session.mediaProvider.primaryImageURL(for: collection.item, context: .posterGrid), placeholderSymbol: "rectangle.stack", fallbackURLs: session.mediaProvider.artworkURLs(for: collection.item, request: .init(role: .poster, maxWidth: 360)))
         }.posterNavigationStyle()
     }
@@ -88,28 +110,34 @@ struct MovieCollectionsShelf: View {
     }
 }
 
-struct MovieCollectionMemberships: View {
+struct ItemCollectionMemberships: View {
     @Environment(RootNavigationState.self) private var root
     @Environment(SessionStore.self) private var session
-    let movieID: String
+    let itemID: String
+    let format: CollectionFormat
     private var store: CollectionStore {
         root.collectionStore(session: session)
     }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            if !store.memberships(for: movieID).isEmpty {
+            if !store.memberships(for: itemID).isEmpty {
                 Text("Collections").font(.title2.bold())
-                ForEach(store.memberships(for: movieID)) { collection in
-                    NavigationLink(value: MediaCollectionRef(id: collection.id, scope: session.references.scope)) {
+                ForEach(store.memberships(for: itemID)) { collection in
+                    NavigationLink(value: MediaCollectionRef(id: collection.id, scope: session.references.scope, format: format)) {
                         Label(collection.item.displayTitle, systemImage: "rectangle.stack")
                     }
-                    .mediaItemContextMenu(item: nil, groupName: collection.item.displayTitle, canRemove: CollectionPlatform.canManage && store.capabilities.removeMembers && store.canSubmitMutations, remove: {
-                        _ = await store.mutate { try await session.mediaProvider.removeCollectionMembers(id: collection.id, itemIDs: [movieID]); return nil }
+                    .mediaItemContextMenu(item: nil, groupName: collection.item.displayTitle, canRemove: CollectionPlatform.canManage && store.capabilities.removeMembers && store.canSubmitMutations && store.memberErrors[collection.id] == nil, remove: {
+                        await store.mutate(collectionID: collection.id, verifying: .excludes([itemID])) {
+                            try await session.mediaProvider.removeCollectionMembers(id: collection.id, itemIDs: [itemID])
+                            return collection.id
+                        }
                     })
                 }
             }
-            if let message = store.errorMessage {
+            if store.needsMutationReview || store.isMutating {
+                CollectionFeedback(store: store)
+            } else if let message = store.errorMessage {
                 Text(message).font(.caption).foregroundStyle(.secondary)
                 Button("Retry Collections") { Task { await store.load(force: true) } }
             }
@@ -145,6 +173,7 @@ struct MediaCollectionDetailView: View {
     @Environment(SessionStore.self) private var session
     @Environment(\.dismiss) private var dismiss
     let id: String
+    var format = CollectionFormat.all
     @State private var sort = CollectionSort.serverDefault
     @State private var editing = false
     @State private var adding = false
@@ -155,20 +184,22 @@ struct MediaCollectionDetailView: View {
     }
 
     private var collection: MediaCollection? {
-        store.collection(id)
+        guard let collection = store.collection(id), ContentRatingGate.admitsStored(collection.item) else { return nil }
+        return collection
     }
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
                 CollectionFeedback(store: store)
-                if let collection, ContentRatingGate.admitsStored(collection.item) {
+                if let collection {
+                    let members = admitted(collection)
                     HStack(alignment: .top, spacing: 20) {
                         AsyncPoster(url: session.mediaProvider.primaryImageURL(for: collection.item, context: .posterGrid), fallbackURLs: session.mediaProvider.artworkURLs(for: collection.item, request: .init(role: .poster, maxWidth: 360))).frame(width: artworkWidth, height: artworkWidth * 1.5)
                         VStack(alignment: .leading, spacing: 12) {
                             Text(collection.item.displayTitle).font(collectionTitleFont)
                             if collection.membersLoaded {
-                                Text("\(admitted(collection).count) titles").foregroundStyle(.secondary)
+                                Text("\(members.count) titles").foregroundStyle(.secondary)
                             }
                             if !collection.item.genres.isEmpty {
                                 Text(collection.item.genres.joined(separator: " / ")).foregroundStyle(.secondary)
@@ -186,12 +217,14 @@ struct MediaCollectionDetailView: View {
                     .focusSection()
                     #endif
                     if collection.membersLoaded {
-                        if admitted(collection).isEmpty {
-                            ContentUnavailableView("No Titles", systemImage: "film")
+                        if members.isEmpty {
+                            ContentUnavailableView("No Titles", systemImage: "rectangle.stack")
                         }
-                        memberSection("Movies", members: admitted(collection).filter { $0.type == .movie }, collection: collection)
-                        memberSection("Series", members: admitted(collection).filter { $0.type == .series }, collection: collection)
-                        memberSection("Other Titles", members: admitted(collection).filter { ![.movie, .series].contains($0.type) }, collection: collection)
+                        memberSection("Movies", members: members.filter { $0.type == .movie }, collection: collection)
+                        memberSection("Series", members: members.filter { $0.type == .series }, collection: collection)
+                        memberSection("Books", members: members.filter { $0.type == .book }, collection: collection)
+                        memberSection("Audiobooks", members: members.filter { $0.type == .audioBook }, collection: collection)
+                        memberSection("Other Titles", members: members.filter { ![.movie, .series, .book, .audioBook].contains($0.type) }, collection: collection)
                     }
                 } else if loading {
                     ProgressView()
@@ -211,14 +244,14 @@ struct MediaCollectionDetailView: View {
             #endif
         }
         .sheet(isPresented: $editing) { NavigationStack { CollectionEditor(collectionID: id) } }
-        .sheet(isPresented: $adding) { NavigationStack { CollectionMoviePicker(collectionID: id) } }
+        .sheet(isPresented: $adding) { NavigationStack { CollectionTitlePicker(collectionID: id, initialFormat: format) } }
         .confirmationDialog("Delete Collection?", isPresented: $deleting) {
             Button("Delete Collection", role: .destructive) { Task {
-                if await store.mutate({ try await session.mediaProvider.deleteCollection(id: id); return nil }) {
+                if await store.mutate(collectionID: id, verifying: .deleted, { try await session.mediaProvider.deleteCollection(id: id); return id }) {
                     dismiss()
                 }
             } }
-        } message: { Text("This deletes the collection from Jellyfin. Its movies and watched history remain.") }
+        } message: { Text("This deletes the shared collection from Jellyfin. Its titles and their progress are kept.") }
         .gusVisibleContent(.collections, isLoading: store.state.isLoading)
         .task { await store.load(); await store.loadDetail(id: id); loading = false }
         .refreshable { await store.load(force: true); await store.loadDetail(id: id, force: true) }
@@ -229,16 +262,17 @@ struct MediaCollectionDetailView: View {
             Picker("Sort", selection: $sort) { ForEach(CollectionSort.allCases) { Text($0.title).tag($0) } }
             if CollectionPlatform.canManage {
                 if store.capabilities.addMembers {
-                    Button("Add Movies", systemImage: "plus") { adding = true }
+                    Button("Add Titles", systemImage: "plus") { adding = true }
+                        .disabled(!store.canSubmitMutations || collection?.membersLoaded != true || store.memberErrors[id] != nil)
                 }
                 if store.capabilities.editMetadata || store.capabilities.editArtwork {
-                    Button("Edit", systemImage: "pencil") { editing = true }.collectionShortcut("e")
+                    Button("Edit", systemImage: "pencil") { editing = true }.collectionShortcut("e").disabled(!store.canSubmitMutations)
                 }
                 if store.permissions(for: id).delete {
-                    Button("Delete Collection", systemImage: "trash", role: .destructive) { deleting = true }
+                    Button("Delete Collection", systemImage: "trash", role: .destructive) { deleting = true }.disabled(!store.canSubmitMutations)
                 }
             }
-        } label: { GusToolbarLabel("More", systemImage: "ellipsis.circle", tvSystemImage: "ellipsis") }.gusIPadIconOnly().gusTVToolbarIcon().accessibilityLabel("More").disabled(!store.canSubmitMutations || collection == nil)
+        } label: { GusToolbarLabel("More", systemImage: "ellipsis.circle", tvSystemImage: "ellipsis") }.gusIPadIconOnly().gusTVToolbarIcon().accessibilityLabel("More").disabled(collection == nil)
     }
 
     private func admitted(_ collection: MediaCollection) -> [MediaItem] {
@@ -253,9 +287,12 @@ struct MediaCollectionDetailView: View {
                     NavigationLink(value: ItemRef(item: item)) { PosterCard(item: item, imageURL: session.mediaProvider.primaryImageURL(for: item, context: .posterGrid), fallbackURLs: session.mediaProvider.artworkURLs(for: item, request: .init(role: .poster, maxWidth: 360))) }
                         .posterNavigationStyle()
                         .gusTVFocus(id: item.id ?? "", section: "collection:" + id, ids: sort.sorted(members).compactMap(\.id), item: item)
-                        .mediaItemContextMenu(item: item, groupName: collection.item.displayTitle, canRemove: CollectionPlatform.canManage && store.capabilities.removeMembers && store.canSubmitMutations, remove: {
+                        .mediaItemContextMenu(item: item, groupName: collection.item.displayTitle, canRemove: CollectionPlatform.canManage && store.capabilities.removeMembers && store.canSubmitMutations && store.memberErrors[id] == nil, remove: {
                             if let itemID = item.id {
-                                _ = await store.mutate { try await session.mediaProvider.removeCollectionMembers(id: id, itemIDs: [itemID]); return nil }
+                                await store.mutate(collectionID: id, verifying: .excludes([itemID])) {
+                                    try await session.mediaProvider.removeCollectionMembers(id: id, itemIDs: [itemID])
+                                    return id
+                                }
                             }
                         })
                 }
@@ -284,8 +321,19 @@ struct CollectionFeedback: View {
         if store.needsMutationReview {
             if store.canKeepCurrentServerState {
                 Section("Review Server Collections") {
-                    ForEach(store.collections) { collection in
-                        Text(collection.item.displayTitle)
+                    if store.reviewCollectionID != nil {
+                        if let collection = store.reviewedCollection, ContentRatingGate.admitsStored(collection.item) {
+                            Text(collection.item.displayTitle).font(.headline)
+                            reviewMembers(collection)
+                        } else {
+                            Text("This collection is no longer visible on Jellyfin.")
+                        }
+                    } else {
+                        ForEach(store.collections.filter { ContentRatingGate.admitsStored($0.item) }) { collection in
+                            NavigationLink(collection.item.displayTitle) {
+                                List { reviewMembers(collection) }.navigationTitle(collection.item.displayTitle)
+                            }
+                        }
                     }
                 }
                 Button("Use Current Server State") { store.keepCurrentServerState() }
@@ -293,6 +341,15 @@ struct CollectionFeedback: View {
         }
         if let message = store.statusMessage {
             Text(message).foregroundStyle(.secondary)
+        }
+    }
+
+    @ViewBuilder private func reviewMembers(_ collection: MediaCollection) -> some View {
+        let members = ContentRatingGate.filter(collection.members)
+        if members.isEmpty {
+            Text("No Titles").foregroundStyle(.secondary)
+        } else {
+            ForEach(members, id: \.id) { member in Text(member.displayTitle) }
         }
     }
 }

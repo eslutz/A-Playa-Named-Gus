@@ -6,6 +6,119 @@ import Testing
 
 @Suite("Library store helpers", .serialized)
 struct LibraryStoreTests {
+    @MainActor
+    @Test("a filtered multi-page series opens all accessible volumes")
+    func bookSeriesMembershipAcrossPages() async throws {
+        let first = BaseItemDto(id: "first", indexNumber: 1, name: "Z book", seriesName: "Fixture Saga", type: .book)
+        let second = BaseItemDto(id: "second", indexNumber: 2, name: "A book", seriesName: "  fixture  saga ", type: .book)
+        let hidden = BaseItemDto(id: "hidden", indexNumber: 3, name: "Restricted", seriesName: "Fixture Saga", type: .book)
+        LibraryItemsURLProtocol.configure(responses: [
+            .init(result: .init(items: [second], totalRecordCount: 1)),
+            .init(result: .init(items: [second, hidden], totalRecordCount: 3)),
+            .init(result: .init(items: [first], totalRecordCount: 3)),
+        ])
+        let store = try LibraryStore(scope: .category(.books), session: libraryTestSession(), admits: { $0.id != "hidden" }, initialFilter: .init(status: .unplayed))
+        await store.load()
+        #expect(store.hasCompleteBookCatalog)
+        #expect(store.items.compactMap(\.id) == ["second"])
+        #expect(store.bookEntries.count == 1)
+        guard case let .series(series)? = store.bookEntries.first else { Issue.record("Missing series"); return }
+        #expect(series.members.compactMap(\.id) == ["first", "second"])
+        #expect(LibraryItemsURLProtocol.recordedRequests.map(\.startIndex) == [0, 0, 2])
+        #expect(LibraryItemsURLProtocol.recordedRequests.map(\.filters) == ["IsUnplayed", nil, nil])
+    }
+
+    @MainActor
+    @Test("a failed later page leaves available titles browsable and prevents edits")
+    func incompleteBookSeries() async throws {
+        let book = BaseItemDto(id: "first", name: "Volume 1", seriesName: "Saga", type: .book)
+        LibraryItemsURLProtocol.configure(responses: [
+            .init(result: .init(items: [book], totalRecordCount: 2)),
+            .init(result: .init(items: [], totalRecordCount: 2)),
+            .init(result: .init(items: [book], totalRecordCount: 1)),
+        ])
+        let store = try LibraryStore(scope: .category(.books), session: libraryTestSession())
+        await store.load()
+        #expect(store.state == .loaded)
+        #expect(!store.hasCompleteBookCatalog && store.refreshError != nil)
+        #expect(store.bookEntries.count == 1)
+        await store.load()
+        #expect(store.hasCompleteBookCatalog)
+        #expect(store.refreshError == nil)
+    }
+
+    @Test("format, series IDs, and untagged titles have separate identities")
+    func bookShelfIdentities() {
+        let standalone = MediaItem(id: "alone", name: "Standalone", seriesName: "  ", type: .book)
+        let book = MediaItem(id: "book", name: "Book", seriesID: "AAA", seriesName: "Saga", type: .book)
+        let unrelated = MediaItem(id: "other", name: "Other", seriesID: "BBB", seriesName: "Saga", type: .book)
+        let audio = MediaItem(id: "audio", indexNumber: 9, name: "Audio 1", productionYear: 2021, seriesName: "Saga", type: .audioBook)
+        let newer = MediaItem(id: "newer", indexNumber: 1, name: "Audio 2", productionYear: 2022, seriesName: "SAGA", type: .audioBook)
+        let items = [standalone, book, unrelated, newer, audio]
+        let rows = BookSeriesCatalog(items).entries(visible: items, sortByName: false)
+        #expect(rows.count == 4)
+        guard case let .series(series)? = rows.last else { Issue.record("Missing audiobook series"); return }
+        #expect(series.members.compactMap(\.id) == ["audio", "newer"])
+    }
+
+    @Test("name-only volumes join a uniquely identified series while editions remain separate")
+    func mixedSeriesIdentifiers() throws {
+        let identified = MediaItem(id: "ed1", name: "Shared Title", seriesID: "AAA", seriesName: "Saga", type: .book)
+        let unnamedID = MediaItem(id: "ed2", name: "Shared Title", seriesName: "saga", type: .book)
+        let legacyKey = try #require(BookSeriesKey(item: unnamedID))
+        var catalog = BookSeriesCatalog([identified, unnamedID])
+        #expect(catalog.entries(visible: catalog.books, sortByName: true).count == 1)
+        #expect(catalog.series(legacyKey)?.members.compactMap(\.id) == ["ed1", "ed2"])
+        var otherSeries = identified
+        otherSeries.id = "other"
+        otherSeries.seriesID = "BBB"
+        catalog = BookSeriesCatalog([identified, unnamedID, otherSeries])
+        #expect(catalog.entries(visible: catalog.books, sortByName: true).count == 3)
+        #expect(catalog.series(legacyKey)?.members.compactMap(\.id) == ["ed2"])
+    }
+
+    @Test("audiobook stacks use unambiguous server metadata independently of editing permissions")
+    func audiobookSeriesFromJellyfin() throws {
+        let payload = #"""
+        [
+          {"Id":"a","Type":"AudioBook","Name":"Earlier","SeriesId":"aa","SeriesName":"Saga","IndexNumber":8,"ProductionYear":2021},
+          {"Id":"b","Type":"AudioBook","Name":"Later","SeriesName":" saga ","IndexNumber":1,"ProductionYear":2022},
+          {"Id":"c","Type":"AudioBook","Name":"Standalone","Album":"Saga","IndexNumber":2,"ParentIndexNumber":1}
+        ]
+        """#
+        let items = try JellyfinMediaItemMapper.mediaItems(from: JSONDecoder().decode([BaseItemDto].self, from: Data(payload.utf8)))
+        var catalog = BookSeriesCatalog(items)
+        let entries = catalog.entries(visible: items, sortByName: false)
+        #expect(entries.map(\.title) == ["Saga", "Standalone"])
+        guard case let .series(saga) = entries.first else { Issue.record("Missing audiobook series"); return }
+        #expect(saga.members.compactMap(\.id) == ["a", "b"])
+        #expect(BookSeriesEditScope(items).editableBooks.isEmpty)
+
+        var unrelated = items[0]
+        unrelated.id = "d"
+        unrelated.seriesID = "bb"
+        catalog = BookSeriesCatalog(items + [unrelated])
+        guard case let .title(unresolved) = catalog.entries(visible: [items[1]], sortByName: false).first else {
+            Issue.record("A shared name cannot establish which audiobook series owns this title"); return
+        }
+        #expect(unresolved.id == "b")
+    }
+
+    @Test("volumes with only a series ID join named siblings of the same format")
+    func volumesWithoutSeriesNames() throws {
+        let unnamed = MediaItem(id: "first", indexNumber: 1, name: "First", seriesID: "AAA", type: .book)
+        let named = MediaItem(id: "second", indexNumber: 2, name: "Second", seriesID: "AAA", seriesName: "Saga", type: .book)
+        let audio = MediaItem(id: "audio", name: "Audio", seriesID: "AAA", seriesName: "  ", type: .audioBook)
+        let catalog = BookSeriesCatalog([unnamed, named, audio])
+        let key = try #require(BookSeriesKey(item: unnamed))
+        let group = try #require(catalog.series(key))
+        #expect(group.name == "Saga")
+        #expect(group.members.compactMap(\.id) == ["first", "second"])
+        #expect(catalog.entries(visible: catalog.books, sortByName: false).map(\.title) == ["Saga", "Audio"])
+        let incomplete = BookSeriesCatalog([unnamed])
+        #expect(incomplete.entries(visible: incomplete.books, sortByName: true).map(\.id) == ["first"])
+    }
+
     @Test("iPhone music browse requests albums and artists without video playlists")
     func musicScope() {
         let query = LibraryRequest.parameters(scope: .musicLibrary(parentID: "music"), startIndex: 60, limit: 60)

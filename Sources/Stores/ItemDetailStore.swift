@@ -118,7 +118,7 @@ final class ItemDetailStore {
     }
 
     /// Explicit menu actions do not toggle against potentially stale displayed metadata.
-    func setWatched(_ watched: Bool, localProgress: OfflinePlaybackProgressStore = .shared, nextUp: UpNextStore? = nil, activity: NextUpActivityStore = .shared) async {
+    func setWatched(_ watched: Bool, localProgress: OfflinePlaybackProgressStore = .shared, bookProgress: BookProgressStore = .shared, nextUp: UpNextStore? = nil, activity: NextUpActivityStore = .shared) async {
         guard session.isActive, !isUpdatingUserData, item.id != nil else { return }
         if needsUserDataRefresh {
             await refreshUserData(); return
@@ -146,6 +146,9 @@ final class ItemDetailStore {
             try Task.checkCancellation()
             guard session.isActive else { return }
             localProgress.resetCheckpoint(itemID: id, scope: session.references.scope)
+            if item.type == .book {
+                bookProgress.clearLocator(forItemID: id, scope: session.references.scope)
+            }
             // This provider API selects an endpoint; the inverse requests the desired status.
             try await session.mediaProvider.toggleWatched(itemID: id, currentlyWatched: !watched)
             acceptedWrite = true
@@ -254,7 +257,7 @@ final class ItemDetailStore {
         }
         if partiallyAccepted {
             actionOutcome = .uncertain
-            actionError = String(localized: "Playback progress was reset, but the watched status was not confirmed. Refresh Status before making another change.")
+            actionError = String(localized: "Progress was reset, but the completion status was not confirmed. Refresh Status before making another change.")
         } else if accepted {
             actionOutcome = .accepted
             actionError = String(localized: "Saved; refresh unavailable. Pull to refresh before making another change.")

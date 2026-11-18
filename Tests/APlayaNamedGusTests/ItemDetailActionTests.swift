@@ -172,6 +172,40 @@ struct ItemDetailActionTests {
         #expect(progress.positionTicks(forItemID: "movie", scope: scope) == 99)
     }
 
+    @Test("marking a book unread clears its precise location after the server accepts the reset")
+    @MainActor
+    func markBookUnreadClearsLocator() async throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let bookProgress = BookProgressStore(directory: directory)
+        let progress = OfflinePlaybackProgressStore(directory: directory)
+        let scope = AccountScope(serverID: "s", userID: "u")
+        let locator = #"{"locations":{"totalProgression":0.4}}"#
+        bookProgress.save(locatorJSON: locator, forItemID: "book", scope: scope)
+        bookProgress.save(locatorJSON: locator, forItemID: "another", scope: scope)
+        progress.checkpoint(itemID: "book", positionTicks: 4_000_000, scope: scope)
+        var remote = MediaItem(id: "book", type: .book, userData: MediaUserData(playbackPositionTicks: 4_000_000, isWatched: true))
+        let provider = FakeMediaProviderSession(capabilities: ProviderCapabilities())
+        provider.itemHandler = { _ in remote }
+        provider.progressHandler = { _, ticks in remote.userData?.playbackPositionTicks = ticks }
+        provider.watchedHandler = { remote.userData?.isWatched = false }
+        let url = try #require(URL(string: "https://example.invalid"))
+        let session = SessionStore(
+            client: JellyfinClientFactory.makeClient(url: url),
+            user: StoredUser(id: "u", name: "User", serverID: "s"),
+            server: ServerConnection(id: "s", name: "Server", url: url),
+            mediaProvider: provider
+        )
+        let store = ItemDetailStore(item: remote, session: session)
+        await store.setWatched(false, localProgress: progress, bookProgress: bookProgress)
+        #expect(store.actionOutcome == .confirmed)
+        #expect(remote.userData?.playbackPositionTicks == 0)
+        let reloaded = BookProgressStore(directory: directory)
+        #expect(reloaded.locatorJSON(forItemID: "book", scope: scope) == nil)
+        #expect(reloaded.locatorJSON(forItemID: "another", scope: scope) == locator)
+        #expect(BookDetailProgress.reading(locator: nil, localTicks: progress.positionTicks(forItemID: "book", scope: scope), data: remote.userData) == nil)
+    }
+
     @Test("a rejected watched write after a saved progress reset requires readback before another action")
     @MainActor
     func partiallyAcceptedWatchedAction() async throws {

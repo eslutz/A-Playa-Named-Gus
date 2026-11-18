@@ -5,62 +5,28 @@ struct AboutCardsView: View {
     @Environment(SessionStore.self) private var session
     let item: MediaItem
     let posterURL: URL?
-    @State private var showsFullSynopsis = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text(item.isBookFormat ? "Synopsis" : "About")
+            Text("About")
                 .font(.title2.bold())
                 .accessibilityAddTraits(.isHeader)
 
             VStack(alignment: .leading, spacing: 24) {
                 if let overview = item.overview?.trimmedNilIfEmpty {
-                    if item.isBookFormat {
+                    DetailInfoCard(title: "Synopsis") {
                         Text(overview).fixedSize(horizontal: false, vertical: true)
-                            .gusTVFocusableInfo()
-                    } else {
-                        DetailInfoCard(title: "Synopsis") {
-                            Text(overview).fixedSize(horizontal: false, vertical: true)
-                            Button("Show More") { showsFullSynopsis = true }
-                                .accessibilityIdentifier("Detail.fullSynopsis")
-                        }
-                        .tvFocusSection()
+                        FullSynopsisButton(title: item.displayTitle, overview: overview)
                     }
-                } else if item.isBookFormat {
-                    Text("No synopsis available").foregroundStyle(.secondary)
+                    .tvFocusSection()
                 }
-                if !item.isBookFormat {
-                    AdaptiveStack(horizontalMinimumWidth: 320 + 32 + 320, horizontalAlignment: .top, horizontalSpacing: 32, verticalSpacing: 24) { horizontal in
-                        informationCards(horizontal: horizontal)
-                    }
+                AdaptiveStack(horizontalMinimumWidth: 320 + 32 + 320, horizontalAlignment: .top, horizontalSpacing: 32, verticalSpacing: 24) { horizontal in
+                    informationCards(horizontal: horizontal)
                 }
             }
             .accessibilityElement(children: .contain)
             .accessibilityIdentifier("Detail.aboutCards")
             .tvFocusSection()
-        }
-        .sheet(isPresented: $showsFullSynopsis) {
-            NavigationStack {
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 16) {
-                        Text(item.displayTitle)
-                            .font(.title.bold())
-                            .fixedSize(horizontal: false, vertical: true)
-                            .accessibilityAddTraits(.isHeader)
-                            .accessibilityIdentifier("Synopsis.heading")
-                        Text(item.overview ?? "")
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding()
-                }
-                .navigationTitle("Synopsis")
-                .toolbar {
-                    ToolbarItem(placement: .cancellationAction) {
-                        GusCloseButton { showsFullSynopsis = false }
-                            .accessibilityIdentifier("Synopsis.done")
-                    }
-                }
-            }
         }
     }
 
@@ -104,6 +70,48 @@ struct AboutCardsView: View {
                 }
             }
         }
+    }
+}
+
+/// Opens the same scrollable synopsis from either a book preview or an About card.
+struct FullSynopsisButton: View {
+    let title: String
+    let overview: String
+    @State private var showsFullSynopsis = false
+
+    var body: some View {
+        Button("Show More") { showsFullSynopsis = true }
+            .accessibilityIdentifier("Detail.fullSynopsis")
+            .gusTVTask(isPresented: $showsFullSynopsis) {
+                NavigationStack {
+                    ScrollView {
+                        VStack(alignment: .leading, spacing: 16) {
+                            Text(title)
+                                .font(.title.bold())
+                                .fixedSize(horizontal: false, vertical: true)
+                                .accessibilityAddTraits(.isHeader)
+                                .accessibilityIdentifier("Synopsis.heading")
+                            Text(overview)
+                                .accessibilityIdentifier("Synopsis.body")
+                        }
+                        .frame(maxWidth: 1200, alignment: .leading)
+                        .padding()
+                    }
+                    #if os(tvOS)
+                    .focusable()
+                    #endif
+                    .navigationTitle("Synopsis")
+                    .toolbar {
+                        ToolbarItem(placement: .cancellationAction) {
+                            GusCloseButton { showsFullSynopsis = false }
+                                .accessibilityIdentifier("Synopsis.done")
+                        }
+                    }
+                }
+                #if os(macOS)
+                .frame(minWidth: 400, idealWidth: 520, minHeight: 320, idealHeight: 440)
+                #endif
+            }
     }
 }
 

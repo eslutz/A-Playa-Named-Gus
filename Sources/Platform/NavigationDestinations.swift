@@ -87,6 +87,9 @@ extension View {
             VideoPlaylistDetailView(id: ref.id)
                 .gusTVFocusScope()
         }
+        .navigationDestination(for: BookSeriesRef.self) { ref in
+            BookSeriesDetailView(ref: ref).gusTVFocusScope()
+        }
         .navigationDestination(for: MediaCollectionRef.self) { ref in
             ScopedCollectionDestination(ref: ref)
                 .gusTVFocusScope()
@@ -113,7 +116,7 @@ private struct ScopedCollectionDestination: View {
     let ref: MediaCollectionRef
     var body: some View {
         if ref.scope == session.references.scope {
-            MediaCollectionDetailView(id: ref.id)
+            MediaCollectionDetailView(id: ref.id, format: ref.format)
         } else {
             ContentUnavailableView("Collection Unavailable", systemImage: "rectangle.stack")
         }
@@ -125,7 +128,7 @@ private struct ScopedCollectionsDestination: View {
     let ref: CollectionsRef
     var body: some View {
         if ref.scope == session.references.scope {
-            CollectionsView()
+            CollectionsView(initialFormat: ref.format)
         } else {
             ContentUnavailableView("Collections Unavailable", systemImage: "rectangle.stack")
         }

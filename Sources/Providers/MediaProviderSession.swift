@@ -17,6 +17,8 @@ struct MediaItemQuery: Sendable {
     var isRecursive: Bool
     var sort: MediaItemSort?
     var statusFilter: MediaItemStatusFilter
+    /// Catalog scans do not need chapters or stream metadata for every title.
+    var isBookCatalog = false
 
     init(
         parentID: String? = nil,
@@ -184,6 +186,11 @@ protocol MediaProviderSession: AnyObject, Sendable {
     func removeCollectionMembers(id: String, itemIDs: [String]) async throws
     func setCollectionArtwork(id: String, jpeg: Data) async throws
 
+    /// A server-confirmable series metadata edit on an ebook. A collection-management
+    /// grant alone does not grant permission to change book metadata.
+    func canEditBookSeries() async throws -> Bool
+    func setBookSeries(itemID: String, from expectedName: String?, to newName: String?) async throws
+
     // MARK: Book reading progress (gated by `capabilities.supportsBookProgressSync`)
 
     /// Reports EPUB reading position as a 0...1 fraction through the book, so it surfaces
@@ -196,6 +203,14 @@ protocol MediaProviderSession: AnyObject, Sendable {
 
 extension MediaProviderSession {
     func releasePlaybackResource(_ resource: PlaybackResource) async throws {}
+
+    func canEditBookSeries() async throws -> Bool {
+        false
+    }
+
+    func setBookSeries(itemID: String, from expectedName: String?, to newName: String?) async throws {
+        throw GusError.forbidden
+    }
 
     func collectionCapabilities(id: String?) async throws -> CollectionCapabilities {
         throw unsupportedCollections()

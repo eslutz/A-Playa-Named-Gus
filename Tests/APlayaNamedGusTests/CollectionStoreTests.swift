@@ -542,3 +542,23 @@ struct CollectionStoreTests {
         #expect(artworkWrites == 0)
     }
 }
+
+struct CollectionFormatTests {
+    @Test func shelvesMatchOnlyVisibleMembersAndKeepEmptyCollectionsInAll() {
+        let header = MediaItem(id: "collection", officialRating: "G", type: .boxSet)
+        let book = MediaItem(id: "ebook", officialRating: "G", type: .book)
+        let audio = MediaItem(id: "audio", officialRating: "G", type: .audioBook)
+        let mixed = MediaCollection(item: header, members: [book, audio], membersLoaded: true)
+        #expect(CollectionFormat.books.includes(mixed))
+        #expect(CollectionFormat.audiobooks.includes(mixed))
+        #expect(!CollectionFormat.movies.includes(mixed))
+        #expect(!CollectionFormat.audiobooks.includes(mixed, admitting: { $0.id != audio.id }))
+        #expect(!CollectionFormat.all.includes(mixed, admitting: { $0.id != header.id }))
+
+        let empty = MediaCollection(item: header, membersLoaded: true)
+        #expect(CollectionFormat.all.includes(empty))
+        #expect(!CollectionFormat.books.includes(empty))
+        let partial = MediaCollection(item: header, members: [book], membersLoaded: false)
+        #expect(!CollectionFormat.books.includes(partial))
+    }
+}

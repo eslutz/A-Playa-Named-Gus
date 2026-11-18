@@ -149,6 +149,129 @@ struct JellyfinMediaListProviderTests {
         #expect(body?["Taglines"] as? [String] == ["Preserved"])
     }
 
+    private func seriesUser(admin: Bool) throws -> (String, Int) {
+        let user = UserDto(policy: UserPolicy(authenticationProviderID: "provider", enableCollectionManagement: true, isAdministrator: admin, passwordResetProviderID: "reset"))
+        return try (String(decoding: JSONEncoder().encode(user), as: UTF8.self), 200)
+    }
+
+    @Test("Ebook series writes preserve the full item and confirm Jellyfin's response")
+    func ebookSeriesWrite() async throws {
+        let original = """
+        {"Id":"\(itemID)","Name":"Book One","Type":"Book","IndexNumber":4,"SeriesName":"Original",
+        "LockedFields":["Cast"],"FutureMetadata":{"Field":"Preserved"},"People":[{"Name":"Someone","Type":"FutureKind"}]}
+        """
+        let updated = original.replacingOccurrences(of: "Original", with: "New Name")
+        let fixture = try NativeListFixture(jsonResponses: [
+            (#"{"Version":"12.4.0"}"#, 200), seriesUser(admin: true), (original, 200), ("", 204), (updated, 200),
+        ])
+        defer { fixture.finish() }
+        #expect(try await fixture.provider.canEditBookSeries())
+        try await fixture.provider.setBookSeries(itemID: itemID, from: "Original", to: "New Name")
+        let writes = fixture.state.requests.filter { $0.httpMethod == "POST" }
+        let post = try #require(writes.first)
+        #expect(writes.count == 1)
+        #expect(post.url?.path == "/Items/\(itemID)")
+        let expected = try #require(JSONSerialization.jsonObject(with: Data(updated.utf8)) as? NSDictionary)
+        let body = try #require(JSONSerialization.jsonObject(with: bodyData(post)) as? NSDictionary)
+        #expect(expected == body)
+        #expect(fixture.state.requests.last?.httpMethod == "GET")
+    }
+
+    @Test("Series removal sends an empty string and accepts a missing series on readback")
+    func ebookSeriesRemoval() async throws {
+        let clear = #"{"Id":"\#(itemID)","Name":"Book","Type":"Book"}"#
+        let current = #"{"Id":"\#(itemID)","Name":"Book","Type":"Book","SeriesName":"Series"}"#
+        let fixture = try NativeListFixture(jsonResponses: [
+            (#"{"Version":"12.4"}"#, 200), seriesUser(admin: true), (current, 200), ("", 204), (clear, 200),
+        ])
+        defer { fixture.finish() }
+        #expect(try await fixture.provider.canEditBookSeries())
+        try await fixture.provider.setBookSeries(itemID: itemID, from: "Series", to: nil)
+        let post = try #require(fixture.state.requests.first { $0.httpMethod == "POST" })
+        let body = try #require(JSONSerialization.jsonObject(with: bodyData(post)) as? [String: Any])
+        #expect(body["SeriesName"] as? String == "")
+    }
+
+    @Test("Unsupported servers and accounts cannot edit book series")
+    func ebookSeriesPermissions() async throws {
+        for (version, admin) in [("10.11.11", true), ("12.0-rc1", true), ("12.4.0", false)] {
+            let fixture = try NativeListFixture(jsonResponses: [
+                (#"{"Version":"\#(version)"}"#, 200), seriesUser(admin: admin),
+            ])
+            defer { fixture.finish() }
+            #expect(try await !fixture.provider.canEditBookSeries())
+            await #expect(throws: GusError.forbidden) {
+                try await fixture.provider.setBookSeries(itemID: itemID, from: nil, to: "Series")
+            }
+            #expect(!fixture.state.requests.contains { $0.httpMethod == "POST" })
+        }
+    }
+
+    @Test("A stale series membership or audiobook response blocks the metadata write")
+    func ebookSeriesStaleOrUnsupportedItem() async throws {
+        for kind in ["Book", "AudioBook"] {
+            let fixture = try NativeListFixture(jsonResponses: [
+                (#"{"Version":"12.4"}"#, 200), seriesUser(admin: true),
+                (#"{"Id":"\#(itemID)","Type":"\#(kind)","Name":"Title","SeriesName":"Other"}"#, 200),
+            ])
+            defer { fixture.finish() }
+            #expect(try await fixture.provider.canEditBookSeries())
+            await #expect(throws: GusError.self) {
+                try await fixture.provider.setBookSeries(itemID: itemID, from: nil, to: "New")
+            }
+            #expect(!fixture.state.requests.contains { $0.httpMethod == "POST" })
+        }
+    }
+
+    @Test("An ignored edit surfaces a verification failure and never repeats the POST")
+    func ebookSeriesIgnored() async throws {
+        let book = #"{"Id":"\#(itemID)","Type":"Book","Name":"Unassigned"}"#
+        let fixture = try NativeListFixture(jsonResponses: [
+            (#"{"Version":"12.0"}"#, 200), seriesUser(admin: true), (book, 200), ("", 204), (book, 200),
+        ])
+        defer { fixture.finish() }
+        #expect(try await fixture.provider.canEditBookSeries())
+        await #expect(throws: GusError.self) {
+            try await fixture.provider.setBookSeries(itemID: itemID, from: nil, to: "Series")
+        }
+        #expect(fixture.state.requests.filter { $0.httpMethod == "POST" }.count == 1)
+    }
+
+    @Test("The ebook editor offers name-only volumes and reserves ID-backed group names")
+    func ebookSeriesAssignmentScope() {
+        let scope = BookSeriesEditScope([
+            MediaItem(id: "a", seriesID: "123", seriesName: "First Saga", type: .book),
+            MediaItem(id: "b", seriesID: "456", seriesName: "FIRST   SAGA", type: .book),
+            MediaItem(id: "c", seriesID: "789", seriesName: "Single ID", type: .book),
+            MediaItem(id: "d", seriesName: "Name Only", type: .book),
+            MediaItem(id: "e", seriesID: "00000000-0000-0000-0000-000000000000", type: .book),
+            MediaItem(id: "f", seriesID: "123", seriesName: "Audio Only", type: .audioBook),
+        ])
+        #expect(scope.editableBooks.compactMap(\.id) == ["d", "e"])
+        #expect(!scope.allowsAssignment(to: "  first Saga "))
+        #expect(!scope.allowsAssignment(to: "Single ID"))
+        #expect(scope.allowsAssignment(to: "Name Only"))
+        #expect(scope.allowsAssignment(to: "Audio Only"))
+    }
+
+    @Test("An ID-backed volume cannot be moved, and an ID appearing on readback prevents a false success")
+    func ebookSeriesIDVerification() async throws {
+        let free = #"{"Id":"\#(itemID)","Type":"Book","Name":"Volume"}"#
+        let grouped = #"{"Id":"\#(itemID)","Type":"Book","Name":"Volume","SeriesName":"Selected","SeriesId":"11111111111111111111111111111111"}"#
+        for idBeforeWrite in [true, false] {
+            let fixture = try NativeListFixture(jsonResponses: [
+                (#"{"Version":"12.4"}"#, 200), seriesUser(admin: true),
+                (idBeforeWrite ? grouped : free, 200), ("", 204), (grouped, 200),
+            ])
+            defer { fixture.finish() }
+            #expect(try await fixture.provider.canEditBookSeries())
+            await #expect(throws: GusError.self) {
+                try await fixture.provider.setBookSeries(itemID: itemID, from: idBeforeWrite ? "Selected" : nil, to: idBeforeWrite ? "Moved" : "Selected")
+            }
+            #expect(fixture.state.requests.filter { $0.httpMethod == "POST" }.count == (idBeforeWrite ? 0 : 1))
+        }
+    }
+
     @Test("Artwork uses base64 JPEG through the SDK transport")
     func collectionArtworkRequest() async throws {
         let fixture = try NativeListFixture(responses: [BaseItemDto(id: ServerMediaListID.string(listID), type: .boxSet)], emptyResponses: 1)

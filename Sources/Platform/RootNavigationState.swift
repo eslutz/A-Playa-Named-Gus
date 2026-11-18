@@ -91,6 +91,22 @@ final class RootNavigationState {
         return store
     }
 
+    /// An ebook may also be visible in a second, library-specific shelf.
+    /// Refresh the edited snapshot immediately and reload hidden shelves on return.
+    func refreshBookShelves(afterEditing store: LibraryStore) async {
+        let affected = libraries.compactMap { key, reference -> VisibleContent? in
+            guard let other = reference.value, other !== store, other.scope.groupsBookSeries else { return nil }
+            return .library(key)
+        }
+        for content in affected {
+            refreshedAt[content] = contentRevision - 1
+        }
+        await store.load(superseding: true)
+        for content in affected {
+            await refreshVisible(content)
+        }
+    }
+
     func detailStore(for item: MediaItem, session: SessionStore) -> ItemDetailStore {
         let current = item.id.flatMap { session.references.updates[$0] } ?? item
         let key = ItemRef(item: current).id

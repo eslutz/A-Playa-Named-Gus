@@ -24,9 +24,27 @@ struct AudioPlaybackTests {
         let genres = ["Movie, TV & Video Game Tie-Ins, Adventure, \"History, Modern\", adventure"]
         #expect(BookDetailMetadata.genres(genres) == ["Movie, TV & Video Game Tie-Ins", "Adventure", "History, Modern"])
         #expect(BookDetailMetadata.synopsis(#"First\r\n\nSecond"#) == "First\n\nSecond")
-        #expect(BookDetailMetadata.credit(for: MediaPerson(name: "Writer", creditType: "Author")) == "Author")
-        #expect(BookDetailMetadata.credit(for: MediaPerson(name: "Reader", role: "Narrator")) == "Narrator")
-        #expect(BookDetailMetadata.credit(for: MediaPerson(name: "Someone")) == "Contributor")
+        #expect(BookDetailMetadata.byline(for: MediaPerson(name: "Writer", creditType: "Author")) == .author)
+        #expect(BookDetailMetadata.byline(for: MediaPerson(name: "Reader", role: "Narrator")) == .narrator)
+        #expect(BookDetailMetadata.byline(for: MediaPerson(name: "Someone")) == nil)
+    }
+
+    @Test("library cards describe book credits and reserve progress for individual media and playlists")
+    func bookLibraryPresentation() {
+        let progress = MediaUserData(playbackPositionTicks: 10, playedPercentage: 20)
+        let people = [
+            MediaPerson(name: "Writer", creditType: "Author"),
+            MediaPerson(name: "writer", creditType: "Writer"),
+            MediaPerson(name: "Reader", role: "Narrator", creditType: "Writer"),
+        ]
+        let book = MediaItem(people: people, productionYear: 2024, type: .book, userData: progress)
+        #expect(book.bookBrowseSubtitle == "Writer · 2024")
+        #expect(book.bookNarratorNames == ["Reader"])
+        #expect(book.mediaAccessibility.label.contains("Writer"))
+        #expect(book.completionActionTitle == "Mark as Read")
+        #expect(MediaItem(type: .boxSet, userData: progress).playbackProgress == nil)
+        #expect(MediaItem(type: .boxSet, userData: progress).mediaAccessibility.value.isEmpty)
+        #expect(MediaItem(type: .playlist, userData: progress).playbackProgress == 0.2)
     }
 
     @Test("book and audiobook progress use format-specific units")

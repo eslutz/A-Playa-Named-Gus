@@ -69,8 +69,10 @@ struct VideoPlaylistRef: Hashable {
 struct MediaCollectionRef: Hashable {
     let id: String
     let scope: AccountScope
+    var format = CollectionFormat.all
 }
 
 struct CollectionsRef: Hashable {
     let scope: AccountScope
+    var format = CollectionFormat.all
 }

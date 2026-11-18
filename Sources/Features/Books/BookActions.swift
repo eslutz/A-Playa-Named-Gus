@@ -1,126 +1,97 @@
 import SwiftUI
 
-/// Read / share actions for a book on the detail screen.
-///
-/// Reading is available where the Readium navigator exists (iOS/iPadOS);
-/// the share sheet — whose primary job is "Open in Books" — everywhere except tvOS.
-/// tvOS browses book details only. The book file is fetched lazily on first use:
-/// only an already-downloaded/cached copy is offered up front, so opening a detail
-/// page never downloads the whole book speculatively.
+/// The reader and progress belong beside the book's synopsis.
 struct BookActionButtons: View {
-    @Environment(SessionStore.self) private var session
-    @Environment(OfflineDownloadStore.self) private var downloads
     let item: MediaItem
     var progress: BookDetailProgress? = nil
 
-    @State private var shareFileURL: URL?
-    @State private var isPreparingShare = false
-    @State private var shareErrorMessage: String?
-    @State private var readerItem: ItemRef?
+    #if canImport(ReadiumNavigator)
+        @State private var readerItem: ItemRef?
+    #endif
 
     var body: some View {
-        #if os(tvOS)
+        VStack(alignment: .leading, spacing: 10) {
+            #if canImport(ReadiumNavigator)
+                Button {
+                    readerItem = ItemRef(item: item)
+                } label: {
+                    Label(progress?.isInProgress == true ? "Continue Reading" : "Read", systemImage: "book")
+                        .gusProminentActionForeground()
+                }
+                .gusProminentGlassButtonStyle()
+                .controlSize(.large)
+                .gusProminentActionTint()
+                .visionHoverEffect(cornerRadius: 10)
+                .playerPresentation(item: $readerItem)
+            #endif
+
             if let progress {
                 BookDetailProgressBar(progress: progress)
             }
-        #else
-            VStack(alignment: .leading, spacing: 10) {
-                #if canImport(ReadiumNavigator)
-                    Button {
-                        readerItem = ItemRef(item: item)
-                    } label: {
-                        Label(progress?.isInProgress == true ? "Continue Reading" : "Read", systemImage: "book")
-                            .gusProminentActionForeground()
-                    }
-                    .gusProminentGlassButtonStyle()
-                    .controlSize(.large)
-                    .gusProminentActionTint()
-                    .visionHoverEffect(cornerRadius: 10)
-                #endif
-
-                if let progress {
-                    BookDetailProgressBar(progress: progress)
-                }
-                shareControl
-            }
-            .task(id: item.id) {
-                // Cheap, local-only probe so Share is a single tap when the file is
-                // already on device; otherwise the button fetches on demand.
-                shareFileURL = BookFileProvider(session: session, downloads: downloads).existingLocalFile(for: item)
-            }
-            #if canImport(ReadiumNavigator)
-            .playerPresentation(item: $readerItem)
-            #endif
-            .alert(
-                "Couldn't Prepare Book",
-                isPresented: Binding(
-                    get: { shareErrorMessage != nil },
-                    set: { isPresented in
-                        if !isPresented {
-                            shareErrorMessage = nil
-                        }
-                    }
-                )
-            ) {
-                Button("OK", role: .cancel) {
-                    shareErrorMessage = nil
-                }
-            } message: {
-                Text(shareErrorMessage ?? "")
-            }
-        #endif
+        }
     }
+}
 
-    #if !os(tvOS)
-        @ViewBuilder
-        private var shareControl: some View {
-            if let shareFileURL {
-                ShareLink(item: shareFileURL, preview: SharePreview(item.displayTitle)) {
-                    Label("Share", systemImage: "square.and.arrow.up")
-                }
-                .gusGlassButtonStyle()
-                .controlSize(.large)
-                .visionHoverEffect(cornerRadius: 10)
-                .accessibilityHint("Opens the share sheet — use it to open this book in Apple Books.")
-            } else {
-                Button {
-                    prepareShare()
-                } label: {
-                    if isPreparingShare {
-                        Label {
-                            Text("Preparing…")
-                        } icon: {
-                            ProgressView()
-                                .controlSize(.small)
+#if !os(tvOS)
+    /// Use the actual local file URL so the system offers readers for its format.
+    struct ExternalBookReaderSheet: View {
+        @Environment(SessionStore.self) private var session
+        @Environment(OfflineDownloadStore.self) private var downloads
+        @Environment(\.dismiss) private var dismiss
+        let item: MediaItem
+        @State private var fileURL: URL?
+        @State private var errorMessage: String?
+        @State private var attempt = 0
+
+        var body: some View {
+            Group {
+                if let fileURL {
+                    OfflineBookShareView(item: item, fileURL: fileURL)
+                } else {
+                    NavigationStack {
+                        Group {
+                            if let errorMessage {
+                                ContentUnavailableView {
+                                    Label("Couldn't Prepare Book", systemImage: "book.closed")
+                                } description: {
+                                    Text(errorMessage)
+                                } actions: {
+                                    Button("Try Again") { self.errorMessage = nil; attempt += 1 }
+                                }
+                            } else {
+                                ProgressView("Preparing Book…")
+                            }
                         }
-                    } else {
-                        Label("Share", systemImage: "square.and.arrow.up")
+                        .padding()
+                        .navigationTitle("Open in Another App")
+                        .toolbar {
+                            ToolbarItem(placement: .cancellationAction) { GusCloseButton { dismiss() } }
+                        }
                     }
                 }
-                .gusGlassButtonStyle()
-                .controlSize(.large)
-                .disabled(isPreparingShare)
-                .visionHoverEffect(cornerRadius: 10)
-                .accessibilityHint("Downloads the book, then offers the share sheet — use it to open this book in Apple Books.")
             }
-        }
-
-        private func prepareShare() {
-            guard !isPreparingShare else { return }
-            isPreparingShare = true
-            Task {
-                defer { isPreparingShare = false }
+            .task(id: attempt) {
+                let provider = BookFileProvider(session: session, downloads: downloads)
                 do {
-                    shareFileURL = try await BookFileProvider(session: session, downloads: downloads).localFile(for: item)
+                    let url: URL
+                    if let cached = provider.existingLocalFile(for: item) {
+                        url = cached
+                    } else {
+                        url = try await provider.localFile(for: item)
+                    }
+                    try Task.checkCancellation()
+                    guard session.isActive else { return }
+                    fileURL = url
                 } catch {
-                    let gusError = GusError(from: error)
-                    guard !gusError.isCancellation else { return }
-                    shareErrorMessage = gusError.localizedDescription
+                    let failure = GusError(from: error)
+                    if !Task.isCancelled, !failure.isCancellation {
+                        errorMessage = failure.localizedDescription
+                    }
                 }
             }
         }
-    #endif
-}
+    }
+#endif
 
 #if canImport(ReadiumNavigator)
     /// Fetches the book file (preferring an offline download), then presents the reader.
@@ -212,6 +183,9 @@ enum BookDetailProgress: Equatable {
             return .fraction(min(max(fraction, 0), 1))
         }
         if let ticks = localTicks {
+            if ticks == 0, locator == nil {
+                return data?.isWatched == true ? .fraction(1) : nil
+            }
             return .fraction(JellyfinBookProgress.fraction(forTicks: ticks))
         }
         if let percentage = data?.playedPercentage, percentage > 0, percentage.isFinite {

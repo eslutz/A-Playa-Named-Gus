@@ -871,7 +871,7 @@ milestone once it becomes the active focus and is ready to carry a hard acceptan
  advanced features materially improve Gus beyond the launch accessibility baseline without
  adding custom systems that duplicate Apple-provided accessibility behavior.
 
-- [x] **Book and audiobook details.** Separate both formats in main navigation and show cover-led reading and listening details with synopsis, genre tags, credits, and saved progress.
+- [x] **Book and audiobook details.** Separate both formats in main navigation. Show author, narrator where available, year, listening duration, full synopsis and saved progress. Browse inline stacks from Jellyfin series metadata. Administrators on supported Jellyfin 12 servers can update name-based ebook series with per-title readback. Audiobook stacks require readable series metadata from the server. Standard Jellyfin 10.11.11 and 12.4.0 omit it. Track upstream support in [issue #55](https://github.com/eslutz/A-Playa-Named-Gus/issues/55).
 - [~] **Books and audiobooks.** Add support for Jellyfin book libraries, with special focus
  on audiobooks as an audio-first playback experience. Candidate scope includes book
  browsing, audiobook playback, playback speed, chapter navigation, bookmarks, resume
@@ -1023,8 +1023,9 @@ October 12 pipeline policy supersedes direct-main publication: main now requires
 
 ## Native collections — implementation candidate
 
-- [~] Collections are independent library objects with Movies shelves, all-collections browsing, poster details, mixed-media sections, movie membership links, labeled search results and default/title/release-date sorting.
-- [~] Online creation, metadata/artwork edits, movie multi-select and membership removal respect separate capabilities; television browsing has no management controls. Collection code has no migration or offline-edit queue.
+- [~] Collections appear on Movies shelves and through a Collections link in Books and Audiobooks. Format filters use accessible member titles. All includes empty collections. Mixed collections show each format in its own section.
+- [~] Online creation, metadata/artwork edits, multi-select for movies, books and audiobooks, and membership removal respect Jellyfin permissions. Books and audiobooks support collection editing on iPhone, iPad, Mac and Vision Pro, and browsing on Apple TV. Membership changes preserve each title’s series metadata and playback or reading progress.
+- [x] Isolated Jellyfin 10.11.11 and 12.4.0 servers confirmed ebook, audiobook and mixed collection membership after a fresh sign-in. Deleting populated collections preserved the original titles.
 - [x] Authenticated collection create/edit/membership/artwork/delete readbacks passed against the isolated Jellyfin demo, including multiple memberships and preservation of member playback state.
 - [ ] Cross-platform UI/accessibility and physical-device acceptance. See [collection implementation evidence](Reviews/README.md) and the [Collections wiki guide](https://github.com/eslutz/A-Playa-Named-Gus/wiki/Collections).
 
