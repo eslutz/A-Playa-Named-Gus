@@ -39,6 +39,8 @@ struct AudioPlaybackTests {
         #expect(BookDetailProgress.listening(ticks: 2, duration: 10, percent: nil) == .fraction(0.2))
         #expect(BookDetailProgress.listening(ticks: 20, duration: 10, percent: nil) == .fraction(1))
         #expect(BookDetailProgress.listening(ticks: 5, duration: nil, percent: nil) == .unknown)
+        #expect(BookDetailProgress.listening(ticks: 2, duration: 10, percent: nil, completed: true) == .fraction(0.2))
+        #expect(BookDetailProgress.listening(ticks: 0, duration: 10, percent: nil, started: true, completed: true) == .fraction(1))
     }
 
     @Test("queue advances forward and stops at the end without repeat")

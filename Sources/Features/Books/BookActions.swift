@@ -220,17 +220,29 @@ enum BookDetailProgress: Equatable {
         if let ticks = data?.playbackPositionTicks, ticks > 0 {
             return .fraction(JellyfinBookProgress.fraction(forTicks: ticks))
         }
-        return locator != nil || data?.lastPlayedAt != nil ? .unknown : nil
+        if locator != nil {
+            return .unknown
+        }
+        if data?.isWatched == true {
+            return .fraction(1)
+        }
+        return data?.lastPlayedAt != nil ? .unknown : nil
     }
 
-    static func listening(ticks: Int?, duration: Int?, percent: Double?, started: Bool = false) -> Self? {
-        if let ticks, ticks > 0 || started, let duration, duration > 0 {
+    static func listening(ticks: Int?, duration: Int?, percent: Double?, started: Bool = false, completed: Bool = false) -> Self? {
+        if let ticks, ticks > 0 || (started && !completed), let duration, duration > 0 {
             return .fraction(min(max(Double(ticks) / Double(duration), 0), 1))
         }
         if let percent, percent > 0, percent.isFinite {
             return .fraction(min(percent / 100, 1))
         }
-        return started || (ticks ?? 0) > 0 ? .unknown : nil
+        if (ticks ?? 0) > 0 {
+            return .unknown
+        }
+        if completed {
+            return .fraction(1)
+        }
+        return started ? .unknown : nil
     }
 }
 

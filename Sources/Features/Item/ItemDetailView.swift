@@ -362,9 +362,6 @@ struct ItemDetailView: View {
 
     private func bookDetailProgress(for item: MediaItem) -> BookDetailProgress? {
         guard item.isBookFormat, let id = item.id else { return nil }
-        if item.userData?.isWatched == true {
-            return .fraction(1)
-        }
         let scope = session.references.scope
         if item.type == .book {
             let locator = BookProgressStore.shared.locatorJSON(forItemID: id, scope: scope)
@@ -379,7 +376,8 @@ struct ItemDetailView: View {
             ticks: checkpoint ?? resumeTicks(for: item) ?? item.userData?.playbackPositionTicks,
             duration: MediaPlaybackIdentity.runTimeTicks(for: downloaded?.playbackItem ?? item, mediaSourceID: sourceID),
             percent: checkpoint == nil ? item.userData?.playedPercentage : nil,
-            started: checkpoint != nil || item.userData?.lastPlayedAt != nil
+            started: checkpoint != nil || item.userData?.lastPlayedAt != nil,
+            completed: item.userData?.isWatched == true
         )
     }
 
