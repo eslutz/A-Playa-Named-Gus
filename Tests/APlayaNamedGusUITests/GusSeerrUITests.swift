@@ -448,7 +448,11 @@
         }
 
         private func openHistory(_ app: XCUIApplication) {
+            let menu = app.buttons["Seerr.menu"].firstMatch
+            XCTAssertTrue(menu.waitForExistence(timeout: 10))
             let history = app.buttons["My Requests"].firstMatch
+            XCTAssertFalse(history.exists, "Discover shows My Requests only inside its menu")
+            menu.tap()
             XCTAssertTrue(history.waitForExistence(timeout: 10))
             history.tap()
             XCTAssertTrue(app.navigationBars["My Requests"].waitForExistence(timeout: 10))

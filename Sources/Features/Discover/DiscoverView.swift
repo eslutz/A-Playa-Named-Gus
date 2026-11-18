@@ -56,11 +56,6 @@ struct DiscoverView: View {
                     .gusIPadIconOnly()
                     .accessibilityIdentifier("Seerr.menu")
                 }
-                if store.isConnected {
-                    ToolbarItem {
-                        SeerrRequestHistoryLink()
-                    }
-                }
             #endif
         }
         .gusTVTask(isPresented: $showingSetup) { SeerrConnectView() }
