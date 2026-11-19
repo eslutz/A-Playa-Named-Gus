@@ -80,7 +80,8 @@ struct DetailSynopsis: View {
     var moreIdentifier = "Detail.fullSynopsis"
     var focusItem: MediaItem?
     var lines = 4
-    @State private var truncated = false
+    @State private var previewHeight: CGFloat = 0
+    @State private var fullHeight: CGFloat = 0
 
     var body: some View {
         if let text = BookDetailMetadata.synopsis(overview) {
@@ -89,14 +90,19 @@ struct DetailSynopsis: View {
                     .lineLimit(lines)
                     .fixedSize(horizontal: false, vertical: true)
                     .accessibilityIdentifier(identifier)
-                    .overlayPreferenceValue(Text.LayoutKey.self) { layouts in
-                        Color.clear
-                            .allowsHitTesting(false)
-                            .onChange(of: layouts.contains { $0.layout.isTruncated }, initial: true) { _, value in
-                                truncated = value
-                            }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { previewHeight = $0 }
+                    .background(alignment: .topLeading) {
+                        // Compare the same text and font at this preview's actual width.
+                        // Some OS 26 text layouts omit the truncation flag at paragraph breaks.
+                        Text(verbatim: text)
+                            .lineLimit(nil)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { fullHeight = $0 }
+                            .hidden()
+                            .accessibilityHidden(true)
                     }
-                if truncated {
+                if previewHeight > 0, fullHeight > previewHeight + 0.5 {
                     let button = FullSynopsisButton(title: title, overview: text)
                         .accessibilityIdentifier(moreIdentifier)
                     if let focusItem {

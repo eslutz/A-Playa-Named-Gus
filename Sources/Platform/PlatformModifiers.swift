@@ -191,6 +191,15 @@ enum PosterGrid {
 enum DetailActionMetrics {
     static let minimumLabelHeight: CGFloat = 44
 
+    static var maximumSecondaryRowWidth: CGFloat {
+        #if os(tvOS)
+            // TV's native bordered labels include room for focused captions.
+            return 800
+        #else
+            return maximumRowWidth
+        #endif
+    }
+
     static var maximumRowWidth: CGFloat {
         #if os(macOS)
             return 280

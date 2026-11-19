@@ -390,6 +390,50 @@
             XCTAssertTrue(field.waitForExistence(timeout: 8))
             XCTAssertEqual(field.value as? String, "Horror")
             XCTAssertTrue(result.exists)
+
+            field.tap()
+            let clear = app.buttons["Clear text"].firstMatch
+            XCTAssertTrue(clear.waitForExistence(timeout: 5))
+            clear.tap()
+            field.tap()
+            field.typeText("Midnight")
+            dismissKeyboard(app)
+
+            let movieResults = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Midnight Story "))
+            let firstMovie = movieResults.matching(NSPredicate(format: "label BEGINSWITH %@", "Midnight Story 01")).firstMatch
+            XCTAssertTrue(firstMovie.waitForExistence(timeout: 12))
+            let deepGenre = app.descendants(matching: .any)["Search.genre.47000000000000000000000000000004"].firstMatch
+            func visible(_ element: XCUIElement) -> Bool {
+                guard element.exists, element.isHittable else { return false }
+                let y = element.frame.midY
+                return y > app.frame.minY + 90 && y < app.frame.maxY - 90
+            }
+
+            XCTAssertFalse(visible(deepGenre))
+            for _ in 0 ..< 20 where !visible(deepGenre) {
+                app.swipeUp(velocity: .slow)
+            }
+            XCTAssertTrue(visible(deepGenre))
+            XCTAssertFalse(visible(firstMovie))
+            guard let anchor = movieResults.allElementsBoundByIndex.first(where: visible) else {
+                XCTFail("Expected a visible movie beside the scrolled genre")
+                return
+            }
+            let anchorLabel = anchor.label
+            let originalY = anchor.frame.midY
+            deepGenre.tap()
+            let midnight = app.navigationBars["Midnight Mysteries"]
+            XCTAssertTrue(midnight.waitForExistence(timeout: 12))
+            XCTAssertTrue(app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "Night Radio")).firstMatch.waitForExistence(timeout: 8))
+            midnight.buttons.element(boundBy: 0).tap()
+
+            XCTAssertTrue(field.waitForExistence(timeout: 8))
+            XCTAssertEqual(field.value as? String, "Midnight")
+            let restored = movieResults.matching(NSPredicate(format: "label == %@", anchorLabel)).firstMatch
+            XCTAssertTrue(restored.waitForExistence(timeout: 8))
+            XCTAssertTrue(visible(restored))
+            XCTAssertFalse(visible(firstMovie))
+            XCTAssertEqual(restored.frame.midY, originalY, accuracy: 8)
         }
 
         func testSynopsisRespondsToWidthAndAccessibilityText() throws {

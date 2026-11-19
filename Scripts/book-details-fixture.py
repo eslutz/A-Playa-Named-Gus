@@ -206,7 +206,11 @@ class GenreHandler(Handler):
              "ImageTags": {"Primary": "serverGenreImage"}}
     members = [{"Id": "47000000000000000000000000000002", "Name": "The Lantern House", "Type": "Movie"},
                {"Id": "47000000000000000000000000000003", "Name": "Night Radio", "Type": "Series"}]
-    items = [genre, *members]
+    midnight_genre = {"Id": "47000000000000000000000000000004", "Name": "Midnight Mysteries", "Type": "Genre"}
+    midnight_movies = [{"Id": f"4800{index:028d}", "Name": f"Midnight Story {index:02d}", "Type": "Movie"}
+                       for index in range(1, 49)]
+    # A second realistic search page places a genre near the bottom of the grid.
+    items = [genre, *members, *midnight_movies[:-1], midnight_genre, midnight_movies[-1]]
 
     def do_GET(self):
         url = urlsplit(self.path)
@@ -214,7 +218,8 @@ class GenreHandler(Handler):
         if url.path.endswith("/Items") and "searchterm" in query:
             matches = [item for item in self.items if query["searchterm"].casefold() in item["Name"].casefold()]
         elif url.path.endswith("/Items") and "genreids" in query:
-            matches = self.members if query["genreids"].replace("-", "") == self.genre["Id"] else []
+            by_genre = {self.genre["Id"]: self.members, self.midnight_genre["Id"]: self.members[1:]}
+            matches = by_genre.get(query["genreids"].replace("-", ""), [])
         else:
             return super().do_GET()
         offset = int(query.get("startindex", 0))

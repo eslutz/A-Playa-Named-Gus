@@ -302,7 +302,7 @@ struct VideoPlaylistDetailView: View {
                 .accessibilityIdentifier("Playlist.shuffle")
             }
             .gusPhoneHeroAccessoryStyle(onArtwork: false)
-            .frame(maxWidth: DetailActionMetrics.maximumRowWidth)
+            .frame(maxWidth: DetailActionMetrics.maximumSecondaryRowWidth)
             if !isVideo && !playlist.entries.isEmpty {
                 Text("Play mixed media individually. Ordered video playback supports movies and episodes.").foregroundStyle(.secondary)
             }

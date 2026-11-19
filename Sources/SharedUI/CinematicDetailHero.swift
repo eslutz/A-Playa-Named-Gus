@@ -92,7 +92,7 @@ struct CinematicDetailHero<Accessory: View>: View {
                     upNextButton.gusTVDetailActionFocus(id: "nextUp", item: item)
                     accessory
                 }
-                .frame(maxWidth: DetailActionMetrics.maximumRowWidth)
+                .frame(maxWidth: DetailActionMetrics.maximumSecondaryRowWidth)
                 .tvFocusSection()
             }
         }
@@ -119,7 +119,7 @@ struct CinematicDetailHero<Accessory: View>: View {
             // symbols compact so accessibility text sizes cannot overlap peers.
             .dynamicTypeSize(...DynamicTypeSize.large)
             .gusPhoneHeroAccessoryStyle(onArtwork: false)
-            .frame(maxWidth: DetailActionMetrics.maximumRowWidth)
+            .frame(maxWidth: DetailActionMetrics.maximumSecondaryRowWidth)
         }
     }
 
@@ -404,7 +404,8 @@ struct DetailActionLayout: Layout {
         var index = 0
         var y = bounds.minY
         for line in lines(width: bounds.width, subviews: subviews) {
-            var x = bounds.midX - line.width / 2
+            let primaryWidth = min(bounds.width, DetailActionMetrics.maximumRowWidth)
+            var x = bounds.minX + max(0, (primaryWidth - line.width) / 2)
             for size in line.sizes {
                 subviews[index].place(at: CGPoint(x: x, y: y + (line.height - size.height) / 2), anchor: .topLeading, proposal: ProposedViewSize(size))
                 x += size.width + spacing

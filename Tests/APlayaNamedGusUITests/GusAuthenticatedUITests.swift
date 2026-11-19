@@ -181,6 +181,13 @@ final class GusAuthenticatedUITests: XCTestCase {
                             identifier: primaryAction == "Detail.play" ? primaryAction : nil,
                             label: primaryAction == "Play" ? primaryAction : nil
                         )
+                        if kind == "Movie" {
+                            let buttons = ["Detail.nextUp", "Detail.favorite", "Detail.more"].map { app.buttons[$0] }
+                            for button in buttons {
+                                XCTAssertTrue(button.exists)
+                                XCTAssertEqual(button.frame.midY, buttons[0].frame.midY, accuracy: 1)
+                            }
+                        }
                     #endif
                     capture(app, kind.lowercased() + "-header-" + appearance)
                     app.terminate()

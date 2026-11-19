@@ -35,7 +35,7 @@ extension View {
                 }
                 HStack(alignment: .top, spacing: 56) {
                     controls()
-                        .frame(width: DetailActionMetrics.maximumRowWidth, alignment: .leading)
+                        .frame(width: DetailActionMetrics.maximumSecondaryRowWidth, alignment: .leading)
                         .focusSection()
                     VStack(alignment: .leading, spacing: 20) {
                         if let overview = item.overview?.trimmedNilIfEmpty {
@@ -56,7 +56,7 @@ extension View {
                     AsyncPoster(url: backdropURL, placeholderSymbol: item.artworkPlaceholderSymbol, fallbackURLs: session.mediaProvider.artworkURLs(for: item, request: .init(role: item.type == .episode ? .episodeStill : .backdrop, maxWidth: 1920)))
                         .frame(width: geometry.size.width, height: geometry.size.height).clipped()
                         .mask {
-                            LinearGradient(stops: [.init(color: .black, location: 0.28), .init(color: .black.opacity(0.2), location: 0.65), .init(color: .clear, location: 1)], startPoint: .top, endPoint: .bottom)
+                            LinearGradient(stops: [.init(color: .black, location: 0.24), .init(color: .black.opacity(0.3), location: 0.48), .init(color: .black.opacity(0.08), location: 0.7), .init(color: .clear, location: 1)], startPoint: .top, endPoint: .bottom)
                         }
                         .accessibilityHidden(true)
                 }
