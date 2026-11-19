@@ -197,17 +197,7 @@ final class GusAuthenticatedUITests: XCTestCase {
 
         /// Uses the same loopback book fixture as the iPhone detail regressions.
         func testBookFullSynopsis() throws {
-            continueAfterFailure = false
-            let app = XCUIApplication()
-            app.launchEnvironment["GUS_DEMO_URL"] = "http://127.0.0.1:5058"
-            app.launchArguments = [
-                "--gus-demo-server",
-                "--gus-skip-session-restore",
-                "--gus-disable-cloud-sync",
-                "--gus-route",
-                "item/42000000000000000000000000000002",
-            ]
-            app.launch()
+            let app = launchBookFixture(route: "item/42000000000000000000000000000002")
             XCTAssertTrue(app.staticTexts["By Fixture Author"].firstMatch.waitForExistence(timeout: 25))
             XCTAssertTrue(app.staticTexts["Narrated by Fixture Reader"].firstMatch.exists)
             XCTAssertFalse(app.staticTexts["Credits"].exists)
@@ -232,16 +222,59 @@ final class GusAuthenticatedUITests: XCTestCase {
             XCTAssertTrue(showMore.waitForExistence(timeout: 5))
             XCTAssertTrue(heading.waitForNonExistence(timeout: 5))
             capture(app, "book-details")
+        }
 
-            app.terminate()
-            app.launchArguments[app.launchArguments.count - 1] = "item/42000000000000000000000000000004"
-            app.launch()
-            let fitting = app.staticTexts["Detail.heroOverview"].firstMatch
-            XCTAssertTrue(fitting.waitForExistence(timeout: 20))
-            XCTAssertEqual(fitting.label, "A short synopsis.")
-            XCTAssertFalse(app.buttons["Detail.fullSynopsis"].exists)
+        func testBookFittingSynopsisFromFirstLaunch() {
+            let app = launchBookFixture(route: "item/42000000000000000000000000000004")
+            assertFittingBookSynopsis(app)
             capture(app, "book-fitting-synopsis")
         }
+
+        private func launchBookFixture(route: String) -> XCUIApplication {
+            continueAfterFailure = false
+            let app = XCUIApplication()
+            app.launchEnvironment["GUS_DEMO_URL"] = "http://127.0.0.1:5058"
+            app.launchArguments = ["--gus-demo-server", "--gus-disable-cloud-sync", "--gus-route", route]
+            app.launch()
+            return app
+        }
+
+        private func assertFittingBookSynopsis(_ app: XCUIApplication) {
+            let fitting = app.staticTexts["Detail.heroOverview"].firstMatch
+            XCTAssertTrue(fitting.waitForExistence(timeout: 20), app.debugDescription)
+            XCTAssertEqual(fitting.label, "A short synopsis.")
+            XCTAssertFalse(app.buttons["Detail.fullSynopsis"].exists)
+        }
+    #endif
+
+    #if os(visionOS)
+        func testBookFittingSynopsisFromLibrary() throws {
+            let app = launchBookFixture(route: "home")
+            let books = app.buttons["Books"].firstMatch
+            if !books.waitForExistence(timeout: 5) {
+                let more = app.buttons["More"].firstMatch
+                XCTAssertTrue(more.waitForExistence(timeout: 20), app.debugDescription)
+                more.tap()
+            }
+            XCTAssertTrue(books.waitForExistence(timeout: 10), app.debugDescription)
+            books.tap()
+            let series = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "Fixture Saga")).firstMatch
+            XCTAssertTrue(series.waitForExistence(timeout: 10), app.debugDescription)
+            series.tap()
+            let volume = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "First Volume")).firstMatch
+            XCTAssertTrue(volume.waitForExistence(timeout: 10), app.debugDescription)
+            volume.tap()
+            assertFittingBookSynopsis(app)
+            capture(app, "spatial-book-from-library")
+
+            let home = app.buttons["Home"].firstMatch
+            XCTAssertTrue(home.waitForExistence(timeout: 10), app.debugDescription)
+            home.tap()
+            XCTAssertTrue(app.navigationBars["Home"].waitForExistence(timeout: 10), app.debugDescription)
+            try app.open(XCTUnwrap(URL(string: "gus://item/42000000000000000000000000000004")))
+            assertFittingBookSynopsis(app)
+        }
+
     #endif
 
     func testLoadedDetailLayouts() throws {
