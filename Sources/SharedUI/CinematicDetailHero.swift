@@ -246,6 +246,7 @@ struct DetailPrimaryButton: View {
     var body: some View {
         Button(action: action) {
             Label(title, systemImage: systemImage)
+                .fontWeight(.bold)
                 .gusProminentActionForeground()
                 .frame(maxWidth: .infinity)
         }
