@@ -320,6 +320,24 @@ final class GusAuthenticatedUITests: XCTestCase {
     #endif
 
     #if os(tvOS)
+        func testTVPlaybackHelpFromRemote() throws {
+            try prepare()
+            defer { finish() }
+            let app = launch("settings")
+            for (label, explanation) in [
+                ("About Streaming Quality", "Maximum lets compatible files play at original quality."),
+                ("About Remembering Episode Tracks", "Gus remembers the audio and subtitle choices"),
+            ] {
+                try focusTV(app, label: label)
+                XCUIRemote.shared.press(.select)
+                let message = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", explanation)).firstMatch
+                XCTAssertTrue(message.waitForExistence(timeout: 5), app.debugDescription)
+                capture(app, label)
+                XCUIRemote.shared.press(.select)
+                XCTAssertTrue(message.waitForNonExistence(timeout: 5))
+            }
+        }
+
         func testTVRemoteCanHideAndShowCollections() throws {
             continueAfterFailure = false
             let app = launch("settings")

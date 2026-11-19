@@ -378,6 +378,7 @@
             let result = app.descendants(matching: .any).matching(NSPredicate(format: "identifier BEGINSWITH %@", "Search.genre.")).firstMatch
             XCTAssertTrue(result.waitForExistence(timeout: 20))
             XCTAssertTrue(result.label.contains("Horror"))
+            capture("genre-horror-search-result")
             result.tap()
             let navigation = app.navigationBars["Horror"]
             XCTAssertTrue(navigation.waitForExistence(timeout: 12))
@@ -404,9 +405,10 @@
             XCTAssertTrue(firstMovie.waitForExistence(timeout: 12))
             let deepGenre = app.descendants(matching: .any)["Search.genre.47000000000000000000000000000004"].firstMatch
             func visible(_ element: XCUIElement) -> Bool {
-                guard element.exists, element.isHittable else { return false }
-                let y = element.frame.midY
-                return y > app.frame.minY + 90 && y < app.frame.maxY - 90
+                guard element.exists else { return false }
+                let frame = element.frame
+                let viewport = app.frame.insetBy(dx: 0, dy: 90)
+                return !frame.isEmpty && viewport.contains(CGPoint(x: frame.midX, y: frame.midY))
             }
 
             XCTAssertFalse(visible(deepGenre))
@@ -415,7 +417,10 @@
             }
             XCTAssertTrue(visible(deepGenre))
             XCTAssertFalse(visible(firstMovie))
-            guard let anchor = movieResults.allElementsBoundByIndex.first(where: visible) else {
+            let nearbyMovies = (43 ... 48).reversed().map { number in
+                movieResults.matching(NSPredicate(format: "label BEGINSWITH %@", "Midnight Story \(number)")).firstMatch
+            }
+            guard let anchor = nearbyMovies.first(where: visible) else {
                 XCTFail("Expected a visible movie beside the scrolled genre")
                 return
             }
