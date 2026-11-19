@@ -68,20 +68,21 @@ struct SettingsView: View {
             }
 
             Section {
-                HStack {
+                playbackSetting(
+                    helpTitle: "About Streaming Quality",
+                    helpText: "Maximum lets compatible files play at original quality. Lower settings cap the streaming bitrate for constrained networks."
+                ) {
                     Picker("Streaming Quality", selection: $playbackQualityRawValue) {
                         ForEach(PlaybackQuality.allCases) { quality in
                             Text(quality.title).tag(quality.rawValue)
                         }
                     }
-                    PlaybackHelpButton(
-                        title: "About Streaming Quality",
-                        message: "Maximum lets compatible files play at original quality. Lower settings cap the streaming bitrate for constrained networks."
-                    )
                 }
-                .accessibilityElement(children: .contain)
                 Toggle("Auto-Play Next Episode", isOn: $autoPlayNextEpisode)
-                HStack {
+                playbackSetting(
+                    helpTitle: "About Remembering Episode Tracks",
+                    helpText: "Gus remembers the audio and subtitle choices you make for each series on this device and account. Other episodes use those choices when matching tracks are available. Turning this off clears your saved choices."
+                ) {
                     Toggle("Remember Episode Tracks for This Account", isOn: $rememberPlaybackTracks)
                         .accessibilityIdentifier("Settings.rememberEpisodeTracks")
                         .onChange(of: rememberPlaybackTracks) { _, enabled in
@@ -90,12 +91,7 @@ struct SettingsView: View {
                         .task(id: session.user.id + session.server.id) {
                             rememberPlaybackTracks = PlaybackTrackMemory.shared.isEnabled(scope: AccountScope(serverID: session.server.id, userID: session.user.id))
                         }
-                    PlaybackHelpButton(
-                        title: "About Remembering Episode Tracks",
-                        message: "Gus remembers the audio and subtitle choices you make for each series on this device and account. Other episodes use those choices when matching tracks are available. Turning this off clears your saved choices."
-                    )
                 }
-                .accessibilityElement(children: .contain)
             } header: {
                 Text("Playback")
             }
@@ -208,6 +204,25 @@ struct SettingsView: View {
     }
 
     @ViewBuilder
+    private func playbackSetting<Control: View>(
+        helpTitle: LocalizedStringKey,
+        helpText: LocalizedStringKey,
+        @ViewBuilder control: () -> Control
+    ) -> some View {
+        #if os(tvOS)
+            // The television Form focuses each cell as one remote action.
+            control()
+            PlaybackHelpButton(title: helpTitle, message: helpText)
+        #else
+            HStack {
+                control()
+                PlaybackHelpButton(title: helpTitle, message: helpText)
+            }
+            .accessibilityElement(children: .contain)
+        #endif
+    }
+
+    @ViewBuilder
     private func storedUserRow(_ user: StoredUser, server: ServerConnection) -> some View {
         let isActiveUser = session.user.id == user.id && session.user.serverID == user.serverID
 
@@ -272,8 +287,12 @@ private struct PlaybackHelpButton: View {
     var body: some View {
         Button { showingHelp = true } label: {
             Label(title, systemImage: "info.circle")
+            #if os(tvOS)
+                .labelStyle(.titleAndIcon)
+            #else
                 .labelStyle(.iconOnly)
                 .frame(minWidth: 44, minHeight: 44)
+            #endif
                 .contentShape(Rectangle())
         }
         #if os(tvOS)
