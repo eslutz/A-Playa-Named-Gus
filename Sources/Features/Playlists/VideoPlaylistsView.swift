@@ -339,15 +339,6 @@ struct VideoPlaylistDetailView: View {
         let isPlayable = [.movie, .episode, .video].contains(entry.reference.item.type) || entry.reference.item.isAudioPlayable
         let title = admitted ? entry.reference.item.displayTitle : String(localized: "Restricted Content")
         return HStack(spacing: 16) {
-            if canEdit, !mutating, playlist.entries.count > 1 {
-                PlaylistDragHandle(
-                    title: title,
-                    moveUp: { move(index, by: -1, in: playlist) },
-                    moveDown: { move(index, by: 1, in: playlist) },
-                    canMoveUp: index > 0, canMoveDown: index + 1 < playlist.entries.count
-                )
-                .accessibilityIdentifier("Playlist.reorder." + entry.id.uuidString)
-            }
             Text("\(index + 1)").monospacedDigit().frame(width: max(28, CGFloat(String(max(playlist.entries.count, 1)).count) * numberDigitWidth), alignment: .trailing).foregroundStyle(.secondary)
             entryContent(entry, admitted: admitted, isPlayable: isPlayable)
                 .mediaItemContextMenu(item: admitted ? entry.reference.item : nil, groupName: playlist.name, canRemove: canEdit && !mutating, remove: { remove(entry) }) {

@@ -34,6 +34,9 @@ struct MediaListEditor: View {
     @State private var discarding = false
     @State private var error: String?
     @State private var submitted: [String] = []
+    #if os(iOS)
+        @State private var editMode: EditMode = .active
+    #endif
 
     private var scope: AccountScope {
         session.references.scope
@@ -110,16 +113,17 @@ struct MediaListEditor: View {
                 if canRename || canEditMetadata {
                     details
                 }
+                artwork
                 if canRemove {
                     contents
-                }
-                if canEditCover {
-                    artwork
                 }
             } else if error == nil {
                 ProgressView()
             }
         }
+        #if os(iOS)
+        .environment(\.editMode, $editMode)
+        #endif
         .disabled(saving)
         .navigationTitle(playlistID == nil ? "Edit Collection" : "Edit Playlist")
         .toolbar {
@@ -148,7 +152,7 @@ struct MediaListEditor: View {
     }
 
     private var details: some View {
-        Section("Details") {
+        Section(canEditMetadata ? "Details" : "Name") {
             if canRename {
                 TextField("Name", text: $name)
             }
@@ -165,35 +169,48 @@ struct MediaListEditor: View {
             if entries.isEmpty {
                 Text("No Titles").foregroundStyle(.secondary)
             }
-            ForEach(entries) { entry in
-                let title = ContentRatingGate.admitsStored(entry.item) ? entry.item.displayTitle : String(localized: "Restricted Content")
-                HStack {
-                    if playlistID != nil, !removed.contains(entry.id), order.count > 1 {
-                        PlaylistDragHandle(
-                            title: title,
-                            moveUp: { move(entry.id, by: -1) }, moveDown: { move(entry.id, by: 1) },
-                            canMoveUp: neighbor(of: entry.id, offset: -1) != nil, canMoveDown: neighbor(of: entry.id, offset: 1) != nil
-                        )
-                        .accessibilityIdentifier("Playlist.reorder." + entry.id)
-                    }
-                    Text(title)
-                        .strikethrough(removed.contains(entry.id))
-                    Spacer()
-                    Button {
-                        if !removed.insert(entry.id).inserted {
-                            removed.remove(entry.id)
-                        }
-                    } label: {
-                        Label(removed.contains(entry.id) ? "Undo Removal" : "Remove", systemImage: removed.contains(entry.id) ? "arrow.uturn.backward" : "minus.circle")
-                    }
-                    .buttonStyle(.borderless)
-                    .accessibilityIdentifier("MediaListEditor.remove." + entry.id)
+            #if os(iOS)
+                ForEach(entries) { entry in
+                    Text(ContentRatingGate.admitsStored(entry.item) ? entry.item.displayTitle : String(localized: "Restricted Content"))
                 }
-                .moveDisabled(removed.contains(entry.id))
-            }
-            .gusPlaylistMove(enabled: playlistID != nil && !saving) { indices, offset in
-                entries.move(fromOffsets: indices, toOffset: offset)
-            }
+                .onDelete { offsets in
+                    removed.formUnion(offsets.map { entries[$0].id })
+                    entries.remove(atOffsets: offsets)
+                }
+                .onMove(perform: playlistID != nil && !saving ? { indices, offset in
+                    entries.move(fromOffsets: indices, toOffset: offset)
+                } : nil)
+            #else
+                ForEach(entries) { entry in
+                    let title = ContentRatingGate.admitsStored(entry.item) ? entry.item.displayTitle : String(localized: "Restricted Content")
+                    HStack {
+                        Text(title)
+                            .strikethrough(removed.contains(entry.id))
+                        Spacer()
+                        Button {
+                            if !removed.insert(entry.id).inserted {
+                                removed.remove(entry.id)
+                            }
+                        } label: {
+                            Label(removed.contains(entry.id) ? "Undo Removal" : "Remove", systemImage: removed.contains(entry.id) ? "arrow.uturn.backward" : "minus.circle")
+                        }
+                        .buttonStyle(.borderless)
+                        .accessibilityIdentifier("MediaListEditor.remove." + entry.id)
+                        if playlistID != nil, !removed.contains(entry.id), order.count > 1 {
+                            PlaylistDragHandle(
+                                title: title,
+                                moveUp: { move(entry.id, by: -1) }, moveDown: { move(entry.id, by: 1) },
+                                canMoveUp: neighbor(of: entry.id, offset: -1) != nil, canMoveDown: neighbor(of: entry.id, offset: 1) != nil
+                            )
+                            .accessibilityIdentifier("Playlist.reorder." + entry.id)
+                        }
+                    }
+                    .moveDisabled(removed.contains(entry.id))
+                }
+                .gusPlaylistMove(enabled: playlistID != nil && !saving) { indices, offset in
+                    entries.move(fromOffsets: indices, toOffset: offset)
+                }
+            #endif
         }
     }
 
@@ -219,14 +236,18 @@ struct MediaListEditor: View {
             case .remove:
                 Text("Cover will be removed on Save.").foregroundStyle(.secondary)
             }
-            #if !os(tvOS)
-                Button("Change Artwork", systemImage: "photo") { importing = true }
-            #endif
-            if originalCoverTag != nil, cover != .remove {
-                Button("Remove Cover", systemImage: "trash", role: .destructive) { cover = .remove; preview = nil }
-            }
-            if cover != .unchanged {
-                Button("Undo Cover Change") { cover = .unchanged; preview = nil }
+            if canEditCover {
+                #if !os(tvOS)
+                    Button("Change Artwork", systemImage: "photo") { importing = true }
+                #endif
+                if originalCoverTag != nil, cover != .remove {
+                    Button("Remove Cover", systemImage: "trash", role: .destructive) { cover = .remove; preview = nil }
+                }
+                if cover != .unchanged {
+                    Button("Undo Cover Change") { cover = .unchanged; preview = nil }
+                }
+            } else {
+                Text("Cover editing requires permission and a connection to Jellyfin.").foregroundStyle(.secondary)
             }
         }
     }

@@ -434,9 +434,11 @@
             XCTAssertEqual(app.buttons.matching(identifier: "Playlist.addItems").count, 1)
             XCTAssertFalse(app.buttons["Playlist.nextUp"].exists)
             let handles = app.descendants(matching: .any).matching(NSPredicate(format: "identifier BEGINSWITH %@", "Playlist.reorder."))
-            XCTAssertEqual(handles.count, 2)
-            let destination = handles.element(boundBy: 0).coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.05))
-            handles.element(boundBy: 1).coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
+            XCTAssertEqual(handles.count, 0)
+            let rows = app.cells.containing(NSPredicate(format: "identifier BEGINSWITH %@", "Playlist.entry."))
+            XCTAssertEqual(rows.count, 2)
+            let destination = rows.element(boundBy: 0).coordinate(withNormalizedOffset: CGVector(dx: 0.1, dy: 0.05))
+            rows.element(boundBy: 1).coordinate(withNormalizedOffset: CGVector(dx: 0.1, dy: 0.5))
                 .press(forDuration: 1.5, thenDragTo: destination, withVelocity: .slow, thenHoldForDuration: 1.2)
             let changed = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
                 app.staticTexts["May Irwin Kiss (1896)"].firstMatch.frame.minY < app.staticTexts["Edison Kinetoscopic Record of a Sneeze (1894)"].firstMatch.frame.minY
@@ -455,8 +457,9 @@
             app.buttons["Playlist.more"].tap(); app.buttons["Edit"].tap()
             let save = app.buttons["MediaListEditor.save"]
             XCTAssertTrue(save.waitForExistence(timeout: 5))
-            let removal = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@", "MediaListEditor.remove.")).firstMatch
+            let removal = app.images["minus.circle.fill"].firstMatch
             XCTAssertTrue(removal.waitForExistence(timeout: 5)); removal.tap()
+            app.buttons["Delete"].firstMatch.tap()
             let staged = try await nativeEntries(listID: id, playlist: true)
             XCTAssertEqual(staged.count, 1)
             app.buttons["Cancel"].firstMatch.tap()
@@ -467,6 +470,7 @@
 
             app.buttons["Playlist.more"].tap(); app.buttons["Edit"].tap()
             XCTAssertTrue(removal.waitForExistence(timeout: 5)); removal.tap()
+            app.buttons["Delete"].firstMatch.tap()
             save.tap()
             XCTAssertTrue(save.waitForNonExistence(timeout: 15))
             let remaining = try await nativeEntries(listID: id, playlist: true)
