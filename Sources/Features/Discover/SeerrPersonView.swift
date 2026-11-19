@@ -93,20 +93,24 @@ struct SeerrPersonView: View {
             }
         }
         .navigationTitle(model.revision == store.revision ? model.person?.name ?? String(localized: "Person") : String(localized: "Person"))
+        .toolbarTitleDisplayMode(.inline)
         .task(id: accessRevision) { await model.load(id: personID, store: store) }
     }
 
     private func content(_ person: SeerrPerson) -> some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 28) {
-                SeerrArtworkView(path: person.profilePath, aspectRatio: 4.0 / 5.0, symbol: "person", width: "h632")
-                    .frame(maxWidth: 240)
-                Text(person.name).font(.largeTitle.bold()).fixedSize(horizontal: false, vertical: true)
-                if let birthplace = person.placeOfBirth?.trimmedNilIfEmpty {
-                    Text(birthplace).font(.subheadline).foregroundStyle(.secondary)
-                }
-                if let biography = person.biography?.trimmedNilIfEmpty {
-                    Text(biography).font(.body).fixedSize(horizontal: false, vertical: true)
+                DetailCoverHeader {
+                    SeerrArtworkView(path: person.profilePath, aspectRatio: 4.0 / 5.0, contentMode: .fit, symbol: "person", width: "h632")
+                        .frame(maxWidth: 240)
+                } summary: {
+                    Text(person.name).font(.largeTitle.bold()).accessibilityAddTraits(.isHeader)
+                    if let birthplace = person.placeOfBirth?.trimmedNilIfEmpty {
+                        Text(birthplace).font(.subheadline).foregroundStyle(.secondary)
+                    }
+                    if let biography = person.biography?.trimmedNilIfEmpty {
+                        DetailSynopsis(title: person.name, overview: biography)
+                    }
                 }
                 credits
             }

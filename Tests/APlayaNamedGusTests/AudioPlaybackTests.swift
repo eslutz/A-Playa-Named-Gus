@@ -24,6 +24,9 @@ struct AudioPlaybackTests {
         let genres = ["Movie, TV & Video Game Tie-Ins, Adventure, \"History, Modern\", adventure"]
         #expect(BookDetailMetadata.genres(genres) == ["Movie, TV & Video Game Tie-Ins", "Adventure", "History, Modern"])
         #expect(BookDetailMetadata.synopsis(#"First\r\n\nSecond"#) == "First\n\nSecond")
+        #expect(BookDetailMetadata.synopsis("<p>Tom &amp; Jerry<br/>Return</p><p>&#x201C;Home&#8221;</p>") == "Tom & Jerry\nReturn\n\n“Home”")
+        #expect(BookDetailMetadata.synopsis("2 < 3 &amp; 4 > 1") == "2 < 3 & 4 > 1")
+        #expect(BookDetailMetadata.synopsis("<div><br></div>") == nil)
         #expect(BookDetailMetadata.byline(for: MediaPerson(name: "Writer", creditType: "Author")) == .author)
         #expect(BookDetailMetadata.byline(for: MediaPerson(name: "Reader", role: "Narrator")) == .narrator)
         #expect(BookDetailMetadata.byline(for: MediaPerson(name: "Someone")) == nil)

@@ -68,23 +68,36 @@ struct SettingsView: View {
             }
 
             Section {
-                Picker("Streaming Quality", selection: $playbackQualityRawValue) {
-                    ForEach(PlaybackQuality.allCases) { quality in
-                        Text(quality.title).tag(quality.rawValue)
+                HStack {
+                    Picker("Streaming Quality", selection: $playbackQualityRawValue) {
+                        ForEach(PlaybackQuality.allCases) { quality in
+                            Text(quality.title).tag(quality.rawValue)
+                        }
                     }
+                    PlaybackHelpButton(
+                        title: "About Streaming Quality",
+                        message: "Maximum lets compatible files play at original quality. Lower settings cap the streaming bitrate for constrained networks."
+                    )
                 }
+                .accessibilityElement(children: .contain)
                 Toggle("Auto-Play Next Episode", isOn: $autoPlayNextEpisode)
-                Toggle("Remember Episode Tracks for This Account", isOn: $rememberPlaybackTracks)
-                    .onChange(of: rememberPlaybackTracks) { _, enabled in
-                        PlaybackTrackMemory.shared.setEnabled(enabled, scope: AccountScope(serverID: session.server.id, userID: session.user.id))
-                    }
-                    .task(id: session.user.id + session.server.id) {
-                        rememberPlaybackTracks = PlaybackTrackMemory.shared.isEnabled(scope: AccountScope(serverID: session.server.id, userID: session.user.id))
-                    }
+                HStack {
+                    Toggle("Remember Episode Tracks for This Account", isOn: $rememberPlaybackTracks)
+                        .accessibilityIdentifier("Settings.rememberEpisodeTracks")
+                        .onChange(of: rememberPlaybackTracks) { _, enabled in
+                            PlaybackTrackMemory.shared.setEnabled(enabled, scope: AccountScope(serverID: session.server.id, userID: session.user.id))
+                        }
+                        .task(id: session.user.id + session.server.id) {
+                            rememberPlaybackTracks = PlaybackTrackMemory.shared.isEnabled(scope: AccountScope(serverID: session.server.id, userID: session.user.id))
+                        }
+                    PlaybackHelpButton(
+                        title: "About Remembering Episode Tracks",
+                        message: "Gus remembers the audio and subtitle choices you make for each series on this device and account. Other episodes use those choices when matching tracks are available. Turning this off clears your saved choices."
+                    )
+                }
+                .accessibilityElement(children: .contain)
             } header: {
                 Text("Playback")
-            } footer: {
-                Text("Maximum lets compatible files play at original quality. Lower settings cap the streaming bitrate for constrained networks.")
             }
 
             Section("iCloud Sync") {
@@ -247,6 +260,37 @@ private extension View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         #else
             formStyle(.grouped)
+        #endif
+    }
+}
+
+private struct PlaybackHelpButton: View {
+    let title: LocalizedStringKey
+    let message: LocalizedStringKey
+    @State private var showingHelp = false
+
+    var body: some View {
+        Button { showingHelp = true } label: {
+            Label(title, systemImage: "info.circle")
+                .labelStyle(.iconOnly)
+                .frame(minWidth: 44, minHeight: 44)
+                .contentShape(Rectangle())
+        }
+        #if os(tvOS)
+        .alert(title, isPresented: $showingHelp) {
+            Button("OK") {}
+        } message: {
+            Text(message)
+        }
+        #else
+        .buttonStyle(.borderless)
+        .popover(isPresented: $showingHelp) {
+            Text(message)
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(idealWidth: 280, maxWidth: 340, alignment: .leading)
+                .padding()
+                .presentationCompactAdaptation(.popover)
+        }
         #endif
     }
 }

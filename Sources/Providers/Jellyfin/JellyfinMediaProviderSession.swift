@@ -107,6 +107,7 @@ final class JellyfinMediaProviderSession: MediaProviderSession {
             sortBy: sortBy(for: query.sort),
             enableUserData: true,
             artistIDs: query.artistID.map { [$0] },
+            genreIDs: query.genreID.map { [$0] },
             enableTotalRecordCount: true,
             enableImages: true
         )
@@ -246,6 +247,26 @@ final class JellyfinMediaProviderSession: MediaProviderSession {
             resource: resolution.resource,
             isLive: resolution.mediaSource?.liveStreamID != nil
         )
+    }
+
+    func downloadBook(for item: MediaItem) async throws -> (file: URL, filename: String) {
+        guard item.type == .book, let id = item.id else { throw GusError.notFound }
+        guard item.canDownload == true else { throw GusError.forbidden }
+        let source = DownloadSourceResolver.bookOriginalSource(itemID: id, item: item)
+        let response = try await client.download(for: source.request)
+        // Without a disposition filename URLSession may manufacture "Download.pdf"
+        // from the endpoint path and MIME type. Prefer the media's basename in that case.
+        let disposition = (response.response as? HTTPURLResponse)?.value(forHTTPHeaderField: "Content-Disposition")
+        let suggested = disposition?.localizedCaseInsensitiveContains("filename") == true ? response.response.suggestedFilename : nil
+        let knownName = suggested ?? item.originalBookFilename
+        let filename: String
+        if let knownName, !URL(fileURLWithPath: knownName).pathExtension.isEmpty {
+            filename = URL(fileURLWithPath: knownName).lastPathComponent
+        } else {
+            let ext = response.response.mimeType == "application/pdf" ? "pdf" : source.fileExtension
+            filename = item.displayTitle + "." + ext
+        }
+        return (response.value, filename)
     }
 
     func downloadSource(for item: MediaItem, streamSelection: PlaybackStreamSelection) async throws -> DownloadSourceResolution {
@@ -611,12 +632,10 @@ final class JellyfinMediaProviderSession: MediaProviderSession {
         return true
     }
 
-    func canEditMediaListCover(_ list: EditableMediaList) async throws -> Bool {
-        guard try await collectionCapabilities(id: nil).editArtwork else { return false }
-        if case let .playlist(id) = list {
-            return await canEditPlaylist(id: id)
-        }
-        return true
+    func canEditMediaListCover(_: EditableMediaList) async throws -> Bool {
+        // Jellyfin authorizes Primary image uploads with RequiresElevation.
+        // Playlist membership permissions apply only to the playlist editor APIs.
+        try await collectionCapabilities(id: nil).editArtwork
     }
 
     func editMediaListMetadata(_ list: EditableMediaList, name: String?, expectedName: String, overview: String?, expectedOverview: String) async throws {
@@ -668,7 +687,7 @@ final class JellyfinMediaProviderSession: MediaProviderSession {
         if change == .remove, tag == nil {
             return
         }
-        if case let .replace(jpeg) = change, tag != nil, await listCoverMatches(list, jpeg: jpeg) {
+        if case let .replace(jpeg) = change, let tag, (try? await listCoverMatches(list, tag: tag, jpeg: jpeg)) == true {
             return
         }
         guard tag == expectedTag else {
@@ -682,27 +701,24 @@ final class JellyfinMediaProviderSession: MediaProviderSession {
             case .remove: _ = try await client.send(Paths.deleteItemImage(itemID: list.itemID, imageType: "Primary"))
             }
         } catch {
-            switch change {
-            case let .replace(jpeg):
-                if await listCoverMatches(list, jpeg: jpeg) {
-                    return
-                }
-            case .remove:
-                do {
-                    if try await primaryImageTag(list) == nil {
-                        return
-                    }
-                } catch {}
-            case .unchanged: break
+            if (try? await confirmedCover(list, change: change)) == true {
+                return
             }
             throw error
         }
-        let observed = try await primaryImageTag(list)
-        guard observed != tag else {
-            if case let .replace(jpeg) = change, await listCoverMatches(list, jpeg: jpeg) {
-                return
-            }
+        guard try await confirmedCover(list, change: change) else {
             throw GusError.server(String(localized: "Jellyfin did not confirm the cover change."))
+        }
+    }
+
+    private func confirmedCover(_ list: EditableMediaList, change: MediaListCoverEdit) async throws -> Bool {
+        let tag = try await primaryImageTag(list)
+        switch change {
+        case .unchanged: return true
+        case .remove: return tag == nil
+        case let .replace(jpeg):
+            guard let tag else { return false }
+            return try await listCoverMatches(list, tag: tag, jpeg: jpeg)
         }
     }
 
@@ -727,9 +743,9 @@ final class JellyfinMediaProviderSession: MediaProviderSession {
         return (header["ImageTags"] as? [String: String])?["Primary"]
     }
 
-    private func listCoverMatches(_ list: EditableMediaList, jpeg: Data) async -> Bool {
-        let request = Paths.getItemImage(itemID: list.itemID, imageType: "Primary")
-        return (try? await client.data(for: request).value) == jpeg
+    private func listCoverMatches(_ list: EditableMediaList, tag: String, jpeg: Data) async throws -> Bool {
+        let request = Paths.getItemImage(itemID: list.itemID, imageType: "Primary", parameters: .init(tag: tag))
+        return try await client.data(for: request).value == jpeg
     }
 
     // MARK: Library collections (independent of playlist occurrence APIs)
@@ -1027,6 +1043,7 @@ final class JellyfinMediaProviderSession: MediaProviderSession {
 
     private static func baseItemKind(for type: MediaItemType) -> BaseItemKind? {
         switch type {
+        case .genre: return .genre
         case .movie: return .movie
         case .episode: return .episode
         case .series: return .series

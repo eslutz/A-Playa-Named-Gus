@@ -555,7 +555,7 @@ private extension Array where Element == (String, String?) {
     }
 }
 
-private final class FakeDownloadSessionCoordinator: DownloadSessionCoordinating {
+final class FakeDownloadSessionCoordinator: DownloadSessionCoordinating {
     weak var eventHandler: DownloadSessionCoordinatorEventHandler?
     var pauseResumeData: Data?
     var startedRecordIDs: [String] = []
@@ -588,8 +588,8 @@ private final class FakeDownloadSessionCoordinator: DownloadSessionCoordinating 
 }
 
 @MainActor
-private extension SessionStore {
-    static var testSession: SessionStore {
+extension SessionStore {
+    fileprivate static var testSession: SessionStore {
         makeTestSession()
     }
 

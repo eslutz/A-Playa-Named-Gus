@@ -15,8 +15,7 @@ struct AboutCardsView: View {
             VStack(alignment: .leading, spacing: 24) {
                 if let overview = item.overview?.trimmedNilIfEmpty {
                     DetailInfoCard(title: "Synopsis") {
-                        Text(overview).fixedSize(horizontal: false, vertical: true)
-                        FullSynopsisButton(title: item.displayTitle, overview: overview)
+                        DetailSynopsis(title: item.displayTitle, overview: overview, moreIdentifier: "Detail.aboutFullSynopsis")
                     }
                     .tvFocusSection()
                 }
@@ -73,15 +72,52 @@ struct AboutCardsView: View {
     }
 }
 
+/// Inspect the rendered preview itself so a change in width, font or locale updates the action.
+struct DetailSynopsis: View {
+    let title: String
+    let overview: String
+    var identifier = "Detail.synopsisPreview"
+    var moreIdentifier = "Detail.fullSynopsis"
+    var focusItem: MediaItem?
+    var lines = 4
+    @State private var truncated = false
+
+    var body: some View {
+        if let text = BookDetailMetadata.synopsis(overview) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(verbatim: text)
+                    .lineLimit(lines)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier(identifier)
+                    .overlayPreferenceValue(Text.LayoutKey.self) { layouts in
+                        Color.clear
+                            .allowsHitTesting(false)
+                            .onChange(of: layouts.contains { $0.layout.isTruncated }, initial: true) { _, value in
+                                truncated = value
+                            }
+                    }
+                if truncated {
+                    let button = FullSynopsisButton(title: title, overview: text)
+                        .accessibilityIdentifier(moreIdentifier)
+                    if let focusItem {
+                        button.gusTVDetailActionFocus(id: "synopsis", item: focusItem)
+                    } else {
+                        button
+                    }
+                }
+            }
+        }
+    }
+}
+
 /// Opens the same scrollable synopsis from either a book preview or an About card.
-struct FullSynopsisButton: View {
+private struct FullSynopsisButton: View {
     let title: String
     let overview: String
     @State private var showsFullSynopsis = false
 
     var body: some View {
         Button("Show More") { showsFullSynopsis = true }
-            .accessibilityIdentifier("Detail.fullSynopsis")
             .gusTVTask(isPresented: $showsFullSynopsis) {
                 NavigationStack {
                     ScrollView {

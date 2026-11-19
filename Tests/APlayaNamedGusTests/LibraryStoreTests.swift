@@ -7,6 +7,26 @@ import Testing
 @Suite("Library store helpers", .serialized)
 struct LibraryStoreTests {
     @MainActor
+    @Test func genreBrowseUsesGenreIDAndFiltersMembers() async throws {
+        let genre = JellyfinMediaItemMapper.mediaItem(from: BaseItemDto(id: "horror", name: "Horror", type: .genre))
+        #expect(genre.type == .genre)
+        #expect(genre.gusTVPlaybackTarget(nextUp: [], episodes: []) == nil)
+        LibraryItemsURLProtocol.configure(responses: [
+            .init(result: .init(items: [
+                BaseItemDto(id: "allowed", type: .movie),
+                BaseItemDto(id: "restricted", type: .movie),
+            ], totalRecordCount: 2)),
+        ])
+        let scope = LibraryGridScope.genre(id: "horror", name: "Horror")
+        let store = try LibraryStore(scope: scope, session: libraryTestSession(), admits: { $0.id == "allowed" })
+        await store.load()
+        #expect(store.items.compactMap(\.id) == ["allowed"])
+        let request = try #require(LibraryItemsURLProtocol.recordedRequests.first)
+        #expect(request.genreIDs == "horror")
+        #expect(request.parentID == nil)
+    }
+
+    @MainActor
     @Test("a filtered multi-page series opens all accessible volumes")
     func bookSeriesMembershipAcrossPages() async throws {
         let first = BaseItemDto(id: "first", indexNumber: 1, name: "Z book", seriesName: "Fixture Saga", type: .book)
@@ -387,6 +407,7 @@ private struct StubbedLibraryItemsResponse: Sendable {
 }
 
 private struct RecordedLibraryItemsRequest: Equatable {
+    var genreIDs: String?
     var parentID: String?
     var searchTerm: String?
     var startIndex: Int?
@@ -546,6 +567,7 @@ private final class LibraryItemsURLProtocolState: @unchecked Sendable {
     private static func recordedRequest(from request: URLRequest) -> RecordedLibraryItemsRequest {
         let queryItems = URLComponents(url: request.url!, resolvingAgainstBaseURL: false)?.queryItems ?? []
         return RecordedLibraryItemsRequest(
+            genreIDs: queryValue("genreIds", in: queryItems),
             parentID: queryValue("parentID", in: queryItems),
             searchTerm: queryValue("searchTerm", in: queryItems),
             startIndex: queryValue("startIndex", in: queryItems).flatMap(Int.init),

@@ -158,6 +158,36 @@ final class GusAuthenticatedUITests: XCTestCase {
     #endif
 
     #if os(tvOS) || os(visionOS)
+        func testArtworkHeaderAppearances() throws {
+            try prepare()
+            defer { finish() }
+            for appearance in ["light", "dark"] {
+                for (kind, primaryAction) in [("Movie", "Detail.play"), ("MusicAlbum", "Play")] {
+                    let app = application()
+                    app.launchArguments = try [
+                        "--gus-demo-server",
+                        "--gus-disable-cloud-sync",
+                        "--gus-route",
+                        "item/" + required(kind),
+                        "-dev.ericslutz.gus.appearance",
+                        appearance,
+                    ]
+                    app.launch()
+                    let button = app.buttons[primaryAction].firstMatch
+                    XCTAssertTrue(button.waitForExistence(timeout: 25))
+                    #if os(tvOS)
+                        try focusTV(
+                            app,
+                            identifier: primaryAction == "Detail.play" ? primaryAction : nil,
+                            label: primaryAction == "Play" ? primaryAction : nil
+                        )
+                    #endif
+                    capture(app, kind.lowercased() + "-header-" + appearance)
+                    app.terminate()
+                }
+            }
+        }
+
         /// Uses the same loopback book fixture as the iPhone detail regressions.
         func testBookFullSynopsis() throws {
             continueAfterFailure = false
@@ -195,6 +225,15 @@ final class GusAuthenticatedUITests: XCTestCase {
             XCTAssertTrue(showMore.waitForExistence(timeout: 5))
             XCTAssertTrue(heading.waitForNonExistence(timeout: 5))
             capture(app, "book-details")
+
+            app.terminate()
+            app.launchArguments[app.launchArguments.count - 1] = "item/42000000000000000000000000000004"
+            app.launch()
+            let fitting = app.staticTexts["Detail.heroOverview"].firstMatch
+            XCTAssertTrue(fitting.waitForExistence(timeout: 20))
+            XCTAssertEqual(fitting.label, "A short synopsis.")
+            XCTAssertFalse(app.buttons["Detail.fullSynopsis"].exists)
+            capture(app, "book-fitting-synopsis")
         }
     #endif
 
@@ -402,8 +441,8 @@ final class GusAuthenticatedUITests: XCTestCase {
             XCTAssertTrue(lists.buttons["Playlist.create"].waitForExistence(timeout: 10))
             lists.terminate()
 
-            let detail = try launch("item/" + required("SynopsisMovie"))
-            try focusTV(detail, label: "Synopsis")
+            let detail = try launch("item/" + required("LongSynopsisMovie"))
+            try focusTV(detail, identifier: "Detail.fullSynopsis")
             XCUIRemote.shared.press(.select)
             XCTAssertTrue(detail.buttons["Close"].waitForExistence(timeout: 15))
             XCTAssertEqual(detail.buttons["Close"].staticTexts.count, 0)
@@ -443,8 +482,8 @@ final class GusAuthenticatedUITests: XCTestCase {
                     capture(app, "tv-remediation-collection-chooser")
                 }
                 XCUIRemote.shared.press(.menu)
-                if app.buttons["Synopsis"].exists {
-                    try focusTV(app, label: "Synopsis")
+                if app.buttons["Detail.fullSynopsis"].exists {
+                    try focusTV(app, identifier: "Detail.fullSynopsis")
                     capture(app, "tv-remediation-focused-synopsis-" + kind.lowercased())
                 }
                 app.terminate()
@@ -1170,7 +1209,7 @@ final class GusAuthenticatedUITests: XCTestCase {
             XCTAssertFalse(showAll.hasFocus || showAll.descendants(matching: .any).allElementsBoundByIndex.contains(where: \.hasFocus))
             capture(home, "tv-home-show-all-unfocused")
             home.terminate()
-            let app = try launch("item/" + required("SynopsisMovie"))
+            let app = try launch("item/" + required("LongSynopsisMovie"))
             let play = app.buttons["Detail.play"]
             XCTAssertTrue(play.waitForExistence(timeout: 30))
             let focused = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in play.hasFocus }, object: nil)
@@ -1233,8 +1272,8 @@ final class GusAuthenticatedUITests: XCTestCase {
             XCUIRemote.shared.press(.menu)
             let menuDismissed = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in !restart.exists }, object: nil)
             XCTAssertEqual(XCTWaiter.wait(for: [menuDismissed], timeout: 5), .completed)
-            try focusTV(app, label: "Synopsis")
-            let synopsis = app.buttons["Synopsis"]
+            try focusTV(app, identifier: "Detail.fullSynopsis")
+            let synopsis = app.buttons["Detail.fullSynopsis"]
             let synopsisFocused = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in synopsis.hasFocus }, object: nil)
             XCTAssertEqual(XCTWaiter.wait(for: [synopsisFocused], timeout: 5), .completed, app.debugDescription)
             XCUIRemote.shared.press(.select)
@@ -1242,23 +1281,17 @@ final class GusAuthenticatedUITests: XCTestCase {
             capture(app, "tv-full-synopsis")
             XCUIRemote.shared.press(.menu)
 
-            let fullSynopsis = app.buttons["Detail.fullSynopsis"]
-            for _ in 0 ..< 24 {
-                if fullSynopsis.exists, fullSynopsis.hasFocus {
-                    break
-                }
+            // A wide About card may fit the same overview that was clipped in the hero.
+            let aboutPreview = app.staticTexts["Detail.synopsisPreview"].firstMatch
+            for _ in 0 ..< 24 where !aboutPreview.exists || !app.windows.firstMatch.frame.intersects(aboutPreview.frame) {
                 XCUIRemote.shared.press(.down)
             }
-            // The first About card is a readable focus target to the left of Show More.
-            if !fullSynopsis.hasFocus {
-                XCUIRemote.shared.press(.right)
+            XCTAssertTrue(aboutPreview.exists)
+            let aboutMore = app.buttons["Detail.aboutFullSynopsis"]
+            if aboutMore.exists {
+                try focusTV(app, identifier: "Detail.aboutFullSynopsis")
+                XCTAssertTrue(app.windows.firstMatch.frame.contains(aboutMore.frame))
             }
-            let aboutFocused = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in fullSynopsis.hasFocus }, object: nil)
-            let aboutResult = XCTWaiter.wait(for: [aboutFocused], timeout: 5)
-            capture(app, "tv-about-focus-result")
-            XCTAssertEqual(aboutResult, .completed, app.debugDescription)
-            let window = app.windows.firstMatch.frame
-            XCTAssertTrue(window.contains(fullSynopsis.frame))
             capture(app, "tv-about-focused")
 
             app.terminate()
@@ -1469,7 +1502,7 @@ final class GusAuthenticatedUITests: XCTestCase {
         func testFullSynopsisHeading() throws {
             try prepare()
             defer { finish() }
-            let app = try launch("item/" + required("SynopsisMovie"))
+            let app = try launch("item/" + required("LongSynopsisMovie"))
             XCTAssertTrue(app.buttons["Detail.play"].waitForExistence(timeout: 30))
             let more = app.buttons["Detail.fullSynopsis"].firstMatch
             for _ in 0 ..< 10 {
@@ -1488,7 +1521,7 @@ final class GusAuthenticatedUITests: XCTestCase {
             more.tap()
             let heading = app.staticTexts["Synopsis.heading"]
             XCTAssertTrue(heading.waitForExistence(timeout: 10))
-            XCTAssertEqual(heading.label, try required("SynopsisMovieTitle"))
+            XCTAssertEqual(heading.label, try required("LongSynopsisMovieTitle"))
             capture(app, "full-synopsis")
             app.buttons["Synopsis.done"].tap()
             let dismissed = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in !heading.exists }, object: nil)
@@ -1764,13 +1797,16 @@ final class GusAuthenticatedUITests: XCTestCase {
         if let book = items.first(where: { $0["Type"] as? String == "Book" && $0["Name"] as? String == "Dracula" }) {
             result["NestedBook"] = book["Id"] as? String
         }
-        guard let synopsisMovie = items.filter({
+        let describedMovies = items.filter {
             $0["Type"] as? String == "Movie" && !($0["Overview"] as? String ?? "").isEmpty
-        }).max(by: { ($0["Name"] as? String ?? "").count < ($1["Name"] as? String ?? "").count }),
-              let id = synopsisMovie["Id"] as? String, let title = synopsisMovie["Name"] as? String
-        else { throw FixtureError.missingMedia }
-        result["SynopsisMovie"] = id
-        result["SynopsisMovieTitle"] = title
+        }
+        for (key, field) in [("SynopsisMovie", "Name"), ("LongSynopsisMovie", "Overview")] {
+            guard let movie = describedMovies.max(by: { ($0[field] as? String ?? "").count < ($1[field] as? String ?? "").count }),
+                  let id = movie["Id"] as? String, let title = movie["Name"] as? String
+            else { throw FixtureError.missingMedia }
+            result[key] = id
+            result[key + "Title"] = title
+        }
         for type in ["Movie", "Series", "Episode", "Season", "MusicAlbum", "MusicArtist", "PhotoAlbum", "Photo", "Book", "BoxSet", "Playlist"] {
             if let item = items.first(where: { $0["Type"] as? String == type }), let id = item["Id"] as? String {
                 result[type] = id

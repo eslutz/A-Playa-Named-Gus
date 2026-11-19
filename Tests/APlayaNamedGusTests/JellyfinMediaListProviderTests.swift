@@ -211,6 +211,16 @@ struct JellyfinMediaListProviderTests {
         #expect(fixture.state.requests.allSatisfy { $0.httpMethod == "GET" })
     }
 
+    @Test("Shared playlist artwork permission is independent of membership editing")
+    func playlistCoverPermission() async throws {
+        for admin in [true, false] {
+            let fixture = try NativeListFixture(jsonResponses: [seriesUser(admin: admin)])
+            defer { fixture.finish() }
+            #expect(try await fixture.provider.canEditMediaListCover(.playlist(listID)) == admin)
+            #expect(fixture.state.requests.count == 1)
+        }
+    }
+
     @Test("Removing a playlist cover deletes only Primary and confirms the updated tag")
     func playlistCoverRemoval() async throws {
         let id = ServerMediaListID.string(listID)
@@ -219,7 +229,7 @@ struct JellyfinMediaListProviderTests {
         """
         let cleared = original.replacingOccurrences(of: #""Primary":"old","#, with: "")
         let fixture = try NativeListFixture(jsonResponses: [
-            seriesUser(admin: true), (#"{"CanEdit":true}"#, 200), (original, 200), ("", 204), (cleared, 200),
+            seriesUser(admin: true), (original, 200), ("", 204), (cleared, 200),
         ])
         defer { fixture.finish() }
         try await fixture.provider.editMediaListCover(.playlist(listID), change: .remove, expectedTag: "old")
@@ -346,8 +356,8 @@ struct JellyfinMediaListProviderTests {
         }
     }
 
-    @Test("Artwork uses base64 JPEG through the SDK transport")
-    func collectionArtworkRequest() async throws {
+    @Test("Artwork uses base64 JPEG and confirms the exact replacement at its new tag", arguments: [true, false])
+    func collectionArtworkRequest(matches: Bool) async throws {
         let id = ServerMediaListID.string(listID)
         let original = """
         {"Id":"\(id)","Name":"Collection","Type":"BoxSet"}
@@ -355,10 +365,20 @@ struct JellyfinMediaListProviderTests {
         let updated = """
         {"Id":"\(id)","Name":"Collection","Type":"BoxSet","ImageTags":{"Primary":"uploaded"}}
         """
-        let fixture = try NativeListFixture(jsonResponses: [seriesUser(admin: true), (original, 200), ("", 204), (updated, 200)])
-        defer { fixture.finish() }
         let jpeg = Data([0xFF, 0xD8, 0xFF, 0xD9])
-        try await fixture.provider.editMediaListCover(.collection(id), change: .replace(jpeg), expectedTag: nil)
+        let fixture = try NativeListFixture(
+            data: [Data(seriesUser(admin: true).0.utf8), Data(original.utf8), Data(), Data(updated.utf8), matches ? jpeg : Data()],
+            statusCodes: [200, 200, 204, 200, 200]
+        )
+        defer { fixture.finish() }
+        if matches {
+            try await fixture.provider.editMediaListCover(.collection(id), change: .replace(jpeg), expectedTag: nil)
+        } else {
+            await #expect(throws: GusError.self) {
+                try await fixture.provider.editMediaListCover(.collection(id), change: .replace(jpeg), expectedTag: nil)
+            }
+        }
+        #expect(fixture.state.requests.last?.url?.query?.contains("tag=uploaded") == true)
         let request = try #require(fixture.state.requests.first { $0.httpMethod == "POST" })
         #expect(request.url?.path == "/Items/\(ServerMediaListID.string(listID))/Images/Primary")
         #expect(request.value(forHTTPHeaderField: "Content-Type") == "image/jpeg")
@@ -601,7 +621,7 @@ private struct NativeListFixture {
         try self.init(data: jsonResponses.map { Data($0.0.utf8) }, statusCodes: jsonResponses.map(\.1), suspendedPaths: suspendedPaths)
     }
 
-    private init(data: [Data], statusCodes: [Int]? = nil, suspendedPaths: Set<String> = []) throws {
+    init(data: [Data], statusCodes: [Int]? = nil, suspendedPaths: Set<String> = []) throws {
         let fixtureState = NativeListResponseState(responses: data, statusCodes: statusCodes, suspendedPaths: suspendedPaths)
         let fixtureID = UUID().uuidString
         state = fixtureState

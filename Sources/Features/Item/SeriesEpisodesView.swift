@@ -41,14 +41,22 @@ struct SeriesEpisodesView: View {
                     ScrollView(.horizontal, showsIndicators: false) {
                         LazyHStack(alignment: .top, spacing: 18) {
                             ForEach(store.episodes, id: \.id) { episode in
-                                NavigationLink(value: ItemRef(item: episode)) {
-                                    EpisodeCard(episode: episode)
-                                        .frame(width: episodeCardWidth)
+                                VStack(alignment: .leading, spacing: 4) {
+                                    NavigationLink(value: ItemRef(item: episode)) {
+                                        EpisodeCard(episode: episode)
+                                    }
+                                    .posterNavigationStyle()
+                                    .mediaItemContextMenu(item: episode)
+                                    .gusTVFocus(id: ItemRef(item: episode).id, section: "episodes:" + (store.selectedSeasonID ?? ""), ids: store.episodes.map { ItemRef(item: $0).id }, item: episode, context: "detail:" + ItemRef(item: store.series).id)
+                                    if let overview = episode.overview?.trimmedNilIfEmpty {
+                                        DetailSynopsis(title: episode.displayTitle, overview: overview, moreIdentifier: "Episode.fullSynopsis", lines: overviewLineLimit)
+                                            .font(.subheadline)
+                                            .foregroundStyle(.secondary)
+                                            .gusTVCardCaption()
+                                    }
                                 }
+                                .frame(width: episodeCardWidth)
                                 .id(ItemRef(item: episode).id)
-                                .posterNavigationStyle()
-                                .mediaItemContextMenu(item: episode)
-                                .gusTVFocus(id: ItemRef(item: episode).id, section: "episodes:" + (store.selectedSeasonID ?? ""), ids: store.episodes.map { ItemRef(item: $0).id }, item: episode, context: "detail:" + ItemRef(item: store.series).id)
                             }
                         }
                         .scrollTargetLayout()
@@ -70,6 +78,14 @@ struct SeriesEpisodesView: View {
                 root.scrollAnchors[key] = ItemRef(item: episode).id
             }
         }
+    }
+
+    private var overviewLineLimit: Int {
+        #if os(tvOS)
+            3
+        #else
+            2
+        #endif
     }
 
     private var episodeCardWidth: CGFloat {
@@ -147,12 +163,6 @@ private struct EpisodeCard: View {
                 Text(episode.displayTitle)
                     .font(.headline)
                     .lineLimit(2, reservesSpace: true)
-                if let overview = episode.overview?.trimmedNilIfEmpty {
-                    Text(overview)
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(overviewLineLimit)
-                }
                 #if os(tvOS)
                     if let runtime = episode.runtimeText {
                         Text(runtime)
@@ -177,14 +187,6 @@ private struct EpisodeCard: View {
             1040
         #else
             420
-        #endif
-    }
-
-    private var overviewLineLimit: Int {
-        #if os(tvOS)
-            3
-        #else
-            2
         #endif
     }
 }

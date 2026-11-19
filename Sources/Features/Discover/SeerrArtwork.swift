@@ -4,12 +4,13 @@ import SwiftUI
 struct SeerrArtworkView: View {
     let path: String?
     var aspectRatio: CGFloat = 2.0 / 3.0
+    var contentMode: ContentMode = .fill
     var symbol = "film"
     var width = "w500"
     var fallbackURL: URL?
 
     var body: some View {
-        ArtworkTile(url: SeerrArtwork.url(path: path, width: width), aspectRatio: aspectRatio, placeholderSymbol: symbol, fallbackURLs: [fallbackURL].compactMap { $0 })
+        ArtworkTile(url: SeerrArtwork.url(path: path, width: width), aspectRatio: aspectRatio, contentMode: contentMode, placeholderSymbol: symbol, fallbackURLs: [fallbackURL].compactMap { $0 })
             .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
             .accessibilityHidden(true)
     }

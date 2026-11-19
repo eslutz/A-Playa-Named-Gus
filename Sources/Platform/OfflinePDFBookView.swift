@@ -212,3 +212,67 @@ struct OfflinePDFBookView: View {
         }
     }
 #endif
+
+#if os(macOS)
+    import AppKit
+
+    /// Presents the macOS sharing picker once its anchor has entered the sheet window.
+    struct NativeBookShareSheet: NSViewRepresentable {
+        let fileURL: URL
+        let close: () -> Void
+
+        func makeNSView(context _: Context) -> Anchor {
+            Anchor(fileURL: fileURL, close: close)
+        }
+
+        func updateNSView(_: Anchor, context _: Context) {}
+
+        final class Anchor: NSView, @MainActor NSSharingServicePickerDelegate {
+            let picker: NSSharingServicePicker
+            let close: () -> Void
+            private var presented = false
+
+            init(fileURL: URL, close: @escaping () -> Void) {
+                picker = NSSharingServicePicker(items: [fileURL])
+                self.close = close
+                super.init(frame: NSRect(x: 0, y: 0, width: 240, height: 64))
+                picker.delegate = self
+            }
+
+            @available(*, unavailable)
+            required init?(coder _: NSCoder) {
+                fatalError()
+            }
+
+            override func viewDidMoveToWindow() {
+                super.viewDidMoveToWindow()
+                guard window != nil, !presented else { return }
+                presented = true
+                Task { @MainActor in
+                    guard self.window != nil else { return }
+                    self.picker.show(relativeTo: self.bounds, of: self, preferredEdge: .minY)
+                }
+            }
+
+            func sharingServicePicker(_: NSSharingServicePicker, didChoose _: NSSharingService?) {
+                close()
+            }
+        }
+    }
+#elseif os(iOS) || os(visionOS)
+    import UIKit
+
+    /// Receives a prepared local file so the system discovers compatible reader extensions.
+    struct NativeBookShareSheet: UIViewControllerRepresentable {
+        let fileURL: URL
+        let close: () -> Void
+
+        func makeUIViewController(context _: Context) -> UIActivityViewController {
+            let controller = UIActivityViewController(activityItems: [fileURL], applicationActivities: nil)
+            controller.completionWithItemsHandler = { _, _, _, _ in close() }
+            return controller
+        }
+
+        func updateUIViewController(_: UIActivityViewController, context _: Context) {}
+    }
+#endif

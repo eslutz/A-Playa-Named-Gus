@@ -4,6 +4,7 @@
 import argparse
 import json
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from pathlib import Path
 from urllib.parse import parse_qs, urlsplit
 from uuid import uuid4
 
@@ -11,10 +12,11 @@ USER = {"Id": "11111111111111111111111111111111", "Name": "Book Fixture"}
 SERVER = "77777777777777777777777777777777"
 BOOK = {
     "Id": "42000000000000000000000000000001", "Type": "Book",
-    "Name": "Fixture Printed Book", "ProductionYear": 2024,
+    "Name": "Fixture Printed Book", "ProductionYear": 2024, "CanDownload": True,
     "Overview": ("First printed paragraph. The station librarian finds a book due back a century earlier. "
                  "Its notes send her through the closed wing, where every shelf holds a different account "
                  "of the same voyage. She must discover which account the missing reader wanted her to find."
+                 "<p>Each map describes a different route.</p><p>One page bears the seal of her own library.</p>"
                  "\\n\\nSecond printed paragraph."),
     "RunTimeTicks": 10000000, "UserData": {"PlaybackPositionTicks": 2500000, "PlayedPercentage": 25},
     "Genres": ["Fantasy", "Adventure"],
@@ -27,6 +29,7 @@ AUDIOBOOK = {
     "Overview": ("A spoken opening. A radio operator hears a familiar voice on a silent channel. "
                  "As she follows the signal along the coast, the story unfolds through recordings, "
                  "letters and fragments of the last broadcast from the island lighthouse."
+                 "<p>She follows the boats inland.</p><p>The final tape names the keeper.</p>"
                  "\\n\\nA second paragraph."),
     "RunTimeTicks": 72000000000, "UserData": {"PlaybackPositionTicks": 18000000000, "PlayedPercentage": 25},
     "Genres": ["Movie, TV & Video Game Tie-Ins, Adventure, Contemporary Fantasy"],
@@ -37,7 +40,7 @@ AUDIOBOOK = {
 def volume(template, number, title, index):
     return {**template, "Id": f"4200000000000000000000000000{number:04d}",
             "Name": title, "SeriesName": "Fixture Saga", "IndexNumber": index,
-            "Overview": "", "UserData": {"Played": False}}
+            "Overview": "A short synopsis.", "UserData": {"Played": False}}
 
 
 ITEMS = [BOOK, AUDIOBOOK, volume(BOOK, 3, "Second Volume", 2),
@@ -71,6 +74,20 @@ class Handler(BaseHTTPRequestHandler):
         query = {key.lower(): values for key, values in parse_qs(url.query).items()}
         if path == "/health":
             self.respond({"fixture": "gus-book-details"})
+        elif path.endswith("/Download"):
+            book = next((item for item in self.items if item["Type"] == "Book" and path == "/Items/" + item["Id"] + "/Download"), None)
+            if not book:
+                return self.respond({}, 404)
+            if "gus-book-fixture" not in self.headers.get("Authorization", "") or "api_key" in query:
+                return self.respond({}, 401)
+            # Original, valid EPUB bytes. The real server sends a filename with Content-Disposition.
+            data = (Path(__file__).resolve().parents[1] / "Tests/APlayaNamedGusTests/Fixtures/ReaderOwnership.epub").read_bytes()
+            self.send_response(200)
+            self.send_header("Content-Type", "application/epub+zip")
+            self.send_header("Content-Disposition", 'attachment; filename="Fixture original edition.epub"')
+            self.send_header("Content-Length", str(len(data)))
+            self.end_headers()
+            self.wfile.write(data)
         elif path == "/System/Info/Public":
             self.respond({"Id": self.server_id, "ServerName": "Book Fixture", "Version": self.version})
         elif path in ("/Users/Me", "/Users/" + self.user["Id"]):
@@ -171,9 +188,24 @@ class AdminHandler(Handler):
         self.respond(None, 204)
 
 
+class SynopsisHandler(Handler):
+    """Short and long rights-cleared descriptions for the responsive detail tests."""
+    items = [
+        {"Id": "46000000000000000000000000000001", "Name": "A New City", "Type": "Series",
+         "Overview": ("When a family moves from their farm to an unfamiliar city, every errand becomes an "
+                      "adventure. Between meeting their neighbors and learning the bus routes, the children "
+                      "find unexpected reminders of home in their new neighborhood.")},
+        {"Id": "46000000000000000000000000000002", "Name": "The Backyard Launch", "Type": "Episode",
+         "Overview": "The children build a backyard rocket to help their neighbor reach for the stars."},
+    ]
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--series-editor", action="store_true", help="Serve the editable 12.4 fixture on port 5059")
+    parser.add_argument("--synopses", action="store_true", help="Serve the responsive synopsis fixture on port 5060")
     args = parser.parse_args()
     port, handler = (5059, AdminHandler) if args.series_editor else (5058, Handler)
+    if args.synopses:
+        port, handler = 5060, SynopsisHandler
     ThreadingHTTPServer(("127.0.0.1", port), handler).serve_forever()

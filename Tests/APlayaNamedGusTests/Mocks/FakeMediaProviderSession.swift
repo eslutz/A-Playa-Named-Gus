@@ -301,6 +301,12 @@ final class FakeMediaProviderSession: MediaProviderSession {
         try await cancelLiveTVTimerHandler?(id)
     }
 
+    var downloadBookHandler: ((MediaItem) async throws -> (file: URL, filename: String))?
+    func downloadBook(for item: MediaItem) async throws -> (file: URL, filename: String) {
+        guard let downloadBookHandler else { throw GusError.notFound }
+        return try await downloadBookHandler(item)
+    }
+
     func downloadSource(for item: MediaItem, streamSelection: PlaybackStreamSelection) async throws -> DownloadSourceResolution {
         downloadSourceCallCount += 1
         let sourceID = streamSelection.mediaSourceID ?? item.mediaSources.first?.id

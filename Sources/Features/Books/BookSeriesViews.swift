@@ -65,12 +65,20 @@ private struct BookSeriesLabel: View {
     let complete: Bool
 
     private var subtitle: String {
-        guard complete else { return String(localized: "Series") }
         let count = series.members.count
         if series.id.format == .audioBook {
+            guard complete else { return String(localized: "Series") }
             return count == 1 ? String(localized: "Series · 1 audiobook") : String(localized: "Series · \(count) audiobooks")
         }
-        return count == 1 ? String(localized: "Series · 1 book") : String(localized: "Series · \(count) books")
+        let byline = series.authorNames.formatted(.list(type: .and))
+        let bookCount: String
+        if complete {
+            bookCount = count == 1 ? String(localized: "1 book") : String(localized: "\(count) books")
+        } else {
+            bookCount = count == 1 ? String(localized: "At least 1 book") : String(localized: "At least \(count) books")
+        }
+        guard !byline.isEmpty else { return bookCount }
+        return String(localized: "\(byline) · \(bookCount)")
     }
 
     var body: some View {
@@ -101,7 +109,9 @@ private struct BookSeriesLabel: View {
         VStack(alignment: .leading, spacing: 3) {
             Text(series.name).font(showsList ? .body.weight(.medium) : .subheadline.weight(.medium))
                 .foregroundStyle(.primary)
-            Text(subtitle).font(.caption).foregroundStyle(.secondary)
+            if !subtitle.isEmpty {
+                Text(subtitle).font(.caption).foregroundStyle(.secondary)
+            }
         }
     }
 
@@ -131,6 +141,8 @@ struct BookSeriesDetailView: View {
     @Environment(SessionStore.self) private var session
     @Environment(RootNavigationState.self) private var root
     @Environment(\.dismiss) private var dismiss
+    @AppStorage(ContentRatingGate.limitDefaultsKey) private var limit = ContentRatingGate.Limit.off
+    @AppStorage(ContentRatingGate.hideUnratedDefaultsKey) private var hideUnrated = false
     let ref: BookSeriesRef
     @State private var store: LibraryStore?
 
@@ -144,7 +156,8 @@ struct BookSeriesDetailView: View {
             if session.references.scope != ref.account {
                 ContentUnavailableView("Series Unavailable", systemImage: "books.vertical")
             } else if let store {
-                let members = store.bookCatalog.series(ref.key)?.members ?? []
+                let series = store.bookCatalog.series(ref.key)
+                let members = series?.members ?? []
                 ScrollView {
                     VStack(alignment: .leading) {
                         if let error = store.refreshError {
@@ -153,6 +166,21 @@ struct BookSeriesDetailView: View {
                         }
                         LoadingStateView(state: store.state, isEmpty: members.isEmpty, emptyTitle: "No Titles in This Series", emptySymbol: "books.vertical", retryAction: { Task { await store.load() } }) {
                             LazyVStack(alignment: .leading, spacing: 0) {
+                                if let cover = ContentRatingGate.coverMembers(members, limit: limit, hideUnrated: hideUnrated, count: 1).first {
+                                    DetailCoverHeader {
+                                        let urls = session.mediaProvider.artworkURLs(for: cover, request: .init(role: cover.coverArtworkRole, maxWidth: 640))
+                                        ArtworkTile(url: urls.first, aspectRatio: cover.type == .audioBook ? 1 : 2.0 / 3.0, contentMode: .fit, placeholderSymbol: "books.vertical", fallbackURLs: Array(urls.dropFirst()))
+                                            .frame(maxWidth: 220)
+                                    } summary: {
+                                        Text(currentRef.name).font(.largeTitle.bold()).accessibilityAddTraits(.isHeader)
+                                        if let authors = series?.authorNames, !authors.isEmpty {
+                                            Text(authors.formatted(.list(type: .and)))
+                                        }
+                                        if store.hasCompleteBookCatalog {
+                                            Text("\(members.count) titles").foregroundStyle(.secondary)
+                                        }
+                                    }
+                                }
                                 ForEach(members, id: \.id) { item in
                                     MediaItemNavigationLink(item: item) { MediaLibraryRow(item: item) }
                                         .buttonStyle(.plain)
@@ -178,6 +206,7 @@ struct BookSeriesDetailView: View {
             }
         }
         .navigationTitle(currentRef.name)
+        .toolbarTitleDisplayMode(.inline)
         .task(id: ref) {
             guard ref.account == session.references.scope else { return }
             let library = root.libraryStore(for: ref.library, session: session)

@@ -51,9 +51,7 @@ acceptance. Review images and recovery checkpoints stay outside Git.
 
 ## Refinement handoff reconciliation
 
-The current implementation adds native behavior that needs reconciliation with the
-canonical editable documents. The tracked Sketch snapshots were not changed or
-verified for these refinements. Sketch MCP is required for editable mutations;
+The tracked iPhone, iPad, Apple TV and Vision Pro files include updated artwork and action layouts. The scenarios below also cover earlier refinements that still need reconciliation with the private Sketch workspace. Sketch MCP is required for editable mutations;
 archive inspection, source review and simulator images do not establish saved-design
 fidelity.
 
@@ -72,7 +70,7 @@ the canonical document; do not invent frame IDs or duplicate every picker value.
 | Audio collection | Ordered queue continuation; complete Shuffle collection progress/cancel/retry; disabled unavailable transport |
 | Browsing context | Resume-aligned season/episode; latest-feed expansion; Back/resize/focus restoration |
 | Artwork and semantics | Role-specific missing/stale artwork, unchanged bounds, full episode identity/status, larger text and RTL |
-| Responsive details | Retained control/card focus through resizing; compact hero copy uses the existing opaque backing, with wrapped titles and synopses |
+| Responsive details | Retain focus through resizing. Keep the upper artwork clear, fade into the summary, and use a fixed gap between secondary actions. |
 | Reader recovery | Navigator construction failure; resource retry/keep reading; retained last valid locator |
 | Native previews | Compatible HLS scrubber preview; tvOS chapter navigation with deferred or missing artwork; unsupported JPEG trickplay |
 

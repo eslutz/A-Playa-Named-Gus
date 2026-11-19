@@ -11,7 +11,7 @@ enum TVDetailPlaybackTarget {
             let matching = episodes.filter { $0.type == .episode && $0.seriesID == seriesID }
             return matching.first(where: { $0.userData?.isWatched != true }) ?? matching.first
         }
-        guard item.type != .boxSet, item.type != .book, item.type != .season else { return nil }
+        guard item.type != .genre, item.type != .boxSet, item.type != .book, item.type != .season else { return nil }
         return item
     }
 }

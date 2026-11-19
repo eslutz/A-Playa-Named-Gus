@@ -44,6 +44,9 @@ enum JellyfinMediaItemMapper {
             userData: item.userData.map(mediaUserData),
             video3DFormat: media3DFormat(from: item.video3DFormat)
         )
+        if item.type == .book, let path = item.path ?? item.mediaSources?.first?.path {
+            mapped.originalBookFilename = path.split(whereSeparator: { $0 == "/" || $0 == "\\" }).last.map(String.init)
+        }
         mapped.externalIDs = item.providerIDs ?? [:]
         return mapped
     }
@@ -72,6 +75,8 @@ enum JellyfinMediaItemMapper {
     private static func mediaItemType(from type: BaseItemKind?) -> MediaItemType? {
         guard let type else { return nil }
         switch type {
+        case .genre:
+            return .genre
         case .movie:
             return .movie
         case .episode:

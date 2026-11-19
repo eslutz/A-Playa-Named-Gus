@@ -155,21 +155,11 @@ struct VideoPlaylistDetailView: View {
         Group {
             if let playlist, let serverList {
                 List {
-                    Section { cover(serverList) }
-                    if let overview = serverList.overview, !overview.isEmpty {
-                        Section { Text(overview).foregroundStyle(.secondary) }
+                    Section {
+                        playlistHeader(playlist, list: serverList)
                     }
+                    .listRowBackground(Color.clear)
                     if serverList.entriesLoaded {
-                        if serverList.entries.allSatisfy({ $0.item.isAudioPlayable }) && !serverList.entries.isEmpty {
-                            Section {
-                                Text("\(playlist.entries.count) items").font(.subheadline).foregroundStyle(.secondary)
-                                NavigationLink("Open Audio Playlist") {
-                                    AlbumDetailView(album: serverList.coverItem)
-                                }
-                            }
-                        } else {
-                            playbackControls(playlist)
-                        }
                         Section {
                             if playlist.entries.isEmpty {
                                 Text("Add movies or individual episodes to get started.").foregroundStyle(.secondary)
@@ -193,6 +183,7 @@ struct VideoPlaylistDetailView: View {
                     }
                 }
                 .navigationTitle(playlist.name)
+                .toolbarTitleDisplayMode(.inline)
                 .toolbar {
                     ToolbarItem(placement: .primaryAction) {
                         Button { adding = true } label: { GusToolbarLabel("Add Items", systemImage: "text.badge.plus", tvSystemImage: "plus") }
@@ -204,16 +195,7 @@ struct VideoPlaylistDetailView: View {
                     }
                     ToolbarItem(placement: .primaryAction) {
                         Menu {
-                            Button("Edit", systemImage: "pencil") { editing = true }.disabled(!serverList.canEdit)
-                            if serverList.entriesLoaded, serverList.entries.isEmpty || !serverList.entries.allSatisfy({ $0.item.isAudioPlayable }) {
-                                let key = "playlist:" + lists.resolvedID(id, scope: scope).uuidString
-                                let isInNextUp = playlist.appearsInNextUp && !NextUpActivityStore.shared.isDismissed(key, scope: scope)
-                                Button(isInNextUp ? "Remove from Next Up" : "Add to Next Up", systemImage: isInNextUp ? MediaActionSymbols.removeFromNextUp : MediaActionSymbols.addToNextUp) {
-                                    let resolved = lists.resolvedID(id, scope: scope)
-                                    supplemental.setQueued(id: resolved, queued: !isInNextUp, scope: scope)
-                                    NextUpActivityStore.shared.setDismissed(key, dismissed: isInNextUp, scope: scope)
-                                }
-                            }
+                            Button("Edit", systemImage: "pencil") { editing = true }
                             Divider()
                             Button("Delete Playlist", systemImage: "trash", role: .destructive) { deletingPlaylist = true }.disabled(!serverList.canEdit)
                         } label: { GusToolbarLabel("More", systemImage: "ellipsis") }
@@ -261,71 +243,81 @@ struct VideoPlaylistDetailView: View {
         .refreshable { await lists.refresh(id: id, kind: .playlist, session: session) }
     }
 
-    private func cover(_ list: ServerMediaList) -> some View {
-        PlaylistCoverArtwork(playlist: list.coverItem, entries: list.entries.map(\.item), maxWidth: 480)
-            .frame(width: 160)
-            .clipShape(RoundedRectangle(cornerRadius: 12))
-            .frame(maxWidth: .infinity)
-            .listRowBackground(Color.clear)
-            .accessibilityHidden(true)
-    }
-
-    private func playbackControls(_ playlist: VideoPlaylist) -> some View {
-        Section { playbackSummary(playlist) }
+    private func playlistHeader(_ playlist: VideoPlaylist, list: ServerMediaList) -> some View {
+        DetailCoverHeader {
+            PlaylistCoverArtwork(playlist: list.coverItem, entries: list.entries.map(\.item), maxWidth: 720, contentMode: .fit)
+                .frame(maxWidth: 240)
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+        } summary: {
+            VStack(alignment: .leading, spacing: 12) {
+                Text(playlist.name).font(.largeTitle.bold()).accessibilityAddTraits(.isHeader)
+                if list.entriesLoaded {
+                    Text("\(playlist.entries.count) items").font(.subheadline).foregroundStyle(.secondary)
+                    if !list.entries.isEmpty && list.entries.allSatisfy({ $0.item.isAudioPlayable }) {
+                        NavigationLink("Open Audio Playlist") { AlbumDetailView(album: list.coverItem) }
+                    } else {
+                        playbackSummary(playlist)
+                    }
+                }
+                if let overview = list.overview {
+                    DetailSynopsis(title: playlist.name, overview: overview)
+                }
+            }
+        }
     }
 
     private func playbackSummary(_ playlist: VideoPlaylist) -> some View {
         let selection = playlist.playbackAction
         let isVideo = !playlist.entries.isEmpty && playlist.entries.allSatisfy { [.movie, .episode, .video].contains($0.reference.item.type) }
-        return Group {
-            VStack(alignment: .leading, spacing: 12) {
-                Text("\(playlist.entries.count) items").font(.subheadline).foregroundStyle(.secondary)
-                if selection.isUnavailable {
-                    Label("Resume Entry Unavailable", systemImage: "exclamationmark.triangle")
-                    Text("Choose an entry to play from, or start this playlist again.").foregroundStyle(.secondary)
+        return VStack(alignment: .leading, spacing: 12) {
+            if selection.isUnavailable {
+                Label("Resume Entry Unavailable", systemImage: "exclamationmark.triangle")
+                Text("Choose an entry to play from, or start this playlist again.").foregroundStyle(.secondary)
+            }
+            if !selection.hasProgress, !playlist.entries.isEmpty {
+                Text("Item 1 of \(playlist.entries.count)").font(.caption).foregroundStyle(.secondary)
+            } else if selection.hasProgress, let current = playlist.entries.firstIndex(where: { $0.id == playlist.cursor?.entryID }) {
+                Text("Resume at item \(current + 1) of \(playlist.entries.count)").font(.caption).foregroundStyle(.secondary)
+            }
+            DetailPrimaryButton(selection.hasProgress ? "Resume" : "Play", systemImage: "play.fill") {
+                play(playlist.entries.first(where: { $0.id == selection.entryID }), fromBeginning: !selection.hasProgress)
+            }
+            .disabled(!isVideo || selection.isUnavailable || editing || mutating)
+            .accessibilityIdentifier("Playlist.play")
+            DetailActionRow {
+                nextUpButton(playlist)
+                ItemUserActionButton(title: "Start from Beginning", compactTitle: "Restart", systemImage: "arrow.counterclockwise") {
+                    play(playlist.entries.first, fromBeginning: true)
                 }
-                if !selection.hasProgress, !playlist.entries.isEmpty {
-                    Text("Item 1 of \(playlist.entries.count)").font(.caption).foregroundStyle(.secondary)
-                } else if selection.hasProgress, let current = playlist.entries.firstIndex(where: { $0.id == playlist.cursor?.entryID }) {
-                    Text("Resume at item \(current + 1) of \(playlist.entries.count)").font(.caption).foregroundStyle(.secondary)
+                .disabled(!isVideo || editing || mutating)
+                .accessibilityIdentifier("Playlist.restart")
+                ItemUserActionButton(title: "Shuffle", systemImage: "shuffle") {
+                    play(playlist.entries.randomElement(), fromBeginning: true, shuffled: true)
                 }
-                HStack(spacing: 12) {
-                    Button {
-                        play(playlist.entries.first(where: { $0.id == selection.entryID }), fromBeginning: !selection.hasProgress)
-                    } label: {
-                        Label(selection.hasProgress ? "Resume" : "Play", systemImage: "play.fill")
-                            .gusProminentActionForeground()
-                            .frame(maxWidth: .infinity).gusPhoneActionLabelHeight()
-                    }
-                    .gusProminentGlassButtonStyle().gusProminentActionTint()
-                    .disabled(!isVideo || selection.isUnavailable || editing || mutating)
-                    .accessibilityIdentifier("Playlist.play")
-                    Button {
-                        play(playlist.entries.first, fromBeginning: true)
-                    } label: {
-                        Label("Start from Beginning", systemImage: "arrow.counterclockwise")
-                            .labelStyle(.iconOnly).frame(minWidth: 24, minHeight: 24)
-                    }
-                    .gusGlassButtonStyle().buttonBorderShape(.circle)
-                    .disabled(!isVideo || editing || mutating)
-                    .accessibilityIdentifier("Playlist.restart")
-                    Button {
-                        play(playlist.entries.randomElement(), fromBeginning: true, shuffled: true)
-                    } label: {
-                        Label("Shuffle", systemImage: "shuffle")
-                            .labelStyle(.iconOnly).frame(minWidth: 24, minHeight: 24)
-                    }
-                    .gusGlassButtonStyle().buttonBorderShape(.circle)
-                    .disabled(!isVideo || editing || mutating)
-                    .accessibilityIdentifier("Playlist.shuffle")
-                }
-                .controlSize(.large)
-                .frame(maxWidth: DetailActionMetrics.maximumRowWidth)
-                if !isVideo && !playlist.entries.isEmpty {
-                    Text("Play mixed media individually. Ordered video playback supports movies and episodes.").foregroundStyle(.secondary)
-                }
+                .disabled(!isVideo || editing || mutating)
+                .accessibilityIdentifier("Playlist.shuffle")
+            }
+            .gusPhoneHeroAccessoryStyle(onArtwork: false)
+            .frame(maxWidth: DetailActionMetrics.maximumRowWidth)
+            if !isVideo && !playlist.entries.isEmpty {
+                Text("Play mixed media individually. Ordered video playback supports movies and episodes.").foregroundStyle(.secondary)
             }
         }
+    }
+
+    private func nextUpButton(_ playlist: VideoPlaylist) -> some View {
+        let resolved = lists.resolvedID(id, scope: scope)
+        let key = "playlist:" + resolved.uuidString
+        let queued = playlist.appearsInNextUp && !NextUpActivityStore.shared.isDismissed(key, scope: scope)
+        return ItemUserActionButton(
+            title: queued ? "Remove from Next Up" : "Add to Next Up",
+            compactTitle: "Next Up",
+            systemImage: queued ? MediaActionSymbols.removeFromNextUp : MediaActionSymbols.addToNextUp
+        ) {
+            supplemental.setQueued(id: resolved, queued: !queued, scope: scope)
+            NextUpActivityStore.shared.setDismissed(key, dismissed: queued, scope: scope)
+        }
+        .accessibilityIdentifier("Playlist.nextUp")
     }
 
     private func mutate(_ action: @escaping @MainActor () async -> Void) {
@@ -419,11 +411,12 @@ struct PlaylistCoverArtwork: View {
     let entries: [MediaItem]
     let maxWidth: Int
     var aspectRatio: CGFloat = 1
+    var contentMode: ContentMode = .fill
 
     var body: some View {
         let items = ContentRatingGate.playlistCoverItems(playlist: playlist, entries: entries, limit: limit, hideUnrated: hideUnrated)
         let urls = items.flatMap { session.mediaProvider.artworkURLs(for: $0, request: .init(role: .square, maxWidth: maxWidth)) }
-        ArtworkTile(url: urls.first, aspectRatio: aspectRatio, placeholderSymbol: "list.and.film", fallbackURLs: Array(urls.dropFirst()))
+        ArtworkTile(url: urls.first, aspectRatio: aspectRatio, contentMode: contentMode, placeholderSymbol: "list.and.film", fallbackURLs: Array(urls.dropFirst()))
             .accessibilityHidden(true)
     }
 }

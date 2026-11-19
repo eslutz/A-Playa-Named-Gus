@@ -1,6 +1,7 @@
 import Foundation
 
 enum MediaItemType: String, Codable, Hashable, Sendable {
+    case genre
     case movie
     case episode
     case series
@@ -285,6 +286,8 @@ struct MediaItem: Codable, Hashable, Identifiable, Sendable {
     var name: String?
     var officialRating: String?
     var overview: String?
+    /// Basename for sharing managed offline books whose on-disk name is an item ID.
+    var originalBookFilename: String?
     var parentBackdropImageTags: [String]
     var parentBackdropItemID: String?
     var parentID: String?
@@ -327,6 +330,7 @@ struct MediaItem: Codable, Hashable, Identifiable, Sendable {
         case name
         case officialRating
         case overview
+        case originalBookFilename
         case parentBackdropImageTags
         case parentBackdropItemID
         case externalIDs
@@ -454,6 +458,7 @@ struct MediaItem: Codable, Hashable, Identifiable, Sendable {
         name = try values.decodeIfPresent(String.self, forKey: .name)
         officialRating = try values.decodeIfPresent(String.self, forKey: .officialRating)
         overview = try values.decodeIfPresent(String.self, forKey: .overview)
+        originalBookFilename = try values.decodeIfPresent(String.self, forKey: .originalBookFilename)
         parentBackdropImageTags = try values.decodeIfPresent([String].self, forKey: .parentBackdropImageTags) ?? []
         parentBackdropItemID = try values.decodeIfPresent(String.self, forKey: .parentBackdropItemID)
         externalIDs = try values.decodeIfPresent([String: String].self, forKey: .externalIDs) ?? [:]

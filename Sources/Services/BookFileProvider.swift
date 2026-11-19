@@ -1,9 +1,8 @@
 import Foundation
 import Observation
-import OSLog
 
 /// Fetches a book's original file (epub/pdf) to local storage for the in-app reader and
-/// the "Open in Books" share sheet.
+/// the native share sheet.
 ///
 /// Prefers an existing offline download; otherwise streams the original into a Caches
 /// subdirectory (books are small, and Caches keeps the OS free to reclaim space).
@@ -11,11 +10,12 @@ import OSLog
 struct BookFileProvider {
     private let session: SessionStore
     private let downloads: OfflineDownloadStore?
-    private let logger = Logger(category: .downloads)
+    private let cachesDirectory: URL?
 
-    init(session: SessionStore, downloads: OfflineDownloadStore? = nil) {
+    init(session: SessionStore, downloads: OfflineDownloadStore? = nil, cachesDirectory: URL? = nil) {
         self.session = session
         self.downloads = downloads
+        self.cachesDirectory = cachesDirectory
     }
 
     private var accountScope: AccountScope {
@@ -25,43 +25,90 @@ struct BookFileProvider {
     /// Returns the book's file only if it is already on device (offline download or a
     /// previously cached copy) — never touches the network. Lets the UI offer Share
     /// immediately without eagerly downloading the whole book.
-    func existingLocalFile(for item: MediaItem) -> URL? {
-        if let downloaded = downloads?.localFileURL(for: item, serverID: session.server.id, userID: session.user.id) {
+    private func existingLocalFile(for item: MediaItem) -> URL? {
+        if let downloaded = downloads?.localFileURL(for: item, serverID: session.server.id, userID: session.user.id),
+           Self.isUsableFile(downloaded)
+        {
             return downloaded
         }
         guard let itemID = item.id,
-              let caches = try? FileManager.default.url(for: .cachesDirectory, in: .userDomainMask, appropriateFor: nil, create: false)
+              let caches = try? cachesDirectory ?? FileManager.default.url(for: .cachesDirectory, in: .userDomainMask, appropriateFor: nil, create: false)
         else { return nil }
         let directory = Self.cacheDirectory(forItemID: itemID, scope: accountScope, cachesDirectory: caches)
-        let contents = try? FileManager.default.contentsOfDirectory(at: directory, includingPropertiesForKeys: nil)
-        return contents?.first
+        let contents = try? FileManager.default.contentsOfDirectory(at: directory, includingPropertiesForKeys: [.isRegularFileKey, .fileSizeKey], options: [.skipsHiddenFiles])
+        return contents?.first { Self.isUsableFile($0) }
     }
 
-    /// Returns a local file URL for the book, fetching it if needed.
+    private nonisolated static func isUsableFile(_ url: URL, fileExtension: String? = nil) -> Bool {
+        guard let values = try? url.resourceValues(forKeys: [.isRegularFileKey, .fileSizeKey]),
+              values.isRegularFile == true, (values.fileSize ?? 0) > 0,
+              let file = try? FileHandle(forReadingFrom: url) else { return false }
+        defer { try? file.close() }
+        switch (fileExtension ?? url.pathExtension).lowercased() {
+        case "epub", "cbz":
+            return (try? file.read(upToCount: 4)) == Data([0x50, 0x4B, 0x03, 0x04])
+        case "pdf":
+            return (try? file.read(upToCount: 1024))?.range(of: Data("%PDF-".utf8)) != nil
+        default:
+            return true
+        }
+    }
+
+    /// Returns an account-scoped original. Both Read and Share can use the cache offline.
     func localFile(for item: MediaItem) async throws -> URL {
-        if let downloaded = downloads?.localFileURL(for: item, serverID: session.server.id, userID: session.user.id) {
-            return downloaded
+        guard session.isActive else { throw GusError.cancelled }
+        guard item.type == .book, item.id != nil else { throw GusError.notFound }
+        guard item.canDownload != false else { throw GusError.forbidden }
+        if let existing = existingLocalFile(for: item) {
+            return existing
         }
 
         let current = try await session.references.currentItem(item)
-        let source = try await session.mediaProvider.downloadSource(for: current, streamSelection: .none)
+        guard current.canDownload == true else { throw GusError.forbidden }
+        let original = try await session.mediaProvider.downloadBook(for: current)
+        defer { try? FileManager.default.removeItem(at: original.file) }
+        try Task.checkCancellation()
+        guard session.isActive else { throw GusError.cancelled }
+        let filename = URL(fileURLWithPath: original.filename)
+        guard Self.isUsableFile(original.file, fileExtension: filename.pathExtension) else {
+            throw GusError.server(String(localized: "The server returned an invalid book file."))
+        }
         let destination = try Self.cacheDestination(
-            for: item,
-            fileExtension: source.fileExtension,
-            scope: accountScope
+            for: current,
+            fileExtension: filename.pathExtension,
+            scope: accountScope,
+            cachesDirectory: cachesDirectory,
+            name: filename.deletingPathExtension().lastPathComponent
         )
-        if FileManager.default.fileExists(atPath: destination.path) {
+        if Self.isUsableFile(destination) {
             return destination
         }
-
-        let (temporaryURL, response) = try await URLSession.shared.download(from: source.url)
-        if let httpResponse = response as? HTTPURLResponse, !(200 ... 299).contains(httpResponse.statusCode) {
-            try? FileManager.default.removeItem(at: temporaryURL)
-            throw GusError.server(String(localized: "The server could not provide this book.", comment: "Book fetch error"))
+        if FileManager.default.fileExists(atPath: destination.path) {
+            _ = try FileManager.default.replaceItemAt(destination, withItemAt: original.file)
+        } else {
+            try FileManager.default.moveItem(at: original.file, to: destination)
         }
-        try? FileManager.default.removeItem(at: destination)
-        try FileManager.default.moveItem(at: temporaryURL, to: destination)
-        logger.info("Cached book file (\(source.fileExtension, privacy: .private))")
+        return destination
+    }
+
+    /// Offline downloads use an item ID on disk. Give the system share sheet a readable
+    /// book name while keeping that managed download in place.
+    func fileForSharing(for item: MediaItem) async throws -> URL {
+        let local = try await localFile(for: item)
+        guard downloads?.localFileURL(for: item, serverID: session.server.id, userID: session.user.id) == local else { return local }
+        let sourceName = item.originalBookFilename.map { URL(fileURLWithPath: $0) }
+        let name = sourceName?.pathExtension.caseInsensitiveCompare(local.pathExtension) == .orderedSame ? sourceName?.deletingPathExtension().lastPathComponent : nil
+        let destination = try Self.cacheDestination(for: item, fileExtension: local.pathExtension, scope: accountScope, cachesDirectory: cachesDirectory, name: name)
+        let manager = FileManager.default
+        let staging = destination.deletingLastPathComponent().appendingPathComponent("." + UUID().uuidString)
+        defer { try? manager.removeItem(at: staging) }
+        do { try manager.linkItem(at: local, to: staging) }
+        catch { try manager.copyItem(at: local, to: staging) }
+        if manager.fileExists(atPath: destination.path) {
+            _ = try manager.replaceItemAt(destination, withItemAt: staging)
+        } else {
+            try manager.moveItem(at: staging, to: destination)
+        }
         return destination
     }
 
@@ -71,7 +118,8 @@ struct BookFileProvider {
         for item: MediaItem,
         fileExtension: String,
         scope: AccountScope,
-        cachesDirectory: URL? = nil
+        cachesDirectory: URL? = nil,
+        name: String? = nil
     ) throws -> URL {
         let caches = try cachesDirectory ?? FileManager.default.url(
             for: .cachesDirectory,
@@ -81,7 +129,7 @@ struct BookFileProvider {
         )
         let directory = cacheDirectory(forItemID: item.id, scope: scope, cachesDirectory: caches)
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-        return directory.appendingPathComponent(sanitizedFileName(item.displayTitle))
+        return directory.appendingPathComponent(sanitizedFileName(name ?? item.displayTitle))
             .appendingPathExtension(fileExtension)
     }
 

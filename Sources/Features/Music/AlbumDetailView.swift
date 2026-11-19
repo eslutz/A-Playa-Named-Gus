@@ -6,8 +6,6 @@ struct AlbumDetailView: View {
     @Environment(AudioPlaybackCoordinator.self) private var audio
     @Environment(SessionStore.self) private var session
     @Environment(OfflineDownloadStore.self) private var downloads
-    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
-    @ScaledMetric(relativeTo: .body) private var actionsMinimumWidth: CGFloat = 240
     let album: MediaItem
 
     #if os(iOS)
@@ -39,94 +37,32 @@ struct AlbumDetailView: View {
         }
         .refreshable { await loadTracks() }
         .navigationTitle(album.displayTitle)
+        .toolbarTitleDisplayMode(.inline)
         .gusTVDetailTitle()
         .task {
             await loadTracks()
         }
     }
 
-    @ViewBuilder private var albumContent: some View {
-        #if os(iOS)
-            AdaptiveStack(horizontalMinimumWidth: 240 + 32 + 280, horizontalAlignment: .top, horizontalSpacing: 32, verticalSpacing: 24, prefersVertical: !usesIPadColumns) { horizontal in
-                header(isColumn: horizontal)
-                    .frame(width: horizontal ? 240 : nil, alignment: .leading)
-                VStack(alignment: .leading, spacing: 16) {
-                    if horizontal {
-                        Text("Tracks").font(.headline)
-                    }
-                    trackList
-                }
-                .frame(minWidth: horizontal ? 280 : nil, maxWidth: .infinity, alignment: .leading)
-            }
-        #elseif os(tvOS)
-            HStack(alignment: .top, spacing: 64) {
-                VStack(alignment: .leading, spacing: 32) {
-                    albumArtwork
-                    VStack(alignment: .leading, spacing: 24) { albumActions }
-                }
-                .frame(width: 360)
-                VStack(alignment: .leading, spacing: 24) {
-                    Text("Tracks").font(.title2.bold())
-                    trackList
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-            }
-            .gusTVContentHeading(album.displayTitle)
-            .padding(64)
-        #else
-            stackedContent
-        #endif
-    }
-
-    private var stackedContent: some View {
+    private var albumContent: some View {
         VStack(alignment: .leading, spacing: 24) {
-            header()
-            trackList
-        }
-    }
-
-    private var isCompactHeader: Bool {
-        #if os(iOS)
-            widthClass == .compact
-        #else
-            false
-        #endif
-    }
-
-    private var usesIPadColumns: Bool {
-        #if os(iOS)
-            DeviceIdentity.usesIPadPresentation && widthClass == .regular && !dynamicTypeSize.isAccessibilitySize
-        #else
-            false
-        #endif
-    }
-
-    private func header(isColumn: Bool = false) -> some View {
-        VStack(alignment: .leading, spacing: isCompactHeader ? 24 : 0) {
-            if isCompactHeader {
-                HStack(spacing: 6) {
-                    if let artist = album.albumArtist ?? album.artists.first {
-                        Text(artist)
-                    }
-                    if let year = album.productionYear {
-                        Text(String(year))
-                    }
-                    Text(trackCount)
-                }
-                .font(.subheadline).foregroundStyle(.secondary)
-            }
-            AdaptiveStack(horizontalMinimumWidth: artworkWidth + 20 + 280, horizontalAlignment: .top, horizontalSpacing: 20, verticalSpacing: isCompactHeader ? 24 : (isColumn ? 16 : 20), prefersVertical: isCompactHeader || isColumn) { _ in
+            DetailCoverHeader {
                 albumArtwork
-                VStack(alignment: .leading, spacing: isColumn ? 16 : 8) {
-                    if !isCompactHeader {
-                        albumMetadata(isColumn: isColumn)
-                    }
-                    AdaptiveStack(horizontalMinimumWidth: actionsMinimumWidth, horizontalSpacing: 12, verticalSpacing: 12) { _ in
-                        albumActions
-                    }
+            } summary: {
+                Text(album.displayTitle).font(.largeTitle.bold()).accessibilityAddTraits(.isHeader)
+                if let artist = album.albumArtist ?? album.artists.first {
+                    Text(artist).font(.title3)
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
+                if let year = album.productionYear {
+                    Text(String(year)).font(.subheadline).foregroundStyle(.secondary)
+                }
+                Text(trackCount).font(.subheadline).foregroundStyle(.secondary)
+                albumActions
+                if let overview = album.overview {
+                    DetailSynopsis(title: album.displayTitle, overview: overview)
+                }
             }
+            trackList
         }
     }
 
@@ -136,7 +72,7 @@ struct AlbumDetailView: View {
 
     private var artworkWidth: CGFloat {
         #if os(iOS)
-            widthClass == .compact ? 160 : (DeviceIdentity.usesIPadPresentation ? 240 : 180)
+            widthClass == .compact ? 220 : 240
         #elseif os(tvOS)
             360
         #else
@@ -147,49 +83,23 @@ struct AlbumDetailView: View {
     private var albumArtwork: some View {
         Group {
             if album.type == .playlist {
-                PlaylistCoverArtwork(playlist: album, entries: tracks, maxWidth: 360)
+                PlaylistCoverArtwork(playlist: album, entries: tracks, maxWidth: 360, contentMode: .fit)
             } else {
-                ArtworkTile(url: session.mediaProvider.primaryImageURL(for: album, context: .posterGrid), aspectRatio: 1, placeholderSymbol: "music.note", fallbackURLs: session.mediaProvider.artworkURLs(for: album, request: .init(role: .square, maxWidth: 360)))
+                ArtworkTile(url: session.mediaProvider.primaryImageURL(for: album, context: .posterGrid), aspectRatio: 1, contentMode: .fit, placeholderSymbol: "music.note", fallbackURLs: session.mediaProvider.artworkURLs(for: album, request: .init(role: .square, maxWidth: 360)))
             }
         }
-        .frame(width: artworkWidth)
+        .frame(maxWidth: artworkWidth)
         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 
-    private func albumMetadata(isColumn: Bool) -> some View {
-        VStack(alignment: .leading, spacing: isColumn ? 16 : 8) {
-            if !isColumn {
-                Text(album.displayTitle).font(.title.bold()).fixedSize(horizontal: false, vertical: true)
-            }
-            if let artist = album.albumArtist ?? album.artists.first {
-                Text(artist).font(isColumn ? .subheadline : .title3)
-                    .foregroundStyle(isColumn ? .secondary : .primary)
-            }
-            if let year = album.productionYear {
-                Text(String(year)).font(isColumn ? .subheadline : .body).foregroundStyle(.secondary)
-            }
-            if isColumn {
-                Text(trackCount).font(.subheadline).foregroundStyle(.secondary)
+    private var albumActions: some View {
+        VStack(spacing: 12) {
+            DetailPrimaryButton("Play", systemImage: "play.fill") { play(startingAt: 0) }
+            DetailActionRow {
+                ItemUserActionButton(title: "Shuffle", systemImage: "shuffle") { play(startingAt: 0, shuffled: true) }
             }
         }
-    }
-
-    @ViewBuilder private var albumActions: some View {
-        Button { play(startingAt: 0) } label: {
-            Label("Play", systemImage: "play.fill")
-                .gusProminentActionForeground()
-                .gusPhoneActionLabelHeight()
-        }
-        .gusProminentGlassButtonStyle()
-        .controlSize(.large)
-        .fixedSize()
-        .disabled(tracks.isEmpty)
-        Button { play(startingAt: 0, shuffled: true) } label: {
-            Label("Shuffle", systemImage: "shuffle").gusPhoneActionLabelHeight()
-        }
-        .gusGlassButtonStyle()
-        .controlSize(.large)
-        .fixedSize()
+        .frame(maxWidth: DetailActionMetrics.maximumRowWidth)
         .disabled(tracks.isEmpty)
     }
 
@@ -335,23 +245,34 @@ struct ArtistAlbumsView: View {
             retryAction: { Task { await loadAlbums() } }
         ) {
             ScrollView {
-                LazyVGrid(columns: PosterGrid.columns, alignment: .leading, spacing: PosterGrid.spacing) {
-                    ForEach(albums, id: \.id) { albumItem in
-                        NavigationLink(value: ItemRef(item: albumItem)) {
-                            PosterCard(
-                                title: albumItem.displayTitle,
-                                subtitle: albumItem.productionYear.map(String.init),
-                                statusItem: albumItem,
-                                imageURL: session.mediaProvider.primaryImageURL(for: albumItem, context: .posterGrid),
-                                aspectRatio: 1,
-                                placeholderSymbol: "music.note",
-                                fallbackURLs: session.mediaProvider.artworkURLs(for: albumItem, request: .init(role: .square, maxWidth: 360))
-                            )
+                VStack(alignment: .leading, spacing: 24) {
+                    DetailCoverHeader {
+                        let urls = session.mediaProvider.artworkURLs(for: artist, request: .init(role: .square, maxWidth: 640))
+                        ArtworkTile(url: urls.first, aspectRatio: 1, contentMode: .fit, placeholderSymbol: "music.mic", fallbackURLs: Array(urls.dropFirst()))
+                            .frame(maxWidth: 240)
+                    } summary: {
+                        Text(artist.displayTitle).font(.largeTitle.bold()).accessibilityAddTraits(.isHeader)
+                        if let overview = artist.overview {
+                            DetailSynopsis(title: artist.displayTitle, overview: overview)
                         }
-                        .posterNavigationStyle()
+                    }
+                    LazyVGrid(columns: PosterGrid.columns, alignment: .leading, spacing: PosterGrid.spacing) {
+                        ForEach(albums, id: \.id) { albumItem in
+                            NavigationLink(value: ItemRef(item: albumItem)) {
+                                PosterCard(
+                                    title: albumItem.displayTitle,
+                                    subtitle: albumItem.productionYear.map(String.init),
+                                    statusItem: albumItem,
+                                    imageURL: session.mediaProvider.primaryImageURL(for: albumItem, context: .posterGrid),
+                                    aspectRatio: 1,
+                                    placeholderSymbol: "music.note",
+                                    fallbackURLs: session.mediaProvider.artworkURLs(for: albumItem, request: .init(role: .square, maxWidth: 360))
+                                )
+                            }
+                            .posterNavigationStyle()
+                        }
                     }
                 }
-                .gusTVContentHeading(artist.displayTitle)
                 .padding()
                 .frame(maxWidth: PageContentMetrics.maxWidth, alignment: .leading)
                 .frame(maxWidth: .infinity)
@@ -360,6 +281,7 @@ struct ArtistAlbumsView: View {
             .lookToScroll()
         }
         .navigationTitle(artist.displayTitle)
+        .toolbarTitleDisplayMode(.inline)
         .gusTVDetailTitle()
         .task {
             await loadAlbums()
