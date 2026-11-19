@@ -13,6 +13,11 @@ both appearances live in `Gus-Shared-Library.sketch`.
   coverage are reviewed separately from these design studies.
 - `Gus-iPadOS.sketch`: 95 Screens and 62 States in each appearance. Light/Dark
   partners are adjacent in a compact canvas grid; their internal layouts match.
+- `Gus-macOS.sketch` is a new local detail reference. Its eight editable frames
+  show a backdrop movie and a full book cover in 1040- and 500-point windows,
+  each in Light and Dark. The controls link to the Apple macOS 27 UI Kit and
+  the movie artwork links to the Gus shared library. The book cover has an
+  editable local source on the Artwork page. Native Mac visual acceptance is pending.
 - `Gus-Shared-Library.sketch`: existing Light/Dark components plus editable paired
   Dark sources and their color/style dependencies. iPad Dark instances link to
   this library rather than flattened images.
