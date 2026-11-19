@@ -42,6 +42,36 @@
             finishConnectedSession(app)
         }
 
+        func testRequestAndRequestSeasonsUsePrimaryActions() async throws {
+            let app = try await connectedDiscover(appearance: "dark")
+            defer { app.terminate() }
+            var movieSize: CGSize?
+            for (feed, id, title, label) in [
+                ("popularMovies", "movie.950000001", "Popular Movies", "Request"),
+                ("popularTV", "tv.950000002", "Popular TV Series", "Request Seasons"),
+            ] {
+                let all = app.buttons["Seerr.feed." + feed + ".showAll"].firstMatch
+                reveal(all, in: app)
+                all.tap()
+                let row = app.buttons["Seerr.title." + id].firstMatch
+                XCTAssertTrue(row.waitForExistence(timeout: 15))
+                row.tap()
+                let request = app.buttons["Seerr.request"].firstMatch
+                reveal(request, in: app)
+                XCTAssertEqual(request.label, label)
+                XCTAssertGreaterThanOrEqual(request.frame.height, 44)
+                if let movieSize {
+                    XCTAssertEqual(request.frame.size, movieSize)
+                } else {
+                    movieSize = request.frame.size
+                }
+                capture("seerr-" + feed + "-primary-dark")
+                goBack(to: title, in: app)
+                goBack(to: "Discover", in: app)
+            }
+            finishConnectedSession(app)
+        }
+
         func testPopularSimilarAndCategoryDestinations() async throws {
             let app = try await connectedDiscover()
             defer { app.terminate() }
@@ -89,8 +119,8 @@
             finishConnectedSession(app)
         }
 
-        private func connectedDiscover() async throws -> XCUIApplication {
-            let app = try await prepare()
+        private func connectedDiscover(appearance: String? = nil) async throws -> XCUIApplication {
+            let app = try await prepare(appearance: appearance)
             executionTimeAllowance = 540
             if !app.staticTexts["Connected"].exists || !app.staticTexts["Gus Fixture Manager"].exists {
                 connect(app)
@@ -250,7 +280,7 @@
             capture("seerr-pending-manager-history-refreshed-empty")
         }
 
-        private func prepare(uncertainNext: Bool = false) async throws -> XCUIApplication {
+        private func prepare(uncertainNext: Bool = false, appearance: String? = nil) async throws -> XCUIApplication {
             continueAfterFailure = false
             executionTimeAllowance = 240
             let app = XCUIApplication()
@@ -265,6 +295,9 @@
                 "-dev.ericslutz.gus.contentRatingLimit", "off",
                 "-dev.ericslutz.gus.contentRatingHideUnrated", "NO",
             ]
+            if let appearance {
+                app.launchArguments += ["-dev.ericslutz.gus.appearance", appearance]
+            }
             app.launch()
             openIntegration(app)
             return app

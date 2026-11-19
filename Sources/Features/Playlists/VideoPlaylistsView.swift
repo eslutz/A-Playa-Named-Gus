@@ -250,7 +250,11 @@ struct VideoPlaylistDetailView: View {
                 .clipShape(RoundedRectangle(cornerRadius: 12))
         } summary: {
             VStack(alignment: .leading, spacing: 12) {
-                Text(playlist.name).font(.largeTitle.bold()).accessibilityAddTraits(.isHeader)
+                Text(playlist.name)
+                    .font(.largeTitle.bold())
+                    .lineLimit(nil)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityAddTraits(.isHeader)
                 if list.entriesLoaded {
                     Text("\(playlist.entries.count) items").font(.subheadline).foregroundStyle(.secondary)
                     if !list.entries.isEmpty && list.entries.allSatisfy({ $0.item.isAudioPlayable }) {

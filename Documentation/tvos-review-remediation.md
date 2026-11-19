@@ -6,7 +6,7 @@ This round follows the owner's TV-009–075 review and supplied cinematic hero r
 | --- | --- |
 | TV-009 | Full-viewport sign-in options; a dedicated centered authorization code view replaces the cramped Quick Connect form. |
 | TV-025 | Native system Back remains system-owned. Toolbar actions use familiar, unbordered SF Symbols with accessible names and state values. Filter, view mode, playlist actions, slideshow and overflow follow this policy; viewing overlays use the standard Close glyph. Editor Save, Cancel and Apply remain descriptive text. |
-| TV-028–030 | Full-width cinematic movie hero; synopsis/metadata left, Play and compact Next Up/Favorite/More right. Watched, playlist membership and permitted movie collection membership live in More. |
+| TV-028–030 | The movie backdrop fades into the title and the viewing surface. Play and its secondary controls sit to the left of the synopsis and metadata. Show More opens the full text when the preview is clipped. More includes watched status and permitted playlist or collection actions. |
 | TV-033/034 | Restore the original full-width, left-aligned series/season composition. Season overflow stays available even without a playable primary target. |
 | TV-039 | One collection heading, larger collection artwork and existing capability-gated actions. |
 | TV-043 | Playback details use a dark system-material contrast surface over video. |

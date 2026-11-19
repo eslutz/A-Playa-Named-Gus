@@ -195,9 +195,7 @@ enum DetailActionMetrics {
         #if os(macOS)
             return 280
         #elseif os(tvOS)
-            return 440
-        #elseif os(visionOS)
-            return 360
+            return 528
         #else
             return 320
         #endif

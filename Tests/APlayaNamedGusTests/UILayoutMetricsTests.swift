@@ -5,10 +5,32 @@ import Foundation
 import ImageIO
 import SwiftUI
 import Testing
+#if os(iOS)
+    import UIKit
+#endif
 
 @Suite("UI layout metrics")
 struct UILayoutMetricsTests {
     #if os(iOS)
+        @MainActor
+        @Test("Detail primary actions preserve the Play button dimensions for Gus and custom accents", arguments: [false, true])
+        func primaryActionSize(customAccent: Bool) throws {
+            let actions: [(LocalizedStringKey, String)] = [
+                ("Play", "play.fill"), ("Resume", "play.fill"), ("Read", "book.fill"),
+                ("Continue Reading", "book.fill"), ("Request", "plus.circle"), ("Request Seasons", "plus.circle"),
+            ]
+            let sizes = actions.map { title, symbol in
+                let view = DetailPrimaryButton(title, systemImage: symbol) {}
+                    .environment(\.gusThemeFill, customAccent ? .mint : .accentColor)
+                    .environment(\.gusThemeForeground, customAccent ? .black : .gusProminentActionForeground)
+                return UIHostingController(rootView: view).sizeThatFits(in: CGSize(width: 390, height: 200))
+            }
+            let play = try #require(sizes.first)
+            #expect(play.width == DetailActionMetrics.maximumRowWidth)
+            #expect(play.height >= 44)
+            #expect(sizes.allSatisfy { $0 == play })
+        }
+
         @MainActor
         @Test("Rendered second-row gaps stay eight points wide", arguments: [2, 3, 5])
         func secondaryActionGaps(count: Int) throws {

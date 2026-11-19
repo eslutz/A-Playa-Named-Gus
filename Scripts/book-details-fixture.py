@@ -200,12 +200,37 @@ class SynopsisHandler(Handler):
     ]
 
 
+class GenreHandler(Handler):
+    """Model Jellyfin 12's general search result and its genre-ID member query."""
+    genre = {"Id": "47000000000000000000000000000001", "Name": "Horror", "Type": "Genre",
+             "ImageTags": {"Primary": "serverGenreImage"}}
+    members = [{"Id": "47000000000000000000000000000002", "Name": "The Lantern House", "Type": "Movie"},
+               {"Id": "47000000000000000000000000000003", "Name": "Night Radio", "Type": "Series"}]
+    items = [genre, *members]
+
+    def do_GET(self):
+        url = urlsplit(self.path)
+        query = {key.lower(): value[0] for key, value in parse_qs(url.query).items()}
+        if url.path.endswith("/Items") and "searchterm" in query:
+            matches = [item for item in self.items if query["searchterm"].casefold() in item["Name"].casefold()]
+        elif url.path.endswith("/Items") and "genreids" in query:
+            matches = self.members if query["genreids"].replace("-", "") == self.genre["Id"] else []
+        else:
+            return super().do_GET()
+        offset = int(query.get("startindex", 0))
+        limit = int(query.get("limit", 60))
+        self.respond({"Items": matches[offset:offset + limit], "TotalRecordCount": len(matches), "StartIndex": offset})
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--series-editor", action="store_true", help="Serve the editable 12.4 fixture on port 5059")
     parser.add_argument("--synopses", action="store_true", help="Serve the responsive synopsis fixture on port 5060")
+    parser.add_argument("--genres", action="store_true", help="Serve Jellyfin genre search on port 5061")
     args = parser.parse_args()
     port, handler = (5059, AdminHandler) if args.series_editor else (5058, Handler)
     if args.synopses:
         port, handler = 5060, SynopsisHandler
+    if args.genres:
+        port, handler = 5061, GenreHandler
     ThreadingHTTPServer(("127.0.0.1", port), handler).serve_forever()

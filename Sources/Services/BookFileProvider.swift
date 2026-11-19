@@ -129,8 +129,8 @@ struct BookFileProvider {
         )
         let directory = cacheDirectory(forItemID: item.id, scope: scope, cachesDirectory: caches)
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-        return directory.appendingPathComponent(sanitizedFileName(name ?? item.displayTitle))
-            .appendingPathExtension(fileExtension)
+        let basename = name.map { URL(fileURLWithPath: $0).lastPathComponent } ?? sanitizedFileName(item.displayTitle)
+        return directory.appendingPathComponent(basename).appendingPathExtension(fileExtension)
     }
 
     nonisolated static func purgeCachedFiles(scope: AccountScope, cachesDirectory: URL? = nil) {

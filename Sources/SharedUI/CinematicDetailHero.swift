@@ -92,7 +92,7 @@ struct CinematicDetailHero<Accessory: View>: View {
                     upNextButton.gusTVDetailActionFocus(id: "nextUp", item: item)
                     accessory
                 }
-                .frame(maxWidth: 528)
+                .frame(maxWidth: DetailActionMetrics.maximumRowWidth)
                 .tvFocusSection()
             }
         }
@@ -251,17 +251,9 @@ struct DetailPrimaryButton: View {
         }
         .gusProminentGlassButtonStyle()
         .controlSize(.large)
-        .frame(maxWidth: primaryWidth)
+        .frame(maxWidth: DetailActionMetrics.maximumRowWidth)
         .gusProminentActionTint()
         .visionHoverEffect(Capsule())
-    }
-
-    private var primaryWidth: CGFloat {
-        #if os(tvOS)
-            528
-        #else
-            min(320, DetailActionMetrics.maximumRowWidth)
-        #endif
     }
 }
 

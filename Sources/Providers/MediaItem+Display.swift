@@ -223,13 +223,6 @@ enum BookDetailMetadata {
         text = text.replacingOccurrences(of: #"\r\n"#, with: "\n")
             .replacingOccurrences(of: #"\n"#, with: "\n")
             .replacingOccurrences(of: "\r\n", with: "\n")
-        if text.contains("<") {
-            text = text.replacingOccurrences(of: #"(?is)<(script|style)\b[^>]*>.*?</\1\s*>"#, with: "", options: .regularExpression)
-                .replacingOccurrences(of: #"(?i)<br\b[^>]*>"#, with: "\n", options: .regularExpression)
-                .replacingOccurrences(of: #"(?i)</?(p|div|li)\b[^>]*>"#, with: "\n\n", options: .regularExpression)
-                .replacingOccurrences(of: #"(?i)</?[a-z][\w:-]*(?:\s[^<>]*)?/?>"#, with: "", options: .regularExpression)
-                .replacingOccurrences(of: #"(?:\n[\t ]*){3,}"#, with: "\n\n", options: .regularExpression)
-        }
         if text.contains("&") {
             // CommonMark decodes named and numeric HTML entities without loading remote content.
             // Parse only the entity itself so ordinary punctuation in a synopsis stays literal.
@@ -238,6 +231,13 @@ enum BookDetailMetadata {
                 guard let decoded = try? AttributedString(markdown: entity, options: .init(interpretedSyntax: .inlineOnlyPreservingWhitespace)) else { return entity }
                 return String(decoded.characters)
             }
+        }
+        if text.contains("<") {
+            text = text.replacingOccurrences(of: #"(?is)<(script|style)\b[^>]*>.*?</\1\s*>"#, with: "", options: .regularExpression)
+                .replacingOccurrences(of: #"(?i)<br\b[^>]*>"#, with: "\n", options: .regularExpression)
+                .replacingOccurrences(of: #"(?i)</?(p|div|li)\b[^>]*>"#, with: "\n\n", options: .regularExpression)
+                .replacingOccurrences(of: #"(?i)</?[a-z][\w:-]*(?:\s[^<>]*)?/?>"#, with: "", options: .regularExpression)
+                .replacingOccurrences(of: #"(?:\n[\t ]*){3,}"#, with: "\n\n", options: .regularExpression)
         }
         return nonblank(text)
     }

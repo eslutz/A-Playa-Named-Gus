@@ -370,23 +370,25 @@
         }
 
         func testGenreSearchOpensMembersAndRestoresQuery() {
-            let app = launch("search")
+            let app = launch("search", environment: ["GUS_DEMO_URL": "http://127.0.0.1:5061"])
             let field = app.searchFields.firstMatch
             XCTAssertTrue(field.waitForExistence(timeout: 30))
             field.tap()
-            field.typeText("Drama")
+            field.typeText("Horror")
             let result = app.descendants(matching: .any).matching(NSPredicate(format: "identifier BEGINSWITH %@", "Search.genre.")).firstMatch
             XCTAssertTrue(result.waitForExistence(timeout: 20))
-            XCTAssertTrue(result.label.contains("Drama"))
+            XCTAssertTrue(result.label.contains("Horror"))
             result.tap()
-            let navigation = app.navigationBars["Drama"]
+            let navigation = app.navigationBars["Horror"]
             XCTAssertTrue(navigation.waitForExistence(timeout: 12))
             XCTAssertFalse(app.buttons["Detail.play"].exists)
             XCTAssertTrue(app.buttons["Library.displayMode"].exists)
-            capture("genre-drama")
+            let member = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "The Lantern House")).firstMatch
+            XCTAssertTrue(member.waitForExistence(timeout: 12))
+            capture("genre-horror")
             navigation.buttons.element(boundBy: 0).tap()
             XCTAssertTrue(field.waitForExistence(timeout: 8))
-            XCTAssertEqual(field.value as? String, "Drama")
+            XCTAssertEqual(field.value as? String, "Horror")
             XCTAssertTrue(result.exists)
         }
 
