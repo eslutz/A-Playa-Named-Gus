@@ -37,6 +37,7 @@ final class HomeStore {
     private(set) var unifiedNextUp: [NextUpEntry] = []
     private var savedIntents: [UpNextEntry] = []
     private var playlistCandidates: [NextUpPlaylistCandidate] = []
+    let forYou = ForYouShelfState()
     private let activity: NextUpActivityStore
     private var resumeOffset = 0
     private var nextOffset = 0

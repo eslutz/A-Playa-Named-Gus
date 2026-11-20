@@ -21,6 +21,8 @@ final class SessionStore {
     let profile: UserProfileStore
     let server: ServerConnection
     let seerr: SeerrStore
+    let intelligencePreferences: GusIntelligencePreferences
+    @ObservationIgnored lazy var libraryIntelligence = GusLibraryIntelligence(session: self)
     let searchHistory: SearchHistoryStore
     private(set) var reauthenticationRequest: SessionLease?
     private weak var recoveryOwner: AppModel?
@@ -107,6 +109,7 @@ final class SessionStore {
         self.user = user
         self.server = server
         self.seerr = SeerrStore(scope: scope)
+        self.intelligencePreferences = GusIntelligencePreferences(scope: scope, defaults: historyDefaults)
         self.searchHistory = SearchHistoryStore(scope: scope, defaults: historyDefaults)
         let provider = mediaProvider ?? JellyfinMediaProviderSession(client: client, userID: user.id)
         self.mediaProvider = provider

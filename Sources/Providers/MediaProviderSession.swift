@@ -25,7 +25,10 @@ struct MediaItemQuery: Sendable {
     var sort: MediaItemSort?
     var statusFilter: MediaItemStatusFilter
     /// Catalog scans do not need chapters or stream metadata for every title.
-    var isBookCatalog = false
+    var metadataOnly = false
+    var itemIDs: [String]?
+    var favoritesOnly = false
+    var mostRecentlyPlayedFirst = false
 
     init(
         parentID: String? = nil,

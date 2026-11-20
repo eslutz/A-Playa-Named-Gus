@@ -95,11 +95,6 @@ struct SeerrResultLink: View {
 }
 
 extension SeerrTitle {
-    /// Movie, TV and person IDs share a numeric namespace, so list identity includes type.
-    var seerrCatalogID: String {
-        "\(mediaType?.rawValue ?? "unknown"):\(id)"
-    }
-
     var seerrIdentityDescription: String {
         [releaseYear, seerrTypeDescription].compactMap { $0 }.joined(separator: " · ")
     }

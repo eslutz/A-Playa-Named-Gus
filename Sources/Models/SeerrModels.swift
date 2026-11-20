@@ -260,6 +260,11 @@ struct SeerrTitle: Codable, Identifiable, Hashable, Sendable {
     var character: String?
     var job: String?
 
+    /// Movie, TV and person IDs share a numeric namespace, so list identity includes type.
+    var seerrCatalogID: String {
+        "\(mediaType?.rawValue ?? "unknown"):\(id)"
+    }
+
     var displayTitle: String {
         title ?? name ?? String(id)
     }

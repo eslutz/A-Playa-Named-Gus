@@ -40,12 +40,12 @@ struct GlobalSearchContent: View {
     private var searchableResults: some View {
         results
             .gusSearchable(
-                text: Binding(get: { root.globalSearch.typed.text }, set: { root.editSearchText($0) }),
+                text: Binding(get: { root.globalSearch.text }, set: { root.editSearchText($0) }),
                 isPresented: Bindable(root.globalSearch.typed).isPresented,
                 isFocused: $fieldFocused,
                 prompt: Text("Search Library")
             )
-            .onSubmit(of: .search) { root.globalSearch.typed.submitSearch(to: session.searchHistory) }
+            .modifier(LibrarySearchFieldBehavior(search: root.globalSearch))
     }
 
     private var navigationTitle: String {
@@ -55,7 +55,7 @@ struct GlobalSearchContent: View {
         #if os(iOS)
             let typed = root.globalSearch.typed
             if widthClass == .compact, !typed.isPresented {
-                let query = typed.text.trimmingCharacters(in: .whitespacesAndNewlines)
+                let query = root.globalSearch.text.trimmingCharacters(in: .whitespacesAndNewlines)
                 if !query.isEmpty {
                     return query
                 }
@@ -68,6 +68,8 @@ struct GlobalSearchContent: View {
         Group {
             if let related = root.globalSearch.related {
                 RelatedResultsView(results: related).id(ObjectIdentifier(related))
+            } else if root.globalSearch.naturalMode {
+                NaturalLibraryResults(search: root.globalSearch)
             } else if !root.globalSearch.typed.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                 OwnedSearchResults(state: root.globalSearch.typed)
                     .id(ObjectIdentifier(root.globalSearch.typed))
@@ -77,6 +79,20 @@ struct GlobalSearchContent: View {
         }
         .navigationTitle(navigationTitle)
         .toolbar {
+            if root.globalSearch.related == nil, root.globalSearch.naturalMode || GusIntelligenceModel(session: session).isAvailable {
+                ToolbarItem(placement: .primaryAction) {
+                    Menu {
+                        Picker("Search Mode", selection: Bindable(root.globalSearch).naturalMode) {
+                            Text("Keyword").tag(false)
+                            Text("Natural Language").tag(true)
+                        }
+                    } label: {
+                        Label(root.globalSearch.naturalMode ? String(localized: "Natural Language") : String(localized: "Keyword"), systemImage: "line.3.horizontal.decrease")
+                    }
+                    .accessibilityLabel("Search Mode")
+                    .accessibilityIdentifier("Search.mode")
+                }
+            }
             if root.hasSearchReturn {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Back to Detail", systemImage: "chevron.backward", action: root.backToSearchDetail)
@@ -84,7 +100,7 @@ struct GlobalSearchContent: View {
                         .gusTVToolbarIcon()
                 }
             }
-            if root.globalSearch.related != nil || !root.globalSearch.typed.text.isEmpty {
+            if root.globalSearch.related != nil || !root.globalSearch.text.isEmpty {
                 ToolbarItem(placement: .primaryAction) {
                     Button("Close Results", systemImage: "xmark", action: root.closeSearchResults)
                         .accessibilityIdentifier("Search.closeResults")

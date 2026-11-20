@@ -18,11 +18,28 @@ struct WatchBrowseView: View {
             retryAction: { Task { await load() } },
             preservesContent: true
         ) {
-            List(libraries, id: \.id) { library in
-                if let id = library.id {
-                    NavigationLink(value: WatchLibraryRoute(id: id)) {
-                        Label(library.name ?? "Library", systemImage: library.librarySymbol)
+            List {
+                if #available(watchOS 27, *) {
+                    NavigationLink(value: WatchIntelligenceRoute.search) { Label("Search Library", systemImage: "magnifyingglass") }
+                        .accessibilityIdentifier("Watch.Browse.search")
+                    if session.intelligencePreferences.recommendationsEnabled {
+                        NavigationLink(value: WatchIntelligenceRoute.forYou) { Label("For You", systemImage: "heart") }
                     }
+                }
+                ForEach(libraries, id: \.id) { library in
+                    if let id = library.id {
+                        NavigationLink(value: WatchLibraryRoute(id: id)) {
+                            Label(library.name ?? "Library", systemImage: library.librarySymbol)
+                        }
+                    }
+                }
+            }
+        }
+        .navigationDestination(for: WatchIntelligenceRoute.self) { route in
+            if #available(watchOS 27, *) {
+                switch route {
+                case .search: WatchLibrarySearchView()
+                case .forYou: WatchForYouView()
                 }
             }
         }
@@ -127,11 +144,15 @@ struct WatchLibraryView: View {
     }
 }
 
+private enum WatchIntelligenceRoute: Hashable {
+    case search, forYou
+}
+
 private struct WatchLibraryRoute: Hashable {
     let id: String
 }
 
-private struct WatchItemRoute: Hashable {
+struct WatchItemRoute: Hashable {
     let id: String
 }
 

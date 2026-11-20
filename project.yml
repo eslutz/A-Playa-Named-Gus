@@ -130,6 +130,7 @@ targets:
       - path: Sources/Platform/DownloadsAvailability.swift
       - path: Sources/SharedUI/LoadingStateView.swift
       - path: Sources/SharedUI/NativeArtworkScope.swift
+      - path: Sources/SharedUI/IntelligenceSettingsSection.swift
       - path: Resources/Localizable.xcstrings
       - path: Resources/Watch/InfoPlist.xcstrings
       - path: Resources/Watch/Assets.xcassets

@@ -242,6 +242,9 @@ final class ItemDetailStore {
         }
         needsUserDataRefresh = false
         canKeepCurrentUserData = false
+        if expectedWatched != nil || expectedFavorite != nil {
+            session.libraryIntelligence.invalidateTasteSignals()
+        }
         expectedWatched = nil
         expectedFavorite = nil
         actionOutcome = .confirmed

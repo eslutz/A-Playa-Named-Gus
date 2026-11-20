@@ -177,7 +177,7 @@ private struct TabRootView: View {
         }, set: { id in
             state.selectSection(id)
             #if os(iOS)
-                if id == RootNavigationState.searchID, state.globalSearch.related == nil, state.globalSearch.typed.text.isEmpty {
+                if id == RootNavigationState.searchID, state.globalSearch.related == nil, state.globalSearch.text.isEmpty {
                     state.globalSearch.typed.isPresented = true
                 }
             #endif
@@ -207,11 +207,11 @@ private struct TabRootView: View {
                 Tab(value: RootNavigationState.searchID, role: .search) {
                     SectionStack(sectionID: RootNavigationState.searchID)
                         .searchable(
-                            text: Binding(get: { state.globalSearch.typed.text }, set: { state.editSearchText($0) }),
+                            text: Binding(get: { state.globalSearch.text }, set: { state.editSearchText($0) }),
                             isPresented: Bindable(state.globalSearch.typed).isPresented,
                             prompt: "Search Library"
                         )
-                        .onSubmit(of: .search) { state.globalSearch.typed.submitSearch(to: session.searchHistory) }
+                        .modifier(LibrarySearchFieldBehavior(search: state.globalSearch))
                 }
             #elseif os(visionOS)
                 Tab("Search", systemImage: "magnifyingglass", value: RootNavigationState.searchID) {

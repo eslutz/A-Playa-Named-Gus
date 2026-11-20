@@ -56,6 +56,10 @@ struct WatchSettingsView: View {
                 }
             }
 
+            if #available(watchOS 27, *) {
+                IntelligenceSettingsSection()
+            }
+
             Section("About") {
                 LabeledContent("Version", value: DeviceIdentity.appVersion)
             }

@@ -159,6 +159,14 @@ rather than treating retained or missing records as a current inventory.
 | Page deduplication | Scoped media identity with raw server offsets; playlist occurrences preserve ordering and duplicates; BrowseRefinementTests |
 | Saved-media persistence | Account-scoped records, offline draft reconciliation and CloudKit ownership; VideoPlaylistTests, MediaReferencePersistenceTests, ServerMediaListsStoreTests |
 
+## Library intelligence and Discover
+
+Keyword is the default in both fields. Exercise exact titles, select a completion and clear the field, then repeat with Natural Language on a compatible device. Confirm that typing does not invoke Foundation Models, and that Discover only opens titles or people returned by the active Seerr server. Cover restricted profiles, account and server switches during a request, missing metadata, stale results and a failed provider request.
+
+Run `SearchStoreTests`, `SeerrCatalogStoreTests`, `GusLibraryIntelligenceTests` and `IntelligenceEvaluationTests`. The last suite also has tests that require an available on-device model. Record the model, OS, locale, prompt and expected fixture ID during qualification. Evaluate movies, shows, episodes, books, audiobooks, albums, songs and Seerr person lookups. Include multilingual prompts, unsupported constraints and absent titles. Aim for an expected result in the first five for at least 80% of the labeled positive prompts. A restricted, cross-account or invented result fails qualification regardless of recall. Run the model evaluation separately from deterministic fixtures and measure cold and warm suggestion latency on representative devices.
+
+For For You, exercise opt-in, opt-out during ranking, cold start without taste history, and opening a recommended item. Check that each reason is supported by the user's library metadata. Validate quota exhaustion and loss of connectivity separately in an entitled OS 27 build. [Signing requirements](AppStore/signing-capabilities.md) · [Issue 50](https://github.com/eslutz/A-Playa-Named-Gus/issues/50)
+
 ## Server cleanup boundary
 
 Video playback prefers native MP4 direct delivery and fMP4 HLS. A secondary

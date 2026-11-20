@@ -6,6 +6,27 @@ import SwiftUI
 @MainActor @Observable
 final class GlobalSearchSession {
     let typed = SectionSearchState(retainsResults: true)
+    let natural = LibraryNaturalSearchState()
+    var naturalMode = false {
+        didSet {
+            if oldValue != naturalMode {
+                natural.resetResults()
+            }
+        }
+    }
+
+    var text: String {
+        naturalMode ? natural.text : typed.text
+    }
+
+    func submit(to history: SearchHistoryStore) {
+        if naturalMode {
+            natural.submit()
+        } else {
+            typed.submitSearch(to: history)
+        }
+    }
+
     var related: RelatedSearchResults?
     var detailOrigin: SearchDetailOrigin?
 

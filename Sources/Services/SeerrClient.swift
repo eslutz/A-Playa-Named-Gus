@@ -203,6 +203,23 @@ actor SeerrClient {
         return try await get(feed.path, query: query)
     }
 
+    /// Uses the movie release date or the TV first-air date, as required by Seerr's discovery routes.
+    func discoverTitles(type: SeerrMediaType, genreIDs: [Int], minimumYear: Int?, maximumYear: Int?, page: Int) async throws -> SeerrPage {
+        guard type == .movie || type == .tv, genreIDs.allSatisfy({ $0 > 0 }) else { throw SeerrClientError.invalidPayload }
+        var query = Self.pageQuery(page)
+        if !genreIDs.isEmpty {
+            query.append(URLQueryItem(name: "genre", value: genreIDs.map(String.init).joined(separator: ",")))
+        }
+        let dateKey = type == .movie ? "primaryReleaseDate" : "firstAirDate"
+        if let minimumYear {
+            query.append(URLQueryItem(name: dateKey + "Gte", value: String(format: "%04d-01-01", minimumYear)))
+        }
+        if let maximumYear {
+            query.append(URLQueryItem(name: dateKey + "Lte", value: String(format: "%04d-12-31", maximumYear)))
+        }
+        return try await get(type == .movie ? "discover/movies" : "discover/tv", query: query)
+    }
+
     func search(query: String, page: Int = 1, language: String? = nil) async throws -> SeerrPage {
         try await get("search", query: [URLQueryItem(name: "query", value: query)] + Self.pageQuery(page, language: language))
     }

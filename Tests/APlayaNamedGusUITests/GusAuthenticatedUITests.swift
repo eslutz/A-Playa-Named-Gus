@@ -100,6 +100,30 @@ final class GusAuthenticatedUITests: XCTestCase {
     }
 
     #if os(iOS)
+        func testLibraryPredictiveCompletionKeepsKeywordSearch() throws {
+            try prepare()
+            defer { finish() }
+            let title = try required("MovieTitle")
+            let app = launch("search")
+            let field = app.searchFields.firstMatch
+            XCTAssertTrue(field.waitForExistence(timeout: 30))
+            field.tap()
+            field.typeText(String(title.prefix(max(1, title.count - 2))))
+            let completion = app.descendants(matching: .any)
+                .matching(NSPredicate(format: "identifier == %@ AND label == %@", "Search.completion", title)).firstMatch
+            XCTAssertTrue(completion.waitForExistence(timeout: 20), app.debugDescription)
+            completion.tap()
+            XCTAssertEqual(field.value as? String, title)
+            let submit = app.keyboards.buttons["Search"].firstMatch
+            if submit.isHittable {
+                submit.tap()
+            }
+            let result = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", title)).firstMatch
+            XCTAssertTrue(result.waitForExistence(timeout: 15), app.debugDescription)
+            result.tap()
+            XCTAssertTrue(app.buttons["Detail.play"].waitForExistence(timeout: 15), app.debugDescription)
+        }
+
         func testReadyVideoCloseReturnsToDetail() throws {
             try prepare()
             defer { finish() }
@@ -758,22 +782,8 @@ final class GusAuthenticatedUITests: XCTestCase {
                 try focusTV(app, label: "Disconnect")
                 XCUIRemote.shared.press(.select)
             }
-            try focusTV(app, label: "Connect to Seerr")
-            XCUIRemote.shared.press(.select)
-            try enterTV(app, identifier: "Seerr.serverURL", text: "http://127.0.0.1:5059")
-            try focusTV(app, identifier: "Seerr.continue")
-            XCUIRemote.shared.press(.select)
-            try enterTV(app, identifier: "Seerr.username", text: "fixture@example.invalid")
-            try enterTV(app, identifier: "Seerr.password", text: "gus-fixture-only")
-            capture(app, "tv-seerr-signin-aligned")
-            try focusTV(app, identifier: "Seerr.signIn")
-            XCUIRemote.shared.press(.select)
-            XCTAssertTrue(app.staticTexts["Connected"].waitForExistence(timeout: 20))
-            capture(app, "tv-seerr-connected")
-            XCUIRemote.shared.press(.menu)
-            try showTVSidebar(app)
-            try focusTV(app, label: "Discover")
-            XCUIRemote.shared.press(.select)
+            try connectTVSeerrFixture(app)
+            try openTVDiscover(app)
             try verifyTVTrendingCarousel(app)
             try focusTV(app, identifier: "Seerr.title.movie.950000001")
             XCUIRemote.shared.press(.select)
@@ -794,6 +804,53 @@ final class GusAuthenticatedUITests: XCTestCase {
             XCTAssertTrue(app.descendants(matching: .any)["Seerr.requests.filter"].waitForExistence(timeout: 15), app.debugDescription)
             XCTAssertTrue(app.staticTexts["Gus Fixture Movie"].waitForExistence(timeout: 10), app.debugDescription)
             capture(app, "tv-seerr-request-history")
+        }
+
+        func testTVDiscoverPredictiveSearch() throws {
+            try prepare()
+            defer { finish() }
+            let app = launch("settings")
+            try focusTV(app, label: "Seerr")
+            XCUIRemote.shared.press(.select)
+            if app.buttons["Connect to Seerr"].waitForExistence(timeout: 3) {
+                try connectTVSeerrFixture(app)
+            } else {
+                // Search only the synthetic loopback catalog in this UI test.
+                try XCTSkipUnless(app.staticTexts["Gus Fixture Manager"].exists && app.staticTexts["127.0.0.1"].exists)
+            }
+            try openTVDiscover(app)
+            try focusTV(app, label: "Search Seerr")
+            XCUIRemote.shared.press(.select)
+            let field = app.searchFields.firstMatch
+            XCTAssertTrue(field.waitForExistence(timeout: 15))
+            app.typeText("Gus Fixture Mov")
+            let title = "Gus Fixture Movie"
+            try focusTV(app, label: title)
+            XCUIRemote.shared.press(.select)
+            XCTAssertEqual(field.value as? String, title)
+            XCTAssertTrue(app.buttons["Seerr.title.movie.950000001"].waitForExistence(timeout: 10))
+        }
+
+        private func connectTVSeerrFixture(_ app: XCUIApplication) throws {
+            try focusTV(app, label: "Connect to Seerr")
+            XCUIRemote.shared.press(.select)
+            try enterTV(app, identifier: "Seerr.serverURL", text: "http://127.0.0.1:5059")
+            try focusTV(app, identifier: "Seerr.continue")
+            XCUIRemote.shared.press(.select)
+            try enterTV(app, identifier: "Seerr.username", text: "fixture@example.invalid")
+            try enterTV(app, identifier: "Seerr.password", text: "gus-fixture-only")
+            capture(app, "tv-seerr-signin-aligned")
+            try focusTV(app, identifier: "Seerr.signIn")
+            XCUIRemote.shared.press(.select)
+            XCTAssertTrue(app.staticTexts["Connected"].waitForExistence(timeout: 20))
+            capture(app, "tv-seerr-connected")
+        }
+
+        private func openTVDiscover(_ app: XCUIApplication) throws {
+            XCUIRemote.shared.press(.menu)
+            try showTVSidebar(app)
+            try focusTV(app, label: "Discover")
+            XCUIRemote.shared.press(.select)
         }
 
         private func verifyTVTrendingCarousel(_ app: XCUIApplication) throws {

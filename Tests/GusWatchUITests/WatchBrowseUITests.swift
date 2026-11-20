@@ -47,6 +47,30 @@ final class WatchBrowseUITests: XCTestCase {
         capture(app, "watch-paused")
     }
 
+    func testWatchSearchOpensWithoutCloudConsent() throws {
+        guard #available(watchOS 27, *) else { throw XCTSkip("Watch Search requires watchOS 27.") }
+        continueAfterFailure = false
+        let app = XCUIApplication(bundleIdentifier: "dev.ericslutz.gus.watchkitapp")
+        app.launchArguments = ["--gus-demo-server"]
+        app.launch()
+        defer { app.terminate() }
+        let searchLink = app.buttons["Watch.Browse.search"]
+        for _ in 0 ..< 8 {
+            if searchLink.waitForExistence(timeout: 2), searchLink.isHittable {
+                break
+            }
+            if app.navigationBars["Settings"].exists || app.navigationBars["Downloads"].exists {
+                app.swipeDown(velocity: .slow)
+            } else {
+                app.swipeUp(velocity: .slow)
+            }
+        }
+        XCTAssertTrue(searchLink.waitForExistence(timeout: 8))
+        searchLink.tap()
+        XCTAssertTrue(app.navigationBars["Search Library"].waitForExistence(timeout: 8))
+        XCTAssertFalse(app.buttons["Natural Language"].exists)
+    }
+
     private func capture(_ app: XCUIApplication, _ name: String) {
         let attachment = XCTAttachment(screenshot: app.screenshot())
         attachment.name = name

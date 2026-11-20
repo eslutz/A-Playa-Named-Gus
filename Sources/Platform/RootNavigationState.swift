@@ -257,6 +257,9 @@ final class RootNavigationState {
         if selectedSectionID == Self.searchID, id != Self.searchID, let searchHistory {
             globalSearch.typed.completeLoadedSearch(in: searchHistory)
             globalSearch.typed.isPresented = false
+            if globalSearch.natural.state == .loading {
+                globalSearch.natural.resetResults()
+            }
         }
         if id == Self.searchID {
             resumeKeptSearch()
@@ -349,14 +352,18 @@ final class RootNavigationState {
     /// Only an edit to the field replaces a related search. Tab selection and keyboard
     /// dismissal can change native presentation independently of the field's contents.
     func editSearchText(_ text: String) {
-        guard text != globalSearch.typed.text else { return }
+        guard text != globalSearch.text else { return }
         if !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             globalSearch.related = nil
             globalSearch.detailOrigin = nil
             keptSearch = nil
         }
-        globalSearch.typed.text = text
-        globalSearch.typed.updateQuery()
+        if globalSearch.naturalMode {
+            globalSearch.natural.text = text
+        } else {
+            globalSearch.typed.text = text
+            globalSearch.typed.updateQuery()
+        }
     }
 
     func pathBinding(for id: String) -> Binding<NavigationPath> {
@@ -408,11 +415,11 @@ final class RootNavigationState {
 @MainActor @Observable
 final class SectionSearchState {
     @ObservationIgnored private weak var currentStore: SearchStore?
-    @ObservationIgnored private var retainedStore: SearchStore?
+    private var retainedStore: SearchStore?
     @ObservationIgnored private weak var history: SearchHistoryStore?
     private let retainsResults: Bool
     var store: SearchStore? {
-        currentStore
+        retainedStore ?? currentStore
     }
 
     var scrollAnchor: String?

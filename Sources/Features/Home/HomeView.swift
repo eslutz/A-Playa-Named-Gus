@@ -14,6 +14,8 @@ struct HomeView: View {
     @Environment(UpNextStore.self) private var upNext
     @Environment(SavedMediaStore.self) private var playlists
     @Environment(ServerMediaListsStore.self) private var serverLists
+    @AppStorage(ContentRatingGate.limitDefaultsKey) private var ratingLimit = ContentRatingGate.Limit.off.rawValue
+    @AppStorage(ContentRatingGate.hideUnratedDefaultsKey) private var hideUnrated = false
     private let activity = NextUpActivityStore.shared
     let store: HomeStore?
 
@@ -64,6 +66,9 @@ struct HomeView: View {
             guard playbackRefresh.revision > 0, let store else { return }
             await store.refresh()
         }
+        .task(id: store.map { _ in shelfContext }) {
+            await store?.forYou.load(shelfContext, session: session)
+        }
         .task(id: sharedWithYou.revision) {
             guard let store else { return }
             await store.loadSharedWithYou(links: sharedWithYou.links, title: sharedWithYou.collectionTitle)
@@ -74,8 +79,25 @@ struct HomeView: View {
         }
     }
 
+    private var shelfContext: ForYouShelfState.Context {
+        let preferences = session.intelligencePreferences
+        return .init(
+            cloudEnabled: preferences.cloudEnabled,
+            recommendationsEnabled: preferences.recommendationsEnabled,
+            limit: ratingLimit,
+            hideUnrated: hideUnrated,
+            activityRevision: playbackRefresh.revision,
+            tasteRevision: session.libraryIntelligence.tasteRevision
+        )
+    }
+
+    private func shouldShowShelf(_ store: HomeStore) -> Bool {
+        shelfContext.recommendationsEnabled && store.forYou.context == shelfContext &&
+            (!store.forYou.picks.isEmpty || store.forYou.error != nil)
+    }
+
     private func hasContent(_ store: HomeStore) -> Bool {
-        !store.unifiedNextUp.isEmpty || !store.sharedWithYouItems.isEmpty || !store.latestSections.isEmpty
+        !store.unifiedNextUp.isEmpty || !store.sharedWithYouItems.isEmpty || !store.latestSections.isEmpty || shouldShowShelf(store)
     }
 
     private func updateNextUp() {
@@ -122,6 +144,23 @@ struct HomeView: View {
                     if !store.unifiedNextUp.isEmpty {
                         NextUpRail(store: store).id("next")
                     }
+                    if shouldShowShelf(store) {
+                        if !store.forYou.picks.isEmpty {
+                            MediaRail(
+                                title: String(localized: "For You"),
+                                items: store.forYou.picks.map(\.item),
+                                recommendations: store.forYou.picks,
+                                focusKey: "home.forYou"
+                            ).id("forYou")
+                        }
+                        if let error = store.forYou.error {
+                            VStack(alignment: .leading) {
+                                Text("For You Unavailable").font(.headline)
+                                Text(error).foregroundStyle(.secondary)
+                                Button("Retry") { Task { await store.forYou.load(shelfContext, session: session, refresh: true) } }
+                            }
+                        }
+                    }
                     if !store.sharedWithYouItems.isEmpty {
                         MediaRail(title: store.sharedWithYouTitle, items: store.sharedWithYouItems).id("shared")
                     }
@@ -142,6 +181,7 @@ struct HomeView: View {
             .refreshable {
                 await upNext.refresh(session: session, force: true)
                 await store.refresh()
+                await store.forYou.load(shelfContext, session: session, refresh: true)
                 updateNextUp()
             }
         }
@@ -358,6 +398,7 @@ struct MediaRail: View {
     let items: [MediaItem]
     var library: MediaItem? = nil
     var latestKind: LatestMediaKind? = nil
+    var recommendations: [GusLibraryPick] = []
     var style: MediaRailStyle = .poster
     var focusKey: String? = nil
     var focusContext: String? = nil
@@ -388,12 +429,17 @@ struct MediaRail: View {
                         MediaItemNavigationLink(item: item) {
                             switch style {
                             case .poster:
-                                PosterCard(
-                                    item: item,
-                                    imageURL: session.mediaProvider.primaryImageURL(for: item, context: .posterRail),
-                                    fallbackURLs: session.mediaProvider.artworkURLs(for: item, request: .init(role: .poster, maxWidth: 260)),
-                                    onExhausted: { _ = try? await session.references.currentItem(item) }
-                                )
+                                VStack(alignment: .leading, spacing: 4) {
+                                    PosterCard(
+                                        item: item,
+                                        imageURL: session.mediaProvider.primaryImageURL(for: item, context: .posterRail),
+                                        fallbackURLs: session.mediaProvider.artworkURLs(for: item, request: .init(role: .poster, maxWidth: 260)),
+                                        onExhausted: { _ = try? await session.references.currentItem(item) }
+                                    )
+                                    if let pick = recommendations.first(where: { $0.id == item.id }) {
+                                        Text(pick.reason).font(.caption).foregroundStyle(.secondary)
+                                    }
+                                }
                                 .gusPhoneRailWidth(backdrop: style == .backdrop, fallback: style.itemWidth)
                             case .backdrop:
                                 BackdropCard(
