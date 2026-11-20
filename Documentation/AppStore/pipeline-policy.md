@@ -19,8 +19,9 @@ Retain exact source, compiled-input, artifact, native test-identity and raw-log
 provenance outside Git. Existing results keep their original revision/artifact labels;
 reuse requires an explicit unchanged-source scope, not a claim that they were rerun.
 Requalify affected behavior when source changes or unresolved failures require it.
-Local native macOS runtime and physical-device testing remain outside the current
-validation scope; the hosted macOS exception does not authorize either.
+Local automated app tests and runtime verification use Apple simulators exclusively.
+Record hardware-only checks as unverified. The hosted native macOS unit test is
+a separate CI check.
 
 The warning-free and Apple Silicon policies remain mandatory. Do not suppress build
 or tool diagnostics, weaken architecture/concurrency settings, or substitute a passing

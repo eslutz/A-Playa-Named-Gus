@@ -5,8 +5,9 @@ Run the smallest checks that can establish the claim you need to make. The
 [agent rules](../AGENTS.md) define repository constraints;
 [`project.yml`](../project.yml) and [shared build settings](../Config/Shared.xcconfig)
 define targets and settings. The [pipeline policy](AppStore/pipeline-policy.md)
-owns hosted checks and release gates. This guide does not authorize signing,
-distribution, or physical-device testing.
+owns hosted checks and release gates. Run local automated app tests and runtime
+verification on Apple simulators only, one at a time. Record any behavior that
+requires physical hardware or a live device entitlement as **unverified**.
 
 ## Choose a validation path
 
@@ -27,9 +28,11 @@ distribution, or physical-device testing.
    needs a local Apple Silicon Mac, full Xcode, and the relevant runtime and
    destination. Install XcodeGen or SwiftFormat only when needed. Server-backed
    UI work also needs the local fixture prerequisites.
-3. **Select the target.** Use the actual scheme and an installed simulator UDID.
-   Confirm the platform and OS before running; do not pick a device based on name
-   or use `booted` where several simulators might be active.
+3. **Select the target.** Match the scheme’s destination against
+   `xcrun simctl list devices available`. Pass the explicit simulator platform
+   and UDID, for example `platform=iOS Simulator,id=<simulator UDID>`.
+   A connected phone or Watch may also appear in Xcode’s destination list.
+   Only a simulator entry qualifies for these checks.
 4. **Run scoped checks.** Keep simulator builds and tests local. Preserve the
    [warning gate](AppStore/warning-policy.md); don't apply the hosted macOS exception
    locally. Stop if you cannot verify the target, fixture, toolchain, or permission.

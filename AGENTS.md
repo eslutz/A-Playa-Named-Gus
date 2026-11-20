@@ -76,11 +76,15 @@ The app bundle ID is `dev.ericslutz.gus`.
 - For routine code changes run focused lint, build, and test checks for the
   affected code and platforms. Discover installed destinations before using them;
   report exactly what ran, what passed, and what remains unverified.
-- **All simulator builds and tests run locally.** No simulator actions in
-  GitHub CI or Xcode Cloud. Hosted GitHub validation is static/configuration work
-  plus native arm64 macOS build and unit tests only. No hosted UI/integration or
-  E2E validation. Hosted native checks do not authorize local native macOS
-  runtime or physical-device validation, outside the current scope.
+- **Run local automated app tests and runtime verification only on Apple
+  simulators, one at a time.** Select an installed simulator UDID and its
+  explicit simulator platform. Physical devices, including connected and unlocked
+  devices, are outside automated validation. Record hardware-only behavior as
+  unverified when the simulator cannot exercise it.
+- All simulator builds and tests run locally. Hosted GitHub validation covers
+  static/configuration checks and the native arm64 macOS build and unit tests.
+  Keep simulator work out of GitHub CI and Xcode Cloud. Local native macOS
+  runtime testing and hosted UI, integration and E2E tests are outside scope.
 - Keep builds warning-free. Never suppress diagnostics to obtain a pass.
   The only exception is the documented, explicitly logged hosted native arm64
   macOS simulator-discovery warning; it does not apply to archives or local
