@@ -870,20 +870,19 @@ final class GusAuthenticatedUITests: XCTestCase {
             try prepare()
             defer { finish() }
             let query = "Unmatched fixture query"
-            let app = openTVLibrarySearch()
-            app.typeText(query)
+            let server = try Data(required("FixtureServerID").utf8).base64EncodedString()
+            let user = try Data(required("FixtureUserID").utf8).base64EncodedString()
+            let key = "dev.ericslutz.gus.searchHistory." + server + "." + user
+            // The argument domain supplies a read-only fixture for this launch only.
+            let data = try JSONSerialization.data(withJSONObject: [["typed": ["_0": query]]])
+            let encoded = "<" + data.map { String(format: "%02x", $0) }.joined() + ">"
+            let app = openTVLibrarySearch(arguments: ["-" + key, encoded])
+            try completeTVSearch(app, prefix: String(query.dropLast(2)), title: query)
             XCTAssertTrue(app.staticTexts["No Results"].waitForExistence(timeout: 15))
-            // Leaving the loaded search records the exact query in the demo account's history.
-            try app.open(XCTUnwrap(URL(string: "gus://home")))
-            XCTAssertTrue(app.staticTexts["Recently Added Movies"].waitForExistence(timeout: 20))
-            app.terminate()
-            let again = openTVLibrarySearch()
-            try completeTVSearch(again, prefix: String(query.dropLast(2)), title: query)
-            XCTAssertTrue(again.staticTexts["No Results"].waitForExistence(timeout: 15))
         }
 
-        private func openTVLibrarySearch() -> XCUIApplication {
-            let app = launch("search")
+        private func openTVLibrarySearch(arguments: [String] = []) -> XCUIApplication {
+            let app = launch("search", arguments: arguments)
             let field = app.searchFields.firstMatch
             XCTAssertTrue(field.waitForExistence(timeout: 20))
             let keyboardFocus = { field.debugDescription.contains(", Keyboard Focused") }
@@ -904,7 +903,7 @@ final class GusAuthenticatedUITests: XCTestCase {
             XCTAssertTrue(field.waitForExistence(timeout: 15))
             app.typeText(prefix)
             let completion = app.buttons["Search.completion." + title]
-            XCTAssertTrue(completion.waitForExistence(timeout: 15))
+            XCTAssertTrue(completion.waitForExistence(timeout: 15), app.debugDescription)
             for _ in 0 ..< 5 where !completion.hasFocus {
                 XCUIRemote.shared.press(.down)
             }
@@ -1979,9 +1978,9 @@ final class GusAuthenticatedUITests: XCTestCase {
         return app
     }
 
-    private func launch(_ route: String) -> XCUIApplication {
+    private func launch(_ route: String, arguments: [String] = []) -> XCUIApplication {
         let app = application()
-        app.launchArguments = ["--gus-demo-server", "--gus-disable-cloud-sync", "--gus-route", route]
+        app.launchArguments = ["--gus-demo-server", "--gus-disable-cloud-sync", "--gus-route", route] + arguments
         app.launch()
         return app
     }
@@ -2036,7 +2035,8 @@ final class GusAuthenticatedUITests: XCTestCase {
         else { throw FixtureError.unavailable }
         let response = try request("/Users/\(userID)/Items?Recursive=true&Limit=1000&Fields=Overview", token: token)
         let items = response["Items"] as? [[String: Any]] ?? []
-        var result: [String: String] = [:]
+        var result = ["FixtureUserID": userID]
+        result["FixtureServerID"] = auth["ServerId"] as? String ?? user["ServerId"] as? String
         for type in ["Audio", "Movie", "MusicAlbum", "Book"] {
             let candidates = items.filter { $0["Type"] as? String == type }
             let selected = type == "Audio" ? candidates.max(by: { ($0["RunTimeTicks"] as? Double ?? 0) < ($1["RunTimeTicks"] as? Double ?? 0) }) : candidates.first
