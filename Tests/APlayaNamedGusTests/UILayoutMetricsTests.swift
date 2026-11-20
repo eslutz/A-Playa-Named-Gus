@@ -45,9 +45,10 @@ struct UILayoutMetricsTests {
             .clipped()
             .environment(\.detailArtworkViewportHeight, CGFloat(height))
             let image = try #require(ImageRenderer(content: header).cgImage)
+            let colorSpace = try #require(CGColorSpace(name: CGColorSpace.sRGB))
             let context = try #require(CGContext(
                 data: nil, width: image.width, height: image.height, bitsPerComponent: 8,
-                bytesPerRow: image.width * 4, space: CGColorSpace(name: CGColorSpace.sRGB)!,
+                bytesPerRow: image.width * 4, space: colorSpace,
                 bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
             ))
             context.draw(image, in: CGRect(x: 0, y: 0, width: image.width, height: image.height))
@@ -78,9 +79,10 @@ struct UILayoutMetricsTests {
                 .frame(width: 320)
                 .background(artwork)
             let image = try #require(ImageRenderer(content: header).cgImage)
+            let colorSpace = try #require(CGColorSpace(name: CGColorSpace.sRGB))
             let context = try #require(CGContext(
                 data: nil, width: image.width, height: image.height, bitsPerComponent: 8,
-                bytesPerRow: image.width * 4, space: CGColorSpace(name: CGColorSpace.sRGB)!,
+                bytesPerRow: image.width * 4, space: colorSpace,
                 bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
             ))
             context.draw(image, in: CGRect(x: 0, y: 0, width: image.width, height: image.height))
