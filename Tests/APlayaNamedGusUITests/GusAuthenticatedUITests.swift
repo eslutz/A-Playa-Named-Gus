@@ -823,17 +823,22 @@ final class GusAuthenticatedUITests: XCTestCase {
                 }
                 try XCTSkipUnless(showsValue("Gus Fixture Manager") && showsValue("127.0.0.1"), "Requires the connected loopback Seerr fixture.")
             }
-            try openTVDiscover(app)
-            try focusTV(app, label: "Search Seerr")
+            app.terminate()
+            let browse = launch("home")
+            XCTAssertTrue(browse.staticTexts["Recently Added Movies"].waitForExistence(timeout: 30))
+            XCUIRemote.shared.press(.menu)
+            try focusTV(browse, label: "Discover")
             XCUIRemote.shared.press(.select)
-            let field = app.searchFields.firstMatch
+            try focusTV(browse, label: "Search Seerr")
+            XCUIRemote.shared.press(.select)
+            let field = browse.searchFields.firstMatch
             XCTAssertTrue(field.waitForExistence(timeout: 15))
-            app.typeText("Gus Fixture Mov")
+            browse.typeText("Gus Fixture Mov")
             let title = "Gus Fixture Movie"
-            try focusTV(app, label: title)
+            try focusTV(browse, label: title)
             XCUIRemote.shared.press(.select)
             XCTAssertEqual(field.value as? String, title)
-            XCTAssertTrue(app.buttons["Seerr.title.movie.950000001"].waitForExistence(timeout: 10))
+            XCTAssertTrue(browse.buttons["Seerr.title.movie.950000001"].waitForExistence(timeout: 10))
         }
 
         private func connectTVSeerrFixture(_ app: XCUIApplication) throws {

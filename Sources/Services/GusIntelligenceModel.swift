@@ -226,7 +226,7 @@ struct GusIntelligenceModel {
     /// Recognize a complete, unambiguous genre/date phrase, including Discover's suggested queries.
     /// Extra requirements or unfamiliar wording must still be interpreted by the model.
     static func genreAndYear(_ prompt: String) -> GusSearchIntent? {
-        let pattern = #/(.+) (movies|films|shows|tv series|series)(?: released)? (from the|from|in|after|before|since) ([0-9]{4})(s?)/#
+        let pattern = #/(.+?) (movies|films|shows|tv series|series)(?: released)? (from the|from|in|after|before|since) ([0-9]{4})(s?)/#
         guard let match = GusLibraryMatching.normalized(prompt).wholeMatch(of: pattern)?.output,
               let year = Int(match.4), (1000 ... 9989).contains(year) else { return nil }
         let genre: String

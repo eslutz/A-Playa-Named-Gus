@@ -12,6 +12,7 @@ struct IntelligenceEvaluationTests {
     @Test func exactGenreAndYearQueriesPreserveAllConstraints() {
         let decade = GusIntelligenceModel.genreAndYear("Sci-fi movies from the 1990s")
         #expect(decade == GusSearchIntent(mediaTypes: [.movie], genres: ["Science Fiction"], minimumYear: 1990, maximumYear: 1999))
+        #expect(GusIntelligenceModel.genreAndYear("Dramatic TV series from 2005") == GusSearchIntent(mediaTypes: [.series], genres: ["Drama"], minimumYear: 2005, maximumYear: 2005))
         #expect(GusIntelligenceModel.genreAndYear("Comedy series released after 2014") == GusSearchIntent(mediaTypes: [.series], genres: ["Comedy"], minimumYear: 2015))
         #expect(GusIntelligenceModel.genreAndYear("Comedy series before 2014 starring Jane Doe") == nil)
         #expect(GusIntelligenceModel.genreAndYear("Not comedy movies from 2014") == nil)
@@ -152,6 +153,20 @@ struct IntelligenceEvaluationTests {
                 let hits = titles.filter { intent.score($0) != nil }
                 #expect(hits.map(\.id) == [expected], "Incorrect interpretation of \(query): \(intent)")
             }
+        }
+
+        @Test(.enabled(if: hasLocalModel, "Requires supported hardware with a ready on-device Apple model"))
+        func localModelRanksLibraryCandidates() async throws {
+            let session = try makeSession(FakeMediaProviderSession(capabilities: .init()))
+            session.intelligencePreferences.recommendationsEnabled = true
+            let candidates = [
+                GusRankCandidate(handle: 0, title: "Antarctic Birds", genres: ["Documentary"], summary: "A field guide to nesting birds."),
+                GusRankCandidate(handle: 1, title: "Hidden Witness", genres: ["Mystery"], summary: "A detective solves a murder in a quiet village."),
+                GusRankCandidate(handle: 2, title: "Sunday Bread", genres: ["Cooking"], summary: "A baker teaches sourdough technique."),
+            ]
+            let ranked = try await GusIntelligenceModel(session: session).rank(candidates: candidates, traits: ["Mystery", "Detective stories"])
+            #expect(ranked.first == 1)
+            #expect(Set(ranked).isSubset(of: [0, 1, 2]))
         }
 
         private func makeSession(_ provider: FakeMediaProviderSession) throws -> SessionStore {
