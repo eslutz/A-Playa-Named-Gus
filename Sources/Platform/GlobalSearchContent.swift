@@ -24,6 +24,14 @@ struct GlobalSearchContent: View {
             } else {
                 searchableResults
             }
+        #elseif os(tvOS)
+            if root.globalSearch.related != nil {
+                // The tvOS search controller brings its keyboard into focus as
+                // soon as it appears. A metadata selection already supplies the query.
+                results
+            } else {
+                searchableResults
+            }
         #else
             searchableResults
         #endif
@@ -73,29 +81,24 @@ struct GlobalSearchContent: View {
 }
 
 private struct RelatedResultsView: View {
-    @Environment(SessionStore.self) private var session
     let results: RelatedSearchResults
-    @State private var attempt = 0
 
     var body: some View {
-        Group {
-            if let target = results.resolved {
-                LibraryGridView(scope: .related(target))
-            } else if results.unavailable {
-                ContentUnavailableView("No Matching Credit or Tag", systemImage: results.target.kind.systemImage)
-            } else if let message = results.errorMessage {
-                ContentUnavailableView {
-                    Label("Couldn't Load Results", systemImage: "exclamationmark.triangle")
-                } description: {
-                    Text(message)
-                } actions: {
-                    Button("Retry") { attempt += 1 }
-                }
-            } else {
-                ProgressView()
+        if let target = results.resolved {
+            LibraryGridView(scope: .related(target), searchResults: results)
+        } else if results.unavailable {
+            ContentUnavailableView("No Matching Credit or Tag", systemImage: results.target.kind.systemImage)
+        } else if let message = results.errorMessage {
+            ContentUnavailableView {
+                Label("Couldn't Load Results", systemImage: "exclamationmark.triangle")
+            } description: {
+                Text(message)
+            } actions: {
+                Button("Retry", action: results.retry)
             }
+        } else {
+            ProgressView().accessibilityIdentifier("Search.resolvingTag")
         }
-        .task(id: attempt) { await results.resolve(session: session) }
     }
 }
 

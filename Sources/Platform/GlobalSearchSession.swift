@@ -7,6 +7,7 @@ import SwiftUI
 final class GlobalSearchSession {
     let typed = SectionSearchState(retainsResults: true)
     var related: RelatedSearchResults?
+    var detailOrigin: SearchDetailOrigin?
 
     init(target: RelatedSearch? = nil) {
         related = target.map { RelatedSearchResults(target: $0) }
@@ -20,8 +21,19 @@ struct SearchDetailOrigin {
     let sheetPath: NavigationPath
     let search: GlobalSearchSession?
     let scrollAnchors: [String: String]
+    let viewport: DetailScrollLocation?
     let focus: TVFocusMemory
     let focusContext: String?
+}
+
+struct DetailScrollLocation: Equatable {
+    let key: String
+    let y: CGFloat
+}
+
+/// A saved result position belongs to one query in one window.
+@MainActor final class SearchResultsViewport {
+    var y: CGFloat?
 }
 
 @MainActor @Observable
@@ -31,6 +43,14 @@ final class RelatedSearchResults {
     private(set) var unavailable = false
     private(set) var errorMessage: String?
     var pages: LibraryStore?
+    var scrollAnchor: String?
+    let viewport = SearchResultsViewport()
+    private(set) var lookupID = UUID()
+
+    func retry() {
+        errorMessage = nil
+        lookupID = UUID()
+    }
 
     init(target: RelatedSearch) {
         self.target = target
@@ -38,8 +58,7 @@ final class RelatedSearchResults {
     }
 
     func resolve(session: SessionStore) async {
-        guard resolved == nil, !unavailable else { return }
-        errorMessage = nil
+        guard resolved == nil, !unavailable, errorMessage == nil else { return }
         do {
             let match = try await session.mediaProvider.resolveRelatedSearch(target)
             try Task.checkCancellation()

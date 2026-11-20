@@ -4,10 +4,13 @@ import SwiftUI
 struct CastRail: View {
     @Environment(SessionStore.self) private var session
     @Environment(RootNavigationState.self) private var navigation
+    @Environment(\.detailScrollViewport) private var viewport
     let item: MediaItem
 
     var body: some View {
         let context = "detail:" + ItemRef(item: item).id
+        let people = displayPeople
+        let focusIDs = people.map(\.focusID)
         VStack(alignment: .leading, spacing: 12) {
             HStack {
                 Text("Cast & Crew")
@@ -18,13 +21,13 @@ struct CastRail: View {
 
             ScrollView(.horizontal, showsIndicators: false) {
                 LazyHStack(alignment: .top, spacing: 16) {
-                    ForEach(displayPeople, id: \.focusID) { person in
+                    ForEach(people, id: \.focusID) { person in
                         if person.target.id != nil {
-                            Button { navigation.openRelatedSearch(person.target, focusContext: context) } label: { card(person) }
+                            Button { navigation.openRelatedSearch(person.target, focusContext: context, viewport: viewport?.location) } label: { card(person) }
                                 .buttonStyle(.plain)
                                 .accessibilityHint("Search for related titles")
                                 .accessibilityIdentifier("Detail.related." + person.focusID)
-                                .gusTVFocus(id: person.focusID, section: context + ":cast", ids: displayPeople.map(\.focusID), context: context)
+                                .gusTVFocus(id: person.focusID, section: context + ":cast", ids: focusIDs, context: context)
                         } else {
                             card(person).gusTVFocusableInfo()
                         }
@@ -92,7 +95,7 @@ struct CastRail: View {
 
     private var displayPeople: [CastDisplayPerson] {
         var seen = Set<String>()
-        return Array(item.people.compactMap(CastDisplayPerson.init).filter { seen.insert($0.focusID).inserted }.prefix(16))
+        return item.people.compactMap(CastDisplayPerson.init).filter { seen.insert($0.focusID).inserted }
     }
 }
 

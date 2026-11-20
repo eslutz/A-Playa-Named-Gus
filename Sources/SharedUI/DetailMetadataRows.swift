@@ -18,6 +18,7 @@ struct DetailMetadataRows: View {
 
 private struct MetadataPillRow: View {
     @Environment(RootNavigationState.self) private var navigation
+    @Environment(\.detailScrollViewport) private var viewport
     let title: LocalizedStringKey
     let values: [RelatedSearch]
     let identifier: String
@@ -34,7 +35,7 @@ private struct MetadataPillRow: View {
                 HStack(spacing: 10) {
                     ForEach(values, id: \.identityKey) { target in
                         Button(target.name) {
-                            navigation.openRelatedSearch(target, focusContext: context)
+                            navigation.openRelatedSearch(target, focusContext: context, viewport: viewport?.location)
                         }
                         .buttonStyle(.bordered)
                         .buttonBorderShape(.capsule)

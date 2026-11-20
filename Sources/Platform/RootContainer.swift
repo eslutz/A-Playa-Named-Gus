@@ -25,6 +25,16 @@ struct RootContainer: View {
                 NavigationStack { UserProfileView() }
             }
             .gusContentLinks()
+            .task(id: state.selectedSectionID == RootNavigationState.searchID ? state.globalSearch.related?.lookupID : nil) {
+                if state.selectedSectionID == RootNavigationState.searchID, let related = state.globalSearch.related {
+                    await related.resolve(session: session)
+                    guard !Task.isCancelled, state.globalSearch.related === related, let match = related.resolved else { return }
+                    let pages = state.libraryStore(for: .related(match), session: session, searchResults: related)
+                    if pages.state == .idle || pages.state == .loading {
+                        await pages.load(superseding: true)
+                    }
+                }
+            }
             .gusSessionPlayerHost(state: state, enabled: state.detailItem == nil)
             .gusAudioHost(coordinator: audio, enabled: state.detailItem == nil)
         #if os(iOS) || os(tvOS) || os(macOS)

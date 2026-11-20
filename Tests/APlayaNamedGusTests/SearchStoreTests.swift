@@ -10,7 +10,7 @@ struct SearchStoreTests {
         let scope = AccountScope(serverID: "one", userID: "user")
         let history = SearchHistoryStore(scope: scope, defaults: defaults)
         let genre = RelatedSearch(kind: .genre, id: "42", name: "Horror")
-        let studio = RelatedSearch(kind: .studio, name: "Horror")
+        let studio = RelatedSearch(kind: .studio, id: "42", name: "Horror")
         for index in 1 ... 20 {
             history.record(.typed("Query " + String(index)))
         }
@@ -20,6 +20,7 @@ struct SearchStoreTests {
         history.record(.typed("HORROR"))
         history.record(.related(.init(kind: .genre, id: "42", name: "Renamed")))
         history.record(.typed("  "))
+        history.record(.related(.init(kind: .studio, name: "Unresolved")))
         #expect(history.entries.count == 20)
         #expect(history.entries.last == .typed("Query 4"))
         #expect(Array(history.entries.prefix(3)) == [.related(.init(kind: .genre, id: "42", name: "Renamed")), .typed("HORROR"), .related(studio)])
@@ -67,19 +68,25 @@ struct SearchStoreTests {
         #expect(history.entries.first == .typed("Finished"))
         state.replayTyped("Horror", in: history)
         #expect(state.text == "Horror" && history.entries.first == .typed("Horror"))
+        history.remove(.typed("Horror"))
+        await store.search("Horror")
         state.release(owner: owner)
+        state.completeLoadedSearch(in: history)
+        #expect(!history.entries.contains(.typed("Horror")))
         #expect(state.store === store)
     }
 
     @Test("global Search retains its loaded result pages across removal and reattachment of the surface")
-    @MainActor func globalSearchRetainsPages() async {
+    @MainActor func globalSearchRetainsPages() async throws {
         let provider = FakeMediaProviderSession(capabilities: .init())
         var requests = 0
         provider.itemsHandler = { _ in
             requests += 1
             return .init(items: [.init(id: "movie", name: "Movie", officialRating: "G", type: .movie)], totalRecordCount: 1)
         }
-        let session = SessionStore.makeTestSession(mediaProvider: provider)
+        let defaults = try #require(UserDefaults(suiteName: UUID().uuidString))
+        let url = try #require(URL(string: "https://example.invalid"))
+        let session = SessionStore(client: JellyfinClientFactory.makeClient(url: url), user: .init(id: "u", name: "User", serverID: "s"), server: .init(id: "s", name: "Server", url: url), mediaProvider: provider, historyDefaults: defaults)
         let state = SectionSearchState(retainsResults: true)
         let owner = UUID()
         var first: SearchStore? = state.acquireStore(session: session, owner: owner)
@@ -90,10 +97,15 @@ struct SearchStoreTests {
         first = nil
         #expect(retained != nil)
         let replacementOwner = UUID()
-        let replacement = state.acquireStore(session: session, owner: replacementOwner)
-        #expect(replacement === retained && replacement.query == "Movie")
-        #expect(replacement.results.compactMap(\.id) == ["movie"] && requests == 1)
+        var replacement: SearchStore? = state.acquireStore(session: session, owner: replacementOwner)
+        #expect(replacement === retained && replacement?.query == "Movie")
+        #expect(replacement?.results.compactMap(\.id) == ["movie"] && requests == 1)
         state.release(owner: replacementOwner)
+        state.text = ""
+        #expect(session.searchHistory.entries == [.typed("Movie")])
+        #expect(replacement?.results.isEmpty == true)
+        replacement = nil
+        #expect(retained == nil)
     }
 
     @Test("an empty continuation below the remembered total preserves search results and retries the raw offset")

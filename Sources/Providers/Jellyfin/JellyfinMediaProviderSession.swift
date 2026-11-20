@@ -108,7 +108,7 @@ final class JellyfinMediaProviderSession: MediaProviderSession {
             enableUserData: true,
             personIDs: query.personID.map { [$0] },
             artistIDs: query.artistID.map { [$0] },
-            isCollapseBoxSetItems: query.genreID != nil || query.studioID != nil || query.personID != nil ? false : nil,
+            isCollapseBoxSetItems: query.hasRelatedFilter ? false : nil,
             studioIDs: query.studioID.map { [$0] },
             genreIDs: query.genreID.map { [$0] },
             enableTotalRecordCount: true,
@@ -1066,7 +1066,10 @@ final class JellyfinMediaProviderSession: MediaProviderSession {
 
     private func includeItemKinds(for query: MediaItemQuery) -> [BaseItemKind]? {
         if let includeTypes = query.includeTypes {
-            let kinds = includeTypes.compactMap(Self.baseItemKind(for:))
+            var kinds = includeTypes.compactMap(Self.baseItemKind(for:))
+            if query.hasRelatedFilter, kinds.contains(.video) {
+                kinds.append(.musicVideo)
+            }
             return kinds.isEmpty ? nil : kinds
         }
         // Artist queries return that artist's albums unless the caller asked otherwise.

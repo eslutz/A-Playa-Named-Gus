@@ -41,6 +41,9 @@ private struct ContentLinkHandler: ViewModifier {
                             }
                         }
                 }
+                #if os(iOS)
+                .presentationContentInteraction(.scrolls)
+                #endif
                 .gusSessionPlayerHost(state: rootState)
                 .gusAudioHost(coordinator: audio)
                 .gusNowPlaying(coordinator: audio, usesTabAccessory: false)

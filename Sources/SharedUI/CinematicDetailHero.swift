@@ -183,6 +183,13 @@ enum DetailPageMetrics {
 
 extension EnvironmentValues {
     @Entry var detailArtworkTopInset: CGFloat = 0
+    @Entry var detailBackdropHeightLimit: CGFloat = 440
+    @Entry var detailScrollViewport: DetailScrollViewport?
+}
+
+/// The originating control reads the vertical offset at the moment of selection.
+@MainActor final class DetailScrollViewport {
+    var location: DetailScrollLocation?
 }
 
 extension View {
@@ -191,6 +198,7 @@ extension View {
     func detailArtworkViewport() -> some View {
         GeometryReader { viewport in
             self.environment(\.detailArtworkTopInset, viewport.safeAreaInsets.top)
+                .environment(\.detailBackdropHeightLimit, min(440, viewport.size.height * 0.55))
                 .ignoresSafeArea(.container, edges: .top)
         }
     }
@@ -198,10 +206,28 @@ extension View {
 
 /// Header artwork can use the whole pane. Only the sections below it use page margins.
 struct ArtworkDetailPage<Header: View, Sections: View>: View {
+    @Environment(RootNavigationState.self) private var navigation
+    var detailKey: String? = nil
     @ViewBuilder let header: () -> Header
     @ViewBuilder let sections: () -> Sections
 
     var body: some View {
+        Group {
+            if let detailKey {
+                #if os(tvOS)
+                    scroll.scrollPosition(id: navigation.scrollBinding(for: detailKey))
+                #else
+                    scroll.modifier(DetailScrollRestoration(key: detailKey))
+                #endif
+            } else {
+                scroll
+            }
+        }
+        .detailArtworkViewport()
+        .lookToScroll()
+    }
+
+    private var scroll: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: DetailPageMetrics.sectionSpacing) {
                 header()
@@ -213,10 +239,41 @@ struct ArtworkDetailPage<Header: View, Sections: View>: View {
                     .frame(maxWidth: .infinity)
             }
         }
-        .detailArtworkViewport()
-        .lookToScroll()
     }
 }
+
+#if !os(tvOS)
+    private struct DetailScrollRestoration: ViewModifier {
+        @Environment(RootNavigationState.self) private var navigation
+        let key: String
+        @State private var position = ScrollPosition(idType: String.self)
+        @State private var viewport = DetailScrollViewport()
+
+        func body(content: Content) -> some View {
+            content
+                .environment(\.detailScrollViewport, viewport)
+                .scrollPosition($position)
+                .onScrollGeometryChange(for: CGFloat.self) { $0.contentOffset.y } action: { _, y in
+                    viewport.location = DetailScrollLocation(key: key, y: y)
+                }
+                .onChange(of: position.viewID(type: String.self)) { _, id in
+                    if let id {
+                        navigation.scrollAnchors[key] = id
+                    }
+                }
+                .onAppear {
+                    if navigation.returningDetailViewport?.key != key, let anchor = navigation.scrollAnchors[key] {
+                        position.scrollTo(id: anchor)
+                    }
+                }
+                .onChange(of: navigation.returningDetailViewport, initial: true) { _, location in
+                    guard let location, location.key == key else { return }
+                    position.scrollTo(y: location.y)
+                    navigation.returningDetailViewport = nil
+                }
+        }
+    }
+#endif
 
 /// Keep data-loading sections mounted while reserving space only for visible sections.
 struct DetailSectionLayout: Layout {
@@ -247,6 +304,10 @@ struct DetailSectionLayout: Layout {
 /// Let the lower edge of the backdrop fade into the system surface beneath the title.
 struct DetailBackdropHeader<Artwork: View, Summary: View>: View {
     @Environment(\.detailArtworkTopInset) private var topInset
+    @Environment(\.detailBackdropHeightLimit) private var heightLimit
+    #if os(iOS)
+        @Environment(\.colorScheme) private var colorScheme
+    #endif
     @ViewBuilder let artwork: () -> Artwork
     @ViewBuilder let summary: () -> Summary
 
@@ -254,13 +315,28 @@ struct DetailBackdropHeader<Artwork: View, Summary: View>: View {
         VStack(spacing: -32) {
             Color.clear
                 .aspectRatio(1.55, contentMode: .fit)
-                .frame(maxHeight: 440)
+                .frame(maxHeight: heightLimit)
                 .padding(.top, topInset)
                 .frame(maxWidth: .infinity)
                 .overlay {
                     GeometryReader { geometry in
                         artwork().frame(width: geometry.size.width, height: geometry.size.height).clipped()
                             .backgroundExtensionEffect()
+                        #if os(iOS)
+                            .overlay(alignment: .top) {
+                                let surface: Color = colorScheme == .dark ? .black : .white
+                                LinearGradient(
+                                    stops: [
+                                        .init(color: surface.opacity(0.66), location: 0),
+                                        .init(color: surface.opacity(0.60), location: 0.52),
+                                        .init(color: .clear, location: 1),
+                                    ],
+                                    startPoint: .top, endPoint: .bottom
+                                )
+                                .frame(height: min(geometry.size.height, min(100, max(72, topInset))))
+                                .allowsHitTesting(false)
+                            }
+                        #endif
                     }
                     .mask {
                         LinearGradient(stops: [.init(color: .black, location: 0), .init(color: .black, location: 0.62), .init(color: .clear, location: 1)], startPoint: .top, endPoint: .bottom)
@@ -313,6 +389,7 @@ struct DetailCoverHeader<Artwork: View, Summary: View>: View {
 }
 
 struct DetailPrimaryButton: View {
+    @ScaledMetric(relativeTo: .body) private var symbolLineHeight: CGFloat = 17
     let title: LocalizedStringKey
     let systemImage: String
     let action: () -> Void
@@ -325,10 +402,16 @@ struct DetailPrimaryButton: View {
 
     var body: some View {
         Button(action: action) {
-            Label(title, systemImage: systemImage)
-                .fontWeight(.bold)
-                .gusProminentActionForeground()
-                .frame(maxWidth: .infinity)
+            Label {
+                Text(title)
+            } icon: {
+                // Give each symbol the same line box. Some circle symbols otherwise
+                // increase the native button height by one pixel on OS 26.
+                Image(systemName: systemImage).frame(height: symbolLineHeight)
+            }
+            .fontWeight(.bold)
+            .gusProminentActionForeground()
+            .frame(maxWidth: .infinity)
         }
         .gusProminentGlassButtonStyle()
         .controlSize(.large)

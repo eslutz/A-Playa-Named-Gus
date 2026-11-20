@@ -37,18 +37,48 @@ struct LibraryStoreTests {
     }
 
     @MainActor
+    @Test func interruptedLookupCanRetryAndHistorySurvivesOnlySuccessfulResolution() async throws {
+        let session = try libraryTestSession()
+        let nameOnly = RelatedSearch(kind: .studio, name: "Beacon Works")
+        let results = RelatedSearchResults(target: nameOnly)
+        LibraryItemsURLProtocol.configure(responses: [])
+        await results.resolve(session: session)
+        #expect(results.errorMessage != nil && !results.unavailable)
+        let match = BaseItemDto(id: "studio-7", name: nameOnly.name, type: .studio)
+        LibraryItemsURLProtocol.configure(responses: [.init(result: .init(items: [match], totalRecordCount: 1))])
+        let oldLookup = results.lookupID
+        results.retry()
+        #expect(results.lookupID != oldLookup)
+        await results.resolve(session: session)
+        let resolved = try #require(results.resolved)
+        #expect(resolved.id == "studio-7")
+        #expect(results.errorMessage == nil && session.searchHistory.entries.first == .related(resolved))
+        session.searchHistory.remove(.related(resolved))
+        await results.resolve(session: session)
+        #expect(!session.searchHistory.entries.contains(.related(resolved)))
+
+        let missing = RelatedSearchResults(target: RelatedSearch(kind: .genre, name: "Absent"))
+        LibraryItemsURLProtocol.configure(responses: [.init(result: .init(items: [], totalRecordCount: 0))])
+        await missing.resolve(session: session)
+        #expect(missing.unavailable && missing.errorMessage == nil)
+    }
+
+    @MainActor
     @Test func relatedBrowseFiltersUseTheCreditedEntity() async throws {
         let session = try libraryTestSession()
         let first = BaseItemDto(id: "member", type: .episode)
+        let musicVideo = BaseItemDto(id: "music-video", type: .musicVideo)
         let restricted = BaseItemDto(id: "blocked", type: .movie)
         for kind: RelatedSearch.Kind in [.studio, .person] {
             let target = RelatedSearch(kind: kind, id: "entity", name: "North")
             let scope = LibraryGridScope.related(target)
-            LibraryItemsURLProtocol.configure(responses: [.init(result: .init(items: [first, restricted], totalRecordCount: 2))])
+            LibraryItemsURLProtocol.configure(responses: [.init(result: .init(items: [first, musicVideo, restricted], totalRecordCount: 3))])
             let store = LibraryStore(scope: scope, session: session, admits: { $0.id != "blocked" })
             await store.load()
-            #expect(store.items.compactMap(\.id) == ["member"])
+            #expect(store.items.compactMap(\.id) == ["member", "music-video"])
+            #expect(store.items.last?.type == .video)
             let request = try #require(LibraryItemsURLProtocol.recordedRequests.first)
+            #expect(request.includeItemTypes.contains("MusicVideo"))
             #expect(request.studioIDs == (kind == .studio ? "entity" : nil))
             #expect(request.personIDs == (kind == .person ? "entity" : nil))
             #expect(request.genreIDs == nil && request.searchTerm == nil)
@@ -479,6 +509,7 @@ private struct RecordedLibraryItemsRequest: Equatable {
     var studioIDs: String?
     var personIDs: String?
     var genreIDs: String?
+    var includeItemTypes: [String]
     var parentID: String?
     var searchTerm: String?
     var startIndex: Int?
@@ -644,6 +675,7 @@ private final class LibraryItemsURLProtocolState: @unchecked Sendable {
             studioIDs: queryValue("studioIds", in: queryItems),
             personIDs: queryValue("personIds", in: queryItems),
             genreIDs: queryValue("genreIds", in: queryItems),
+            includeItemTypes: queryItems.filter { $0.name == "includeItemTypes" }.compactMap(\.value),
             parentID: queryValue("parentID", in: queryItems),
             searchTerm: queryValue("searchTerm", in: queryItems),
             startIndex: queryValue("startIndex", in: queryItems).flatMap(Int.init),

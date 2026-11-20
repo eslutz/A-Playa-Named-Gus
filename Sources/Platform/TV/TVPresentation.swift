@@ -110,9 +110,9 @@ extension View {
         #endif
     }
 
-    @ViewBuilder func gusTVDetailTitle() -> some View {
+    @ViewBuilder func gusTVDetailTitle(showsNavigationBar: Bool = false) -> some View {
         #if os(tvOS)
-            toolbar(.hidden, for: .navigationBar)
+            toolbar(showsNavigationBar ? .visible : .hidden, for: .navigationBar)
         #else
             self
         #endif

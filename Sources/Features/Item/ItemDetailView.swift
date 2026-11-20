@@ -179,11 +179,12 @@ struct ItemDetailView: View {
                 presentationItem.overview = presentationItem.overview ?? item.overview?.trimmedNilIfEmpty
                 if presentationItem.genres.isEmpty {
                     presentationItem.genres = item.genres
+                    presentationItem.genreItems = item.genreItems
                 }
             }
         }
         let target = store.item.gusTVPlaybackTarget(nextUp: navigationState.home?.unifiedNextUp ?? [], episodes: store.seriesStore?.episodes ?? [])
-        return ArtworkDetailPage {
+        return ArtworkDetailPage(detailKey: "detail:" + ItemRef(item: item).id) {
             CinematicDetailHero(
                 item: presentationItem,
                 bookProgress: bookDetailProgress(for: store.item),
@@ -343,7 +344,6 @@ struct ItemDetailView: View {
                 MediaRail(title: String(localized: "Recommended", comment: "Item detail section header for similar/recommended items"), items: store.similarItems, focusKey: "detail:" + ItemRef(item: item).id + ":recommended", focusContext: "detail:" + ItemRef(item: item).id)
             }
         }
-        .scrollPosition(id: navigationState.scrollBinding(for: "detail:" + ItemRef(item: item).id))
         .gusTVBrowseViewport()
         .gusTVDetailCanvas()
         .task {

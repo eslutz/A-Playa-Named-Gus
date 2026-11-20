@@ -171,7 +171,7 @@ struct MediaCollectionDetailView: View {
     }
 
     var body: some View {
-        ArtworkDetailPage {
+        ArtworkDetailPage(detailKey: "detail:" + id) {
             if let collection {
                 let urls = collection.coverURLs(using: session.mediaProvider, limit: limit, hideUnrated: hideUnrated)
                 DetailCoverHeader(maximumCoverWidth: artworkWidth) {
@@ -181,9 +181,6 @@ struct MediaCollectionDetailView: View {
                     Text(collection.item.displayTitle).font(collectionTitleFont).accessibilityAddTraits(.isHeader)
                     if collection.membersLoaded {
                         Text("\(admitted(collection).count) titles").foregroundStyle(.secondary)
-                    }
-                    if !collection.item.genres.isEmpty {
-                        Text(collection.item.genres.joined(separator: " / ")).foregroundStyle(.secondary)
                     }
                     if let overview = collection.item.overview {
                         DetailSynopsis(title: collection.item.displayTitle, overview: overview)
@@ -199,6 +196,7 @@ struct MediaCollectionDetailView: View {
         } sections: {
             CollectionFeedback(store: store)
             if let collection {
+                DetailMetadataRows(item: collection.item).id("metadata")
                 let members = admitted(collection)
                 if collection.membersLoaded {
                     if members.isEmpty {

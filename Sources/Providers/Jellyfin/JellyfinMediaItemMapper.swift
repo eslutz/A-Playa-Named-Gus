@@ -94,7 +94,7 @@ enum JellyfinMediaItemMapper {
             return .folder
         case .trailer:
             return .trailer
-        case .video:
+        case .video, .musicVideo:
             return .video
         case .audio:
             return .audio

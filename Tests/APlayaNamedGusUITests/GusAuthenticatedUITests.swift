@@ -178,8 +178,9 @@ final class GusAuthenticatedUITests: XCTestCase {
             func assertGenreResults() {
                 let member = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "Night Radio")).firstMatch
                 XCTAssertTrue(member.waitForExistence(timeout: 20), app.debugDescription)
-                XCTAssertTrue(app.buttons["Search.backToDetail"].exists)
-                XCTAssertTrue(app.buttons["Search.closeResults"].exists)
+                XCTAssertTrue(app.buttons["Search.backToDetail"].firstMatch.waitForExistence(timeout: 8), app.debugDescription)
+                XCTAssertTrue(app.buttons["Search.closeResults"].firstMatch.exists, app.debugDescription)
+                XCTAssertFalse(app.keyboards.firstMatch.exists)
             }
             try select(genreID)
             assertGenreResults()

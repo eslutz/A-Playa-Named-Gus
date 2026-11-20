@@ -51,13 +51,10 @@ struct RecentSearchesView: View {
 }
 
 struct SearchResultsView: View {
-    @Environment(RootNavigationState.self) private var rootState
     @Environment(SessionStore.self) private var session
     let store: SearchStore
 
-    private var searchState: SectionSearchState {
-        rootState.searchState(for: RootNavigationState.searchID)
-    }
+    let searchState: SectionSearchState
 
     var body: some View {
         LoadingStateView(
@@ -73,7 +70,7 @@ struct SearchResultsView: View {
                         resultLink(item)
                             .id(ItemRef(item: item).id)
                             .posterNavigationStyle()
-                            .gusTVFocus(id: ItemRef(item: item).id, section: "search:" + RootNavigationState.searchID + ":" + store.query, ids: store.results.map { ItemRef(item: $0).id }, item: item)
+                            .gusTVFocus(id: ItemRef(item: item).id, section: RootNavigationState.searchID, ids: store.results.map { ItemRef(item: $0).id }, item: item)
                             .task { await store.loadMoreIfNeeded(currentItem: item) }
                     }
 
@@ -103,7 +100,7 @@ struct SearchResultsView: View {
                 .gusTVPagePadding()
             }
             .gusVisibleContent(.search(RootNavigationState.searchID), isLoading: store.state.isLoading || store.isRefreshing || store.isLoadingNextPage)
-            .scrollPosition(id: rootState.scrollBinding(for: "search:" + RootNavigationState.searchID + ":" + store.query))
+            .searchResultsScroll(viewport: searchState.viewport, anchor: Bindable(searchState).scrollAnchor)
             .lookToScroll()
         }
     }
@@ -139,6 +136,81 @@ struct SearchResultsView: View {
     }
 }
 
+extension View {
+    @ViewBuilder func searchResultsScroll(viewport: SearchResultsViewport?, anchor: Binding<String?>) -> some View {
+        #if os(tvOS)
+            scrollPosition(id: anchor)
+        #else
+            if let viewport {
+                modifier(SearchResultsScrollRestoration(viewport: viewport))
+                    .id(ObjectIdentifier(viewport))
+            } else {
+                scrollPosition(id: anchor)
+            }
+        #endif
+    }
+}
+
+#if !os(tvOS)
+    private struct SearchResultsScrollRestoration: ViewModifier {
+        @Environment(RootNavigationState.self) private var navigation
+        let viewport: SearchResultsViewport
+        @State private var position = ScrollPosition()
+        @State private var isOnscreen = false
+        @State private var pendingY: CGFloat?
+
+        private struct Geometry: Equatable {
+            let y: CGFloat
+            let contentHeight: CGFloat
+        }
+
+        private var showsResults: Bool {
+            navigation.selectedSectionID == RootNavigationState.searchID && navigation.paths[RootNavigationState.searchID]?.isEmpty != false
+        }
+
+        func body(content: Content) -> some View {
+            content
+                .scrollPosition($position)
+                .onScrollGeometryChange(for: Geometry.self) {
+                    Geometry(y: $0.contentOffset.y, contentHeight: $0.contentSize.height)
+                } action: { old, new in
+                    guard isOnscreen, showsResults else { return }
+                    if let pendingY {
+                        if abs(pendingY - new.y) < 1 {
+                            self.pendingY = nil
+                        } else if old.contentHeight != new.contentHeight {
+                            // Lazy rows can grow after the first layout clamps the offset.
+                            position.scrollTo(y: pendingY)
+                        }
+                    } else {
+                        viewport.y = new.y
+                    }
+                }
+                .onScrollPhaseChange { _, phase in
+                    if phase == .interacting {
+                        pendingY = nil
+                    }
+                }
+                .onAppear {
+                    isOnscreen = true
+                    restore()
+                }
+                .onDisappear { isOnscreen = false }
+                .onChange(of: showsResults) { _, shown in
+                    if shown {
+                        restore()
+                    }
+                }
+        }
+
+        private func restore() {
+            guard isOnscreen, showsResults, let y = viewport.y else { return }
+            pendingY = y
+            position.scrollTo(y: y)
+        }
+    }
+#endif
+
 /// The global search keeps its loaded pages when this surface is temporarily hidden.
 struct OwnedSearchResults: View {
     @Environment(SessionStore.self) private var session
@@ -151,23 +223,19 @@ struct OwnedSearchResults: View {
             if state.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                 ContentUnavailableView("Search Library", systemImage: "magnifyingglass")
             } else if let store {
-                SearchResultsView(store: store)
+                SearchResultsView(store: store, searchState: state)
             } else {
                 ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
-        .task {
-            let acquired = store ?? state.acquireStore(session: session, owner: owner)
-            store = acquired
-            state.retain(acquired, owner: owner)
-        }
         .onAppear {
             if let store {
                 state.retain(store, owner: owner)
+            } else {
+                store = state.acquireStore(session: session, owner: owner)
             }
         }
         .onDisappear {
-            state.completeLoadedSearch(in: session.searchHistory)
             state.release(owner: owner)
         }
         .onChange(of: state.text) { _, _ in state.updateQuery() }

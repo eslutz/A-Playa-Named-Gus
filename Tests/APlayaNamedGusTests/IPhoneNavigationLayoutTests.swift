@@ -215,4 +215,23 @@ struct RelatedSearchNavigationTests {
         #expect(root.globalSearch.related == nil)
         #expect(root.globalSearch.typed.text == "Comedy")
     }
+
+    @Test func nestedFiltersKeepEachDetailsBackDestination() {
+        let root = RootNavigationState()
+        let origin = root.selectedSectionID
+        root.detailItem = movie
+        root.openRelatedSearch(horror)
+        let genreResults = root.globalSearch
+        root.paths[RootNavigationState.searchID, default: NavigationPath()].append(movie)
+        root.openRelatedSearch(RelatedSearch(kind: .person, id: "actor", name: "Mara Lake"))
+
+        root.backToSearchDetail()
+        #expect(root.globalSearch === genreResults)
+        #expect(root.paths[RootNavigationState.searchID]?.count == 1)
+        root.paths[RootNavigationState.searchID]?.removeLast()
+        #expect(root.hasSearchReturn)
+        root.backToSearchDetail()
+        #expect(root.selectedSectionID == origin)
+        #expect(root.detailItem == movie)
+    }
 }

@@ -13,6 +13,10 @@ struct MediaItemQuery: Sendable {
     var genreID: String?
     var studioID: String?
     var personID: String?
+    var hasRelatedFilter: Bool {
+        genreID != nil || studioID != nil || personID != nil
+    }
+
     /// Restricts results to these item types (provider-mapped, e.g. Jellyfin `includeItemTypes`).
     var includeTypes: [MediaItemType]?
     var startIndex: Int

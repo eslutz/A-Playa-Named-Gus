@@ -210,6 +210,7 @@ class GenreHandler(Handler):
     actor = {"Id": "47000000000000000000000000000008", "Name": "Mara Lake", "Type": "Actor", "Role": "The Keeper"}
     director = {"Id": "47000000000000000000000000000009", "Name": "Rowan Vale", "Type": "Director"}
     members = [{"Id": "47000000000000000000000000000002", "Name": "The Lantern House", "Type": "Movie",
+                "BackdropImageTags": ["lanternStill"],
                 "Genres": ["Horror", "Coastal Mystery", "Unlisted Genre"], "GenreItems": [genre],
                 "Studios": [studio, {"Name": "Beacon Works"}],
                 "People": [actor, director, {"Name": "Jules North", "Type": "Actor", "Role": "Visitor"}]},
@@ -223,13 +224,23 @@ class GenreHandler(Handler):
     def do_GET(self):
         url = urlsplit(self.path)
         query = {key.lower(): value[0] for key, value in parse_qs(url.query).items()}
+        if url.path.rstrip("/") in (f"/Items/{self.members[0]['Id']}/Images/Backdrop", f"/Items/{self.members[0]['Id']}/Images/Backdrop/0"):
+            # Still from the Library of Congress public-domain copy of The Kiss (1896).
+            # https://www.loc.gov/item/00694131/
+            data = (Path(__file__).resolve().parents[1] / "Tests/Fixtures/RelatedMovieBackdrop.jpg").read_bytes()
+            self.send_response(200)
+            self.send_header("Content-Type", "image/jpeg")
+            self.send_header("Content-Length", str(len(data)))
+            self.end_headers()
+            self.wfile.write(data)
+            return
         if url.path.endswith("/Items") and "searchterm" in query:
             matches = [item for item in self.items if query["searchterm"].casefold() in item["Name"].casefold()]
         elif url.path in ("/Genres", "/Studios"):
             candidates = [self.genre, self.coastal] if url.path == "/Genres" else [self.studio, self.beacon]
             matches = [item for item in candidates if query.get("searchterm", "").casefold() in item["Name"].casefold()]
         elif url.path.endswith("/Items") and "genreids" in query:
-            by_genre = {self.genre["Id"]: self.members, self.coastal["Id"]: self.members[:1],
+            by_genre = {self.genre["Id"]: self.members, self.coastal["Id"]: self.members[:1] + self.midnight_movies,
                         self.midnight_genre["Id"]: self.members[1:]}
             matches = by_genre.get(query["genreids"].replace("-", ""), [])
         elif url.path.endswith("/Items") and "studioids" in query:

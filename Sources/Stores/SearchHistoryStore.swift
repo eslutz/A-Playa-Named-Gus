@@ -8,8 +8,20 @@ enum SearchHistoryEntry: Codable, Hashable, Identifiable {
 
     var id: String {
         switch self {
-        case let .typed(text): "typed:" + RelatedSearch.normalizedName(text)
+        case let .typed(text): "typed:" + text.trimmingCharacters(in: .whitespacesAndNewlines).lowercased(with: Locale(identifier: "en_US_POSIX"))
         case let .related(search): "related:" + search.identityKey
+        }
+    }
+
+    var completed: Self? {
+        switch self {
+        case let .typed(text):
+            let query = text.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !query.isEmpty else { return nil }
+            return .typed(query)
+        case let .related(target):
+            guard let id = target.id, !id.isEmpty, !target.name.isEmpty else { return nil }
+            return self
         }
     }
 
@@ -24,6 +36,7 @@ enum SearchHistoryEntry: Codable, Hashable, Identifiable {
 /// Only completed search intents are kept on this device for the authenticated account.
 @MainActor @Observable
 final class SearchHistoryStore {
+    private static let limit = 20
     private(set) var entries: [SearchHistoryEntry]
     private let defaults: UserDefaults
     private let key: String
@@ -32,20 +45,17 @@ final class SearchHistoryStore {
     init(scope: AccountScope, defaults: UserDefaults = .standard) {
         self.defaults = defaults
         key = Self.key(for: scope)
-        entries = defaults.data(forKey: key).flatMap { try? JSONDecoder().decode([SearchHistoryEntry].self, from: $0) } ?? []
+        let saved = defaults.data(forKey: key).flatMap { try? JSONDecoder().decode([SearchHistoryEntry].self, from: $0) } ?? []
+        var seen = Set<String>()
+        entries = Array(saved.compactMap(\.completed).filter { seen.insert($0.id).inserted }.prefix(Self.limit))
+        if entries != saved {
+            persist()
+        }
     }
 
     func record(_ entry: SearchHistoryEntry) {
-        guard active else { return }
-        let title = entry.title.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !title.isEmpty else { return }
-        let value = if case .typed = entry {
-            SearchHistoryEntry.typed(title)
-        } else {
-            entry
-        }
-        guard entries.first != value else { return }
-        entries = [value] + entries.filter { $0.id != value.id }.prefix(19)
+        guard active, let value = entry.completed, entries.first != value else { return }
+        entries = [value] + entries.filter { $0.id != value.id }.prefix(Self.limit - 1)
         persist()
     }
 

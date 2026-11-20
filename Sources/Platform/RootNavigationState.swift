@@ -8,10 +8,9 @@ final class RootNavigationState {
     static let searchID = "gus.search"
     let searchHistory: SearchHistoryStore?
     var globalSearch = GlobalSearchSession()
-    private var returnDetail: SearchDetailOrigin?
     private(set) var keptSearch: GlobalSearchSession?
     var hasSearchReturn: Bool {
-        returnDetail != nil
+        globalSearch.detailOrigin != nil
     }
 
     var sheetPath = NavigationPath()
@@ -37,6 +36,7 @@ final class RootNavigationState {
     }
 
     var scrollAnchors: [String: String] = [:]
+    var returningDetailViewport: DetailScrollLocation?
     var libraryListModes: [String: Bool] = [:]
     var photoAlbumModes: [String: Bool] = [:]
     var librariesShowGrid = false
@@ -94,13 +94,11 @@ final class RootNavigationState {
         return state
     }
 
-    func libraryStore(for scope: LibraryGridScope, session: SessionStore) -> LibraryStore {
-        let activeResults = globalSearch.related
-        let ownsPages = activeResults?.resolved.map { LibraryGridScope.related($0).storeIdentity == scope.storeIdentity } == true
-        if let store = libraries[scope.storeIdentity]?.value {
-            if ownsPages {
-                activeResults?.pages = store
-            }
+    func libraryStore(for scope: LibraryGridScope, session: SessionStore, searchResults: RelatedSearchResults? = nil) -> LibraryStore {
+        if let pages = searchResults?.pages {
+            return pages
+        }
+        if searchResults == nil, let store = libraries[scope.storeIdentity]?.value {
             return store
         }
         libraries = libraries.filter { $0.value.value != nil }
@@ -108,9 +106,7 @@ final class RootNavigationState {
         let store = LibraryStore(scope: scope, session: session, initialFilter: libraryFilters[key]) { [weak self] filter in
             self?.libraryFilters[key] = filter
         }
-        if ownsPages {
-            activeResults?.pages = store
-        }
+        searchResults?.pages = store
         libraries[key] = StoreReference(store)
         refreshedAt[.library(key)] = contentRevision
         return store
@@ -268,29 +264,32 @@ final class RootNavigationState {
         selectedSectionID = id == "gus.tv.search" ? Self.searchID : id
     }
 
-    func openRelatedSearch(_ target: RelatedSearch, focusContext: String? = nil) {
+    func openRelatedSearch(_ target: RelatedSearch, focusContext: String? = nil, viewport: DetailScrollLocation? = nil) {
         if let searchHistory {
             globalSearch.typed.completeLoadedSearch(in: searchHistory)
         }
         let section = selectedSectionID
         globalSearch.typed.isPresented = false
-        returnDetail = SearchDetailOrigin(
+        let origin = SearchDetailOrigin(
             section: section,
             path: paths[section] ?? NavigationPath(),
             sheet: detailItem,
             sheetPath: sheetPath,
             search: section == Self.searchID ? globalSearch : nil,
             scrollAnchors: scrollAnchors.filter { $0.key.hasPrefix("detail:") },
+            viewport: viewport,
             focus: tvFocus,
             focusContext: focusContext
         )
         detailItem = nil
-        startRelated(target)
+        returningDetailViewport = nil
+        startRelated(target, from: origin)
     }
 
-    private func startRelated(_ target: RelatedSearch) {
+    private func startRelated(_ target: RelatedSearch, from origin: SearchDetailOrigin? = nil) {
         keptSearch = nil
         globalSearch = GlobalSearchSession(target: target)
+        globalSearch.detailOrigin = origin
         if let related = globalSearch.related, let resolved = related.resolved {
             searchHistory?.record(.related(resolved))
         }
@@ -299,8 +298,8 @@ final class RootNavigationState {
     }
 
     func backToSearchDetail() {
-        guard let origin = returnDetail else { return }
-        returnDetail = nil
+        guard let origin = globalSearch.detailOrigin else { return }
+        globalSearch.detailOrigin = nil
         if let previous = origin.search {
             keptSearch = globalSearch
             globalSearch = previous
@@ -310,6 +309,7 @@ final class RootNavigationState {
         sheetPath = origin.sheetPath
         detailItem = origin.sheet
         scrollAnchors.merge(origin.scrollAnchors) { _, original in original }
+        returningDetailViewport = origin.viewport
         #if os(tvOS)
             tvFocus = origin.focus
             if let context = origin.focusContext {
@@ -331,14 +331,12 @@ final class RootNavigationState {
         }
         globalSearch.typed.isPresented = false
         globalSearch = GlobalSearchSession()
-        returnDetail = nil
         keptSearch = nil
         paths[Self.searchID] = NavigationPath()
     }
 
     func replaySearch(_ entry: SearchHistoryEntry) {
         guard let searchHistory else { return }
-        returnDetail = nil
         switch entry {
         case let .related(target): startRelated(target)
         case let .typed(text):
@@ -354,7 +352,7 @@ final class RootNavigationState {
         guard text != globalSearch.typed.text else { return }
         if !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             globalSearch.related = nil
-            returnDetail = nil
+            globalSearch.detailOrigin = nil
             keptSearch = nil
         }
         globalSearch.typed.text = text
@@ -366,7 +364,11 @@ final class RootNavigationState {
     }
 
     func scrollBinding(for id: String) -> Binding<String?> {
-        Binding(get: { self.scrollAnchors[id] }, set: { self.scrollAnchors[id] = $0 })
+        Binding(get: { self.scrollAnchors[id] }, set: { anchor in
+            if self.scrollAnchors[id] != anchor {
+                self.scrollAnchors[id] = anchor
+            }
+        })
     }
 
     /// Leave room for the native More and search tabs without losing account customization.
@@ -393,10 +395,10 @@ final class RootNavigationState {
 
     func adopt(_ route: AppRoute) {
         switch route {
-        case .home: selectedSectionID = NavigationSectionPreference.homeID
-        case .libraries: selectedSectionID = NavigationSectionPreference.librariesID
-        case .downloaded: selectedSectionID = NavigationSectionPreference.downloadedID
-        case .settings: selectedSectionID = NavigationSectionPreference.settingsID
+        case .home: selectSection(NavigationSectionPreference.homeID)
+        case .libraries: selectSection(NavigationSectionPreference.librariesID)
+        case .downloaded: selectSection(NavigationSectionPreference.downloadedID)
+        case .settings: selectSection(NavigationSectionPreference.settingsID)
         case .search:
             selectSection(Self.searchID)
         }
@@ -413,11 +415,22 @@ final class SectionSearchState {
         currentStore
     }
 
+    var scrollAnchor: String?
+    private(set) var viewport = SearchResultsViewport()
     var text = "" {
         didSet {
             guard oldValue != text else { return }
-            if text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty, let history {
-                completeLoadedSearch(oldValue, in: history)
+            scrollAnchor = nil
+            viewport = SearchResultsViewport()
+            if text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                if let history {
+                    completeLoadedSearch(oldValue, in: history)
+                }
+                searchTask?.cancel()
+                searchTask = nil
+                store?.reset()
+                retainedStore = nil
+                requestedText = nil
             }
             lastCompletedQuery = nil
         }
@@ -478,15 +491,15 @@ final class SectionSearchState {
             result = SearchStore(session: session); requestedText = nil
         }
         history = session.searchHistory
-        if retainsResults {
-            retainedStore = result
-        }
         retain(result, owner: owner)
         return result
     }
 
     func retain(_ store: SearchStore, owner: UUID) {
         currentStore = store
+        if retainsResults {
+            retainedStore = store
+        }
         owners.insert(owner)
         updateQuery()
     }
