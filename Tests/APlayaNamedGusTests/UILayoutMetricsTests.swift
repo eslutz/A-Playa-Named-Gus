@@ -33,6 +33,41 @@ struct UILayoutMetricsTests {
             }
         }
 
+        @Test("Foreground covers fit the available height without changing aspect ratio", arguments: [2.0 / 3.0, 1.0])
+        @MainActor func foregroundCoverFitsShortViewport(ratio: Double) throws {
+            let height = 220
+            let header = DetailCoverHeader {
+                Color.red.aspectRatio(ratio, contentMode: .fit)
+            } summary: {
+                Text("Title")
+            }
+            .frame(width: 700)
+            .environment(\.detailArtworkViewportHeight, CGFloat(height))
+            let image = try #require(ImageRenderer(content: header).cgImage)
+            let context = try #require(CGContext(
+                data: nil, width: image.width, height: image.height, bitsPerComponent: 8,
+                bytesPerRow: image.width * 4, space: CGColorSpace(name: CGColorSpace.sRGB)!,
+                bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+            ))
+            context.draw(image, in: CGRect(x: 0, y: 0, width: image.width, height: image.height))
+            let pixels = try #require(context.data?.assumingMemoryBound(to: UInt8.self))
+            var horizontal = IndexSet()
+            var vertical = IndexSet()
+            for y in 0 ..< image.height {
+                for x in 0 ..< image.width {
+                    let index = (y * image.width + x) * 4
+                    if pixels[index] > 220, pixels[index + 1] < 100, pixels[index + 2] < 100 {
+                        horizontal.insert(x)
+                        vertical.insert(y)
+                    }
+                }
+            }
+            let bottom = try #require(vertical.last)
+            #expect(bottom < height)
+            #expect(abs(vertical.count - (height - 24)) <= 1)
+            #expect(abs(Double(horizontal.count) - Double(vertical.count) * ratio) <= 1)
+        }
+
         @Test("Backdrop art leaves system status text legible in either appearance", arguments: [false, true])
         @MainActor func backdropStatusContrast(dark: Bool) throws {
             let artwork: Color = dark ? .white : .black

@@ -217,9 +217,9 @@ class GenreHandler(Handler):
                {"Id": "47000000000000000000000000000003", "Name": "Night Radio", "Type": "Series"}]
     midnight_genre = {"Id": "47000000000000000000000000000004", "Name": "Midnight Mysteries", "Type": "Genre"}
     midnight_movies = [{"Id": f"4800{index:028d}", "Name": f"Midnight Story {index:02d}", "Type": "Movie"}
-                       for index in range(1, 49)]
-    # A second realistic search page places a genre near the bottom of the grid.
-    items = [genre, *members, *midnight_movies[:-1], midnight_genre, midnight_movies[-1]]
+                       for index in range(1, 65)]
+    # Keep the genre at result 48 and allow enough subsequent rows to clear the keyboard.
+    items = [genre, *members, *midnight_movies[:47], midnight_genre, *midnight_movies[47:]]
 
     def do_GET(self):
         url = urlsplit(self.path)
@@ -234,13 +234,15 @@ class GenreHandler(Handler):
             self.end_headers()
             self.wfile.write(data)
             return
-        if url.path.endswith("/Items") and "searchterm" in query:
+        if url.path == f"/Items/{self.members[0]['Id']}/Similar":
+            matches = self.members[1:]
+        elif url.path.endswith("/Items") and "searchterm" in query:
             matches = [item for item in self.items if query["searchterm"].casefold() in item["Name"].casefold()]
         elif url.path in ("/Genres", "/Studios"):
             candidates = [self.genre, self.coastal] if url.path == "/Genres" else [self.studio, self.beacon]
             matches = [item for item in candidates if query.get("searchterm", "").casefold() in item["Name"].casefold()]
         elif url.path.endswith("/Items") and "genreids" in query:
-            by_genre = {self.genre["Id"]: self.members, self.coastal["Id"]: self.members[:1] + self.midnight_movies,
+            by_genre = {self.genre["Id"]: self.members, self.coastal["Id"]: self.members[:1] + self.midnight_movies[:48],
                         self.midnight_genre["Id"]: self.members[1:]}
             matches = by_genre.get(query["genreids"].replace("-", ""), [])
         elif url.path.endswith("/Items") and "studioids" in query:

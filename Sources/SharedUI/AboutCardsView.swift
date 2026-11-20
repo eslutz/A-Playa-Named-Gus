@@ -33,20 +33,25 @@ struct AboutCardsView: View {
         posterSummaryCard
             .frame(minWidth: horizontal ? 320 : nil, maxWidth: .infinity, alignment: .topLeading)
             .gusTVFocusableInfo()
-        DetailInfoCard(title: "Media") {
-            if let runtime = item.runtimeText {
-                LabeledContent("Duration", value: runtime)
+        let runtime = item.runtimeText
+        let rating = item.officialRating?.trimmedNilIfEmpty
+        let container = item.container?.trimmedNilIfEmpty
+        if runtime != nil || rating != nil || container != nil {
+            DetailInfoCard(title: "Media") {
+                if let runtime {
+                    LabeledContent("Duration", value: runtime)
+                }
+                if let rating {
+                    LabeledContent("Rating", value: rating)
+                }
+                if let container {
+                    LabeledContent("Container", value: container.uppercased().replacingOccurrences(of: ",", with: ", "))
+                        .fixedSize(horizontal: false, vertical: true)
+                }
             }
-            if let rating = item.officialRating {
-                LabeledContent("Rating", value: rating)
-            }
-            if let container = item.container?.trimmedNilIfEmpty {
-                LabeledContent("Container", value: container.uppercased().replacingOccurrences(of: ",", with: ", "))
-                    .fixedSize(horizontal: false, vertical: true)
-            }
+            .frame(minWidth: horizontal ? 320 : nil, maxWidth: .infinity, alignment: .topLeading)
+            .gusTVFocusableInfo()
         }
-        .frame(minWidth: horizontal ? 320 : nil, maxWidth: .infinity, alignment: .topLeading)
-        .gusTVFocusableInfo()
     }
 
     private var posterSummaryCard: some View {

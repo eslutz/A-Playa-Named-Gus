@@ -183,7 +183,7 @@ enum DetailPageMetrics {
 
 extension EnvironmentValues {
     @Entry var detailArtworkTopInset: CGFloat = 0
-    @Entry var detailBackdropHeightLimit: CGFloat = 440
+    @Entry var detailArtworkViewportHeight: CGFloat?
     @Entry var detailScrollViewport: DetailScrollViewport?
 }
 
@@ -198,7 +198,7 @@ extension View {
     func detailArtworkViewport() -> some View {
         GeometryReader { viewport in
             self.environment(\.detailArtworkTopInset, viewport.safeAreaInsets.top)
-                .environment(\.detailBackdropHeightLimit, min(440, viewport.size.height * 0.55))
+                .environment(\.detailArtworkViewportHeight, viewport.size.height)
                 .ignoresSafeArea(.container, edges: .top)
         }
     }
@@ -304,7 +304,7 @@ struct DetailSectionLayout: Layout {
 /// Let the lower edge of the backdrop fade into the system surface beneath the title.
 struct DetailBackdropHeader<Artwork: View, Summary: View>: View {
     @Environment(\.detailArtworkTopInset) private var topInset
-    @Environment(\.detailBackdropHeightLimit) private var heightLimit
+    @Environment(\.detailArtworkViewportHeight) private var viewportHeight
     #if os(iOS)
         @Environment(\.colorScheme) private var colorScheme
     #endif
@@ -315,7 +315,7 @@ struct DetailBackdropHeader<Artwork: View, Summary: View>: View {
         VStack(spacing: -32) {
             Color.clear
                 .aspectRatio(1.55, contentMode: .fit)
-                .frame(maxHeight: heightLimit)
+                .frame(maxHeight: min(440, viewportHeight.map { $0 * 0.55 } ?? 440))
                 .padding(.top, topInset)
                 .frame(maxWidth: .infinity)
                 .overlay {
@@ -354,6 +354,7 @@ struct DetailBackdropHeader<Artwork: View, Summary: View>: View {
 /// Keep the complete cover visible and place the summary alongside it when space permits.
 struct DetailCoverHeader<Artwork: View, Summary: View>: View {
     @Environment(\.detailArtworkTopInset) private var topInset
+    @Environment(\.detailArtworkViewportHeight) private var viewportHeight
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
     var maximumCoverWidth: CGFloat = 240
     @ViewBuilder let artwork: () -> Artwork
@@ -361,7 +362,9 @@ struct DetailCoverHeader<Artwork: View, Summary: View>: View {
 
     var body: some View {
         AdaptiveStack(horizontalMinimumWidth: 640, horizontalAlignment: .center, verticalAlignment: .center, horizontalSpacing: 32, verticalSpacing: 20) { _ in
-            artwork().frame(maxWidth: maximumCoverWidth).accessibilityHidden(true)
+            artwork()
+                .frame(maxWidth: maximumCoverWidth, maxHeight: viewportHeight.map { max(0, $0 - 24) })
+                .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 12) { summary() }
                 .frame(maxWidth: .infinity, alignment: .leading)
         }

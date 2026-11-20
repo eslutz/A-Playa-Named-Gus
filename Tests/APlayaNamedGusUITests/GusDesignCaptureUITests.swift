@@ -495,6 +495,21 @@
             XCTAssertTrue(app.buttons["Search.clearRecent"].waitForExistence(timeout: 8))
         }
 
+        func testRecommendationsAppearBelowAbout() {
+            let app = launch("item/47000000000000000000000000000002", environment: ["GUS_DEMO_URL": "http://127.0.0.1:5061"])
+            XCTAssertTrue(waitForMovieDetail(app))
+            let recommended = app.staticTexts["Recommended"].firstMatch
+            for _ in 0 ..< 8 where !visible(recommended, in: app) {
+                app.swipeUp(velocity: .slow)
+            }
+            XCTAssertTrue(visible(recommended, in: app))
+            let about = app.staticTexts["About"].firstMatch
+            XCTAssertTrue(about.exists)
+            XCTAssertFalse(app.staticTexts["Media"].exists, "An item without technical metadata should not reserve an empty card.")
+            XCTAssertLessThan(about.frame.maxY, recommended.frame.minY)
+            capture("recommendations-below-about", waitsForLoading: false)
+        }
+
         func testSearchOriginDetailKeepsRelatedResultsAcrossTabs() {
             let app = launch("search", environment: ["GUS_DEMO_URL": "http://127.0.0.1:5061"])
             let field = app.searchFields.firstMatch
@@ -542,10 +557,12 @@
             for _ in 0 ..< 16 where !visible(member, in: app) {
                 app.swipeUp(velocity: .slow)
             }
+            centerForTap(member, in: app)
             XCTAssertTrue(visible(member, in: app))
             XCTAssertFalse(visible(first, in: app))
+            capture("related-coastal-scrolled", waitsForLoading: false)
             let y = member.frame.midY
-            member.tap()
+            tapVisibleCenter(member, in: app)
             XCTAssertTrue(app.buttons["Detail.play"].waitForExistence(timeout: 12))
             app.navigationBars.buttons.element(boundBy: 0).tap()
             XCTAssertTrue(grid.waitForExistence(timeout: 8))
@@ -560,7 +577,45 @@
         private func visible(_ element: XCUIElement, in app: XCUIApplication) -> Bool {
             guard element.exists else { return false }
             let frame = element.frame
-            return !frame.isEmpty && app.frame.insetBy(dx: 0, dy: 90).contains(CGPoint(x: frame.midX, y: frame.midY))
+            let viewport = app.frame.insetBy(dx: 0, dy: 90)
+            guard !frame.isEmpty, viewport.contains(CGPoint(x: frame.midX, y: frame.midY)) else { return false }
+            let keyboard = app.keyboards.firstMatch
+            return !keyboard.exists || frame.midY < keyboard.frame.minY - 60
+        }
+
+        private func centerForTap(_ element: XCUIElement, in app: XCUIApplication) {
+            let bounds = app.frame
+            let keyboard = app.keyboards.firstMatch
+            let bottom = min(bounds.maxY - 100, keyboard.exists ? keyboard.frame.minY - 60 : bounds.maxY)
+            let top = bounds.minY + 140
+            let center = (top + bottom) / 2
+            let height = bottom - top
+            XCTAssertGreaterThan(height, 100)
+            let origin = app.coordinate(withNormalizedOffset: .zero)
+            for _ in 0 ..< 8 {
+                guard element.exists else { break }
+                let distance = element.frame.midY - center
+                if abs(distance) < height * 0.22 {
+                    return
+                }
+                let drag = min(abs(distance), height * 0.65) * (distance > 0 ? 1 : -1)
+                let x = bounds.width * 0.65
+                let start = center + drag / 2 - bounds.minY
+                origin.withOffset(CGVector(dx: x, dy: start)).press(
+                    forDuration: 0.08, thenDragTo: origin.withOffset(CGVector(dx: x, dy: start - drag)),
+                    withVelocity: .slow, thenHoldForDuration: 0.2
+                )
+            }
+            XCTFail("Expected the measured control in the unobstructed center of the results")
+        }
+
+        /// An element tap may scroll a lazy grid after we measure it. A physical
+        /// tap at the visible center leaves that measured viewport in place.
+        private func tapVisibleCenter(_ element: XCUIElement, in app: XCUIApplication) {
+            XCTAssertTrue(visible(element, in: app))
+            let frame = element.frame
+            app.coordinate(withNormalizedOffset: .zero)
+                .withOffset(CGVector(dx: frame.midX - app.frame.minX, dy: frame.midY - app.frame.minY)).tap()
         }
 
         private func assertRestored(_ element: XCUIElement, at y: CGFloat, in app: XCUIApplication) {
@@ -609,6 +664,7 @@
             for _ in 0 ..< 20 where !visible(deepGenre, in: app) {
                 app.swipeUp(velocity: .slow)
             }
+            centerForTap(deepGenre, in: app)
             XCTAssertTrue(visible(deepGenre, in: app))
             XCTAssertFalse(visible(firstMovie, in: app))
             let nearbyMovies = (43 ... 48).reversed().map { number in
@@ -619,8 +675,9 @@
                 return
             }
             let anchorLabel = anchor.label
+            capture("typed-midnight-scrolled", waitsForLoading: false)
             let originalY = anchor.frame.midY
-            deepGenre.tap()
+            tapVisibleCenter(deepGenre, in: app)
             let midnight = app.navigationBars["Midnight Mysteries"]
             XCTAssertTrue(midnight.waitForExistence(timeout: 12))
             XCTAssertTrue(app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "Night Radio")).firstMatch.waitForExistence(timeout: 8))

@@ -191,11 +191,7 @@ final class GusAuthenticatedUITests: XCTestCase {
             assertGenreResults()
             try select("Search.closeResults")
             XCTAssertFalse(app.buttons["Search.backToDetail"].exists)
-            XCTAssertTrue(
-                app.staticTexts["Search Library"].firstMatch.waitForExistence(timeout: 10) ||
-                    app.staticTexts["Recent Searches"].firstMatch.exists,
-                app.debugDescription
-            )
+            XCTAssertTrue(app.staticTexts["Recent Searches"].firstMatch.waitForExistence(timeout: 10), app.debugDescription)
         }
 
         func testArtworkHeaderAppearances() throws {
@@ -329,8 +325,15 @@ final class GusAuthenticatedUITests: XCTestCase {
         #endif
         for (type, action) in details {
             let app = try launch("item/" + required(type))
-            let button = type == "Movie" ? app.buttons["Detail.play"] : app.buttons[action].firstMatch
-            XCTAssertTrue(button.waitForExistence(timeout: 30))
+            let button: XCUIElement
+            if type == "Movie" {
+                button = app.buttons["Detail.play"]
+            } else if action == "Read" {
+                button = app.buttons.matching(NSPredicate(format: "label IN %@", ["Read", "Continue Reading"])).firstMatch
+            } else {
+                button = app.buttons[action].firstMatch
+            }
+            XCTAssertTrue(button.waitForExistence(timeout: 30), app.debugDescription)
             if type == "Movie" {
                 XCTAssertEqual(app.buttons.matching(identifier: "Detail.play").count, 1, app.debugDescription)
                 XCTAssertEqual(app.buttons.matching(identifier: "Detail.nextUp").count, 1, app.debugDescription)
