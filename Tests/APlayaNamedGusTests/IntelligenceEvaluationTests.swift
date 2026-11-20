@@ -25,6 +25,14 @@ struct IntelligenceEvaluationTests {
         #expect(GusIntelligenceModel.namedContributor("Books by Marta Cruz in Spanish") == nil)
     }
 
+    @Test func namedTitleKeepsTheRequestedLibraryType() {
+        #expect(GusIntelligenceModel.namedTitle("Show me the episode called North Shore") == GusSearchIntent(mediaTypes: [.episode], keywords: ["North Shore"]))
+        #expect(GusIntelligenceModel.namedTitle("Find a book titled “a road in winter”") == GusSearchIntent(mediaTypes: [.book], keywords: ["a road in winter"]))
+        #expect(GusIntelligenceModel.namedTitle("Find the movie named Solaris directed by Tarkovsky") == nil)
+        #expect(GusIntelligenceModel.namedTitle("Find the song named \"Blues\" or \"Waltz\"") == nil)
+        #expect(GusIntelligenceModel.namedTitle("Show me the movie called Arrival from 2016") == nil)
+    }
+
     @Test func cloudInputExcludesServerAndCredentialFields() {
         let hosts = ["library.example.invalid"]
         for sample in [

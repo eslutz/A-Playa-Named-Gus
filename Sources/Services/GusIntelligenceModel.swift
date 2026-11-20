@@ -157,7 +157,7 @@ struct GusIntelligenceModel {
         #if canImport(FoundationModels) && !os(tvOS)
             if #available(watchOS 27, *) {
                 let prompt = try checkedPrompt(prompt)
-                if isAvailable, let filters = Self.genreAndYear(prompt) ?? Self.namedContributor(prompt) {
+                if isAvailable, let filters = Self.namedTitle(prompt) ?? Self.genreAndYear(prompt) ?? Self.namedContributor(prompt) {
                     return filters
                 }
                 return try await generate(prompt: prompt, instructions: Self.searchInstructions + """
@@ -261,6 +261,37 @@ struct GusIntelligenceModel {
             }
         }
         return intent
+    }
+
+    /// A named title already specifies both Jellyfin filters. Leave compound or ambiguous
+    /// unquoted requests to the model so other constraints are preserved.
+    static func namedTitle(_ prompt: String) -> GusSearchIntent? {
+        let pattern = #/(?:(?:find|show me|look up|search for)\s+)?(?:(?:the|an?)\s+)?(movie|film|series|episode|book|audiobook|album|song|track)\s+(?:titled|called|named)\s+(.+)/#.ignoresCase()
+        guard let match = prompt.wholeMatch(of: pattern)?.output else { return nil }
+        let title = String(match.2).trimmingCharacters(in: .whitespacesAndNewlines)
+        let name: String
+        if title.first == "\"" || title.first == "“" {
+            let closing: Character = title.first == "“" ? "”" : "\""
+            let inside = title.dropFirst().dropLast()
+            name = inside.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard title.last == closing, !name.isEmpty, !inside.contains(closing) else { return nil }
+        } else {
+            let words = title.split(whereSeparator: \.isWhitespace)
+            let connectors: Set<Substring> = ["a", "an", "of", "the"]
+            guard let first = words.first?.first, first.isUppercase || first.isNumber,
+                  words.allSatisfy({ $0.first?.isUppercase == true || $0.first?.isNumber == true || connectors.contains($0) }) else { return nil }
+            name = title
+        }
+        let type: MediaItemType = switch match.1.lowercased() {
+        case "movie", "film": .movie
+        case "series": .series
+        case "episode": .episode
+        case "book": .book
+        case "audiobook": .audioBook
+        case "album": .musicAlbum
+        default: .audio
+        }
+        return GusSearchIntent(mediaTypes: [type], keywords: [name])
     }
 
     /// These forms explicitly bind a creator to a medium and a job. A compound query
