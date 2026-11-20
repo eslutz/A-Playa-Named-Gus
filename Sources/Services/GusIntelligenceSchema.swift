@@ -53,8 +53,9 @@
         var mediaTypes: [String]
         var minimumMinutes: Int?
         var maximumMinutes: Int?
-        @Guide(description: "Played status", .anyOf(["all", "unplayed", "played", "resumable"]))
+        @Guide(description: "Use all unless the request explicitly asks for a viewing or playback state", .anyOf(["all", "unplayed", "played", "resumable"]))
         var status: String
+        @Guide(description: "True only if the person explicitly asks for their favorites. Otherwise false.")
         var favoritesOnly: Bool
 
         func intent() throws -> GusSearchIntent {

@@ -109,7 +109,7 @@ final class GusAuthenticatedUITests: XCTestCase {
             XCTAssertTrue(field.waitForExistence(timeout: 30))
             field.tap()
             field.typeText(String(title.prefix(max(1, title.count - 2))))
-            let completion = app.cells.buttons.matching(NSPredicate(format: "label == %@ AND value == nil", title)).firstMatch
+            let completion = app.collectionViews.cells.buttons[title].firstMatch
             XCTAssertTrue(completion.waitForExistence(timeout: 20), app.debugDescription)
             completion.tap()
             XCTAssertEqual(field.value as? String, title)

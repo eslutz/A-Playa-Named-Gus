@@ -17,6 +17,13 @@ struct IntelligenceEvaluationTests {
         #expect(GusIntelligenceModel.genreAndYear("Not comedy movies from 2014") == nil)
     }
 
+    @Test func namedContributorRequiresTheRequestedJob() {
+        #expect(GusIntelligenceModel.namedContributor("Audiobooks narrated by A. Rivera") == GusSearchIntent(mediaTypes: [.audioBook], credits: [.init(name: "A. Rivera", role: "narrator")]))
+        #expect(GusIntelligenceModel.namedContributor("Libros de Isabel García") == GusSearchIntent(mediaTypes: [.book], credits: [.init(name: "Isabel García", role: "author")]))
+        #expect(GusIntelligenceModel.namedContributor("Books by M. Chan and J. Hall") == nil)
+        #expect(GusIntelligenceModel.namedContributor("Books by Marta Cruz in Spanish") == nil)
+    }
+
     @Test func cloudInputExcludesServerAndCredentialFields() {
         let hosts = ["library.example.invalid"]
         for sample in [
@@ -110,14 +117,17 @@ struct IntelligenceEvaluationTests {
             }
             let prompts: [(String, String)] = [
                 ("Mystery movies released in 2019", "M"), ("Dramatic TV series from 2005", "S"),
+                ("I’d like a mystery film. Which ones in my library came out in 2019?", "M"),
                 ("Show me the episode called The Lighthouse", "E"), ("Libros de Marta Cruz", "B"),
                 ("Audiobooks narrated by Eli Snow", "AB"), ("Albums by Summer Night", "A"), ("Find the song Blue Hour", "T"),
+                ("Which of my books did Marta Cruz write?", "B"),
+                ("I want to listen to something narrated by Eli Snow. Which audiobooks fit?", "AB"),
             ]
             let model = GusIntelligenceModel(session: session)
             for (prompt, expected) in prompts {
                 let intent = try await model.interpretLibrary(prompt)
                 let results = try await session.libraryIntelligence.search(intent)
-                #expect(results.prefix(5).contains { $0.id == expected }, "Missing expected match for \(prompt)")
+                #expect(results.prefix(5).contains { $0.id == expected }, "Missing expected match for \(prompt): \(intent)")
             }
             let missing = try await model.interpretLibrary("Find the movie titled Nonexistent Violet Observatory")
             #expect(try await session.libraryIntelligence.search(missing).isEmpty)

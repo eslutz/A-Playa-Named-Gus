@@ -153,11 +153,13 @@ struct GusIntelligenceModel {
         #if canImport(FoundationModels) && !os(tvOS)
             if #available(watchOS 27, *) {
                 let prompt = try checkedPrompt(prompt)
-                if isAvailable, let filters = Self.genreAndYear(prompt) {
+                if isAvailable, let filters = Self.genreAndYear(prompt) ?? Self.namedContributor(prompt) {
                     return filters
                 }
                 return try await generate(prompt: prompt, instructions: Self.searchInstructions + """
                 Search a Jellyfin library. Map a song to audio, an album to musicAlbum and an audiobook to audioBook.
+                Put a named author or narrator in credits and leave keywords empty unless a title is also requested.
+                Translate genre descriptions into genre names. Avoid adding plot themes to a genre request.
                 Convert exclusive dates and durations to inclusive whole-year or whole-minute bounds only when equivalent.
                 """, schema: LibraryQuery.self) { try $0.intent() }
             }
@@ -230,6 +232,8 @@ struct GusIntelligenceModel {
         let genre: String
         switch match.1 {
         case "sci fi", "scifi", "science fiction": genre = "Science Fiction"
+        case "dramatic": genre = "Drama"
+        case "comedic": genre = "Comedy"
         case "action", "adventure", "animation", "comedy", "crime", "documentary", "drama",
              "family", "fantasy", "history", "horror", "music", "mystery", "romance", "thriller", "war", "western":
             genre = String(match.1).capitalized
@@ -253,6 +257,37 @@ struct GusIntelligenceModel {
             }
         }
         return intent
+    }
+
+    /// These forms explicitly bind a creator to a medium and a job. A compound query
+    /// goes through the model so its remaining requirements are preserved.
+    static func namedContributor(_ prompt: String) -> GusSearchIntent? {
+        let pattern = #/(books|audiobooks|albums|songs|libros|audiolibros) (by|written by|narrated by|de|escritos por|narrados por) ([\p{L}][\p{L}\p{M} .’'\-]*)/#.ignoresCase()
+        guard let match = prompt.wholeMatch(of: pattern)?.output else { return nil }
+        let name = String(match.3).trimmingCharacters(in: .whitespacesAndNewlines)
+        let words = GusLibraryMatching.words(name)
+        let conjunctions: Set<String> = ["and", "or", "with", "without", "before", "after", "from", "who", "that", "y", "o", "con", "sin", "antes", "despues", "que"]
+        let particles: Set<Substring> = ["de", "del", "la", "di", "da", "van", "von", "bin", "al"]
+        let looksLikeAName = name.split(separator: " ").allSatisfy { word in
+            word.first?.isUppercase == true || particles.contains(word)
+        }
+        guard looksLikeAName, (1 ... 6).contains(words.count), conjunctions.isDisjoint(with: words) else { return nil }
+        let type: MediaItemType
+        let role: String
+        switch (match.1.lowercased(), match.2.lowercased()) {
+        case ("books", "by"), ("books", "written by"), ("libros", "de"), ("libros", "escritos por"):
+            (type, role) = (.book, "author")
+        case ("audiobooks", "narrated by"), ("audiolibros", "narrados por"):
+            (type, role) = (.audioBook, "narrator")
+        case ("audiobooks", "written by"), ("audiolibros", "escritos por"):
+            (type, role) = (.audioBook, "author")
+        case ("albums", "by"):
+            (type, role) = (.musicAlbum, "artist")
+        case ("songs", "by"):
+            (type, role) = (.audio, "artist")
+        default: return nil
+        }
+        return GusSearchIntent(mediaTypes: [type], credits: [.init(name: name, role: role)])
     }
 
     /// Catalog descriptions and user-entered text can contain pasted links or access-bearing fields.
