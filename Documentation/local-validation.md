@@ -5,16 +5,17 @@ Run the smallest checks that can establish the claim you need to make. The
 [agent rules](../AGENTS.md) define repository constraints;
 [`project.yml`](../project.yml) and [shared build settings](../Config/Shared.xcconfig)
 define targets and settings. The [pipeline policy](AppStore/pipeline-policy.md)
-owns hosted checks and release gates. Run local automated app tests and runtime
-verification on Apple simulators only, one at a time. Record any behavior that
-requires physical hardware or a live device entitlement as **unverified**.
+owns hosted checks and release gates. Run macOS tests and runtime verification
+natively on a local Apple Silicon Mac. For the other platforms, use local Apple
+simulators one at a time. Record behavior that requires unavailable hardware or
+entitlements as **unverified**.
 
 ## Choose a validation path
 
 | Change | Run locally | Record |
 | --- | --- | --- |
 | Documentation only | Review changed text, relative links and anchors, and whitespace; validate syntax if config also changed. Skip XcodeGen, app builds, and tests. | Checks performed and config scope. |
-| Routine code | Lint relevant code; build affected targets and run focused local simulator tests where appropriate. | Target, OS, test scope, and outcomes. |
+| Routine code | Lint relevant code, build affected targets, and run focused local tests where appropriate. | Target, OS, test scope, and outcomes. |
 | Project inputs | Regenerate when generator config or the source/resource file set changes. Review the generated diff and verify the tracked snapshot and pins. Then use the routine or UI path as applicable. | Input change, generated changes, and snapshot check. |
 | UI, server, or Watch behavior | Use the relevant installed simulator, test scheme, and approved fixtures. Exercise the affected behavior; use screenshots when useful. | Simulator, fixture, scenarios, and observed behavior. |
 | Exact release candidate | Follow [local qualification](AppStore/pipeline-policy.md#local-qualification) for the intended revision and affected platforms. Hand off signing, archives, and distribution separately. | Exact revision and artifact, raw logs and test evidence, and unresolved gates. |
@@ -28,7 +29,8 @@ requires physical hardware or a live device entitlement as **unverified**.
    needs a local Apple Silicon Mac, full Xcode, and the relevant runtime and
    destination. Install XcodeGen or SwiftFormat only when needed. Server-backed
    UI work also needs the local fixture prerequisites.
-3. **Select the target.** Match the scheme’s destination against
+3. **Select the target.** Use `platform=macOS,arch=arm64` for native Mac tests.
+   For simulator tests, match the scheme’s destination against
    `xcrun simctl list devices available`. Pass the explicit simulator platform
    and UDID, for example `platform=iOS Simulator,id=<simulator UDID>`.
    A connected phone or Watch may also appear in Xcode’s destination list.
@@ -40,7 +42,7 @@ requires physical hardware or a live device entitlement as **unverified**.
    substituting a hosted simulator or a different test environment.
 5. **Report evidence.** For each check, say **passed**, **failed** (with the first
    meaningful error), **blocked** (with the missing prerequisite), or **not run**.
-   Record the revision, target/scheme, simulator OS/UDID, and exact checks. Build
+   Record the revision, target/scheme, OS, simulator UDID where applicable, and exact checks. Build
    success does not establish launch; launch does not establish behavior. Keep raw
    logs, result bundles, and retained screenshots outside Git and the checkout.
 
@@ -119,6 +121,27 @@ python3 Scripts/run-warning-free.py xcodebuild \
   -resultBundlePath "$EVIDENCE/ios-unit.xcresult" test >"$EVIDENCE/ios-unit.log" 2>&1
 ```
 
+### Test native macOS on Apple Silicon
+
+Run the native unit scheme from the checkout root. The temporary signing
+configuration uses the existing unit-host entitlements for App Sandbox and
+networking. It leaves the checkout's signing settings in place for other builds.
+
+```sh
+EVIDENCE="$(mktemp -d /tmp/gus-macos-validation.XXXXXX)"
+printf 'CODE_SIGN_ENTITLEMENTS[sdk=macosx*] = %s\nCODE_SIGN_STYLE = Manual\nCODE_SIGN_IDENTITY = -\nPROVISIONING_PROFILE_SPECIFIER =\n' \
+  "$PWD/ci_scripts/gus-macos-unit.entitlements" >"$EVIDENCE/MacUnit.xcconfig"
+XCODE_XCCONFIG_FILE="$EVIDENCE/MacUnit.xcconfig" \
+  python3 Scripts/run-warning-free.py xcodebuild \
+  -project 'A Playa Named Gus.xcodeproj' -scheme 'Gus macOS Unit Tests' \
+  -destination 'platform=macOS,arch=arm64' -parallel-testing-enabled NO \
+  -derivedDataPath "$EVIDENCE/DerivedData" \
+  -resultBundlePath "$EVIDENCE/macos-unit.xcresult" test >"$EVIDENCE/macos-unit.log" 2>&1
+```
+
+For macOS UI tests, use the `Gus macOS Tests` scheme with the same native
+destination and the signing and fixtures required by the scenario.
+
 ### Fixtures, UI tests, and captures
 
 For authenticated Jellyfin flows, start the [demo server](demo-server.md)
@@ -140,9 +163,8 @@ for matching before/after captures.
 
 ## Manual and release handoffs
 
-Native local macOS runtime tests and physical-device acceptance are outside
-current scope. List them separately when still needed. Don't start hosted jobs,
-archives, signing or distribution as a substitute for a missing local check.
+Record physical-device acceptance separately from local app tests. Follow the
+release gates for signing, archives, and distribution.
 
 If choosing the [release helper](../Scripts/validate-release.py), review the
 selected phase and use an explicit external `--output` directory. Do not use

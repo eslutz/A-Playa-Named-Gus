@@ -18,6 +18,6 @@ native framework for launching and inspecting the app.
 
 ## Consequences
 
-Unit tests remain concise and Apple-native. Simulator unit and XCUITest flows run
-locally; the explicitly authorized hosted native macOS unit job is the runtime CI
-exception. See the [current pipeline policy](../AppStore/pipeline-policy.md).
+Unit tests remain concise and Apple-native. Unit and XCUITest flows run locally
+on native Apple Silicon for macOS and in simulators for the other platforms.
+See the [current pipeline policy](../AppStore/pipeline-policy.md).

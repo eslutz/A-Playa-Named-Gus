@@ -5,12 +5,12 @@ Thanks for helping improve A Playa Named Gus.
 Contributor guidance lives in the
 [Contributing wiki page](https://github.com/eslutz/A-Playa-Named-Gus/wiki/Contributing).
 
-Changes must go through a pull request targeting `main`, with the five required
-GitHub checks passing before merge. Server-side main protection is currently disabled;
-this requirement remains project policy. Use local Apple simulators for automated
-app tests and runtime verification. Record hardware-only behavior as unverified.
-Native macOS build/unit checks run on GitHub. Local simulator qualification,
-authorized native archives, and actual TestFlight availability are separate gates.
+Changes must go through a pull request targeting `main`, with the four required
+GitHub checks passing before merge. Server-side main protection is currently disabled.
+Run macOS tests locally on Apple Silicon and use local Apple simulators for the
+other platforms. Record behavior that requires unavailable hardware or entitlements
+as unverified. Record local test results in the PR. GitHub runs the native macOS build.
+Local test evidence, authorized native archives, and TestFlight availability are separate gates.
 [Gate details](Documentation/AppStore/pipeline-policy.md).
 
 ## Development references

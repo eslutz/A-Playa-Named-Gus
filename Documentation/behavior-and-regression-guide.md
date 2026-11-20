@@ -132,7 +132,7 @@ page deduplication. Gus retains AVPlayer/AVKit and current OS 26 fallbacks.
 | F16 | Full-content continuation | Raw-offset paging, ordered queue continuation, full shuffle collection; incomplete advertised collections fail visibly | BrowseRefinementTests, including incompleteCollection; PlaybackLifecyclePolicyTests |
 | F17 | Superseding first-page query changes | Immutable query identity and generation cancellation | LibraryStoreTests, BrowseRefinementTests |
 | F18 | Reader construction/resource recovery | Public container read observation, inline recovery, bounded chapter selection and generation-scoped Retry | BookReaderLoadingTests; verify missing-resource recovery and semantic-locator restoration |
-| F19 | Every PR triggers required CI | Always-triggered workflow, fail-closed classifier, explicit documentation-only success | test-classify-changes.py; all five hosted checks required for each candidate |
+| F19 | Every PR triggers required CI | Always-triggered workflow, fail-closed classifier, explicit documentation-only success | test-classify-changes.py; all four hosted checks required for each candidate |
 | F20 | Measured performance and justified retention/I/O fixes | Non-owning heavy-store lookup, owner/lease cancellation, visibility refresh, serial diagnostics and download workers | NavigationOwnershipTests, including replacementDetailOwnership and seriesLeaseCancellation; DiagnosticsTests, DownloadStoreIntegrationTests; qualify same-simulator Release p95 as applicable |
 | F21 | Current platform visual/interaction/accessibility acceptance | Native controls retained; platform interaction checks | Separate visual, interaction, and assistive acceptance |
 | F22 | Catalog and native semantic formatting | Shared localized metadata and native duration/count formatting | Catalog validation and BrowseRefinementTests; exercise RTL and largest text |
@@ -193,14 +193,14 @@ and real tuner fault-injection evidence; Gus makes no such guarantee.
 ## Acceptance
 
 Use [local validation](local-validation.md) and [pipeline policy](AppStore/pipeline-policy.md)
-for scope. Run affected unit and authenticated local simulator cases before
-claiming coverage. For full refinement performance qualification, compare
+for scope. Run affected unit and authenticated local cases before claiming coverage.
+Use native Apple Silicon for macOS and simulators for the other platforms. For full refinement performance qualification, compare
 same-simulator Release p95 (10% regression ceiling or stricter applicable gate),
 using 30 cold/warm samples, 10 browse cycles, 30 player open/close cycles and
 a one-hour playback soak. Record exact revision, host and inputs outside Git.
 This matrix is not required for every change.
 
-Keep native macOS runtime, physical-device and Sketch acceptance separate.
+Record physical-device and Sketch acceptance separately from local tests.
 A completed diagnostics flush establishes durability; termination can lose
 unflushed events. A lost response with an unknown server resource ID still needs
 server cancellation or TTL validation before claiming cleanup.
