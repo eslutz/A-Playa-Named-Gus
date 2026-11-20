@@ -158,6 +158,42 @@ final class GusAuthenticatedUITests: XCTestCase {
     #endif
 
     #if os(tvOS) || os(visionOS)
+        func testRelatedGenreReturnsToDetailAndClosesToSearch() throws {
+            continueAfterFailure = false
+            let app = XCUIApplication()
+            app.launchEnvironment["GUS_DEMO_URL"] = "http://127.0.0.1:5061"
+            app.launchArguments = ["--gus-demo-server", "--gus-disable-cloud-sync", "--gus-route", "item/47000000000000000000000000000002"]
+            app.launch()
+            let genreID = "Detail.related.genre:id:47000000000000000000000000000001"
+            func select(_ identifier: String) throws {
+                #if os(tvOS)
+                    try focusTV(app, identifier: identifier)
+                    XCUIRemote.shared.press(.select)
+                #else
+                    let button = app.buttons[identifier].firstMatch
+                    XCTAssertTrue(button.waitForExistence(timeout: 25), app.debugDescription)
+                    button.tap()
+                #endif
+            }
+            func assertGenreResults() {
+                let member = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "Night Radio")).firstMatch
+                XCTAssertTrue(member.waitForExistence(timeout: 20), app.debugDescription)
+                XCTAssertTrue(app.buttons["Search.backToDetail"].firstMatch.waitForExistence(timeout: 8), app.debugDescription)
+                XCTAssertTrue(app.buttons["Search.closeResults"].firstMatch.exists, app.debugDescription)
+                XCTAssertFalse(app.keyboards.firstMatch.exists)
+            }
+            try select(genreID)
+            assertGenreResults()
+            capture(app, "related-horror-results")
+            try select("Search.backToDetail")
+            XCTAssertTrue(app.buttons["Detail.play"].waitForExistence(timeout: 15), app.debugDescription)
+            try select(genreID)
+            assertGenreResults()
+            try select("Search.closeResults")
+            XCTAssertFalse(app.buttons["Search.backToDetail"].exists)
+            XCTAssertTrue(app.staticTexts["Recent Searches"].firstMatch.waitForExistence(timeout: 10), app.debugDescription)
+        }
+
         func testArtworkHeaderAppearances() throws {
             try prepare()
             defer { finish() }
@@ -289,8 +325,15 @@ final class GusAuthenticatedUITests: XCTestCase {
         #endif
         for (type, action) in details {
             let app = try launch("item/" + required(type))
-            let button = type == "Movie" ? app.buttons["Detail.play"] : app.buttons[action].firstMatch
-            XCTAssertTrue(button.waitForExistence(timeout: 30))
+            let button: XCUIElement
+            if type == "Movie" {
+                button = app.buttons["Detail.play"]
+            } else if action == "Read" {
+                button = app.buttons.matching(NSPredicate(format: "label IN %@", ["Read", "Continue Reading"])).firstMatch
+            } else {
+                button = app.buttons[action].firstMatch
+            }
+            XCTAssertTrue(button.waitForExistence(timeout: 30), app.debugDescription)
             if type == "Movie" {
                 XCTAssertEqual(app.buttons.matching(identifier: "Detail.play").count, 1, app.debugDescription)
                 XCTAssertEqual(app.buttons.matching(identifier: "Detail.nextUp").count, 1, app.debugDescription)
@@ -299,6 +342,10 @@ final class GusAuthenticatedUITests: XCTestCase {
                 reveal(button, in: app)
                 XCTAssertTrue(button.isHittable)
                 assertHorizontallyContained(button, in: app)
+                if type == "Movie" {
+                    let next = app.buttons["Detail.nextUp"]
+                    XCTAssertEqual(next.frame.minX, button.frame.minX, accuracy: 1, app.debugDescription)
+                }
             #endif
             capture(app, type.lowercased() + "-detail")
             #if os(iOS)

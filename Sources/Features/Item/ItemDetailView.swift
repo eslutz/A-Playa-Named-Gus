@@ -179,185 +179,173 @@ struct ItemDetailView: View {
                 presentationItem.overview = presentationItem.overview ?? item.overview?.trimmedNilIfEmpty
                 if presentationItem.genres.isEmpty {
                     presentationItem.genres = item.genres
+                    presentationItem.genreItems = item.genreItems
                 }
             }
         }
         let target = store.item.gusTVPlaybackTarget(nextUp: navigationState.home?.unifiedNextUp ?? [], episodes: store.seriesStore?.episodes ?? [])
-        return GeometryReader { geometry in
-            ScrollView {
-                VStack(alignment: .leading, spacing: 0) {
-                    CinematicDetailHero(
-                        item: presentationItem,
-                        bookProgress: bookDetailProgress(for: store.item),
-                        primaryPlayEnabled: target.map { ContentRatingGate.admitsStored($0) } ?? false,
-                        playbackHasProgress: target.map { (resumeTicks(for: $0) ?? 0) > 0 } ?? false,
-                        startFromBeginning: {
-                            if let target, ContentRatingGate.admitsStored(target) {
-                                playerItem = playbackReference(for: target, fromBeginning: true)
+        return ArtworkDetailPage(detailKey: "detail:" + ItemRef(item: item).id) {
+            CinematicDetailHero(
+                item: presentationItem,
+                bookProgress: bookDetailProgress(for: store.item),
+                primaryPlayEnabled: target.map { ContentRatingGate.admitsStored($0) } ?? false,
+                playbackHasProgress: target.map { (resumeTicks(for: $0) ?? 0) > 0 } ?? false,
+                startFromBeginning: {
+                    if let target, ContentRatingGate.admitsStored(target) {
+                        playerItem = playbackReference(for: target, fromBeginning: true)
+                    }
+                },
+                backdropURL: session.mediaProvider.backdropImageURL(for: store.item, context: .backdrop),
+                play: {
+                    if let target, ContentRatingGate.admitsStored(target) {
+                        playerItem = playbackReference(for: target)
+                    }
+                },
+                isInUpNext: upNext.contains(store.item, serverID: session.server.id, userID: session.user.id),
+                toggleUpNext: {
+                    guard !updatingNextUp else { return }
+                    updatingNextUp = true
+                    Task {
+                        defer { updatingNextUp = false }
+                        if upNext.contains(store.item, serverID: session.server.id, userID: session.user.id) {
+                            do { try await upNext.removeFromNextUp(store.item, session: session) }
+                            catch { nextUpError = GusError(from: error).localizedDescription }
+                        } else {
+                            upNext.toggle(store.item, serverID: session.server.id, userID: session.user.id)
+                            NextUpActivityStore.shared.restore(store.item, scope: session.references.scope)
+                        }
+                        playbackRefresh.markPlaybackProgressChanged()
+                    }
+                }
+            ) {
+                if let target {
+                    versionMenu(for: target, focusItem: store.item)
+                }
+                ItemUserActionButton(
+                    title: store.item.userData?.isFavorite == true
+                        ? "Remove from Favorites"
+                        : "Add to Favorites",
+                    compactTitle: "Favorite",
+                    systemImage: store.item.userData?.isFavorite == true
+                        ? "heart.fill"
+                        : "heart",
+                    action: {
+                        Task { await store.toggleFavorite() }
+                    }
+                )
+                .disabled(store.isUpdatingUserData || store.needsUserDataRefresh)
+                .accessibilityIdentifier("Detail.favorite")
+                .gusTVDetailActionFocus(id: "favorite", item: store.item)
+                #if os(tvOS)
+                    if store.item.id != nil {
+                        Menu {
+                            Button(store.item.completionActionTitle, systemImage: "checkmark.circle") {
+                                Task { await store.setWatched(store.item.userData?.isWatched != true, nextUp: upNext) }
                             }
-                        },
-                        backdropURL: session.mediaProvider.backdropImageURL(for: store.item, context: .backdrop),
-                        play: {
+                            .disabled(store.isUpdatingUserData || store.needsUserDataRefresh)
+                            .accessibilityIdentifier("Detail.watched")
                             if let target, ContentRatingGate.admitsStored(target) {
-                                playerItem = playbackReference(for: target)
-                            }
-                        },
-                        isInUpNext: upNext.contains(store.item, serverID: session.server.id, userID: session.user.id),
-                        toggleUpNext: {
-                            guard !updatingNextUp else { return }
-                            updatingNextUp = true
-                            Task {
-                                defer { updatingNextUp = false }
-                                if upNext.contains(store.item, serverID: session.server.id, userID: session.user.id) {
-                                    do { try await upNext.removeFromNextUp(store.item, session: session) }
-                                    catch { nextUpError = GusError(from: error).localizedDescription }
-                                } else {
-                                    upNext.toggle(store.item, serverID: session.server.id, userID: session.user.id)
-                                    NextUpActivityStore.shared.restore(store.item, scope: session.references.scope)
+                                Button("Start from Beginning", systemImage: "arrow.counterclockwise") {
+                                    playerItem = playbackReference(for: target, fromBeginning: true)
                                 }
-                                playbackRefresh.markPlaybackProgressChanged()
                             }
+                            if store.item.type == .movie || store.item.type == .episode {
+                                Button("Add to Playlist", systemImage: MediaActionSymbols.addToPlaylist) { addingToPlaylist = true }
+                            }
+                            if store.item.type == .movie, navigationState.collectionStore(session: session).capabilities.addMembers {
+                                Button("Add to Collection", systemImage: "rectangle.stack.badge.plus") { addingToCollection = true }
+                            }
+                        } label: {
+                            Label("More", systemImage: "ellipsis").gusDetailActionLabel()
                         }
-                    ) {
-                        if let target {
-                            versionMenu(for: target, focusItem: store.item)
-                        }
+                        .gusDetailActionControlStyle()
+                        .accessibilityIdentifier("Detail.more")
+                        .gusTVDetailActionFocus(id: "more", item: store.item)
+                    }
+                #endif
+                #if !os(tvOS)
+                    if SharePlayCoordinator.canShare(store.item) {
                         ItemUserActionButton(
-                            title: store.item.userData?.isFavorite == true
-                                ? "Remove from Favorites"
-                                : "Add to Favorites",
-                            compactTitle: "Favorite",
-                            systemImage: store.item.userData?.isFavorite == true
-                                ? "heart.fill"
-                                : "heart",
+                            title: "SharePlay",
+                            systemImage: "shareplay",
                             action: {
-                                Task { await store.toggleFavorite() }
+                                startSharePlay(for: selectedRequest(for: store.item))
                             }
                         )
-                        .disabled(store.isUpdatingUserData || store.needsUserDataRefresh)
-                        .accessibilityIdentifier("Detail.favorite")
-                        .gusTVDetailActionFocus(id: "favorite", item: store.item)
-                        #if os(tvOS)
-                            if store.item.id != nil {
-                                Menu {
-                                    Button(store.item.completionActionTitle, systemImage: "checkmark.circle") {
-                                        Task { await store.setWatched(store.item.userData?.isWatched != true, nextUp: upNext) }
-                                    }
-                                    .disabled(store.isUpdatingUserData || store.needsUserDataRefresh)
-                                    .accessibilityIdentifier("Detail.watched")
-                                    if let target, ContentRatingGate.admitsStored(target) {
-                                        Button("Start from Beginning", systemImage: "arrow.counterclockwise") {
-                                            playerItem = playbackReference(for: target, fromBeginning: true)
-                                        }
-                                    }
-                                    if store.item.type == .movie || store.item.type == .episode {
-                                        Button("Add to Playlist", systemImage: MediaActionSymbols.addToPlaylist) { addingToPlaylist = true }
-                                    }
-                                    if store.item.type == .movie, navigationState.collectionStore(session: session).capabilities.addMembers {
-                                        Button("Add to Collection", systemImage: "rectangle.stack.badge.plus") { addingToCollection = true }
-                                    }
-                                } label: {
-                                    Label("More", systemImage: "ellipsis").gusDetailActionLabel()
-                                }
-                                .gusDetailActionControlStyle()
-                                .accessibilityIdentifier("Detail.more")
-                                .gusTVDetailActionFocus(id: "more", item: store.item)
-                            }
-                        #endif
-                        #if !os(tvOS)
-                            if SharePlayCoordinator.canShare(store.item) {
-                                ItemUserActionButton(
-                                    title: "SharePlay",
-                                    systemImage: "shareplay",
-                                    action: {
-                                        startSharePlay(for: selectedRequest(for: store.item))
-                                    }
-                                )
-                            }
-                        #endif
-                        if DownloadsAvailability.isSupported, session.mediaProvider.capabilities.supportsDownloads {
-                            DownloadButton(request: selectedRequest(for: store.item), iconOnly: true)
-                                .accessibilityIdentifier("Detail.download")
-                        }
                     }
-
-                    VStack(alignment: .leading, spacing: 30) {
-                        if store.isUpdatingUserData {
-                            ProgressView("Updating…")
-                        }
-                        if let error = store.actionError {
-                            VStack(alignment: .leading) {
-                                Text(error).foregroundStyle(.secondary)
-                                Button(store.needsUserDataRefresh ? String(localized: "Refresh Status") : String(localized: "Dismiss")) {
-                                    if store.needsUserDataRefresh {
-                                        Task { await store.refreshUserData() }
-                                    } else {
-                                        store.actionError = nil
-                                    }
-                                }
-                                if store.canKeepCurrentUserData {
-                                    Button("Keep Current Status") { store.keepCurrentUserData() }
-                                }
-                            }
-                        }
-                        if let failure = store.relatedContentError {
-                            VStack(alignment: .leading) {
-                                Text(failure).foregroundStyle(.secondary)
-                                Button("Retry Related Content") { Task { await store.retryRelatedContent() } }
-                            }
-                        }
-                        if let itemID = store.item.id {
-                            SharedWithYouAttributionView(link: .item(id: itemID))
-                        }
-
-                        if let seriesStore = store.seriesStore {
-                            SeriesEpisodesView(store: seriesStore, preferredEpisode: target).id("episodes")
-                        }
-
-                        DetailMetadataRows(item: presentationItem).id("metadata")
-                        if store.item.type == .movie || store.item.isBookFormat, let id = store.item.id {
-                            ItemCollectionMemberships(itemID: id, format: CollectionFormat(type: store.item.type)).padding(.vertical)
-                        }
-                        #if !os(tvOS)
-                            if !store.item.isBookFormat, !store.item.people.isEmpty {
-                                CastRail(people: store.item.people).id("cast")
-                            }
-
-                        #endif
-
-                        if !store.specialFeatures.isEmpty {
-                            MediaRail(title: String(localized: "Special Features", comment: "Item detail section header for bonus/extra content"), items: store.specialFeatures, style: .backdrop, focusKey: "detail:" + ItemRef(item: item).id + ":extras", focusContext: "detail:" + ItemRef(item: item).id)
-                        }
-
-                        if !store.similarItems.isEmpty {
-                            MediaRail(title: String(localized: "Recommended", comment: "Item detail section header for similar/recommended items"), items: store.similarItems, focusKey: "detail:" + ItemRef(item: item).id + ":recommended", focusContext: "detail:" + ItemRef(item: item).id)
-                        }
-
-                        #if os(tvOS)
-                            if !store.item.isBookFormat, !store.item.people.isEmpty {
-                                CastRail(people: store.item.people).id("cast")
-                            }
-                        #endif
-
-                        if !presentationItem.isBookFormat {
-                            AboutCardsView(
-                                item: presentationItem,
-                                posterURL: session.mediaProvider.primaryImageURL(for: store.item, context: .posterRail)
-                            )
-                        }
-                    }
-                    .scrollTargetLayout()
-                    .padding(sectionPadding)
-                    .frame(width: min(geometry.size.width, PageContentMetrics.maxWidth), alignment: .leading)
-                    .frame(width: geometry.size.width)
+                #endif
+                if DownloadsAvailability.isSupported, session.mediaProvider.capabilities.supportsDownloads {
+                    DownloadButton(request: selectedRequest(for: store.item), iconOnly: true)
+                        .accessibilityIdentifier("Detail.download")
                 }
-                .frame(width: geometry.size.width)
             }
-            .scrollPosition(id: navigationState.scrollBinding(for: "detail:" + ItemRef(item: item).id))
+
+        } sections: {
+            if store.isUpdatingUserData {
+                ProgressView("Updating…")
+            }
+            if let error = store.actionError {
+                VStack(alignment: .leading) {
+                    Text(error).foregroundStyle(.secondary)
+                    Button(store.needsUserDataRefresh ? String(localized: "Refresh Status") : String(localized: "Dismiss")) {
+                        if store.needsUserDataRefresh {
+                            Task { await store.refreshUserData() }
+                        } else {
+                            store.actionError = nil
+                        }
+                    }
+                    if store.canKeepCurrentUserData {
+                        Button("Keep Current Status") { store.keepCurrentUserData() }
+                    }
+                }
+            }
+            if let failure = store.relatedContentError {
+                VStack(alignment: .leading) {
+                    Text(failure).foregroundStyle(.secondary)
+                    Button("Retry Related Content") { Task { await store.retryRelatedContent() } }
+                }
+            }
+            if let itemID = store.item.id {
+                SharedWithYouAttributionView(link: .item(id: itemID))
+            }
+
+            if let seriesStore = store.seriesStore {
+                SeriesEpisodesView(store: seriesStore, preferredEpisode: target).id("episodes")
+            }
+
+            DetailMetadataRows(item: presentationItem).id("metadata")
+            if store.item.type == .movie || store.item.isBookFormat, let id = store.item.id {
+                ItemCollectionMemberships(itemID: id, format: CollectionFormat(type: store.item.type))
+            }
+            #if !os(tvOS)
+                if !store.item.isBookFormat, !store.item.people.isEmpty {
+                    CastRail(item: store.item).id("cast")
+                }
+
+            #endif
+
+            if !store.specialFeatures.isEmpty {
+                MediaRail(title: String(localized: "Special Features", comment: "Item detail section header for bonus/extra content"), items: store.specialFeatures, style: .backdrop, focusKey: "detail:" + ItemRef(item: item).id + ":extras", focusContext: "detail:" + ItemRef(item: item).id)
+            }
+
+            #if os(tvOS)
+                if !store.item.isBookFormat, !store.item.people.isEmpty {
+                    CastRail(item: store.item).id("cast")
+                }
+            #endif
+
+            if !presentationItem.isBookFormat {
+                AboutCardsView(
+                    item: presentationItem,
+                    posterURL: session.mediaProvider.primaryImageURL(for: store.item, context: .posterRail)
+                )
+            }
+            if !store.similarItems.isEmpty {
+                MediaRail(title: String(localized: "Recommended", comment: "Item detail section header for similar/recommended items"), items: store.similarItems, focusKey: "detail:" + ItemRef(item: item).id + ":recommended", focusContext: "detail:" + ItemRef(item: item).id)
+            }
         }
         .gusTVBrowseViewport()
         .gusTVDetailCanvas()
-        .lookToScroll()
         .task {
             downloads.load(serverID: session.server.id, userID: session.user.id)
             upNext.load(serverID: session.server.id, userID: session.user.id)
@@ -441,16 +429,6 @@ struct ItemDetailView: View {
         }
         let current = store?.item ?? item
         return !ContentRatingGate.admits(current, limit: limit, hideUnrated: hideUnratedContent)
-    }
-
-    private var sectionPadding: EdgeInsets {
-        #if os(tvOS)
-            return EdgeInsets(top: 48, leading: 80, bottom: 80, trailing: 80)
-        #elseif os(visionOS)
-            return EdgeInsets(top: 30, leading: 36, bottom: 40, trailing: 36)
-        #else
-            return EdgeInsets(top: 24, leading: 20, bottom: 32, trailing: 20)
-        #endif
     }
 
     #if !os(tvOS)

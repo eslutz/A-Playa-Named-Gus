@@ -8,9 +8,13 @@ struct RootContainer: View {
     @Environment(OfflineDownloadStore.self) private var downloads
     @Environment(AppNavigationModel.self) private var navigation
     @Environment(NavigationPreferencesStore.self) private var preferences
-    @State private var state = RootNavigationState()
+    @State private var state: RootNavigationState
     @Environment(AudioPlaybackCoordinator.self) private var audio
     @SceneStorage("gus.root.selection") private var storedSelection = NavigationSectionPreference.homeID
+
+    init(searchHistory: SearchHistoryStore) {
+        _state = State(initialValue: RootNavigationState(searchHistory: searchHistory))
+    }
 
     var body: some View {
         // Keep the presentation anchor stable when the native tab/split container
@@ -21,6 +25,16 @@ struct RootContainer: View {
                 NavigationStack { UserProfileView() }
             }
             .gusContentLinks()
+            .task(id: state.selectedSectionID == RootNavigationState.searchID ? state.globalSearch.related?.lookupID : nil) {
+                if state.selectedSectionID == RootNavigationState.searchID, let related = state.globalSearch.related {
+                    await related.resolve(session: session)
+                    guard !Task.isCancelled, state.globalSearch.related === related, let match = related.resolved else { return }
+                    let pages = state.libraryStore(for: .related(match), session: session, searchResults: related)
+                    if pages.state == .idle || pages.state == .loading {
+                        await pages.load(superseding: true)
+                    }
+                }
+            }
             .gusSessionPlayerHost(state: state, enabled: state.detailItem == nil)
             .gusAudioHost(coordinator: audio, enabled: state.detailItem == nil)
         #if os(iOS) || os(tvOS) || os(macOS)
@@ -29,15 +43,13 @@ struct RootContainer: View {
             .task {
                 preferences.load(serverID: session.server.id, userID: session.user.id)
                 if navigation.routeRequest == 0 {
-                    state.selectedSectionID = storedSelection
+                    state.selectSection(storedSelection)
                 } else {
                     state.adopt(navigation.route)
                 }
-                #if os(iOS)
-                    if navigation.searchFocusRequest > 0 {
-                        state.selectedSectionID = RootNavigationState.searchID
-                    }
-                #endif
+                if navigation.searchFocusRequest > 0 {
+                    focusSearch()
+                }
                 if state.home == nil {
                     let home = HomeStore(session: session)
                     state.home = home
@@ -59,19 +71,10 @@ struct RootContainer: View {
                 session.references.beginRefresh()
                 await state.refreshCachedContent()
             }
-            .onChange(of: navigation.searchFocusRequest, initial: true) { _, request in
-                if request > 0, state.selectedSectionID == NavigationSectionPreference.discoverID {
-                    state.paths[NavigationSectionPreference.discoverID] = NavigationPath()
+            .onChange(of: navigation.searchFocusRequest) { _, request in
+                if request > 0 {
+                    focusSearch()
                 }
-                #if os(iOS)
-                    if request > 0 {
-                        state.selectedSectionID = RootNavigationState.searchID
-                    }
-                #elseif os(tvOS)
-                    if request > 0 {
-                        state.selectedSectionID = "gus.tv.search"
-                    }
-                #endif
             }
             .onChange(of: navigation.routeRequest) { _, _ in state.adopt(navigation.route) }
             .onChange(of: state.selectedSectionID) { _, id in storedSelection = id }
@@ -79,6 +82,17 @@ struct RootContainer: View {
             .environment(audio)
             .environment(session.seerr)
             .task { await session.seerr.restore() }
+    }
+
+    private func focusSearch() {
+        switch state.selectedSectionID {
+        case NavigationSectionPreference.discoverID, NavigationSectionPreference.downloadedID:
+            state.paths[state.selectedSectionID] = NavigationPath()
+        default:
+            state.selectSection(RootNavigationState.searchID)
+            state.paths[RootNavigationState.searchID] = NavigationPath()
+            state.globalSearch.typed.isPresented = true
+        }
     }
 
     @ViewBuilder private var presentationRoot: some View {
@@ -159,17 +173,21 @@ private struct TabRootView: View {
                     return direct.first?.id ?? NavigationSectionPreference.homeID
                 }
             #endif
-            return (direct.contains { $0.id == state.selectedSectionID } || state.selectedSectionID == "gus.tv.search" || state.selectedSectionID == RootNavigationState.searchID) ? state.selectedSectionID : RootNavigationState.moreID
-        }, set: { state.selectedSectionID = $0 })
+            return (direct.contains { $0.id == state.selectedSectionID } || state.selectedSectionID == RootNavigationState.searchID) ? state.selectedSectionID : RootNavigationState.moreID
+        }, set: { id in
+            state.selectSection(id)
+            #if os(iOS)
+                if id == RootNavigationState.searchID, state.globalSearch.related == nil, state.globalSearch.typed.text.isEmpty {
+                    state.globalSearch.typed.isPresented = true
+                }
+            #endif
+        })
     }
 
     var body: some View {
-        #if os(iOS)
-            let search = state.searchState(for: RootNavigationState.searchID)
-        #endif
         TabView(selection: selection) {
             #if os(tvOS)
-                Tab("Search", systemImage: "magnifyingglass", value: "gus.tv.search", role: .search) { SectionStack(sectionID: "gus.tv.search") }
+                Tab("Search", systemImage: "magnifyingglass", value: RootNavigationState.searchID, role: .search) { SectionStack(sectionID: RootNavigationState.searchID) }
             #endif
             ForEach(direct) { section in
                 Tab(value: section.id) { SectionStack(sectionID: section.id) } label: {
@@ -181,14 +199,23 @@ private struct TabRootView: View {
                 }
             }
             if !overflow.isEmpty {
-                Tab(value: RootNavigationState.moreID) { SectionStack(sectionID: state.selectedSectionID == RootNavigationState.moreID ? RootNavigationState.moreID : state.selectedSectionID, overflow: overflow) } label: {
+                Tab(value: RootNavigationState.moreID) { SectionStack(sectionID: overflow.contains(where: { $0.id == state.selectedSectionID }) ? state.selectedSectionID : RootNavigationState.moreID, overflow: overflow) } label: {
                     Label("More", systemImage: "ellipsis")
                 }
             }
             #if os(iOS)
                 Tab(value: RootNavigationState.searchID, role: .search) {
                     SectionStack(sectionID: RootNavigationState.searchID)
-                        .searchable(text: Binding(get: { search.text }, set: { search.text = $0 }), isPresented: Binding(get: { search.isPresented }, set: { search.isPresented = $0 }), prompt: "Search Library")
+                        .searchable(
+                            text: Binding(get: { state.globalSearch.typed.text }, set: { state.editSearchText($0) }),
+                            isPresented: Bindable(state.globalSearch.typed).isPresented,
+                            prompt: "Search Library"
+                        )
+                        .onSubmit(of: .search) { state.globalSearch.typed.submitSearch(to: session.searchHistory) }
+                }
+            #elseif os(visionOS)
+                Tab("Search", systemImage: "magnifyingglass", value: RootNavigationState.searchID) {
+                    SectionStack(sectionID: RootNavigationState.searchID)
                 }
             #endif
         }
@@ -196,19 +223,8 @@ private struct TabRootView: View {
         .onChange(of: sections.map(\.id), initial: true) { _, ids in
             state.reconcileVisionMoreSelection(sectionIDs: ids)
         }
+        .onChange(of: state.selectedSectionID) { _, _ in state.reconcileVisionMoreSelection(sectionIDs: sections.map(\.id)) }
         #endif
-        #if os(iOS)
-        .tabViewSearchActivation(.searchTabSelection)
-        .onChange(of: search.text) { _, _ in search.updateQuery() }
-        #endif
-        .onChange(of: state.selectedSectionID) { _, id in
-            #if os(visionOS)
-                state.reconcileVisionMoreSelection(sectionIDs: sections.map(\.id))
-            #endif
-            if id == RootNavigationState.searchID {
-                state.searchState(for: id).isPresented = true
-            }
-        }
     }
 }
 
@@ -224,9 +240,11 @@ private struct SplitRootView: View {
         NavigationSplitView {
             List(selection: Binding<String?>(get: { state.selectedSectionID }, set: {
                 if let id = $0 {
-                    state.selectedSectionID = id
+                    state.selectSection(id)
                 }
             })) {
+                Label("Search", systemImage: "magnifyingglass").tag(RootNavigationState.searchID)
+                    .accessibilityIdentifier("Navigation.search")
                 ForEach(sections) { section in Label(section.title, systemImage: section.systemImage).tag(section.id) }
             }
             .navigationTitle("Gus")
@@ -252,7 +270,7 @@ private struct SplitRootView: View {
             NavigationSplitView(columnVisibility: Bindable(state).sidebarVisibility) {
                 List(selection: Binding<String?>(get: { state.selectedSectionID }, set: {
                     if let id = $0 {
-                        state.selectedSectionID = id
+                        state.selectSection(id)
                     }
                 })) {
                     Label("Search", systemImage: "magnifyingglass")
@@ -305,9 +323,6 @@ private struct SplitRootView: View {
 #endif
 
 private struct SectionStack: View {
-    #if os(iOS)
-        @Environment(\.horizontalSizeClass) private var widthClass
-    #endif
     @Environment(RootNavigationState.self) private var state
     @Environment(AudioPlaybackCoordinator.self) private var audio
     @Environment(SessionStore.self) private var session
@@ -324,21 +339,7 @@ private struct SectionStack: View {
         NavigationStack(path: state.pathBinding(for: sectionID)) {
             Group {
                 if sectionID == RootNavigationState.searchID {
-                    #if os(iOS)
-                        if widthClass == .compact {
-                            GlobalSearchContent(state: state.searchState(for: sectionID))
-                                .navigationTitle("Search")
-                        } else {
-                            standaloneSearch
-                        }
-                    #else
-                        standaloneSearch
-                    #endif
-                } else if sectionID == "gus.tv.search" {
-                    SearchRootView(state: state.searchState(for: sectionID)) {
-                        ContentUnavailableView("Search Library", systemImage: "magnifyingglass")
-                    }
-                    .navigationTitle("Search")
+                    GlobalSearchContent()
                 } else if sectionID == RootNavigationState.moreID {
                     List(overflow.isEmpty ? sections : overflow) { section in
                         Button { state.selectedSectionID = section.id } label: { Label(section.title, systemImage: section.systemImage) }
@@ -350,21 +351,7 @@ private struct SectionStack: View {
                     } else if section.id == NavigationSectionPreference.discoverID {
                         DiscoverView()
                     } else {
-                        #if os(iOS)
-                            if widthClass == .compact || DeviceIdentity.usesIPadPresentation {
-                                RootSectionDestination(section: section, home: home)
-                            } else {
-                                SearchRootView(state: state.searchState(for: section.id)) {
-                                    RootSectionDestination(section: section, home: home)
-                                }
-                            }
-                        #elseif os(tvOS)
-                            RootSectionDestination(section: section, home: home)
-                        #else
-                            SearchRootView(state: state.searchState(for: section.id)) {
-                                RootSectionDestination(section: section, home: home)
-                            }
-                        #endif
+                        RootSectionDestination(section: section, home: home)
                     }
                 } else {
                     HomeView(store: home)
@@ -373,7 +360,7 @@ private struct SectionStack: View {
             .gusItemDestinations()
             .toolbar {
                 #if os(iOS)
-                    if sectionID == RootNavigationState.searchID, DeviceIdentity.usesIPadPresentation {
+                    if sectionID == RootNavigationState.searchID, state.globalSearch.related == nil, DeviceIdentity.usesIPadPresentation {
                         ToolbarItem(placement: .primaryAction) {
                             let search = state.searchState(for: sectionID)
                             Button {
@@ -401,13 +388,6 @@ private struct SectionStack: View {
         .gusNowPlaying(coordinator: audio, enabled: state.detailItem == nil)
         #endif
     }
-
-    private var standaloneSearch: some View {
-        SearchRootView(state: state.searchState(for: sectionID)) {
-            ContentUnavailableView("Search Library", systemImage: "magnifyingglass")
-        }
-        .navigationTitle("Search")
-    }
 }
 
 private struct RootSectionDestination: View {
@@ -432,13 +412,5 @@ private struct RootSectionDestination: View {
         } else {
             LibrariesLandingView(store: home)
         }
-    }
-}
-
-/// The native tab container owns the search field; this destination owns only its results.
-private struct GlobalSearchContent: View {
-    let state: SectionSearchState
-    var body: some View {
-        OwnedSearchResults(state: state).id(ObjectIdentifier(state))
     }
 }

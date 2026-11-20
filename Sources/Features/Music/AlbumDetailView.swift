@@ -27,13 +27,7 @@ struct AlbumDetailView: View {
             retryAction: { Task { await loadTracks() } },
             preservesContent: true
         ) {
-            ScrollView {
-                albumContent
-                    .gusPhonePagePadding()
-                    .frame(maxWidth: PageContentMetrics.maxWidth, alignment: .leading)
-                    .frame(maxWidth: .infinity)
-            }
-            .lookToScroll()
+            ArtworkDetailPage { albumHeader } sections: { trackList }
         }
         .refreshable { await loadTracks() }
         .navigationTitle(album.displayTitle)
@@ -44,25 +38,22 @@ struct AlbumDetailView: View {
         }
     }
 
-    private var albumContent: some View {
-        VStack(alignment: .leading, spacing: 24) {
-            DetailCoverHeader {
-                albumArtwork
-            } summary: {
-                Text(album.displayTitle).font(.largeTitle.bold()).accessibilityAddTraits(.isHeader)
-                if let artist = album.albumArtist ?? album.artists.first {
-                    Text(artist).font(.title3)
-                }
-                if let year = album.productionYear {
-                    Text(String(year)).font(.subheadline).foregroundStyle(.secondary)
-                }
-                Text(trackCount).font(.subheadline).foregroundStyle(.secondary)
-                albumActions
-                if let overview = album.overview {
-                    DetailSynopsis(title: album.displayTitle, overview: overview)
-                }
+    private var albumHeader: some View {
+        DetailCoverHeader(maximumCoverWidth: artworkWidth) {
+            albumArtwork
+        } summary: {
+            Text(album.displayTitle).font(.largeTitle.bold()).accessibilityAddTraits(.isHeader)
+            if let artist = album.albumArtist ?? album.artists.first {
+                Text(artist).font(.title3)
             }
-            trackList
+            if let year = album.productionYear {
+                Text(String(year)).font(.subheadline).foregroundStyle(.secondary)
+            }
+            Text(trackCount).font(.subheadline).foregroundStyle(.secondary)
+            albumActions
+            if let overview = album.overview {
+                DetailSynopsis(title: album.displayTitle, overview: overview)
+            }
         }
     }
 
@@ -88,12 +79,12 @@ struct AlbumDetailView: View {
                 ArtworkTile(url: session.mediaProvider.primaryImageURL(for: album, context: .posterGrid), aspectRatio: 1, contentMode: .fit, placeholderSymbol: "music.note", fallbackURLs: session.mediaProvider.artworkURLs(for: album, request: .init(role: .square, maxWidth: 360)))
             }
         }
-        .frame(maxWidth: artworkWidth)
+
         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 
     private var albumActions: some View {
-        VStack(spacing: 12) {
+        VStack(alignment: .leading, spacing: 12) {
             DetailPrimaryButton("Play", systemImage: "play.fill") { play(startingAt: 0) }
             DetailActionRow {
                 ItemUserActionButton(title: "Shuffle", systemImage: "shuffle") { play(startingAt: 0, shuffled: true) }
@@ -244,41 +235,34 @@ struct ArtistAlbumsView: View {
             emptySymbol: "music.note.list",
             retryAction: { Task { await loadAlbums() } }
         ) {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 24) {
-                    DetailCoverHeader {
-                        let urls = session.mediaProvider.artworkURLs(for: artist, request: .init(role: .square, maxWidth: 640))
-                        ArtworkTile(url: urls.first, aspectRatio: 1, contentMode: .fit, placeholderSymbol: "music.mic", fallbackURLs: Array(urls.dropFirst()))
-                            .frame(maxWidth: 240)
-                    } summary: {
-                        Text(artist.displayTitle).font(.largeTitle.bold()).accessibilityAddTraits(.isHeader)
-                        if let overview = artist.overview {
-                            DetailSynopsis(title: artist.displayTitle, overview: overview)
-                        }
-                    }
-                    LazyVGrid(columns: PosterGrid.columns, alignment: .leading, spacing: PosterGrid.spacing) {
-                        ForEach(albums, id: \.id) { albumItem in
-                            NavigationLink(value: ItemRef(item: albumItem)) {
-                                PosterCard(
-                                    title: albumItem.displayTitle,
-                                    subtitle: albumItem.productionYear.map(String.init),
-                                    statusItem: albumItem,
-                                    imageURL: session.mediaProvider.primaryImageURL(for: albumItem, context: .posterGrid),
-                                    aspectRatio: 1,
-                                    placeholderSymbol: "music.note",
-                                    fallbackURLs: session.mediaProvider.artworkURLs(for: albumItem, request: .init(role: .square, maxWidth: 360))
-                                )
-                            }
-                            .posterNavigationStyle()
-                        }
+            ArtworkDetailPage {
+                DetailCoverHeader {
+                    let urls = session.mediaProvider.artworkURLs(for: artist, request: .init(role: .square, maxWidth: 640))
+                    ArtworkTile(url: urls.first, aspectRatio: 1, contentMode: .fit, placeholderSymbol: "music.mic", fallbackURLs: Array(urls.dropFirst()))
+                } summary: {
+                    Text(artist.displayTitle).font(.largeTitle.bold()).accessibilityAddTraits(.isHeader)
+                    if let overview = artist.overview {
+                        DetailSynopsis(title: artist.displayTitle, overview: overview)
                     }
                 }
-                .padding()
-                .frame(maxWidth: PageContentMetrics.maxWidth, alignment: .leading)
-                .frame(maxWidth: .infinity)
-                .tvFocusSection()
+            } sections: {
+                LazyVGrid(columns: PosterGrid.columns, alignment: .leading, spacing: PosterGrid.spacing) {
+                    ForEach(albums, id: \.id) { albumItem in
+                        NavigationLink(value: ItemRef(item: albumItem)) {
+                            PosterCard(
+                                title: albumItem.displayTitle,
+                                subtitle: albumItem.productionYear.map(String.init),
+                                statusItem: albumItem,
+                                imageURL: session.mediaProvider.primaryImageURL(for: albumItem, context: .posterGrid),
+                                aspectRatio: 1,
+                                placeholderSymbol: "music.note",
+                                fallbackURLs: session.mediaProvider.artworkURLs(for: albumItem, request: .init(role: .square, maxWidth: 360))
+                            )
+                        }
+                        .posterNavigationStyle()
+                    }
+                }.tvFocusSection()
             }
-            .lookToScroll()
         }
         .navigationTitle(artist.displayTitle)
         .toolbarTitleDisplayMode(.inline)

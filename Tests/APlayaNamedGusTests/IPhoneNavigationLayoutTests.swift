@@ -67,15 +67,15 @@ struct IPhoneNavigationLayoutTests {
             let ids = (0 ..< sectionCount).map { "section-\($0)" }
             let direct = RootNavigationState.visionDirectSectionIDs(ids)
             let overflow = ids.filter { !direct.contains($0) }
-            let renderedTabCount = direct.count + (overflow.isEmpty ? 0 : 1)
+            let renderedTabCount = 1 + direct.count + (overflow.isEmpty ? 0 : 1)
             let reachable = direct + overflow
             #expect(renderedTabCount <= 8)
             #expect(reachable == ids)
-            if sectionCount <= 8 {
+            if sectionCount <= 7 {
                 #expect(direct == ids)
                 #expect(overflow.isEmpty)
             } else {
-                #expect(direct.count == 7)
+                #expect(direct.count == 6)
                 #expect(!overflow.isEmpty)
             }
         }
@@ -85,8 +85,8 @@ struct IPhoneNavigationLayoutTests {
             let ids = ["home", "settings", "category.books", "downloaded", "category.photos", "libraries", "category.music", "playlists", "discover", "category.movies"]
             let direct = RootNavigationState.visionDirectSectionIDs(ids)
             let overflow = ids.filter { !direct.contains($0) }
-            #expect(direct == ["home", "settings", "category.books", "downloaded", "category.photos", "libraries", "category.music"])
-            #expect(overflow == ["playlists", "discover", "category.movies"])
+            #expect(direct == ["home", "settings", "category.books", "downloaded", "category.photos", "libraries"])
+            #expect(overflow == ["category.music", "playlists", "discover", "category.movies"])
         }
 
         @Test("Vision overflow routes preserve real section selection and history")
@@ -128,7 +128,7 @@ struct IPhoneNavigationLayoutTests {
             path.append(AppScreen.navigationSettings)
             state.paths["settings"] = path
             state.scrollAnchors["settings"] = "navigation"
-            for count in [0, 7, 8] {
+            for count in [0, 6, 7] {
                 let sections = Array(ids.prefix(count))
                 state.selectedSectionID = RootNavigationState.moreID
                 state.reconcileVisionMoreSelection(sectionIDs: sections)
@@ -141,10 +141,97 @@ struct IPhoneNavigationLayoutTests {
             #expect(state.selectedSectionID == "settings")
             // Persisted selection can arrive after the sections are already resolved.
             state.selectedSectionID = RootNavigationState.moreID
-            state.reconcileVisionMoreSelection(sectionIDs: ids)
+            state.reconcileVisionMoreSelection(sectionIDs: Array(ids.prefix(7)))
             #expect(state.selectedSectionID == "settings")
             #expect(state.paths["settings"]?.count == 1)
             #expect(state.scrollAnchors["settings"] == "navigation")
         }
     }
 #endif
+
+@MainActor
+@Suite("Related search navigation")
+struct RelatedSearchNavigationTests {
+    private let horror = RelatedSearch(kind: .genre, id: "genre-id", name: "Horror")
+    private let movie = ItemRef(item: MediaItem(id: "movie", name: "The Lantern House", type: .movie))
+
+    @Test func returningToDetailKeepsTheResultUntilClose() {
+        let root = RootNavigationState()
+        let origin = root.selectedSectionID
+        root.paths[origin, default: NavigationPath()].append(movie)
+        root.scrollAnchors["detail:movie"] = "metadata"
+        root.openRelatedSearch(horror)
+        let kept = root.globalSearch
+        #expect(kept.related?.resolved == horror)
+        #expect(root.selectedSectionID == RootNavigationState.searchID)
+        root.selectSection("libraries")
+        root.selectSection(RootNavigationState.searchID)
+        #expect(root.hasSearchReturn)
+        root.paths[origin] = NavigationPath()
+        root.scrollAnchors["detail:movie"] = nil
+        root.backToSearchDetail()
+        #expect(root.selectedSectionID == origin)
+        #expect(root.paths[origin]?.count == 1)
+        #expect(root.scrollAnchors["detail:movie"] == "metadata")
+        #expect(!root.hasSearchReturn)
+        root.selectSection(RootNavigationState.searchID)
+        #expect(root.globalSearch === kept)
+        root.closeSearchResults()
+        #expect(root.globalSearch.related == nil)
+        #expect(root.globalSearch.typed.text.isEmpty)
+        #expect(root.keptSearch == nil)
+    }
+
+    @Test func backToSearchOriginRestoresItsStackAndLaterReopensResults() {
+        let root = RootNavigationState()
+        root.selectSection(RootNavigationState.searchID)
+        root.editSearchText("Lantern")
+        root.paths[RootNavigationState.searchID, default: NavigationPath()].append(movie)
+        let original = root.globalSearch
+        root.openRelatedSearch(horror)
+        let filtered = root.globalSearch
+        root.backToSearchDetail()
+        #expect(root.globalSearch === original)
+        #expect(root.globalSearch.typed.text == "Lantern")
+        #expect(root.paths[RootNavigationState.searchID]?.count == 1)
+        root.selectSection("home")
+        root.selectSection(RootNavigationState.searchID)
+        #expect(root.globalSearch === filtered)
+        #expect(root.paths[RootNavigationState.searchID]?.isEmpty == true)
+    }
+
+    @Test func backRestoresSheetAndNestedDetailAndNewQueryReplacesReturn() {
+        let root = RootNavigationState()
+        root.detailItem = movie
+        root.sheetPath.append(movie)
+        root.openRelatedSearch(horror)
+        #expect(root.detailItem == nil)
+        root.backToSearchDetail()
+        #expect(root.detailItem == movie)
+        #expect(root.sheetPath.count == 1)
+        root.openRelatedSearch(horror)
+        root.editSearchText("Comedy")
+        #expect(!root.hasSearchReturn)
+        #expect(root.globalSearch.related == nil)
+        #expect(root.globalSearch.typed.text == "Comedy")
+    }
+
+    @Test func nestedFiltersKeepEachDetailsBackDestination() {
+        let root = RootNavigationState()
+        let origin = root.selectedSectionID
+        root.detailItem = movie
+        root.openRelatedSearch(horror)
+        let genreResults = root.globalSearch
+        root.paths[RootNavigationState.searchID, default: NavigationPath()].append(movie)
+        root.openRelatedSearch(RelatedSearch(kind: .person, id: "actor", name: "Mara Lake"))
+
+        root.backToSearchDetail()
+        #expect(root.globalSearch === genreResults)
+        #expect(root.paths[RootNavigationState.searchID]?.count == 1)
+        root.paths[RootNavigationState.searchID]?.removeLast()
+        #expect(root.hasSearchReturn)
+        root.backToSearchDetail()
+        #expect(root.selectedSectionID == origin)
+        #expect(root.detailItem == movie)
+    }
+}

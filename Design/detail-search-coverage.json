@@ -1,0 +1,145 @@
+{
+  "schemaVersion": 1,
+  "scope": "Editable local Sketch document and frame identities. Light and Dark are distinct frames.",
+  "devices": {
+    "iPhone": {
+      "documentID": "CC9F9102-81AA-4A0B-8C51-3EEFF66D287C",
+      "pages": {
+        "Detail and Global Search": {
+          "pageID": "CC50D1CF-519A-4F94-B9FA-88A2BD982CDC",
+          "frames": {
+            "Recent Searches / Light": "DFB7EB0B-C1CC-4C25-B104-D86B375A32B7",
+            "Recent Searches / Dark": "9A14FD33-56DE-46DC-8A33-16B5E86D30CF",
+            "Related Results / Light": "9324A587-BB58-4BA2-A876-D29ABE0E8887",
+            "Related Results / Dark": "5CC93447-01C5-48AF-AA02-6B3EF88A1BFD",
+            "Remove from History / Light": "6822DD56-EBD1-4E38-80E1-58B2F4A4519C",
+            "Remove from History / Dark": "DB13C6C7-C22E-44EB-81CE-40C3646A0824",
+            "Clear Search History / Light": "03AB62DD-64A5-4D18-B0B6-A03DE8C48330",
+            "Clear Search History / Dark": "AE6D3AA0-4B8B-4675-B42A-59ED26AF8B8A",
+            "Detail Sections / Light": "A6576044-61EA-4A39-BE46-7380FB4679E2",
+            "Detail Sections / Dark": "27983FED-F883-46FE-8008-0E5C40D367D1",
+            "Movie Detail / Light": "87CF1A0B-04C4-4317-B762-132EE26A9859",
+            "Movie Detail / Dark": "32D7C838-12F4-4697-8132-9C69043EC99F",
+            "Book Detail / Light": "02EE712B-5DC0-4B89-8529-7D824153D040",
+            "Book Detail / Dark": "E7B68038-E48C-4490-AB1E-84B691B7AFED",
+            "Album Detail / Light": "2ABC33D8-BCF8-409B-B6E5-618730FAD985",
+            "Album Detail / Dark": "DDD45FFA-75EA-403C-96CA-6225E5B00ADB"
+          }
+        }
+      }
+    },
+    "iPadOS": {
+      "documentID": "F7BA4DCD-BA4C-4B37-9DBF-929D41CF4649",
+      "pages": {
+        "Detail and Global Search": {
+          "pageID": "2FB92064-1848-4117-82CE-18EEB8B5AC3C",
+          "frames": {
+            "Recent Searches / Light": "72760F71-656A-477D-AF1E-752BE8641200",
+            "Recent Searches / Dark": "2B7629C7-1A41-4EEB-866F-145F93E99D0D",
+            "Related Results / Light": "5256BA1D-7288-478E-A9D7-48237168ABE2",
+            "Related Results / Dark": "0295EE61-F831-4591-9D49-D69807182C89",
+            "Remove from History / Light": "00D7D815-6A83-401A-8D49-73563C9F6F1B",
+            "Remove from History / Dark": "B0E202DA-747E-43ED-AB15-4B0E6D378785",
+            "Clear Search History / Light": "2A480421-1D2D-4535-B7A1-F846BA2AF072",
+            "Clear Search History / Dark": "E937C402-389F-41C8-AAB5-7A81E976CC66",
+            "Detail Sections / Light": "607D3D4A-A834-40F7-ADE5-75570B8370E5",
+            "Detail Sections / Dark": "A6C32753-8658-495B-91C9-042698ED16D6",
+            "Movie Detail / Light": "CABDEA32-6C5F-460D-BE72-4CBDC2A2D9FB",
+            "Movie Detail / Dark": "FD1B04F5-3C73-4BF7-947D-9D5E8DC34516",
+            "Book Detail / Light": "4D616293-B4FA-4D78-939B-0005797345E6",
+            "Book Detail / Dark": "6A8E918A-0DFF-440E-884F-C09C68938503",
+            "Album Detail / Light": "088BDF61-6F3C-4EE3-A472-7651A197C2F7",
+            "Album Detail / Dark": "9241666D-F3F6-459E-A65E-AF88A5A3C56F"
+          }
+        },
+        "Compact Global Search": {
+          "pageID": "47DA2D50-0174-4DEC-980B-CA513019A195",
+          "frames": {
+            "Recent Searches / Light": "1D063B61-68D2-415F-996E-0688B195D297",
+            "Recent Searches / Dark": "4B45A795-76FE-490D-AC2F-9927C4680A8E",
+            "Related Results / Light": "086CDD33-2605-4293-81B7-4B6EA81F39B3",
+            "Related Results / Dark": "9FCF79C8-1AF7-401C-B7D8-825297E480FE"
+          }
+        }
+      }
+    },
+    "macOS": {
+      "documentID": "3E0012FE-7C37-4214-8BA5-781AE336440D",
+      "pages": {
+        "Detail and Global Search": {
+          "pageID": "4BAA9731-08D3-4EE3-A768-A9C1BCA05654",
+          "frames": {
+            "Recent Searches / Light": "CC06AFC5-11C8-42EB-B993-84BCBA0E2865",
+            "Recent Searches / Dark": "7AB47D25-F2C7-4715-9719-2C6A44F21AB0",
+            "Related Results / Light": "9CFD6DF9-6B84-425F-BDFE-4D53A1A907BE",
+            "Related Results / Dark": "8B85454B-0983-4434-B119-063945C13253",
+            "Remove from History / Light": "1CDD7393-05C7-426D-A810-2DC3B263B18E",
+            "Remove from History / Dark": "04E2F2DD-458D-49B4-80A6-257EE7E052C9",
+            "Clear Search History / Light": "B25FEA57-310E-4F6E-BEE1-FE252AC501CF",
+            "Clear Search History / Dark": "2E9DF9B0-E70B-4997-B1B2-039399BC3C57",
+            "Detail Sections / Light": "F2F7B027-7A44-4AA3-9B59-60D734334182",
+            "Detail Sections / Dark": "C2FDA173-D183-4924-9FDD-3EF5E66477B3",
+            "Movie Detail / Light": "CC0C505A-9B67-4604-9664-1BB9B523A739",
+            "Movie Detail / Dark": "DBAB2BBC-4684-41AD-B071-B3003B3F32B5",
+            "Book Detail / Light": "85E370B7-91DE-4CA5-BDB2-C4246E803C25",
+            "Book Detail / Dark": "8DE2374E-4039-4636-832C-7AA6BE441A35",
+            "Album Detail / Light": "9B7FB046-A5A1-47DF-966D-33E11E783E86",
+            "Album Detail / Dark": "4520FD95-AF5A-48B7-8450-0A466461A5ED"
+          }
+        }
+      }
+    },
+    "tvOS": {
+      "documentID": "A61D3915-F67C-4B15-8B33-E07A1AF6B0F0",
+      "pages": {
+        "Detail and Global Search": {
+          "pageID": "5BA88AD5-7F19-4624-9DE5-989469B5AAF7",
+          "frames": {
+            "Recent Searches / Light": "D8F36CF0-E853-423D-AE7D-2D2A5415F045",
+            "Recent Searches / Dark": "3F12E5F7-4728-4381-8477-CFB3477BF71F",
+            "Related Results / Light": "E7331739-6111-4782-8B75-54BF0CE18E57",
+            "Related Results / Dark": "154FC10C-619F-4645-9D6E-08692C4543DB",
+            "Remove from History / Light": "27A2E569-BB75-4E00-A9BB-49604383FF6B",
+            "Remove from History / Dark": "8C7DEA6D-A1B8-4563-86D4-C9E28DFFC8CF",
+            "Clear Search History / Light": "6BD48646-6788-4B57-AC5D-A6B195A7FF89",
+            "Clear Search History / Dark": "928BE0AE-0F0A-4F0C-AA08-2608B962F502",
+            "Detail Sections / Light": "711393DD-BFDB-4BC5-B197-16A2D2B99B46",
+            "Detail Sections / Dark": "E9C6B486-D673-499B-85AD-2384C750832E",
+            "Movie Detail / Light": "FC3B2C23-6F5C-4699-A2F2-01C4DE3539A5",
+            "Movie Detail / Dark": "DC1E25C3-6AD1-401E-83B7-A74E081E09AC",
+            "Book Detail / Light": "86E56A33-BFA9-4553-877D-67E19AEAAF23",
+            "Book Detail / Dark": "5A3FE694-1DE3-4BFB-AAEF-2A6029B5BA29",
+            "Album Detail / Light": "01276064-3CCA-47A0-810A-EB8D876D6690",
+            "Album Detail / Dark": "405FF2D1-EA79-4984-98FC-AE60C8F46672"
+          }
+        }
+      }
+    },
+    "visionOS": {
+      "documentID": "512CF582-9480-4E1D-85DC-A2C8037876BE",
+      "pages": {
+        "Detail and Global Search": {
+          "pageID": "4D494072-4E03-49F5-8AAF-E67ED872710C",
+          "frames": {
+            "Recent Searches / Light": "7B7BE9DD-5269-4093-9B17-3AD4043878A8",
+            "Recent Searches / Dark": "738FA591-64CD-4C11-A79E-C811FB5518C8",
+            "Related Results / Light": "1DF47E29-7758-4277-AE60-B47EC8D7B436",
+            "Related Results / Dark": "4AA19257-FF84-4808-B81A-C777E20F192F",
+            "Remove from History / Light": "7500311D-4870-4AF0-A899-78F443F9166D",
+            "Remove from History / Dark": "EB4B491D-A37A-48C4-B99C-33AAC38AD9DF",
+            "Clear Search History / Light": "ADA3537C-CD92-4920-8EC0-297B1BC4BBBB",
+            "Clear Search History / Dark": "E8453BF0-8252-4A77-8BF7-6B77A11A1901",
+            "Detail Sections / Light": "EA116A35-F8D9-4BDD-928C-B43D4FF3DAB2",
+            "Detail Sections / Dark": "49A35489-8CB5-4A8B-8622-5014C912224E",
+            "Movie Detail / Light": "9B58E1F8-6A54-4956-A3B5-0BA6A6F5B0FB",
+            "Movie Detail / Dark": "A692F2FD-5CDA-4905-BFD5-02DF1405A02C",
+            "Book Detail / Light": "8E66E5CB-B230-49B0-9BA8-190BF7DE811C",
+            "Book Detail / Dark": "7A992639-5698-4D27-A61B-CA26614DA504",
+            "Album Detail / Light": "BAE414F9-C65A-43F0-90CC-3360980421D2",
+            "Album Detail / Dark": "B64125B4-AFEC-4C03-8532-3E358AE8A123"
+          }
+        }
+      }
+    }
+  }
+}

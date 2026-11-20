@@ -367,3 +367,26 @@ extension MediaItem {
         type == .book || type == .audioBook
     }
 }
+
+extension MediaItem {
+    var genreSearchTargets: [RelatedSearch] {
+        let byName = Dictionary(grouping: genreItems) { RelatedSearch.normalizedName($0.name ?? "") }
+        let targets = genres.map { name in
+            let matches = byName[RelatedSearch.normalizedName(name)] ?? []
+            let ids = Set(matches.compactMap(\.id))
+            return RelatedSearch(kind: .genre, id: ids.count == 1 ? ids.first : nil, name: name)
+        }
+        return uniqueRelatedTargets(targets)
+    }
+
+    var studioSearchTargets: [RelatedSearch] {
+        uniqueRelatedTargets(studios.compactMap { studio in
+            studio.name.map { RelatedSearch(kind: .studio, id: studio.id, name: $0) }
+        })
+    }
+
+    private func uniqueRelatedTargets(_ targets: [RelatedSearch]) -> [RelatedSearch] {
+        var seen = Set<String>()
+        return targets.filter { !$0.name.isEmpty && seen.insert($0.identityKey).inserted }
+    }
+}

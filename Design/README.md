@@ -13,8 +13,8 @@ both appearances live in `Gus-Shared-Library.sketch`.
   coverage are reviewed separately from these design studies.
 - `Gus-iPadOS.sketch`: 95 Screens and 62 States in each appearance. Light/Dark
   partners are adjacent in a compact canvas grid; their internal layouts match.
-- `Gus-macOS.sketch` is a new local detail reference. Its eight editable frames
-  show a backdrop movie and a full book cover in 1040- and 500-point windows,
+- `Gus-macOS.sketch` is a local detail and search reference. The eight frames
+  on Screens show a backdrop movie and a full book cover in 1040- and 500-point windows,
   each in Light and Dark. The controls link to the Apple macOS 27 UI Kit and
   the movie artwork links to the Gus shared library. The book cover has an
   editable local source on the Artwork page. Native Mac visual acceptance is pending.
@@ -31,8 +31,29 @@ both appearances live in `Gus-Shared-Library.sketch`.
   Cinema, Live TV, expanded playback, resizing and physical-device acceptance
   need separate validation.
 
-`appearance-coverage.json` maps the iPad appearance partners by persistent layer
-ID. Screens, States, and Components remain the document's three pages.
+`appearance-coverage.json` maps the original iPad Screens and States by persistent
+layer ID. Components holds their reusable sources.
+
+## Detail and global search
+
+Each device document contains a **Detail and Global Search** page with eight
+editable studies in Light and Dark. Movie Detail places the backdrop behind the
+navigation controls. Book and Album Detail retain the whole cover. The primary
+action and each secondary row share a leading edge. Detail Sections places
+Genres, Studios, and Cast & Crew above About and the final Recommended section.
+
+Recent Searches shows typed searches and related genre, studio, and person
+entries. The app retains the latest 20 entries per account. Remove from History
+shows an individual row's menu. Clear Search History shows the confirmation.
+Related Results displays the selected name and type with separate Back to Detail
+and Close Results actions. iPhone uses a Search tab, wide iPad and Mac use a
+sidebar, and Apple TV and Vision Pro use their platform tab layouts. The iPad
+**Compact Global Search** page pairs Recent Searches and Related Results in
+500-point Light and Dark windows with a Search tab.
+
+[Detail and search frame IDs](detail-search-coverage.json) identifies these
+local design references. The named Sketch exports are visual studies. Use
+runtime captures to check paging, focus restoration, and account isolation.
 
 ## Appearance maintenance
 

@@ -49,7 +49,6 @@ extension View {
             }
             .padding(.horizontal, 80)
             .padding(.top, 64)
-            .padding(.bottom, 64)
             .frame(maxWidth: .infinity, minHeight: 940, alignment: .bottomLeading)
             .background {
                 GeometryReader { geometry in

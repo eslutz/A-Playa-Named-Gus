@@ -32,7 +32,7 @@ struct RootView: View {
 
     @ViewBuilder private var content: some View {
         if let session = appModel.currentSession {
-            RootContainer()
+            RootContainer(searchHistory: session.searchHistory)
                 .task(id: videoPlaylists.revision) {
                     upNext.reconcileSyncedIntents(scope: session.references.scope)
                     NextUpActivityStore.shared.reconcile(scope: session.references.scope)

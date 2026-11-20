@@ -240,6 +240,10 @@ automated build verification. (Covers priority: *polish & testing*.)
   results with a no-results state. *(Done: `SearchStore` drives debounced, cancellable,
   paginated `getItems` search; iOS/iPadOS/macOS/visionOS use `.searchable`, and tvOS has a
   Search tab.)*
+- [x] **Related searches and history.** Genre, studio, and person controls open the
+  account-filtered Search grid. Back restores the originating detail. Search keeps the
+  results until closed or replaced. Each account keeps its latest 20 completed typed
+  and related searches locally, with individual removal and confirmed clearing.
 - [x] **Series → seasons → episodes.** Detail hierarchy for shows (`getItems` by
   parent/`getSeasons`/`getEpisodes`) with season picker and episode list. *Acceptance:*
   can navigate Series → Season → Episode → Play. *(Done: series details load seasons and
@@ -692,9 +696,9 @@ milestone once it becomes the active focus and is ready to carry a hard acceptan
  including tvOS focus; all three roots (tabs, visionOS sidebar, split view) render the
  customized sections dynamically. Visibility follows available library types unless the
  user explicitly shows or hides a category. Saved order controls the first three
- direct iPhone tabs. visionOS keeps
- up to eight sections direct; above eight it shows the first seven in resolved order
- plus More, retaining each section's navigation history. Removing overflow returns a
+ direct iPhone tabs. visionOS reserves a tab for Search. Up to seven content sections
+ appear directly. Larger configurations show six plus More, retaining each section's
+ navigation history. Removing overflow returns a
  selected More root to the first direct section.)*
 
 - [x] **Content deep links & system integration.** Deep-link individual library items and

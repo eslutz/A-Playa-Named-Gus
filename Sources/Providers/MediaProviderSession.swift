@@ -11,6 +11,12 @@ struct MediaItemQuery: Sendable {
     /// Restricts results to albums by this artist (provider-mapped, e.g. Jellyfin `artistIds`).
     var artistID: String?
     var genreID: String?
+    var studioID: String?
+    var personID: String?
+    var hasRelatedFilter: Bool {
+        genreID != nil || studioID != nil || personID != nil
+    }
+
     /// Restricts results to these item types (provider-mapped, e.g. Jellyfin `includeItemTypes`).
     var includeTypes: [MediaItemType]?
     var startIndex: Int
@@ -26,6 +32,8 @@ struct MediaItemQuery: Sendable {
         searchTerm: String? = nil,
         artistID: String? = nil,
         genreID: String? = nil,
+        studioID: String? = nil,
+        personID: String? = nil,
         includeTypes: [MediaItemType]? = nil,
         startIndex: Int,
         limit: Int,
@@ -37,6 +45,8 @@ struct MediaItemQuery: Sendable {
         self.searchTerm = searchTerm
         self.artistID = artistID
         self.genreID = genreID
+        self.studioID = studioID
+        self.personID = personID
         self.includeTypes = includeTypes
         self.startIndex = startIndex
         self.limit = limit
@@ -114,6 +124,7 @@ protocol MediaProviderSession: AnyObject, Sendable {
     func nextUpItemsPage(startIndex: Int, limit: Int) async throws -> MediaItemPage
     func latestMedia(in library: MediaItem, limit: Int) async throws -> [MediaItem]
     func items(query: MediaItemQuery) async throws -> MediaItemPage
+    func resolveRelatedSearch(_ target: RelatedSearch) async throws -> RelatedSearch?
     func item(id: String) async throws -> MediaItem
     func similarItems(itemID: String, limit: Int) async throws -> [MediaItem]
     func specialFeatures(itemID: String) async throws -> [MediaItem]
@@ -209,6 +220,10 @@ protocol MediaProviderSession: AnyObject, Sendable {
 }
 
 extension MediaProviderSession {
+    func resolveRelatedSearch(_ target: RelatedSearch) async throws -> RelatedSearch? {
+        target.id == nil ? nil : target
+    }
+
     func canEditMediaListMetadata(_ list: EditableMediaList) async throws -> Bool {
         false
     }

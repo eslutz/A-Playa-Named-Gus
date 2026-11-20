@@ -28,41 +28,134 @@ struct UILayoutMetricsTests {
             let play = try #require(sizes.first)
             #expect(play.width == DetailActionMetrics.maximumRowWidth)
             #expect(play.height >= 44)
-            #expect(sizes.allSatisfy { $0 == play })
+            for (index, size) in sizes.enumerated() {
+                #expect(size == play, "Primary action symbol: \(actions[index].1)")
+            }
         }
 
-        @MainActor
-        @Test("Rendered second-row gaps stay eight points wide", arguments: [2, 3, 5])
-        func secondaryActionGaps(count: Int) throws {
-            let width = 320
+        @Test("Foreground covers fit the available height without changing aspect ratio", arguments: [2.0 / 3.0, 1.0])
+        @MainActor func foregroundCoverFitsShortViewport(ratio: Double) throws {
+            let height = 220
+            let header = DetailCoverHeader {
+                Color.red.aspectRatio(ratio, contentMode: .fit)
+            } summary: {
+                Text("Title")
+            }
+            .frame(width: 700, height: CGFloat(height), alignment: .top)
+            .clipped()
+            .environment(\.detailArtworkViewportHeight, CGFloat(height))
+            let image = try #require(ImageRenderer(content: header).cgImage)
+            let colorSpace = try #require(CGColorSpace(name: CGColorSpace.sRGB))
+            let context = try #require(CGContext(
+                data: nil, width: image.width, height: image.height, bitsPerComponent: 8,
+                bytesPerRow: image.width * 4, space: colorSpace,
+                bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+            ))
+            context.draw(image, in: CGRect(x: 0, y: 0, width: image.width, height: image.height))
+            let pixels = try #require(context.data?.assumingMemoryBound(to: UInt8.self))
+            var horizontal = IndexSet()
+            var vertical = IndexSet()
+            for y in 0 ..< image.height {
+                for x in 0 ..< image.width {
+                    let index = (y * image.width + x) * 4
+                    if pixels[index] > 220, pixels[index + 1] < 100, pixels[index + 2] < 100 {
+                        horizontal.insert(x)
+                        vertical.insert(y)
+                    }
+                }
+            }
+            #expect(vertical.first == 24)
+            #expect(vertical.last == height - 1)
+            #expect(abs(vertical.count - (height - 24)) <= 1)
+            #expect(abs(Double(horizontal.count) - Double(vertical.count) * ratio) <= 1)
+        }
+
+        @Test("Backdrop art leaves system status text legible in either appearance", arguments: [false, true])
+        @MainActor func backdropStatusContrast(dark: Bool) throws {
+            let artwork: Color = dark ? .white : .black
+            let header = DetailBackdropHeader { artwork } summary: { EmptyView() }
+                .environment(\.colorScheme, dark ? .dark : .light)
+                .environment(\.detailArtworkTopInset, 76)
+                .frame(width: 320)
+                .background(artwork)
+            let image = try #require(ImageRenderer(content: header).cgImage)
+            let colorSpace = try #require(CGColorSpace(name: CGColorSpace.sRGB))
+            let context = try #require(CGContext(
+                data: nil, width: image.width, height: image.height, bitsPerComponent: 8,
+                bytesPerRow: image.width * 4, space: colorSpace,
+                bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+            ))
+            context.draw(image, in: CGRect(x: 0, y: 0, width: image.width, height: image.height))
+            let pixels = try #require(context.data?.assumingMemoryBound(to: UInt8.self))
+            func channel(y: Int) -> Double {
+                Double(pixels[(y * image.width + image.width / 2) * 4]) / 255
+            }
+            let value = channel(y: 30)
+            let luminance = value <= 0.04045 ? value / 12.92 : pow((value + 0.055) / 1.055, 2.4)
+            let contrast = dark ? 1.05 / (luminance + 0.05) : (luminance + 0.05) / 0.05
+            #expect(contrast >= 4.5)
+            #expect(channel(y: 115) == (dark ? 1 : 0))
+        }
+    #endif
+
+    @MainActor
+    @Test("Secondary controls start at the leading edge on every line", arguments: [2, 3, 5], [false, true])
+    func secondaryActionGaps(count: Int, rightToLeft: Bool) throws {
+        #if os(tvOS)
+            let gap = 24
+        #elseif os(visionOS)
+            let gap = 16
+        #else
+            let gap = 8
+        #endif
+        let step = 44 + gap
+        for width in [360, 120] {
             let row = DetailActionLayout {
                 ForEach(0 ..< count, id: \.self) { _ in
                     Color.black.frame(width: 44, height: 44)
                 }
             }
             .frame(width: CGFloat(width))
+            .environment(\.layoutDirection, rightToLeft ? .rightToLeft : .leftToRight)
             .background(.white)
             let image = try #require(ImageRenderer(content: row).cgImage)
             let context = try #require(CGContext(
-                data: nil,
-                width: width,
-                height: 44,
-                bitsPerComponent: 8,
-                bytesPerRow: width,
-                space: CGColorSpaceCreateDeviceGray(),
-                bitmapInfo: CGImageAlphaInfo.none.rawValue
+                data: nil, width: width, height: image.height, bitsPerComponent: 8, bytesPerRow: width,
+                space: CGColorSpaceCreateDeviceGray(), bitmapInfo: CGImageAlphaInfo.none.rawValue
             ))
-            context.draw(image, in: CGRect(x: 0, y: 0, width: CGFloat(width), height: 44))
+            context.draw(image, in: CGRect(x: 0, y: 0, width: width, height: image.height))
             let pixels = try #require(context.data?.assumingMemoryBound(to: UInt8.self))
-            let midline = (0 ..< width).map { pixels[22 * width + $0] < 128 }
-            let leading = (width - count * 44 - (count - 1) * 8) / 2
-            let expected = (0 ..< count).flatMap { index in
-                let x = leading + index * 52
-                return Array(x ..< x + 44)
+            let perLine = min(count, (width + gap) / step)
+            let lines = (count + perLine - 1) / perLine
+            #expect(image.height == lines * 44 + (lines - 1) * gap)
+            var measuredCount = 0
+            for y in stride(from: 22, to: image.height, by: step) {
+                let occupied = (0 ..< width).filter { leadingOffset in
+                    let x = rightToLeft ? width - 1 - leadingOffset : leadingOffset
+                    return pixels[y * width + x] < 128
+                }
+                let controls = occupied.count / 44
+                measuredCount += controls
+                #expect(controls > 0 && controls <= perLine)
+                #expect(occupied == (0 ..< controls).flatMap { index in Array(index * step ..< index * step + 44) })
             }
-            #expect(midline.indices.filter { midline[$0] } == expected)
+            #expect(measuredCount == count)
         }
-    #endif
+    }
+
+    @MainActor
+    @Test("Empty detail sections consume no inter-section space")
+    func visibleDetailSectionSpacing() throws {
+        let layout = DetailSectionLayout {
+            Color.clear.frame(height: 0)
+            Color.red.frame(height: 30)
+            VStack { EmptyView() }.frame(height: 0)
+            Color.blue.frame(height: 40)
+            Color.clear.frame(height: 0)
+        }
+        let image = try #require(ImageRenderer(content: layout.frame(width: 375)).cgImage)
+        #expect(image.height == 30 + Int(DetailPageMetrics.sectionSpacing) + 40)
+    }
 
     @Test("iOS and iPadOS media rails use the shared larger card sizing")
     func iOSMediaRailSizing() {

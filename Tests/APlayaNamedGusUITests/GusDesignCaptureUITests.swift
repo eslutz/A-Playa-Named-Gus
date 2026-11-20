@@ -369,6 +369,262 @@
             }
         }
 
+        func testRecentSearchesReplayRemoveAndClear() {
+            continueAfterFailure = false
+            let app = launch("search", environment: ["GUS_DEMO_URL": "http://127.0.0.1:5061"])
+            defer { app.terminate() }
+            let field = app.searchFields.firstMatch
+            XCTAssertTrue(field.waitForExistence(timeout: 30))
+            let clear = app.buttons["Search.clearRecent"].firstMatch
+            func clearAll() {
+                clear.tap()
+                let confirm = app.alerts.buttons["Clear Search History"].firstMatch
+                XCTAssertTrue(confirm.waitForExistence(timeout: 5))
+                confirm.tap()
+            }
+            if clear.exists {
+                clearAll()
+            }
+
+            let id = "47000000000000000000000000000001"
+            let result = app.buttons["Search.genre." + id].firstMatch
+            field.tap()
+            field.typeText("Hor")
+            XCTAssertTrue(result.waitForExistence(timeout: 15))
+            field.typeText("ror")
+            XCTAssertEqual(field.value as? String, "Horror")
+            dismissKeyboard(app)
+            result.tap()
+            XCTAssertTrue(app.navigationBars["Horror"].waitForExistence(timeout: 10))
+            app.navigationBars["Horror"].buttons.element(boundBy: 0).tap()
+            XCTAssertTrue(field.waitForExistence(timeout: 8))
+            let close = app.buttons["Search.closeResults"].firstMatch
+            XCTAssertTrue(close.waitForExistence(timeout: 8))
+            close.tap()
+
+            let typed = app.buttons["Search.recent.typed:horror"].firstMatch
+            let genre = app.buttons["Search.recent.related:genre:id:" + id].firstMatch
+            XCTAssertTrue(typed.waitForExistence(timeout: 8))
+            XCTAssertTrue(genre.exists)
+            XCTAssertFalse(app.buttons["Search.recent.typed:hor"].exists)
+            capture("recent-searches")
+            app.terminate()
+            app.launch()
+            XCTAssertTrue(typed.waitForExistence(timeout: 30))
+            typed.tap()
+            XCTAssertTrue(result.waitForExistence(timeout: 15))
+            XCTAssertEqual(field.value as? String, "Horror")
+            close.tap()
+            XCTAssertTrue(genre.waitForExistence(timeout: 8))
+            genre.tap()
+            let member = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "The Lantern House")).firstMatch
+            XCTAssertTrue(member.waitForExistence(timeout: 15))
+            close.tap()
+
+            XCTAssertTrue(typed.waitForExistence(timeout: 8))
+            typed.press(forDuration: 1.2)
+            let remove = app.buttons["Remove from History"].firstMatch
+            XCTAssertTrue(remove.waitForExistence(timeout: 5))
+            remove.tap()
+            XCTAssertTrue(typed.waitForNonExistence(timeout: 5))
+            XCTAssertTrue(genre.exists)
+            clear.tap()
+            XCTAssertTrue(app.alerts.buttons["Cancel"].waitForExistence(timeout: 5))
+            capture("clear-search-history", waitsForLoading: false)
+            app.alerts.buttons["Cancel"].tap()
+            XCTAssertTrue(genre.exists)
+            clearAll()
+            XCTAssertTrue(genre.waitForNonExistence(timeout: 5))
+            app.terminate()
+            app.launch()
+            XCTAssertTrue(field.waitForExistence(timeout: 30))
+            XCTAssertFalse(genre.exists || typed.exists || clear.exists)
+        }
+
+        func testDetailTagsAndCreditsOpenSearchAndReturn() {
+            let app = launch("item/47000000000000000000000000000002", environment: ["GUS_DEMO_URL": "http://127.0.0.1:5061"])
+            XCTAssertTrue(waitForMovieDetail(app))
+            let idPrefix = "470000000000000000000000000000"
+            let fields = [
+                ("genre:id:" + idPrefix + "01", "Horror"),
+                ("studio:name:beacon works", "Beacon Works"),
+                ("person:id:" + idPrefix + "08:The Keeper", "Mara Lake"),
+                ("person:id:" + idPrefix + "09:Director", "Rowan Vale"),
+            ]
+            for (id, name) in fields {
+                let link = app.buttons["Detail.related." + id].firstMatch
+                for _ in 0 ..< 8 {
+                    if link.exists, link.isHittable, link.frame.midY < app.frame.maxY - 85 {
+                        break
+                    }
+                    app.swipeUp(velocity: .slow)
+                }
+                XCTAssertTrue(link.isHittable, "Expected detail control for " + name)
+                let sourceY = link.frame.midY
+                if name == "Mara Lake" {
+                    capture("detail-credits-and-tags", waitsForLoading: false)
+                }
+                link.tap()
+                let back = app.buttons["Search.backToDetail"].firstMatch
+                XCTAssertTrue(back.waitForExistence(timeout: 12), "Expected Search from " + name)
+                XCTAssertTrue(app.navigationBars[name].waitForExistence(timeout: 8))
+                let movie = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "The Lantern House")).firstMatch
+                XCTAssertTrue(movie.waitForExistence(timeout: 10))
+                XCTAssertFalse(app.keyboards.firstMatch.exists)
+                if name == "Horror" {
+                    movie.tap()
+                    XCTAssertTrue(app.buttons["Detail.play"].waitForExistence(timeout: 12))
+                    capture("pushed-movie-artwork", waitsForLoading: false)
+                    app.navigationBars.buttons.element(boundBy: 0).tap()
+                    XCTAssertTrue(back.waitForExistence(timeout: 8))
+                    capture("related-horror-results")
+                }
+                back.tap()
+                XCTAssertTrue(app.buttons["Detail.play"].waitForExistence(timeout: 10))
+                XCTAssertEqual(link.frame.midY, sourceY, accuracy: 12, "Back should restore the position of " + name)
+            }
+            // A sheet blocks tab selection. Closing the restored sheet leaves its
+            // underlying section selected and the director results available in Search.
+            if UIDevice.current.userInterfaceIdiom == .phone {
+                app.buttons["ContentLink.detailDone"].tap()
+            }
+            XCTAssertTrue(openDestination("Search", app))
+            XCTAssertTrue(app.navigationBars["Rowan Vale"].waitForExistence(timeout: 8))
+            XCTAssertFalse(app.keyboards.firstMatch.exists)
+            app.buttons["Search.closeResults"].tap()
+            XCTAssertTrue(app.buttons["Search.clearRecent"].waitForExistence(timeout: 8))
+        }
+
+        func testRecommendationsAppearBelowAbout() {
+            let app = launch("item/47000000000000000000000000000002", environment: ["GUS_DEMO_URL": "http://127.0.0.1:5061"])
+            XCTAssertTrue(waitForMovieDetail(app))
+            let recommended = app.staticTexts["Recommended"].firstMatch
+            for _ in 0 ..< 8 where !visible(recommended, in: app) {
+                app.swipeUp(velocity: .slow)
+            }
+            XCTAssertTrue(visible(recommended, in: app))
+            let about = app.staticTexts["About"].firstMatch
+            XCTAssertTrue(about.exists)
+            XCTAssertFalse(app.staticTexts["Media"].exists, "An item without technical metadata should not reserve an empty card.")
+            XCTAssertLessThan(about.frame.maxY, recommended.frame.minY)
+            capture("recommendations-below-about", waitsForLoading: false)
+        }
+
+        func testSearchOriginDetailKeepsRelatedResultsAcrossTabs() {
+            let app = launch("search", environment: ["GUS_DEMO_URL": "http://127.0.0.1:5061"])
+            let field = app.searchFields.firstMatch
+            XCTAssertTrue(field.waitForExistence(timeout: 30))
+            field.tap()
+            field.typeText("Lantern")
+            dismissKeyboard(app)
+            let movie = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "The Lantern House")).firstMatch
+            XCTAssertTrue(movie.waitForExistence(timeout: 12))
+            movie.tap()
+            let genre = app.buttons["Detail.related.genre:id:47000000000000000000000000000001"]
+            for _ in 0 ..< 5 where !genre.isHittable {
+                app.swipeUp(velocity: .slow)
+            }
+            XCTAssertTrue(genre.isHittable)
+            genre.tap()
+            let back = app.buttons["Search.backToDetail"]
+            XCTAssertTrue(back.waitForExistence(timeout: 12))
+            back.tap()
+            XCTAssertTrue(app.buttons["Detail.play"].waitForExistence(timeout: 10))
+            XCTAssertTrue(openDestination("Home", app))
+            XCTAssertTrue(openDestination("Search", app))
+            XCTAssertTrue(app.navigationBars["Horror"].waitForExistence(timeout: 8))
+            XCTAssertTrue(movie.waitForExistence(timeout: 10))
+            XCTAssertFalse(app.keyboards.firstMatch.exists)
+            app.buttons["Search.closeResults"].tap()
+            XCTAssertTrue(app.buttons["Search.recent.typed:lantern"].waitForExistence(timeout: 5))
+        }
+
+        func testRelatedGridRetainsScrolledMemberAcrossDetailAndTabs() {
+            let app = launch("item/47000000000000000000000000000002", environment: ["GUS_DEMO_URL": "http://127.0.0.1:5061"])
+            XCTAssertTrue(waitForMovieDetail(app))
+            let genre = app.buttons["Detail.related.genre:name:coastal mystery"]
+            for _ in 0 ..< 8 where !genre.exists || !genre.isHittable {
+                app.swipeUp(velocity: .slow)
+            }
+            XCTAssertTrue(genre.isHittable)
+            genre.tap()
+            let grid = app.navigationBars["Coastal Mystery"]
+            XCTAssertTrue(grid.waitForExistence(timeout: 12))
+            let movies = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Midnight Story "))
+            let first = movies.matching(NSPredicate(format: "label BEGINSWITH %@", "Midnight Story 01")).firstMatch
+            XCTAssertTrue(first.waitForExistence(timeout: 12))
+            let member = movies.matching(NSPredicate(format: "label BEGINSWITH %@", "Midnight Story 24")).firstMatch
+            for _ in 0 ..< 16 where !visible(member, in: app) {
+                app.swipeUp(velocity: .slow)
+            }
+            centerForTap(member, in: app)
+            XCTAssertTrue(visible(member, in: app))
+            XCTAssertFalse(visible(first, in: app))
+            capture("related-coastal-scrolled", waitsForLoading: false)
+            let y = member.frame.midY
+            tapVisibleCenter(member, in: app)
+            XCTAssertTrue(app.buttons["Detail.play"].waitForExistence(timeout: 12))
+            app.navigationBars.buttons.element(boundBy: 0).tap()
+            XCTAssertTrue(grid.waitForExistence(timeout: 8))
+            assertRestored(member, at: y, in: app)
+            XCTAssertTrue(openDestination("Home", app))
+            XCTAssertTrue(openDestination("Search", app))
+            XCTAssertTrue(grid.waitForExistence(timeout: 8))
+            assertRestored(member, at: y, in: app)
+            XCTAssertFalse(visible(first, in: app))
+        }
+
+        private func visible(_ element: XCUIElement, in app: XCUIApplication) -> Bool {
+            guard element.exists else { return false }
+            let frame = element.frame
+            let viewport = app.frame.insetBy(dx: 0, dy: 90)
+            guard !frame.isEmpty, viewport.contains(CGPoint(x: frame.midX, y: frame.midY)) else { return false }
+            let keyboard = app.keyboards.firstMatch
+            return !keyboard.exists || frame.midY < keyboard.frame.minY - 60
+        }
+
+        private func centerForTap(_ element: XCUIElement, in app: XCUIApplication) {
+            let bounds = app.frame
+            let keyboard = app.keyboards.firstMatch
+            let bottom = min(bounds.maxY - 100, keyboard.exists ? keyboard.frame.minY - 60 : bounds.maxY)
+            let top = bounds.minY + 140
+            let center = (top + bottom) / 2
+            let height = bottom - top
+            XCTAssertGreaterThan(height, 100)
+            let origin = app.coordinate(withNormalizedOffset: .zero)
+            for _ in 0 ..< 8 {
+                guard element.exists else { break }
+                let distance = element.frame.midY - center
+                if abs(distance) < height * 0.22 {
+                    return
+                }
+                let drag = min(abs(distance), height * 0.65) * (distance > 0 ? 1 : -1)
+                let x = bounds.width * 0.65
+                let start = center + drag / 2 - bounds.minY
+                origin.withOffset(CGVector(dx: x, dy: start)).press(
+                    forDuration: 0.08, thenDragTo: origin.withOffset(CGVector(dx: x, dy: start - drag)),
+                    withVelocity: .slow, thenHoldForDuration: 0.2
+                )
+            }
+            XCTFail("Expected the measured control in the unobstructed center of the results")
+        }
+
+        /// An element tap may scroll a lazy grid after we measure it. A physical
+        /// tap at the visible center leaves that measured viewport in place.
+        private func tapVisibleCenter(_ element: XCUIElement, in app: XCUIApplication) {
+            XCTAssertTrue(visible(element, in: app))
+            let frame = element.frame
+            app.coordinate(withNormalizedOffset: .zero)
+                .withOffset(CGVector(dx: frame.midX - app.frame.minX, dy: frame.midY - app.frame.minY)).tap()
+        }
+
+        private func assertRestored(_ element: XCUIElement, at y: CGFloat, in app: XCUIApplication) {
+            let restored = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+                self.visible(element, in: app) && abs(element.frame.midY - y) <= 8
+            }, object: nil)
+            XCTAssertEqual(XCTWaiter.wait(for: [restored], timeout: 6), .completed, "Expected row at \(y), found \(element.frame.midY)")
+        }
+
         func testGenreSearchOpensMembersAndRestoresQuery() {
             let app = launch("search", environment: ["GUS_DEMO_URL": "http://127.0.0.1:5061"])
             let field = app.searchFields.firstMatch
@@ -404,29 +660,24 @@
             let firstMovie = movieResults.matching(NSPredicate(format: "label BEGINSWITH %@", "Midnight Story 01")).firstMatch
             XCTAssertTrue(firstMovie.waitForExistence(timeout: 12))
             let deepGenre = app.descendants(matching: .any)["Search.genre.47000000000000000000000000000004"].firstMatch
-            func visible(_ element: XCUIElement) -> Bool {
-                guard element.exists else { return false }
-                let frame = element.frame
-                let viewport = app.frame.insetBy(dx: 0, dy: 90)
-                return !frame.isEmpty && viewport.contains(CGPoint(x: frame.midX, y: frame.midY))
-            }
-
-            XCTAssertFalse(visible(deepGenre))
-            for _ in 0 ..< 20 where !visible(deepGenre) {
+            XCTAssertFalse(visible(deepGenre, in: app))
+            for _ in 0 ..< 20 where !visible(deepGenre, in: app) {
                 app.swipeUp(velocity: .slow)
             }
-            XCTAssertTrue(visible(deepGenre))
-            XCTAssertFalse(visible(firstMovie))
+            centerForTap(deepGenre, in: app)
+            XCTAssertTrue(visible(deepGenre, in: app))
+            XCTAssertFalse(visible(firstMovie, in: app))
             let nearbyMovies = (43 ... 48).reversed().map { number in
                 movieResults.matching(NSPredicate(format: "label BEGINSWITH %@", "Midnight Story \(number)")).firstMatch
             }
-            guard let anchor = nearbyMovies.first(where: visible) else {
+            guard let anchor = nearbyMovies.first(where: { visible($0, in: app) }) else {
                 XCTFail("Expected a visible movie beside the scrolled genre")
                 return
             }
             let anchorLabel = anchor.label
+            capture("typed-midnight-scrolled", waitsForLoading: false)
             let originalY = anchor.frame.midY
-            deepGenre.tap()
+            tapVisibleCenter(deepGenre, in: app)
             let midnight = app.navigationBars["Midnight Mysteries"]
             XCTAssertTrue(midnight.waitForExistence(timeout: 12))
             XCTAssertTrue(app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "Night Radio")).firstMatch.waitForExistence(timeout: 8))
@@ -436,9 +687,17 @@
             XCTAssertEqual(field.value as? String, "Midnight")
             let restored = movieResults.matching(NSPredicate(format: "label == %@", anchorLabel)).firstMatch
             XCTAssertTrue(restored.waitForExistence(timeout: 8))
-            XCTAssertTrue(visible(restored))
-            XCTAssertFalse(visible(firstMovie))
-            XCTAssertEqual(restored.frame.midY, originalY, accuracy: 8)
+            assertRestored(restored, at: originalY, in: app)
+            XCTAssertFalse(visible(firstMovie, in: app))
+            XCTAssertTrue(openDestination("Home", app))
+            XCTAssertTrue(openDestination("Search", app))
+            if field.exists {
+                XCTAssertEqual(field.value as? String, "Midnight")
+            } else {
+                XCTAssertTrue(app.navigationBars["Midnight"].staticTexts["Midnight"].waitForExistence(timeout: 8))
+            }
+            XCTAssertFalse(app.keyboards.firstMatch.exists)
+            assertRestored(restored, at: originalY, in: app)
         }
 
         func testSynopsisRespondsToWidthAndAccessibilityText() throws {
@@ -950,24 +1209,22 @@
         private func openDestination(_ title: String, _ app: XCUIApplication) -> Bool {
             let titles = title == "Shows" ? ["Shows", "Series"] : [title]
             if UIDevice.current.userInterfaceIdiom == .pad {
+                let sidebar = app.collectionViews["Sidebar"].firstMatch
                 let show = app.buttons["Navigation.showSidebar"]
-                if show.isHittable {
+                if !sidebar.exists || !sidebar.isHittable, show.exists, show.isHittable {
                     show.tap()
                 }
-                if title == "Search" {
-                    let search = app.descendants(matching: .any)["Navigation.search"].firstMatch
-                    guard search.waitForExistence(timeout: 5) else { return false }
-                    search.tap()
-                    return true
-                }
-                let row = app.descendants(matching: .any).matching(NSPredicate(
-                    format: "identifier BEGINSWITH %@ AND label IN %@", "Navigation.section.", titles
-                )).firstMatch
+                let row = sidebar.cells.containing(NSPredicate(format: "label IN %@", titles)).firstMatch
                 for _ in 0 ..< 5 {
-                    if row.exists && row.isHittable {
+                    if row.exists, row.isHittable {
                         row.tap(); return true
                     }
-                    app.collectionViews.firstMatch.swipeUp()
+                    guard sidebar.exists, sidebar.isHittable else { return false }
+                    if title == "Search" || title == "Home" {
+                        sidebar.swipeDown()
+                    } else {
+                        sidebar.swipeUp()
+                    }
                 }
                 return false
             }

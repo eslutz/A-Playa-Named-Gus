@@ -201,25 +201,55 @@ class SynopsisHandler(Handler):
 
 
 class GenreHandler(Handler):
-    """Model Jellyfin 12's general search result and its genre-ID member query."""
+    """General search, typed related metadata lookup and account-filtered member queries."""
     genre = {"Id": "47000000000000000000000000000001", "Name": "Horror", "Type": "Genre",
              "ImageTags": {"Primary": "serverGenreImage"}}
-    members = [{"Id": "47000000000000000000000000000002", "Name": "The Lantern House", "Type": "Movie"},
+    coastal = {"Id": "47000000000000000000000000000006", "Name": "Coastal Mystery", "Type": "Genre"}
+    studio = {"Id": "47000000000000000000000000000005", "Name": "Lantern Pictures", "Type": "Studio"}
+    beacon = {"Id": "47000000000000000000000000000007", "Name": "Beacon Works", "Type": "Studio"}
+    actor = {"Id": "47000000000000000000000000000008", "Name": "Mara Lake", "Type": "Actor", "Role": "The Keeper"}
+    director = {"Id": "47000000000000000000000000000009", "Name": "Rowan Vale", "Type": "Director"}
+    members = [{"Id": "47000000000000000000000000000002", "Name": "The Lantern House", "Type": "Movie",
+                "BackdropImageTags": ["lanternStill"],
+                "Genres": ["Horror", "Coastal Mystery", "Unlisted Genre"], "GenreItems": [genre],
+                "Studios": [studio, {"Name": "Beacon Works"}],
+                "People": [actor, director, {"Name": "Jules North", "Type": "Actor", "Role": "Visitor"}]},
                {"Id": "47000000000000000000000000000003", "Name": "Night Radio", "Type": "Series"}]
     midnight_genre = {"Id": "47000000000000000000000000000004", "Name": "Midnight Mysteries", "Type": "Genre"}
     midnight_movies = [{"Id": f"4800{index:028d}", "Name": f"Midnight Story {index:02d}", "Type": "Movie"}
-                       for index in range(1, 49)]
-    # A second realistic search page places a genre near the bottom of the grid.
-    items = [genre, *members, *midnight_movies[:-1], midnight_genre, midnight_movies[-1]]
+                       for index in range(1, 65)]
+    # Keep the genre at result 48 and allow enough subsequent rows to clear the keyboard.
+    items = [genre, *members, *midnight_movies[:47], midnight_genre, *midnight_movies[47:]]
 
     def do_GET(self):
         url = urlsplit(self.path)
         query = {key.lower(): value[0] for key, value in parse_qs(url.query).items()}
-        if url.path.endswith("/Items") and "searchterm" in query:
+        if url.path.rstrip("/") in (f"/Items/{self.members[0]['Id']}/Images/Backdrop", f"/Items/{self.members[0]['Id']}/Images/Backdrop/0"):
+            # Still from the Library of Congress public-domain copy of The Kiss (1896).
+            # https://www.loc.gov/item/00694131/
+            data = (Path(__file__).resolve().parents[1] / "Tests/Fixtures/RelatedMovieBackdrop.jpg").read_bytes()
+            self.send_response(200)
+            self.send_header("Content-Type", "image/jpeg")
+            self.send_header("Content-Length", str(len(data)))
+            self.end_headers()
+            self.wfile.write(data)
+            return
+        if url.path == f"/Items/{self.members[0]['Id']}/Similar":
+            matches = self.members[1:]
+        elif url.path.endswith("/Items") and "searchterm" in query:
             matches = [item for item in self.items if query["searchterm"].casefold() in item["Name"].casefold()]
+        elif url.path in ("/Genres", "/Studios"):
+            candidates = [self.genre, self.coastal] if url.path == "/Genres" else [self.studio, self.beacon]
+            matches = [item for item in candidates if query.get("searchterm", "").casefold() in item["Name"].casefold()]
         elif url.path.endswith("/Items") and "genreids" in query:
-            by_genre = {self.genre["Id"]: self.members, self.midnight_genre["Id"]: self.members[1:]}
+            by_genre = {self.genre["Id"]: self.members, self.coastal["Id"]: self.members[:1] + self.midnight_movies[:48],
+                        self.midnight_genre["Id"]: self.members[1:]}
             matches = by_genre.get(query["genreids"].replace("-", ""), [])
+        elif url.path.endswith("/Items") and "studioids" in query:
+            matches = self.members[:1] if query["studioids"].replace("-", "") in (self.studio["Id"], self.beacon["Id"]) else []
+        elif url.path.endswith("/Items") and "personids" in query:
+            by_person = {self.actor["Id"]: self.members, self.director["Id"]: self.members[:1]}
+            matches = by_person.get(query["personids"].replace("-", ""), [])
         else:
             return super().do_GET()
         offset = int(query.get("startindex", 0))

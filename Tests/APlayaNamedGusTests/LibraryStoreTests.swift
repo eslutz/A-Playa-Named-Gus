@@ -7,6 +7,102 @@ import Testing
 @Suite("Library store helpers", .serialized)
 struct LibraryStoreTests {
     @MainActor
+    @Test func namedRelatedCreditRequiresAnExactUniqueAccountMatch() async throws {
+        let provider = try libraryTestSession().mediaProvider
+        let exact = BaseItemDto(id: "g1", name: "Coastal Mystery", type: .genre)
+        let similar = BaseItemDto(id: "g2", name: "Coastal Mystery Drama", type: .genre)
+        let homonym = BaseItemDto(id: "g3", name: "Coastal Mystery", type: .genre)
+        let studio = BaseItemDto(id: "s1", name: "Coastal Mystery", type: .studio)
+        LibraryItemsURLProtocol.configure(responses: [
+            .init(result: .init(items: [similar, studio], totalRecordCount: 4)),
+            .init(result: .init(items: [exact, exact], totalRecordCount: 4)),
+            .init(result: .init(items: [exact, homonym], totalRecordCount: 2)),
+            .init(result: .init(items: [similar], totalRecordCount: 1)),
+            .init(result: .init(items: [studio], totalRecordCount: 1)),
+        ])
+        let nameOnly = RelatedSearch(kind: .genre, name: "COASTAL MYSTERY")
+        let resolved = try await provider.resolveRelatedSearch(nameOnly)
+        #expect(resolved?.id == "g1")
+        #expect(try await provider.resolveRelatedSearch(nameOnly) == nil)
+        #expect(try await provider.resolveRelatedSearch(nameOnly) == nil)
+        let studioMatch = try await provider.resolveRelatedSearch(RelatedSearch(kind: .studio, name: "Coastal Mystery"))
+        #expect(studioMatch?.id == "s1")
+        #expect(try await provider.resolveRelatedSearch(#require(resolved)) == resolved)
+        #expect(try await provider.resolveRelatedSearch(.init(kind: .person, name: "Ana Reyes")) == nil)
+        let requests = LibraryItemsURLProtocol.recordedRequests
+        #expect(requests.map(\.path) == ["/Genres", "/Genres", "/Genres", "/Genres", "/Studios"])
+        #expect(requests.allSatisfy { $0.userID == "user-1" })
+        #expect(requests.prefix(2).compactMap(\.startIndex) == [0, 2])
+        #expect(requests.first?.searchTerm == "COASTAL MYSTERY")
+    }
+
+    @MainActor
+    @Test func interruptedLookupCanRetryAndHistorySurvivesOnlySuccessfulResolution() async throws {
+        let session = try libraryTestSession()
+        let nameOnly = RelatedSearch(kind: .studio, name: "Beacon Works")
+        let results = RelatedSearchResults(target: nameOnly)
+        LibraryItemsURLProtocol.configure(responses: [])
+        await results.resolve(session: session)
+        #expect(results.errorMessage != nil && !results.unavailable)
+        let match = BaseItemDto(id: "studio-7", name: nameOnly.name, type: .studio)
+        LibraryItemsURLProtocol.configure(responses: [.init(result: .init(items: [match], totalRecordCount: 1))])
+        let oldLookup = results.lookupID
+        results.retry()
+        #expect(results.lookupID != oldLookup)
+        await results.resolve(session: session)
+        let resolved = try #require(results.resolved)
+        #expect(resolved.id == "studio-7")
+        #expect(results.errorMessage == nil && session.searchHistory.entries.first == .related(resolved))
+        session.searchHistory.remove(.related(resolved))
+        await results.resolve(session: session)
+        #expect(!session.searchHistory.entries.contains(.related(resolved)))
+
+        let missing = RelatedSearchResults(target: RelatedSearch(kind: .genre, name: "Absent"))
+        LibraryItemsURLProtocol.configure(responses: [.init(result: .init(items: [], totalRecordCount: 0))])
+        await missing.resolve(session: session)
+        #expect(missing.unavailable && missing.errorMessage == nil)
+    }
+
+    @MainActor
+    @Test func relatedBrowseFiltersUseTheCreditedEntity() async throws {
+        let session = try libraryTestSession()
+        let first = BaseItemDto(id: "member", type: .episode)
+        let musicVideo = BaseItemDto(id: "music-video", type: .musicVideo)
+        let restricted = BaseItemDto(id: "blocked", type: .movie)
+        for kind: RelatedSearch.Kind in [.studio, .person] {
+            let target = RelatedSearch(kind: kind, id: "entity", name: "North")
+            let scope = LibraryGridScope.related(target)
+            LibraryItemsURLProtocol.configure(responses: [.init(result: .init(items: [first, musicVideo, restricted], totalRecordCount: 3))])
+            let store = LibraryStore(scope: scope, session: session, admits: { $0.id != "blocked" })
+            await store.load()
+            #expect(store.items.compactMap(\.id) == ["member", "music-video"])
+            #expect(store.items.last?.type == .video)
+            let request = try #require(LibraryItemsURLProtocol.recordedRequests.first)
+            #expect(request.includeItemTypes.contains("MusicVideo"))
+            #expect(request.studioIDs == (kind == .studio ? "entity" : nil))
+            #expect(request.personIDs == (kind == .person ? "entity" : nil))
+            #expect(request.genreIDs == nil && request.searchTerm == nil)
+            #expect(request.userID == "user-1")
+            let next = LibraryRequest.parameters(scope: scope, startIndex: 60, limit: 60)
+            #expect(next.startIndex == 60 && next.includeTypes?.contains(.episode) == true)
+            #expect(next.studioID == request.studioIDs && next.personID == request.personIDs)
+        }
+        LibraryItemsURLProtocol.configure(responses: [])
+        let unresolved = LibraryStore(scope: .related(.init(kind: .person, name: "North")), session: session)
+        await unresolved.load()
+        #expect(unresolved.items.isEmpty && LibraryItemsURLProtocol.recordedRequests.isEmpty)
+    }
+
+    @Test func relatedMetadataRetainsStructuredIDsAndLegacyNames() throws {
+        let dto = BaseItemDto(genreItems: [NameIDPair(id: "g1", name: "Fantasy")], genres: ["Fantasy", "Adventure"], id: "m", name: "Book", studios: [NameIDPair(id: "s1", name: "North")])
+        let item = JellyfinMediaItemMapper.mediaItem(from: dto)
+        #expect(item.genreSearchTargets == [.init(kind: .genre, id: "g1", name: "Fantasy"), .init(kind: .genre, name: "Adventure")])
+        #expect(item.studioSearchTargets == [.init(kind: .studio, id: "s1", name: "North")])
+        let old = try JSONDecoder().decode(MediaItem.self, from: Data(#"{"providerKind":"jellyfin","genres":["Legacy"]}"#.utf8))
+        #expect(old.genreSearchTargets == [.init(kind: .genre, name: "Legacy")])
+    }
+
+    @MainActor
     @Test func genreBrowseUsesGenreIDAndFiltersMembers() async throws {
         let genre = JellyfinMediaItemMapper.mediaItem(from: BaseItemDto(id: "horror", name: "Horror", type: .genre))
         #expect(genre.type == .genre)
@@ -23,6 +119,7 @@ struct LibraryStoreTests {
         #expect(store.items.compactMap(\.id) == ["allowed"])
         let request = try #require(LibraryItemsURLProtocol.recordedRequests.first)
         #expect(request.genreIDs == "horror")
+        #expect(scope.includeTypes?.contains(.episode) == true)
         #expect(request.parentID == nil)
     }
 
@@ -407,7 +504,12 @@ private struct StubbedLibraryItemsResponse: Sendable {
 }
 
 private struct RecordedLibraryItemsRequest: Equatable {
+    var path: String
+    var userID: String?
+    var studioIDs: String?
+    var personIDs: String?
     var genreIDs: String?
+    var includeItemTypes: [String]
     var parentID: String?
     var searchTerm: String?
     var startIndex: Int?
@@ -447,7 +549,8 @@ private final class LibraryItemsURLProtocol: URLProtocol {
     }
 
     override class func canInit(with request: URLRequest) -> Bool {
-        request.url?.path == "/Items"
+        guard let path = request.url?.path else { return false }
+        return ["/Items", "/Genres", "/Studios"].contains(path)
     }
 
     override class func canonicalRequest(for request: URLRequest) -> URLRequest {
@@ -567,7 +670,12 @@ private final class LibraryItemsURLProtocolState: @unchecked Sendable {
     private static func recordedRequest(from request: URLRequest) -> RecordedLibraryItemsRequest {
         let queryItems = URLComponents(url: request.url!, resolvingAgainstBaseURL: false)?.queryItems ?? []
         return RecordedLibraryItemsRequest(
+            path: request.url!.path,
+            userID: queryValue("userID", in: queryItems),
+            studioIDs: queryValue("studioIds", in: queryItems),
+            personIDs: queryValue("personIds", in: queryItems),
             genreIDs: queryValue("genreIds", in: queryItems),
+            includeItemTypes: queryItems.filter { $0.name == "includeItemTypes" }.compactMap(\.value),
             parentID: queryValue("parentID", in: queryItems),
             searchTerm: queryValue("searchTerm", in: queryItems),
             startIndex: queryValue("startIndex", in: queryItems).flatMap(Int.init),

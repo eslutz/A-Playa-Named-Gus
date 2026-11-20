@@ -21,6 +21,7 @@ final class SessionStore {
     let profile: UserProfileStore
     let server: ServerConnection
     let seerr: SeerrStore
+    let searchHistory: SearchHistoryStore
     private(set) var reauthenticationRequest: SessionLease?
     private weak var recoveryOwner: AppModel?
     private final class InvalidationRegistration {
@@ -63,6 +64,7 @@ final class SessionStore {
         artworkTransport.invalidate()
         profile.invalidate()
         seerr.deactivate()
+        searchHistory.deactivate()
         references.invalidate()
         invalidateCollections()
         let handlers = invalidationHandlers
@@ -93,18 +95,21 @@ final class SessionStore {
         client: JellyfinClient,
         user: StoredUser,
         server: ServerConnection,
-        mediaProvider: (any MediaProviderSession)? = nil
+        mediaProvider: (any MediaProviderSession)? = nil,
+        historyDefaults: UserDefaults = .standard
     ) {
+        let scope = AccountScope(serverID: server.id, userID: user.id)
         let lease = SessionLease(credential: SessionCredential(user: user))
         self.lease = lease
-        self.artworkTransport = NativeArtworkTransport(scope: AccountScope(serverID: server.id, userID: user.id), generation: lease.generation)
+        self.artworkTransport = NativeArtworkTransport(scope: scope, generation: lease.generation)
         self.client = client
         self.profile = UserProfileStore(client: client, userID: user.id)
         self.user = user
         self.server = server
-        self.seerr = SeerrStore(scope: AccountScope(serverID: server.id, userID: user.id))
+        self.seerr = SeerrStore(scope: scope)
+        self.searchHistory = SearchHistoryStore(scope: scope, defaults: historyDefaults)
         let provider = mediaProvider ?? JellyfinMediaProviderSession(client: client, userID: user.id)
         self.mediaProvider = provider
-        self.references = MediaReferenceResolver(provider: provider, scope: AccountScope(serverID: server.id, userID: user.id))
+        self.references = MediaReferenceResolver(provider: provider, scope: scope)
     }
 }

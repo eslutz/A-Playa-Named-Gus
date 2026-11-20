@@ -4,7 +4,12 @@ struct LibraryGridView: View {
     @Environment(RootNavigationState.self) private var navigationState
     @Environment(SessionStore.self) private var session
     let scope: LibraryGridScope
-    @State private var store: LibraryStore?
+    private var searchResults: RelatedSearchResults?
+    @State private var localStore: LibraryStore?
+    private var store: LibraryStore? {
+        searchResults?.pages ?? localStore
+    }
+
     private var showsList: Bool {
         get { navigationState.libraryListModes[scope.storeIdentity, default: false] }
         nonmutating set { navigationState.libraryListModes[scope.storeIdentity] = newValue }
@@ -27,7 +32,8 @@ struct LibraryGridView: View {
         scope = .library(library)
     }
 
-    init(scope: LibraryGridScope) {
+    init(scope: LibraryGridScope, searchResults: RelatedSearchResults? = nil) {
+        self.searchResults = searchResults
         self.scope = scope
     }
 
@@ -36,7 +42,7 @@ struct LibraryGridView: View {
         case let .library(item): item.collectionType == .photos
         case let .category(category): category == .photos
         case .photoLibrary: true
-        case .musicLibrary, .latest, .genre: false
+        case .musicLibrary, .latest, .related: false
         }
     }
 
@@ -56,7 +62,7 @@ struct LibraryGridView: View {
         case let .library(item): item.collectionType == .music
         case let .category(category): category == .music
         case .musicLibrary: true
-        case .photoLibrary, .latest, .genre: false
+        case .photoLibrary, .latest, .related: false
         }
     }
 
@@ -84,16 +90,24 @@ struct LibraryGridView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
                 #if os(tvOS)
-                    HStack {
-                        Text(scope.title).font(.largeTitle.bold())
-                        Spacer()
-                        if let store {
-                            LibraryFilterMenu(store: store).disabled(store.isLoading)
+                    if searchResults == nil {
+                        HStack {
+                            Text(scope.title).font(.largeTitle.bold())
+                            Spacer()
+                            if let store {
+                                LibraryFilterMenu(store: store).disabled(store.isLoading)
+                            }
                         }
+                        .focusSection()
+                        .padding(.bottom, 24)
                     }
-                    .focusSection()
-                    .padding(.bottom, 24)
                 #endif
+                if let target = scope.relatedSearch {
+                    Label(target.kind.title, systemImage: target.kind.systemImage)
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                        .accessibilityIdentifier("Library.relatedKind")
+                }
                 if let collectionFormat {
                     NavigationLink(value: CollectionsRef(scope: session.references.scope, format: collectionFormat, movieLibraryID: collectionFormat == .movies ? scope.parentID : nil)) {
                         Label("Collections", systemImage: "rectangle.stack")
@@ -123,9 +137,13 @@ struct LibraryGridView: View {
         }
         .gusTVBrowseViewport()
         .navigationTitle(scope.title)
-        .gusTVDetailTitle()
+        .gusTVDetailTitle(showsNavigationBar: searchResults != nil)
         .toolbar {
-            #if !os(tvOS)
+            #if os(tvOS)
+                if searchResults != nil, let store {
+                    ToolbarItem { LibraryFilterMenu(store: store).disabled(store.isLoading) }
+                }
+            #else
                 ToolbarItem(placement: .primaryAction) {
                     Button {
                         showsList.toggle()
@@ -155,14 +173,17 @@ struct LibraryGridView: View {
             }
         }
         .task(id: effectiveScope.storeIdentity) {
+            // A detail sheet can dismiss while the native Search tab is mounting.
+            // The window owns the filtered grid’s first load across that transition.
+            guard searchResults == nil else { return }
             let store = navigationState.libraryStore(for: effectiveScope, session: session)
-            self.store = store
+            localStore = store
             if store.state == .idle {
                 await store.load()
             }
         }
         .gusVisibleContent(.library(effectiveScope.storeIdentity), isLoading: store?.isLoading ?? true)
-        .scrollPosition(id: navigationState.scrollBinding(for: "library:" + scope.storeIdentity))
+        .searchResultsScroll(viewport: searchResults?.viewport, anchor: searchResults.map { Bindable($0).scrollAnchor } ?? navigationState.scrollBinding(for: "library:" + scope.storeIdentity))
         .lookToScroll()
         .refreshable { await store?.load() }
     }

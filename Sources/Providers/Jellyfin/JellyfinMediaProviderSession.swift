@@ -106,7 +106,10 @@ final class JellyfinMediaProviderSession: MediaProviderSession {
             filters: filters(for: query.statusFilter),
             sortBy: sortBy(for: query.sort),
             enableUserData: true,
+            personIDs: query.personID.map { [$0] },
             artistIDs: query.artistID.map { [$0] },
+            isCollapseBoxSetItems: query.hasRelatedFilter ? false : nil,
+            studioIDs: query.studioID.map { [$0] },
             genreIDs: query.genreID.map { [$0] },
             enableTotalRecordCount: true,
             enableImages: true
@@ -118,6 +121,35 @@ final class JellyfinMediaProviderSession: MediaProviderSession {
             items: JellyfinMediaItemMapper.mediaItems(from: response.value.items ?? []),
             totalRecordCount: response.value.totalRecordCount
         )
+    }
+
+    /// A legacy name-only tag may match several similarly named entities.
+    /// Use the typed, account-filtered catalog and accept one distinct exact match.
+    func resolveRelatedSearch(_ target: RelatedSearch) async throws -> RelatedSearch? {
+        if target.id?.isEmpty == false {
+            return target
+        }
+        let name = RelatedSearch.normalizedName(target.name)
+        guard !name.isEmpty, target.kind != .person else { return nil }
+        let studio = target.kind == .studio
+        let expectedKind: BaseItemKind = studio ? .studio : .genre
+        let candidates = try await MediaPageLoader.collect { offset, limit in
+            let request = studio
+                ? Paths.getStudios(parameters: .init(startIndex: offset, limit: limit, searchTerm: target.name, userID: userID, enableImages: false, enableTotalRecordCount: true))
+                : Paths.getGenres(parameters: .init(startIndex: offset, limit: limit, searchTerm: target.name, userID: userID, enableImages: false, enableTotalRecordCount: true))
+            let response = try await NetworkRetryPolicy.idempotent.run { try await client.browse(request) }
+            // Count the whole server page for pagination, retaining names only for the requested kind.
+            let items = (response.value.items ?? []).map { dto in
+                MediaItem(id: dto.id, name: dto.type == expectedKind ? dto.name : nil)
+            }
+            return MediaItemPage(items: items, totalRecordCount: response.value.totalRecordCount)
+        }
+        let ids = Set(candidates.compactMap { candidate -> String? in
+            guard let candidateName = candidate.name, RelatedSearch.normalizedName(candidateName) == name else { return nil }
+            return candidate.id
+        })
+        guard ids.count == 1, let id = ids.first, !id.isEmpty else { return nil }
+        return RelatedSearch(kind: target.kind, id: id, name: target.name)
     }
 
     func item(id: String) async throws -> MediaItem {
@@ -1034,7 +1066,10 @@ final class JellyfinMediaProviderSession: MediaProviderSession {
 
     private func includeItemKinds(for query: MediaItemQuery) -> [BaseItemKind]? {
         if let includeTypes = query.includeTypes {
-            let kinds = includeTypes.compactMap(Self.baseItemKind(for:))
+            var kinds = includeTypes.compactMap(Self.baseItemKind(for:))
+            if query.hasRelatedFilter, kinds.contains(.video) {
+                kinds.append(.musicVideo)
+            }
             return kinds.isEmpty ? nil : kinds
         }
         // Artist queries return that artist's albums unless the caller asked otherwise.

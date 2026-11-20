@@ -98,27 +98,22 @@ struct SeerrPersonView: View {
     }
 
     private func content(_ person: SeerrPerson) -> some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 28) {
-                DetailCoverHeader {
-                    SeerrArtworkView(path: person.profilePath, aspectRatio: 4.0 / 5.0, contentMode: .fit, symbol: "person", width: "h632")
-                        .frame(maxWidth: 240)
-                } summary: {
-                    Text(person.name).font(.largeTitle.bold()).accessibilityAddTraits(.isHeader)
-                    if let birthplace = person.placeOfBirth?.trimmedNilIfEmpty {
-                        Text(birthplace).font(.subheadline).foregroundStyle(.secondary)
-                    }
-                    if let biography = person.biography?.trimmedNilIfEmpty {
-                        DetailSynopsis(title: person.name, overview: biography)
-                    }
+        ArtworkDetailPage {
+            DetailCoverHeader {
+                SeerrArtworkView(path: person.profilePath, aspectRatio: 4.0 / 5.0, contentMode: .fit, symbol: "person", width: "h632")
+
+            } summary: {
+                Text(person.name).font(.largeTitle.bold()).accessibilityAddTraits(.isHeader)
+                if let birthplace = person.placeOfBirth?.trimmedNilIfEmpty {
+                    Text(birthplace).font(.subheadline).foregroundStyle(.secondary)
                 }
-                credits
+                if let biography = person.biography?.trimmedNilIfEmpty {
+                    DetailSynopsis(title: person.name, overview: biography)
+                }
             }
-            .padding()
-            .frame(maxWidth: PageContentMetrics.maxWidth, alignment: .leading)
-            .frame(maxWidth: .infinity)
+        } sections: {
+            credits
         }
-        .lookToScroll()
         .refreshable { await model.load(id: personID, store: store) }
     }
 

@@ -19,6 +19,7 @@ enum JellyfinMediaItemMapper {
             criticRating: item.criticRating.map { Double($0) },
             currentProgramName: item.currentProgram?.name,
             genres: bookGenres(from: item),
+            genreItems: (item.genreItems ?? []).map(mediaNamedItem),
             id: item.id,
             imageTags: item.imageTags ?? [:],
             indexNumber: item.indexNumber,
@@ -38,7 +39,7 @@ enum JellyfinMediaItemMapper {
             seriesID: item.seriesID,
             seriesName: item.seriesName,
             seriesPrimaryImageTag: item.seriesPrimaryImageTag,
-            studios: (item.studios ?? []).map(mediaStudio),
+            studios: (item.studios ?? []).map(mediaNamedItem),
             taglines: item.taglines ?? [],
             type: mediaItemType(from: item.type),
             userData: item.userData.map(mediaUserData),
@@ -93,7 +94,7 @@ enum JellyfinMediaItemMapper {
             return .folder
         case .trailer:
             return .trailer
-        case .video:
+        case .video, .musicVideo:
             return .video
         case .audio:
             return .audio
@@ -146,8 +147,8 @@ enum JellyfinMediaItemMapper {
 
     private static func bookGenres(from item: BaseItemDto) -> [String] {
         let genres = item.genres ?? []
-        guard item.type == .book || item.type == .audioBook else { return genres }
         let structured = item.genreItems?.compactMap(\.name).map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }.filter { !$0.isEmpty } ?? []
+        guard item.type == .book || item.type == .audioBook else { return genres.isEmpty ? structured : genres }
         if structured.count > 1 {
             return structured
         }
@@ -167,8 +168,8 @@ enum JellyfinMediaItemMapper {
         )
     }
 
-    private static func mediaStudio(from studio: NameIDPair) -> MediaStudio {
-        MediaStudio(id: studio.id, name: studio.name)
+    private static func mediaNamedItem(from pair: NameIDPair) -> MediaNamedItem {
+        MediaNamedItem(id: pair.id, name: pair.name)
     }
 
     private static func mediaUserData(from userData: UserItemDataDto) -> MediaUserData {

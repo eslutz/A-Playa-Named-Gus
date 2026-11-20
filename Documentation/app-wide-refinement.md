@@ -65,11 +65,10 @@ page deduplication. Gus retains AVPlayer/AVKit and current OS 26 fallbacks.
   allowing horizontal content to return to vertical when its pane narrows.
   Secondary detail buttons and native menu triggers share the same label sizing,
   minimum control bounds and system button treatment across main platforms.
-  Standard hero copy uses opaque backing at every width so artwork and text height
-  cannot reduce its foreground/background contrast.
-- visionOS root navigation respects the native eight-tab limit. Up to eight visible
-  sections remain direct; larger configurations show the first seven in resolved
-  order plus More. Overflow preserves section selection and navigation histories.
+  A lower-edge fade keeps detail titles and controls readable. Artwork extends behind
+  the native top controls. Secondary controls align with the primary action’s leading edge.
+- visionOS root navigation respects the native eight-tab limit. Search always has a tab. Up to seven content
+  sections appear directly, or six in resolved order alongside More when needed. Overflow preserves section selection and navigation histories.
   If More becomes unnecessary while selected,
   the root returns to the first direct section without resetting those histories.
 - Version changes ask whether to start over or resume at the saved timestamp.

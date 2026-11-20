@@ -120,7 +120,51 @@ struct MediaUserData: Codable, Hashable, Sendable {
     }
 }
 
-struct MediaStudio: Codable, Hashable, Identifiable, Sendable {
+struct RelatedSearch: Codable, Hashable, Sendable {
+    enum Kind: String, Codable, Hashable, Sendable {
+        case genre, studio, person
+
+        var title: String {
+            switch self {
+            case .genre: String(localized: "Genre")
+            case .studio: String(localized: "Studio")
+            case .person: String(localized: "Person")
+            }
+        }
+
+        var systemImage: String {
+            switch self {
+            case .genre: "tag"
+            case .studio: "building.2"
+            case .person: "person"
+            }
+        }
+    }
+
+    let kind: Kind
+    let id: String?
+    let name: String
+
+    init(kind: Kind, id: String? = nil, name: String) {
+        self.kind = kind
+        let trimmed = id?.trimmingCharacters(in: .whitespacesAndNewlines)
+        self.id = trimmed?.isEmpty == false ? trimmed : nil
+        self.name = name.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    var identityKey: String {
+        kind.rawValue + (id.map { ":id:" + $0 } ?? ":name:" + Self.normalizedName(name))
+    }
+
+    static func normalizedName(_ name: String) -> String {
+        name.split(whereSeparator: \.isWhitespace).joined(separator: " ")
+            .precomposedStringWithCanonicalMapping.lowercased(with: Locale(identifier: "en_US_POSIX"))
+    }
+}
+
+typealias MediaStudio = MediaNamedItem
+
+struct MediaNamedItem: Codable, Hashable, Identifiable, Sendable {
     var id: String?
     var name: String?
 
@@ -279,6 +323,7 @@ struct MediaItem: Codable, Hashable, Identifiable, Sendable {
     /// Live TV: the program currently airing on this channel.
     var currentProgramName: String?
     var genres: [String]
+    var genreItems: [MediaNamedItem]
     var id: String?
     var imageTags: [String: String]
     var indexNumber: Int?
@@ -323,6 +368,7 @@ struct MediaItem: Codable, Hashable, Identifiable, Sendable {
         case criticRating
         case currentProgramName
         case genres
+        case genreItems
         case id
         case imageTags
         case indexNumber
@@ -367,6 +413,7 @@ struct MediaItem: Codable, Hashable, Identifiable, Sendable {
         criticRating: Double? = nil,
         currentProgramName: String? = nil,
         genres: [String] = [],
+        genreItems: [MediaNamedItem] = [],
         id: String? = nil,
         imageTags: [String: String] = [:],
         indexNumber: Int? = nil,
@@ -407,6 +454,7 @@ struct MediaItem: Codable, Hashable, Identifiable, Sendable {
         self.criticRating = criticRating
         self.currentProgramName = currentProgramName
         self.genres = genres
+        self.genreItems = genreItems
         self.id = id
         self.imageTags = imageTags
         self.indexNumber = indexNumber
@@ -451,6 +499,7 @@ struct MediaItem: Codable, Hashable, Identifiable, Sendable {
         criticRating = try values.decodeIfPresent(Double.self, forKey: .criticRating)
         currentProgramName = try values.decodeIfPresent(String.self, forKey: .currentProgramName)
         genres = try values.decodeIfPresent([String].self, forKey: .genres) ?? []
+        genreItems = try values.decodeIfPresent([MediaNamedItem].self, forKey: .genreItems) ?? []
         id = try values.decodeIfPresent(String.self, forKey: .id)
         imageTags = try values.decodeIfPresent([String: String].self, forKey: .imageTags) ?? [:]
         indexNumber = try values.decodeIfPresent(Int.self, forKey: .indexNumber)
