@@ -41,7 +41,8 @@ struct UILayoutMetricsTests {
             } summary: {
                 Text("Title")
             }
-            .frame(width: 700)
+            .frame(width: 700, height: CGFloat(height), alignment: .top)
+            .clipped()
             .environment(\.detailArtworkViewportHeight, CGFloat(height))
             let image = try #require(ImageRenderer(content: header).cgImage)
             let context = try #require(CGContext(
@@ -62,8 +63,8 @@ struct UILayoutMetricsTests {
                     }
                 }
             }
-            let bottom = try #require(vertical.last)
-            #expect(bottom < height)
+            #expect(vertical.first == 24)
+            #expect(vertical.last == height - 1)
             #expect(abs(vertical.count - (height - 24)) <= 1)
             #expect(abs(Double(horizontal.count) - Double(vertical.count) * ratio) <= 1)
         }

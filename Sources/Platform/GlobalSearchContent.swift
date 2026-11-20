@@ -48,6 +48,22 @@ struct GlobalSearchContent: View {
             .onSubmit(of: .search) { root.globalSearch.typed.submitSearch(to: session.searchHistory) }
     }
 
+    private var navigationTitle: String {
+        if let related = root.globalSearch.related {
+            return related.target.name
+        }
+        #if os(iOS)
+            let typed = root.globalSearch.typed
+            if widthClass == .compact, !typed.isPresented {
+                let query = typed.text.trimmingCharacters(in: .whitespacesAndNewlines)
+                if !query.isEmpty {
+                    return query
+                }
+            }
+        #endif
+        return String(localized: "Search")
+    }
+
     private var results: some View {
         Group {
             if let related = root.globalSearch.related {
@@ -59,7 +75,7 @@ struct GlobalSearchContent: View {
                 RecentSearchesView(onSelect: root.replaySearch)
             }
         }
-        .navigationTitle(root.globalSearch.related?.target.name ?? String(localized: "Search"))
+        .navigationTitle(navigationTitle)
         .toolbar {
             if root.hasSearchReturn {
                 ToolbarItem(placement: .cancellationAction) {

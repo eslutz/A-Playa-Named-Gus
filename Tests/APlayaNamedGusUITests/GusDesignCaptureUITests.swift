@@ -691,7 +691,12 @@
             XCTAssertFalse(visible(firstMovie, in: app))
             XCTAssertTrue(openDestination("Home", app))
             XCTAssertTrue(openDestination("Search", app))
-            XCTAssertEqual(field.value as? String, "Midnight")
+            if field.exists {
+                XCTAssertEqual(field.value as? String, "Midnight")
+            } else {
+                XCTAssertTrue(app.navigationBars["Midnight"].staticTexts["Midnight"].waitForExistence(timeout: 8))
+            }
+            XCTAssertFalse(app.keyboards.firstMatch.exists)
             assertRestored(restored, at: originalY, in: app)
         }
 
