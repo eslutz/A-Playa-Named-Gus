@@ -103,7 +103,7 @@ struct GusRankCandidate: Encodable, Sendable {
     let summary: String
 }
 
-enum GusIntelligenceError: LocalizedError {
+enum GusIntelligenceError: LocalizedError, Equatable {
     case useKeyword, unavailable, invalidResponse, inputTooLong, generationFailed, privateInput, cloudNetwork, cloudServiceUnavailable, rateLimited
     case quota(Date?)
 
@@ -410,16 +410,8 @@ struct GusIntelligenceModel {
                     let cloud = PrivateCloudComputeLanguageModel()
                     let quota = cloud.quotaUsage
                     guard !quota.isLimitReached else { throw GusIntelligenceError.quota(quota.resetDate) }
-                    do {
-                        guard try await cloud.supportsLocale() else { throw GusIntelligenceError.unavailable }
-                        return try await respond(using: LanguageModelSession(model: cloud, instructions: instructions), cloud: true)
-                    } catch PrivateCloudComputeLanguageModel.Error.networkFailure {
-                        throw GusIntelligenceError.cloudNetwork
-                    } catch PrivateCloudComputeLanguageModel.Error.serviceUnavailable {
-                        throw GusIntelligenceError.cloudServiceUnavailable
-                    } catch let PrivateCloudComputeLanguageModel.Error.quotaLimitReached(limit) {
-                        throw GusIntelligenceError.quota(limit.resetDate)
-                    }
+                    guard try await cloud.supportsLocale() else { throw GusIntelligenceError.unavailable }
+                    return try await respond(using: LanguageModelSession(model: cloud, instructions: instructions), cloud: true)
                 }
             } catch {
                 try checkAccess(cloud: false)
@@ -430,9 +422,15 @@ struct GusIntelligenceModel {
             }
         }
 
-        private static func generationError(_ error: Error) -> GusIntelligenceError {
-            if #available(iOS 27, macOS 27, visionOS 27, watchOS 27, *), case LanguageModelError.rateLimited = error {
-                return .rateLimited
+        static func generationError(_ error: Error) -> GusIntelligenceError {
+            if #available(iOS 27, macOS 27, visionOS 27, watchOS 27, *) {
+                switch error {
+                case LanguageModelError.rateLimited: return .rateLimited
+                case PrivateCloudComputeLanguageModel.Error.networkFailure: return .cloudNetwork
+                case PrivateCloudComputeLanguageModel.Error.serviceUnavailable: return .cloudServiceUnavailable
+                case let PrivateCloudComputeLanguageModel.Error.quotaLimitReached(limit): return .quota(limit.resetDate)
+                default: break
+                }
             }
             return error as? GusIntelligenceError ?? .generationFailed
         }

@@ -22,7 +22,7 @@ final class GlobalSearchSession {
         natural.text = value
         mode.edit(value, naturalSearchEnabled: naturalSearchEnabled)
         if displaysKeywords {
-            typed.setKeywordText(value, recordsHistory: true)
+            typed.setKeywordText(value, recordsHistory: !naturalSearchEnabled)
         } else {
             typed.text = ""
         }

@@ -23,6 +23,8 @@ struct SearchStoreTests {
         #expect(history.entries.isEmpty)
         root.editSearchText("mystery dramas", naturalSearchEnabled: true)
         #expect(search.displaysKeywords && search.typed.text == "mystery dramas")
+        search.typed.selectedResult(.init(id: "m", name: "Movie", type: .movie), for: search.text, in: history)
+        #expect(history.entries.isEmpty)
         search.submit(naturalSearchEnabled: true, history: history)
         #expect(search.natural.submission != nil && !search.displaysKeywords)
         search.searchByKeyword(recordingIn: history)

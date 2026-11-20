@@ -128,16 +128,13 @@ extension View {
             }
         #else
             gusSearchable(text: text, isPresented: isPresented, isFocused: isFocused, prompt: Text("Search Discover"))
-                .searchSuggestions { seerrCompletions(suggestions) }
+                .searchSuggestions {
+                    ForEach(suggestions, id: \.self) { value in
+                        Button { text.wrappedValue = value } label: { Text(verbatim: value) }
+                            .accessibilityIdentifier("Seerr.suggestion." + value)
+                    }
+                }
         #endif
-    }
-
-    private func seerrCompletions(_ values: [String]) -> some View {
-        ForEach(values, id: \.self) { value in
-            Text(verbatim: value)
-                .accessibilityIdentifier("Seerr.suggestion." + value)
-                .searchCompletion(value)
-        }
     }
 
     @ViewBuilder func gusTVRequestReview(title: SeerrTitle) -> some View {

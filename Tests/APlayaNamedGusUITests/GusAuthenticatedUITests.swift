@@ -225,6 +225,31 @@ final class GusAuthenticatedUITests: XCTestCase {
             XCTAssertTrue(app.buttons["Detail.play"].waitForExistence(timeout: 15), app.debugDescription)
         }
 
+        func testLibraryNaturalSuggestionWaitsForSubmit() throws {
+            try prepare()
+            defer { finish() }
+            let args = ["--gus-intelligence-test-cloud", "--gus-intelligence-test-suite", UUID().uuidString]
+            let app = launch("search", arguments: args)
+            let decline = app.buttons["Intelligence.prompt.decline"]
+            XCTAssertTrue(app.staticTexts["Enable For You?"].waitForExistence(timeout: 20))
+            decline.tap()
+            let field = app.searchFields.firstMatch
+            XCTAssertTrue(field.waitForExistence(timeout: 15))
+            field.tap()
+            field.typeText("Unwatched sci")
+            let title = "Unwatched sci-fi movies"
+            let completion = app.buttons[title].firstMatch
+            XCTAssertTrue(completion.waitForExistence(timeout: 10), app.debugDescription)
+            completion.tap()
+            XCTAssertEqual(field.value as? String, title)
+            XCTAssertFalse(app.buttons["Intelligence.prompt.allow"].exists)
+            field.tap()
+            field.typeText("\n")
+            XCTAssertTrue(app.staticTexts["Allow Private Cloud Compute?"].waitForExistence(timeout: 12), app.debugDescription)
+            decline.tap()
+            XCTAssertEqual(field.value as? String, title)
+        }
+
         func testReadyVideoCloseReturnsToDetail() throws {
             try prepare()
             defer { finish() }

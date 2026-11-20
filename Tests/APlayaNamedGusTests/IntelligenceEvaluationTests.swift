@@ -77,6 +77,32 @@ struct IntelligenceEvaluationTests {
     }
 
     #if canImport(FoundationModels) && !os(tvOS) && !os(watchOS)
+        @Test func cloudServiceErrorsPreserveReasonWithoutRetrying() async {
+            guard #available(iOS 27, macOS 27, visionOS 27, *) else { return }
+            typealias CloudError = PrivateCloudComputeLanguageModel.Error
+            let reset = Date(timeIntervalSince1970: 1_800_000_000)
+            let failures: [(Error, GusIntelligenceError)] = [
+                (CloudError.networkFailure(.init(debugDescription: "fixture")), .cloudNetwork),
+                (CloudError.serviceUnavailable(.init(debugDescription: "fixture")), .cloudServiceUnavailable),
+                (CloudError.quotaLimitReached(.init(resetDate: reset, debugDescription: "fixture")), .quota(reset)),
+                (CloudError.quotaLimitReached(.init(debugDescription: "fixture")), .quota(nil)),
+                (LanguageModelError.rateLimited(.init(resetDate: nil, debugDescription: "fixture")), .rateLimited),
+            ]
+            for (failure, expected) in failures {
+                var calls = 0
+                do {
+                    let _: [Int] = try await GusIntelligenceModel.route(local: { nil }, cloudAllowed: { true }, mayEscalate: { _ in true }) {
+                        calls += 1
+                        throw failure
+                    }
+                    Issue.record("Cloud request unexpectedly succeeded")
+                } catch {
+                    #expect(GusIntelligenceModel.generationError(error) == expected)
+                }
+                #expect(calls == 1)
+            }
+        }
+
         @Test func guardrailAndRefusalAreTerminal() {
             if #available(iOS 27, macOS 27, visionOS 27, *) {
                 let guardrail = LanguageModelError.guardrailViolation(.init(debugDescription: "fixture"))

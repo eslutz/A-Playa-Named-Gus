@@ -71,14 +71,11 @@ struct WatchLibrarySearchView: View {
             }
         }
         .navigationTitle("Search Library")
-        .searchable(text: Binding(get: { natural.text }, set: { draft in
-            if draft != natural.text {
-                draftMode.edit(draft, naturalSearchEnabled: prefersNatural)
-                natural.text = draft
-            }
-        }), prompt: "Search Library")
+        .searchable(text: Binding(get: { natural.text }, set: edit), prompt: "Search Library")
         .searchSuggestions {
-            ForEach(suggestions, id: \.self) { value in Text(value).searchCompletion(value) }
+            ForEach(suggestions, id: \.self) { value in
+                Button { edit(value) } label: { Text(verbatim: value) }
+            }
         }
         .onSubmit(of: .search) {
             if prefersNatural {
@@ -129,6 +126,12 @@ struct WatchLibrarySearchView: View {
     private func useKeyword() {
         natural.resetResults()
         draftMode = .keyword
+    }
+
+    private func edit(_ draft: String) {
+        guard draft != natural.text else { return }
+        draftMode.edit(draft, naturalSearchEnabled: prefersNatural)
+        natural.text = draft
     }
 }
 
