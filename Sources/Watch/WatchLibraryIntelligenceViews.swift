@@ -195,7 +195,11 @@ private struct WatchIntelligenceDestination: View {
     var body: some View {
         switch item.type {
         case .musicAlbum: WatchAlbumView(album: item)
-        case .series: WatchSeriesSearchEpisodes(series: item)
+        case .series:
+            if let id = item.id {
+                WatchSeriesSearchEpisodes(seriesID: id, title: item.displayTitle)
+                    .id(id)
+            }
         default: WatchItemActionsView(item: item)
         }
     }
@@ -203,34 +207,34 @@ private struct WatchIntelligenceDestination: View {
 
 private struct WatchSeriesSearchEpisodes: View {
     @Environment(SessionStore.self) private var session
-    let series: MediaItem
-    @State private var episodes: [MediaItem] = []
-    @State private var state: LoadState = .idle
+    let seriesID: String
+    let title: String
+    @State private var store = SeriesEpisodeListStore()
 
     var body: some View {
-        LoadingStateView(state: state, isEmpty: episodes.isEmpty, emptyTitle: "No Episodes", emptySymbol: "tv", retryAction: { Task { await load() } }) {
-            List(episodes, id: \.id) { item in
-                NavigationLink(item.displayTitle) { WatchItemActionsView(item: item) }
+        LoadingStateView(
+            state: store.state, isEmpty: store.episodes.isEmpty && !store.canLoadMore,
+            emptyTitle: "No Episodes", emptySymbol: "tv", retryAction: { Task { await loadNext() } },
+            preservesContent: true
+        ) {
+            List {
+                ForEach(store.episodes, id: \.id) { item in
+                    NavigationLink(item.displayTitle) { WatchItemActionsView(item: item) }
+                }
+                if store.canLoadMore, store.state == .loaded {
+                    Button("Load More") { Task { await loadNext() } }
+                }
             }
         }
-        .navigationTitle(series.displayTitle)
-        .task { await load() }
+        .navigationTitle(title)
+        .task {
+            if store.state == .idle {
+                await loadNext()
+            }
+        }
     }
 
-    private func load() async {
-        guard let id = series.id, session.isActive else { return }
-        state = .loading
-        do {
-            let page = try await session.mediaProvider.items(query: .init(parentID: id, includeTypes: [.episode], startIndex: 0, limit: 30, isRecursive: true))
-            try Task.checkCancellation()
-            guard session.isActive else { return }
-            episodes = ContentRatingGate.filter(page.items)
-            state = .loaded
-        } catch {
-            guard !Task.isCancelled, session.isActive else { return }
-            let failure = GusError(from: error)
-            failure.handleIfUnauthorized(session: session)
-            state = .failed(failure.localizedDescription)
-        }
+    private func loadNext() async {
+        await store.loadNext(seriesID: seriesID, session: session)
     }
 }

@@ -7,6 +7,57 @@ import Testing
 @Suite("Library store helpers", .serialized)
 struct LibraryStoreTests {
     @MainActor
+    @Test func seriesEpisodesContinuePastThreeRestrictedPages() async throws {
+        let session = try libraryTestSession()
+        let store = SeriesEpisodeListStore(admits: { $0.id == "visible" })
+        var responses = stride(from: 0, to: 90, by: 30).map { start in
+            let hidden = (start ..< start + 30).map { BaseItemDto(id: "hidden-\($0)", type: .episode) }
+            return StubbedLibraryItemsResponse(result: .init(items: hidden))
+        }
+        responses.append(.init(result: .init(items: [BaseItemDto(id: "visible", type: .episode)])))
+        LibraryItemsURLProtocol.configure(responses: responses)
+
+        await store.loadNext(seriesID: "series-1", session: session)
+        #expect(store.state == .loaded && store.episodes.isEmpty && store.canLoadMore)
+        #expect(LibraryItemsURLProtocol.recordedRequests.map(\.startIndex) == [0, 30, 60])
+
+        await store.loadNext(seriesID: "series-1", session: session)
+        #expect(store.episodes.compactMap(\.id) == ["visible"] && !store.canLoadMore)
+        let requests = LibraryItemsURLProtocol.recordedRequests
+        #expect(requests.map(\.startIndex) == [0, 30, 60, 90])
+        #expect(requests.allSatisfy { $0.parentID == "series-1" && $0.includeItemTypes == ["Episode"] && $0.limit == 30 && $0.recursive == "true" })
+    }
+
+    @MainActor
+    @Test func seriesEpisodesRetryAtTheRawOffsetAfterAnIncompletePage() async throws {
+        let session = try libraryTestSession()
+        let store = SeriesEpisodeListStore(admits: { $0.id != "hidden" })
+        let first = BaseItemDto(id: "first", type: .episode)
+        let second = BaseItemDto(id: "second", type: .episode)
+        let third = BaseItemDto(id: "third", type: .episode)
+        LibraryItemsURLProtocol.configure(responses: [
+            .init(result: .init(items: [first, BaseItemDto(id: "hidden", type: .episode)], totalRecordCount: 6)),
+            .init(result: .init(items: [first, second])),
+            .init(result: .init(items: [])),
+            .init(result: .init(items: [second, third])),
+        ])
+
+        await store.loadNext(seriesID: "series-1", session: session)
+        await store.loadNext(seriesID: "series-1", session: session)
+        #expect(store.episodes.compactMap(\.id) == ["first", "second"] && store.canLoadMore)
+        await store.loadNext(seriesID: "series-1", session: session)
+        guard case .failed = store.state else {
+            Issue.record("An incomplete page must offer a retry")
+            return
+        }
+        #expect(store.episodes.compactMap(\.id) == ["first", "second"] && store.canLoadMore)
+        await store.loadNext(seriesID: "series-1", session: session)
+        #expect(store.state == .loaded && !store.canLoadMore)
+        #expect(store.episodes.compactMap(\.id) == ["first", "second", "third"])
+        #expect(LibraryItemsURLProtocol.recordedRequests.map(\.startIndex) == [0, 2, 4, 4])
+    }
+
+    @MainActor
     @Test func namedRelatedCreditRequiresAnExactUniqueAccountMatch() async throws {
         let provider = try libraryTestSession().mediaProvider
         let exact = BaseItemDto(id: "g1", name: "Coastal Mystery", type: .genre)
@@ -513,6 +564,8 @@ private struct RecordedLibraryItemsRequest: Equatable {
     var parentID: String?
     var searchTerm: String?
     var startIndex: Int?
+    var limit: Int?
+    var recursive: String?
     var filters: String?
     var sortBy: String?
     var sortOrder: String?
@@ -679,6 +732,8 @@ private final class LibraryItemsURLProtocolState: @unchecked Sendable {
             parentID: queryValue("parentID", in: queryItems),
             searchTerm: queryValue("searchTerm", in: queryItems),
             startIndex: queryValue("startIndex", in: queryItems).flatMap(Int.init),
+            limit: queryValue("limit", in: queryItems).flatMap(Int.init),
+            recursive: queryValue("recursive", in: queryItems),
             filters: queryValue("filters", in: queryItems),
             sortBy: queryValue("sortBy", in: queryItems),
             sortOrder: queryValue("sortOrder", in: queryItems)

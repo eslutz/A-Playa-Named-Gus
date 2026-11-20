@@ -16,6 +16,56 @@ enum SeriesRequest {
     }
 }
 
+/// The Watch series destination browses episodes across seasons in Jellyfin's order.
+@MainActor @Observable
+final class SeriesEpisodeListStore {
+    private(set) var episodes: [MediaItem] = []
+    private(set) var state: LoadState = .idle
+    private var paging = Paging(pageSize: 30)
+    private let admits: (MediaItem) -> Bool
+
+    init(admits: @escaping (MediaItem) -> Bool = { ContentRatingGate.admitsStored($0) }) {
+        self.admits = admits
+    }
+
+    var canLoadMore: Bool {
+        paging.canLoadMore
+    }
+
+    func loadNext(seriesID: String, session: SessionStore) async {
+        guard session.isActive, !state.isLoading, state != .loaded || canLoadMore else { return }
+        state = .loading
+        do {
+            // Bound the work per tap when entire pages are restricted or duplicated.
+            for _ in 0 ..< 3 {
+                try Task.checkCancellation()
+                let offset = paging.nextStartIndex
+                let query = MediaItemQuery(parentID: seriesID, includeTypes: [.episode], startIndex: offset, limit: paging.pageSize, isRecursive: true)
+                let page = try await session.mediaProvider.items(query: query)
+                try Task.checkCancellation()
+                guard session.isActive else { return }
+                let total = try MediaPageLoader.validatedTotal(for: page, startIndex: offset, previousTotal: paging.totalRecordCount)
+                let additions = MediaPageLoader.unique(page.items.filter(admits), after: episodes)
+                episodes += additions
+                paging.appendResults(receivedCount: page.items.count, totalRecordCount: total)
+                if !additions.isEmpty || !canLoadMore {
+                    break
+                }
+            }
+            state = .loaded
+        } catch {
+            guard session.isActive else { return }
+            let failure = GusError(from: error)
+            if Task.isCancelled || failure.isCancellation {
+                state = paging.nextStartIndex == 0 ? .idle : .loaded
+            } else {
+                failure.handleIfUnauthorized(session: session)
+                state = .failed(failure.localizedDescription)
+            }
+        }
+    }
+}
+
 @MainActor
 @Observable
 final class ItemDetailStore {
