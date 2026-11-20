@@ -238,11 +238,12 @@ final class GusAuthenticatedUITests: XCTestCase {
             field.tap()
             field.typeText("Unwatched sci")
             let title = "Unwatched sci-fi movies"
-            let completion = app.buttons[title].firstMatch
+            let completion = app.buttons["Search.suggestion." + title].firstMatch
             XCTAssertTrue(completion.waitForExistence(timeout: 10), app.debugDescription)
             completion.tap()
             XCTAssertEqual(field.value as? String, title)
-            XCTAssertFalse(app.buttons["Intelligence.prompt.allow"].exists)
+            XCTAssertFalse(app.staticTexts["Allow Private Cloud Compute?"].exists, app.debugDescription)
+            XCTAssertFalse(app.staticTexts["Enable For You?"].exists, app.debugDescription)
             field.tap()
             field.typeText("\n")
             XCTAssertTrue(app.staticTexts["Allow Private Cloud Compute?"].waitForExistence(timeout: 12), app.debugDescription)

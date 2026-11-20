@@ -22,11 +22,12 @@
             field.tap()
             let title = "Gus Fixture Movie"
             field.typeText("Gus Fixture Mov")
-            let completion = app.collectionViews.cells.buttons[title].firstMatch
+            let completion = app.buttons["Search.suggestion." + title].firstMatch
             XCTAssertTrue(completion.waitForExistence(timeout: 15), app.debugDescription)
             completion.tap()
             XCTAssertEqual(field.value as? String, title)
-            XCTAssertFalse(app.buttons["Intelligence.prompt.allow"].exists)
+            XCTAssertFalse(app.staticTexts["Allow Private Cloud Compute?"].exists, app.debugDescription)
+            XCTAssertFalse(app.staticTexts["Enable For You?"].exists, app.debugDescription)
             let typedState = try await fixtureState()
             XCTAssertFalse(typedState.events.contains { $0.exactFixtureMovieSearch == true })
             if !app.keyboards.buttons["Search"].firstMatch.isHittable {

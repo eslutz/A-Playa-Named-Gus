@@ -95,13 +95,12 @@ struct DiscoverBrowseView: View {
             }
         }
         .navigationTitle(searchOnly ? "Search Seerr" : "Discover")
-        .gusSeerrSearch(text: Binding(get: { query }, set: { value in
-            if value != query {
-                naturalSubmission = nil
-                draftMode.edit(value, naturalSearchEnabled: session.intelligenceAccess.usesNaturalSearch)
+        .safeAreaInset(edge: .top, spacing: 0) {
+            if session.intelligenceAccess.usesNaturalSearch, naturalSubmission == nil {
+                SearchDraftSuggestions(values: suggestions, select: edit)
             }
-            query = value
-        }), isPresented: $searchPresented, isFocused: $searchFocused, enabledOnTV: searchOnly, suggestions: suggestions, suggestionsInResults: !naturalMode)
+        }
+        .gusSeerrSearch(text: Binding(get: { query }, set: edit), isPresented: $searchPresented, isFocused: $searchFocused, enabledOnTV: searchOnly, suggestions: session.intelligenceAccess.usesNaturalSearch ? [] : suggestions, suggestionsInResults: !naturalMode)
         .onChange(of: session.intelligenceAccess.usesNaturalSearch) { _, _ in
             naturalSubmission = nil
             draftMode = normalizedQuery.isEmpty ? .natural : .keywordUntilSubmit
@@ -148,6 +147,13 @@ struct DiscoverBrowseView: View {
             await catalog.load(store: store)
         }
         .onChange(of: store.revision) { _, _ in scrollID = nil }
+    }
+
+    private func edit(_ value: String) {
+        guard value != query else { return }
+        naturalSubmission = nil
+        draftMode.edit(value, naturalSearchEnabled: session.intelligenceAccess.usesNaturalSearch)
+        query = value
     }
 
     private var suggestions: [String] {

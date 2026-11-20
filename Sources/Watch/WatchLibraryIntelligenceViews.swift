@@ -42,6 +42,9 @@ struct WatchLibrarySearchView: View {
 
     var body: some View {
         List {
+            if prefersNatural, !suggestions.isEmpty {
+                Section { suggestionButtons }
+            }
             if naturalMode {
                 Text("Watch searches recent items and keyword matches.").font(.footnote)
                 if !natural.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
@@ -73,8 +76,8 @@ struct WatchLibrarySearchView: View {
         .navigationTitle("Search Library")
         .searchable(text: Binding(get: { natural.text }, set: edit), prompt: "Search Library")
         .searchSuggestions {
-            ForEach(suggestions, id: \.self) { value in
-                Button { edit(value) } label: { Text(verbatim: value) }
+            if !prefersNatural {
+                suggestionButtons
             }
         }
         .onSubmit(of: .search) {
@@ -126,6 +129,12 @@ struct WatchLibrarySearchView: View {
     private func useKeyword() {
         natural.resetResults()
         draftMode = .keyword
+    }
+
+    private var suggestionButtons: some View {
+        ForEach(suggestions, id: \.self) { value in
+            Button { edit(value) } label: { Text(verbatim: value) }
+        }
     }
 
     private func edit(_ draft: String) {

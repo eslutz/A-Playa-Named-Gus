@@ -1,5 +1,33 @@
 import SwiftUI
 
+/// The system search-suggestion list also sends a search submission on iPad.
+/// These buttons live in the search content, so selecting one can only edit the draft.
+struct SearchDraftSuggestions: View {
+    let values: [String]
+    let select: (String) -> Void
+
+    var body: some View {
+        if !values.isEmpty {
+            ScrollView(.horizontal) {
+                HStack {
+                    ForEach(values, id: \.self) { value in
+                        Button { select(value) } label: { Text(verbatim: value) }
+                            .buttonStyle(.bordered)
+                            .accessibilityIdentifier("Search.suggestion." + value)
+                    }
+                }
+                .padding(.horizontal)
+                .padding(.vertical, 6)
+            }
+            .scrollIndicators(.hidden)
+        }
+    }
+}
+
+extension EnvironmentValues {
+    @Entry var librarySearchDraftSuggestions: [String] = []
+}
+
 struct NaturalLibraryResults: View {
     @Environment(SessionStore.self) private var session
     let search: GlobalSearchSession
@@ -63,7 +91,9 @@ struct NaturalLibraryResults: View {
 /// Attach to the view owning .searchable, including compact iPhone's role-based tab.
 struct LibrarySearchFieldBehavior: ViewModifier {
     @Environment(SessionStore.self) private var session
-    @Environment(RootNavigationState.self) private var root
+    #if os(tvOS)
+        @Environment(RootNavigationState.self) private var root
+    #endif
     @AppStorage(ContentRatingGate.limitDefaultsKey) private var restriction = ContentRatingGate.Limit.off.rawValue
     @AppStorage(ContentRatingGate.hideUnratedDefaultsKey) private var hideUnrated = false
     @State private var catalogTerms: [String] = []
@@ -107,14 +137,13 @@ struct LibrarySearchFieldBehavior: ViewModifier {
             content.gusTVSearchCompletions(terms, inResults: search.typed.store?.results.isEmpty == false && !naturalMode, select: { root.editSearchText($0) })
         #else
             content.searchSuggestions {
-                ForEach(terms, id: \.self) { value in
-                    Button {
-                        root.editSearchText(value, naturalSearchEnabled: session.intelligenceAccess.usesNaturalSearch)
-                    } label: {
-                        Text(verbatim: value)
+                if !session.intelligenceAccess.usesNaturalSearch {
+                    ForEach(terms, id: \.self) { value in
+                        Text(verbatim: value).searchCompletion(value)
                     }
                 }
             }
+            .environment(\.librarySearchDraftSuggestions, session.intelligenceAccess.usesNaturalSearch && search.natural.submission == nil ? terms : [])
             .onSubmit(of: .search) { search.submit(naturalSearchEnabled: session.intelligenceAccess.usesNaturalSearch, history: session.searchHistory) }
         #endif
     }

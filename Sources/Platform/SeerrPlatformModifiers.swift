@@ -130,8 +130,9 @@ extension View {
             gusSearchable(text: text, isPresented: isPresented, isFocused: isFocused, prompt: Text("Search Discover"))
                 .searchSuggestions {
                     ForEach(suggestions, id: \.self) { value in
-                        Button { text.wrappedValue = value } label: { Text(verbatim: value) }
+                        Text(verbatim: value)
                             .accessibilityIdentifier("Seerr.suggestion." + value)
+                            .searchCompletion(value)
                     }
                 }
         #endif

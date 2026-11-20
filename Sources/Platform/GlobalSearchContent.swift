@@ -86,6 +86,9 @@ struct GlobalSearchContent: View {
             }
         }
         .navigationTitle(navigationTitle)
+        .safeAreaInset(edge: .top, spacing: 0) {
+            LibraryDraftSuggestionRows()
+        }
         .toolbar {
             if root.hasSearchReturn {
                 ToolbarItem(placement: .cancellationAction) {
@@ -103,6 +106,18 @@ struct GlobalSearchContent: View {
             }
         }
         .modifier(SearchExitCommand(root: root))
+    }
+}
+
+private struct LibraryDraftSuggestionRows: View {
+    @Environment(\.librarySearchDraftSuggestions) private var values
+    @Environment(RootNavigationState.self) private var root
+    @Environment(SessionStore.self) private var session
+
+    var body: some View {
+        SearchDraftSuggestions(values: values) {
+            root.editSearchText($0, naturalSearchEnabled: session.intelligenceAccess.usesNaturalSearch)
+        }
     }
 }
 
