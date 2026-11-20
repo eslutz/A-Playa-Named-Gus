@@ -61,11 +61,26 @@ struct IntelligenceEvaluationTests {
     }
 
     #if canImport(FoundationModels) && !os(tvOS) && !os(watchOS)
-        private nonisolated static var hasLocalModel: Bool {
-            SystemLanguageModel.default.isAvailable && SystemLanguageModel.default.supportsLocale()
+        @Test func guardrailAndRefusalAreTerminal() {
+            if #available(iOS 27, macOS 27, visionOS 27, *) {
+                let guardrail = LanguageModelError.guardrailViolation(.init(debugDescription: "fixture"))
+                let refusal = LanguageModelError.refusal(.init(explanation: "fixture", debugDescription: "fixture"))
+                #expect(!GusIntelligenceModel.canEscalate(guardrail))
+                #expect(!GusIntelligenceModel.canEscalate(refusal))
+                #expect(GusIntelligenceModel.canEscalate(SystemLanguageModel.Error.assetsUnavailable(.init(debugDescription: "fixture"))))
+            }
         }
 
-        @Test(.enabled(if: hasLocalModel, "Requires an available on-device Apple model"))
+        private nonisolated static var hasLocalModel: Bool {
+            // A simulator can advertise availability while its token generator rejects inference.
+            // Preserve an explicit diagnostic run for hosts that can supply the model.
+            #if targetEnvironment(simulator)
+                guard ProcessInfo.processInfo.environment["GUS_EVALUATE_SYSTEM_MODEL"] == "1" else { return false }
+            #endif
+            return SystemLanguageModel.default.isAvailable && SystemLanguageModel.default.supportsLocale()
+        }
+
+        @Test(.enabled(if: hasLocalModel, "Requires supported hardware with a ready on-device Apple model"))
         func localModelLibraryTopFive() async throws {
             let provider = FakeMediaProviderSession(capabilities: .init())
             let session = try makeSession(provider)
@@ -100,7 +115,7 @@ struct IntelligenceEvaluationTests {
             #expect(try await session.libraryIntelligence.search(missing).isEmpty)
         }
 
-        @Test(.enabled(if: hasLocalModel, "Requires an available on-device Apple model"))
+        @Test(.enabled(if: hasLocalModel, "Requires supported hardware with a ready on-device Apple model"))
         func localModelDiscoverTopFive() async throws {
             let model = try GusIntelligenceModel(session: makeSession(FakeMediaProviderSession(capabilities: .init())))
             let titles: [SeerrTitle] = [
@@ -115,9 +130,9 @@ struct IntelligenceEvaluationTests {
                 ("Sci-fi movies released after 2014", 1),
             ] {
                 let intent = try await model.interpretDiscover(query)
-                #expect(intent.isSupported)
+                #expect(intent.isSupported, "Unsupported interpretation of \(query): \(intent)")
                 let hits = titles.filter { intent.score($0) != nil }
-                #expect(hits.map(\.id) == [expected])
+                #expect(hits.map(\.id) == [expected], "Incorrect interpretation of \(query): \(intent)")
             }
         }
 

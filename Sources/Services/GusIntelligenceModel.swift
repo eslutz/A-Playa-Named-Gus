@@ -164,9 +164,11 @@ struct GusIntelligenceModel {
     func interpretDiscover(_ prompt: String) async throws -> SeerrSearchIntent {
         #if canImport(FoundationModels) && !os(tvOS) && !os(watchOS)
             return try await generate(prompt: checkedPrompt(prompt), instructions: Self.searchInstructions + """
-            Search the Seerr movie, TV and person catalog. Use a person's name in keywords to look up the person.
-            Use characters for required character names within titles.
-            Place personal viewing status, library availability, duration, and other unsupported requirements in unsupported.
+            Extract filters for the Seerr movie, TV and person catalog.
+            For a movie or series title lookup, put the title alone in keywords.
+            For a person lookup, set mediaType to person and place the name only in keywords.
+            Genres belong in genres. A year after 2000 starts at 2001. A decade includes all ten years.
+            Use unsupported only for requirements actually present in the request that this schema cannot express.
             """, schema: DiscoverQuery.self) { try $0.intent() }
         #else
             throw GusIntelligenceError.unavailable
@@ -282,7 +284,7 @@ struct GusIntelligenceModel {
                     diagnostics.endInterval("LibraryIntelligence", interval)
                     diagnostics.record(.intelligenceAttempt(cloud: cloud, succeeded: succeeded))
                 }
-                let value = try await model.respond(to: prompt, generating: schema)
+                let value = try await model.respond(to: prompt, generating: schema, options: GenerationOptions(samplingMode: .greedy))
                 try checkAccess(cloud: cloud)
                 let result = try validate(value.content)
                 succeeded = true
@@ -331,13 +333,17 @@ struct GusIntelligenceModel {
         }
 
         #if !os(watchOS)
-            private static func canEscalate(_ error: Error) -> Bool {
+            static func canEscalate(_ error: Error) -> Bool {
                 if case GusIntelligenceError.invalidResponse = error {
                     return true
                 }
                 if #available(iOS 27, macOS 27, visionOS 27, *) {
-                    if case LanguageModelError.contextSizeExceeded = error {
-                        return true
+                    if let modelError = error as? LanguageModelError {
+                        switch modelError {
+                        case .contextSizeExceeded, .unsupportedLanguageOrLocale, .unsupportedGenerationGuide, .timeout:
+                            return true
+                        default: return false
+                        }
                     }
                     if case SystemLanguageModel.Error.assetsUnavailable = error {
                         return true

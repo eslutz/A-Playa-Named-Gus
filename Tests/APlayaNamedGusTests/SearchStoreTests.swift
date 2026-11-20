@@ -49,6 +49,11 @@ struct SearchStoreTests {
         restored.cloudEnabled = true
         let other = GusIntelligencePreferences(scope: .init(serverID: "b", userID: "user"), defaults: defaults)
         #expect(!other.cloudEnabled && !other.recommendationsEnabled)
+        other.recommendationsEnabled = true
+        GusIntelligencePreferences.delete(scope: scope, defaults: defaults)
+        let removed = GusIntelligencePreferences(scope: scope, defaults: defaults)
+        #expect(!removed.cloudEnabled && !removed.recommendationsEnabled)
+        #expect(GusIntelligencePreferences(scope: .init(serverID: "b", userID: "user"), defaults: defaults).recommendationsEnabled)
     }
 
     @Test("recent searches keep the newest twenty distinct intents for one server and user")

@@ -15,6 +15,7 @@
     struct SearchTerms: Sendable {
         @Guide(description: "Explicit title or name lookups")
         var keywords: [String]
+        @Guide(description: "Genres explicitly requested, such as science fiction. Empty for title lookups.")
         var genres: [String]
         @Guide(description: "Credited people whose job was not specified")
         var people: [String]
@@ -22,8 +23,11 @@
         var characters: [String]
         @Guide(description: "Soft descriptive terms or plot motifs")
         var themes: [String]
+        @Guide(description: "Verbatim phrases from the request for constraints that cannot be represented. Empty when the request is fully supported.")
         var unsupported: [String]
+        @Guide(description: "Inclusive earliest requested release year")
         var minimumYear: Int?
+        @Guide(description: "Inclusive latest requested release year")
         var maximumYear: Int?
 
         var requiredCredits: [GusCreditRequirement] {
@@ -105,7 +109,7 @@
                 unsupported: terms.unsupported,
                 minimumYear: terms.minimumYear,
                 maximumYear: terms.maximumYear
-            )
+            ).normalizedPersonLookup()
         }
     }
 

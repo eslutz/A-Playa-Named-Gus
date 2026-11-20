@@ -130,8 +130,10 @@ final class GusLibraryIntelligence {
         // recreates a deleted directory after sign-out.
         _ = try check(restriction)
         try FileManager.default.createDirectory(at: catalog.directory, withIntermediateDirectories: true)
-        let file = catalog.directory.appending(path: UUID().uuidString + ".sqlite")
-        defer { try? FileManager.default.removeItem(at: file) }
+        GusCatalogStage.removeAbandoned(in: catalog.directory)
+        let stage = try GusCatalogStage(in: catalog.directory)
+        let file = stage.file
+        defer { stage.discard() }
         try await catalog.prepare(file, restriction: restriction)
         var progress = GusCatalogPaging()
         while true {
@@ -157,11 +159,18 @@ final class GusLibraryIntelligence {
         var query = page(records.count)
         query.itemIDs = records.compactMap(\.id)
         guard let ids = query.itemIDs, !ids.isEmpty else { return [] }
-        let live = try await fetch(query, restriction: restriction)
         var byID: [String: MediaItem] = [:]
-        for item in ContentRatingGate.filter(live.items) {
-            if let id = item.id {
-                byID[id] = item
+        var progress = GusCatalogPaging()
+        while true {
+            query.startIndex = progress.offset
+            let live = try await fetch(query, restriction: restriction)
+            for item in ContentRatingGate.filter(live.items) {
+                if let id = item.id {
+                    byID[id] = item
+                }
+            }
+            if try progress.advance(live, requested: query.limit) {
+                break
             }
         }
         return records.compactMap { saved in
@@ -204,10 +213,11 @@ final class GusLibraryIntelligence {
             return MediaPageLoader.unique(ContentRatingGate.filter(candidates)).filter { GusLibraryMatching.accepts($0, intent: intent) }
         #else
             try await refreshCatalog(restriction: restriction, force: false)
-            let raw = try await catalog.matching(terms: terms, limit: 60) {
+            return try await catalog.collect(terms: terms, batchSize: 60, limit: 60, accepts: {
                 ContentRatingGate.admitsStored($0) && GusLibraryMatching.accepts($0, intent: intent)
-            }
-            return try await verified(raw, restriction: restriction).filter { GusLibraryMatching.accepts($0, intent: intent) }
+            }, verify: { batch in
+                try await self.verified(batch, restriction: restriction).filter { GusLibraryMatching.accepts($0, intent: intent) }
+            }, identity: { $0.id })
         #endif
     }
 
@@ -219,11 +229,12 @@ final class GusLibraryIntelligence {
         #else
             let restriction = restrictions
             try await refreshCatalog(restriction: restriction, force: false)
-            let raw = try await catalog.matching(terms: [prefix], limit: 8) { item in
+            return try await catalog.collect(terms: [prefix], batchSize: 8, limit: 6, accepts: { item in
                 ContentRatingGate.admitsStored(item) && !GusLibraryMatching.completions(in: [item], prefix: prefix).isEmpty
-            }
-            let items = try await verified(raw, restriction: restriction)
-            return GusLibraryMatching.completions(in: items, prefix: prefix)
+            }, verify: { batch in
+                let live = try await self.verified(batch, restriction: restriction)
+                return GusLibraryMatching.completions(in: live, prefix: prefix)
+            }, identity: { GusLibraryMatching.normalized($0) })
         #endif
     }
 
@@ -279,21 +290,25 @@ final class GusLibraryIntelligence {
             let live = try await verified(cachedPicks.map(\.item), restriction: restriction)
             let checked = taste.ranked(live)
             try ensureCurrent()
-            return cachedPicks.compactMap { saved in checked.first { $0.id == saved.id } }
+            let surviving = cachedPicks.compactMap { saved in checked.first { $0.id == saved.id } }
+            if !surviving.isEmpty, surviving.count == cachedPicks.count {
+                return surviving
+            }
         }
 
         #if os(watchOS)
             let raw = try await fetch(page(80, sort: .recentlyAdded), restriction: restriction).items
+            let preliminary = Array(taste.ranked(ContentRatingGate.filter(raw)).prefix(24))
+            let live = try await verified(preliminary.map(\.item), restriction: restriction)
         #else
             try await refreshCatalog(restriction: restriction, force: refresh)
-            let raw = try await catalog.matching(terms: taste.traits, limit: 96) { item in
-                ContentRatingGate.admitsStored(item) && item.userData?.isFavorite != true &&
-                    item.userData?.isWatched != true && !GusLibraryMatching.isInProgress(item)
-            }
+            let live = try await catalog.collect(terms: taste.traits, batchSize: 32, limit: 96, accepts: {
+                ContentRatingGate.admitsStored($0) && taste.isCandidate($0)
+            }, verify: { batch in
+                try await self.verified(batch, restriction: restriction).filter { taste.isCandidate($0) }
+            }, identity: { $0.id })
         #endif
-        let preliminary = Array(taste.ranked(ContentRatingGate.filter(raw)).prefix(24))
-        let live = try await verified(preliminary.map(\.item), restriction: restriction)
-        let shortlist = taste.ranked(live)
+        let shortlist = Array(taste.ranked(live).prefix(24))
         try ensureCurrent()
         guard !shortlist.isEmpty else {
             cachedSeeds = nil
@@ -305,7 +320,7 @@ final class GusLibraryIntelligence {
         }
         let ordered: [GusLibraryPick]
         do {
-            let order = try await GusIntelligenceModel(session: session).rank(candidates: candidates, traits: taste.traits)
+            let order = candidates.count == 1 ? [0] : try await GusIntelligenceModel(session: session).rank(candidates: candidates, traits: taste.traits)
             var selected = Set<Int>()
             ordered = (order + Array(shortlist.indices)).filter { shortlist.indices.contains($0) && selected.insert($0).inserted }.map { shortlist[$0] }
         } catch {
@@ -313,10 +328,9 @@ final class GusLibraryIntelligence {
             ordered = shortlist
         }
         try ensureCurrent()
-        let selected = Array(ordered.prefix(6))
-        let final = try taste.ranked(await verified(selected.map(\.item), restriction: restriction))
+        let final = try taste.ranked(await verified(ordered.map(\.item), restriction: restriction))
         try ensureCurrent()
-        cachedPicks = selected.compactMap { pick in final.first { $0.id == pick.id } }
+        cachedPicks = Array(ordered.compactMap { pick in final.first { $0.id == pick.id } }.prefix(6))
         cachedSeeds = seeds
         cachedRestrictions = restriction
         return cachedPicks

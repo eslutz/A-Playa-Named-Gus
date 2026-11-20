@@ -121,7 +121,7 @@ enum GusLibraryMatching {
         return results
     }
 
-    struct Taste {
+    struct Taste: Sendable {
         var weights: [String: Int] = [:]
         var tags: [String: String] = [:]
         var seedIDs: Set<String> = []
@@ -154,10 +154,19 @@ enum GusLibraryMatching {
             return tags.filter { !$0.value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
         }
 
+        private func isEligible(_ item: MediaItem) -> Bool {
+            guard let id = item.id else { return false }
+            return !seedIDs.contains(id) && item.userData?.isWatched != true &&
+                item.userData?.isFavorite != true && !isInProgress(item)
+        }
+
+        func isCandidate(_ item: MediaItem) -> Bool {
+            isEligible(item) && Self.tags(for: item).keys.contains { weights[$0] != nil }
+        }
+
         func ranked(_ items: [MediaItem]) -> [GusLibraryPick] {
             let scored = items.compactMap { item -> (GusLibraryPick, Int)? in
-                guard let id = item.id, !seedIDs.contains(id), item.userData?.isWatched != true,
-                      item.userData?.isFavorite != true, !isInProgress(item) else { return nil }
+                guard isEligible(item) else { return nil }
                 let tags = Self.tags(for: item)
                 let matches = tags.keys.filter { weights[$0] != nil }.sorted { a, b in
                     let lhs = weights[a, default: 0], rhs = weights[b, default: 0]

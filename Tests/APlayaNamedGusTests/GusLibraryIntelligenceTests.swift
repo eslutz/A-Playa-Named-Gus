@@ -58,23 +58,28 @@ struct GusLibraryIntelligenceTests {
             ("song", .init(mediaTypes: [.audio], keywords: ["Current"])),
         ]
         for (id, intent) in requirements {
-            let hits = try await catalog.matching(terms: intent.keywords + intent.themes, limit: 5) { GusLibraryMatching.accepts($0, intent: intent) }
+            let hits = try await catalog.collect(terms: intent.keywords + intent.themes, batchSize: 5, limit: 5, accepts: {
+                GusLibraryMatching.accepts($0, intent: intent)
+            }, verify: { $0 }, identity: { $0.id })
             #expect(hits.contains { $0.id == id })
         }
     }
 
-    @Test @MainActor func snapshotMatchesAreRecheckedAndNewFavoritesUseLiveState() async throws {
-        let provider = FakeMediaProviderSession(capabilities: .init())
+    @MainActor private func makeSession(_ provider: FakeMediaProviderSession) throws -> SessionStore {
         let url = try #require(URL(string: "https://example.com"))
         let server = UUID().uuidString
-        let scope = AccountScope(serverID: server, userID: "user")
-        defer { GusLibraryIntelligence.deleteCatalog(scope: scope) }
-        let session = SessionStore(
+        return SessionStore(
             client: JellyfinClientFactory.makeClient(url: url),
             user: .init(id: "user", name: "User", serverID: server),
             server: .init(id: server, name: "Server", url: url),
             mediaProvider: provider
         )
+    }
+
+    @Test @MainActor func snapshotMatchesAreRecheckedAndNewFavoritesUseLiveState() async throws {
+        let provider = FakeMediaProviderSession(capabilities: .init())
+        let session = try makeSession(provider)
+        defer { GusLibraryIntelligence.deleteCatalog(scope: session.references.scope) }
         let removed = MediaItem(id: "removed", name: "Harbor Lights", officialRating: "G", type: .movie)
         var renamed = MediaItem(id: "renamed", name: "Harbor Road", officialRating: "G", type: .movie)
         var newFavorite = MediaItem(id: "favorite", name: "Tide", officialRating: "G", type: .movie)
@@ -99,6 +104,82 @@ struct GusLibraryIntelligenceTests {
         #expect(favorites.compactMap(\.id) == ["favorite"])
         provider.itemsHandler = { _ in throw GusError.offline }
         await #expect(throws: GusError.offline) { try await session.libraryIntelligence.search(.init(keywords: ["Harbor"])) }
+    }
+
+    @Test @MainActor func searchAndCompletionsContinuePastRevokedBatches() async throws {
+        let provider = FakeMediaProviderSession(capabilities: .init())
+        let session = try makeSession(provider)
+        defer { GusLibraryIntelligence.deleteCatalog(scope: session.references.scope) }
+        let rows = (0 ..< 65).map { MediaItem(id: "row-\($0)", name: "Harbor \($0)", officialRating: "G", type: .movie) }
+        var requested = Set<String>()
+        provider.itemsHandler = { query in
+            guard let batch = query.itemIDs else { return .init(items: rows, totalRecordCount: rows.count) }
+            let firstBatch = requested.isEmpty
+            #expect(requested.isDisjoint(with: batch))
+            requested.formUnion(batch)
+            let live = firstBatch ? [] : rows.filter { batch.contains($0.id ?? "") }
+            return .init(items: live, totalRecordCount: live.count)
+        }
+        let hits = try await session.libraryIntelligence.search(.init(keywords: ["Harbor"]))
+        #expect(hits.count == 5)
+        #expect(requested.count == 65)
+        requested.removeAll()
+        let suggestions = try await session.libraryIntelligence.suggestions(prefix: "har")
+        #expect(suggestions.count == 6)
+        #expect(requested.count == 16)
+    }
+
+    @Test @MainActor func shelfRequiresExactAffinityAndReplacesARevokedCachedPick() async throws {
+        let provider = FakeMediaProviderSession(capabilities: .init())
+        let session = try makeSession(provider)
+        session.intelligencePreferences.recommendationsEnabled = true
+        defer {
+            GusLibraryIntelligence.deleteCatalog(scope: session.references.scope)
+            GusIntelligencePreferences.delete(scope: session.references.scope, defaults: .standard)
+        }
+        let seed = MediaItem(genres: ["Mystery"], id: "seed", officialRating: "G", type: .book, userData: .init(isFavorite: true))
+        let candidates = ["a", "b"].map { MediaItem(genres: ["Mystery"], id: $0, name: "Coast", officialRating: "G", type: .book) }
+        let incidental = (0 ..< 100).map { MediaItem(id: "distractor-\($0)", name: "Mystery", officialRating: "G", type: .movie) }
+        var available = candidates[0]
+        provider.itemsHandler = { query in
+            if query.favoritesOnly {
+                return .init(items: [seed], totalRecordCount: 1)
+            }
+            if query.mostRecentlyPlayedFirst {
+                return .init(items: [], totalRecordCount: 0)
+            }
+            if let ids = query.itemIDs {
+                #expect(ids.allSatisfy { $0 == "a" || $0 == "b" })
+                let live = ids.contains(available.id ?? "") ? [available] : []
+                return .init(items: live, totalRecordCount: live.count)
+            }
+            let rows = incidental + candidates
+            return .init(items: rows, totalRecordCount: rows.count)
+        }
+        let first = try await session.libraryIntelligence.recommendations()
+        #expect(first.compactMap(\.id) == ["a"])
+        available = candidates[1]
+        let replacement = try await session.libraryIntelligence.recommendations()
+        #expect(replacement.compactMap(\.id) == ["b"])
+    }
+
+    @Test func abandonedStageCleanupPreservesActiveWritersAndPublishedSnapshot() throws {
+        let directory = URL.temporaryDirectory.appending(path: UUID().uuidString)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let stale = directory.appending(path: UUID().uuidString)
+        let lease = stale.appendingPathExtension("lease"), orphan = stale.appendingPathExtension("sqlite")
+        let snapshot = directory.appending(path: "catalog.sqlite")
+        let current = try GusCatalogStage(in: directory)
+        defer { current.discard() }
+        for file in [lease, orphan, snapshot, current.file] {
+            try Data().write(to: file)
+        }
+        GusCatalogStage.removeAbandoned(in: directory)
+        #expect(!FileManager.default.fileExists(atPath: orphan.path))
+        #expect(!FileManager.default.fileExists(atPath: lease.path))
+        #expect(FileManager.default.fileExists(atPath: current.file.path))
+        #expect(FileManager.default.fileExists(atPath: snapshot.path))
     }
 
     @Test func incompleteAndRepeatedPagesCannotPublishASnapshot() throws {

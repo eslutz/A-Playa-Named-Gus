@@ -13,6 +13,24 @@ struct SeerrSearchIntent: Hashable, Sendable {
     var minimumYear: Int?
     var maximumYear: Int?
 
+    /// A name in a person lookup identifies the result. A name on a film or series
+    /// describes a required credit and must remain a separate constraint.
+    func normalizedPersonLookup() -> Self {
+        guard mediaType == "person" else { return self }
+        var normalized = self
+        if keywords.isEmpty, genres.isEmpty, credits.isEmpty, characters.isEmpty, themes.isEmpty,
+           unsupported.isEmpty, minimumYear == nil, maximumYear == nil
+        {
+            normalized.keywords = people
+            normalized.people = []
+        } else {
+            normalized.people = people.filter { person in
+                !keywords.contains { Self.sameName($0, person) }
+            }
+        }
+        return normalized
+    }
+
     var types: [SeerrMediaType] {
         mediaType.flatMap(SeerrMediaType.init(rawValue:)).map { [$0] } ?? [.movie, .tv]
     }

@@ -1,4 +1,5 @@
 import CryptoKit
+import Darwin
 import Foundation
 import SQLite3
 
@@ -73,36 +74,57 @@ actor GusLibraryCatalog {
         }
     }
 
-    /// Keep reading until enough admitted records match, including for filter-only searches.
-    func matching(terms: [String], limit: Int, accepts: @Sendable (MediaItem) -> Bool) throws -> [MediaItem] {
+    /// Keep a single SQLite cursor while the caller verifies successive batches with Jellyfin.
+    /// A revoked row or duplicate completion does not consume an output slot.
+    func collect<Match: Sendable>(
+        terms: [String], batchSize: Int, limit: Int,
+        accepts: @Sendable (MediaItem) -> Bool,
+        verify: @Sendable ([MediaItem]) async throws -> [Match],
+        identity: @Sendable (Match) -> String?
+    ) async throws -> [Match] {
+        guard limit > 0, batchSize > 0 else { return [] }
         let words = terms.flatMap { $0.split { !$0.isLetter && !$0.isNumber }.map(String.init) }.prefix(40)
         let expression = words.map { "\"\($0)\"*" }.joined(separator: " OR ")
         let sql = expression.isEmpty
             ? "SELECT payload FROM records ORDER BY rowid"
-            : "SELECT payload FROM records WHERE records MATCH ? ORDER BY bm25(records, 4, 3, 1, 0), rowid"
-        return try withDB(snapshot) { db in
-            try statement(sql, db) { stmt in
-                if !expression.isEmpty {
-                    try bind(expression, at: 1, to: stmt)
+            : "SELECT payload FROM records WHERE records MATCH ? AND rank MATCH 'bm25(4, 3, 1, 0)' ORDER BY rank"
+        let db = try openDB(snapshot, flags: SQLITE_OPEN_READONLY)
+        defer { sqlite3_close(db) }
+        let stmt = try prepareStatement(sql, db)
+        defer { sqlite3_finalize(stmt) }
+        if !expression.isEmpty {
+            try bind(expression, at: 1, to: stmt)
+        }
+        let decoder = JSONDecoder()
+        var result: [Match] = [], seen = Set<String>(), batch: [MediaItem] = []
+        while result.count < limit {
+            try Task.checkCancellation()
+            let step = sqlite3_step(stmt)
+            if step != SQLITE_DONE {
+                guard step == SQLITE_ROW, let bytes = sqlite3_column_blob(stmt, 0) else { throw CatalogError.unavailable }
+                let data = Data(bytes: bytes, count: Int(sqlite3_column_bytes(stmt, 0)))
+                let item = try decoder.decode(MediaItem.self, from: data)
+                if accepts(item) {
+                    batch.append(item)
                 }
-                let decoder = JSONDecoder()
-                var result: [MediaItem] = []
-                while result.count < limit {
-                    try Task.checkCancellation()
-                    let step = sqlite3_step(stmt)
-                    if step == SQLITE_DONE {
-                        break
-                    }
-                    guard step == SQLITE_ROW, let bytes = sqlite3_column_blob(stmt, 0) else { throw CatalogError.unavailable }
-                    let data = Data(bytes: bytes, count: Int(sqlite3_column_bytes(stmt, 0)))
-                    let item = try decoder.decode(MediaItem.self, from: data)
-                    if accepts(item) {
-                        result.append(item)
+            }
+            if !batch.isEmpty, batch.count == batchSize || step == SQLITE_DONE {
+                for match in try await verify(batch) {
+                    if let id = identity(match), seen.insert(id).inserted {
+                        result.append(match)
+                        if result.count == limit {
+                            break
+                        }
                     }
                 }
-                return result
+                batch.removeAll(keepingCapacity: true)
+            }
+            if step == SQLITE_DONE {
+                break
             }
         }
+        try Task.checkCancellation()
+        return result
     }
 
     private enum CatalogError: LocalizedError {
@@ -117,11 +139,19 @@ actor GusLibraryCatalog {
     }
 
     private func withDB<T>(_ file: URL, flags: Int32 = SQLITE_OPEN_READONLY, _ body: (OpaquePointer) throws -> T) throws -> T {
+        let db = try openDB(file, flags: flags)
+        defer { sqlite3_close(db) }
+        return try body(db)
+    }
+
+    private func openDB(_ file: URL, flags: Int32) throws -> OpaquePointer {
         var handle: OpaquePointer?
         let result = sqlite3_open_v2(file.path, &handle, flags, nil)
-        defer { sqlite3_close(handle) }
-        guard result == SQLITE_OK, let handle else { throw CatalogError.unavailable }
-        return try body(handle)
+        guard result == SQLITE_OK, let handle else {
+            sqlite3_close(handle)
+            throw CatalogError.unavailable
+        }
+        return handle
     }
 
     private func execute(_ sql: String, _ db: OpaquePointer) throws {
@@ -129,10 +159,15 @@ actor GusLibraryCatalog {
     }
 
     private func statement<T>(_ sql: String, _ db: OpaquePointer, _ body: (OpaquePointer) throws -> T) throws -> T {
-        var stmt: OpaquePointer?
-        guard sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK, let stmt else { throw CatalogError.unavailable }
+        let stmt = try prepareStatement(sql, db)
         defer { sqlite3_finalize(stmt) }
         return try body(stmt)
+    }
+
+    private func prepareStatement(_ sql: String, _ db: OpaquePointer) throws -> OpaquePointer {
+        var stmt: OpaquePointer?
+        guard sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK, let stmt else { throw CatalogError.unavailable }
+        return stmt
     }
 
     private func bind(_ text: String, at index: Int32, to stmt: OpaquePointer) throws {
@@ -141,5 +176,44 @@ actor GusLibraryCatalog {
 
     private func done(_ stmt: OpaquePointer) throws {
         guard sqlite3_step(stmt) == SQLITE_DONE else { throw CatalogError.unavailable }
+    }
+}
+
+/// The lease is created and exclusively locked in one syscall. A terminated process releases
+/// its lease automatically, including if it stopped between two SQLite transactions.
+struct GusCatalogStage {
+    let file: URL
+    private let lease: URL
+    private let descriptor: Int32
+
+    init(in directory: URL) throws {
+        let base = directory.appending(path: UUID().uuidString)
+        file = base.appendingPathExtension("sqlite")
+        lease = base.appendingPathExtension("lease")
+        descriptor = Darwin.open(lease.path, O_CREAT | O_EXCL | O_EXLOCK | O_NONBLOCK | O_CLOEXEC, S_IRUSR | S_IWUSR)
+        guard descriptor >= 0 else { throw CocoaError(.fileWriteUnknown) }
+    }
+
+    static func removeAbandoned(in directory: URL) {
+        let files = (try? FileManager.default.contentsOfDirectory(at: directory, includingPropertiesForKeys: nil)) ?? []
+        for lease in files where lease.pathExtension == "lease" {
+            let base = lease.deletingPathExtension()
+            guard UUID(uuidString: base.lastPathComponent) != nil else { continue }
+            let descriptor = Darwin.open(lease.path, O_RDONLY | O_NOFOLLOW | O_EXLOCK | O_NONBLOCK | O_CLOEXEC)
+            guard descriptor >= 0 else { continue }
+            discard(file: base.appendingPathExtension("sqlite"), lease: lease, descriptor: descriptor)
+        }
+    }
+
+    func discard() {
+        Self.discard(file: file, lease: lease, descriptor: descriptor)
+    }
+
+    private static func discard(file: URL, lease: URL, descriptor: Int32) {
+        for suffix in ["", "-journal", "-wal", "-shm"] {
+            try? FileManager.default.removeItem(atPath: file.path + suffix)
+        }
+        try? FileManager.default.removeItem(at: lease)
+        Darwin.close(descriptor)
     }
 }

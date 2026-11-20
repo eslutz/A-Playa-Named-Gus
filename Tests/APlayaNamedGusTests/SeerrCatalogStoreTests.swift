@@ -496,6 +496,22 @@ struct SeerrCatalogStoreTests {
         #expect(fixture.http.requests.count == 1)
     }
 
+    @Test("Person lookups reconcile duplicate or misplaced names without dropping distinct constraints")
+    func normalizedPersonLookup() {
+        let expected = SeerrSearchIntent(mediaType: "person", keywords: ["Maya Chen"])
+        let duplicated = SeerrSearchIntent(mediaType: "person", keywords: ["Maya Chen"], people: ["maya chen"])
+        let misplaced = SeerrSearchIntent(mediaType: "person", people: ["Maya Chen"])
+        #expect(duplicated.normalizedPersonLookup() == expected)
+        #expect(misplaced.normalizedPersonLookup() == expected)
+        let distinct = SeerrSearchIntent(mediaType: "person", keywords: ["Maya Chen"], people: ["Maya Chen", "Alex Chen"])
+        #expect(distinct.normalizedPersonLookup().people == ["Alex Chen"])
+        #expect(!distinct.normalizedPersonLookup().isSupported)
+        let extraCondition = SeerrSearchIntent(mediaType: "person", people: ["Maya Chen"], minimumYear: 2000)
+        #expect(extraCondition.normalizedPersonLookup() == extraCondition)
+        let movie = SeerrSearchIntent(mediaType: "movie", people: ["Maya Chen"])
+        #expect(movie.normalizedPersonLookup() == movie)
+    }
+
     @Test("A director request must match the named director on each returned Seerr title")
     func naturalCredits() async throws {
         let fixture = try await CatalogStoreFixture(replies: [
