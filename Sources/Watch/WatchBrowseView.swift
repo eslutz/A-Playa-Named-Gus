@@ -247,6 +247,7 @@ struct WatchAlbumView: View {
         .task {
             await load()
         }
+        .defersIntelligencePrompt(while: playerQueue != nil)
         .sheet(item: $playerQueue) { queue in
             WatchAudioPlayerView(tracks: queue.tracks, startIndex: queue.startIndex, continuation: queue.continuation)
         }

@@ -5,13 +5,14 @@ struct SeerrInterpretedResults: View {
     @Environment(SessionStore.self) private var session
     let submission: DiscoverSubmission
     let store: SeerrStore
+    let isCurrentSubmission: () -> Bool
     let useKeyword: () -> Void
     @State private var catalog: SeerrCatalogStore?
     @State private var message: String?
 
     private var isCurrent: Bool {
         session.isActive && session.seerr === store && store.isConnected && store.revision == submission.connection &&
-            store.restrictionRevision == submission.restrictions && session.intelligencePreferences.cloudEnabled == submission.cloudEnabled
+            store.restrictionRevision == submission.restrictions && isCurrentSubmission()
     }
 
     var body: some View {
@@ -27,8 +28,6 @@ struct SeerrInterpretedResults: View {
                             Label("No Verified Matches", systemImage: "magnifyingglass")
                         } description: {
                             Text("Seerr’s available metadata did not confirm a match in the searched results.")
-                        } actions: {
-                            Button("Search by Keyword", action: useKeyword)
                         }
                     } else {
                         SeerrCatalogResults(catalog: catalog, store: store)
@@ -39,8 +38,6 @@ struct SeerrInterpretedResults: View {
                     Label("Natural Language Search Unavailable", systemImage: "magnifyingglass")
                 } description: {
                     Text(verbatim: message)
-                } actions: {
-                    Button("Search by Keyword", action: useKeyword)
                 }
             } else {
                 ProgressView("Searching Discover")
@@ -54,6 +51,10 @@ struct SeerrInterpretedResults: View {
             }
             guard message == nil else { return }
             do {
+                let allowed = try await session.intelligenceAccess.requestSearchAccess()
+                try Task.checkCancellation()
+                guard isCurrent else { return }
+                guard allowed else { throw GusIntelligenceError.useKeyword }
                 let intent = try await GusIntelligenceModel(session: session).interpretDiscover(submission.text)
                 try Task.checkCancellation()
                 guard isCurrent else { return }
@@ -67,6 +68,9 @@ struct SeerrInterpretedResults: View {
                 let results = SeerrCatalogStore(source: .natural(intent))
                 catalog = results
                 await results.load(store: store)
+            } catch GusIntelligenceError.useKeyword {
+                guard !Task.isCancelled, isCurrent else { return }
+                useKeyword()
             } catch {
                 guard !Task.isCancelled, isCurrent else { return }
                 message = error.localizedDescription

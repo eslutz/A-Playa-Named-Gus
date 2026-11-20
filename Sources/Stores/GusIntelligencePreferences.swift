@@ -1,32 +1,64 @@
 import Foundation
 import Observation
 
-/// Separate opt-ins belong to this device and the authenticated server/user pair.
+/// Choices belong to this installation and Jellyfin server/user pair. Missing opt-in keys
+/// mean the user hasn't answered yet. Older builds already wrote explicit Boolean choices.
 @MainActor @Observable
 final class GusIntelligencePreferences {
     private let defaults: UserDefaults
     private let prefix: String
 
-    var cloudEnabled: Bool {
-        didSet { defaults.set(cloudEnabled, forKey: prefix + ".cloud") }
+    var naturalSearchEnabled: Bool {
+        didSet { defaults.set(naturalSearchEnabled, forKey: prefix + ".naturalSearch") }
     }
 
+    private(set) var cloudDecision: Bool?
+    var cloudEnabled: Bool {
+        get { cloudDecision == true }
+        set {
+            cloudDecision = newValue
+            defaults.set(newValue, forKey: prefix + ".cloud")
+        }
+    }
+
+    private(set) var recommendationDecision: Bool?
     var recommendationsEnabled: Bool {
-        didSet { defaults.set(recommendationsEnabled, forKey: prefix + ".recommendations") }
+        get { recommendationDecision == true }
+        set {
+            recommendationDecision = newValue
+            defaults.set(newValue, forKey: prefix + ".recommendations")
+        }
     }
 
     init(scope: AccountScope, defaults: UserDefaults = .standard) {
+        let defaults = Self.storage(defaults)
         let key = Self.keyPrefix(for: scope)
         self.defaults = defaults
         self.prefix = key
-        self.cloudEnabled = defaults.bool(forKey: key + ".cloud")
-        self.recommendationsEnabled = defaults.bool(forKey: key + ".recommendations")
+        self.naturalSearchEnabled = defaults.object(forKey: key + ".naturalSearch") as? Bool ?? true
+        self.cloudDecision = defaults.object(forKey: key + ".cloud") as? Bool
+        self.recommendationDecision = defaults.object(forKey: key + ".recommendations") as? Bool
     }
 
     static func delete(scope: AccountScope, defaults: UserDefaults) {
+        let defaults = storage(defaults)
         let key = keyPrefix(for: scope)
-        defaults.removeObject(forKey: key + ".cloud")
-        defaults.removeObject(forKey: key + ".recommendations")
+        for suffix in [".naturalSearch", ".cloud", ".recommendations"] {
+            defaults.removeObject(forKey: key + suffix)
+        }
+    }
+
+    private static func storage(_ defaults: UserDefaults) -> UserDefaults {
+        #if DEBUG && targetEnvironment(simulator)
+            let args = ProcessInfo.processInfo.arguments
+            if args.contains("--gus-demo-server") || args.contains("--gus-debug-preview-session"),
+               let index = args.firstIndex(of: "--gus-intelligence-test-suite"), args.indices.contains(index + 1),
+               let suite = UserDefaults(suiteName: args[index + 1])
+            {
+                return suite
+            }
+        #endif
+        return defaults
     }
 
     private static func keyPrefix(for scope: AccountScope) -> String {

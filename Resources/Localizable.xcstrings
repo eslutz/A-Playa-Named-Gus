@@ -1,6 +1,30 @@
 {
   "sourceLanguage": "en",
   "strings": {
+    "Allow Private Cloud Compute?": {
+      "comment": "Action in the Library Intelligence settings or invitation."
+    },
+    "Apple can process submitted searches and, when For You is enabled, selected titles, descriptions, and viewing interests. Requests use your daily quota. You can change this in Gus Settings → Library Intelligence → Allow Private Cloud Compute.": {
+      "comment": "Explanation in the Library Intelligence settings or invitation."
+    },
+    "Enable For You": {
+      "comment": "Action in the Library Intelligence settings or invitation."
+    },
+    "Enable For You?": {
+      "comment": "Action in the Library Intelligence settings or invitation."
+    },
+    "Get recommendations based on your Jellyfin favorites and playback history. You can change this in Gus Settings → Library Intelligence → Show For You.": {
+      "comment": "Explanation in the Library Intelligence settings or invitation."
+    },
+    "Natural Language Search": {
+      "comment": "Action in the Library Intelligence settings or invitation."
+    },
+    "Not Now": {
+      "comment": "Action in the Library Intelligence settings or invitation."
+    },
+    "Turn on Allow Private Cloud Compute to use natural-language search and For You on this device.": {
+      "comment": "Explanation in the Library Intelligence settings or invitation."
+    },
     "Comedy series from the 2000s": {
       "comment": "Example query for natural-language search in Discover."
     },

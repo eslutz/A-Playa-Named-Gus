@@ -4,26 +4,32 @@ import Testing
 
 @Suite("Search store helpers")
 struct SearchStoreTests {
-    @Test("natural-language drafts and submissions never write keyword history")
-    @MainActor func separateSearchModes() throws {
+    @Test("one draft supports natural submit, keyword fallback and shared preference changes")
+    @MainActor func unifiedSearchDraft() throws {
         let suite = UUID().uuidString
         let defaults = try #require(UserDefaults(suiteName: suite))
         defer { defaults.removePersistentDomain(forName: suite) }
         let history = SearchHistoryStore(scope: .init(serverID: "s", userID: "u"), defaults: defaults)
-        let search = GlobalSearchSession()
-        search.typed.text = "Psych"
-        search.submit(to: history)
-        search.naturalMode = true
-        search.natural.text = "movies with both characters"
-        #expect(search.text == "movies with both characters")
-        #expect(search.natural.submission == nil)
-        search.submit(to: history)
-        #expect(search.natural.submission != nil)
-        #expect(history.entries == [.typed("Psych")])
-        search.natural.text += " after 2001"
-        #expect(search.natural.submission == nil)
-        search.naturalMode = false
-        #expect(search.text == "Psych")
+        let root = RootNavigationState(searchHistory: history)
+        let search = root.globalSearch
+        root.editSearchText("mystery movies", naturalSearchEnabled: true)
+        #expect(search.natural.submission == nil && search.typed.text.isEmpty)
+        search.submit(naturalSearchEnabled: true, history: history)
+        #expect(search.natural.submission != nil && history.entries.isEmpty)
+        root.useKeywordSearchForCurrentDrafts()
+        #expect(search.natural.submission == nil && search.displaysKeywords)
+        #expect(search.text == "mystery movies" && search.typed.text == search.text)
+        search.typed.selectedResult(.init(id: "m", name: "Movie", type: .movie), for: search.text, in: history)
+        #expect(history.entries.isEmpty)
+        search.submit(naturalSearchEnabled: true, history: history)
+        #expect(search.natural.submission != nil && !search.displaysKeywords)
+        search.searchByKeyword(recordingIn: history)
+        #expect(search.natural.submission == nil && search.typed.text == search.text)
+        #expect(history.entries == [.typed("mystery movies")])
+        root.editSearchText("mystery movies before 2001", naturalSearchEnabled: true)
+        #expect(!search.displaysKeywords && search.natural.submission == nil && search.typed.text.isEmpty)
+        root.replaySearch(.typed("Title"))
+        #expect(root.globalSearch.displaysKeywords && root.globalSearch.text == "Title")
     }
 
     @Test("suggestions deduplicate, exclude the current text and limit visible completions")

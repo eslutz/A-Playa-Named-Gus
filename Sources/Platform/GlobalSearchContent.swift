@@ -38,12 +38,12 @@ struct GlobalSearchContent: View {
     }
 
     @ViewBuilder private var searchableResults: some View {
-        let text = Binding(get: { root.globalSearch.text }, set: { root.editSearchText($0) })
+        let text = Binding(get: { root.globalSearch.text }, set: { root.editSearchText($0, naturalSearchEnabled: session.intelligenceAccess.usesNaturalSearch) })
         #if os(tvOS)
             results
                 .modifier(LibrarySearchFieldBehavior(search: root.globalSearch))
                 .searchable(text: text, prompt: Text("Search Library"))
-                .onSubmit(of: .search) { root.globalSearch.submit(to: session.searchHistory) }
+                .onSubmit(of: .search) { root.globalSearch.submit(naturalSearchEnabled: false, history: session.searchHistory) }
         #else
             results
                 .gusSearchable(
@@ -76,7 +76,7 @@ struct GlobalSearchContent: View {
         Group {
             if let related = root.globalSearch.related {
                 RelatedResultsView(results: related).id(ObjectIdentifier(related))
-            } else if root.globalSearch.naturalMode {
+            } else if session.intelligenceAccess.usesNaturalSearch, !root.globalSearch.displaysKeywords, !root.globalSearch.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                 NaturalLibraryResults(search: root.globalSearch)
             } else if !root.globalSearch.typed.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                 OwnedSearchResults(state: root.globalSearch.typed)
@@ -87,20 +87,6 @@ struct GlobalSearchContent: View {
         }
         .navigationTitle(navigationTitle)
         .toolbar {
-            if root.globalSearch.related == nil, root.globalSearch.naturalMode || GusIntelligenceModel(session: session).isAvailable {
-                ToolbarItem(placement: .primaryAction) {
-                    Menu {
-                        Picker("Search Mode", selection: Bindable(root.globalSearch).naturalMode) {
-                            Text("Keyword").tag(false)
-                            Text("Natural Language").tag(true)
-                        }
-                    } label: {
-                        Label(root.globalSearch.naturalMode ? String(localized: "Natural Language") : String(localized: "Keyword"), systemImage: "line.3.horizontal.decrease")
-                    }
-                    .accessibilityLabel("Search Mode")
-                    .accessibilityIdentifier("Search.mode")
-                }
-            }
             if root.hasSearchReturn {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Back to Detail", systemImage: "chevron.backward", action: root.backToSearchDetail)

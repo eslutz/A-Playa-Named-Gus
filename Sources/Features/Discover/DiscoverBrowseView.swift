@@ -15,7 +15,7 @@ struct DiscoverBrowseView: View {
     @State private var feedError: String?
     @State private var feedsRevision: String?
     @State private var query = ""
-    @State private var naturalMode = false
+    @State private var displaysKeywords = false
     @State private var naturalSubmission: DiscoverSubmission?
     @State private var searchCatalog: SeerrCatalogStore?
     @State private var submittedSearch = UUID()
@@ -49,18 +49,38 @@ struct DiscoverBrowseView: View {
         session.isActive && session.seerr === store && store.isConnected
     }
 
+    private var naturalMode: Bool {
+        session.intelligenceAccess.usesNaturalSearch && !displaysKeywords
+    }
+
+    private func searchByKeyword() {
+        naturalSubmission = nil
+        displaysKeywords = true
+        submitsImmediately = true
+        submittedSearch = UUID()
+    }
+
     private var searchRevision: String {
         "\(accessRevision):\(naturalMode):\(normalizedQuery):\(submittedSearch)"
     }
 
     var body: some View {
         Group {
-            if naturalMode {
-                if let submission = naturalSubmission, hasSearchAccess, submission.text == normalizedQuery, submission.access == accessRevision, submission.cloudEnabled == session.intelligencePreferences.cloudEnabled {
-                    SeerrInterpretedResults(submission: submission, store: store) { naturalMode = false }
-                        .id(submission.id)
-                } else {
-                    ContentUnavailableView("Natural Language", systemImage: "magnifyingglass", description: Text("Describe movies, shows, or people, then submit your search."))
+            if naturalMode, !normalizedQuery.isEmpty {
+                Group {
+                    if let submission = naturalSubmission, hasSearchAccess, submission.text == normalizedQuery, submission.access == accessRevision {
+                        SeerrInterpretedResults(submission: submission, store: store, isCurrentSubmission: {
+                            naturalMode && naturalSubmission?.id == submission.id && normalizedQuery == submission.text
+                        }, useKeyword: searchByKeyword)
+                            .id(submission.id)
+                    } else {
+                        ContentUnavailableView("Natural Language", systemImage: "magnifyingglass", description: Text("Describe movies, shows, or people, then submit your search."))
+                    }
+                }
+                .safeAreaInset(edge: .bottom) {
+                    Button("Search by Keyword", action: searchByKeyword)
+                        .accessibilityIdentifier("Seerr.search.byKeyword")
+                        .padding(.vertical, 8)
                 }
             } else if !normalizedQuery.isEmpty {
                 if let searchCatalog, searchCatalog.source == .search(normalizedQuery) {
@@ -78,28 +98,20 @@ struct DiscoverBrowseView: View {
         .gusSeerrSearch(text: Binding(get: { query }, set: { value in
             if value != query {
                 naturalSubmission = nil
+                displaysKeywords = !session.intelligenceAccess.usesNaturalSearch
             }
             query = value
         }), isPresented: $searchPresented, isFocused: $searchFocused, enabledOnTV: searchOnly, suggestions: suggestions, suggestionsInResults: !naturalMode)
-        .toolbar {
-            if naturalMode || GusIntelligenceModel(session: session).isAvailable {
-                ToolbarItem(placement: .primaryAction) {
-                    Menu {
-                        Picker("Search Mode", selection: $naturalMode) {
-                            Text("Keyword").tag(false)
-                            Text("Natural Language").tag(true)
-                        }
-                    } label: {
-                        Label(naturalMode ? String(localized: "Natural Language") : String(localized: "Keyword"), systemImage: "line.3.horizontal.decrease")
-                    }
-                    .accessibilityLabel("Search Mode")
-                    .accessibilityIdentifier("Seerr.search.mode")
-                }
+        .onChange(of: session.intelligenceAccess.usesNaturalSearch) { _, _ in
+            naturalSubmission = nil
+            displaysKeywords = !normalizedQuery.isEmpty
+        }
+        .onChange(of: accessRevision) { _, _ in naturalSubmission = nil }
+        .onChange(of: session.intelligencePreferences.cloudEnabled) { _, allowed in
+            if !allowed {
+                naturalSubmission = nil
             }
         }
-        .onChange(of: naturalMode) { _, _ in naturalSubmission = nil }
-        .onChange(of: accessRevision) { _, _ in naturalSubmission = nil }
-        .onChange(of: session.intelligencePreferences.cloudEnabled) { _, _ in naturalSubmission = nil }
         .onChange(of: navigation.searchFocusRequest, initial: true) { _, request in
             guard request > 0 else { return }
             searchPresented = true
@@ -107,9 +119,10 @@ struct DiscoverBrowseView: View {
         }
         .onSubmit(of: .search) {
             guard hasSearchAccess else { return }
-            if naturalMode {
+            if session.intelligenceAccess.usesNaturalSearch {
                 if !normalizedQuery.isEmpty {
-                    naturalSubmission = DiscoverSubmission(text: normalizedQuery, access: accessRevision, connection: store.revision, restrictions: store.restrictionRevision, cloudEnabled: session.intelligencePreferences.cloudEnabled)
+                    displaysKeywords = false
+                    naturalSubmission = DiscoverSubmission(text: normalizedQuery, access: accessRevision, connection: store.revision, restrictions: store.restrictionRevision)
                 }
             } else if searchCatalog?.source != .search(normalizedQuery) || searchCatalog?.state == .idle || searchCatalog?.errorMessage != nil {
                 submitsImmediately = true
@@ -285,7 +298,6 @@ struct DiscoverSubmission {
     let access: String
     let connection: UUID
     let restrictions: String
-    let cloudEnabled: Bool
 }
 
 private struct TrendingLoadKey: Equatable {

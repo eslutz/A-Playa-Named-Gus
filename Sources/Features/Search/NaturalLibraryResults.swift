@@ -21,7 +21,6 @@ struct NaturalLibraryResults: View {
                     Text(message)
                 } actions: {
                     Button("Retry") { natural.submit() }
-                    Button("Search by Title") { search.naturalMode = false }
                 }
             case .loaded:
                 List {
@@ -32,7 +31,6 @@ struct NaturalLibraryResults: View {
                     }
                     if natural.items.isEmpty {
                         Text("No accessible title has metadata confirming these requirements.")
-                        Button("Search by Title") { search.naturalMode = false }
                     }
                     if natural.items.count == 60 {
                         Text("Showing the first 60 matches.").font(.footnote)
@@ -44,10 +42,21 @@ struct NaturalLibraryResults: View {
                 }
             }
         }
-        .task(id: natural.submission) { await natural.run(session: session) }
+        .safeAreaInset(edge: .bottom) {
+            Button("Search by Keyword") { search.searchByKeyword(recordingIn: session.searchHistory) }
+                .accessibilityIdentifier("Search.byKeyword")
+                .padding(.vertical, 8)
+        }
+        .task(id: natural.submission) {
+            await natural.run(session: session) { search.searchByKeyword() }
+        }
         .onChange(of: restriction) { natural.resetResults() }
         .onChange(of: hideUnrated) { natural.resetResults() }
-        .onChange(of: session.intelligencePreferences.cloudEnabled) { natural.resetResults() }
+        .onChange(of: session.intelligencePreferences.cloudEnabled) { _, allowed in
+            if !allowed {
+                natural.resetResults()
+            }
+        }
     }
 }
 
@@ -63,8 +72,12 @@ struct LibrarySearchFieldBehavior: ViewModifier {
     @State private var catalogKey: String?
     let search: GlobalSearchSession
 
+    private var naturalMode: Bool {
+        session.intelligenceAccess.usesNaturalSearch && !search.displaysKeywords
+    }
+
     private var requestKey: String {
-        "\(search.naturalMode):\(restriction):\(hideUnrated):\(search.text)"
+        "\(naturalMode):\(restriction):\(hideUnrated):\(search.text)"
     }
 
     private var terms: [String] {
@@ -79,13 +92,13 @@ struct LibrarySearchFieldBehavior: ViewModifier {
                 }
             }
         }
-        if let store = search.typed.store, store.query == search.text, !search.naturalMode {
+        if let store = search.typed.store, store.query == search.text, !naturalMode {
             candidates += GusLibraryMatching.completions(in: ContentRatingGate.filter(store.results), prefix: search.text)
         }
         if catalogKey == requestKey {
             candidates += catalogTerms
         }
-        if search.naturalMode {
+        if naturalMode {
             candidates += [String(localized: "Unwatched sci-fi movies"), String(localized: "Favorite audiobooks")]
         }
         return SearchCompletions.matching(search.text, candidates: candidates)
@@ -93,14 +106,14 @@ struct LibrarySearchFieldBehavior: ViewModifier {
 
     @ViewBuilder private func fieldSuggestions(_ content: Content) -> some View {
         #if os(tvOS)
-            content.gusTVSearchCompletions(terms, inResults: search.typed.store?.results.isEmpty == false && !search.naturalMode, select: root.editSearchText)
+            content.gusTVSearchCompletions(terms, inResults: search.typed.store?.results.isEmpty == false && !naturalMode, select: { root.editSearchText($0) })
         #else
             content.searchSuggestions {
                 ForEach(terms, id: \.self) { value in
                     Text(value).searchCompletion(value)
                 }
             }
-            .onSubmit(of: .search) { search.submit(to: session.searchHistory) }
+            .onSubmit(of: .search) { search.submit(naturalSearchEnabled: session.intelligenceAccess.usesNaturalSearch, history: session.searchHistory) }
         #endif
     }
 

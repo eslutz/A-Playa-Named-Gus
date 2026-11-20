@@ -344,25 +344,34 @@ final class RootNavigationState {
         case let .related(target): startRelated(target)
         case let .typed(text):
             closeSearchResults()
-            globalSearch.typed.replayTyped(text, in: searchHistory)
+            globalSearch.edit(text, naturalSearchEnabled: false)
+            globalSearch.searchByKeyword(recordingIn: searchHistory)
             selectedSectionID = Self.searchID
         }
     }
 
     /// Only an edit to the field replaces a related search. Tab selection and keyboard
     /// dismissal can change native presentation independently of the field's contents.
-    func editSearchText(_ text: String) {
+    func editSearchText(_ text: String, naturalSearchEnabled: Bool = false) {
         guard text != globalSearch.text else { return }
         if !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             globalSearch.related = nil
             globalSearch.detailOrigin = nil
             keptSearch = nil
         }
-        if globalSearch.naturalMode {
-            globalSearch.natural.text = text
-        } else {
-            globalSearch.typed.text = text
-            globalSearch.typed.updateQuery()
+        globalSearch.edit(text, naturalSearchEnabled: naturalSearchEnabled)
+    }
+
+    /// A detail may have temporarily suspended another search in this window.
+    func useKeywordSearchForCurrentDrafts() {
+        var pending = [globalSearch, keptSearch].compactMap { $0 }
+        while let search = pending.popLast() {
+            if let previous = search.detailOrigin?.search {
+                pending.append(previous)
+            }
+            if !search.displaysKeywords {
+                search.searchByKeyword()
+            }
         }
     }
 
@@ -449,6 +458,15 @@ final class SectionSearchState {
     @ObservationIgnored private var searchTask: Task<Void, Never>?
     private var requestedText: String?
     private var lastCompletedQuery: String?
+    private var recordsTypedHistory = true
+
+    /// Automatic fallback can search a natural-language prompt literally without
+    /// adding its text to recents when the user later opens or leaves the results.
+    func setKeywordText(_ value: String, recordsHistory: Bool) {
+        text = value
+        recordsTypedHistory = recordsHistory
+        updateQuery()
+    }
 
     init(retainsResults: Bool = false) {
         self.retainsResults = retainsResults
@@ -483,7 +501,7 @@ final class SectionSearchState {
 
     private func recordTyped(_ text: String, in history: SearchHistoryStore) {
         let query = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !query.isEmpty else { return }
+        guard recordsTypedHistory, !query.isEmpty else { return }
         history.record(.typed(query))
         lastCompletedQuery = query
     }

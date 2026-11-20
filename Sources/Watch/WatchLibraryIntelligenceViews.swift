@@ -4,11 +4,18 @@ import SwiftUI
 struct WatchLibrarySearchView: View {
     @Environment(SessionStore.self) private var session
     @State private var natural = LibraryNaturalSearchState()
-    @State private var naturalMode = false
-    @State private var keyword = ""
+    @State private var keywordQuery: String?
     @State private var keywordStore: SearchStore?
     @AppStorage(ContentRatingGate.limitDefaultsKey) private var ratingLimit = ContentRatingGate.Limit.off.rawValue
     @AppStorage(ContentRatingGate.hideUnratedDefaultsKey) private var hideUnrated = false
+
+    private var prefersNatural: Bool {
+        session.intelligenceAccess.usesNaturalSearch
+    }
+
+    private var naturalMode: Bool {
+        prefersNatural && keywordQuery != natural.text
+    }
 
     private var results: [MediaItem] {
         let rows = naturalMode ? natural.items : keywordStore?.results ?? []
@@ -28,22 +35,19 @@ struct WatchLibrarySearchView: View {
         }
         if naturalMode {
             values += [String(localized: "Unwatched sci-fi movies"), String(localized: "Favorite audiobooks")]
-        } else if keywordStore?.query == keyword {
-            values += GusLibraryMatching.completions(in: results, prefix: keyword)
+        } else if keywordStore?.query == natural.text.trimmingCharacters(in: .whitespacesAndNewlines) {
+            values += GusLibraryMatching.completions(in: results, prefix: natural.text)
         }
-        return SearchCompletions.matching(naturalMode ? natural.text : keyword, candidates: values)
+        return SearchCompletions.matching(natural.text, candidates: values)
     }
 
     var body: some View {
         List {
-            if naturalMode || GusIntelligenceModel(session: session).isAvailable {
-                Picker("Search Mode", selection: $naturalMode) {
-                    Text("Keyword").tag(false)
-                    Text("Natural Language").tag(true)
-                }
-            }
             if naturalMode {
                 Text("Watch searches recent items and keyword matches.").font(.footnote)
+                if !natural.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                    Button("Search by Keyword", action: useKeyword)
+                }
                 if !natural.filters.isEmpty {
                     Text(natural.filters.joined(separator: " · ")).font(.footnote)
                 }
@@ -54,10 +58,8 @@ struct WatchLibrarySearchView: View {
             }
             if case let .failed(message) = state {
                 Text(message)
-                if naturalMode {
-                    Button("Search by Title") { naturalMode = false }
-                } else {
-                    Button("Retry") { Task { await keywordStore?.search(keyword) } }
+                if !naturalMode {
+                    Button("Retry") { Task { await keywordStore?.search(natural.text) } }
                 }
             }
             if state == .loaded, results.isEmpty {
@@ -70,39 +72,64 @@ struct WatchLibrarySearchView: View {
             }
         }
         .navigationTitle("Search Library")
-        .searchable(text: naturalMode ? Bindable(natural).text : $keyword, prompt: "Search Library")
+        .searchable(text: Binding(get: { natural.text }, set: { draft in
+            if draft != natural.text {
+                keywordQuery = nil
+                natural.text = draft
+            }
+        }), prompt: "Search Library")
         .searchSuggestions {
             ForEach(suggestions, id: \.self) { value in Text(value).searchCompletion(value) }
         }
         .onSubmit(of: .search) {
-            if naturalMode {
+            if prefersNatural {
+                keywordQuery = nil
                 natural.submit()
             } else {
-                session.searchHistory.record(.typed(keyword))
+                session.searchHistory.record(.typed(natural.text))
             }
         }
-        .task(id: "\(naturalMode):\(keyword):\(ratingLimit):\(hideUnrated)") {
-            guard !naturalMode else { return }
+        .task(id: "\(naturalMode):\(natural.text):\(ratingLimit):\(hideUnrated)") {
+            guard !naturalMode else {
+                keywordStore?.cancelForegroundLoad()
+                return
+            }
+            let keyword = natural.text.trimmingCharacters(in: .whitespacesAndNewlines)
             let allowed: [MediaItemType] = [.movie, .series, .episode, .book, .audioBook, .musicAlbum, .audio]
             let store = keywordStore ?? SearchStore(session: session, limit: 20, includeTypes: allowed)
             keywordStore = store
             if store.query != keyword {
                 store.reset()
             }
-            guard !keyword.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
+            guard !keyword.isEmpty else { return }
             do { try await Task.sleep(for: .milliseconds(300)) } catch { return }
             await store.search(keyword)
         }
-        .task(id: natural.submission) { await natural.run(session: session) }
-        .onChange(of: naturalMode) { natural.resetResults() }
+        .task(id: natural.submission) {
+            guard naturalMode else { return }
+            await natural.run(session: session, onKeyword: useKeyword)
+        }
+        .onChange(of: prefersNatural) { _, enabled in
+            natural.resetResults()
+            keywordQuery = enabled && !natural.text.isEmpty ? natural.text : nil
+        }
         .onChange(of: ratingLimit) { natural.resetResults() }
         .onChange(of: hideUnrated) { natural.resetResults() }
-        .onChange(of: session.intelligencePreferences.cloudEnabled) { natural.resetResults() }
+        .onChange(of: session.intelligencePreferences.cloudEnabled) { _, enabled in
+            if !enabled {
+                natural.resetResults()
+            }
+        }
         .navigationDestination(for: WatchItemRoute.self) { route in
             if let item = results.first(where: { $0.id == route.id }) {
                 WatchIntelligenceDestination(item: item)
             }
         }
+    }
+
+    private func useKeyword() {
+        natural.resetResults()
+        keywordQuery = natural.text
     }
 }
 

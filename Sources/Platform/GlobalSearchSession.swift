@@ -7,23 +7,39 @@ import SwiftUI
 final class GlobalSearchSession {
     let typed = SectionSearchState(retainsResults: true)
     let natural = LibraryNaturalSearchState()
-    var naturalMode = false {
-        didSet {
-            if oldValue != naturalMode {
-                natural.resetResults()
-            }
+    private(set) var displaysKeywords = false
+
+    var text: String {
+        natural.text
+    }
+
+    func edit(_ value: String, naturalSearchEnabled: Bool) {
+        guard value != text else { return }
+        natural.text = value
+        displaysKeywords = !naturalSearchEnabled
+        if displaysKeywords {
+            typed.setKeywordText(value, recordsHistory: true)
+        } else {
+            typed.text = ""
         }
     }
 
-    var text: String {
-        naturalMode ? natural.text : typed.text
+    func searchByKeyword(recordingIn history: SearchHistoryStore? = nil) {
+        natural.resetResults()
+        displaysKeywords = true
+        typed.setKeywordText(text, recordsHistory: history != nil)
+        if let history {
+            typed.submitSearch(to: history)
+        }
     }
 
-    func submit(to history: SearchHistoryStore) {
-        if naturalMode {
+    func submit(naturalSearchEnabled: Bool, history: SearchHistoryStore) {
+        if naturalSearchEnabled {
+            displaysKeywords = false
+            typed.text = ""
             natural.submit()
         } else {
-            typed.submitSearch(to: history)
+            searchByKeyword(recordingIn: history)
         }
     }
 

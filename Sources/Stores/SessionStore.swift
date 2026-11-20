@@ -23,6 +23,14 @@ final class SessionStore {
     let seerr: SeerrStore
     let intelligencePreferences: GusIntelligencePreferences
     @ObservationIgnored lazy var libraryIntelligence = GusLibraryIntelligence(session: self)
+    @ObservationIgnored lazy var intelligenceAccess: GusIntelligenceAccess = {
+        let access = GusIntelligenceAccess(preferences: intelligencePreferences, routes: .system()) { [weak self] in
+            self?.libraryIntelligence.clearRecommendations()
+        }
+        onInvalidation(of: access) { $0.invalidate() }
+        return access
+    }()
+
     let searchHistory: SearchHistoryStore
     private(set) var reauthenticationRequest: SessionLease?
     private weak var recoveryOwner: AppModel?

@@ -71,6 +71,30 @@ final class WatchBrowseUITests: XCTestCase {
         XCTAssertFalse(app.buttons["Natural Language"].exists)
     }
 
+    func testWatchForYouInvitationPersistsNotNow() throws {
+        guard #available(watchOS 27, *) else { throw XCTSkip("Watch intelligence requires watchOS 27.") }
+        continueAfterFailure = false
+        let app = XCUIApplication(bundleIdentifier: "dev.ericslutz.gus.watchkitapp")
+        app.launchArguments = ["--gus-demo-server", "--gus-intelligence-test-cloud", "--gus-intelligence-test-suite", UUID().uuidString]
+        app.launch()
+        defer { app.terminate() }
+        let title = app.staticTexts["Enable For You?"]
+        XCTAssertTrue(title.waitForExistence(timeout: 20))
+        let message = "Get recommendations based on your Jellyfin favorites and playback history. You can change this in Gus Settings → Library Intelligence → Show For You."
+        XCTAssertTrue(app.staticTexts[message].exists)
+        let decline = app.buttons["Intelligence.prompt.decline"]
+        for _ in 0 ..< 5 where !decline.isHittable {
+            app.swipeUp(velocity: .slow)
+        }
+        XCTAssertTrue(decline.isHittable)
+        decline.tap()
+        XCTAssertTrue(title.waitForNonExistence(timeout: 5))
+        app.terminate()
+        app.launch()
+        XCTAssertTrue(app.navigationBars["Remote"].waitForExistence(timeout: 20))
+        XCTAssertFalse(title.waitForExistence(timeout: 2))
+    }
+
     private func capture(_ app: XCUIApplication, _ name: String) {
         let attachment = XCTAttachment(screenshot: app.screenshot())
         attachment.name = name

@@ -32,15 +32,22 @@ final class LibraryNaturalSearchState {
         filters = []
     }
 
-    func run(session: SessionStore) async {
+    func run(session: SessionStore, onKeyword: () -> Void) async {
         guard let request = submission, state == .loading, session.isActive else { return }
         let run = UUID()
         activeRun = run
+        func isCurrent() -> Bool {
+            session.isActive && submission == request && activeRun == run && session.intelligenceAccess.usesNaturalSearch
+        }
         do {
+            let allowed = try await session.intelligenceAccess.requestSearchAccess()
+            try Task.checkCancellation()
+            guard isCurrent() else { return }
+            guard allowed else { throw GusIntelligenceError.useKeyword }
             let model = GusIntelligenceModel(session: session)
             let intent = try await model.interpretLibrary(text)
             try Task.checkCancellation()
-            guard session.isActive, submission == request, activeRun == run else { return }
+            guard isCurrent() else { return }
             filters = intent.appliedFilters
             guard intent.unsupported.isEmpty else {
                 let missing = intent.unsupported.joined(separator: ", ")
@@ -49,11 +56,15 @@ final class LibraryNaturalSearchState {
             }
             let result = try await session.libraryIntelligence.search(intent)
             try Task.checkCancellation()
-            guard session.isActive, submission == request, activeRun == run else { return }
+            guard isCurrent() else { return }
             items = ContentRatingGate.filter(result)
             state = .loaded
+        } catch GusIntelligenceError.useKeyword {
+            guard isCurrent(), !Task.isCancelled else { return }
+            resetResults()
+            onKeyword()
         } catch {
-            guard session.isActive, submission == request, activeRun == run else { return }
+            guard isCurrent() else { return }
             let failure = GusError(from: error)
             if Task.isCancelled || failure.isCancellation {
                 resetResults()

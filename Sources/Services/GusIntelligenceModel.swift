@@ -104,11 +104,12 @@ struct GusRankCandidate: Encodable, Sendable {
 }
 
 enum GusIntelligenceError: LocalizedError {
-    case unavailable, invalidResponse, inputTooLong, generationFailed, privateInput
+    case useKeyword, unavailable, invalidResponse, inputTooLong, generationFailed, privateInput
     case quota(Date?)
 
     var errorDescription: String? {
         switch self {
+        case .useKeyword: String(localized: "Search by Keyword")
         case .unavailable: String(localized: "Apple Intelligence is unavailable for this device or language.")
         case .invalidResponse: String(localized: "The search requirements could not be interpreted reliably.")
         case .inputTooLong: String(localized: "Shorten the search and try again.")
@@ -307,7 +308,7 @@ struct GusIntelligenceModel {
     /// Consent is read after local inference, since it may change while the model is running.
     static func route<T>(
         local: () async throws -> T?,
-        cloudAllowed: () -> Bool,
+        cloudAllowed: () async throws -> Bool,
         mayEscalate: (Error) -> Bool,
         cloud: () async throws -> T
     ) async throws -> T {
@@ -318,10 +319,10 @@ struct GusIntelligenceModel {
             }
         } catch {
             try Task.checkCancellation()
-            guard !(error is CancellationError), mayEscalate(error), cloudAllowed() else { throw error }
+            guard !(error is CancellationError), mayEscalate(error), try await cloudAllowed() else { throw error }
         }
         try Task.checkCancellation()
-        guard cloudAllowed() else { throw GusIntelligenceError.unavailable }
+        guard try await cloudAllowed() else { throw GusIntelligenceError.unavailable }
         return try await cloud()
     }
 
@@ -351,7 +352,7 @@ struct GusIntelligenceModel {
         ) async throws -> T {
             func checkAccess(cloud: Bool) throws {
                 try Task.checkCancellation()
-                guard session.isActive, !recommendations || session.intelligencePreferences.recommendationsEnabled,
+                guard session.isActive, recommendations ? session.intelligencePreferences.recommendationsEnabled : session.intelligencePreferences.naturalSearchEnabled,
                       !cloud || session.intelligencePreferences.cloudEnabled else { throw CancellationError() }
             }
             try checkAccess(cloud: false)
@@ -380,7 +381,17 @@ struct GusIntelligenceModel {
                     #endif
                     return nil
                 } cloudAllowed: {
-                    session.isActive && session.intelligencePreferences.cloudEnabled && cloudSupported
+                    guard session.isActive, cloudSupported else { return false }
+                    if recommendations {
+                        return session.intelligencePreferences.cloudEnabled
+                    }
+                    guard try await session.intelligenceAccess.requestSearchCloudAccess() else {
+                        if session.intelligencePreferences.cloudDecision == false {
+                            throw GusIntelligenceError.useKeyword
+                        }
+                        return false
+                    }
+                    return true
                 } mayEscalate: { error in
                     #if os(watchOS)
                         false

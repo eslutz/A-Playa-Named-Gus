@@ -175,6 +175,10 @@ final class PlaybackReportQueue {
     private let timeout: Duration
     private var jobs: [Job] = []
     private var openSessions: Set<UUID> = []
+    var hasActivePlayback: Bool {
+        !openSessions.isEmpty
+    }
+
     private var worker: Task<Void, Never>?
     private(set) var succeededCount = 0
     private(set) var failedCount = 0

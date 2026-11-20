@@ -100,11 +100,98 @@ final class GusAuthenticatedUITests: XCTestCase {
     }
 
     #if os(iOS)
+        func testCloudForYouInvitationAndLibraryIntelligenceSettings() throws {
+            try prepare()
+            defer { finish() }
+            let args = ["--gus-intelligence-test-cloud", "--gus-intelligence-test-suite", UUID().uuidString]
+            let app = launch("settings", arguments: args)
+            let message = "Get recommendations based on your Jellyfin favorites and playback history. You can change this in Gus Settings → Library Intelligence → Show For You."
+            XCTAssertTrue(app.staticTexts[message].waitForExistence(timeout: 20))
+            app.buttons["Intelligence.prompt.allow"].tap()
+            XCTAssertTrue(app.staticTexts["Allow Private Cloud Compute?"].waitForExistence(timeout: 10))
+            app.buttons["Intelligence.prompt.allow"].tap()
+
+            let natural = app.switches["Intelligence.naturalSearch"].firstMatch
+            let cloud = app.switches["Intelligence.privateCloud"].firstMatch
+            let forYou = app.switches["Intelligence.forYou"].firstMatch
+            revealIntelligenceSettings(forYou, in: app)
+            XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label ==[c] %@", "Library Intelligence")).firstMatch.exists)
+            XCTAssertLessThan(natural.frame.midY, cloud.frame.midY)
+            XCTAssertLessThan(cloud.frame.midY, forYou.frame.midY)
+            XCTAssertEqual(natural.value as? String, "1")
+            XCTAssertEqual(cloud.value as? String, "1")
+            XCTAssertEqual(forYou.value as? String, "1")
+            natural.tap()
+            XCTAssertEqual(natural.value as? String, "0")
+
+            app.terminate()
+            let again = launch("settings", arguments: args)
+            let persisted = again.switches["Intelligence.naturalSearch"].firstMatch
+            revealIntelligenceSettings(persisted, in: again)
+            XCTAssertEqual(persisted.value as? String, "0")
+            XCTAssertFalse(again.buttons["Intelligence.prompt.allow"].exists)
+        }
+
+        func testDismissedForYouInvitationCanBeEnabledInSettings() throws {
+            try prepare()
+            defer { finish() }
+            let args = ["--gus-intelligence-test-local", "--gus-intelligence-test-suite", UUID().uuidString]
+            let app = launch("settings", arguments: args)
+            let decline = app.buttons["Intelligence.prompt.decline"]
+            XCTAssertTrue(decline.waitForExistence(timeout: 20))
+            decline.tap()
+            let forYou = app.switches["Intelligence.forYou"].firstMatch
+            revealIntelligenceSettings(forYou, in: app)
+            XCTAssertEqual(forYou.value as? String, "0")
+            XCTAssertFalse(app.switches["Intelligence.privateCloud"].exists)
+            app.terminate()
+
+            let again = launch("settings", arguments: args)
+            let restored = again.switches["Intelligence.forYou"].firstMatch
+            revealIntelligenceSettings(restored, in: again)
+            XCTAssertFalse(again.buttons["Intelligence.prompt.allow"].exists)
+            restored.tap()
+            XCTAssertEqual(restored.value as? String, "1")
+        }
+
+        func testSwipingAwayForYouCountsAsNotNow() throws {
+            try prepare()
+            defer { finish() }
+            let args = ["--gus-intelligence-test-local", "--gus-intelligence-test-suite", UUID().uuidString]
+            let app = launch("settings", arguments: args)
+            let title = app.staticTexts["Enable For You?"]
+            XCTAssertTrue(title.waitForExistence(timeout: 20))
+            let sheet = app.sheets.firstMatch.exists ? app.sheets.firstMatch : title
+            let handle = sheet.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.05))
+            handle.press(forDuration: 0.1, thenDragTo: app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.98)))
+            XCTAssertTrue(title.waitForNonExistence(timeout: 8))
+            app.terminate()
+
+            let again = launch("settings", arguments: args)
+            let restored = again.switches["Intelligence.forYou"].firstMatch
+            revealIntelligenceSettings(restored, in: again)
+            XCTAssertEqual(restored.value as? String, "0")
+            XCTAssertFalse(again.buttons["Intelligence.prompt.allow"].exists)
+        }
+
+        private func revealIntelligenceSettings(_ toggle: XCUIElement, in app: XCUIApplication) {
+            XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: 12))
+            for _ in 0 ..< 6 where !toggle.exists || !toggle.isHittable {
+                let bottom = app.coordinate(withNormalizedOffset: CGVector(dx: 0.8, dy: 0.8))
+                let top = app.coordinate(withNormalizedOffset: CGVector(dx: 0.8, dy: 0.45))
+                bottom.press(forDuration: 0.1, thenDragTo: top)
+            }
+            XCTAssertTrue(toggle.isHittable, app.debugDescription)
+        }
+
         func testLibraryPredictiveCompletionKeepsKeywordSearch() throws {
             try prepare()
             defer { finish() }
             let title = try required("MovieTitle")
-            let app = launch("search")
+            let server = try Data(required("FixtureServerID").utf8).base64EncodedString()
+            let user = try Data(required("FixtureUserID").utf8).base64EncodedString()
+            let key = "-dev.ericslutz.gus.intelligence." + server + "." + user
+            let app = launch("search", arguments: [key + ".naturalSearch", "NO", key + ".recommendations", "NO"])
             let field = app.searchFields.firstMatch
             XCTAssertTrue(field.waitForExistence(timeout: 30))
             field.tap()
