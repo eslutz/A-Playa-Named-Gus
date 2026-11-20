@@ -171,52 +171,53 @@ struct MediaCollectionDetailView: View {
     }
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 24) {
-                CollectionFeedback(store: store)
-                if let collection {
-                    let members = admitted(collection)
-                    let urls = collection.coverURLs(using: session.mediaProvider, limit: limit, hideUnrated: hideUnrated)
-                    DetailCoverHeader {
-                        ArtworkTile(url: urls.first, contentMode: .fit, placeholderSymbol: "rectangle.stack", fallbackURLs: Array(urls.dropFirst()))
-                            .frame(maxWidth: artworkWidth)
-                    } summary: {
-                        Text(collection.item.displayTitle).font(collectionTitleFont).accessibilityAddTraits(.isHeader)
-                        if collection.membersLoaded {
-                            Text("\(members.count) titles").foregroundStyle(.secondary)
-                        }
-                        if !collection.item.genres.isEmpty {
-                            Text(collection.item.genres.joined(separator: " / ")).foregroundStyle(.secondary)
-                        }
-                        if let overview = collection.item.overview {
-                            DetailSynopsis(title: collection.item.displayTitle, overview: overview)
-                        }
-                        #if os(tvOS)
-                            collectionActions
-                        #endif
+        ArtworkDetailPage {
+            if let collection {
+                let urls = collection.coverURLs(using: session.mediaProvider, limit: limit, hideUnrated: hideUnrated)
+                DetailCoverHeader(maximumCoverWidth: artworkWidth) {
+                    ArtworkTile(url: urls.first, contentMode: .fit, placeholderSymbol: "rectangle.stack", fallbackURLs: Array(urls.dropFirst()))
+
+                } summary: {
+                    Text(collection.item.displayTitle).font(collectionTitleFont).accessibilityAddTraits(.isHeader)
+                    if collection.membersLoaded {
+                        Text("\(admitted(collection).count) titles").foregroundStyle(.secondary)
+                    }
+                    if !collection.item.genres.isEmpty {
+                        Text(collection.item.genres.joined(separator: " / ")).foregroundStyle(.secondary)
+                    }
+                    if let overview = collection.item.overview {
+                        DetailSynopsis(title: collection.item.displayTitle, overview: overview)
                     }
                     #if os(tvOS)
-                    .focusSection()
+                        collectionActions
                     #endif
-                    if collection.membersLoaded {
-                        if members.isEmpty {
-                            ContentUnavailableView("No Titles", systemImage: "rectangle.stack")
-                        }
-                        memberSection("Movies", members: members.filter { $0.type == .movie }, collection: collection)
-                        memberSection("Series", members: members.filter { $0.type == .series }, collection: collection)
-                        memberSection("Books", members: members.filter { $0.type == .book }, collection: collection)
-                        memberSection("Audiobooks", members: members.filter { $0.type == .audioBook }, collection: collection)
-                        memberSection("Other Titles", members: members.filter { ![.movie, .series, .book, .audioBook].contains($0.type) }, collection: collection)
+                }
+                #if os(tvOS)
+                .focusSection()
+                #endif
+            }
+        } sections: {
+            CollectionFeedback(store: store)
+            if let collection {
+                let members = admitted(collection)
+                if collection.membersLoaded {
+                    if members.isEmpty {
+                        ContentUnavailableView("No Titles", systemImage: "rectangle.stack")
                     }
-                } else if loading {
-                    ProgressView()
-                } else {
-                    ContentUnavailableView("Collection Unavailable", systemImage: "rectangle.stack", description: Text("Refresh while connected to Jellyfin to load this collection."))
+                    memberSection("Movies", members: members.filter { $0.type == .movie }, collection: collection)
+                    memberSection("Series", members: members.filter { $0.type == .series }, collection: collection)
+                    memberSection("Books", members: members.filter { $0.type == .book }, collection: collection)
+                    memberSection("Audiobooks", members: members.filter { $0.type == .audioBook }, collection: collection)
+                    memberSection("Other Titles", members: members.filter { ![.movie, .series, .book, .audioBook].contains($0.type) }, collection: collection)
                 }
-                if let error = store.memberErrors[id] {
-                    Text(error); Button("Retry") { Task { await store.loadDetail(id: id, force: true) } }
-                }
-            }.gusTVPagePadding()
+            } else if loading {
+                ProgressView()
+            } else {
+                ContentUnavailableView("Collection Unavailable", systemImage: "rectangle.stack", description: Text("Refresh while connected to Jellyfin to load this collection."))
+            }
+            if let error = store.memberErrors[id] {
+                Text(error); Button("Retry") { Task { await store.loadDetail(id: id, force: true) } }
+            }
         }
         .navigationTitle(collection?.item.displayTitle ?? String(localized: "Collection"))
         .toolbarTitleDisplayMode(.inline)
@@ -265,21 +266,23 @@ struct MediaCollectionDetailView: View {
 
     @ViewBuilder private func memberSection(_ title: LocalizedStringKey, members: [MediaItem], collection: MediaCollection) -> some View {
         if !members.isEmpty {
-            Text(title).font(.title2.bold())
-            LazyVGrid(columns: PosterGrid.columns, spacing: PosterGrid.spacing) {
-                ForEach(sort.sorted(members), id: \.id) { item in
-                    let urls = session.mediaProvider.artworkURLs(for: item, request: .init(role: item.coverArtworkRole, maxWidth: 360))
-                    NavigationLink(value: ItemRef(item: item)) { PosterCard(item: item, imageURL: urls.first, fallbackURLs: Array(urls.dropFirst())) }
-                        .posterNavigationStyle()
-                        .gusTVFocus(id: item.id ?? "", section: "collection:" + id, ids: sort.sorted(members).compactMap(\.id), item: item)
-                        .mediaItemContextMenu(item: item, groupName: collection.item.displayTitle, canRemove: store.capabilities.removeMembers && store.canSubmitMutations && store.memberErrors[id] == nil, remove: {
-                            if let itemID = item.id {
-                                await store.mutate(collectionID: id, verifying: .excludes([itemID])) {
-                                    try await session.mediaProvider.removeCollectionMembers(id: id, itemIDs: [itemID])
-                                    return id
+            VStack(alignment: .leading, spacing: 12) {
+                Text(title).font(.title2.bold())
+                LazyVGrid(columns: PosterGrid.columns, spacing: PosterGrid.spacing) {
+                    ForEach(sort.sorted(members), id: \.id) { item in
+                        let urls = session.mediaProvider.artworkURLs(for: item, request: .init(role: item.coverArtworkRole, maxWidth: 360))
+                        NavigationLink(value: ItemRef(item: item)) { PosterCard(item: item, imageURL: urls.first, fallbackURLs: Array(urls.dropFirst())) }
+                            .posterNavigationStyle()
+                            .gusTVFocus(id: item.id ?? "", section: "collection:" + id, ids: sort.sorted(members).compactMap(\.id), item: item)
+                            .mediaItemContextMenu(item: item, groupName: collection.item.displayTitle, canRemove: store.capabilities.removeMembers && store.canSubmitMutations && store.memberErrors[id] == nil, remove: {
+                                if let itemID = item.id {
+                                    await store.mutate(collectionID: id, verifying: .excludes([itemID])) {
+                                        try await session.mediaProvider.removeCollectionMembers(id: id, itemIDs: [itemID])
+                                        return id
+                                    }
                                 }
-                            }
-                        })
+                            })
+                    }
                 }
             }
         }

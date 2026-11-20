@@ -6,6 +6,20 @@ import SwiftUI
 final class RootNavigationState {
     static let moreID = "gus.more"
     static let searchID = "gus.search"
+    let searchHistory: SearchHistoryStore?
+    var globalSearch = GlobalSearchSession()
+    private var returnDetail: SearchDetailOrigin?
+    private(set) var keptSearch: GlobalSearchSession?
+    var hasSearchReturn: Bool {
+        returnDetail != nil
+    }
+
+    var sheetPath = NavigationPath()
+
+    init(searchHistory: SearchHistoryStore? = nil) {
+        self.searchHistory = searchHistory
+    }
+
     var selectedSectionID = NavigationSectionPreference.homeID
     #if os(iOS)
         var sidebarVisibility = NavigationSplitViewVisibility.doubleColumn
@@ -68,6 +82,9 @@ final class RootNavigationState {
     private var selectedSeasons: [String: String] = [:]
 
     func searchState(for id: String) -> SectionSearchState {
+        if id == Self.searchID {
+            return globalSearch.typed
+        }
         if let state = searches[id] {
             return state
         }
@@ -78,13 +95,21 @@ final class RootNavigationState {
     }
 
     func libraryStore(for scope: LibraryGridScope, session: SessionStore) -> LibraryStore {
+        let activeResults = globalSearch.related
+        let ownsPages = activeResults?.resolved.map { LibraryGridScope.related($0).storeIdentity == scope.storeIdentity } == true
         if let store = libraries[scope.storeIdentity]?.value {
+            if ownsPages {
+                activeResults?.pages = store
+            }
             return store
         }
         libraries = libraries.filter { $0.value.value != nil }
         let key = scope.storeIdentity
         let store = LibraryStore(scope: scope, session: session, initialFilter: libraryFilters[key]) { [weak self] filter in
             self?.libraryFilters[key] = filter
+        }
+        if ownsPages {
+            activeResults?.pages = store
         }
         libraries[key] = StoreReference(store)
         refreshedAt[.library(key)] = contentRevision
@@ -212,7 +237,7 @@ final class RootNavigationState {
         case let .library(id): return libraries[id]?.value?.isLoading == false
         case let .detail(id): return currentDetail(id)?.state.isLoading == false
         case let .search(id):
-            guard let store = searches[id]?.store else { return false }
+            guard let store = searchState(for: id).store else { return false }
             return !store.state.isLoading && !store.isRefreshing && !store.isLoadingNextPage
         }
     }
@@ -225,10 +250,115 @@ final class RootNavigationState {
         case let .library(id): await libraries[id]?.value?.load()
         case let .detail(id): await currentDetail(id)?.load()
         case let .search(id):
-            if let store = searches[id]?.store, !store.query.isEmpty {
+            if let store = searchState(for: id).store, !store.query.isEmpty {
                 await store.search(store.query)
             }
         }
+    }
+
+    /// Selecting Search after returning to a detail in its own stack resumes the kept results.
+    func selectSection(_ id: String) {
+        if selectedSectionID == Self.searchID, id != Self.searchID, let searchHistory {
+            globalSearch.typed.completeLoadedSearch(in: searchHistory)
+            globalSearch.typed.isPresented = false
+        }
+        if id == Self.searchID {
+            resumeKeptSearch()
+        }
+        selectedSectionID = id == "gus.tv.search" ? Self.searchID : id
+    }
+
+    func openRelatedSearch(_ target: RelatedSearch, focusContext: String? = nil) {
+        if let searchHistory {
+            globalSearch.typed.completeLoadedSearch(in: searchHistory)
+        }
+        let section = selectedSectionID
+        globalSearch.typed.isPresented = false
+        returnDetail = SearchDetailOrigin(
+            section: section,
+            path: paths[section] ?? NavigationPath(),
+            sheet: detailItem,
+            sheetPath: sheetPath,
+            search: section == Self.searchID ? globalSearch : nil,
+            scrollAnchors: scrollAnchors.filter { $0.key.hasPrefix("detail:") },
+            focus: tvFocus,
+            focusContext: focusContext
+        )
+        detailItem = nil
+        startRelated(target)
+    }
+
+    private func startRelated(_ target: RelatedSearch) {
+        keptSearch = nil
+        globalSearch = GlobalSearchSession(target: target)
+        if let related = globalSearch.related, let resolved = related.resolved {
+            searchHistory?.record(.related(resolved))
+        }
+        paths[Self.searchID] = NavigationPath()
+        selectedSectionID = Self.searchID
+    }
+
+    func backToSearchDetail() {
+        guard let origin = returnDetail else { return }
+        returnDetail = nil
+        if let previous = origin.search {
+            keptSearch = globalSearch
+            globalSearch = previous
+        }
+        paths[origin.section] = origin.path
+        selectedSectionID = origin.section
+        sheetPath = origin.sheetPath
+        detailItem = origin.sheet
+        scrollAnchors.merge(origin.scrollAnchors) { _, original in original }
+        #if os(tvOS)
+            tvFocus = origin.focus
+            if let context = origin.focusContext {
+                tvFocus.requestRestoration(context: context)
+            }
+        #endif
+    }
+
+    func resumeKeptSearch() {
+        guard let keptSearch else { return }
+        self.keptSearch = nil
+        globalSearch = keptSearch
+        paths[Self.searchID] = NavigationPath()
+    }
+
+    func closeSearchResults() {
+        if let searchHistory {
+            globalSearch.typed.completeLoadedSearch(in: searchHistory)
+        }
+        globalSearch.typed.isPresented = false
+        globalSearch = GlobalSearchSession()
+        returnDetail = nil
+        keptSearch = nil
+        paths[Self.searchID] = NavigationPath()
+    }
+
+    func replaySearch(_ entry: SearchHistoryEntry) {
+        guard let searchHistory else { return }
+        returnDetail = nil
+        switch entry {
+        case let .related(target): startRelated(target)
+        case let .typed(text):
+            closeSearchResults()
+            globalSearch.typed.replayTyped(text, in: searchHistory)
+            selectedSectionID = Self.searchID
+        }
+    }
+
+    /// Only an edit to the field replaces a related search. Tab selection and keyboard
+    /// dismissal can change native presentation independently of the field's contents.
+    func editSearchText(_ text: String) {
+        guard text != globalSearch.typed.text else { return }
+        if !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            globalSearch.related = nil
+            returnDetail = nil
+            keptSearch = nil
+        }
+        globalSearch.typed.text = text
+        globalSearch.typed.updateQuery()
     }
 
     func pathBinding(for id: String) -> Binding<NavigationPath> {
@@ -250,13 +380,13 @@ final class RootNavigationState {
     }
 
     #if os(visionOS)
-        /// visionOS supports eight native tabs; reserve the last for More only when needed.
+        /// visionOS supports eight native tabs; reserve Search and, when needed, More.
         static func visionDirectSectionIDs(_ ids: [String]) -> [String] {
-            ids.count > 8 ? Array(ids.prefix(7)) : ids
+            ids.count > 7 ? Array(ids.prefix(6)) : ids
         }
 
         func reconcileVisionMoreSelection(sectionIDs: [String]) {
-            guard selectedSectionID == Self.moreID, sectionIDs.count <= 8 else { return }
+            guard selectedSectionID == Self.moreID, sectionIDs.count <= 7 else { return }
             selectedSectionID = sectionIDs.first ?? NavigationSectionPreference.homeID
         }
     #endif
@@ -268,11 +398,7 @@ final class RootNavigationState {
         case .downloaded: selectedSectionID = NavigationSectionPreference.downloadedID
         case .settings: selectedSectionID = NavigationSectionPreference.settingsID
         case .search:
-            #if os(iOS)
-                selectedSectionID = Self.searchID
-            #else
-                break
-            #endif
+            selectSection(Self.searchID)
         }
     }
 }
@@ -280,25 +406,80 @@ final class RootNavigationState {
 @MainActor @Observable
 final class SectionSearchState {
     @ObservationIgnored private weak var currentStore: SearchStore?
+    @ObservationIgnored private var retainedStore: SearchStore?
+    @ObservationIgnored private weak var history: SearchHistoryStore?
+    private let retainsResults: Bool
     var store: SearchStore? {
         currentStore
     }
 
-    var text = ""
+    var text = "" {
+        didSet {
+            guard oldValue != text else { return }
+            if text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty, let history {
+                completeLoadedSearch(oldValue, in: history)
+            }
+            lastCompletedQuery = nil
+        }
+    }
+
     var isPresented = false
     var showsList = false
     private var owners: Set<UUID> = []
     @ObservationIgnored private var searchTask: Task<Void, Never>?
     private var requestedText: String?
+    private var lastCompletedQuery: String?
 
-    /// The view owns results; this account-scoped object retains only field and
-    /// presentation choices plus a non-owning lookup for adaptive replacement.
+    init(retainsResults: Bool = false) {
+        self.retainsResults = retainsResults
+    }
+
+    func submitSearch(to history: SearchHistoryStore) {
+        recordTyped(text, in: history)
+    }
+
+    func completeLoadedSearch(in history: SearchHistoryStore) {
+        completeLoadedSearch(text, in: history)
+    }
+
+    private func completeLoadedSearch(_ text: String, in history: SearchHistoryStore) {
+        let query = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let store, store.state == .loaded, store.query == query, lastCompletedQuery != query else { return }
+        recordTyped(query, in: history)
+    }
+
+    func selectedResult(_ item: MediaItem, for query: String, in history: SearchHistoryStore) {
+        recordTyped(query, in: history)
+        if item.type == .genre, let id = item.id {
+            history.record(.related(.init(kind: .genre, id: id, name: item.displayTitle)))
+        }
+    }
+
+    func replayTyped(_ query: String, in history: SearchHistoryStore) {
+        text = query
+        submitSearch(to: history)
+        updateQuery()
+    }
+
+    private func recordTyped(_ text: String, in history: SearchHistoryStore) {
+        let query = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !query.isEmpty else { return }
+        history.record(.typed(query))
+        lastCompletedQuery = query
+    }
+
+    /// The single global search retains pages across section changes. Other
+    /// holders retain only a weak lookup for adaptive replacement.
     func acquireStore(session: SessionStore, owner: UUID) -> SearchStore {
         let result: SearchStore
         if let currentStore {
             result = currentStore
         } else {
             result = SearchStore(session: session); requestedText = nil
+        }
+        history = session.searchHistory
+        if retainsResults {
+            retainedStore = result
         }
         retain(result, owner: owner)
         return result

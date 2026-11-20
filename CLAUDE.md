@@ -240,7 +240,7 @@ State objects are `@Observable @MainActor` classes (Observation framework — no
 - `RootView` switches on `AppModel.currentSession`: `nil` → `ConnectFlowView`; otherwise
   injects a `SessionStore` (authenticated `JellyfinClient` + user + server) into the signed-in tree.
 - Feature stores take a `SessionStore` and use its media provider. `RootNavigationState`
-  owns Home, weak library/detail store lookups, per-section search state, navigation paths,
+  owns Home, weak library/detail store lookups, window-owned global Search results, navigation paths,
   per-library display choices, profile presentation, and scroll anchors for the signed-in account; adaptive view replacement reuses that state.
   `RootView` owns `AudioPlaybackCoordinator` and stops it when the account changes.
 - `SavedMediaStore` owns supplemental Gus intent, cursors, activity and its CloudKit
@@ -279,11 +279,11 @@ All section stacks bind their paths to `RootNavigationState`. Compact iPhone nav
 uses three content tabs plus an explicit More list and a native Search tab, keeping
 one stack per section. The default content tabs are Home, Movies and Series when
 available; a saved account-specific order keeps its first three visible sections.
-visionOS shows all configured sections directly when there are at most eight; above
-eight it shows the first seven in resolved order plus More. Overflow uses the same
+visionOS reserves a tab for Search. Up to seven configured sections appear directly.
+With additional sections, the first six appear alongside More and Search. Overflow uses the same
 section selection and navigation histories.
 When More becomes unnecessary, its selection returns to the first direct section
-without clearing those histories. Settings/Downloads children use the typed
+without clearing those histories. Search keeps one active text or related-results session per window. A related search can suspend its originating detail stack until Back, including a presented detail sheet. The 20 most recent completed searches belong to the signed-in account on this device. Settings/Downloads children use the typed
 `AppScreen` destinations.
 
 **Content deep links** (`gus://item/<id>`, `gus://play/<id>` — `Models/ContentLink.swift`)

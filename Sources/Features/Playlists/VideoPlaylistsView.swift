@@ -155,22 +155,23 @@ struct VideoPlaylistDetailView: View {
         Group {
             if let playlist, let serverList {
                 List {
-                    Section {
-                        playlistHeader(playlist, list: serverList)
-                    }
-                    .listRowBackground(Color.clear)
+                    playlistHeader(playlist, list: serverList)
+                        .padding(.bottom, DetailPageMetrics.sectionSpacing)
+                        .listRowInsets(EdgeInsets())
+                        .listRowBackground(Color.clear)
+                    #if !os(tvOS)
+                        .listRowSeparator(.hidden)
+                    #endif
                     if serverList.entriesLoaded {
-                        Section {
-                            if playlist.entries.isEmpty {
-                                Text("Add movies or individual episodes to get started.").foregroundStyle(.secondary)
-                            }
-                            ForEach(Array(playlist.entries.enumerated()), id: \.element.id) { index, entry in
-                                entryRow(entry, index: index, playlist: playlist, canEdit: serverList.canEdit)
-                            }
-                            .gusPlaylistMove(enabled: serverList.canEdit && !mutating) { indices, destination in
-                                guard indices.count == 1, let source = indices.first else { return }
-                                move(source, by: destination > source ? destination - source - 1 : destination - source, in: playlist)
-                            }
+                        if playlist.entries.isEmpty {
+                            Text("Add movies or individual episodes to get started.").foregroundStyle(.secondary)
+                        }
+                        ForEach(Array(playlist.entries.enumerated()), id: \.element.id) { index, entry in
+                            entryRow(entry, index: index, playlist: playlist, canEdit: serverList.canEdit)
+                        }
+                        .gusPlaylistMove(enabled: serverList.canEdit && !mutating) { indices, destination in
+                            guard indices.count == 1, let source = indices.first else { return }
+                            move(source, by: destination > source ? destination - source - 1 : destination - source, in: playlist)
                         }
                     } else if loadingEntries {
                         ProgressView()
@@ -182,6 +183,9 @@ struct VideoPlaylistDetailView: View {
                         Text(message).foregroundStyle(.secondary)
                     }
                 }
+                .listStyle(.plain)
+                .contentMargins(.top, 0, for: .scrollContent)
+                .detailArtworkViewport()
                 .navigationTitle(playlist.name)
                 .toolbarTitleDisplayMode(.inline)
                 .toolbar {
@@ -246,7 +250,6 @@ struct VideoPlaylistDetailView: View {
     private func playlistHeader(_ playlist: VideoPlaylist, list: ServerMediaList) -> some View {
         DetailCoverHeader {
             PlaylistCoverArtwork(playlist: list.coverItem, entries: list.entries.map(\.item), maxWidth: 720, contentMode: .fit)
-                .frame(maxWidth: 240)
                 .clipShape(RoundedRectangle(cornerRadius: 12))
         } summary: {
             VStack(alignment: .leading, spacing: 12) {

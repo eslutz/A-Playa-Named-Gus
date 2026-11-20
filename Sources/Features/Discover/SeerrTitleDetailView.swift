@@ -158,57 +158,52 @@ struct SeerrTitleDetailView: View {
     }
 
     private func content(_ title: SeerrTitle) -> some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 24) {
-                if let backdrop = SeerrArtwork.url(path: title.backdropPath, width: "w1280") {
-                    DetailBackdropHeader {
-                        AsyncPoster(url: backdrop, placeholderSymbol: "film", fallbackURLs: [SeerrArtwork.url(path: title.posterPath, width: "w780")].compactMap { $0 })
-                    } summary: { summary(title) }
-                } else {
-                    DetailCoverHeader {
-                        SeerrArtworkView(path: title.posterPath, contentMode: .fit, width: "w780")
-                            .frame(maxWidth: 240)
-                    } summary: { summary(title) }
-                }
-                if detail.mediaType == .tv, let seasons = title.seasons, !seasons.isEmpty {
-                    seasonList(title, seasons: seasons)
-                }
-                if let genres = title.genres, !genres.isEmpty {
-                    categoryLinks("Genres", items: genres, kind: detail.mediaType == .movie ? .movieGenres : .tvGenres)
-                }
-                if detail.mediaType == .movie, let studios = title.productionCompanies, !studios.isEmpty {
-                    categoryLinks("Studios", items: studios, kind: .studios)
-                }
-                if detail.mediaType == .tv, let networks = title.networks, !networks.isEmpty {
-                    categoryLinks("Networks", items: networks, kind: .networks)
-                }
-                if let credits = title.credits, !credits.cast.isEmpty || !credits.crew.isEmpty {
-                    SeerrCreditsSection(credits: credits, store: store)
-                }
-                if detail.mediaType == .movie, let collection = title.collection, let name = collection.name?.trimmedNilIfEmpty {
-                    NavigationLink {
-                        SeerrCatalogGridView(title: name, source: .collection(collection.id), store: store)
-                    } label: { Label(name, systemImage: "rectangle.stack") }
-                        .accessibilityIdentifier("Seerr.collection." + String(collection.id))
-                }
-                SeerrRelatedTitlesSection(
-                    heading: String(localized: "Recommendations"),
-                    source: .recommendations(detail.mediaType, title.id),
-                    linkID: "Seerr.recommendations.seeAll",
-                    store: store
-                )
-                SeerrRelatedTitlesSection(
-                    heading: detail.mediaType == .movie ? String(localized: "Similar Movies") : String(localized: "Similar Series"),
-                    source: .similar(detail.mediaType, title.id),
-                    linkID: "Seerr.similar.seeAll",
-                    store: store
-                )
+        ArtworkDetailPage {
+            if let backdrop = SeerrArtwork.url(path: title.backdropPath, width: "w1280") {
+                DetailBackdropHeader {
+                    AsyncPoster(url: backdrop, placeholderSymbol: "film", fallbackURLs: [SeerrArtwork.url(path: title.posterPath, width: "w780")].compactMap { $0 })
+                } summary: { summary(title) }
+            } else {
+                DetailCoverHeader {
+                    SeerrArtworkView(path: title.posterPath, contentMode: .fit, width: "w780")
+
+                } summary: { summary(title) }
             }
-            .padding()
-            .frame(maxWidth: PageContentMetrics.maxWidth, alignment: .leading)
-            .frame(maxWidth: .infinity)
+        } sections: {
+            if detail.mediaType == .tv, let seasons = title.seasons, !seasons.isEmpty {
+                seasonList(title, seasons: seasons)
+            }
+            if let genres = title.genres, !genres.isEmpty {
+                categoryLinks("Genres", items: genres, kind: detail.mediaType == .movie ? .movieGenres : .tvGenres)
+            }
+            if detail.mediaType == .movie, let studios = title.productionCompanies, !studios.isEmpty {
+                categoryLinks("Studios", items: studios, kind: .studios)
+            }
+            if detail.mediaType == .tv, let networks = title.networks, !networks.isEmpty {
+                categoryLinks("Networks", items: networks, kind: .networks)
+            }
+            if let credits = title.credits, !credits.cast.isEmpty || !credits.crew.isEmpty {
+                SeerrCreditsSection(credits: credits, store: store)
+            }
+            if detail.mediaType == .movie, let collection = title.collection, let name = collection.name?.trimmedNilIfEmpty {
+                NavigationLink {
+                    SeerrCatalogGridView(title: name, source: .collection(collection.id), store: store)
+                } label: { Label(name, systemImage: "rectangle.stack") }
+                    .accessibilityIdentifier("Seerr.collection." + String(collection.id))
+            }
+            SeerrRelatedTitlesSection(
+                heading: detail.mediaType == .movie ? String(localized: "Similar Movies") : String(localized: "Similar Series"),
+                source: .similar(detail.mediaType, title.id),
+                linkID: "Seerr.similar.seeAll",
+                store: store
+            )
+            SeerrRelatedTitlesSection(
+                heading: String(localized: "Recommendations"),
+                source: .recommendations(detail.mediaType, title.id),
+                linkID: "Seerr.recommendations.seeAll",
+                store: store
+            )
         }
-        .lookToScroll()
         .refreshable { await detail.load(store: store) }
     }
 

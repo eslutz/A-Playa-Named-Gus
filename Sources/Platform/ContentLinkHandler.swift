@@ -28,7 +28,7 @@ private struct ContentLinkHandler: ViewModifier {
                 await resolve(link)
             }
             .sheet(item: Bindable(rootState).projectedValue.detailItem) { ref in
-                NavigationStack {
+                NavigationStack(path: Bindable(rootState).sheetPath) {
                     ItemRouteDestination(item: ref.item)
                         .gusItemDestinations()
                         .toolbar {
@@ -84,9 +84,11 @@ private struct ContentLinkHandler: ViewModifier {
                             rootState.paths[rootState.selectedSectionID, default: NavigationPath()].append(ItemRef(item: item))
                         }
                     } else {
+                        rootState.sheetPath = NavigationPath()
                         rootState.detailItem = ItemRef(item: item)
                     }
                 #else
+                    rootState.sheetPath = NavigationPath()
                     rootState.detailItem = ItemRef(item: item)
                 #endif
             case .play:

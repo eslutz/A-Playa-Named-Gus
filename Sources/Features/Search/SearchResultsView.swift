@@ -1,12 +1,62 @@
 import SwiftUI
 
+struct RecentSearchesView: View {
+    @Environment(SessionStore.self) private var session
+    @State private var confirmsClear = false
+    let onSelect: (SearchHistoryEntry) -> Void
+
+    var body: some View {
+        let history = session.searchHistory
+        let entries = history.entries
+        if entries.isEmpty {
+            ContentUnavailableView("Search Library", systemImage: "magnifyingglass")
+        } else {
+            List {
+                Section("Recent Searches") {
+                    ForEach(entries) { entry in
+                        Button { onSelect(entry) } label: {
+                            switch entry {
+                            case let .typed(text):
+                                Label(text, systemImage: "magnifyingglass")
+                            case let .related(search):
+                                Label {
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text(search.name)
+                                        Text(search.kind.title).font(.caption).foregroundStyle(.secondary)
+                                    }
+                                } icon: { Image(systemName: search.kind.systemImage) }
+                            }
+                        }
+                        .accessibilityIdentifier("Search.recent." + entry.id)
+                        .contextMenu {
+                            Button("Remove from History", systemImage: "trash", role: .destructive) { history.remove(entry) }
+                        }
+                        .accessibilityAction(named: "Remove from History") { history.remove(entry) }
+                    }
+                    .onDelete { offsets in
+                        for index in offsets {
+                            history.remove(entries[index])
+                        }
+                    }
+                }
+                Button("Clear Search History", role: .destructive) { confirmsClear = true }
+                    .accessibilityIdentifier("Search.clearRecent")
+            }
+            .alert("Clear Search History?", isPresented: $confirmsClear) {
+                Button("Cancel", role: .cancel) {}
+                Button("Clear Search History", role: .destructive) { history.clear() }
+            }
+        }
+    }
+}
+
 struct SearchResultsView: View {
     @Environment(RootNavigationState.self) private var rootState
     @Environment(SessionStore.self) private var session
     let store: SearchStore
 
     private var searchState: SectionSearchState {
-        rootState.searchState(for: rootState.selectedSectionID)
+        rootState.searchState(for: RootNavigationState.searchID)
     }
 
     var body: some View {
@@ -23,7 +73,7 @@ struct SearchResultsView: View {
                         resultLink(item)
                             .id(ItemRef(item: item).id)
                             .posterNavigationStyle()
-                            .gusTVFocus(id: ItemRef(item: item).id, section: "search:" + rootState.selectedSectionID + ":" + store.query, ids: store.results.map { ItemRef(item: $0).id }, item: item)
+                            .gusTVFocus(id: ItemRef(item: item).id, section: "search:" + RootNavigationState.searchID + ":" + store.query, ids: store.results.map { ItemRef(item: $0).id }, item: item)
                             .task { await store.loadMoreIfNeeded(currentItem: item) }
                     }
 
@@ -52,15 +102,15 @@ struct SearchResultsView: View {
                 .scrollTargetLayout()
                 .gusTVPagePadding()
             }
-            .gusVisibleContent(.search(rootState.selectedSectionID), isLoading: store.state.isLoading || store.isRefreshing || store.isLoadingNextPage)
-            .scrollPosition(id: rootState.scrollBinding(for: "search:" + rootState.selectedSectionID + ":" + store.query))
+            .gusVisibleContent(.search(RootNavigationState.searchID), isLoading: store.state.isLoading || store.isRefreshing || store.isLoadingNextPage)
+            .scrollPosition(id: rootState.scrollBinding(for: "search:" + RootNavigationState.searchID + ":" + store.query))
             .lookToScroll()
         }
     }
 
     @ViewBuilder private func resultLink(_ item: MediaItem) -> some View {
         if item.type == .genre {
-            MediaItemNavigationLink(item: item) {
+            MediaItemNavigationLink(item: item, onSelect: { didSelect(item) }) {
                 VStack(alignment: .leading, spacing: 4) {
                     Label(item.displayTitle, systemImage: "tag")
                         .font(.headline)
@@ -73,7 +123,7 @@ struct SearchResultsView: View {
             }
             .accessibilityIdentifier("Search.genre." + (item.id ?? ""))
         } else {
-            MediaItemNavigationLink(item: item) {
+            MediaItemNavigationLink(item: item, onSelect: { didSelect(item) }) {
                 if searchState.showsList {
                     MediaLibraryRow(item: item)
                 } else {
@@ -83,58 +133,13 @@ struct SearchResultsView: View {
             .mediaItemContextMenu(item: item)
         }
     }
-}
 
-struct SearchRootView<Content: View>: View {
-    @Environment(AppNavigationModel.self) private var navigation
-    @Environment(SessionStore.self) private var session
-    @Bindable var state: SectionSearchState
-    @FocusState private var isSearchFocused: Bool
-
-    @ViewBuilder var content: () -> Content
-
-    var body: some View {
-        searchContent
-            .onChange(of: navigation.searchFocusRequest) { _, request in
-                guard session.mediaProvider.capabilities.supportsSearch, request > 0 else { return }
-                state.isPresented = true
-                isSearchFocused = true
-            }
-    }
-
-    @ViewBuilder
-    private var searchContent: some View {
-        if session.mediaProvider.capabilities.supportsSearch {
-            searchSurface
-                .gusSearchable(
-                    text: $state.text,
-                    isPresented: $state.isPresented,
-                    isFocused: $isSearchFocused,
-                    prompt: Text("Search Library")
-                )
-                .onChange(of: state.text, initial: true) { _, _ in state.updateQuery() }
-        } else {
-            content()
-        }
-    }
-
-    @ViewBuilder
-    private var searchSurface: some View {
-        if isSearching {
-            OwnedSearchResults(state: state).id(ObjectIdentifier(state))
-        } else {
-            content()
-        }
-    }
-
-    private var isSearching: Bool {
-        session.mediaProvider.capabilities.supportsSearch
-            && !state.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    private func didSelect(_ item: MediaItem) {
+        searchState.selectedResult(item, for: store.query, in: session.searchHistory)
     }
 }
 
-/// One native result surface owns heavy pages while alive in the navigation
-/// hierarchy. The account registry keeps only query and presentation choices.
+/// The global search keeps its loaded pages when this surface is temporarily hidden.
 struct OwnedSearchResults: View {
     @Environment(SessionStore.self) private var session
     let state: SectionSearchState
@@ -161,7 +166,10 @@ struct OwnedSearchResults: View {
                 state.retain(store, owner: owner)
             }
         }
-        .onDisappear { state.release(owner: owner) }
+        .onDisappear {
+            state.completeLoadedSearch(in: session.searchHistory)
+            state.release(owner: owner)
+        }
         .onChange(of: state.text) { _, _ in state.updateQuery() }
     }
 }

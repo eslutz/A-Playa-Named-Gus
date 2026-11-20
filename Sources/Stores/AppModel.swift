@@ -237,6 +237,7 @@ final class AppModel {
     }
 
     func clearHandedOffSession(serverID: String, userID: String) async {
+        SearchHistoryStore.delete(scope: AccountScope(serverID: serverID, userID: userID), defaults: userDefaults)
         guard let user = users.first(where: { $0.id == userID && $0.serverID == serverID }) else {
             let credential = SessionCredential(serverID: serverID, userID: userID)
             tokenStore.deleteToken(for: credential)
@@ -318,7 +319,8 @@ final class AppModel {
             let session = SessionStore(
                 client: JellyfinClientFactory.makeClient(url: server.url, accessToken: "debug-preview-token"),
                 user: user,
-                server: server
+                server: server,
+                historyDefaults: userDefaults
             )
             activationGeneration = UUID()
             let generation = activationGeneration
@@ -493,6 +495,7 @@ final class AppModel {
 
     private func removeAccount(server: ServerConnection, user: StoredUser) {
         clearAccountData(server: server, user: user)
+        SearchHistoryStore.delete(scope: AccountScope(serverID: server.id, userID: user.id), defaults: userDefaults)
         tokenStore.deleteToken(for: SessionCredential(user: user))
         users.removeAll { SessionCredential(user: $0) == SessionCredential(user: user) }
         serverStore.saveUsers(users)
@@ -507,7 +510,7 @@ final class AppModel {
         clearCurrentAccountDataIfNeeded(replacingWith: user)
         let authentication = SessionAuthentication(userID: user.id)
         let client = clientFactory(server.url, token, authentication)
-        let session = SessionStore(client: client, user: user, server: server)
+        let session = SessionStore(client: client, user: user, server: server, historyDefaults: userDefaults)
         authentication.bind(to: session)
         installSession(session)
         lastSessionAccount = SessionCredential(user: user).account

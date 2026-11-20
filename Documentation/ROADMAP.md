@@ -240,6 +240,10 @@ automated build verification. (Covers priority: *polish & testing*.)
   results with a no-results state. *(Done: `SearchStore` drives debounced, cancellable,
   paginated `getItems` search; iOS/iPadOS/macOS/visionOS use `.searchable`, and tvOS has a
   Search tab.)*
+- [x] **Related searches and history.** Genre, studio, and person controls open the
+  account-filtered Search grid. Back restores the originating detail. Search keeps the
+  results until closed or replaced. Each account keeps its latest 20 completed typed
+  and related searches locally, with individual removal and confirmed clearing.
 - [x] **Series → seasons → episodes.** Detail hierarchy for shows (`getItems` by
   parent/`getSeasons`/`getEpisodes`) with season picker and episode list. *Acceptance:*
   can navigate Series → Season → Episode → Play. *(Done: series details load seasons and

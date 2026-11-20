@@ -32,35 +32,54 @@ struct UILayoutMetricsTests {
         }
 
         @MainActor
-        @Test("Rendered second-row gaps stay eight points wide", arguments: [2, 3, 5])
-        func secondaryActionGaps(count: Int) throws {
-            let width = 320
-            let row = DetailActionLayout {
-                ForEach(0 ..< count, id: \.self) { _ in
-                    Color.black.frame(width: 44, height: 44)
+        @Test("Secondary controls start at the leading edge on every line", arguments: [2, 3, 5], [false, true])
+        func secondaryActionGaps(count: Int, rightToLeft: Bool) throws {
+            for width in [320, 100] {
+                let row = DetailActionLayout {
+                    ForEach(0 ..< count, id: \.self) { _ in
+                        Color.black.frame(width: 44, height: 44)
+                    }
                 }
+                .frame(width: CGFloat(width))
+                .environment(\.layoutDirection, rightToLeft ? .rightToLeft : .leftToRight)
+                .background(.white)
+                let image = try #require(ImageRenderer(content: row).cgImage)
+                let context = try #require(CGContext(
+                    data: nil, width: width, height: image.height, bitsPerComponent: 8, bytesPerRow: width,
+                    space: CGColorSpaceCreateDeviceGray(), bitmapInfo: CGImageAlphaInfo.none.rawValue
+                ))
+                context.draw(image, in: CGRect(x: 0, y: 0, width: width, height: image.height))
+                let pixels = try #require(context.data?.assumingMemoryBound(to: UInt8.self))
+                let perLine = min(count, (width + 8) / 52)
+                let lines = (count + perLine - 1) / perLine
+                #expect(image.height == lines * 44 + (lines - 1) * 8)
+                var measuredCount = 0
+                for y in stride(from: 22, to: image.height, by: 52) {
+                    let occupied = (0 ..< width).filter { leadingOffset in
+                        let x = rightToLeft ? width - 1 - leadingOffset : leadingOffset
+                        return pixels[y * width + x] < 128
+                    }
+                    let controls = occupied.count / 44
+                    measuredCount += controls
+                    #expect(controls > 0 && controls <= perLine)
+                    #expect(occupied == (0 ..< controls).flatMap { index in Array(index * 52 ..< index * 52 + 44) })
+                }
+                #expect(measuredCount == count)
             }
-            .frame(width: CGFloat(width))
-            .background(.white)
-            let image = try #require(ImageRenderer(content: row).cgImage)
-            let context = try #require(CGContext(
-                data: nil,
-                width: width,
-                height: 44,
-                bitsPerComponent: 8,
-                bytesPerRow: width,
-                space: CGColorSpaceCreateDeviceGray(),
-                bitmapInfo: CGImageAlphaInfo.none.rawValue
-            ))
-            context.draw(image, in: CGRect(x: 0, y: 0, width: CGFloat(width), height: 44))
-            let pixels = try #require(context.data?.assumingMemoryBound(to: UInt8.self))
-            let midline = (0 ..< width).map { pixels[22 * width + $0] < 128 }
-            let leading = (width - count * 44 - (count - 1) * 8) / 2
-            let expected = (0 ..< count).flatMap { index in
-                let x = leading + index * 52
-                return Array(x ..< x + 44)
+        }
+
+        @MainActor
+        @Test("Empty detail sections consume no inter-section space")
+        func visibleDetailSectionSpacing() {
+            let layout = DetailSectionLayout {
+                Color.clear.frame(height: 0)
+                Color.red.frame(height: 30)
+                VStack { EmptyView() }.frame(height: 0)
+                Color.blue.frame(height: 40)
+                Color.clear.frame(height: 0)
             }
-            #expect(midline.indices.filter { midline[$0] } == expected)
+            let size = UIHostingController(rootView: layout).sizeThatFits(in: CGSize(width: 375, height: 2000))
+            #expect(size.height == 30 + DetailPageMetrics.sectionSpacing + 40)
         }
     #endif
 

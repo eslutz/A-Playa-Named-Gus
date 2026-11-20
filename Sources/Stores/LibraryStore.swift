@@ -93,7 +93,12 @@ struct LibraryFilterState: Equatable {
 }
 
 enum LibraryGridScope: Hashable {
-    case genre(id: String, name: String)
+    case related(RelatedSearch)
+
+    static func genre(id: String, name: String) -> Self {
+        .related(RelatedSearch(kind: .genre, id: id, name: name))
+    }
+
     case library(MediaItem)
     case category(NavigationCategory)
     case photoLibrary(parentID: String?, albums: Bool)
@@ -110,7 +115,7 @@ enum LibraryGridScope: Hashable {
             return String(localized: "Photos")
         case .musicLibrary:
             return String(localized: "Music")
-        case let .genre(_, name): return name
+        case let .related(target): return target.name
         case let .latest(kind): return kind.title
         }
     }
@@ -125,7 +130,7 @@ enum LibraryGridScope: Hashable {
             return "photo"
         case .musicLibrary:
             return "music.note"
-        case .genre: return "tag"
+        case let .related(target): return target.kind.systemImage
         case .latest: return "clock"
         }
     }
@@ -134,16 +139,16 @@ enum LibraryGridScope: Hashable {
         switch self {
         case let .library(library):
             return library.id
-        case .category, .latest, .genre:
+        case .category, .latest, .related:
             return nil
         case let .photoLibrary(parentID, _), let .musicLibrary(parentID):
             return parentID
         }
     }
 
-    var genreID: String? {
-        if case let .genre(id, _) = self {
-            return id
+    var relatedSearch: RelatedSearch? {
+        if case let .related(target) = self {
+            return target
         }
         return nil
     }
@@ -166,7 +171,8 @@ enum LibraryGridScope: Hashable {
             return albums ? [.photoAlbum] : [.photo]
         case .musicLibrary:
             return [.musicAlbum, .musicArtist]
-        case .genre: return [.movie, .series, .book, .audioBook, .musicAlbum, .audio, .video]
+        case .related:
+            return [.movie, .series, .episode, .book, .audioBook, .musicAlbum, .audio, .video, .trailer, .recording, .photo]
         case let .latest(kind): return kind.includeTypes
         }
     }
@@ -175,7 +181,7 @@ enum LibraryGridScope: Hashable {
         switch self {
         case .library:
             return groupsBookSeries
-        case .category, .photoLibrary, .musicLibrary, .latest, .genre:
+        case .category, .photoLibrary, .musicLibrary, .latest, .related:
             return true
         }
     }
@@ -190,7 +196,7 @@ enum LibraryGridScope: Hashable {
             return "photos:" + (parentID ?? "all") + (albums ? ":albums" : ":images")
         case let .musicLibrary(parentID):
             return "music:" + (parentID ?? "all")
-        case let .genre(id, _): return "genre:" + id
+        case let .related(target): return target.identityKey
         case let .latest(kind): return "latest:" + kind.rawValue
         }
     }
@@ -207,7 +213,9 @@ enum LibraryRequest {
     ) -> MediaItemQuery {
         MediaItemQuery(
             parentID: scope.parentID,
-            genreID: scope.genreID,
+            genreID: scope.relatedSearch.flatMap { $0.kind == .genre ? $0.id : nil },
+            studioID: scope.relatedSearch.flatMap { $0.kind == .studio ? $0.id : nil },
+            personID: scope.relatedSearch.flatMap { $0.kind == .person ? $0.id : nil },
             includeTypes: scope.includeTypes,
             startIndex: startIndex,
             limit: limit,
@@ -468,6 +476,9 @@ final class LibraryStore {
     }
 
     private func loadPage(startIndex: Int, replaceResults: Bool, generation: Int) async throws {
+        if let target = scope.relatedSearch, target.id?.isEmpty != false {
+            throw GusError.notFound
+        }
         let query = LibraryRequest.parameters(
             scope: scope,
             startIndex: startIndex,

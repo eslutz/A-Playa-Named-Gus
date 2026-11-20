@@ -369,6 +369,123 @@
             }
         }
 
+        func testRecentSearchesReplayRemoveAndClear() {
+            continueAfterFailure = false
+            let app = launch("search", environment: ["GUS_DEMO_URL": "http://127.0.0.1:5061"])
+            defer { app.terminate() }
+            let field = app.searchFields.firstMatch
+            XCTAssertTrue(field.waitForExistence(timeout: 30))
+            let clear = app.buttons["Search.clearRecent"].firstMatch
+            func clearAll() {
+                clear.tap()
+                let confirm = app.alerts.buttons["Clear Search History"].firstMatch
+                XCTAssertTrue(confirm.waitForExistence(timeout: 5))
+                confirm.tap()
+            }
+            if clear.exists {
+                clearAll()
+            }
+
+            let id = "47000000000000000000000000000001"
+            let result = app.buttons["Search.genre." + id].firstMatch
+            field.tap()
+            field.typeText("Hor")
+            XCTAssertTrue(result.waitForExistence(timeout: 15))
+            field.typeText("ror")
+            XCTAssertEqual(field.value as? String, "Horror")
+            dismissKeyboard(app)
+            result.tap()
+            XCTAssertTrue(app.navigationBars["Horror"].waitForExistence(timeout: 10))
+            app.navigationBars["Horror"].buttons.element(boundBy: 0).tap()
+            XCTAssertTrue(field.waitForExistence(timeout: 8))
+            let close = app.buttons["Search.closeResults"].firstMatch
+            XCTAssertTrue(close.waitForExistence(timeout: 8))
+            close.tap()
+
+            let typed = app.buttons["Search.recent.typed:horror"].firstMatch
+            let genre = app.buttons["Search.recent.related:genre:id:" + id].firstMatch
+            XCTAssertTrue(typed.waitForExistence(timeout: 8))
+            XCTAssertTrue(genre.exists)
+            XCTAssertFalse(app.buttons["Search.recent.typed:hor"].exists)
+            app.terminate()
+            app.launch()
+            XCTAssertTrue(typed.waitForExistence(timeout: 30))
+            typed.tap()
+            XCTAssertTrue(result.waitForExistence(timeout: 15))
+            XCTAssertEqual(field.value as? String, "Horror")
+            close.tap()
+            XCTAssertTrue(genre.waitForExistence(timeout: 8))
+            genre.tap()
+            let member = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "The Lantern House")).firstMatch
+            XCTAssertTrue(member.waitForExistence(timeout: 15))
+            close.tap()
+
+            XCTAssertTrue(typed.waitForExistence(timeout: 8))
+            typed.press(forDuration: 1.2)
+            let remove = app.buttons["Remove from History"].firstMatch
+            XCTAssertTrue(remove.waitForExistence(timeout: 5))
+            remove.tap()
+            XCTAssertTrue(typed.waitForNonExistence(timeout: 5))
+            XCTAssertTrue(genre.exists)
+            clear.tap()
+            app.alerts.buttons["Cancel"].tap()
+            XCTAssertTrue(genre.exists)
+            clearAll()
+            XCTAssertTrue(genre.waitForNonExistence(timeout: 5))
+            app.terminate()
+            app.launch()
+            XCTAssertTrue(field.waitForExistence(timeout: 30))
+            XCTAssertFalse(genre.exists || typed.exists || clear.exists)
+        }
+
+        func testDetailTagsAndCreditsOpenSearchAndReturn() {
+            let app = launch("item/47000000000000000000000000000002", environment: ["GUS_DEMO_URL": "http://127.0.0.1:5061"])
+            XCTAssertTrue(waitForMovieDetail(app))
+            let idPrefix = "470000000000000000000000000000"
+            let fields = [
+                ("genre:id:" + idPrefix + "01", "Horror"),
+                ("studio:name:beacon works", "Beacon Works"),
+                ("person:id:" + idPrefix + "08:The Keeper", "Mara Lake"),
+                ("person:id:" + idPrefix + "09:Director", "Rowan Vale"),
+            ]
+            for (id, name) in fields {
+                let link = app.buttons["Detail.related." + id].firstMatch
+                for _ in 0 ..< 8 {
+                    if link.exists, link.isHittable, link.frame.midY < app.frame.maxY - 85 {
+                        break
+                    }
+                    app.swipeUp(velocity: .slow)
+                }
+                XCTAssertTrue(link.isHittable, "Expected detail control for " + name)
+                link.tap()
+                let back = app.buttons["Search.backToDetail"].firstMatch
+                XCTAssertTrue(back.waitForExistence(timeout: 12), "Expected Search from " + name)
+                XCTAssertTrue(app.navigationBars[name].waitForExistence(timeout: 8))
+                let movie = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "The Lantern House")).firstMatch
+                XCTAssertTrue(movie.waitForExistence(timeout: 10))
+                XCTAssertFalse(app.keyboards.firstMatch.exists)
+                if name == "Horror" {
+                    movie.tap()
+                    XCTAssertTrue(app.buttons["Detail.play"].waitForExistence(timeout: 12))
+                    app.navigationBars.buttons.element(boundBy: 0).tap()
+                    XCTAssertTrue(back.waitForExistence(timeout: 8))
+                    capture("related-horror-results")
+                }
+                back.tap()
+                XCTAssertTrue(app.buttons["Detail.play"].waitForExistence(timeout: 10))
+            }
+            // A sheet blocks tab selection. Closing the restored sheet leaves its
+            // underlying section selected and the director results available in Search.
+            if UIDevice.current.userInterfaceIdiom == .phone {
+                app.buttons["ContentLink.detailDone"].tap()
+            }
+            XCTAssertTrue(openDestination("Search", app))
+            XCTAssertTrue(app.navigationBars["Rowan Vale"].waitForExistence(timeout: 8))
+            XCTAssertFalse(app.keyboards.firstMatch.exists)
+            app.buttons["Search.closeResults"].tap()
+            XCTAssertTrue(app.buttons["Search.clearRecent"].waitForExistence(timeout: 8))
+        }
+
         func testGenreSearchOpensMembersAndRestoresQuery() {
             let app = launch("search", environment: ["GUS_DEMO_URL": "http://127.0.0.1:5061"])
             let field = app.searchFields.firstMatch

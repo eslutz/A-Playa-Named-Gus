@@ -158,41 +158,38 @@ struct BookSeriesDetailView: View {
             } else if let store {
                 let series = store.bookCatalog.series(ref.key)
                 let members = series?.members ?? []
-                ScrollView {
-                    VStack(alignment: .leading) {
-                        if let error = store.refreshError {
-                            Text(error).foregroundStyle(.secondary)
-                            Button("Try Again") { Task { await store.load() } }
+                LoadingStateView(state: store.state, isEmpty: members.isEmpty, emptyTitle: "No Titles in This Series", emptySymbol: "books.vertical", retryAction: { Task { await store.load() } }) {
+                    ArtworkDetailPage {
+                        DetailCoverHeader(maximumCoverWidth: 220) {
+                            let cover = ContentRatingGate.coverMembers(members, limit: limit, hideUnrated: hideUnrated, count: 1).first
+                            let urls = cover.map { session.mediaProvider.artworkURLs(for: $0, request: .init(role: $0.coverArtworkRole, maxWidth: 640)) } ?? []
+                            ArtworkTile(url: urls.first, aspectRatio: cover?.type == .audioBook ? 1 : 2.0 / 3.0, contentMode: .fit, placeholderSymbol: "books.vertical", fallbackURLs: Array(urls.dropFirst()))
+
+                        } summary: {
+                            Text(currentRef.name).font(.largeTitle.bold()).accessibilityAddTraits(.isHeader)
+                            if let authors = series?.authorNames, !authors.isEmpty {
+                                Text(authors.formatted(.list(type: .and)))
+                            }
+                            if store.hasCompleteBookCatalog {
+                                Text("\(members.count) titles").foregroundStyle(.secondary)
+                            }
                         }
-                        LoadingStateView(state: store.state, isEmpty: members.isEmpty, emptyTitle: "No Titles in This Series", emptySymbol: "books.vertical", retryAction: { Task { await store.load() } }) {
-                            LazyVStack(alignment: .leading, spacing: 0) {
-                                if let cover = ContentRatingGate.coverMembers(members, limit: limit, hideUnrated: hideUnrated, count: 1).first {
-                                    DetailCoverHeader {
-                                        let urls = session.mediaProvider.artworkURLs(for: cover, request: .init(role: cover.coverArtworkRole, maxWidth: 640))
-                                        ArtworkTile(url: urls.first, aspectRatio: cover.type == .audioBook ? 1 : 2.0 / 3.0, contentMode: .fit, placeholderSymbol: "books.vertical", fallbackURLs: Array(urls.dropFirst()))
-                                            .frame(maxWidth: 220)
-                                    } summary: {
-                                        Text(currentRef.name).font(.largeTitle.bold()).accessibilityAddTraits(.isHeader)
-                                        if let authors = series?.authorNames, !authors.isEmpty {
-                                            Text(authors.formatted(.list(type: .and)))
-                                        }
-                                        if store.hasCompleteBookCatalog {
-                                            Text("\(members.count) titles").foregroundStyle(.secondary)
-                                        }
-                                    }
-                                }
-                                ForEach(members, id: \.id) { item in
-                                    MediaItemNavigationLink(item: item) { MediaLibraryRow(item: item) }
-                                        .buttonStyle(.plain)
-                                        .mediaItemContextMenu(item: item)
-                                    Divider()
-                                }
+                    } sections: {
+                        if let error = store.refreshError {
+                            VStack(alignment: .leading) {
+                                Text(error).foregroundStyle(.secondary)
+                                Button("Try Again") { Task { await store.load() } }
+                            }
+                        }
+                        LazyVStack(alignment: .leading, spacing: 0) {
+                            ForEach(members, id: \.id) { item in
+                                MediaItemNavigationLink(item: item) { MediaLibraryRow(item: item) }
+                                    .buttonStyle(.plain)
+                                    .mediaItemContextMenu(item: item)
+                                Divider()
                             }
                         }
                     }
-                    .gusTVPagePadding()
-                    .frame(maxWidth: PageContentMetrics.maxWidth, alignment: .leading)
-                    .frame(maxWidth: .infinity)
                 }
                 .refreshable { await store.load() }
                 .gusVisibleContent(.library(ref.library.storeIdentity), isLoading: store.isLoading)

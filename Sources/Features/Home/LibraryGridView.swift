@@ -36,7 +36,7 @@ struct LibraryGridView: View {
         case let .library(item): item.collectionType == .photos
         case let .category(category): category == .photos
         case .photoLibrary: true
-        case .musicLibrary, .latest, .genre: false
+        case .musicLibrary, .latest, .related: false
         }
     }
 
@@ -56,7 +56,7 @@ struct LibraryGridView: View {
         case let .library(item): item.collectionType == .music
         case let .category(category): category == .music
         case .musicLibrary: true
-        case .photoLibrary, .latest, .genre: false
+        case .photoLibrary, .latest, .related: false
         }
     }
 
@@ -94,6 +94,12 @@ struct LibraryGridView: View {
                     .focusSection()
                     .padding(.bottom, 24)
                 #endif
+                if let target = scope.relatedSearch {
+                    Label(target.kind.title, systemImage: target.kind.systemImage)
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                        .accessibilityIdentifier("Library.relatedKind")
+                }
                 if let collectionFormat {
                     NavigationLink(value: CollectionsRef(scope: session.references.scope, format: collectionFormat, movieLibraryID: collectionFormat == .movies ? scope.parentID : nil)) {
                         Label("Collections", systemImage: "rectangle.stack")

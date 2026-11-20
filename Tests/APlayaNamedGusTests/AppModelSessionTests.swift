@@ -44,6 +44,28 @@ struct AppModelSessionTests {
         ])
     }
 
+    @Test("search history survives account switching and disappears only for an explicitly removed account")
+    func searchHistoryFollowsAccount() async throws {
+        let cleanup = AccountCleanupSpy()
+        let fixture = try Fixture(accountCleanup: cleanup.actions)
+        try await fixture.appModel.switchToStoredUser(fixture.userA)
+        let previous = try #require(fixture.appModel.currentSession?.searchHistory)
+        previous.record(.typed("First account"))
+        try await fixture.appModel.switchToStoredUser(fixture.userB)
+        let other = try #require(fixture.appModel.currentSession?.searchHistory)
+        #expect(other.entries.isEmpty)
+        other.record(.typed("Second account"))
+        try await fixture.appModel.switchToStoredUser(fixture.userA)
+        let restored = try #require(fixture.appModel.currentSession?.searchHistory)
+        #expect(restored.entries == [.typed("First account")])
+        await fixture.appModel.signOut()
+        restored.record(.typed("Late completion"))
+        let scope = AccountScope(serverID: fixture.serverA.id, userID: fixture.userA.id)
+        #expect(SearchHistoryStore(scope: scope, defaults: fixture.userDefaults).entries.isEmpty)
+        try await fixture.appModel.switchToStoredUser(fixture.userB)
+        #expect(fixture.appModel.currentSession?.searchHistory.entries == [.typed("Second account")])
+    }
+
     @Test("signing out deletes only the active user's token and stored record")
     func signOutDeletesOnlyActiveUser() async throws {
         let cleanup = AccountCleanupSpy()

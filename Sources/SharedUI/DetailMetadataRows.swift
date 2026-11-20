@@ -1,68 +1,53 @@
 import SwiftUI
 
-/// Genre and studio pill rows shown in the item detail metadata section.
+/// Tapping a credit opens Global Search constrained to that server entity.
 struct DetailMetadataRows: View {
     let item: MediaItem
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            if let genres = item.genres.nonEmptyStrings, !genres.isEmpty {
-                MetadataPillRow(title: "Genres", values: genres, identifier: "Detail.metadataGenres", usesBookPills: item.isBookFormat)
+        VStack(alignment: .leading, spacing: DetailPageMetrics.sectionSpacing) {
+            if !item.genreSearchTargets.isEmpty {
+                MetadataPillRow(title: "Genres", values: item.genreSearchTargets, identifier: "Detail.metadataGenres", item: item)
             }
-
-            if !item.isBookFormat, let studios = item.studios.compactMap(\.name).nonEmptyStrings, !studios.isEmpty {
-                MetadataPillRow(title: "Studios", values: studios, identifier: "Detail.metadataStudios")
+            if !item.isBookFormat, !item.studioSearchTargets.isEmpty {
+                MetadataPillRow(title: "Studios", values: item.studioSearchTargets, identifier: "Detail.metadataStudios", item: item)
             }
         }
     }
 }
 
-// MARK: - Pill row
-
 private struct MetadataPillRow: View {
+    @Environment(RootNavigationState.self) private var navigation
     let title: LocalizedStringKey
-    let values: [String]
+    let values: [RelatedSearch]
     let identifier: String
-    var usesBookPills = false
+    let item: MediaItem
 
     var body: some View {
+        let context = "detail:" + ItemRef(item: item).id
         VStack(alignment: .leading, spacing: 10) {
             Text(title)
                 .font(.headline)
                 .accessibilityAddTraits(.isHeader)
                 .accessibilityIdentifier(identifier)
-
-            #if os(tvOS)
-                if usesBookPills {
-                    pills
-                } else {
-                    Text(values.joined(separator: " · "))
-                        .font(.body)
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .gusTVFocusableInfo()
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 10) {
+                    ForEach(values, id: \.identityKey) { target in
+                        Button(target.name) {
+                            navigation.openRelatedSearch(target, focusContext: context)
+                        }
+                        .buttonStyle(.bordered)
+                        .buttonBorderShape(.capsule)
+                        .accessibilityHint("Search for related titles")
+                        .accessibilityIdentifier("Detail.related." + target.identityKey)
+                        .gusTVFocus(id: target.identityKey, section: context + ":" + identifier, ids: values.map(\.identityKey), context: context)
+                    }
                 }
-            #else
-                pills
-            #endif
-        }
-    }
-
-    private var pills: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 10) {
-                ForEach(values, id: \.self) { value in
-                    Text(value)
-                        .font(.subheadline.weight(.medium))
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 7)
-                        .background(.thinMaterial, in: Capsule())
-                        .gusTVFocusableInfo()
-                }
+                .padding(.vertical, 2)
+                .gusTVRailPadding()
             }
-            .padding(.vertical, 2)
+            .lookToScroll(.horizontal)
+            .gusTVRailViewport()
         }
-        .lookToScroll(.horizontal)
-        .gusTVRailViewport()
     }
 }

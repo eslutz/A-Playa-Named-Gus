@@ -1,6 +1,42 @@
 {
   "sourceLanguage": "en",
   "strings": {
+    "Back to Detail": {
+      "comment": "Jellyfin Search navigation."
+    },
+    "Show Search Results": {
+      "comment": "Jellyfin Search navigation."
+    },
+    "Close Results": {
+      "comment": "Jellyfin Search navigation."
+    },
+    "No Matching Credit or Tag": {
+      "comment": "Jellyfin Search navigation."
+    },
+    "Couldn't Load Results": {
+      "comment": "Jellyfin Search navigation."
+    },
+    "Search Unavailable": {
+      "comment": "Jellyfin Search navigation."
+    },
+    "Recent Searches": {
+      "comment": "Jellyfin Search history on this device."
+    },
+    "Remove from History": {
+      "comment": "Jellyfin Search history on this device."
+    },
+    "Clear Search History": {
+      "comment": "Jellyfin Search history on this device."
+    },
+    "Clear Search History?": {
+      "comment": "Jellyfin Search history on this device."
+    },
+    "Studio": {
+      "comment": "Metadata link from a Jellyfin detail page."
+    },
+    "Search for related titles": {
+      "comment": "Metadata link from a Jellyfin detail page."
+    },
     "1 book": {
       "comment": "Books shelf volume count."
     },

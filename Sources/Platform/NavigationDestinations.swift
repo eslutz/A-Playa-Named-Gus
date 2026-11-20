@@ -5,20 +5,33 @@ struct MediaItemNavigationLink<Label: View>: View {
     @Environment(RootNavigationState.self) private var navigation
     @Environment(SessionStore.self) private var session
     let item: MediaItem
+    var onSelect: (() -> Void)? = nil
     @ViewBuilder var label: () -> Label
 
     var body: some View {
         #if os(iOS)
             if DeviceIdentity.usesIPadPresentation, item.type == .photo {
                 Button {
+                    onSelect?()
                     navigation.playerItem = ItemRef(item: item, serverID: session.server.id, userID: session.user.id)
                 } label: { label() }
             } else {
-                NavigationLink(value: ItemRef(item: item)) { label() }
+                itemLink
             }
         #else
-            NavigationLink(value: ItemRef(item: item)) { label() }
+            itemLink
         #endif
+    }
+
+    @ViewBuilder private var itemLink: some View {
+        if let onSelect {
+            Button {
+                onSelect()
+                navigation.paths[navigation.selectedSectionID, default: NavigationPath()].append(ItemRef(item: item))
+            } label: { label() }
+        } else {
+            NavigationLink(value: ItemRef(item: item)) { label() }
+        }
     }
 }
 
@@ -27,9 +40,25 @@ struct MediaItemNavigationLink<Label: View>: View {
 /// Shared by pushed navigation (`gusItemDestinations`) and modally presented content
 /// deep links (`ContentLinkHandler`).
 struct ItemRouteDestination: View {
+    @Environment(RootNavigationState.self) private var navigation
     let item: MediaItem
 
     var body: some View {
+        destination.toolbar {
+            if navigation.selectedSectionID == RootNavigationState.searchID, navigation.keptSearch != nil {
+                ToolbarItem(placement: .primaryAction) {
+                    Button("Show Search Results", systemImage: "magnifyingglass") {
+                        navigation.detailItem = nil
+                        navigation.resumeKeptSearch()
+                    }
+                    .accessibilityIdentifier("Search.resumeResults")
+                    .gusTVToolbarIcon()
+                }
+            }
+        }
+    }
+
+    @ViewBuilder private var destination: some View {
         switch item.type {
         case .genre:
             if let id = item.id {

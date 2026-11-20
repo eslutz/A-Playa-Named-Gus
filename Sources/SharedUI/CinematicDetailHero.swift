@@ -26,7 +26,6 @@ struct CinematicDetailHero<Accessory: View>: View {
                     placeholderSymbol: item.artworkPlaceholderSymbol,
                     fallbackURLs: Array(urls.dropFirst())
                 )
-                .frame(maxWidth: 240)
                 .accessibilityHidden(true)
             } summary: {
                 Text(item.displayTitle).font(titleFont).accessibilityAddTraits(.isHeader)
@@ -169,8 +168,85 @@ struct CinematicDetailHero<Accessory: View>: View {
     }
 }
 
+enum DetailPageMetrics {
+    #if os(tvOS)
+        static let sectionSpacing: CGFloat = 40
+        static let horizontalInset: CGFloat = 80
+    #elseif os(visionOS)
+        static let sectionSpacing: CGFloat = 24
+        static let horizontalInset: CGFloat = 36
+    #else
+        static let sectionSpacing: CGFloat = 24
+        static let horizontalInset: CGFloat = 20
+    #endif
+}
+
+extension EnvironmentValues {
+    @Entry var detailArtworkTopInset: CGFloat = 0
+}
+
+extension View {
+    /// Scroll artwork beneath the native toolbar. The cover header restores the inset
+    /// to its foreground, preserving the complete cover and its controls.
+    func detailArtworkViewport() -> some View {
+        GeometryReader { viewport in
+            self.environment(\.detailArtworkTopInset, viewport.safeAreaInsets.top)
+                .ignoresSafeArea(.container, edges: .top)
+        }
+    }
+}
+
+/// Header artwork can use the whole pane. Only the sections below it use page margins.
+struct ArtworkDetailPage<Header: View, Sections: View>: View {
+    @ViewBuilder let header: () -> Header
+    @ViewBuilder let sections: () -> Sections
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: DetailPageMetrics.sectionSpacing) {
+                header()
+                DetailSectionLayout { sections() }
+                    .scrollTargetLayout()
+                    .padding(.horizontal, DetailPageMetrics.horizontalInset)
+                    .padding(.bottom, DetailPageMetrics.sectionSpacing)
+                    .frame(maxWidth: PageContentMetrics.maxWidth, alignment: .leading)
+                    .frame(maxWidth: .infinity)
+            }
+        }
+        .detailArtworkViewport()
+        .lookToScroll()
+    }
+}
+
+/// Keep data-loading sections mounted while reserving space only for visible sections.
+struct DetailSectionLayout: Layout {
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache _: inout ()) -> CGSize {
+        let width = proposal.width.flatMap { $0.isFinite ? $0 : nil }
+        let sizes = subviews.map { $0.sizeThatFits(ProposedViewSize(width: width, height: nil)) }
+            .filter { $0.height > 0 }
+        let gaps = CGFloat(max(0, sizes.count - 1)) * DetailPageMetrics.sectionSpacing
+        return CGSize(
+            width: width ?? sizes.map(\.width).max() ?? 0,
+            height: sizes.reduce(gaps) { $0 + $1.height }
+        )
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal _: ProposedViewSize, subviews: Subviews, cache _: inout ()) {
+        let proposal = ProposedViewSize(width: bounds.width, height: nil)
+        var y = bounds.minY
+        for subview in subviews {
+            let size = subview.sizeThatFits(proposal)
+            subview.place(at: CGPoint(x: bounds.minX, y: y), anchor: .topLeading, proposal: proposal)
+            if size.height > 0 {
+                y += size.height + DetailPageMetrics.sectionSpacing
+            }
+        }
+    }
+}
+
 /// Let the lower edge of the backdrop fade into the system surface beneath the title.
 struct DetailBackdropHeader<Artwork: View, Summary: View>: View {
+    @Environment(\.detailArtworkTopInset) private var topInset
     @ViewBuilder let artwork: () -> Artwork
     @ViewBuilder let summary: () -> Summary
 
@@ -179,6 +255,7 @@ struct DetailBackdropHeader<Artwork: View, Summary: View>: View {
             Color.clear
                 .aspectRatio(1.55, contentMode: .fit)
                 .frame(maxHeight: 440)
+                .padding(.top, topInset)
                 .frame(maxWidth: .infinity)
                 .overlay {
                     GeometryReader { geometry in
@@ -191,8 +268,7 @@ struct DetailBackdropHeader<Artwork: View, Summary: View>: View {
                     .accessibilityHidden(true)
                 }
             VStack(alignment: .leading, spacing: 12) { summary() }
-                .padding(.horizontal, 24)
-                .padding(.bottom, 24)
+                .padding(.horizontal, DetailPageMetrics.horizontalInset)
                 .frame(maxWidth: PageContentMetrics.maxWidth, alignment: .leading)
                 .frame(maxWidth: .infinity)
         }
@@ -201,25 +277,29 @@ struct DetailBackdropHeader<Artwork: View, Summary: View>: View {
 
 /// Keep the complete cover visible and place the summary alongside it when space permits.
 struct DetailCoverHeader<Artwork: View, Summary: View>: View {
+    @Environment(\.detailArtworkTopInset) private var topInset
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    var maximumCoverWidth: CGFloat = 240
     @ViewBuilder let artwork: () -> Artwork
     @ViewBuilder let summary: () -> Summary
 
     var body: some View {
         AdaptiveStack(horizontalMinimumWidth: 640, horizontalAlignment: .center, verticalAlignment: .center, horizontalSpacing: 32, verticalSpacing: 20) { _ in
-            artwork().accessibilityHidden(true)
+            artwork().frame(maxWidth: maximumCoverWidth).accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 12) { summary() }
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .padding(24)
+        .padding(.horizontal, DetailPageMetrics.horizontalInset)
+        .padding(.top, topInset + 24)
         .frame(maxWidth: PageContentMetrics.maxWidth, alignment: .leading)
         .frame(maxWidth: .infinity)
         .background {
             if !reduceTransparency {
                 GeometryReader { geometry in
                     artwork()
+                        .scaledToFill()
                         .frame(width: geometry.size.width, height: geometry.size.height)
-                        .scaleEffect(2)
+                        .clipped()
                         .blur(radius: 40)
                         .opacity(0.25)
                         .mask(LinearGradient(colors: [.black, .clear], startPoint: .top, endPoint: .bottom))
@@ -354,7 +434,7 @@ struct DetailActionRow<Content: View>: View {
     }
 }
 
-/// Wrap naturally sized controls and center each line beneath the primary action.
+/// Wrap naturally sized controls at the primary action’s leading edge. SwiftUI mirrors the positions in RTL.
 struct DetailActionLayout: Layout {
     #if os(tvOS)
         private let spacing: CGFloat = 24
@@ -405,8 +485,7 @@ struct DetailActionLayout: Layout {
         var index = 0
         var y = bounds.minY
         for line in lines(width: bounds.width, subviews: subviews) {
-            let primaryWidth = min(bounds.width, DetailActionMetrics.maximumRowWidth)
-            var x = bounds.minX + max(0, (primaryWidth - line.width) / 2)
+            var x = bounds.minX
             for size in line.sizes {
                 subviews[index].place(at: CGPoint(x: x, y: y + (line.height - size.height) / 2), anchor: .topLeading, proposal: ProposedViewSize(size))
                 x += size.width + spacing
