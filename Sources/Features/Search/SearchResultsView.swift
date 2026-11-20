@@ -65,6 +65,9 @@ struct SearchResultsView: View {
             retryAction: { Task { await store.search(store.query) } }
         ) {
             ScrollView {
+                #if os(tvOS)
+                    TVSearchCompletionRows()
+                #endif
                 LazyVGrid(columns: searchState.showsList ? [GridItem(.flexible())] : PosterGrid.columns, alignment: .leading, spacing: PosterGrid.spacing) {
                     ForEach(store.results, id: \.id) { item in
                         resultLink(item)

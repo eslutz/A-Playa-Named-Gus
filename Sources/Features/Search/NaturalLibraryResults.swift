@@ -93,7 +93,7 @@ struct LibrarySearchFieldBehavior: ViewModifier {
 
     @ViewBuilder private func fieldSuggestions(_ content: Content) -> some View {
         #if os(tvOS)
-            content.gusTVSearchCompletions(terms, select: root.editSearchText)
+            content.gusTVSearchCompletions(terms, inResults: search.typed.store?.results.isEmpty == false && !search.naturalMode, select: root.editSearchText)
         #else
             content.searchSuggestions {
                 ForEach(terms, id: \.self) { value in

@@ -118,10 +118,10 @@ extension HorizontalAlignment {
 }
 
 extension View {
-    @ViewBuilder func gusSeerrSearch(text: Binding<String>, isPresented: Binding<Bool>, isFocused: FocusState<Bool>.Binding, enabledOnTV: Bool, suggestions: [String]) -> some View {
+    @ViewBuilder func gusSeerrSearch(text: Binding<String>, isPresented: Binding<Bool>, isFocused: FocusState<Bool>.Binding, enabledOnTV: Bool, suggestions: [String], suggestionsInResults: Bool) -> some View {
         #if os(tvOS)
             if enabledOnTV {
-                gusTVSearchCompletions(suggestions) { text.wrappedValue = $0 }
+                gusTVSearchCompletions(suggestions, inResults: suggestionsInResults) { text.wrappedValue = $0 }
                     .searchable(text: text, prompt: Text("Search Seerr"))
             } else {
                 self

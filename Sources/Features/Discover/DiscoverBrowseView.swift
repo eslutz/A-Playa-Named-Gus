@@ -80,7 +80,7 @@ struct DiscoverBrowseView: View {
                 naturalSubmission = nil
             }
             query = value
-        }), isPresented: $searchPresented, isFocused: $searchFocused, enabledOnTV: searchOnly, suggestions: suggestions)
+        }), isPresented: $searchPresented, isFocused: $searchFocused, enabledOnTV: searchOnly, suggestions: suggestions, suggestionsInResults: !naturalMode)
         .toolbar {
             if naturalMode || GusIntelligenceModel(session: session).isAvailable {
                 ToolbarItem(placement: .primaryAction) {

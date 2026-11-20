@@ -833,16 +833,63 @@ final class GusAuthenticatedUITests: XCTestCase {
             try XCTSkipUnless(fixture.waitForExistence(timeout: 10), "Search only runs against the synthetic Seerr fixture.")
             try focusTV(app, label: "Search Seerr")
             XCUIRemote.shared.press(.select)
+            try completeTVSearch(app, prefix: "Gus Fixture Mov", title: "Gus Fixture Movie")
+            XCTAssertTrue(app.buttons["Seerr.title.movie.950000001"].waitForExistence(timeout: 10))
+        }
+
+        func testTVLibraryPredictiveSearch() throws {
+            try prepare()
+            defer { finish() }
+            let app = openTVLibrarySearch()
+            let title = try required("MovieTitle")
+            try completeTVSearch(app, prefix: String(title.dropLast(2)), title: title)
+            let result = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", title)).firstMatch
+            XCTAssertTrue(result.waitForExistence(timeout: 15))
+        }
+
+        func testTVHistoryCompletionWithoutResults() throws {
+            try prepare()
+            defer { finish() }
+            let query = "Unmatched fixture query"
+            let app = openTVLibrarySearch()
+            app.typeText(query + "\n")
+            XCTAssertTrue(app.staticTexts["No Results"].waitForExistence(timeout: 15))
+            app.terminate()
+            let again = openTVLibrarySearch()
+            try completeTVSearch(again, prefix: String(query.dropLast(2)), title: query)
+            XCTAssertTrue(again.staticTexts["No Results"].waitForExistence(timeout: 15))
+        }
+
+        private func openTVLibrarySearch() -> XCUIApplication {
+            let app = launch("search")
+            let field = app.searchFields.firstMatch
+            XCTAssertTrue(field.waitForExistence(timeout: 20))
+            let keyboardFocus = { field.debugDescription.contains(", Keyboard Focused") }
+            if !keyboardFocus() {
+                XCUIRemote.shared.press(.right)
+                let active = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in keyboardFocus() }, object: nil)
+                if XCTWaiter.wait(for: [active], timeout: 3) != .completed {
+                    XCUIRemote.shared.press(.select)
+                }
+            }
+            let ready = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in keyboardFocus() }, object: nil)
+            XCTAssertEqual(XCTWaiter.wait(for: [ready], timeout: 10), .completed)
+            return app
+        }
+
+        private func completeTVSearch(_ app: XCUIApplication, prefix: String, title: String) throws {
             let field = app.searchFields.firstMatch
             XCTAssertTrue(field.waitForExistence(timeout: 15))
-            app.typeText("Gus Fixture Mov")
-            let title = "Gus Fixture Movie"
-            let completionID = "Search.completion." + title
-            try focusTV(app, identifier: completionID)
+            app.typeText(prefix)
+            let completion = app.buttons["Search.completion." + title]
+            XCTAssertTrue(completion.waitForExistence(timeout: 15))
+            for _ in 0 ..< 5 where !completion.hasFocus {
+                XCUIRemote.shared.press(.down)
+            }
+            XCTAssertTrue(completion.hasFocus, app.debugDescription)
             XCUIRemote.shared.press(.select)
             let completed = XCTNSPredicateExpectation(predicate: NSPredicate(format: "value == %@", title), object: field)
             XCTAssertEqual(XCTWaiter.wait(for: [completed], timeout: 10), .completed)
-            XCTAssertTrue(app.buttons["Seerr.title.movie.950000001"].waitForExistence(timeout: 10))
         }
 
         private func connectTVSeerrFixture(_ app: XCUIApplication, ready: XCUIElement? = nil) throws {
@@ -1020,6 +1067,9 @@ final class GusAuthenticatedUITests: XCTestCase {
                 let key = identifier ?? label!
                 let cells = app.cells.containing(NSPredicate(format: "identifier == %@ OR label == %@", key, key))
                 let resolved = cells.allElementsBoundByAccessibilityElement.last { !$0.frame.isEmpty } ?? target
+                if target.hasFocus || resolved.hasFocus {
+                    return
+                }
                 let destination = resolved.frame
                 guard let current = try? focusedTVFrame(app) else {
                     // A newly revealed tvOS screen can wait for the first directional
@@ -1078,14 +1128,19 @@ final class GusAuthenticatedUITests: XCTestCase {
         /// XCTest's live hierarchy includes its frame even when hasFocus predicates omit it.
         private func focusedTVFrame(_ app: XCUIApplication) throws -> CGRect {
             let description = app.debugDescription
-            let pattern = #"\{\{(-?[0-9.]+), (-?[0-9.]+)\}, \{([0-9.]+), ([0-9.]+)\}\}[^\n]*Focused"#
-            let expression = try NSRegularExpression(pattern: pattern)
-            guard let match = expression.firstMatch(in: description, range: NSRange(description.startIndex..., in: description)) else { throw FixtureError.missingMedia }
-            let values = try (1 ... 4).map { index in
-                let range = try XCTUnwrap(Range(match.range(at: index), in: description))
-                return try XCTUnwrap(Double(description[range]))
+            let pattern = #"\{\{(-?[0-9.]+), (-?[0-9.]+)\}, \{([0-9.]+), ([0-9.]+)\}\}[^\n]*, Focused(?:,|$)"#
+            let expression = try NSRegularExpression(pattern: pattern, options: .anchorsMatchLines)
+            for match in expression.matches(in: description, range: NSRange(description.startIndex..., in: description)) {
+                let values = try (1 ... 4).map { index in
+                    let range = try XCTUnwrap(Range(match.range(at: index), in: description))
+                    return try XCTUnwrap(Double(description[range]))
+                }
+                let frame = CGRect(x: values[0], y: values[1], width: values[2], height: values[3])
+                if !frame.isEmpty {
+                    return frame
+                }
             }
-            return CGRect(x: values[0], y: values[1], width: values[2], height: values[3])
+            throw FixtureError.missingMedia
         }
 
         private func tvHasFocus(_ element: XCUIElement, in app: XCUIApplication) -> Bool {

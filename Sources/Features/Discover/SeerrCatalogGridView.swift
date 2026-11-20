@@ -450,6 +450,11 @@ struct SeerrCatalogResults: View {
         ) {
             ScrollView {
                 VStack(spacing: 24) {
+                    #if os(tvOS)
+                        if case .search = catalog.source {
+                            TVSearchCompletionRows()
+                        }
+                    #endif
                     if visibleItems.isEmpty, catalog.state == .loaded {
                         Text("No matching titles on this page").foregroundStyle(.secondary)
                     }

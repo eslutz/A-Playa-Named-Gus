@@ -117,26 +117,8 @@ extension View {
     }
 
     #if os(tvOS)
-        /// Keep completions in the remote's focus path between the keyboard and catalog.
-        func gusTVSearchCompletions(_ values: [String], select: @escaping (String) -> Void) -> some View {
-            VStack(alignment: .leading, spacing: 0) {
-                if !values.isEmpty {
-                    ScrollView(.horizontal) {
-                        HStack(spacing: 24) {
-                            ForEach(values, id: \.self) { value in
-                                Button { select(value) } label: { Text(verbatim: value).lineLimit(1) }
-                                    .accessibilityIdentifier("Search.completion." + value)
-                            }
-                        }
-                        .padding(.horizontal).padding(.vertical, 16)
-                    }
-                    .scrollIndicators(.hidden)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .focusSection()
-                }
-                self
-            }
+        func gusTVSearchCompletions(_ values: [String], inResults: Bool, select: @escaping @MainActor (String) -> Void) -> some View {
+            modifier(TVSearchCompletionScope(values: Array(values.prefix(3)), inResults: inResults, select: select))
         }
     #endif
 
@@ -247,6 +229,59 @@ enum DetailActionMetrics {
                 }
             } else {
                 content
+            }
+        }
+    }
+#endif
+
+#if os(tvOS)
+    private struct TVSearchCompletionContext {
+        let values: [String]
+        let scope: Namespace.ID
+        let select: @MainActor (String) -> Void
+    }
+
+    private extension EnvironmentValues {
+        @Entry var tvSearchCompletionContext: TVSearchCompletionContext?
+    }
+
+    private struct TVSearchCompletionScope: ViewModifier {
+        @Namespace private var scope
+        let values: [String]
+        let inResults: Bool
+        let select: @MainActor (String) -> Void
+
+        func body(content: Content) -> some View {
+            content.safeAreaInset(edge: .top, spacing: 0) {
+                if !inResults {
+                    TVSearchCompletionRows()
+                }
+            }
+            .environment(\.tvSearchCompletionContext, TVSearchCompletionContext(values: values, scope: scope, select: select))
+            .focusScope(scope)
+        }
+    }
+
+    /// A full-width result is reachable from any column of the native TV keyboard.
+    struct TVSearchCompletionRows: View {
+        @Environment(\.tvSearchCompletionContext) private var context
+
+        var body: some View {
+            if let context, !context.values.isEmpty {
+                VStack(spacing: 16) {
+                    ForEach(context.values, id: \.self) { value in
+                        Button { context.select(value) } label: {
+                            Text(verbatim: value)
+                                .lineLimit(1)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .contentShape(Rectangle())
+                        }
+                        .prefersDefaultFocus(value == context.values.first, in: context.scope)
+                        .accessibilityIdentifier("Search.completion." + value)
+                    }
+                }
+                .padding(.horizontal).padding(.vertical, 16)
+                .focusSection()
             }
         }
     }

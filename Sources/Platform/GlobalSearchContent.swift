@@ -38,7 +38,7 @@ struct GlobalSearchContent: View {
     }
 
     @ViewBuilder private var searchableResults: some View {
-        let text = Binding(get: { root.globalSearch.text }, set: root.editSearchText)
+        let text = Binding(get: { root.globalSearch.text }, set: { root.editSearchText($0) })
         #if os(tvOS)
             results
                 .modifier(LibrarySearchFieldBehavior(search: root.globalSearch))
