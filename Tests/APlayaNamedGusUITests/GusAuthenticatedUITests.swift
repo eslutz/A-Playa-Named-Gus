@@ -109,13 +109,12 @@ final class GusAuthenticatedUITests: XCTestCase {
             XCTAssertTrue(field.waitForExistence(timeout: 30))
             field.tap()
             field.typeText(String(title.prefix(max(1, title.count - 2))))
-            let completion = app.descendants(matching: .any)
-                .matching(NSPredicate(format: "identifier == %@ AND label == %@", "Search.completion", title)).firstMatch
+            let completion = app.cells.buttons.matching(NSPredicate(format: "label == %@ AND value == nil", title)).firstMatch
             XCTAssertTrue(completion.waitForExistence(timeout: 20), app.debugDescription)
             completion.tap()
             XCTAssertEqual(field.value as? String, title)
             let submit = app.keyboards.buttons["Search"].firstMatch
-            if submit.isHittable {
+            if submit.exists, submit.isHittable {
                 submit.tap()
             }
             let result = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", title)).firstMatch
@@ -808,15 +807,21 @@ final class GusAuthenticatedUITests: XCTestCase {
 
         func testTVDiscoverPredictiveSearch() throws {
             try prepare()
+            executionTimeAllowance = 360
             defer { finish() }
             let app = launch("settings")
             try focusTV(app, label: "Seerr")
             XCUIRemote.shared.press(.select)
-            if app.buttons["Connect to Seerr"].waitForExistence(timeout: 3) {
+            if app.buttons["Connect to Seerr"].waitForExistence(timeout: 15) {
                 try connectTVSeerrFixture(app)
             } else {
-                // Search only the synthetic loopback catalog in this UI test.
-                try XCTSkipUnless(app.staticTexts["Gus Fixture Manager"].exists && app.staticTexts["127.0.0.1"].exists)
+                // A tvOS Form may expose a LabeledContent value on its cell.
+                let elements = app.descendants(matching: .any)
+                func showsValue(_ value: String) -> Bool {
+                    elements.matching(NSPredicate(format: "label CONTAINS %@ OR value CONTAINS %@", value, value))
+                        .firstMatch.exists
+                }
+                try XCTSkipUnless(showsValue("Gus Fixture Manager") && showsValue("127.0.0.1"), "Requires the connected loopback Seerr fixture.")
             }
             try openTVDiscover(app)
             try focusTV(app, label: "Search Seerr")

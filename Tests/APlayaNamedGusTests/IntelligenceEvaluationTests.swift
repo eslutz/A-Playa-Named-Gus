@@ -9,6 +9,14 @@ import Testing
 /// and networking on CI and simulators that cannot host Apple Intelligence.
 @MainActor
 struct IntelligenceEvaluationTests {
+    @Test func exactGenreAndYearQueriesPreserveAllConstraints() {
+        let decade = GusIntelligenceModel.genreAndYear("Sci-fi movies from the 1990s")
+        #expect(decade == GusSearchIntent(mediaTypes: [.movie], genres: ["Science Fiction"], minimumYear: 1990, maximumYear: 1999))
+        #expect(GusIntelligenceModel.genreAndYear("Comedy series released after 2014") == GusSearchIntent(mediaTypes: [.series], genres: ["Comedy"], minimumYear: 2015))
+        #expect(GusIntelligenceModel.genreAndYear("Comedy series before 2014 starring Jane Doe") == nil)
+        #expect(GusIntelligenceModel.genreAndYear("Not comedy movies from 2014") == nil)
+    }
+
     @Test func cloudInputExcludesServerAndCredentialFields() {
         let hosts = ["library.example.invalid"]
         for sample in [

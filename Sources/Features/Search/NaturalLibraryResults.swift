@@ -92,7 +92,7 @@ struct LibrarySearchFieldBehavior: ViewModifier {
         content
             .searchSuggestions {
                 ForEach(terms, id: \.self) { value in
-                    Text(value).accessibilityIdentifier("Search.completion").searchCompletion(value)
+                    Text(value).searchCompletion(value)
                 }
             }
             .onSubmit(of: .search) { search.submit(to: session.searchHistory) }

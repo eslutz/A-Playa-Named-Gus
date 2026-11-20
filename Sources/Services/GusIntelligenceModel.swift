@@ -152,7 +152,11 @@ struct GusIntelligenceModel {
     func interpretLibrary(_ prompt: String) async throws -> GusSearchIntent {
         #if canImport(FoundationModels) && !os(tvOS)
             if #available(watchOS 27, *) {
-                return try await generate(prompt: checkedPrompt(prompt), instructions: Self.searchInstructions + """
+                let prompt = try checkedPrompt(prompt)
+                if isAvailable, let filters = Self.genreAndYear(prompt) {
+                    return filters
+                }
+                return try await generate(prompt: prompt, instructions: Self.searchInstructions + """
                 Search a Jellyfin library. Map a song to audio, an album to musicAlbum and an audiobook to audioBook.
                 Convert exclusive dates and durations to inclusive whole-year or whole-minute bounds only when equivalent.
                 """, schema: LibraryQuery.self) { try $0.intent() }
@@ -163,7 +167,14 @@ struct GusIntelligenceModel {
 
     func interpretDiscover(_ prompt: String) async throws -> SeerrSearchIntent {
         #if canImport(FoundationModels) && !os(tvOS) && !os(watchOS)
-            return try await generate(prompt: checkedPrompt(prompt), instructions: Self.searchInstructions + """
+            let prompt = try checkedPrompt(prompt)
+            if isAvailable, let filters = Self.genreAndYear(prompt) {
+                return SeerrSearchIntent(
+                    mediaType: filters.mediaTypes == [.movie] ? "movie" : "tv",
+                    genres: filters.genres, minimumYear: filters.minimumYear, maximumYear: filters.maximumYear
+                )
+            }
+            return try await generate(prompt: prompt, instructions: Self.searchInstructions + """
             Extract filters for the Seerr movie, TV and person catalog.
             For a movie or series title lookup, put the title alone in keywords.
             For a person lookup, set mediaType to person and place the name only in keywords.
@@ -208,6 +219,40 @@ struct GusIntelligenceModel {
             }
         #endif
         throw GusIntelligenceError.unavailable
+    }
+
+    /// Recognize a complete, unambiguous genre/date phrase, including Discover's suggested queries.
+    /// Extra requirements or unfamiliar wording must still be interpreted by the model.
+    static func genreAndYear(_ prompt: String) -> GusSearchIntent? {
+        let pattern = #/(.+) (movies|films|shows|tv series|series)(?: released)? (from the|from|in|after|before|since) ([0-9]{4})(s?)/#
+        guard let match = GusLibraryMatching.normalized(prompt).wholeMatch(of: pattern)?.output,
+              let year = Int(match.4), (1000 ... 9989).contains(year) else { return nil }
+        let genre: String
+        switch match.1 {
+        case "sci fi", "scifi", "science fiction": genre = "Science Fiction"
+        case "action", "adventure", "animation", "comedy", "crime", "documentary", "drama",
+             "family", "fantasy", "history", "horror", "music", "mystery", "romance", "thriller", "war", "western":
+            genre = String(match.1).capitalized
+        default: return nil
+        }
+
+        var intent = GusSearchIntent(mediaTypes: [match.2 == "movies" || match.2 == "films" ? .movie : .series], genres: [genre])
+        if match.5 == "s" {
+            guard year.isMultiple(of: 10), ["from the", "in", "from"].contains(String(match.3)) else { return nil }
+            intent.minimumYear = year
+            intent.maximumYear = year + 9
+        } else {
+            switch match.3 {
+            case "after": intent.minimumYear = year + 1
+            case "since": intent.minimumYear = year
+            case "before": intent.maximumYear = year - 1
+            case "in", "from":
+                intent.minimumYear = year
+                intent.maximumYear = year
+            default: return nil
+            }
+        }
+        return intent
     }
 
     /// Catalog descriptions and user-entered text can contain pasted links or access-bearing fields.
