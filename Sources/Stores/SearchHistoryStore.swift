@@ -20,15 +20,9 @@ enum SearchHistoryEntry: Codable, Hashable, Identifiable {
             guard !query.isEmpty else { return nil }
             return .typed(query)
         case let .related(target):
-            guard let id = target.id, !id.isEmpty, !target.name.isEmpty else { return nil }
-            return self
-        }
-    }
-
-    var title: String {
-        switch self {
-        case let .typed(text): text
-        case let .related(search): search.name
+            let value = RelatedSearch(kind: target.kind, id: target.id, name: target.name)
+            guard value.id != nil, !value.name.isEmpty else { return nil }
+            return .related(value)
         }
     }
 }

@@ -157,10 +157,10 @@ extension View {
         let viewport: SearchResultsViewport
         @State private var position = ScrollPosition()
         @State private var isOnscreen = false
-        @State private var pendingY: CGFloat?
+        @State private var pendingDistance: CGFloat?
 
         private struct Geometry: Equatable {
-            let y: CGFloat
+            let distanceFromTop: CGFloat
             let contentHeight: CGFloat
         }
 
@@ -172,23 +172,24 @@ extension View {
             content
                 .scrollPosition($position)
                 .onScrollGeometryChange(for: Geometry.self) {
-                    Geometry(y: $0.contentOffset.y, contentHeight: $0.contentSize.height)
+                    // ScrollPosition measures from the top including the native toolbar inset.
+                    Geometry(distanceFromTop: $0.contentOffset.y + $0.contentInsets.top, contentHeight: $0.contentSize.height)
                 } action: { old, new in
                     guard isOnscreen, showsResults else { return }
-                    if let pendingY {
-                        if abs(pendingY - new.y) < 1 {
-                            self.pendingY = nil
+                    if let pendingDistance {
+                        if abs(pendingDistance - new.distanceFromTop) < 1 {
+                            self.pendingDistance = nil
                         } else if old.contentHeight != new.contentHeight {
                             // Lazy rows can grow after the first layout clamps the offset.
-                            position.scrollTo(y: pendingY)
+                            position.scrollTo(y: pendingDistance)
                         }
                     } else {
-                        viewport.y = new.y
+                        viewport.distanceFromTop = new.distanceFromTop
                     }
                 }
                 .onScrollPhaseChange { _, phase in
                     if phase == .interacting {
-                        pendingY = nil
+                        pendingDistance = nil
                     }
                 }
                 .onAppear {
@@ -204,9 +205,9 @@ extension View {
         }
 
         private func restore() {
-            guard isOnscreen, showsResults, let y = viewport.y else { return }
-            pendingY = y
-            position.scrollTo(y: y)
+            guard isOnscreen, showsResults, let distance = viewport.distanceFromTop else { return }
+            pendingDistance = distance
+            position.scrollTo(y: distance)
         }
     }
 #endif

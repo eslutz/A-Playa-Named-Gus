@@ -33,7 +33,7 @@ struct DetailScrollLocation: Equatable {
 
 /// A saved result position belongs to one query in one window.
 @MainActor final class SearchResultsViewport {
-    var y: CGFloat?
+    var distanceFromTop: CGFloat?
 }
 
 @MainActor @Observable

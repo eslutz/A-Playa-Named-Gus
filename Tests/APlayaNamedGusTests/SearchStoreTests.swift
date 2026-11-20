@@ -76,6 +76,24 @@ struct SearchStoreTests {
         #expect(state.store === store)
     }
 
+    @Test("loading a longer saved history persists only the latest twenty completed queries")
+    @MainActor func trimsPreviouslySavedHistory() throws {
+        let suite = UUID().uuidString
+        let defaults = try #require(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let scope = AccountScope(serverID: "server", userID: "user")
+        SearchHistoryStore(scope: scope, defaults: defaults).record(.typed("First"))
+        let key = try #require(defaults.persistentDomain(forName: suite)?.keys.first)
+        let queries = (1 ... 50).map { SearchHistoryEntry.typed("Query " + String($0)) }
+        let saved = [.typed("  Query 1  "), .typed("QUERY 1"), .related(.init(kind: .studio, name: "Unknown"))] + queries
+        try defaults.set(JSONEncoder().encode(saved), forKey: key)
+
+        let loaded = SearchHistoryStore(scope: scope, defaults: defaults)
+        #expect(loaded.entries == Array(queries.prefix(20)))
+        let stored = try #require(defaults.data(forKey: key))
+        #expect(try JSONDecoder().decode([SearchHistoryEntry].self, from: stored) == loaded.entries)
+    }
+
     @Test("global Search retains its loaded result pages across removal and reattachment of the surface")
     @MainActor func globalSearchRetainsPages() async throws {
         let provider = FakeMediaProviderSession(capabilities: .init())
