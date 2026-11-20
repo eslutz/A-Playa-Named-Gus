@@ -1,10 +1,9 @@
 import SwiftUI
 
-@available(watchOS 27, *)
 struct WatchLibrarySearchView: View {
     @Environment(SessionStore.self) private var session
     @State private var natural = LibraryNaturalSearchState()
-    @State private var keywordQuery: String?
+    @State private var draftMode = SearchDraftMode.natural
     @State private var keywordStore: SearchStore?
     @AppStorage(ContentRatingGate.limitDefaultsKey) private var ratingLimit = ContentRatingGate.Limit.off.rawValue
     @AppStorage(ContentRatingGate.hideUnratedDefaultsKey) private var hideUnrated = false
@@ -14,7 +13,7 @@ struct WatchLibrarySearchView: View {
     }
 
     private var naturalMode: Bool {
-        prefersNatural && keywordQuery != natural.text
+        prefersNatural && draftMode == .natural
     }
 
     private var results: [MediaItem] {
@@ -74,7 +73,7 @@ struct WatchLibrarySearchView: View {
         .navigationTitle("Search Library")
         .searchable(text: Binding(get: { natural.text }, set: { draft in
             if draft != natural.text {
-                keywordQuery = nil
+                draftMode.edit(draft, naturalSearchEnabled: prefersNatural)
                 natural.text = draft
             }
         }), prompt: "Search Library")
@@ -83,7 +82,7 @@ struct WatchLibrarySearchView: View {
         }
         .onSubmit(of: .search) {
             if prefersNatural {
-                keywordQuery = nil
+                draftMode = .natural
                 natural.submit()
             } else {
                 session.searchHistory.record(.typed(natural.text))
@@ -109,9 +108,9 @@ struct WatchLibrarySearchView: View {
             guard naturalMode else { return }
             await natural.run(session: session, onKeyword: useKeyword)
         }
-        .onChange(of: prefersNatural) { _, enabled in
+        .onChange(of: prefersNatural) { _, _ in
             natural.resetResults()
-            keywordQuery = enabled && !natural.text.isEmpty ? natural.text : nil
+            draftMode = natural.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? .natural : .keywordUntilSubmit
         }
         .onChange(of: ratingLimit) { natural.resetResults() }
         .onChange(of: hideUnrated) { natural.resetResults() }
@@ -129,7 +128,7 @@ struct WatchLibrarySearchView: View {
 
     private func useKeyword() {
         natural.resetResults()
-        keywordQuery = natural.text
+        draftMode = .keyword
     }
 }
 

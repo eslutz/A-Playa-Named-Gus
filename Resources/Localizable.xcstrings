@@ -1,6 +1,15 @@
 {
   "sourceLanguage": "en",
   "strings": {
+    "Private Cloud Compute could not connect. Check your network and try again.": {
+      "comment": "Recovery message displayed for a submitted intelligence request."
+    },
+    "Private Cloud Compute is temporarily unavailable.": {
+      "comment": "Recovery message displayed for a submitted intelligence request."
+    },
+    "Apple Intelligence is limiting requests. Try again later.": {
+      "comment": "Recovery message displayed for a submitted intelligence request."
+    },
     "Allow Private Cloud Compute?": {
       "comment": "Action in the Library Intelligence settings or invitation."
     },

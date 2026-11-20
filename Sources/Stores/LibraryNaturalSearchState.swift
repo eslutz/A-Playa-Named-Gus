@@ -1,6 +1,24 @@
 import Foundation
 import Observation
 
+/// A one-query override ends on edit. Re-enabling natural search keeps an
+/// existing keyword draft live until the user submits or clears it.
+enum SearchDraftMode {
+    case natural
+    case keyword
+    case keywordUntilSubmit
+
+    mutating func edit(_ text: String, naturalSearchEnabled: Bool) {
+        if text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            self = .natural
+        } else if !naturalSearchEnabled {
+            self = .keywordUntilSubmit
+        } else if self != .keywordUntilSubmit {
+            self = .natural
+        }
+    }
+}
+
 /// Holds one submitted query across adaptive layout changes. Editing never starts inference.
 @MainActor @Observable
 final class LibraryNaturalSearchState {

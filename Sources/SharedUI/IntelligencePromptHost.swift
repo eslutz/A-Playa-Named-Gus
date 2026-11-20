@@ -34,6 +34,12 @@ struct IntelligencePromptHost: ViewModifier {
             .task(id: LocaleCheck(active: phase == .active, cloudReady: access.cloudReady, locale: locale)) {
                 if phase == .active, access.cloudReady {
                     await access.refreshCloudLocale()
+                    for delay in [3, 15] {
+                        guard !access.hasCheckedCloudLocale else { return }
+                        do { try await Task.sleep(for: .seconds(delay)) } catch { return }
+                        guard !Task.isCancelled, !access.hasCheckedCloudLocale else { return }
+                        await access.refreshCloudLocale()
+                    }
                 }
             }
             .task(id: state) {
@@ -92,8 +98,10 @@ private struct IntelligencePromptView: View {
                 .accessibilityAddTraits(.isHeader)
             if prompt == .forYou {
                 Text("Get recommendations based on your Jellyfin favorites and playback history. You can change this in Gus Settings → Library Intelligence → Show For You.")
+                    .accessibilityIdentifier("Intelligence.prompt.message")
             } else {
                 Text("Apple can process submitted searches and, when For You is enabled, selected titles, descriptions, and viewing interests. Requests use your daily quota. You can change this in Gus Settings → Library Intelligence → Allow Private Cloud Compute.")
+                    .accessibilityIdentifier("Intelligence.prompt.message")
             }
             Button(prompt == .forYou ? LocalizedStringKey("Enable For You") : LocalizedStringKey("Allow Private Cloud Compute")) { respond(true) }
                 .buttonStyle(.borderedProminent)

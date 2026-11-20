@@ -47,8 +47,7 @@ final class WatchBrowseUITests: XCTestCase {
         capture(app, "watch-paused")
     }
 
-    func testWatchSearchOpensWithoutCloudConsent() throws {
-        guard #available(watchOS 27, *) else { throw XCTSkip("Watch Search requires watchOS 27.") }
+    func testWatchSearchOpensWithoutCloudConsent() {
         continueAfterFailure = false
         let app = XCUIApplication(bundleIdentifier: "dev.ericslutz.gus.watchkitapp")
         app.launchArguments = ["--gus-demo-server"]
@@ -80,8 +79,9 @@ final class WatchBrowseUITests: XCTestCase {
         defer { app.terminate() }
         let title = app.staticTexts["Enable For You?"]
         XCTAssertTrue(title.waitForExistence(timeout: 20))
-        let message = "Get recommendations based on your Jellyfin favorites and playback history. You can change this in Gus Settings → Library Intelligence → Show For You."
-        XCTAssertTrue(app.staticTexts[message].exists)
+        let message = app.staticTexts["Intelligence.prompt.message"]
+        XCTAssertTrue(message.waitForExistence(timeout: 5))
+        XCTAssertEqual(message.label, "Get recommendations based on your Jellyfin favorites and playback history. You can change this in Gus Settings → Library Intelligence → Show For You.")
         let decline = app.buttons["Intelligence.prompt.decline"]
         for _ in 0 ..< 5 where !decline.isHittable {
             app.swipeUp(velocity: .slow)

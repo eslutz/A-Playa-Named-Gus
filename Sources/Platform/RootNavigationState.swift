@@ -369,9 +369,7 @@ final class RootNavigationState {
             if let previous = search.detailOrigin?.search {
                 pending.append(previous)
             }
-            if !search.displaysKeywords {
-                search.searchByKeyword()
-            }
+            search.applyKeywordPreference()
         }
     }
 

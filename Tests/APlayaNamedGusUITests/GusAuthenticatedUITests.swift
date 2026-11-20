@@ -106,7 +106,9 @@ final class GusAuthenticatedUITests: XCTestCase {
             let args = ["--gus-intelligence-test-cloud", "--gus-intelligence-test-suite", UUID().uuidString]
             let app = launch("settings", arguments: args)
             let message = "Get recommendations based on your Jellyfin favorites and playback history. You can change this in Gus Settings → Library Intelligence → Show For You."
-            XCTAssertTrue(app.staticTexts[message].waitForExistence(timeout: 20))
+            let explanation = app.staticTexts["Intelligence.prompt.message"]
+            XCTAssertTrue(explanation.waitForExistence(timeout: 20))
+            XCTAssertEqual(explanation.label, message)
             app.buttons["Intelligence.prompt.allow"].tap()
             XCTAssertTrue(app.staticTexts["Allow Private Cloud Compute?"].waitForExistence(timeout: 10))
             app.buttons["Intelligence.prompt.allow"].tap()
@@ -121,8 +123,8 @@ final class GusAuthenticatedUITests: XCTestCase {
             XCTAssertEqual(natural.value as? String, "1")
             XCTAssertEqual(cloud.value as? String, "1")
             XCTAssertEqual(forYou.value as? String, "1")
-            natural.tap()
-            XCTAssertEqual(natural.value as? String, "0")
+            revealIntelligenceSettings(natural, in: app)
+            tapIntelligenceSwitch(natural, expecting: "0")
 
             app.terminate()
             let again = launch("settings", arguments: args)
@@ -150,8 +152,7 @@ final class GusAuthenticatedUITests: XCTestCase {
             let restored = again.switches["Intelligence.forYou"].firstMatch
             revealIntelligenceSettings(restored, in: again)
             XCTAssertFalse(again.buttons["Intelligence.prompt.allow"].exists)
-            restored.tap()
-            XCTAssertEqual(restored.value as? String, "1")
+            tapIntelligenceSwitch(restored, expecting: "1")
         }
 
         func testSwipingAwayForYouCountsAsNotNow() throws {
@@ -174,14 +175,28 @@ final class GusAuthenticatedUITests: XCTestCase {
             XCTAssertFalse(again.buttons["Intelligence.prompt.allow"].exists)
         }
 
+        private func tapIntelligenceSwitch(_ toggle: XCUIElement, expecting value: String) {
+            XCTAssertTrue(toggle.isEnabled)
+            let offset = max(0.5, 1 - 28 / toggle.frame.width)
+            toggle.coordinate(withNormalizedOffset: CGVector(dx: offset, dy: 0.5)).tap()
+            let changed = XCTNSPredicateExpectation(predicate: NSPredicate(format: "value == %@", value), object: toggle)
+            XCTAssertEqual(XCTWaiter.wait(for: [changed], timeout: 5), .completed, toggle.debugDescription)
+        }
+
         private func revealIntelligenceSettings(_ toggle: XCUIElement, in app: XCUIApplication) {
             XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: 12))
-            for _ in 0 ..< 6 where !toggle.exists || !toggle.isHittable {
-                let bottom = app.coordinate(withNormalizedOffset: CGVector(dx: 0.8, dy: 0.8))
-                let top = app.coordinate(withNormalizedOffset: CGVector(dx: 0.8, dy: 0.45))
-                bottom.press(forDuration: 0.1, thenDragTo: top)
+            let viewport = app.frame.insetBy(dx: 0, dy: 100)
+            for _ in 0 ..< 8 {
+                let frame = toggle.exists ? toggle.frame : .zero
+                if viewport.contains(frame), frame.height > 0, toggle.isHittable {
+                    return
+                }
+                let above = frame.height > 0 && frame.minY < viewport.minY
+                let start = app.coordinate(withNormalizedOffset: CGVector(dx: 0.8, dy: above ? 0.45 : 0.8))
+                let end = app.coordinate(withNormalizedOffset: CGVector(dx: 0.8, dy: above ? 0.8 : 0.45))
+                start.press(forDuration: 0.1, thenDragTo: end)
             }
-            XCTAssertTrue(toggle.isHittable, app.debugDescription)
+            XCTFail(app.debugDescription)
         }
 
         func testLibraryPredictiveCompletionKeepsKeywordSearch() throws {

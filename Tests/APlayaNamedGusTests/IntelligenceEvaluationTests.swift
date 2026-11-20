@@ -87,6 +87,16 @@ struct IntelligenceEvaluationTests {
             }
         }
 
+        @Test func generatedConstraintsRequireSourceEvidence() throws {
+            let terms = SearchTerms(releaseYears: .init(phrase: "aus dem Jahr 1986", minimum: 1986, maximum: 1986), keywords: ["El Río"], genres: [], people: [], credits: [.init(jobPhrase: "starring", name: "El Río", role: "actor")], characters: [], themes: [], unsupported: [])
+            let query = LibraryQuery(terms: terms, mediaTypes: ["movie"], durationMinutes: .init(phrase: "", minimum: 0, maximum: 0), status: "all", favoritesOnly: false)
+            let intent = try query.intent(for: "Den Film El Río aus dem Jahr 1986")
+            #expect(intent == GusSearchIntent(mediaTypes: [.movie], keywords: ["El Río"], minimumYear: 1986, maximumYear: 1986))
+            let minutes = RequestedRange(phrase: "unter zwei Stunden", minimum: nil, maximum: 119)
+            #expect(try minutes.bounds(in: "Etwas unter zwei Stunden").1 == 119)
+            #expect(throws: GusIntelligenceError.self) { try minutes.bounds(in: "Any length") }
+        }
+
         private nonisolated static var hasLocalModel: Bool {
             // A simulator can advertise availability while its token generator rejects inference.
             // Preserve an explicit diagnostic run for hosts that can supply the model.
@@ -127,6 +137,10 @@ struct IntelligenceEvaluationTests {
             let model = GusIntelligenceModel(session: session)
             for (prompt, expected) in prompts {
                 let intent = try await model.interpretLibrary(prompt)
+                #expect(intent.minimumMinutes == nil && intent.maximumMinutes == nil, "Unexpected runtime for \(prompt): \(intent)")
+                if expected == movie.id {
+                    #expect(intent.minimumYear == 2019 && intent.maximumYear == 2019, "Incorrect release year for \(prompt): \(intent)")
+                }
                 let results = try await session.libraryIntelligence.search(intent)
                 #expect(results.prefix(5).contains { $0.id == expected }, "Missing expected match for \(prompt): \(intent)")
             }

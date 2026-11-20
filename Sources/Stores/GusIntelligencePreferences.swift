@@ -35,9 +35,13 @@ final class GusIntelligencePreferences {
         let key = Self.keyPrefix(for: scope)
         self.defaults = defaults
         self.prefix = key
-        self.naturalSearchEnabled = defaults.object(forKey: key + ".naturalSearch") as? Bool ?? true
-        self.cloudDecision = defaults.object(forKey: key + ".cloud") as? Bool
-        self.recommendationDecision = defaults.object(forKey: key + ".recommendations") as? Bool
+        func choice(_ suffix: String) -> Bool? {
+            let name = key + suffix
+            return defaults.object(forKey: name) == nil ? nil : defaults.bool(forKey: name)
+        }
+        self.naturalSearchEnabled = choice(".naturalSearch") ?? true
+        self.cloudDecision = choice(".cloud")
+        self.recommendationDecision = choice(".recommendations")
     }
 
     static func delete(scope: AccountScope, defaults: UserDefaults) {

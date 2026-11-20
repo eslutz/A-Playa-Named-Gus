@@ -21,8 +21,32 @@ struct IntelligenceAccessTests {
         #expect(!restored.naturalSearchEnabled && restored.cloudDecision == false && restored.recommendationsEnabled)
         let other = GusIntelligencePreferences(scope: .init(serverID: "server", userID: "someone"), defaults: defaults)
         #expect(other.naturalSearchEnabled && other.recommendationDecision == nil)
+        let otherServer = AccountScope(serverID: "another-server", userID: scope.userID)
+        GusIntelligencePreferences(scope: otherServer, defaults: defaults).recommendationsEnabled = false
         GusIntelligencePreferences.delete(scope: scope, defaults: defaults)
         #expect(prefs.naturalSearchEnabled && prefs.cloudDecision == nil && prefs.recommendationDecision == nil)
+        #expect(GusIntelligencePreferences(scope: otherServer, defaults: defaults).recommendationDecision == false)
+    }
+
+    @Test func invitationWaitsForCloudLocaleAndPreservesTheDecision() async {
+        let settings = prefs
+        var serviceAvailable = false
+        let routes = IntelligenceModelRoutes(cloud: { .ready }, supportsCloudLocale: { _ in
+            guard serviceAvailable else { throw URLError(.notConnectedToInternet) }
+            return true
+        })
+        let access = GusIntelligenceAccess(preferences: settings, routes: routes) {}
+        let window = UUID()
+        await access.refreshCloudLocale()
+        #expect(access.supportsCloud && !access.hasCheckedCloudLocale)
+        #expect(access.claimPrompt(for: window) == nil && settings.recommendationDecision == nil)
+        serviceAvailable = true
+        await access.refreshCloudLocale()
+        #expect(access.claimPrompt(for: window) == .forYou)
+        access.respond(to: .forYou, from: window, allow: false)
+        let reopened = GusIntelligenceAccess(preferences: prefs, routes: routes) {}
+        await reopened.refreshCloudLocale()
+        #expect(reopened.claimPrompt(for: UUID()) == nil)
     }
 
     @Test func foregroundWindowsShareOneInvitation() {

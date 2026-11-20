@@ -19,12 +19,10 @@ struct WatchBrowseView: View {
             preservesContent: true
         ) {
             List {
-                if #available(watchOS 27, *) {
-                    NavigationLink(value: WatchIntelligenceRoute.search) { Label("Search Library", systemImage: "magnifyingglass") }
-                        .accessibilityIdentifier("Watch.Browse.search")
-                    if session.intelligencePreferences.recommendationsEnabled {
-                        NavigationLink(value: WatchIntelligenceRoute.forYou) { Label("For You", systemImage: "heart") }
-                    }
+                NavigationLink(value: WatchIntelligenceRoute.search) { Label("Search Library", systemImage: "magnifyingglass") }
+                    .accessibilityIdentifier("Watch.Browse.search")
+                if #available(watchOS 27, *), session.intelligencePreferences.recommendationsEnabled {
+                    NavigationLink(value: WatchIntelligenceRoute.forYou) { Label("For You", systemImage: "heart") }
                 }
                 ForEach(libraries, id: \.id) { library in
                     if let id = library.id {
@@ -36,10 +34,11 @@ struct WatchBrowseView: View {
             }
         }
         .navigationDestination(for: WatchIntelligenceRoute.self) { route in
-            if #available(watchOS 27, *) {
-                switch route {
-                case .search: WatchLibrarySearchView()
-                case .forYou: WatchForYouView()
+            switch route {
+            case .search: WatchLibrarySearchView()
+            case .forYou:
+                if #available(watchOS 27, *) {
+                    WatchForYouView()
                 }
             }
         }

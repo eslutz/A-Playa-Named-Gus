@@ -26,6 +26,7 @@
             XCTAssertTrue(completion.waitForExistence(timeout: 15), app.debugDescription)
             completion.tap()
             XCTAssertEqual(field.value as? String, title)
+            XCTAssertFalse(app.buttons["Intelligence.prompt.allow"].exists)
             let typedState = try await fixtureState()
             XCTAssertFalse(typedState.events.contains { $0.exactFixtureMovieSearch == true })
             if !app.keyboards.buttons["Search"].firstMatch.isHittable {

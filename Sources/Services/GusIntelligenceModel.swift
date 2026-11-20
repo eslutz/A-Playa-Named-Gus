@@ -104,7 +104,7 @@ struct GusRankCandidate: Encodable, Sendable {
 }
 
 enum GusIntelligenceError: LocalizedError {
-    case useKeyword, unavailable, invalidResponse, inputTooLong, generationFailed, privateInput
+    case useKeyword, unavailable, invalidResponse, inputTooLong, generationFailed, privateInput, cloudNetwork, cloudServiceUnavailable, rateLimited
     case quota(Date?)
 
     var errorDescription: String? {
@@ -113,6 +113,9 @@ enum GusIntelligenceError: LocalizedError {
         case .unavailable: String(localized: "Apple Intelligence is unavailable for this device or language.")
         case .invalidResponse: String(localized: "The search requirements could not be interpreted reliably.")
         case .inputTooLong: String(localized: "Shorten the search and try again.")
+        case .cloudNetwork: String(localized: "Private Cloud Compute could not connect. Check your network and try again.")
+        case .cloudServiceUnavailable: String(localized: "Private Cloud Compute is temporarily unavailable.")
+        case .rateLimited: String(localized: "Apple Intelligence is limiting requests. Try again later.")
         case .generationFailed: String(localized: "Apple Intelligence could not complete this request.")
         case .privateInput: String(localized: "Remove links or account identifiers to use Private Cloud Compute.")
         case let .quota(reset):
@@ -162,7 +165,7 @@ struct GusIntelligenceModel {
                 Put a named author or narrator in credits and leave keywords empty unless a title is also requested.
                 Translate genre descriptions into genre names. Avoid adding plot themes to a genre request.
                 Convert exclusive dates and durations to inclusive whole-year or whole-minute bounds only when equivalent.
-                """, schema: LibraryQuery.self) { try $0.intent() }
+                """, schema: LibraryQuery.self) { try $0.intent(for: prompt) }
             }
         #endif
         throw GusIntelligenceError.unavailable
@@ -183,7 +186,7 @@ struct GusIntelligenceModel {
             For a person lookup, set mediaType to person and place the name only in keywords.
             Genres belong in genres. A year after 2000 starts at 2001. A decade includes all ten years.
             Use unsupported only for requirements actually present in the request that this schema cannot express.
-            """, schema: DiscoverQuery.self) { try $0.intent() }
+            """, schema: DiscoverQuery.self) { try $0.intent(for: prompt) }
         #else
             throw GusIntelligenceError.unavailable
         #endif
@@ -410,6 +413,10 @@ struct GusIntelligenceModel {
                     do {
                         guard try await cloud.supportsLocale() else { throw GusIntelligenceError.unavailable }
                         return try await respond(using: LanguageModelSession(model: cloud, instructions: instructions), cloud: true)
+                    } catch PrivateCloudComputeLanguageModel.Error.networkFailure {
+                        throw GusIntelligenceError.cloudNetwork
+                    } catch PrivateCloudComputeLanguageModel.Error.serviceUnavailable {
+                        throw GusIntelligenceError.cloudServiceUnavailable
                     } catch let PrivateCloudComputeLanguageModel.Error.quotaLimitReached(limit) {
                         throw GusIntelligenceError.quota(limit.resetDate)
                     }
@@ -419,8 +426,15 @@ struct GusIntelligenceModel {
                 if error is CancellationError {
                     throw error
                 }
-                throw error as? GusIntelligenceError ?? .generationFailed
+                throw Self.generationError(error)
             }
+        }
+
+        private static func generationError(_ error: Error) -> GusIntelligenceError {
+            if #available(iOS 27, macOS 27, visionOS 27, watchOS 27, *), case LanguageModelError.rateLimited = error {
+                return .rateLimited
+            }
+            return error as? GusIntelligenceError ?? .generationFailed
         }
 
         #if !os(watchOS)

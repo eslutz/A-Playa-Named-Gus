@@ -74,10 +74,8 @@ struct RootContainer: View {
                 session.references.beginRefresh()
                 await state.refreshCachedContent()
             }
-            .onChange(of: session.intelligenceAccess.usesNaturalSearch) { _, enabled in
-                if !enabled {
-                    state.useKeywordSearchForCurrentDrafts()
-                }
+            .onChange(of: session.intelligenceAccess.usesNaturalSearch) { _, _ in
+                state.useKeywordSearchForCurrentDrafts()
             }
             .onChange(of: navigation.searchFocusRequest) { _, request in
                 if request > 0 {

@@ -96,8 +96,12 @@ final class GusIntelligenceAccess {
         active && routes.cloud() == .ready
     }
 
+    var hasCheckedCloudLocale: Bool {
+        checkedLocale == Locale.current
+    }
+
     private var cloudLocaleEligible: Bool {
-        checkedLocale != Locale.current || localeSupported
+        !hasCheckedCloudLocale || localeSupported
     }
 
     var supportsSearch: Bool {
@@ -113,7 +117,7 @@ final class GusIntelligenceAccess {
     }
 
     var canOfferForYou: Bool {
-        active && (routes.local() == .ready || (cloudReady && preferences.cloudDecision != false && checkedLocale == Locale.current && localeSupported))
+        active && (routes.local() == .ready || (cloudReady && preferences.cloudDecision != false && hasCheckedCloudLocale && localeSupported))
     }
 
     func refreshCloudLocale() async {
@@ -233,7 +237,7 @@ final class GusIntelligenceAccess {
     func requestSearchCloudAccess() async throws -> Bool {
         try Task.checkCancellation()
         guard active, preferences.naturalSearchEnabled, cloudReady else { return false }
-        if checkedLocale != .current {
+        if !hasCheckedCloudLocale {
             await refreshCloudLocale()
         }
         try Task.checkCancellation()

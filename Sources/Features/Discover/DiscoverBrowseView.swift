@@ -15,7 +15,7 @@ struct DiscoverBrowseView: View {
     @State private var feedError: String?
     @State private var feedsRevision: String?
     @State private var query = ""
-    @State private var displaysKeywords = false
+    @State private var draftMode = SearchDraftMode.natural
     @State private var naturalSubmission: DiscoverSubmission?
     @State private var searchCatalog: SeerrCatalogStore?
     @State private var submittedSearch = UUID()
@@ -50,12 +50,12 @@ struct DiscoverBrowseView: View {
     }
 
     private var naturalMode: Bool {
-        session.intelligenceAccess.usesNaturalSearch && !displaysKeywords
+        session.intelligenceAccess.usesNaturalSearch && draftMode == .natural
     }
 
     private func searchByKeyword() {
         naturalSubmission = nil
-        displaysKeywords = true
+        draftMode = .keyword
         submitsImmediately = true
         submittedSearch = UUID()
     }
@@ -98,13 +98,13 @@ struct DiscoverBrowseView: View {
         .gusSeerrSearch(text: Binding(get: { query }, set: { value in
             if value != query {
                 naturalSubmission = nil
-                displaysKeywords = !session.intelligenceAccess.usesNaturalSearch
+                draftMode.edit(value, naturalSearchEnabled: session.intelligenceAccess.usesNaturalSearch)
             }
             query = value
         }), isPresented: $searchPresented, isFocused: $searchFocused, enabledOnTV: searchOnly, suggestions: suggestions, suggestionsInResults: !naturalMode)
         .onChange(of: session.intelligenceAccess.usesNaturalSearch) { _, _ in
             naturalSubmission = nil
-            displaysKeywords = !normalizedQuery.isEmpty
+            draftMode = normalizedQuery.isEmpty ? .natural : .keywordUntilSubmit
         }
         .onChange(of: accessRevision) { _, _ in naturalSubmission = nil }
         .onChange(of: session.intelligencePreferences.cloudEnabled) { _, allowed in
@@ -121,7 +121,7 @@ struct DiscoverBrowseView: View {
             guard hasSearchAccess else { return }
             if session.intelligenceAccess.usesNaturalSearch {
                 if !normalizedQuery.isEmpty {
-                    displaysKeywords = false
+                    draftMode = .natural
                     naturalSubmission = DiscoverSubmission(text: normalizedQuery, access: accessRevision, connection: store.revision, restrictions: store.restrictionRevision)
                 }
             } else if searchCatalog?.source != .search(normalizedQuery) || searchCatalog?.state == .idle || searchCatalog?.errorMessage != nil {
