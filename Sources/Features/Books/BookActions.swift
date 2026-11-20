@@ -12,16 +12,9 @@ struct BookActionButtons: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             #if canImport(ReadiumNavigator)
-                Button {
+                DetailPrimaryButton(progress?.isInProgress == true ? "Continue Reading" : "Read", systemImage: "book.fill") {
                     readerItem = ItemRef(item: item)
-                } label: {
-                    Label(progress?.isInProgress == true ? "Continue Reading" : "Read", systemImage: "book")
-                        .gusProminentActionForeground()
                 }
-                .gusProminentGlassButtonStyle()
-                .controlSize(.large)
-                .gusProminentActionTint()
-                .visionHoverEffect(cornerRadius: 10)
                 .playerPresentation(item: $readerItem)
             #endif
 
@@ -46,7 +39,7 @@ struct BookActionButtons: View {
         var body: some View {
             Group {
                 if let fileURL {
-                    OfflineBookShareView(item: item, fileURL: fileURL)
+                    NativeBookShareSheet(fileURL: fileURL, close: { dismiss() })
                 } else {
                     NavigationStack {
                         Group {
@@ -63,7 +56,7 @@ struct BookActionButtons: View {
                             }
                         }
                         .padding()
-                        .navigationTitle("Open in Another App")
+                        .navigationTitle("Share")
                         .toolbar {
                             ToolbarItem(placement: .cancellationAction) { GusCloseButton { dismiss() } }
                         }
@@ -73,12 +66,7 @@ struct BookActionButtons: View {
             .task(id: attempt) {
                 let provider = BookFileProvider(session: session, downloads: downloads)
                 do {
-                    let url: URL
-                    if let cached = provider.existingLocalFile(for: item) {
-                        url = cached
-                    } else {
-                        url = try await provider.localFile(for: item)
-                    }
+                    let url = try await provider.fileForSharing(for: item)
                     try Task.checkCancellation()
                     guard session.isActive else { return }
                     fileURL = url

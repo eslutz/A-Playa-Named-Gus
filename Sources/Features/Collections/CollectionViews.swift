@@ -133,11 +133,11 @@ struct MediaCollectionDetailView: View {
     #endif
     private var artworkWidth: CGFloat {
         #if os(iOS)
-            widthClass == .compact ? 120 : 140
+            widthClass == .compact ? 200 : 240
         #elseif os(tvOS)
             300
         #else
-            140
+            240
         #endif
     }
 
@@ -177,23 +177,21 @@ struct MediaCollectionDetailView: View {
                 if let collection {
                     let members = admitted(collection)
                     let urls = collection.coverURLs(using: session.mediaProvider, limit: limit, hideUnrated: hideUnrated)
-                    HStack(alignment: .top, spacing: 20) {
+                    DetailCoverHeader {
                         ArtworkTile(url: urls.first, contentMode: .fit, placeholderSymbol: "rectangle.stack", fallbackURLs: Array(urls.dropFirst()))
-                            .frame(width: artworkWidth)
-                        VStack(alignment: .leading, spacing: 12) {
-                            Text(collection.item.displayTitle).font(collectionTitleFont)
-                            if collection.membersLoaded {
-                                Text("\(members.count) titles").foregroundStyle(.secondary)
-                            }
-                            if !collection.item.genres.isEmpty {
-                                Text(collection.item.genres.joined(separator: " / ")).foregroundStyle(.secondary)
-                            }
-                            if let overview = collection.item.overview, !overview.isEmpty {
-                                Text(overview)
-                            }
+                            .frame(maxWidth: artworkWidth)
+                    } summary: {
+                        Text(collection.item.displayTitle).font(collectionTitleFont).accessibilityAddTraits(.isHeader)
+                        if collection.membersLoaded {
+                            Text("\(members.count) titles").foregroundStyle(.secondary)
+                        }
+                        if !collection.item.genres.isEmpty {
+                            Text(collection.item.genres.joined(separator: " / ")).foregroundStyle(.secondary)
+                        }
+                        if let overview = collection.item.overview {
+                            DetailSynopsis(title: collection.item.displayTitle, overview: overview)
                         }
                         #if os(tvOS)
-                            Spacer(minLength: 32)
                             collectionActions
                         #endif
                     }
@@ -221,6 +219,7 @@ struct MediaCollectionDetailView: View {
             }.gusTVPagePadding()
         }
         .navigationTitle(collection?.item.displayTitle ?? String(localized: "Collection"))
+        .toolbarTitleDisplayMode(.inline)
         .gusTVDetailTitle()
         .toolbar {
             #if !os(tvOS)

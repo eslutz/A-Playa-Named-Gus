@@ -109,7 +109,7 @@ enum SpotlightIndexer {
                 return .epub
             case .photo:
                 return .image
-            case .boxSet, .collectionFolder, .folder, .photoAlbum, .unknown:
+            case .boxSet, .collectionFolder, .folder, .genre, .photoAlbum, .unknown:
                 return .content
             }
         }

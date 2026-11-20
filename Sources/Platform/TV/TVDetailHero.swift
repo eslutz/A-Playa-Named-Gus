@@ -17,15 +17,15 @@ extension View {
         let item: MediaItem
         let backdropURL: URL?
         @ViewBuilder let controls: () -> Controls
-        @State private var showingOverview = false
 
         var body: some View {
             VStack(alignment: .leading, spacing: 32) {
+                Spacer(minLength: 300)
                 VStack(alignment: .leading, spacing: 8) {
                     if item.type == .episode, let seriesName = item.seriesName?.trimmedNilIfEmpty {
                         Text(seriesName)
                             .font(.title3.weight(.medium))
-                            .foregroundStyle(.white.opacity(0.7))
+                            .foregroundStyle(.secondary)
                     }
                     Text(item.displayTitle)
                         .font(.largeTitle.bold())
@@ -33,34 +33,20 @@ extension View {
                         .frame(maxWidth: 1200, alignment: .leading)
                         .accessibilityAddTraits(.isHeader)
                 }
-                Spacer(minLength: 300)
                 HStack(alignment: .top, spacing: 56) {
                     controls()
-                        .fixedSize(horizontal: true, vertical: false)
-                        .frame(minWidth: 528, alignment: .leading)
+                        .frame(width: DetailActionMetrics.maximumSecondaryRowWidth, alignment: .leading)
                         .focusSection()
                     VStack(alignment: .leading, spacing: 20) {
                         if let overview = item.overview?.trimmedNilIfEmpty {
-                            Button { showingOverview = true } label: {
-                                Text(overview)
-                                    .font(.body)
-                                    .lineLimit(4)
-                                    .multilineTextAlignment(.leading)
-                                    .frame(maxWidth: .infinity, alignment: .leading)
-                            }
-                            .buttonStyle(.plain)
-                            .accessibilityLabel("Synopsis")
-                            .accessibilityHint("Read the full description")
-                            .accessibilityIdentifier("Detail.heroOverview")
-                            .gusTVDetailActionFocus(id: "synopsis", item: item)
+                            DetailSynopsis(title: item.displayTitle, overview: overview, identifier: "Detail.heroOverview", focusItem: item)
                         }
-                        HeroMetadataRow(item: item, foreground: .white.opacity(0.7))
+                        HeroMetadataRow(item: item, foreground: .secondary)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .focusSection()
                 }
             }
-            .environment(\.colorScheme, .dark)
             .padding(.horizontal, 80)
             .padding(.top, 64)
             .padding(.bottom, 64)
@@ -69,26 +55,12 @@ extension View {
                 GeometryReader { geometry in
                     AsyncPoster(url: backdropURL, placeholderSymbol: item.artworkPlaceholderSymbol, fallbackURLs: session.mediaProvider.artworkURLs(for: item, request: .init(role: item.type == .episode ? .episodeStill : .backdrop, maxWidth: 1920)))
                         .frame(width: geometry.size.width, height: geometry.size.height).clipped()
-                        .overlay {
-                            LinearGradient(colors: [.black.opacity(0.55), .clear], startPoint: .top, endPoint: .center)
-                        }
-                        .overlay {
-                            LinearGradient(stops: [.init(color: .clear, location: 0.35), .init(color: .black.opacity(0.75), location: 0.7), .init(color: .black, location: 1)], startPoint: .top, endPoint: .bottom)
+                        .mask {
+                            LinearGradient(stops: [.init(color: .black, location: 0.24), .init(color: .black.opacity(0.3), location: 0.48), .init(color: .black.opacity(0.08), location: 0.7), .init(color: .clear, location: 1)], startPoint: .top, endPoint: .bottom)
                         }
                         .accessibilityHidden(true)
                 }
                 .accessibilityHidden(true)
-            }
-            .gusTVTask(isPresented: $showingOverview) {
-                NavigationStack {
-                    ScrollView {
-                        Text(item.overview ?? "").font(.title3).padding(64)
-                            .frame(maxWidth: 1200, alignment: .leading)
-                    }
-                    .focusable()
-                    .navigationTitle(item.displayTitle)
-                    .toolbar { ToolbarItem(placement: .cancellationAction) { GusCloseButton { showingOverview = false } } }
-                }
             }
         }
     }

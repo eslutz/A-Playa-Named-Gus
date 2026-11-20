@@ -10,6 +10,7 @@ struct MediaItemQuery: Sendable {
     var searchTerm: String?
     /// Restricts results to albums by this artist (provider-mapped, e.g. Jellyfin `artistIds`).
     var artistID: String?
+    var genreID: String?
     /// Restricts results to these item types (provider-mapped, e.g. Jellyfin `includeItemTypes`).
     var includeTypes: [MediaItemType]?
     var startIndex: Int
@@ -24,6 +25,7 @@ struct MediaItemQuery: Sendable {
         parentID: String? = nil,
         searchTerm: String? = nil,
         artistID: String? = nil,
+        genreID: String? = nil,
         includeTypes: [MediaItemType]? = nil,
         startIndex: Int,
         limit: Int,
@@ -34,6 +36,7 @@ struct MediaItemQuery: Sendable {
         self.parentID = parentID
         self.searchTerm = searchTerm
         self.artistID = artistID
+        self.genreID = genreID
         self.includeTypes = includeTypes
         self.startIndex = startIndex
         self.limit = limit
@@ -140,6 +143,8 @@ protocol MediaProviderSession: AnyObject, Sendable {
     /// Close after an ambiguous Stop response can close another consumer.
     func releasePlaybackResource(_ resource: PlaybackResource) async throws
 
+    /// Returns an authenticated temporary original. The caller owns moving or removing it.
+    func downloadBook(for item: MediaItem) async throws -> (file: URL, filename: String)
     func downloadSource(for item: MediaItem, streamSelection: PlaybackStreamSelection) async throws -> DownloadSourceResolution
 
     // MARK: Live TV (no-tuner servers report unavailable)

@@ -1,6 +1,45 @@
 {
   "sourceLanguage": "en",
   "strings": {
+    "1 book": {
+      "comment": "Books shelf volume count."
+    },
+    "%lld books": {
+      "comment": "Books shelf volume count."
+    },
+    "At least 1 book": {
+      "comment": "Books shelf volume count."
+    },
+    "At least %lld books": {
+      "comment": "Books shelf volume count."
+    },
+    "Change Cover": {
+      "comment": "Shared playlist cover editor."
+    },
+    "Checking artwork permission…": {
+      "comment": "Shared playlist cover editor."
+    },
+    "Only a Jellyfin administrator can change this shared playlist cover.": {
+      "comment": "Shared playlist cover editor."
+    },
+    "Genre": {
+      "comment": "Genre browsing from search."
+    },
+    "Genre Unavailable": {
+      "comment": "Genre browsing from search."
+    },
+    "About Streaming Quality": {
+      "comment": "Accessible Playback settings help."
+    },
+    "About Remembering Episode Tracks": {
+      "comment": "Accessible Playback settings help."
+    },
+    "Gus remembers the audio and subtitle choices you make for each series on this device and account. Other episodes use those choices when matching tracks are available. Turning this off clears your saved choices.": {
+      "comment": "Accessible Playback settings help."
+    },
+    "The server returned an invalid book file.": {
+      "comment": "Error while preparing the original ebook."
+    },
     "Undo Removal": {
       "comment": "Playlist and collection editing."
     },

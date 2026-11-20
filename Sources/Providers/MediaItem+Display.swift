@@ -219,10 +219,27 @@ extension MediaItem {
 
 enum BookDetailMetadata {
     static func synopsis(_ value: String?) -> String? {
-        let cleaned = value?.replacingOccurrences(of: #"\r\n"#, with: "\n")
+        guard var text = nonblank(value) else { return nil }
+        text = text.replacingOccurrences(of: #"\r\n"#, with: "\n")
             .replacingOccurrences(of: #"\n"#, with: "\n")
             .replacingOccurrences(of: "\r\n", with: "\n")
-        return nonblank(cleaned)
+        if text.contains("&") {
+            // CommonMark decodes named and numeric HTML entities without loading remote content.
+            // Parse only the entity itself so ordinary punctuation in a synopsis stays literal.
+            text = text.replacing(#/&(?:#[xX][0-9a-fA-F]+|#[0-9]+|[a-zA-Z][a-zA-Z0-9]+);/#) { match in
+                let entity = String(match.output)
+                guard let decoded = try? AttributedString(markdown: entity, options: .init(interpretedSyntax: .inlineOnlyPreservingWhitespace)) else { return entity }
+                return String(decoded.characters)
+            }
+        }
+        if text.contains("<") {
+            text = text.replacingOccurrences(of: #"(?is)<(script|style)\b[^>]*>.*?</\1\s*>"#, with: "", options: .regularExpression)
+                .replacingOccurrences(of: #"(?i)<br\b[^>]*>"#, with: "\n", options: .regularExpression)
+                .replacingOccurrences(of: #"(?i)</?(p|div|li)\b[^>]*>"#, with: "\n\n", options: .regularExpression)
+                .replacingOccurrences(of: #"(?i)</?[a-z][\w:-]*(?:\s[^<>]*)?/?>"#, with: "", options: .regularExpression)
+                .replacingOccurrences(of: #"(?:\n[\t ]*){3,}"#, with: "\n\n", options: .regularExpression)
+        }
+        return nonblank(text)
     }
 
     static func genres(_ values: [String]) -> [String] {
@@ -255,7 +272,7 @@ enum BookDetailMetadata {
         return values.compactMap { nonblank($0) }.filter { seen.insert($0.lowercased()).inserted }
     }
 
-    private static func nonblank(_ value: String?) -> String? {
+    fileprivate static func nonblank(_ value: String?) -> String? {
         guard let value = value?.trimmingCharacters(in: .whitespacesAndNewlines), !value.isEmpty else { return nil }
         return value
     }
@@ -294,7 +311,13 @@ extension MediaItem {
     }
 
     var bookAuthorNames: [String] {
-        contributorNames(.author)
+        let authors = contributorNames(.author)
+        guard authors.isEmpty, type == .audioBook,
+              let albumAuthor = BookDetailMetadata.nonblank(albumArtist),
+              artists.contains(where: { BookDetailMetadata.nonblank($0)?.caseInsensitiveCompare(albumAuthor) == .orderedSame }),
+              !bookNarratorNames.contains(where: { $0.caseInsensitiveCompare(albumAuthor) == .orderedSame })
+        else { return authors }
+        return [albumAuthor]
     }
 
     var bookNarratorNames: [String] {

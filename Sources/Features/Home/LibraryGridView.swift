@@ -36,7 +36,7 @@ struct LibraryGridView: View {
         case let .library(item): item.collectionType == .photos
         case let .category(category): category == .photos
         case .photoLibrary: true
-        case .musicLibrary, .latest: false
+        case .musicLibrary, .latest, .genre: false
         }
     }
 
@@ -56,7 +56,7 @@ struct LibraryGridView: View {
         case let .library(item): item.collectionType == .music
         case let .category(category): category == .music
         case .musicLibrary: true
-        case .photoLibrary, .latest: false
+        case .photoLibrary, .latest, .genre: false
         }
     }
 

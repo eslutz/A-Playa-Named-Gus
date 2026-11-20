@@ -20,18 +20,11 @@ struct SearchResultsView: View {
             ScrollView {
                 LazyVGrid(columns: searchState.showsList ? [GridItem(.flexible())] : PosterGrid.columns, alignment: .leading, spacing: PosterGrid.spacing) {
                     ForEach(store.results, id: \.id) { item in
-                        MediaItemNavigationLink(item: item) {
-                            if searchState.showsList {
-                                MediaLibraryRow(item: item)
-                            } else {
-                                PosterCard(item: item, imageURL: session.mediaProvider.primaryImageURL(for: item, context: .posterGrid), fallbackURLs: session.mediaProvider.artworkURLs(for: item, request: .init(role: .poster, maxWidth: 360)))
-                            }
-                        }
-                        .id(ItemRef(item: item).id)
-                        .posterNavigationStyle()
-                        .mediaItemContextMenu(item: item)
-                        .gusTVFocus(id: ItemRef(item: item).id, section: "search:" + rootState.selectedSectionID + ":" + store.query, ids: store.results.map { ItemRef(item: $0).id }, item: item)
-                        .task { await store.loadMoreIfNeeded(currentItem: item) }
+                        resultLink(item)
+                            .id(ItemRef(item: item).id)
+                            .posterNavigationStyle()
+                            .gusTVFocus(id: ItemRef(item: item).id, section: "search:" + rootState.selectedSectionID + ":" + store.query, ids: store.results.map { ItemRef(item: $0).id }, item: item)
+                            .task { await store.loadMoreIfNeeded(currentItem: item) }
                     }
 
                     if store.isRefreshing {
@@ -62,6 +55,32 @@ struct SearchResultsView: View {
             .gusVisibleContent(.search(rootState.selectedSectionID), isLoading: store.state.isLoading || store.isRefreshing || store.isLoadingNextPage)
             .scrollPosition(id: rootState.scrollBinding(for: "search:" + rootState.selectedSectionID + ":" + store.query))
             .lookToScroll()
+        }
+    }
+
+    @ViewBuilder private func resultLink(_ item: MediaItem) -> some View {
+        if item.type == .genre {
+            MediaItemNavigationLink(item: item) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Label(item.displayTitle, systemImage: "tag")
+                        .font(.headline)
+                    Text("Genre").font(.subheadline).foregroundStyle(.secondary)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding()
+                .background(.quaternary, in: RoundedRectangle(cornerRadius: 12))
+                .accessibilityElement(children: .combine)
+            }
+            .accessibilityIdentifier("Search.genre." + (item.id ?? ""))
+        } else {
+            MediaItemNavigationLink(item: item) {
+                if searchState.showsList {
+                    MediaLibraryRow(item: item)
+                } else {
+                    PosterCard(item: item, imageURL: session.mediaProvider.primaryImageURL(for: item, context: .posterGrid), fallbackURLs: session.mediaProvider.artworkURLs(for: item, request: .init(role: .poster, maxWidth: 360)))
+                }
+            }
+            .mediaItemContextMenu(item: item)
         }
     }
 }

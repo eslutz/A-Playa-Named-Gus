@@ -93,6 +93,7 @@ struct LibraryFilterState: Equatable {
 }
 
 enum LibraryGridScope: Hashable {
+    case genre(id: String, name: String)
     case library(MediaItem)
     case category(NavigationCategory)
     case photoLibrary(parentID: String?, albums: Bool)
@@ -109,6 +110,7 @@ enum LibraryGridScope: Hashable {
             return String(localized: "Photos")
         case .musicLibrary:
             return String(localized: "Music")
+        case let .genre(_, name): return name
         case let .latest(kind): return kind.title
         }
     }
@@ -123,6 +125,7 @@ enum LibraryGridScope: Hashable {
             return "photo"
         case .musicLibrary:
             return "music.note"
+        case .genre: return "tag"
         case .latest: return "clock"
         }
     }
@@ -131,11 +134,18 @@ enum LibraryGridScope: Hashable {
         switch self {
         case let .library(library):
             return library.id
-        case .category, .latest:
+        case .category, .latest, .genre:
             return nil
         case let .photoLibrary(parentID, _), let .musicLibrary(parentID):
             return parentID
         }
+    }
+
+    var genreID: String? {
+        if case let .genre(id, _) = self {
+            return id
+        }
+        return nil
     }
 
     var groupsBookSeries: Bool {
@@ -156,6 +166,7 @@ enum LibraryGridScope: Hashable {
             return albums ? [.photoAlbum] : [.photo]
         case .musicLibrary:
             return [.musicAlbum, .musicArtist]
+        case .genre: return [.movie, .series, .book, .audioBook, .musicAlbum, .audio, .video]
         case let .latest(kind): return kind.includeTypes
         }
     }
@@ -164,7 +175,7 @@ enum LibraryGridScope: Hashable {
         switch self {
         case .library:
             return groupsBookSeries
-        case .category, .photoLibrary, .musicLibrary, .latest:
+        case .category, .photoLibrary, .musicLibrary, .latest, .genre:
             return true
         }
     }
@@ -179,6 +190,7 @@ enum LibraryGridScope: Hashable {
             return "photos:" + (parentID ?? "all") + (albums ? ":albums" : ":images")
         case let .musicLibrary(parentID):
             return "music:" + (parentID ?? "all")
+        case let .genre(id, _): return "genre:" + id
         case let .latest(kind): return "latest:" + kind.rawValue
         }
     }
@@ -195,6 +207,7 @@ enum LibraryRequest {
     ) -> MediaItemQuery {
         MediaItemQuery(
             parentID: scope.parentID,
+            genreID: scope.genreID,
             includeTypes: scope.includeTypes,
             startIndex: startIndex,
             limit: limit,

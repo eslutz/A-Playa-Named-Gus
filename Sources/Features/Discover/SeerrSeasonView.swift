@@ -37,24 +37,30 @@ struct SeerrSeasonView: View {
             }
         }
         .navigationTitle(isAuthorized ? season.seerrName : String(localized: "Season"))
+        .toolbarTitleDisplayMode(.inline)
         .task(id: accessRevision) { await load() }
     }
 
     private func content(_ season: SeerrSeason) -> some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
-                Text(series.displayTitle).font(.title2).foregroundStyle(.secondary)
-                Text(season.seerrName).font(.largeTitle.bold())
-                Text("Standard format").font(.subheadline).foregroundStyle(.secondary)
-                if let summary = season.overview?.trimmedNilIfEmpty {
-                    Text(summary).fixedSize(horizontal: false, vertical: true)
-                }
-                if let availability = series.mediaInfo?.seasons?.first(where: { $0.seasonNumber == season.seasonNumber }) {
-                    if let description = availability.status.seerrDescription {
-                        Text(description).font(.headline)
+                DetailCoverHeader {
+                    SeerrArtworkView(path: season.posterPath ?? series.posterPath, contentMode: .fit, width: "w780")
+                        .frame(maxWidth: 220)
+                } summary: {
+                    Text(series.displayTitle).font(.title2).foregroundStyle(.secondary)
+                    Text(season.seerrName).font(.largeTitle.bold())
+                    Text("Standard format").font(.subheadline).foregroundStyle(.secondary)
+                    if let summary = season.overview?.trimmedNilIfEmpty {
+                        DetailSynopsis(title: season.seerrName, overview: summary)
                     }
-                    if availability.status == .available || availability.status == .partiallyAvailable {
-                        SeerrPlaybackMatchView(title: series, seasonNumber: season.seasonNumber)
+                    if let availability = series.mediaInfo?.seasons?.first(where: { $0.seasonNumber == season.seasonNumber }) {
+                        if let description = availability.status.seerrDescription {
+                            Text(description).font(.headline)
+                        }
+                        if availability.status == .available || availability.status == .partiallyAvailable {
+                            SeerrPlaybackMatchView(title: series, seasonNumber: season.seasonNumber)
+                        }
                     }
                 }
                 Text("Episodes").font(.title2.bold()).accessibilityAddTraits(.isHeader)
@@ -129,13 +135,12 @@ private struct SeerrEpisodeMetadata: View {
                     Text(date).font(.subheadline).foregroundStyle(.secondary)
                 }
                 if let summary = episode.overview?.trimmedNilIfEmpty {
-                    Text(summary).font(.body)
+                    DetailSynopsis(title: episode.name ?? String(localized: "Episode \(episode.episodeNumber)"), overview: summary)
                 }
             }
             .fixedSize(horizontal: false, vertical: true)
             Spacer(minLength: 0)
         }
-        .accessibilityElement(children: .combine)
-        .gusTVFocusableInfo()
+        .accessibilityElement(children: .contain)
     }
 }

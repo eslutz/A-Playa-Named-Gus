@@ -31,6 +31,12 @@ struct ItemRouteDestination: View {
 
     var body: some View {
         switch item.type {
+        case .genre:
+            if let id = item.id {
+                LibraryGridView(scope: .genre(id: id, name: item.displayTitle))
+            } else {
+                ContentUnavailableView("Genre Unavailable", systemImage: "tag")
+            }
         case .musicAlbum:
             AlbumDetailView(album: item)
         case .playlist:

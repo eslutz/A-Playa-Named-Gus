@@ -4,12 +4,8 @@ import SwiftUI
 /// title block, play/up-next actions, and a caller-supplied accessory slot.
 struct CinematicDetailHero<Accessory: View>: View {
     @Environment(SessionStore.self) private var session
-    #if os(iOS)
-        @Environment(\.horizontalSizeClass) private var widthClass
-    #endif
     let item: MediaItem
     var bookProgress: BookDetailProgress? = nil
-    var playbackItem: MediaItem? = nil
     var primaryPlayEnabled = true
     var playbackHasProgress = false
     var startFromBeginning: (() -> Void)? = nil
@@ -20,41 +16,21 @@ struct CinematicDetailHero<Accessory: View>: View {
     @ViewBuilder let accessory: Accessory
 
     var body: some View {
-        if item.isBookFormat {
-            bookHero
-        } else {
-            cinematicHero
-        }
-    }
-
-    @ViewBuilder private var cinematicHero: some View {
-        #if os(iOS)
-            if DeviceIdentity.usesIPadPresentation {
-                iPadHero
-            } else {
-                platformHero
-            }
-        #else
-            platformHero
-        #endif
-    }
-
-    private var bookHero: some View {
-        AdaptiveStack(horizontalMinimumWidth: 470, horizontalAlignment: .top, horizontalSpacing: 24, verticalSpacing: 16) { horizontal in
-            AsyncPoster(
-                url: session.mediaProvider.primaryImageURL(for: item, context: .posterGrid),
-                placeholderSymbol: "book",
-                fallbackURLs: session.mediaProvider.artworkURLs(for: item, request: .init(role: .poster, maxWidth: 640))
-            )
-            .aspectRatio(item.type == .book ? 2.0 / 3.0 : 1, contentMode: .fit)
-            .frame(width: horizontal ? 190 : nil)
-            .frame(maxWidth: 220)
-            .clipShape(RoundedRectangle(cornerRadius: 12))
-            .accessibilityHidden(true)
-
-            VStack(alignment: .leading, spacing: 12) {
-                Text(item.displayTitle).font(.largeTitle.bold()).accessibilityAddTraits(.isHeader)
-                VStack(alignment: .leading, spacing: 4) {
+        if item.isBookFormat || hasOnlyCoverArtwork {
+            DetailCoverHeader {
+                let urls = session.mediaProvider.artworkURLs(for: item, request: .init(role: item.coverArtworkRole, maxWidth: 640))
+                ArtworkTile(
+                    url: urls.first,
+                    aspectRatio: item.primaryImageAspectRatio.flatMap { $0 > 0 ? $0 : nil } ?? (item.type == .audioBook ? 1 : 2.0 / 3.0),
+                    contentMode: .fit,
+                    placeholderSymbol: item.artworkPlaceholderSymbol,
+                    fallbackURLs: Array(urls.dropFirst())
+                )
+                .frame(maxWidth: 240)
+                .accessibilityHidden(true)
+            } summary: {
+                Text(item.displayTitle).font(titleFont).accessibilityAddTraits(.isHeader)
+                if item.isBookFormat {
                     if let authors = item.bookAuthorText {
                         Text("By \(authors)")
                     }
@@ -62,27 +38,30 @@ struct CinematicDetailHero<Accessory: View>: View {
                         Text("Narrated by \(item.bookNarratorNames.formatted(.list(type: .and)))")
                     }
                     if let publicationDetails {
-                        Text(publicationDetails)
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
+                        Text(publicationDetails).font(.subheadline).foregroundStyle(.secondary)
                     }
-                }
-                if let overview = item.overview {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(overview).lineLimit(4).accessibilityIdentifier("Detail.heroOverview")
-                        FullSynopsisButton(title: item.displayTitle, overview: overview)
-                            .gusTVDetailActionFocus(id: "synopsis", item: item)
-                    }
+                } else {
+                    HeroMetadataRow(item: item, foreground: .secondary)
                 }
                 actionStack
+                synopsis
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
+            .tvFocusSection()
+        } else {
+            platformHero
         }
-        .padding(.horizontal)
-        .padding(.vertical, 24)
-        .frame(maxWidth: PageContentMetrics.maxWidth, alignment: .leading)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .tvFocusSection()
+    }
+
+    /// A portrait poster is the whole header artwork when Jellyfin has no landscape alternative.
+    private var hasOnlyCoverArtwork: Bool {
+        guard let ratio = item.primaryImageAspectRatio, ratio > 0, ratio < 1.33 else { return false }
+        return item.backdropImageTags.isEmpty && item.parentBackdropImageTags.isEmpty && item.imageTags["Thumb"] == nil
+    }
+
+    @ViewBuilder private var synopsis: some View {
+        if let overview = item.overview {
+            DetailSynopsis(title: item.displayTitle, overview: overview, identifier: "Detail.heroOverview", focusItem: item)
+        }
     }
 
     private var publicationDetails: String? {
@@ -96,127 +75,27 @@ struct CinematicDetailHero<Accessory: View>: View {
         return year ?? duration
     }
 
-    #if os(iOS)
-        private var iPadHero: some View {
-            AdaptiveStack(
-                horizontalMinimumWidth: (item.type == .book ? 240 : 400) + 280 + 32,
-                horizontalAlignment: .top,
-                horizontalSpacing: 32,
-                verticalSpacing: 24
-            ) { horizontal in
-                iPadArtworkAndActions
-                    .frame(width: horizontal ? (item.type == .book ? 240 : 400) : nil)
-                    .frame(maxWidth: item.type == .book ? 240 : 400, alignment: .leading)
-                iPadOverview
-                    .frame(minWidth: horizontal ? 280 : nil, maxWidth: horizontal ? 680 : .infinity, alignment: .leading)
-            }
-            .padding(24)
-            .frame(maxWidth: PageContentMetrics.maxWidth, alignment: .leading)
-            .frame(maxWidth: .infinity, alignment: .leading)
-        }
-
-        private var iPadArtworkAndActions: some View {
-            VStack(alignment: .leading, spacing: 16) {
-                AsyncPoster(
-                    url: item.type == .book ? session.mediaProvider.primaryImageURL(for: item, context: .posterGrid) : backdropURL,
-                    placeholderSymbol: item.artworkPlaceholderSymbol,
-                    fallbackURLs: session.mediaProvider.artworkURLs(for: item, request: .init(role: item.type == .book ? .poster : .backdrop, maxWidth: 1280))
-                )
-                .aspectRatio(item.type == .book ? 2.0 / 3.0 : 16.0 / 9.0, contentMode: .fit)
-                .clipShape(RoundedRectangle(cornerRadius: 12))
-                .accessibilityHidden(true)
-                HeroMetadataRow(item: item, foreground: .secondary)
-                actionStack
-            }
-        }
-
-        private var iPadOverview: some View {
-            VStack(alignment: .leading, spacing: 16) {
-                if let overview = item.overview?.trimmedNilIfEmpty {
-                    Text("Synopsis").font(.headline)
-                    Text(overview).fixedSize(horizontal: false, vertical: true)
-                        .accessibilityIdentifier("Detail.heroOverview")
-                }
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-        }
-    #endif
-
     private var platformHero: some View {
-        standardHero.gusTVDetailHero(item: item, backdropURL: backdropURL) {
+        let urls = session.mediaProvider.artworkURLs(for: item, request: .init(role: item.type == .episode ? .episodeStill : .backdrop, maxWidth: 1920))
+        return DetailBackdropHeader {
+            AsyncPoster(url: urls.first ?? backdropURL, placeholderSymbol: item.artworkPlaceholderSymbol, fallbackURLs: Array(urls.dropFirst()), onExhausted: { _ = try? await session.references.currentItem(item) })
+        } summary: {
+            Text(item.displayTitle).font(titleFont).accessibilityAddTraits(.isHeader)
+            HeroMetadataRow(item: item, foreground: .secondary)
+            actionStack
+            synopsis
+        }
+        .gusTVDetailHero(item: item, backdropURL: urls.first ?? backdropURL) {
             VStack(alignment: .leading, spacing: 24) {
-                playButton.frame(width: primaryActionWidth)
-                HStack(spacing: 24) {
-                    upNextButton
-                        .gusTVDetailActionFocus(id: "nextUp", item: item)
+                playButton
+                DetailActionRow {
+                    upNextButton.gusTVDetailActionFocus(id: "nextUp", item: item)
                     accessory
                 }
+                .frame(maxWidth: DetailActionMetrics.maximumSecondaryRowWidth)
                 .tvFocusSection()
             }
         }
-    }
-
-    private var standardHero: some View {
-        AdaptiveStack(
-            horizontalMinimumWidth: 320 + DetailActionMetrics.maximumRowWidth + 28,
-            horizontalAlignment: .bottom,
-            horizontalSpacing: 28,
-            verticalSpacing: 18
-        ) { horizontal in
-            titleBlock.frame(maxWidth: horizontal ? 760 : .infinity, alignment: .leading)
-            actionStack.frame(width: horizontal ? DetailActionMetrics.maximumRowWidth : nil, alignment: .leading)
-        }
-        .padding(heroPadding)
-        .frame(maxWidth: PageContentMetrics.maxWidth, alignment: .leading)
-        .frame(maxWidth: .infinity, minHeight: baseHeroHeight, alignment: .bottomLeading)
-        .background {
-            GeometryReader { geometry in
-                AsyncPoster(url: backdropURL, placeholderSymbol: item.artworkPlaceholderSymbol, fallbackURLs: session.mediaProvider.artworkURLs(for: item, request: .init(role: item.type == .book ? .poster : .backdrop, maxWidth: 1280)), onExhausted: { _ = try? await session.references.currentItem(item) })
-                    .frame(width: geometry.size.width, height: geometry.size.height)
-                    .clipped()
-                    .overlay {
-                        LinearGradient(colors: heroScrim, startPoint: .bottom, endPoint: .top)
-                    }
-            }
-            // Extend artwork to the pane edge in landscape while keeping the
-            // foreground controls inside the container's safe area.
-            .ignoresSafeArea(.container, edges: .horizontal)
-            .accessibilityHidden(true)
-        }
-        .accessibilityElement(children: .contain)
-    }
-
-    private var titleBlock: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text(item.displayTitle)
-                .font(titleFont)
-                .fontWeight(.bold)
-                .fixedSize(horizontal: false, vertical: true)
-
-            HeroMetadataRow(item: item)
-
-            if let overview = item.overview?.trimmedNilIfEmpty {
-                Text(overview)
-                    .font(.body)
-                    .foregroundStyle(.white)
-                    .lineLimit(4)
-                    .accessibilityIdentifier("Detail.heroOverview")
-            }
-        }
-        .foregroundStyle(.white)
-        // Artwork and adaptive text height must not determine text contrast.
-        // Keep the same opaque copy surface at every standard-hero width.
-        .padding(12)
-        .background(.black, in: RoundedRectangle(cornerRadius: 8))
-    }
-
-    private var heroScrim: [Color] {
-        #if os(iOS)
-            if widthClass == .compact {
-                return [.black.opacity(0.95), .black.opacity(0.72), .black.opacity(0.15)]
-            }
-        #endif
-        return [.black.opacity(0.85), .black.opacity(0.6), .black.opacity(0.2)]
     }
 
     private var actionStack: some View {
@@ -230,15 +109,17 @@ struct CinematicDetailHero<Accessory: View>: View {
                 BookDetailProgressBar(progress: bookProgress)
             }
             DetailActionRow {
-                upNextButton
-                restartButton
+                upNextButton.gusTVDetailActionFocus(id: "nextUp", item: item)
+                #if !os(tvOS)
+                    restartButton
+                #endif
                 accessory
             }
             // These controls have spoken labels rather than visible text. Keep
             // symbols compact so accessibility text sizes cannot overlap peers.
             .dynamicTypeSize(...DynamicTypeSize.large)
-            .gusPhoneHeroAccessoryStyle(onArtwork: !item.isBookFormat)
-            .frame(maxWidth: DetailActionMetrics.maximumRowWidth)
+            .gusPhoneHeroAccessoryStyle(onArtwork: false)
+            .frame(maxWidth: DetailActionMetrics.maximumSecondaryRowWidth)
         }
     }
 
@@ -250,30 +131,11 @@ struct CinematicDetailHero<Accessory: View>: View {
     @ViewBuilder
     private var playButton: some View {
         if isPlayableItem {
-            Button(action: play) {
-                Label(playbackHasProgress ? String(localized: "Resume") : String(localized: "Play"), systemImage: "play.fill")
-                    .gusProminentActionForeground()
-                    .frame(maxWidth: .infinity)
-                    .accessibilityIdentifier("Detail.play")
-            }
-            .gusProminentGlassButtonStyle()
-            .controlSize(.large)
-            // Keep the primary action prominent without turning wide panes into
-            // a full-width button. Narrow panes can still shrink naturally.
-            .frame(maxWidth: primaryActionWidth)
-            .gusProminentActionTint()
-            .gusDefaultActionShortcut()
-            .gusTVDetailActionFocus(id: "play", item: item, initial: true)
-            .visionHoverEffect(Capsule())
+            DetailPrimaryButton(playbackHasProgress ? "Resume" : "Play", systemImage: "play.fill", action: play)
+                .accessibilityIdentifier("Detail.play")
+                .gusDefaultActionShortcut()
+                .gusTVDetailActionFocus(id: "play", item: item, initial: true)
         }
-    }
-
-    private var primaryActionWidth: CGFloat {
-        #if os(tvOS)
-            528
-        #else
-            min(320, DetailActionMetrics.maximumRowWidth)
-        #endif
     }
 
     private var upNextButton: some View {
@@ -305,27 +167,94 @@ struct CinematicDetailHero<Accessory: View>: View {
             return .title.bold()
         #endif
     }
+}
 
-    private var baseHeroHeight: CGFloat {
-        #if os(tvOS)
-            return 620
-        #elseif os(visionOS)
-            return 560
-        #elseif os(macOS)
-            return 480
-        #elseif os(iOS)
-            return widthClass == .compact ? 550 : 420
-        #else
-            return 420
-        #endif
+/// Let the lower edge of the backdrop fade into the system surface beneath the title.
+struct DetailBackdropHeader<Artwork: View, Summary: View>: View {
+    @ViewBuilder let artwork: () -> Artwork
+    @ViewBuilder let summary: () -> Summary
+
+    var body: some View {
+        VStack(spacing: -32) {
+            Color.clear
+                .aspectRatio(1.55, contentMode: .fit)
+                .frame(maxHeight: 440)
+                .frame(maxWidth: .infinity)
+                .overlay {
+                    GeometryReader { geometry in
+                        artwork().frame(width: geometry.size.width, height: geometry.size.height).clipped()
+                            .backgroundExtensionEffect()
+                    }
+                    .mask {
+                        LinearGradient(stops: [.init(color: .black, location: 0), .init(color: .black, location: 0.62), .init(color: .clear, location: 1)], startPoint: .top, endPoint: .bottom)
+                    }
+                    .accessibilityHidden(true)
+                }
+            VStack(alignment: .leading, spacing: 12) { summary() }
+                .padding(.horizontal, 24)
+                .padding(.bottom, 24)
+                .frame(maxWidth: PageContentMetrics.maxWidth, alignment: .leading)
+                .frame(maxWidth: .infinity)
+        }
+    }
+}
+
+/// Keep the complete cover visible and place the summary alongside it when space permits.
+struct DetailCoverHeader<Artwork: View, Summary: View>: View {
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    @ViewBuilder let artwork: () -> Artwork
+    @ViewBuilder let summary: () -> Summary
+
+    var body: some View {
+        AdaptiveStack(horizontalMinimumWidth: 640, horizontalAlignment: .center, verticalAlignment: .center, horizontalSpacing: 32, verticalSpacing: 20) { _ in
+            artwork().accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: 12) { summary() }
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .padding(24)
+        .frame(maxWidth: PageContentMetrics.maxWidth, alignment: .leading)
+        .frame(maxWidth: .infinity)
+        .background {
+            if !reduceTransparency {
+                GeometryReader { geometry in
+                    artwork()
+                        .frame(width: geometry.size.width, height: geometry.size.height)
+                        .scaleEffect(2)
+                        .blur(radius: 40)
+                        .opacity(0.25)
+                        .mask(LinearGradient(colors: [.black, .clear], startPoint: .top, endPoint: .bottom))
+                }
+                .clipped()
+                .accessibilityHidden(true)
+                .allowsHitTesting(false)
+            }
+        }
+    }
+}
+
+struct DetailPrimaryButton: View {
+    let title: LocalizedStringKey
+    let systemImage: String
+    let action: () -> Void
+
+    init(_ title: LocalizedStringKey, systemImage: String, action: @escaping () -> Void) {
+        self.title = title
+        self.systemImage = systemImage
+        self.action = action
     }
 
-    private var heroPadding: CGFloat {
-        #if os(tvOS) || os(visionOS)
-            return 40
-        #else
-            return 24
-        #endif
+    var body: some View {
+        Button(action: action) {
+            Label(title, systemImage: systemImage)
+                .fontWeight(.bold)
+                .gusProminentActionForeground()
+                .frame(maxWidth: .infinity)
+        }
+        .gusProminentGlassButtonStyle()
+        .controlSize(.large)
+        .frame(maxWidth: DetailActionMetrics.maximumRowWidth)
+        .gusProminentActionTint()
+        .visionHoverEffect(Capsule())
     }
 }
 
@@ -425,41 +354,65 @@ struct DetailActionRow<Content: View>: View {
     }
 }
 
-/// A single realized set of controls, arranged as a row or a two-column grid.
-/// A Layout is needed because changing GridRow parents would replace control identity.
-private struct DetailActionLayout: Layout {
-    private let spacing: CGFloat = 8
+/// Wrap naturally sized controls and center each line beneath the primary action.
+struct DetailActionLayout: Layout {
+    #if os(tvOS)
+        private let spacing: CGFloat = 24
+    #elseif os(visionOS)
+        private let spacing: CGFloat = 16
+    #else
+        private let spacing: CGFloat = 8
+    #endif
+
+    private struct Line {
+        var sizes: [CGSize] = []
+        var width: CGFloat = 0
+        var height: CGFloat = 0
+    }
+
+    private func lines(width: CGFloat?, subviews: Subviews) -> [Line] {
+        var rows: [Line] = []
+        var line = Line()
+        for subview in subviews {
+            var size = subview.sizeThatFits(.unspecified)
+            if let width, size.width > width {
+                size = subview.sizeThatFits(.init(width: width, height: nil))
+            }
+            if let width, !line.sizes.isEmpty, line.width + spacing + size.width > width {
+                rows.append(line)
+                line = Line()
+            }
+            line.width += (line.sizes.isEmpty ? 0 : spacing) + size.width
+            line.height = max(line.height, size.height)
+            line.sizes.append(size)
+        }
+        if !line.sizes.isEmpty {
+            rows.append(line)
+        }
+        return rows
+    }
 
     func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache _: inout ()) -> CGSize {
-        let metrics = measurements(width: proposal.width, subviews: subviews)
-        return CGSize(width: metrics.width, height: metrics.heights.reduce(0, +) + spacing * CGFloat(max(0, metrics.heights.count - 1)))
+        let width = proposal.width.flatMap { $0.isFinite ? $0 : nil }
+        let rows = lines(width: width, subviews: subviews)
+        return CGSize(
+            width: width ?? rows.map(\.width).max() ?? 0,
+            height: rows.reduce(0) { $0 + $1.height } + spacing * CGFloat(max(0, rows.count - 1))
+        )
     }
 
     func placeSubviews(in bounds: CGRect, proposal _: ProposedViewSize, subviews: Subviews, cache _: inout ()) {
-        let metrics = measurements(width: bounds.width, subviews: subviews)
-        guard metrics.columns > 0 else { return }
-        let cellWidth = (metrics.width - spacing * CGFloat(metrics.columns - 1)) / CGFloat(metrics.columns)
+        var index = 0
         var y = bounds.minY
-        for (index, view) in subviews.enumerated() {
-            let row = index / metrics.columns
-            let column = index % metrics.columns
-            view.place(at: CGPoint(x: bounds.minX + CGFloat(column) * (cellWidth + spacing), y: y), anchor: .topLeading, proposal: ProposedViewSize(width: cellWidth, height: metrics.heights[row]))
-            if column == metrics.columns - 1 {
-                y += metrics.heights[row] + spacing
+        for line in lines(width: bounds.width, subviews: subviews) {
+            let primaryWidth = min(bounds.width, DetailActionMetrics.maximumRowWidth)
+            var x = bounds.minX + max(0, (primaryWidth - line.width) / 2)
+            for size in line.sizes {
+                subviews[index].place(at: CGPoint(x: x, y: y + (line.height - size.height) / 2), anchor: .topLeading, proposal: ProposedViewSize(size))
+                x += size.width + spacing
+                index += 1
             }
+            y += line.height + spacing
         }
-    }
-
-    private func measurements(width: CGFloat?, subviews: Subviews) -> (width: CGFloat, columns: Int, heights: [CGFloat]) {
-        guard !subviews.isEmpty else { return (0, 0, []) }
-        let idealWidth = subviews.reduce(CGFloat.zero) { $0 + $1.sizeThatFits(.unspecified).width } + spacing * CGFloat(subviews.count - 1)
-        let width = max(0, width.flatMap { $0.isFinite ? $0 : nil } ?? idealWidth)
-        let columns = idealWidth <= width ? subviews.count : min(width >= 96 ? 2 : 1, subviews.count)
-        let cellWidth = max(0, (width - spacing * CGFloat(columns - 1)) / CGFloat(columns))
-        var heights = Array(repeating: CGFloat.zero, count: (subviews.count + columns - 1) / columns)
-        for (index, view) in subviews.enumerated() {
-            heights[index / columns] = max(heights[index / columns], view.sizeThatFits(ProposedViewSize(width: cellWidth, height: nil)).height)
-        }
-        return (width, columns, heights)
     }
 }

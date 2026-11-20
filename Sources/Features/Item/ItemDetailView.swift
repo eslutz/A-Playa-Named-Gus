@@ -120,10 +120,10 @@ struct ItemDetailView: View {
                                     Button("Add to Collection", systemImage: "rectangle.stack.badge.plus") { addingToCollection = true }
                                 }
                                 if store.item.type == .book {
-                                    Button("Open in Another App", systemImage: "square.and.arrow.up") {
+                                    Button("Share", systemImage: "square.and.arrow.up") {
                                         externalBook = ItemRef(item: store.item)
                                     }
-                                    .accessibilityIdentifier("Book.openExternally")
+                                    .accessibilityIdentifier("Book.share")
                                 }
                                 Divider()
                                 Button(store.item.completionActionTitle, systemImage: markWatched ? "checkmark.circle" : "arrow.counterclockwise") {
@@ -174,9 +174,9 @@ struct ItemDetailView: View {
     private func detailContent(for store: ItemDetailStore) -> some View {
         var presentationItem = store.item
         if presentationItem.isBookFormat {
-            presentationItem.overview = BookDetailMetadata.synopsis(store.item.overview)
+            presentationItem.overview = store.item.overview?.trimmedNilIfEmpty
             if presentationItem.id == item.id {
-                presentationItem.overview = presentationItem.overview ?? BookDetailMetadata.synopsis(item.overview)
+                presentationItem.overview = presentationItem.overview ?? item.overview?.trimmedNilIfEmpty
                 if presentationItem.genres.isEmpty {
                     presentationItem.genres = item.genres
                 }
@@ -189,7 +189,6 @@ struct ItemDetailView: View {
                     CinematicDetailHero(
                         item: presentationItem,
                         bookProgress: bookDetailProgress(for: store.item),
-                        playbackItem: target,
                         primaryPlayEnabled: target.map { ContentRatingGate.admitsStored($0) } ?? false,
                         playbackHasProgress: target.map { (resumeTicks(for: $0) ?? 0) > 0 } ?? false,
                         startFromBeginning: {
@@ -315,13 +314,10 @@ struct ItemDetailView: View {
                             SeriesEpisodesView(store: seriesStore, preferredEpisode: target).id("episodes")
                         }
 
+                        DetailMetadataRows(item: presentationItem).id("metadata")
                         if store.item.type == .movie || store.item.isBookFormat, let id = store.item.id {
                             ItemCollectionMemberships(itemID: id, format: CollectionFormat(type: store.item.type)).padding(.vertical)
                         }
-                        #if !os(tvOS)
-                            DetailMetadataRows(item: presentationItem).id("metadata")
-                        #endif
-
                         #if !os(tvOS)
                             if !store.item.isBookFormat, !store.item.people.isEmpty {
                                 CastRail(people: store.item.people).id("cast")
@@ -341,7 +337,6 @@ struct ItemDetailView: View {
                             if !store.item.isBookFormat, !store.item.people.isEmpty {
                                 CastRail(people: store.item.people).id("cast")
                             }
-                            DetailMetadataRows(item: presentationItem).id("metadata")
                         #endif
 
                         if !presentationItem.isBookFormat {

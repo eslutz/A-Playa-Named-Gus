@@ -100,6 +100,7 @@ struct SeerrTitleDetailView: View {
             }
         }
         .navigationTitle(authorizedTitle?.displayTitle ?? String(localized: "Title"))
+        .toolbarTitleDisplayMode(.inline)
         .gusTVDetailTitle()
         .gusTVFocusScope()
         .task(id: accessRevision) {
@@ -158,21 +159,16 @@ struct SeerrTitleDetailView: View {
 
     private func content(_ title: SeerrTitle) -> some View {
         ScrollView {
-            GusTVMediaDetailLayout {
-                SeerrArtworkView(
-                    path: title.backdropPath,
-                    aspectRatio: title.backdropPath == nil ? 2.0 / 3.0 : 16.0 / 9.0,
-                    width: "w1280",
-                    fallbackURL: SeerrArtwork.url(path: title.posterPath, width: "w780")
-                )
-                .frame(maxHeight: 520)
-                .clipped()
-            } summary: {
-                identity(title)
-                actions(title)
-            } details: {
-                if let synopsis = title.overview?.trimmedNilIfEmpty {
-                    Text(synopsis).font(.body).fixedSize(horizontal: false, vertical: true)
+            VStack(alignment: .leading, spacing: 24) {
+                if let backdrop = SeerrArtwork.url(path: title.backdropPath, width: "w1280") {
+                    DetailBackdropHeader {
+                        AsyncPoster(url: backdrop, placeholderSymbol: "film", fallbackURLs: [SeerrArtwork.url(path: title.posterPath, width: "w780")].compactMap { $0 })
+                    } summary: { summary(title) }
+                } else {
+                    DetailCoverHeader {
+                        SeerrArtworkView(path: title.posterPath, contentMode: .fit, width: "w780")
+                            .frame(maxWidth: 240)
+                    } summary: { summary(title) }
                 }
                 if detail.mediaType == .tv, let seasons = title.seasons, !seasons.isEmpty {
                     seasonList(title, seasons: seasons)
@@ -216,6 +212,14 @@ struct SeerrTitleDetailView: View {
         .refreshable { await detail.load(store: store) }
     }
 
+    @ViewBuilder private func summary(_ title: SeerrTitle) -> some View {
+        identity(title)
+        actions(title)
+        if let synopsis = title.overview {
+            DetailSynopsis(title: title.displayTitle, overview: synopsis)
+        }
+    }
+
     private func categoryLinks(_ heading: LocalizedStringKey, items: [SeerrCategory], kind: SeerrCategoryKind) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(heading).font(.headline).accessibilityAddTraits(.isHeader)
@@ -257,10 +261,9 @@ struct SeerrTitleDetailView: View {
     private func actions(_ title: SeerrTitle) -> some View {
         VStack(alignment: .leading, spacing: 12) {
             if canOpenRequest(title) {
-                Button(detail.mediaType == .tv ? "Request Seasons" : "Request", systemImage: "plus.circle") {
+                DetailPrimaryButton(detail.mediaType == .tv ? "Request Seasons" : "Request", systemImage: "plus.circle") {
                     requestTitle = title
                 }
-                .gusTVRequestButtonStyle()
                 .accessibilityIdentifier("Seerr.request")
                 .gusTVFocus(id: "request", section: "seerr-title:" + detail.mediaType.rawValue + ":" + String(title.id), ids: ["request"], initial: true)
             }

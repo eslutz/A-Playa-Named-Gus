@@ -68,23 +68,32 @@ struct SettingsView: View {
             }
 
             Section {
-                Picker("Streaming Quality", selection: $playbackQualityRawValue) {
-                    ForEach(PlaybackQuality.allCases) { quality in
-                        Text(quality.title).tag(quality.rawValue)
+                playbackSetting(
+                    helpTitle: "About Streaming Quality",
+                    helpText: "Maximum lets compatible files play at original quality. Lower settings cap the streaming bitrate for constrained networks."
+                ) {
+                    Picker("Streaming Quality", selection: $playbackQualityRawValue) {
+                        ForEach(PlaybackQuality.allCases) { quality in
+                            Text(quality.title).tag(quality.rawValue)
+                        }
                     }
                 }
                 Toggle("Auto-Play Next Episode", isOn: $autoPlayNextEpisode)
-                Toggle("Remember Episode Tracks for This Account", isOn: $rememberPlaybackTracks)
-                    .onChange(of: rememberPlaybackTracks) { _, enabled in
-                        PlaybackTrackMemory.shared.setEnabled(enabled, scope: AccountScope(serverID: session.server.id, userID: session.user.id))
-                    }
-                    .task(id: session.user.id + session.server.id) {
-                        rememberPlaybackTracks = PlaybackTrackMemory.shared.isEnabled(scope: AccountScope(serverID: session.server.id, userID: session.user.id))
-                    }
+                playbackSetting(
+                    helpTitle: "About Remembering Episode Tracks",
+                    helpText: "Gus remembers the audio and subtitle choices you make for each series on this device and account. Other episodes use those choices when matching tracks are available. Turning this off clears your saved choices."
+                ) {
+                    Toggle("Remember Episode Tracks for This Account", isOn: $rememberPlaybackTracks)
+                        .accessibilityIdentifier("Settings.rememberEpisodeTracks")
+                        .onChange(of: rememberPlaybackTracks) { _, enabled in
+                            PlaybackTrackMemory.shared.setEnabled(enabled, scope: AccountScope(serverID: session.server.id, userID: session.user.id))
+                        }
+                        .task(id: session.user.id + session.server.id) {
+                            rememberPlaybackTracks = PlaybackTrackMemory.shared.isEnabled(scope: AccountScope(serverID: session.server.id, userID: session.user.id))
+                        }
+                }
             } header: {
                 Text("Playback")
-            } footer: {
-                Text("Maximum lets compatible files play at original quality. Lower settings cap the streaming bitrate for constrained networks.")
             }
 
             Section("iCloud Sync") {
@@ -195,6 +204,25 @@ struct SettingsView: View {
     }
 
     @ViewBuilder
+    private func playbackSetting<Control: View>(
+        helpTitle: LocalizedStringKey,
+        helpText: LocalizedStringKey,
+        @ViewBuilder control: () -> Control
+    ) -> some View {
+        #if os(tvOS)
+            // The television Form focuses each cell as one remote action.
+            control()
+            PlaybackHelpButton(title: helpTitle, message: helpText)
+        #else
+            HStack {
+                control()
+                PlaybackHelpButton(title: helpTitle, message: helpText)
+            }
+            .accessibilityElement(children: .contain)
+        #endif
+    }
+
+    @ViewBuilder
     private func storedUserRow(_ user: StoredUser, server: ServerConnection) -> some View {
         let isActiveUser = session.user.id == user.id && session.user.serverID == user.serverID
 
@@ -247,6 +275,41 @@ private extension View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         #else
             formStyle(.grouped)
+        #endif
+    }
+}
+
+private struct PlaybackHelpButton: View {
+    let title: LocalizedStringKey
+    let message: LocalizedStringKey
+    @State private var showingHelp = false
+
+    var body: some View {
+        Button { showingHelp = true } label: {
+            Label(title, systemImage: "info.circle")
+            #if os(tvOS)
+                .labelStyle(.titleAndIcon)
+            #else
+                .labelStyle(.iconOnly)
+                .frame(minWidth: 44, minHeight: 44)
+            #endif
+                .contentShape(Rectangle())
+        }
+        #if os(tvOS)
+        .alert(title, isPresented: $showingHelp) {
+            Button("OK") {}
+        } message: {
+            Text(message)
+        }
+        #else
+        .buttonStyle(.borderless)
+        .popover(isPresented: $showingHelp) {
+            Text(message)
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(idealWidth: 280, maxWidth: 340, alignment: .leading)
+                .padding()
+                .presentationCompactAdaptation(.popover)
+        }
         #endif
     }
 }

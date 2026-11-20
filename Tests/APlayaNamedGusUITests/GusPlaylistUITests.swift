@@ -188,11 +188,10 @@
             let row = revealPlaylistRow(named: name, in: app)
             XCTAssertTrue(row.exists); row.tap()
             XCTAssertTrue(app.buttons["Playlist.more"].waitForExistence(timeout: 10))
-            app.buttons["Playlist.more"].tap()
-            if app.buttons["Add to Next Up"].exists {
-                app.buttons["Add to Next Up"].tap()
-            } else {
-                app.tap()
+            let nextUp = app.buttons["Playlist.nextUp"]
+            XCTAssertTrue(nextUp.waitForExistence(timeout: 10))
+            if nextUp.label == "Add to Next Up" {
+                nextUp.tap()
             }
             app.terminate(); app.launch()
             let card = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@ AND label CONTAINS %@", "NextUp.card.playlist:", name)).firstMatch
@@ -432,11 +431,21 @@
             let controlsCapture = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
             controlsCapture.name = "design-playlist-playback-controls"; controlsCapture.lifetime = .keepAlways; add(controlsCapture)
             XCTAssertEqual(app.buttons.matching(identifier: "Playlist.addItems").count, 1)
-            XCTAssertFalse(app.buttons["Playlist.nextUp"].exists)
+            let nextUp = app.buttons["Playlist.nextUp"]
+            let restart = app.buttons["Playlist.restart"]
+            let shuffle = app.buttons["Playlist.shuffle"]
+            XCTAssertTrue(nextUp.exists)
+            XCTAssertLessThanOrEqual(app.buttons["Playlist.play"].frame.maxY, nextUp.frame.minY)
+            XCTAssertEqual(nextUp.frame.midY, shuffle.frame.midY, accuracy: 1)
+            XCTAssertEqual(restart.frame.minX - nextUp.frame.maxX, shuffle.frame.minX - restart.frame.maxX, accuracy: 1)
             let handles = app.descendants(matching: .any).matching(NSPredicate(format: "identifier BEGINSWITH %@", "Playlist.reorder."))
             XCTAssertEqual(handles.count, 0)
             let rows = app.cells.containing(NSPredicate(format: "identifier BEGINSWITH %@", "Playlist.entry."))
             XCTAssertEqual(rows.count, 2)
+            let lastRow = rows.element(boundBy: 1)
+            if lastRow.frame.maxY > app.frame.maxY - 100 {
+                app.swipeUp()
+            }
             let destination = rows.element(boundBy: 0).coordinate(withNormalizedOffset: CGVector(dx: 0.1, dy: 0.05))
             rows.element(boundBy: 1).coordinate(withNormalizedOffset: CGVector(dx: 0.1, dy: 0.5))
                 .press(forDuration: 1.5, thenDragTo: destination, withVelocity: .slow, thenHoldForDuration: 1.2)
@@ -485,6 +494,41 @@
             XCTAssertTrue(app.buttons["Playlist.more"].waitForNonExistence(timeout: 10))
             let deleted = try await nativeList(named: name, kind: "Playlist")
             XCTAssertNil(deleted)
+        }
+
+        func testPlaybackHelpExplainsEachSettingWithoutChangingIt() {
+            continueAfterFailure = false
+            let app = XCUIApplication()
+            app.launchArguments = ["--gus-skip-session-restore", "--gus-demo-server", "--gus-disable-cloud-sync", "--gus-route", "settings"]
+            for (label, explanation) in [
+                ("About Streaming Quality", "Maximum lets compatible files play at original quality."),
+                ("About Remembering Episode Tracks", "Gus remembers the audio and subtitle choices"),
+            ] {
+                app.launch()
+                defer { app.terminate() }
+                XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: 30))
+                let help = app.buttons[label]
+                for _ in 0 ..< 5 where !help.isHittable {
+                    app.swipeUp()
+                }
+                XCTAssertTrue(help.isHittable)
+                let message = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", explanation)).firstMatch
+                XCTAssertFalse(message.exists)
+                let toggle = app.switches["Settings.rememberEpisodeTracks"]
+                let originalSetting = toggle.exists ? toggle.value as? String : nil
+                help.tap()
+                XCTAssertTrue(message.waitForExistence(timeout: 5))
+                let capture = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+                capture.name = label
+                capture.lifetime = .keepAlways
+                add(capture)
+                // Dismiss using the native popover's backdrop.
+                app.coordinate(withNormalizedOffset: CGVector(dx: 0.05, dy: 0.12)).tap()
+                XCTAssertTrue(message.waitForNonExistence(timeout: 5))
+                if let originalSetting {
+                    XCTAssertEqual(toggle.value as? String, originalSetting)
+                }
+            }
         }
 
         func testItemDetailMoreMenuKeepsRestartSeparateFromWatched() async throws {

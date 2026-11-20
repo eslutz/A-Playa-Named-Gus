@@ -27,6 +27,8 @@ struct MediaListEditor: View {
     @State private var canRename = false
     @State private var canEditMetadata = false
     @State private var canEditCover = false
+    @State private var coverPermissionError: String?
+    @State private var checkingCoverPermission = false
     @State private var canRemove = false
     @State private var loaded = false
     @State private var saving = false
@@ -219,7 +221,7 @@ struct MediaListEditor: View {
             switch cover {
             case .unchanged:
                 if let playlistID, let playlist = playlists.list(id: playlistID, kind: .playlist, scope: scope) {
-                    PlaylistCoverArtwork(playlist: playlist.coverItem, entries: playlist.entries.map(\.item), maxWidth: 360)
+                    PlaylistCoverArtwork(playlist: playlist.coverItem, entries: playlist.entries.map(\.item), maxWidth: 360, contentMode: .fit)
                         .frame(width: 120)
                 } else if let collectionID, let collection = collections.collection(collectionID) {
                     let urls = collection.coverURLs(using: session.mediaProvider, limit: ContentRatingGate.storedLimit(), hideUnrated: UserDefaults.standard.bool(forKey: ContentRatingGate.hideUnratedDefaultsKey))
@@ -229,16 +231,15 @@ struct MediaListEditor: View {
                 }
             case .replace:
                 if let preview {
-                    Image(decorative: preview, scale: 1)
+                    Image(preview, scale: 1, label: Text("Selected Cover"))
                         .resizable().scaledToFit().frame(maxWidth: 120, maxHeight: 160)
-                        .accessibilityLabel("Selected Cover")
                 }
             case .remove:
                 Text("Cover will be removed on Save.").foregroundStyle(.secondary)
             }
             if canEditCover {
                 #if !os(tvOS)
-                    Button("Change Artwork", systemImage: "photo") { importing = true }
+                    Button("Change Cover", systemImage: "photo") { importing = true }
                 #endif
                 if originalCoverTag != nil, cover != .remove {
                     Button("Remove Cover", systemImage: "trash", role: .destructive) { cover = .remove; preview = nil }
@@ -246,6 +247,13 @@ struct MediaListEditor: View {
                 if cover != .unchanged {
                     Button("Undo Cover Change") { cover = .unchanged; preview = nil }
                 }
+            } else if checkingCoverPermission {
+                ProgressView("Checking artwork permission…")
+            } else if let coverPermissionError {
+                Text(coverPermissionError).foregroundStyle(.secondary)
+                Button("Retry") { Task { await checkPlaylistCoverPermission() } }
+            } else if playlistID != nil {
+                Text("Only a Jellyfin administrator can change this shared playlist cover.").foregroundStyle(.secondary)
             } else {
                 Text("Cover editing requires permission and a connection to Jellyfin.").foregroundStyle(.secondary)
             }
@@ -291,6 +299,21 @@ struct MediaListEditor: View {
         }
     }
 
+    private func checkPlaylistCoverPermission() async {
+        guard !checkingCoverPermission else { return }
+        checkingCoverPermission = true
+        defer { checkingCoverPermission = false }
+        do {
+            canEditCover = try await session.mediaProvider.canEditMediaListCover(serverList)
+            coverPermissionError = nil
+        } catch {
+            canEditCover = false
+            let failure = GusError(from: error)
+            failure.handleIfUnauthorized(session: session)
+            coverPermissionError = failure.localizedDescription
+        }
+    }
+
     private func load() async {
         guard !loaded else { return }
         error = nil
@@ -299,19 +322,19 @@ struct MediaListEditor: View {
             if playlists.list(id: id, kind: .playlist, scope: scope)?.entriesLoaded != true {
                 await playlists.refresh(id: id, kind: .playlist, session: session)
             }
-            guard let playlist = playlists.list(id: id, kind: .playlist, scope: scope), playlist.canEdit else {
+            guard let playlist = playlists.list(id: id, kind: .playlist, scope: scope) else {
                 error = String(localized: "The editable playlist could not be loaded.")
                 return
             }
-            canRename = true
-            canRemove = playlist.entriesLoaded
+            canRename = playlist.canEdit
+            canRemove = playlist.canEdit && playlist.entriesLoaded
             originalName = playlist.name
             originalOverview = playlist.overview ?? ""
             originalCoverTag = playlist.primaryImageTag
             entries = playlist.entries.map { Entry(id: $0.id.uuidString, item: $0.item) }
             // An offline playlist still exposes its locally journaled controls.
             canEditMetadata = (try? await session.mediaProvider.canEditMediaListMetadata(serverList)) == true
-            canEditCover = (try? await session.mediaProvider.canEditMediaListCover(serverList)) == true
+            await checkPlaylistCoverPermission()
         case let .collection(id):
             await collections.loadPermissions()
             await collections.loadDetail(id: id)

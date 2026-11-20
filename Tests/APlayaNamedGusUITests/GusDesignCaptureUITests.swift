@@ -369,6 +369,119 @@
             }
         }
 
+        func testGenreSearchOpensMembersAndRestoresQuery() {
+            let app = launch("search", environment: ["GUS_DEMO_URL": "http://127.0.0.1:5061"])
+            let field = app.searchFields.firstMatch
+            XCTAssertTrue(field.waitForExistence(timeout: 30))
+            field.tap()
+            field.typeText("Horror")
+            let result = app.descendants(matching: .any).matching(NSPredicate(format: "identifier BEGINSWITH %@", "Search.genre.")).firstMatch
+            XCTAssertTrue(result.waitForExistence(timeout: 20))
+            XCTAssertTrue(result.label.contains("Horror"))
+            capture("genre-horror-search-result")
+            result.tap()
+            let navigation = app.navigationBars["Horror"]
+            XCTAssertTrue(navigation.waitForExistence(timeout: 12))
+            XCTAssertFalse(app.buttons["Detail.play"].exists)
+            XCTAssertTrue(app.buttons["Library.displayMode"].exists)
+            let member = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "The Lantern House")).firstMatch
+            XCTAssertTrue(member.waitForExistence(timeout: 12))
+            capture("genre-horror")
+            navigation.buttons.element(boundBy: 0).tap()
+            XCTAssertTrue(field.waitForExistence(timeout: 8))
+            XCTAssertEqual(field.value as? String, "Horror")
+            XCTAssertTrue(result.exists)
+
+            field.tap()
+            let clear = app.buttons["Clear text"].firstMatch
+            XCTAssertTrue(clear.waitForExistence(timeout: 5))
+            clear.tap()
+            field.tap()
+            field.typeText("Midnight")
+            dismissKeyboard(app)
+
+            let movieResults = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Midnight Story "))
+            let firstMovie = movieResults.matching(NSPredicate(format: "label BEGINSWITH %@", "Midnight Story 01")).firstMatch
+            XCTAssertTrue(firstMovie.waitForExistence(timeout: 12))
+            let deepGenre = app.descendants(matching: .any)["Search.genre.47000000000000000000000000000004"].firstMatch
+            func visible(_ element: XCUIElement) -> Bool {
+                guard element.exists else { return false }
+                let frame = element.frame
+                let viewport = app.frame.insetBy(dx: 0, dy: 90)
+                return !frame.isEmpty && viewport.contains(CGPoint(x: frame.midX, y: frame.midY))
+            }
+
+            XCTAssertFalse(visible(deepGenre))
+            for _ in 0 ..< 20 where !visible(deepGenre) {
+                app.swipeUp(velocity: .slow)
+            }
+            XCTAssertTrue(visible(deepGenre))
+            XCTAssertFalse(visible(firstMovie))
+            let nearbyMovies = (43 ... 48).reversed().map { number in
+                movieResults.matching(NSPredicate(format: "label BEGINSWITH %@", "Midnight Story \(number)")).firstMatch
+            }
+            guard let anchor = nearbyMovies.first(where: visible) else {
+                XCTFail("Expected a visible movie beside the scrolled genre")
+                return
+            }
+            let anchorLabel = anchor.label
+            let originalY = anchor.frame.midY
+            deepGenre.tap()
+            let midnight = app.navigationBars["Midnight Mysteries"]
+            XCTAssertTrue(midnight.waitForExistence(timeout: 12))
+            XCTAssertTrue(app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "Night Radio")).firstMatch.waitForExistence(timeout: 8))
+            midnight.buttons.element(boundBy: 0).tap()
+
+            XCTAssertTrue(field.waitForExistence(timeout: 8))
+            XCTAssertEqual(field.value as? String, "Midnight")
+            let restored = movieResults.matching(NSPredicate(format: "label == %@", anchorLabel)).firstMatch
+            XCTAssertTrue(restored.waitForExistence(timeout: 8))
+            XCTAssertTrue(visible(restored))
+            XCTAssertFalse(visible(firstMovie))
+            XCTAssertEqual(restored.frame.midY, originalY, accuracy: 8)
+        }
+
+        func testSynopsisRespondsToWidthAndAccessibilityText() throws {
+            guard UIDevice.current.userInterfaceIdiom == .phone else { throw XCTSkip("Uses an iPhone portrait and landscape width") }
+            XCUIDevice.shared.orientation = .portrait
+            defer { XCUIDevice.shared.orientation = .portrait }
+            let fixture = ["GUS_DEMO_URL": "http://127.0.0.1:5060"]
+            let long = launch("item/46000000000000000000000000000001", environment: fixture)
+            let preview = long.staticTexts["Detail.heroOverview"]
+            let more = long.buttons["Detail.fullSynopsis"]
+            XCTAssertTrue(preview.waitForExistence(timeout: 20))
+            XCTAssertTrue(more.waitForExistence(timeout: 5))
+            let synopsis = preview.label
+            more.tap()
+            XCTAssertTrue(long.staticTexts["Synopsis.body"].waitForExistence(timeout: 5))
+            XCTAssertEqual(long.staticTexts["Synopsis.body"].label, synopsis)
+            long.buttons["Synopsis.done"].tap()
+            XCUIDevice.shared.orientation = .landscapeLeft
+            XCTAssertTrue(more.waitForNonExistence(timeout: 8))
+            XCUIDevice.shared.orientation = .portrait
+            XCTAssertTrue(more.waitForExistence(timeout: 8))
+            let shortRoute = "item/46000000000000000000000000000002"
+            let short = launch(shortRoute, environment: fixture)
+            XCTAssertTrue(short.staticTexts["Detail.heroOverview"].waitForExistence(timeout: 20))
+            XCTAssertFalse(short.buttons["Detail.fullSynopsis"].exists)
+            let enlarged = launch(shortRoute, largeText: true, environment: fixture)
+            XCTAssertTrue(enlarged.staticTexts["Detail.heroOverview"].waitForExistence(timeout: 20))
+            XCTAssertTrue(enlarged.buttons["Detail.fullSynopsis"].waitForExistence(timeout: 8))
+        }
+
+        func testArtworkDetailsInBothAppearances() throws {
+            for (type, name) in [("Movie", "movie"), ("Book", "book"), ("MusicAlbum", "album")] {
+                let item = try XCTUnwrap(media.first { $0["type"] == type })
+                let id = try XCTUnwrap(item["id"])
+                for appearance in ["light", "dark"] {
+                    let app = launch("item/" + id, appearance: appearance)
+                    let detail = app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", item["name"] ?? "")).firstMatch
+                    XCTAssertTrue(detail.waitForExistence(timeout: 25))
+                    capture(name + "-detail-" + appearance)
+                }
+            }
+        }
+
         func testSearchAndNavigation() {
             let app = launch("search")
             XCTAssertTrue(app.searchFields.firstMatch.waitForExistence(timeout: 30))
@@ -808,11 +921,11 @@
             }
         }
 
-        private func launch(_ route: String?, largeText: Bool = false, environment: [String: String] = [:]) -> XCUIApplication {
+        private func launch(_ route: String?, largeText: Bool = false, appearance: String = "light", environment: [String: String] = [:]) -> XCUIApplication {
             let app = XCUIApplication()
             app.terminate()
             app.launchEnvironment.merge(environment) { _, new in new }
-            app.launchArguments = ["--gus-skip-session-restore", "--gus-disable-cloud-sync", "-dev.ericslutz.gus.appearance", "light", "-dev.ericslutz.gus.contentRatingLimit", "off"]
+            app.launchArguments = ["--gus-skip-session-restore", "--gus-disable-cloud-sync", "-dev.ericslutz.gus.appearance", appearance, "-dev.ericslutz.gus.contentRatingLimit", "off"]
             if largeText {
                 app.launchArguments += ["-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXXL"]
             }
@@ -915,6 +1028,31 @@
 
     @MainActor
     final class GusBookDetailUITests: XCTestCase {
+        func testSharePresentsTheOriginalBookInSystemActivities() {
+            continueAfterFailure = false
+            let app = XCUIApplication()
+            app.launchEnvironment["GUS_DEMO_URL"] = ProcessInfo.processInfo.environment["GUS_BOOK_SHARE_FIXTURE_URL"] ?? "http://127.0.0.1:5058"
+            app.launchArguments = [
+                "--gus-skip-session-restore", "--gus-disable-cloud-sync", "--gus-demo-server",
+                "--gus-route", "item/42000000000000000000000000000001",
+                "-dev.ericslutz.gus.contentRatingLimit", "off",
+            ]
+            app.launch()
+            defer { app.terminate() }
+            let menu = app.buttons["Detail.actions"].firstMatch
+            XCTAssertTrue(menu.waitForExistence(timeout: 25))
+            menu.tap()
+            let share = app.buttons["Book.share"].firstMatch
+            XCTAssertEqual(share.label, "Share")
+            share.tap()
+            let filename = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS[c] %@", "Fixture original edition")).firstMatch
+            XCTAssertTrue(filename.waitForExistence(timeout: 15), app.debugDescription)
+            let attachment = XCTAttachment(screenshot: app.screenshot())
+            attachment.name = "Book native share sheet"
+            attachment.lifetime = .keepAlways
+            add(attachment)
+        }
+
         func testAudiobookSynopsisAtLargestTextSize() throws {
             continueAfterFailure = false
             let app = XCUIApplication()
@@ -981,7 +1119,7 @@
                 let menu = app.buttons["Detail.actions"].firstMatch
                 menu.tap()
                 XCTAssertTrue(app.buttons[index == 1 ? "Mark as Read" : "Mark as Finished"].firstMatch.exists)
-                XCTAssertEqual(app.buttons["Book.openExternally"].exists, index == 1)
+                XCTAssertEqual(app.buttons["Book.share"].exists, index == 1)
                 app.coordinate(withNormalizedOffset: CGVector(dx: 0.1, dy: 0.8)).tap()
 
                 let preview = app.staticTexts["Detail.heroOverview"].firstMatch
@@ -1204,7 +1342,9 @@
                 let stack = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "Fixture Saga")).firstMatch
                 XCTAssertTrue(stack.waitForExistence(timeout: 10))
                 if destination == "Books" {
+                    XCTAssertEqual(stack.value as? String, "Fixture Author · 2 books")
                     app.buttons["Library.displayMode"].tap()
+                    XCTAssertEqual(stack.value as? String, "Fixture Author · 2 books")
                     XCTAssertTrue(card.label.contains("Fixture Author"))
                     XCTAssertTrue(card.label.contains("2024"))
                     XCTAssertFalse(app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "First Volume")).firstMatch.exists)
@@ -1216,6 +1356,7 @@
                 XCTAssertTrue(memberButton.label.contains("Fixture Author"))
                 memberButton.tap()
                 XCTAssertTrue(app.staticTexts[member].firstMatch.waitForExistence(timeout: 10))
+                XCTAssertEqual(app.staticTexts["Detail.heroOverview"].firstMatch.label, "A short synopsis.")
                 XCTAssertFalse(app.buttons["Detail.fullSynopsis"].exists)
             }
         }

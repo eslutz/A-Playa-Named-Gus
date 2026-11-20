@@ -33,6 +33,8 @@ with tempfile.TemporaryDirectory(prefix="gus-cloud-project-") as directory:
         scheme.attrib.pop("LastUpgradeVersion", None)
         scheme.attrib.pop("version", None)
         for node in scheme.iter():
+            if node.tag == "BuildAction" and node.get("buildArchitectures") == "Automatic":
+                node.attrib.pop("buildArchitectures")
             for attribute in ("runPostActionsOnFailure", "onlyGenerateCoverageForSpecifiedTargets", "parallelizable"):
                 if node.get(attribute) == "NO":
                     node.attrib.pop(attribute)

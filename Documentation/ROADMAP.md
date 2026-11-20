@@ -1065,7 +1065,14 @@ Scope and API evidence: [Seerr contract](Seerr-api-contract.md). The ongoing ove
 
 ### tvOS detail presentation follow-up
 
-The app follows the selected Apple TV detail references: top-left titles over full-bleed artwork, a lower action/synopsis area retaining both action rows and More, season-led episode rails, circular cast portraits, and metadata after content rails. The tvOS Sketch snapshot follows the canonical Sketch workspace. Durable limitations and reproduction steps are in [tvOS design validation](tvos-design-validation.md); captures and detailed historical audits stay outside Git.
+The app follows the selected Apple TV detail references: titles over the lower gradient of full-bleed artwork, a lower action/synopsis area retaining both action rows and More, season-led episode rails, circular cast portraits, and metadata after content rails. The tvOS Sketch snapshot follows the canonical Sketch workspace. Durable limitations and reproduction steps are in [tvOS design validation](tvos-design-validation.md); captures and detailed historical audits stay outside Git.
+### Detail screens, book credits and genre search
+
+- [x] Use shared primary actions and fixed secondary spacing across detail pages. Preserve full-size covers and show the complete synopsis on request when text is clipped.
+- [x] Display available volume authors with Books series counts, distinguish audiobook authors from narrators, and share original ebook files through the system share sheet.
+- [x] Browse permitted movies and series from genre search results. Expose playlist artwork permissions and inline help for account track memory and streaming quality.
+- [ ] Verify native Mac visuals and physical-device accessibility and focus separately from simulator and hosted checks.
+
 ### Developer diagnostics
 
 - [~] Settings > Developer > Client Logs: bounded retained privacy-safe app events, normalized performance summaries, and user-initiated JSON export. Native sharing on iOS/iPadOS/macOS/visionOS; Apple TV sends an events-only bundle to a selected iPhone through DeviceDiscoveryUI. Explicit Watch requests return a bounded snapshot with capture/receipt timestamps for inclusion in the iPhone export. Physical-device transfer, reconnection and TestFlight acceptance remain open.

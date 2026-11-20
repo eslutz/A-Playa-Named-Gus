@@ -3,10 +3,67 @@ import CryptoKit
 import Foundation
 @testable import Gus
 import ImageIO
+import SwiftUI
 import Testing
+#if os(iOS)
+    import UIKit
+#endif
 
 @Suite("UI layout metrics")
 struct UILayoutMetricsTests {
+    #if os(iOS)
+        @MainActor
+        @Test("Detail primary actions preserve the Play button dimensions for Gus and custom accents", arguments: [false, true])
+        func primaryActionSize(customAccent: Bool) throws {
+            let actions: [(LocalizedStringKey, String)] = [
+                ("Play", "play.fill"), ("Resume", "play.fill"), ("Read", "book.fill"),
+                ("Continue Reading", "book.fill"), ("Request", "plus.circle"), ("Request Seasons", "plus.circle"),
+            ]
+            let sizes = actions.map { title, symbol in
+                let view = DetailPrimaryButton(title, systemImage: symbol) {}
+                    .environment(\.gusThemeFill, customAccent ? .mint : .accentColor)
+                    .environment(\.gusThemeForeground, customAccent ? .black : .gusProminentActionForeground)
+                return UIHostingController(rootView: view).sizeThatFits(in: CGSize(width: 390, height: 200))
+            }
+            let play = try #require(sizes.first)
+            #expect(play.width == DetailActionMetrics.maximumRowWidth)
+            #expect(play.height >= 44)
+            #expect(sizes.allSatisfy { $0 == play })
+        }
+
+        @MainActor
+        @Test("Rendered second-row gaps stay eight points wide", arguments: [2, 3, 5])
+        func secondaryActionGaps(count: Int) throws {
+            let width = 320
+            let row = DetailActionLayout {
+                ForEach(0 ..< count, id: \.self) { _ in
+                    Color.black.frame(width: 44, height: 44)
+                }
+            }
+            .frame(width: CGFloat(width))
+            .background(.white)
+            let image = try #require(ImageRenderer(content: row).cgImage)
+            let context = try #require(CGContext(
+                data: nil,
+                width: width,
+                height: 44,
+                bitsPerComponent: 8,
+                bytesPerRow: width,
+                space: CGColorSpaceCreateDeviceGray(),
+                bitmapInfo: CGImageAlphaInfo.none.rawValue
+            ))
+            context.draw(image, in: CGRect(x: 0, y: 0, width: CGFloat(width), height: 44))
+            let pixels = try #require(context.data?.assumingMemoryBound(to: UInt8.self))
+            let midline = (0 ..< width).map { pixels[22 * width + $0] < 128 }
+            let leading = (width - count * 44 - (count - 1) * 8) / 2
+            let expected = (0 ..< count).flatMap { index in
+                let x = leading + index * 52
+                return Array(x ..< x + 44)
+            }
+            #expect(midline.indices.filter { midline[$0] } == expected)
+        }
+    #endif
+
     @Test("iOS and iPadOS media rails use the shared larger card sizing")
     func iOSMediaRailSizing() {
         #if os(iOS)

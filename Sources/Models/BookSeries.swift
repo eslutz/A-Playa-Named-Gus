@@ -53,6 +53,12 @@ struct BookSeries: Identifiable {
     let name: String
     let members: [MediaItem]
 
+    /// Use volume order so the byline is stable across shelf sorts and filters.
+    var authorNames: [String] {
+        var seen = Set<String>()
+        return members.flatMap(\.bookAuthorNames).filter { seen.insert($0.lowercased()).inserted }
+    }
+
     /// A track/disc number on an audiobook identifies part of a recording.
     /// Only ebook index numbers represent volumes in the standard Jellyfin DTO.
     static func volumeOrder(_ lhs: MediaItem, _ rhs: MediaItem) -> Bool {
