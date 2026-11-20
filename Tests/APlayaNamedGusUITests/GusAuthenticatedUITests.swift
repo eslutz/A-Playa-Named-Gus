@@ -810,19 +810,7 @@ final class GusAuthenticatedUITests: XCTestCase {
             executionTimeAllowance = 360
             defer { finish() }
             let app = launch("home")
-            XCTAssertTrue(app.staticTexts["Recently Added Movies"].waitForExistence(timeout: 30))
-            let discover = app.buttons.matching(NSPredicate(format: "label == %@", "Discover"))
-            func sidebarIsInteractive() -> Bool {
-                discover.allElementsBoundByAccessibilityElement.contains { $0.hasFocus || ($0.isEnabled && $0.isHittable && !$0.frame.isEmpty) }
-            }
-            for event: XCUIRemote.Button in [.left, .menu, .left] where !sidebarIsInteractive() {
-                XCUIRemote.shared.press(event)
-                let ready = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in sidebarIsInteractive() }, object: nil)
-                _ = XCTWaiter.wait(for: [ready], timeout: 2)
-            }
-            XCTAssertTrue(sidebarIsInteractive(), app.debugDescription)
-            try focusTV(app, label: "Discover")
-            XCUIRemote.shared.press(.select)
+            try enterTVDiscoverFromHome(app)
             let search = app.buttons["Search Seerr"]
             if app.buttons["Seerr.connect"].waitForExistence(timeout: 3) {
                 try XCTSkipUnless(app.buttons["Seerr.connect"].label == "Connect to Seerr", "Requires a new or connected local fixture.")
@@ -838,6 +826,22 @@ final class GusAuthenticatedUITests: XCTestCase {
             XCTAssertTrue(app.buttons["Seerr.title.movie.950000001"].waitForExistence(timeout: 10))
             let after = try await exactFixtureMovieSearchCount()
             XCTAssertGreaterThan(after, before)
+        }
+
+        private func enterTVDiscoverFromHome(_ app: XCUIApplication) throws {
+            XCTAssertTrue(app.staticTexts["Recently Added Movies"].waitForExistence(timeout: 30))
+            let discover = app.buttons.matching(NSPredicate(format: "label == %@", "Discover"))
+            func sidebarIsInteractive() -> Bool {
+                discover.allElementsBoundByAccessibilityElement.contains { $0.hasFocus || ($0.isEnabled && $0.isHittable && !$0.frame.isEmpty) }
+            }
+            for event: XCUIRemote.Button in [.left, .menu, .left] where !sidebarIsInteractive() {
+                XCUIRemote.shared.press(event)
+                let ready = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in sidebarIsInteractive() }, object: nil)
+                _ = XCTWaiter.wait(for: [ready], timeout: 2)
+            }
+            XCTAssertTrue(sidebarIsInteractive(), app.debugDescription)
+            try focusTV(app, label: "Discover")
+            XCUIRemote.shared.press(.select)
         }
 
         private func exactFixtureMovieSearchCount() async throws -> Int {
@@ -867,8 +871,11 @@ final class GusAuthenticatedUITests: XCTestCase {
             defer { finish() }
             let query = "Unmatched fixture query"
             let app = openTVLibrarySearch()
-            app.typeText(query + "\n")
+            app.typeText(query)
             XCTAssertTrue(app.staticTexts["No Results"].waitForExistence(timeout: 15))
+            // Leaving the loaded search records the exact query in the demo account's history.
+            try app.open(XCTUnwrap(URL(string: "gus://home")))
+            XCTAssertTrue(app.staticTexts["Recently Added Movies"].waitForExistence(timeout: 20))
             app.terminate()
             let again = openTVLibrarySearch()
             try completeTVSearch(again, prefix: String(query.dropLast(2)), title: query)
