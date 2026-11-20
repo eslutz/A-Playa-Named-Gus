@@ -100,7 +100,7 @@ struct DiscoverBrowseView: View {
                 SearchDraftSuggestions(values: suggestions, select: edit)
             }
         }
-        .gusSeerrSearch(text: Binding(get: { query }, set: edit), isPresented: $searchPresented, isFocused: $searchFocused, enabledOnTV: searchOnly, suggestions: session.intelligenceAccess.usesNaturalSearch ? [] : suggestions, suggestionsInResults: !naturalMode)
+        .gusSeerrSearch(text: Binding(get: { query }, set: { edit($0) }), isPresented: $searchPresented, isFocused: $searchFocused, enabledOnTV: searchOnly, suggestions: session.intelligenceAccess.usesNaturalSearch ? [] : suggestions, suggestionsInResults: !naturalMode)
         .onChange(of: session.intelligenceAccess.usesNaturalSearch) { _, _ in
             naturalSubmission = nil
             draftMode = normalizedQuery.isEmpty ? .natural : .keywordUntilSubmit

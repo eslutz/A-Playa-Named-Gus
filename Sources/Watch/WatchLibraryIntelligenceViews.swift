@@ -74,7 +74,7 @@ struct WatchLibrarySearchView: View {
             }
         }
         .navigationTitle("Search Library")
-        .searchable(text: Binding(get: { natural.text }, set: edit), prompt: "Search Library")
+        .searchable(text: Binding(get: { natural.text }, set: { edit($0) }), prompt: "Search Library")
         .searchSuggestions {
             if !prefersNatural {
                 suggestionButtons
