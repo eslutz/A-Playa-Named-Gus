@@ -1,7 +1,6 @@
 # Signing and Capabilities
 
-**Current policy (October 12):** protected main requires PRs and all GitHub checks. The saved main-only Cloud release tests iPhone/iPad/Duo, Mac, TV and Vision before internal distribution. Native Icon Composer source is restored and Cloud Build 8 passed without issues; CI run 38242041231 retained one iPad native audio completion failure. Tester availability remains unconfirmed until the new gates pass. [Pipeline policy](pipeline-policy.md), [release status](internal-testflight-release.md).
-
+See [pipeline policy](pipeline-policy.md) for current PR, qualification, and authorized distribution gates. This page describes signing inputs and capabilities, not current release status.
 
 ## Current State
 
@@ -13,36 +12,10 @@ declarations cover the currently wired release surface; CarPlay audio remains pe
 manual Apple grant and is intentionally not advertised in App Store metadata until it is
 granted and wired.
 
-The current Cloud toolchain is **Xcode 27.1 RC (`27A9275`)**; GitHub uses the hosted
-27.1 toolchain and rejects an iOS simulator SDK below 27.1. Duo arrangement APIs
-require that SDK even though runtime use is availability-guarded. Deployment targets
-remain `iOS 18`, `tvOS 18`, `visionOS 2`, `macOS 15`, and `watchOS 11`. Newer features
-use availability checks or fail closed when the required framework/entitlement is
-absent. Exact minimum-OS execution remains a separate acceptance gate.
-
-Local device builds use the git-ignored `Config/Local.xcconfig` override to switch to
-automatic signing. Distributable build signing, provisioning, TestFlight upload, and
-App Store archives belong in Xcode Cloud, not GitHub Actions.
-
-Cloud Build 6 accepted all four required BUILD actions with zero issues after the
-six iOS/one Mac compiler warnings were repaired. Runtime code passed required CI
-`38230709289` **13/13**. The separate `Gus Internal TestFlight` workflow has four
-required internal-only Release ARCHIVE actions and four group post-actions; the
-existing account is its one selected tester.
-
-Build 7 produced signed App Store exports. iOS main/Watch and tvOS main/Top Shelf
-versions, signatures and matching distribution profiles were verified. The Mac
-signed app/package passed inspection with its sandbox and approved inbound/outbound
-network entitlements, and required category/copyright metadata is present. Mac,
-tvOS and visionOS uploads processed as VALID/READY_FOR_BETA_TESTING. iOS failed
-later App Store preparation; independent Apple validation identified default
-iOS/Watch icon alpha channels as the concrete rejection. All post-actions were
-skipped; the group still had zero builds and tester state NOT_INVITED.
-
-Opaque default-icon repair `64b9de6` and its semantic artwork assertion correction
-`f354c7a` are published. Corrected CI `38237504737`, the signed retry and group
-availability remain pending. [Signing proof and release status](internal-testflight-release.md),
-[icon diagnosis](icon-upload-repair.md), [warning repair](build-warning-repairs.md).
+Use the toolchain and deployment targets in project configuration; review the
+currently selected Cloud toolchain before an authorized archive. Local simulator
+builds do not qualify distribution signing. Local device signing, when separately
+authorized, uses the Git-ignored `Config/Local.xcconfig` override.
 
 ## Capabilities — Declared Implementation
 
@@ -75,7 +48,7 @@ capability.
 
 **Universal Links / Shared with You:** Gus claims `applinks:gus.ericslutz.dev` and
 supports `/item/<id>` and `/play/<id>`. The required associated-domains file is documented
-in `Documentation/AppStore/universal-links.md` and
+in `Documentation/universal-links.md` and
 `Documentation/AppStore/apple-app-site-association.json`.
 
 **Removed:** `NSFaceIDUsageDescription` was present but `LocalAuthentication` is never
@@ -163,15 +136,11 @@ Xcode Cloud signs/provisions it as part of the iOS app; confirm the watch app an
 provisioning are included when the iOS archive is validated. Scope:
 `Documentation/watchos-brief.md`.
 
-Build 4's App Store export failed because Cloud could not auto-register
-`dev.ericslutz.gus.watchkitapp` or find its matching App Store provisioning profile.
-The exact identifier is now registered through Apple's Developer UI as `Gus Watch`,
-resource `X7N8FKWCC6`, platform `UNIVERSAL`, Team `QS3GC3CT43`. The API snapshot
-returns only the default `IN_APP_PURCHASE` capability; no extra Watch entitlement
-or in-app purchase implementation was added. Build 7 now verifies matching App Store profile generation, signed export, and
-embedded Watch signatures/version. iOS upload still awaits the repaired default
-icons; profile/export acceptance does not establish tester installation. Registration proof,
-confirmed failure.
+When a Watch profile is missing, verify the exact embedded bundle identifier is
+registered to the same team, and confirm the generated profile, signature and
+version in the signed iOS export. Registration alone does not qualify a build.
+If preparation rejects the default icon alpha channel, see the
+[icon guide](icon-composer-source.md#diagnose-default-png-upload-rejections).
 
 ## Setting Your Team ID (Local Override)
 
@@ -190,20 +159,14 @@ not a signing secret. To build locally for a device:
 
 ## CI Signing Ownership
 
-GitHub Actions builds and tests simulator/ad-hoc macOS outputs to protect the codebase.
-It should not hold Apple Distribution certificates or provisioning profiles for Gus.
+For hosted jobs and release ownership, see the [pipeline policy](pipeline-policy.md).
 
-Xcode Cloud is the distribution signing/provisioning owner for iOS/iPadOS, tvOS,
-visionOS, and macOS archives and TestFlight uploads. The existing validation workflow
-is build-only; the separate internal archive/distribution workflow is configured,
-with corrected-run acceptance pending. Native
-UI/device acceptance and public release validation remain separate work.
 `ci_scripts/ci_post_clone.sh` accepts
 only the verified Cloud account UUID or legacy Developer Team ID and always writes
 signing Team ID `QS3GC3CT43` into a temporary automatic-signing `Config/Local.xcconfig`.
 The account UUID never becomes a signing Team ID. It requires the committed shared Xcode project and
 `Package.resolved`. Generate the project locally from `project.yml`; Cloud does not
-regenerate it. See [API preparation](api-access.md).
+regenerate it. See [API preparation](app-store-connect.md#api-access-and-cloud-workflow-discovery).
 
 ## Remaining Distribution and Submission Steps
 
@@ -212,22 +175,15 @@ regenerate it. See [API preparation](api-access.md).
   internal beta.
 - **Declared Age Range device verification** — verify on an OS 26 device that the system
   sheet presents and maps back to Gus's content limit.
-- Complete a corrected run of the configured manual internal-only archive/distribution
-  workflow. Keep the successful BUILD-validation workflow intact.
-  Watch ships inside the iOS archive and Top Shelf inside the tvOS archive; they do
-  not require separate store records/distribution workflows.
+- Verify the Watch and Top Shelf components within the iOS and tvOS archives.
+  They do not require separate store records or distribution workflows.
 - Let Xcode Cloud manage App Store provisioning profiles for the main app, registered
   Watch companion, and tvOS Top Shelf extension; verify the resulting signed products.
 - Review per-platform capabilities in Xcode Signing & Capabilities and App Store Connect
   for any provisioning-profile additions (e.g. Push Notifications if added later).
-- Archive and validate Release builds for iOS/iPadOS, tvOS, visionOS, and macOS in
-  Xcode Cloud.
 - Confirm macOS App Sandbox entitlements pass the archive-validation step (no unexpected
   file/network access).
-- Confirm each uploaded build is processed/eligible for internal testing and assigned
-  to `Gus Internal`, whose existing-account membership is already verified. Account
-  membership, build access, and actual
-  TestFlight installation are distinct results.
+- Use the [pipeline policy](pipeline-policy.md) for archive and TestFlight acceptance.
 
 ## Playlist and Next Up iCloud synchronization
 
@@ -235,10 +191,7 @@ The unified Next Up branch adds supplemental CloudKit private-database synchroni
 through `iCloud.dev.ericslutz.gus`. Jellyfin owns playlist and Collection/BoxSet names,
 IDs, membership, playlist order and permissions. Native list definitions and queued
 server edits stay with Jellyfin and the account-scoped device cache; CloudKit carries
-Gus resume cursors, saved Next Up intent and activity. Legacy Gus-owned playlist records
-remain preserved for explicit import into Jellyfin; they are not silently migrated.
-Legacy lists with repeated media items cannot be imported until duplicates are
-explicitly removed, because Jellyfin 10.11.11 deduplicates native playlist membership.
+Gus resume cursors, saved Next Up intent and activity.
 
 All four main-app platform entitlement files declare CloudKit, silent remote
 notifications and that container; `project.yml` explicitly links the system framework.

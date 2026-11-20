@@ -43,11 +43,16 @@ Historical Cloud results do not establish current release or tester access.
 Release qualification requires exact-candidate local simulator evidence, current
 PR checks, and authorized native archive/signing/distribution gates. Old Cloud
 workflows containing simulator actions must not be started.
-[Release report](Documentation/AppStore/internal-testflight-release.md).
+[Release policy](Documentation/AppStore/pipeline-policy.md).
 
 ## Designs
 
-The [iPhone design](Design/Gus-iPhone.sketch), [iPadOS design](Design/Gus-iPadOS.sketch), and [shared library](Design/Gus-Shared-Library.sketch) each contain their Light and Dark content in one editable document. See [design organization and appearance coverage](Design/README.md). Historical design material is retained in the local, Git-ignored `Design/Archive/`. Design coverage does not establish runtime acceptance.
+The [iPhone design](Design/Gus-iPhone.sketch), [iPadOS design](Design/Gus-iPadOS.sketch), and [shared library](Design/Gus-Shared-Library.sketch) each contain their Light and Dark content in one editable document. See [design organization and appearance coverage](Design/README.md). Design coverage does not establish runtime acceptance.
+
+## Documentation
+
+Start with the [Gus documentation index](Documentation/README.md) for design,
+engineering, local validation, and release guides.
 
 ## Contributing
 

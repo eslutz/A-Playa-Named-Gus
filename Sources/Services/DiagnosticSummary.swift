@@ -5,7 +5,7 @@ import OSLog
 ///
 /// Only aggregate numbers survive normalization — no identifiers, URLs, or stack traces.
 /// Summaries are what the recurring diagnostics review in
-/// `Documentation/AppStore/diagnostics-reliability.md` reads between releases.
+/// `Documentation/diagnostics-reliability.md` reads between releases.
 struct DiagnosticSummary: Codable, Equatable {
     enum Kind: String, Codable {
         case metrics

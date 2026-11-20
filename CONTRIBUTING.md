@@ -11,3 +11,21 @@ this requirement remains project policy. Simulator builds and tests run locally,
 while native macOS build/unit checks remain hosted. Local simulator qualification,
 authorized native archives, and actual TestFlight availability are separate gates.
 [Gate details](Documentation/AppStore/pipeline-policy.md).
+
+## Development references
+
+- Keep the root [AGENTS.md](AGENTS.md) for guidance that applies to most tasks
+  or prevents costly mistakes. Put task-specific instructions and reference
+  details in the relevant docs and link to them instead.
+- The [engineering guide](Documentation/engineering-guide.md) maps the source,
+  platform boundaries, and design decisions.
+- The [local validation runbook](Documentation/local-validation.md) has XcodeGen,
+  build/test, demo, and screenshot commands.
+- Track actionable work and scope changes in [GitHub issues](https://github.com/eslutz/A-Playa-Named-Gus/issues).
+  Update the wiki when behavior or user guidance changes, and the website when
+  public feature claims, screenshots, support, privacy, accessibility, age
+  suitability, or brand assets change. Keep those updates with the app change.
+  The wiki is the primary home for long-form user-facing documentation.
+- Use [Swiftfin](https://github.com/eslutz/Swiftfin) only as a reference for patterns
+  and Jellyfin SDK call shapes. Never copy code; implement Gus changes using its
+  own Apple-first stack.

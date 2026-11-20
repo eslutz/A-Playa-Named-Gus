@@ -1,8 +1,10 @@
-# App Review Compliance Audit
+# App Review and disclosures
+
+## Review and source compliance
 
 Status: **source/configuration self-audit; release acceptance pending.**
 The current findings, runtime evidence and manual/device gates are recorded in
-[the October 10 release audit](../Reviews/README.md).
+[product QA and acceptance](../Reviews/README.md).
 This document does not establish Apple approval or full runtime coverage.
 
 This document walks the [App Review Guidelines](https://developer.apple.com/app-store/review/guidelines/)
@@ -17,7 +19,7 @@ backend, hosts no content, and collects no data.*
 
 ---
 
-## 1. Safety
+### 1. Safety
 
 - **1.1 Objectionable content** — A Playa Named Gus ships no content. Everything shown
   comes from a media server the user installs, owns, and authenticates to. The app is a
@@ -36,13 +38,13 @@ backend, hosts no content, and collects no data.*
 - **1.4 Physical harm** — N/A (media playback only).
 - **1.5 Developer information** — The support URL (`https://gus.ericslutz.dev/support`)
   and contact information ship with the App Store Connect record
-  (`Documentation/AppStore/review-support-pages.md`).
+  (`Documentation/AppStore/submission-metadata.md`).
 - **1.6 Data security** — Credentials go only to the user's own server. Tokens are stored
   with the Security framework (data-protection Keychain on every platform, including
   macOS). ATS is scoped, not disabled (see Configuration audit). There is no developer
   backend to breach.
 
-## 2. Performance
+### 2. Performance
 
 - **2.1 App completeness** — The local demo supports selected authentication, library,
   playback and book journeys. Full feature acceptance still requires the device,
@@ -50,7 +52,7 @@ backend, hosts no content, and collects no data.*
   the reviewer demo server is reachable before submission.
 - **2.2 Beta testing** — Beta builds stay on TestFlight; the App Store build is final.
 - **2.3 Accurate metadata** — Screenshots are captured from the rights-cleared,
-  public-domain/CC0 demo library (`Documentation/AppStore/demo-server.md`), so store
+  public-domain/CC0 demo library (`Documentation/demo-server.md`), so store
   imagery never shows copyrighted third-party media. The description identifies the app
   as a third-party client that **requires a user-provided Jellyfin server** and is not
   affiliated with the Jellyfin project.
@@ -74,7 +76,7 @@ backend, hosts no content, and collects no data.*
     a general-purpose browser). There is no web browsing surface.
   - **2.5.13 / health & sensitive frameworks** — None used.
 
-## 3. Business
+### 3. Business
 
 - **3.1 Payments** — The app is free, with **no IAP, no subscriptions, no ads, and no
   monetization of any kind**. It unlocks nothing: Jellyfin is free open-source software
@@ -83,7 +85,7 @@ backend, hosts no content, and collects no data.*
 - **3.2 Other business model issues** — The app does not require any paid third-party
   service: a Jellyfin server is free to operate. No artificial gating exists.
 
-## 4. Design
+### 4. Design
 
 - **4.1 Copycats** — Original name, original Gus brand mark icon, original
   code. The mature Swiftfin client is a *pattern* reference only (documented policy in
@@ -107,16 +109,16 @@ backend, hosts no content, and collects no data.*
   Jellyfin project*. The app name is an original phrase; no third-party characters,
   artwork, or media appear in the app or its metadata.
 
-## 5. Legal
+### 5. Legal
 
 - **5.1.1 Privacy — data collection and storage** — The developer collects **nothing**.
   `Resources/PrivacyInfo.xcprivacy` declares `NSPrivacyTracking = false`, an empty
   `NSPrivacyCollectedDataTypes`, and exactly the two required-reason APIs in use
   (Disk Space `E174.1`, UserDefaults `CA92.1`) — call-site audit in
-  `Documentation/AppStore/privacy-labels.md`. Server credentials, tokens, playback
+  `Documentation/AppStore/review-and-disclosures.md`. Server credentials, tokens, playback
   state, and downloads stay on-device or travel only to the user's chosen server.
   Diagnostics are Apple-native (MetricKit + on-device aggregate summaries, no
-  identifiers, no third-party SDK — `Documentation/AppStore/diagnostics-reliability.md`).
+  identifiers, no third-party SDK — `Documentation/diagnostics-reliability.md`).
 - **5.1.2 Data use and sharing** — Nothing is shared with anyone, including the
   developer. No tracking, no ads, no fingerprinting; the required-reason declarations
   cover the only restricted APIs.
@@ -132,9 +134,9 @@ backend, hosts no content, and collects no data.*
 
 ---
 
-## Configuration audit
+### Configuration audit
 
-### ATS / self-hosted HTTP
+#### ATS / self-hosted HTTP
 
 ATS is scoped, not disabled: `Info.plist` sets `NSAllowsArbitraryLoads = false` with
 `NSAllowsLocalNetworking = true`. Self-hosted Jellyfin servers on a private LAN (the
@@ -148,32 +150,32 @@ AVPlayer/HLS fetches cannot carry auth headers — the standard Jellyfin-client 
 Those URLs are treated as sensitive: they are never logged (OSLog statements log item
 ids only).
 
-### Encryption / export compliance
+#### Encryption / export compliance
 
 `ITSAppUsesNonExemptEncryption = false`. Only Apple TLS (URLSession) and Keychain
 storage are used; no custom cryptography is implemented.
 
-### Local network
+#### Local network
 
 `NSLocalNetworkUsageDescription` is present. Local network access is user-initiated
 (the Find Local Servers button triggers a UDP broadcast on port 7359 via the
 `jellyfin-sdk-swift` discovery API). Manual URL entry remains primary. `NSBonjourServices`
 is not declared because discovery uses UDP broadcast, not Bonjour/mDNS.
 
-### Background audio
+#### Background audio
 
 `UIBackgroundModes = [audio]` enables playback continuation, Now Playing/transport
 integration, and PiP. Background downloads use `URLSessionConfiguration.background`,
 which needs no background mode.
 
-### Locally downloaded media
+#### Locally downloaded media
 
 Offline downloads (iOS/iPadOS/macOS/visionOS; audio-only on watchOS; excluded on tvOS)
 come exclusively from the authenticated user's server, respect the server's
 `canDownload` permission, land in per-server/user Application Support folders, and are
 excluded from iCloud backup. Nothing is shared outward. ADR 0005 records the design.
 
-### Capabilities & entitlements
+#### Capabilities & entitlements
 
 | Capability | Status |
 |---|---|
@@ -190,7 +192,7 @@ excluded from iCloud backup. Nothing is shared outward. ADR 0005 records the des
 
 ---
 
-## Draft: Notes for Review (App Store Connect)
+### Draft: Notes for Review (App Store Connect)
 
 > A Playa Named Gus is a native client for Jellyfin, a free open-source media server
 > that users install on their own hardware. The app ships no content and operates no
@@ -213,7 +215,7 @@ excluded from iCloud backup. Nothing is shared outward. ADR 0005 records the des
 >
 > No purchases, subscriptions, ads, analytics, or data collection of any kind.
 
-## Draft: age rating questionnaire
+### Draft: age rating questionnaire
 
 App-supplied content is the user's own library, so the questionnaire is answered for
 *the app itself*:
@@ -237,9 +239,9 @@ own server library and includes parental content-restriction controls.
 
 ---
 
-## Open items (account-blocked — not review blockers)
+### Open items (account-blocked — not review blockers)
 
-- Complete App Privacy answers in App Store Connect (source: `privacy-labels.md`).
+- Complete App Privacy answers in App Store Connect (source: `review-and-disclosures.md`).
 - Add the privacy policy URL (all platforms) and the tvOS privacy policy text field.
 - Publish and verify the public support/privacy/accessibility/age pages at
   `gus.ericslutz.dev`, then replace the placeholder demo-server host in the review notes
@@ -248,7 +250,7 @@ own server library and includes parental content-restriction controls.
 - Upload screenshots and submit to TestFlight before final submission.
 - Request the CarPlay audio entitlement.
 
-### Operational blockers requiring external action
+#### Operational blockers requiring external action
 
 The following items cannot be resolved by code changes. Each needs a specific out-of-repo
 action before first submission.
@@ -262,13 +264,13 @@ file once the hosted instance is confirmed.
 
 **BUILD-3 — Publish website pages at `gus.ericslutz.dev`**
 Action required: the support, privacy policy, accessibility, and age-suitability pages
-referenced throughout this audit (`review-support-pages.md`) live in the sibling
+referenced throughout this audit (`submission-metadata.md`) live in the sibling
 `../Gus.website` repo and must be deployed before submission. App Store Connect requires
 a reachable support URL and a reachable privacy policy URL; App Review will visit both.
 Confirm each page loads over HTTPS and matches current app behavior before submitting.
 Changes to the app that affect privacy disclosures, supported features, or accessibility
 claims must be reflected in the website as part of the same unit of work (per the wiki
-and website sync policy in `CLAUDE.md`).
+and website sync policy in `AGENTS.md`).
 
 **BUILD-4 — Create Xcode Cloud workflow in App Store Connect**
 Action required: sign in to App Store Connect → Xcode Cloud, connect the repository, and
@@ -276,5 +278,88 @@ configure a workflow for the `dev.ericslutz.gus` bundle ID. The workflow must bu
 main app target plus the `GusTopShelf` tvOS extension and the `GusWatch` watchOS target,
 manage provisioning profiles for all three, and produce signed archives for iOS/iPadOS,
 tvOS, visionOS, and macOS. Until this exists, no TestFlight build or App Store submission
-is possible. See `Documentation/AppStore/ci-strategy.md` and the CI Signing Ownership
+is possible. See `Documentation/AppStore/pipeline-policy.md` and the CI Signing Ownership
 section of `signing-capabilities.md` for the intended Xcode Cloud scope.
+
+## App Store privacy answers
+
+Reference: [Apple privacy manifest documentation](https://developer.apple.com/documentation/bundleresources/privacy-manifest-files)
+and [App Store privacy answers](https://developer.apple.com/help/app-store-connect/manage-app-information/manage-app-privacy).
+
+A Playa Named Gus does not collect data for the developer and does not track users. The app
+communicates with user-provided Jellyfin servers; the server operator's own privacy
+practices are outside the scope of this document.
+
+Apple's App Store Connect privacy flow requires these answers to be accurate and updated if
+data practices change. The declarations below mirror `Resources/PrivacyInfo.xcprivacy`
+exactly — update both together.
+
+### Tracking
+
+- **Tracking:** No.
+- **Third-party advertising or data broker sharing:** No.
+- **Analytics SDKs:** None.
+
+### Data Collected by Developer
+
+**Data linked to user:** None.
+**Data not linked to user:** None.
+
+Jellyfin usernames, server URLs, tokens, media metadata, playback progress, and downloaded
+media remain on-device or are sent to the user-selected Jellyfin server. Nothing is routed
+through an A Playa Named Gus developer backend.
+
+### Privacy Manifest (PrivacyInfo.xcprivacy)
+
+`Resources/PrivacyInfo.xcprivacy` is bundled with the app. Declarations:
+
+| Field | Value |
+|---|---|
+| NSPrivacyTracking | false |
+| NSPrivacyTrackingDomains | (empty) |
+| NSPrivacyCollectedDataTypes | (empty) |
+
+#### Required-reason APIs declared
+
+| Category | Reason | Call site |
+|---|---|---|
+| NSPrivacyAccessedAPICategoryDiskSpace | E174.1 | `OfflineDownloadStore.ensureDiskBudget` checks available volume capacity (`volumeAvailableCapacityForImportantUsage`, or `volumeAvailableCapacity` on watchOS) before starting a download |
+| NSPrivacyAccessedAPICategoryUserDefaults | CA92.1 | `AppModel` (last-signed-in user ID), `DeviceIdentity` (stable device UUID), and `@AppStorage`/`@SceneStorage` preferences (sidebar selection, appearance, content limit, navigation order) — app-own keys only |
+
+`Resources/PrivacyInfo.xcprivacy` is bundled into the main app target **and** the
+`GusWatch` companion target, both of which exercise these required-reason APIs.
+
+#### Required-reason APIs not declared (not used)
+
+File timestamp APIs, System boot time APIs, Active keyboard APIs — none are called in A
+Playa Named Gus source code.
+
+### Device Permissions / Usage Descriptions
+
+| Key | Reason |
+|---|---|
+| NSLocalNetworkUsageDescription | User-initiated Jellyfin server discovery over local-network UDP broadcast. Manual URL entry remains primary. |
+| UIBackgroundModes: audio | Media playback continuation, Now Playing, and system transport controls via AVKit. |
+
+### Diagnostics
+
+The Diagnostics & Reliability implementation does not change the answers above:
+
+- MetricKit payloads are delivered on-device; `MetricKitCollector` normalizes them into
+  aggregate summaries stored only in the app's Application Support directory. Nothing is
+  transmitted to the developer.
+- `DiagnosticsHub` lifecycle markers carry only numeric/boolean values by construction
+  and are retained in a bounded local buffer/file, also recorded in the unified log.
+- User-requested sanitized exports and Apple-native companion transfers do not send
+  data to the developer automatically. The user selects any subsequent share recipient;
+  incoming companion snapshots are validated and replace the prior snapshot.
+- Crash and metrics data in Xcode Organizer / App Store Connect comes from Apple's own
+  opt-in "Share With App Developers" mechanism, which Apple discloses to the user; the
+  app itself still collects nothing.
+- No new required-reason APIs were introduced; `PrivacyInfo.xcprivacy` content is
+  unchanged (it is now also bundled into the watch target, which uses the same APIs).
+
+### Remaining Submission Steps
+- Add the privacy policy URL for iOS, iPadOS, macOS, and visionOS in App Store Connect.
+- Add tvOS privacy policy text in the Apple TV Privacy Policy field.
+- Complete App Privacy answers in App Store Connect, using this document as the source.

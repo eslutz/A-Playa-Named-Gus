@@ -5,7 +5,7 @@ import AppKit
 
 let root = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
 let assets = root.appendingPathComponent("Resources/Assets.xcassets")
-let review = root.appendingPathComponent("Documentation/AppStore/platform-icon-review")
+let review = root.appendingPathComponent("Documentation/Reviews/platform-icon-review")
 try FileManager.default.createDirectory(at: review, withIntermediateDirectories: true)
 func source(_ name: String) throws -> NSImage {
     let url = root.appendingPathComponent("Resources/AppIcon.icon/Assets/\(name).svg")

@@ -1,6 +1,6 @@
 # iPad client and service boundaries
 
-The iPad redesign uses the existing media-provider sessions, Seerr client, session navigation and playback coordinators. It introduces no new server service or runtime dependency. The external comparison report owns the scenario checklist and runtime evidence; this document records durable implementation boundaries.
+iPad uses the shared media-provider sessions, Seerr client, navigation state, and playback coordinators. No iPad-specific backend is required. Keep scenario results and runtime evidence outside the repository.
 
 ## Presentation and state ownership
 
@@ -10,11 +10,11 @@ The iPad redesign uses the existing media-provider sessions, Seerr client, sessi
 - Request creation, profile editing, chapter selection and queue selection remain focused sheets. From a confirmed iPad request, View My Requests leaves the task sheet and pushes history in the main content stack.
 - Common toolbar actions use SF Symbols with semantic labels. Save, Cancel, destructive choices and recovery actions retain explicit text. Native volume/output controls retain system behavior; simulator output limitations do not justify a simulated volume slider.
 - The profile sheet is hosted above adaptive container replacement so its draft survives layout changes. Saves expose native progress; failed saves keep the editor draft. A requested reload confirms before replacing changed fields. Reader opening failures expose retry without resetting a successfully opened publication.
-- Jellyfin Connect and Sign In use the shared onboarding identity and fields, arranged in two columns on wide iPad windows and stacked in narrow windows or accessibility text sizes. Seerr setup uses the designed centered introduction and filled fields on iPad; native action labels avoid adding a second large vertical inset. The approved iPhone onboarding and other-platform forms retain their existing presentation.
+- Jellyfin Connect and Sign In use the shared onboarding identity and fields, arranged in two columns on wide iPad windows and stacked in narrow windows or accessibility text sizes. Seerr setup uses the designed centered introduction and filled fields on iPad; native action labels avoid adding a second large vertical inset. The compact iPhone onboarding and other-platform forms retain their existing presentation.
 
 ## Comparison workflow
 
-Keep all evidence outside the repository. After the single final scenario pass, export result-bundle attachments with `xcrun xcresulttool export attachments`. Run `Scripts/update-ipad-comparison.py --report-root <external-review-root> --attachments <export-directory> ...` to append implementation images. The tool requires all indexed scenarios by default, keeps original before/Sketch files intact, and records screenshot hashes, dimensions, test identifiers and simulator provenance. Use `--dry-run` to inspect coverage; `--allow-partial` is only for an explicitly incomplete report.
+Keep all evidence outside the repository. After a candidate comparison run, export result-bundle attachments with `xcrun xcresulttool export attachments`. Run `Scripts/update-ipad-comparison.py --report-root <external-review-root> --attachments <export-directory> ...` to append implementation images. The tool requires all indexed scenarios by default, keeps original before/Sketch files intact, and records screenshot hashes, dimensions, test identifiers and simulator provenance. Use `--dry-run` to inspect coverage; `--allow-partial` is only for an explicitly incomplete report.
 
 Captures are not behavioral acceptance. The external implementation checklist separately records focused interaction tests, supporting-state coverage, visual review, platform builds and remaining physical/minimum-OS checks. Fixture titles and colors may differ from synthetic Sketch examples; presentation and behavior are the acceptance targets.
 

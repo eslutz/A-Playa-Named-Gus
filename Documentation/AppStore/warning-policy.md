@@ -1,17 +1,6 @@
 # Warning-free build and release policy
 
-Requested October 13, 2026. A build with any warning or error is not accepted,
-even when Xcode or Xcode Cloud reports success.
-
-## Temporary owner-approved exception — October 15, 2026
-
-The owner waived only `xcodebuild: WARNING: Using the first of multiple matching destinations`
-in Xcode Cloud's macOS and visionOS `test-without-building` commands. Build 24 (`6fd4a86`)
-had exactly these two warnings across 18 raw log bundles, zero Intel compile/link actions,
-and all 12 actions succeeded. This is acceptance with a narrow exception, not a warning-free
-build. Retain raw-log review; compiler, linker, dependency, asset, other destination, and
-all other build-tool warnings still block acceptance. Do not change the diagnostic scanner
-to suppress these warnings.
+Reject warnings and errors even when the build tool exits successfully.
 
 ## Required checks
 
@@ -28,50 +17,15 @@ to suppress these warnings.
 - GitHub package resolution, build and test commands stream through
   `Scripts/run-warning-free.py`, which applies the same diagnostic gate and
   preserves the command's failure status.
-- Required GitHub checks must pass on the fix commit. After its reviewed merge,
-  Xcode Cloud must report zero warnings and errors in every test and archive
-  action for iOS, macOS, tvOS and visionOS, including embedded Watch and Top Shelf.
-  Successful signed export and TestFlight processing remain separate gates.
-
-## Build 16 findings
-
-Build 16 succeeded but had 16 warning occurrences across its eight build/test
-jobs. The occurrences reduce to three distinct diagnostics:
-
-1. `HomeView.swift`: the closure passed to `Optional.map` in a `guard` was
-   ambiguous with the guard body. Parenthesize the closure argument.
-2. `LibraryStoreTests.swift`: the test URL protocol declared an unchecked
-   conformance despite Foundation marking its inherited Sendable conformance
-   unavailable. Remove that conformance from the Foundation subclass.
-3. The same test captured the nonsendable protocol in an asynchronous Sendable
-   task. Keep the protocol at the Foundation boundary and serialize delayed
-   response delivery/cancellation through a separately synchronized weak handle.
-
-The local Xcode 27.1 matrix additionally exposed Watch metadata extraction without
-an AppIntents.framework dependency. Link the system framework explicitly, as the
-other targets do; do not disable metadata extraction to hide the warning.
-
-Verify both normal responses and cancellation/filter replacement through the
-existing serialized `LibraryStoreTests` suite. Preserve complete concurrency
-checking. Cloud Build 16 remains historical evidence of the warnings, not proof
-that the fix has passed Cloud.
-
-## Local verification of the fix
-
-Xcode 27.1 RC (27A9275) compiled the app and unit-test targets for macOS, iOS,
-tvOS and visionOS with zero emitted warnings or errors. The iOS lane includes
-the Watch companion; tvOS includes Top Shelf. The final iOS rerun was clean after
-adding Watch's framework dependency. Eight LibraryStoreTests passed with zero
-failures/skips. Six warning-gate regression tests, thirteen Cloud bootstrap tests,
-and all eight static release checks passed.
-
-Hosted required CI and a new provisioned Xcode Cloud run must still verify the
-reviewed fix commit. Local compilation does not qualify a Cloud release.
+- Verify required PR checks and exact-candidate evidence under the
+  [pipeline policy](pipeline-policy.md). For an authorized native archive,
+  inspect raw archive/export logs as well as Xcode Cloud issues. Empty issue
+  lists, successful upload, TestFlight processing, and tester installation
+  establish different outcomes.
 
 ## Authorized hosted simulator-discovery exception
 
-The owner waived CI simulator-related warnings on November 17, 2026. The implemented
-exception is narrower: only the observed Xcode `DVTiPhoneSimulator.m:661` warning
+This exception is limited to the observed Xcode `DVTiPhoneSimulator.m:661` warning
 immediately followed by a nil SimDevice architecture detail with a null simulator
 runtime is waived. Native hosted macOS commands must explicitly opt in and select
 `platform=macOS,arch=arm64`. Each occurrence and the final count remain in raw logs.

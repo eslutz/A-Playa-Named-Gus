@@ -15,7 +15,7 @@
 #   Scripts/demo-server.sh reset    # remove container + config volumes (media untouched)
 #   Scripts/demo-server.sh status   # container + API health
 #
-# See Documentation/AppStore/demo-server.md for the demo-library workflow.
+# See Documentation/demo-server.md for the demo-library workflow.
 set -euo pipefail
 
 CONTAINER="${GUS_DEMO_CONTAINER:-gus-demo-jellyfin}"

@@ -1,4 +1,4 @@
-# App-wide refinement implementation
+# Behavior and regression guide
 
 Approved scope: all 22 Swiftfin comparison findings, source/version selection,
 opt-in per-account same-series track preferences, native preview support and
@@ -105,8 +105,7 @@ page deduplication. Gus retains AVPlayer/AVKit and current OS 26 fallbacks.
   before leaving the current page and has one 30-second readiness deadline.
   Close and account retirement reject late callbacks. Canceling a task does not
   prove immediate release of a suspended Readium operation.
-- Retired readers/imports/CRUD are removed without a migration bridge. Current
-  format data, current offline draft reconciliation and first verified iCloud
+- Saved-media data, offline draft reconciliation and first verified iCloud
   identity ownership remain supported.
   Obsolete hero no-ops, unused presentation adapters and the superseded tab-count
   policy are removed along with their callers and obsolete assertions.
@@ -121,22 +120,22 @@ page deduplication. Gus retains AVPlayer/AVKit and current OS 26 fallbacks.
 | F04 | Truthful playback lifecycle and finalization | Shared native preparation; audio/video/Watch finalization, actual-playing observations and persistent iOS/iPadOS video dismissal | PlaybackLifecyclePolicyTests, TVPlaybackLifecycleTests, GusAuthenticatedUITests.testReadyVideoCloseReturnsToDetail; physical output pending |
 | F05 | One resolution deadline/retry owner | PlaybackDeadline and StreamURLBuilder | PlaybackLifecyclePolicyTests, StreamURLBuilderTests |
 | F06 | Watch credential and endpoint rotation | Central AppModel installation and lease invalidation | AppModelSessionTests; paired Watch acceptance pending |
-| F07 | Truthful independent Live TV loading | Current-account permission plus explicit server membership; independent channel/recording/timer phases | BrowseRefinementTests, JellyfinLiveTVProviderTests (real HTTP JSON, cancellation and combined read budget); scoped local M3U/native evidence recorded in the external revision manifest; hardware-tuner compatibility separate |
-| F08 | Live resource ownership and seekability | Origin-owned allocation; Stop owns started-live release | PlaybackLifecyclePolicyTests; local M3U Stop/lost-reply evidence recorded externally; hardware and unknown-ID limits below |
+| F07 | Truthful independent Live TV loading | Current-account permission plus explicit server membership; independent channel/recording/timer phases | BrowseRefinementTests, JellyfinLiveTVProviderTests (real HTTP JSON, cancellation and combined read budget); qualify M3U and hardware-tuner compatibility separately |
+| F08 | Live resource ownership and seekability | Origin-owned allocation; Stop owns started-live release | PlaybackLifecyclePolicyTests; verify started-live Stop and lost replies independently; hardware and unknown-ID limits below |
 | F09 | Remote action feedback | Shared ActionOutcome and capability/duplicate/explicit-position guards | RemoteSessionsTests, including explicitPositionConfirmation; physical target acceptance pending |
 | F10 | Bounded invalidations and stale-response rejection | One remote refresh plus one follow-up, lease/generation/visibility checks | RemoteSessionsTests |
-| F11 | Role-aware artwork and fallback adoption | MediaArtworkRequest, ordered URL candidates and lease-owned OS 27 native image transport; OS 26 native fallback | BrowseRefinementTests; scoped native per-lease reuse/cancellation evidence recorded externally |
+| F11 | Role-aware artwork and fallback adoption | MediaArtworkRequest, ordered URL candidates and lease-owned OS 27 native image transport; OS 26 native fallback | BrowseRefinementTests; test native reuse and cancellation by lease |
 | F12 | Complete shared accessible media identity | Shared Jellyfin and Seerr metadata projections | BrowseRefinementTests; physical VoiceOver acceptance pending |
-| F13 | Resume-aligned initial series selection | Initial preferred season/episode, explicit-selection retention | BrowseRefinementTests, UIRemediationTests; scoped TV focus observations recorded externally |
-| F14 | Latest-feed expansion on every main platform | Native Show All routes shared across main platforms | Source/caller coverage; representative interaction evidence and applicability limits recorded in the external revision manifest |
+| F13 | Resume-aligned initial series selection | Initial preferred season/episode, explicit-selection retention | BrowseRefinementTests, UIRemediationTests; exercise native focus in the target fixture |
+| F14 | Latest-feed expansion on every main platform | Native Show All routes shared across main platforms | Source/caller coverage; exercise representative Show All interactions |
 | F15 | Retained-content refresh | ForegroundLoadPhase plus domain-specific refresh/page errors; strict download metadata errors/retry | LibraryStoreTests, ItemDetailActionTests, SeerrCatalogStoreTests, BrowseRefinementTests, DownloadStoreIntegrationTests.unreadableMetadataLoading |
 | F16 | Full-content continuation | Raw-offset paging, ordered queue continuation, full shuffle collection; incomplete advertised collections fail visibly | BrowseRefinementTests, including incompleteCollection; PlaybackLifecyclePolicyTests |
 | F17 | Superseding first-page query changes | Immutable query identity and generation cancellation | LibraryStoreTests, BrowseRefinementTests |
-| F18 | Reader construction/resource recovery | Public container read observation, inline recovery, bounded chapter selection and generation-scoped Retry | BookReaderLoadingTests; scoped native missing-resource/Retry and semantic-locator restoration evidence recorded externally |
+| F18 | Reader construction/resource recovery | Public container read observation, inline recovery, bounded chapter selection and generation-scoped Retry | BookReaderLoadingTests; verify missing-resource recovery and semantic-locator restoration |
 | F19 | Every PR triggers required CI | Always-triggered workflow, fail-closed classifier, explicit documentation-only success | test-classify-changes.py; all five hosted checks required for each candidate |
-| F20 | Measured performance and justified retention/I/O fixes | Non-owning heavy-store lookup, owner/lease cancellation, visibility refresh, serial diagnostics and download workers | NavigationOwnershipTests, including replacementDetailOwnership and seriesLeaseCancellation; DiagnosticsTests, DownloadStoreIntegrationTests; local same-simulator Release p95 gate accepted, with exact revision, one-pair scope and host-condition limits recorded externally |
-| F21 | Current platform visual/interaction/accessibility acceptance | Native controls retained; platform interaction checks | Platform-scoped evidence recorded externally; owner deferred Sketch reconciliation outside this release scope |
-| F22 | Catalog and native semantic formatting | Shared localized metadata and native duration/count formatting | Catalog validation and BrowseRefinementTests; targeted RTL/largest-text observations recorded externally |
+| F20 | Measured performance and justified retention/I/O fixes | Non-owning heavy-store lookup, owner/lease cancellation, visibility refresh, serial diagnostics and download workers | NavigationOwnershipTests, including replacementDetailOwnership and seriesLeaseCancellation; DiagnosticsTests, DownloadStoreIntegrationTests; qualify same-simulator Release p95 as applicable |
+| F21 | Current platform visual/interaction/accessibility acceptance | Native controls retained; platform interaction checks | Separate visual, interaction, and assistive acceptance |
+| F22 | Catalog and native semantic formatting | Shared localized metadata and native duration/count formatting | Catalog validation and BrowseRefinementTests; exercise RTL and largest text |
 
 The named tests are coverage pointers, not a claim that a particular revision has
 passed. Exact revision, destinations, results and runtime artifacts belong in the
@@ -156,9 +155,9 @@ rather than treating retained or missing records as a current inventory.
 | Source/version selection | PlaybackRequest across local/remote/Watch/CarPlay/deep-link/Handoff/SharePlay/Mac entry points; PlaybackActionTests, ContentLinkTests, RemoteSessionsTests |
 | Semantic track continuation | Account opt-in, semantic-only persisted preferences and conservative same-series matching; Automatic/Off/Explicit intent; PlaybackLifecyclePolicyTests.semanticPreferencePersistence and customTrackRoleIdentity |
 | Different-cut progress | Native choice before reusing time; exact-source checkpoints and download selection; DownloadedLibraryTests.sourceSpecificCheckpoints, DownloadStoreIntegrationTests.sourceQualifiedProgressTransfer, OfflineDownloadTests.selectedAudioTranscodeDownload |
-| Native previews | Unmodified compatible I-frame HLS, deferred bounded tvOS chapter metadata; platform-scoped native preview/Select observations recorded externally; no synthesized JPEG scrubber |
+| Native previews | Unmodified compatible I-frame HLS, deferred bounded tvOS chapter metadata; verify native preview and Select per platform; no synthesized JPEG scrubber |
 | Page deduplication | Scoped media identity with raw server offsets; playlist occurrences preserve ordering and duplicates; BrowseRefinementTests |
-| Retirement | SavedMediaStore replaces local-playlist CRUD/import; current-format record filtering, draft journal and CloudKit ownership retained; VideoPlaylistTests, MediaReferencePersistenceTests, ServerMediaListsStoreTests |
+| Saved-media persistence | Account-scoped records, offline draft reconciliation and CloudKit ownership; VideoPlaylistTests, MediaReferencePersistenceTests, ServerMediaListsStoreTests |
 
 ## Server cleanup boundary
 
@@ -185,26 +184,15 @@ and real tuner fault-injection evidence; Gus makes no such guarantee.
 
 ## Acceptance
 
-Build all six platform destinations without warnings. For this refinement run,
-the user's simulator-only constraint limits runtime validation to simulators:
-shared unit suites, affected authenticated UI/Watch regressions, 30 cold/warm
-samples, 10 browse cycles, 30 player open/close cycles and a one-hour playback
-soak. Compare same-simulator p95 latency with a 10% regression ceiling, retaining
-any stricter existing gate. Physical acceptance, including the previously
-deferred Duo checks, is excluded from this run and remains unverified. Local native
-macOS runtime testing is also held under that constraint. The user approved an
-exception for the required hosted macOS CI unit job; that exception does not
-authorize physical-device or local native macOS runtime tests. Completed
-diagnostics flushes establish durability; abrupt termination
-can lose events not yet flushed. Lost responses with unknown server resource IDs
-require server cancellation/TTL validation, not a claim of client-side closure.
+Use [local validation](local-validation.md) and [pipeline policy](AppStore/pipeline-policy.md)
+for scope. Run affected unit and authenticated local simulator cases before
+claiming coverage. For full refinement performance qualification, compare
+same-simulator Release p95 (10% regression ceiling or stricter applicable gate),
+using 30 cold/warm samples, 10 browse cycles, 30 player open/close cycles and
+a one-hour playback soak. Record exact revision, host and inputs outside Git.
+This matrix is not required for every change.
 
-Sketch-specific comparison and handoff work is deferred by the owner and is not
-a gate for the Swiftfin-pattern release. Existing platform interaction evidence
-retains its original scope; deferral does not establish visual acceptance.
-
-Keep raw logs, traces, screenshots and result bundles outside Git. Regenerate the
-XcodeGen project after file changes. Update ADRs, the roadmap,
-wiki and affected website claims with the delivered behavior. Protected
-main changes require a PR and required checks. Local validation, physical device
-acceptance, hosted CI, archives and distribution are separate gates.
+Keep native macOS runtime, physical-device and Sketch acceptance separate.
+A completed diagnostics flush establishes durability; termination can lose
+unflushed events. A lost response with an unknown server resource ID still needs
+server cancellation or TTL validation before claiming cleanup.

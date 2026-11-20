@@ -1,4 +1,4 @@
-# 0011 — Typed use of the existing Jellyfin transport
+# 0012 — Typed use of the existing Jellyfin transport
 
 Status: accepted; revised for app-wide refinement on 2026-11-15.
 

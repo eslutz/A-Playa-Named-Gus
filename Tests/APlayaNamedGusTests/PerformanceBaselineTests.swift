@@ -3,7 +3,7 @@ import JellyfinAPI
 import XCTest
 
 /// XCTest `measure` probes for hot pure-logic paths, recorded in
-/// `Documentation/AppStore/performance-baselines.md`.
+/// `Documentation/diagnostics-reliability.md`.
 ///
 /// These complement the `DiagnosticsHub` signpost intervals (server connect, library
 /// load, playback startup, search), which are measured in Instruments against a live

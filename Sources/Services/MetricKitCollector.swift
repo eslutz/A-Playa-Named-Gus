@@ -11,7 +11,7 @@ extension DiagnosticsHub {
     /// Starts MetricKit collection where the platform supports it.
     ///
     /// tvOS has no MetricKit; that gap is documented in
-    /// `Documentation/AppStore/diagnostics-reliability.md` rather than papered over with
+    /// `Documentation/diagnostics-reliability.md` rather than papered over with
     /// a third-party SDK. macOS delivers diagnostic payloads only.
     func startMetricCollection() {
         #if canImport(MetricKit) && !os(tvOS)

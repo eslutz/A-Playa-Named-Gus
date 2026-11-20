@@ -7,7 +7,7 @@ import OSLog
 /// Cases carry only numeric or boolean payloads by construction — never names, URLs,
 /// titles, tokens, or other values that could identify a person, server, or media item.
 /// Keep new cases to that contract; it is what satisfies the redaction requirement in
-/// `Documentation/AppStore/diagnostics-reliability.md`.
+/// `Documentation/diagnostics-reliability.md`.
 enum DiagnosticEvent: Equatable, Sendable {
     case referenceUnavailable
     case referenceReplaced
@@ -122,7 +122,7 @@ struct DiagnosticEventRecord: Codable, Equatable, Sendable {
 /// Events land in a bounded in-memory ring buffer (for interpreting MetricKit summaries)
 /// and the unified log; intervals emit `OSSignposter` ranges measurable in Instruments,
 /// which is how the performance baselines in
-/// `Documentation/AppStore/performance-baselines.md` are re-measured.
+/// `Documentation/diagnostics-reliability.md` are re-measured.
 final class DiagnosticsHub: Sendable {
     static let shared = DiagnosticsHub(directory: AppStorageLocation.appDirectory())
     static let maxRecentEvents = 200

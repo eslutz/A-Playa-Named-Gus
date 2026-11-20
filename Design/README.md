@@ -1,107 +1,101 @@
-# Editable Sketch designs
+# Gus design rules and patterns
 
-Keep one document per device directly in this folder: `Gus-<device>.sketch`.
-Light and Dark appearances belong inside that document. Reusable components for
-both appearances live in `Gus-Shared-Library.sketch`.
+Sketch is the editable design workspace. Use the private **Gus** folder for the
+canonical working documents and the files here as tracked design snapshots.
+Keep this README as the canonical repo guide for design sources, rules, and
+patterns. Check the actual canonical document before claiming its latest content
+or coverage. Archived Figma and older Sketch work is reference only; don't
+reimport legacy screen layouts or regenerate the archives.
 
-- `Gus-iPhone.sketch`: current iPhone Screens, States, and Components, including
-  both appearances. The older separate appearance files are archived locally.
-- `Gus-tvOS.sketch`: editable TV Screens, States and Components, including the
-  connection/profile revisions and native-reference theme/hex editor studies.
-  Canonical private cloud version: [vwZAA3](https://www.sketch.com/s/2711b90a-32b4-4f8d-a0ca-725c75e9e207/v/vwZAA3).
-  TV artwork slots remain placeholders. Simulator comparisons and interaction
-  coverage are reviewed separately from these design studies.
-- `Gus-iPadOS.sketch`: 95 Screens and 62 States in each appearance. Light/Dark
-  partners are adjacent in a compact canvas grid; their internal layouts match.
-- `Gus-macOS.sketch` is a local detail and search reference. The eight frames
-  on Screens show a backdrop movie and a full book cover in 1040- and 500-point windows,
-  each in Light and Dark. The controls link to the Apple macOS 27 UI Kit and
-  the movie artwork links to the Gus shared library. The book cover has an
-  editable local source on the Artwork page. Native Mac visual acceptance is pending.
-- `Gus-Shared-Library.sketch`: existing Light/Dark components plus editable paired
-  Dark sources and their color/style dependencies. iPad Dark instances link to
-  this library rather than flattened images.
+## Editable sources
 
-- `Gus-visionOS.sketch`: representative editable snapshot with 32 Screens, 10
-  States and six local product symbols, plus linked Apple visionOS controls.
-  Includes one Settings Light/Dark pair and a large-text form; other appearance
-  pairs remain incomplete. [Coverage and limitations](visionos-coverage.json)
-  maps the saved frames. Backdrop glass is approximate. The captured app baseline
-  has no verified source commit, and parity with current main remains unverified.
-  Cinema, Live TV, expanded playback, resizing and physical-device acceptance
-  need separate validation.
+Keep one `Gus-<device>.sketch` document per device with Light and Dark in the
+same file. Reusable components for both appearances belong in
+`Gus-Shared-Library.sketch`. Use existing Screens, States, and Components pages
+where present; reuse frame/component IDs and design system symbols.
 
-`appearance-coverage.json` maps the original iPad Screens and States by persistent
-layer ID. Components holds their reusable sources.
+| Tracked snapshot | What to consult |
+| --- | --- |
+| [Gus-iPhone.sketch](Gus-iPhone.sketch) | iPhone screens, states, components, and detail/search studies. |
+| [Gus-iPadOS.sketch](Gus-iPadOS.sketch) | iPad screens, states, and compact search; keep matched Light/Dark layouts adjacent. |
+| [Gus-tvOS.sketch](Gus-tvOS.sketch) | TV screens, states, and components, including connection/profile and theme editor references. |
+| [Gus-macOS.sketch](Gus-macOS.sketch) | Detail/search and editable artwork studies for wide and narrow windows. |
+| [Gus-visionOS.sketch](Gus-visionOS.sketch) | Editable reference studies; [coverage and limitations](visionos-coverage.json) describe the saved snapshot, not live or runtime acceptance. |
+| [Gus-Shared-Library.sketch](Gus-Shared-Library.sketch) | Linked sources, paired appearances, and shared colors/styles. |
 
-## Detail and global search
+Find a study in the canonical Sketch document by document, page, and frame
+name. Verify the current frame or component ID before editing; do not invent
+IDs or assume the tracked snapshot matches the live document.
 
-Each device document contains a **Detail and Global Search** page with eight
-editable studies in Light and Dark. Movie Detail places the backdrop behind the
-navigation controls. Book and Album Detail retain the whole cover. The primary
-action and each secondary row share a leading edge. Detail Sections places
-Genres, Studios, and Cast & Crew above About and the final Recommended section.
+## Native design and appearance
 
-Recent Searches shows typed searches and related genre, studio, and person
-entries. The app retains the latest 20 entries per account. Remove from History
-shows an individual row's menu. Clear Search History shows the confirmation.
-Related Results displays the selected name and type with separate Back to Detail
-and Close Results actions. iPhone uses a Search tab, wide iPad and Mac use a
-sidebar, and Apple TV and Vision Pro use their platform tab layouts. The iPad
-**Compact Global Search** page pairs Recent Searches and Related Results in
-500-point Light and Dark windows with a Search tab.
+- Follow the [Apple Human Interface Guidelines](https://developer.apple.com/design/human-interface-guidelines/)
+  and [Apple Design Resources](https://developer.apple.com/design/resources/).
+  Use linked official Apple components and native system controls; never describe
+  flat or blur mockups as verified native Liquid Glass fidelity.
+- Keep Light/Dark layout and nested geometry consistent. Preserve existing text,
+  visibility, and override paths. Review Dark text, surface, accent and vibrancy
+  independently. Editable paired sources such as `References / iPad / Dark`
+  and `References / Shared / Dark` don't automatically follow macOS appearance.
+- Use Sketch MCP for editable mutations. To refresh tracked snapshots, copy the
+  saved canonical files byte for byte. Preserve the shared library document
+  identity so existing device documents keep their live component links.
 
-[Detail and search frame IDs](detail-search-coverage.json) identifies these
-local design references. The named Sketch exports are visual studies. Use
-runtime captures to check paging, focus restoration, and account isolation.
+## Detail, search, and navigation
 
-## Appearance maintenance
+- In movie details, extend backdrop artwork behind navigation controls and fade
+  into the summary. In book and album details, keep the whole cover visible.
+  Align primary and secondary actions on a shared leading edge; use consistent
+  gaps. Keep Genres, Studios, and Cast & Crew above About and Recommendations.
+- Match search to each platform: compact iPhone/iPad use a Search tab; wide iPad
+  and Mac use a sidebar; Apple TV and Vision Pro follow native tab layouts.
+  Show history row actions and a confirmation for clearing history. Related
+  results identify their subject and distinguish Back to Detail from Close Results.
+  Verify paging, focus restoration, and account isolation separately in the app.
+- On iPad, keep ordinary details in the selected section's navigation stack.
+  Reader, Photos, and Now Playing use the window-level session presentation.
+  Preserve context when resizing. See [iPad capabilities](../Documentation/ipad-capabilities.md)
+  for behavior and platform boundaries.
 
-The library retains its original linked Apple resources. The paired Dark sources
-preserve the existing controls' nested geometry, text, visibility, and override
-paths. They use Dark text/surface/accent values and Dark vibrancy blending.
-`References / iPad / Dark` and `References / Shared / Dark` contain editable
-supporting sources; existing Dark variants remain available for compatibility.
-When updating a source control, update and review its paired Dark source too;
-these local appearance derivatives do not automatically switch with macOS's
-appearance setting.
+## State patterns and validation
 
-Refresh tracked snapshots by copying the canonical saved files byte for byte.
-Sketch's copy-save operation can assign a new document identity; retain the
-shared library's identity so the device documents keep their component links.
+Use representative states with paired appearances, not an exhaustive set of
+picker values. Check the relevant scenarios when designing or revising a flow:
 
-The delivered files were opened and saved by Sketch, checked for symbol/image
-references and appearance coverage, and reviewed using representative native PNG
-exports. Design completion does not establish runtime or physical-device
-acceptance. Review images and recovery checkpoints stay outside Git.
+| Scenario | Native surface and state to check |
+| --- | --- |
+| Version choice | Eligible multiversion choices; Start Over, Resume at Timestamp, Cancel; single-source default. |
+| Playback choices | Native menu without AVKit overlap; Automatic, Off, explicit/unavailable tracks, Watch and eligible CarPlay choices. |
+| Video dismissal | Native Close above AVKit in preparation, failure and ready states; portrait and landscape safe areas. |
+| Foreground recovery | Initial failure, retained-content refresh failure, page retry and accepted/uncertain/confirmed cancellation. |
+| Unconfirmed edits | Collection server-state review; partial or canceled transmitted profile save; reload with preserved draft. |
+| Download recovery | Unreadable metadata retry, pause/resume storage failure, recorded version identity and converted-file track limits. |
+| Audio collection | Ordered continuation, complete Shuffle progress/cancel/retry, disabled unavailable transport. |
+| Browsing context | Resume-aligned seasons/episodes, latest-feed expansion, Back/resize/focus restoration. |
+| Artwork and semantics | Role-specific missing/stale artwork, stable bounds, full episode identity and status, larger text and RTL. |
+| Reader recovery | Navigator construction failure, resource retry or continue reading, last valid locator retained. |
+| Native previews | Compatible HLS scrubber preview, tvOS chapters with deferred/missing art, unsupported JPEG trickplay. |
 
-## Refinement handoff reconciliation
+Capture matching states from the candidate build. Record source/build, OS,
+device/window, appearance, and fixture provenance. Check VoiceOver, focus,
+Crown/keyboard/gaze interaction, contrast, and comfort on the appropriate
+platform; visual studies, simulator screenshots, and physical acceptance are
+distinct. Keep captures and recovery artifacts outside Git. See the
+[behavior and regression guide](../Documentation/behavior-and-regression-guide.md) for current
+behavior and [review comparisons](../Documentation/Reviews/README.md) for the
+local comparison workflow.
 
-The tracked iPhone, iPad, Apple TV and Vision Pro files include updated artwork and action layouts. The scenarios below also cover earlier refinements that still need reconciliation with the private Sketch workspace. Sketch MCP is required for editable mutations;
-archive inspection, source review and simulator images do not establish saved-design
-fidelity.
+## tvOS design validation
 
-Use the existing Screens, States and Components pages and paired appearances. Map
-these representative scenarios to persistent frame/component IDs after inspecting
-the canonical document; do not invent frame IDs or duplicate every picker value.
+The Sketch document represents glass, focus transitions, and keyboards
+statically. Compare fresh design renders to settled app states and verify native
+focus, loading, errors, empty content, and dismissal separately. Refresh exports
+and inspect symbol and image links before treating a missing layer as a defect.
+Top Shelf artwork is not evidence of live dynamic cards. Use
+[isolated TV validation](../Documentation/tvos-capabilities.md#isolated-validation)
+for the test fixture and keep captures and manifests outside the checkout.
 
-| Scenario | Native surface and state to reconcile |
-|---|---|
-| Detail version choice | Eligible multiversion menu; Start Over / Resume at Timestamp / Cancel; single-source default |
-| Playback choices | Native player menu without AVKit overlap; Automatic / Off / explicit or unavailable track; Watch and eligible CarPlay choices |
-| Video dismissal | iOS/iPadOS native Close above AVKit in preparation, failure and ready states, with or without Playback Options; portrait and landscape safe areas |
-| Foreground recovery | Initial failure, retained-content refresh failure, page retry, recording cancellation accepted/uncertain/confirmed |
-| Unconfirmed edits | Collection server-state review; partial profile save and canceled transmitted save requiring reload; preserved draft |
-| Download recovery | Unreadable metadata retry; storage failure during pause/resume; recorded version identity and converted-file track limits |
-| Audio collection | Ordered queue continuation; complete Shuffle collection progress/cancel/retry; disabled unavailable transport |
-| Browsing context | Resume-aligned season/episode; latest-feed expansion; Back/resize/focus restoration |
-| Artwork and semantics | Role-specific missing/stale artwork, unchanged bounds, full episode identity/status, larger text and RTL |
-| Responsive details | Retain focus through resizing. Keep the upper artwork clear, fade into the summary, and use a fixed gap between secondary actions. |
-| Reader recovery | Navigator construction failure; resource retry/keep reading; retained last valid locator |
-| Native previews | Compatible HLS scrubber preview; tvOS chapter navigation with deferred or missing artwork; unsupported JPEG trickplay |
-
-Capture matching current-build states before proposing visual changes. Record build,
-OS, device/window, appearance and fixture provenance alongside native frame exports.
-Physical focus, VoiceOver/Crown/keyboard/gaze interaction, contrast and comfort remain
-separate acceptance checks. The implementation ledger is in
-[app-wide refinement](../Documentation/app-wide-refinement.md).
+For targeted supplementary-screen and toolbar regressions, use
+`testTVRemediationSupplementaryScreens` and `testTVToolbarViewModes` in the
+TV authenticated UI suite. Verify picker focus and populated options rather
+than treating a static layout or simulator render as interaction acceptance.

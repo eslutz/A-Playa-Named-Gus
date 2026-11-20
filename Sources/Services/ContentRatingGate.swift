@@ -6,7 +6,7 @@ import Foundation
 /// The limit is an app-level preference (Settings → Content Restrictions) that parents
 /// pair with Apple Screen Time's app/settings locks; reading the device's effective
 /// movie/TV rating restrictions via ManagedSettings requires the Apple-granted Family
-/// Controls entitlement and is documented as follow-up in `Documentation/ROADMAP.md`.
+/// Controls entitlement and is documented as follow-up in `Documentation/family-safety-brief.md`.
 enum ContentRatingGate {
     /// Comparable severity rank for a rating limit. Higher admits more mature content.
     enum Limit: String, CaseIterable, Identifiable, Codable {

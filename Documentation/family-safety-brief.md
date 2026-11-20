@@ -1,14 +1,13 @@
 # Family Safety & Age Assurance — Product Brief
 
-Status: brief complete; the implementable scope is **shipped** (see "Shipped scope").
-This is the acceptance artifact for the roadmap's *Family safety controls and age
-assurance* item.
+This guide describes implemented controls and their verification scope. Declared
+Age Range still needs real-device acceptance of the system sheet and tier mapping.
 
 Gus's stance: **parent-friendly content controls built on Apple-provided safety APIs**,
 never a custom age-verification or child-profile system. Gus stores no birthdates, no
 exact ages, and no per-child identity data.
 
-## Shipped scope
+## Implemented scope
 
 1. **Content-rating limit (all platforms).** Settings → Content Restrictions offers
    Off / All Ages / Parental Guidance / Teen / Mature. `ContentRatingGate` maps official
@@ -57,8 +56,8 @@ would make the feature unusable, while the strict toggle serves households that 
 
 | API | Availability | Entitlement | Status |
 |---|---|---|---|
-| App-level `ContentRatingGate` | All platforms (incl. watchOS browse) | none | shipped |
-| DeclaredAgeRange (`AgeRangeService`) | iOS 26+/macOS 26+ (visionOS/tvOS/watchOS unavailable) | `com.apple.developer.declared-age-range` | code shipped; entitlement wired; real-device system-sheet verification remains |
+| App-level `ContentRatingGate` | All platforms (incl. watchOS browse) | none | implemented |
+| DeclaredAgeRange (`AgeRangeService`) | iOS 26+/macOS 26+ (visionOS/tvOS/watchOS unavailable) | `com.apple.developer.declared-age-range` | implemented; entitlement wired; real-device system-sheet verification remains |
 | ManagedSettings read of device media-rating restrictions | iOS/iPadOS | Family Controls (`com.apple.developer.family-controls`, distribution requires Apple approval) | **follow-up only** — per the roadmap, pursued only if Gus needs Screen-Time-style controls beyond media-rating filtering |
 | PermissionKit / significant-change parental consent | iOS 26.4+ | TBD | evaluated; not needed while Gus collects nothing and ships no communication features |
 
@@ -76,9 +75,10 @@ Settings is the enforcement layer Apple provides).
 
 ## App Store Connect age rating impact
 
-Unchanged (expected 4+): the app itself ships no rated content. The questionnaire
+Do not infer a store age rating from the presence of parental controls. Verify
+the current rating and disclosures in App Store Connect. Draft questionnaire
 answers and the parental-controls disclosure live in
-`Documentation/AppStore/review-compliance-audit.md`.
+`Documentation/AppStore/review-and-disclosures.md`.
 
 ## Test matrix
 

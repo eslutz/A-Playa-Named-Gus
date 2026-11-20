@@ -76,7 +76,8 @@ jobs:
       - name: Validate Markdown encoding
         run: |
           ruby <<'RUBY'
-          paths = Dir["Documentation/**/*.md"] + %w[README.md CONTRIBUTING.md]
+          abort("AGENTS.md must be a regular file") unless File.file?("AGENTS.md") && !File.symlink?("AGENTS.md")
+          paths = Dir["Documentation/**/*.md"] + %w[AGENTS.md README.md CONTRIBUTING.md]
           paths.each do |path|
             next unless File.file?(path)
 

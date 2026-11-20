@@ -428,7 +428,7 @@ case "$TARGET" in
     echo ""
     log "Done. Screenshots saved to Screenshots/"
     log "Signed-in scenes use the local demo server (Scripts/demo-server.sh start)."
-    log "See Documentation/AppStore/screenshots-and-testflight.md and demo-server.md."
+    log "See Documentation/AppStore/screenshots-and-testflight.md and Documentation/demo-server.md."
     ;;
   *)
     echo "Usage: $0 [--list | iphone | ipad | tv | vision | watch | mac | all]"

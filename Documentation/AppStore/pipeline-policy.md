@@ -3,9 +3,8 @@
 Changes to `main` require a PR and all five current GitHub checks: **Validation
 Scope**, **Lint**, **Docs and Config**, **Build macOS**, and **Test macOS**. Keep
 conversations resolved and the intended source revision explicit before merging.
-This is project policy: server-side main branch protection is currently disabled,
-and this correction does not restore or change remote enforcement. Verify the live
-required-check configuration separately rather than inferring it from workflow YAML.
+This is project policy. Verify live branch protection and required-check
+configuration separately; workflow YAML does not establish remote enforcement.
 
 GitHub CI runs on PRs targeting main, with read-only repository permissions and
 cancellation of superseded runs. It performs static/configuration checks and native
@@ -14,7 +13,8 @@ an explicit exception. Simulator builds and tests are prohibited in GitHub and X
 
 ## Local qualification
 
-Run all iOS/iPadOS, tvOS, visionOS and watchOS simulator builds and tests locally.
+Run all iOS/iPadOS, tvOS, visionOS and watchOS simulator builds and tests locally,
+one simulator at a time. See the [local guide](../local-validation.md).
 Retain exact source, compiled-input, artifact, native test-identity and raw-log
 provenance outside Git. Existing results keep their original revision/artifact labels;
 reuse requires an explicit unchanged-source scope, not a claim that they were rerun.
@@ -40,35 +40,28 @@ review. Preserve the global `XCODE_XCCONFIG_FILE` architecture override for comp
 and the normal warning/signing gates. A saved workflow or API template is not evidence
 of current successful execution.
 
-## Superseded hosted simulator configuration
+## Cloud workflow boundaries
 
-Earlier 13/14-job GitHub matrices and the manual **Gus Validation** single-iPhone
-workflow are superseded. **Gus Internal TestFlight** uses four internal-only device
-archives and four distributions to Gus Internal after all five required GitHub checks
-pass for the release inputs. GitHub's explicit-arm64 native macOS tests supply the
-native test gate; Cloud does not repeat them. Apple's Cloud test runner used an
-ambiguous Mac destination and emitted an unwaived warning, so its duplicate test
-action was removed without expanding the warning exception.
-Its former iOS, tvOS and visionOS simulator test actions have also been removed. Keep the
-workflow manual, main-only and clean, with the global architecture override intact.
-Do not start the stale Gus Validation workflow. Re-read remote actions and distribution
-groups before every authorized archive run. The Cloud pre-build hook
-rejects non-macOS build/test actions while retaining native macOS and archive support
-when Cloud selects a source revision containing the hook.
-The visionOS archive uses Apple's `CI_PRODUCT_PLATFORM=xrOS` identifier; the
-pre-build guard accepts its archive/analysis actions and rejects its simulator
-build/test actions. Rejections log only the platform and action identifiers.
-
-Prior dated CI/Cloud outcomes are historical, revision-scoped evidence, not current
-pipeline instructions or release acceptance. See [release history](internal-testflight-release.md).
+Use the manual, main-only internal TestFlight workflow only after verifying
+its live configuration. Its four native archive and group distribution actions
+must not include simulator actions. The Cloud pre-build hook rejects non-macOS
+build/test actions but does not replace inspecting the live workflow; preserve
+the global architecture override and use Apple’s `xrOS` identifier for visionOS.
+Do not start the old Gus Validation workflow.
 
 ## Authorized hosted simulator-discovery exception
 
-The owner waived CI simulator-related warnings on November 17, 2026. The implemented
-exception is narrower: only the observed Xcode `DVTiPhoneSimulator.m:661` warning
-immediately followed by a nil SimDevice architecture detail with a null simulator
-runtime is waived. Native hosted macOS commands must explicitly opt in and select
-`platform=macOS,arch=arm64`. Each occurrence and the final count remain in raw logs.
-Unknown/malformed assertions, compiler/linker/asset warnings, errors, Intel output,
-and nonzero tool exits still fail. Local validation and archives retain strict gates;
-this exception does not authorize hosted simulator builds or tests.
+See the [warning policy](warning-policy.md#authorized-hosted-simulator-discovery-exception)
+for the exact hosted native macOS exception. It authorizes no simulator work.
+
+## Cloud project and package recovery
+
+Keep the generated shared project, scheme and package pins in the repository.
+Check them locally with `python3 Scripts/check-cloud-project.py`. For a dependency
+wizard failure, verify the real repository, shared scheme, toolchain and pinned
+package graph before escalating through Apple’s supported connection or support
+path. A repository connection alone does not establish that Cloud can fetch
+packages and archive the intended project. Do not publish a package-free project,
+force automatic dependency resolution, or grant unnecessary repository access
+to work around onboarding. See [API preparation](app-store-connect.md#api-access-and-cloud-workflow-discovery) for read-only
+workflow inspection and [signing](signing-capabilities.md) for distribution setup.

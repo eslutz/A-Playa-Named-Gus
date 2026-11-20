@@ -5,7 +5,7 @@
 # measurements (server connect, library load, playback startup, search) come from
 # the DiagnosticsHub signpost intervals — profile with Instruments using subsystem
 # `dev.ericslutz.gus`, category `Diagnostics`. Record results in
-# Documentation/AppStore/performance-baselines.md.
+# Documentation/diagnostics-reliability.md.
 #
 # Usage: Scripts/measure-launch-baseline.sh ["iPhone 17" | simulator-UDID] [runs]
 # GUS_LAUNCH_APP_PATH can reuse an already validated simulator app without building.
