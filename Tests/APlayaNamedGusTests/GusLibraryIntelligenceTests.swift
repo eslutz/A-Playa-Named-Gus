@@ -18,6 +18,7 @@ struct GusLibraryIntelligenceTests {
         let both = GusSearchIntent(mediaTypes: [.movie], genres: ["sci-fi"], people: ["Jan Reyes"], characters: ["Pilot", "Engineer"], minimumYear: 2010, maximumMinutes: 90)
         #expect(Self.fixture.filter { GusLibraryMatching.accepts($0, intent: both) }.map(\.id) == ["film"])
         #expect(CatalogNameMatching.role("Arthur Fleck / The Joker (voice)", matches: "Joker"))
+        #expect(CatalogNameMatching.role("Arthur Fleck / Joker", matches: "the Joker"))
         #expect(!CatalogNameMatching.role("Joker’s henchman", matches: "Joker"))
         #expect(!GusLibraryMatching.accepts(Self.fixture[0], intent: .init(keywords: ["expedition"])))
         var narrated = GusSearchIntent(mediaTypes: [.audioBook])

@@ -113,7 +113,10 @@ class Handler(BaseHTTPRequestHandler):
             return self.respond({"fixture": "gus-discover", "version": 1})
         if path == "/__fixture/state":
             return self.respond(copy.deepcopy(STATE))
-        STATE["events"].append({"method": "GET", "path": path})
+        event = {"method": "GET", "path": path}
+        if path == "/api/v1/search" and query.get("query") == ["Gus Fixture Movie"]:
+            event["exactFixtureMovieSearch"] = True
+        STATE["events"].append(event)
         if path == "/api/v1/status":
             return self.respond({"version": "3.3.0"})
         if path == "/api/v1/settings/public":

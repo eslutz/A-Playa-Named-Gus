@@ -805,7 +805,7 @@ final class GusAuthenticatedUITests: XCTestCase {
             capture(app, "tv-seerr-request-history")
         }
 
-        func testTVDiscoverPredictiveSearch() throws {
+        func testTVDiscoverPredictiveSearch() async throws {
             try prepare()
             executionTimeAllowance = 360
             defer { finish() }
@@ -833,8 +833,23 @@ final class GusAuthenticatedUITests: XCTestCase {
             try XCTSkipUnless(fixture.waitForExistence(timeout: 10), "Search only runs against the synthetic Seerr fixture.")
             try focusTV(app, label: "Search Seerr")
             XCUIRemote.shared.press(.select)
+            let before = try await exactFixtureMovieSearchCount()
             try completeTVSearch(app, prefix: "Gus Fixture Mov", title: "Gus Fixture Movie")
             XCTAssertTrue(app.buttons["Seerr.title.movie.950000001"].waitForExistence(timeout: 10))
+            let after = try await exactFixtureMovieSearchCount()
+            XCTAssertGreaterThan(after, before)
+        }
+
+        private func exactFixtureMovieSearchCount() async throws -> Int {
+            struct State: Decodable {
+                struct Event: Decodable { var exactFixtureMovieSearch: Bool? }
+                var events: [Event]
+            }
+            let client = URLSession(configuration: .ephemeral, delegate: FixtureHTTPClient(), delegateQueue: nil)
+            defer { client.invalidateAndCancel() }
+            let url = try XCTUnwrap(URL(string: "http://127.0.0.1:5059/__fixture/state"))
+            let (data, _) = try await client.data(from: url)
+            return try JSONDecoder().decode(State.self, from: data).events.filter { $0.exactFixtureMovieSearch == true }.count
         }
 
         func testTVLibraryPredictiveSearch() throws {
@@ -888,8 +903,9 @@ final class GusAuthenticatedUITests: XCTestCase {
             }
             XCTAssertTrue(completion.hasFocus, app.debugDescription)
             XCUIRemote.shared.press(.select)
-            let completed = XCTNSPredicateExpectation(predicate: NSPredicate(format: "value == %@", title), object: field)
-            XCTAssertEqual(XCTWaiter.wait(for: [completed], timeout: 10), .completed)
+            // UIKit may append an accessibility hint after the field's actual text.
+            let completed = XCTNSPredicateExpectation(predicate: NSPredicate(format: "value == %@ OR value BEGINSWITH %@", title, title + ", "), object: field)
+            XCTAssertEqual(XCTWaiter.wait(for: [completed], timeout: 10), .completed, "Actual field value: " + String(describing: field.value))
         }
 
         private func connectTVSeerrFixture(_ app: XCUIApplication, ready: XCUIElement? = nil) throws {

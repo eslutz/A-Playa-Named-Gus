@@ -197,11 +197,14 @@ enum GusLibraryMatching {
 enum CatalogNameMatching {
     static func role(_ role: String?, matches name: String) -> Bool {
         guard let role else { return false }
-        let requested = GusLibraryMatching.words(name)
+        func nameWords(_ value: String) -> ArraySlice<String> {
+            let words = GusLibraryMatching.words(value)
+            return words.count > 1 && words.first == "the" ? words.dropFirst() : words[...]
+        }
+        let requested = nameWords(name)
         guard !requested.isEmpty else { return false }
         return role.split(whereSeparator: { $0 == "/" || $0 == ";" }).contains { component in
-            let actual = GusLibraryMatching.words(String(component.prefix { $0 != "(" }))
-            return actual == requested || (actual.first == "the" && actual.dropFirst().elementsEqual(requested))
+            nameWords(String(component.prefix { $0 != "(" })) == requested
         }
     }
 }
