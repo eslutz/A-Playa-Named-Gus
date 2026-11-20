@@ -37,15 +37,23 @@ struct GlobalSearchContent: View {
         #endif
     }
 
-    private var searchableResults: some View {
-        results
-            .gusSearchable(
-                text: Binding(get: { root.globalSearch.text }, set: { root.editSearchText($0) }),
-                isPresented: Bindable(root.globalSearch.typed).isPresented,
-                isFocused: $fieldFocused,
-                prompt: Text("Search Library")
-            )
-            .modifier(LibrarySearchFieldBehavior(search: root.globalSearch))
+    @ViewBuilder private var searchableResults: some View {
+        let text = Binding(get: { root.globalSearch.text }, set: root.editSearchText)
+        #if os(tvOS)
+            results
+                .modifier(LibrarySearchFieldBehavior(search: root.globalSearch))
+                .searchable(text: text, prompt: Text("Search Library"))
+                .onSubmit(of: .search) { root.globalSearch.submit(to: session.searchHistory) }
+        #else
+            results
+                .gusSearchable(
+                    text: text,
+                    isPresented: Bindable(root.globalSearch.typed).isPresented,
+                    isFocused: $fieldFocused,
+                    prompt: Text("Search Library")
+                )
+                .modifier(LibrarySearchFieldBehavior(search: root.globalSearch))
+        #endif
     }
 
     private var navigationTitle: String {

@@ -116,6 +116,30 @@ extension View {
         #endif
     }
 
+    #if os(tvOS)
+        /// Keep completions in the remote's focus path between the keyboard and catalog.
+        func gusTVSearchCompletions(_ values: [String], select: @escaping (String) -> Void) -> some View {
+            VStack(alignment: .leading, spacing: 0) {
+                if !values.isEmpty {
+                    ScrollView(.horizontal) {
+                        HStack(spacing: 24) {
+                            ForEach(values, id: \.self) { value in
+                                Button { select(value) } label: { Text(verbatim: value).lineLimit(1) }
+                                    .accessibilityIdentifier("Search.completion." + value)
+                            }
+                        }
+                        .padding(.horizontal).padding(.vertical, 16)
+                    }
+                    .scrollIndicators(.hidden)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .focusSection()
+                }
+                self
+            }
+        }
+    #endif
+
     /// Account identifiers must preserve the typed case on software keyboards.
     @ViewBuilder
     func gusAccountNameInput() -> some View {

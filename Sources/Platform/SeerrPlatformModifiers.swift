@@ -121,8 +121,8 @@ extension View {
     @ViewBuilder func gusSeerrSearch(text: Binding<String>, isPresented: Binding<Bool>, isFocused: FocusState<Bool>.Binding, enabledOnTV: Bool, suggestions: [String]) -> some View {
         #if os(tvOS)
             if enabledOnTV {
-                searchable(text: text, prompt: Text("Search Seerr"))
-                    .searchSuggestions { seerrCompletions(suggestions) }
+                gusTVSearchCompletions(suggestions) { text.wrappedValue = $0 }
+                    .searchable(text: text, prompt: Text("Search Seerr"))
             } else {
                 self
             }

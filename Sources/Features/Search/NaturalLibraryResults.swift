@@ -54,6 +54,9 @@ struct NaturalLibraryResults: View {
 /// Attach to the view owning .searchable, including compact iPhone's role-based tab.
 struct LibrarySearchFieldBehavior: ViewModifier {
     @Environment(SessionStore.self) private var session
+    #if os(tvOS)
+        @Environment(RootNavigationState.self) private var root
+    #endif
     @AppStorage(ContentRatingGate.limitDefaultsKey) private var restriction = ContentRatingGate.Limit.off.rawValue
     @AppStorage(ContentRatingGate.hideUnratedDefaultsKey) private var hideUnrated = false
     @State private var catalogTerms: [String] = []
@@ -88,14 +91,21 @@ struct LibrarySearchFieldBehavior: ViewModifier {
         return SearchCompletions.matching(search.text, candidates: candidates)
     }
 
-    func body(content: Content) -> some View {
-        content
-            .searchSuggestions {
+    @ViewBuilder private func fieldSuggestions(_ content: Content) -> some View {
+        #if os(tvOS)
+            content.gusTVSearchCompletions(terms, select: root.editSearchText)
+        #else
+            content.searchSuggestions {
                 ForEach(terms, id: \.self) { value in
                     Text(value).searchCompletion(value)
                 }
             }
             .onSubmit(of: .search) { search.submit(to: session.searchHistory) }
+        #endif
+    }
+
+    func body(content: Content) -> some View {
+        fieldSuggestions(content)
             .task(id: requestKey) {
                 let key = requestKey
                 let prefix = search.text.trimmingCharacters(in: .whitespacesAndNewlines)
