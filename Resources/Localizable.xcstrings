@@ -1,6 +1,12 @@
 {
   "sourceLanguage": "en",
   "strings": {
+    "Couldn’t load recommendations from iCloud. Try again.": {
+      "comment": "Retry message when Apple TV cannot read the current account’s shared recommendations."
+    },
+    "Loading": {
+      "comment": "VoiceOver status for unresolved browse shelves and grids."
+    },
     "Scary tone": {
       "comment": "A required mood in a natural library search."
     },

@@ -57,6 +57,19 @@ IDs or assume the tracked snapshot matches the live document.
   Preserve context when resizing. See [iPad capabilities](../Documentation/ipad-capabilities.md)
   for behavior and platform boundaries.
 
+## Stable browsing, search, and Settings handoff
+
+The editable Sketch updates for [issue #78](https://github.com/eslutz/A-Playa-Named-Gus/issues/78) are pending. The following frame names were checked against the tracked snapshots. Open the corresponding documents in the private Gus folder and confirm the current frames before editing.
+
+| Study | Changes for the paired Light and Dark frames |
+| --- | --- |
+| Home and library grids | Start with iPhone **Home / Ready** and iPad **Home / Ready** in portrait and landscape. Show a warm return with the previous cards visible. For a cold return, keep the same headings, card aspect ratios and caption space using blank artwork and text bars. Include a partially loaded Home with just one shelf still waiting. Show separate series cards under For You and keep episode numbers on Next Up. |
+| Library search | Use the existing compact search and wide sidebar results layouts. Show the submitted “something scary with robots” query with **Scary tone** and **Robots** in Applied Filters. Pair a result supported by both concepts with an empty state offering **Horror**, **Robot stories**, and **Search by Keyword**. |
+| Settings | Use iPhone **Settings / Account and Playback**, the **Middle content / Light** and **Middle / Dark** states, and iPad **Settings / Playback Appearance / Landscape**. Add a disclosure row for **Library Intelligence**. Its destination shows the available search, Private Cloud Compute and For You options with their explanations. Keep **Sync Gus Resume and Next Up**, its status and **Sync For You to Apple TV** together under **iCloud Sync**. Use **Show Synced For You** on Apple TV. |
+| Playback | Update the existing **Streaming quality menu** states. Place each info button immediately after the setting name, with the menu value or switch at the trailing edge. Capture the one-line compact labels, the open native menu with full quality descriptions and the larger-text layout. On Apple TV retain the individually focusable help rows. |
+
+Use the user-supplied Home, search and Settings screenshots as before-state references. For fresh candidate captures, use the behaviors exercised by `testPlaybackHelpExplainsEachSettingWithoutChangingIt`, `testCloudForYouInvitationAndLibraryIntelligenceSettings`, and `testForYouAppleTVSyncConsentRequiresAnExplicitAction`. Use the blank placeholder reference for card geometry and native platform fills for each appearance.
+
 ## State patterns and validation
 
 Use representative states with paired appearances, not an exhaustive set of

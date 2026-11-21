@@ -866,7 +866,7 @@ struct BrowseShelfPlaceholder: View {
             ScrollView(.horizontal) {
                 HStack(alignment: .top, spacing: MediaRailMetrics.spacing(for: backdrop ? .backdrop : .poster)) {
                     ForEach(0 ..< 8, id: \.self) { _ in
-                        BrowseCardPlaceholder(ratio: backdrop ? 16.0 / 9 : 2.0 / 3, forYou: forYou)
+                        BrowseCardPlaceholder(ratio: backdrop ? 16.0 / 9 : 2.0 / 3, forYou: forYou, nextUp: backdrop)
                             .gusPhoneRailWidth(backdrop: backdrop, fallback: MediaRailMetrics.itemWidth(for: backdrop ? .backdrop : .poster))
                     }
                 }.gusTVRailPadding()
@@ -886,12 +886,17 @@ struct BrowseShelfPlaceholder: View {
 private struct BrowseCardPlaceholder: View {
     let ratio: CGFloat
     var forYou = false
+    var nextUp = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             RoundedRectangle(cornerRadius: 10).fill(.quaternary).aspectRatio(ratio, contentMode: .fit)
-            VStack(alignment: .leading, spacing: 1) {
-                Text(verbatim: "Media title").font(.subheadline.weight(.medium)).gusTVPosterTitle()
+            VStack(alignment: .leading, spacing: nextUp ? 6 : 1) {
+                if nextUp {
+                    Text(verbatim: "Media title").font(.headline).lineLimit(1)
+                } else {
+                    Text(verbatim: "Media title").font(.subheadline.weight(.medium)).gusTVPosterTitle()
+                }
                 Text(verbatim: "Subtitle").font(.caption)
                 Text(verbatim: " ").font(.caption)
             }

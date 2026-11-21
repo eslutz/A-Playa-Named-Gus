@@ -5,6 +5,49 @@
     /// These cases establish server-backed CRUD, not physical/iCloud acceptance.
     @MainActor
     final class GusPlaylistUITests: XCTestCase {
+        func testHomeShelfKeepsItsPositionAcrossTabs() throws {
+            continueAfterFailure = false
+            let app = XCUIApplication()
+            app.launchArguments = ["--gus-skip-session-restore", "--gus-demo-server", "--gus-disable-cloud-sync", "--gus-route", "home"]
+            app.launch()
+            defer { app.terminate() }
+
+            let heading = app.staticTexts["Recently Added Movies"].firstMatch
+            XCTAssertTrue(heading.waitForExistence(timeout: 30))
+            let window = app.frame
+            for _ in 0 ..< 8 where heading.frame.minY > window.midY {
+                let start = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.65))
+                let distance = min(window.height * 0.3, heading.frame.minY - window.height * 0.32)
+                start.press(
+                    forDuration: 0.1,
+                    thenDragTo: start.withOffset(CGVector(dx: 0, dy: -distance)),
+                    withVelocity: .slow,
+                    thenHoldForDuration: 0.2
+                )
+            }
+            XCTAssertTrue(heading.isHittable)
+            let originalHeading = heading.frame
+            let card = try XCTUnwrap(app.buttons.allElementsBoundByIndex.first { button in
+                let frame = button.frame
+                return !button.label.isEmpty && frame.height > 100 && frame.minX < window.midX &&
+                    frame.minY >= originalHeading.maxY && frame.minY < originalHeading.maxY + 60
+            })
+            let originalCard = card.frame
+            let title = card.label
+
+            app.tabBars.buttons["Movies"].tap()
+            XCTAssertTrue(app.navigationBars["Movies"].waitForExistence(timeout: 10))
+            app.tabBars.buttons["Home"].tap()
+            XCTAssertTrue(heading.waitForExistence(timeout: 5))
+            XCTAssertTrue(heading.isHittable)
+            XCTAssertEqual(heading.frame.minY, originalHeading.minY, accuracy: 1)
+            let restored = try XCTUnwrap(app.buttons.matching(NSPredicate(format: "label == %@", title)).allElementsBoundByIndex.first {
+                abs($0.frame.minY - originalCard.minY) <= 1
+            })
+            XCTAssertEqual(restored.frame.minX, originalCard.minX, accuracy: 1)
+            XCTAssertEqual(restored.frame.size, originalCard.size)
+        }
+
         func testWatchedPosterKeepsGridGeometry() async throws {
             continueAfterFailure = false
             executionTimeAllowance = 240
