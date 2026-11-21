@@ -36,6 +36,40 @@ if [ "${XCODE_XCCONFIG_FILE:-}" != "$expected_architecture_config" ] ||
   exit 65
 fi
 
+# PCC needs a provisioned device archive. Keep ordinary builds on the
+# checked-in entitlement files and preserve every existing signed capability.
+if [ "${CI_XCODEBUILD_ACTION:-}" = archive ] && [ "${CI_WORKFLOW:-}" = "Gus Internal TestFlight" ]; then
+  case "$CI_PRODUCT_PLATFORM" in
+    iOS) pcc_sdk=iphoneos; pcc_entitlements=Gus-iOS ;;
+    macOS) pcc_sdk=macosx; pcc_entitlements=Gus ;;
+    xrOS) pcc_sdk=xros; pcc_entitlements=Gus-SharePlay ;;
+    watchOS) pcc_sdk=watchos; pcc_entitlements= ;;
+    tvOS) exit 0 ;;
+  esac
+  if [ ! -f Config/Local.xcconfig ]; then
+    echo "Cloud post-clone signing configuration is missing." >&2
+    exit 66
+  fi
+  mkdir -p build/pcc-signing
+  if [ -n "$pcc_entitlements" ]; then
+    pcc_file="build/pcc-signing/$pcc_entitlements-PCC.entitlements"
+    cp "Config/$pcc_entitlements.entitlements" "$pcc_file"
+    /usr/bin/plutil -insert com\\.apple\\.developer\\.private-cloud-compute -bool YES "$pcc_file"
+    printf '\nCODE_SIGN_ENTITLEMENTS[sdk=%s*] = %s\n' "$pcc_sdk" "$pcc_file" >> Config/Local.xcconfig
+  fi
+  if [ "$CI_PRODUCT_PLATFORM" = iOS ] || [ "$CI_PRODUCT_PLATFORM" = watchOS ]; then
+    watch_file="build/pcc-signing/Gus-Watch-PCC.entitlements"
+    /usr/bin/plutil -create xml1 "$watch_file"
+    /usr/bin/plutil -insert com\\.apple\\.developer\\.private-cloud-compute -bool YES "$watch_file"
+    printf '\nGUS_WATCH_CODE_SIGN_ENTITLEMENTS = %s\n' "$watch_file" >> Config/Local.xcconfig
+    printf 'GUS_PCC_ENTITLED[sdk=watchos*] = YES\n' >> Config/Local.xcconfig
+  fi
+  if [ "$pcc_sdk" != watchos ]; then
+    printf 'GUS_PCC_ENTITLED[sdk=%s*] = YES\n' "$pcc_sdk" >> Config/Local.xcconfig
+  fi
+  exit 0
+fi
+
 # Cloud builds unit hosts ad hoc. Preserve sandbox/network permissions.
 if [ "${CI_PRODUCT_PLATFORM:-}" != macOS ] ||
    [ "${CI_XCODEBUILD_ACTION:-}" != build-for-testing ]; then
