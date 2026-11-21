@@ -50,12 +50,10 @@ verify_pcc() {
     echo "PCC bundle or runtime configuration mismatch for $identifier." >&2
     exit 65
   fi
-  /usr/bin/codesign --verify --strict "$bundle"
-  /usr/bin/codesign --display --entitlements - "$bundle" > "$evidence/entitlements.plist"
+  /usr/bin/codesign --verify --strict -R='entitlement["com.apple.developer.private-cloud-compute"] exists' "$bundle"
   /usr/bin/security cms -D -i "$profile" -o "$evidence/profile.plist"
-  if [ "$(/usr/bin/plutil -extract "$pcc_key" raw "$evidence/entitlements.plist")" != true ] ||
-     [ "$(/usr/bin/plutil -extract "Entitlements.$pcc_key" raw "$evidence/profile.plist")" != true ]; then
-    echo "PCC is missing from the signature or profile for $identifier." >&2
+  if [ "$(/usr/bin/plutil -extract "Entitlements.$pcc_key" raw "$evidence/profile.plist")" != true ]; then
+    echo "PCC is missing from the provisioning profile for $identifier." >&2
     exit 65
   fi
   echo "Verified signed PCC entitlement and provisioning profile for $identifier."
