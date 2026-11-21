@@ -297,11 +297,11 @@ struct SeerrTitleDetailView: View {
                             }
                         }
                         Spacer()
-                        Image(systemName: "chevron.forward").foregroundStyle(.secondary).accessibilityHidden(true)
                     }
                     .padding(.vertical, 8)
                     .contentShape(Rectangle())
                 }
+                .navigationLinkIndicatorVisibility(.visible)
                 Divider()
             }
         }

@@ -68,6 +68,7 @@ struct NaturalLibraryResults: View {
                     }
                     ForEach(ContentRatingGate.filter(natural.items), id: \.id) { item in
                         MediaItemNavigationLink(item: item) { MediaLibraryRow(item: item) }
+                            .navigationLinkIndicatorVisibility(.visible)
                             .mediaItemContextMenu(item: item)
                     }
                 }
@@ -112,7 +113,6 @@ struct LibrarySearchFieldBehavior: ViewModifier {
     }
 
     private var terms: [String] {
-        guard search.related == nil else { return [] }
         var candidates: [String] = []
         if restriction == ContentRatingGate.Limit.off.rawValue {
             candidates = session.searchHistory.entries.compactMap {
@@ -156,7 +156,7 @@ struct LibrarySearchFieldBehavior: ViewModifier {
             .task(id: requestKey) {
                 let key = requestKey
                 let prefix = search.text.trimmingCharacters(in: .whitespacesAndNewlines)
-                guard !prefix.isEmpty, search.related == nil else { return }
+                guard !prefix.isEmpty else { return }
                 do {
                     try await Task.sleep(for: .milliseconds(200))
                     let terms = try await session.libraryIntelligence.suggestions(prefix: prefix)

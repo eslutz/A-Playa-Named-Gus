@@ -7,13 +7,17 @@ final class RootNavigationState {
     static let moreID = "gus.more"
     static let searchID = "gus.search"
     let searchHistory: SearchHistoryStore?
-    var globalSearch = GlobalSearchSession()
-    private(set) var keptSearch: GlobalSearchSession?
-    var hasSearchReturn: Bool {
-        globalSearch.detailOrigin != nil
-    }
+    let globalSearch = GlobalSearchSession()
+    private(set) var relatedResults: [UUID: RelatedSearchResults] = [:]
 
-    var sheetPath = NavigationPath()
+    var sheetPath: [GusRoute] = [] {
+        didSet {
+            #if os(tvOS)
+                tvFocus.navigationChanged(section: "gus.detailSheet", from: oldValue.count, to: sheetPath.count)
+            #endif
+            routesChanged(from: oldValue, to: sheetPath, in: nil)
+        }
+    }
 
     init(searchHistory: SearchHistoryStore? = nil) {
         self.searchHistory = searchHistory
@@ -25,15 +29,22 @@ final class RootNavigationState {
     #else
         var sidebarVisibility = NavigationSplitViewVisibility.automatic
     #endif
-    var paths: [String: NavigationPath] = [:] {
+    var paths: [String: [GusRoute]] = [:] {
         didSet {
-            #if os(tvOS)
-                for section in Set(oldValue.keys).union(paths.keys) {
-                    tvFocus.navigationChanged(section: section, from: oldValue[section]?.count ?? 0, to: paths[section]?.count ?? 0)
-                }
-            #endif
+            for section in Set(oldValue.keys).union(paths.keys) {
+                let before = oldValue[section] ?? []
+                let after = paths[section] ?? []
+                guard before != after else { continue }
+                #if os(tvOS)
+                    tvFocus.navigationChanged(section: section, from: before.count, to: after.count)
+                #endif
+                routesChanged(from: before, to: after, in: section)
+            }
         }
     }
+
+    private var lastOverflowSection: String?
+    private var displayedOverflowIDs: [String] = []
 
     var scrollAnchors: [String: String] = [:]
     var returningDetailViewport: DetailScrollLocation?
@@ -48,11 +59,31 @@ final class RootNavigationState {
     }
 
     var playerItem: ItemRef?
-    var detailItem: ItemRef?
+    var detailItem: ItemRef? {
+        didSet {
+            if detailItem != oldValue {
+                resetDetailPath()
+            }
+        }
+    }
+
     var downloadSearch = ""
     var downloadFilter = DownloadedLibraryFilter.all
     var isDownloadSearchPresented = false
     private var collections: CollectionStore?
+
+    private func resetDetailPath() {
+        sheetPath = []
+        returningDetailViewport = nil
+    }
+
+    func presentDetail(_ item: ItemRef) {
+        if detailItem == item {
+            resetDetailPath()
+        } else {
+            detailItem = item
+        }
+    }
 
     func collectionStore(session: SessionStore) -> CollectionStore {
         if let collections, collections.session === session {
@@ -102,9 +133,10 @@ final class RootNavigationState {
             return store
         }
         libraries = libraries.filter { $0.value.value != nil }
-        let key = scope.storeIdentity
-        let store = LibraryStore(scope: scope, session: session, initialFilter: libraryFilters[key]) { [weak self] filter in
-            self?.libraryFilters[key] = filter
+        let filterKey = scope.storeIdentity
+        let key = searchResults?.storeKey ?? filterKey
+        let store = LibraryStore(scope: scope, session: session, initialFilter: libraryFilters[filterKey]) { [weak self] filter in
+            self?.libraryFilters[filterKey] = filter
         }
         searchResults?.pages = store
         libraries[key] = StoreReference(store)
@@ -267,129 +299,181 @@ final class RootNavigationState {
         }
     }
 
-    /// Selecting Search after returning to a detail in its own stack resumes the kept results.
     func selectSection(_ id: String) {
-        if selectedSectionID == Self.searchID, id != Self.searchID, let searchHistory {
-            globalSearch.typed.completeLoadedSearch(in: searchHistory)
+        let next = id == "gus.tv.search" ? Self.searchID : id
+        guard next != selectedSectionID else { return }
+        returningDetailViewport = nil
+        if selectedSectionID == Self.searchID {
+            if let searchHistory {
+                globalSearch.typed.completeLoadedSearch(in: searchHistory)
+            }
             globalSearch.typed.isPresented = false
             if globalSearch.natural.state == .loading {
                 globalSearch.natural.resetResults()
             }
         }
-        if id == Self.searchID {
-            resumeKeptSearch()
-        }
-        selectedSectionID = id == "gus.tv.search" ? Self.searchID : id
+        selectedSectionID = next
     }
 
-    func openRelatedSearch(_ target: RelatedSearch, focusContext: String? = nil, viewport: DetailScrollLocation? = nil) {
-        if let searchHistory {
-            globalSearch.typed.completeLoadedSearch(in: searchHistory)
+    func openRelatedSearch(_ target: RelatedSearch, viewport: DetailScrollLocation? = nil) {
+        if selectedSectionID == Self.searchID {
+            if let searchHistory {
+                globalSearch.typed.completeLoadedSearch(in: searchHistory)
+            }
+            globalSearch.typed.isPresented = false
         }
-        let section = selectedSectionID
-        globalSearch.typed.isPresented = false
-        let origin = SearchDetailOrigin(
-            section: section,
-            path: paths[section] ?? NavigationPath(),
-            sheet: detailItem,
-            sheetPath: sheetPath,
-            search: section == Self.searchID ? globalSearch : nil,
-            scrollAnchors: scrollAnchors.filter { $0.key.hasPrefix("detail:") },
-            viewport: viewport,
-            focus: tvFocus,
-            focusContext: focusContext
-        )
-        detailItem = nil
-        returningDetailViewport = nil
-        startRelated(target, from: origin)
-    }
-
-    private func startRelated(_ target: RelatedSearch, from origin: SearchDetailOrigin? = nil) {
-        keptSearch = nil
-        globalSearch = GlobalSearchSession(target: target)
-        globalSearch.detailOrigin = origin
-        if let related = globalSearch.related, let resolved = related.resolved {
+        let results = RelatedSearchResults(target: target, originatingViewport: viewport)
+        relatedResults[results.id] = results
+        if let resolved = results.resolved {
             searchHistory?.record(.related(resolved))
         }
-        paths[Self.searchID] = NavigationPath()
-        selectedSectionID = Self.searchID
-    }
-
-    func backToSearchDetail() {
-        guard let origin = globalSearch.detailOrigin else { return }
-        globalSearch.detailOrigin = nil
-        if let previous = origin.search {
-            keptSearch = globalSearch
-            globalSearch = previous
+        if detailItem != nil {
+            sheetPath.append(.related(results.id))
+        } else {
+            paths[selectedSectionID, default: []].append(.related(results.id))
         }
-        paths[origin.section] = origin.path
-        selectedSectionID = origin.section
-        sheetPath = origin.sheetPath
-        detailItem = origin.sheet
-        scrollAnchors.merge(origin.scrollAnchors) { _, original in original }
-        returningDetailViewport = origin.viewport
-        #if os(tvOS)
-            tvFocus = origin.focus
-            if let context = origin.focusContext {
-                tvFocus.requestRestoration(context: context)
+    }
+
+    /// A native pop can skip several pages using the Back menu. Restore only
+    /// the viewport belonging to the detail immediately below the removed branch.
+    func routesChanged(from old: [GusRoute], to new: [GusRoute], in sectionID: String?) {
+        guard old != new else { return }
+        let visibleSection = detailItem == nil ? selectedSectionID : nil
+        if sectionID == visibleSection {
+            if new.count < old.count, old.starts(with: new), case let .related(id) = old[new.count] {
+                returningDetailViewport = relatedResults[id]?.originatingViewport
+            } else {
+                returningDetailViewport = nil
             }
-        #endif
+        }
+        for case let .related(id) in old where !new.contains(.related(id)) {
+            guard !sheetPath.contains(.related(id)), !paths.values.contains(where: { $0.contains(.related(id)) }),
+                  let results = relatedResults.removeValue(forKey: id) else { continue }
+            results.discard()
+            #if os(tvOS)
+                tvFocus.discardResults(context: results.storeKey)
+                scrollAnchors[results.storeKey] = nil
+            #endif
+            let content = VisibleContent.library(results.storeKey)
+            libraries[results.storeKey] = nil
+            refreshedAt[content] = nil
+            refreshTasks.removeValue(forKey: content)?.cancel()
+            refreshTokens[content] = nil
+        }
     }
 
-    func resumeKeptSearch() {
-        guard let keptSearch else { return }
-        self.keptSearch = nil
-        globalSearch = keptSearch
-        paths[Self.searchID] = NavigationPath()
+    func showsSearchResults(_ viewport: SearchResultsViewport) -> Bool {
+        let path = detailItem == nil ? paths[selectedSectionID] ?? [] : sheetPath
+        if case let .related(id)? = path.last {
+            return relatedResults[id]?.viewport === viewport
+        }
+        return detailItem == nil && selectedSectionID == Self.searchID && path.isEmpty && globalSearch.typed.viewport === viewport
     }
 
-    func closeSearchResults() {
+    func clearSearchResults(dismissField: () -> Void = {}) {
         if let searchHistory {
             globalSearch.typed.completeLoadedSearch(in: searchHistory)
         }
+        dismissField()
         globalSearch.typed.isPresented = false
-        globalSearch = GlobalSearchSession()
-        keptSearch = nil
-        paths[Self.searchID] = NavigationPath()
+        globalSearch.edit("", naturalSearchEnabled: false)
     }
 
     func replaySearch(_ entry: SearchHistoryEntry) {
         guard let searchHistory else { return }
         switch entry {
-        case let .related(target): startRelated(target)
+        case let .related(target):
+            openRelatedSearch(target)
         case let .typed(text):
-            closeSearchResults()
+            clearSearchResults()
             globalSearch.edit(text, naturalSearchEnabled: false)
             globalSearch.searchByKeyword(recordingIn: searchHistory)
-            selectedSectionID = Self.searchID
         }
     }
 
-    /// Only an edit to the field replaces a related search. Tab selection and keyboard
-    /// dismissal can change native presentation independently of the field's contents.
     func editSearchText(_ text: String, naturalSearchEnabled: Bool = false) {
-        guard text != globalSearch.text else { return }
-        if !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            globalSearch.related = nil
-            globalSearch.detailOrigin = nil
-            keptSearch = nil
-        }
         globalSearch.edit(text, naturalSearchEnabled: naturalSearchEnabled)
     }
 
-    /// A detail may have temporarily suspended another search in this window.
     func useKeywordSearchForCurrentDrafts() {
-        var pending = [globalSearch, keptSearch].compactMap { $0 }
-        while let search = pending.popLast() {
-            if let previous = search.detailOrigin?.search {
-                pending.append(previous)
+        globalSearch.applyKeywordPreference()
+    }
+
+    func pathBinding(for id: String) -> Binding<[GusRoute]> {
+        Binding(get: { self.paths[id] ?? [] }, set: { path in
+            guard self.selectedSectionID == id else { return }
+            self.accept(path, for: id)
+        })
+    }
+
+    /// Keep section history independent of its placement in tabs, More, or the sidebar.
+    func morePathBinding(overflowIDs: [String]) -> Binding<[GusRoute]> {
+        let owner = selectedSectionID
+        return Binding(get: {
+            let selected = self.selectedSectionID
+            let section = overflowIDs.contains(selected) ? selected : self.lastOverflowSection
+            if selected != Self.moreID, let section, overflowIDs.contains(section) {
+                return [.section(section)] + (self.paths[section] ?? [])
             }
-            search.applyKeywordPreference()
+            return self.paths[Self.moreID] ?? []
+        }, set: { path in
+            let selected = self.selectedSectionID
+            // A tab or layout change can retire this stack before SwiftUI delivers its last write.
+            guard self.displayedOverflowIDs == overflowIDs, selected == owner,
+                  selected == Self.moreID || overflowIDs.contains(selected) else { return }
+            if case let .section(section) = path.first {
+                guard overflowIDs.contains(section) else { return }
+                if selected == section {
+                    self.accept(Array(path.dropFirst()), for: section)
+                } else if selected == Self.moreID {
+                    self.lastOverflowSection = section
+                    self.selectSection(section)
+                }
+            } else if overflowIDs.contains(selected) {
+                guard path.isEmpty else { return }
+                self.paths[selected] = []
+                self.lastOverflowSection = nil
+                self.selectSection(Self.moreID)
+            } else {
+                self.accept(path, for: Self.moreID)
+            }
+        })
+    }
+
+    func rememberOverflowSelection(in overflowIDs: [String]) {
+        displayedOverflowIDs = overflowIDs
+        if overflowIDs.contains(selectedSectionID) {
+            lastOverflowSection = selectedSectionID
+        } else if let lastOverflowSection, !overflowIDs.contains(lastOverflowSection) {
+            self.lastOverflowSection = nil
         }
     }
 
-    func pathBinding(for id: String) -> Binding<NavigationPath> {
-        Binding(get: { self.paths[id] ?? NavigationPath() }, set: { self.paths[id] = $0 })
+    func useSidebar() {
+        displayedOverflowIDs = []
+        if selectedSectionID == Self.moreID {
+            selectSection(NavigationSectionPreference.homeID)
+        }
+    }
+
+    func selectMoreTab(overflowIDs: [String]) {
+        guard !overflowIDs.contains(selectedSectionID) else { return }
+        if let lastOverflowSection, overflowIDs.contains(lastOverflowSection) {
+            selectSection(lastOverflowSection)
+        } else {
+            selectSection(Self.moreID)
+        }
+    }
+
+    private func accept(_ path: [GusRoute], for section: String) {
+        let previous = paths[section] ?? []
+        guard path != previous else { return }
+        paths[section] = path
+        if path.count == previous.count + 1, path.starts(with: previous),
+           case let .searchResult(ref, query) = path.last, let searchHistory
+        {
+            globalSearch.typed.selectedResult(ref.item, for: query, in: searchHistory)
+        }
     }
 
     func scrollBinding(for id: String) -> Binding<String?> {
@@ -416,11 +500,20 @@ final class RootNavigationState {
             ids.count > 7 ? Array(ids.prefix(6)) : ids
         }
 
-        func reconcileVisionMoreSelection(sectionIDs: [String]) {
-            guard selectedSectionID == Self.moreID, sectionIDs.count <= 7 else { return }
-            selectedSectionID = sectionIDs.first ?? NavigationSectionPreference.homeID
-        }
     #endif
+
+    func reconcileTabSelection(sectionIDs: [String], overflowIDs: [String], librariesLoaded: Bool) {
+        rememberOverflowSelection(in: overflowIDs)
+        guard selectedSectionID != Self.searchID, !sectionIDs.contains(selectedSectionID) else { return }
+        if selectedSectionID == Self.moreID {
+            if overflowIDs.isEmpty {
+                selectSection(sectionIDs.first ?? NavigationSectionPreference.homeID)
+            }
+        } else if librariesLoaded {
+            // A hidden section can still be in scene restoration from a previous launch.
+            selectSection(overflowIDs.isEmpty ? sectionIDs.first ?? NavigationSectionPreference.homeID : Self.moreID)
+        }
+    }
 
     func adopt(_ route: AppRoute) {
         switch route {
@@ -576,7 +669,7 @@ final class SectionSearchState {
     }
 }
 
-/// Typed fixed destinations allow the shared NavigationPath to preserve Settings/Downloads.
+/// Fixed settings and request destinations in a signed-in stack.
 enum AppScreen: Hashable {
     case downloads
     case navigationSettings

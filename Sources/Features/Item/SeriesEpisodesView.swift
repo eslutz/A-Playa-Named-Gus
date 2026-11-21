@@ -42,7 +42,7 @@ struct SeriesEpisodesView: View {
                         LazyHStack(alignment: .top, spacing: 18) {
                             ForEach(store.episodes, id: \.id) { episode in
                                 VStack(alignment: .leading, spacing: 4) {
-                                    NavigationLink(value: ItemRef(item: episode)) {
+                                    NavigationLink(value: GusRoute.item(.init(item: episode))) {
                                         EpisodeCard(episode: episode)
                                     }
                                     .posterNavigationStyle()
@@ -113,8 +113,9 @@ private struct SeasonPicker: View {
                 }
             }
         } label: {
-            Label(selectedSeasonTitle, systemImage: "chevron.up.chevron.down")
+            Text(selectedSeasonTitle)
         }
+        .menuIndicator(.visible)
         .disabled(store.seasons.isEmpty)
     }
 

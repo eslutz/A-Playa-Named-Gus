@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Tapping a credit opens Global Search constrained to that server entity.
+/// Tapping a credit pushes the titles for that server entity.
 struct DetailMetadataRows: View {
     let item: MediaItem
 
@@ -35,7 +35,7 @@ private struct MetadataPillRow: View {
                 HStack(spacing: 10) {
                     ForEach(values, id: \.identityKey) { target in
                         Button(target.name) {
-                            navigation.openRelatedSearch(target, focusContext: context, viewport: viewport?.location)
+                            navigation.openRelatedSearch(target, viewport: viewport?.location)
                         }
                         .buttonStyle(.bordered)
                         .buttonBorderShape(.capsule)

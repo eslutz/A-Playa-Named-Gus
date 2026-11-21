@@ -71,6 +71,7 @@ struct SearchResultsView: View {
                 LazyVGrid(columns: searchState.showsList ? [GridItem(.flexible())] : PosterGrid.columns, alignment: .leading, spacing: PosterGrid.spacing) {
                     ForEach(store.results, id: \.id) { item in
                         resultLink(item)
+                            .navigationLinkIndicatorVisibility(searchState.showsList ? .visible : .automatic)
                             .id(ItemRef(item: item).id)
                             .posterNavigationStyle()
                             .gusTVFocus(id: ItemRef(item: item).id, section: RootNavigationState.searchID, ids: store.results.map { ItemRef(item: $0).id }, item: item)
@@ -110,7 +111,7 @@ struct SearchResultsView: View {
 
     @ViewBuilder private func resultLink(_ item: MediaItem) -> some View {
         if item.type == .genre {
-            MediaItemNavigationLink(item: item, onSelect: { didSelect(item) }) {
+            MediaItemNavigationLink(item: item, searchQuery: store.query) {
                 VStack(alignment: .leading, spacing: 4) {
                     Label(item.displayTitle, systemImage: "tag")
                         .font(.headline)
@@ -123,7 +124,7 @@ struct SearchResultsView: View {
             }
             .accessibilityIdentifier("Search.genre." + (item.id ?? ""))
         } else {
-            MediaItemNavigationLink(item: item, onSelect: { didSelect(item) }) {
+            MediaItemNavigationLink(item: item, searchQuery: store.query) {
                 if searchState.showsList {
                     MediaLibraryRow(item: item)
                 } else {
@@ -132,10 +133,6 @@ struct SearchResultsView: View {
             }
             .mediaItemContextMenu(item: item)
         }
-    }
-
-    private func didSelect(_ item: MediaItem) {
-        searchState.selectedResult(item, for: store.query, in: session.searchHistory)
     }
 }
 
@@ -168,7 +165,7 @@ extension View {
         }
 
         private var showsResults: Bool {
-            navigation.selectedSectionID == RootNavigationState.searchID && navigation.paths[RootNavigationState.searchID]?.isEmpty != false
+            navigation.showsSearchResults(viewport)
         }
 
         func body(content: Content) -> some View {

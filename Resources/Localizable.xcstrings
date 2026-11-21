@@ -295,14 +295,8 @@
     "When enabled, Gus can send search text, selected catalog details, and taste signals to Apple’s Private Cloud Compute using your daily quota.": {
       "comment": "Search or recommendation label for the current Gus library."
     },
-    "Back to Detail": {
-      "comment": "Jellyfin Search navigation."
-    },
-    "Show Search Results": {
-      "comment": "Jellyfin Search navigation."
-    },
-    "Close Results": {
-      "comment": "Jellyfin Search navigation."
+    "Clear Results": {
+      "comment": "Clear the current library search and show recent searches."
     },
     "No Matching Credit or Tag": {
       "comment": "Jellyfin Search navigation."

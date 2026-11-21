@@ -47,6 +47,17 @@ struct TVFocusMemory {
         }
     }
 
+    /// Each pushed related-results page has a unique focus context for its own scroll position.
+    mutating func discardResults(context: String) {
+        bookmarks[context] = nil
+        sectionsByContext[context] = nil
+        returning[context] = nil
+        frames = frames.filter { $0.value.context != context }
+        if lastContext == context {
+            lastContext = nil
+        }
+    }
+
     /// A dismissed task returns to the control that opened it in the same context.
     mutating func requestRestoration(context: String) {
         guard let section = sectionsByContext[context], let bookmark = bookmarks[section] else { return }

@@ -37,7 +37,7 @@
                 #endif
                     .toolbar {
                         ToolbarItem(placement: .cancellationAction) {
-                            ImmersiveDismissButton {
+                            GusCloseButton {
                                 model?.close()
                                 // The session host owns this cover; do not dismiss
                                 // an ancestor detail sheet after adaptive relayout.

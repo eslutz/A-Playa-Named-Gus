@@ -105,16 +105,15 @@ struct VideoPlayerView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .ignoresSafeArea()
         #endif
+        #if os(tvOS) || os(visionOS)
         .overlay(alignment: .topLeading) {
-            #if !os(iOS)
-                if store?.state != .ready {
-                    Button("Close", systemImage: "xmark") { closePlayback() }
-                        .frame(minWidth: 44, minHeight: 44)
-                        .padding()
-                        .foregroundStyle(.white)
-                }
-            #endif
+            if store?.state != .ready || playlist?.errorMessage != nil {
+                GusCloseButton { closePlayback() }
+                    .padding()
+                    .accessibilityIdentifier("VideoPlayer.close")
+            }
         }
+        #endif
         #if !os(tvOS)
         .safeAreaInset(edge: .top, spacing: 0) {
             #if os(iOS)

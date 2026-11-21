@@ -1,8 +1,7 @@
 import Observation
 import SwiftUI
 
-/// A window keeps its current results through tab and split-view replacement. A search
-/// opened from a detail in Search can temporarily suspend that detail's original stack.
+/// The Search tab owns its draft and results across adaptive layout changes.
 @MainActor @Observable
 final class GlobalSearchSession {
     let typed = SectionSearchState(retainsResults: true)
@@ -54,25 +53,6 @@ final class GlobalSearchSession {
             applyKeywordPreference()
         }
     }
-
-    var related: RelatedSearchResults?
-    var detailOrigin: SearchDetailOrigin?
-
-    init(target: RelatedSearch? = nil) {
-        related = target.map { RelatedSearchResults(target: $0) }
-    }
-}
-
-struct SearchDetailOrigin {
-    let section: String
-    let path: NavigationPath
-    let sheet: ItemRef?
-    let sheetPath: NavigationPath
-    let search: GlobalSearchSession?
-    let scrollAnchors: [String: String]
-    let viewport: DetailScrollLocation?
-    let focus: TVFocusMemory
-    let focusContext: String?
 }
 
 struct DetailScrollLocation: Equatable {
@@ -87,7 +67,13 @@ struct DetailScrollLocation: Equatable {
 
 @MainActor @Observable
 final class RelatedSearchResults {
+    let id = UUID()
     let target: RelatedSearch
+    let originatingViewport: DetailScrollLocation?
+    var storeKey: String {
+        "related:" + id.uuidString
+    }
+
     private(set) var resolved: RelatedSearch?
     private(set) var unavailable = false
     private(set) var errorMessage: String?
@@ -96,22 +82,30 @@ final class RelatedSearchResults {
     let viewport = SearchResultsViewport()
     private(set) var lookupID = UUID()
 
+    @ObservationIgnored private var discarded = false
+
+    func discard() {
+        discarded = true
+    }
+
     func retry() {
         errorMessage = nil
         lookupID = UUID()
     }
 
-    init(target: RelatedSearch) {
+    init(target: RelatedSearch, originatingViewport: DetailScrollLocation? = nil) {
         self.target = target
+        self.originatingViewport = originatingViewport
         resolved = target.id == nil ? nil : target
     }
 
     func resolve(session: SessionStore) async {
-        guard resolved == nil, !unavailable, errorMessage == nil else { return }
+        guard !discarded, resolved == nil, !unavailable, errorMessage == nil, session.isActive, !Task.isCancelled else { return }
+        let lookup = lookupID
         do {
             let match = try await session.mediaProvider.resolveRelatedSearch(target)
             try Task.checkCancellation()
-            guard session.isActive else { return }
+            guard !discarded, session.isActive, lookupID == lookup, resolved == nil else { return }
             if let match {
                 resolved = match
                 session.searchHistory.record(.related(match))
@@ -120,7 +114,7 @@ final class RelatedSearchResults {
             }
         } catch {
             let error = GusError(from: error)
-            guard !Task.isCancelled, !error.isCancellation, session.isActive else { return }
+            guard !discarded, !Task.isCancelled, !error.isCancellation, session.isActive, lookupID == lookup, resolved == nil else { return }
             error.handleIfUnauthorized(session: session)
             errorMessage = error.localizedDescription
         }

@@ -111,7 +111,7 @@ struct LibraryGridView: View {
                         .accessibilityIdentifier("Library.relatedKind")
                 }
                 if let collectionFormat {
-                    NavigationLink(value: CollectionsRef(scope: session.references.scope, format: collectionFormat, movieLibraryID: collectionFormat == .movies ? scope.parentID : nil)) {
+                    NavigationLink(value: GusRoute.collections(.init(scope: session.references.scope, format: collectionFormat, movieLibraryID: collectionFormat == .movies ? scope.parentID : nil))) {
                         Label("Collections", systemImage: "rectangle.stack")
                     }
                     .accessibilityIdentifier("Library.collections")
@@ -176,19 +176,18 @@ struct LibraryGridView: View {
             }
         }
         .task(id: effectiveScope.storeIdentity + ratingLimit + String(hideUnrated)) {
-            // A detail sheet can dismiss while the native Search tab is mounting.
-            // The window owns the filtered grid’s first load across that transition.
-            if let searchResults {
-                if let pages = searchResults.pages, !pages.matchesRestriction {
-                    await pages.loadIfNeeded()
-                }
-                return
+            let pages = navigationState.libraryStore(for: effectiveScope, session: session, searchResults: searchResults)
+            if searchResults == nil {
+                localStore = pages
+                await pages.loadIfNeeded()
+            } else if pages.state == .loading {
+                // An adaptive layout can replace the owner while its first page is still loading.
+                await pages.load(superseding: true)
+            } else if pages.state == .idle || !pages.matchesRestriction {
+                await pages.loadIfNeeded()
             }
-            let store = navigationState.libraryStore(for: effectiveScope, session: session)
-            localStore = store
-            await store.loadIfNeeded()
         }
-        .gusVisibleContent(.library(effectiveScope.storeIdentity), isLoading: store?.isLoading ?? true)
+        .gusVisibleContent(.library(searchResults?.storeKey ?? effectiveScope.storeIdentity), isLoading: store?.isLoading ?? true)
         .searchResultsScroll(viewport: searchResults?.viewport, anchor: searchResults.map { Bindable($0).scrollAnchor } ?? navigationState.scrollBinding(for: "library:" + scope.storeIdentity))
         .lookToScroll()
         .refreshable { await store?.load() }
@@ -207,6 +206,7 @@ struct LibraryGridView: View {
                 ForEach(store.items, id: \.id) { item in
                     MediaItemNavigationLink(item: item) { MediaLibraryRow(item: item) }
                         .buttonStyle(.plain)
+                        .navigationLinkIndicatorVisibility(.visible)
                         .mediaItemContextMenu(item: item)
                         .id(ItemRef(item: item).id)
                         .task { await store.loadMoreIfNeeded(currentItem: item) }
@@ -277,7 +277,7 @@ struct LibraryGridView: View {
             } else {
                 LazyVGrid(columns: PosterGrid.columns, alignment: .leading, spacing: PosterGrid.spacing) {
                     ForEach(albums, id: \.id) { album in
-                        NavigationLink(value: ItemRef(item: album)) {
+                        NavigationLink(value: GusRoute.item(.init(item: album))) {
                             PosterCard(title: album.displayTitle, subtitle: musicSubtitle(album), statusItem: album, imageURL: session.mediaProvider.primaryImageURL(for: album, context: .posterGrid), aspectRatio: 1, placeholderSymbol: "music.note", fallbackURLs: session.mediaProvider.artworkURLs(for: album, request: .init(role: .square, maxWidth: 360)))
                         }
                         .posterNavigationStyle()
@@ -309,7 +309,7 @@ struct LibraryGridView: View {
     }
 
     private func musicRow(_ item: MediaItem, subtitle: String?, store: LibraryStore) -> some View {
-        NavigationLink(value: ItemRef(item: item)) {
+        NavigationLink(value: GusRoute.item(.init(item: item))) {
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(item.displayTitle).foregroundStyle(.primary)
@@ -318,12 +318,12 @@ struct LibraryGridView: View {
                     }
                 }
                 Spacer(minLength: 12)
-                Image(systemName: "chevron.right").font(.caption.weight(.semibold)).foregroundStyle(.tertiary)
             }
             .padding(.horizontal, 14).padding(.vertical, 12)
             .frame(minHeight: 44).contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .navigationLinkIndicatorVisibility(.visible)
         .mediaItemContextMenu(item: item)
         .id(ItemRef(item: item).id)
         .task { await store.loadMoreIfNeeded(currentItem: item) }
@@ -336,7 +336,7 @@ struct LibraryGridView: View {
                     .id(ItemRef(item: item).id)
                     .posterNavigationStyle()
                     .mediaItemContextMenu(item: item)
-                    .gusTVFocus(id: ItemRef(item: item).id, section: "library:" + scope.storeIdentity, ids: store.items.map { ItemRef(item: $0).id }, initial: item.id == store.items.first?.id, item: item)
+                    .gusTVFocus(id: ItemRef(item: item).id, section: searchResults?.storeKey ?? "library:" + scope.storeIdentity, ids: store.items.map { ItemRef(item: $0).id }, initial: item.id == store.items.first?.id, item: item)
                     .task { await store.loadMoreIfNeeded(currentItem: item) }
             }
             if let error = store.pageError {

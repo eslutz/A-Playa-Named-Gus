@@ -175,11 +175,11 @@ private struct SessionAudioPlayer: View {
                     }
                 }
                 .toolbar {
+                    ToolbarItem(placement: .cancellationAction) {
+                        GusCloseButton { audio.close() }
+                            .accessibilityIdentifier("AudioPlayer.close")
+                    }
                     #if os(iOS)
-                        ToolbarItem(placement: .cancellationAction) {
-                            ImmersiveDismissButton { audio.close() }
-                                .accessibilityIdentifier("AudioPlayer.close")
-                        }
                         if widthClass == .compact {
                             ToolbarItem(placement: .principal) {
                                 Text(audio.store?.currentTrack?.album ?? String(localized: "Now Playing"))
@@ -189,7 +189,6 @@ private struct SessionAudioPlayer: View {
                             ToolbarItem(placement: .principal) { Text("Now Playing").font(.headline) }
                         }
                     #else
-                        ToolbarItem(placement: .cancellationAction) { Button("Done", systemImage: "xmark") { audio.close() } }
                         ToolbarItem { Button("Stop", systemImage: "stop.fill") { audio.stop() } }
                     #endif
                 }

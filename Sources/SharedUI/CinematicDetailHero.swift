@@ -248,6 +248,7 @@ struct ArtworkDetailPage<Header: View, Sections: View>: View {
         let key: String
         @State private var position = ScrollPosition(idType: String.self)
         @State private var viewport = DetailScrollViewport()
+        @State private var isOnscreen = false
 
         func body(content: Content) -> some View {
             content
@@ -262,15 +263,21 @@ struct ArtworkDetailPage<Header: View, Sections: View>: View {
                     }
                 }
                 .onAppear {
-                    if navigation.returningDetailViewport?.key != key, let anchor = navigation.scrollAnchors[key] {
+                    isOnscreen = true
+                    if navigation.returningDetailViewport?.key == key {
+                        restoreViewport()
+                    } else if let anchor = navigation.scrollAnchors[key] {
                         position.scrollTo(id: anchor)
                     }
                 }
-                .onChange(of: navigation.returningDetailViewport, initial: true) { _, location in
-                    guard let location, location.key == key else { return }
-                    position.scrollTo(y: location.y)
-                    navigation.returningDetailViewport = nil
-                }
+                .onDisappear { isOnscreen = false }
+                .onChange(of: navigation.returningDetailViewport) { restoreViewport() }
+        }
+
+        private func restoreViewport() {
+            guard isOnscreen, let location = navigation.returningDetailViewport, location.key == key else { return }
+            position.scrollTo(y: location.y)
+            navigation.returningDetailViewport = nil
         }
     }
 #endif

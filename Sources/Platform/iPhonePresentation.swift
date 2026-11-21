@@ -14,23 +14,6 @@ import SwiftUI
     }
 #endif
 
-/// Immersive iPad surfaces return to their caller without implying playback stops.
-struct ImmersiveDismissButton: View {
-    let action: () -> Void
-
-    var body: some View {
-        #if os(iOS)
-            if DeviceIdentity.usesIPadPresentation {
-                Button("Back", systemImage: "chevron.backward", action: action).labelStyle(.iconOnly)
-            } else {
-                GusCloseButton(action: action)
-            }
-        #else
-            GusCloseButton(action: action)
-        #endif
-    }
-}
-
 /// Shared iPhone treatments from the reviewed Sketch component page.
 /// Native controls retain their platform materials, accessibility, and interaction.
 extension View {

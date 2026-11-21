@@ -28,8 +28,6 @@ struct MediaLibraryRow: View {
                 }
             }
             Spacer(minLength: 8)
-            Image(systemName: "chevron.right").font(.caption.weight(.semibold)).foregroundStyle(.tertiary)
-                .accessibilityHidden(true)
         }
         .padding(.vertical, 8)
         .frame(maxWidth: .infinity, alignment: .leading)

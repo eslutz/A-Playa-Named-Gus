@@ -36,6 +36,38 @@ struct SearchStoreTests {
         #expect(root.globalSearch.displaysKeywords && root.globalSearch.text == "Title")
     }
 
+    @Test("Clear Results finalizes eligible keyword history before native dismissal and cancels a pending natural search")
+    @MainActor func clearResults() async throws {
+        let suite = UUID().uuidString
+        let defaults = try #require(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let url = try #require(URL(string: "https://example.invalid"))
+        let provider = FakeMediaProviderSession(capabilities: .init())
+        provider.itemsHandler = { _ in .init(items: [], totalRecordCount: 0) }
+        let session = SessionStore(client: JellyfinClientFactory.makeClient(url: url), user: .init(id: "u", name: "User", serverID: "s"), server: .init(id: "s", name: "Server", url: url), mediaProvider: provider, historyDefaults: defaults)
+        let history = session.searchHistory
+        let root = RootNavigationState(searchHistory: history)
+        let search = root.globalSearch
+        let owner = UUID()
+        root.editSearchText("Lantern")
+        let store = search.typed.acquireStore(session: session, owner: owner)
+        await store.search("Lantern")
+        search.typed.isPresented = true
+        root.clearSearchResults {
+            #expect(history.entries == [.typed("Lantern")])
+            root.editSearchText("")
+        }
+        #expect(search.text.isEmpty && search.typed.text.isEmpty && !search.typed.isPresented)
+        #expect(store.state == .idle)
+        search.typed.release(owner: owner)
+        root.editSearchText("Something to watch", naturalSearchEnabled: true)
+        search.submit(naturalSearchEnabled: true, history: history)
+        #expect(search.natural.submission != nil)
+        root.clearSearchResults()
+        #expect(search.natural.submission == nil && search.text.isEmpty)
+        #expect(history.entries == [.typed("Lantern")])
+    }
+
     @Test("suggestions deduplicate, exclude the current text and limit visible completions")
     @MainActor func nativeCompletions() {
         let terms = ["sci", "SCI", "Sci-fi", "SCI-FI", "Comedy", "Sci-Fi Series"]

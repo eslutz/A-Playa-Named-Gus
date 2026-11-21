@@ -260,7 +260,7 @@
             XCTAssertTrue(app.navigationBars["My Requests"].waitForExistence(timeout: 10))
             capture("seerr-confirmation-history")
             if UIDevice.current.userInterfaceIdiom == .pad {
-                XCTAssertTrue(app.buttons["Navigation.hideSidebar"].exists)
+                XCTAssertTrue(app.sidebarToggle.exists)
                 XCTAssertFalse(app.buttons["Close"].exists)
             } else {
                 app.navigationBars["My Requests"].buttons.firstMatch.tap()
@@ -481,15 +481,7 @@
                     XCTAssertTrue(back.waitForExistence(timeout: 5))
                     back.tap()
                 }
-                let backToMore = app.navigationBars.buttons["More"].firstMatch
-                if backToMore.waitForExistence(timeout: 2) {
-                    backToMore.tap()
-                } else {
-                    let more = app.tabBars.buttons["More"]
-                    if more.exists {
-                        more.tap()
-                    }
-                }
+                XCTAssertTrue(app.openMoreIndex())
                 let discover = app.buttons["Discover"].firstMatch
                 reveal(discover, in: app)
                 discover.tap()
