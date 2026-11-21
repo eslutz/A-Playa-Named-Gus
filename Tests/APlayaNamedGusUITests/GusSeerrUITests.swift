@@ -92,11 +92,11 @@
             let filters = app.buttons["Filters"].firstMatch
             XCTAssertTrue(filters.waitForExistence(timeout: 10))
             filters.tap()
-            let mediaType = app.buttons["Media Type"].firstMatch
+            let mediaType = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Media Type,")).firstMatch
             XCTAssertTrue(mediaType.waitForExistence(timeout: 10))
             mediaType.tap()
             app.buttons["Movies"].firstMatch.tap()
-            XCTAssertEqual(mediaType.value as? String, "Movies")
+            XCTAssertEqual(mediaType.label, "Media Type, Movies")
             app.buttons["Apply"].tap()
             let nextPage = app.buttons["Load More"].firstMatch
             reveal(nextPage, in: app)
@@ -114,7 +114,7 @@
             XCTAssertEqual(movie.frame.midY, position, accuracy: 40)
             filters.tap()
             XCTAssertTrue(mediaType.waitForExistence(timeout: 10))
-            XCTAssertEqual(mediaType.value as? String, "Movies")
+            XCTAssertEqual(mediaType.label, "Media Type, Movies")
             app.buttons["Cancel"].tap()
             goBack(to: "Discover", in: app)
             finishConnectedSession(app)
