@@ -153,7 +153,7 @@ private struct IntelligencePromptView: View {
                 switch self {
                 case .forYou: "Gus Settings → Library Intelligence → Show For You."
                 case .cloud: "Gus Settings → Library Intelligence → Allow Private Cloud Compute."
-                case .forYouSync: "Gus Settings → Library Intelligence → Sync For You to Apple TV."
+                case .forYouSync: "Gus Settings → iCloud Sync → Sync For You to Apple TV."
                 }
             }
 

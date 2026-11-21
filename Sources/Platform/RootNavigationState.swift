@@ -120,6 +120,7 @@ final class RootNavigationState {
             return .library(key)
         }
         for content in affected {
+            forceRefresh.insert(content)
             refreshedAt[content] = contentRevision - 1
         }
         await store.load(superseding: true)
@@ -151,6 +152,8 @@ final class RootNavigationState {
         case library(String), detail(String), search(String)
     }
 
+    private var forceRefresh = Set<VisibleContent>()
+    private var lastForegroundRevision: Int?
     private var contentRevision = 0
     private var refreshedAt: [VisibleContent: Int] = [:]
     private var visibleOwners: [UUID: VisibleContent] = [:]
@@ -186,8 +189,9 @@ final class RootNavigationState {
 
     /// Invalidate all contexts, but perform network work only for visible owners.
     /// Back-stack choices and scroll/focus anchors remain lightweight root state.
-    func refreshCachedContent() async {
+    func refreshCachedContent(ifStale: Bool = false) async {
         contentRevision += 1
+        lastForegroundRevision = ifStale ? contentRevision : nil
         for content in Set(visibleOwners.values) {
             guard !Task.isCancelled else { return }
             await refreshVisible(content)
@@ -240,10 +244,21 @@ final class RootNavigationState {
 
     private func performRefresh(_ content: VisibleContent) async {
         guard visibleOwners.values.contains(content), !Task.isCancelled else { return }
+        let ifStale = forceRefresh.remove(content) == nil && lastForegroundRevision == contentRevision
         switch content {
-        case .home: await home?.refresh()
+        case .home:
+            if ifStale {
+                await home?.loadIfNeeded()
+            } else {
+                await home?.refresh()
+            }
         case .collections: await collections?.load(force: true)
-        case let .library(id): await libraries[id]?.value?.load()
+        case let .library(id):
+            if ifStale {
+                await libraries[id]?.value?.loadIfNeeded()
+            } else {
+                await libraries[id]?.value?.load()
+            }
         case let .detail(id): await currentDetail(id)?.load()
         case let .search(id):
             if let store = searchState(for: id).store, !store.query.isEmpty {

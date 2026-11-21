@@ -26,7 +26,7 @@ actor GusLibraryCatalog {
         guard let date = try? snapshot.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate,
               Date().timeIntervalSince(date) < 86400 else { return false }
         return (try? withDB(snapshot) { db in
-            try statement("SELECT restriction FROM metadata", db) { query in
+            try statement("SELECT restriction FROM metadata WHERE schemaVersion = 2", db) { query in
                 guard sqlite3_step(query) == SQLITE_ROW else { return false }
                 return String(cString: sqlite3_column_text(query, 0)) == restriction
             }
@@ -36,8 +36,8 @@ actor GusLibraryCatalog {
     func prepare(_ file: URL, restriction: String) throws {
         try Task.checkCancellation()
         try withDB(file, flags: SQLITE_OPEN_CREATE | SQLITE_OPEN_READWRITE) { db in
-            try execute("CREATE VIRTUAL TABLE records USING fts5(title, credits, description, payload UNINDEXED); CREATE TABLE metadata(restriction TEXT NOT NULL)", db)
-            try statement("INSERT INTO metadata VALUES (?)", db) { stmt in
+            try execute("CREATE VIRTUAL TABLE records USING fts5(title, credits, genres, synopsis, taglines, tags, payload UNINDEXED); CREATE TABLE metadata(restriction TEXT NOT NULL, schemaVersion INTEGER NOT NULL)", db)
+            try statement("INSERT INTO metadata VALUES (?, 2)", db) { stmt in
                 try bind(restriction, at: 1, to: stmt)
                 try done(stmt)
             }
@@ -48,7 +48,7 @@ actor GusLibraryCatalog {
         try Task.checkCancellation()
         try withDB(file, flags: SQLITE_OPEN_READWRITE) { db in
             try execute("BEGIN TRANSACTION", db)
-            try statement("INSERT INTO records VALUES (?, ?, ?, ?)", db) { stmt in
+            try statement("INSERT INTO records VALUES (?, ?, ?, ?, ?, ?, ?)", db) { stmt in
                 for item in items {
                     try Task.checkCancellation()
                     sqlite3_reset(stmt)
@@ -56,15 +56,18 @@ actor GusLibraryCatalog {
                     let record = MediaItem(
                         album: item.album, albumArtist: item.albumArtist, artists: item.artists, genres: item.genres, id: item.id,
                         name: item.name, officialRating: item.officialRating, overview: item.overview, people: item.people,
-                        productionYear: item.productionYear, runTimeTicks: item.runTimeTicks, seriesName: item.seriesName,
-                        taglines: item.taglines, type: item.type, userData: item.userData
+                        productionYear: item.productionYear, runTimeTicks: item.runTimeTicks, seriesID: item.seriesID, seriesName: item.seriesName,
+                        taglines: item.taglines, tags: item.tags, type: item.type, userData: item.userData
                     )
-                    try bind(item.name ?? "", at: 1, to: stmt)
+                    try bind([item.name, item.album, item.seriesName].compactMap { $0 }.joined(separator: " "), at: 1, to: stmt)
                     try bind((GusLibraryMatching.creators(item) + item.people.compactMap(\.role)).joined(separator: " "), at: 2, to: stmt)
-                    try bind(GusLibraryMatching.description(item), at: 3, to: stmt)
+                    try bind(item.genres.joined(separator: " "), at: 3, to: stmt)
+                    try bind(item.overview ?? "", at: 4, to: stmt)
+                    try bind(item.taglines.joined(separator: " "), at: 5, to: stmt)
+                    try bind(item.tags.joined(separator: " "), at: 6, to: stmt)
                     let payload = try JSONEncoder().encode(record)
                     let result = payload.withUnsafeBytes {
-                        sqlite3_bind_blob(stmt, 4, $0.baseAddress, Int32($0.count), transient)
+                        sqlite3_bind_blob(stmt, 7, $0.baseAddress, Int32($0.count), transient)
                     }
                     guard result == SQLITE_OK else { throw CatalogError.unavailable }
                     try done(stmt)
@@ -77,17 +80,28 @@ actor GusLibraryCatalog {
     /// Keep a single SQLite cursor while the caller verifies successive batches with Jellyfin.
     /// A revoked row or duplicate completion does not consume an output slot.
     func collect<Match: Sendable>(
-        terms: [String], batchSize: Int, limit: Int,
+        terms: [String], concepts: [LibrarySearchConcept] = [], batchSize: Int, limit: Int,
         accepts: @Sendable (MediaItem) -> Bool,
         verify: @Sendable ([MediaItem]) async throws -> [Match],
         identity: @Sendable (Match) -> String?
     ) async throws -> [Match] {
         guard limit > 0, batchSize > 0 else { return [] }
         let words = terms.flatMap { $0.split { !$0.isLetter && !$0.isNumber }.map(String.init) }.prefix(40)
-        let expression = words.map { "\"\($0)\"*" }.joined(separator: " OR ")
+        var clauses: [String] = []
+        if !words.isEmpty {
+            clauses.append("(" + words.map { "\"\($0)\"*" }.joined(separator: " OR ") + ")")
+        }
+        for concept in concepts {
+            guard !concept.alternatives.isEmpty else { return [] }
+            // Alternatives contain normalized words only. Quote phrases to preserve their boundaries.
+            let alternatives = concept.alternatives.map { "\"\($0)\"" }.joined(separator: " OR ")
+            let fields = concept.kind == .tone ? "{genres synopsis taglines tags}" : "{synopsis taglines tags}"
+            clauses.append(fields + " : (" + alternatives + ")")
+        }
+        let expression = clauses.joined(separator: " AND ")
         let sql = expression.isEmpty
             ? "SELECT payload FROM records ORDER BY rowid"
-            : "SELECT payload FROM records WHERE records MATCH ? AND rank MATCH 'bm25(4, 3, 1, 0)' ORDER BY rank"
+            : "SELECT payload FROM records WHERE records MATCH ? AND rank MATCH 'bm25(4, 3, 2, 1, 1, 2, 0)' ORDER BY rank, rowid"
         let db = try openDB(snapshot, flags: SQLITE_OPEN_READONLY)
         defer { sqlite3_close(db) }
         let stmt = try prepareStatement(sql, db)
@@ -125,6 +139,29 @@ actor GusLibraryCatalog {
         }
         try Task.checkCancellation()
         return result
+    }
+
+    struct Candidate: Sendable {
+        let id: String
+        let type: MediaItemType
+        let rank: GusSearchIntent.Rank
+    }
+
+    /// Rank compact references locally before applying the live verification budget. A large
+    /// group of episodes must not crowd a stronger movie out of the first verification batch.
+    func rankedCandidates(for intent: GusSearchIntent, terms: [String]) async throws -> [Candidate] {
+        let candidates: [Candidate] = try await collect(
+            terms: terms, concepts: intent.concepts, batchSize: 100, limit: .max,
+            accepts: { ContentRatingGate.admitsStored($0) && GusLibraryMatching.accepts($0, intent: intent) },
+            verify: { rows in
+                rows.compactMap { row in
+                    guard let id = row.id, let type = row.type else { return nil }
+                    return Candidate(id: id, type: type, rank: intent.rank(row))
+                }
+            },
+            identity: { $0.id }
+        )
+        return candidates.sorted { $0.rank > $1.rank }
     }
 
     private enum CatalogError: LocalizedError {

@@ -516,6 +516,10 @@
                 XCTAssertFalse(message.exists)
                 let toggle = app.switches["Settings.rememberEpisodeTracks"]
                 let originalSetting = toggle.exists ? toggle.value as? String : nil
+                let control = label == "About Streaming Quality" ? app.buttons["Settings.streamingQuality"] : toggle
+                XCTAssertTrue(control.isHittable)
+                XCTAssertLessThanOrEqual(help.frame.maxX, control.frame.minX + 1)
+                XCTAssertEqual(help.frame.midY, control.frame.midY, accuracy: 2)
                 help.tap()
                 XCTAssertTrue(message.waitForExistence(timeout: 5))
                 let capture = XCTAttachment(screenshot: XCUIScreen.main.screenshot())

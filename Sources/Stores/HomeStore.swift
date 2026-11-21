@@ -1,6 +1,5 @@
 import Foundation
 import Observation
-import OSLog
 
 struct HomeLatestSection: Identifiable, Sendable {
     let id: String
@@ -37,7 +36,10 @@ final class HomeStore {
     private(set) var unifiedNextUp: [NextUpEntry] = []
     private var savedIntents: [UpNextEntry] = []
     private var playlistCandidates: [NextUpPlaylistCandidate] = []
-    let forYou = ForYouShelfState()
+    var forYou: ForYouShelfState {
+        session.forYouShelf
+    }
+
     private let activity: NextUpActivityStore
     private var resumeOffset = 0
     private var nextOffset = 0
@@ -54,7 +56,6 @@ final class HomeStore {
 
     private let nextUpPageSize = 50
     private typealias FeedFailure = (title: String, cause: GusError)
-    private var libraryGeneration = UUID()
     private(set) var libraryState: LoadState = .idle
     private(set) var libraries: [MediaItem] = []
     private(set) var resumeItems: [MediaItem] = []
@@ -67,22 +68,329 @@ final class HomeStore {
     private(set) var latestSections: [HomeLatestSection] = []
 
     private let session: SessionStore
-    private let logger = Logger(category: .home)
 
     init(session: SessionStore, activity: NextUpActivityStore = .shared) {
         self.session = session
         self.activity = activity
+        session.onInvalidation(of: self) { store in
+            for task in store.flights.values {
+                task.cancel()
+            }
+            store.flights.removeAll()
+            store.loadGeneration = UUID()
+        }
+    }
+
+    private enum Feed: Hashable, Sendable {
+        case resume, next, libraries, latest(LatestMediaKind)
+        static let automatic: [Self] = [.resume, .next]
+        static var home: [Self] {
+            automatic + LatestMediaKind.allCases.map(latest)
+        }
+
+        var isAutomatic: Bool {
+            self == .resume || self == .next
+        }
+
+        var cacheKey: String {
+            switch self {
+            case .resume: "resume"
+            case .next: "next"
+            case .libraries: "libraries"
+            case let .latest(kind): "latest:" + kind.rawValue
+            }
+        }
+
+        var title: String {
+            switch self {
+            case .resume: String(localized: "Continue Watching")
+            case .next: String(localized: "Next Up")
+            case .libraries: String(localized: "Libraries")
+            case let .latest(kind): kind.title
+            }
+        }
+    }
+
+    func restoreSnapshots() {
+        guard session.isActive else { return }
+        for key in Feed.home + [.libraries] {
+            hydrate(key)
+        }
+    }
+
+    private struct AutomaticPage: Codable {
+        let items: [MediaItem]
+        let offset: Int
+        let total: Int?
+        let hasMore: Bool
+    }
+
+    private var timestamps: [Feed: Date] = [:]
+    private var completed = Set<Feed>()
+    private var flights: [Feed: Task<GusError?, Never>] = [:]
+    private var feedErrors: [Feed: GusError] = [:]
+    private var restriction = BrowseSnapshotCache.restriction
+    private var lastPlaybackRevision = 0
+
+    var matchesRestriction: Bool {
+        restriction == BrowseSnapshotCache.restriction
+    }
+
+    var nextUpPending: Bool {
+        !completed.contains(.resume) || !completed.contains(.next)
+    }
+
+    func isPending(_ kind: LatestMediaKind) -> Bool {
+        !completed.contains(.latest(kind))
     }
 
     func load() async {
-        await load(showsLoadingState: true)
+        await loadHome(force: true)
     }
 
-    /// Reloads content in place. Already-loaded screens keep their content visible
-    /// (no full-screen spinner flash) — used by pull-to-refresh and the post-playback
-    /// revision bump.
     func refresh() async {
-        await load(showsLoadingState: state != .loaded)
+        await loadHome(force: true)
+    }
+
+    func loadIfNeeded() async {
+        await loadHome(force: false)
+    }
+
+    func refreshAfterPlayback(revision: Int) async {
+        guard revision > lastPlaybackRevision else { return }
+        lastPlaybackRevision = revision
+        // A read started before playback completed can carry the old position.
+        for key in Feed.automatic {
+            _ = await flights[key]?.value
+        }
+        await loadHome(force: true, automaticOnly: true)
+    }
+
+    private func prepareScope() {
+        let current = BrowseSnapshotCache.restriction
+        guard current != restriction else { return }
+        restriction = current
+        loadGeneration = UUID()
+        for task in flights.values {
+            task.cancel()
+        }
+        flights.removeAll()
+        timestamps.removeAll()
+        completed.removeAll()
+        errorMessage = nil
+        feedErrors.removeAll()
+        for key in [Feed.resume, .next, .libraries] {
+            clear(key)
+        }
+        latestSections = []
+        sharedWithYouItems = ContentRatingGate.filter(sharedWithYouItems)
+        savedIntents.removeAll { !ContentRatingGate.admitsStored($0.reference.item) }
+        playlistCandidates = []
+        rebuildNextUp()
+    }
+
+    private func clear(_ key: Feed) {
+        switch key {
+        case .resume:
+            resumeItems = []
+            resumeOffset = 0
+            resumeTotal = nil
+            resumeHasMore = false
+        case .next:
+            nextUpItems = []
+            nextOffset = 0
+            nextTotal = nil
+            nextHasMore = false
+        case .libraries: libraries = []
+        case let .latest(kind): latestSections.removeAll { $0.kind == kind }
+        }
+        completed.remove(key)
+        timestamps[key] = nil
+    }
+
+    private func setLatest(_ kind: LatestMediaKind, items: [MediaItem]) {
+        let id = "latest:" + kind.rawValue
+        var sections = latestSections.filter { $0.kind != kind }
+        if !items.isEmpty {
+            sections.append(.init(id: id, title: kind.title, items: items, kind: kind))
+        }
+        latestSections = LatestMediaKind.allCases.compactMap { kind in sections.first { $0.kind == kind } }
+    }
+
+    private func applyAutomatic(_ page: AutomaticPage, key: Feed, recordActivity: Bool = true) {
+        if key == .resume {
+            resumeItems = ContentRatingGate.filter(page.items)
+            resumeOffset = page.offset
+            resumeTotal = page.total
+            resumeHasMore = page.hasMore
+        } else {
+            nextUpItems = ContentRatingGate.filter(page.items)
+            nextOffset = page.offset
+            nextTotal = page.total
+            nextHasMore = page.hasMore
+        }
+        rebuildNextUp(recordActivity: recordActivity)
+    }
+
+    private func hydrate(_ key: Feed) {
+        let cache = session.browseCache
+        if let date = timestamps[key] {
+            if (0 ..< BrowseSnapshotCache.lifetime).contains(cache.now().timeIntervalSince(date)) {
+                return
+            }
+            clear(key)
+            if key.isAutomatic {
+                rebuildNextUp()
+            }
+        }
+        if key.isAutomatic {
+            guard let entry = cache.read(key.cacheKey, as: AutomaticPage.self) else { return }
+            applyAutomatic(entry.value, key: key, recordActivity: false)
+            timestamps[key] = entry.savedAt
+        } else {
+            guard let entry = cache.read(key.cacheKey, as: [MediaItem].self) else { return }
+            if key == .libraries {
+                libraries = entry.value
+                libraryState = .loaded
+            } else if case let .latest(kind) = key {
+                setLatest(kind, items: ContentRatingGate.filter(entry.value))
+            }
+            timestamps[key] = entry.savedAt
+        }
+        completed.insert(key)
+    }
+
+    private func needsRefresh(_ key: Feed, force: Bool) -> Bool {
+        if !force || timestamps[key] != nil {
+            hydrate(key)
+        }
+        if feedErrors[key] != nil {
+            return true
+        }
+        let interval: TimeInterval = key.isAutomatic ? 60 : 300
+        return force || timestamps[key].map { session.browseCache.now().timeIntervalSince($0) >= interval } != false
+    }
+
+    private func loadHome(force: Bool, automaticOnly: Bool = false) async {
+        guard session.isActive, !Task.isCancelled else { return }
+        prepareScope()
+        let partition = restriction
+        let requested = automaticOnly ? Feed.automatic : Feed.home
+        let feeds = requested.filter { needsRefresh($0, force: force) }
+        if state == .idle {
+            state = .loading
+        }
+        async let views: Void = automaticOnly ? () : loadLibraries(force: force)
+        if feeds.contains(where: { $0.isAutomatic && flights[$0] == nil }) {
+            loadGeneration = UUID()
+            isLoadingMore = false
+        }
+        await withTaskGroup(of: Void.self) { group in
+            for key in feeds {
+                group.addTask { _ = await self.refreshFeed(key) }
+            }
+        }
+        await views
+        guard session.isActive, partition == restriction else { return }
+        if !feeds.isEmpty || state == .loading {
+            let failure: FeedFailure? = Feed.home.lazy.compactMap { key in self.feedErrors[key].map { (key.title, $0) } }.first
+            errorMessage = failure.map { failure in
+                String(localized: "Couldn’t refresh \(failure.title). \(failure.cause.localizedDescription)")
+            }
+            state = errorMessage.map { .failed($0) } ?? .loaded
+        }
+        donateToSystemSearch()
+    }
+
+    private func refreshFeed(_ key: Feed) async -> GusError? {
+        if let flight = flights[key] {
+            return await flight.value
+        }
+        let partition = restriction
+        if timestamps[key] == nil {
+            completed.remove(key)
+        }
+        let task = Task { @MainActor () -> GusError? in
+            defer {
+                if !Task.isCancelled {
+                    self.flights[key] = nil
+                }
+            }
+            do {
+                try await self.fetch(key, partition: partition)
+                self.feedErrors[key] = nil
+                self.timestamps[key] = self.session.browseCache.now()
+                self.completed.insert(key)
+                return nil
+            } catch {
+                let failure = GusError(from: error)
+                guard !failure.isCancellation, self.session.isActive, partition == self.restriction else { return .cancelled }
+                if failure.invalidatesBrowseSnapshot {
+                    self.session.browseCache.remove(key.cacheKey)
+                    self.clear(key)
+                    self.rebuildNextUp()
+                }
+                self.feedErrors[key] = failure
+                self.completed.insert(key)
+                failure.handleIfUnauthorized(session: self.session)
+                return failure
+            }
+        }
+        flights[key] = task
+        return await task.value
+    }
+
+    private func fetch(_ key: Feed, partition: String) async throws {
+        func validate() throws {
+            try Task.checkCancellation()
+            guard session.isActive, partition == BrowseSnapshotCache.restriction else { throw CancellationError() }
+        }
+        try validate()
+        let cache = session.browseCache
+        if key == .libraries {
+            let items = try await session.mediaProvider.userViews()
+            try validate()
+            libraries = items
+            cache.write(items.map(\.browseSnapshotItem), key: key.cacheKey)
+        } else if key.isAutomatic {
+            let limit = max(key == .resume ? resumeOffset : nextOffset, nextUpPageSize)
+            let result = key == .resume ? await resumeResult(startIndex: 0, limit: limit) : await nextUpResult(startIndex: 0, limit: limit)
+            let page = try result.get()
+            try validate()
+            let count = min(nextUpPageSize, page.items.count)
+            let more = Self.hasMore(page: page, offset: page.items.count, requested: limit)
+            cache.write(AutomaticPage(items: ContentRatingGate.filter(Array(page.items.prefix(count))).map(\.browseSnapshotItem), offset: count, total: page.totalRecordCount, hasMore: page.items.count > count || more), key: key.cacheKey)
+            applyAutomatic(.init(items: page.items, offset: page.items.count, total: page.totalRecordCount, hasMore: more), key: key)
+        } else if case let .latest(kind) = key {
+            var items: [MediaItem] = []
+            var offset = 0
+            while items.count < 12, offset < 180 {
+                let page = try await session.mediaProvider.latestMedia(kind: kind, startIndex: offset, limit: 60)
+                try validate()
+                items = kind.displayItems(items + ContentRatingGate.filter(page.items))
+                offset += page.items.count
+                if page.items.count < 60 || page.totalRecordCount.map({ offset >= $0 }) == true {
+                    break
+                }
+            }
+            let shelf = Array(items.prefix(12))
+            setLatest(kind, items: shelf)
+            cache.write(shelf.map(\.browseSnapshotItem), key: key.cacheKey)
+        }
+    }
+
+    func loadLibraries(force: Bool = true) async {
+        guard session.isActive, !Task.isCancelled else { return }
+        prepareScope()
+        guard needsRefresh(.libraries, force: force) else { return }
+        if libraries.isEmpty, timestamps[.libraries] == nil {
+            libraryState = .loading
+        }
+        let failure = await refreshFeed(.libraries)
+        if failure == .cancelled {
+            return
+        }
+        libraryState = failure.map { .failed($0.localizedDescription) } ?? .loaded
     }
 
     func loadSharedWithYou(links: [ContentLink], title: String) async {
@@ -132,9 +440,11 @@ final class HomeStore {
         donateToSystemSearch()
     }
 
-    private func rebuildNextUp() {
+    private func rebuildNextUp(recordActivity: Bool = true) {
         let scope = session.references.scope
-        activity.reconcileResume(resumeItems + nextUpItems, scope: scope)
+        if recordActivity {
+            activity.reconcileResume(resumeItems + nextUpItems, scope: scope)
+        }
         unifiedNextUp = NextUpBuilder.build(
             resume: resumeItems, nextEpisodes: nextUpItems, saved: savedIntents,
             playlists: playlistCandidates.filter { !activity.isDismissed("playlist:" + $0.id.uuidString, scope: scope) }, activity: activity.snapshot(scope: scope),
@@ -142,86 +452,8 @@ final class HomeStore {
         ).filter {
             !activity.isDismissed($0.id, scope: scope) && ($0.playlist != nil || $0.item.map { !activity.isDismissed($0, scope: scope) } != false)
         }
-        activity.remember(unifiedNextUp.map(\.id), scope: scope)
-    }
-
-    private func load(showsLoadingState: Bool) async {
-        let generation = UUID()
-        loadGeneration = generation
-        defer {
-            if generation == loadGeneration, Task.isCancelled, state == .loading {
-                state = unifiedNextUp.isEmpty && latestSections.isEmpty && sharedWithYouItems.isEmpty ? .idle : .loaded
-            }
-        }
-        isLoadingMore = false
-        if showsLoadingState {
-            state = .loading
-        }
-        // Independent failures preserve successful responses and usable cached
-        // content. A failed latest-media rail cannot hide saved/offline intents.
-        async let views: Void = loadLibraries()
-        let resumeLimit = max(resumeOffset, nextUpPageSize)
-        let nextLimit = max(nextOffset, nextUpPageSize)
-        async let resume = resumeResult(startIndex: 0, limit: resumeLimit)
-        async let next = nextUpResult(startIndex: 0, limit: nextLimit)
-        let results = await(resume, next)
-        guard !Task.isCancelled, session.references.isActive, loadGeneration == generation else { return }
-        var errors: [FeedFailure] = []
-        switch results.0 {
-        case let .success(page):
-            resumeItems = ContentRatingGate.filter(page.items)
-            resumeOffset = page.items.count
-            resumeTotal = page.totalRecordCount
-            resumeHasMore = Self.hasMore(page: page, offset: resumeOffset, requested: resumeLimit)
-        case let .failure(error): errors.append((String(localized: "Continue Watching"), error))
-        }
-        switch results.1 {
-        case let .success(page):
-            nextUpItems = ContentRatingGate.filter(page.items)
-            nextOffset = page.items.count
-            nextTotal = page.totalRecordCount
-            nextHasMore = Self.hasMore(page: page, offset: nextOffset, requested: nextLimit)
-        case let .failure(error): errors.append((String(localized: "Next Up"), error))
-        }
-        let latest = await loadLatestSections()
-        guard !Task.isCancelled, session.references.isActive, loadGeneration == generation else { return }
-        latestSections = latest.sections
-        errors += latest.errors
-        errorMessage = errors.first(where: { !$0.cause.isCancellation }).map { failure in
-            String(localized: "Couldn’t refresh \(failure.title). \(failure.cause.localizedDescription)")
-        }
-        if errors.contains(where: { $0.cause == .unauthorized }) {
-            session.handleUnauthorized()
-        }
-        // HomeView renders a banner if usable content survives, otherwise its
-        // usual unavailable screen. Local Next Up can arrive after this request.
-        state = errorMessage.map { .failed($0) } ?? .loaded
-        rebuildNextUp()
-        donateToSystemSearch()
-        await views
-    }
-
-    func loadLibraries() async {
-        guard !Task.isCancelled, session.references.isActive else { return }
-        let generation = UUID()
-        libraryGeneration = generation
-        let previous = libraryState == .loading ? (libraries.isEmpty ? LoadState.idle : .loaded) : libraryState
-        libraryState = .loading
-        defer {
-            if generation == libraryGeneration, libraryState == .loading {
-                libraryState = previous
-            }
-        }
-        do {
-            let items = try await session.mediaProvider.userViews()
-            guard !Task.isCancelled, session.references.isActive, generation == libraryGeneration else { return }
-            libraries = items
-            libraryState = .loaded
-        } catch {
-            let failure = GusError(from: error)
-            guard !Task.isCancelled, session.references.isActive, generation == libraryGeneration, !failure.isCancellation else { return }
-            libraryState = .failed(failure.localizedDescription)
-            failure.handleIfUnauthorized(session: session)
+        if recordActivity {
+            activity.remember(unifiedNextUp.map(\.id), scope: scope)
         }
     }
 
@@ -250,7 +482,7 @@ final class HomeStore {
     /// records, including rating-gated and deduplicated records, avoiding skipped
     /// pages when fewer cards are visible than records returned.
     func loadMoreNextUp() async {
-        guard hasMoreNextUp, !isLoadingMore else { return }
+        guard hasMoreNextUp, !isLoadingMore, flights[.resume] == nil, flights[.next] == nil else { return }
         let generation = loadGeneration
         isLoadingMore = true
         defer {
@@ -263,7 +495,7 @@ final class HomeStore {
         async let resume: Result<MediaItemPage, GusError>? = fetchResume ? resumeResult(startIndex: resumeStart, limit: nextUpPageSize, previousTotal: resumeTotal) : nil
         async let next: Result<MediaItemPage, GusError>? = fetchNext ? nextUpResult(startIndex: nextStart, limit: nextUpPageSize, previousTotal: nextTotal) : nil
         let results = await(resume, next)
-        guard !Task.isCancelled, session.references.isActive, generation == loadGeneration else { return }
+        guard !Task.isCancelled, session.references.isActive, generation == loadGeneration, restriction == BrowseSnapshotCache.restriction else { return }
         var errors: [GusError] = []
         if let result = results.0 {
             switch result {
@@ -272,7 +504,11 @@ final class HomeStore {
                 resumeTotal = page.totalRecordCount
                 resumeHasMore = Self.hasMore(page: page, offset: resumeOffset, requested: nextUpPageSize)
                 resumeItems += MediaPageLoader.unique(ContentRatingGate.filter(page.items), after: resumeItems)
-            case let .failure(error): errors.append(error)
+            case let .failure(error):
+                if error.invalidatesBrowseSnapshot {
+                    session.browseCache.remove("resume"); clear(.resume); completed.insert(.resume)
+                }
+                errors.append(error)
             }
         }
         if let result = results.1 {
@@ -282,7 +518,11 @@ final class HomeStore {
                 nextTotal = page.totalRecordCount
                 nextHasMore = Self.hasMore(page: page, offset: nextOffset, requested: nextUpPageSize)
                 nextUpItems += MediaPageLoader.unique(ContentRatingGate.filter(page.items), after: nextUpItems)
-            case let .failure(error): errors.append(error)
+            case let .failure(error):
+                if error.invalidatesBrowseSnapshot {
+                    session.browseCache.remove("next"); clear(.next); completed.insert(.next)
+                }
+                errors.append(error)
             }
         }
         errorMessage = errors.first(where: { !$0.isCancellation })?.localizedDescription
@@ -315,49 +555,5 @@ final class HomeStore {
             }
             TopShelfSnapshot(items: Array(shelfItems), serverID: session.server.id, userID: session.user.id).save()
         #endif
-    }
-
-    /// Each feed is globally sorted by the signed-in user's provider.
-    private func loadLatestSections() async -> (sections: [HomeLatestSection], errors: [FeedFailure]) {
-        let provider = session.mediaProvider
-        let cached = Dictionary(latestSections.map { ($0.kind, $0) }, uniquingKeysWith: { _, new in new })
-        var result: [LatestMediaKind: HomeLatestSection] = [:]
-        var errors: [LatestMediaKind: GusError] = [:]
-        await withTaskGroup(of: (LatestMediaKind, [MediaItem]?, GusError?).self) { group in
-            for kind in LatestMediaKind.allCases {
-                group.addTask {
-                    do {
-                        var items: [MediaItem] = []
-                        var offset = 0
-                        // A small shelf must not scan thousands of episodes to
-                        // find twelve distinct series. Show All owns further paging.
-                        while items.count < 12, offset < 180 {
-                            try Task.checkCancellation()
-                            let page = try await provider.latestMedia(kind: kind, startIndex: offset, limit: 60)
-                            items = kind.displayItems(items + ContentRatingGate.filter(page.items))
-                            offset += page.items.count
-                            if page.items.isEmpty || page.items.count < 60 || page.totalRecordCount.map({ offset >= $0 }) == true {
-                                break
-                            }
-                        }
-                        return (kind, Array(items.prefix(12)), nil)
-                    } catch { return (kind, nil, GusError(from: error)) }
-                }
-            }
-            for await(kind, items, error) in group {
-                if let error, !error.isCancellation {
-                    errors[kind] = error
-                }
-                if let items, !items.isEmpty {
-                    result[kind] = HomeLatestSection(id: "latest:" + kind.rawValue, title: kind.title, items: items, kind: kind)
-                } else if items == nil, let previous = cached[kind] {
-                    result[kind] = HomeLatestSection(id: previous.id, title: previous.title, items: ContentRatingGate.filter(previous.items), kind: kind)
-                }
-            }
-        }
-        let failures: [FeedFailure] = LatestMediaKind.allCases.compactMap { kind in
-            errors[kind].map { (kind.title, $0) }
-        }
-        return (LatestMediaKind.allCases.compactMap { result[$0] }.filter { !$0.items.isEmpty }, failures)
     }
 }

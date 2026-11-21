@@ -1,6 +1,42 @@
 {
   "sourceLanguage": "en",
   "strings": {
+    "Scary tone": {
+      "comment": "A required mood in a natural library search."
+    },
+    "Robots": {
+      "comment": "A subject in a natural library search."
+    },
+    "Horror": {
+      "comment": "A broader library search using only the horror requirement."
+    },
+    "Robot stories": {
+      "comment": "A broader library search using only the robot subject."
+    },
+    "No strong matches in your library": {
+      "comment": "Empty state for a natural search whose requirements could not be verified."
+    },
+    "Original": {
+      "comment": "Compact name for original streaming quality."
+    },
+    "High": {
+      "comment": "Compact streaming quality option."
+    },
+    "Medium": {
+      "comment": "Compact streaming quality option."
+    },
+    "Low": {
+      "comment": "Compact streaming quality option."
+    },
+    "Remember Episode Tracks": {
+      "comment": "Playback setting for remembering audio and subtitle choices for a series."
+    },
+    "Remember Tracks": {
+      "comment": "Compact playback setting label for remembering episode tracks."
+    },
+    "Turn on Show For You in Library Intelligence to share recommendations.": {
+      "comment": "Explains the prerequisite for Apple TV recommendation sync."
+    },
     "Apple can process submitted searches and, when For You is enabled, selected titles, descriptions, and viewing interests. Requests use your daily quota.": {
 
     },
@@ -202,7 +238,7 @@
     "Gus saves the Jellyfin item IDs for your ranked recommendations in your private iCloud storage. Your iPhone and Apple TV must use the same iCloud and Jellyfin accounts.": {
       "comment": "Privacy disclosure in the For You sync consent sheet."
     },
-    "Gus Settings → Library Intelligence → Sync For You to Apple TV.": {
+    "Gus Settings → iCloud Sync → Sync For You to Apple TV.": {
       "comment": "Settings path shown in the For You sync consent sheet."
     },
     "Enable Sync": {

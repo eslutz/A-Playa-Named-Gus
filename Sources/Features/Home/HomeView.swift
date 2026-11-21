@@ -1,7 +1,4 @@
 import SwiftUI
-#if os(tvOS)
-    import CloudKit
-#endif
 
 /// Home combines automatic playback progress and explicit saved intents into Next Up.
 ///
@@ -17,14 +14,10 @@ struct HomeView: View {
     @Environment(UpNextStore.self) private var upNext
     @Environment(SavedMediaStore.self) private var playlists
     @Environment(ServerMediaListsStore.self) private var serverLists
-    #if os(iOS) || os(tvOS)
-        @Environment(\.scenePhase) private var scenePhase
-    #endif
-    #if os(tvOS)
-        @State private var iCloudAccountRevision = 0
-    #endif
+    @Environment(\.scenePhase) private var scenePhase
     @AppStorage(ContentRatingGate.limitDefaultsKey) private var ratingLimit = ContentRatingGate.Limit.off.rawValue
     @AppStorage(ContentRatingGate.hideUnratedDefaultsKey) private var hideUnrated = false
+    @State private var heldSlots: Set<String>?
     private let activity = NextUpActivityStore.shared
     let store: HomeStore?
 
@@ -34,7 +27,7 @@ struct HomeView: View {
 
     var body: some View {
         Group {
-            if let store {
+            if let store, store.matchesRestriction {
                 if case let .failed(message) = store.state, !hasContent(store), DownloadsAvailability.isSupported {
                     ContentUnavailableView {
                         Label("Server Unavailable", systemImage: "wifi.slash")
@@ -50,7 +43,12 @@ struct HomeView: View {
                     content(store)
                 }
             } else {
-                ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity)
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 32) {
+                        BrowseShelfPlaceholder(backdrop: true)
+                        BrowseShelfPlaceholder(backdrop: false).accessibilityHidden(true)
+                    }.gusTVPagePadding()
+                }
             }
         }
         .alert("Queue Could Not Be Updated", isPresented: Binding(get: { upNext.errorMessage != nil }, set: {
@@ -62,18 +60,16 @@ struct HomeView: View {
         } message: { Text(upNext.errorMessage ?? "") }
         .gusVisibleContent(.home, isLoading: store?.state.isLoading ?? true)
         .navigationTitle("Home")
-        .task {
-            if let store, store.state == .idle {
-                await store.load()
-            }
+        .task(id: String(store != nil) + ratingLimit + String(hideUnrated)) {
+            await store?.loadIfNeeded()
             await upNext.refresh(session: session)
         }
-        .task(id: "\(upNext.revision)-\(playlists.revision)-\(serverLists.revision)-\(activity.revision)") {
+        .task(id: "\(store != nil)-\(ratingLimit)-\(hideUnrated)-\(upNext.revision)-\(playlists.revision)-\(serverLists.revision)-\(activity.revision)") {
             updateNextUp()
         }
         .task(id: playbackRefresh.revision) {
             guard playbackRefresh.revision > 0, let store else { return }
-            await store.refresh()
+            await store.refreshAfterPlayback(revision: playbackRefresh.revision)
         }
         #if os(tvOS)
         .task(id: syncedShelfRefresh) {
@@ -88,25 +84,10 @@ struct HomeView: View {
                 }
             }
         }
-        .onChange(of: scenePhase) { _, phase in
-            if phase != .active {
-                store?.forYou.clearSyncedPicks()
-            }
-        }
-        .task {
-            for await _ in NotificationCenter.default.notifications(named: .CKAccountChanged).map({ _ in () }) {
-                store?.forYou.clearSyncedPicks()
-                iCloudAccountRevision += 1
-            }
-        }
-        #elseif os(iOS)
-        .task(id: iPhoneShelfContext) {
-            guard let iPhoneShelfContext else { return }
-            await store?.forYou.load(iPhoneShelfContext, session: session)
-        }
         #else
-        .task(id: store.map { _ in shelfContext }) {
-            await store?.forYou.load(shelfContext, session: session)
+        .task(id: activeShelfContext) {
+            guard let activeShelfContext else { return }
+            await store?.forYou.load(activeShelfContext, session: session)
         }
         #endif
         .task(id: sharedWithYou.revision) {
@@ -143,11 +124,9 @@ struct HomeView: View {
         #endif
     }
 
-    #if os(iOS)
-        private var iPhoneShelfContext: ForYouShelfState.Context? {
-            let context = shelfContext
-            guard store != nil, scenePhase == .active || !context.forYouSyncEnabled else { return nil }
-            return context
+    #if !os(tvOS)
+        private var activeShelfContext: ForYouShelfState.Context? {
+            store != nil && scenePhase == .active ? shelfContext : nil
         }
     #endif
 
@@ -164,18 +143,47 @@ struct HomeView: View {
                 store: store.map(ObjectIdentifier.init),
                 context: shelfContext,
                 isActive: scenePhase == .active,
-                iCloudAccountRevision: iCloudAccountRevision
+                iCloudAccountRevision: session.forYouShelf.iCloudAccountRevision
             )
         }
     #endif
 
     private func shouldShowShelf(_ store: HomeStore) -> Bool {
-        session.isActive && shelfContext.recommendationsEnabled && store.forYou.context == shelfContext &&
-            (!store.forYou.picks.isEmpty || store.forYou.error != nil)
+        guard session.isActive, shelfContext.recommendationsEnabled else { return false }
+        return store.forYou.needsPlaceholder(shelfContext, session: session) || !store.forYou.picks.isEmpty || store.forYou.error != nil
     }
 
     private func hasContent(_ store: HomeStore) -> Bool {
-        !store.unifiedNextUp.isEmpty || !store.sharedWithYouItems.isEmpty || !store.latestSections.isEmpty || shouldShowShelf(store)
+        !visibleSlots(store).isEmpty || heldSlots?.isEmpty == false
+    }
+
+    private func visibleSlots(_ store: HomeStore) -> Set<String> {
+        var slots = Set(store.latestSections.map(\.id))
+        for kind in LatestMediaKind.allCases where store.isPending(kind) {
+            slots.insert("latest:" + kind.rawValue)
+        }
+        if store.nextUpPending || !store.unifiedNextUp.isEmpty {
+            slots.insert("next")
+        }
+        if shouldShowShelf(store) {
+            slots.insert("forYou")
+        }
+        if !store.sharedWithYouItems.isEmpty {
+            slots.insert("shared")
+        }
+        return slots
+    }
+
+    private func firstLoadingSlot(_ store: HomeStore, slots: Set<String>) -> String? {
+        if slots.contains("next"), store.unifiedNextUp.isEmpty, store.nextUpPending {
+            return "next"
+        }
+        if slots.contains("forYou"), shouldShowShelf(store), store.forYou.needsPlaceholder(shelfContext, session: session) {
+            return "forYou"
+        }
+        return LatestMediaKind.allCases.first { kind in
+            slots.contains("latest:" + kind.rawValue) && store.isPending(kind)
+        }.map { "latest:" + $0.rawValue }
     }
 
     private func updateNextUp() {
@@ -196,6 +204,8 @@ struct HomeView: View {
     }
 
     private func content(_ store: HomeStore) -> some View {
+        let slots = heldSlots ?? visibleSlots(store)
+        let loadingSlot = firstLoadingSlot(store, slots: slots)
         return LoadingStateView(
             state: hasContent(store) ? .loaded : store.state,
             isEmpty: !hasContent(store),
@@ -219,33 +229,55 @@ struct HomeView: View {
                             Button("Try Again") { Task { await store.refresh() } }
                         }
                     }
-                    if !store.unifiedNextUp.isEmpty {
-                        NextUpRail(store: store).id("next")
+                    if slots.contains("next") {
+                        Group {
+                            if !store.unifiedNextUp.isEmpty {
+                                NextUpRail(store: store)
+                            } else {
+                                BrowseShelfPlaceholder(backdrop: true).opacity(store.nextUpPending ? 1 : 0).accessibilityHidden(loadingSlot != "next")
+                            }
+                        }.id("next")
                     }
-                    if shouldShowShelf(store) {
-                        if !store.forYou.picks.isEmpty {
+                    if slots.contains("forYou"), shelfContext.recommendationsEnabled {
+                        if store.forYou.needsPlaceholder(shelfContext, session: session) {
+                            BrowseShelfPlaceholder(backdrop: false, forYou: true, showsSyncSetup: !shelfContext.forYouSyncEnabled)
+                                .accessibilityHidden(loadingSlot != "forYou").id("forYou")
+                        } else if store.forYou.canDisplay(shelfContext, session: session), !store.forYou.picks.isEmpty {
                             MediaRail(
                                 title: String(localized: "For You"),
                                 items: store.forYou.picks.map(\.item),
                                 recommendations: store.forYou.picks,
                                 focusKey: "home.forYou"
                             ).id("forYou")
-                        }
-                        if let error = store.forYou.error {
+                        } else if let error = store.forYou.error {
                             VStack(alignment: .leading) {
                                 Text("For You Unavailable").font(.headline)
                                 Text(error).foregroundStyle(.secondary)
                                 Button("Retry") { Task { await store.forYou.load(shelfContext, session: session, refresh: true) } }
                             }
+                        } else if heldSlots != nil {
+                            BrowseShelfPlaceholder(backdrop: false, forYou: true, showsSyncSetup: !shelfContext.forYouSyncEnabled).hidden()
                         }
                     }
-                    if !store.sharedWithYouItems.isEmpty {
-                        MediaRail(title: store.sharedWithYouTitle, items: store.sharedWithYouItems).id("shared")
+                    if slots.contains("shared") {
+                        if store.sharedWithYouItems.isEmpty {
+                            BrowseShelfPlaceholder(backdrop: false).hidden()
+                        } else {
+                            MediaRail(title: store.sharedWithYouTitle, items: store.sharedWithYouItems).id("shared")
+                        }
                     }
                     ProgressTransferView()
-                    ForEach(store.latestSections) { section in
-                        MediaRail(title: section.title, items: section.items, latestKind: section.kind, requestsInitialFocus: store.unifiedNextUp.isEmpty && section.id == store.latestSections.first?.id)
-                            .id(section.id)
+                    ForEach(LatestMediaKind.allCases, id: \.self) { kind in
+                        let id = "latest:" + kind.rawValue
+                        if slots.contains(id) {
+                            Group {
+                                if let section = store.latestSections.first(where: { $0.kind == kind }) {
+                                    MediaRail(title: section.title, items: section.items, latestKind: kind, requestsInitialFocus: store.unifiedNextUp.isEmpty && id == store.latestSections.first?.id)
+                                } else {
+                                    BrowseShelfPlaceholder(backdrop: false).opacity(store.isPending(kind) ? 1 : 0).accessibilityHidden(loadingSlot != id)
+                                }
+                            }.id(id)
+                        }
                     }
                 }
                 .scrollTargetLayout()
@@ -254,9 +286,16 @@ struct HomeView: View {
                 .frame(maxWidth: .infinity)
             }
             .gusTVBrowseViewport()
+            .onScrollGeometryChange(for: Bool.self) { geometry in
+                geometry.contentOffset.y <= -geometry.contentInsets.top + 2
+            } action: { _, atTop in
+                heldSlots = atTop ? nil : (heldSlots ?? visibleSlots(store))
+            }
+            .onDisappear { heldSlots = nil }
             .scrollPosition(id: rootState.scrollBinding(for: "home"))
             .lookToScroll()
             .refreshable {
+                heldSlots = nil
                 await upNext.refresh(session: session, force: true)
                 await store.refresh()
                 await store.forYou.load(shelfContext, session: session, refresh: true)
@@ -682,6 +721,9 @@ private struct BackdropCard: View {
 /// Persistent Libraries destination used by tabs, sidebars, and menu routes.
 /// Shares the root container's `HomeStore` with `HomeView`.
 struct LibrariesLandingView: View {
+    @Environment(\.scenePhase) private var scenePhase
+    @AppStorage(ContentRatingGate.limitDefaultsKey) private var ratingLimit = ContentRatingGate.Limit.off.rawValue
+    @AppStorage(ContentRatingGate.hideUnratedDefaultsKey) private var hideUnrated = false
     @Environment(SessionStore.self) private var session
     @Environment(RootNavigationState.self) private var navigationState
     private var showsGrid: Bool {
@@ -709,17 +751,15 @@ struct LibrariesLandingView: View {
 
     var body: some View {
         Group {
-            if let store {
+            if let store, store.matchesRestriction {
                 content(store)
             } else {
-                ProgressView()
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                BrowseGridPlaceholder(list: usesList, ratio: 16.0 / 9).gusPhonePagePadding()
             }
         }
-        .task(id: store != nil) {
-            if let store, store.libraryState == .idle {
-                await store.loadLibraries()
-            }
+        .task(id: String(store != nil) + String(scenePhase == .active) + ratingLimit + String(hideUnrated)) {
+            guard scenePhase == .active else { return }
+            await store?.loadLibraries(force: false)
         }
         .navigationTitle("Libraries")
         .toolbar {
@@ -734,45 +774,49 @@ struct LibrariesLandingView: View {
         }
     }
 
-    private func content(_ store: HomeStore) -> some View {
-        LoadingStateView(
-            state: store.libraryState,
-            isEmpty: store.libraries.isEmpty,
-            emptyTitle: "No Libraries",
-            emptySymbol: "rectangle.stack",
-            retryAction: { Task { await store.loadLibraries() } },
-            preservesContent: true
-        ) {
-            Group {
-                if usesList {
-                    List(store.libraries, id: \.id) { library in
-                        let urls = session.mediaProvider.artworkURLs(for: library, request: .init(role: .libraryThumbnail, maxWidth: 288))
-                        NavigationLink(value: LibraryRef(item: library)) {
-                            HStack(spacing: 16) {
-                                ArtworkTile(
-                                    url: urls.first, aspectRatio: 16.0 / 9.0, contentMode: .fit,
-                                    placeholderSymbol: library.librarySymbol, fallbackURLs: Array(urls.dropFirst())
-                                )
-                                .frame(width: 96)
-                                .clipShape(RoundedRectangle(cornerRadius: 8))
-                                .accessibilityHidden(true)
-                                Text(library.displayTitle).font(.body.weight(.medium))
+    @ViewBuilder private func content(_ store: HomeStore) -> some View {
+        if store.libraries.isEmpty, store.libraryState == .idle || store.libraryState == .loading {
+            BrowseGridPlaceholder(list: usesList, ratio: 16.0 / 9).gusPhonePagePadding()
+        } else {
+            LoadingStateView(
+                state: store.libraryState,
+                isEmpty: store.libraries.isEmpty,
+                emptyTitle: "No Libraries",
+                emptySymbol: "rectangle.stack",
+                retryAction: { Task { await store.loadLibraries() } },
+                preservesContent: true
+            ) {
+                Group {
+                    if usesList {
+                        List(store.libraries, id: \.id) { library in
+                            let urls = session.mediaProvider.artworkURLs(for: library, request: .init(role: .libraryThumbnail, maxWidth: 288))
+                            NavigationLink(value: LibraryRef(item: library)) {
+                                HStack(spacing: 16) {
+                                    ArtworkTile(
+                                        url: urls.first, aspectRatio: 16.0 / 9.0, contentMode: .fit,
+                                        placeholderSymbol: library.librarySymbol, fallbackURLs: Array(urls.dropFirst())
+                                    )
+                                    .frame(width: 96)
+                                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                                    .accessibilityHidden(true)
+                                    Text(library.displayTitle).font(.body.weight(.medium))
+                                }
+                                .padding(.vertical, 8)
                             }
-                            .padding(.vertical, 8)
                         }
+                        .listStyle(.plain)
+                    } else {
+                        ScrollView {
+                            LibrariesGrid(libraries: store.libraries)
+                                .gusPhonePagePadding()
+                                .frame(maxWidth: PageContentMetrics.maxWidth, alignment: .leading)
+                                .frame(maxWidth: .infinity)
+                        }
+                        .lookToScroll()
                     }
-                    .listStyle(.plain)
-                } else {
-                    ScrollView {
-                        LibrariesGrid(libraries: store.libraries)
-                            .gusPhonePagePadding()
-                            .frame(maxWidth: PageContentMetrics.maxWidth, alignment: .leading)
-                            .frame(maxWidth: .infinity)
-                    }
-                    .lookToScroll()
                 }
+                .refreshable { await store.loadLibraries() }
             }
-            .refreshable { await store.loadLibraries() }
         }
     }
 }
@@ -799,5 +843,94 @@ private struct LibrariesGrid: View {
             }
             .tvFocusSection()
         }
+    }
+}
+
+/// Uses the same rail width and artwork ratios as the loaded cards.
+struct BrowseShelfPlaceholder: View {
+    let backdrop: Bool
+    var forYou = false
+    var showsSyncSetup = false
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text(verbatim: "Section title")
+                .gusPhoneRailHeading()
+                .redacted(reason: .placeholder)
+            #if os(iOS)
+                if forYou, showsSyncSetup {
+                    ForYouSyncSetupButton().hidden()
+                        .overlay { Capsule().fill(.quaternary) }
+                }
+            #endif
+            ScrollView(.horizontal) {
+                HStack(alignment: .top, spacing: MediaRailMetrics.spacing(for: backdrop ? .backdrop : .poster)) {
+                    ForEach(0 ..< 8, id: \.self) { _ in
+                        BrowseCardPlaceholder(ratio: backdrop ? 16.0 / 9 : 2.0 / 3, forYou: forYou)
+                            .gusPhoneRailWidth(backdrop: backdrop, fallback: MediaRailMetrics.itemWidth(for: backdrop ? .backdrop : .poster))
+                    }
+                }.gusTVRailPadding()
+            }
+            .scrollIndicators(.hidden)
+            .scrollDisabled(true)
+            #if os(tvOS)
+                .focusable(false)
+            #endif
+        }
+        .allowsHitTesting(false)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Loading")
+    }
+}
+
+private struct BrowseCardPlaceholder: View {
+    let ratio: CGFloat
+    var forYou = false
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            RoundedRectangle(cornerRadius: 10).fill(.quaternary).aspectRatio(ratio, contentMode: .fit)
+            VStack(alignment: .leading, spacing: 1) {
+                Text(verbatim: "Media title").font(.subheadline.weight(.medium)).gusTVPosterTitle()
+                Text(verbatim: "Subtitle").font(.caption)
+                Text(verbatim: " ").font(.caption)
+            }
+            .gusTVCardCaption()
+            .redacted(reason: .placeholder)
+            #if !os(tvOS)
+                if forYou {
+                    Text(verbatim: "Recommendation").font(.caption)
+                        .lineLimit(2, reservesSpace: true)
+                        .redacted(reason: .placeholder)
+                }
+            #endif
+        }
+    }
+}
+
+struct BrowseGridPlaceholder: View {
+    var list = false
+    var ratio: CGFloat = 2.0 / 3
+    var body: some View {
+        Group {
+            if list {
+                VStack(spacing: 16) {
+                    ForEach(0 ..< 8, id: \.self) { _ in
+                        HStack(spacing: 16) {
+                            RoundedRectangle(cornerRadius: 8).fill(.quaternary).aspectRatio(ratio, contentMode: .fit).frame(height: 58)
+                            Capsule().fill(.quaternary).frame(width: 140, height: 12)
+                            Spacer()
+                        }
+                    }
+                }
+            } else {
+                LazyVGrid(columns: PosterGrid.columns, alignment: .leading, spacing: PosterGrid.spacing) {
+                    ForEach(0 ..< 12, id: \.self) { _ in BrowseCardPlaceholder(ratio: ratio) }
+                }
+            }
+        }
+        .allowsHitTesting(false)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Loading")
     }
 }

@@ -1,4 +1,7 @@
 import SwiftUI
+#if os(tvOS)
+    import CloudKit
+#endif
 
 /// Only the visual container changes with width; navigation and players remain session-owned.
 struct RootContainer: View {
@@ -15,8 +18,10 @@ struct RootContainer: View {
     #endif
     @SceneStorage("gus.root.selection") private var storedSelection = NavigationSectionPreference.homeID
 
-    init(searchHistory: SearchHistoryStore) {
-        _state = State(initialValue: RootNavigationState(searchHistory: searchHistory))
+    init(session: SessionStore) {
+        let navigation = RootNavigationState(searchHistory: session.searchHistory)
+        navigation.home = session.homeStore()
+        _state = State(initialValue: navigation)
     }
 
     var body: some View {
@@ -53,11 +58,7 @@ struct RootContainer: View {
                 if navigation.searchFocusRequest > 0 {
                     focusSearch()
                 }
-                if state.home == nil {
-                    let home = HomeStore(session: session)
-                    state.home = home
-                    await home.load()
-                }
+                await state.home?.loadIfNeeded()
             }
             .task {
                 await session.profile.load()
@@ -75,8 +76,20 @@ struct RootContainer: View {
                 await session.profile.load()
                 app.synchronizeProfile(from: session)
                 session.references.beginRefresh()
-                await state.refreshCachedContent()
+                await state.refreshCachedContent(ifStale: true)
             }
+        #if os(tvOS)
+            .onChange(of: scenePhase) { _, phase in
+                if phase != .active {
+                    session.forYouShelf.clear()
+                }
+            }
+            .task {
+                for await _ in NotificationCenter.default.notifications(named: .CKAccountChanged).map({ _ in () }) {
+                    session.forYouShelf.iCloudAccountChanged()
+                }
+            }
+        #endif
             .onChange(of: session.intelligenceAccess.usesNaturalSearch) { _, _ in
                 state.useKeywordSearchForCurrentDrafts()
             }

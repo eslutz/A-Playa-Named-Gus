@@ -348,6 +348,7 @@ struct MediaItem: Codable, Hashable, Identifiable, Sendable {
     var seriesPrimaryImageTag: String?
     var studios: [MediaStudio]
     var taglines: [String]
+    var tags: [String]
     var type: MediaItemType?
     var userData: MediaUserData?
     var video3DFormat: Media3DFormat?
@@ -392,6 +393,7 @@ struct MediaItem: Codable, Hashable, Identifiable, Sendable {
         case seriesPrimaryImageTag
         case studios
         case taglines
+        case tags
         case type
         case userData
         case video3DFormat
@@ -435,6 +437,7 @@ struct MediaItem: Codable, Hashable, Identifiable, Sendable {
         seriesPrimaryImageTag: String? = nil,
         studios: [MediaStudio] = [],
         taglines: [String] = [],
+        tags: [String] = [],
         type: MediaItemType? = nil,
         userData: MediaUserData? = nil,
         video3DFormat: Media3DFormat? = nil
@@ -476,6 +479,7 @@ struct MediaItem: Codable, Hashable, Identifiable, Sendable {
         self.seriesPrimaryImageTag = seriesPrimaryImageTag
         self.studios = studios
         self.taglines = taglines
+        self.tags = tags
         self.type = type
         self.userData = userData
         self.video3DFormat = video3DFormat
@@ -523,6 +527,7 @@ struct MediaItem: Codable, Hashable, Identifiable, Sendable {
         seriesPrimaryImageTag = try values.decodeIfPresent(String.self, forKey: .seriesPrimaryImageTag)
         studios = try values.decodeIfPresent([MediaStudio].self, forKey: .studios) ?? []
         taglines = try values.decodeIfPresent([String].self, forKey: .taglines) ?? []
+        tags = try values.decodeIfPresent([String].self, forKey: .tags) ?? []
         type = try values.decodeIfPresent(MediaItemType.self, forKey: .type)
         userData = try values.decodeIfPresent(MediaUserData.self, forKey: .userData)
         video3DFormat = try values.decodeIfPresent(Media3DFormat.self, forKey: .video3DFormat)

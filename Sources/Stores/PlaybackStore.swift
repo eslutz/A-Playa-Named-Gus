@@ -1050,6 +1050,7 @@ final class PlaybackStore {
             playbackRefresh.markPlaybackProgressChanged()
             return
         }
+        let session = self.session
         let provider = session.mediaProvider
         let refresh = playbackRefresh
         session.playbackReports.enqueue(.stop, sessionID: context.reportID, onFailure: handleReportFailure, completion: { reportSucceeded in
@@ -1064,6 +1065,7 @@ final class PlaybackStore {
             }
         }) {
             try await provider.reportPlaybackStopped(context: context, positionTicks: positionTicks)
+            session.libraryIntelligence.invalidateTasteSignals()
             refresh.markPlaybackProgressChanged()
         }
     }

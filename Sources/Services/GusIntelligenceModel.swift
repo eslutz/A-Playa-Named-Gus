@@ -47,7 +47,7 @@ struct GusSearchIntent: Equatable, Sendable {
     var people: [String] = []
     var credits: [GusCreditRequirement] = []
     var characters: [String] = []
-    var themes: [String] = []
+    var concepts: [LibrarySearchConcept] = []
     var unsupported: [String] = []
     var minimumYear: Int?
     var maximumYear: Int?
@@ -70,7 +70,7 @@ struct GusSearchIntent: Equatable, Sendable {
             }
         }
         labels += keywords + genres + people
-        labels += credits.map(\.displayLabel) + characters + themes
+        labels += credits.map(\.displayLabel) + characters + concepts.map(\.label)
         if let minimumYear {
             labels.append(String(localized: "From year \(minimumYear.formatted(.number.grouping(.never)))"))
         }
@@ -157,13 +157,18 @@ struct GusIntelligenceModel {
         #if canImport(FoundationModels) && !os(tvOS)
             if #available(watchOS 27, *) {
                 let prompt = try checkedPrompt(prompt)
-                if isAvailable, let filters = Self.namedTitle(prompt) ?? Self.genreAndYear(prompt) ?? Self.namedContributor(prompt) {
+                if isAvailable, let filters = Self.namedTitle(prompt) ?? Self.genreAndYear(prompt) ?? Self.namedContributor(prompt) ?? Self.toneAndSubject(prompt) {
                     return filters
                 }
                 return try await generate(prompt: prompt, instructions: Self.searchInstructions + """
                 Search a Jellyfin library. Map a song to audio, an album to musicAlbum and an audiobook to audioBook.
                 Put a named author or narrator in credits and leave keywords empty unless a title is also requested.
-                Translate genre descriptions into genre names. Avoid adding plot themes to a genre request.
+                Put explicit genres in genres. Put each requested mood and plot subject in its own concept.
+                For "something scary with robots", extract the tone "scary" and the subject "robots".
+                Leave keywords empty for descriptions. Reserve keywords for direct title and name lookups.
+                A word inside a named title does not request that mood or subject. For example, "Scary Movie" and "I, Robot" are titles.
+                Report excluded subjects and alternative concepts in unsupported. Never turn a negation or an alternative into a required concept.
+                Leave terms.themes empty when concepts capture the request. Preserve named genres as hard filters.
                 Convert exclusive dates and durations to inclusive whole-year or whole-minute bounds only when equivalent.
                 """, schema: LibraryQuery.self) { try $0.intent(for: prompt) }
             }
@@ -227,6 +232,16 @@ struct GusIntelligenceModel {
         throw GusIntelligenceError.unavailable
     }
 
+    /// Known mood/subject pairs can be interpreted locally when they consume the whole request.
+    /// A qualifier or a negation sends the complete prompt to the model.
+    static func toneAndSubject(_ prompt: String) -> GusSearchIntent? {
+        let pattern = #/(?:(?:i['’]m looking for|i am looking for|i want|find|show me)\s+)?something\s+(\p{L}+)\s+(?:with|about)\s+(\p{L}+)[.?!]?/#.ignoresCase()
+        guard let parts = prompt.wholeMatch(of: pattern)?.output,
+              let tone = LibrarySearchConcept.known(parts.1.lowercased()), tone.kind == .tone,
+              let subject = LibrarySearchConcept.known(parts.2.lowercased()), subject.kind == .subject else { return nil }
+        return GusSearchIntent(concepts: [tone, subject])
+    }
+
     /// Recognize a complete, unambiguous genre/date phrase, including Discover's suggested queries.
     /// Extra requirements or unfamiliar wording must still be interpreted by the model.
     static func genreAndYear(_ prompt: String) -> GusSearchIntent? {
@@ -266,6 +281,14 @@ struct GusIntelligenceModel {
     /// A named title already specifies both Jellyfin filters. Leave compound or ambiguous
     /// unquoted requests to the model so other constraints are preserved.
     static func namedTitle(_ prompt: String) -> GusSearchIntent? {
+        let quoted = #/(?:(?:find|show me|look up|search for)\s+)?(?:"([^"]+)"|“([^”]+)”)/#.ignoresCase()
+        if let quotedTitle = prompt.wholeMatch(of: quoted)?.output,
+           let literal = quotedTitle.1 ?? quotedTitle.2
+        {
+            let title = literal.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !title.isEmpty else { return nil }
+            return GusSearchIntent(keywords: [title])
+        }
         let pattern = #/(?:(?:find|show me|look up|search for)\s+)?(?:(?:the|an?)\s+)?(movie|film|series|episode|book|audiobook|album|song|track)\s+(?:titled|called|named)\s+(.+)/#.ignoresCase()
         guard let match = prompt.wholeMatch(of: pattern)?.output else { return nil }
         let title = String(match.2).trimmingCharacters(in: .whitespacesAndNewlines)

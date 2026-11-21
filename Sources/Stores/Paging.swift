@@ -1,5 +1,5 @@
 /// Shared page-state helper for Jellyfin list endpoints.
-struct Paging: Equatable {
+struct Paging: Equatable, Codable {
     let pageSize: Int
     let prefetchThreshold: Int
     private(set) var nextStartIndex = 0

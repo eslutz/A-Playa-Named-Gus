@@ -39,6 +39,15 @@ enum PlaybackQuality: String, CaseIterable, Identifiable {
         }
     }
 
+    var compactTitle: String {
+        switch self {
+        case .maximum: String(localized: "Original")
+        case .high: String(localized: "High")
+        case .medium: String(localized: "Medium")
+        case .low: String(localized: "Low")
+        }
+    }
+
     var title: String {
         switch self {
         case .maximum:

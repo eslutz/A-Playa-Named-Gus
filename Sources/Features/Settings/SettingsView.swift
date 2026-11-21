@@ -69,28 +69,43 @@ struct SettingsView: View {
 
             Section {
                 playbackSetting(
+                    title: "Streaming Quality",
                     helpTitle: "About Streaming Quality",
                     helpText: "Maximum lets compatible files play at original quality. Lower settings cap the streaming bitrate for constrained networks."
                 ) {
-                    Picker("Streaming Quality", selection: $playbackQualityRawValue) {
-                        ForEach(PlaybackQuality.allCases) { quality in
-                            Text(quality.title).tag(quality.rawValue)
+                    #if os(tvOS)
+                        qualityPicker
+                    #else
+                        Menu {
+                            qualityPicker.pickerStyle(.inline)
+                        } label: {
+                            Text((PlaybackQuality(rawValue: playbackQualityRawValue) ?? .maximum).compactTitle)
                         }
-                    }
+                        .menuStyle(.button)
+                        .buttonStyle(.borderless)
+                        .accessibilityLabel("Streaming Quality")
+                        .accessibilityValue((PlaybackQuality(rawValue: playbackQualityRawValue) ?? .maximum).title)
+                        .accessibilityIdentifier("Settings.streamingQuality")
+                    #endif
                 }
                 Toggle("Auto-Play Next Episode", isOn: $autoPlayNextEpisode)
                 playbackSetting(
+                    title: "Remember Episode Tracks",
+                    compactTitle: "Remember Tracks",
                     helpTitle: "About Remembering Episode Tracks",
                     helpText: "Gus remembers the audio and subtitle choices you make for each series on this device and account. Other episodes use those choices when matching tracks are available. Turning this off clears your saved choices."
                 ) {
-                    Toggle("Remember Episode Tracks for This Account", isOn: $rememberPlaybackTracks)
-                        .accessibilityIdentifier("Settings.rememberEpisodeTracks")
-                        .onChange(of: rememberPlaybackTracks) { _, enabled in
-                            PlaybackTrackMemory.shared.setEnabled(enabled, scope: AccountScope(serverID: session.server.id, userID: session.user.id))
+                    Toggle("Remember Episode Tracks for This Account", isOn: Binding(
+                        get: { rememberPlaybackTracks },
+                        set: { enabled in
+                            rememberPlaybackTracks = enabled
+                            PlaybackTrackMemory.shared.setEnabled(enabled, scope: session.references.scope)
                         }
-                        .task(id: session.user.id + session.server.id) {
-                            rememberPlaybackTracks = PlaybackTrackMemory.shared.isEnabled(scope: AccountScope(serverID: session.server.id, userID: session.user.id))
-                        }
+                    ))
+                    #if !os(tvOS)
+                    .labelsHidden()
+                    #endif
+                    .accessibilityIdentifier("Settings.rememberEpisodeTracks")
                 }
             } header: {
                 Text("Playback")
@@ -102,6 +117,9 @@ struct SettingsView: View {
                 Toggle("Sync Gus Resume and Next Up", isOn: Binding(get: { videoPlaylists.syncEnabled }, set: { videoPlaylists.syncEnabled = $0 }))
                 Text(videoPlaylists.syncStatus).foregroundStyle(.secondary)
                 Text("Jellyfin stores playlists and collections. iCloud synchronizes Gus resume positions and Next Up state.").font(.caption).foregroundStyle(.secondary)
+                #if os(iOS) || os(tvOS)
+                    ForYouSyncSetting()
+                #endif
             }
 
             Section {
@@ -168,6 +186,9 @@ struct SettingsView: View {
                 LabeledContent("Device", value: DeviceIdentity.deviceName)
             }
         }
+        .task(id: session.references.scope) {
+            rememberPlaybackTracks = PlaybackTrackMemory.shared.isEnabled(scope: session.references.scope)
+        }
         .settingsFormStyle()
         .gusTVAccentEditor(isPresented: $showingTVAccentEditor)
         .navigationTitle("Settings")
@@ -205,8 +226,18 @@ struct SettingsView: View {
         }
     }
 
+    private var qualityPicker: some View {
+        Picker("Streaming Quality", selection: $playbackQualityRawValue) {
+            ForEach(PlaybackQuality.allCases) { quality in
+                Text(quality.title).tag(quality.rawValue)
+            }
+        }
+    }
+
     @ViewBuilder
     private func playbackSetting<Control: View>(
+        title: LocalizedStringKey,
+        compactTitle: LocalizedStringKey? = nil,
         helpTitle: LocalizedStringKey,
         helpText: LocalizedStringKey,
         @ViewBuilder control: () -> Control
@@ -216,9 +247,29 @@ struct SettingsView: View {
             control()
             PlaybackHelpButton(title: helpTitle, message: helpText)
         #else
-            HStack {
-                control()
-                PlaybackHelpButton(title: helpTitle, message: helpText)
+            let help = PlaybackHelpButton(title: helpTitle, message: helpText)
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: 0) {
+                    Text(title).fixedSize().accessibilityHidden(true)
+                    help
+                    Spacer(minLength: 4)
+                    control().fixedSize()
+                }
+                if let compactTitle {
+                    HStack(spacing: 0) {
+                        Text(compactTitle).fixedSize().accessibilityHidden(true)
+                        help
+                        Spacer(minLength: 4)
+                        control().fixedSize()
+                    }
+                }
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack(spacing: 0) {
+                        Text(title).fixedSize(horizontal: false, vertical: true).accessibilityHidden(true)
+                        help
+                    }
+                    control()
+                }
             }
             .accessibilityElement(children: .contain)
         #endif

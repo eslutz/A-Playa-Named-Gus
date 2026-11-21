@@ -12,75 +12,187 @@ final class ForYouShelfState {
         let activityRevision: Int
         let tasteRevision: Int
         var forYouSyncEnabled = false
+
+        @MainActor var currentRestrictions: Bool {
+            limit == ContentRatingGate.storedLimit().rawValue &&
+                hideUnrated == UserDefaults.standard.bool(forKey: ContentRatingGate.hideUnratedDefaultsKey)
+        }
     }
 
+    private static let freshness: TimeInterval = 6 * 60 * 60
     private(set) var picks: [GusLibraryPick] = []
     private(set) var error: String?
     private(set) var isLoading = false
-    private(set) var context: Context?
+    private var context: Context?
+    private var successfulContext: Context?
+    private var savedAt: Date?
+    private var scope: AccountScope?
     private var generation = UUID()
+    @ObservationIgnored private var pending: (context: Context, refresh: Bool, task: Task<Void, Never>)?
 
-    func load(_ context: Context, session: SessionStore, refresh: Bool = false) async {
-        let previous = self.context
-        let token = UUID()
-        generation = token
-        self.context = context
+    init(session: SessionStore) {
+        #if !os(tvOS)
+            let preferences = session.intelligencePreferences
+            let context = Context(
+                cloudEnabled: preferences.cloudEnabled,
+                recommendationsEnabled: preferences.recommendationsEnabled,
+                limit: ContentRatingGate.storedLimit().rawValue,
+                hideUnrated: UserDefaults.standard.bool(forKey: ContentRatingGate.hideUnratedDefaultsKey),
+                activityRevision: 0,
+                tasteRevision: session.libraryIntelligence.tasteRevision,
+                forYouSyncEnabled: preferences.forYouSyncEnabled
+            )
+            restore(context, session: session)
+        #endif
+    }
+
+    func canDisplay(_ requested: Context, session: SessionStore) -> Bool {
+        guard session.isActive, requested.recommendationsEnabled, requested.currentRestrictions, scope == session.references.scope,
+              context?.limit == requested.limit, context?.hideUnrated == requested.hideUnrated else { return false }
+        return savedAt.map { (0 ..< BrowseSnapshotCache.lifetime).contains(session.browseCache.now().timeIntervalSince($0)) } ?? true
+    }
+
+    func needsPlaceholder(_ requested: Context, session: SessionStore) -> Bool {
+        !canDisplay(requested, session: session) || (isLoading && savedAt == nil)
+    }
+
+    func clear() {
+        generation = UUID()
+        pending?.task.cancel()
+        pending = nil
+        picks = []
+        context = nil
+        successfulContext = nil
+        savedAt = nil
+        scope = nil
+        isLoading = false
         error = nil
-        if previous != context {
-            picks = []
-        }
-        guard session.isActive, context.recommendationsEnabled else {
-            picks = []
-            isLoading = false
-            return
-        }
-        isLoading = true
-        defer {
-            if generation == token {
-                isLoading = false
+    }
+
+    #if !os(tvOS)
+        private func restore(_ requested: Context, session: SessionStore) {
+            guard session.isActive, requested.recommendationsEnabled,
+                  let snapshot = session.browseCache.read("for-you", as: [GusLibraryPick].self) else { return }
+            // Older payloads may contain episode IDs. They must be reranked as titles.
+            picks = snapshot.value.filter { pick in
+                pick.item.type.map(GusLibraryMatching.recommendationTypes.contains) == true && ContentRatingGate.admitsStored(pick.item)
+            }
+            scope = session.references.scope
+            context = requested
+            savedAt = snapshot.savedAt
+            if picks.count == snapshot.value.count {
+                successfulContext = requested
             }
         }
+    #endif
+
+    func load(_ requested: Context, session: SessionStore, refresh: Bool = false) async {
+        guard !Task.isCancelled, requested.currentRestrictions else { return }
+        guard session.isActive, requested.recommendationsEnabled else {
+            clear()
+            return
+        }
+        if let pending, pending.context == requested, !refresh || pending.refresh {
+            await pending.task.value
+            return
+        }
+        if !canDisplay(requested, session: session) {
+            clear()
+            #if !os(tvOS)
+                restore(requested, session: session)
+            #endif
+        }
+        #if !os(tvOS)
+            if !refresh, successfulContext == requested, let savedAt,
+               savedAt >= (session.intelligencePreferences.tasteChangedAt ?? .distantPast),
+               session.browseCache.now().timeIntervalSince(savedAt) < Self.freshness
+            {
+                return
+            }
+        #endif
+
+        pending?.task.cancel()
+        let token = UUID()
+        generation = token
+        scope = session.references.scope
+        context = requested
+        error = nil
+        isLoading = true
+        let task = Task { await fetch(requested, session: session, refresh: refresh, generation: token) }
+        pending = (requested, refresh, task)
+        await task.value
+        if generation == token {
+            isLoading = false
+            pending = nil
+        }
+    }
+
+    private func fetch(_ requested: Context, session: SessionStore, refresh: Bool, generation token: UUID) async {
         do {
             #if os(tvOS)
                 let result = try await loadSyncedPicks(session: session)
                 try Task.checkCancellation()
-                guard session.isActive, generation == token, session.intelligencePreferences.forYouSyncEnabled else { return }
+                guard session.isActive, requested.currentRestrictions, generation == token, session.intelligencePreferences.forYouSyncEnabled else { return }
                 picks = result
             #else
                 let result = try await session.libraryIntelligence.recommendations(refresh: refresh)
                 try Task.checkCancellation()
-                guard session.isActive, generation == token, session.intelligencePreferences.recommendationsEnabled else { return }
+                guard session.isActive, requested.currentRestrictions, generation == token, session.intelligencePreferences.recommendationsEnabled else { return }
                 picks = result.filter { ContentRatingGate.admitsStored($0.item) }
+                let snapshot = picks.map { GusLibraryPick(item: $0.item.browseSnapshotItem, reason: $0.reason) }
+                session.browseCache.write(snapshot, key: "for-you")
                 #if os(iOS)
                     session.shareForYouPicks(picks)
                 #endif
             #endif
+            savedAt = session.browseCache.now()
+            successfulContext = requested
         } catch {
-            guard session.isActive, !Task.isCancelled, generation == token else { return }
+            guard session.isActive, requested.currentRestrictions, !Task.isCancelled, generation == token else { return }
             let failure = GusError(from: error)
-            failure.handleIfUnauthorized(session: session)
-            if !failure.isCancellation {
+            guard !failure.isCancellation else { return }
+            #if os(tvOS)
+                // A failed iCloud or Jellyfin identity check cannot confirm this shelf.
                 picks = []
-                #if !os(tvOS)
-                    self.error = error.localizedDescription
-                #endif
+            #else
+                if failure == .forbidden || failure == .notFound || failure == .unauthorized {
+                    session.browseCache.remove("for-you")
+                    picks = []
+                    savedAt = nil
+                    successfulContext = nil
+                } else if !canDisplay(requested, session: session) {
+                    picks = []
+                    savedAt = nil
+                }
+            #endif
+            if picks.isEmpty {
+                self.error = failure.localizedDescription
             }
+            failure.handleIfUnauthorized(session: session)
         }
     }
 
     #if os(tvOS)
-        func clearSyncedPicks() {
-            generation = UUID()
-            picks = []
-            isLoading = false
+        private(set) var iCloudAccountRevision = 0
+
+        func iCloudAccountChanged() {
+            clear()
+            iCloudAccountRevision += 1
         }
 
         private func loadSyncedPicks(session: SessionStore) async throws -> [GusLibraryPick] {
-            guard let snapshot = try await session.forYouSnapshotSync.fetch(), !snapshot.itemIDs.isEmpty else { return [] }
+            let shared: ForYouSnapshot?
+            do {
+                shared = try await session.forYouSnapshotSync.fetch()
+            } catch {
+                try Task.checkCancellation()
+                throw GusError.server(String(localized: "Couldn’t load recommendations from iCloud. Try again."))
+            }
+            guard let snapshot = shared, !snapshot.itemIDs.isEmpty else { return [] }
             try Task.checkCancellation()
             guard session.isActive else { return [] }
             var query = MediaItemQuery(
-                includeTypes: GusLibraryMatching.types,
+                includeTypes: GusLibraryMatching.recommendationTypes,
                 startIndex: 0,
                 limit: snapshot.itemIDs.count,
                 isRecursive: true
@@ -101,7 +213,7 @@ final class ForYouShelfState {
         ) -> [GusLibraryPick] {
             guard snapshot.isFresh(at: now) else { return [] }
             let valid = items.filter {
-                $0.providerKind == .jellyfin && $0.type.map(GusLibraryMatching.types.contains) == true &&
+                $0.providerKind == .jellyfin && $0.type.map(GusLibraryMatching.recommendationTypes.contains) == true &&
                     $0.type != .book && admits($0)
             }
             // Jellyfin controls current access and metadata. Preserve the phone's rank.

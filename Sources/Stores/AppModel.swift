@@ -240,6 +240,7 @@ final class AppModel {
         let scope = AccountScope(serverID: serverID, userID: userID)
         GusIntelligencePreferences.delete(scope: scope, defaults: userDefaults)
         GusLibraryIntelligence.deleteCatalog(scope: scope)
+        BrowseSnapshotCache.delete(scope: scope)
         SearchHistoryStore.delete(scope: scope, defaults: userDefaults)
         guard let user = users.first(where: { $0.id == userID && $0.serverID == serverID }) else {
             let credential = SessionCredential(serverID: serverID, userID: userID)
@@ -501,6 +502,7 @@ final class AppModel {
         let scope = AccountScope(serverID: server.id, userID: user.id)
         GusIntelligencePreferences.delete(scope: scope, defaults: userDefaults)
         GusLibraryIntelligence.deleteCatalog(scope: scope)
+        BrowseSnapshotCache.delete(scope: scope)
         SearchHistoryStore.delete(scope: scope, defaults: userDefaults)
         tokenStore.deleteToken(for: SessionCredential(user: user))
         users.removeAll { SessionCredential(user: $0) == SessionCredential(user: user) }

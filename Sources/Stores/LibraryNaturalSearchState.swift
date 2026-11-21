@@ -31,6 +31,23 @@ final class LibraryNaturalSearchState {
     }
 
     private var activeRun = UUID()
+    private var interpreted: GusSearchIntent?
+    var relaxations: [GusSearchIntent.Relaxation] {
+        interpreted?.relaxations ?? []
+    }
+
+    func broaden(removing conceptID: String) {
+        guard state == .loaded, items.isEmpty, let broader = interpreted?.removingConcept(conceptID) else { return }
+        interpreted = broader
+        submission = UUID()
+        state = .loading
+    }
+
+    func retry() {
+        submission = UUID()
+        state = .loading
+    }
+
     private(set) var submission: UUID?
     private(set) var filters: [String] = []
     private(set) var items: [MediaItem] = []
@@ -48,6 +65,7 @@ final class LibraryNaturalSearchState {
         state = .idle
         items = []
         filters = []
+        interpreted = nil
     }
 
     func run(session: SessionStore, onKeyword: () -> Void) async {
@@ -62,10 +80,15 @@ final class LibraryNaturalSearchState {
             try Task.checkCancellation()
             guard isCurrent() else { return }
             guard allowed else { throw GusIntelligenceError.useKeyword }
-            let model = GusIntelligenceModel(session: session)
-            let intent = try await model.interpretLibrary(text)
+            let intent: GusSearchIntent
+            if let interpreted {
+                intent = interpreted
+            } else {
+                intent = try await GusIntelligenceModel(session: session).interpretLibrary(text)
+            }
             try Task.checkCancellation()
             guard isCurrent() else { return }
+            interpreted = intent
             filters = intent.appliedFilters
             guard intent.unsupported.isEmpty else {
                 let missing = intent.unsupported.joined(separator: ", ")

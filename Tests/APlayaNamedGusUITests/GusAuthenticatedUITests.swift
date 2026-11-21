@@ -207,7 +207,7 @@ final class GusAuthenticatedUITests: XCTestCase {
             )
             XCTAssertEqual(
                 app.staticTexts["Intelligence.prompt.settingsPath"].label,
-                "Gus Settings → Library Intelligence → Sync For You to Apple TV."
+                "Gus Settings → iCloud Sync → Sync For You to Apple TV."
             )
             capture(app, "for-you-sync-consent")
             app.buttons["Intelligence.prompt.decline"].tap()
@@ -217,7 +217,7 @@ final class GusAuthenticatedUITests: XCTestCase {
             app.terminate()
             let settings = launch("settings", arguments: args)
             let sync = settings.switches["Intelligence.forYouSync"].firstMatch
-            revealIntelligenceSettings(sync, in: settings)
+            revealSettingsControl(sync, in: settings)
             XCTAssertEqual(sync.value as? String, "0")
             XCTAssertFalse(syncTitle.exists)
             let offset = max(0.5, 1 - 28 / sync.frame.width)
@@ -228,7 +228,12 @@ final class GusAuthenticatedUITests: XCTestCase {
             let error = settings.staticTexts["Couldn’t verify your iCloud account. Try again."].firstMatch
             XCTAssertTrue(error.waitForExistence(timeout: 10))
             XCTAssertEqual(sync.value as? String, "0")
-            XCTAssertEqual(settings.switches["Intelligence.forYou"].firstMatch.value as? String, "1")
+            XCTAssertFalse(settings.switches["Intelligence.forYou"].exists)
+            settings.swipeDown()
+            let forYou = settings.switches["Intelligence.forYou"].firstMatch
+            revealIntelligenceSettings(forYou, in: settings)
+            XCTAssertEqual(forYou.value as? String, "1")
+            XCTAssertFalse(settings.switches["Intelligence.forYouSync"].exists)
         }
 
         private func tapIntelligenceSwitch(_ toggle: XCUIElement, expecting value: String) {
@@ -240,7 +245,17 @@ final class GusAuthenticatedUITests: XCTestCase {
         }
 
         private func revealIntelligenceSettings(_ toggle: XCUIElement, in app: XCUIApplication) {
-            XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: 12))
+            if !app.navigationBars["Library Intelligence"].exists {
+                XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: 12))
+                let link = app.buttons["Settings.libraryIntelligence"].firstMatch
+                revealSettingsControl(link, in: app)
+                link.tap()
+                XCTAssertTrue(app.navigationBars["Library Intelligence"].waitForExistence(timeout: 5))
+            }
+            revealSettingsControl(toggle, in: app)
+        }
+
+        private func revealSettingsControl(_ toggle: XCUIElement, in app: XCUIApplication) {
             let viewport = app.frame.insetBy(dx: 0, dy: 100)
             for _ in 0 ..< 8 {
                 let frame = toggle.exists ? toggle.frame : .zero
