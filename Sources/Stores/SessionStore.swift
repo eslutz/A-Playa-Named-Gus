@@ -63,6 +63,7 @@ final class SessionStore {
                 intelligencePreferences.forYouSyncIdentity = nil
                 return
             }
+            guard intelligencePreferences.recommendationsEnabled else { return }
             isVerifyingForYouSyncAccount = true
             Task {
                 defer { isVerifyingForYouSyncAccount = false }

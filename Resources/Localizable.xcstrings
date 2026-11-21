@@ -193,6 +193,21 @@
     "Sync For You to Apple TV": {
       "comment": "Opt-in toggle to publish ranked recommendation item IDs from iPhone."
     },
+    "Set Up Apple TV Sync": {
+      "comment": "Button on the iPhone For You shelf that opens the sync consent sheet."
+    },
+    "Sync For You to Apple TV?": {
+      "comment": "Title of the For You sync consent sheet."
+    },
+    "Gus saves the Jellyfin item IDs for your ranked recommendations in your private iCloud storage. Your iPhone and Apple TV must use the same iCloud and Jellyfin accounts.": {
+      "comment": "Privacy disclosure in the For You sync consent sheet."
+    },
+    "Gus Settings → Library Intelligence → Sync For You to Apple TV.": {
+      "comment": "Settings path shown in the For You sync consent sheet."
+    },
+    "Enable Sync": {
+      "comment": "Confirms consent to sync For You recommendations from iPhone to Apple TV."
+    },
     "Show Synced For You": {
       "comment": "Apple TV toggle to display recommendations synced from iPhone."
     },
