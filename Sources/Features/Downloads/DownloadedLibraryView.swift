@@ -61,7 +61,7 @@ struct DownloadedLibraryView: View {
         }
         .toolbar {
             ToolbarItem {
-                NavigationLink(value: AppScreen.downloads) {
+                NavigationLink(value: GusRoute.screen(.downloads)) {
                     Label("Manage Downloads", systemImage: "arrow.down.circle").frame(minWidth: 44, minHeight: 44)
                 }
             }
@@ -82,7 +82,7 @@ struct DownloadedLibraryView: View {
             } description: {
                 Text(search.isEmpty ? "Completed downloads available on this device appear here." : "Try another title, series, or artist.")
             } actions: {
-                NavigationLink("Manage Downloads", value: AppScreen.downloads)
+                NavigationLink("Manage Downloads", value: GusRoute.screen(.downloads))
                     .frame(minWidth: 44, minHeight: 44)
                     .contentShape(Rectangle())
             }

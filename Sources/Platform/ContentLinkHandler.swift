@@ -50,12 +50,13 @@ private struct ContentLinkHandler: ViewModifier {
                             }
                         }
                 }
+                .environment(\.detailNavigationStack, .sheet(itemID: ref.id))
                 #if os(iOS)
-                .presentationContentInteraction(.scrolls)
+                    .presentationContentInteraction(.scrolls)
                 #endif
-                .gusSessionPlayerHost(state: rootState)
-                .gusAudioHost(coordinator: audio)
-                .gusNowPlaying(coordinator: audio, usesTabAccessory: false)
+                    .gusSessionPlayerHost(state: rootState)
+                    .gusAudioHost(coordinator: audio)
+                    .gusNowPlaying(coordinator: audio, usesTabAccessory: false)
             }
             .playerPresentation(item: $playerItem)
             .alert(
@@ -87,21 +88,19 @@ private struct ContentLinkHandler: ViewModifier {
             switch link {
             case .item:
                 #if os(tvOS)
-                    rootState.paths[rootState.selectedSectionID, default: NavigationPath()].append(ItemRef(item: item))
+                    rootState.paths[rootState.selectedSectionID, default: []].append(.item(.init(item: item)))
                 #elseif os(iOS)
                     if DeviceIdentity.usesIPadPresentation {
                         if item.type == .photo {
                             rootState.playerItem = ItemRef(item: item, serverID: session.server.id, userID: session.user.id)
                         } else {
-                            rootState.paths[rootState.selectedSectionID, default: NavigationPath()].append(ItemRef(item: item))
+                            rootState.paths[rootState.selectedSectionID, default: []].append(.item(.init(item: item)))
                         }
                     } else {
-                        rootState.sheetPath = NavigationPath()
-                        rootState.detailItem = ItemRef(item: item)
+                        rootState.presentDetail(.init(item: item))
                     }
                 #else
-                    rootState.sheetPath = NavigationPath()
-                    rootState.detailItem = ItemRef(item: item)
+                    rootState.presentDetail(.init(item: item))
                 #endif
             case .play:
                 var request = link.playbackRequest ?? PlaybackRequest(item: item)

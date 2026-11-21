@@ -20,19 +20,33 @@ struct UserProfileView: View {
 
     var body: some View {
         Group {
-            if !ready, session.profile.isLoading {
-                ProgressView("Loading Profile")
-            } else if !ready, let message = session.profile.errorMessage {
+            if ready {
+                profileForm
+            } else if !session.profile.isLoading, let message = session.profile.errorMessage {
                 ContentUnavailableView {
                     Label("Profile Unavailable", systemImage: "person.crop.circle.badge.exclamationmark")
                 } description: { Text(message) } actions: {
                     Button("Try Again") { Task { await load() } }
                 }
             } else {
-                profileForm
+                ProgressView("Loading Profile")
             }
         }
         .navigationTitle("Profile")
+        .toolbar {
+            if !ready {
+                ToolbarItem(placement: .cancellationAction) {
+                    GusCloseButton { dismiss() }
+                        .disabled(session.profile.isSaving)
+                }
+            }
+        }
+        .interactiveDismissDisabled(session.profile.isSaving)
+        .onChange(of: session.profile.profile) { _, _ in
+            if !ready {
+                populateFields()
+            }
+        }
         .task {
             if !ready {
                 await load()
@@ -101,7 +115,6 @@ struct UserProfileView: View {
             #endif
         }
         .disabled(session.profile.isSaving || session.profile.isLoading)
-        .navigationTitle("Profile")
         .toolbar {
             #if os(iOS) || os(tvOS)
                 ToolbarItem(placement: .cancellationAction) {
@@ -129,12 +142,6 @@ struct UserProfileView: View {
             Button("Keep Editing", role: .cancel) {}
         } message: {
             Text("Reloading replaces your unsaved profile changes with the current server profile.")
-        }
-        .interactiveDismissDisabled(session.profile.isSaving)
-        .onChange(of: session.profile.profile) { _, _ in
-            if !ready {
-                populateFields()
-            }
         }
     }
 

@@ -751,15 +751,13 @@
             if tab.waitForExistence(timeout: 3) {
                 tab.tap()
             } else if app.tabBars.firstMatch.exists {
-                let more = app.tabBars.buttons["More"]
-                XCTAssertTrue(more.waitForExistence(timeout: 5))
-                more.tap()
+                XCTAssertTrue(app.openMoreIndex())
                 let playlists = app.buttons["Playlists"].firstMatch
                 XCTAssertTrue(playlists.waitForExistence(timeout: 10))
                 playlists.tap()
             } else {
-                let show = app.buttons["Navigation.showSidebar"]
-                if show.isHittable {
+                let show = app.sidebarToggle
+                if !app.collectionViews["Sidebar"].firstMatch.isHittable, show.isHittable {
                     show.tap()
                 }
                 let sidebar = app.descendants(matching: .any)["Navigation.section.playlists"].firstMatch

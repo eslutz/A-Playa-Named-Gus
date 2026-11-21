@@ -148,7 +148,7 @@ struct LiveTVView: View {
             }
         } else {
             List(store.recordings, id: \.id) { recording in
-                NavigationLink(value: ItemRef(item: recording)) {
+                NavigationLink(value: GusRoute.item(.init(item: recording))) {
                     VStack(alignment: .leading, spacing: 2) {
                         Text(recording.displayTitle)
                             .font(.headline)

@@ -156,9 +156,9 @@ struct TVFocusRestorationTests {
         func retainedParentPop() {
             let root = RootNavigationState()
             root.tvFocus.remember(id: "b", index: 1, section: "latest", context: "home")
-            root.paths["home", default: NavigationPath()].append("child")
+            root.paths["home", default: []].append(.screen(.downloads))
             root.tvFocus.remember(id: "play", index: 0, section: "actions", context: "detail")
-            root.paths["home"] = NavigationPath()
+            root.paths["home"] = []
             root.tvFocus.remember(id: "book", index: 0, section: "books", context: "home")
             #expect(root.tvFocus.restoredID(section: "latest", context: "home", ids: ["a", "c"], initial: false) == "c")
         }

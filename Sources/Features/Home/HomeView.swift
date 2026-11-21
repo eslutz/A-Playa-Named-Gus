@@ -64,9 +64,7 @@ struct HomeView: View {
             await store?.loadIfNeeded()
             await upNext.refresh(session: session)
         }
-        .task(id: "\(store != nil)-\(ratingLimit)-\(hideUnrated)-\(upNext.revision)-\(playlists.revision)-\(serverLists.revision)-\(activity.revision)") {
-            updateNextUp()
-        }
+        .modifier(NextUpUpdates(store: store))
         .task(id: playbackRefresh.revision) {
             guard playbackRefresh.revision > 0, let store else { return }
             await store.refreshAfterPlayback(revision: playbackRefresh.revision)
@@ -186,23 +184,6 @@ struct HomeView: View {
         }.map { "latest:" + $0.rawValue }
     }
 
-    private func updateNextUp() {
-        guard !Task.isCancelled else { return }
-        let scope = session.references.scope
-        upNext.load(serverID: scope.serverID, userID: scope.userID)
-        upNext.reconcileSyncedIntents(scope: scope)
-        activity.reconcile(scope: scope)
-        serverLists.load(scope: scope)
-        let candidates = serverLists.videoPlaylists(scope: scope, supplemental: playlists).compactMap { playlist -> NextUpPlaylistCandidate? in
-            guard playlist.appearsInNextUp else { return nil }
-            let index = playlist.entries.firstIndex { $0.id == playlist.cursor?.entryID } ?? 0
-            let item = playlist.entries.indices.contains(index) ? playlist.entries[index].reference.item : nil
-            guard item.map({ ContentRatingGate.admitsStored($0) }) ?? true else { return nil }
-            return NextUpPlaylistCandidate(id: playlist.id, name: playlist.name, item: item, position: playlist.entries.isEmpty ? 0 : index + 1, total: playlist.entries.count, activityAt: playlist.activityAt, members: playlist.entries.map(\.reference.item))
-        }
-        store?.updateNextUp(saved: upNext.entries(serverID: scope.serverID, userID: scope.userID), playlists: candidates)
-    }
-
     private func content(_ store: HomeStore) -> some View {
         let slots = heldSlots ?? visibleSlots(store)
         let loadingSlot = firstLoadingSlot(store, slots: slots)
@@ -299,9 +280,27 @@ struct HomeView: View {
                 await upNext.refresh(session: session, force: true)
                 await store.refresh()
                 await store.forYou.load(shelfContext, session: session, refresh: true)
-                updateNextUp()
+                store.refreshNextUp(upNext: upNext, playlists: playlists, serverLists: serverLists)
             }
         }
+    }
+}
+
+/// The queue can change while either its Home rail or its pushed list is visible.
+private struct NextUpUpdates: ViewModifier {
+    @Environment(UpNextStore.self) private var upNext
+    @Environment(SavedMediaStore.self) private var playlists
+    @Environment(ServerMediaListsStore.self) private var serverLists
+    @AppStorage(ContentRatingGate.limitDefaultsKey) private var ratingLimit = ContentRatingGate.Limit.off.rawValue
+    @AppStorage(ContentRatingGate.hideUnratedDefaultsKey) private var hideUnrated = false
+    private let activity = NextUpActivityStore.shared
+    let store: HomeStore?
+
+    func body(content: Content) -> some View {
+        content
+            .task(id: "\(store != nil)-\(ratingLimit)-\(hideUnrated)-\(upNext.revision)-\(playlists.revision)-\(serverLists.revision)-\(activity.revision)") {
+                store?.refreshNextUp(upNext: upNext, playlists: playlists, serverLists: serverLists)
+            }
     }
 }
 
@@ -314,7 +313,7 @@ private struct NextUpRail: View {
             HStack {
                 Text("Next Up").gusPhoneRailHeading().accessibilityAddTraits(.isHeader)
                 Spacer()
-                NavigationLink("Show All") { NextUpListView(store: store).gusTVFocusScope() }
+                NavigationLink("Show All", value: GusRoute.nextUp)
                     .accessibilityIdentifier("NextUp.showAll")
                     .gusTVFocus(id: "all", section: "home.next.control", ids: ["all"], context: root.selectedSectionID)
             }
@@ -337,7 +336,7 @@ private struct NextUpRail: View {
     }
 }
 
-private struct NextUpListView: View {
+struct NextUpListView: View {
     let store: HomeStore
     @AppStorage("nextUpDisplayGrid") private var showsGrid = false
     var body: some View {
@@ -386,6 +385,7 @@ private struct NextUpListView: View {
             }
         }
         .navigationTitle("Next Up")
+        .modifier(NextUpUpdates(store: store))
         .gusTVDetailTitle()
         .toolbar {
             #if !os(tvOS)
@@ -420,7 +420,8 @@ private struct NextUpDestination: View {
     var body: some View {
         Group {
             if let playlist = entry.playlist {
-                NavigationLink(value: VideoPlaylistRef(id: playlist.id)) { label }
+                NavigationLink(value: GusRoute.playlist(.init(id: playlist.id))) { label }
+                    .navigationLinkIndicatorVisibility(usesArtwork ? .automatic : .visible)
                     .posterNavigationStyle()
             } else if let saved = entry.savedEntry, saved.availability == .unavailable || saved.availability == .requiresSelection {
                 VStack(alignment: .leading, spacing: 8) {
@@ -434,6 +435,7 @@ private struct NextUpDestination: View {
                 }
             } else if let item = entry.item {
                 MediaItemNavigationLink(item: item) { label }
+                    .navigationLinkIndicatorVisibility(usesArtwork ? .automatic : .visible)
                     .posterNavigationStyle()
             }
         }
@@ -530,10 +532,10 @@ struct MediaRail: View {
                     .accessibilityAddTraits(.isHeader)
                 Spacer()
                 if let latestKind {
-                    NavigationLink("Show All") { LibraryGridView(scope: .latest(latestKind)).gusTVFocusScope() }
+                    NavigationLink("Show All", value: GusRoute.libraryGrid(.latest(latestKind)))
                         .gusTVFocus(id: "all", section: (focusKey ?? "latest:" + latestKind.rawValue) + ":control", ids: ["all"], context: focusContext ?? root.selectedSectionID)
                 } else if let library {
-                    NavigationLink("Show All") { LibraryGridView(library: library).gusTVFocusScope() }
+                    NavigationLink("Show All", value: GusRoute.libraryGrid(.library(library)))
                         .gusTVFocus(id: "all", section: (focusKey ?? "library:" + (library.id ?? title)) + ":control", ids: ["all"], context: focusContext ?? root.selectedSectionID)
                 }
             }
@@ -790,7 +792,7 @@ struct LibrariesLandingView: View {
                     if usesList {
                         List(store.libraries, id: \.id) { library in
                             let urls = session.mediaProvider.artworkURLs(for: library, request: .init(role: .libraryThumbnail, maxWidth: 288))
-                            NavigationLink(value: LibraryRef(item: library)) {
+                            NavigationLink(value: GusRoute.library(.init(item: library))) {
                                 HStack(spacing: 16) {
                                     ArtworkTile(
                                         url: urls.first, aspectRatio: 16.0 / 9.0, contentMode: .fit,
@@ -830,7 +832,7 @@ private struct LibrariesGrid: View {
         VStack(alignment: .leading, spacing: 12) {
             LazyVGrid(columns: PosterGrid.columns, alignment: .leading, spacing: PosterGrid.spacing) {
                 ForEach(libraries, id: \.id) { library in
-                    NavigationLink(value: LibraryRef(item: library)) {
+                    NavigationLink(value: GusRoute.library(.init(item: library))) {
                         PosterCard(
                             title: library.name ?? "Library",
                             imageURL: session.mediaProvider.primaryImageURL(for: library, context: .posterGrid),

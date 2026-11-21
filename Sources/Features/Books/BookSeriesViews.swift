@@ -19,6 +19,7 @@ struct BookShelfView: View {
             LazyVStack(alignment: .leading, spacing: 0) {
                 ForEach(store.bookEntries) { entry in
                     link(entry).buttonStyle(.plain)
+                        .navigationLinkIndicatorVisibility(.visible)
                     Divider()
                 }
             }
@@ -49,7 +50,7 @@ struct BookShelfView: View {
             }
             .mediaItemContextMenu(item: item)
         case let .series(series):
-            NavigationLink(value: BookSeriesRef(account: session.references.scope, library: store.scope, key: series.id, name: series.name)) {
+            NavigationLink(value: GusRoute.bookSeries(.init(account: session.references.scope, library: store.scope, key: series.id, name: series.name))) {
                 BookSeriesLabel(series: series, showsList: showsList, complete: store.hasCompleteBookCatalog)
             }
         }
@@ -88,7 +89,6 @@ private struct BookSeriesLabel: View {
                     covers.frame(width: 44)
                     caption
                     Spacer(minLength: 8)
-                    Image(systemName: "chevron.right").font(.caption.weight(.semibold)).foregroundStyle(.tertiary)
                 }
                 .padding(.vertical, 8)
             } else {
@@ -185,6 +185,7 @@ struct BookSeriesDetailView: View {
                             ForEach(members, id: \.id) { item in
                                 MediaItemNavigationLink(item: item) { MediaLibraryRow(item: item) }
                                     .buttonStyle(.plain)
+                                    .navigationLinkIndicatorVisibility(.visible)
                                     .mediaItemContextMenu(item: item)
                                 Divider()
                             }

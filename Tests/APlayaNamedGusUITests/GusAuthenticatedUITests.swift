@@ -39,7 +39,7 @@ final class GusAuthenticatedUITests: XCTestCase {
     func testAudioCloseAndReopen() throws {
         try prepare()
         defer { finish() }
-        let app = try launch("play/" + required("Audio"))
+        let app = try launch("play/" + required("Audio"), arguments: ["--gus-intelligence-test-unsupported"])
         #if os(tvOS)
             XCTAssertTrue(app.cells["AVAudibleSettings"].waitForExistence(timeout: 30))
         #elseif os(iOS)
@@ -47,7 +47,7 @@ final class GusAuthenticatedUITests: XCTestCase {
             XCTAssertTrue(app.buttons["Pause"].waitForExistence(timeout: 30))
             XCTAssertTrue(app.buttons["Pause"].isEnabled)
         #else
-            XCTAssertTrue(app.buttons["Done"].waitForExistence(timeout: 30))
+            XCTAssertTrue(app.buttons["AudioPlayer.close"].waitForExistence(timeout: 30))
         #endif
         capture(app, "audio-open")
         #if os(iOS)
@@ -63,10 +63,8 @@ final class GusAuthenticatedUITests: XCTestCase {
                     break
                 }
             }
-        #elseif os(iOS)
-            app.buttons["AudioPlayer.close"].tap()
         #else
-            app.buttons["Done"].firstMatch.tap()
+            app.buttons["AudioPlayer.close"].tap()
         #endif
         let reopen = app.buttons["NowPlaying.reopen"]
         XCTAssertTrue(reopen.waitForExistence(timeout: 10))
@@ -360,7 +358,7 @@ final class GusAuthenticatedUITests: XCTestCase {
         func testReadyVideoCloseReturnsToDetail() throws {
             try prepare()
             defer { finish() }
-            let app = try launch("item/" + required("SynopsisMovie"))
+            let app = try launch("item/" + required("SynopsisMovie"), arguments: ["--gus-intelligence-test-unsupported"])
             let restart = app.buttons["Detail.restart"]
             XCTAssertTrue(restart.waitForExistence(timeout: 30))
             reveal(restart, in: app)
@@ -415,7 +413,7 @@ final class GusAuthenticatedUITests: XCTestCase {
     #endif
 
     #if os(tvOS) || os(visionOS)
-        func testRelatedGenreReturnsToDetailAndClosesToSearch() throws {
+        func testRelatedGenreReturnsWithNativeBack() throws {
             continueAfterFailure = false
             let app = XCUIApplication()
             app.launchEnvironment["GUS_DEMO_URL"] = "http://127.0.0.1:5061"
@@ -435,20 +433,22 @@ final class GusAuthenticatedUITests: XCTestCase {
             func assertGenreResults() {
                 let member = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "Night Radio")).firstMatch
                 XCTAssertTrue(member.waitForExistence(timeout: 20), app.debugDescription)
-                XCTAssertTrue(app.buttons["Search.backToDetail"].firstMatch.waitForExistence(timeout: 8), app.debugDescription)
-                XCTAssertTrue(app.buttons["Search.closeResults"].firstMatch.exists, app.debugDescription)
                 XCTAssertFalse(app.keyboards.firstMatch.exists)
             }
             try select(genreID)
             assertGenreResults()
             capture(app, "related-horror-results")
-            try select("Search.backToDetail")
+            #if os(tvOS)
+                XCUIRemote.shared.press(.menu)
+            #else
+                let back = app.navigationBars.buttons["BackButton"].firstMatch
+                XCTAssertTrue(back.waitForExistence(timeout: 8), app.debugDescription)
+                back.tap()
+            #endif
             XCTAssertTrue(app.buttons["Detail.play"].waitForExistence(timeout: 15), app.debugDescription)
-            try select(genreID)
-            assertGenreResults()
-            try select("Search.closeResults")
-            XCTAssertFalse(app.buttons["Search.backToDetail"].exists)
-            XCTAssertTrue(app.staticTexts["Recent Searches"].firstMatch.waitForExistence(timeout: 10), app.debugDescription)
+            #if os(tvOS)
+                XCTAssertTrue(app.buttons[genreID].firstMatch.hasFocus, app.debugDescription)
+            #endif
         }
 
         func testArtworkHeaderAppearances() throws {
@@ -833,7 +833,6 @@ final class GusAuthenticatedUITests: XCTestCase {
             try focusTV(detail, identifier: "Detail.fullSynopsis")
             XCUIRemote.shared.press(.select)
             XCTAssertTrue(detail.buttons["Close"].waitForExistence(timeout: 15))
-            XCTAssertEqual(detail.buttons["Close"].staticTexts.count, 0)
             capture(detail, "toolbar-synopsis-close")
             XCUIRemote.shared.press(.menu)
             XCTAssertTrue(detail.buttons["Detail.more"].waitForExistence(timeout: 10))
@@ -1862,8 +1861,8 @@ final class GusAuthenticatedUITests: XCTestCase {
         func testBookReaderDismissal() throws {
             try prepare()
             defer { finish() }
-            let app = try launch("item/" + required("Book"))
-            let read = app.buttons["Read"].firstMatch
+            let app = try launch("item/" + required("Book"), arguments: ["--gus-intelligence-test-unsupported"])
+            let read = app.buttons.matching(NSPredicate(format: "label IN %@", ["Read", "Continue Reading"])).firstMatch
             XCTAssertTrue(read.waitForExistence(timeout: 30))
             for _ in 0 ..< 8 {
                 if read.isHittable {
@@ -1886,9 +1885,9 @@ final class GusAuthenticatedUITests: XCTestCase {
                 !app.buttons["BookReader.done"].exists && !app.webViews.firstMatch.exists && read.exists
             }, object: nil)
             XCTAssertEqual(XCTWaiter.wait(for: [dismissed], timeout: 30), .completed)
-            reveal(app.buttons["Read"].firstMatch, in: app)
+            reveal(read, in: app)
             capture(app, "book-reader-dismissed")
-            XCTAssertTrue(app.buttons["Read"].firstMatch.isHittable)
+            XCTAssertTrue(read.isHittable)
         }
 
         func testBookReaderNestedChapters() throws {

@@ -161,16 +161,12 @@ struct ConnectServerView: View {
                         showingLocalServers = true
                         discoveryStore.start()
                     } label: {
-                        HStack(spacing: 16) {
-                            Image(systemName: "dot.radiowaves.left.and.right").foregroundStyle(.blue)
-                            Text("Find a local server").foregroundStyle(.primary)
-                            Spacer()
-                            Image(systemName: "chevron.right").foregroundStyle(.secondary)
-                        }
-                        .padding(.vertical, 18)
-                        .contentShape(Rectangle())
+                        Label("Find a local server", systemImage: "dot.radiowaves.left.and.right")
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.vertical, 18)
+                            .contentShape(Rectangle())
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(.borderless)
                     .overlay(alignment: .top) { Divider() }
                     .overlay(alignment: .bottom) { Divider() }
                     Text("Search for Jellyfin servers on your local network when you’re on the same Wi-Fi.")

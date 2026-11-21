@@ -33,16 +33,6 @@ struct RootContainer: View {
                 NavigationStack { UserProfileView() }
             }
             .gusContentLinks()
-            .task(id: state.selectedSectionID == RootNavigationState.searchID ? state.globalSearch.related?.lookupID : nil) {
-                if state.selectedSectionID == RootNavigationState.searchID, let related = state.globalSearch.related {
-                    await related.resolve(session: session)
-                    guard !Task.isCancelled, state.globalSearch.related === related, let match = related.resolved else { return }
-                    let pages = state.libraryStore(for: .related(match), session: session, searchResults: related)
-                    if pages.state == .idle || pages.state == .loading {
-                        await pages.load(superseding: true)
-                    }
-                }
-            }
             .gusSessionPlayerHost(state: state, enabled: state.detailItem == nil)
             .gusAudioHost(coordinator: audio, enabled: state.detailItem == nil)
         #if os(iOS) || os(tvOS) || os(macOS)
@@ -124,10 +114,10 @@ struct RootContainer: View {
     private func focusSearch() {
         switch state.selectedSectionID {
         case NavigationSectionPreference.discoverID, NavigationSectionPreference.downloadedID:
-            state.paths[state.selectedSectionID] = NavigationPath()
+            state.paths[state.selectedSectionID] = []
         default:
             state.selectSection(RootNavigationState.searchID)
-            state.paths[RootNavigationState.searchID] = NavigationPath()
+            state.paths[RootNavigationState.searchID] = []
             state.globalSearch.typed.isPresented = true
         }
     }
@@ -199,22 +189,37 @@ private struct TabRootView: View {
     }
 
     private var overflow: [ResolvedNavigationSection] {
-        sections.filter { section in !direct.contains { $0.id == section.id } }
+        let directIDs = Set(direct.map(\.id))
+        return sections.filter { !directIDs.contains($0.id) }
+    }
+
+    private struct TabConfiguration: Equatable {
+        let sectionIDs: [String]
+        let overflowIDs: [String]
+        let selected: String
+        let librariesLoaded: Bool
+    }
+
+    private var configuration: TabConfiguration {
+        .init(sectionIDs: sections.map(\.id), overflowIDs: overflow.map(\.id), selected: state.selectedSectionID, librariesLoaded: state.home?.libraryState == .loaded)
     }
 
     private var selection: Binding<String> {
         Binding(get: {
-            #if os(visionOS)
-                // Keep the native selection valid during the same update that removes More.
-                if state.selectedSectionID == RootNavigationState.moreID, overflow.isEmpty {
-                    return direct.first?.id ?? NavigationSectionPreference.homeID
-                }
-            #endif
-            return (direct.contains { $0.id == state.selectedSectionID } || state.selectedSectionID == RootNavigationState.searchID) ? state.selectedSectionID : RootNavigationState.moreID
+            if direct.contains(where: { $0.id == state.selectedSectionID }) || state.selectedSectionID == RootNavigationState.searchID {
+                return state.selectedSectionID
+            }
+            return overflow.isEmpty ? direct.first?.id ?? NavigationSectionPreference.homeID : RootNavigationState.moreID
         }, set: { id in
-            state.selectSection(id)
+            if id == RootNavigationState.moreID {
+                state.selectMoreTab(overflowIDs: overflow.map(\.id))
+            } else {
+                state.selectSection(id)
+            }
             #if os(iOS)
-                if id == RootNavigationState.searchID, state.globalSearch.related == nil, state.globalSearch.text.isEmpty {
+                if id == RootNavigationState.searchID, state.paths[id]?.isEmpty != false,
+                   state.globalSearch.text.isEmpty, session.searchHistory.entries.isEmpty
+                {
                     state.globalSearch.typed.isPresented = true
                 }
             #endif
@@ -236,7 +241,7 @@ private struct TabRootView: View {
                 }
             }
             if !overflow.isEmpty {
-                Tab(value: RootNavigationState.moreID) { SectionStack(sectionID: overflow.contains(where: { $0.id == state.selectedSectionID }) ? state.selectedSectionID : RootNavigationState.moreID, overflow: overflow) } label: {
+                Tab(value: RootNavigationState.moreID) { SectionStack(sectionID: RootNavigationState.moreID, overflow: overflow) } label: {
                     Label("More", systemImage: "ellipsis")
                 }
             }
@@ -256,12 +261,9 @@ private struct TabRootView: View {
                 }
             #endif
         }
-        #if os(visionOS)
-        .onChange(of: sections.map(\.id), initial: true) { _, ids in
-            state.reconcileVisionMoreSelection(sectionIDs: ids)
+        .onChange(of: configuration, initial: true) { _, config in
+            state.reconcileTabSelection(sectionIDs: config.sectionIDs, overflowIDs: config.overflowIDs, librariesLoaded: config.librariesLoaded)
         }
-        .onChange(of: state.selectedSectionID) { _, _ in state.reconcileVisionMoreSelection(sectionIDs: sections.map(\.id)) }
-        #endif
     }
 }
 
@@ -290,6 +292,7 @@ private struct SplitRootView: View {
             SectionStack(sectionID: state.selectedSectionID)
         }
         .navigationSplitViewStyle(.balanced)
+        .onAppear { state.useSidebar() }
     }
 }
 
@@ -304,7 +307,11 @@ private struct SplitRootView: View {
         }
 
         var body: some View {
-            NavigationSplitView(columnVisibility: Bindable(state).sidebarVisibility) {
+            let visibility = Binding(
+                get: { state.sidebarVisibility ?? (dynamicTypeSize.isAccessibilitySize ? .detailOnly : .doubleColumn) },
+                set: { state.sidebarVisibility = $0 }
+            )
+            NavigationSplitView(columnVisibility: visibility) {
                 List(selection: Binding<String?>(get: { state.selectedSectionID }, set: {
                     if let id = $0 {
                         state.selectSection(id)
@@ -321,36 +328,13 @@ private struct SplitRootView: View {
                 }
                 .navigationTitle("Gus")
                 .navigationSplitViewColumnWidth(min: 220, ideal: 280, max: 320)
-                .toolbar(removing: .sidebarToggle)
-                .toolbar {
-                    ToolbarItem(placement: .topBarTrailing) {
-                        Button("Hide Sidebar", systemImage: "sidebar.left") {
-                            state.sidebarVisibility = .detailOnly
-                        }
-                        .labelStyle(.iconOnly)
-                        .accessibilityIdentifier("Navigation.hideSidebar")
-                    }
-                }
-
             } detail: {
                 SectionStack(sectionID: state.selectedSectionID)
-                    .toolbar(removing: .sidebarToggle)
-                    .toolbar {
-                        if state.sidebarVisibility == .detailOnly {
-                            ToolbarItem(placement: .topBarLeading) {
-                                Button("Show Sidebar", systemImage: "sidebar.left") {
-                                    state.sidebarVisibility = .doubleColumn
-                                }
-                                .labelStyle(.iconOnly)
-                                .accessibilityIdentifier("Navigation.showSidebar")
-                            }
-                        }
-                    }
             }
             .navigationSplitViewStyle(.balanced)
-            .toolbar(removing: .sidebarToggle)
-            .onChange(of: dynamicTypeSize, initial: true) { _, size in
-                if size.isAccessibilitySize {
+            .onAppear { state.useSidebar() }
+            .onChange(of: dynamicTypeSize.isAccessibilitySize) { _, usesAccessibilitySize in
+                if usesAccessibilitySize {
                     state.sidebarVisibility = .detailOnly
                 }
             }
@@ -363,41 +347,37 @@ private struct SectionStack: View {
     @Environment(RootNavigationState.self) private var state
     @Environment(AudioPlaybackCoordinator.self) private var audio
     @Environment(SessionStore.self) private var session
-    @Environment(NavigationPreferencesStore.self) private var preferences
     let sectionID: String
     var overflow: [ResolvedNavigationSection] = []
-    private var sections: [ResolvedNavigationSection] {
-        RootSections.resolve(preferences, state: state, session: session)
-    }
 
     var body: some View {
-        // Read the observable reference before the escaping search-content closure.
-        let home = state.home
-        NavigationStack(path: state.pathBinding(for: sectionID)) {
+        let path = sectionID == RootNavigationState.moreID
+            ? state.morePathBinding(overflowIDs: overflow.map(\.id))
+            : state.pathBinding(for: sectionID)
+        let contentSection: String = if case let .section(id)? = path.wrappedValue.first {
+            id
+        } else {
+            sectionID
+        }
+        NavigationStack(path: path) {
             Group {
                 if sectionID == RootNavigationState.searchID {
                     GlobalSearchContent()
                 } else if sectionID == RootNavigationState.moreID {
-                    List(overflow.isEmpty ? sections : overflow) { section in
-                        Button { state.selectedSectionID = section.id } label: { Label(section.title, systemImage: section.systemImage) }
+                    List(overflow) { section in
+                        NavigationLink(value: GusRoute.section(section.id)) {
+                            Label(section.title, systemImage: section.systemImage)
+                        }
                     }
                     .navigationTitle("More")
-                } else if let section = sections.first(where: { $0.id == sectionID }) {
-                    if section.id == NavigationSectionPreference.downloadedID {
-                        DownloadedLibraryView()
-                    } else if section.id == NavigationSectionPreference.discoverID {
-                        DiscoverView()
-                    } else {
-                        RootSectionDestination(section: section, home: home)
-                    }
                 } else {
-                    HomeView(store: home)
+                    SectionDestination(sectionID: sectionID)
                 }
             }
             .gusItemDestinations()
             .toolbar {
                 #if os(iOS)
-                    if sectionID == RootNavigationState.searchID, state.globalSearch.related == nil, DeviceIdentity.usesIPadPresentation,
+                    if sectionID == RootNavigationState.searchID, DeviceIdentity.usesIPadPresentation,
                        !session.intelligenceAccess.usesNaturalSearch || state.globalSearch.displaysKeywords
                     {
                         ToolbarItem(placement: .primaryAction) {
@@ -412,20 +392,32 @@ private struct SectionStack: View {
                         }
                     }
                 #endif
-                if overflow.contains(where: { $0.id == sectionID }), state.paths[sectionID]?.isEmpty != false {
-                    ToolbarItem(placement: .cancellationAction) {
-                        Button { state.selectedSectionID = RootNavigationState.moreID } label: { GusToolbarLabel("More", systemImage: "chevron.backward") }.accessibilityLabel("More").gusTVToolbarIcon()
-                    }
-                }
             }
         }
+        .environment(\.detailNavigationStack, .section(contentSection))
         #if os(tvOS)
-        .gusTVNativeControls()
-        .gusTVFocusScope()
+            .gusTVNativeControls()
+            .gusTVFocusScope()
         #endif
         #if os(visionOS)
         .gusNowPlaying(coordinator: audio, enabled: state.detailItem == nil)
         #endif
+    }
+}
+
+struct SectionDestination: View {
+    @Environment(RootNavigationState.self) private var state
+    @Environment(SessionStore.self) private var session
+    @Environment(NavigationPreferencesStore.self) private var preferences
+    let sectionID: String
+
+    var body: some View {
+        let sections = RootSections.resolve(preferences, state: state, session: session)
+        if let section = sections.first(where: { $0.id == sectionID }) {
+            RootSectionDestination(section: section, home: state.home)
+        } else {
+            HomeView(store: state.home)
+        }
     }
 }
 
@@ -435,6 +427,10 @@ private struct RootSectionDestination: View {
     var body: some View {
         if section.id == NavigationSectionPreference.homeID {
             HomeView(store: home)
+        } else if section.id == NavigationSectionPreference.downloadedID {
+            DownloadedLibraryView()
+        } else if section.id == NavigationSectionPreference.discoverID {
+            DiscoverView()
         } else if section.id == NavigationSectionPreference.playlistsID {
             VideoPlaylistsView()
         } else if section.id == NavigationSectionPreference.settingsID {

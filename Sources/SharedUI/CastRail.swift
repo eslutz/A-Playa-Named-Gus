@@ -23,7 +23,7 @@ struct CastRail: View {
                 LazyHStack(alignment: .top, spacing: 16) {
                     ForEach(people, id: \.focusID) { person in
                         if person.target.id != nil {
-                            Button { navigation.openRelatedSearch(person.target, focusContext: context, viewport: viewport?.location) } label: { card(person) }
+                            Button { navigation.openRelatedSearch(person.target, viewport: viewport?.location) } label: { card(person) }
                                 .buttonStyle(.plain)
                                 .accessibilityHint("Search for related titles")
                                 .accessibilityIdentifier("Detail.related." + person.focusID)

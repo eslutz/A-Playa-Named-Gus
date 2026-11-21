@@ -28,7 +28,7 @@ struct SeerrPlaybackMatchView: View {
                 }.disabled(loading)
             }
             ForEach(matches.filter { ContentRatingGate.admitsStored($0) }, id: \.id) { item in
-                NavigationLink(value: ItemRef(item: item)) {
+                NavigationLink(value: GusRoute.item(.init(item: item))) {
                     Label(matches.count > 1 ? item.displayTitle : String(localized: "Open in Gus"), systemImage: "play.circle")
                 }
             }

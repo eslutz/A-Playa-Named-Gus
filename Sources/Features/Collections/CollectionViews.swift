@@ -84,7 +84,7 @@ struct CollectionLink: View {
     var format = CollectionFormat.all
     var body: some View {
         let urls = collection.coverURLs(using: session.mediaProvider, limit: limit, hideUnrated: hideUnrated)
-        NavigationLink(value: MediaCollectionRef(id: collection.id, scope: session.references.scope, format: format)) {
+        NavigationLink(value: GusRoute.collection(.init(id: collection.id, scope: session.references.scope, format: format))) {
             PosterCard(title: collection.item.displayTitle, subtitle: String(localized: "Collection"), statusItem: collection.item, imageURL: urls.first, placeholderSymbol: "rectangle.stack", fallbackURLs: Array(urls.dropFirst()))
         }.posterNavigationStyle()
     }
@@ -104,7 +104,7 @@ struct ItemCollectionMemberships: View {
             if !store.memberships(for: itemID).isEmpty {
                 Text("Collections").font(.title2.bold())
                 ForEach(store.memberships(for: itemID)) { collection in
-                    NavigationLink(value: MediaCollectionRef(id: collection.id, scope: session.references.scope, format: format)) {
+                    NavigationLink(value: GusRoute.collection(.init(id: collection.id, scope: session.references.scope, format: format))) {
                         Label(collection.item.displayTitle, systemImage: "rectangle.stack")
                     }
                     .mediaItemContextMenu(item: nil, groupName: collection.item.displayTitle, canRemove: store.capabilities.removeMembers && store.canSubmitMutations && store.memberErrors[collection.id] == nil, remove: {
@@ -269,7 +269,7 @@ struct MediaCollectionDetailView: View {
                 LazyVGrid(columns: PosterGrid.columns, spacing: PosterGrid.spacing) {
                     ForEach(sort.sorted(members), id: \.id) { item in
                         let urls = session.mediaProvider.artworkURLs(for: item, request: .init(role: item.coverArtworkRole, maxWidth: 360))
-                        NavigationLink(value: ItemRef(item: item)) { PosterCard(item: item, imageURL: urls.first, fallbackURLs: Array(urls.dropFirst())) }
+                        NavigationLink(value: GusRoute.item(.init(item: item))) { PosterCard(item: item, imageURL: urls.first, fallbackURLs: Array(urls.dropFirst())) }
                             .posterNavigationStyle()
                             .gusTVFocus(id: item.id ?? "", section: "collection:" + id, ids: sort.sorted(members).compactMap(\.id), item: item)
                             .mediaItemContextMenu(item: item, groupName: collection.item.displayTitle, canRemove: store.capabilities.removeMembers && store.canSubmitMutations && store.memberErrors[id] == nil, remove: {

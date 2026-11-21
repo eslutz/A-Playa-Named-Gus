@@ -248,7 +248,7 @@ struct ArtistAlbumsView: View {
             } sections: {
                 LazyVGrid(columns: PosterGrid.columns, alignment: .leading, spacing: PosterGrid.spacing) {
                     ForEach(albums, id: \.id) { albumItem in
-                        NavigationLink(value: ItemRef(item: albumItem)) {
+                        NavigationLink(value: GusRoute.item(.init(item: albumItem))) {
                             PosterCard(
                                 title: albumItem.displayTitle,
                                 subtitle: albumItem.productionYear.map(String.init),

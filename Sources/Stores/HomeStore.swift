@@ -433,6 +433,23 @@ final class HomeStore {
         )
     }
 
+    func refreshNextUp(upNext: UpNextStore, playlists: SavedMediaStore, serverLists: ServerMediaListsStore) {
+        guard !Task.isCancelled else { return }
+        let scope = session.references.scope
+        upNext.load(serverID: scope.serverID, userID: scope.userID)
+        upNext.reconcileSyncedIntents(scope: scope)
+        activity.reconcile(scope: scope)
+        serverLists.load(scope: scope)
+        let candidates = serverLists.videoPlaylists(scope: scope, supplemental: playlists).compactMap { playlist -> NextUpPlaylistCandidate? in
+            guard playlist.appearsInNextUp else { return nil }
+            let index = playlist.entries.firstIndex { $0.id == playlist.cursor?.entryID } ?? 0
+            let item = playlist.entries.indices.contains(index) ? playlist.entries[index].reference.item : nil
+            guard item.map({ ContentRatingGate.admitsStored($0) }) ?? true else { return nil }
+            return NextUpPlaylistCandidate(id: playlist.id, name: playlist.name, item: item, position: playlist.entries.isEmpty ? 0 : index + 1, total: playlist.entries.count, activityAt: playlist.activityAt, members: playlist.entries.map(\.reference.item))
+        }
+        updateNextUp(saved: upNext.entries(serverID: scope.serverID, userID: scope.userID), playlists: candidates)
+    }
+
     func updateNextUp(saved: [UpNextEntry], playlists: [NextUpPlaylistCandidate]) {
         savedIntents = saved.filter { $0.reference.scope == session.references.scope && ContentRatingGate.admitsStored($0.reference.item) }
         playlistCandidates = playlists

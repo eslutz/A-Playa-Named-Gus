@@ -245,9 +245,12 @@ struct ArtworkDetailPage<Header: View, Sections: View>: View {
 #if !os(tvOS)
     private struct DetailScrollRestoration: ViewModifier {
         @Environment(RootNavigationState.self) private var navigation
+        @Environment(\.detailNavigationStack) private var stack
+        @State private var entry: DetailStackPosition?
         let key: String
         @State private var position = ScrollPosition(idType: String.self)
         @State private var viewport = DetailScrollViewport()
+        @State private var isOnscreen = false
 
         func body(content: Content) -> some View {
             content
@@ -257,20 +260,25 @@ struct ArtworkDetailPage<Header: View, Sections: View>: View {
                     viewport.location = DetailScrollLocation(key: key, y: y)
                 }
                 .onChange(of: position.viewID(type: String.self)) { _, id in
-                    if let id {
-                        navigation.scrollAnchors[key] = id
+                    if isOnscreen, let id {
+                        navigation.rememberDetailAnchor(id, at: entry, key: key)
                     }
                 }
                 .onAppear {
-                    if navigation.returningDetailViewport?.key != key, let anchor = navigation.scrollAnchors[key] {
+                    isOnscreen = true
+                    entry = navigation.detailPosition(in: stack)
+                    if !restoreViewport(), let anchor = navigation.detailAnchor(at: entry, key: key) {
                         position.scrollTo(id: anchor)
                     }
                 }
-                .onChange(of: navigation.returningDetailViewport, initial: true) { _, location in
-                    guard let location, location.key == key else { return }
-                    position.scrollTo(y: location.y)
-                    navigation.returningDetailViewport = nil
-                }
+                .onDisappear { isOnscreen = false }
+                .onChange(of: navigation.returningDetailViewport) { restoreViewport() }
+        }
+
+        @discardableResult private func restoreViewport() -> Bool {
+            guard isOnscreen, let location = navigation.takeReturningViewport(at: entry, key: key) else { return false }
+            position.scrollTo(y: location.y)
+            return true
         }
     }
 #endif

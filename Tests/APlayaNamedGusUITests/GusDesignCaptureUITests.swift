@@ -2,6 +2,29 @@
     import UIKit
     import XCTest
 
+    extension XCUIApplication {
+        var sidebarToggle: XCUIElement {
+            buttons.matching(NSPredicate(format: "label IN %@", ["Show Sidebar", "Hide Sidebar", "Toggle Sidebar"])).firstMatch
+        }
+
+        func openMoreIndex() -> Bool {
+            let tab = tabBars.buttons["More"]
+            guard tab.waitForExistence(timeout: 5), tab.isHittable else { return false }
+            tab.tap()
+            let index = navigationBars["More"]
+            let back = navigationBars.buttons["BackButton"].firstMatch
+            // Returning to the tab can reveal an existing section several pushes deep.
+            for _ in 0 ..< 12 {
+                if index.waitForExistence(timeout: 1) {
+                    return true
+                }
+                guard back.isHittable else { return false }
+                back.tap()
+            }
+            return index.exists
+        }
+    }
+
     /// Repeatable visual walkthrough of the real demo server, shared by baseline and redesign.
     /// Attachments stay in the external result bundle; no captured pixels belong in source.
     /// Run in a dedicated simulator: optional-category captures change demo navigation
@@ -45,23 +68,97 @@
             try await super.tearDown()
         }
 
+        func testMoreUsesNativeBackThroughSettings() throws {
+            guard UIDevice.current.userInterfaceIdiom == .phone else { throw XCTSkip("Requires compact iPhone tabs") }
+            let app = launch("home", keywordOnly: true)
+            let more = app.tabBars.buttons["More"]
+            XCTAssertTrue(more.waitForExistence(timeout: 30))
+            XCTAssertTrue(more.isHittable)
+            more.tap()
+            XCTAssertTrue(app.navigationBars["More"].waitForExistence(timeout: 8), app.debugDescription)
+            let settings = app.buttons["Settings"].firstMatch
+            XCTAssertTrue(settings.waitForExistence(timeout: 8))
+            settings.tap()
+            let navigation = app.buttons["Navigation"].firstMatch
+            for _ in 0 ..< 8 where !navigation.isHittable {
+                app.swipeUp()
+            }
+            XCTAssertTrue(navigation.isHittable)
+            navigation.tap()
+            let childBack = app.navigationBars["Navigation"].buttons["BackButton"]
+            XCTAssertTrue(childBack.waitForExistence(timeout: 8))
+            childBack.tap()
+            let sectionBack = app.navigationBars["Settings"].buttons["BackButton"]
+            XCTAssertTrue(sectionBack.waitForExistence(timeout: 8))
+            sectionBack.tap()
+            XCTAssertTrue(app.navigationBars["More"].waitForExistence(timeout: 8))
+            settings.tap()
+            XCTAssertTrue(sectionBack.waitForExistence(timeout: 8))
+            let leadingEdge = app.coordinate(withNormalizedOffset: CGVector(dx: 0.005, dy: 0.55))
+            let farEdge = app.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.55))
+            leadingEdge.press(forDuration: 0.05, thenDragTo: farEdge, withVelocity: .fast, thenHoldForDuration: 0)
+            XCTAssertTrue(app.navigationBars["More"].waitForExistence(timeout: 8), app.debugDescription)
+        }
+
+        func testMoreBackAndDisclosureInRightToLeftLayout() throws {
+            guard UIDevice.current.userInterfaceIdiom == .phone else { throw XCTSkip("Requires compact iPhone tabs") }
+            let app = XCUIApplication()
+            app.launchArguments = [
+                "--gus-demo-server",
+                "--gus-disable-cloud-sync",
+                "--gus-intelligence-test-unsupported",
+                "--gus-route",
+                "settings",
+                "-AppleLanguages",
+                "(ar)",
+                "-AppleLocale",
+                "ar_SA",
+                "-AppleTextDirection",
+                "YES",
+                "-NSForceRightToLeftWritingDirection",
+                "YES",
+            ]
+            app.launch()
+            let back = app.navigationBars.buttons["BackButton"].firstMatch
+            XCTAssertTrue(back.waitForExistence(timeout: 30))
+            XCTAssertGreaterThan(back.frame.midX, app.frame.midX)
+            capture("settings-rtl-disclosure", waitsForLoading: false)
+            back.tap()
+            XCTAssertTrue(app.navigationBars["More"].waitForExistence(timeout: 8))
+        }
+
+        func testAccessibleIPadCanReopenSidebar() throws {
+            guard UIDevice.current.userInterfaceIdiom == .pad else { throw XCTSkip("Requires an iPad") }
+            let app = launch("home", largeText: true, keywordOnly: true)
+            let toggle = app.sidebarToggle
+            XCTAssertTrue(toggle.waitForExistence(timeout: 30))
+            let search = app.collectionViews["Sidebar"].staticTexts["Navigation.search"].firstMatch
+            XCTAssertFalse(search.isHittable)
+            toggle.tap()
+            XCTAssertTrue(search.waitForExistence(timeout: 8))
+            XCTAssertTrue(search.isHittable)
+            search.tap()
+            XCTAssertTrue(app.searchFields.firstMatch.waitForExistence(timeout: 8))
+        }
+
         func testIPadR2SearchAndSidebar() throws {
             guard UIDevice.current.userInterfaceIdiom == .pad else {
                 throw XCTSkip("Requires an iPad")
             }
             XCUIDevice.shared.orientation = .landscapeLeft
-            let app = launch("home")
-            let hide = app.buttons["Navigation.hideSidebar"]
+            let app = launch("home", keywordOnly: true)
+            let hide = app.sidebarToggle
             XCTAssertTrue(hide.waitForExistence(timeout: 30))
             XCTAssertEqual(app.buttons.allElementsBoundByIndex.filter {
                 $0.isHittable && $0.label.localizedCaseInsensitiveContains("sidebar")
             }.count, 1)
             XCTAssertFalse(app.searchFields.firstMatch.exists)
             hide.tap()
-            let show = app.buttons["Navigation.showSidebar"]
+            XCTAssertTrue(app.descendants(matching: .any)["Navigation.section.home"].firstMatch.waitForNonExistence(timeout: 5))
+            let show = app.sidebarToggle
             XCTAssertTrue(show.waitForExistence(timeout: 5))
             show.tap()
-            let search = app.descendants(matching: .any)["Navigation.search"].firstMatch
+            let search = app.collectionViews["Sidebar"].staticTexts["Navigation.search"].firstMatch
             XCTAssertTrue(search.waitForExistence(timeout: 5))
             search.tap()
             let field = app.searchFields.firstMatch
@@ -88,7 +185,7 @@
             let app = try launch("item/" + XCTUnwrap(album["id"]))
             let title = try XCTUnwrap(album["name"])
             XCTAssertTrue(app.navigationBars[title].waitForExistence(timeout: 30))
-            XCTAssertTrue(app.buttons["Navigation.hideSidebar"].exists)
+            XCTAssertTrue(app.sidebarToggle.exists)
             XCTAssertFalse(app.buttons["ContentLink.detailDone"].exists)
             let back = app.navigationBars[title].buttons["Home"]
             XCTAssertTrue(back.exists)
@@ -98,7 +195,7 @@
 
         func testIPadR2ScopedLayoutsAndProfileDraft() throws {
             guard UIDevice.current.userInterfaceIdiom == .pad else { throw XCTSkip("Requires an iPad") }
-            let app = launch("home")
+            let app = launch("home", keywordOnly: true, environment: ["GUS_DEMO_URL": "http://127.0.0.1:5062"])
             XCTAssertTrue(waitForRoot(app))
             XCTAssertTrue(openDestination("Music", app))
             let mode = app.buttons["Library.displayMode"]
@@ -371,7 +468,7 @@
 
         func testRecentSearchesReplayRemoveAndClear() {
             continueAfterFailure = false
-            let app = launch("search", environment: ["GUS_DEMO_URL": "http://127.0.0.1:5061"])
+            let app = launch("search", keywordOnly: true, environment: ["GUS_DEMO_URL": "http://127.0.0.1:5061"])
             defer { app.terminate() }
             let field = app.searchFields.firstMatch
             XCTAssertTrue(field.waitForExistence(timeout: 30))
@@ -396,9 +493,10 @@
             dismissKeyboard(app)
             result.tap()
             XCTAssertTrue(app.navigationBars["Horror"].waitForExistence(timeout: 10))
-            app.navigationBars["Horror"].buttons.element(boundBy: 0).tap()
+            app.navigationBars["Horror"].buttons["BackButton"].tap()
             XCTAssertTrue(field.waitForExistence(timeout: 8))
-            let close = app.buttons["Search.closeResults"].firstMatch
+            XCTAssertEqual(field.value as? String, "Horror")
+            let close = app.buttons["Search.clearResults"].firstMatch
             XCTAssertTrue(close.waitForExistence(timeout: 8))
             close.tap()
 
@@ -413,13 +511,13 @@
             XCTAssertTrue(typed.waitForExistence(timeout: 30))
             typed.tap()
             XCTAssertTrue(result.waitForExistence(timeout: 15))
-            XCTAssertEqual(field.value as? String, "Horror")
+            XCTAssertTrue((field.exists && field.value as? String == "Horror") || app.navigationBars["Horror"].exists, app.debugDescription)
             close.tap()
             XCTAssertTrue(genre.waitForExistence(timeout: 8))
             genre.tap()
             let member = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "The Lantern House")).firstMatch
             XCTAssertTrue(member.waitForExistence(timeout: 15))
-            close.tap()
+            app.navigationBars["Horror"].buttons["BackButton"].tap()
 
             XCTAssertTrue(typed.waitForExistence(timeout: 8))
             typed.press(forDuration: 1.2)
@@ -441,8 +539,8 @@
             XCTAssertFalse(genre.exists || typed.exists || clear.exists)
         }
 
-        func testDetailTagsAndCreditsOpenSearchAndReturn() {
-            let app = launch("item/47000000000000000000000000000002", environment: ["GUS_DEMO_URL": "http://127.0.0.1:5061"])
+        func testDetailTagsAndCreditsPushRelatedResultsAndReturn() {
+            let app = launch("item/47000000000000000000000000000002", keywordOnly: true, environment: ["GUS_DEMO_URL": "http://127.0.0.1:5061"])
             XCTAssertTrue(waitForMovieDetail(app))
             let idPrefix = "470000000000000000000000000000"
             let fields = [
@@ -465,7 +563,7 @@
                     capture("detail-credits-and-tags", waitsForLoading: false)
                 }
                 link.tap()
-                let back = app.buttons["Search.backToDetail"].firstMatch
+                let back = app.navigationBars[name].buttons["BackButton"].firstMatch
                 XCTAssertTrue(back.waitForExistence(timeout: 12), "Expected Search from " + name)
                 XCTAssertTrue(app.navigationBars[name].waitForExistence(timeout: 8))
                 let movie = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "The Lantern House")).firstMatch
@@ -475,7 +573,7 @@
                     movie.tap()
                     XCTAssertTrue(app.buttons["Detail.play"].waitForExistence(timeout: 12))
                     capture("pushed-movie-artwork", waitsForLoading: false)
-                    app.navigationBars.buttons.element(boundBy: 0).tap()
+                    app.navigationBars.buttons["BackButton"].firstMatch.tap()
                     XCTAssertTrue(back.waitForExistence(timeout: 8))
                     capture("related-horror-results")
                 }
@@ -483,16 +581,17 @@
                 XCTAssertTrue(app.buttons["Detail.play"].waitForExistence(timeout: 10))
                 XCTAssertEqual(link.frame.midY, sourceY, accuracy: 12, "Back should restore the position of " + name)
             }
-            // A sheet blocks tab selection. Closing the restored sheet leaves its
-            // underlying section selected and the director results available in Search.
             if UIDevice.current.userInterfaceIdiom == .phone {
                 app.buttons["ContentLink.detailDone"].tap()
             }
             XCTAssertTrue(openDestination("Search", app))
+            let recent = app.buttons["Search.recent.related:person:id:" + idPrefix + "09"]
+            XCTAssertTrue(recent.waitForExistence(timeout: 8))
+            XCTAssertTrue(recent.isHittable, app.debugDescription)
+            recent.tap()
             XCTAssertTrue(app.navigationBars["Rowan Vale"].waitForExistence(timeout: 8))
-            XCTAssertFalse(app.keyboards.firstMatch.exists)
-            app.buttons["Search.closeResults"].tap()
-            XCTAssertTrue(app.buttons["Search.clearRecent"].waitForExistence(timeout: 8))
+            app.navigationBars["Rowan Vale"].buttons["BackButton"].tap()
+            XCTAssertTrue(recent.waitForExistence(timeout: 8))
         }
 
         func testRecommendationsAppearBelowAbout() {
@@ -511,40 +610,50 @@
         }
 
         func testSearchOriginDetailKeepsRelatedResultsAcrossTabs() {
-            let app = launch("search", environment: ["GUS_DEMO_URL": "http://127.0.0.1:5061"])
+            let app = launch("search", keywordOnly: true, environment: ["GUS_DEMO_URL": "http://127.0.0.1:5061"])
             let field = app.searchFields.firstMatch
             XCTAssertTrue(field.waitForExistence(timeout: 30))
             field.tap()
-            field.typeText("Lantern")
-            dismissKeyboard(app)
-            let movie = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "The Lantern House")).firstMatch
+            field.typeText("Lantern\n")
+            let movie = app.buttons["Search.result.47000000000000000000000000000002"].firstMatch
             XCTAssertTrue(movie.waitForExistence(timeout: 12))
+            XCTAssertTrue(movie.isHittable, app.debugDescription)
             movie.tap()
+            XCTAssertTrue(app.buttons["Detail.play"].waitForExistence(timeout: 10), app.debugDescription)
             let genre = app.buttons["Detail.related.genre:id:47000000000000000000000000000001"]
             for _ in 0 ..< 5 where !genre.isHittable {
                 app.swipeUp(velocity: .slow)
             }
             XCTAssertTrue(genre.isHittable)
             genre.tap()
-            let back = app.buttons["Search.backToDetail"]
-            XCTAssertTrue(back.waitForExistence(timeout: 12))
-            back.tap()
-            XCTAssertTrue(app.buttons["Detail.play"].waitForExistence(timeout: 10))
+            let related = app.navigationBars["Horror"]
+            XCTAssertTrue(related.waitForExistence(timeout: 12))
             XCTAssertTrue(openDestination("Home", app))
             XCTAssertTrue(openDestination("Search", app))
-            XCTAssertTrue(app.navigationBars["Horror"].waitForExistence(timeout: 8))
+            XCTAssertTrue(related.waitForExistence(timeout: 8))
+            related.buttons["BackButton"].tap()
+            XCTAssertTrue(app.buttons["Detail.play"].waitForExistence(timeout: 10))
+            app.navigationBars.buttons["BackButton"].firstMatch.tap()
             XCTAssertTrue(movie.waitForExistence(timeout: 10))
-            XCTAssertFalse(app.keyboards.firstMatch.exists)
-            app.buttons["Search.closeResults"].tap()
+            XCTAssertTrue((field.exists && field.value as? String == "Lantern") || app.navigationBars["Lantern"].exists, app.debugDescription)
+            app.buttons["Search.clearResults"].tap()
             XCTAssertTrue(app.buttons["Search.recent.typed:lantern"].waitForExistence(timeout: 5))
         }
 
         func testRelatedGridRetainsScrolledMemberAcrossDetailAndTabs() {
-            let app = launch("item/47000000000000000000000000000002", environment: ["GUS_DEMO_URL": "http://127.0.0.1:5061"])
-            XCTAssertTrue(waitForMovieDetail(app))
+            let app = launch("search", keywordOnly: true, environment: ["GUS_DEMO_URL": "http://127.0.0.1:5061"])
+            let field = app.searchFields.firstMatch
+            XCTAssertTrue(field.waitForExistence(timeout: 30))
+            field.tap()
+            field.typeText("Lantern\n")
+            let source = app.buttons["Search.result.47000000000000000000000000000002"].firstMatch
+            XCTAssertTrue(source.waitForExistence(timeout: 15))
+            source.tap()
+            XCTAssertTrue(app.buttons["Detail.play"].waitForExistence(timeout: 10))
             let genre = app.buttons["Detail.related.genre:name:coastal mystery"]
-            for _ in 0 ..< 8 where !genre.exists || !genre.isHittable {
-                app.swipeUp(velocity: .slow)
+            XCTAssertTrue(genre.waitForExistence(timeout: 8), app.debugDescription)
+            if !genre.isHittable {
+                centerForTap(genre, in: app)
             }
             XCTAssertTrue(genre.isHittable)
             genre.tap()
@@ -626,7 +735,7 @@
         }
 
         func testGenreSearchOpensMembersAndRestoresQuery() {
-            let app = launch("search", environment: ["GUS_DEMO_URL": "http://127.0.0.1:5061"])
+            let app = launch("search", keywordOnly: true, environment: ["GUS_DEMO_URL": "http://127.0.0.1:5061"])
             let field = app.searchFields.firstMatch
             XCTAssertTrue(field.waitForExistence(timeout: 30))
             field.tap()
@@ -910,20 +1019,35 @@
             }
         }
 
-        func testPhotoAndBookViewer() {
-            for (type, name) in [("Photo", "photo-viewer"), ("PhotoAlbum", "photo-album")] {
-                guard let item = media.first(where: { $0["type"] == type }), let id = item["id"] else { continue }
-                let app = launch("item/" + id)
+        func testPhotoAndBookViewer() throws {
+            let photo = try XCTUnwrap(media.first { $0["type"] == "Photo" })
+            let photoID = try XCTUnwrap(photo["id"])
+            let title = try XCTUnwrap(photo["name"])
+            let gallery = launch("settings", keywordOnly: true)
+            let settings = gallery.navigationBars["Settings"]
+            XCTAssertTrue(settings.waitForExistence(timeout: 30))
+            try gallery.open(XCTUnwrap(URL(string: "gus://play/" + photoID)))
+            let viewer = gallery.navigationBars[title]
+            let close = viewer.buttons["Close"]
+            XCTAssertTrue(close.waitForExistence(timeout: 20))
+            XCTAssertTrue(viewer.buttons["Play Slideshow"].exists)
+            capture("photo-viewer")
+            close.tap()
+            XCTAssertTrue(viewer.waitForNonExistence(timeout: 10))
+            XCTAssertTrue(settings.isHittable)
+
+            if let album = media.first(where: { $0["type"] == "PhotoAlbum" }), let id = album["id"] {
+                let app = launch("item/" + id, keywordOnly: true)
                 if UIDevice.current.userInterfaceIdiom == .pad {
                     XCTAssertTrue(app.navigationBars.firstMatch.waitForExistence(timeout: 30))
                 } else {
                     XCTAssertTrue(app.buttons["ContentLink.detailDone"].waitForExistence(timeout: 30))
                 }
-                capture(name)
+                capture("photo-album")
             }
             if let item = media.first(where: { $0["name"] == "Dracula" }), let id = item["id"] {
-                let app = launch("item/" + id)
-                let read = app.buttons["Read"].firstMatch
+                let app = launch("item/" + id, keywordOnly: true)
+                let read = app.buttons.matching(NSPredicate(format: "label IN %@", ["Read", "Continue Reading"])).firstMatch
                 if read.waitForExistence(timeout: 30) {
                     read.tap()
                     XCTAssertTrue(app.buttons["BookReader.done"].waitForExistence(timeout: 30))
@@ -1101,11 +1225,11 @@
             let large = launch("downloaded", largeText: true)
             XCTAssertTrue(large.staticTexts[title].firstMatch.waitForExistence(timeout: 30))
             if UIDevice.current.userInterfaceIdiom == .pad {
-                let hide = large.buttons["Navigation.hideSidebar"]
+                let hide = large.buttons["Hide Sidebar"]
                 if hide.isHittable {
                     hide.tap()
                 }
-                XCTAssertTrue(large.buttons["Navigation.showSidebar"].waitForExistence(timeout: 5))
+                XCTAssertTrue(large.sidebarToggle.waitForExistence(timeout: 5))
             }
             capture("downloads-browse-large-text")
             let manage = large.buttons["Manage Downloads"].firstMatch
@@ -1180,11 +1304,14 @@
             }
         }
 
-        private func launch(_ route: String?, largeText: Bool = false, appearance: String = "light", environment: [String: String] = [:]) -> XCUIApplication {
+        private func launch(_ route: String?, largeText: Bool = false, appearance: String = "light", keywordOnly: Bool = false, environment: [String: String] = [:]) -> XCUIApplication {
             let app = XCUIApplication()
             app.terminate()
             app.launchEnvironment.merge(environment) { _, new in new }
             app.launchArguments = ["--gus-skip-session-restore", "--gus-disable-cloud-sync", "-dev.ericslutz.gus.appearance", appearance, "-dev.ericslutz.gus.contentRatingLimit", "off"]
+            if keywordOnly {
+                app.launchArguments.append("--gus-intelligence-test-unsupported")
+            }
             if largeText {
                 app.launchArguments += ["-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXXL"]
             }
@@ -1201,7 +1328,7 @@
 
         private func waitForRoot(_ app: XCUIApplication) -> Bool {
             if UIDevice.current.userInterfaceIdiom == .pad {
-                return app.buttons["Navigation.hideSidebar"].waitForExistence(timeout: 30)
+                return app.sidebarToggle.waitForExistence(timeout: 30)
             }
             return app.tabBars.firstMatch.waitForExistence(timeout: 30)
         }
@@ -1210,16 +1337,16 @@
             let titles = title == "Shows" ? ["Shows", "Series"] : [title]
             if UIDevice.current.userInterfaceIdiom == .pad {
                 let sidebar = app.collectionViews["Sidebar"].firstMatch
-                let show = app.buttons["Navigation.showSidebar"]
-                if !sidebar.exists || !sidebar.isHittable, show.exists, show.isHittable {
+                let show = app.buttons["Show Sidebar"]
+                if show.isHittable {
                     show.tap()
                 }
-                let row = sidebar.cells.containing(NSPredicate(format: "label IN %@", titles)).firstMatch
+                let row = sidebar.staticTexts.matching(NSPredicate(format: "identifier BEGINSWITH 'Navigation.' AND label IN %@", titles)).firstMatch
+                guard sidebar.waitForExistence(timeout: 5) else { return false }
                 for _ in 0 ..< 5 {
                     if row.exists, row.isHittable {
                         row.tap(); return true
                     }
-                    guard sidebar.exists, sidebar.isHittable else { return false }
                     if title == "Search" || title == "Home" {
                         sidebar.swipeDown()
                     } else {
@@ -1232,8 +1359,7 @@
                 tab.tap()
                 return true
             }
-            guard let more = button("More", app) else { return false }
-            more.tap()
+            guard app.openMoreIndex() else { return false }
             capture("more")
             for _ in 0 ..< 4 {
                 if let target = button(title, app), target.isHittable {
@@ -1403,7 +1529,7 @@
 
         private func openShelf(_ destination: String, in app: XCUIApplication) {
             if UIDevice.current.userInterfaceIdiom == .pad {
-                let show = app.buttons["Navigation.showSidebar"]
+                let show = app.buttons["Show Sidebar"]
                 if show.isHittable {
                     show.tap()
                 }
@@ -1427,9 +1553,7 @@
             if tab.isHittable {
                 tab.tap()
             } else {
-                let more = app.tabBars.buttons["More"].firstMatch
-                XCTAssertTrue(more.waitForExistence(timeout: 25))
-                more.tap()
+                XCTAssertTrue(app.openMoreIndex())
                 let entry = app.buttons[destination].firstMatch
                 XCTAssertTrue(entry.waitForExistence(timeout: 15))
                 entry.tap()

@@ -49,8 +49,10 @@ IDs or assume the tracked snapshot matches the live document.
   gaps. Keep Genres, Studios, and Cast & Crew above About and Recommendations.
 - Match search to each platform: compact iPhone/iPad use a Search tab; wide iPad
   and Mac use a sidebar; Apple TV and Vision Pro follow native tab layouts.
-  Show history row actions and a confirmation for clearing history. Related
-  results identify their subject and distinguish Back to Detail from Close Results.
+  Show history row actions and a confirmation for clearing history. A genre, studio
+  or credit opens titled results in the current stack. Use native Back at each
+  level and **Clear Results** on the text search. More uses native disclosure and
+  Back. Profile and server discovery use modal actions and system dismissal.
   Verify paging, focus restoration, and account isolation separately in the app.
 - On iPad, keep ordinary details in the selected section's navigation stack.
   Reader, Photos, and Now Playing use the window-level session presentation.

@@ -271,7 +271,7 @@ extension PlaybackIntegrationTests {
             let activeSession = session(provider())
             let state = RootNavigationState()
             state.selectedSectionID = "category.movies"
-            state.paths["category.movies", default: NavigationPath()].append(AppScreen.downloads)
+            state.paths["category.movies", default: []].append(.screen(.downloads))
             let search = state.searchState(for: "category.movies")
             search.text = "Psych"
             let same = state.searchState(for: "category.movies")

@@ -5,6 +5,7 @@ import argparse
 import json
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+from threading import Event
 from urllib.parse import parse_qs, urlsplit
 from uuid import uuid4
 
@@ -188,6 +189,109 @@ class AdminHandler(Handler):
         self.respond(None, 204)
 
 
+class NavigationHandler(Handler):
+    """Season choices and per-account profile failures or disappearing movies for navigation tests."""
+    server_id = "49494949494949494949494949494949"
+    libraries = [
+        {"Id": "42000000000000000000000000000000", "Name": "Mixed Library", "CollectionType": "books"},
+        {"Id": "49020000000000000000000000000000", "Name": "Music", "CollectionType": "music"},
+        {"Id": "49030000000000000000000000000000", "Name": "Photos", "CollectionType": "photos"},
+    ]
+    series = {"Id": "49000000000000000000000000000000", "Name": "Navigation Series", "Type": "Series"}
+    seasons = [{"Id": "49000000000000000000000000000001", "Name": "First Season", "Type": "Season", "IndexNumber": 1},
+               {"Id": "49000000000000000000000000000002", "Name": "Second Season", "Type": "Season", "IndexNumber": 2}]
+    items = [series, {"Id": "49020000000000000000000000000001", "Type": "MusicAlbum", "Name": "Fixture Album"},
+             {"Id": "49030000000000000000000000000001", "Type": "PhotoAlbum", "Name": "Fixture Photos"}]
+    pending_profiles = {}
+    queue_movies = {}
+    pending_playback = {}
+
+    def do_POST(self):
+        if self.path == "/Users/AuthenticateByName":
+            body = json.loads(self.rfile.read(int(self.headers["Content-Length"])))
+            username = body.get("Username", "")
+            user_id = username.removeprefix("queue-")
+            user = self.user
+            if len(user_id) == 32 and all(ch in "0123456789abcdef" for ch in user_id):
+                if username.startswith("queue-"):
+                    self.queue_movies.setdefault(user_id, True)
+                else:
+                    self.pending_profiles[user_id] = Event()
+                user = {**user, "Id": user_id}
+            return self.respond({"User": user, "AccessToken": "gus-navigation-fixture", "ServerId": self.server_id})
+        parts = urlsplit(self.path).path.strip("/").split("/")
+        if len(parts) == 3 and parts[0] == "fixture" and parts[1] in ("hold-playback", "fail-playback"):
+            movie_id = parts[2]
+            if movie_id not in self.queue_movies:
+                return self.respond({}, 404)
+            if parts[1] == "hold-playback":
+                self.pending_playback[movie_id] = Event()
+            else:
+                pending = self.pending_playback.pop(movie_id, None)
+                if pending is None:
+                    return self.respond({}, 404)
+                pending.set()
+            return self.respond(None, 204)
+        if len(parts) == 3 and parts[0] == "Items" and parts[2] == "PlaybackInfo" and parts[1] in self.queue_movies:
+            self.rfile.read(int(self.headers.get("Content-Length", 0)))
+            pending = self.pending_playback.get(parts[1])
+            if pending is not None:
+                pending.wait(timeout=60)
+            try:
+                self.respond({"MediaSources": []})
+            except (BrokenPipeError, ConnectionResetError):
+                pass  # Closing during preparation cancels the client's request.
+            return
+        if self.path.startswith("/fixture/remove-movie/"):
+            movie_id = self.path.rsplit("/", 1)[-1]
+            if movie_id not in self.queue_movies:
+                return self.respond({}, 404)
+            self.queue_movies[movie_id] = False
+            return self.respond(None, 204)
+        if self.path.startswith("/fixture/fail-profile/"):
+            pending = self.pending_profiles.pop(self.path.rsplit("/", 1)[-1], None)
+            if pending is None:
+                return self.respond({}, 404)
+            pending.set()
+            return self.respond(None, 204)
+        super().do_POST()
+
+    def do_GET(self):
+        url = urlsplit(self.path)
+        if url.path == "/health":
+            return self.respond({"fixture": "gus-navigation"})
+        if url.path == "/UserViews" or url.path.endswith("/Views"):
+            return self.respond({"Items": [{**library, "Type": "CollectionFolder"} for library in self.libraries],
+                                 "TotalRecordCount": len(self.libraries)})
+        parts = url.path.split("/")
+        if len(parts) >= 3 and parts[-2] == "Items" and parts[-1] in self.queue_movies:
+            movie_id = parts[-1]
+            if self.queue_movies[movie_id]:
+                return self.respond({"Id": movie_id, "Type": "Movie", "Name": "Recoverable Movie"})
+            return self.respond({}, 404)
+        if url.path.startswith("/Users/") and url.path.count("/") == 2:
+            user_id = url.path.rsplit("/", 1)[-1].replace("-", "")
+            if user_id in ("Me", self.user["Id"]):
+                return self.respond(self.user)
+            if user_id in self.queue_movies:
+                return self.respond({**self.user, "Id": user_id})
+            pending = self.pending_profiles.get(user_id)
+            if pending is not None:
+                pending.wait(timeout=60)
+            return self.respond({}, 500)
+        if url.path == f"/Shows/{self.series['Id']}/Seasons":
+            return self.respond({"Items": self.seasons, "TotalRecordCount": len(self.seasons)})
+        if url.path == f"/Shows/{self.series['Id']}/Episodes":
+            query = {key.lower(): value[0] for key, value in parse_qs(url.query).items()}
+            season_id = query.get("seasonid", "").replace("-", "")
+            episodes = [{"Id": f"4901000000000000000000000000000{season['IndexNumber']}",
+                         "Type": "Episode", "Name": "Episode of " + season["Name"],
+                         "SeriesId": self.series["Id"], "SeasonId": season["Id"], "IndexNumber": 1}
+                        for season in self.seasons if season["Id"] == season_id]
+            return self.respond({"Items": episodes, "TotalRecordCount": len(episodes)})
+        super().do_GET()
+
+
 class SynopsisHandler(Handler):
     """Short and long rights-cleared descriptions for the responsive detail tests."""
     items = [
@@ -262,10 +366,13 @@ if __name__ == "__main__":
     parser.add_argument("--series-editor", action="store_true", help="Serve the editable 12.4 fixture on port 5059")
     parser.add_argument("--synopses", action="store_true", help="Serve the responsive synopsis fixture on port 5060")
     parser.add_argument("--genres", action="store_true", help="Serve Jellyfin genre search on port 5061")
+    parser.add_argument("--navigation", action="store_true", help="Serve profile and season navigation cases on port 5062")
     args = parser.parse_args()
     port, handler = (5059, AdminHandler) if args.series_editor else (5058, Handler)
     if args.synopses:
         port, handler = 5060, SynopsisHandler
     if args.genres:
         port, handler = 5061, GenreHandler
+    if args.navigation:
+        port, handler = 5062, NavigationHandler
     ThreadingHTTPServer(("127.0.0.1", port), handler).serve_forever()

@@ -86,7 +86,7 @@ extension View {
                    ref.serverID == nil || ref.serverID == session.server.id,
                    ref.userID == nil || ref.userID == session.user.id
                 {
-                    PresentedPlayer(item: ref.item, localOnly: ref.localOnly == true, playlistID: ref.playlistID, playlistEntryID: ref.playlistEntryID, playlistFromBeginning: ref.playlistFromBeginning == true, playlistShuffled: ref.playlistShuffled == true, playbackRequest: ref.resolvedPlaybackRequest)
+                    PresentedPlayer(item: ref.item, localOnly: ref.localOnly == true, playlistID: ref.playlistID, playlistEntryID: ref.playlistEntryID, playlistFromBeginning: ref.playlistFromBeginning == true, playlistShuffled: ref.playlistShuffled == true, playbackRequest: ref.resolvedPlaybackRequest, usesWindowClose: true)
                         .environment(session)
                         .gusArtworkTransport(session.artworkTransport)
                         .id(session.lease.generation)
@@ -119,6 +119,7 @@ struct PresentedPlayer: View {
     var playlistShuffled = false
     var playbackRequest: PlaybackRequest? = nil
     var close: (() -> Void)?
+    var usesWindowClose = false
 
     var body: some View {
         // Second-layer family-safety gate: list filtering hides restricted items, but
@@ -127,9 +128,9 @@ struct PresentedPlayer: View {
             NavigationStack {
                 RestrictedContentView()
                     .toolbar {
-                        ToolbarItem(placement: .cancellationAction) {
-                            GusCloseButton {
-                                dismiss()
+                        if !usesWindowClose {
+                            ToolbarItem(placement: .cancellationAction) {
+                                GusCloseButton { dismiss() }
                             }
                         }
                     }
@@ -147,7 +148,7 @@ struct PresentedPlayer: View {
                 PhotoViewerView(photo: item)
                     .toolbar {
                         ToolbarItem(placement: .cancellationAction) {
-                            ImmersiveDismissButton {
+                            GusCloseButton {
                                 dismiss()
                             }
                         }

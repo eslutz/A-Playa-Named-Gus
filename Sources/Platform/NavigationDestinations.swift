@@ -1,18 +1,36 @@
 import SwiftUI
 
+/// Value destinations for the signed-in section stacks and externally opened detail sheets.
+enum GusRoute: Hashable {
+    case section(String)
+    case library(LibraryRef)
+    case item(ItemRef)
+    case searchResult(ItemRef, query: String)
+    case related(UUID)
+    case playlist(VideoPlaylistRef)
+    case bookSeries(BookSeriesRef)
+    case collection(MediaCollectionRef)
+    case collections(CollectionsRef)
+    case screen(AppScreen)
+    case nextUp
+    case libraryGrid(LibraryGridScope)
+}
+
 /// Photos use the stable session cover on iPad; other items retain typed push navigation.
 struct MediaItemNavigationLink<Label: View>: View {
     @Environment(RootNavigationState.self) private var navigation
     @Environment(SessionStore.self) private var session
     let item: MediaItem
-    var onSelect: (() -> Void)? = nil
+    var searchQuery: String?
     @ViewBuilder var label: () -> Label
 
     var body: some View {
         #if os(iOS)
             if DeviceIdentity.usesIPadPresentation, item.type == .photo {
                 Button {
-                    onSelect?()
+                    if let searchQuery {
+                        navigation.globalSearch.typed.selectedResult(item, for: searchQuery, in: session.searchHistory)
+                    }
                     navigation.playerItem = ItemRef(item: item, serverID: session.server.id, userID: session.user.id)
                 } label: { label() }
             } else {
@@ -23,15 +41,10 @@ struct MediaItemNavigationLink<Label: View>: View {
         #endif
     }
 
-    @ViewBuilder private var itemLink: some View {
-        if let onSelect {
-            Button {
-                onSelect()
-                navigation.paths[navigation.selectedSectionID, default: NavigationPath()].append(ItemRef(item: item))
-            } label: { label() }
-        } else {
-            NavigationLink(value: ItemRef(item: item)) { label() }
-        }
+    private var itemLink: some View {
+        let ref = ItemRef(item: item)
+        let route = searchQuery.map { GusRoute.searchResult(ref, query: $0) } ?? .item(ref)
+        return NavigationLink(value: route) { label() }
     }
 }
 
@@ -40,25 +53,9 @@ struct MediaItemNavigationLink<Label: View>: View {
 /// Shared by pushed navigation (`gusItemDestinations`) and modally presented content
 /// deep links (`ContentLinkHandler`).
 struct ItemRouteDestination: View {
-    @Environment(RootNavigationState.self) private var navigation
     let item: MediaItem
 
     var body: some View {
-        destination.toolbar {
-            if navigation.selectedSectionID == RootNavigationState.searchID, navigation.keptSearch != nil {
-                ToolbarItem(placement: .primaryAction) {
-                    Button("Show Search Results", systemImage: "magnifyingglass") {
-                        navigation.detailItem = nil
-                        navigation.resumeKeptSearch()
-                    }
-                    .accessibilityIdentifier("Search.resumeResults")
-                    .gusTVToolbarIcon()
-                }
-            }
-        }
-    }
-
-    @ViewBuilder private var destination: some View {
         switch item.type {
         case .genre:
             if let id = item.id {
@@ -95,53 +92,59 @@ struct ItemRouteDestination: View {
 }
 
 extension View {
-    /// Registers A Playa Named Gus's item/library navigation destinations once, at the root of a
-    /// `NavigationStack`. Feature views push `LibraryRef`/`ItemRef` values via
-    /// `NavigationLink(value:)`; centralizing the destinations here avoids duplicate
-    /// `navigationDestination` declarations on the same stack.
-    /// Each pushed page owns its TV focus scope; the stack's root scope does not
-    /// supply the custom namespace to destination content.
+    /// A destination belongs to its enclosing stack, including when a section is reached from More.
     func gusItemDestinations() -> some View {
-        navigationDestination(for: LibraryRef.self) { ref in
-            Group {
-                if ref.item.collectionType == .livetv {
-                    LiveTVView()
-                } else if ref.item.collectionType == .boxsets {
-                    CollectionsView()
-                } else {
-                    LibraryGridView(library: ref.item)
-                }
-            }
-            .gusTVFocusScope()
+        navigationDestination(for: GusRoute.self) { route in
+            GusRouteDestination(route: route).gusTVFocusScope()
         }
-        .navigationDestination(for: ItemRef.self) { ref in
+    }
+}
+
+private struct GusRouteDestination: View {
+    @Environment(RootNavigationState.self) private var navigation
+    let route: GusRoute
+
+    var body: some View {
+        switch route {
+        case let .section(id):
+            SectionDestination(sectionID: id)
+        case let .library(ref):
+            if ref.item.collectionType == .livetv {
+                LiveTVView()
+            } else if ref.item.collectionType == .boxsets {
+                CollectionsView()
+            } else {
+                LibraryGridView(library: ref.item)
+            }
+        case let .item(ref), let .searchResult(ref, _):
             ItemRouteDestination(item: ref.item)
-                .gusTVFocusScope()
-        }
-        .navigationDestination(for: VideoPlaylistRef.self) { ref in
+        case let .related(id):
+            RelatedResultsDestination(id: id)
+        case let .playlist(ref):
             VideoPlaylistDetailView(id: ref.id)
-                .gusTVFocusScope()
-        }
-        .navigationDestination(for: BookSeriesRef.self) { ref in
-            BookSeriesDetailView(ref: ref).gusTVFocusScope()
-        }
-        .navigationDestination(for: MediaCollectionRef.self) { ref in
+        case let .bookSeries(ref):
+            BookSeriesDetailView(ref: ref)
+        case let .collection(ref):
             ScopedCollectionDestination(ref: ref)
-                .gusTVFocusScope()
-        }
-        .navigationDestination(for: CollectionsRef.self) { ref in
+        case let .collections(ref):
             ScopedCollectionsDestination(ref: ref)
-                .gusTVFocusScope()
-        }
-        .navigationDestination(for: AppScreen.self) { screen in
-            Group {
-                switch screen {
-                case .downloads: DownloadsView()
-                case .navigationSettings: NavigationSettingsView()
-                case .seerrRequests: SeerrRequestsView()
-                }
+        case let .screen(screen):
+            switch screen {
+            case .downloads: DownloadsView()
+            case .navigationSettings: NavigationSettingsView()
+            case .seerrRequests: SeerrRequestsView()
+            case .seerrSettings: SeerrSettingsView()
+            case .clientLogs: DeveloperDiagnosticsView()
+            #if !os(tvOS)
+                case .libraryIntelligence: LibraryIntelligenceSettingsView()
+            #endif
             }
-            .gusTVFocusScope()
+        case .nextUp:
+            if let store = navigation.home {
+                NextUpListView(store: store)
+            }
+        case let .libraryGrid(scope):
+            LibraryGridView(scope: scope)
         }
     }
 }
@@ -175,7 +178,7 @@ private struct ScopedCollectionsDestination: View {
     func pushIPadRequestHistory() -> Bool {
         #if os(iOS)
             guard DeviceIdentity.usesIPadPresentation else { return false }
-            paths[selectedSectionID, default: NavigationPath()].append(AppScreen.seerrRequests)
+            paths[selectedSectionID, default: []].append(.screen(.seerrRequests))
             return true
         #else
             return false
@@ -188,7 +191,7 @@ struct SeerrRequestHistoryLink: View {
     var body: some View {
         #if os(iOS)
             if DeviceIdentity.usesIPadPresentation {
-                NavigationLink(value: AppScreen.seerrRequests) { Label("My Requests", systemImage: "clock") }
+                NavigationLink(value: GusRoute.screen(.seerrRequests)) { Label("My Requests", systemImage: "clock") }
                     .labelStyle(.iconOnly)
             } else {
                 standardLink

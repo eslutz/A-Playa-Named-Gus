@@ -93,7 +93,7 @@ struct VideoPlaylistsView: View {
         ForEach(values) { list in
             Group {
                 if kind == .playlist {
-                    NavigationLink(value: VideoPlaylistRef(id: list.id)) { label(list) }
+                    NavigationLink(value: GusRoute.playlist(.init(id: list.id))) { label(list) }
                 }
             }
             .contextMenu { Button("Delete", role: .destructive) { deleting = list }.disabled(!list.canEdit) }
@@ -371,7 +371,7 @@ struct VideoPlaylistDetailView: View {
             .accessibilityIdentifier("Playlist.entry." + entry.id.uuidString)
             .accessibilityHint("Plays the playlist starting with this item")
         } else if admitted {
-            NavigationLink(value: ItemRef(item: entry.reference.item)) {
+            NavigationLink(value: GusRoute.item(.init(item: entry.reference.item))) {
                 HStack(spacing: 12) {
                     PlaylistEntryThumbnail(item: entry.reference.item)
                     Text(entry.reference.item.displayTitle)

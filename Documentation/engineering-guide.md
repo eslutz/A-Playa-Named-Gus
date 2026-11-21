@@ -99,21 +99,23 @@ failure. Explicit Sign Out retains its separate deletion policy.
 
 Navigation divergence is isolated in `Platform/RootContainer.swift`: compact-width
 iOS uses `TabView`; tvOS and visionOS use `TabView` with `.sidebarAdaptable`;
-regular-width iOS and macOS use `NavigationSplitView`. Item and library
-navigation destinations are registered once at each `NavigationStack` root via
-`.gusItemDestinations()`; feature views push typed `LibraryRef`/`ItemRef` values. Fixed
-app destinations use `AppRoute` + `AppNavigationModel` for `gus://home`, `gus://search`,
-and `gus://settings`, shared by URL opens, menu commands, and the tvOS Top Shelf extension.
-All section stacks bind their paths to `RootNavigationState`. Compact iPhone navigation
-uses three content tabs plus an explicit More list and a native Search tab, keeping
-one stack per section. The default content tabs are Home, Movies and Series when
-available; a saved account-specific order keeps its first three visible sections.
-visionOS reserves a tab for Search. Up to seven configured sections appear directly.
-With additional sections, the first six appear alongside More and Search. Overflow uses the same
-section selection and navigation histories.
-When More becomes unnecessary, its selection returns to the first direct section
-without clearing those histories. Search keeps one active text or related-results session per window. A related search can suspend its originating detail stack until Back, including a presented detail sheet. The 20 most recent completed searches belong to the signed-in account on this device. Jellyfin queries use the active account and paginate typed or related results; genre, studio, and person identities are mapped to the corresponding server filters. Settings/Downloads children use the typed
-`AppScreen` destinations.
+regular-width iOS and macOS use `NavigationSplitView`. Each signed-in stack registers its value destinations at the root.
+Fixed app routes for `gus://home`, `gus://search` and `gus://settings` are
+shared by URL opens, menu commands and the tvOS Top Shelf extension.
+
+Compact iPhone navigation shows three content tabs, More when needed, and Search.
+The default content tabs are Home, Movies and Series when available. A saved
+account order determines the first three visible sections. Vision Pro shows up to
+seven sections alongside Search, or six sections plus More and Search.
+More presents its overflow sections as native pushes. Each section retains its
+value-based child path when moving between a direct tab, More and the sidebar.
+
+Selecting a genre, studio or credit pushes related results in the current stack,
+including when a content link opened the detail in a sheet. Native Back returns
+through the same pages. Each related destination owns its paged results and
+viewport while it is on the stack. The window retains its text search, and
+Clear Results returns that search to Recent Searches. The last 20 completed
+searches belong to the signed-in account on this device.
 
 **Content deep links** (`gus://item/<id>`, `gus://play/<id>` — `Models/ContentLink.swift`)
 ride `AppNavigationModel` via a consume-once pending-link; `Platform/ContentLinkHandler.swift`

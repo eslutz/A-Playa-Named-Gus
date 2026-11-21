@@ -8,10 +8,6 @@ struct SettingsView: View {
     @Environment(OfflineDownloadStore.self) private var downloads
     @Environment(SavedMediaStore.self) private var videoPlaylists
 
-    #if os(iOS)
-        @Environment(\.horizontalSizeClass) private var widthClass
-    #endif
-
     @State private var rememberPlaybackTracks = false
     @State private var showingTVAccentEditor = false
     @State private var reauthenticationServer: ServerConnection?
@@ -25,21 +21,7 @@ struct SettingsView: View {
     var body: some View {
         Form {
             Section("Account") {
-                Button { navigationState.isProfilePresented = true } label: {
-                    #if os(iOS)
-                        if widthClass == .compact {
-                            HStack {
-                                Text("View and Edit Profile").foregroundStyle(.primary)
-                                Spacer()
-                                Image(systemName: "chevron.right").font(.caption.weight(.semibold)).foregroundStyle(.tertiary)
-                            }
-                        } else {
-                            Text("View and Edit Profile")
-                        }
-                    #else
-                        Text("View and Edit Profile")
-                    #endif
-                }
+                Button("View and Edit Profile") { navigationState.isProfilePresented = true }
                 LabeledContent("User", value: session.user.name)
                 LabeledContent("Server", value: session.server.name)
                 LabeledContent("Address", value: session.server.url.absoluteString)
@@ -124,7 +106,7 @@ struct SettingsView: View {
                 #if os(iOS)
                     ThemeSettingsControls()
                 #endif
-                NavigationLink(value: AppScreen.navigationSettings) {
+                NavigationLink(value: GusRoute.screen(.navigationSettings)) {
                     Label("Navigation", systemImage: "list.bullet")
                 }
             } header: {
@@ -164,11 +146,13 @@ struct SettingsView: View {
             }
 
             Section("Integrations") {
-                NavigationLink { SeerrSettingsView() } label: { Label("Seerr", systemImage: "sparkles") }
+                NavigationLink(value: GusRoute.screen(.seerrSettings)) {
+                    Label("Seerr", systemImage: "sparkles")
+                }
             }
 
             Section("Developer") {
-                NavigationLink { DeveloperDiagnosticsView() } label: {
+                NavigationLink(value: GusRoute.screen(.clientLogs)) {
                     Label("Client Logs", systemImage: "ladybug")
                 }
             }
@@ -402,7 +386,7 @@ private struct DownloadsSettingsSection: View {
 
     var body: some View {
         Section {
-            NavigationLink(value: AppScreen.downloads) {
+            NavigationLink(value: GusRoute.screen(.downloads)) {
                 LabeledContent("Downloaded Media", value: formattedByteCount)
             }
         } header: {
