@@ -204,6 +204,7 @@ class NavigationHandler(Handler):
              {"Id": "49030000000000000000000000000001", "Type": "PhotoAlbum", "Name": "Fixture Photos"}]
     pending_profiles = {}
     queue_movies = {}
+    pending_playback = {}
 
     def do_POST(self):
         if self.path == "/Users/AuthenticateByName":
@@ -218,6 +219,29 @@ class NavigationHandler(Handler):
                     self.pending_profiles[user_id] = Event()
                 user = {**user, "Id": user_id}
             return self.respond({"User": user, "AccessToken": "gus-navigation-fixture", "ServerId": self.server_id})
+        parts = urlsplit(self.path).path.strip("/").split("/")
+        if len(parts) == 3 and parts[0] == "fixture" and parts[1] in ("hold-playback", "fail-playback"):
+            movie_id = parts[2]
+            if movie_id not in self.queue_movies:
+                return self.respond({}, 404)
+            if parts[1] == "hold-playback":
+                self.pending_playback[movie_id] = Event()
+            else:
+                pending = self.pending_playback.pop(movie_id, None)
+                if pending is None:
+                    return self.respond({}, 404)
+                pending.set()
+            return self.respond(None, 204)
+        if len(parts) == 3 and parts[0] == "Items" and parts[2] == "PlaybackInfo" and parts[1] in self.queue_movies:
+            self.rfile.read(int(self.headers.get("Content-Length", 0)))
+            pending = self.pending_playback.get(parts[1])
+            if pending is not None:
+                pending.wait(timeout=60)
+            try:
+                self.respond({"MediaSources": []})
+            except (BrokenPipeError, ConnectionResetError):
+                pass  # Closing during preparation cancels the client's request.
+            return
         if self.path.startswith("/fixture/remove-movie/"):
             movie_id = self.path.rsplit("/", 1)[-1]
             if movie_id not in self.queue_movies:

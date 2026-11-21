@@ -36,6 +36,23 @@ struct SearchStoreTests {
         #expect(root.globalSearch.displaysKeywords && root.globalSearch.text == "Title")
     }
 
+    @Test("keyword submission reveals the results until the draft changes")
+    @MainActor func submittedKeywordClosesSuggestions() throws {
+        let suite = UUID().uuidString
+        let defaults = try #require(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let history = SearchHistoryStore(scope: .init(serverID: "s", userID: "u"), defaults: defaults)
+        let search = GlobalSearchSession()
+        search.edit("Lantern", naturalSearchEnabled: false)
+        #expect(search.showsDraftSuggestions)
+        search.submit(naturalSearchEnabled: false, history: history)
+        #expect(!search.showsDraftSuggestions && search.typed.text == "Lantern")
+        search.edit("Lantern", naturalSearchEnabled: false)
+        #expect(!search.showsDraftSuggestions)
+        search.edit("Lanterns", naturalSearchEnabled: false)
+        #expect(search.showsDraftSuggestions)
+    }
+
     @Test("Clear Results finalizes eligible keyword history before native dismissal and cancels a pending natural search")
     @MainActor func clearResults() async throws {
         let suite = UUID().uuidString

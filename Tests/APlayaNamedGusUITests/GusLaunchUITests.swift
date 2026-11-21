@@ -119,6 +119,41 @@ final class GusLaunchUITests: XCTestCase {
             XCTAssertEqual((response as? HTTPURLResponse)?.statusCode, 204)
         }
 
+        func testVideoCanCloseDuringPreparationAndAfterFailure() async throws {
+            continueAfterFailure = false
+            let base = try await navigationFixture()
+            let movieID = UUID().uuidString.replacingOccurrences(of: "-", with: "").lowercased()
+            let app = makeApp()
+            app.launchEnvironment["GUS_DEMO_URL"] = base.absoluteString
+            app.launchEnvironment["GUS_DEMO_USERNAME"] = "queue-" + movieID
+            app.launchArguments += ["--gus-demo-server", "--gus-disable-cloud-sync", "--gus-intelligence-test-unsupported", "--gus-route", "item/" + movieID]
+            app.launch()
+            defer { app.terminate() }
+
+            let play = app.buttons["Detail.play"].firstMatch
+            let close = app.buttons["VideoPlayer.close"]
+            let failure = app.staticTexts["Can't Play This"].firstMatch
+            XCTAssertTrue(play.waitForExistence(timeout: 20))
+            try await updateNavigationFixture(base, action: "hold-playback", id: movieID)
+            play.tap()
+            XCTAssertTrue(close.waitForExistence(timeout: 10))
+            XCTAssertTrue(app.activityIndicators.firstMatch.exists)
+            XCTAssertFalse(failure.exists)
+            close.tap()
+            XCTAssertTrue(close.waitForNonExistence(timeout: 5))
+            XCTAssertTrue(play.isHittable)
+
+            try await updateNavigationFixture(base, action: "fail-playback", id: movieID)
+            play.tap()
+            XCTAssertTrue(failure.waitForExistence(timeout: 15))
+            XCTAssertTrue(app.buttons["Try Again"].isHittable)
+            XCTAssertTrue(close.isHittable)
+            close.tap()
+            XCTAssertTrue(close.waitForNonExistence(timeout: 5))
+            XCTAssertFalse(failure.exists)
+            XCTAssertTrue(play.isHittable)
+        }
+
         func testSeasonMenuLoadsSelectedSeasonEpisodes() async throws {
             continueAfterFailure = false
             let base = try await navigationFixture()

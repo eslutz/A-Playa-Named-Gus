@@ -1861,8 +1861,8 @@ final class GusAuthenticatedUITests: XCTestCase {
         func testBookReaderDismissal() throws {
             try prepare()
             defer { finish() }
-            let app = try launch("item/" + required("Book"))
-            let read = app.buttons["Read"].firstMatch
+            let app = try launch("item/" + required("Book"), arguments: ["--gus-intelligence-test-unsupported"])
+            let read = app.buttons.matching(NSPredicate(format: "label IN %@", ["Read", "Continue Reading"])).firstMatch
             XCTAssertTrue(read.waitForExistence(timeout: 30))
             for _ in 0 ..< 8 {
                 if read.isHittable {
@@ -1885,9 +1885,9 @@ final class GusAuthenticatedUITests: XCTestCase {
                 !app.buttons["BookReader.done"].exists && !app.webViews.firstMatch.exists && read.exists
             }, object: nil)
             XCTAssertEqual(XCTWaiter.wait(for: [dismissed], timeout: 30), .completed)
-            reveal(app.buttons["Read"].firstMatch, in: app)
+            reveal(read, in: app)
             capture(app, "book-reader-dismissed")
-            XCTAssertTrue(app.buttons["Read"].firstMatch.isHittable)
+            XCTAssertTrue(read.isHittable)
         }
 
         func testBookReaderNestedChapters() throws {

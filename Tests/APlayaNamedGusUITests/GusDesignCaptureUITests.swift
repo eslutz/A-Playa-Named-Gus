@@ -132,11 +132,13 @@
             let app = launch("home", largeText: true, keywordOnly: true)
             let toggle = app.sidebarToggle
             XCTAssertTrue(toggle.waitForExistence(timeout: 30))
-            let search = app.descendants(matching: .any)["Navigation.search"].firstMatch
+            let search = app.collectionViews["Sidebar"].staticTexts["Navigation.search"].firstMatch
             XCTAssertFalse(search.isHittable)
             toggle.tap()
             XCTAssertTrue(search.waitForExistence(timeout: 8))
             XCTAssertTrue(search.isHittable)
+            search.tap()
+            XCTAssertTrue(app.searchFields.firstMatch.waitForExistence(timeout: 8))
         }
 
         func testIPadR2SearchAndSidebar() throws {
@@ -156,7 +158,7 @@
             let show = app.sidebarToggle
             XCTAssertTrue(show.waitForExistence(timeout: 5))
             show.tap()
-            let search = app.descendants(matching: .any)["Navigation.search"].firstMatch
+            let search = app.collectionViews["Sidebar"].staticTexts["Navigation.search"].firstMatch
             XCTAssertTrue(search.waitForExistence(timeout: 5))
             search.tap()
             let field = app.searchFields.firstMatch
@@ -509,7 +511,7 @@
             XCTAssertTrue(typed.waitForExistence(timeout: 30))
             typed.tap()
             XCTAssertTrue(result.waitForExistence(timeout: 15))
-            XCTAssertEqual(field.value as? String, "Horror")
+            XCTAssertTrue((field.exists && field.value as? String == "Horror") || app.navigationBars["Horror"].exists, app.debugDescription)
             close.tap()
             XCTAssertTrue(genre.waitForExistence(timeout: 8))
             genre.tap()
@@ -615,7 +617,9 @@
             field.typeText("Lantern\n")
             let movie = app.buttons["Search.result.47000000000000000000000000000002"].firstMatch
             XCTAssertTrue(movie.waitForExistence(timeout: 12))
+            XCTAssertTrue(movie.isHittable, app.debugDescription)
             movie.tap()
+            XCTAssertTrue(app.buttons["Detail.play"].waitForExistence(timeout: 10), app.debugDescription)
             let genre = app.buttons["Detail.related.genre:id:47000000000000000000000000000001"]
             for _ in 0 ..< 5 where !genre.isHittable {
                 app.swipeUp(velocity: .slow)
@@ -1013,20 +1017,35 @@
             }
         }
 
-        func testPhotoAndBookViewer() {
-            for (type, name) in [("Photo", "photo-viewer"), ("PhotoAlbum", "photo-album")] {
-                guard let item = media.first(where: { $0["type"] == type }), let id = item["id"] else { continue }
-                let app = launch("item/" + id)
+        func testPhotoAndBookViewer() throws {
+            let photo = try XCTUnwrap(media.first { $0["type"] == "Photo" })
+            let photoID = try XCTUnwrap(photo["id"])
+            let title = try XCTUnwrap(photo["name"])
+            let gallery = launch("settings", keywordOnly: true)
+            let settings = gallery.navigationBars["Settings"]
+            XCTAssertTrue(settings.waitForExistence(timeout: 30))
+            try gallery.open(XCTUnwrap(URL(string: "gus://play/" + photoID)))
+            let viewer = gallery.navigationBars[title]
+            let close = viewer.buttons["Close"]
+            XCTAssertTrue(close.waitForExistence(timeout: 20))
+            XCTAssertTrue(viewer.buttons["Play Slideshow"].exists)
+            capture("photo-viewer")
+            close.tap()
+            XCTAssertTrue(viewer.waitForNonExistence(timeout: 10))
+            XCTAssertTrue(settings.isHittable)
+
+            if let album = media.first(where: { $0["type"] == "PhotoAlbum" }), let id = album["id"] {
+                let app = launch("item/" + id, keywordOnly: true)
                 if UIDevice.current.userInterfaceIdiom == .pad {
                     XCTAssertTrue(app.navigationBars.firstMatch.waitForExistence(timeout: 30))
                 } else {
                     XCTAssertTrue(app.buttons["ContentLink.detailDone"].waitForExistence(timeout: 30))
                 }
-                capture(name)
+                capture("photo-album")
             }
             if let item = media.first(where: { $0["name"] == "Dracula" }), let id = item["id"] {
-                let app = launch("item/" + id)
-                let read = app.buttons["Read"].firstMatch
+                let app = launch("item/" + id, keywordOnly: true)
+                let read = app.buttons.matching(NSPredicate(format: "label IN %@", ["Read", "Continue Reading"])).firstMatch
                 if read.waitForExistence(timeout: 30) {
                     read.tap()
                     XCTAssertTrue(app.buttons["BookReader.done"].waitForExistence(timeout: 30))

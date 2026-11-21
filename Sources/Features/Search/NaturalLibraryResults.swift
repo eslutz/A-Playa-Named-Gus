@@ -140,7 +140,8 @@ struct LibrarySearchFieldBehavior: ViewModifier {
             content.gusTVSearchCompletions(terms, inResults: search.typed.store?.results.isEmpty == false && !naturalMode, select: { root.editSearchText($0) })
         #else
             content.searchSuggestions {
-                if !session.intelligenceAccess.usesNaturalSearch {
+                // A presented completion list covers the result links on iPhone.
+                if !session.intelligenceAccess.usesNaturalSearch, search.showsDraftSuggestions {
                     ForEach(terms, id: \.self) { value in
                         Text(verbatim: value).searchCompletion(value)
                     }

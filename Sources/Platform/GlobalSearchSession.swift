@@ -7,6 +7,7 @@ final class GlobalSearchSession {
     let typed = SectionSearchState(retainsResults: true)
     let natural = LibraryNaturalSearchState()
     private var mode = SearchDraftMode.natural
+    private(set) var showsDraftSuggestions = true
 
     var displaysKeywords: Bool {
         mode != .natural
@@ -18,6 +19,7 @@ final class GlobalSearchSession {
 
     func edit(_ value: String, naturalSearchEnabled: Bool) {
         guard value != text else { return }
+        showsDraftSuggestions = true
         natural.text = value
         mode.edit(value, naturalSearchEnabled: naturalSearchEnabled)
         if displaysKeywords {
@@ -28,6 +30,7 @@ final class GlobalSearchSession {
     }
 
     func searchByKeyword(recordingIn history: SearchHistoryStore? = nil) {
+        showsDraftSuggestions = false
         natural.resetResults()
         mode = .keyword
         typed.setKeywordText(text, recordsHistory: history != nil)
@@ -45,6 +48,7 @@ final class GlobalSearchSession {
 
     func submit(naturalSearchEnabled: Bool, history: SearchHistoryStore) {
         if naturalSearchEnabled {
+            showsDraftSuggestions = false
             mode = .natural
             typed.text = ""
             natural.submit()
