@@ -207,7 +207,7 @@ final class GusAuthenticatedUITests: XCTestCase {
             )
             XCTAssertEqual(
                 app.staticTexts["Intelligence.prompt.settingsPath"].label,
-                "Gus Settings → Library Intelligence → Sync For You to Apple TV."
+                "Gus Settings → iCloud Sync → Sync For You to Apple TV."
             )
             capture(app, "for-you-sync-consent")
             app.buttons["Intelligence.prompt.decline"].tap()
@@ -217,7 +217,7 @@ final class GusAuthenticatedUITests: XCTestCase {
             app.terminate()
             let settings = launch("settings", arguments: args)
             let sync = settings.switches["Intelligence.forYouSync"].firstMatch
-            revealIntelligenceSettings(sync, in: settings)
+            revealSettingsControl(sync, in: settings)
             XCTAssertEqual(sync.value as? String, "0")
             XCTAssertFalse(syncTitle.exists)
             let offset = max(0.5, 1 - 28 / sync.frame.width)
@@ -228,7 +228,12 @@ final class GusAuthenticatedUITests: XCTestCase {
             let error = settings.staticTexts["Couldn’t verify your iCloud account. Try again."].firstMatch
             XCTAssertTrue(error.waitForExistence(timeout: 10))
             XCTAssertEqual(sync.value as? String, "0")
-            XCTAssertEqual(settings.switches["Intelligence.forYou"].firstMatch.value as? String, "1")
+            XCTAssertFalse(settings.switches["Intelligence.forYou"].exists)
+            settings.swipeDown()
+            let forYou = settings.switches["Intelligence.forYou"].firstMatch
+            revealIntelligenceSettings(forYou, in: settings)
+            XCTAssertEqual(forYou.value as? String, "1")
+            XCTAssertFalse(settings.switches["Intelligence.forYouSync"].exists)
         }
 
         private func tapIntelligenceSwitch(_ toggle: XCUIElement, expecting value: String) {
@@ -240,17 +245,33 @@ final class GusAuthenticatedUITests: XCTestCase {
         }
 
         private func revealIntelligenceSettings(_ toggle: XCUIElement, in app: XCUIApplication) {
-            XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: 12))
-            let viewport = app.frame.insetBy(dx: 0, dy: 100)
+            if !app.navigationBars["Library Intelligence"].exists {
+                XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: 12))
+                let link = app.buttons["Settings.libraryIntelligence"].firstMatch
+                revealSettingsControl(link, in: app)
+                link.tap()
+                XCTAssertTrue(app.navigationBars["Library Intelligence"].waitForExistence(timeout: 5))
+            }
+            revealSettingsControl(toggle, in: app)
+        }
+
+        private func revealSettingsControl(_ toggle: XCUIElement, in app: XCUIApplication) {
+            let form = app.collectionViews.matching(NSPredicate(format: "label != %@", "Sidebar")).firstMatch
+            let row = form.cells.firstMatch
+            XCTAssertTrue(row.waitForExistence(timeout: 5), app.debugDescription)
+            let bounds = form.frame
+            let viewport = bounds.insetBy(dx: 0, dy: 100)
+            // An iPad list can extend behind its sidebar. Use the actual row's leading edge for the drag.
+            let leadingInset = (row.frame.minX - bounds.minX + 6) / bounds.width
             for _ in 0 ..< 8 {
                 let frame = toggle.exists ? toggle.frame : .zero
                 if viewport.contains(frame), frame.height > 0, toggle.isHittable {
                     return
                 }
                 let above = frame.height > 0 && frame.minY < viewport.minY
-                let start = app.coordinate(withNormalizedOffset: CGVector(dx: 0.8, dy: above ? 0.45 : 0.8))
-                let end = app.coordinate(withNormalizedOffset: CGVector(dx: 0.8, dy: above ? 0.8 : 0.45))
-                start.press(forDuration: 0.1, thenDragTo: end)
+                let start = form.coordinate(withNormalizedOffset: CGVector(dx: leadingInset, dy: above ? 0.42 : 0.73))
+                let end = form.coordinate(withNormalizedOffset: CGVector(dx: leadingInset, dy: above ? 0.73 : 0.42))
+                start.press(forDuration: 0.05, thenDragTo: end, withVelocity: .slow, thenHoldForDuration: 0.15)
             }
             XCTFail(app.debugDescription)
         }

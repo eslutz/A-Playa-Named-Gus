@@ -5,6 +5,56 @@
     /// These cases establish server-backed CRUD, not physical/iCloud acceptance.
     @MainActor
     final class GusPlaylistUITests: XCTestCase {
+        func testHomeShelfKeepsItsPositionAcrossTabs() throws {
+            continueAfterFailure = false
+            let app = XCUIApplication()
+            app.launchArguments = [
+                "--gus-skip-session-restore", "--gus-demo-server", "--gus-disable-cloud-sync", "--gus-route", "home",
+                "--gus-intelligence-test-local", "--gus-intelligence-test-suite", UUID().uuidString,
+            ]
+            app.launch()
+            defer { app.terminate() }
+            let decline = app.buttons["Intelligence.prompt.decline"].firstMatch
+            XCTAssertTrue(decline.waitForExistence(timeout: 30))
+            decline.tap()
+            XCTAssertTrue(decline.waitForNonExistence(timeout: 5))
+
+            let heading = app.staticTexts["Recently Added Movies"].firstMatch
+            XCTAssertTrue(heading.waitForExistence(timeout: 30))
+            let window = app.frame
+            for _ in 0 ..< 8 where heading.frame.minY > window.midY {
+                let start = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.65))
+                let distance = min(window.height * 0.3, heading.frame.minY - window.height * 0.32)
+                start.press(
+                    forDuration: 0.1,
+                    thenDragTo: start.withOffset(CGVector(dx: 0, dy: -distance)),
+                    withVelocity: .slow,
+                    thenHoldForDuration: 0.2
+                )
+            }
+            XCTAssertTrue(heading.isHittable)
+            let originalHeading = heading.frame
+            let card = try XCTUnwrap(app.buttons.allElementsBoundByIndex.first { button in
+                let frame = button.frame
+                return !button.label.isEmpty && frame.height > 100 && frame.minX < window.midX &&
+                    frame.minY >= originalHeading.maxY && frame.minY < originalHeading.maxY + 60
+            })
+            let originalCard = card.frame
+            let title = card.label
+
+            app.tabBars.buttons["Movies"].tap()
+            XCTAssertTrue(app.navigationBars["Movies"].waitForExistence(timeout: 10))
+            app.tabBars.buttons["Home"].tap()
+            XCTAssertTrue(heading.waitForExistence(timeout: 5))
+            XCTAssertTrue(heading.isHittable)
+            XCTAssertEqual(heading.frame.minY, originalHeading.minY, accuracy: 1)
+            let restored = try XCTUnwrap(app.buttons.matching(NSPredicate(format: "label == %@", title)).allElementsBoundByIndex.first {
+                abs($0.frame.minY - originalCard.minY) <= 1
+            })
+            XCTAssertEqual(restored.frame.minX, originalCard.minX, accuracy: 1)
+            XCTAssertEqual(restored.frame.size, originalCard.size)
+        }
+
         func testWatchedPosterKeepsGridGeometry() async throws {
             continueAfterFailure = false
             executionTimeAllowance = 240
@@ -499,14 +549,21 @@
         func testPlaybackHelpExplainsEachSettingWithoutChangingIt() {
             continueAfterFailure = false
             let app = XCUIApplication()
+            app.launchEnvironment["GUS_DEMO_URL"] = ProcessInfo.processInfo.environment["GUS_DEMO_URL"]
             app.launchArguments = ["--gus-skip-session-restore", "--gus-demo-server", "--gus-disable-cloud-sync", "--gus-route", "settings"]
+            app.launch()
+            defer { app.terminate() }
+            XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: 30))
+            let invitation = app.buttons["Intelligence.prompt.decline"]
+            if invitation.waitForExistence(timeout: 3) {
+                invitation.tap()
+                XCTAssertTrue(invitation.waitForNonExistence(timeout: 5))
+            }
+
             for (label, explanation) in [
                 ("About Streaming Quality", "Maximum lets compatible files play at original quality."),
                 ("About Remembering Episode Tracks", "Gus remembers the audio and subtitle choices"),
             ] {
-                app.launch()
-                defer { app.terminate() }
-                XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: 30))
                 let help = app.buttons[label]
                 for _ in 0 ..< 5 where !help.isHittable {
                     app.swipeUp()
@@ -516,6 +573,10 @@
                 XCTAssertFalse(message.exists)
                 let toggle = app.switches["Settings.rememberEpisodeTracks"]
                 let originalSetting = toggle.exists ? toggle.value as? String : nil
+                let control = label == "About Streaming Quality" ? app.buttons["Settings.streamingQuality"] : toggle
+                XCTAssertTrue(control.isHittable)
+                XCTAssertLessThanOrEqual(help.frame.maxX, control.frame.minX + 1)
+                XCTAssertEqual(help.frame.midY, control.frame.midY, accuracy: 2)
                 help.tap()
                 XCTAssertTrue(message.waitForExistence(timeout: 5))
                 let capture = XCTAttachment(screenshot: XCUIScreen.main.screenshot())

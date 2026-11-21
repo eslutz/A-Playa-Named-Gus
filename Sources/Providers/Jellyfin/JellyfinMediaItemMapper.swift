@@ -41,6 +41,7 @@ enum JellyfinMediaItemMapper {
             seriesPrimaryImageTag: item.seriesPrimaryImageTag,
             studios: (item.studios ?? []).map(mediaNamedItem),
             taglines: item.taglines ?? [],
+            tags: item.tags ?? [],
             type: mediaItemType(from: item.type),
             userData: item.userData.map(mediaUserData),
             video3DFormat: media3DFormat(from: item.video3DFormat)

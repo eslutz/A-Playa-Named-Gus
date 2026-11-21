@@ -48,7 +48,7 @@ struct NaturalLibraryResults: View {
                 } description: {
                     Text(message)
                 } actions: {
-                    Button("Retry") { natural.submit() }
+                    Button("Retry") { natural.retry() }
                 }
             case .loaded:
                 List {
@@ -58,7 +58,10 @@ struct NaturalLibraryResults: View {
                         }
                     }
                     if natural.items.isEmpty {
-                        Text("No accessible title has metadata confirming these requirements.")
+                        Text("No strong matches in your library")
+                        ForEach(natural.relaxations) { choice in
+                            Button(choice.label) { natural.broaden(removing: choice.id) }
+                        }
                     }
                     if natural.items.count == 60 {
                         Text("Showing the first 60 matches.").font(.footnote)

@@ -3,6 +3,8 @@ import SwiftUI
 struct LibraryGridView: View {
     @Environment(RootNavigationState.self) private var navigationState
     @Environment(SessionStore.self) private var session
+    @AppStorage(ContentRatingGate.limitDefaultsKey) private var ratingLimit = ContentRatingGate.Limit.off.rawValue
+    @AppStorage(ContentRatingGate.hideUnratedDefaultsKey) private var hideUnrated = false
     let scope: LibraryGridScope
     private var searchResults: RelatedSearchResults?
     @State private var localStore: LibraryStore?
@@ -114,21 +116,22 @@ struct LibraryGridView: View {
                     }
                     .accessibilityIdentifier("Library.collections")
                 }
-                if let store {
-                    if store.isRefreshing {
-                        ProgressView().accessibilityLabel("Refreshing")
-                    }
+                if let store, store.scope == effectiveScope, store.matchesRestriction {
                     if let message = store.refreshError {
                         VStack(spacing: 8) {
                             Text(message).foregroundStyle(.secondary)
                             Button("Try Again") { Task { await store.load() } }
                         }
                     }
-                    LoadingStateView(state: store.state, isEmpty: store.items.isEmpty && !store.canLoadMore, emptyTitle: "Empty Library", emptySymbol: "rectangle.on.rectangle", retryAction: { Task { await store.load() } }) {
-                        grid(store)
+                    if store.items.isEmpty, store.state == .idle || store.state == .loading {
+                        BrowseGridPlaceholder(list: showsList)
+                    } else {
+                        LoadingStateView(state: store.state, isEmpty: store.items.isEmpty && !store.canLoadMore, emptyTitle: "Empty Library", emptySymbol: "rectangle.on.rectangle", retryAction: { Task { await store.load() } }) {
+                            grid(store)
+                        }
                     }
                 } else {
-                    ProgressView().frame(maxWidth: .infinity)
+                    BrowseGridPlaceholder(list: showsList)
                 }
             }
             .gusTVPagePadding()
@@ -172,15 +175,18 @@ struct LibraryGridView: View {
                 .gusIPhoneOrIPadOnly()
             }
         }
-        .task(id: effectiveScope.storeIdentity) {
+        .task(id: effectiveScope.storeIdentity + ratingLimit + String(hideUnrated)) {
             // A detail sheet can dismiss while the native Search tab is mounting.
             // The window owns the filtered grid’s first load across that transition.
-            guard searchResults == nil else { return }
+            if let searchResults {
+                if let pages = searchResults.pages, !pages.matchesRestriction {
+                    await pages.loadIfNeeded()
+                }
+                return
+            }
             let store = navigationState.libraryStore(for: effectiveScope, session: session)
             localStore = store
-            if store.state == .idle {
-                await store.load()
-            }
+            await store.loadIfNeeded()
         }
         .gusVisibleContent(.library(effectiveScope.storeIdentity), isLoading: store?.isLoading ?? true)
         .searchResultsScroll(viewport: searchResults?.viewport, anchor: searchResults.map { Bindable($0).scrollAnchor } ?? navigationState.scrollBinding(for: "library:" + scope.storeIdentity))

@@ -1026,6 +1026,7 @@ final class JellyfinMediaProviderSession: MediaProviderSession {
         .people,
         .studios,
         .taglines,
+        .tags,
     ]
 
     private static let playbackMetadataFields: [ItemFields] = metadataFields + [

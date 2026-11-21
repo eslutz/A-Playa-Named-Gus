@@ -65,7 +65,14 @@ struct WatchLibrarySearchView: View {
                 }
             }
             if state == .loaded, results.isEmpty {
-                Text("No Results")
+                if naturalMode {
+                    Text("No strong matches in your library")
+                    ForEach(natural.relaxations) { choice in
+                        Button(choice.label) { natural.broaden(removing: choice.id) }
+                    }
+                } else {
+                    Text("No Results")
+                }
             }
             ForEach(results, id: \.id) { item in WatchItemRow(item: item) }
             if !naturalMode, let keywordStore, keywordStore.canLoadMore {
@@ -149,7 +156,9 @@ struct WatchForYouView: View {
     @Environment(SessionStore.self) private var session
     @AppStorage(ContentRatingGate.limitDefaultsKey) private var ratingLimit = ContentRatingGate.Limit.off.rawValue
     @AppStorage(ContentRatingGate.hideUnratedDefaultsKey) private var hideUnrated = false
-    @State private var shelf = ForYouShelfState()
+    private var shelf: ForYouShelfState {
+        session.forYouShelf
+    }
 
     private var context: ForYouShelfState.Context {
         let prefs = session.intelligencePreferences
@@ -158,8 +167,10 @@ struct WatchForYouView: View {
 
     var body: some View {
         List {
-            if context.recommendationsEnabled, shelf.context == context {
-                if shelf.isLoading {
+            if context.recommendationsEnabled, !shelf.canDisplay(context, session: session) {
+                ProgressView()
+            } else if shelf.canDisplay(context, session: session) {
+                if shelf.isLoading, shelf.picks.isEmpty {
                     ProgressView()
                 }
                 if let error = shelf.error {
@@ -180,7 +191,7 @@ struct WatchForYouView: View {
         .task(id: context) { await shelf.load(context, session: session) }
         .refreshable { await shelf.load(context, session: session, refresh: true) }
         .navigationDestination(for: WatchItemRoute.self) { route in
-            if context.recommendationsEnabled, shelf.context == context,
+            if context.recommendationsEnabled, shelf.canDisplay(context, session: session),
                let item = shelf.picks.first(where: { $0.item.id == route.id })?.item, ContentRatingGate.admitsStored(item)
             {
                 WatchIntelligenceDestination(item: item)

@@ -961,6 +961,7 @@ final class AudioPlayerStore {
             return
         }
         let snapshot = context
+        let session = self.session
         let provider = session.mediaProvider
         session.playbackReports.enqueue(.stop, sessionID: context.reportID, onFailure: handleReportFailure, completion: { reportSucceeded in
             // Successful Stop owns the live-stream consumer release. Raw Close
@@ -973,6 +974,7 @@ final class AudioPlayerStore {
             }
         }) {
             try await provider.reportPlaybackStopped(context: snapshot, positionTicks: ticks)
+            session.libraryIntelligence.invalidateTasteSignals()
         }
     }
 

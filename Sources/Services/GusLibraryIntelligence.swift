@@ -53,6 +53,8 @@ final class GusLibraryIntelligence {
     }
 
     func invalidateTasteSignals() {
+        guard let session, session.isActive, session.intelligencePreferences.recommendationsEnabled else { return }
+        session.intelligencePreferences.tasteChangedAt = .now
         tasteRevision += 1
         clearRecommendations()
     }
@@ -99,6 +101,7 @@ final class GusLibraryIntelligence {
             return
         }
         if !force, await catalog.isFresh(restriction: restriction) {
+            _ = try check(restriction)
             return
         }
         _ = try check(restriction)
@@ -182,7 +185,13 @@ final class GusLibraryIntelligence {
     func search(_ intent: GusSearchIntent) async throws -> [MediaItem] {
         guard intent.unsupported.isEmpty else { return [] }
         let restriction = restrictions
-        let terms = intent.keywords + intent.themes + intent.credits.map(\.name) + intent.people
+        let results = try await matches(for: intent, restriction: restriction)
+        _ = try check(restriction)
+        return results
+    }
+
+    private func matches(for intent: GusSearchIntent, restriction: String) async throws -> [MediaItem] {
+        let terms = intent.keywords + intent.credits.map(\.name) + intent.people
         if intent.favoritesOnly || intent.status != .all {
             // The server owns mutable user data. A new favorite or a just-completed
             // book can change membership hours before the metadata snapshot expires.
@@ -193,6 +202,7 @@ final class GusLibraryIntelligence {
                 query.favoritesOnly = intent.favoritesOnly
                 let result = try await fetch(query, restriction: restriction)
                 matches += ContentRatingGate.filter(result.items).filter { GusLibraryMatching.accepts($0, intent: intent) }
+                matches = intent.rankedResults(matches)
                 let complete = try progress.advance(result, requested: query.limit)
                 if complete {
                     break
@@ -202,17 +212,31 @@ final class GusLibraryIntelligence {
                         break
                     }
                 #endif
-            } while matches.count < 60
-            return Array(matches.prefix(60))
+            } while !intent.concepts.isEmpty || matches.count < 60
+            return matches
         }
         #if os(watchOS)
             var candidates = try await fetch(page(80, sort: .recentlyAdded), restriction: restriction).items
-            for term in (terms + intent.characters + intent.genres).prefix(2) {
+            for term in (terms + intent.concepts.map(\.phrase) + intent.characters + intent.genres).prefix(2) {
                 candidates += try await fetch(page(30, term: term), restriction: restriction).items
             }
-            return MediaPageLoader.unique(ContentRatingGate.filter(candidates)).filter { GusLibraryMatching.accepts($0, intent: intent) }
+            let matches = MediaPageLoader.unique(ContentRatingGate.filter(candidates)).filter { GusLibraryMatching.accepts($0, intent: intent) }
+            return intent.rankedResults(matches)
         #else
             try await refreshCatalog(restriction: restriction, force: false)
+            if !intent.concepts.isEmpty {
+                let candidates = try await catalog.rankedCandidates(for: intent, terms: terms)
+                var matches: [MediaItem] = []
+                for start in stride(from: 0, to: candidates.count, by: 60) {
+                    let records = candidates[start...].prefix(60).map { MediaItem(id: $0.id, type: $0.type) }
+                    let live = try await verified(records, restriction: restriction)
+                    matches = intent.rankedResults(matches + live.filter { GusLibraryMatching.accepts($0, intent: intent) })
+                    if matches.count == 60 {
+                        break
+                    }
+                }
+                return matches
+            }
             return try await catalog.collect(terms: terms, batchSize: 60, limit: 60, accepts: {
                 ContentRatingGate.admitsStored($0) && GusLibraryMatching.accepts($0, intent: intent)
             }, verify: { batch in
@@ -229,12 +253,14 @@ final class GusLibraryIntelligence {
         #else
             let restriction = restrictions
             try await refreshCatalog(restriction: restriction, force: false)
-            return try await catalog.collect(terms: [prefix], batchSize: 8, limit: 6, accepts: { item in
+            let suggestions = try await catalog.collect(terms: [prefix], batchSize: 8, limit: 6, accepts: { item in
                 ContentRatingGate.admitsStored(item) && !GusLibraryMatching.completions(in: [item], prefix: prefix).isEmpty
             }, verify: { batch in
                 let live = try await self.verified(batch, restriction: restriction)
                 return GusLibraryMatching.completions(in: live, prefix: prefix)
             }, identity: { GusLibraryMatching.normalized($0) })
+            _ = try check(restriction)
+            return suggestions
         #endif
     }
 
@@ -245,7 +271,11 @@ final class GusLibraryIntelligence {
         #if DEBUG && os(iOS) && targetEnvironment(simulator)
             let args = ProcessInfo.processInfo.arguments
             if args.contains("--gus-demo-server"), args.contains("--gus-intelligence-test-picks") {
-                let items = try await fetch(page(4), restriction: restriction).items
+                var query = page(4)
+                query.includeTypes = GusLibraryMatching.recommendationTypes
+                let items = try await fetch(query, restriction: restriction).items.filter { item in
+                    item.type.map(GusLibraryMatching.recommendationTypes.contains) == true
+                }
                 return ContentRatingGate.filter(items).map { GusLibraryPick(item: $0, reason: "") }
             }
         #endif
@@ -287,7 +317,13 @@ final class GusLibraryIntelligence {
             favoritePage.items.filter { $0.userData?.isFavorite == true } + recentPage.items.filter { $0.userData?.lastPlayedAt != nil }
         ))
         try ensureCurrent()
-        let taste = GusLibraryMatching.Taste(seeds: seeds)
+        // Episodes often have little metadata of their own. Resolve their actual series
+        // with the active account before using its genres and credited people.
+        let seriesIDs = Set(seeds.filter { $0.type == .episode }.compactMap(\.seriesID))
+        let series = try await verified(seriesIDs.sorted().map { MediaItem(id: $0, type: .series) }, restriction: restriction)
+        let seriesByID = Dictionary(series.compactMap { item in item.id.map { ($0, item) } }, uniquingKeysWith: { first, _ in first })
+        try ensureCurrent()
+        let taste = GusLibraryMatching.Taste(seeds: seeds, seriesByID: seriesByID)
         guard !taste.traits.isEmpty else {
             cachedSeeds = nil
             cachedPicks = []
@@ -304,7 +340,9 @@ final class GusLibraryIntelligence {
         }
 
         #if os(watchOS)
-            let raw = try await fetch(page(80, sort: .recentlyAdded), restriction: restriction).items
+            var query = page(80, sort: .recentlyAdded)
+            query.includeTypes = GusLibraryMatching.recommendationTypes
+            let raw = try await fetch(query, restriction: restriction).items
             let preliminary = Array(taste.ranked(ContentRatingGate.filter(raw)).prefix(24))
             let live = try await verified(preliminary.map(\.item), restriction: restriction)
         #else

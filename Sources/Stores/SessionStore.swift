@@ -10,6 +10,21 @@ import Observation
 @MainActor
 @Observable
 final class SessionStore {
+    let browseCache: BrowseSnapshotCache
+    @ObservationIgnored private weak var existingHome: HomeStore?
+
+    /// Windows hold the store for their lifetime. A session shares completed or
+    /// in-flight reads across windows without retaining a cycle when they close.
+    func homeStore() -> HomeStore {
+        if let existingHome {
+            return existingHome
+        }
+        let home = HomeStore(session: self)
+        home.restoreSnapshots()
+        existingHome = home
+        return home
+    }
+
     let lease: SessionLease
     private(set) var isActive = true
     let client: JellyfinClient
@@ -22,6 +37,7 @@ final class SessionStore {
     let server: ServerConnection
     let seerr: SeerrStore
     let intelligencePreferences: GusIntelligencePreferences
+    @ObservationIgnored lazy var forYouShelf = ForYouShelfState(session: self)
     @ObservationIgnored lazy var libraryIntelligence = GusLibraryIntelligence(session: self)
     #if os(iOS) || os(tvOS)
         @ObservationIgnored lazy var forYouSnapshotSync = ForYouSnapshotSync(scope: references.scope)
@@ -36,6 +52,11 @@ final class SessionStore {
         let access = GusIntelligenceAccess(preferences: intelligencePreferences, routes: .system()) { [weak self] in
             guard let self else { return }
             libraryIntelligence.clearRecommendations()
+            if !intelligencePreferences.recommendationsEnabled {
+                forYouShelf.clear()
+                intelligencePreferences.tasteChangedAt = nil
+                browseCache.remove("for-you")
+            }
             #if os(iOS)
                 if intelligencePreferences.forYouSyncEnabled, !intelligencePreferences.recommendationsEnabled {
                     revokeForYouSharing()
@@ -50,6 +71,9 @@ final class SessionStore {
         func setForYouSyncEnabled(_ enabled: Bool) {
             guard isActive else { return }
             intelligencePreferences.forYouSyncEnabled = enabled
+            if !enabled {
+                forYouShelf.clear()
+            }
         }
     #endif
 
@@ -83,7 +107,7 @@ final class SessionStore {
             guard isActive, intelligencePreferences.forYouSyncEnabled,
                   intelligencePreferences.recommendationsEnabled else { return }
             scheduleForYouSync(itemIDs: picks.compactMap {
-                $0.item.providerKind == .jellyfin ? $0.item.id : nil
+                $0.item.providerKind == .jellyfin && $0.item.type.map(GusLibraryMatching.recommendationTypes.contains) == true ? $0.item.id : nil
             })
         }
 
@@ -159,6 +183,7 @@ final class SessionStore {
     /// Coalesces expiry reports from concurrent requests for this credential generation.
     func handleUnauthorized() {
         guard isActive, reauthenticationRequest == nil else { return }
+        browseCache.purge()
         reauthenticationRequest = lease
         invalidate()
         recoveryOwner?.recoverExpiredSession(lease: lease)
@@ -219,10 +244,12 @@ final class SessionStore {
         user: StoredUser,
         server: ServerConnection,
         mediaProvider: (any MediaProviderSession)? = nil,
-        historyDefaults: UserDefaults = .standard
+        historyDefaults: UserDefaults = .standard,
+        browseCache: BrowseSnapshotCache? = nil
     ) {
         let scope = AccountScope(serverID: server.id, userID: user.id)
         let lease = SessionLease(credential: SessionCredential(user: user))
+        self.browseCache = browseCache ?? BrowseSnapshotCache(scope: scope)
         self.lease = lease
         self.artworkTransport = NativeArtworkTransport(scope: scope, generation: lease.generation)
         self.client = client

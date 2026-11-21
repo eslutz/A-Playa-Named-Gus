@@ -26,6 +26,11 @@ struct IntelligenceEvaluationTests {
     }
 
     @Test func namedTitleKeepsTheRequestedLibraryType() {
+        #expect(GusIntelligenceModel.namedTitle("Find “Scary Movie”") == GusSearchIntent(keywords: ["Scary Movie"]))
+        #expect(GusIntelligenceModel.namedTitle("Show me the movie called I, Robot") == GusSearchIntent(mediaTypes: [.movie], keywords: ["I, Robot"]))
+        #expect(GusIntelligenceModel.namedTitle("“Something Scary With Robots”") == GusSearchIntent(keywords: ["Something Scary With Robots"]))
+        #expect(GusIntelligenceModel.toneAndSubject("“Something Scary With Robots”") == nil)
+        #expect(GusIntelligenceModel.toneAndSubject("Something scary with robots or ghosts") == nil)
         #expect(GusIntelligenceModel.namedTitle("Show me the episode called North Shore") == GusSearchIntent(mediaTypes: [.episode], keywords: ["North Shore"]))
         #expect(GusIntelligenceModel.namedTitle("Find a book titled “a road in winter”") == GusSearchIntent(mediaTypes: [.book], keywords: ["a road in winter"]))
         #expect(GusIntelligenceModel.namedTitle("Find the movie named Solaris directed by Tarkovsky") == nil)
@@ -123,12 +128,47 @@ struct IntelligenceEvaluationTests {
 
         @Test func generatedConstraintsRequireSourceEvidence() throws {
             let terms = SearchTerms(releaseYears: .init(phrase: "aus dem Jahr 1986", minimum: 1986, maximum: 1986), keywords: ["El Río"], genres: [], people: [], credits: [.init(jobPhrase: "starring", name: "El Río", role: "actor")], characters: [], themes: [], unsupported: [])
-            let query = LibraryQuery(terms: terms, mediaTypes: ["movie"], durationMinutes: .init(phrase: "", minimum: 0, maximum: 0), status: "all", favoritesOnly: false)
+            let query = LibraryQuery(terms: terms, concepts: [], mediaTypes: ["movie"], durationMinutes: .init(phrase: "", minimum: 0, maximum: 0), status: "all", favoritesOnly: false)
             let intent = try query.intent(for: "Den Film El Río aus dem Jahr 1986")
             #expect(intent == GusSearchIntent(mediaTypes: [.movie], keywords: ["El Río"], minimumYear: 1986, maximumYear: 1986))
             let minutes = RequestedRange(phrase: "unter zwei Stunden", minimum: nil, maximum: 119)
             #expect(try minutes.bounds(in: "Etwas unter zwei Stunden").1 == 119)
             #expect(throws: GusIntelligenceError.self) { try minutes.bounds(in: "Any length") }
+        }
+
+        @Test func compoundInterpretationSeparatesToneAndSubjectAndRejectsInventedRequirements() throws {
+            let terms = SearchTerms(releaseYears: nil, keywords: [], genres: [], people: [], credits: [], characters: [], themes: [], unsupported: [])
+            var query = LibraryQuery(terms: terms, concepts: [
+                .init(phrase: "scary", kind: "tone", synonyms: ["horror"]),
+                .init(phrase: "robots", kind: "subject", synonyms: ["android"]),
+            ], mediaTypes: [], durationMinutes: nil, status: "all", favoritesOnly: false)
+            let prompt = "I’m looking for something scary with robots"
+            let intent = try query.intent(for: prompt)
+            #expect(intent.concepts.map(\.id) == ["scary", "robots"])
+            #expect(intent.concepts.map(\.kind) == [.tone, .subject])
+            query.concepts.append(.init(phrase: "space travel", kind: "subject", synonyms: []))
+            #expect(throws: GusIntelligenceError.self) { try query.intent(for: prompt) }
+        }
+
+        @Test func titleWordsAreNotConceptsAndNegativeOrAlternativeRequestsDoNotBecomePositive() throws {
+            let terms = SearchTerms(releaseYears: nil, keywords: ["Scary Movie"], genres: [], people: [], credits: [], characters: [], themes: ["horror"], unsupported: [])
+            var query = LibraryQuery(
+                terms: terms,
+                concepts: [.init(phrase: "scary", kind: "tone", synonyms: [])],
+                mediaTypes: ["movie"],
+                durationMinutes: nil,
+                status: "all",
+                favoritesOnly: false
+            )
+            let named = try query.intent(for: "Find Scary Movie")
+            #expect(named == GusSearchIntent(mediaTypes: [.movie], keywords: ["Scary Movie"]))
+            #expect(try query.intent(for: "Find a scary title called Scary Movie").concepts == [.init("scary")])
+            query.terms.keywords = []
+            query.terms.themes = []
+            for text in ["Something scary without robots", "Something scary or funny", "Something not too scary"] {
+                #expect(try !query.intent(for: text).unsupported.isEmpty)
+            }
+            #expect(try query.intent(for: "Movies or series with a scary tone").unsupported.isEmpty)
         }
 
         private nonisolated static var hasLocalModel: Bool {
@@ -152,7 +192,10 @@ struct IntelligenceEvaluationTests {
             let audioBook = MediaItem(id: "AB", name: "Hidden Maps", people: [.init(name: "Eli Snow", creditType: "Narrator")], type: .audioBook)
             let album = MediaItem(albumArtist: "Summer Night", id: "A", name: "First Snow", type: .musicAlbum)
             let song = MediaItem(artists: ["Summer Night"], id: "T", name: "Blue Hour", type: .audio)
-            let items = [movie, series, episode, book, audioBook, album, song]
+            let androidHorror = MediaItem(genres: ["Horror"], id: "AH", name: "After Hours", overview: "An android stalks the empty mall.", type: .movie)
+            let robotComedy = MediaItem(genres: ["Comedy"], id: "RC", name: "Scary Robots", overview: "An android opens a bakery.", type: .movie)
+            let monsterHorror = MediaItem(genres: ["Horror"], id: "MH", name: "The Scary Larry Show", overview: "A ghost haunts the woods.", type: .series)
+            let items = [movie, series, episode, book, audioBook, album, song, robotComedy, monsterHorror, androidHorror]
             provider.itemsHandler = { query in
                 let available = items.filter { item in query.itemIDs.map { $0.contains(item.id ?? "") } ?? true }
                 return MediaItemPage(
@@ -162,6 +205,7 @@ struct IntelligenceEvaluationTests {
             }
             let prompts: [(String, String)] = [
                 ("Mystery movies released in 2019", "M"), ("Dramatic TV series from 2005", "S"),
+                ("I’m looking for something scary with robots", "AH"),
                 ("I’d like a mystery film. Which ones in my library came out in 2019?", "M"),
                 ("Show me the episode called The Lighthouse", "E"), ("Libros de Marta Cruz", "B"),
                 ("Audiobooks narrated by Eli Snow", "AB"), ("Albums by Summer Night", "A"), ("Find the song Blue Hour", "T"),
@@ -176,6 +220,9 @@ struct IntelligenceEvaluationTests {
                     #expect(intent.minimumYear == 2019 && intent.maximumYear == 2019, "Incorrect release year for \(prompt): \(intent)")
                 }
                 let results = try await session.libraryIntelligence.search(intent)
+                if expected == androidHorror.id {
+                    #expect(results.compactMap(\.id) == ["AH"])
+                }
                 #expect(results.prefix(5).contains { $0.id == expected }, "Missing expected match for \(prompt): \(intent)")
             }
             let missing = try await model.interpretLibrary("Find the movie titled Nonexistent Violet Observatory")

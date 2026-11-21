@@ -21,6 +21,10 @@ final class GusIntelligencePreferences {
         }
     }
 
+    var tasteChangedAt: Date? {
+        didSet { defaults.set(tasteChangedAt, forKey: prefix + ".tasteChangedAt") }
+    }
+
     private(set) var recommendationDecision: Bool?
     var recommendationsEnabled: Bool {
         get { recommendationDecision == true }
@@ -60,6 +64,7 @@ final class GusIntelligencePreferences {
         self.naturalSearchEnabled = choice(".naturalSearch") ?? true
         self.cloudDecision = choice(".cloud")
         self.recommendationDecision = choice(".recommendations")
+        self.tasteChangedAt = defaults.object(forKey: key + ".tasteChangedAt") as? Date
         #if os(iOS)
             self.forYouSyncIdentity = defaults.string(forKey: key + ".forYouSyncIdentity")
             self.forYouSyncRevocations = defaults.dictionary(forKey: key + ".forYouSyncRevocations") as? [String: Date] ?? [:]
@@ -73,7 +78,7 @@ final class GusIntelligencePreferences {
     static func delete(scope: AccountScope, defaults: UserDefaults) {
         let defaults = storage(defaults)
         let key = keyPrefix(for: scope)
-        for suffix in [".naturalSearch", ".cloud", ".recommendations", ".forYouSync", ".forYouSyncIdentity", ".forYouSyncRevocations"] {
+        for suffix in [".naturalSearch", ".cloud", ".recommendations", ".tasteChangedAt", ".forYouSync", ".forYouSyncIdentity", ".forYouSyncRevocations"] {
             defaults.removeObject(forKey: key + suffix)
         }
     }

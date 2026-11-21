@@ -1,6 +1,6 @@
 import Foundation
 
-struct GusLibraryPick: Identifiable, Sendable {
+struct GusLibraryPick: Identifiable, Codable, Sendable {
     let item: MediaItem
     let reason: String
     var id: String? {
@@ -11,6 +11,8 @@ struct GusLibraryPick: Identifiable, Sendable {
 /// Hard constraints are evaluated from Jellyfin metadata, including on the refreshed record.
 enum GusLibraryMatching {
     static let types: [MediaItemType] = [.movie, .series, .episode, .book, .audioBook, .musicAlbum, .audio]
+
+    static let recommendationTypes = types.filter { $0 != .episode }
 
     static func words(_ value: String) -> [String] {
         value.folding(options: [.caseInsensitive, .diacriticInsensitive, .widthInsensitive], locale: Locale(identifier: "en_US_POSIX"))
@@ -28,10 +30,6 @@ enum GusLibraryMatching {
 
     static func creators(_ item: MediaItem) -> [String] {
         item.artists + [item.albumArtist].compactMap { $0 } + item.people.compactMap(\.name)
-    }
-
-    static func description(_ item: MediaItem) -> String {
-        ([item.overview, item.album, item.seriesName].compactMap { $0 } + item.genres + item.taglines).joined(separator: " ")
     }
 
     /// Exact genre aliases cover Jellyfin's common representations without substring matches.
@@ -79,9 +77,7 @@ enum GusLibraryMatching {
         guard intent.characters.allSatisfy({ character in roles.contains { CatalogNameMatching.role($0, matches: character) } }) else { return false }
         let titleNames = [item.name, item.album, item.seriesName].compactMap { $0 } + creators(item)
         guard intent.keywords.allSatisfy({ keyword in titleNames.contains { contains($0, phrase: keyword) } }) else { return false }
-        let text = (titleNames + roles + [description(item)]).joined(separator: " ")
-        let themes = intent.themes.flatMap(words)
-        return themes.isEmpty || !Set(themes).isDisjoint(with: Set(words(text)))
+        return intent.concepts.allSatisfy { $0.strength(in: item) > 0 }
     }
 
     private static func hasCredit(_ credit: GusCreditRequirement, item: MediaItem) -> Bool {
@@ -132,12 +128,20 @@ enum GusLibraryMatching {
             }.prefix(16).compactMap { tags[$0] }
         }
 
-        init(seeds: [MediaItem]) {
+        init(seeds: [MediaItem], seriesByID: [String: MediaItem] = [:]) {
+            var signals: [String: (item: MediaItem, weight: Int)] = [:]
             for item in seeds {
-                guard let id = item.id, seedIDs.insert(id).inserted else { continue }
+                guard let id = item.type == .episode ? item.seriesID : item.id else { continue }
                 let weight = item.userData?.isFavorite == true ? 3 : 1
-                for (key, value) in Self.tags(for: item) {
-                    weights[key, default: 0] += weight
+                seedIDs.insert(id)
+                let source = seriesByID[id] ?? item
+                guard !Self.tags(for: source).isEmpty, weight > (signals[id]?.weight ?? 0) else { continue }
+                signals[id] = (source, weight)
+            }
+            for id in signals.keys.sorted() {
+                guard let signal = signals[id] else { continue }
+                for (key, value) in Self.tags(for: signal.item) {
+                    weights[key, default: 0] += signal.weight
                     tags[key] = value
                 }
             }
@@ -155,7 +159,7 @@ enum GusLibraryMatching {
         }
 
         private func isEligible(_ item: MediaItem) -> Bool {
-            guard let id = item.id else { return false }
+            guard let id = item.id, let type = item.type, recommendationTypes.contains(type) else { return false }
             return !seedIDs.contains(id) && item.userData?.isWatched != true &&
                 item.userData?.isFavorite != true && !isInProgress(item)
         }
@@ -165,7 +169,7 @@ enum GusLibraryMatching {
         }
 
         func ranked(_ items: [MediaItem]) -> [GusLibraryPick] {
-            let scored = items.compactMap { item -> (GusLibraryPick, Int)? in
+            let scored = MediaPageLoader.unique(items).compactMap { item -> (GusLibraryPick, Int)? in
                 guard isEligible(item) else { return nil }
                 let tags = Self.tags(for: item)
                 let matches = tags.keys.filter { weights[$0] != nil }.sorted { a, b in

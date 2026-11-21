@@ -79,8 +79,29 @@
 
     @available(watchOS 27, *)
     @Generable
+    struct RequestedLibraryConcept: Sendable {
+        @Guide(description: "Copy the short phrase in the request that describes this one mood or plot subject.")
+        var phrase: String
+        @Guide(description: "Choose tone for atmosphere or mood, subject for a plot element.", .anyOf(["tone", "subject"]))
+        var kind: String
+        @Guide(description: "Up to three interchangeable metadata terms for this concept. Exclude loosely related terms and broader genres.")
+        var synonyms: [String]
+
+        func validated(in prompt: String) throws -> LibrarySearchConcept {
+            guard let kind = LibrarySearchConcept.Kind(rawValue: kind),
+                  phrase.count <= 160, GusLibraryMatching.contains(prompt, phrase: phrase),
+                  synonyms.count <= 3,
+                  synonyms.allSatisfy({ !$0.isEmpty && $0.count <= 80 }) else { throw GusIntelligenceError.invalidResponse }
+            return LibrarySearchConcept(phrase, kind: kind, synonyms: synonyms)
+        }
+    }
+
+    @available(watchOS 27, *)
+    @Generable
     struct LibraryQuery: Sendable {
         var terms: SearchTerms
+        @Guide(description: "Independent descriptive concepts required together. Empty for a named title, credit or genre lookup.")
+        var concepts: [RequestedLibraryConcept]
         @Guide(description: "Only requested types from movie, series, episode, book, audioBook, musicAlbum, audio")
         var mediaTypes: [String]
         @Guide(description: "Runtime or reading duration in minutes. Omit the entire range unless the person requested a duration.")
@@ -97,7 +118,28 @@
             let allowed: Set<MediaItemType> = [.movie, .series, .episode, .book, .audioBook, .musicAlbum, .audio]
             guard types.count == mediaTypes.count, types.allSatisfy(allowed.contains),
                   let status = MediaItemStatusFilter(rawValue: status),
-                  (minimumMinutes ?? 0) >= 0, (minimumMinutes ?? 0) <= (maximumMinutes ?? .max) else { throw GusIntelligenceError.invalidResponse }
+                  (minimumMinutes ?? 0) >= 0, (minimumMinutes ?? 0) <= (maximumMinutes ?? .max),
+                  concepts.count <= 8 else { throw GusIntelligenceError.invalidResponse }
+            var seen = Set<String>()
+            let required = try concepts.map { try $0.validated(in: prompt) }
+            let legacy = terms.themes.map { LibrarySearchConcept($0) }.filter { fallback in
+                !required.contains { $0.alternatives.contains(fallback.id) }
+            }
+            // Mask named lookups before accepting descriptive evidence. For example, a request
+            // for “Scary Movie” only requires a scary mood if the user also asks for it outside the name.
+            let source = " " + GusLibraryMatching.normalized(prompt) + " "
+            let names = terms.keywords + terms.people + terms.credits.map(\.name) + terms.characters
+            let description = names.reduce(source) { text, name in
+                text.replacingOccurrences(of: " " + GusLibraryMatching.normalized(name) + " ", with: " ")
+            }
+            guard legacy.allSatisfy({ concept in
+                concept.alternatives.contains { source.contains(" " + $0 + " ") }
+            }) else { throw GusIntelligenceError.invalidResponse }
+            let unique = (required + legacy).filter { concept in
+                concept.alternatives.contains { description.contains(" " + $0 + " ") } && seen.insert(concept.id).inserted
+            }
+            let unsupported = terms.unsupported.isEmpty && LibrarySearchConcept.hasUnsupportedComposition(in: description, concepts: unique)
+                ? [prompt] : terms.unsupported
             let value = GusSearchIntent(
                 mediaTypes: types,
                 keywords: terms.keywords,
@@ -105,8 +147,8 @@
                 people: terms.people,
                 credits: constraints.credits,
                 characters: terms.characters,
-                themes: terms.themes,
-                unsupported: terms.unsupported,
+                concepts: unique,
+                unsupported: unsupported,
                 minimumYear: constraints.minimumYear,
                 maximumYear: constraints.maximumYear,
                 minimumMinutes: minimumMinutes,

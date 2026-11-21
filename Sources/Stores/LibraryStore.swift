@@ -186,6 +186,14 @@ enum LibraryGridScope: Hashable {
         }
     }
 
+    fileprivate var cacheIdentity: String {
+        switch self {
+        case .library: "library:" + storeIdentity
+        case .category: "category:" + storeIdentity
+        default: storeIdentity
+        }
+    }
+
     var storeIdentity: String {
         switch self {
         case let .library(library):
@@ -292,8 +300,65 @@ final class LibraryStore {
         state.isLoading || isRefreshing || isLoadingNextPage
     }
 
+    private struct FirstPage: Codable {
+        let items: [MediaItem]
+        let paging: Paging
+    }
+
+    private var savedAt: Date?
+    private var restriction = BrowseSnapshotCache.restriction
+    var matchesRestriction: Bool {
+        restriction == BrowseSnapshotCache.restriction
+    }
+
+    private var cacheKey: String {
+        "grid:" + scope.cacheIdentity + ":" + filter.sort.rawValue + ":" + filter.status.rawValue
+    }
+
+    private func clearSnapshot() {
+        invalidate()
+        items = []
+        bookEntries = []
+        bookCatalog = BookSeriesCatalog([])
+        paging.reset()
+        savedAt = nil
+        refreshError = nil
+        pageError = nil
+        state = .idle
+    }
+
+    func loadIfNeeded() async {
+        guard session.isActive else { return }
+        let cache = session.browseCache
+        if restriction != BrowseSnapshotCache.restriction ||
+            savedAt.map({ !(0 ..< BrowseSnapshotCache.lifetime).contains(cache.now().timeIntervalSince($0)) }) == true
+        {
+            clearSnapshot()
+            restriction = BrowseSnapshotCache.restriction
+        }
+        if state == .idle, let snapshot = cache.read(cacheKey, as: FirstPage.self) {
+            savedAt = snapshot.savedAt
+            items = snapshot.value.items.filter(admits)
+            paging = snapshot.value.paging
+            if scope.groupsBookSeries {
+                bookCatalog = BookSeriesCatalog(items)
+                bookEntries = bookCatalog.entries(visible: items, sortByName: filter.sort == .name)
+            }
+            state = .loaded
+        }
+        if let savedAt, cache.now().timeIntervalSince(savedAt) < 300, !scope.groupsBookSeries || hasCompleteBookCatalog {
+            return
+        }
+        await load()
+    }
+
     func load(superseding: Bool = false) async {
         guard session.isActive, superseding || !isLoading else { return }
+        if restriction != BrowseSnapshotCache.restriction || savedAt.map({ !(0 ..< BrowseSnapshotCache.lifetime).contains(session.browseCache.now().timeIntervalSince($0)) }) == true {
+            clearSnapshot()
+            restriction = BrowseSnapshotCache.restriction
+        }
+        let partition = restriction
         let previousItems = items
         let previousPaging = paging
         let hasContent = !items.isEmpty
@@ -302,9 +367,9 @@ final class LibraryStore {
         pageError = nil
         let generation = loadGeneration
         isLoadingNextPage = false
-        isRefreshing = hasContent
+        isRefreshing = hasContent || savedAt != nil
         refreshError = nil
-        if !hasContent {
+        if !hasContent, savedAt == nil {
             state = .loading
         }
         paging.reset()
@@ -317,21 +382,32 @@ final class LibraryStore {
         let diagnostics = DiagnosticsHub.shared
         diagnostics.record(.libraryLoadStarted)
         let loadInterval = diagnostics.beginInterval("LibraryLoad")
+        defer { diagnostics.endInterval("LibraryLoad", loadInterval) }
         do {
             if scope.groupsBookSeries {
                 // Opening a stack can remove the launching view's task. The
                 // session/generation still owns this read for the pushed page.
                 try await Task { try await self.loadBookCatalog(generation: generation) }.value
+            } else if hasContent, previousPaging.nextStartIndex > LibraryRequest.pageSize {
+                try await refreshLoadedPages(through: previousPaging.nextStartIndex, generation: generation)
             } else {
                 try await scanPages(replaceResults: true, generation: generation)
             }
-            diagnostics.endInterval("LibraryLoad", loadInterval)
+            guard generation == loadGeneration, session.isActive, partition == BrowseSnapshotCache.restriction else { return }
+            savedAt = session.browseCache.now()
+            if scope.groupsBookSeries || previousPaging.nextStartIndex <= LibraryRequest.pageSize || !hasContent {
+                saveFirstPage(items, paging: paging)
+            }
             diagnostics.record(.libraryLoadFinished(itemCount: items.count))
         } catch {
-            diagnostics.endInterval("LibraryLoad", loadInterval)
             guard generation == loadGeneration, session.isActive else { return }
             diagnostics.record(.libraryLoadFailed)
-            if scope.groupsBookSeries, !hasContent, !items.isEmpty, !GusError(from: error).isCancellation {
+            if GusError(from: error).invalidatesBrowseSnapshot {
+                session.browseCache.remove(cacheKey)
+                clearSnapshot()
+                handle(error)
+                GusError(from: error).handleIfUnauthorized(session: session)
+            } else if scope.groupsBookSeries, !hasContent, !items.isEmpty, !GusError(from: error).isCancellation {
                 bookCatalog = BookSeriesCatalog(items)
                 bookEntries = bookCatalog.entries(visible: items, sortByName: filter.sort == .name)
                 state = .loaded
@@ -358,10 +434,8 @@ final class LibraryStore {
         guard self.filter != filter else { return }
         self.filter = filter
         onFilterChanged?(filter)
-        items = []
-        bookCatalog = BookSeriesCatalog([])
-        bookEntries = []
-        await load(superseding: true)
+        clearSnapshot()
+        await loadIfNeeded()
     }
 
     func loadMoreIfNeeded(currentItem item: MediaItem) async {
@@ -387,7 +461,12 @@ final class LibraryStore {
         catch {
             guard generation == loadGeneration, session.isActive else { return }
             let failure = GusError(from: error)
-            if !failure.isCancellation {
+            if failure.invalidatesBrowseSnapshot {
+                session.browseCache.remove(cacheKey)
+                clearSnapshot()
+                handle(error)
+                failure.handleIfUnauthorized(session: session)
+            } else if !failure.isCancellation {
                 pageError = failure.localizedDescription
             }
         }
@@ -423,7 +502,7 @@ final class LibraryStore {
         }
         let catalog = selection.status == .all ? visible : try await bookPages(filter: .default, generation: generation)
         try Task.checkCancellation()
-        guard generation == loadGeneration, session.isActive else { throw CancellationError() }
+        guard generation == loadGeneration, session.isActive, matchesRestriction else { throw CancellationError() }
         bookCatalog = BookSeriesCatalog(catalog.filter(admits))
         if selection.status == .all {
             items = bookCatalog.books
@@ -444,13 +523,13 @@ final class LibraryStore {
         var count = 0
         let catalog = try await MediaPageLoader.collect(didLoadPage: didLoadPage) { offset, limit in
             try Task.checkCancellation()
-            guard generation == self.loadGeneration, self.session.isActive else { throw CancellationError() }
+            guard generation == self.loadGeneration, self.session.isActive, self.matchesRestriction else { throw CancellationError() }
             var query = LibraryRequest.parameters(scope: self.scope, startIndex: offset, limit: limit, filter: filter)
             query.metadataOnly = true
             let task = Task { try await self.session.mediaProvider.items(query: query) }
             self.pageTask = task
             let page = try await withTaskCancellationHandler { try await task.value } onCancel: { task.cancel() }
-            guard generation == self.loadGeneration, self.session.isActive else { throw CancellationError() }
+            guard generation == self.loadGeneration, self.session.isActive, self.matchesRestriction else { throw CancellationError() }
             count += page.items.count
             return page
         }
@@ -475,6 +554,47 @@ final class LibraryStore {
         }
     }
 
+    private func saveFirstPage(_ items: [MediaItem], paging: Paging) {
+        let preview = items.prefix(LibraryRequest.pageSize).map(\.browseSnapshotItem)
+        session.browseCache.write(FirstPage(items: preview, paging: paging), key: cacheKey)
+    }
+
+    /// Stage a deep grid refresh so a visible card on page two never disappears
+    /// while the first page is being replaced. Persist only the initial page.
+    private func refreshLoadedPages(through depth: Int, generation: Int) async throws {
+        var refreshed: [MediaItem] = []
+        var cursor = Paging(pageSize: LibraryRequest.pageSize, prefetchThreshold: 12)
+        var firstPage: FirstPage?
+        repeat {
+            let query = LibraryRequest.parameters(scope: scope, startIndex: cursor.nextStartIndex, limit: cursor.pageSize, filter: filter)
+            let task = Task { try await session.mediaProvider.items(query: query) }
+            pageTask = task
+            let page = try await withTaskCancellationHandler { try await task.value } onCancel: { task.cancel() }
+            try Task.checkCancellation()
+            guard generation == loadGeneration, session.isActive, restriction == BrowseSnapshotCache.restriction else { throw CancellationError() }
+            let total = try MediaPageLoader.validatedTotal(for: page, startIndex: cursor.nextStartIndex, previousTotal: cursor.totalRecordCount)
+            let filtered = page.items.filter(admits)
+            let display: [MediaItem]
+            if case let .latest(kind) = scope {
+                display = kind.displayItems(filtered)
+            } else {
+                display = filtered
+            }
+            refreshed += MediaPageLoader.unique(display, after: refreshed)
+            cursor.appendResults(receivedCount: page.items.count, totalRecordCount: total)
+            if firstPage == nil {
+                firstPage = FirstPage(items: refreshed, paging: cursor)
+            }
+        } while cursor.canLoadMore && cursor.nextStartIndex < depth
+        if let firstPage {
+            saveFirstPage(firstPage.items, paging: firstPage.paging)
+        }
+        items = refreshed
+        paging = cursor
+        index(refreshed)
+        state = .loaded
+    }
+
     private func loadPage(startIndex: Int, replaceResults: Bool, generation: Int) async throws {
         if let target = scope.relatedSearch, target.id?.isEmpty != false {
             throw GusError.notFound
@@ -489,7 +609,7 @@ final class LibraryStore {
         pageTask = task
         let page = try await withTaskCancellationHandler { try await task.value } onCancel: { task.cancel() }
         try Task.checkCancellation()
-        guard generation == loadGeneration, session.isActive else { return }
+        guard generation == loadGeneration, session.isActive, restriction == BrowseSnapshotCache.restriction else { throw CancellationError() }
         let total = try MediaPageLoader.validatedTotal(for: page, startIndex: startIndex, previousTotal: replaceResults ? nil : paging.totalRecordCount)
 
         let admitted: [MediaItem]
