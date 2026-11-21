@@ -23,13 +23,122 @@ final class SessionStore {
     let seerr: SeerrStore
     let intelligencePreferences: GusIntelligencePreferences
     @ObservationIgnored lazy var libraryIntelligence = GusLibraryIntelligence(session: self)
+    #if os(iOS) || os(tvOS)
+        @ObservationIgnored lazy var forYouSnapshotSync = ForYouSnapshotSync(scope: references.scope)
+    #endif
+    #if os(iOS)
+        @ObservationIgnored private var forYouSyncTask: Task<Void, Never>?
+        @ObservationIgnored private var forYouSyncGeneration = UUID()
+        private(set) var isVerifyingForYouSyncAccount = false
+        private(set) var forYouSyncAccountVerificationFailed = false
+    #endif
     @ObservationIgnored lazy var intelligenceAccess: GusIntelligenceAccess = {
         let access = GusIntelligenceAccess(preferences: intelligencePreferences, routes: .system()) { [weak self] in
-            self?.libraryIntelligence.clearRecommendations()
+            guard let self else { return }
+            libraryIntelligence.clearRecommendations()
+            #if os(iOS)
+                if intelligencePreferences.forYouSyncEnabled, !intelligencePreferences.recommendationsEnabled {
+                    revokeForYouSharing()
+                }
+            #endif
         }
         onInvalidation(of: access) { $0.invalidate() }
         return access
     }()
+
+    #if os(tvOS)
+        func setForYouSyncEnabled(_ enabled: Bool) {
+            guard isActive else { return }
+            intelligencePreferences.forYouSyncEnabled = enabled
+        }
+    #endif
+
+    #if os(iOS)
+        func setForYouSyncEnabled(_ enabled: Bool) {
+            guard isActive, !isVerifyingForYouSyncAccount,
+                  intelligencePreferences.forYouSyncEnabled != enabled else { return }
+            forYouSyncAccountVerificationFailed = false
+            guard enabled else {
+                revokeForYouSharing()
+                intelligencePreferences.forYouSyncIdentity = nil
+                return
+            }
+            isVerifyingForYouSyncAccount = true
+            Task {
+                defer { isVerifyingForYouSyncAccount = false }
+                do {
+                    let identity = try await forYouSnapshotSync.currentPublishingIdentity()
+                    guard isActive, intelligencePreferences.recommendationsEnabled else { return }
+                    intelligencePreferences.forYouSyncIdentity = identity
+                    forYouSyncAccountVerificationFailed = identity == nil
+                } catch {
+                    guard isActive else { return }
+                    forYouSyncAccountVerificationFailed = true
+                }
+            }
+        }
+
+        func shareForYouPicks(_ picks: [GusLibraryPick]) {
+            guard isActive, intelligencePreferences.forYouSyncEnabled,
+                  intelligencePreferences.recommendationsEnabled else { return }
+            scheduleForYouSync(itemIDs: picks.compactMap {
+                $0.item.providerKind == .jellyfin ? $0.item.id : nil
+            })
+        }
+
+        func refreshForYouSyncAccount() {
+            guard forYouSyncTask == nil, intelligencePreferences.forYouSyncEnabled ||
+                !intelligencePreferences.forYouSyncRevocations.isEmpty else { return }
+            scheduleForYouSync()
+        }
+
+        private func revokeForYouSharing() {
+            guard let identity = intelligencePreferences.forYouSyncIdentity else { return }
+            intelligencePreferences.forYouSyncRevocations[identity] = .now
+            scheduleForYouSync()
+        }
+
+        private func scheduleForYouSync(itemIDs: [String]? = nil) {
+            let previous = forYouSyncTask
+            let token = UUID()
+            let createdAt = Date.now
+            forYouSyncGeneration = token
+            // Finish an in-flight upload before processing a newer decision. Superseded
+            // work that has not reached CloudKit can be dropped.
+            forYouSyncTask = Task { [weak self] in
+                await previous?.value
+                guard let self, isActive, forYouSyncGeneration == token else { return }
+                defer {
+                    if forYouSyncGeneration == token {
+                        forYouSyncTask = nil
+                    }
+                }
+                do {
+                    guard let identity = try await forYouSnapshotSync.currentPublishingIdentity(),
+                          isActive, forYouSyncGeneration == token else { return }
+                    // An opt-in from the previous iCloud account must never grant
+                    // access to a new account, including after an app relaunch.
+                    if let allowed = intelligencePreferences.forYouSyncIdentity, allowed != identity {
+                        intelligencePreferences.forYouSyncIdentity = nil
+                    }
+                    if let revokedAt = intelligencePreferences.forYouSyncRevocations[identity] {
+                        try await forYouSnapshotSync.revoke(createdAt: revokedAt, identity: identity)
+                        guard isActive else { return }
+                        if intelligencePreferences.forYouSyncRevocations[identity] == revokedAt {
+                            intelligencePreferences.forYouSyncRevocations[identity] = nil
+                        }
+                    }
+                    guard let itemIDs, isActive, forYouSyncGeneration == token,
+                          intelligencePreferences.forYouSyncIdentity == identity,
+                          intelligencePreferences.recommendationsEnabled else { return }
+                    try await forYouSnapshotSync.publish(itemIDs: itemIDs, createdAt: createdAt, identity: identity)
+                } catch {
+                    // Keep an unsent opt-out for the next foreground activation.
+                    // Expiring snapshots also bound retention if iCloud stays unavailable.
+                }
+            }
+        }
+    #endif
 
     let searchHistory: SearchHistoryStore
     private(set) var reauthenticationRequest: SessionLease?
@@ -71,6 +180,9 @@ final class SessionStore {
     func invalidate() {
         guard isActive else { return }
         isActive = false
+        #if os(iOS)
+            forYouSyncTask?.cancel()
+        #endif
         artworkTransport.invalidate()
         profile.invalidate()
         seerr.deactivate()

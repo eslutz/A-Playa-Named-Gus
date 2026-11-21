@@ -1,6 +1,18 @@
 {
   "sourceLanguage": "en",
   "strings": {
+    "Apple can process submitted searches and, when For You is enabled, selected titles, descriptions, and viewing interests. Requests use your daily quota.": {
+
+    },
+    "Get recommendations based on your Jellyfin favorites and playback history.": {
+
+    },
+    "Gus Settings → Library Intelligence → Allow Private Cloud Compute.": {
+
+    },
+    "Gus Settings → Library Intelligence → Show For You.": {
+
+    },
     "Private Cloud Compute could not connect. Check your network and try again.": {
       "comment": "Recovery message displayed for a submitted intelligence request."
     },
@@ -177,6 +189,18 @@
     },
     "Show For You": {
       "comment": "Search or recommendation label for the current Gus library."
+    },
+    "Sync For You to Apple TV": {
+      "comment": "Opt-in toggle to publish ranked recommendation item IDs from iPhone."
+    },
+    "Show Synced For You": {
+      "comment": "Apple TV toggle to display recommendations synced from iPhone."
+    },
+    "Gus shares the ranked Jellyfin item IDs through your private iCloud storage. Use the same iCloud and Jellyfin accounts on both devices.": {
+      "comment": "Privacy and account requirements for publishing For You from iPhone to Apple TV."
+    },
+    "Enable Sync For You to Apple TV in Gus on your iPhone. Use the same iCloud and Jellyfin accounts on both devices.": {
+      "comment": "Apple TV settings guidance for receiving opted-in iPhone recommendations."
     },
     "Showing the first 60 matches.": {
       "comment": "Search or recommendation label for the current Gus library."
@@ -2318,6 +2342,9 @@
           }
         }
       }
+    },
+    "Couldn’t verify your iCloud account. Try again.": {
+
     },
     "Dark": {
       "comment": "Appearance option: always dark mode"

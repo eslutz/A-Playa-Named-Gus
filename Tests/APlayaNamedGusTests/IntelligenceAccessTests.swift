@@ -28,6 +28,50 @@ struct IntelligenceAccessTests {
         #expect(GusIntelligencePreferences(scope: otherServer, defaults: defaults).recommendationDecision == false)
     }
 
+    @Test func forYouSyncChoiceAndRevocationRemainLocalToTheAccount() {
+        let settings = prefs
+        #if os(iOS) || os(tvOS)
+            let otherAccount = AccountScope(serverID: scope.serverID, userID: "other-user")
+            let otherServer = AccountScope(serverID: "other-server", userID: scope.userID)
+        #endif
+        #if os(iOS)
+            #expect(!settings.forYouSyncEnabled)
+            #expect(settings.forYouSyncRevocations.isEmpty)
+            let revocation = Date(timeIntervalSince1970: 1000)
+            settings.forYouSyncRevocations["original-iCloud-account"] = revocation
+            #expect(!prefs.forYouSyncEnabled)
+
+            settings.forYouSyncIdentity = "newly-approved-iCloud-account"
+            let restored = prefs
+            #expect(restored.forYouSyncEnabled)
+            #expect(restored.forYouSyncIdentity == "newly-approved-iCloud-account")
+            #expect(restored.forYouSyncRevocations["original-iCloud-account"] == revocation)
+            #expect(restored.forYouSyncRevocations["newly-approved-iCloud-account"] == nil)
+
+            for otherScope in [otherAccount, otherServer] {
+                let other = GusIntelligencePreferences(scope: otherScope, defaults: defaults)
+                #expect(!other.forYouSyncEnabled)
+                #expect(other.forYouSyncRevocations.isEmpty)
+            }
+            restored.forYouSyncRevocations["original-iCloud-account"] = nil
+            #expect(prefs.forYouSyncRevocations.isEmpty)
+            GusIntelligencePreferences.delete(scope: scope, defaults: defaults)
+            #expect(!prefs.forYouSyncEnabled)
+            #expect(prefs.forYouSyncRevocations.isEmpty)
+        #elseif os(tvOS)
+            #expect(settings.forYouSyncEnabled)
+            settings.forYouSyncEnabled = false
+            #expect(!prefs.forYouSyncEnabled)
+            for otherScope in [otherAccount, otherServer] {
+                #expect(GusIntelligencePreferences(scope: otherScope, defaults: defaults).forYouSyncEnabled)
+            }
+            GusIntelligencePreferences.delete(scope: scope, defaults: defaults)
+            #expect(prefs.forYouSyncEnabled)
+        #else
+            #expect(!settings.forYouSyncEnabled)
+        #endif
+    }
+
     @Test func invitationWaitsForCloudLocaleAndPreservesTheDecision() async {
         let settings = prefs
         var serviceAvailable = false
