@@ -70,7 +70,7 @@ struct RootContainer: View {
             .task(id: scenePhase) {
                 guard scenePhase == .active else { return }
                 #if os(iOS)
-                    session.retryForYouSyncRevocation()
+                    session.refreshForYouSyncAccount()
                 #endif
                 await session.profile.load()
                 app.synchronizeProfile(from: session)

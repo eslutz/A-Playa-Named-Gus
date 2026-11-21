@@ -2343,6 +2343,9 @@
         }
       }
     },
+    "Couldn’t verify your iCloud account. Try again.": {
+
+    },
     "Dark": {
       "comment": "Appearance option: always dark mode"
     },

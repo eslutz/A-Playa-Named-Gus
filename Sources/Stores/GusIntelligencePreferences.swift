@@ -30,13 +30,23 @@ final class GusIntelligencePreferences {
         }
     }
 
-    var forYouSyncEnabled: Bool {
-        didSet { defaults.set(forYouSyncEnabled, forKey: prefix + ".forYouSync") }
-    }
+    #if os(iOS)
+        var forYouSyncEnabled: Bool {
+            forYouSyncIdentity != nil
+        }
 
-    var forYouSyncRevocationDate: Date? {
-        didSet { defaults.set(forYouSyncRevocationDate, forKey: prefix + ".forYouSyncRevocationDate") }
-    }
+        var forYouSyncIdentity: String? {
+            didSet { defaults.set(forYouSyncIdentity, forKey: prefix + ".forYouSyncIdentity") }
+        }
+
+        var forYouSyncRevocations: [String: Date] {
+            didSet { defaults.set(forYouSyncRevocations, forKey: prefix + ".forYouSyncRevocations") }
+        }
+    #else
+        var forYouSyncEnabled: Bool {
+            didSet { defaults.set(forYouSyncEnabled, forKey: prefix + ".forYouSync") }
+        }
+    #endif
 
     init(scope: AccountScope, defaults: UserDefaults = .standard) {
         let defaults = Self.storage(defaults)
@@ -50,8 +60,10 @@ final class GusIntelligencePreferences {
         self.naturalSearchEnabled = choice(".naturalSearch") ?? true
         self.cloudDecision = choice(".cloud")
         self.recommendationDecision = choice(".recommendations")
-        self.forYouSyncRevocationDate = defaults.object(forKey: key + ".forYouSyncRevocationDate") as? Date
-        #if os(tvOS)
+        #if os(iOS)
+            self.forYouSyncIdentity = defaults.string(forKey: key + ".forYouSyncIdentity")
+            self.forYouSyncRevocations = defaults.dictionary(forKey: key + ".forYouSyncRevocations") as? [String: Date] ?? [:]
+        #elseif os(tvOS)
             self.forYouSyncEnabled = choice(".forYouSync") ?? true
         #else
             self.forYouSyncEnabled = choice(".forYouSync") ?? false
@@ -61,7 +73,7 @@ final class GusIntelligencePreferences {
     static func delete(scope: AccountScope, defaults: UserDefaults) {
         let defaults = storage(defaults)
         let key = keyPrefix(for: scope)
-        for suffix in [".naturalSearch", ".cloud", ".recommendations", ".forYouSync", ".forYouSyncRevocationDate"] {
+        for suffix in [".naturalSearch", ".cloud", ".recommendations", ".forYouSync", ".forYouSyncIdentity", ".forYouSyncRevocations"] {
             defaults.removeObject(forKey: key + suffix)
         }
     }

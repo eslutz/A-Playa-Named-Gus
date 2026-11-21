@@ -75,7 +75,6 @@
         private let scope: AccountScope
         private static let recordType = "SavedMediaRecord"
         private static let refreshInterval: TimeInterval = 24 * 60 * 60
-        private var publishingUserID: CKRecord.ID?
 
         private lazy var container: CKContainer? = {
             guard Bundle.main.bundleURL.pathExtension == "app",
@@ -108,22 +107,28 @@
             }
         }
 
-        func publish(itemIDs: [String], createdAt: Date = .now) async throws {
-            try await write(ForYouSnapshot(itemIDs: itemIDs, createdAt: createdAt), isRevocation: false)
+        /// The caller persists this hash with the user's explicit sync consent.
+        func currentPublishingIdentity() async throws -> String? {
+            try await access().map { Self.digest($0.userID.recordName) }
         }
 
-        func revoke(createdAt: Date = .now) async throws {
+        func publish(itemIDs: [String], createdAt: Date = .now, identity: String) async throws {
+            try await write(
+                ForYouSnapshot(itemIDs: itemIDs, createdAt: createdAt),
+                isRevocation: false,
+                identity: identity
+            )
+        }
+
+        func revoke(createdAt: Date = .now, identity: String) async throws {
             // A dated empty record prevents a concurrent, older upload from
             // restoring picks after this device has withdrawn them.
-            try await write(ForYouSnapshot(itemIDs: [], createdAt: createdAt), isRevocation: true)
+            try await write(ForYouSnapshot(itemIDs: [], createdAt: createdAt), isRevocation: true, identity: identity)
         }
 
-        private func write(_ snapshot: ForYouSnapshot, isRevocation: Bool) async throws {
+        private func write(_ snapshot: ForYouSnapshot, isRevocation: Bool, identity: String) async throws {
             guard let access = try await access() else { return }
-            if let publishingUserID, publishingUserID != access.userID {
-                throw SyncError.accountChanged
-            }
-            publishingUserID = access.userID
+            guard Self.digest(access.userID.recordName) == identity else { throw SyncError.accountChanged }
             for attempt in 0 ..< 3 {
                 do {
                     let record: CKRecord
@@ -175,9 +180,8 @@
             // the IDs as CloudKit record names. An explicit zone owner also prevents
             // an in-flight request from silently following a newly active account.
             let key = [scope.serverID, scope.userID, userID.recordName].map { "\($0.utf8.count):\($0)" }.joined()
-            let digest = SHA256.hash(data: Data(key.utf8)).map { String(format: "%02x", $0) }.joined()
             let zoneID = CKRecordZone.ID(zoneName: "ForYou-v1", ownerName: userID.recordName)
-            let recordID = CKRecord.ID(recordName: digest, zoneID: zoneID)
+            let recordID = CKRecord.ID(recordName: Self.digest(key), zoneID: zoneID)
             return Access(database: container.privateCloudDatabase, userID: userID, recordID: recordID)
         }
 
@@ -185,6 +189,10 @@
             try Task.checkCancellation()
             guard let container, try await container.userRecordID() == expected else { throw SyncError.accountChanged }
             try Task.checkCancellation()
+        }
+
+        private static func digest(_ value: String) -> String {
+            SHA256.hash(data: Data(value.utf8)).map { String(format: "%02x", $0) }.joined()
         }
 
         private static func snapshot(from record: CKRecord) -> ForYouSnapshot? {

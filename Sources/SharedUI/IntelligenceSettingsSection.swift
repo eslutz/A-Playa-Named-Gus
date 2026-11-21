@@ -55,7 +55,7 @@ struct IntelligenceSettingsSection: View {
                 #if os(iOS)
                     if showsForYouSync {
                         Toggle("Sync For You to Apple TV", isOn: forYouSyncChoice)
-                            .disabled(!preferences.recommendationsEnabled && !preferences.forYouSyncEnabled)
+                            .disabled(session.isVerifyingForYouSyncAccount || (!preferences.recommendationsEnabled && !preferences.forYouSyncEnabled))
                             .accessibilityIdentifier("Intelligence.forYouSync")
                     }
                 #endif
@@ -67,6 +67,9 @@ struct IntelligenceSettingsSection: View {
                     #if os(iOS)
                         if showsForYouSync {
                             Text("Gus shares the ranked Jellyfin item IDs through your private iCloud storage. Use the same iCloud and Jellyfin accounts on both devices.")
+                            if session.forYouSyncAccountVerificationFailed {
+                                Text("Couldn’t verify your iCloud account. Try again.")
+                            }
                         }
                     #endif
                     if needsCloudConsent {

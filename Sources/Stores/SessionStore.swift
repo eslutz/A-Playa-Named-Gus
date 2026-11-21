@@ -29,6 +29,8 @@ final class SessionStore {
     #if os(iOS)
         @ObservationIgnored private var forYouSyncTask: Task<Void, Never>?
         @ObservationIgnored private var forYouSyncGeneration = UUID()
+        private(set) var isVerifyingForYouSyncAccount = false
+        private(set) var forYouSyncAccountVerificationFailed = false
     #endif
     @ObservationIgnored lazy var intelligenceAccess: GusIntelligenceAccess = {
         let access = GusIntelligenceAccess(preferences: intelligencePreferences, routes: .system()) { [weak self] in
@@ -44,19 +46,38 @@ final class SessionStore {
         return access
     }()
 
-    #if os(iOS) || os(tvOS)
+    #if os(tvOS)
         func setForYouSyncEnabled(_ enabled: Bool) {
-            guard isActive, intelligencePreferences.forYouSyncEnabled != enabled else { return }
+            guard isActive else { return }
             intelligencePreferences.forYouSyncEnabled = enabled
-            #if os(iOS)
-                if !enabled {
-                    revokeForYouSharing()
-                }
-            #endif
         }
     #endif
 
     #if os(iOS)
+        func setForYouSyncEnabled(_ enabled: Bool) {
+            guard isActive, !isVerifyingForYouSyncAccount,
+                  intelligencePreferences.forYouSyncEnabled != enabled else { return }
+            forYouSyncAccountVerificationFailed = false
+            guard enabled else {
+                revokeForYouSharing()
+                intelligencePreferences.forYouSyncIdentity = nil
+                return
+            }
+            isVerifyingForYouSyncAccount = true
+            Task {
+                defer { isVerifyingForYouSyncAccount = false }
+                do {
+                    let identity = try await forYouSnapshotSync.currentPublishingIdentity()
+                    guard isActive, intelligencePreferences.recommendationsEnabled else { return }
+                    intelligencePreferences.forYouSyncIdentity = identity
+                    forYouSyncAccountVerificationFailed = identity == nil
+                } catch {
+                    guard isActive else { return }
+                    forYouSyncAccountVerificationFailed = true
+                }
+            }
+        }
+
         func shareForYouPicks(_ picks: [GusLibraryPick]) {
             guard isActive, intelligencePreferences.forYouSyncEnabled,
                   intelligencePreferences.recommendationsEnabled else { return }
@@ -65,13 +86,15 @@ final class SessionStore {
             })
         }
 
-        func retryForYouSyncRevocation() {
-            guard forYouSyncTask == nil, intelligencePreferences.forYouSyncRevocationDate != nil else { return }
+        func refreshForYouSyncAccount() {
+            guard forYouSyncTask == nil, intelligencePreferences.forYouSyncEnabled ||
+                !intelligencePreferences.forYouSyncRevocations.isEmpty else { return }
             scheduleForYouSync()
         }
 
         private func revokeForYouSharing() {
-            intelligencePreferences.forYouSyncRevocationDate = .now
+            guard let identity = intelligencePreferences.forYouSyncIdentity else { return }
+            intelligencePreferences.forYouSyncRevocations[identity] = .now
             scheduleForYouSync()
         }
 
@@ -91,17 +114,24 @@ final class SessionStore {
                     }
                 }
                 do {
-                    if let revokedAt = intelligencePreferences.forYouSyncRevocationDate {
-                        try await forYouSnapshotSync.revoke(createdAt: revokedAt)
+                    guard let identity = try await forYouSnapshotSync.currentPublishingIdentity(),
+                          isActive, forYouSyncGeneration == token else { return }
+                    // An opt-in from the previous iCloud account must never grant
+                    // access to a new account, including after an app relaunch.
+                    if let allowed = intelligencePreferences.forYouSyncIdentity, allowed != identity {
+                        intelligencePreferences.forYouSyncIdentity = nil
+                    }
+                    if let revokedAt = intelligencePreferences.forYouSyncRevocations[identity] {
+                        try await forYouSnapshotSync.revoke(createdAt: revokedAt, identity: identity)
                         guard isActive else { return }
-                        if intelligencePreferences.forYouSyncRevocationDate == revokedAt {
-                            intelligencePreferences.forYouSyncRevocationDate = nil
+                        if intelligencePreferences.forYouSyncRevocations[identity] == revokedAt {
+                            intelligencePreferences.forYouSyncRevocations[identity] = nil
                         }
                     }
                     guard let itemIDs, isActive, forYouSyncGeneration == token,
-                          intelligencePreferences.forYouSyncEnabled,
+                          intelligencePreferences.forYouSyncIdentity == identity,
                           intelligencePreferences.recommendationsEnabled else { return }
-                    try await forYouSnapshotSync.publish(itemIDs: itemIDs, createdAt: createdAt)
+                    try await forYouSnapshotSync.publish(itemIDs: itemIDs, createdAt: createdAt, identity: identity)
                 } catch {
                     // Keep an unsent opt-out for the next foreground activation.
                     // Expiring snapshots also bound retention if iCloud stays unavailable.
