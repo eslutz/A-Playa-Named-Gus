@@ -193,7 +193,7 @@
 
         func testIPadR2ScopedLayoutsAndProfileDraft() throws {
             guard UIDevice.current.userInterfaceIdiom == .pad else { throw XCTSkip("Requires an iPad") }
-            let app = launch("home", keywordOnly: true)
+            let app = launch("home", keywordOnly: true, environment: ["GUS_DEMO_URL": "http://127.0.0.1:5062"])
             XCTAssertTrue(waitForRoot(app))
             XCTAssertTrue(openDestination("Music", app))
             let mode = app.buttons["Library.displayMode"]
@@ -491,8 +491,9 @@
             dismissKeyboard(app)
             result.tap()
             XCTAssertTrue(app.navigationBars["Horror"].waitForExistence(timeout: 10))
-            app.navigationBars["Horror"].buttons.element(boundBy: 0).tap()
+            app.navigationBars["Horror"].buttons["BackButton"].tap()
             XCTAssertTrue(field.waitForExistence(timeout: 8))
+            XCTAssertEqual(field.value as? String, "Horror")
             let close = app.buttons["Search.clearResults"].firstMatch
             XCTAssertTrue(close.waitForExistence(timeout: 8))
             close.tap()
@@ -611,9 +612,8 @@
             let field = app.searchFields.firstMatch
             XCTAssertTrue(field.waitForExistence(timeout: 30))
             field.tap()
-            field.typeText("Lantern")
-            dismissKeyboard(app)
-            let movie = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "The Lantern House")).firstMatch
+            field.typeText("Lantern\n")
+            let movie = app.buttons["Search.result.47000000000000000000000000000002"].firstMatch
             XCTAssertTrue(movie.waitForExistence(timeout: 12))
             movie.tap()
             let genre = app.buttons["Detail.related.genre:id:47000000000000000000000000000001"]
@@ -641,9 +641,8 @@
             let field = app.searchFields.firstMatch
             XCTAssertTrue(field.waitForExistence(timeout: 30))
             field.tap()
-            field.typeText("Lantern")
-            dismissKeyboard(app)
-            let source = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "The Lantern House")).firstMatch
+            field.typeText("Lantern\n")
+            let source = app.buttons["Search.result.47000000000000000000000000000002"].firstMatch
             XCTAssertTrue(source.waitForExistence(timeout: 15))
             source.tap()
             let genre = app.buttons["Detail.related.genre:name:coastal mystery"]
@@ -1205,8 +1204,8 @@
             let large = launch("downloaded", largeText: true)
             XCTAssertTrue(large.staticTexts[title].firstMatch.waitForExistence(timeout: 30))
             if UIDevice.current.userInterfaceIdiom == .pad {
-                let hide = large.sidebarToggle
-                if large.collectionViews["Sidebar"].firstMatch.isHittable, hide.isHittable {
+                let hide = large.buttons["Hide Sidebar"]
+                if hide.isHittable {
                     hide.tap()
                 }
                 XCTAssertTrue(large.sidebarToggle.waitForExistence(timeout: 5))
@@ -1317,16 +1316,16 @@
             let titles = title == "Shows" ? ["Shows", "Series"] : [title]
             if UIDevice.current.userInterfaceIdiom == .pad {
                 let sidebar = app.collectionViews["Sidebar"].firstMatch
-                let show = app.sidebarToggle
-                if !sidebar.exists || !sidebar.isHittable, show.exists, show.isHittable {
+                let show = app.buttons["Show Sidebar"]
+                if show.isHittable {
                     show.tap()
                 }
-                let row = sidebar.cells.containing(NSPredicate(format: "label IN %@", titles)).firstMatch
+                let row = sidebar.staticTexts.matching(NSPredicate(format: "identifier BEGINSWITH 'Navigation.' AND label IN %@", titles)).firstMatch
+                guard sidebar.waitForExistence(timeout: 5) else { return false }
                 for _ in 0 ..< 5 {
                     if row.exists, row.isHittable {
                         row.tap(); return true
                     }
-                    guard sidebar.exists, sidebar.isHittable else { return false }
                     if title == "Search" || title == "Home" {
                         sidebar.swipeDown()
                     } else {
@@ -1509,8 +1508,8 @@
 
         private func openShelf(_ destination: String, in app: XCUIApplication) {
             if UIDevice.current.userInterfaceIdiom == .pad {
-                let show = app.sidebarToggle
-                if !app.collectionViews["Sidebar"].firstMatch.isHittable, show.isHittable {
+                let show = app.buttons["Show Sidebar"]
+                if show.isHittable {
                     show.tap()
                 }
                 let row = app.descendants(matching: .any).matching(NSPredicate(

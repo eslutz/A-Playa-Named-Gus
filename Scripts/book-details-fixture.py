@@ -191,10 +191,17 @@ class AdminHandler(Handler):
 
 class NavigationHandler(Handler):
     """Season choices and per-account profile failures or disappearing movies for navigation tests."""
+    server_id = "49494949494949494949494949494949"
+    libraries = [
+        {"Id": "42000000000000000000000000000000", "Name": "Mixed Library", "CollectionType": "books"},
+        {"Id": "49020000000000000000000000000000", "Name": "Music", "CollectionType": "music"},
+        {"Id": "49030000000000000000000000000000", "Name": "Photos", "CollectionType": "photos"},
+    ]
     series = {"Id": "49000000000000000000000000000000", "Name": "Navigation Series", "Type": "Series"}
     seasons = [{"Id": "49000000000000000000000000000001", "Name": "First Season", "Type": "Season", "IndexNumber": 1},
                {"Id": "49000000000000000000000000000002", "Name": "Second Season", "Type": "Season", "IndexNumber": 2}]
-    items = [series]
+    items = [series, {"Id": "49020000000000000000000000000001", "Type": "MusicAlbum", "Name": "Fixture Album"},
+             {"Id": "49030000000000000000000000000001", "Type": "PhotoAlbum", "Name": "Fixture Photos"}]
     pending_profiles = {}
     queue_movies = {}
 
@@ -229,6 +236,9 @@ class NavigationHandler(Handler):
         url = urlsplit(self.path)
         if url.path == "/health":
             return self.respond({"fixture": "gus-navigation"})
+        if url.path == "/UserViews" or url.path.endswith("/Views"):
+            return self.respond({"Items": [{**library, "Type": "CollectionFolder"} for library in self.libraries],
+                                 "TotalRecordCount": len(self.libraries)})
         parts = url.path.split("/")
         if len(parts) >= 3 and parts[-2] == "Items" and parts[-1] in self.queue_movies:
             movie_id = parts[-1]
@@ -237,13 +247,14 @@ class NavigationHandler(Handler):
             return self.respond({}, 404)
         if url.path.startswith("/Users/") and url.path.count("/") == 2:
             user_id = url.path.rsplit("/", 1)[-1].replace("-", "")
+            if user_id in ("Me", self.user["Id"]):
+                return self.respond(self.user)
             if user_id in self.queue_movies:
                 return self.respond({**self.user, "Id": user_id})
-            if user_id not in ("Me", self.user["Id"]):
-                pending = self.pending_profiles.get(user_id)
-                if pending is not None:
-                    pending.wait(timeout=60)
-                return self.respond({}, 500)
+            pending = self.pending_profiles.get(user_id)
+            if pending is not None:
+                pending.wait(timeout=60)
+            return self.respond({}, 500)
         if url.path == f"/Shows/{self.series['Id']}/Seasons":
             return self.respond({"Items": self.seasons, "TotalRecordCount": len(self.seasons)})
         if url.path == f"/Shows/{self.series['Id']}/Episodes":

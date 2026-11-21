@@ -307,7 +307,11 @@ private struct SplitRootView: View {
         }
 
         var body: some View {
-            NavigationSplitView(columnVisibility: Bindable(state).sidebarVisibility) {
+            let visibility = Binding(
+                get: { state.sidebarVisibility ?? (dynamicTypeSize.isAccessibilitySize ? .detailOnly : .doubleColumn) },
+                set: { state.sidebarVisibility = $0 }
+            )
+            NavigationSplitView(columnVisibility: visibility) {
                 List(selection: Binding<String?>(get: { state.selectedSectionID }, set: {
                     if let id = $0 {
                         state.selectSection(id)
@@ -329,8 +333,8 @@ private struct SplitRootView: View {
             }
             .navigationSplitViewStyle(.balanced)
             .onAppear { state.useSidebar() }
-            .onChange(of: dynamicTypeSize, initial: true) { _, size in
-                if size.isAccessibilitySize {
+            .onChange(of: dynamicTypeSize.isAccessibilitySize) { _, usesAccessibilitySize in
+                if usesAccessibilitySize {
                     state.sidebarVisibility = .detailOnly
                 }
             }

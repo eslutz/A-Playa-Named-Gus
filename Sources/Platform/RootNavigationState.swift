@@ -25,7 +25,7 @@ final class RootNavigationState {
 
     var selectedSectionID = NavigationSectionPreference.homeID
     #if os(iOS)
-        var sidebarVisibility = NavigationSplitViewVisibility.doubleColumn
+        var sidebarVisibility: NavigationSplitViewVisibility?
     #else
         var sidebarVisibility = NavigationSplitViewVisibility.automatic
     #endif

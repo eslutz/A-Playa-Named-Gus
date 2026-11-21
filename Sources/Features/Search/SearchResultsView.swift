@@ -132,6 +132,7 @@ struct SearchResultsView: View {
                 }
             }
             .mediaItemContextMenu(item: item)
+            .accessibilityIdentifier("Search.result." + ItemRef(item: item).id)
         }
     }
 }

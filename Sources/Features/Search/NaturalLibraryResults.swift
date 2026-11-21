@@ -153,6 +153,7 @@ struct LibrarySearchFieldBehavior: ViewModifier {
 
     func body(content: Content) -> some View {
         fieldSuggestions(content)
+            .searchPresentationToolbarBehavior(.avoidHidingContent)
             .task(id: requestKey) {
                 let key = requestKey
                 let prefix = search.text.trimmingCharacters(in: .whitespacesAndNewlines)
