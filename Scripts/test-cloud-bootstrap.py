@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Exercise Apple's ci_scripts working directory and bootstrap failure boundaries."""
 import os
+import plistlib
 from pathlib import Path
 import shutil
 import subprocess
@@ -101,6 +102,46 @@ class BootstrapTests(unittest.TestCase):
         env = {**self.env, "CI_PRODUCT_PLATFORM": platform, "CI_XCODEBUILD_ACTION": action}
         return subprocess.run(["/bin/sh", "ci_pre_xcodebuild.sh"], cwd=self.root / "ci_scripts",
                               env=env, capture_output=True, text=True)
+
+    def test_pcc_archives_preserve_platform_and_watch_entitlements(self):
+        self.env["CI_WORKFLOW"] = "Gus Internal TestFlight"
+        capability = "com.apple.developer.private-cloud-compute"
+        fixtures = {
+            "iOS": ("iphoneos", "Gus-iOS", True),
+            "macOS": ("macosx", "Gus", False),
+            "xrOS": ("xros", "Gus-SharePlay", False),
+            "watchOS": ("watchos", None, True),
+            "tvOS": ("appletvos", None, False),
+        }
+        config_dir = self.root / "Config"
+        generated_dir = self.root / "build/pcc-signing"
+        for platform, (sdk, base, watch) in fixtures.items():
+            with self.subTest(platform=platform):
+                self.assertEqual(self.run_script().returncode, 0)
+                for file in generated_dir.glob("*-PCC.entitlements"):
+                    file.unlink()
+                if base:
+                    shutil.copy2(SOURCE.parent.parent / "Config" / f"{base}.entitlements", config_dir)
+                result = self.run_pre_build(platform=platform, action="archive")
+                self.assertEqual(result.returncode, 0, result.stderr)
+                config = (config_dir / "Local.xcconfig").read_text()
+                if platform == "tvOS":
+                    self.assertNotIn("GUS_PCC_ENTITLED", config)
+                    self.assertEqual(list(generated_dir.glob("*-PCC.entitlements")), [])
+                    continue
+                self.assertIn(f"GUS_PCC_ENTITLED[sdk={sdk}*] = YES", config)
+                if base:
+                    existing = plistlib.loads((config_dir / f"{base}.entitlements").read_bytes())
+                    archive = plistlib.loads((generated_dir / f"{base}-PCC.entitlements").read_bytes())
+                    self.assertEqual(archive, {**existing, capability: True})
+                    self.assertIn(f"CODE_SIGN_ENTITLEMENTS[sdk={sdk}*] = build/pcc-signing/{base}-PCC.entitlements", config)
+                if watch:
+                    archive = plistlib.loads((generated_dir / "Gus-Watch-PCC.entitlements").read_bytes())
+                    self.assertEqual(archive, {capability: True})
+                    self.assertIn("GUS_PCC_ENTITLED[sdk=watchos*] = YES", config)
+                    self.assertIn("GUS_WATCH_CODE_SIGN_ENTITLEMENTS = build/pcc-signing/Gus-Watch-PCC.entitlements", config)
+                else:
+                    self.assertNotIn("GUS_WATCH_CODE_SIGN_ENTITLEMENTS", config)
 
     def test_cloud_mac_test_execution_does_not_require_checkout_or_build_configuration(self):
         # Cloud distributes compiled products and ci_scripts to separate test runners.
