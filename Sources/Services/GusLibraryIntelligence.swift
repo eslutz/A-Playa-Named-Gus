@@ -242,6 +242,13 @@ final class GusLibraryIntelligence {
         let restriction = restrictions
         let session = try check(restriction)
         guard session.intelligencePreferences.recommendationsEnabled else { clearRecommendations(); return [] }
+        #if DEBUG && os(iOS) && targetEnvironment(simulator)
+            let args = ProcessInfo.processInfo.arguments
+            if args.contains("--gus-demo-server"), args.contains("--gus-intelligence-test-picks") {
+                let items = try await fetch(page(4), restriction: restriction).items
+                return ContentRatingGate.filter(items).map { GusLibraryPick(item: $0, reason: "") }
+            }
+        #endif
         let context = restriction + String(session.intelligencePreferences.cloudEnabled)
         if let pendingShelf, pendingShelf.context == context, !refresh || pendingShelf.refresh {
             let result = try await pendingShelf.task.value

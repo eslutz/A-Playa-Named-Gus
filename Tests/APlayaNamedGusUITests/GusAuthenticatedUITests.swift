@@ -181,6 +181,56 @@ final class GusAuthenticatedUITests: XCTestCase {
             XCTAssertFalse(again.buttons["Intelligence.prompt.allow"].exists)
         }
 
+        func testForYouAppleTVSyncConsentRequiresAnExplicitAction() throws {
+            try prepare()
+            defer { finish() }
+            let args = [
+                "--gus-intelligence-test-local", "--gus-intelligence-test-picks",
+                "--gus-intelligence-test-suite", UUID().uuidString,
+            ]
+            let app = launch("home", arguments: args)
+            let allow = app.buttons["Intelligence.prompt.allow"]
+            let shelfAction = app.buttons["ForYou.setupAppleTVSync"]
+            let syncTitle = app.staticTexts["Sync For You to Apple TV?"]
+            XCTAssertTrue(app.staticTexts["Enable For You?"].waitForExistence(timeout: 20))
+            XCTAssertFalse(shelfAction.exists)
+            allow.tap()
+
+            XCTAssertTrue(shelfAction.waitForExistence(timeout: 20))
+            XCTAssertFalse(syncTitle.exists)
+            reveal(shelfAction, in: app)
+            shelfAction.tap()
+            XCTAssertTrue(syncTitle.waitForExistence(timeout: 10))
+            XCTAssertEqual(
+                app.staticTexts["Intelligence.prompt.message"].label,
+                "Gus saves the Jellyfin item IDs for your ranked recommendations in your private iCloud storage. Your iPhone and Apple TV must use the same iCloud and Jellyfin accounts."
+            )
+            XCTAssertEqual(
+                app.staticTexts["Intelligence.prompt.settingsPath"].label,
+                "Gus Settings → Library Intelligence → Sync For You to Apple TV."
+            )
+            capture(app, "for-you-sync-consent")
+            app.buttons["Intelligence.prompt.decline"].tap()
+            XCTAssertTrue(syncTitle.waitForNonExistence(timeout: 8))
+            XCTAssertTrue(shelfAction.exists)
+
+            app.terminate()
+            let settings = launch("settings", arguments: args)
+            let sync = settings.switches["Intelligence.forYouSync"].firstMatch
+            revealIntelligenceSettings(sync, in: settings)
+            XCTAssertEqual(sync.value as? String, "0")
+            XCTAssertFalse(syncTitle.exists)
+            let offset = max(0.5, 1 - 28 / sync.frame.width)
+            sync.coordinate(withNormalizedOffset: CGVector(dx: offset, dy: 0.5)).tap()
+            XCTAssertTrue(syncTitle.waitForExistence(timeout: 10))
+            XCTAssertEqual(allow.label, "Enable Sync")
+            allow.tap()
+            let error = settings.staticTexts["Couldn’t verify your iCloud account. Try again."].firstMatch
+            XCTAssertTrue(error.waitForExistence(timeout: 10))
+            XCTAssertEqual(sync.value as? String, "0")
+            XCTAssertEqual(settings.switches["Intelligence.forYou"].firstMatch.value as? String, "1")
+        }
+
         private func tapIntelligenceSwitch(_ toggle: XCUIElement, expecting value: String) {
             XCTAssertTrue(toggle.isEnabled)
             let offset = max(0.5, 1 - 28 / toggle.frame.width)

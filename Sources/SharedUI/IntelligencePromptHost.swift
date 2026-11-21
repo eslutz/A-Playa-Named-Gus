@@ -93,97 +93,13 @@ private struct IntelligencePromptView: View {
 
     var body: some View {
         #if os(iOS)
-            phoneSheet
+            IntelligencePhonePrompt(kind: prompt == .forYou ? .forYou : .cloud, respond: respond)
         #else
             platformSheet
         #endif
     }
 
-    #if os(iOS)
-        @Environment(\.dynamicTypeSize) private var dynamicType
-
-        private var title: LocalizedStringKey {
-            prompt == .forYou ? "Enable For You?" : "Allow Private Cloud Compute?"
-        }
-
-        private var message: LocalizedStringKey {
-            prompt == .forYou
-                ? "Get recommendations based on your Jellyfin favorites and playback history."
-                : "Apple can process submitted searches and, when For You is enabled, selected titles, descriptions, and viewing interests. Requests use your daily quota."
-        }
-
-        private var settingsPath: LocalizedStringKey {
-            prompt == .forYou
-                ? "Gus Settings → Library Intelligence → Show For You."
-                : "Gus Settings → Library Intelligence → Allow Private Cloud Compute."
-        }
-
-        private var primaryAction: LocalizedStringKey {
-            prompt == .forYou ? "Enable For You" : "Allow Private Cloud Compute"
-        }
-
-        private var phoneSheet: some View {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 20) {
-                    VStack(alignment: .leading, spacing: 10) {
-                        Image(systemName: prompt == .forYou ? "sparkles" : "icloud")
-                            .font(.title)
-                            .foregroundStyle(.tint)
-                            .accessibilityHidden(true)
-                        Text(title)
-                            .font(.title2.bold())
-                            .accessibilityAddTraits(.isHeader)
-                        Text(message)
-                            .accessibilityIdentifier("Intelligence.prompt.message")
-                    }
-
-                    Label {
-                        Text(settingsPath)
-                            .accessibilityIdentifier("Intelligence.prompt.settingsPath")
-                    } icon: {
-                        Image(systemName: "gearshape")
-                            .foregroundStyle(.secondary)
-                            .accessibilityHidden(true)
-                    }
-                    .font(.footnote)
-                    .foregroundStyle(.primary)
-
-                    VStack(spacing: 8) {
-                        Button {
-                            respond(true)
-                        } label: {
-                            Text(primaryAction)
-                                .fontWeight(.semibold)
-                                .frame(maxWidth: .infinity)
-                                .gusPhoneProminentForeground()
-                        }
-                        .buttonStyle(.borderedProminent)
-                        .gusPhoneActionTint()
-                        .accessibilityIdentifier("Intelligence.prompt.allow")
-
-                        Button(role: .cancel) {
-                            respond(false)
-                        } label: {
-                            Text("Not Now")
-                                .frame(maxWidth: .infinity)
-                        }
-                        .buttonStyle(.bordered)
-                        .tint(.primary)
-                        .accessibilityIdentifier("Intelligence.prompt.decline")
-                    }
-                    .controlSize(.large)
-                }
-                .padding(.horizontal, 24)
-                .padding(.vertical, 22)
-                .frame(maxWidth: 460)
-                .frame(maxWidth: .infinity)
-            }
-            .defaultScrollAnchor(.center, for: .alignment)
-            .presentationDetents(dynamicType.isAccessibilitySize || prompt == .cloud ? [.large] : [.medium, .large])
-            .presentationBackground(Color(uiColor: .secondarySystemBackground))
-            .presentationDragIndicator(.visible)
-        }
-    #else
+    #if !os(iOS)
         private var platformSheet: some View {
             VStack(alignment: .leading, spacing: 12) {
                 Text(prompt == .forYou ? LocalizedStringKey("Enable For You?") : LocalizedStringKey("Allow Private Cloud Compute?"))
@@ -211,6 +127,141 @@ private struct IntelligencePromptView: View {
         }
     #endif
 }
+
+#if os(iOS)
+    private struct IntelligencePhonePrompt: View {
+        enum Kind {
+            case forYou, cloud, forYouSync
+
+            var title: LocalizedStringKey {
+                switch self {
+                case .forYou: "Enable For You?"
+                case .cloud: "Allow Private Cloud Compute?"
+                case .forYouSync: "Sync For You to Apple TV?"
+                }
+            }
+
+            var message: LocalizedStringKey {
+                switch self {
+                case .forYou: "Get recommendations based on your Jellyfin favorites and playback history."
+                case .cloud: "Apple can process submitted searches and, when For You is enabled, selected titles, descriptions, and viewing interests. Requests use your daily quota."
+                case .forYouSync: "Gus saves the Jellyfin item IDs for your ranked recommendations in your private iCloud storage. Your iPhone and Apple TV must use the same iCloud and Jellyfin accounts."
+                }
+            }
+
+            var settingsPath: LocalizedStringKey {
+                switch self {
+                case .forYou: "Gus Settings → Library Intelligence → Show For You."
+                case .cloud: "Gus Settings → Library Intelligence → Allow Private Cloud Compute."
+                case .forYouSync: "Gus Settings → Library Intelligence → Sync For You to Apple TV."
+                }
+            }
+
+            var primaryAction: LocalizedStringKey {
+                switch self {
+                case .forYou: "Enable For You"
+                case .cloud: "Allow Private Cloud Compute"
+                case .forYouSync: "Enable Sync"
+                }
+            }
+
+            var symbol: String {
+                switch self {
+                case .forYou: "sparkles"
+                case .cloud: "icloud"
+                case .forYouSync: "appletv"
+                }
+            }
+        }
+
+        @Environment(\.dynamicTypeSize) private var dynamicType
+        let kind: Kind
+        let respond: (Bool) -> Void
+
+        var body: some View {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 20) {
+                    VStack(alignment: .leading, spacing: 10) {
+                        Image(systemName: kind.symbol)
+                            .font(.title)
+                            .foregroundStyle(.tint)
+                            .accessibilityHidden(true)
+                        Text(kind.title)
+                            .font(.title2.bold())
+                            .accessibilityAddTraits(.isHeader)
+                        Text(kind.message)
+                            .accessibilityIdentifier("Intelligence.prompt.message")
+                    }
+
+                    Label {
+                        Text(kind.settingsPath)
+                            .accessibilityIdentifier("Intelligence.prompt.settingsPath")
+                    } icon: {
+                        Image(systemName: "gearshape")
+                            .foregroundStyle(.secondary)
+                            .accessibilityHidden(true)
+                    }
+                    .font(.footnote)
+                    .foregroundStyle(.primary)
+
+                    VStack(spacing: 8) {
+                        Button {
+                            respond(true)
+                        } label: {
+                            Text(kind.primaryAction)
+                                .fontWeight(.semibold)
+                                .frame(maxWidth: .infinity)
+                                .gusPhoneProminentForeground()
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .gusPhoneActionTint()
+                        .accessibilityIdentifier("Intelligence.prompt.allow")
+
+                        Button(role: .cancel) {
+                            respond(false)
+                        } label: {
+                            Text("Not Now")
+                                .frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(.bordered)
+                        .tint(.primary)
+                        .accessibilityIdentifier("Intelligence.prompt.decline")
+                    }
+                    .controlSize(.large)
+                }
+                .padding(.horizontal, 24)
+                .padding(.vertical, 22)
+                .frame(maxWidth: 460)
+                .frame(maxWidth: .infinity)
+            }
+            .defaultScrollAnchor(.center, for: .alignment)
+            .presentationDetents(dynamicType.isAccessibilitySize || kind == .cloud ? [.large] : [.medium, .large])
+            .presentationBackground(Color(uiColor: .secondarySystemBackground))
+            .presentationDragIndicator(.visible)
+        }
+    }
+
+    private struct ForYouSyncConsentSheet: View {
+        @Environment(SessionStore.self) private var session
+        @Environment(\.dismiss) private var dismiss
+
+        var body: some View {
+            IntelligencePhonePrompt(kind: .forYouSync) { allow in
+                if allow {
+                    session.setForYouSyncEnabled(true)
+                }
+                dismiss()
+            }
+        }
+    }
+
+    extension View {
+        func forYouSyncConsent(isPresented: Binding<Bool>) -> some View {
+            sheet(isPresented: isPresented) { ForYouSyncConsentSheet() }
+                .defersIntelligencePrompt(while: isPresented.wrappedValue)
+        }
+    }
+#endif
 
 private extension View {
     func scrollWhenNeeded() -> some View {

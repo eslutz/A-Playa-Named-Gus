@@ -500,6 +500,12 @@ struct MediaRail: View {
             }
             .tvFocusSection()
 
+            #if os(iOS)
+                if !recommendations.isEmpty, !session.intelligencePreferences.forYouSyncEnabled {
+                    ForYouSyncSetupButton()
+                }
+            #endif
+
             ScrollView(.horizontal, showsIndicators: false) {
                 LazyHStack(alignment: .top, spacing: style.spacing) {
                     ForEach(items, id: \.id) { saved in
@@ -547,6 +553,35 @@ struct MediaRail: View {
         }
     }
 }
+
+#if os(iOS)
+    private struct ForYouSyncSetupButton: View {
+        @Environment(SessionStore.self) private var session
+        @State private var showingConsent = false
+
+        var body: some View {
+            VStack(alignment: .leading, spacing: 6) {
+                Button {
+                    showingConsent = true
+                } label: {
+                    Label("Set Up Apple TV Sync", systemImage: "appletv")
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.large)
+                .gusPhoneActionTint()
+                .disabled(session.isVerifyingForYouSyncAccount)
+                .accessibilityIdentifier("ForYou.setupAppleTVSync")
+                .forYouSyncConsent(isPresented: $showingConsent)
+
+                if session.forYouSyncAccountVerificationFailed {
+                    Text("Couldn’t verify your iCloud account. Try again.")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
+            }
+        }
+    }
+#endif
 
 enum MediaRailStyle: Equatable {
     case poster

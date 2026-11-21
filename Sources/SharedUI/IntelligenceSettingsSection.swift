@@ -2,6 +2,9 @@ import SwiftUI
 
 struct IntelligenceSettingsSection: View {
     @Environment(SessionStore.self) private var session
+    #if os(iOS)
+        @State private var showingForYouSyncConsent = false
+    #endif
 
     var body: some View {
         #if os(tvOS)
@@ -54,9 +57,19 @@ struct IntelligenceSettingsSection: View {
                 }
                 #if os(iOS)
                     if showsForYouSync {
-                        Toggle("Sync For You to Apple TV", isOn: forYouSyncChoice)
-                            .disabled(session.isVerifyingForYouSyncAccount || (!preferences.recommendationsEnabled && !preferences.forYouSyncEnabled))
-                            .accessibilityIdentifier("Intelligence.forYouSync")
+                        Toggle("Sync For You to Apple TV", isOn: Binding(
+                            get: { preferences.forYouSyncEnabled },
+                            set: { enabled in
+                                if enabled {
+                                    showingForYouSyncConsent = true
+                                } else {
+                                    session.setForYouSyncEnabled(false)
+                                }
+                            }
+                        ))
+                        .disabled(session.isVerifyingForYouSyncAccount || (!preferences.recommendationsEnabled && !preferences.forYouSyncEnabled))
+                        .accessibilityIdentifier("Intelligence.forYouSync")
+                        .forYouSyncConsent(isPresented: $showingForYouSyncConsent)
                     }
                 #endif
             } header: {
@@ -82,7 +95,7 @@ struct IntelligenceSettingsSection: View {
         }
     }
 
-    #if os(iOS) || os(tvOS)
+    #if os(tvOS)
         private var forYouSyncChoice: Binding<Bool> {
             Binding(
                 get: { session.intelligencePreferences.forYouSyncEnabled },
