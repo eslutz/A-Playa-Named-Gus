@@ -256,16 +256,21 @@ final class GusAuthenticatedUITests: XCTestCase {
         }
 
         private func revealSettingsControl(_ toggle: XCUIElement, in app: XCUIApplication) {
-            let viewport = app.frame.insetBy(dx: 0, dy: 100)
+            let form = app.collectionViews.matching(NSPredicate(format: "label != %@", "Sidebar")).firstMatch
+            let row = form.cells.firstMatch
+            XCTAssertTrue(row.waitForExistence(timeout: 5), app.debugDescription)
+            let bounds = form.frame
+            let viewport = bounds.insetBy(dx: 0, dy: 100)
+            // An iPad list can extend behind its sidebar. Use the actual row's leading edge for the drag.
+            let leadingInset = (row.frame.minX - bounds.minX + 6) / bounds.width
             for _ in 0 ..< 8 {
                 let frame = toggle.exists ? toggle.frame : .zero
                 if viewport.contains(frame), frame.height > 0, toggle.isHittable {
                     return
                 }
                 let above = frame.height > 0 && frame.minY < viewport.minY
-                // The grouped Form's leading gutter scrolls without dragging a native switch thumb.
-                let start = app.coordinate(withNormalizedOffset: CGVector(dx: 0.025, dy: above ? 0.42 : 0.73))
-                let end = app.coordinate(withNormalizedOffset: CGVector(dx: 0.025, dy: above ? 0.73 : 0.42))
+                let start = form.coordinate(withNormalizedOffset: CGVector(dx: leadingInset, dy: above ? 0.42 : 0.73))
+                let end = form.coordinate(withNormalizedOffset: CGVector(dx: leadingInset, dy: above ? 0.73 : 0.42))
                 start.press(forDuration: 0.05, thenDragTo: end, withVelocity: .slow, thenHoldForDuration: 0.15)
             }
             XCTFail(app.debugDescription)
