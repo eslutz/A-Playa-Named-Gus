@@ -8,9 +8,16 @@
         func testHomeShelfKeepsItsPositionAcrossTabs() throws {
             continueAfterFailure = false
             let app = XCUIApplication()
-            app.launchArguments = ["--gus-skip-session-restore", "--gus-demo-server", "--gus-disable-cloud-sync", "--gus-route", "home"]
+            app.launchArguments = [
+                "--gus-skip-session-restore", "--gus-demo-server", "--gus-disable-cloud-sync", "--gus-route", "home",
+                "--gus-intelligence-test-local", "--gus-intelligence-test-suite", UUID().uuidString,
+            ]
             app.launch()
             defer { app.terminate() }
+            let decline = app.buttons["Intelligence.prompt.decline"].firstMatch
+            XCTAssertTrue(decline.waitForExistence(timeout: 30))
+            decline.tap()
+            XCTAssertTrue(decline.waitForNonExistence(timeout: 5))
 
             let heading = app.staticTexts["Recently Added Movies"].firstMatch
             XCTAssertTrue(heading.waitForExistence(timeout: 30))
@@ -542,14 +549,21 @@
         func testPlaybackHelpExplainsEachSettingWithoutChangingIt() {
             continueAfterFailure = false
             let app = XCUIApplication()
+            app.launchEnvironment["GUS_DEMO_URL"] = ProcessInfo.processInfo.environment["GUS_DEMO_URL"]
             app.launchArguments = ["--gus-skip-session-restore", "--gus-demo-server", "--gus-disable-cloud-sync", "--gus-route", "settings"]
+            app.launch()
+            defer { app.terminate() }
+            XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: 30))
+            let invitation = app.buttons["Intelligence.prompt.decline"]
+            if invitation.waitForExistence(timeout: 3) {
+                invitation.tap()
+                XCTAssertTrue(invitation.waitForNonExistence(timeout: 5))
+            }
+
             for (label, explanation) in [
                 ("About Streaming Quality", "Maximum lets compatible files play at original quality."),
                 ("About Remembering Episode Tracks", "Gus remembers the audio and subtitle choices"),
             ] {
-                app.launch()
-                defer { app.terminate() }
-                XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: 30))
                 let help = app.buttons[label]
                 for _ in 0 ..< 5 where !help.isHittable {
                     app.swipeUp()

@@ -263,9 +263,10 @@ final class GusAuthenticatedUITests: XCTestCase {
                     return
                 }
                 let above = frame.height > 0 && frame.minY < viewport.minY
-                let start = app.coordinate(withNormalizedOffset: CGVector(dx: 0.8, dy: above ? 0.45 : 0.8))
-                let end = app.coordinate(withNormalizedOffset: CGVector(dx: 0.8, dy: above ? 0.8 : 0.45))
-                start.press(forDuration: 0.1, thenDragTo: end)
+                // The grouped Form's leading gutter scrolls without dragging a native switch thumb.
+                let start = app.coordinate(withNormalizedOffset: CGVector(dx: 0.025, dy: above ? 0.42 : 0.73))
+                let end = app.coordinate(withNormalizedOffset: CGVector(dx: 0.025, dy: above ? 0.73 : 0.42))
+                start.press(forDuration: 0.05, thenDragTo: end, withVelocity: .slow, thenHoldForDuration: 0.15)
             }
             XCTFail(app.debugDescription)
         }
