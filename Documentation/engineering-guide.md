@@ -110,6 +110,11 @@ seven sections alongside Search, or six sections plus More and Search.
 More presents its overflow sections as native pushes. Each section retains its
 value-based child path when moving between a direct tab, More and the sidebar.
 
+Discover's catalog, title, credits and season routes use the same stack as
+Open in Gus and subsequent Jellyfin detail pushes. Each Discover route belongs
+to the current Seerr connection revision. A connection change truncates the
+path at the first stale route, including any Jellyfin pages pushed above it.
+
 Selecting a genre, studio or credit pushes related results in the current stack,
 including when a content link opened the detail in a sheet. Native Back returns
 through the same pages. Each related destination owns its paged results and

@@ -423,9 +423,7 @@ struct SeerrCatalogStoreTests {
         let json = Self.movie(1, title: "Retained title", rating: "G")
         let fixture = try await CatalogStoreFixture(replies: [.init(json: json), .init(json: "{}", status: 503)])
         defer { fixture.cleanUp() }
-        var seed = try JSONDecoder().decode(SeerrTitle.self, from: Data(json.utf8))
-        seed.mediaType = .movie
-        let detail = SeerrTitleDetailStore(title: seed)
+        let detail = SeerrTitleDetailStore(mediaType: .movie, id: 1)
         await detail.load(store: fixture.store)
         await detail.load(store: fixture.store)
         #expect(detail.title?.displayTitle == "Retained title")

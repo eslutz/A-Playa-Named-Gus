@@ -77,6 +77,34 @@ struct IPhoneNavigationLayoutTests {
         #expect(root.paths["settings"] == [.screen(.downloads)])
     }
 
+    @Test("Changing the Seerr connection removes stale Discover routes and their descendants")
+    func staleDiscoverHistory() {
+        let root = RootNavigationState()
+        let discover = NavigationSectionPreference.discoverID
+        let oldRevision = UUID()
+        let newRevision = UUID()
+        let catalog = GusRoute.seerr(.init(revision: oldRevision, destination: .catalog(name: "Popular TV", source: .feed(.popularTV))))
+        let season = GusRoute.seerr(.init(revision: oldRevision, destination: .season(seriesID: 42, number: 2)))
+        let item = GusRoute.item(.init(item: MediaItem(id: "season", type: .season)))
+        root.selectSection(discover)
+        root.rememberOverflowSelection(in: [discover])
+        root.updateSeerrRevision(oldRevision)
+        let compact = root.morePathBinding(overflowIDs: [discover])
+        compact.wrappedValue = [.section(discover), catalog, season, item]
+        root.paths["settings"] = [.screen(.navigationSettings)]
+        #expect(root.pathBinding(for: discover).wrappedValue == [catalog, season, item])
+
+        root.updateSeerrRevision(newRevision)
+        #expect(compact.wrappedValue == [.section(discover)])
+        #expect(root.paths["settings"] == [.screen(.navigationSettings)])
+        compact.wrappedValue = [.section(discover), catalog, season, item]
+        #expect(compact.wrappedValue == [.section(discover)])
+
+        let currentTitle = GusRoute.seerr(.init(revision: newRevision, destination: .title(.tv, 42)))
+        root.pathBinding(for: discover).wrappedValue = [currentTitle]
+        #expect(compact.wrappedValue == [.section(discover), currentTitle])
+    }
+
     @Test("Settings child pages survive the transition from More to the sidebar and back")
     func settingsChildrenRetainHistory() {
         #if os(tvOS)

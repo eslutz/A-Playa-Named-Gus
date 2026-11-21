@@ -11,9 +11,9 @@ final class SeerrTitleDetailStore {
     private(set) var restrictions: String?
     private var generation = UUID()
 
-    init(title: SeerrTitle) {
-        mediaType = title.mediaType ?? .unknown
-        id = title.id
+    init(mediaType: SeerrMediaType, id: Int) {
+        self.mediaType = mediaType
+        self.id = id
     }
 
     func invalidate() {
@@ -71,9 +71,9 @@ struct SeerrTitleDetailView: View {
     @AppStorage(ContentRatingGate.limitDefaultsKey) private var contentLimitRawValue = ContentRatingGate.Limit.off.rawValue
     @AppStorage(ContentRatingGate.hideUnratedDefaultsKey) private var hideUnratedContent = false
 
-    init(title: SeerrTitle, store: SeerrStore) {
+    init(mediaType: SeerrMediaType, id: Int, store: SeerrStore) {
         self.store = store
-        _detail = State(initialValue: SeerrTitleDetailStore(title: title))
+        _detail = State(initialValue: SeerrTitleDetailStore(mediaType: mediaType, id: id))
     }
 
     private var accessRevision: String {
@@ -186,10 +186,10 @@ struct SeerrTitleDetailView: View {
                 SeerrCreditsSection(credits: credits, store: store)
             }
             if detail.mediaType == .movie, let collection = title.collection, let name = collection.name?.trimmedNilIfEmpty {
-                NavigationLink {
-                    SeerrCatalogGridView(title: name, source: .collection(collection.id), store: store)
-                } label: { Label(name, systemImage: "rectangle.stack") }
-                    .accessibilityIdentifier("Seerr.collection." + String(collection.id))
+                NavigationLink(value: store.navigationRoute(.catalog(name: name, source: .collection(collection.id)))) {
+                    Label(name, systemImage: "rectangle.stack")
+                }
+                .accessibilityIdentifier("Seerr.collection." + String(collection.id))
             }
             SeerrRelatedTitlesSection(
                 heading: detail.mediaType == .movie ? String(localized: "Similar Movies") : String(localized: "Similar Series"),
@@ -221,10 +221,8 @@ struct SeerrTitleDetailView: View {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 12) {
                     ForEach(items) { item in
-                        NavigationLink(item.name) {
-                            SeerrCatalogGridView(title: item.name, source: .category(kind, item.id), store: store)
-                        }
-                        .buttonStyle(.bordered)
+                        NavigationLink(item.name, value: store.navigationRoute(.catalog(name: item.name, source: .category(kind, item.id))))
+                            .buttonStyle(.bordered)
                     }
                 }
                 .padding(.vertical, 8)
@@ -283,9 +281,7 @@ struct SeerrTitleDetailView: View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Seasons").font(.title2.bold()).accessibilityAddTraits(.isHeader)
             ForEach(seasons.sorted { $0.seasonNumber < $1.seasonNumber }, id: \.seasonNumber) { season in
-                NavigationLink {
-                    SeerrSeasonView(series: title, season: season, store: store)
-                } label: {
+                NavigationLink(value: store.navigationRoute(.season(seriesID: title.id, number: season.seasonNumber))) {
                     HStack(alignment: .top) {
                         VStack(alignment: .leading, spacing: 4) {
                             Text(season.seerrName).font(.headline)
@@ -302,6 +298,7 @@ struct SeerrTitleDetailView: View {
                     .contentShape(Rectangle())
                 }
                 .navigationLinkIndicatorVisibility(.visible)
+                .accessibilityIdentifier("Seerr.season." + String(season.seasonNumber))
                 Divider()
             }
         }
@@ -323,9 +320,7 @@ struct SeerrCreditsSection: View {
             ScrollView(.horizontal, showsIndicators: false) {
                 LazyHStack(alignment: .top, spacing: 16) {
                     ForEach(people) { person in
-                        NavigationLink {
-                            SeerrPersonView(personID: person.id, displayName: person.name, store: store)
-                        } label: {
+                        NavigationLink(value: store.navigationRoute(.person(id: person.id, name: person.name))) {
                             VStack(alignment: .leading, spacing: 6) {
                                 SeerrArtworkView(path: person.profilePath, aspectRatio: 4.0 / 5.0, symbol: "person", width: "w185")
                                 Text(person.name).font(.subheadline.weight(.medium))
@@ -336,6 +331,7 @@ struct SeerrCreditsSection: View {
                             .frame(width: CastCardMetrics.width)
                         }
                         .posterNavigationStyle()
+                        .accessibilityIdentifier("Seerr.credit." + String(person.id))
                     }
                 }
                 .padding(.vertical, 8)
@@ -362,11 +358,9 @@ private struct SeerrRelatedTitlesSection: View {
                     Text(heading).font(.title2.bold()).accessibilityAddTraits(.isHeader)
                     Spacer()
                     if !catalog.items.isEmpty || catalog.hasMore {
-                        NavigationLink("See All") {
-                            SeerrCatalogGridView(title: heading, source: source, store: store)
-                        }
-                        .accessibilityLabel(String(localized: "See All \(heading)"))
-                        .accessibilityIdentifier(linkID)
+                        NavigationLink("See All", value: store.navigationRoute(.catalog(name: heading, source: source)))
+                            .accessibilityLabel(String(localized: "See All \(heading)"))
+                            .accessibilityIdentifier(linkID)
                     }
                 }
                 if let error = catalog.errorMessage {

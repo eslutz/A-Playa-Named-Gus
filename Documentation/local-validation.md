@@ -158,6 +158,11 @@ for related results and paging (port 5061). Run the same script with
 selection, unavailable Next Up entries, video preparation and failure, and
 season switching. Both fixtures bind to loopback.
 
+For the Discover-to-Jellyfin handoff tests in `GusSeerrUITests`, run the Seerr
+fixture and the navigation Jellyfin fixture together. These tests enable the
+matching movie and season through Seerr's fixture reset endpoint. They verify
+each native Back step and the position of a title loaded on a later catalog page.
+
 `Scripts/screenshots.sh --list` shows the capture destinations; verify those
 against the tools above. `Scripts/screenshots.sh iphone` builds and captures
 predefined scenes; other selectors are `ipad`, `tv`, `vision`, and `watch`.

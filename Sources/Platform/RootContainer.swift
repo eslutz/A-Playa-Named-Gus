@@ -90,6 +90,9 @@ struct RootContainer: View {
             }
             .onChange(of: navigation.routeRequest) { _, _ in state.adopt(navigation.route) }
             .onChange(of: state.selectedSectionID) { _, id in storedSelection = id }
+            .onChange(of: session.seerr.revision, initial: true) { _, revision in
+                state.updateSeerrRevision(revision)
+            }
             .modifier(IntelligencePromptHost(blocked: defersIntelligencePrompt))
             .environment(state)
             .environment(audio)
