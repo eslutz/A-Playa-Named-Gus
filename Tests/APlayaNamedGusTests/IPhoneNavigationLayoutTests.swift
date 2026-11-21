@@ -77,6 +77,33 @@ struct IPhoneNavigationLayoutTests {
         #expect(root.paths["settings"] == [.screen(.downloads)])
     }
 
+    @Test("Settings child pages survive the transition from More to the sidebar and back")
+    func settingsChildrenRetainHistory() {
+        #if os(tvOS)
+            let screens: [AppScreen] = [.seerrSettings, .clientLogs]
+        #else
+            let screens: [AppScreen] = [.seerrSettings, .clientLogs, .libraryIntelligence]
+        #endif
+        let root = RootNavigationState()
+        let settings = NavigationSectionPreference.settingsID
+        root.selectSection(RootNavigationState.moreID)
+        root.rememberOverflowSelection(in: [settings])
+        root.morePathBinding(overflowIDs: [settings]).wrappedValue = [.section(settings)]
+
+        for screen in screens {
+            let compact = root.morePathBinding(overflowIDs: [settings])
+            compact.wrappedValue.append(.screen(screen))
+            root.useSidebar()
+            compact.wrappedValue = []
+            #expect(root.pathBinding(for: settings).wrappedValue == [.screen(screen)])
+            root.rememberOverflowSelection(in: [settings])
+            let restored = root.morePathBinding(overflowIDs: [settings])
+            #expect(restored.wrappedValue == [.section(settings), .screen(screen)])
+            restored.wrappedValue.removeLast()
+            #expect(restored.wrappedValue == [.section(settings)])
+        }
+    }
+
     @Test("a deep link can push onto the More index independently of section history")
     func moreIndexDeepLink() {
         let root = RootNavigationState()
@@ -257,7 +284,7 @@ struct RelatedSearchNavigationTests {
         #expect(!root.showsSearchResults(results.viewport))
         root.selectSection(origin)
         root.pathBinding(for: origin).wrappedValue = [.item(movie)]
-        #expect(root.returningDetailViewport == viewport)
+        #expect(root.returningDetailViewport?.location == viewport)
         #expect(root.relatedResults.isEmpty)
     }
 
@@ -299,15 +326,43 @@ struct RelatedSearchNavigationTests {
         #expect(first.storeKey != second.storeKey)
         #expect(second.viewport.distanceFromTop == nil)
         root.sheetPath.removeLast()
-        #expect(root.returningDetailViewport == secondViewport)
+        #expect(root.returningDetailViewport?.location == secondViewport)
         #expect(root.relatedResults.count == 1 && root.relatedResults[first.id] === first)
         root.sheetPath.removeLast()
         #expect(root.returningDetailViewport == nil && root.showsSearchResults(first.viewport))
         #expect(first.viewport.distanceFromTop == 680)
         root.sheetPath.append(.item(movie))
         root.sheetPath = []
-        #expect(root.detailItem == movie && root.returningDetailViewport == firstViewport)
+        #expect(root.detailItem == movie && root.returningDetailViewport?.location == firstViewport)
         #expect(root.relatedResults.isEmpty)
+    }
+
+    @Test func identicalDetailsInTheSectionSheetAndNestedPageConsumeOnlyTheirOwnReturn() throws {
+        let root = RootNavigationState()
+        let section = root.selectedSectionID
+        let key = "detail:" + movie.id
+        root.paths[section] = [.item(movie)]
+        let sectionPage = try #require(root.detailPosition(in: .section(section)))
+        root.rememberDetailAnchor("metadata", at: sectionPage, key: key)
+        root.presentDetail(movie)
+        let sheetRoot = try #require(root.detailPosition(in: .sheet(itemID: movie.id)))
+        root.rememberDetailAnchor("cast", at: sheetRoot, key: key)
+        root.sheetPath.append(.item(movie))
+        let nestedPage = try #require(root.detailPosition(in: .sheet(itemID: movie.id)))
+        root.rememberDetailAnchor("recommended", at: nestedPage, key: key)
+        let offset = DetailScrollLocation(key: key, y: 745)
+        root.openRelatedSearch(horror, viewport: offset)
+        root.sheetPath.removeLast()
+        #expect(root.takeReturningViewport(at: sectionPage, key: key) == nil)
+        #expect(root.takeReturningViewport(at: sheetRoot, key: key) == nil)
+        #expect(root.takeReturningViewport(at: nestedPage, key: key) == offset)
+        #expect(root.takeReturningViewport(at: nestedPage, key: key) == nil)
+        root.sheetPath.removeLast()
+        #expect(root.detailAnchor(at: nestedPage, key: key) == nil)
+        #expect(root.detailAnchor(at: sheetRoot, key: key) == "cast")
+        root.detailItem = nil
+        #expect(root.detailAnchor(at: sheetRoot, key: key) == nil)
+        #expect(root.detailAnchor(at: sectionPage, key: key) == "metadata")
     }
 
     @Test func closingDeepLinkReleasesOnlyItsFilters() throws {

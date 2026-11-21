@@ -146,11 +146,13 @@ struct SettingsView: View {
             }
 
             Section("Integrations") {
-                NavigationLink { SeerrSettingsView() } label: { Label("Seerr", systemImage: "sparkles") }
+                NavigationLink(value: GusRoute.screen(.seerrSettings)) {
+                    Label("Seerr", systemImage: "sparkles")
+                }
             }
 
             Section("Developer") {
-                NavigationLink { DeveloperDiagnosticsView() } label: {
+                NavigationLink(value: GusRoute.screen(.clientLogs)) {
                     Label("Client Logs", systemImage: "ladybug")
                 }
             }

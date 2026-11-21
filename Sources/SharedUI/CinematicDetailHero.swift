@@ -245,6 +245,8 @@ struct ArtworkDetailPage<Header: View, Sections: View>: View {
 #if !os(tvOS)
     private struct DetailScrollRestoration: ViewModifier {
         @Environment(RootNavigationState.self) private var navigation
+        @Environment(\.detailNavigationStack) private var stack
+        @State private var entry: DetailStackPosition?
         let key: String
         @State private var position = ScrollPosition(idType: String.self)
         @State private var viewport = DetailScrollViewport()
@@ -258,15 +260,14 @@ struct ArtworkDetailPage<Header: View, Sections: View>: View {
                     viewport.location = DetailScrollLocation(key: key, y: y)
                 }
                 .onChange(of: position.viewID(type: String.self)) { _, id in
-                    if let id {
-                        navigation.scrollAnchors[key] = id
+                    if isOnscreen, let id {
+                        navigation.rememberDetailAnchor(id, at: entry, key: key)
                     }
                 }
                 .onAppear {
                     isOnscreen = true
-                    if navigation.returningDetailViewport?.key == key {
-                        restoreViewport()
-                    } else if let anchor = navigation.scrollAnchors[key] {
+                    entry = navigation.detailPosition(in: stack)
+                    if !restoreViewport(), let anchor = navigation.detailAnchor(at: entry, key: key) {
                         position.scrollTo(id: anchor)
                     }
                 }
@@ -274,10 +275,10 @@ struct ArtworkDetailPage<Header: View, Sections: View>: View {
                 .onChange(of: navigation.returningDetailViewport) { restoreViewport() }
         }
 
-        private func restoreViewport() {
-            guard isOnscreen, let location = navigation.returningDetailViewport, location.key == key else { return }
+        @discardableResult private func restoreViewport() -> Bool {
+            guard isOnscreen, let location = navigation.takeReturningViewport(at: entry, key: key) else { return false }
             position.scrollTo(y: location.y)
-            navigation.returningDetailViewport = nil
+            return true
         }
     }
 #endif

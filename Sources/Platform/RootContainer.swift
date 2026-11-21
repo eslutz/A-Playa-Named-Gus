@@ -217,7 +217,9 @@ private struct TabRootView: View {
                 state.selectSection(id)
             }
             #if os(iOS)
-                if id == RootNavigationState.searchID, state.paths[id]?.isEmpty != false, state.globalSearch.text.isEmpty {
+                if id == RootNavigationState.searchID, state.paths[id]?.isEmpty != false,
+                   state.globalSearch.text.isEmpty, session.searchHistory.entries.isEmpty
+                {
                     state.globalSearch.typed.isPresented = true
                 }
             #endif
@@ -348,6 +350,11 @@ private struct SectionStack: View {
         let path = sectionID == RootNavigationState.moreID
             ? state.morePathBinding(overflowIDs: overflow.map(\.id))
             : state.pathBinding(for: sectionID)
+        let contentSection: String = if case let .section(id)? = path.wrappedValue.first {
+            id
+        } else {
+            sectionID
+        }
         NavigationStack(path: path) {
             Group {
                 if sectionID == RootNavigationState.searchID {
@@ -383,9 +390,10 @@ private struct SectionStack: View {
                 #endif
             }
         }
+        .environment(\.detailNavigationStack, .section(contentSection))
         #if os(tvOS)
-        .gusTVNativeControls()
-        .gusTVFocusScope()
+            .gusTVNativeControls()
+            .gusTVFocusScope()
         #endif
         #if os(visionOS)
         .gusNowPlaying(coordinator: audio, enabled: state.detailItem == nil)

@@ -9,64 +9,71 @@ struct IntelligenceSettingsSection: View {
             let preferences = session.intelligencePreferences
             if access.supportsSearch || access.supportsCloud || preferences.recommendationsEnabled {
                 Section {
-                    NavigationLink {
-                        Form { intelligenceControls }
-                            .navigationTitle("Library Intelligence")
-                    } label: {
-                        Label("Library Intelligence", systemImage: "sparkles")
-                    }
-                    .accessibilityIdentifier("Settings.libraryIntelligence")
+                    let label = Label("Library Intelligence", systemImage: "sparkles")
+                    #if os(watchOS)
+                        let link = NavigationLink { LibraryIntelligenceSettingsView() } label: { label }
+                    #else
+                        let link = NavigationLink(value: GusRoute.screen(.libraryIntelligence)) { label }
+                    #endif
+                    link.accessibilityIdentifier("Settings.libraryIntelligence")
                 }
             }
         #endif
     }
+}
 
-    private var intelligenceControls: some View {
-        let access = session.intelligenceAccess
-        let preferences = session.intelligencePreferences
-        let needsCloudConsent = access.requiresCloud && preferences.cloudDecision == false
-        return Group {
-            if access.supportsSearch {
-                Section {
-                    Toggle("Natural Language Search", isOn: Binding(
-                        get: { preferences.naturalSearchEnabled },
-                        set: { access.setNaturalSearchEnabled($0) }
-                    ))
-                    .accessibilityIdentifier("Intelligence.naturalSearch")
-                } footer: {
-                    Text("Search in your own words with help from Apple’s models.")
+#if !os(tvOS)
+    struct LibraryIntelligenceSettingsView: View {
+        @Environment(SessionStore.self) private var session
+
+        var body: some View {
+            let access = session.intelligenceAccess
+            let preferences = session.intelligencePreferences
+            let needsCloudConsent = access.requiresCloud && preferences.cloudDecision == false
+            Form {
+                if access.supportsSearch {
+                    Section {
+                        Toggle("Natural Language Search", isOn: Binding(
+                            get: { preferences.naturalSearchEnabled },
+                            set: { access.setNaturalSearchEnabled($0) }
+                        ))
+                        .accessibilityIdentifier("Intelligence.naturalSearch")
+                    } footer: {
+                        Text("Search in your own words with help from Apple’s models.")
+                    }
                 }
-            }
-            if access.supportsCloud {
-                Section {
-                    Toggle("Allow Private Cloud Compute", isOn: Binding(
-                        get: { preferences.cloudEnabled },
-                        set: { access.setCloudEnabled($0) }
-                    ))
-                    .accessibilityIdentifier("Intelligence.privateCloud")
-                } footer: {
-                    if needsCloudConsent {
-                        Text("Turn on Allow Private Cloud Compute to use natural-language search and For You on this device.")
-                    } else {
-                        Text("When enabled, Gus can send search text, selected catalog details, and taste signals to Apple’s Private Cloud Compute using your daily quota.")
+                if access.supportsCloud {
+                    Section {
+                        Toggle("Allow Private Cloud Compute", isOn: Binding(
+                            get: { preferences.cloudEnabled },
+                            set: { access.setCloudEnabled($0) }
+                        ))
+                        .accessibilityIdentifier("Intelligence.privateCloud")
+                    } footer: {
+                        if needsCloudConsent {
+                            Text("Turn on Allow Private Cloud Compute to use natural-language search and For You on this device.")
+                        } else {
+                            Text("When enabled, Gus can send search text, selected catalog details, and taste signals to Apple’s Private Cloud Compute using your daily quota.")
+                        }
+                    }
+                }
+                if access.supportsSearch || preferences.recommendationsEnabled {
+                    Section {
+                        Toggle("Show For You", isOn: Binding(
+                            get: { preferences.recommendationsEnabled },
+                            set: { access.setForYouEnabled($0) }
+                        ))
+                        .disabled((!access.canOfferForYou || needsCloudConsent) && !preferences.recommendationsEnabled)
+                        .accessibilityIdentifier("Intelligence.forYou")
+                    } footer: {
+                        Text("For You uses this account’s favorites and activity to suggest media.")
                     }
                 }
             }
-            if access.supportsSearch || preferences.recommendationsEnabled {
-                Section {
-                    Toggle("Show For You", isOn: Binding(
-                        get: { preferences.recommendationsEnabled },
-                        set: { access.setForYouEnabled($0) }
-                    ))
-                    .disabled((!access.canOfferForYou || needsCloudConsent) && !preferences.recommendationsEnabled)
-                    .accessibilityIdentifier("Intelligence.forYou")
-                } footer: {
-                    Text("For You uses this account’s favorites and activity to suggest media.")
-                }
-            }
+            .navigationTitle("Library Intelligence")
         }
     }
-}
+#endif
 
 #if os(iOS) || os(tvOS)
     struct ForYouSyncSetting: View {

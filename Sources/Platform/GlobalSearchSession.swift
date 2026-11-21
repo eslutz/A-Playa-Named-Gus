@@ -55,6 +55,25 @@ final class GlobalSearchSession {
     }
 }
 
+enum DetailNavigationStack: Hashable {
+    case section(String)
+    case sheet(itemID: String)
+}
+
+struct DetailStackPosition: Hashable {
+    let stack: DetailNavigationStack
+    let depth: Int
+}
+
+struct DetailViewportReturn: Equatable {
+    let position: DetailStackPosition
+    let location: DetailScrollLocation
+}
+
+extension EnvironmentValues {
+    @Entry var detailNavigationStack: DetailNavigationStack?
+}
+
 struct DetailScrollLocation: Equatable {
     let key: String
     let y: CGFloat

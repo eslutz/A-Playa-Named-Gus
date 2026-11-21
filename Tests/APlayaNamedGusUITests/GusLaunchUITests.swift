@@ -46,7 +46,7 @@ final class GusLaunchUITests: XCTestCase {
             let app = makeApp()
             app.launchEnvironment["GUS_DEMO_URL"] = base.absoluteString
             app.launchEnvironment["GUS_DEMO_USERNAME"] = userID
-            app.launchArguments += ["--gus-demo-server", "--gus-disable-cloud-sync", "--gus-route", "settings"]
+            app.launchArguments += ["--gus-demo-server", "--gus-disable-cloud-sync", "--gus-intelligence-test-unsupported", "--gus-route", "settings"]
             app.launch()
             defer { app.terminate() }
 
@@ -77,7 +77,7 @@ final class GusLaunchUITests: XCTestCase {
             let app = makeApp()
             app.launchEnvironment["GUS_DEMO_URL"] = base.absoluteString
             app.launchEnvironment["GUS_DEMO_USERNAME"] = "queue-" + account
-            let arguments = app.launchArguments + ["--gus-demo-server", "--gus-disable-cloud-sync", "-nextUpDisplayGrid", "NO", "--gus-route"]
+            let arguments = app.launchArguments + ["--gus-demo-server", "--gus-disable-cloud-sync", "--gus-intelligence-test-unsupported", "-nextUpDisplayGrid", "NO", "--gus-route"]
             app.launchArguments = arguments + ["item/" + account]
             app.launch()
             defer { app.terminate() }
@@ -124,7 +124,7 @@ final class GusLaunchUITests: XCTestCase {
             let base = try await navigationFixture()
             let app = makeApp()
             app.launchEnvironment["GUS_DEMO_URL"] = base.absoluteString
-            app.launchArguments += ["--gus-demo-server", "--gus-disable-cloud-sync", "--gus-route", "item/49000000000000000000000000000000"]
+            app.launchArguments += ["--gus-demo-server", "--gus-disable-cloud-sync", "--gus-intelligence-test-unsupported", "--gus-route", "item/49000000000000000000000000000000"]
             app.launch()
             defer { app.terminate() }
 

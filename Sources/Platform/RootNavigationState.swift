@@ -47,7 +47,8 @@ final class RootNavigationState {
     private var displayedOverflowIDs: [String] = []
 
     var scrollAnchors: [String: String] = [:]
-    var returningDetailViewport: DetailScrollLocation?
+    private(set) var returningDetailViewport: DetailViewportReturn?
+    private var detailAnchors: [DetailStackPosition: (key: String, anchor: String)] = [:]
     var libraryListModes: [String: Bool] = [:]
     var photoAlbumModes: [String: Bool] = [:]
     var librariesShowGrid = false
@@ -75,6 +76,12 @@ final class RootNavigationState {
     private func resetDetailPath() {
         sheetPath = []
         returningDetailViewport = nil
+        detailAnchors = detailAnchors.filter { position, _ in
+            if case .sheet = position.stack {
+                return false
+            }
+            return true
+        }
     }
 
     func presentDetail(_ item: ItemRef) {
@@ -334,14 +341,48 @@ final class RootNavigationState {
         }
     }
 
+    func detailPosition(in stack: DetailNavigationStack?) -> DetailStackPosition? {
+        guard let stack else { return nil }
+        switch stack {
+        case let .sheet(id):
+            guard detailItem?.id == id else { return nil }
+            return .init(stack: stack, depth: sheetPath.count)
+        case let .section(id):
+            return .init(stack: stack, depth: paths[id]?.count ?? 0)
+        }
+    }
+
+    func takeReturningViewport(at position: DetailStackPosition?, key: String) -> DetailScrollLocation? {
+        guard let request = returningDetailViewport, request.position == position, request.location.key == key else { return nil }
+        returningDetailViewport = nil
+        return request.location
+    }
+
+    func rememberDetailAnchor(_ anchor: String, at position: DetailStackPosition?, key: String) {
+        guard let position, detailPosition(in: position.stack) == position else { return }
+        detailAnchors[position] = (key, anchor)
+    }
+
+    func detailAnchor(at position: DetailStackPosition?, key: String) -> String? {
+        guard let position, let saved = detailAnchors[position], saved.key == key else { return nil }
+        return saved.anchor
+    }
+
     /// A native pop can skip several pages using the Back menu. Restore only
     /// the viewport belonging to the detail immediately below the removed branch.
     func routesChanged(from old: [GusRoute], to new: [GusRoute], in sectionID: String?) {
         guard old != new else { return }
+        let stack = sectionID.map(DetailNavigationStack.section) ?? detailItem.map { .sheet(itemID: $0.id) }
+        if let stack, !old.isEmpty, !new.starts(with: old) {
+            let commonDepth = zip(old, new).prefix(while: ==).count
+            detailAnchors = detailAnchors.filter { $0.key.stack != stack || $0.key.depth <= commonDepth }
+        }
         let visibleSection = detailItem == nil ? selectedSectionID : nil
         if sectionID == visibleSection {
-            if new.count < old.count, old.starts(with: new), case let .related(id) = old[new.count] {
-                returningDetailViewport = relatedResults[id]?.originatingViewport
+            if let stack, new.count < old.count, old.starts(with: new), case let .related(id) = old[new.count],
+               let location = relatedResults[id]?.originatingViewport
+            {
+                returningDetailViewport = .init(position: .init(stack: stack, depth: new.count), location: location)
             } else {
                 returningDetailViewport = nil
             }
@@ -674,6 +715,11 @@ enum AppScreen: Hashable {
     case downloads
     case navigationSettings
     case seerrRequests
+    case seerrSettings
+    case clientLogs
+    #if !os(tvOS)
+        case libraryIntelligence
+    #endif
 }
 
 /// Visibility belongs to a concrete view instance so adaptive replacement cannot

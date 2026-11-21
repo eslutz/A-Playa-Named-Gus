@@ -39,7 +39,7 @@ final class GusAuthenticatedUITests: XCTestCase {
     func testAudioCloseAndReopen() throws {
         try prepare()
         defer { finish() }
-        let app = try launch("play/" + required("Audio"))
+        let app = try launch("play/" + required("Audio"), arguments: ["--gus-intelligence-test-unsupported"])
         #if os(tvOS)
             XCTAssertTrue(app.cells["AVAudibleSettings"].waitForExistence(timeout: 30))
         #elseif os(iOS)
@@ -358,7 +358,7 @@ final class GusAuthenticatedUITests: XCTestCase {
         func testReadyVideoCloseReturnsToDetail() throws {
             try prepare()
             defer { finish() }
-            let app = try launch("item/" + required("SynopsisMovie"))
+            let app = try launch("item/" + required("SynopsisMovie"), arguments: ["--gus-intelligence-test-unsupported"])
             let restart = app.buttons["Detail.restart"]
             XCTAssertTrue(restart.waitForExistence(timeout: 30))
             reveal(restart, in: app)

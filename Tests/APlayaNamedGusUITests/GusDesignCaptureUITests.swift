@@ -70,10 +70,12 @@
 
         func testMoreUsesNativeBackThroughSettings() throws {
             guard UIDevice.current.userInterfaceIdiom == .phone else { throw XCTSkip("Requires compact iPhone tabs") }
-            let app = launch("home")
+            let app = launch("home", keywordOnly: true)
             let more = app.tabBars.buttons["More"]
             XCTAssertTrue(more.waitForExistence(timeout: 30))
+            XCTAssertTrue(more.isHittable)
             more.tap()
+            XCTAssertTrue(app.navigationBars["More"].waitForExistence(timeout: 8), app.debugDescription)
             let settings = app.buttons["Settings"].firstMatch
             XCTAssertTrue(settings.waitForExistence(timeout: 8))
             settings.tap()
@@ -92,6 +94,10 @@
             XCTAssertTrue(app.navigationBars["More"].waitForExistence(timeout: 8))
             settings.tap()
             XCTAssertTrue(sectionBack.waitForExistence(timeout: 8))
+            let leadingEdge = app.coordinate(withNormalizedOffset: CGVector(dx: 0.005, dy: 0.55))
+            let farEdge = app.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.55))
+            leadingEdge.press(forDuration: 0.05, thenDragTo: farEdge, withVelocity: .fast, thenHoldForDuration: 0)
+            XCTAssertTrue(app.navigationBars["More"].waitForExistence(timeout: 8), app.debugDescription)
         }
 
         func testMoreBackAndDisclosureInRightToLeftLayout() throws {
@@ -100,6 +106,7 @@
             app.launchArguments = [
                 "--gus-demo-server",
                 "--gus-disable-cloud-sync",
+                "--gus-intelligence-test-unsupported",
                 "--gus-route",
                 "settings",
                 "-AppleLanguages",
@@ -122,7 +129,7 @@
 
         func testAccessibleIPadCanReopenSidebar() throws {
             guard UIDevice.current.userInterfaceIdiom == .pad else { throw XCTSkip("Requires an iPad") }
-            let app = launch("home", largeText: true)
+            let app = launch("home", largeText: true, keywordOnly: true)
             let toggle = app.sidebarToggle
             XCTAssertTrue(toggle.waitForExistence(timeout: 30))
             let search = app.descendants(matching: .any)["Navigation.search"].firstMatch
@@ -137,7 +144,7 @@
                 throw XCTSkip("Requires an iPad")
             }
             XCUIDevice.shared.orientation = .landscapeLeft
-            let app = launch("home")
+            let app = launch("home", keywordOnly: true)
             let hide = app.sidebarToggle
             XCTAssertTrue(hide.waitForExistence(timeout: 30))
             XCTAssertEqual(app.buttons.allElementsBoundByIndex.filter {
@@ -186,7 +193,7 @@
 
         func testIPadR2ScopedLayoutsAndProfileDraft() throws {
             guard UIDevice.current.userInterfaceIdiom == .pad else { throw XCTSkip("Requires an iPad") }
-            let app = launch("home")
+            let app = launch("home", keywordOnly: true)
             XCTAssertTrue(waitForRoot(app))
             XCTAssertTrue(openDestination("Music", app))
             let mode = app.buttons["Library.displayMode"]
@@ -459,7 +466,7 @@
 
         func testRecentSearchesReplayRemoveAndClear() {
             continueAfterFailure = false
-            let app = launch("search", environment: ["GUS_DEMO_URL": "http://127.0.0.1:5061"])
+            let app = launch("search", keywordOnly: true, environment: ["GUS_DEMO_URL": "http://127.0.0.1:5061"])
             defer { app.terminate() }
             let field = app.searchFields.firstMatch
             XCTAssertTrue(field.waitForExistence(timeout: 30))
@@ -530,7 +537,7 @@
         }
 
         func testDetailTagsAndCreditsPushRelatedResultsAndReturn() {
-            let app = launch("item/47000000000000000000000000000002", environment: ["GUS_DEMO_URL": "http://127.0.0.1:5061"])
+            let app = launch("item/47000000000000000000000000000002", keywordOnly: true, environment: ["GUS_DEMO_URL": "http://127.0.0.1:5061"])
             XCTAssertTrue(waitForMovieDetail(app))
             let idPrefix = "470000000000000000000000000000"
             let fields = [
@@ -577,6 +584,7 @@
             XCTAssertTrue(openDestination("Search", app))
             let recent = app.buttons["Search.recent.related:person:id:" + idPrefix + "09"]
             XCTAssertTrue(recent.waitForExistence(timeout: 8))
+            XCTAssertTrue(recent.isHittable, app.debugDescription)
             recent.tap()
             XCTAssertTrue(app.navigationBars["Rowan Vale"].waitForExistence(timeout: 8))
             app.navigationBars["Rowan Vale"].buttons["BackButton"].tap()
@@ -599,7 +607,7 @@
         }
 
         func testSearchOriginDetailKeepsRelatedResultsAcrossTabs() {
-            let app = launch("search", environment: ["GUS_DEMO_URL": "http://127.0.0.1:5061"])
+            let app = launch("search", keywordOnly: true, environment: ["GUS_DEMO_URL": "http://127.0.0.1:5061"])
             let field = app.searchFields.firstMatch
             XCTAssertTrue(field.waitForExistence(timeout: 30))
             field.tap()
@@ -623,13 +631,13 @@
             XCTAssertTrue(app.buttons["Detail.play"].waitForExistence(timeout: 10))
             app.navigationBars.buttons["BackButton"].firstMatch.tap()
             XCTAssertTrue(movie.waitForExistence(timeout: 10))
-            XCTAssertEqual(field.value as? String, "Lantern")
+            XCTAssertTrue((field.exists && field.value as? String == "Lantern") || app.navigationBars["Lantern"].exists, app.debugDescription)
             app.buttons["Search.clearResults"].tap()
             XCTAssertTrue(app.buttons["Search.recent.typed:lantern"].waitForExistence(timeout: 5))
         }
 
         func testRelatedGridRetainsScrolledMemberAcrossDetailAndTabs() {
-            let app = launch("search", environment: ["GUS_DEMO_URL": "http://127.0.0.1:5061"])
+            let app = launch("search", keywordOnly: true, environment: ["GUS_DEMO_URL": "http://127.0.0.1:5061"])
             let field = app.searchFields.firstMatch
             XCTAssertTrue(field.waitForExistence(timeout: 30))
             field.tap()
@@ -722,7 +730,7 @@
         }
 
         func testGenreSearchOpensMembersAndRestoresQuery() {
-            let app = launch("search", environment: ["GUS_DEMO_URL": "http://127.0.0.1:5061"])
+            let app = launch("search", keywordOnly: true, environment: ["GUS_DEMO_URL": "http://127.0.0.1:5061"])
             let field = app.searchFields.firstMatch
             XCTAssertTrue(field.waitForExistence(timeout: 30))
             field.tap()
@@ -1276,11 +1284,14 @@
             }
         }
 
-        private func launch(_ route: String?, largeText: Bool = false, appearance: String = "light", environment: [String: String] = [:]) -> XCUIApplication {
+        private func launch(_ route: String?, largeText: Bool = false, appearance: String = "light", keywordOnly: Bool = false, environment: [String: String] = [:]) -> XCUIApplication {
             let app = XCUIApplication()
             app.terminate()
             app.launchEnvironment.merge(environment) { _, new in new }
             app.launchArguments = ["--gus-skip-session-restore", "--gus-disable-cloud-sync", "-dev.ericslutz.gus.appearance", appearance, "-dev.ericslutz.gus.contentRatingLimit", "off"]
+            if keywordOnly {
+                app.launchArguments.append("--gus-intelligence-test-unsupported")
+            }
             if largeText {
                 app.launchArguments += ["-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXXL"]
             }

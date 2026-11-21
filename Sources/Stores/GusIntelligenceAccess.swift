@@ -26,6 +26,9 @@ struct IntelligenceModelRoutes {
         #if DEBUG && targetEnvironment(simulator) && !os(tvOS)
             let args = ProcessInfo.processInfo.arguments
             if args.contains("--gus-demo-server") || args.contains("--gus-debug-preview-session") {
+                if args.contains("--gus-intelligence-test-unsupported") {
+                    return Self()
+                }
                 if args.contains("--gus-intelligence-test-cloud") {
                     return Self(cloud: { .ready }, supportsCloudLocale: { _ in true })
                 }

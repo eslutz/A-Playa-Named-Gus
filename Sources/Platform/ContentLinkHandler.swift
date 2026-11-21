@@ -50,12 +50,13 @@ private struct ContentLinkHandler: ViewModifier {
                             }
                         }
                 }
+                .environment(\.detailNavigationStack, .sheet(itemID: ref.id))
                 #if os(iOS)
-                .presentationContentInteraction(.scrolls)
+                    .presentationContentInteraction(.scrolls)
                 #endif
-                .gusSessionPlayerHost(state: rootState)
-                .gusAudioHost(coordinator: audio)
-                .gusNowPlaying(coordinator: audio, usesTabAccessory: false)
+                    .gusSessionPlayerHost(state: rootState)
+                    .gusAudioHost(coordinator: audio)
+                    .gusNowPlaying(coordinator: audio, usesTabAccessory: false)
             }
             .playerPresentation(item: $playerItem)
             .alert(

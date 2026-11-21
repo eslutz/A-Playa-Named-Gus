@@ -108,7 +108,7 @@ The default content tabs are Home, Movies and Series when available. A saved
 account order determines the first three visible sections. Vision Pro shows up to
 seven sections alongside Search, or six sections plus More and Search.
 More presents its overflow sections as native pushes. Each section retains its
-child path when moving between a direct tab, More and the sidebar.
+value-based child path when moving between a direct tab, More and the sidebar.
 
 Selecting a genre, studio or credit pushes related results in the current stack,
 including when a content link opened the detail in a sheet. Native Back returns

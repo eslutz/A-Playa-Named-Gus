@@ -133,6 +133,11 @@ private struct GusRouteDestination: View {
             case .downloads: DownloadsView()
             case .navigationSettings: NavigationSettingsView()
             case .seerrRequests: SeerrRequestsView()
+            case .seerrSettings: SeerrSettingsView()
+            case .clientLogs: DeveloperDiagnosticsView()
+            #if !os(tvOS)
+                case .libraryIntelligence: LibraryIntelligenceSettingsView()
+            #endif
             }
         case .nextUp:
             if let store = navigation.home {
