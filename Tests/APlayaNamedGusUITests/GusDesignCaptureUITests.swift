@@ -649,9 +649,11 @@
             let source = app.buttons["Search.result.47000000000000000000000000000002"].firstMatch
             XCTAssertTrue(source.waitForExistence(timeout: 15))
             source.tap()
+            XCTAssertTrue(app.buttons["Detail.play"].waitForExistence(timeout: 10))
             let genre = app.buttons["Detail.related.genre:name:coastal mystery"]
-            for _ in 0 ..< 8 where !genre.exists || !genre.isHittable {
-                app.swipeUp(velocity: .slow)
+            XCTAssertTrue(genre.waitForExistence(timeout: 8), app.debugDescription)
+            if !genre.isHittable {
+                centerForTap(genre, in: app)
             }
             XCTAssertTrue(genre.isHittable)
             genre.tap()

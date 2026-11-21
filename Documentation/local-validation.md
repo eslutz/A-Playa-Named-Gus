@@ -154,8 +154,9 @@ results using the same destination and evidence approach as the unit recipe.
 
 For navigation UI tests, run `python3 Scripts/book-details-fixture.py --genres`
 for related results and paging (port 5061). Run the same script with
-`--navigation` for Profile loading and failure, and the two-season series
-(port 5062). Both fixtures bind to loopback.
+`--navigation` (port 5062) for Profile editing and load failures, sidebar library
+selection, unavailable Next Up entries, video preparation and failure, and
+season switching. Both fixtures bind to loopback.
 
 `Scripts/screenshots.sh --list` shows the capture destinations; verify those
 against the tools above. `Scripts/screenshots.sh iphone` builds and captures
