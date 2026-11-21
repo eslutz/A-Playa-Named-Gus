@@ -105,13 +105,19 @@ final class GusAuthenticatedUITests: XCTestCase {
             defer { finish() }
             let args = ["--gus-intelligence-test-cloud", "--gus-intelligence-test-suite", UUID().uuidString]
             let app = launch("settings", arguments: args)
-            let message = "Get recommendations based on your Jellyfin favorites and playback history. You can change this in Gus Settings → Library Intelligence → Show For You."
             let explanation = app.staticTexts["Intelligence.prompt.message"]
             XCTAssertTrue(explanation.waitForExistence(timeout: 20))
-            XCTAssertEqual(explanation.label, message)
-            app.buttons["Intelligence.prompt.allow"].tap()
+            XCTAssertEqual(explanation.label, "Get recommendations based on your Jellyfin favorites and playback history.")
+            let settingsPath = app.staticTexts["Intelligence.prompt.settingsPath"]
+            XCTAssertEqual(settingsPath.label, "Gus Settings → Library Intelligence → Show For You.")
+            let allow = app.buttons["Intelligence.prompt.allow"]
+            XCTAssertTrue(allow.isHittable)
+            XCTAssertTrue(app.buttons["Intelligence.prompt.decline"].isHittable)
+            capture(app, "for-you-invitation")
+            allow.tap()
             XCTAssertTrue(app.staticTexts["Allow Private Cloud Compute?"].waitForExistence(timeout: 10))
-            app.buttons["Intelligence.prompt.allow"].tap()
+            XCTAssertEqual(settingsPath.label, "Gus Settings → Library Intelligence → Allow Private Cloud Compute.")
+            allow.tap()
 
             let natural = app.switches["Intelligence.naturalSearch"].firstMatch
             let cloud = app.switches["Intelligence.privateCloud"].firstMatch

@@ -1,4 +1,7 @@
 import SwiftUI
+#if os(tvOS)
+    import CloudKit
+#endif
 
 /// Home combines automatic playback progress and explicit saved intents into Next Up.
 ///
@@ -14,6 +17,12 @@ struct HomeView: View {
     @Environment(UpNextStore.self) private var upNext
     @Environment(SavedMediaStore.self) private var playlists
     @Environment(ServerMediaListsStore.self) private var serverLists
+    #if os(iOS) || os(tvOS)
+        @Environment(\.scenePhase) private var scenePhase
+    #endif
+    #if os(tvOS)
+        @State private var iCloudAccountRevision = 0
+    #endif
     @AppStorage(ContentRatingGate.limitDefaultsKey) private var ratingLimit = ContentRatingGate.Limit.off.rawValue
     @AppStorage(ContentRatingGate.hideUnratedDefaultsKey) private var hideUnrated = false
     private let activity = NextUpActivityStore.shared
@@ -66,9 +75,40 @@ struct HomeView: View {
             guard playbackRefresh.revision > 0, let store else { return }
             await store.refresh()
         }
+        #if os(tvOS)
+        .task(id: syncedShelfRefresh) {
+            guard let store, syncedShelfRefresh.isActive, shelfContext.recommendationsEnabled else { return }
+            let context = shelfContext
+            while !Task.isCancelled, session.isActive {
+                await store.forYou.load(context, session: session)
+                do {
+                    try await Task.sleep(for: .seconds(60))
+                } catch {
+                    return
+                }
+            }
+        }
+        .onChange(of: scenePhase) { _, phase in
+            if phase != .active {
+                store?.forYou.clearSyncedPicks()
+            }
+        }
+        .task {
+            for await _ in NotificationCenter.default.notifications(named: .CKAccountChanged).map({ _ in () }) {
+                store?.forYou.clearSyncedPicks()
+                iCloudAccountRevision += 1
+            }
+        }
+        #elseif os(iOS)
+        .task(id: iPhoneShelfContext) {
+            guard let iPhoneShelfContext else { return }
+            await store?.forYou.load(iPhoneShelfContext, session: session)
+        }
+        #else
         .task(id: store.map { _ in shelfContext }) {
             await store?.forYou.load(shelfContext, session: session)
         }
+        #endif
         .task(id: sharedWithYou.revision) {
             guard let store else { return }
             await store.loadSharedWithYou(links: sharedWithYou.links, title: sharedWithYou.collectionTitle)
@@ -81,18 +121,56 @@ struct HomeView: View {
 
     private var shelfContext: ForYouShelfState.Context {
         let preferences = session.intelligencePreferences
-        return .init(
-            cloudEnabled: preferences.cloudEnabled,
-            recommendationsEnabled: preferences.recommendationsEnabled,
-            limit: ratingLimit,
-            hideUnrated: hideUnrated,
-            activityRevision: playbackRefresh.revision,
-            tasteRevision: session.libraryIntelligence.tasteRevision
-        )
+        #if os(tvOS)
+            return .init(
+                cloudEnabled: false,
+                recommendationsEnabled: preferences.forYouSyncEnabled,
+                limit: ratingLimit,
+                hideUnrated: hideUnrated,
+                activityRevision: playbackRefresh.revision,
+                tasteRevision: 0
+            )
+        #else
+            return .init(
+                cloudEnabled: preferences.cloudEnabled,
+                recommendationsEnabled: preferences.recommendationsEnabled,
+                limit: ratingLimit,
+                hideUnrated: hideUnrated,
+                activityRevision: playbackRefresh.revision,
+                tasteRevision: session.libraryIntelligence.tasteRevision,
+                forYouSyncEnabled: preferences.forYouSyncEnabled
+            )
+        #endif
     }
 
+    #if os(iOS)
+        private var iPhoneShelfContext: ForYouShelfState.Context? {
+            let context = shelfContext
+            guard store != nil, scenePhase == .active || !context.forYouSyncEnabled else { return nil }
+            return context
+        }
+    #endif
+
+    #if os(tvOS)
+        private struct SyncedShelfRefresh: Equatable {
+            var store: ObjectIdentifier?
+            var context: ForYouShelfState.Context
+            var isActive: Bool
+            var iCloudAccountRevision: Int
+        }
+
+        private var syncedShelfRefresh: SyncedShelfRefresh {
+            .init(
+                store: store.map(ObjectIdentifier.init),
+                context: shelfContext,
+                isActive: scenePhase == .active,
+                iCloudAccountRevision: iCloudAccountRevision
+            )
+        }
+    #endif
+
     private func shouldShowShelf(_ store: HomeStore) -> Bool {
-        shelfContext.recommendationsEnabled && store.forYou.context == shelfContext &&
+        session.isActive && shelfContext.recommendationsEnabled && store.forYou.context == shelfContext &&
             (!store.forYou.picks.isEmpty || store.forYou.error != nil)
     }
 
@@ -436,7 +514,7 @@ struct MediaRail: View {
                                         fallbackURLs: session.mediaProvider.artworkURLs(for: item, request: .init(role: .poster, maxWidth: 260)),
                                         onExhausted: { _ = try? await session.references.currentItem(item) }
                                     )
-                                    if let pick = recommendations.first(where: { $0.id == item.id }) {
+                                    if let pick = recommendations.first(where: { $0.id == item.id && !$0.reason.isEmpty }) {
                                         Text(pick.reason).font(.caption).foregroundStyle(.secondary)
                                     }
                                 }

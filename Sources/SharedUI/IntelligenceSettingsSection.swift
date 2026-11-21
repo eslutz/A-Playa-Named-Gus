@@ -4,10 +4,31 @@ struct IntelligenceSettingsSection: View {
     @Environment(SessionStore.self) private var session
 
     var body: some View {
+        #if os(tvOS)
+            Section {
+                Toggle("Show Synced For You", isOn: forYouSyncChoice)
+                    .accessibilityIdentifier("Intelligence.forYouSync")
+            } header: {
+                Text("Library Intelligence")
+            } footer: {
+                Text("Enable Sync For You to Apple TV in Gus on your iPhone. Use the same iCloud and Jellyfin accounts on both devices.")
+            }
+        #else
+            localIntelligenceSettings
+        #endif
+    }
+
+    @ViewBuilder
+    private var localIntelligenceSettings: some View {
         let access = session.intelligenceAccess
         let preferences = session.intelligencePreferences
         let needsCloudConsent = access.requiresCloud && preferences.cloudDecision == false
-        if access.supportsSearch || access.supportsCloud || preferences.recommendationsEnabled {
+        #if os(iOS)
+            let showsForYouSync = access.canOfferForYou || preferences.recommendationsEnabled || preferences.forYouSyncEnabled
+        #else
+            let showsForYouSync = false
+        #endif
+        if access.supportsSearch || access.supportsCloud || preferences.recommendationsEnabled || showsForYouSync {
             Section {
                 if access.supportsSearch {
                     Toggle("Natural Language Search", isOn: Binding(
@@ -31,11 +52,23 @@ struct IntelligenceSettingsSection: View {
                     .disabled((!access.canOfferForYou || needsCloudConsent) && !preferences.recommendationsEnabled)
                     .accessibilityIdentifier("Intelligence.forYou")
                 }
+                #if os(iOS)
+                    if showsForYouSync {
+                        Toggle("Sync For You to Apple TV", isOn: forYouSyncChoice)
+                            .disabled(!preferences.recommendationsEnabled && !preferences.forYouSyncEnabled)
+                            .accessibilityIdentifier("Intelligence.forYouSync")
+                    }
+                #endif
             } header: {
                 Text("Library Intelligence")
             } footer: {
                 VStack(alignment: .leading, spacing: 6) {
                     Text("For You uses this account’s favorites and activity to suggest media.")
+                    #if os(iOS)
+                        if showsForYouSync {
+                            Text("Gus shares the ranked Jellyfin item IDs through your private iCloud storage. Use the same iCloud and Jellyfin accounts on both devices.")
+                        }
+                    #endif
                     if needsCloudConsent {
                         Text("Turn on Allow Private Cloud Compute to use natural-language search and For You on this device.")
                     } else if access.supportsCloud {
@@ -45,4 +78,13 @@ struct IntelligenceSettingsSection: View {
             }
         }
     }
+
+    #if os(iOS) || os(tvOS)
+        private var forYouSyncChoice: Binding<Bool> {
+            Binding(
+                get: { session.intelligencePreferences.forYouSyncEnabled },
+                set: { session.setForYouSyncEnabled($0) }
+            )
+        }
+    #endif
 }

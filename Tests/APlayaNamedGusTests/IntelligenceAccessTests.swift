@@ -28,6 +28,38 @@ struct IntelligenceAccessTests {
         #expect(GusIntelligencePreferences(scope: otherServer, defaults: defaults).recommendationDecision == false)
     }
 
+    @Test func forYouSyncChoiceAndRevocationRemainLocalToTheAccount() {
+        #if os(tvOS)
+            let defaultSyncEnabled = true
+        #else
+            let defaultSyncEnabled = false
+        #endif
+        let settings = prefs
+        #expect(settings.forYouSyncEnabled == defaultSyncEnabled)
+        #expect(settings.forYouSyncRevocationDate == nil)
+
+        let revocation = Date(timeIntervalSince1970: 1000)
+        settings.forYouSyncEnabled = !defaultSyncEnabled
+        settings.forYouSyncRevocationDate = revocation
+        let restored = prefs
+        #expect(restored.forYouSyncEnabled != defaultSyncEnabled)
+        #expect(restored.forYouSyncRevocationDate == revocation)
+
+        let otherAccount = AccountScope(serverID: scope.serverID, userID: "other-user")
+        let otherServer = AccountScope(serverID: "other-server", userID: scope.userID)
+        for otherScope in [otherAccount, otherServer] {
+            let other = GusIntelligencePreferences(scope: otherScope, defaults: defaults)
+            #expect(other.forYouSyncEnabled == defaultSyncEnabled)
+            #expect(other.forYouSyncRevocationDate == nil)
+        }
+        restored.forYouSyncRevocationDate = nil
+        #expect(prefs.forYouSyncRevocationDate == nil)
+        restored.forYouSyncRevocationDate = revocation
+        GusIntelligencePreferences.delete(scope: scope, defaults: defaults)
+        #expect(prefs.forYouSyncEnabled == defaultSyncEnabled)
+        #expect(prefs.forYouSyncRevocationDate == nil)
+    }
+
     @Test func invitationWaitsForCloudLocaleAndPreservesTheDecision() async {
         let settings = prefs
         var serviceAvailable = false

@@ -237,3 +237,7 @@ No successful capability grant, profile refresh, production schema deployment or
 physical sync is claimed by these attempts.
 
 Native-list ownership and current validation are tracked in [the implementation ledger](../Reviews/README.md). The signed provisioning and physical sync gates above remain open.
+
+## For You iCloud synchronization
+
+iPhone can share ranked For You item IDs with Apple TV through the same private container. The snapshots use an isolated record zone and reuse the existing `SavedMediaRecord` type and `payload` field. Check that this schema exists in Production and that the signed iOS and tvOS apps have access to the same container before evaluating TestFlight delivery. The Apple TV path reads picks without model access. Check foreground delivery, account isolation, withdrawal and seven-day display expiry on the signed builds before claiming production iCloud acceptance.

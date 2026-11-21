@@ -14,6 +14,43 @@ struct GusLibraryIntelligenceTests {
         .init(album: "Static", artists: ["Horizon"], id: "song", name: "Current", type: .audio),
     ]
 
+    #if os(iOS) || os(tvOS)
+        @Test func syncedRecommendationPayloadPreservesBoundedRankAndExpires() throws {
+            let createdAt = Date(timeIntervalSince1970: 1000)
+            let ranked = (0 ..< 15).map { "item-\($0)" }
+            let snapshot = ForYouSnapshot(
+                itemIDs: ["", "selection with spaces", String(repeating: "x", count: 129), ranked[0]] + ranked,
+                createdAt: createdAt
+            )
+            #expect(snapshot.itemIDs == Array(ranked.prefix(ForYouSnapshot.maximumPicks)))
+            let roundTrip = try JSONDecoder().decode(ForYouSnapshot.self, from: JSONEncoder().encode(snapshot))
+            #expect(roundTrip == snapshot)
+            #expect(roundTrip.isFresh(at: createdAt.addingTimeInterval(ForYouSnapshot.lifetime - 1)))
+            #expect(!roundTrip.isFresh(at: createdAt.addingTimeInterval(ForYouSnapshot.lifetime)))
+            #expect(!roundTrip.isFresh(at: createdAt.addingTimeInterval(-3600)))
+            #expect(!ForYouSnapshot(itemIDs: [], createdAt: createdAt).isFresh(at: createdAt))
+        }
+
+        @Test @MainActor func syncedRecommendationsUseLiveAccessibleTVItemsInPhoneOrder() {
+            let createdAt = Date(timeIntervalSince1970: 1000)
+            let snapshot = ForYouSnapshot(itemIDs: ["first", "missing", "restricted", "book", "second"], createdAt: createdAt)
+            let currentItems: [MediaItem] = [
+                .init(id: "second", name: "Current second title", officialRating: "G", type: .movie),
+                .init(id: "restricted", name: "Restricted title", officialRating: "R", type: .movie),
+                .init(id: "unrequested", name: "Unsolicited server result", officialRating: "G", type: .movie),
+                .init(id: "book", name: "Print only", officialRating: "G", type: .book),
+                .init(id: "first", name: "Current first title", officialRating: "G", type: .movie),
+            ]
+            let admits: (MediaItem) -> Bool = { ContentRatingGate.admits($0, limit: .general, hideUnrated: true) }
+            let picks = ForYouShelfState.syncedPicks(snapshot, from: currentItems, now: createdAt, admits: admits)
+            #expect(picks.compactMap(\.id) == ["first", "second"])
+            #expect(picks.compactMap(\.item.name) == ["Current first title", "Current second title"])
+            #expect(picks.allSatisfy { $0.reason.isEmpty })
+            let expired = createdAt.addingTimeInterval(ForYouSnapshot.lifetime)
+            #expect(ForYouShelfState.syncedPicks(snapshot, from: currentItems, now: expired, admits: admits).isEmpty)
+        }
+    #endif
+
     @Test func exactConstraintsRequireMetadataOnTheSameItem() {
         let both = GusSearchIntent(mediaTypes: [.movie], genres: ["sci-fi"], people: ["Jan Reyes"], characters: ["Pilot", "Engineer"], minimumYear: 2010, maximumMinutes: 90)
         #expect(Self.fixture.filter { GusLibraryMatching.accepts($0, intent: both) }.map(\.id) == ["film"])

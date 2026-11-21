@@ -464,6 +464,7 @@
 		97FEADDA6FCE352E2C783273 /* NavigationOwnershipTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AABCC97870EE24E332FD7A0 /* NavigationOwnershipTests.swift */; };
 		9862528052FAD7803683425C /* PlaybackPreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = 590DBC542156C1FBA50DF086 /* PlaybackPreferences.swift */; };
 		986B5DCA5713BD11FEE2D579 /* SharePlayCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7235838E5900B0E8618E89E1 /* SharePlayCoordinator.swift */; };
+		986E0A49D187FF7079F77719 /* ForYouSnapshotSync.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C36ACF7162EF1585FE167FF /* ForYouSnapshotSync.swift */; };
 		9884F118DA5062F54BE0FDC8 /* SeriesDetailStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA760C937184D7FECC8A4C78 /* SeriesDetailStoreTests.swift */; };
 		98E0AED8CDE4A6117B98DEA7 /* GusTopShelf.appex in Embed Dependencies */ = {isa = PBXBuildFile; fileRef = 900574CB1AB51B19393E858D /* GusTopShelf.appex */; platformFilters = (tvos, ); settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		99342D94EEB0704D848BFED7 /* SeerrRequestHistoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 056A11DFE22C15E9DBF79830 /* SeerrRequestHistoryTests.swift */; };
@@ -661,6 +662,7 @@
 		D5989CCDECA513204958EF9F /* UserProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 70401F85147C70E16AF49816 /* UserProfileView.swift */; };
 		D5C5868BDA6EB307A21513F9 /* DownloadActivityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D7442775BEE8AB10436F932 /* DownloadActivityTests.swift */; };
 		D5FF927695093584B2A1B58D /* NavigationPreferencesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F7599B989D5E230B3423545 /* NavigationPreferencesTests.swift */; };
+		D692BEC917CF8F6E9D484194 /* ForYouSnapshotSync.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C36ACF7162EF1585FE167FF /* ForYouSnapshotSync.swift */; };
 		D6B58BA72BFCC73B288C53CE /* GusCloseButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42139C7C2B01C2BED795D868 /* GusCloseButton.swift */; };
 		D6BF4715676C609239A4F949 /* Color+Gus.swift in Sources */ = {isa = PBXBuildFile; fileRef = EDBF113FBD554305E183D8A3 /* Color+Gus.swift */; };
 		D6C4BAB9951E0071A1BEFCB1 /* GusIntelligenceModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF02EECEF230181408711C04 /* GusIntelligenceModel.swift */; };
@@ -911,6 +913,7 @@
 		0B98273903FCB414A62CFEC3 /* DownloadsAvailability.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownloadsAvailability.swift; sourceTree = "<group>"; };
 		0C09E8F0F08E3F9C8FF590E1 /* CollectionViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollectionViews.swift; sourceTree = "<group>"; };
 		0C13687937754F2E115A7426 /* RepositoryTestFixtures.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RepositoryTestFixtures.swift; sourceTree = "<group>"; };
+		0C36ACF7162EF1585FE167FF /* ForYouSnapshotSync.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ForYouSnapshotSync.swift; sourceTree = "<group>"; };
 		0EC8C9988CDC393B968F84DD /* SeerrNaturalSearch.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SeerrNaturalSearch.swift; sourceTree = "<group>"; };
 		0EF8B18FDE5B2BEE5B43FCBC /* SeerrStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SeerrStore.swift; sourceTree = "<group>"; };
 		0F4CA0C7AE68B9B53B796222 /* GusWatchUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = GusWatchUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -1514,6 +1517,7 @@
 				B06DF69EB98172493F703FE6 /* DownloadFilePreparation.swift */,
 				2BA15CEA4C07EDD8B26057C2 /* DownloadSessionCoordinator.swift */,
 				AD4DA76DAC5A8C957239A326 /* DownloadSourceResolver.swift */,
+				0C36ACF7162EF1585FE167FF /* ForYouSnapshotSync.swift */,
 				D5245493D76BE9AAB1413CBC /* GusError.swift */,
 				BF02EECEF230181408711C04 /* GusIntelligenceModel.swift */,
 				B401163B74AB4993ED4C1ECA /* GusIntelligenceSchema.swift */,
@@ -2760,6 +2764,7 @@
 				BD0A9159BEBBB4590CA9AF92 /* DownloadedLibrary.swift in Sources */,
 				55BA9FCC6014063FE1D646EB /* DownloadsAvailability.swift in Sources */,
 				CDC0F4663B834AAC64915E9F /* ForYouShelfState.swift in Sources */,
+				D692BEC917CF8F6E9D484194 /* ForYouSnapshotSync.swift in Sources */,
 				63B3D0C395872D5471461816 /* GusError.swift in Sources */,
 				A07452DD7D59FA1D43F1112A /* GusIntelligenceAccess.swift in Sources */,
 				4E51D32119CF2AF33F402C7E /* GusIntelligenceModel.swift in Sources */,
@@ -3048,6 +3053,7 @@
 				770DEDCF6252588E3DE920FE /* DownloadsAvailability.swift in Sources */,
 				3C2679D9D842210BE5E0EF48 /* DownloadsView.swift in Sources */,
 				3BC6A8B83D6C1A46A8C5A01B /* ForYouShelfState.swift in Sources */,
+				986E0A49D187FF7079F77719 /* ForYouSnapshotSync.swift in Sources */,
 				E30A21274EE19CD584DD9084 /* GlassStyle.swift in Sources */,
 				2B1D0980FECAA2F33033DB15 /* GlobalSearchContent.swift in Sources */,
 				B2570D85C913F7852E487061 /* GlobalSearchSession.swift in Sources */,

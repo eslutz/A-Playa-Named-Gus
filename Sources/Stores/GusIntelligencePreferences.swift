@@ -30,6 +30,14 @@ final class GusIntelligencePreferences {
         }
     }
 
+    var forYouSyncEnabled: Bool {
+        didSet { defaults.set(forYouSyncEnabled, forKey: prefix + ".forYouSync") }
+    }
+
+    var forYouSyncRevocationDate: Date? {
+        didSet { defaults.set(forYouSyncRevocationDate, forKey: prefix + ".forYouSyncRevocationDate") }
+    }
+
     init(scope: AccountScope, defaults: UserDefaults = .standard) {
         let defaults = Self.storage(defaults)
         let key = Self.keyPrefix(for: scope)
@@ -42,12 +50,18 @@ final class GusIntelligencePreferences {
         self.naturalSearchEnabled = choice(".naturalSearch") ?? true
         self.cloudDecision = choice(".cloud")
         self.recommendationDecision = choice(".recommendations")
+        self.forYouSyncRevocationDate = defaults.object(forKey: key + ".forYouSyncRevocationDate") as? Date
+        #if os(tvOS)
+            self.forYouSyncEnabled = choice(".forYouSync") ?? true
+        #else
+            self.forYouSyncEnabled = choice(".forYouSync") ?? false
+        #endif
     }
 
     static func delete(scope: AccountScope, defaults: UserDefaults) {
         let defaults = storage(defaults)
         let key = keyPrefix(for: scope)
-        for suffix in [".naturalSearch", ".cloud", ".recommendations"] {
+        for suffix in [".naturalSearch", ".cloud", ".recommendations", ".forYouSync", ".forYouSyncRevocationDate"] {
             defaults.removeObject(forKey: key + suffix)
         }
     }
