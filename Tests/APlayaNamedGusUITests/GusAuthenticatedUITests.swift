@@ -124,11 +124,15 @@ final class GusAuthenticatedUITests: XCTestCase {
             let forYou = app.switches["Intelligence.forYou"].firstMatch
             revealIntelligenceSettings(forYou, in: app)
             XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label ==[c] %@", "Library Intelligence")).firstMatch.exists)
-            XCTAssertLessThan(natural.frame.midY, cloud.frame.midY)
+            let helper = app.staticTexts["Search in your own words with help from Apple’s models."].firstMatch
+            XCTAssertTrue(helper.exists)
+            XCTAssertLessThanOrEqual(natural.frame.maxY, helper.frame.minY)
+            XCTAssertLessThanOrEqual(helper.frame.maxY, cloud.frame.minY)
             XCTAssertLessThan(cloud.frame.midY, forYou.frame.midY)
             XCTAssertEqual(natural.value as? String, "1")
             XCTAssertEqual(cloud.value as? String, "1")
             XCTAssertEqual(forYou.value as? String, "1")
+            capture(app, "library-intelligence-settings")
             revealIntelligenceSettings(natural, in: app)
             tapIntelligenceSwitch(natural, expecting: "0")
 
@@ -217,6 +221,11 @@ final class GusAuthenticatedUITests: XCTestCase {
             app.terminate()
             let settings = launch("settings", arguments: args)
             let sync = settings.switches["Intelligence.forYouSync"].firstMatch
+            let resume = settings.switches["Settings.resumeSync"].firstMatch
+            revealSettingsControl(resume, in: settings)
+            XCTAssertTrue(sync.exists)
+            XCTAssertLessThan(sync.frame.maxY, resume.frame.minY)
+            capture(settings, "icloud-sync-settings")
             revealSettingsControl(sync, in: settings)
             XCTAssertEqual(sync.value as? String, "0")
             XCTAssertFalse(syncTitle.exists)
@@ -234,6 +243,26 @@ final class GusAuthenticatedUITests: XCTestCase {
             revealIntelligenceSettings(forYou, in: settings)
             XCTAssertEqual(forYou.value as? String, "1")
             XCTAssertFalse(settings.switches["Intelligence.forYouSync"].exists)
+        }
+
+        func testResumeSyncStatusAtLargestTextSize() throws {
+            try prepare()
+            defer { finish() }
+            let app = launch("settings", arguments: [
+                "--gus-intelligence-test-local", "--gus-intelligence-test-suite", UUID().uuidString,
+                "-UIPreferredContentSizeCategoryName", UIContentSizeCategory.accessibilityExtraExtraExtraLarge.rawValue,
+            ])
+            let decline = app.buttons["Intelligence.prompt.decline"]
+            XCTAssertTrue(decline.waitForExistence(timeout: 20))
+            decline.tap()
+            let status = app.staticTexts["Settings.resumeSyncStatus"].firstMatch
+            revealSettingsControl(status, in: app)
+            let explanation = app.staticTexts["Jellyfin stores playlists and collections. iCloud synchronizes Gus resume positions and Next Up state."].firstMatch
+            XCTAssertTrue(explanation.exists)
+            XCTAssertGreaterThan(explanation.frame.height, status.frame.height)
+            XCTAssertLessThanOrEqual(explanation.frame.maxY, status.frame.minY + 1)
+            XCTAssertEqual(status.label, "Saved on this device")
+            capture(app, "icloud-resume-sync-largest-text")
         }
 
         private func tapIntelligenceSwitch(_ toggle: XCUIElement, expecting value: String) {
@@ -263,7 +292,7 @@ final class GusAuthenticatedUITests: XCTestCase {
             let viewport = bounds.insetBy(dx: 0, dy: 100)
             // An iPad list can extend behind its sidebar. Use the actual row's leading edge for the drag.
             let leadingInset = (row.frame.minX - bounds.minX + 6) / bounds.width
-            for _ in 0 ..< 8 {
+            for _ in 0 ..< 20 {
                 let frame = toggle.exists ? toggle.frame : .zero
                 if viewport.contains(frame), frame.height > 0, toggle.isHittable {
                     return
@@ -628,6 +657,32 @@ final class GusAuthenticatedUITests: XCTestCase {
     #endif
 
     #if os(tvOS)
+        func testTVSyncSettingsFromRemote() throws {
+            try prepare()
+            defer { finish() }
+            let app = launch("settings")
+            XCTAssertTrue(app.staticTexts["Settings"].firstMatch.waitForExistence(timeout: 30))
+            XCUIRemote.shared.press(.right)
+            for identifier in ["Intelligence.forYouSync", "Settings.resumeSync"] {
+                let toggle = app.descendants(matching: .any).matching(identifier: identifier).firstMatch
+                for _ in 0 ..< 30 {
+                    if toggle.exists, !toggle.frame.isEmpty {
+                        break
+                    }
+                    XCUIRemote.shared.press(.down)
+                }
+                try focusTV(app, identifier: identifier)
+                let initial = try XCTUnwrap(toggle.value as? String, toggle.debugDescription)
+                XCUIRemote.shared.press(.select)
+                let changed = XCTNSPredicateExpectation(predicate: NSPredicate(format: "value != %@", initial), object: toggle)
+                XCTAssertEqual(XCTWaiter.wait(for: [changed], timeout: 5), .completed, toggle.debugDescription)
+                XCUIRemote.shared.press(.select)
+                let restored = XCTNSPredicateExpectation(predicate: NSPredicate(format: "value == %@", initial), object: toggle)
+                XCTAssertEqual(XCTWaiter.wait(for: [restored], timeout: 5), .completed, toggle.debugDescription)
+            }
+            capture(app, "icloud-sync-settings-tv")
+        }
+
         func testTVPlaybackHelpFromRemote() throws {
             try prepare()
             defer { finish() }
