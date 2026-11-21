@@ -13,7 +13,7 @@ struct IntelligenceSettingsSection: View {
                         Form { intelligenceControls }
                             .navigationTitle("Library Intelligence")
                     } label: {
-                        Text("Library Intelligence")
+                        Label("Library Intelligence", systemImage: "sparkles")
                     }
                     .accessibilityIdentifier("Settings.libraryIntelligence")
                 }
@@ -33,6 +33,8 @@ struct IntelligenceSettingsSection: View {
                         set: { access.setNaturalSearchEnabled($0) }
                     ))
                     .accessibilityIdentifier("Intelligence.naturalSearch")
+                } footer: {
+                    Text("Search in your own words with help from Apple’s models.")
                 }
             }
             if access.supportsCloud {
@@ -76,40 +78,75 @@ struct IntelligenceSettingsSection: View {
         var body: some View {
             let preferences = session.intelligencePreferences
             #if os(tvOS)
-                Toggle("Show Synced For You", isOn: Binding(
+                SyncSettingRow(title: "Show Synced For You", isOn: Binding(
                     get: { preferences.forYouSyncEnabled },
                     set: { session.setForYouSyncEnabled($0) }
-                ))
-                .accessibilityIdentifier("Intelligence.forYouSync")
-                Text("Enable Sync For You to Apple TV in Gus on your iPhone. Use the same iCloud and Jellyfin accounts on both devices.")
-                    .font(.caption).foregroundStyle(.secondary)
+                ), identifier: "Intelligence.forYouSync") {
+                    Text("Enable Sync For You to Apple TV in Gus on your iPhone. Use the same iCloud and Jellyfin accounts on both devices.")
+                        .font(.caption)
+                }
             #else
                 if session.intelligenceAccess.canOfferForYou || preferences.recommendationsEnabled || preferences.forYouSyncEnabled {
-                    Toggle("Sync For You to Apple TV", isOn: Binding(
-                        get: { preferences.forYouSyncEnabled },
-                        set: { enabled in
-                            if enabled {
-                                showingConsent = true
-                            } else {
-                                session.setForYouSyncEnabled(false)
+                    SyncSettingRow(
+                        title: "Sync For You to Apple TV",
+                        isOn: Binding(
+                            get: { preferences.forYouSyncEnabled },
+                            set: { enabled in
+                                if enabled {
+                                    showingConsent = true
+                                } else {
+                                    session.setForYouSyncEnabled(false)
+                                }
                             }
+                        ),
+                        identifier: "Intelligence.forYouSync",
+                        isDisabled: session.isVerifyingForYouSyncAccount || (!preferences.recommendationsEnabled && !preferences.forYouSyncEnabled)
+                    ) {
+                        if session.forYouSyncAccountVerificationFailed {
+                            Text("Couldn’t verify your iCloud account. Try again.")
                         }
-                    ))
-                    .disabled(session.isVerifyingForYouSyncAccount || (!preferences.recommendationsEnabled && !preferences.forYouSyncEnabled))
-                    .accessibilityIdentifier("Intelligence.forYouSync")
-                    .forYouSyncConsent(isPresented: $showingConsent)
-                    if session.forYouSyncAccountVerificationFailed {
-                        Text("Couldn’t verify your iCloud account. Try again.")
-                            .foregroundStyle(.secondary)
+                        if preferences.recommendationsEnabled {
+                            Text("Gus shares the ranked Jellyfin item IDs through your private iCloud storage. Use the same iCloud and Jellyfin accounts on both devices.")
+                                .font(.caption)
+                        } else {
+                            Text("Turn on Show For You in Library Intelligence to share recommendations.")
+                                .font(.caption)
+                        }
                     }
-                    if preferences.recommendationsEnabled {
-                        Text("Gus shares the ranked Jellyfin item IDs through your private iCloud storage. Use the same iCloud and Jellyfin accounts on both devices.")
-                            .font(.caption).foregroundStyle(.secondary)
-                    } else {
-                        Text("Turn on Show For You in Library Intelligence to share recommendations.")
-                            .font(.caption).foregroundStyle(.secondary)
+                    .forYouSyncConsent(isPresented: $showingConsent)
+                }
+            #endif
+        }
+    }
+#endif
+
+#if !os(watchOS)
+    struct SyncSettingRow<Details: View>: View {
+        let title: LocalizedStringKey
+        @Binding var isOn: Bool
+        let identifier: String
+        var isDisabled = false
+        @ViewBuilder let details: Details
+
+        var body: some View {
+            #if os(tvOS)
+                // A native toggle owns the entire remote-focusable form row.
+                Toggle(isOn: $isOn) {
+                    VStack(alignment: .leading) {
+                        Text(title)
+                        details.foregroundStyle(.secondary).lineLimit(nil)
                     }
                 }
+                .disabled(isDisabled)
+                .accessibilityIdentifier(identifier)
+            #else
+                VStack(alignment: .leading) {
+                    Toggle(title, isOn: $isOn)
+                        .disabled(isDisabled)
+                        .accessibilityIdentifier(identifier)
+                    details.foregroundStyle(.secondary).lineLimit(nil)
+                }
+                .accessibilityElement(children: .contain)
             #endif
         }
     }

@@ -73,20 +73,7 @@ struct SettingsView: View {
                     helpTitle: "About Streaming Quality",
                     helpText: "Maximum lets compatible files play at original quality. Lower settings cap the streaming bitrate for constrained networks."
                 ) {
-                    #if os(tvOS)
-                        qualityPicker
-                    #else
-                        Menu {
-                            qualityPicker.pickerStyle(.inline)
-                        } label: {
-                            Text((PlaybackQuality(rawValue: playbackQualityRawValue) ?? .maximum).compactTitle)
-                        }
-                        .menuStyle(.button)
-                        .buttonStyle(.borderless)
-                        .accessibilityLabel("Streaming Quality")
-                        .accessibilityValue((PlaybackQuality(rawValue: playbackQualityRawValue) ?? .maximum).title)
-                        .accessibilityIdentifier("Settings.streamingQuality")
-                    #endif
+                    qualityPicker
                 }
                 Toggle("Auto-Play Next Episode", isOn: $autoPlayNextEpisode)
                 playbackSetting(
@@ -114,12 +101,18 @@ struct SettingsView: View {
             IntelligenceSettingsSection()
 
             Section("iCloud Sync") {
-                Toggle("Sync Gus Resume and Next Up", isOn: Binding(get: { videoPlaylists.syncEnabled }, set: { videoPlaylists.syncEnabled = $0 }))
-                Text(videoPlaylists.syncStatus).foregroundStyle(.secondary)
-                Text("Jellyfin stores playlists and collections. iCloud synchronizes Gus resume positions and Next Up state.").font(.caption).foregroundStyle(.secondary)
                 #if os(iOS) || os(tvOS)
                     ForYouSyncSetting()
                 #endif
+                SyncSettingRow(title: "Sync Gus Resume and Next Up", isOn: Binding(
+                    get: { videoPlaylists.syncEnabled },
+                    set: { videoPlaylists.syncEnabled = $0 }
+                ), identifier: "Settings.resumeSync") {
+                    Text("Jellyfin stores playlists and collections. iCloud synchronizes Gus resume positions and Next Up state.")
+                        .font(.caption)
+                    Text(videoPlaylists.syncStatus)
+                        .accessibilityIdentifier("Settings.resumeSyncStatus")
+                }
             }
 
             Section {
@@ -226,12 +219,44 @@ struct SettingsView: View {
         }
     }
 
-    private var qualityPicker: some View {
-        Picker("Streaming Quality", selection: $playbackQualityRawValue) {
-            ForEach(PlaybackQuality.allCases) { quality in
-                Text(quality.title).tag(quality.rawValue)
-            }
+    private var qualityOptions: some View {
+        ForEach(PlaybackQuality.allCases) { quality in
+            Text(quality.title).tag(quality.rawValue)
         }
+    }
+
+    @ViewBuilder
+    private var qualityPicker: some View {
+        #if os(tvOS)
+            Picker("Streaming Quality", selection: $playbackQualityRawValue) { qualityOptions }
+        #else
+            let quality = PlaybackQuality(rawValue: playbackQualityRawValue) ?? .maximum
+            #if os(iOS)
+                Picker(selection: $playbackQualityRawValue) {
+                    qualityOptions
+                } label: {
+                    Text("Streaming Quality")
+                } currentValueLabel: {
+                    Text(quality.compactTitle)
+                }
+                .pickerStyle(.menu)
+                .labelsHidden()
+                .accessibilityValue(quality.title)
+                .accessibilityIdentifier("Settings.streamingQuality")
+            #else
+                Menu {
+                    Picker("Streaming Quality", selection: $playbackQualityRawValue) { qualityOptions }
+                        .pickerStyle(.inline)
+                } label: {
+                    Text(quality.compactTitle)
+                }
+                .menuStyle(.button)
+                .buttonStyle(.borderless)
+                .accessibilityLabel("Streaming Quality")
+                .accessibilityValue(quality.title)
+                .accessibilityIdentifier("Settings.streamingQuality")
+            #endif
+        #endif
     }
 
     @ViewBuilder

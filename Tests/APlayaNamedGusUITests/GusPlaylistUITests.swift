@@ -546,7 +546,7 @@
             XCTAssertNil(deleted)
         }
 
-        func testPlaybackHelpExplainsEachSettingWithoutChangingIt() {
+        func testPlaybackHelpExplainsEachSettingWithoutChangingIt() throws {
             continueAfterFailure = false
             let app = XCUIApplication()
             app.launchEnvironment["GUS_DEMO_URL"] = ProcessInfo.processInfo.environment["GUS_DEMO_URL"]
@@ -560,6 +560,7 @@
                 XCTAssertTrue(invitation.waitForNonExistence(timeout: 5))
             }
 
+            let qualityPicker = app.descendants(matching: .any).matching(identifier: "Settings.streamingQuality").firstMatch
             for (label, explanation) in [
                 ("About Streaming Quality", "Maximum lets compatible files play at original quality."),
                 ("About Remembering Episode Tracks", "Gus remembers the audio and subtitle choices"),
@@ -572,9 +573,9 @@
                 let message = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", explanation)).firstMatch
                 XCTAssertFalse(message.exists)
                 let toggle = app.switches["Settings.rememberEpisodeTracks"]
-                let originalSetting = toggle.exists ? toggle.value as? String : nil
-                let control = label == "About Streaming Quality" ? app.buttons["Settings.streamingQuality"] : toggle
+                let control = label == "About Streaming Quality" ? qualityPicker : toggle
                 XCTAssertTrue(control.isHittable)
+                let originalSetting = try XCTUnwrap(control.value as? String)
                 XCTAssertLessThanOrEqual(help.frame.maxX, control.frame.minX + 1)
                 XCTAssertEqual(help.frame.midY, control.frame.midY, accuracy: 2)
                 help.tap()
@@ -586,10 +587,25 @@
                 // Dismiss using the native popover's backdrop.
                 app.coordinate(withNormalizedOffset: CGVector(dx: 0.05, dy: 0.12)).tap()
                 XCTAssertTrue(message.waitForNonExistence(timeout: 5))
-                if let originalSetting {
-                    XCTAssertEqual(toggle.value as? String, originalSetting)
-                }
+                XCTAssertEqual(control.value as? String, originalSetting)
             }
+
+            let capture = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+            capture.name = "Playback settings with native quality picker"
+            capture.lifetime = .keepAlways
+            add(capture)
+
+            let originalQuality = try XCTUnwrap(qualityPicker.value as? String)
+            let nextQuality = originalQuality == "Low (3 Mbps)" ? "High (20 Mbps)" : "Low (3 Mbps)"
+            qualityPicker.tap()
+            for title in ["Maximum (Original)", "High (20 Mbps)", "Medium (8 Mbps)", "Low (3 Mbps)"] {
+                XCTAssertTrue(app.buttons[title].waitForExistence(timeout: 5), title)
+            }
+            app.buttons[nextQuality].tap()
+            XCTAssertEqual(qualityPicker.value as? String, nextQuality)
+            qualityPicker.tap()
+            app.buttons[originalQuality].tap()
+            XCTAssertEqual(qualityPicker.value as? String, originalQuality)
         }
 
         func testItemDetailMoreMenuKeepsRestartSeparateFromWatched() async throws {

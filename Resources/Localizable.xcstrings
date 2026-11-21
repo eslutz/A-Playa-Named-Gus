@@ -82,6 +82,9 @@
     "Natural Language Search": {
       "comment": "Action in the Library Intelligence settings or invitation."
     },
+    "Search in your own words with help from Apple’s models.": {
+      "comment": "Helper below the Natural Language Search switch in Library Intelligence settings."
+    },
     "Not Now": {
       "comment": "Action in the Library Intelligence settings or invitation."
     },
