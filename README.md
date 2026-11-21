@@ -32,15 +32,15 @@ SDK-supported ARM variants.
 Regenerate `A Playa Named Gus.xcodeproj` after adding, renaming, or deleting
 source and resource files.
 
-Changes to `main` require a PR and five GitHub checks: Validation Scope, Lint,
-Docs and Config, Build macOS, and Test macOS. Simulator builds and tests run locally;
-hosted native macOS unit tests have an explicit exception. Server-side main protection
+Changes to `main` require a PR and four GitHub checks (Validation Scope, Lint,
+Docs and Config, and Build macOS). Run macOS tests natively on a local Apple
+Silicon Mac and other platform tests in local simulators. Server-side main protection
 is currently disabled; the PR/check requirement remains project policy.
 [Pipeline policy](Documentation/AppStore/pipeline-policy.md).
 
 The native Icon Composer source is restored at `Resources/AppIcon.icon`.
 Historical Cloud results do not establish current release or tester access.
-Release qualification requires exact-candidate local simulator evidence, current
+Release qualification requires exact-candidate local test evidence, current
 PR checks, and authorized native archive/signing/distribution gates. Old Cloud
 workflows containing simulator actions must not be started.
 [Release policy](Documentation/AppStore/pipeline-policy.md).

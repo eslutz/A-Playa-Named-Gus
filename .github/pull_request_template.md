@@ -4,7 +4,7 @@
 
 ## Validation
 
--
+- Record the local test command, destination, and result for each affected platform. Use a native Apple Silicon Mac for macOS and simulators for the other platforms.
 
 ## Checklist
 

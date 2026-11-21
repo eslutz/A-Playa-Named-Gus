@@ -18,11 +18,27 @@ struct WatchBrowseView: View {
             retryAction: { Task { await load() } },
             preservesContent: true
         ) {
-            List(libraries, id: \.id) { library in
-                if let id = library.id {
-                    NavigationLink(value: WatchLibraryRoute(id: id)) {
-                        Label(library.name ?? "Library", systemImage: library.librarySymbol)
+            List {
+                NavigationLink(value: WatchIntelligenceRoute.search) { Label("Search Library", systemImage: "magnifyingglass") }
+                    .accessibilityIdentifier("Watch.Browse.search")
+                if #available(watchOS 27, *), session.intelligencePreferences.recommendationsEnabled {
+                    NavigationLink(value: WatchIntelligenceRoute.forYou) { Label("For You", systemImage: "heart") }
+                }
+                ForEach(libraries, id: \.id) { library in
+                    if let id = library.id {
+                        NavigationLink(value: WatchLibraryRoute(id: id)) {
+                            Label(library.name ?? "Library", systemImage: library.librarySymbol)
+                        }
                     }
+                }
+            }
+        }
+        .navigationDestination(for: WatchIntelligenceRoute.self) { route in
+            switch route {
+            case .search: WatchLibrarySearchView()
+            case .forYou:
+                if #available(watchOS 27, *) {
+                    WatchForYouView()
                 }
             }
         }
@@ -127,11 +143,15 @@ struct WatchLibraryView: View {
     }
 }
 
+private enum WatchIntelligenceRoute: Hashable {
+    case search, forYou
+}
+
 private struct WatchLibraryRoute: Hashable {
     let id: String
 }
 
-private struct WatchItemRoute: Hashable {
+struct WatchItemRoute: Hashable {
     let id: String
 }
 
@@ -226,6 +246,7 @@ struct WatchAlbumView: View {
         .task {
             await load()
         }
+        .defersIntelligencePrompt(while: playerQueue != nil)
         .sheet(item: $playerQueue) { queue in
             WatchAudioPlayerView(tracks: queue.tracks, startIndex: queue.startIndex, continuation: queue.continuation)
         }

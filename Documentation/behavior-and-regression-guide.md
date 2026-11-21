@@ -132,7 +132,7 @@ page deduplication. Gus retains AVPlayer/AVKit and current OS 26 fallbacks.
 | F16 | Full-content continuation | Raw-offset paging, ordered queue continuation, full shuffle collection; incomplete advertised collections fail visibly | BrowseRefinementTests, including incompleteCollection; PlaybackLifecyclePolicyTests |
 | F17 | Superseding first-page query changes | Immutable query identity and generation cancellation | LibraryStoreTests, BrowseRefinementTests |
 | F18 | Reader construction/resource recovery | Public container read observation, inline recovery, bounded chapter selection and generation-scoped Retry | BookReaderLoadingTests; verify missing-resource recovery and semantic-locator restoration |
-| F19 | Every PR triggers required CI | Always-triggered workflow, fail-closed classifier, explicit documentation-only success | test-classify-changes.py; all five hosted checks required for each candidate |
+| F19 | Every PR triggers required CI | Always-triggered workflow, fail-closed classifier, explicit documentation-only success | test-classify-changes.py; all four hosted checks required for each candidate |
 | F20 | Measured performance and justified retention/I/O fixes | Non-owning heavy-store lookup, owner/lease cancellation, visibility refresh, serial diagnostics and download workers | NavigationOwnershipTests, including replacementDetailOwnership and seriesLeaseCancellation; DiagnosticsTests, DownloadStoreIntegrationTests; qualify same-simulator Release p95 as applicable |
 | F21 | Current platform visual/interaction/accessibility acceptance | Native controls retained; platform interaction checks | Separate visual, interaction, and assistive acceptance |
 | F22 | Catalog and native semantic formatting | Shared localized metadata and native duration/count formatting | Catalog validation and BrowseRefinementTests; exercise RTL and largest text |
@@ -158,6 +158,14 @@ rather than treating retained or missing records as a current inventory.
 | Native previews | Unmodified compatible I-frame HLS, deferred bounded tvOS chapter metadata; verify native preview and Select per platform; no synthesized JPEG scrubber |
 | Page deduplication | Scoped media identity with raw server offsets; playlist occurrences preserve ordering and duplicates; BrowseRefinementTests |
 | Saved-media persistence | Account-scoped records, offline draft reconciliation and CloudKit ownership; VideoPlaylistTests, MediaReferencePersistenceTests, ServerMediaListsStoreTests |
+
+## Library intelligence and Discover
+
+Natural Language Search defaults to on for both fields on a compatible device. Use the provisioned-route simulator fixture to verify that Settings → Library Intelligence shows Natural Language Search, Allow Private Cloud Compute, and Show For You in that order. Exercise an interpreted search, a one-query Search by Keyword, and a predictive completion in each field. Switch Natural Language Search off during a submission, check the draft and literal results in each field, and verify the preference across windows and relaunches. Confirm that typing uses no model requests and that Discover only opens titles or people returned by the active Seerr server. Cover restricted profiles, account and server switches during a request, missing metadata, stale results and a failed provider request.
+
+Run `SearchStoreTests`, `SeerrCatalogStoreTests`, `GusLibraryIntelligenceTests` and `IntelligenceEvaluationTests` on local simulators. Cover keyword searches on OS 26, OS 27 and Apple TV. To evaluate the system model on an eligible OS 27 simulator, set the test action environment variable `GUS_EVALUATE_SYSTEM_MODEL=1`, then run the library search, Discover search and ranking evaluations separately. Record the simulated device, runtime, locale, prompt and expected fixture ID. The simulator may report that a model is available while its token generator cannot perform inference. In that case record the error or skip and mark model quality unverified. Evaluate movies, shows, episodes, books, audiobooks, albums, songs and Seerr person lookups. Include multilingual prompts, unsupported constraints and absent titles. Aim for the expected result in the first five for at least 80% of labeled positive prompts. A restricted, cross-account or invented result fails qualification regardless of recall. Measure cold and warm suggestion latency separately.
+
+Verify the For You invitation in one active window per eligible account on each simulator installation. Exercise fresh and upgraded installs, prior explicit choices, deferred eligibility, first-run dismissal, opt-in, account removal, opt-out during ranking, cold start without taste history, and opening a recommended item. Check the Settings path in the invitation and each recommendation reason against the library metadata. Use a provisioned-route fixture on an OS 27 simulator to exercise cloud-only eligibility, first-use consent, denial and revocation, quota exhaustion and loss of connectivity. Verify that approval resumes the pending action once and that declining uses the current query as keywords or leaves For You off. Record live Private Cloud Compute as unverified when the simulator cannot perform an entitled service request. [Signing requirements](AppStore/signing-capabilities.md) · [Issue 50](https://github.com/eslutz/A-Playa-Named-Gus/issues/50)
 
 ## Server cleanup boundary
 
@@ -185,14 +193,14 @@ and real tuner fault-injection evidence; Gus makes no such guarantee.
 ## Acceptance
 
 Use [local validation](local-validation.md) and [pipeline policy](AppStore/pipeline-policy.md)
-for scope. Run affected unit and authenticated local simulator cases before
-claiming coverage. For full refinement performance qualification, compare
+for scope. Run affected unit and authenticated local cases before claiming coverage.
+Use native Apple Silicon for macOS and simulators for the other platforms. For full refinement performance qualification, compare
 same-simulator Release p95 (10% regression ceiling or stricter applicable gate),
 using 30 cold/warm samples, 10 browse cycles, 30 player open/close cycles and
 a one-hour playback soak. Record exact revision, host and inputs outside Git.
 This matrix is not required for every change.
 
-Keep native macOS runtime, physical-device and Sketch acceptance separate.
+Record physical-device and Sketch acceptance separately from local tests.
 A completed diagnostics flush establishes durability; termination can lose
 unflushed events. A lost response with an unknown server resource ID still needs
 server cancellation or TTL validation before claiming cleanup.

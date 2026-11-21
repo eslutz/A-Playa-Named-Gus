@@ -7,6 +7,41 @@
     /// All credentials, titles and mutations belong to synthetic loopback fixtures.
     @MainActor
     final class GusSeerrUITests: XCTestCase {
+        func testDefaultNaturalSearchDeclineUsesSameSeerrQuery() async throws {
+            let app = try await prepare(exerciseCloudConsent: true)
+            defer { app.terminate() }
+            if !app.staticTexts["Connected"].exists || !app.staticTexts["Gus Fixture Manager"].exists {
+                connect(app)
+            }
+            openDiscover(app)
+            let field = app.searchFields.firstMatch
+            if !field.isHittable {
+                app.swipeDown()
+            }
+            XCTAssertTrue(field.waitForExistence(timeout: 15), app.debugDescription)
+            field.tap()
+            let title = "Gus Fixture Movie"
+            field.typeText("Gus Fixture Mov")
+            let completion = app.buttons["Search.suggestion." + title].firstMatch
+            XCTAssertTrue(completion.waitForExistence(timeout: 15), app.debugDescription)
+            completion.tap()
+            XCTAssertEqual(field.value as? String, title)
+            XCTAssertFalse(app.staticTexts["Allow Private Cloud Compute?"].exists, app.debugDescription)
+            XCTAssertFalse(app.staticTexts["Enable For You?"].exists, app.debugDescription)
+            let typedState = try await fixtureState()
+            XCTAssertFalse(typedState.events.contains { $0.exactFixtureMovieSearch == true })
+            if !app.keyboards.buttons["Search"].firstMatch.isHittable {
+                field.tap()
+            }
+            field.typeText("\n")
+            XCTAssertTrue(app.staticTexts["Allow Private Cloud Compute?"].waitForExistence(timeout: 12), app.debugDescription)
+            app.buttons["Intelligence.prompt.decline"].tap()
+            XCTAssertTrue(app.buttons["Seerr.title.movie.950000001"].waitForExistence(timeout: 15), app.debugDescription)
+            let searched = try await fixtureState()
+            XCTAssertEqual(searched.events.filter { $0.exactFixtureMovieSearch == true }.count, 1)
+            finishConnectedSession(app)
+        }
+
         func testDailyTrendingCarousel() async throws {
             let app = try await connectedDiscover()
             defer { app.terminate() }
@@ -325,7 +360,7 @@
             capture("seerr-pending-manager-history-refreshed-empty")
         }
 
-        private func prepare(uncertainNext: Bool = false, appearance: String? = nil, customAccent: String? = nil) async throws -> XCUIApplication {
+        private func prepare(uncertainNext: Bool = false, appearance: String? = nil, customAccent: String? = nil, exerciseCloudConsent: Bool = false) async throws -> XCUIApplication {
             continueAfterFailure = false
             executionTimeAllowance = 240
             let app = XCUIApplication()
@@ -346,7 +381,17 @@
             if let customAccent {
                 app.launchArguments += ["-gusTheme", "custom", "-gusCustomAccent", customAccent]
             }
+            if exerciseCloudConsent {
+                app.launchArguments += ["--gus-intelligence-test-cloud", "--gus-intelligence-test-suite", "gus.ui." + UUID().uuidString]
+            }
             app.launch()
+            let decline = app.buttons["Intelligence.prompt.decline"]
+            if exerciseCloudConsent {
+                XCTAssertTrue(app.staticTexts["Enable For You?"].waitForExistence(timeout: 25))
+                decline.tap()
+            } else if decline.waitForExistence(timeout: 3) {
+                decline.tap()
+            }
             openIntegration(app)
             return app
         }
@@ -617,7 +662,11 @@
     }
 
     private struct FixtureRequest: Decodable { let id: Int; let status: Int }
-    private struct FixtureEvent: Decodable { let method: String; let path: String }
+    private struct FixtureEvent: Decodable {
+        let method: String
+        let path: String
+        let exactFixtureMovieSearch: Bool?
+    }
 #elseif os(macOS)
     import XCTest
 

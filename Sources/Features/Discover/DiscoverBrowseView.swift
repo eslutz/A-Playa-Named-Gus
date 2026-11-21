@@ -2,6 +2,7 @@ import SwiftUI
 
 /// Discover owns its search scope while each supported feed loads and retries independently.
 struct DiscoverBrowseView: View {
+    @Environment(SessionStore.self) private var session
     @Environment(AppNavigationModel.self) private var navigation
     @Environment(\.calendar) private var calendar
     @Environment(\.scenePhase) private var scenePhase
@@ -14,6 +15,8 @@ struct DiscoverBrowseView: View {
     @State private var feedError: String?
     @State private var feedsRevision: String?
     @State private var query = ""
+    @State private var draftMode = SearchDraftMode.natural
+    @State private var naturalSubmission: DiscoverSubmission?
     @State private var searchCatalog: SeerrCatalogStore?
     @State private var submittedSearch = UUID()
     @State private var submitsImmediately = false
@@ -42,13 +45,44 @@ struct DiscoverBrowseView: View {
         "\(store.revision):\(contentLimitRawValue):\(hideUnratedContent)"
     }
 
+    private var hasSearchAccess: Bool {
+        session.isActive && session.seerr === store && store.isConnected
+    }
+
+    private var naturalMode: Bool {
+        session.intelligenceAccess.usesNaturalSearch && draftMode == .natural
+    }
+
+    private func searchByKeyword() {
+        naturalSubmission = nil
+        draftMode = .keyword
+        submitsImmediately = true
+        submittedSearch = UUID()
+    }
+
     private var searchRevision: String {
-        "\(accessRevision):\(normalizedQuery):\(submittedSearch)"
+        "\(accessRevision):\(naturalMode):\(normalizedQuery):\(submittedSearch)"
     }
 
     var body: some View {
         Group {
-            if !normalizedQuery.isEmpty {
+            if naturalMode, !normalizedQuery.isEmpty {
+                Group {
+                    if let submission = naturalSubmission, hasSearchAccess, submission.text == normalizedQuery, submission.access == accessRevision {
+                        SeerrInterpretedResults(submission: submission, store: store, isCurrentSubmission: {
+                            naturalMode && naturalSubmission?.id == submission.id && normalizedQuery == submission.text
+                        }, useKeyword: searchByKeyword)
+                            .id(submission.id)
+                    } else {
+                        ContentUnavailableView("Natural Language", systemImage: "magnifyingglass", description: Text("Describe movies, shows, or people, then submit your search."))
+                    }
+                }
+                .safeAreaInset(edge: .bottom) {
+                    Button("Search by Keyword", action: searchByKeyword)
+                        .accessibilityIdentifier("Seerr.search.byKeyword")
+                        .padding(.vertical, 8)
+                }
+            } else if !normalizedQuery.isEmpty {
                 if let searchCatalog, searchCatalog.source == .search(normalizedQuery) {
                     SeerrCatalogResults(catalog: searchCatalog, store: store)
                 } else {
@@ -61,18 +95,42 @@ struct DiscoverBrowseView: View {
             }
         }
         .navigationTitle(searchOnly ? "Search Seerr" : "Discover")
-        .gusSeerrSearch(text: $query, isPresented: $searchPresented, isFocused: $searchFocused, enabledOnTV: searchOnly)
+        .safeAreaInset(edge: .top, spacing: 0) {
+            if session.intelligenceAccess.usesNaturalSearch, naturalSubmission == nil {
+                SearchDraftSuggestions(values: suggestions, select: edit)
+            }
+        }
+        .gusSeerrSearch(text: Binding(get: { query }, set: { edit($0) }), isPresented: $searchPresented, isFocused: $searchFocused, enabledOnTV: searchOnly, suggestions: session.intelligenceAccess.usesNaturalSearch ? [] : suggestions, suggestionsInResults: !naturalMode)
+        .onChange(of: session.intelligenceAccess.usesNaturalSearch) { _, _ in
+            naturalSubmission = nil
+            draftMode = normalizedQuery.isEmpty ? .natural : .keywordUntilSubmit
+        }
+        .onChange(of: accessRevision) { _, _ in naturalSubmission = nil }
+        .onChange(of: session.intelligencePreferences.cloudEnabled) { _, allowed in
+            if !allowed {
+                naturalSubmission = nil
+            }
+        }
         .onChange(of: navigation.searchFocusRequest, initial: true) { _, request in
             guard request > 0 else { return }
             searchPresented = true
             searchFocused = true
         }
         .onSubmit(of: .search) {
-            submitsImmediately = true
-            submittedSearch = UUID()
+            guard hasSearchAccess else { return }
+            if session.intelligenceAccess.usesNaturalSearch {
+                if !normalizedQuery.isEmpty {
+                    draftMode = .natural
+                    naturalSubmission = DiscoverSubmission(text: normalizedQuery, access: accessRevision, connection: store.revision, restrictions: store.restrictionRevision)
+                }
+            } else if searchCatalog?.source != .search(normalizedQuery) || searchCatalog?.state == .idle || searchCatalog?.errorMessage != nil {
+                submitsImmediately = true
+                submittedSearch = UUID()
+            }
         }
         .task(id: accessRevision) { await loadFeeds() }
         .task(id: searchRevision) {
+            guard !naturalMode else { return }
             guard !normalizedQuery.isEmpty else {
                 searchCatalog = nil
                 return
@@ -89,6 +147,38 @@ struct DiscoverBrowseView: View {
             await catalog.load(store: store)
         }
         .onChange(of: store.revision) { _, _ in scrollID = nil }
+    }
+
+    private func edit(_ value: String) {
+        guard value != query else { return }
+        naturalSubmission = nil
+        draftMode.edit(value, naturalSearchEnabled: session.intelligenceAccess.usesNaturalSearch)
+        query = value
+    }
+
+    private var suggestions: [String] {
+        guard hasSearchAccess, !normalizedQuery.isEmpty else { return [] }
+        var values: [String] = []
+        if let searchCatalog, searchCatalog.isValid(for: store), naturalMode || searchCatalog.source == .search(normalizedQuery) {
+            values += searchCatalog.items.filter { store.admits($0) }.map(\.displayTitle)
+        }
+        if naturalMode, feedsRevision == accessRevision {
+            for shelf in shelves {
+                switch shelf {
+                case let .categories(directory) where directory.kind.isGenre && directory.revision == store.revision:
+                    values += directory.categories.map { genre in
+                        directory.kind == .movieGenres ? String(localized: "\(genre.name) movies") : String(localized: "\(genre.name) series")
+                    }
+                case let .titles(_, catalog) where catalog.isValid(for: store):
+                    values += catalog.items.filter { store.admits($0) }.map(\.displayTitle)
+                default: break
+                }
+            }
+        }
+        if naturalMode {
+            values += [String(localized: "Sci-fi movies from the 1990s"), String(localized: "Comedy series from the 2000s")]
+        }
+        return SearchCompletions.matching(normalizedQuery, candidates: values, limit: 5)
     }
 
     private var browse: some View {
@@ -206,6 +296,14 @@ struct DiscoverBrowseView: View {
             feedError = error.localizedDescription
         }
     }
+}
+
+struct DiscoverSubmission {
+    let id = UUID()
+    let text: String
+    let access: String
+    let connection: UUID
+    let restrictions: String
 }
 
 private struct TrendingLoadKey: Equatable {

@@ -76,11 +76,14 @@ The app bundle ID is `dev.ericslutz.gus`.
 - For routine code changes run focused lint, build, and test checks for the
   affected code and platforms. Discover installed destinations before using them;
   report exactly what ran, what passed, and what remains unverified.
-- **All simulator builds and tests run locally.** No simulator actions in
-  GitHub CI or Xcode Cloud. Hosted GitHub validation is static/configuration work
-  plus native arm64 macOS build and unit tests only. No hosted UI/integration or
-  E2E validation. Hosted native checks do not authorize local native macOS
-  runtime or physical-device validation, outside the current scope.
+- **Run app tests and runtime verification locally.** Use native Apple Silicon
+  for macOS (`platform=macOS,arch=arm64`). For iOS, iPadOS, tvOS, visionOS and
+  watchOS, use Apple simulators one at a time with an explicit platform and
+  simulator UDID. Record behavior that requires other physical devices or
+  unavailable entitlements as unverified.
+- GitHub validation covers static/configuration checks and the native arm64
+  macOS build. Keep app tests and simulator builds out of GitHub CI and
+  Xcode Cloud.
 - Keep builds warning-free. Never suppress diagnostics to obtain a pass.
   The only exception is the documented, explicitly logged hosted native arm64
   macOS simulator-discovery warning; it does not apply to archives or local
@@ -91,10 +94,11 @@ The app bundle ID is `dev.ericslutz.gus`.
 ## Review and release
 
 - Changes to `main` go through a PR with Validation Scope, Lint, Docs and Config,
-  Build macOS, and Test macOS passing. Verify live enforcement separately.
+  and Build macOS passing. Record relevant local test results in the PR.
+  Verify live enforcement separately.
   Follow the [PR checklist](.github/pull_request_template.md).
 - Release qualification is separate from routine validation: require
-  exact-candidate local simulator evidence, the required checks, and separately
+  exact-candidate local test evidence, the required checks, and separately
   authorized native archives. Verify live Xcode Cloud actions, signing, raw
   diagnostics, and distribution scope before running an authorized release.
   Archive/export, TestFlight processing/group availability, and tester

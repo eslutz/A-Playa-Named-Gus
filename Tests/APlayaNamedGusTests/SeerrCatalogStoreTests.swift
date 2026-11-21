@@ -104,13 +104,16 @@ struct SeerrCatalogStoreTests {
         #expect(fixture.http.requests.first?.url?.path.hasSuffix("/collection/7") == true)
     }
 
-    @Test("a delayed previous-account response cannot replace the new connection's catalog")
-    func accountChangeRejectsLateResponse() async throws {
+    @Test("a delayed previous-account response cannot replace the new connection's catalog", arguments: [
+        SeerrCatalogSource.feed(.trending),
+        .natural(SeerrSearchIntent(mediaType: "movie", keywords: ["account"])),
+    ])
+    func accountChangeRejectsLateResponse(source: SeerrCatalogSource) async throws {
         let fixture = try await CatalogStoreFixture(replies: [
             .init(json: Self.page(1, titles: #"{"id":1,"mediaType":"movie","title":"Previous account"}"#), paused: true),
         ])
         defer { fixture.cleanUp() }
-        let catalog = SeerrCatalogStore(source: .feed(.trending))
+        let catalog = SeerrCatalogStore(source: source)
         let previousLoad = Task { await catalog.load(store: fixture.store) }
         await fixture.http.waitForStarted(1)
 
@@ -430,6 +433,131 @@ struct SeerrCatalogStoreTests {
             Issue.record("The retained title still needs refresh error feedback")
         }
         #expect(fixture.store.isConnected)
+    }
+
+    @Test("Discover movie and series discovery use Seerr genre IDs and the matching inclusive dates", arguments: [SeerrMediaType.movie, .tv])
+    func naturalGenreAndDates(type: SeerrMediaType) async throws {
+        let isMovie = type == .movie
+        let name = isMovie ? "Science Fiction" : "Sci-Fi & Fantasy"
+        let genre = isMovie ? 878 : 10765
+        let date = isMovie ? "releaseDate" : "firstAirDate"
+        let fixture = try await CatalogStoreFixture(replies: [
+            .init(json: #"[{"id":\#(genre),"name":"\#(name)"}]"#),
+            .init(json: Self.page(1, totalPages: 3, titles: #"{"id":71,"mediaType":"\#(type.rawValue)"}"#)),
+            .init(json: Self.page(2, totalPages: 3, titles: #"{"id":71,"mediaType":"\#(type.rawValue)"},{"id":72,"mediaType":"\#(type.rawValue)"}"#)),
+            .init(json: #"{"id":71,"name":"Orbit","overview":"A science fiction adventure.","\#(date)":"2020-01-01","genres":[{"id":\#(genre),"name":"\#(name)"}]}"#),
+            .init(json: #"{"id":72,"name":"Archive","\#(date)":"2008-01-01","genres":[{"id":\#(genre),"name":"\#(name)"}]}"#),
+        ])
+        defer { fixture.cleanUp() }
+        let intent = SeerrSearchIntent(mediaType: type.rawValue, genres: ["sci-fi"], minimumYear: 2011, maximumYear: 2024)
+        let catalog = SeerrCatalogStore(source: .natural(intent))
+        await catalog.load(store: fixture.store)
+        #expect(catalog.items.map(\.id) == [71])
+        #expect(!catalog.hasMore)
+        let pages = fixture.http.requests.filter { $0.url?.lastPathComponent == (isMovie ? "movies" : "tv") && Self.query($0, key: "page") != nil }
+        #expect(pages.map { Self.query($0, key: "page") } == ["1", "2"])
+        let first = try #require(pages.first)
+        #expect(Self.query(first, key: "genre") == String(genre))
+        #expect(Self.query(first, key: isMovie ? "primaryReleaseDateGte" : "firstAirDateGte") == "2011-01-01")
+        #expect(Self.query(first, key: isMovie ? "primaryReleaseDateLte" : "firstAirDateLte") == "2024-12-31")
+    }
+
+    @Test("A combined TV category cannot establish an exact science-fiction constraint")
+    func combinedTVGenre() {
+        let intent = SeerrSearchIntent(mediaType: "tv", genres: ["sci-fi"])
+        let fantasy = SeerrTitle(id: 9, mediaType: .tv, name: "Ancient Kingdom", overview: "A magical forest.", genres: [.init(id: 10765, name: "Sci-Fi & Fantasy")])
+        #expect(intent.score(fantasy) == nil)
+    }
+
+    @Test("All required character names belong to the same admitted Seerr title")
+    func naturalCharacters() async throws {
+        let candidates = #"{"id":1,"mediaType":"movie"},{"id":2,"mediaType":"movie"},{"id":3,"mediaType":"movie","mediaInfo":{"id":3,"status":6}}"#
+        let fixture = try await CatalogStoreFixture(replies: [
+            .init(json: Self.page(1, titles: candidates)), .init(json: Self.page(1, titles: candidates)),
+            .init(json: #"{"id":1,"title":"Together","credits":{"cast":[{"id":101,"name":"One","character":"Bruce Wayne / Batman"},{"id":102,"name":"Two","character":"The Joker (voice)"}],"crew":[]}}"#),
+            .init(json: #"{"id":2,"title":"Impostors","credits":{"cast":[{"id":101,"name":"One","character":"Batman Impostor"},{"id":102,"name":"Two","character":"Joker Henchman"}],"crew":[]}}"#),
+        ])
+        defer { fixture.cleanUp() }
+        let catalog = SeerrCatalogStore(source: .natural(SeerrSearchIntent(mediaType: "movie", characters: ["Batman", "Joker"])))
+        await catalog.load(store: fixture.store)
+        #expect(catalog.items.map(\.id) == [1])
+        #expect(fixture.http.requests.compactMap { Self.query($0, key: "query") } == ["Batman", "Joker"])
+        #expect(fixture.http.requests.count == 4)
+    }
+
+    @Test("Looking up a named person uses Seerr search and cannot yield a same-name movie")
+    func naturalPerson() async throws {
+        let rows = #"{"id":92,"name":"Example Person","mediaType":"person"},{"id":92,"title":"Example Person","mediaType":"movie"}"#
+        let fixture = try await CatalogStoreFixture(replies: [.init(json: Self.page(1, titles: rows))])
+        defer { fixture.cleanUp() }
+        let catalog = SeerrCatalogStore(source: .natural(SeerrSearchIntent(mediaType: "person", keywords: ["Example Person"])))
+        await catalog.load(store: fixture.store)
+        #expect(catalog.items.map(\.seerrCatalogID) == ["person:92"])
+        #expect(fixture.http.requests.count == 1)
+    }
+
+    @Test("Person lookups reconcile duplicate or misplaced names without dropping distinct constraints")
+    func normalizedPersonLookup() {
+        let expected = SeerrSearchIntent(mediaType: "person", keywords: ["Maya Chen"])
+        let duplicated = SeerrSearchIntent(mediaType: "person", keywords: ["Maya Chen"], people: ["maya chen"])
+        let misplaced = SeerrSearchIntent(mediaType: "person", people: ["Maya Chen"])
+        #expect(duplicated.normalizedPersonLookup() == expected)
+        #expect(misplaced.normalizedPersonLookup() == expected)
+        let distinct = SeerrSearchIntent(mediaType: "person", keywords: ["Maya Chen"], people: ["Maya Chen", "Alex Chen"])
+        #expect(distinct.normalizedPersonLookup().people == ["Alex Chen"])
+        #expect(!distinct.normalizedPersonLookup().isSupported)
+        let extraCondition = SeerrSearchIntent(mediaType: "person", people: ["Maya Chen"], minimumYear: 2000)
+        #expect(extraCondition.normalizedPersonLookup() == extraCondition)
+        let movie = SeerrSearchIntent(mediaType: "movie", people: ["Maya Chen"])
+        #expect(movie.normalizedPersonLookup() == movie)
+    }
+
+    @Test("A director request must match the named director on each returned Seerr title")
+    func naturalCredits() async throws {
+        let fixture = try await CatalogStoreFixture(replies: [
+            .init(json: Self.page(1, titles: #"{"id":7,"name":"Example Person","mediaType":"person"}"#)),
+            .init(json: #"{"cast":[{"id":3,"mediaType":"movie"}],"crew":[{"id":1,"mediaType":"movie","job":"Director"},{"id":2,"mediaType":"movie","job":"Director"}]}"#),
+            .init(json: #"{"id":1,"title":"Cameo","credits":{"cast":[{"id":7,"name":"Example Person"}],"crew":[{"id":9,"name":"Someone Else","job":"Director"}]}}"#),
+            .init(json: #"{"id":2,"title":"Directed","credits":{"cast":[],"crew":[{"id":7,"name":"Example Person","job":"Director"}]}}"#),
+        ])
+        defer { fixture.cleanUp() }
+        let intent = SeerrSearchIntent(mediaType: "movie", credits: [.init(name: "Example Person", role: "director")])
+        let catalog = SeerrCatalogStore(source: .natural(intent))
+        await catalog.load(store: fixture.store)
+        #expect(catalog.items.map(\.id) == [2])
+        #expect(fixture.http.requests.compactMap { Self.query($0, key: "query") } == ["Example Person"])
+        #expect(fixture.http.requests.count == 4)
+    }
+
+    @Test("Unsupported and invalid intents do not issue broad catalog lookups")
+    func unsupportedNaturalQueries() async throws {
+        let fixture = try await CatalogStoreFixture(replies: [])
+        defer { fixture.cleanUp() }
+        for intent in [
+            SeerrSearchIntent(),
+            SeerrSearchIntent(mediaType: "book"),
+            SeerrSearchIntent(unsupported: ["my watch state"]),
+            SeerrSearchIntent(minimumYear: 2020, maximumYear: 2000),
+        ] {
+            #expect(!intent.isSupported)
+            let catalog = SeerrCatalogStore(source: .natural(intent))
+            await catalog.load(store: fixture.store)
+            #expect(catalog.errorMessage != nil)
+        }
+        #expect(fixture.http.requests.isEmpty)
+    }
+
+    @Test("Predictive Discover completion shares the regular search's admitted rows and request")
+    func keywordSuggestions() async throws {
+        let rows = #"{"id":91,"mediaType":"movie","title":"Orbit"},{"id":92,"mediaType":"movie","title":"Orbital"},{"id":93,"mediaType":"movie","title":"ORBITAL"},{"id":94,"mediaType":"movie","title":"Orbit Hidden","mediaInfo":{"id":94,"status":6}}"#
+        let fixture = try await CatalogStoreFixture(replies: [.init(json: Self.page(1, titles: rows))])
+        defer { fixture.cleanUp() }
+        let catalog = SeerrCatalogStore(source: .search("orb"))
+        await catalog.load(store: fixture.store)
+        let suggestions = SearchCompletions.matching("orb", candidates: catalog.items.filter { fixture.store.admits($0) }.map(\.displayTitle), limit: 5)
+        #expect(suggestions == ["Orbit", "Orbital"])
+        #expect(catalog.items.map(\.id) == [91, 92, 93])
+        #expect(fixture.http.requests.count == 1)
     }
 
     private static func query(_ request: URLRequest, key: String) -> String? {

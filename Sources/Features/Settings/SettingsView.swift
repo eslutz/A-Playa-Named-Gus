@@ -96,6 +96,8 @@ struct SettingsView: View {
                 Text("Playback")
             }
 
+            IntelligenceSettingsSection()
+
             Section("iCloud Sync") {
                 Toggle("Sync Gus Resume and Next Up", isOn: Binding(get: { videoPlaylists.syncEnabled }, set: { videoPlaylists.syncEnabled = $0 }))
                 Text(videoPlaylists.syncStatus).foregroundStyle(.secondary)

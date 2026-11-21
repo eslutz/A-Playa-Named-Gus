@@ -4,6 +4,68 @@ import Testing
 
 @Suite("Search store helpers")
 struct SearchStoreTests {
+    @Test("one draft supports natural submit, keyword fallback and shared preference changes")
+    @MainActor func unifiedSearchDraft() throws {
+        let suite = UUID().uuidString
+        let defaults = try #require(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let history = SearchHistoryStore(scope: .init(serverID: "s", userID: "u"), defaults: defaults)
+        let root = RootNavigationState(searchHistory: history)
+        let search = root.globalSearch
+        root.editSearchText("mystery movies", naturalSearchEnabled: true)
+        #expect(search.natural.submission == nil && search.typed.text.isEmpty)
+        search.submit(naturalSearchEnabled: true, history: history)
+        #expect(search.natural.submission != nil && history.entries.isEmpty)
+        root.useKeywordSearchForCurrentDrafts()
+        #expect(search.natural.submission == nil && search.displaysKeywords)
+        #expect(search.text == "mystery movies" && search.typed.text == search.text)
+        search.typed.selectedResult(.init(id: "m", name: "Movie", type: .movie), for: search.text, in: history)
+        #expect(history.entries.isEmpty)
+        root.editSearchText("mystery dramas", naturalSearchEnabled: true)
+        #expect(search.displaysKeywords && search.typed.text == "mystery dramas")
+        search.typed.selectedResult(.init(id: "m", name: "Movie", type: .movie), for: search.text, in: history)
+        #expect(history.entries.isEmpty)
+        search.submit(naturalSearchEnabled: true, history: history)
+        #expect(search.natural.submission != nil && !search.displaysKeywords)
+        search.searchByKeyword(recordingIn: history)
+        #expect(search.natural.submission == nil && search.typed.text == search.text)
+        #expect(history.entries == [.typed("mystery dramas")])
+        root.editSearchText("mystery movies before 2001", naturalSearchEnabled: true)
+        #expect(!search.displaysKeywords && search.natural.submission == nil && search.typed.text.isEmpty)
+        root.replaySearch(.typed("Title"))
+        #expect(root.globalSearch.displaysKeywords && root.globalSearch.text == "Title")
+    }
+
+    @Test("suggestions deduplicate, exclude the current text and limit visible completions")
+    @MainActor func nativeCompletions() {
+        let terms = ["sci", "SCI", "Sci-fi", "SCI-FI", "Comedy", "Sci-Fi Series"]
+        #expect(SearchCompletions.matching(" sci ", candidates: terms) == ["Sci-fi", "Sci-Fi Series"])
+        #expect(SearchCompletions.matching(" ", candidates: terms).isEmpty)
+        #expect(SearchCompletions.matching("s", candidates: (1 ... 12).map { "Series \($0)" }).count == 6)
+    }
+
+    @Test("cloud and shelf consent are separate and persist only for their account")
+    @MainActor func scopedIntelligencePreferences() throws {
+        let suite = UUID().uuidString
+        let defaults = try #require(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let scope = AccountScope(serverID: "a", userID: "user")
+        let prefs = GusIntelligencePreferences(scope: scope, defaults: defaults)
+        #expect(!prefs.cloudEnabled && !prefs.recommendationsEnabled)
+        prefs.recommendationsEnabled = true
+        #expect(!prefs.cloudEnabled)
+        let restored = GusIntelligencePreferences(scope: scope, defaults: defaults)
+        #expect(restored.recommendationsEnabled && !restored.cloudEnabled)
+        restored.cloudEnabled = true
+        let other = GusIntelligencePreferences(scope: .init(serverID: "b", userID: "user"), defaults: defaults)
+        #expect(!other.cloudEnabled && !other.recommendationsEnabled)
+        other.recommendationsEnabled = true
+        GusIntelligencePreferences.delete(scope: scope, defaults: defaults)
+        let removed = GusIntelligencePreferences(scope: scope, defaults: defaults)
+        #expect(!removed.cloudEnabled && !removed.recommendationsEnabled)
+        #expect(GusIntelligencePreferences(scope: .init(serverID: "b", userID: "user"), defaults: defaults).recommendationsEnabled)
+    }
+
     @Test("recent searches keep the newest twenty distinct intents for one server and user")
     @MainActor func recentSearches() throws {
         let defaults = try #require(UserDefaults(suiteName: UUID().uuidString))

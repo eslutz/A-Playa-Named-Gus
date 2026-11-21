@@ -1,26 +1,27 @@
 # Pull request and release gates
 
-Changes to `main` require a PR and all five current GitHub checks: **Validation
-Scope**, **Lint**, **Docs and Config**, **Build macOS**, and **Test macOS**. Keep
-conversations resolved and the intended source revision explicit before merging.
+Changes to `main` require a PR and four GitHub checks (**Validation Scope**,
+**Lint**, **Docs and Config**, and **Build macOS**). Record relevant local test
+results in the PR. Keep conversations resolved and the intended source revision
+explicit before merging.
 This is project policy. Verify live branch protection and required-check
 configuration separately; workflow YAML does not establish remote enforcement.
 
 GitHub CI runs on PRs targeting main, with read-only repository permissions and
 cancellation of superseded runs. It performs static/configuration checks and native
-Apple Silicon macOS build/unit validation. Hosted native macOS unit execution has
-an explicit exception. Simulator builds and tests are prohibited in GitHub and Xcode Cloud.
+Apple Silicon macOS compile validation. App tests and simulator builds run locally.
 
 ## Local qualification
 
-Run all iOS/iPadOS, tvOS, visionOS and watchOS simulator builds and tests locally,
-one simulator at a time. See the [local guide](../local-validation.md).
+Run macOS tests natively on a local Apple Silicon Mac with
+`platform=macOS,arch=arm64`. Run iOS/iPadOS, tvOS, visionOS and watchOS
+simulator builds and tests locally, one simulator at a time.
+See the [local guide](../local-validation.md).
 Retain exact source, compiled-input, artifact, native test-identity and raw-log
 provenance outside Git. Existing results keep their original revision/artifact labels;
 reuse requires an explicit unchanged-source scope, not a claim that they were rerun.
 Requalify affected behavior when source changes or unresolved failures require it.
-Local native macOS runtime and physical-device testing remain outside the current
-validation scope; the hosted macOS exception does not authorize either.
+Record checks that need unavailable hardware or entitlements as unverified.
 
 The warning-free and Apple Silicon policies remain mandatory. Do not suppress build
 or tool diagnostics, weaken architecture/concurrency settings, or substitute a passing
@@ -29,7 +30,7 @@ sandbox/network entitlements; distribution signatures remain a separate gate.
 
 ## Native archives and distribution
 
-Release qualification combines exact-candidate local simulator evidence, the five
+Release qualification combines exact-candidate local test evidence, the four
 current PR checks, and separately authorized native archives. Verify archive source,
 architecture, complete signatures/profiles, raw diagnostics and export/upload outcomes.
 App Store Connect processing, beta-group association and actual tester installation

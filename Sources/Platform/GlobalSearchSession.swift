@@ -6,6 +6,55 @@ import SwiftUI
 @MainActor @Observable
 final class GlobalSearchSession {
     let typed = SectionSearchState(retainsResults: true)
+    let natural = LibraryNaturalSearchState()
+    private var mode = SearchDraftMode.natural
+
+    var displaysKeywords: Bool {
+        mode != .natural
+    }
+
+    var text: String {
+        natural.text
+    }
+
+    func edit(_ value: String, naturalSearchEnabled: Bool) {
+        guard value != text else { return }
+        natural.text = value
+        mode.edit(value, naturalSearchEnabled: naturalSearchEnabled)
+        if displaysKeywords {
+            typed.setKeywordText(value, recordsHistory: !naturalSearchEnabled)
+        } else {
+            typed.text = ""
+        }
+    }
+
+    func searchByKeyword(recordingIn history: SearchHistoryStore? = nil) {
+        natural.resetResults()
+        mode = .keyword
+        typed.setKeywordText(text, recordsHistory: history != nil)
+        if let history {
+            typed.submitSearch(to: history)
+        }
+    }
+
+    func applyKeywordPreference() {
+        if !displaysKeywords {
+            searchByKeyword()
+        }
+        mode = text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? .natural : .keywordUntilSubmit
+    }
+
+    func submit(naturalSearchEnabled: Bool, history: SearchHistoryStore) {
+        if naturalSearchEnabled {
+            mode = .natural
+            typed.text = ""
+            natural.submit()
+        } else {
+            searchByKeyword(recordingIn: history)
+            applyKeywordPreference()
+        }
+    }
+
     var related: RelatedSearchResults?
     var detailOrigin: SearchDetailOrigin?
 

@@ -55,6 +55,7 @@ struct WatchRootView: View {
     var body: some View {
         if let session = appModel.currentSession {
             WatchSignedInView()
+                .modifier(IntelligencePromptHost(blocked: appModel.isTransitioning))
                 .id(session.lease)
                 .environment(session)
                 .gusArtworkTransport(session.artworkTransport)

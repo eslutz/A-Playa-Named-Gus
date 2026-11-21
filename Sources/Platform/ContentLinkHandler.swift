@@ -20,13 +20,22 @@ private struct ContentLinkHandler: ViewModifier {
 
     @State private var playerItem: ItemRef?
     @State private var errorMessage: String?
+    @State private var resolvingLink: Int?
 
     func body(content: Content) -> some View {
         content
             .task(id: navigation.contentLinkRequest) {
                 guard navigation.contentLinkRequest > 0, let link = navigation.consumeContentLink() else { return }
+                let request = navigation.contentLinkRequest
+                resolvingLink = request
+                defer {
+                    if resolvingLink == request {
+                        resolvingLink = nil
+                    }
+                }
                 await resolve(link)
             }
+            .defersIntelligencePrompt(while: resolvingLink != nil || playerItem != nil || errorMessage != nil)
             .sheet(item: Bindable(rootState).projectedValue.detailItem) { ref in
                 NavigationStack(path: Bindable(rootState).sheetPath) {
                     ItemRouteDestination(item: ref.item)

@@ -10,6 +10,9 @@ struct RootContainer: View {
     @Environment(NavigationPreferencesStore.self) private var preferences
     @State private var state: RootNavigationState
     @Environment(AudioPlaybackCoordinator.self) private var audio
+    #if os(visionOS)
+        @Environment(CinemaModel.self) private var cinema
+    #endif
     @SceneStorage("gus.root.selection") private var storedSelection = NavigationSectionPreference.homeID
 
     init(searchHistory: SearchHistoryStore) {
@@ -71,6 +74,9 @@ struct RootContainer: View {
                 session.references.beginRefresh()
                 await state.refreshCachedContent()
             }
+            .onChange(of: session.intelligenceAccess.usesNaturalSearch) { _, _ in
+                state.useKeywordSearchForCurrentDrafts()
+            }
             .onChange(of: navigation.searchFocusRequest) { _, request in
                 if request > 0 {
                     focusSearch()
@@ -78,10 +84,25 @@ struct RootContainer: View {
             }
             .onChange(of: navigation.routeRequest) { _, _ in state.adopt(navigation.route) }
             .onChange(of: state.selectedSectionID) { _, id in storedSelection = id }
+            .modifier(IntelligencePromptHost(blocked: defersIntelligencePrompt))
             .environment(state)
             .environment(audio)
             .environment(session.seerr)
             .task { await session.seerr.restore() }
+    }
+
+    private var defersIntelligencePrompt: Bool {
+        #if os(visionOS)
+            if cinema.isOpen {
+                return true
+            }
+        #elseif os(macOS)
+            if !navigation.playerWindows.requests.isEmpty {
+                return true
+            }
+        #endif
+        return app.isTransitioning || state.isProfilePresented || state.playerItem != nil || state.detailItem != nil ||
+            audio.isPresented || audio.store?.isPlaybackRequested == true
     }
 
     private func focusSearch() {
@@ -177,7 +198,7 @@ private struct TabRootView: View {
         }, set: { id in
             state.selectSection(id)
             #if os(iOS)
-                if id == RootNavigationState.searchID, state.globalSearch.related == nil, state.globalSearch.typed.text.isEmpty {
+                if id == RootNavigationState.searchID, state.globalSearch.related == nil, state.globalSearch.text.isEmpty {
                     state.globalSearch.typed.isPresented = true
                 }
             #endif
@@ -207,11 +228,11 @@ private struct TabRootView: View {
                 Tab(value: RootNavigationState.searchID, role: .search) {
                     SectionStack(sectionID: RootNavigationState.searchID)
                         .searchable(
-                            text: Binding(get: { state.globalSearch.typed.text }, set: { state.editSearchText($0) }),
+                            text: Binding(get: { state.globalSearch.text }, set: { state.editSearchText($0, naturalSearchEnabled: session.intelligenceAccess.usesNaturalSearch) }),
                             isPresented: Bindable(state.globalSearch.typed).isPresented,
                             prompt: "Search Library"
                         )
-                        .onSubmit(of: .search) { state.globalSearch.typed.submitSearch(to: session.searchHistory) }
+                        .modifier(LibrarySearchFieldBehavior(search: state.globalSearch))
                 }
             #elseif os(visionOS)
                 Tab("Search", systemImage: "magnifyingglass", value: RootNavigationState.searchID) {
@@ -360,7 +381,9 @@ private struct SectionStack: View {
             .gusItemDestinations()
             .toolbar {
                 #if os(iOS)
-                    if sectionID == RootNavigationState.searchID, state.globalSearch.related == nil, DeviceIdentity.usesIPadPresentation {
+                    if sectionID == RootNavigationState.searchID, state.globalSearch.related == nil, DeviceIdentity.usesIPadPresentation,
+                       !session.intelligenceAccess.usesNaturalSearch || state.globalSearch.displaysKeywords
+                    {
                         ToolbarItem(placement: .primaryAction) {
                             let search = state.searchState(for: sectionID)
                             Button {

@@ -20,6 +20,7 @@ enum DiagnosticEvent: Equatable, Sendable {
     case libraryLoadStarted
     case libraryLoadFinished(itemCount: Int)
     case libraryLoadFailed
+    case intelligenceAttempt(cloud: Bool, succeeded: Bool)
     case searchRequested
     case playbackStartRequested
     case playbackStarted(usingTranscoding: Bool, usingLocalFile: Bool)
@@ -55,6 +56,7 @@ enum DiagnosticEvent: Equatable, Sendable {
         case .libraryLoadStarted: return "library.load.started"
         case .libraryLoadFinished: return "library.load.finished"
         case .libraryLoadFailed: return "library.load.failed"
+        case .intelligenceAttempt: return "intelligence.attempt"
         case .searchRequested: return "search.requested"
         case .playbackStartRequested: return "playback.start.requested"
         case .playbackStarted: return "playback.started"
@@ -78,6 +80,8 @@ enum DiagnosticEvent: Equatable, Sendable {
     /// Numeric/boolean attributes only — see the type-level privacy contract.
     var attributes: [String: String] {
         switch self {
+        case let .intelligenceAttempt(cloud, succeeded):
+            return ["cloud": String(cloud), "succeeded": String(succeeded)]
         case let .playbackTimeControl(status, reason, positionMilliseconds, bufferEmpty, likelyToKeepUp):
             return [
                 "status": String((0 ... 2).contains(status) ? status : 0),

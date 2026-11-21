@@ -37,15 +37,23 @@ struct GlobalSearchContent: View {
         #endif
     }
 
-    private var searchableResults: some View {
-        results
-            .gusSearchable(
-                text: Binding(get: { root.globalSearch.typed.text }, set: { root.editSearchText($0) }),
-                isPresented: Bindable(root.globalSearch.typed).isPresented,
-                isFocused: $fieldFocused,
-                prompt: Text("Search Library")
-            )
-            .onSubmit(of: .search) { root.globalSearch.typed.submitSearch(to: session.searchHistory) }
+    @ViewBuilder private var searchableResults: some View {
+        let text = Binding(get: { root.globalSearch.text }, set: { root.editSearchText($0, naturalSearchEnabled: session.intelligenceAccess.usesNaturalSearch) })
+        #if os(tvOS)
+            results
+                .modifier(LibrarySearchFieldBehavior(search: root.globalSearch))
+                .searchable(text: text, prompt: Text("Search Library"))
+                .onSubmit(of: .search) { root.globalSearch.submit(naturalSearchEnabled: false, history: session.searchHistory) }
+        #else
+            results
+                .gusSearchable(
+                    text: text,
+                    isPresented: Bindable(root.globalSearch.typed).isPresented,
+                    isFocused: $fieldFocused,
+                    prompt: Text("Search Library")
+                )
+                .modifier(LibrarySearchFieldBehavior(search: root.globalSearch))
+        #endif
     }
 
     private var navigationTitle: String {
@@ -55,7 +63,7 @@ struct GlobalSearchContent: View {
         #if os(iOS)
             let typed = root.globalSearch.typed
             if widthClass == .compact, !typed.isPresented {
-                let query = typed.text.trimmingCharacters(in: .whitespacesAndNewlines)
+                let query = root.globalSearch.text.trimmingCharacters(in: .whitespacesAndNewlines)
                 if !query.isEmpty {
                     return query
                 }
@@ -68,6 +76,8 @@ struct GlobalSearchContent: View {
         Group {
             if let related = root.globalSearch.related {
                 RelatedResultsView(results: related).id(ObjectIdentifier(related))
+            } else if session.intelligenceAccess.usesNaturalSearch, !root.globalSearch.displaysKeywords, !root.globalSearch.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                NaturalLibraryResults(search: root.globalSearch)
             } else if !root.globalSearch.typed.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                 OwnedSearchResults(state: root.globalSearch.typed)
                     .id(ObjectIdentifier(root.globalSearch.typed))
@@ -76,6 +86,9 @@ struct GlobalSearchContent: View {
             }
         }
         .navigationTitle(navigationTitle)
+        .safeAreaInset(edge: .top, spacing: 0) {
+            LibraryDraftSuggestionRows()
+        }
         .toolbar {
             if root.hasSearchReturn {
                 ToolbarItem(placement: .cancellationAction) {
@@ -84,7 +97,7 @@ struct GlobalSearchContent: View {
                         .gusTVToolbarIcon()
                 }
             }
-            if root.globalSearch.related != nil || !root.globalSearch.typed.text.isEmpty {
+            if root.globalSearch.related != nil || !root.globalSearch.text.isEmpty {
                 ToolbarItem(placement: .primaryAction) {
                     Button("Close Results", systemImage: "xmark", action: root.closeSearchResults)
                         .accessibilityIdentifier("Search.closeResults")
@@ -93,6 +106,18 @@ struct GlobalSearchContent: View {
             }
         }
         .modifier(SearchExitCommand(root: root))
+    }
+}
+
+private struct LibraryDraftSuggestionRows: View {
+    @Environment(\.librarySearchDraftSuggestions) private var values
+    @Environment(RootNavigationState.self) private var root
+    @Environment(SessionStore.self) private var session
+
+    var body: some View {
+        SearchDraftSuggestions(values: values) {
+            root.editSearchText($0, naturalSearchEnabled: session.intelligenceAccess.usesNaturalSearch)
+        }
     }
 }
 

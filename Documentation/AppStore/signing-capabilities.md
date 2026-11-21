@@ -17,6 +17,16 @@ currently selected Cloud toolchain before an authorized archive. Local simulator
 builds do not qualify distribution signing. Local device signing, when separately
 authorized, uses the Git-ignored `Config/Local.xcconfig` override.
 
+## Optional Private Cloud Compute
+
+The default build uses the on-device Foundation Models API on eligible iPhone, iPad, Mac and Vision Pro hardware. A separately provisioned OS 27 build can also offer Private Cloud Compute, including on Watch. Track qualification in [issue 50](https://github.com/eslutz/A-Playa-Named-Gus/issues/50).
+
+After Apple grants the managed capability, add `com.apple.developer.private-cloud-compute` to the signing entitlements for the approved Gus and GusWatch destinations, preserve their existing capabilities, and regenerate the matching profiles. Set `GUS_PCC_ENTITLED = YES` only for the approved app targets and configurations. This setting exposes the runtime availability check. Apple enforces the signed entitlement and user quota. For an authorized archive, inspect the entitlements and embedded profiles of the app and its Watch companion before enabling distribution. [Apple’s entitlement requirements](https://developer.apple.com/private-cloud-compute/)
+
+Exercise consent, quota exhaustion and network loss with local simulator fixtures.
+Report which responses were simulated. Live Private Cloud Compute service access
+remains unverified when the simulator cannot exercise it.
+
 ## Capabilities — Declared Implementation
 
 The table records source configuration, not proof that distribution provisioning

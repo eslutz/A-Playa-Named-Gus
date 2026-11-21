@@ -446,7 +446,7 @@ final class LibraryStore {
             try Task.checkCancellation()
             guard generation == self.loadGeneration, self.session.isActive else { throw CancellationError() }
             var query = LibraryRequest.parameters(scope: self.scope, startIndex: offset, limit: limit, filter: filter)
-            query.isBookCatalog = true
+            query.metadataOnly = true
             let task = Task { try await self.session.mediaProvider.items(query: query) }
             self.pageTask = task
             let page = try await withTaskCancellationHandler { try await task.value } onCancel: { task.cancel() }

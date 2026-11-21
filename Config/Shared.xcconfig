@@ -75,6 +75,8 @@ CODE_SIGN_ENTITLEMENTS[sdk=appletvsimulator*] = Config/Gus-tvOS.entitlements
 GUS_WATCH_DEBUG_DYLIB = YES
 
 // MARK: - Local overrides
+// Enable only for builds signed with the approved Private Cloud Compute entitlement.
+GUS_PCC_ENTITLED = NO
 //
 // Local and Xcode Cloud generated overrides can opt into
 // automatic signing without changing the source-controlled PR-build defaults.

@@ -49,6 +49,7 @@ struct WatchResumeView: View {
         .task {
             await load()
         }
+        .defersIntelligencePrompt(while: targetPickerItem != nil)
         .sheet(item: $targetPickerItem) { item in
             WatchPlayTargetPicker(request: PlaybackRequest(item: item, startPositionTicks: PlaybackTime.resumePositionTicks(for: item)))
         }

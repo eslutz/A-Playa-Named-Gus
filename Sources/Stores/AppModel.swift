@@ -237,7 +237,10 @@ final class AppModel {
     }
 
     func clearHandedOffSession(serverID: String, userID: String) async {
-        SearchHistoryStore.delete(scope: AccountScope(serverID: serverID, userID: userID), defaults: userDefaults)
+        let scope = AccountScope(serverID: serverID, userID: userID)
+        GusIntelligencePreferences.delete(scope: scope, defaults: userDefaults)
+        GusLibraryIntelligence.deleteCatalog(scope: scope)
+        SearchHistoryStore.delete(scope: scope, defaults: userDefaults)
         guard let user = users.first(where: { $0.id == userID && $0.serverID == serverID }) else {
             let credential = SessionCredential(serverID: serverID, userID: userID)
             tokenStore.deleteToken(for: credential)
@@ -495,7 +498,10 @@ final class AppModel {
 
     private func removeAccount(server: ServerConnection, user: StoredUser) {
         clearAccountData(server: server, user: user)
-        SearchHistoryStore.delete(scope: AccountScope(serverID: server.id, userID: user.id), defaults: userDefaults)
+        let scope = AccountScope(serverID: server.id, userID: user.id)
+        GusIntelligencePreferences.delete(scope: scope, defaults: userDefaults)
+        GusLibraryIntelligence.deleteCatalog(scope: scope)
+        SearchHistoryStore.delete(scope: scope, defaults: userDefaults)
         tokenStore.deleteToken(for: SessionCredential(user: user))
         users.removeAll { SessionCredential(user: $0) == SessionCredential(user: user) }
         serverStore.saveUsers(users)

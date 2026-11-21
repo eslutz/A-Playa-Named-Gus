@@ -76,6 +76,7 @@ struct WatchItemActionsView: View {
             }
         }
         .navigationTitle(item.displayTitle)
+        .defersIntelligencePrompt(while: presentation != nil || confirmingSourceChange)
         .sheet(item: $presentation) { presented in
             switch presented {
             case let .audio(snapshot):

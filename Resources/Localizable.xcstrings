@@ -1,6 +1,216 @@
 {
   "sourceLanguage": "en",
   "strings": {
+    "Private Cloud Compute could not connect. Check your network and try again.": {
+      "comment": "Recovery message displayed for a submitted intelligence request."
+    },
+    "Private Cloud Compute is temporarily unavailable.": {
+      "comment": "Recovery message displayed for a submitted intelligence request."
+    },
+    "Apple Intelligence is limiting requests. Try again later.": {
+      "comment": "Recovery message displayed for a submitted intelligence request."
+    },
+    "Allow Private Cloud Compute?": {
+      "comment": "Action in the Library Intelligence settings or invitation."
+    },
+    "Apple can process submitted searches and, when For You is enabled, selected titles, descriptions, and viewing interests. Requests use your daily quota. You can change this in Gus Settings → Library Intelligence → Allow Private Cloud Compute.": {
+      "comment": "Explanation in the Library Intelligence settings or invitation."
+    },
+    "Enable For You": {
+      "comment": "Action in the Library Intelligence settings or invitation."
+    },
+    "Enable For You?": {
+      "comment": "Action in the Library Intelligence settings or invitation."
+    },
+    "Get recommendations based on your Jellyfin favorites and playback history. You can change this in Gus Settings → Library Intelligence → Show For You.": {
+      "comment": "Explanation in the Library Intelligence settings or invitation."
+    },
+    "Natural Language Search": {
+      "comment": "Action in the Library Intelligence settings or invitation."
+    },
+    "Not Now": {
+      "comment": "Action in the Library Intelligence settings or invitation."
+    },
+    "Turn on Allow Private Cloud Compute to use natural-language search and For You on this device.": {
+      "comment": "Explanation in the Library Intelligence settings or invitation."
+    },
+    "Comedy series from the 2000s": {
+      "comment": "Example query for natural-language search in Discover."
+    },
+    "Sci-fi movies from the 1990s": {
+      "comment": "Example query for natural-language search in Discover."
+    },
+    "Starring %@": {
+      "comment": "Applied search filter for a named contributor and their credited role."
+    },
+    "Directed by %@": {
+      "comment": "Applied search filter for a named contributor and their credited role."
+    },
+    "Written by %@": {
+      "comment": "Applied search filter for a named contributor and their credited role."
+    },
+    "Produced by %@": {
+      "comment": "Applied search filter for a named contributor and their credited role."
+    },
+    "Music by %@": {
+      "comment": "Applied search filter for a named contributor and their credited role."
+    },
+    "Authored by %@": {
+      "comment": "Applied search filter for a named contributor and their credited role."
+    },
+    "Performed by %@": {
+      "comment": "Applied search filter for a named contributor and their credited role."
+    },
+    "%@ movies": {
+      "comment": "Search or recommendation label for Discover."
+    },
+    "%@ series": {
+      "comment": "Search or recommendation label for Discover."
+    },
+    "Allow Private Cloud Compute": {
+      "comment": "Search or recommendation label for the current Gus library."
+    },
+    "Apple Intelligence could not complete this request.": {
+      "comment": "Search or recommendation label for the current Gus library."
+    },
+    "Apple Intelligence is unavailable for this device or language.": {
+      "comment": "Search or recommendation label for the current Gus library."
+    },
+    "Applied Filters": {
+      "comment": "Search or recommendation label for the current Gus library."
+    },
+    "At least %lld minutes": {
+      "comment": "Search or recommendation label for the current Gus library."
+    },
+    "Couldn’t verify these requirements: %@": {
+      "comment": "Search or recommendation label for the current Gus library."
+    },
+    "Describe movies, shows, or people, then submit your search.": {
+      "comment": "Search or recommendation label for Discover."
+    },
+    "Describe what you want to find, then submit your search.": {
+      "comment": "Search or recommendation label for the current Gus library."
+    },
+    "Favorite audiobooks": {
+      "comment": "Search or recommendation label for the current Gus library."
+    },
+    "Favorites": {
+      "comment": "Search or recommendation label for the current Gus library."
+    },
+    "For You": {
+      "comment": "Search or recommendation label for the current Gus library."
+    },
+    "For You Unavailable": {
+      "comment": "Search or recommendation label for the current Gus library."
+    },
+    "For You uses this account’s favorites and activity to suggest media.": {
+      "comment": "Search or recommendation label for the current Gus library."
+    },
+    "From %@": {
+      "comment": "Search or recommendation label for Discover."
+    },
+    "From year %@": {
+      "comment": "Search or recommendation label for the current Gus library."
+    },
+    "Indexing Library": {
+      "comment": "Search or recommendation label for the current Gus library."
+    },
+    "Keyword": {
+      "comment": "Search or recommendation label for the current Gus library."
+    },
+    "Library Intelligence": {
+      "comment": "Search or recommendation label for the current Gus library."
+    },
+    "Matches from a limited set of Seerr results.": {
+      "comment": "Search or recommendation label for Discover."
+    },
+    "Matches your interest in %@.": {
+      "comment": "Search or recommendation label for the current Gus library."
+    },
+    "Natural Language": {
+      "comment": "Search or recommendation label for the current Gus library."
+    },
+    "Natural Language Search Unavailable": {
+      "comment": "Search or recommendation label for Discover."
+    },
+    "No Recommendations Yet": {
+      "comment": "Search or recommendation label for the current Gus library."
+    },
+    "No Verified Matches": {
+      "comment": "Search or recommendation label for Discover."
+    },
+    "No accessible title has metadata confirming these requirements.": {
+      "comment": "Search or recommendation label for the current Gus library."
+    },
+    "People": {
+      "comment": "Search or recommendation label for Discover."
+    },
+    "Private Cloud Compute usage resets %@.": {
+      "comment": "Search or recommendation label for the current Gus library."
+    },
+    "Remove links or account identifiers to use Private Cloud Compute.": {
+      "comment": "Search or recommendation label for the current Gus library."
+    },
+    "Search Mode": {
+      "comment": "Search or recommendation label for the current Gus library."
+    },
+    "Search by Keyword": {
+      "comment": "Search or recommendation label for Discover."
+    },
+    "Search by Title": {
+      "comment": "Search or recommendation label for the current Gus library."
+    },
+    "Searching Library": {
+      "comment": "Search or recommendation label for the current Gus library."
+    },
+    "Seerr cannot verify all the requested conditions. Try a title, genre, or release year.": {
+      "comment": "Search or recommendation label for Discover."
+    },
+    "Seerr cannot verify the requested condition ‘%@’.": {
+      "comment": "Search or recommendation label for Discover."
+    },
+    "Seerr’s available metadata did not confirm a match in the searched results.": {
+      "comment": "Search or recommendation label for Discover."
+    },
+    "Shorten the search and try again.": {
+      "comment": "Search or recommendation label for the current Gus library."
+    },
+    "Show For You": {
+      "comment": "Search or recommendation label for the current Gus library."
+    },
+    "Showing the first 60 matches.": {
+      "comment": "Search or recommendation label for the current Gus library."
+    },
+    "Songs": {
+      "comment": "Search or recommendation label for the current Gus library."
+    },
+    "The Private Cloud Compute usage limit has been reached.": {
+      "comment": "Search or recommendation label for the current Gus library."
+    },
+    "The search catalog could not be opened or updated. Try again.": {
+      "comment": "Search or recommendation label for the current Gus library."
+    },
+    "The search requirements could not be interpreted reliably.": {
+      "comment": "Search or recommendation label for the current Gus library."
+    },
+    "Through %@": {
+      "comment": "Search or recommendation label for Discover."
+    },
+    "Through year %@": {
+      "comment": "Search or recommendation label for the current Gus library."
+    },
+    "Unwatched sci-fi movies": {
+      "comment": "Search or recommendation label for the current Gus library."
+    },
+    "Up to %lld minutes": {
+      "comment": "Search or recommendation label for the current Gus library."
+    },
+    "Watch searches recent items and keyword matches.": {
+      "comment": "Search or recommendation label for the current Gus library."
+    },
+    "When enabled, Gus can send search text, selected catalog details, and taste signals to Apple’s Private Cloud Compute using your daily quota.": {
+      "comment": "Search or recommendation label for the current Gus library."
+    },
     "Back to Detail": {
       "comment": "Jellyfin Search navigation."
     },

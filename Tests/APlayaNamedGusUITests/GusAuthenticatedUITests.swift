@@ -100,6 +100,157 @@ final class GusAuthenticatedUITests: XCTestCase {
     }
 
     #if os(iOS)
+        func testCloudForYouInvitationAndLibraryIntelligenceSettings() throws {
+            try prepare()
+            defer { finish() }
+            let args = ["--gus-intelligence-test-cloud", "--gus-intelligence-test-suite", UUID().uuidString]
+            let app = launch("settings", arguments: args)
+            let message = "Get recommendations based on your Jellyfin favorites and playback history. You can change this in Gus Settings → Library Intelligence → Show For You."
+            let explanation = app.staticTexts["Intelligence.prompt.message"]
+            XCTAssertTrue(explanation.waitForExistence(timeout: 20))
+            XCTAssertEqual(explanation.label, message)
+            app.buttons["Intelligence.prompt.allow"].tap()
+            XCTAssertTrue(app.staticTexts["Allow Private Cloud Compute?"].waitForExistence(timeout: 10))
+            app.buttons["Intelligence.prompt.allow"].tap()
+
+            let natural = app.switches["Intelligence.naturalSearch"].firstMatch
+            let cloud = app.switches["Intelligence.privateCloud"].firstMatch
+            let forYou = app.switches["Intelligence.forYou"].firstMatch
+            revealIntelligenceSettings(forYou, in: app)
+            XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label ==[c] %@", "Library Intelligence")).firstMatch.exists)
+            XCTAssertLessThan(natural.frame.midY, cloud.frame.midY)
+            XCTAssertLessThan(cloud.frame.midY, forYou.frame.midY)
+            XCTAssertEqual(natural.value as? String, "1")
+            XCTAssertEqual(cloud.value as? String, "1")
+            XCTAssertEqual(forYou.value as? String, "1")
+            revealIntelligenceSettings(natural, in: app)
+            tapIntelligenceSwitch(natural, expecting: "0")
+
+            app.terminate()
+            let again = launch("settings", arguments: args)
+            let persisted = again.switches["Intelligence.naturalSearch"].firstMatch
+            revealIntelligenceSettings(persisted, in: again)
+            XCTAssertEqual(persisted.value as? String, "0")
+            XCTAssertFalse(again.buttons["Intelligence.prompt.allow"].exists)
+        }
+
+        func testDismissedForYouInvitationCanBeEnabledInSettings() throws {
+            try prepare()
+            defer { finish() }
+            let args = ["--gus-intelligence-test-local", "--gus-intelligence-test-suite", UUID().uuidString]
+            let app = launch("settings", arguments: args)
+            let decline = app.buttons["Intelligence.prompt.decline"]
+            XCTAssertTrue(decline.waitForExistence(timeout: 20))
+            decline.tap()
+            let forYou = app.switches["Intelligence.forYou"].firstMatch
+            revealIntelligenceSettings(forYou, in: app)
+            XCTAssertEqual(forYou.value as? String, "0")
+            XCTAssertFalse(app.switches["Intelligence.privateCloud"].exists)
+            app.terminate()
+
+            let again = launch("settings", arguments: args)
+            let restored = again.switches["Intelligence.forYou"].firstMatch
+            revealIntelligenceSettings(restored, in: again)
+            XCTAssertFalse(again.buttons["Intelligence.prompt.allow"].exists)
+            tapIntelligenceSwitch(restored, expecting: "1")
+        }
+
+        func testSwipingAwayForYouCountsAsNotNow() throws {
+            try prepare()
+            defer { finish() }
+            let args = ["--gus-intelligence-test-local", "--gus-intelligence-test-suite", UUID().uuidString]
+            let app = launch("settings", arguments: args)
+            let title = app.staticTexts["Enable For You?"]
+            XCTAssertTrue(title.waitForExistence(timeout: 20))
+            let sheet = app.sheets.firstMatch.exists ? app.sheets.firstMatch : title
+            let handle = sheet.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.05))
+            handle.press(forDuration: 0.1, thenDragTo: app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.98)))
+            XCTAssertTrue(title.waitForNonExistence(timeout: 8))
+            app.terminate()
+
+            let again = launch("settings", arguments: args)
+            let restored = again.switches["Intelligence.forYou"].firstMatch
+            revealIntelligenceSettings(restored, in: again)
+            XCTAssertEqual(restored.value as? String, "0")
+            XCTAssertFalse(again.buttons["Intelligence.prompt.allow"].exists)
+        }
+
+        private func tapIntelligenceSwitch(_ toggle: XCUIElement, expecting value: String) {
+            XCTAssertTrue(toggle.isEnabled)
+            let offset = max(0.5, 1 - 28 / toggle.frame.width)
+            toggle.coordinate(withNormalizedOffset: CGVector(dx: offset, dy: 0.5)).tap()
+            let changed = XCTNSPredicateExpectation(predicate: NSPredicate(format: "value == %@", value), object: toggle)
+            XCTAssertEqual(XCTWaiter.wait(for: [changed], timeout: 5), .completed, toggle.debugDescription)
+        }
+
+        private func revealIntelligenceSettings(_ toggle: XCUIElement, in app: XCUIApplication) {
+            XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: 12))
+            let viewport = app.frame.insetBy(dx: 0, dy: 100)
+            for _ in 0 ..< 8 {
+                let frame = toggle.exists ? toggle.frame : .zero
+                if viewport.contains(frame), frame.height > 0, toggle.isHittable {
+                    return
+                }
+                let above = frame.height > 0 && frame.minY < viewport.minY
+                let start = app.coordinate(withNormalizedOffset: CGVector(dx: 0.8, dy: above ? 0.45 : 0.8))
+                let end = app.coordinate(withNormalizedOffset: CGVector(dx: 0.8, dy: above ? 0.8 : 0.45))
+                start.press(forDuration: 0.1, thenDragTo: end)
+            }
+            XCTFail(app.debugDescription)
+        }
+
+        func testLibraryPredictiveCompletionKeepsKeywordSearch() throws {
+            try prepare()
+            defer { finish() }
+            let title = try required("MovieTitle")
+            let server = try Data(required("FixtureServerID").utf8).base64EncodedString()
+            let user = try Data(required("FixtureUserID").utf8).base64EncodedString()
+            let key = "-dev.ericslutz.gus.intelligence." + server + "." + user
+            let app = launch("search", arguments: [key + ".naturalSearch", "NO", key + ".recommendations", "NO"])
+            let field = app.searchFields.firstMatch
+            XCTAssertTrue(field.waitForExistence(timeout: 30))
+            field.tap()
+            field.typeText(String(title.prefix(max(1, title.count - 2))))
+            let completion = app.collectionViews.cells.buttons[title].firstMatch
+            XCTAssertTrue(completion.waitForExistence(timeout: 20), app.debugDescription)
+            completion.tap()
+            XCTAssertEqual(field.value as? String, title)
+            let submit = app.keyboards.buttons["Search"].firstMatch
+            if submit.exists, submit.isHittable {
+                submit.tap()
+            }
+            let result = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", title)).firstMatch
+            XCTAssertTrue(result.waitForExistence(timeout: 15), app.debugDescription)
+            result.tap()
+            XCTAssertTrue(app.buttons["Detail.play"].waitForExistence(timeout: 15), app.debugDescription)
+        }
+
+        func testLibraryNaturalSuggestionWaitsForSubmit() throws {
+            try prepare()
+            defer { finish() }
+            let args = ["--gus-intelligence-test-cloud", "--gus-intelligence-test-suite", UUID().uuidString]
+            let app = launch("search", arguments: args)
+            let decline = app.buttons["Intelligence.prompt.decline"]
+            XCTAssertTrue(app.staticTexts["Enable For You?"].waitForExistence(timeout: 20))
+            decline.tap()
+            let field = app.searchFields.firstMatch
+            XCTAssertTrue(field.waitForExistence(timeout: 15))
+            field.tap()
+            field.typeText("Unwatched sci")
+            let title = "Unwatched sci-fi movies"
+            let completion = app.buttons["Search.suggestion." + title].firstMatch
+            XCTAssertTrue(completion.waitForExistence(timeout: 10), app.debugDescription)
+            completion.tap()
+            XCTAssertEqual(field.value as? String, title)
+            XCTAssertFalse(app.staticTexts["Allow Private Cloud Compute?"].exists, app.debugDescription)
+            XCTAssertFalse(app.staticTexts["Enable For You?"].exists, app.debugDescription)
+            field.tap()
+            field.typeText("\n")
+            XCTAssertTrue(app.staticTexts["Allow Private Cloud Compute?"].waitForExistence(timeout: 12), app.debugDescription)
+            decline.tap()
+            XCTAssertEqual(field.value as? String, title)
+        }
+
         func testReadyVideoCloseReturnsToDetail() throws {
             try prepare()
             defer { finish() }
@@ -758,22 +909,8 @@ final class GusAuthenticatedUITests: XCTestCase {
                 try focusTV(app, label: "Disconnect")
                 XCUIRemote.shared.press(.select)
             }
-            try focusTV(app, label: "Connect to Seerr")
-            XCUIRemote.shared.press(.select)
-            try enterTV(app, identifier: "Seerr.serverURL", text: "http://127.0.0.1:5059")
-            try focusTV(app, identifier: "Seerr.continue")
-            XCUIRemote.shared.press(.select)
-            try enterTV(app, identifier: "Seerr.username", text: "fixture@example.invalid")
-            try enterTV(app, identifier: "Seerr.password", text: "gus-fixture-only")
-            capture(app, "tv-seerr-signin-aligned")
-            try focusTV(app, identifier: "Seerr.signIn")
-            XCUIRemote.shared.press(.select)
-            XCTAssertTrue(app.staticTexts["Connected"].waitForExistence(timeout: 20))
-            capture(app, "tv-seerr-connected")
-            XCUIRemote.shared.press(.menu)
-            try showTVSidebar(app)
-            try focusTV(app, label: "Discover")
-            XCUIRemote.shared.press(.select)
+            try connectTVSeerrFixture(app)
+            try openTVDiscover(app)
             try verifyTVTrendingCarousel(app)
             try focusTV(app, identifier: "Seerr.title.movie.950000001")
             XCUIRemote.shared.press(.select)
@@ -794,6 +931,137 @@ final class GusAuthenticatedUITests: XCTestCase {
             XCTAssertTrue(app.descendants(matching: .any)["Seerr.requests.filter"].waitForExistence(timeout: 15), app.debugDescription)
             XCTAssertTrue(app.staticTexts["Gus Fixture Movie"].waitForExistence(timeout: 10), app.debugDescription)
             capture(app, "tv-seerr-request-history")
+        }
+
+        func testTVDiscoverPredictiveSearch() async throws {
+            try prepare()
+            executionTimeAllowance = 360
+            defer { finish() }
+            let app = launch("home")
+            try enterTVDiscoverFromHome(app)
+            let search = app.buttons["Search Seerr"]
+            if app.buttons["Seerr.connect"].waitForExistence(timeout: 3) {
+                try XCTSkipUnless(app.buttons["Seerr.connect"].label == "Connect to Seerr", "Requires a new or connected local fixture.")
+                try connectTVSeerrFixture(app, ready: search)
+            }
+            XCTAssertTrue(search.waitForExistence(timeout: 20), app.debugDescription)
+            let fixture = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@ OR identifier CONTAINS %@", "Gus Fixture", "9500000")).firstMatch
+            try XCTSkipUnless(fixture.waitForExistence(timeout: 10), "Search only runs against the synthetic Seerr fixture.")
+            try focusTV(app, label: "Search Seerr")
+            XCUIRemote.shared.press(.select)
+            let before = try await exactFixtureMovieSearchCount()
+            try completeTVSearch(app, prefix: "Gus Fixture Mov", title: "Gus Fixture Movie")
+            XCTAssertTrue(app.buttons["Seerr.title.movie.950000001"].waitForExistence(timeout: 10))
+            let after = try await exactFixtureMovieSearchCount()
+            XCTAssertGreaterThan(after, before)
+        }
+
+        private func enterTVDiscoverFromHome(_ app: XCUIApplication) throws {
+            XCTAssertTrue(app.staticTexts["Recently Added Movies"].waitForExistence(timeout: 30))
+            let discover = app.buttons.matching(NSPredicate(format: "label == %@", "Discover"))
+            func sidebarIsInteractive() -> Bool {
+                discover.allElementsBoundByAccessibilityElement.contains { $0.hasFocus || ($0.isEnabled && $0.isHittable && !$0.frame.isEmpty) }
+            }
+            for event: XCUIRemote.Button in [.left, .menu, .left] where !sidebarIsInteractive() {
+                XCUIRemote.shared.press(event)
+                let ready = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in sidebarIsInteractive() }, object: nil)
+                _ = XCTWaiter.wait(for: [ready], timeout: 2)
+            }
+            XCTAssertTrue(sidebarIsInteractive(), app.debugDescription)
+            try focusTV(app, label: "Discover")
+            XCUIRemote.shared.press(.select)
+        }
+
+        private func exactFixtureMovieSearchCount() async throws -> Int {
+            struct State: Decodable {
+                struct Event: Decodable { var exactFixtureMovieSearch: Bool? }
+                var events: [Event]
+            }
+            let client = URLSession(configuration: .ephemeral, delegate: FixtureHTTPClient(), delegateQueue: nil)
+            defer { client.invalidateAndCancel() }
+            let url = try XCTUnwrap(URL(string: "http://127.0.0.1:5059/__fixture/state"))
+            let (data, _) = try await client.data(from: url)
+            return try JSONDecoder().decode(State.self, from: data).events.filter { $0.exactFixtureMovieSearch == true }.count
+        }
+
+        func testTVLibraryPredictiveSearch() throws {
+            try prepare()
+            defer { finish() }
+            let app = openTVLibrarySearch()
+            let title = try required("MovieTitle")
+            try completeTVSearch(app, prefix: String(title.dropLast(2)), title: title)
+            let result = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", title)).firstMatch
+            XCTAssertTrue(result.waitForExistence(timeout: 15))
+        }
+
+        func testTVHistoryCompletionWithoutResults() throws {
+            try prepare()
+            defer { finish() }
+            let query = "Unmatched fixture query"
+            let server = try Data(required("FixtureServerID").utf8).base64EncodedString()
+            let user = try Data(required("FixtureUserID").utf8).base64EncodedString()
+            let key = "dev.ericslutz.gus.searchHistory." + server + "." + user
+            // The argument domain supplies a read-only fixture for this launch only.
+            let data = try JSONSerialization.data(withJSONObject: [["typed": ["_0": query]]])
+            let encoded = "<" + data.map { String(format: "%02x", $0) }.joined() + ">"
+            let app = openTVLibrarySearch(arguments: ["-" + key, encoded])
+            try completeTVSearch(app, prefix: String(query.dropLast(2)), title: query)
+            XCTAssertTrue(app.staticTexts["No Results"].waitForExistence(timeout: 15))
+        }
+
+        private func openTVLibrarySearch(arguments: [String] = []) -> XCUIApplication {
+            let app = launch("search", arguments: arguments)
+            let field = app.searchFields.firstMatch
+            XCTAssertTrue(field.waitForExistence(timeout: 20))
+            let keyboardFocus = { field.debugDescription.contains(", Keyboard Focused") }
+            if !keyboardFocus() {
+                XCUIRemote.shared.press(.right)
+                let active = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in keyboardFocus() }, object: nil)
+                if XCTWaiter.wait(for: [active], timeout: 3) != .completed {
+                    XCUIRemote.shared.press(.select)
+                }
+            }
+            let ready = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in keyboardFocus() }, object: nil)
+            XCTAssertEqual(XCTWaiter.wait(for: [ready], timeout: 10), .completed)
+            return app
+        }
+
+        private func completeTVSearch(_ app: XCUIApplication, prefix: String, title: String) throws {
+            let field = app.searchFields.firstMatch
+            XCTAssertTrue(field.waitForExistence(timeout: 15))
+            app.typeText(prefix)
+            let completion = app.buttons["Search.completion." + title]
+            XCTAssertTrue(completion.waitForExistence(timeout: 15), app.debugDescription)
+            for _ in 0 ..< 5 where !completion.hasFocus {
+                XCUIRemote.shared.press(.down)
+            }
+            XCTAssertTrue(completion.hasFocus, app.debugDescription)
+            XCUIRemote.shared.press(.select)
+            // UIKit may append an accessibility hint after the field's actual text.
+            let completed = XCTNSPredicateExpectation(predicate: NSPredicate(format: "value == %@ OR value BEGINSWITH %@", title, title + ", "), object: field)
+            XCTAssertEqual(XCTWaiter.wait(for: [completed], timeout: 10), .completed, "Actual field value: " + String(describing: field.value))
+        }
+
+        private func connectTVSeerrFixture(_ app: XCUIApplication, ready: XCUIElement? = nil) throws {
+            try focusTV(app, label: "Connect to Seerr")
+            XCUIRemote.shared.press(.select)
+            try enterTV(app, identifier: "Seerr.serverURL", text: "http://127.0.0.1:5059")
+            try focusTV(app, identifier: "Seerr.continue")
+            XCUIRemote.shared.press(.select)
+            try enterTV(app, identifier: "Seerr.username", text: "fixture@example.invalid")
+            try enterTV(app, identifier: "Seerr.password", text: "gus-fixture-only")
+            capture(app, "tv-seerr-signin-aligned")
+            try focusTV(app, identifier: "Seerr.signIn")
+            XCUIRemote.shared.press(.select)
+            XCTAssertTrue((ready ?? app.staticTexts["Connected"]).waitForExistence(timeout: 20))
+            capture(app, "tv-seerr-connected")
+        }
+
+        private func openTVDiscover(_ app: XCUIApplication) throws {
+            XCUIRemote.shared.press(.menu)
+            try showTVSidebar(app)
+            try focusTV(app, label: "Discover")
+            XCUIRemote.shared.press(.select)
         }
 
         private func verifyTVTrendingCarousel(_ app: XCUIApplication) throws {
@@ -949,6 +1217,9 @@ final class GusAuthenticatedUITests: XCTestCase {
                 let key = identifier ?? label!
                 let cells = app.cells.containing(NSPredicate(format: "identifier == %@ OR label == %@", key, key))
                 let resolved = cells.allElementsBoundByAccessibilityElement.last { !$0.frame.isEmpty } ?? target
+                if target.hasFocus || resolved.hasFocus {
+                    return
+                }
                 let destination = resolved.frame
                 guard let current = try? focusedTVFrame(app) else {
                     // A newly revealed tvOS screen can wait for the first directional
@@ -1007,14 +1278,19 @@ final class GusAuthenticatedUITests: XCTestCase {
         /// XCTest's live hierarchy includes its frame even when hasFocus predicates omit it.
         private func focusedTVFrame(_ app: XCUIApplication) throws -> CGRect {
             let description = app.debugDescription
-            let pattern = #"\{\{(-?[0-9.]+), (-?[0-9.]+)\}, \{([0-9.]+), ([0-9.]+)\}\}[^\n]*Focused"#
-            let expression = try NSRegularExpression(pattern: pattern)
-            guard let match = expression.firstMatch(in: description, range: NSRange(description.startIndex..., in: description)) else { throw FixtureError.missingMedia }
-            let values = try (1 ... 4).map { index in
-                let range = try XCTUnwrap(Range(match.range(at: index), in: description))
-                return try XCTUnwrap(Double(description[range]))
+            let pattern = #"\{\{(-?[0-9.]+), (-?[0-9.]+)\}, \{([0-9.]+), ([0-9.]+)\}\}[^\n]*, Focused(?:,|$)"#
+            let expression = try NSRegularExpression(pattern: pattern, options: .anchorsMatchLines)
+            for match in expression.matches(in: description, range: NSRange(description.startIndex..., in: description)) {
+                let values = try (1 ... 4).map { index in
+                    let range = try XCTUnwrap(Range(match.range(at: index), in: description))
+                    return try XCTUnwrap(Double(description[range]))
+                }
+                let frame = CGRect(x: values[0], y: values[1], width: values[2], height: values[3])
+                if !frame.isEmpty {
+                    return frame
+                }
             }
-            return CGRect(x: values[0], y: values[1], width: values[2], height: values[3])
+            throw FixtureError.missingMedia
         }
 
         private func tvHasFocus(_ element: XCUIElement, in app: XCUIApplication) -> Bool {
@@ -1830,9 +2106,9 @@ final class GusAuthenticatedUITests: XCTestCase {
         return app
     }
 
-    private func launch(_ route: String) -> XCUIApplication {
+    private func launch(_ route: String, arguments: [String] = []) -> XCUIApplication {
         let app = application()
-        app.launchArguments = ["--gus-demo-server", "--gus-disable-cloud-sync", "--gus-route", route]
+        app.launchArguments = ["--gus-demo-server", "--gus-disable-cloud-sync", "--gus-route", route] + arguments
         app.launch()
         return app
     }
@@ -1887,7 +2163,8 @@ final class GusAuthenticatedUITests: XCTestCase {
         else { throw FixtureError.unavailable }
         let response = try request("/Users/\(userID)/Items?Recursive=true&Limit=1000&Fields=Overview", token: token)
         let items = response["Items"] as? [[String: Any]] ?? []
-        var result: [String: String] = [:]
+        var result = ["FixtureUserID": userID]
+        result["FixtureServerID"] = auth["ServerId"] as? String ?? user["ServerId"] as? String
         for type in ["Audio", "Movie", "MusicAlbum", "Book"] {
             let candidates = items.filter { $0["Type"] as? String == type }
             let selected = type == "Audio" ? candidates.max(by: { ($0["RunTimeTicks"] as? Double ?? 0) < ($1["RunTimeTicks"] as? Double ?? 0) }) : candidates.first

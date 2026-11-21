@@ -5,6 +5,7 @@ enum SeerrCatalogSource: Hashable {
     case feed(SeerrDiscoveryFeed)
     case category(SeerrCategoryKind, Int)
     case search(String)
+    case natural(SeerrSearchIntent)
     case recommendations(SeerrMediaType, Int)
     case similar(SeerrMediaType, Int)
     case collection(Int)
@@ -122,6 +123,14 @@ final class SeerrCatalogStore {
             }
         }
         do {
+            if case let .natural(intent) = source {
+                let results = try await SeerrNaturalSearch.results(for: intent, store: store)
+                guard isCurrent(operation, revision: revision, store: store) else { return }
+                items = results
+                hasMore = false
+                state = .loaded
+                return
+            }
             let page = try await fetch(client: store.requireClient(), page: 1)
             let admitted = try await store.admitted(page.results)
             guard isCurrent(operation, revision: revision, store: store) else { return }
@@ -234,6 +243,7 @@ final class SeerrCatalogStore {
         case let .feed(feed):
             try await client.browse(feed, page: page, mediaType: filters.requestedMediaType, language: filters.requestedLanguage)
         case let .category(kind, id): try await client.browseCategory(kind, id: id, page: page)
+        case .natural: throw SeerrClientError.invalidPayload
         case let .search(query): try await client.search(query: query, page: page)
         case let .recommendations(type, id): try await client.recommendations(mediaType: type, id: id, page: page)
         case let .similar(type, id): try await client.similar(mediaType: type, id: id, page: page)
@@ -440,6 +450,11 @@ struct SeerrCatalogResults: View {
         ) {
             ScrollView {
                 VStack(spacing: 24) {
+                    #if os(tvOS)
+                        if case .search = catalog.source {
+                            TVSearchCompletionRows()
+                        }
+                    #endif
                     if visibleItems.isEmpty, catalog.state == .loaded {
                         Text("No matching titles on this page").foregroundStyle(.secondary)
                     }

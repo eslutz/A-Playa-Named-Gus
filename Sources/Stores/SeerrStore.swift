@@ -303,7 +303,7 @@ final class SeerrStore {
     }
 
     /// Catalog endpoints omit certifications; restrictions require the richer title before presentation.
-    func admitted(_ titles: [SeerrTitle]) async throws -> [SeerrTitle] {
+    func admitted(_ titles: [SeerrTitle], requiringDetails: Bool = false) async throws -> [SeerrTitle] {
         let expected = revision
         let restrictions = restrictionRevision
         let restriction = ContentRatingGate.storedLimit(userDefaults: defaults)
@@ -314,14 +314,15 @@ final class SeerrStore {
             if title.mediaType == .person {
                 result.append(title); continue
             }
-            guard title.mediaType == .movie || title.mediaType == .tv else { continue }
-            if restriction == .off {
+            guard title.mediaType == .movie || title.mediaType == .tv, !blockedTitles.contains(title.seerrCatalogID), title.mediaInfo?.status != .blocklisted else { continue }
+            if restriction == .off, !requiringDetails {
                 if admits(title) {
                     result.append(title)
                 }
             } else {
                 let client = try requireClient()
                 var detail = try await client.details(mediaType: title.mediaType ?? .unknown, id: title.id)
+                guard detail.id == title.id else { throw SeerrClientError.invalidResponse }
                 detail.character = title.character
                 detail.job = title.job
                 guard expected == revision, restrictions == restrictionRevision else { throw CancellationError() }

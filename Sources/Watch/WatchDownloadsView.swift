@@ -86,6 +86,7 @@ struct WatchDownloadsView: View {
         } message: {
             Text(downloads.errorMessage ?? "")
         }
+        .defersIntelligencePrompt(while: playerRecord != nil || downloads.errorMessage != nil)
         .sheet(item: $playerRecord) { record in
             WatchAudioPlayerView(tracks: [record.playbackItem], startIndex: 0, request: record.playbackRequest, localOnly: true)
         }

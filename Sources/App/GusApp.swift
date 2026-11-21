@@ -128,6 +128,7 @@ struct GusApp: App {
                 }
                 .onChange(of: scenePhase) { _, phase in
                     if phase == .background {
+                        appModel.currentSession?.libraryIntelligence.cancelIndexing()
                         Task { try? await DiagnosticsHub.shared.flush() }
                     }
                 }
