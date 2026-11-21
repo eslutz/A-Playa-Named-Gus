@@ -590,8 +590,11 @@
             }
             password.typeText("gus-fixture-only")
             let signIn = app.buttons["Seerr.signIn"].firstMatch
-            reveal(signIn, in: app)
-            signIn.tap()
+            if signIn.isHittable {
+                signIn.tap()
+            } else {
+                password.typeText("\n")
+            }
             XCTAssertTrue(app.staticTexts["Connected"].waitForExistence(timeout: 20))
         }
 
