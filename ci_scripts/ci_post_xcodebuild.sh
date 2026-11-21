@@ -13,11 +13,31 @@ case "${CI_PRODUCT_PLATFORM:-}" in
   *) exit 0 ;;
 esac
 
-archive="${CI_ARCHIVE_PATH:?Missing Xcode Cloud archive path}"
-app_path=$(/usr/libexec/PlistBuddy -c 'Print :ApplicationProperties:ApplicationPath' "$archive/Info.plist")
-app="$archive/Products/$app_path"
+export_dir="${CI_APP_STORE_SIGNED_APP_PATH:?Missing signed TestFlight export}"
 evidence=$(mktemp -d)
 trap 'rm -rf "$evidence"' EXIT
+if [ "$CI_PRODUCT_PLATFORM" = macOS ]; then
+  set -- "$export_dir"/*.pkg
+  if [ "$#" -ne 1 ] || [ ! -f "$1" ]; then
+    echo "Expected one macOS installer in the signed TestFlight export." >&2
+    exit 65
+  fi
+  /usr/sbin/pkgutil --expand-full "$1" "$evidence/expanded"
+  set -- "$evidence"/expanded/*.pkg/Payload/*.app
+else
+  set -- "$export_dir"/*.ipa
+  if [ "$#" -ne 1 ] || [ ! -f "$1" ]; then
+    echo "Expected one IPA in the signed TestFlight export." >&2
+    exit 65
+  fi
+  /usr/bin/ditto -x -k "$1" "$evidence/expanded"
+  set -- "$evidence"/expanded/Payload/*.app
+fi
+if [ "$#" -ne 1 ] || [ ! -d "$1" ]; then
+  echo "Expected one app bundle in the signed TestFlight export." >&2
+  exit 65
+fi
+app=$1
 pcc_key='com\.apple\.developer\.private-cloud-compute'
 
 verify_pcc() {

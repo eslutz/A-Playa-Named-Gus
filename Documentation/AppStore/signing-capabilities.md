@@ -30,9 +30,9 @@ remains unverified when the simulator cannot exercise it.
 The Gus Internal TestFlight archive hook adds PCC to the existing iOS, macOS
 and visionOS signing entitlements and gives the embedded Watch app its own
 PCC entitlement. Enable the managed capability for both App IDs in Apple
-Developer before running this workflow. The post-archive hook verifies
-the signed entitlement, profile, and runtime flag for each applicable bundle
-before the TestFlight post-actions.
+Developer before running this workflow. Before the TestFlight post-actions, the Cloud hook checks the signed
+TestFlight export for the entitlement, provisioning profile, and runtime flag
+on each applicable bundle.
 
 ## Capabilities — Declared Implementation
 
