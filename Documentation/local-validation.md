@@ -58,7 +58,7 @@ xcodebuild -version
 xcode-select -p
 ```
 
-Run `xcodegen generate` only when inputs affecting the generated project change.
+Run `SWIFT_DETERMINISTIC_HASHING=1 xcodegen generate` only when inputs affecting the generated project change. The environment setting keeps the generated copy-phase IDs stable.
 Review the generated project diff. The shared project snapshot and
 `Package.resolved` are tracked for Xcode Cloud. Verify them with
 `python3 Scripts/check-cloud-project.py` when affected. If dependency resolution

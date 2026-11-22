@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Check the shared XcodeGen snapshot without modifying the working project."""
 import json
+import os
 import xml.etree.ElementTree as ET
 from pathlib import Path
 import shutil
@@ -17,8 +18,10 @@ with tempfile.TemporaryDirectory(prefix="gus-cloud-project-") as directory:
     for name in ("Sources", "Tests", "Resources", "Config", "SiriPreview"):
         shutil.copytree(root / name, scratch / name,
                         ignore=shutil.ignore_patterns("Local.xcconfig", "*.p8"))
+    # XcodeGen iterates embed destinations in Swift hash order when it assigns phase IDs.
+    generator_environment = {**os.environ, "SWIFT_DETERMINISTIC_HASHING": "1"}
     subprocess.run(["xcodegen", "generate"], cwd=scratch, check=True,
-                   stdout=subprocess.DEVNULL)
+                   env=generator_environment, stdout=subprocess.DEVNULL)
     generated = scratch / project_name
     files = [Path("project.pbxproj"), Path("project.xcworkspace/contents.xcworkspacedata")]
     files += [p.relative_to(generated) for p in
@@ -57,7 +60,7 @@ with tempfile.TemporaryDirectory(prefix="gus-cloud-project-") as directory:
     if actual_schemes != expected_schemes:
         drift.append("shared scheme inventory")
     if drift:
-        sys.exit("Regenerate with xcodegen generate and include the shared project changes: "
+        sys.exit("Regenerate with SWIFT_DETERMINISTIC_HASHING=1 xcodegen generate and include the shared project changes: "
                  + ", ".join(drift))
 
 lock = json.loads((project / "project.xcworkspace/xcshareddata/swiftpm/Package.resolved").read_text())
