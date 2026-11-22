@@ -373,11 +373,12 @@ struct AudioPlayerView: View {
 
     @ViewBuilder
     private var chaptersMenu: some View {
-        if let track, !track.chapters.isEmpty {
+        let chapters = store.chapterTargets
+        if !chapters.isEmpty {
             Menu {
-                ForEach(PlaybackChapter.seekTargets(for: track)) { chapter in
+                ForEach(chapters) { chapter in
                     Button(chapter.title) {
-                        Task { await store.seek(to: chapter.seconds) }
+                        Task { await store.seek(to: chapter) }
                     }
                 }
             } label: {

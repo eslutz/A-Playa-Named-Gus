@@ -28,9 +28,7 @@ enum GusPlaybackChoices {
     }
 
     static func chapters(_ item: MediaItem, source: MediaSource?) -> [PlaybackChapter] {
-        // Jellyfin publishes one chapter list for the item, without per-version markers.
-        guard let id = source?.id, !id.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
-              id == item.mediaSources.first?.id, !item.mediaSources.dropFirst().contains(where: { $0.id == id }) else { return [] }
+        guard MediaPlaybackIdentity.ownsChapters(in: item, sourceID: source?.id) else { return [] }
         return PlaybackChapter.seekTargets(for: item)
     }
 

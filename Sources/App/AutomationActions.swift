@@ -299,20 +299,22 @@ struct SeekGusCurrentChapterIntent: AppIntent {
         let (audio, video) = NowPlayingController.chapterPlayers(for: session)
         let chapter: PlaybackChapter?
         if let audio, audio.state == .loaded, let track = audio.currentTrack, ContentRatingGate.admitsStored(track) {
-            chapter = action.target(in: PlaybackChapter.seekTargets(for: track), at: audio.currentTime, number: number)
+            chapter = action.target(in: audio.chapterTargets, at: audio.currentTime, number: number)
             if let chapter {
-                await audio.seek(to: chapter.seconds)
+                guard let nativeItem = audio.nativePlayer?.currentItem, await audio.seek(to: chapter) else { throw GusError.cancelled }
                 try GusIntentRuntime.validate(session)
-                guard NowPlayingController.chapterPlayers(for: session).0 === audio, audio.currentTrack?.id == track.id,
+                guard NowPlayingController.chapterPlayers(for: session).0 === audio, audio.state == .loaded,
+                      audio.nativePlayer?.currentItem === nativeItem, audio.currentTrack?.id == track.id,
                       abs(audio.currentTime - chapter.seconds) <= 2, ContentRatingGate.admitsStored(track) else { throw GusError.cancelled }
             }
         } else if let video, video.state == .ready, ContentRatingGate.admitsStored(video.item) {
             let itemID = video.item.id
             chapter = action.target(in: video.chapterTargets, at: PlaybackTime.seconds(fromTicks: video.positionTicks), number: number)
             if let chapter {
-                await video.seek(to: chapter)
+                guard let nativeItem = video.player?.currentItem, await video.seek(to: chapter) else { throw GusError.cancelled }
                 try GusIntentRuntime.validate(session)
-                guard NowPlayingController.chapterPlayers(for: session).1 === video, video.item.id == itemID,
+                guard NowPlayingController.chapterPlayers(for: session).1 === video, video.state == .ready,
+                      video.player?.currentItem === nativeItem, video.item.id == itemID,
                       abs(PlaybackTime.seconds(fromTicks: video.positionTicks) - chapter.seconds) <= 2,
                       ContentRatingGate.admitsStored(video.item) else { throw GusError.cancelled }
             }

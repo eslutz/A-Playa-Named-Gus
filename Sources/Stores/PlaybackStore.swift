@@ -135,7 +135,8 @@ final class PlaybackStore {
     }
 
     var chapterTargets: [PlaybackChapter] {
-        PlaybackChapter.seekTargets(for: item)
+        guard state == .ready, player?.currentItem != nil else { return [] }
+        return PlaybackChapter.seekTargets(for: item)
     }
 
     var selectedAudioStreamIndex: Int? {
@@ -430,16 +431,18 @@ final class PlaybackStore {
         }
     }
 
-    func seek(to chapter: PlaybackChapter) async {
-        guard session.isActive, let player, let item = player.currentItem else { return }
+    @discardableResult
+    func seek(to chapter: PlaybackChapter) async -> Bool {
+        guard session.isActive, chapterTargets.contains(chapter), let player, let item = player.currentItem else { return false }
         let generation = preparationGeneration
         let finished = await player.seek(
             to: CMTime(seconds: chapter.seconds, preferredTimescale: 600),
             toleranceBefore: .zero,
             toleranceAfter: .zero
         )
-        guard finished, !Task.isCancelled, session.isActive, generation == preparationGeneration, self.player === player, player.currentItem === item else { return }
+        guard finished, !Task.isCancelled, session.isActive, generation == preparationGeneration, self.player === player, player.currentItem === item else { return false }
         reportPlaybackProgress(positionTicks: currentPositionTicks(), isPaused: player.timeControlStatus != .playing)
+        return true
     }
 
     func selectViewingMode(_ mode: Stereo3DViewingMode) async {
@@ -529,20 +532,16 @@ final class PlaybackStore {
             let resolution: PlaybackSourceResolution?
             let playbackURL: URL
             if let localURL {
-                if let downloaded = playingDownload {
-                    item = downloaded.playbackItem; itemID = downloaded.item.id ?? itemID
-                    playbackIntent.item = item
-                    playbackIntent.streamSelection.mediaSourceID = downloaded.mediaSourceID
-                    let tracks = PlaybackTrackMemory.shared.resolve(
-                        request: playbackIntent,
-                        item: item,
-                        source: item.mediaSources.first,
-                        baseSelection: downloaded.playbackSelection(for: playbackIntent),
-                        scope: accountScope
-                    )
-                    streamSelection = tracks.selection
-                    trackSelectionNotice = tracks.hasUnavailableSelection ? String(localized: "A selected track is unavailable in this version. Using the player defaults.") : nil
-                }
+                guard let downloaded = playingDownload else { throw GusError.notFound }
+                item = downloaded.playbackItem; itemID = downloaded.item.id ?? itemID
+                playbackIntent.item = item
+                playbackIntent.streamSelection.mediaSourceID = downloaded.mediaSourceID
+                let tracks = PlaybackTrackMemory.shared.resolve(
+                    request: playbackIntent, item: item, source: item.mediaSources.first,
+                    baseSelection: downloaded.playbackSelection(for: playbackIntent), scope: accountScope
+                )
+                streamSelection = tracks.selection
+                trackSelectionNotice = tracks.hasUnavailableSelection ? String(localized: "A selected track is unavailable in this version. Using the player defaults.") : nil
                 resolution = nil
                 playbackIsLive = false
                 playbackURL = localURL
@@ -599,13 +598,11 @@ final class PlaybackStore {
                 }
                 let remoteResolution = resolved.resolution
                 effectiveStartTicks = resolved.startTicks
-                item = resolved.item
+                item = MediaPlaybackIdentity.presentationItem(for: resolved.item, resolution: remoteResolution, requestedSourceID: resolved.selection.mediaSourceID)
                 itemID = resolved.item.id ?? itemID
                 streamSelection = resolved.selection
                 trackSelectionNotice = resolved.unavailableTrack ? String(localized: "A selected track is unavailable in this version. Using the player defaults.") : nil
-                item.runTimeTicks = MediaPlaybackIdentity.runTimeTicks(for: resolved.item, mediaSourceID: remoteResolution.mediaSourceID ?? resolved.selection.mediaSourceID, resolvedSource: remoteResolution.mediaSource)
                 if let source = remoteResolution.mediaSource {
-                    item.mediaSources = [source] + item.mediaSources.filter { $0.id != source.id }
                     streamSelection.audioStreamIndex = streamSelection.audioStreamIndex ?? source.defaultAudioStreamIndex
                     streamSelection.subtitleStreamIndex = streamSelection.subtitleStreamIndex ?? source.defaultSubtitleStreamIndex
                 }

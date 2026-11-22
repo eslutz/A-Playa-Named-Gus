@@ -112,10 +112,11 @@ import SwiftUI
                         ForEach([0.75, 1, 1.25, 1.5, 2], id: \.self) { Text("\($0, specifier: "%.2g")×").tag($0) }
                     }
                 }
-                if let track = store.currentTrack, !track.chapters.isEmpty {
+                let chapters = store.chapterTargets
+                if !chapters.isEmpty {
                     Section("Chapters") {
-                        ForEach(PlaybackChapter.seekTargets(for: track)) { chapter in
-                            Button(chapter.title) { Task { await store.seek(to: chapter.seconds) } }
+                        ForEach(chapters) { chapter in
+                            Button(chapter.title) { Task { await store.seek(to: chapter) } }
                         }
                     }
                 }

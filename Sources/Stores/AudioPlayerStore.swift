@@ -276,6 +276,11 @@ final class AudioPlayerStore {
         return queue.currentTrack
     }
 
+    var chapterTargets: [PlaybackChapter] {
+        guard state == .loaded, player?.currentItem != nil, let preparedTrack, ContentRatingGate.admitsStored(preparedTrack) else { return [] }
+        return PlaybackChapter.seekTargets(for: preparedTrack)
+    }
+
     /// A bookmark captures the actual negotiated cut and player position, including a paused player.
     func bookmarkPosition(for itemID: String, session owner: SessionStore) -> (ticks: Int, source: String?)? {
         guard session === owner, owner.isActive, state == .loaded, hasPreparedContent, currentTrack?.id == itemID,
@@ -422,19 +427,27 @@ final class AudioPlayerStore {
         retryItemID = nil
     }
 
-    func seek(to seconds: Double) async {
-        guard seconds.isFinite, session.isActive, let player, let item = player.currentItem else { return }
+    @discardableResult
+    func seek(to chapter: PlaybackChapter) async -> Bool {
+        guard chapterTargets.contains(chapter) else { return false }
+        return await seek(to: chapter.seconds)
+    }
+
+    @discardableResult
+    func seek(to seconds: Double) async -> Bool {
+        guard seconds.isFinite, session.isActive, let player, let item = player.currentItem else { return false }
         let generation = preparationGeneration
         let finished = await player.seek(
             to: CMTime(seconds: max(0, seconds), preferredTimescale: 600),
             toleranceBefore: .zero,
             toleranceAfter: .zero
         )
-        guard finished, !Task.isCancelled, session.isActive, generation == preparationGeneration, self.player === player, player.currentItem === item else { return }
+        guard finished, !Task.isCancelled, session.isActive, generation == preparationGeneration, self.player === player, player.currentItem === item else { return false }
         let actual = player.currentTime().seconds
-        guard actual.isFinite else { return }
+        guard actual.isFinite else { return false }
         currentTime = actual
         reportProgress(force: true)
+        return true
     }
 
     var hasNext: Bool {
@@ -685,14 +698,13 @@ final class AudioPlayerStore {
             let playbackURL: URL
             var audioResolution: PlaybackSourceResolution?
             if let localURL {
-                if let downloaded = downloads?.record(for: track, serverID: session.server.id, userID: session.user.id, mediaSourceID: requestedSourceID) {
-                    track = downloaded.playbackItem; trackID = downloaded.item.id ?? trackID
-                    var intent = playbackIntent?.item.id == track.id ? playbackIntent ?? downloaded.playbackRequest : downloaded.playbackRequest
-                    intent.item = track
-                    intent.streamSelection.mediaSourceID = downloaded.mediaSourceID
-                    playbackIntent = intent
-                    audioSelection = downloaded.playbackSelection(for: intent)
-                }
+                guard let downloaded = playingDownload else { throw GusError.notFound }
+                track = downloaded.playbackItem; trackID = downloaded.item.id ?? trackID
+                var intent = playbackIntent?.item.id == track.id ? playbackIntent ?? downloaded.playbackRequest : downloaded.playbackRequest
+                intent.item = track
+                intent.streamSelection.mediaSourceID = downloaded.mediaSourceID
+                playbackIntent = intent
+                audioSelection = downloaded.playbackSelection(for: intent)
                 playbackURL = localURL
                 usingTranscoding = false
             } else {
@@ -726,11 +738,7 @@ final class AudioPlayerStore {
                     }
                     return
                 }
-                track = result.item
-                track.runTimeTicks = MediaPlaybackIdentity.runTimeTicks(for: result.item, mediaSourceID: result.resolution.mediaSourceID ?? result.selection.mediaSourceID, resolvedSource: result.resolution.mediaSource)
-                if let source = result.resolution.mediaSource {
-                    track.mediaSources = [source] + track.mediaSources.filter { $0.id != source.id }
-                }
+                track = MediaPlaybackIdentity.presentationItem(for: result.item, resolution: result.resolution, requestedSourceID: result.selection.mediaSourceID)
                 audioSelection = result.selection
                 trackSelectionNotice = result.unavailableTrack ? String(localized: "A selected track is unavailable in this version. Using the player defaults.") : nil
                 trackID = result.item.id ?? trackID

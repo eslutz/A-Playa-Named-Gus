@@ -125,6 +125,83 @@ struct AutomationActionsTests {
         #expect(provider.playbackRequestedSelections.map(\.mediaSourceID) == ["original"])
     }
 
+    @Test("Changing an active audiobook or video cut retires the primary chapter timeline")
+    func activeChapterEditionChanges() async throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let progress = OfflinePlaybackProgressStore(directory: directory)
+        let provider = FakeMediaProviderSession(capabilities: .init())
+        let session = SessionStore.makeTestSession(mediaProvider: provider)
+        let fixture = try RepositoryTestFixtures.url(for: "Tests/Fixtures/OfflinePlaylist.mov")
+        let book = MediaItem(
+            chapters: [.init(name: "Middle", startPositionTicks: PlaybackTime.ticks(fromSeconds: 2))], id: "chapter-book",
+            mediaSources: [.init(id: "primary"), .init(id: "alternate")], officialRating: "G", type: .audioBook
+        )
+        var movie = book
+        movie.id = "chapter-movie"
+        movie.type = .movie
+        provider.itemHandler = { $0 == movie.id ? movie : book }
+        var resolution = PlaybackSourceResolution(url: fixture, playSessionID: nil, mediaSourceID: "primary", playMethod: .directPlay, stereoLayout: .none, stereoFallbackReason: nil, mediaSource: .init(id: "primary"))
+        provider.audioHandler = { resolution }
+        provider.playbackHandler = { resolution }
+
+        let audio = AudioPlayerStore(session: session, tracks: [book], localProgress: progress, activateAudioSession: { _ in })
+        defer { audio.teardown() }
+        await audio.start()
+        audio.playPause()
+        let chapter = try #require(audio.chapterTargets.first)
+        // Begin the native seek on the main actor, then replace its preparation before it can report success.
+        let oldSeek = Task.immediate { await audio.seek(to: chapter) }
+        resolution.mediaSourceID = "alternate"
+        resolution.mediaSource = .init(id: "alternate")
+        await audio.selectMediaSource(id: "alternate", fromBeginning: true)
+        #expect(await oldSeek.value == false)
+        #expect(audio.state == .loaded)
+        #expect(audio.currentTrack?.mediaSources.first?.id == "alternate")
+        #expect(audio.chapterTargets.isEmpty)
+        #expect(await audio.seek(to: chapter) == false)
+        // The requested primary ID is not sufficient without a negotiated identity.
+        resolution.mediaSourceID = nil
+        resolution.mediaSource = nil
+        await audio.selectMediaSource(id: "primary", fromBeginning: true)
+        #expect(audio.state == .loaded)
+        #expect(audio.chapterTargets.isEmpty)
+
+        resolution.mediaSource = .init(id: "primary")
+        let video = PlaybackStore(request: PlaybackRequest(item: movie), session: session, playbackRefresh: PlaybackRefreshStore(), localProgress: progress, activateAudioSession: { _ in })
+        defer { video.teardown() }
+        video.setPresentationActive(false)
+        await video.prepare()
+        #expect(video.chapterTargets == [chapter])
+        #expect(await video.seek(to: chapter))
+        resolution.mediaSourceID = "alternate"
+        resolution.mediaSource = .init(id: "alternate")
+        await video.selectMediaSource(id: "alternate", fromBeginning: true)
+        #expect(video.state == .ready)
+        #expect(video.item.mediaSources.first?.id == "alternate")
+        #expect(video.chapterTargets.isEmpty)
+        #expect(await video.seek(to: chapter) == false)
+    }
+
+    @Test("Downloaded chapters require the recorded cut to own the original timeline")
+    func downloadedChapterOwner() {
+        let book = MediaItem(
+            chapters: [.init(name: "Opening", startPositionTicks: 0)], id: "book",
+            mediaSources: [.init(id: "primary"), .init(id: "alternate")], type: .audioBook
+        )
+        func chapters(_ item: MediaItem, savedSource: String?) -> [MediaChapterInfo] {
+            OfflineDownloadRecord(id: "record", item: item, filePath: "", byteCount: 1, serverID: "server", userID: "user", downloadedAt: .now, mediaSourceID: savedSource).playbackItem.chapters
+        }
+        #expect(chapters(book, savedSource: "primary") == book.chapters)
+        #expect(chapters(book, savedSource: "alternate").isEmpty)
+        var single = book
+        single.mediaSources = [.init(id: "primary")]
+        #expect(chapters(single, savedSource: nil).isEmpty)
+        #expect(chapters(single, savedSource: "unlisted").isEmpty)
+        single.mediaSources = []
+        #expect(chapters(single, savedSource: nil).isEmpty)
+    }
+
     @Test("A saved slideshow directive never leaves the device through a playback URL")
     func slideshowSharing() {
         var request = PlaybackRequest(item: MediaItem(id: "photo", parentID: "album", type: .photo))

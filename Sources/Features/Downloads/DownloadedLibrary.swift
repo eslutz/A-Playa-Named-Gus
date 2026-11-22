@@ -32,7 +32,7 @@ extension OfflineDownloadRecord {
             result.mediaSources = []
             result.runTimeTicks = nil
         }
-        if item.mediaSources.count > 1, mediaSourceID == nil || mediaSourceID != item.mediaSources.first?.id {
+        if !MediaPlaybackIdentity.ownsChapters(in: item, sourceID: mediaSourceID) {
             result.chapters = []
         }
         result.userData?.playbackPositionTicks = nil
