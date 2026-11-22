@@ -252,6 +252,21 @@ struct BrowseRefinementTests {
         #expect(CarPlayPaging.nextIndex(start: 100, rawCount: 0, total: 999, pageSize: 100) == nil)
     }
 
+    #if os(iOS)
+        @Test("Siri resolves eligible audio titles and disambiguates duplicate names")
+        func siriAudioMatches() {
+            let items: [MediaItem] = [
+                .init(artists: ["First"], id: "one", name: "Café", type: .audio),
+                .init(artists: ["Second"], id: "two", name: "Cafe", type: .audio),
+                .init(id: "video", name: "Cafe", type: .movie),
+                .init(id: "different", name: "Cafeteria", type: .audio),
+            ]
+            #expect(SiriMediaHandler.matches(items, title: "CAFE", artist: nil, identifier: nil, types: [.audio]).compactMap(\.id) == ["one", "two"])
+            #expect(SiriMediaHandler.matches(items, title: "Cafe", artist: "second", identifier: nil, types: [.audio]).compactMap(\.id) == ["two"])
+            #expect(SiriMediaHandler.matches(items, title: "Cafe", artist: nil, identifier: "one", types: [.audio]).compactMap(\.id) == ["one"])
+        }
+    #endif
+
     @Test("CarPlay adds choices only for distinct eligible versions or audio tracks")
     func carPlayEligibleChoices() {
         let first = MediaStreamInfo(index: 2, type: .audio)

@@ -94,8 +94,9 @@ backend, hosts no content, and collects no data.*
 - **4.2 Minimum functionality** — The native client implements browse, search,
   playback with track selection and chapters, downloads, music, books with an in-app
   reader, photos, Live TV, SharePlay and a Watch companion. Runtime acceptance follows
-  the release-validation ledger. CarPlay templates exist but remain unwired pending
-  Apple entitlement approval; do not advertise CarPlay as a shipping capability.
+  the release-validation ledger. The CarPlay audio candidate uses Apple templates
+  for albums, audiobooks, and completed audio downloads, with system Now Playing
+  and Siri playback by title. Hold public availability claims until signed device acceptance.
 - **4.4 Extensions** — The tvOS Top Shelf extension reads a local App Group Continue Watching snapshot,
   supplies unauthenticated artwork URLs to the system, and uses `gus://` deep links.
   It holds no credentials and falls back to static entry points when no snapshot exists.
@@ -186,7 +187,7 @@ excluded from iCloud backup. Nothing is shared outward. ADR 0005 records the des
 | Shared with You | Shipped via Universal Links, `SWHighlightCenter`, and `SWAttributionView` |
 | tvOS App Group / Top Shelf snapshot | Shipped (`group.dev.ericslutz.gus`) |
 | Background audio (`UIBackgroundModes`) | Shipped (Info.plist) |
-| CarPlay audio | Code complete; entitlement awaits Apple grant — not wired into signing (`Config/Gus-CarPlay.entitlements`) |
+| CarPlay audio and Siri | Wired in the iOS candidate. Signed provisioning and device acceptance pending. |
 | Declared Age Range (OS 26+) | Code complete and entitlement-wired for iOS/iPadOS/macOS; device verification remains (see `Documentation/AppStore/signing-capabilities.md`) |
 | Family Controls / ManagedSettings | **Not used** — documented as entitlement-gated follow-up in `Documentation/family-safety-brief.md` |
 
@@ -248,7 +249,7 @@ own server library and includes parental content-restriction controls.
   with the live one.
 - Configure Xcode Cloud signing/provisioning and validate Release archives.
 - Upload screenshots and submit to TestFlight before final submission.
-- Request the CarPlay audio entitlement.
+- Qualify CarPlay audio and Siri on a signed iPhone and vehicle or head unit.
 
 #### Operational blockers requiring external action
 

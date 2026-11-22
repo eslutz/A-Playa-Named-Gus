@@ -414,7 +414,9 @@ struct OfflineDownloadTests {
             .appendingPathComponent(UUID().uuidString, isDirectory: true)
         let fileStore = OfflineDownloadFileStore(directory: directory)
         let coordinator = FakeDownloadSessionCoordinator()
-        let store = OfflineDownloadStore(fileStore: fileStore, coordinator: coordinator)
+        let store = OfflineDownloadStore(fileStore: fileStore, coordinator: coordinator, availableCapacity: {
+            2 * OfflineDownloadStore.minimumFreeBytes
+        })
         let record = fileStore.prepareDownloadRecord(
             item: MediaItem(id: "item-1", name: "Office Space"),
             serverID: "server-1",

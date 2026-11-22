@@ -16,6 +16,10 @@ final class AppModel {
     /// truth for the active session — a second `AppModel` would diverge on sign-out and
     /// account switches.
     static let shared = AppModel()
+    #if os(iOS)
+        let audioPlayback = AudioPlaybackCoordinator()
+    #endif
+    private var sessionRestore: Task<Void, Never>?
 
     struct ReauthenticationRequest: Equatable {
         let server: ServerConnection
@@ -154,7 +158,6 @@ final class AppModel {
         servers = serverStore.loadServers()
         users = serverStore.loadUsers()
         lastSessionAccount = Self.loadLastSessionAccount(from: userDefaults)
-        persistLastSessionAccount()
     }
 
     func synchronizeProfile(from session: SessionStore) {
@@ -178,12 +181,30 @@ final class AppModel {
               let user = users.first(where: { SessionCredential(user: $0).account == account })
         else { return }
 
-        do {
-            try await restoreSavedSession(for: user)
-        } catch {
-            logger.error("Last-session restore failed: \(error.localizedDescription, privacy: .private)")
+        if let sessionRestore {
+            await sessionRestore.value
+            return
         }
+        let restore = Task {
+            do {
+                try await restoreSavedSession(for: user)
+            } catch {
+                logger.error("Last-session restore failed: \(error.localizedDescription, privacy: .private)")
+            }
+        }
+        sessionRestore = restore
+        await restore.value
+        sessionRestore = nil
     }
+
+    #if os(iOS)
+        func reloadSavedAccountsForSessionRestore() {
+            guard currentSession == nil, lastSessionAccount == nil || users.isEmpty else { return }
+            servers = serverStore.loadServers()
+            users = serverStore.loadUsers()
+            lastSessionAccount = Self.loadLastSessionAccount(from: userDefaults)
+        }
+    #endif
 
     /// Restores a saved user's session when its server and Keychain token are present.
     func restoreSavedSession(for user: StoredUser) async throws {

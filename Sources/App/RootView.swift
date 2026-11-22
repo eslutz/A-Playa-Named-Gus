@@ -10,7 +10,13 @@ struct RootView: View {
     @Environment(SavedMediaStore.self) private var videoPlaylists
     @Environment(ServerMediaListsStore.self) private var serverLists
     @Environment(OfflineDownloadStore.self) private var downloads
-    @State private var audio = AudioPlaybackCoordinator()
+    #if os(iOS)
+        private var audio: AudioPlaybackCoordinator {
+            appModel.audioPlayback
+        }
+    #else
+        @State private var audio = AudioPlaybackCoordinator()
+    #endif
     @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
@@ -23,7 +29,13 @@ struct RootView: View {
                     ProgressView("Finishing Playback…").padding().background(.regularMaterial, in: .rect(cornerRadius: 12))
                 }
             }
-            .onChange(of: activeLease) { _, _ in audio.stop(); videoPlaylists.deactivate(); serverLists.deactivate() }
+            .onChange(of: activeLease) { _, _ in
+                #if !os(iOS)
+                    audio.stop()
+                #endif
+                videoPlaylists.deactivate()
+                serverLists.deactivate()
+            }
     }
 
     private var activeLease: SessionLease? {

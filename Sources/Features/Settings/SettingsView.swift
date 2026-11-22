@@ -1,5 +1,9 @@
 import SwiftUI
 
+#if os(iOS)
+    import Intents
+#endif
+
 /// Account, known servers, sign-out, and version info.
 struct SettingsView: View {
     @Environment(AppModel.self) private var appModel
@@ -8,6 +12,9 @@ struct SettingsView: View {
     @Environment(OfflineDownloadStore.self) private var downloads
     @Environment(SavedMediaStore.self) private var videoPlaylists
 
+    #if os(iOS)
+        @State private var siriAuthorization = INPreferences.siriAuthorizationStatus()
+    #endif
     @State private var rememberPlaybackTracks = false
     @State private var showingTVAccentEditor = false
     @State private var reauthenticationServer: ServerConnection?
@@ -58,6 +65,15 @@ struct SettingsView: View {
                     qualityPicker
                 }
                 Toggle("Auto-Play Next Episode", isOn: $autoPlayNextEpisode)
+                #if os(iOS)
+                    if siriAuthorization == .notDetermined {
+                        Button("Enable Siri Playback") {
+                            INPreferences.requestSiriAuthorization { status in
+                                Task { @MainActor in siriAuthorization = status }
+                            }
+                        }
+                    }
+                #endif
                 playbackSetting(
                     title: "Remember Episode Tracks",
                     compactTitle: "Remember Tracks",

@@ -9,8 +9,9 @@
     ///
     /// The scene activates only when the app carries the Apple-granted
     /// `com.apple.developer.carplay-audio` entitlement (see
-    /// `Config/Gus-CarPlay.entitlements` and
+    /// `Config/Gus-iOS.entitlements` and
     /// `Documentation/AppStore/signing-capabilities.md`); without it this code is inert.
+    @MainActor
     final class GusCarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegate {
         private var contentController: CarPlayContentController?
 
@@ -20,18 +21,14 @@
         ) {
             let controller = CarPlayContentController()
             contentController = controller
-            Task { @MainActor in
-                await controller.start(interfaceController: interfaceController)
-            }
+            controller.start(interfaceController: interfaceController)
         }
 
         func templateApplicationScene(
             _ templateApplicationScene: CPTemplateApplicationScene,
             didDisconnectInterfaceController interfaceController: CPInterfaceController
         ) {
-            Task { @MainActor [contentController] in
-                contentController?.teardown()
-            }
+            contentController?.teardown()
             contentController = nil
         }
     }
@@ -44,9 +41,17 @@
         // sign-out and account switches propagate.
         private let appModel = AppModel.shared
         private let logger = Logger(category: .carPlay)
-        private var audioPlayer: AudioPlayerStore?
+        private var playback: AudioPlaybackCoordinator {
+            appModel.audioPlayback
+        }
+
+        private let downloads = OfflineDownloadStore.shared
+        private var restoreTask: Task<Void, Never>?
+        private var libraryTask: Task<Void, Never>?
+        private var rowTasks: [UUID: Task<Void, Never>] = [:]
+        private var renderedLease: SessionLease?
+        private var renderedSession = false
         private weak var interfaceController: CPInterfaceController?
-        private var successfulSections: [ObjectIdentifier: [CPListSection]] = [:]
         private var loadingTemplates: Set<ObjectIdentifier> = []
         private var observationGeneration = 0
         private var playbackChoiceGeneration = 0
@@ -96,43 +101,87 @@
             }
         }
 
-        func start(interfaceController: CPInterfaceController) async {
+        func start(interfaceController: CPInterfaceController) {
             self.interfaceController = interfaceController
-            observeSession()
-            await appModel.restoreLastSession()
-
-            guard let session = appModel.currentSession else {
-                await setSignedOutRoot()
-                return
+            let loading = statusTemplate("Loading Gus…")
+            let nowPlaying = CPNowPlayingTemplate.shared
+            nowPlaying.isUpNextButtonEnabled = false
+            nowPlaying.isAlbumArtistButtonEnabled = false
+            interfaceController.setRootTemplate(loading, animated: false) { [weak self] _, error in
+                if let error {
+                    self?.logger.error("CarPlay loading root failed: \(error.localizedDescription, privacy: .private)")
+                }
             }
-            await setLibraryRoot(session: session)
+            observeSession()
+            restoreSession()
         }
 
         func teardown() {
             observationGeneration += 1
-            playbackChoiceGeneration += 1
-            audioPlayer?.teardown()
-            audioPlayer = nil
+            restoreTask?.cancel()
+            restoreTask = nil
+            resetLibrary()
             interfaceController = nil
-            successfulSections = [:]
-            loadingTemplates = []
+        }
+
+        private func resetLibrary() {
+            playbackChoiceGeneration += 1
+            libraryTask?.cancel()
+            libraryTask = nil
+            for task in rowTasks.values {
+                task.cancel()
+            }
+            rowTasks.removeAll()
+            loadingTemplates.removeAll()
+        }
+
+        private func restoreSession() {
+            restoreTask?.cancel()
+            restoreTask = Task {
+                await appModel.restoreLastSession()
+                guard !Task.isCancelled, interfaceController != nil else { return }
+                if appModel.currentSession == nil, !UIApplication.shared.isProtectedDataAvailable {
+                    // An after-first-unlock credential normally works with the screen locked.
+                    // Retry only when the first read actually failed.
+                    for await _ in NotificationCenter.default.notifications(named: UIApplication.protectedDataDidBecomeAvailableNotification) {
+                        guard !Task.isCancelled, interfaceController != nil else { return }
+                        appModel.reloadSavedAccountsForSessionRestore()
+                        await appModel.restoreLastSession()
+                        break
+                    }
+                }
+                guard !Task.isCancelled else { return }
+                renderSession()
+            }
         }
 
         private func observeSession() {
             let generation = observationGeneration
-            withObservationTracking { _ = appModel.currentSession } onChange: { [weak self] in
+            withObservationTracking {
+                _ = appModel.currentSession?.lease
+                _ = appModel.currentSession?.isActive
+            } onChange: { [weak self] in
                 Task { @MainActor in
                     guard let self, self.observationGeneration == generation, self.interfaceController != nil else { return }
-                    self.audioPlayer?.teardown()
-                    self.audioPlayer = nil
-                    self.playbackChoiceGeneration += 1
-                    self.successfulSections = [:]
-                    self.loadingTemplates = []
                     self.observeSession()
-                    if let session = self.appModel.currentSession {
-                        await self.setLibraryRoot(session: session)
-                    } else {
-                        await self.setSignedOutRoot()
+                    self.renderSession()
+                }
+            }
+        }
+
+        private func renderSession() {
+            let session = appModel.currentSession.flatMap { $0.isActive ? $0 : nil }
+            guard !renderedSession || renderedLease != session?.lease else { return }
+            renderedSession = true
+            renderedLease = session?.lease
+            resetLibrary()
+            libraryTask = Task {
+                if let session {
+                    await setLibraryRoot(session: session)
+                } else {
+                    let status = statusTemplate("Sign-in required")
+                    await performTemplateOperation("set signed-out root") { controller in
+                        try await controller.setRootTemplate(status, animated: false)
                     }
                 }
             }
@@ -140,18 +189,10 @@
 
         // MARK: - Templates
 
-        private func setSignedOutRoot() async {
-            let item = CPListItem(
-                text: String(localized: "Open Gus on iPhone to sign in", comment: "CarPlay signed-out title"),
-                detailText: String(localized: "CarPlay plays music and audiobooks from your active Jellyfin session.", comment: "CarPlay signed-out detail")
-            )
-            let list = CPListTemplate(
-                title: String(localized: "Gus", comment: "CarPlay root title"),
-                sections: [CPListSection(items: [item])]
-            )
-            await performTemplateOperation("set signed-out root") { interfaceController in
-                try await interfaceController.setRootTemplate(list, animated: false)
-            }
+        private func statusTemplate(_ status: String.LocalizationValue) -> CPListTemplate {
+            let row = CPListItem(text: String(localized: status), detailText: nil)
+            row.isEnabled = false
+            return CPListTemplate(title: String(localized: "Gus"), sections: [CPListSection(items: [row])])
         }
 
         private func setLibraryRoot(session: SessionStore) async {
@@ -159,123 +200,232 @@
             albums.tabImage = UIImage(systemName: "music.note.list")
             let books = CPListTemplate(title: String(localized: "Audiobooks"), sections: [])
             books.tabImage = UIImage(systemName: "book")
-            let tabBar = CPTabBarTemplate(templates: [albums, books])
-            await performTemplateOperation("set library root") { controller in
-                try await controller.setRootTemplate(tabBar, animated: false)
+            let downloaded = CPListTemplate(title: String(localized: "Downloaded"), sections: [])
+            downloaded.tabImage = UIImage(systemName: "arrow.down.circle")
+            for template in [albums, books, downloaded] {
+                template.emptyViewTitleVariants = [String(localized: "Loading Gus…")]
             }
+            let root: CPTemplate
+            if CPTabBarTemplate.maximumTabCount >= 3 {
+                root = CPTabBarTemplate(templates: [albums, books, downloaded])
+            } else {
+                let rows = [
+                    categoryItem("Albums", template: albums, session: session),
+                    categoryItem("Audiobooks", template: books, session: session),
+                    categoryItem("Downloaded", template: downloaded, session: session),
+                ]
+                root = CPListTemplate(title: String(localized: "Gus"), sections: [CPListSection(items: rows)])
+            }
+            await performTemplateOperation("set library root") { controller in
+                try await controller.setRootTemplate(root, animated: false)
+            }
+            guard isCurrent(session: session, lease: session.lease) else { return }
+            downloads.load(serverID: session.server.id, userID: session.user.id)
+            showDownloads(downloaded, session: session)
+            observeDownloads(downloaded, session: session)
             async let albumLoad: Void = loadLibraryPage(template: albums, types: [.musicAlbum], offset: 0, session: session)
             async let bookLoad: Void = loadLibraryPage(template: books, types: [.audioBook], offset: 0, session: session)
             _ = await(albumLoad, bookLoad)
         }
 
-        private func loadLibraryPage(template: CPListTemplate, types: [MediaItemType], offset: Int, previousTotal: Int? = nil, session: SessionStore) async {
+        private func categoryItem(_ title: String.LocalizationValue, template: CPListTemplate, session: SessionStore) -> CPListItem {
+            let row = pageItem(title) { [weak self] in
+                guard let self, self.isCurrent(session: session, lease: session.lease) else { return }
+                await self.performTemplateOperation("open category") { controller in
+                    try await controller.pushTemplate(template, animated: true)
+                }
+            }
+            row.accessoryType = .disclosureIndicator
+            return row
+        }
+
+        private func observeDownloads(_ template: CPListTemplate, session: SessionStore) {
+            withObservationTracking {
+                _ = downloads.records
+                _ = downloads.loadState
+            } onChange: { [weak self, weak template] in
+                Task { @MainActor in
+                    guard let self, let template, self.isCurrent(session: session, lease: session.lease) else { return }
+                    self.observeDownloads(template, session: session)
+                    self.showDownloads(template, session: session)
+                }
+            }
+        }
+
+        private func showDownloads(_ template: CPListTemplate, offset: Int = 0, session: SessionStore) {
+            guard isCurrent(session: session, lease: session.lease) else { return }
+            let records = downloads.completedRecords(serverID: session.server.id, userID: session.user.id)
+            let audio = DownloadedLibrary.sections(records: records, filter: .audio, search: "").flatMap(\.records)
+            let size = pageSize
+            let start = min(offset, max(0, (max(0, audio.count - 1) / size) * size))
+            var rows = audio.dropFirst(start).prefix(size).map { record in
+                actionItem(record.item.displayTitle, detail: record.item.runtimeText) { [weak self, weak template] in
+                    guard let self, let template, self.isCurrent(session: session, lease: session.lease),
+                          ContentRatingGate.admitsStored(record.item) else { return }
+                    guard self.downloads.localFileURL(for: record.item, serverID: session.server.id, userID: session.user.id, mediaSourceID: record.mediaSourceID) != nil else {
+                        self.showDownloads(template, offset: start, session: session)
+                        return
+                    }
+                    let request = record.playbackRequest
+                    await self.play(tracks: [request.item], startIndex: 0, request: request, origin: template, continuation: nil, session: session, localOnly: true)
+                }
+            }
+            if start > 0 {
+                rows.append(pageItem("Previous Page") { [weak self, weak template] in
+                    guard let template else { return }
+                    self?.showDownloads(template, offset: start - size, session: session)
+                })
+            }
+            if start + size < audio.count {
+                rows.append(pageItem("Next Page") { [weak self, weak template] in
+                    guard let template else { return }
+                    self?.showDownloads(template, offset: start + size, session: session)
+                })
+            }
+            if downloads.loadErrorMessage != nil {
+                rows.append(pageItem("Try Again", detail: String(localized: "Downloads are unavailable.")) { [weak self, weak template] in
+                    guard let self, let template, self.isCurrent(session: session, lease: session.lease) else { return }
+                    self.downloads.load(serverID: session.server.id, userID: session.user.id)
+                    self.showDownloads(template, offset: start, session: session)
+                })
+            }
+            template.emptyViewTitleVariants = [String(localized: "No Downloaded Audio")]
+            updateSections([CPListSection(items: rows)], on: template)
+        }
+
+        private var pageSize: Int {
+            CarPlayPaging.pageSize(capacity: CPListTemplate.maximumItemCount)
+        }
+
+        private func updateSections(_ sections: [CPListSection], on template: CPListTemplate) {
+            let capacity = CPListTemplate.maximumItemCount
+            if CPListTemplate.maximumSectionCount < sections.count ||
+                sections.reduce(0, { $0 + $1.items.count }) > capacity
+            {
+                template.updateSections([CPListSection(items: Array(sections.flatMap(\.items).prefix(capacity)))])
+            } else {
+                template.updateSections(sections)
+            }
+        }
+
+        private func loadLibraryPage(template: CPListTemplate, types: [MediaItemType], offset: Int, previousOffsets: [Int] = [], previousTotal: Int? = nil, session: SessionStore) async {
             let key = ObjectIdentifier(template)
-            guard session.isActive, loadingTemplates.insert(key).inserted else { return }
+            guard isCurrent(session: session, lease: session.lease), loadingTemplates.insert(key).inserted else { return }
             defer { loadingTemplates.remove(key) }
-            let size = CarPlayPaging.pageSize(capacity: Int(CPListTemplate.maximumItemCount))
+            let size = CarPlayPaging.pageSize(capacity: CPListTemplate.maximumItemCount)
             do {
                 let page = try await session.mediaProvider.items(query: .init(includeTypes: types, startIndex: offset, limit: size, isRecursive: true, sort: .name))
                 try Task.checkCancellation()
-                guard session.isActive, interfaceController != nil else { return }
+                guard isCurrent(session: session, lease: session.lease) else { return }
                 let total = try MediaPageLoader.validatedTotal(for: page, startIndex: offset, previousTotal: previousTotal)
                 let items = ContentRatingGate.filter(MediaPageLoader.unique(page.items))
                 let next = CarPlayPaging.nextIndex(start: offset, rawCount: page.items.count, total: total, pageSize: size)
-                let continuation = next.map { AudioQueueContinuation(query: .init(includeTypes: types, startIndex: 0, limit: size, isRecursive: true, sort: .name), nextStartIndex: $0, totalRecordCount: total) }
-                let content = types == [.musicAlbum] ? albumSection(items, template: template, session: session) : audiobookSection(items, template: template, continuation: continuation, session: session)
+                template.emptyViewTitleVariants = [types == [.musicAlbum] ? String(localized: "No Albums") : String(localized: "No Audiobooks")]
+                let content = types == [.musicAlbum] ? albumSection(items.filter { $0.type == .musicAlbum }, template: template, session: session) : audiobookSection(items.filter { $0.type == .audioBook }, template: template, session: session)
                 var controls: [CPListItem] = []
-                if offset > 0 {
+                if let previous = previousOffsets.last {
                     controls.append(pageItem("Previous Page") { [weak self, weak template] in
                         guard let self, let template else { return }
-                        await self.loadLibraryPage(template: template, types: types, offset: max(0, offset - size), previousTotal: total, session: session)
+                        await self.loadLibraryPage(template: template, types: types, offset: previous, previousOffsets: Array(previousOffsets.dropLast()), previousTotal: total, session: session)
                     })
                 }
                 if let next {
                     controls.append(pageItem("Next Page") { [weak self, weak template] in
                         guard let self, let template else { return }
-                        await self.loadLibraryPage(template: template, types: types, offset: next, previousTotal: total, session: session)
+                        await self.loadLibraryPage(template: template, types: types, offset: next, previousOffsets: previousOffsets + [offset], previousTotal: total, session: session)
                     })
                 }
                 let sections = [content] + (controls.isEmpty ? [] : [CPListSection(items: controls)])
-                successfulSections[key] = sections
-                template.updateSections(sections)
+                template.userInfo = sections
+                updateSections(sections, on: template)
             } catch {
                 let failure = GusError(from: error)
-                guard !failure.isCancellation, session.isActive, interfaceController != nil else { return }
+                guard !failure.isCancellation, isCurrent(session: session, lease: session.lease) else { return }
                 failure.handleIfUnauthorized(session: session)
-                let retry = pageItem("Try Again", detail: failure.localizedDescription) { [weak self, weak template] in
+                let retry = pageItem("Try Again", detail: String(localized: "Jellyfin is unavailable.")) { [weak self, weak template] in
                     guard let self, let template else { return }
-                    await self.loadLibraryPage(template: template, types: types, offset: offset, previousTotal: previousTotal, session: session)
+                    await self.loadLibraryPage(template: template, types: types, offset: offset, previousOffsets: previousOffsets, previousTotal: previousTotal, session: session)
                 }
-                template.updateSections((successfulSections[key] ?? []) + [CPListSection(items: [retry])])
+                updateSections((template.userInfo as? [CPListSection] ?? []) + [CPListSection(items: [retry])], on: template)
             }
         }
 
         private func pageItem(_ title: String.LocalizationValue, detail: String? = nil, action: @escaping @MainActor () async -> Void) -> CPListItem {
-            let item = CPListItem(text: String(localized: title), detailText: detail)
-            item.handler = { _, completion in
-                Task { @MainActor in await action(); completion() }
+            actionItem(String(localized: title), detail: detail, action: action)
+        }
+
+        private func actionItem(_ title: String, detail: String?, action: @escaping @MainActor () async -> Void) -> CPListItem {
+            let item = CPListItem(text: title, detailText: detail)
+            item.handler = { [weak self] _, completion in
+                guard let self, self.interfaceController != nil else { completion(); return }
+                let id = UUID()
+                self.rowTasks[id] = Task { [weak self] in
+                    defer {
+                        self?.rowTasks[id] = nil
+                        completion()
+                    }
+                    guard !Task.isCancelled else { return }
+                    await action()
+                }
             }
             return item
         }
 
-        private func audiobookSection(_ books: [MediaItem], template: CPListTemplate, continuation: AudioQueueContinuation?, session: SessionStore) -> CPListSection {
-            trackSection(books, template: template, continuation: continuation, session: session)
+        private func audiobookSection(_ books: [MediaItem], template: CPListTemplate, session: SessionStore) -> CPListSection {
+            let rows = books.map { book in
+                actionItem(book.displayTitle, detail: book.runtimeText) { [weak self, weak template] in
+                    guard let self, let template else { return }
+                    await self.selectPlayback(tracks: [book], startIndex: 0, origin: template, continuation: nil, session: session)
+                }
+            }
+            return CPListSection(items: rows)
         }
 
         private func albumSection(_ albums: [MediaItem], template: CPListTemplate, session: SessionStore) -> CPListSection {
             let items = albums.map { album in
-                let listItem = CPListItem(
-                    text: album.displayTitle,
-                    detailText: album.albumArtist ?? album.artists.first
-                )
-                listItem.handler = { [weak self, weak template] _, completion in
-                    Task { @MainActor in
-                        await self?.openAlbum(album, origin: template, session: session)
-                        completion()
-                    }
+                let row = actionItem(album.displayTitle, detail: album.albumArtist ?? album.artists.first) { [weak self, weak template] in
+                    await self?.openAlbum(album, origin: template, session: session)
                 }
-                return listItem
+                row.accessoryType = .disclosureIndicator
+                return row
             }
             return CPListSection(items: items)
         }
 
-        /// Rows that play directly (album tracks, audiobooks).
-        private func trackSection(_ tracks: [MediaItem], template: CPListTemplate, offset: Int = 0, limit: Int? = nil, continuation: AudioQueueContinuation? = nil, session: SessionStore) -> CPListSection {
-            let items = tracks.dropFirst(offset).prefix(limit ?? tracks.count).enumerated().map { index, track in
-                let listItem = CPListItem(text: track.displayTitle, detailText: track.runtimeText)
-                listItem.handler = { [weak self, weak template] _, completion in
-                    Task { @MainActor in
-                        if let template {
-                            await self?.selectPlayback(tracks: tracks, startIndex: index + offset, origin: template, continuation: continuation, session: session)
-                        }
-                        completion()
-                    }
+        private func trackSection(_ tracks: [MediaItem], template: CPListTemplate, offset: Int, limit: Int, continuation: AudioQueueContinuation?, session: SessionStore) -> CPListSection {
+            let rows = tracks.dropFirst(offset).prefix(limit).enumerated().map { index, track in
+                actionItem(track.displayTitle, detail: track.runtimeText) { [weak self, weak template] in
+                    guard let self, let template else { return }
+                    await self.selectPlayback(tracks: tracks, startIndex: index + offset, origin: template, continuation: continuation, session: session)
                 }
-                return listItem
             }
-            return CPListSection(items: items)
+            return CPListSection(items: rows)
         }
 
         private func openAlbum(_ album: MediaItem, origin: CPListTemplate?, session: SessionStore) async {
+            guard let origin, isVisible(origin), isCurrent(session: session, lease: session.lease) else { return }
             do {
-                let query = MediaItemQuery(parentID: album.id, startIndex: 0, limit: 200, sort: .trackOrder)
+                let query = MediaItemQuery(parentID: album.id, includeTypes: [.audio], startIndex: 0, limit: 200, sort: .trackOrder)
                 let page = try await session.mediaProvider.items(query: query)
                 try Task.checkCancellation()
-                guard session.isActive else { return }
+                guard isCurrent(session: session, lease: session.lease) else { return }
                 let total = try MediaPageLoader.validatedTotal(for: page, startIndex: 0)
                 let tracks = ContentRatingGate.filter(page.items).filter(\.isAudioPlayable)
                 let next = CarPlayPaging.nextIndex(start: 0, rawCount: page.items.count, total: total, pageSize: query.limit)
                 let continuation = next.map { AudioQueueContinuation(query: query, nextStartIndex: $0, totalRecordCount: total) }
                 let template = CPListTemplate(title: album.displayTitle, sections: [])
                 await showAlbumPage(template: template, tracks: tracks, continuation: continuation, offset: 0, session: session)
+                guard isCurrent(session: session, lease: session.lease), isVisible(origin) else { return }
                 await performTemplateOperation("push album template") { controller in try await controller.pushTemplate(template, animated: true) }
             } catch {
                 let failure = GusError(from: error)
-                guard !failure.isCancellation, session.isActive, let origin else { return }
-                let retry = pageItem("Try Again", detail: failure.localizedDescription) { [weak self, weak origin] in
+                guard !failure.isCancellation, isCurrent(session: session, lease: session.lease), isVisible(origin) else { return }
+                failure.handleIfUnauthorized(session: session)
+                guard session.isActive else { return }
+                let retry = pageItem("Try Again", detail: String(localized: "Jellyfin is unavailable.")) { [weak self, weak origin] in
                     await self?.openAlbum(album, origin: origin, session: session)
                 }
-                origin.updateSections((successfulSections[ObjectIdentifier(origin)] ?? []) + [CPListSection(items: [retry])])
+                updateSections((origin.userInfo as? [CPListSection] ?? []) + [CPListSection(items: [retry])], on: origin)
             }
         }
 
@@ -305,11 +455,11 @@
                 guard !failure.isCancellation, isCurrent(session: session, lease: lease), generation == playbackChoiceGeneration, isVisible(origin) else { return }
                 failure.handleIfUnauthorized(session: session)
                 guard isCurrent(session: session, lease: lease) else { return }
-                let retry = pageItem("Try Again", detail: failure.localizedDescription) { [weak self, weak origin] in
+                let retry = pageItem("Try Again", detail: String(localized: "Jellyfin is unavailable.")) { [weak self, weak origin] in
                     guard let self, let origin else { return }
                     await self.selectPlayback(tracks: tracks, startIndex: startIndex, origin: origin, continuation: continuation, session: session)
                 }
-                origin.updateSections((successfulSections[ObjectIdentifier(origin)] ?? []) + [CPListSection(items: [retry])])
+                updateSections((origin.userInfo as? [CPListSection] ?? []) + [CPListSection(items: [retry])], on: origin)
             }
         }
 
@@ -349,7 +499,7 @@
             if let source = choices.source, choices.request.audioTrack != nil, choices.request.selection(in: source).audioStreamIndex == nil {
                 rows.append(CPListItem(text: String(localized: "A selected track was unavailable. The player will use its default tracks."), detailText: nil))
             }
-            template.updateSections([CPListSection(items: rows)])
+            updateSections([CPListSection(items: rows)], on: template)
         }
 
         private static func audioTitle(_ stream: MediaStreamInfo) -> String {
@@ -360,7 +510,7 @@
         private func showSourceChoices(_ choices: PlaybackChoices, offset: Int = 0) {
             guard isCurrent(choices), let template = choices.template else { return }
             let sources = CarPlayPlaybackChoices.sources(for: choices.request.item)
-            let size = CarPlayPaging.pageSize(capacity: Int(CPListTemplate.maximumItemCount))
+            let size = CarPlayPaging.pageSize(capacity: CPListTemplate.maximumItemCount)
             let rows = sources.dropFirst(offset).prefix(size).enumerated().map { position, source in
                 let row = CPListItem(text: source.name ?? String(localized: "Version \(offset + position + 1)"), detailText: nil)
                 if source.id == choices.source?.id {
@@ -381,7 +531,7 @@
             if offset + size < sources.count {
                 controls.append(pageItem("Next Page") { [weak self] in self?.showSourceChoices(choices, offset: offset + size) })
             }
-            template.updateSections([CPListSection(items: rows), CPListSection(items: controls)])
+            updateSections([CPListSection(items: rows), CPListSection(items: controls)], on: template)
         }
 
         private func chooseSource(_ source: MediaSource, choices: PlaybackChoices, offset: Int) {
@@ -413,7 +563,7 @@
             guard isCurrent(choices), let template = choices.template, let source = choices.source else { return }
             // Automatic is a real choice alongside source-local indexed tracks.
             let options: [MediaStreamInfo?] = [nil] + CarPlayPlaybackChoices.audioStreams(in: source).map(Optional.some)
-            let size = CarPlayPaging.pageSize(capacity: Int(CPListTemplate.maximumItemCount))
+            let size = CarPlayPaging.pageSize(capacity: CPListTemplate.maximumItemCount)
             let rows = options.dropFirst(offset).prefix(size).map { stream in
                 let row = CPListItem(text: stream.map(Self.audioTitle) ?? String(localized: "Automatic"), detailText: nil)
                 if CarPlayPlaybackChoices.isAudioSelected(stream, source: source, request: choices.request) {
@@ -437,47 +587,44 @@
             if offset + size < options.count {
                 controls.append(pageItem("Next Page") { [weak self] in self?.showAudioChoices(choices, offset: offset + size) })
             }
-            template.updateSections([CPListSection(items: rows), CPListSection(items: controls)])
+            updateSections([CPListSection(items: rows), CPListSection(items: controls)], on: template)
         }
 
-        private func play(tracks: [MediaItem], startIndex: Int, request: PlaybackRequest, origin: CPListTemplate, continuation: AudioQueueContinuation?, session: SessionStore) async {
-            guard isCurrent(session: session, lease: session.lease), tracks.indices.contains(startIndex) else { return }
-            audioPlayer?.teardown()
-            let player = AudioPlayerStore(session: session, tracks: tracks, startIndex: startIndex, request: request, continuation: continuation)
-            audioPlayer = player
-            await prepareAndPresent(player, origin: origin, session: session, lease: session.lease)
+        private func play(tracks: [MediaItem], startIndex: Int, request: PlaybackRequest, origin: CPListTemplate, continuation: AudioQueueContinuation?, session: SessionStore, localOnly: Bool = false) async {
+            guard isCurrent(session: session, lease: session.lease), isVisible(origin), tracks.indices.contains(startIndex) else { return }
+            let player = playback.play(tracks: tracks, startIndex: startIndex, localOnly: localOnly, request: request, continuation: continuation, session: session, downloads: downloads, presentOnPhone: false)
+            await presentPlayback(player, origin: origin, session: session, restoringSections: origin.userInfo as? [CPListSection] ?? origin.sections)
         }
 
         private func isCurrent(session: SessionStore, lease: SessionLease) -> Bool {
-            interfaceController != nil && session.isActive && appModel.currentSession === session && appModel.currentSession?.lease == lease
+            !Task.isCancelled && interfaceController != nil && session.isActive && appModel.currentSession === session && session.lease == lease
         }
 
-        private func prepareAndPresent(_ player: AudioPlayerStore, origin: CPListTemplate, session: SessionStore, lease: SessionLease, restoringSections: [CPListSection]? = nil) async {
-            guard isCurrent(session: session, lease: lease), audioPlayer === player else { return }
-            let sections = restoringSections ?? successfulSections[ObjectIdentifier(origin)] ?? origin.sections
-            await player.start()
-            // Preparation can suspend through account replacement, disconnect, or
-            // another selection. None may publish this player's old presentation.
-            guard isCurrent(session: session, lease: lease), audioPlayer === player else { return }
+        private func presentPlayback(_ player: AudioPlayerStore, origin: CPListTemplate, session: SessionStore, restoringSections sections: [CPListSection]) async {
+            await playback.waitForPreparation(of: player)
+            guard isCurrent(session: session, lease: session.lease), playback.store === player, isVisible(origin) else { return }
             guard player.state == .loaded, player.hasPreparedContent else {
-                if case let .failed(message) = player.state {
-                    let retry = pageItem("Try Again", detail: message) { [weak self, weak player, weak origin] in
-                        guard let self, let player, let origin else { return }
-                        await self.prepareAndPresent(player, origin: origin, session: session, lease: lease, restoringSections: sections)
+                if case .failed = player.state {
+                    let retry = pageItem("Try Again", detail: String(localized: "Audio playback is unavailable.")) { [weak self, weak player, weak origin] in
+                        guard let self, let player, let origin,
+                              self.isCurrent(session: session, lease: session.lease), self.playback.store === player else { return }
+                        self.playback.retry()
+                        await self.presentPlayback(player, origin: origin, session: session, restoringSections: sections)
                     }
-                    origin.updateSections(sections + [CPListSection(items: [retry])])
+                    updateSections(sections + [CPListSection(items: [retry])], on: origin)
                 }
                 return
             }
-            origin.updateSections(sections)
-            guard isVisible(origin) else { return }
+            updateSections(sections, on: origin)
             await performTemplateOperation("push now playing template") { interfaceController in
+                guard interfaceController.topTemplate !== CPNowPlayingTemplate.shared,
+                      interfaceController.templates.count < 5 else { return }
                 try await interfaceController.pushTemplate(CPNowPlayingTemplate.shared, animated: true)
             }
         }
 
         private func showAlbumPage(template: CPListTemplate, tracks initialTracks: [MediaItem], continuation initialContinuation: AudioQueueContinuation?, offset: Int, session: SessionStore) async {
-            guard session.isActive else { return }
+            guard isCurrent(session: session, lease: session.lease) else { return }
             var tracks = initialTracks
             var continuation = initialContinuation
             if offset >= tracks.count, continuation != nil {
@@ -488,7 +635,7 @@
                         query.startIndex = next.nextStartIndex
                         let page = try await session.mediaProvider.items(query: query)
                         try Task.checkCancellation()
-                        guard session.isActive else { return }
+                        guard isCurrent(session: session, lease: session.lease) else { return }
                         let total = try MediaPageLoader.validatedTotal(for: page, startIndex: query.startIndex, previousTotal: next.totalRecordCount)
                         let additions = MediaPageLoader.unique(ContentRatingGate.filter(page.items).filter(\.isAudioPlayable), after: tracks)
                         tracks += additions
@@ -502,15 +649,15 @@
                 } catch {
                     let failure = GusError(from: error)
                     guard !failure.isCancellation, session.isActive else { return }
-                    let retry = pageItem("Try Again", detail: failure.localizedDescription) { [weak self, weak template] in
+                    let retry = pageItem("Try Again", detail: String(localized: "Jellyfin is unavailable.")) { [weak self, weak template] in
                         guard let self, let template else { return }
                         await self.showAlbumPage(template: template, tracks: initialTracks, continuation: initialContinuation, offset: offset, session: session)
                     }
-                    template.updateSections((successfulSections[ObjectIdentifier(template)] ?? []) + [CPListSection(items: [retry])])
+                    updateSections((template.userInfo as? [CPListSection] ?? []) + [CPListSection(items: [retry])], on: template)
                     return
                 }
             }
-            let size = CarPlayPaging.pageSize(capacity: Int(CPListTemplate.maximumItemCount))
+            let size = CarPlayPaging.pageSize(capacity: CPListTemplate.maximumItemCount)
             let visibleOffset = min(offset, max(0, tracks.count - 1))
             let loadedTracks = tracks
             let pending = continuation
@@ -528,15 +675,16 @@
                 })
             }
             let sections = [trackSection(tracks, template: template, offset: visibleOffset, limit: size, continuation: continuation, session: session)] + (controls.isEmpty ? [] : [CPListSection(items: controls)])
-            successfulSections[ObjectIdentifier(template)] = sections
-            template.updateSections(sections)
+            template.userInfo = sections
+            template.emptyViewTitleVariants = [String(localized: "No Tracks")]
+            updateSections(sections, on: template)
         }
 
         private func performTemplateOperation(
             _ operation: String,
             _ body: (CPInterfaceController) async throws -> Void
         ) async {
-            guard let interfaceController else { return }
+            guard !Task.isCancelled, let interfaceController else { return }
             do {
                 try await body(interfaceController)
             } catch {
