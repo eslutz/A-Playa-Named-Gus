@@ -271,11 +271,19 @@ struct PlayGusChapterIntent: AppIntent {
     @MainActor func perform() async throws -> some IntentResult {
         let session = try await GusIntentRuntime.session()
         let current = try await GusIntentRuntime.resolve(item, in: session)
-        guard let id = current.id, let chapter = GusChapterAction.numbered.target(in: PlaybackChapter.seekTargets(for: current), at: 0, number: number),
-              current.isAudioPlayable || [.movie, .episode, .recording, .video, .trailer].contains(current.type) else { throw GusError.notFound }
-        let request = PlaybackRequest(item: current, startPositionTicks: chapter.startPositionTicks)
-        AppNavigationModel.shared.open(.play(id: id, serverID: session.server.id, provider: session.server.providerKind, request: request), for: session)
+        let request = try Self.request(for: current, number: number)
+        try GusIntentRuntime.open(current, in: session, play: true, request: request)
         return .result()
+    }
+
+    static func request(for item: MediaItem, number: Int) throws -> PlaybackRequest {
+        guard item.id != nil, item.isAudioPlayable || [.movie, .episode, .recording, .video, .trailer].contains(item.type),
+              let source = item.mediaSources.first, let sourceID = source.id,
+              let chapter = GusChapterAction.numbered.target(in: GusPlaybackChoices.chapters(item, source: source), at: 0, number: number) else { throw GusError.notFound }
+        return PlaybackRequest(
+            item: item, streamSelection: .init(audioStreamIndex: nil, subtitleStreamIndex: nil, mediaSourceID: sourceID),
+            startPositionTicks: chapter.startPositionTicks
+        )
     }
 }
 

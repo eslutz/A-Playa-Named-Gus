@@ -714,7 +714,8 @@ final class AudioPlayerStore {
                         guard activeSession.isActive else { throw CancellationError() }
                         guard let currentID = current.id, ContentRatingGate.admitsStored(current) else { throw GusError.notFound }
                         let selectedSource = current.mediaSources.first(where: { $0.id == requestedIntent?.streamSelection.mediaSourceID }) ?? current.mediaSources.first
-                        let selection = selectedSource.flatMap { requestedIntent?.selection(in: $0) } ?? .none
+                        let selection = selectedSource.flatMap { requestedIntent?.selection(in: $0) }
+                            ?? PlaybackStreamSelection(audioStreamIndex: nil, subtitleStreamIndex: nil, mediaSourceID: requestedIntent?.streamSelection.mediaSourceID)
                         let resolution = try await provider.resolveAudioPlayback(for: currentID, streamSelection: selection)
                         return ResolvedAudio(item: current, resolution: resolution, selection: selection, unavailableTrack: requestedIntent?.audioTrack != nil && selection.audioStreamIndex == nil)
                     }

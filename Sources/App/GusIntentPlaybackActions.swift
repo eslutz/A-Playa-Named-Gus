@@ -27,10 +27,11 @@ enum GusPlaybackChoices {
         }
     }
 
-    static func chapters(_ item: MediaItem, source: MediaSource?) -> [(String, Int)] {
+    static func chapters(_ item: MediaItem, source: MediaSource?) -> [PlaybackChapter] {
         // Jellyfin publishes one chapter list for the item, without per-version markers.
-        guard source?.id == item.mediaSources.first?.id else { return [] }
-        return PlaybackChapter.seekTargets(for: item).map { ($0.title, $0.startPositionTicks) }
+        guard let id = source?.id, !id.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+              id == item.mediaSources.first?.id, !item.mediaSources.dropFirst().contains(where: { $0.id == id }) else { return [] }
+        return PlaybackChapter.seekTargets(for: item)
     }
 
     static func select<T>(_ name: String, from choices: [(String, T)]) throws -> T {
@@ -58,7 +59,9 @@ enum GusPlaybackChoices {
         let source = try source(named: version, item: item)
         let audioTrack = try audio.map { try select($0, from: tracks(source, type: .audio)) }
         let subtitleTrack = try subtitle.map { try select($0, from: tracks(source, type: .subtitle)) }
-        var ticks = try chapter.map { try select($0, from: chapters(item, source: source)) }
+        var ticks = try chapter.map { name in
+            try select(name, from: chapters(item, source: source).map { ($0.title, $0.startPositionTicks) })
+        }
         if let position {
             let conversion = position.multipliedReportingOverflow(by: PlaybackTime.ticksPerSecond)
             guard position >= 0, !conversion.overflow else { throw GusError.server(String(localized: "Choose a valid playback position.")) }
@@ -99,7 +102,7 @@ struct GetGusPlaybackOptionsIntent: AppIntent {
         case .version: values = GusPlaybackChoices.versions(current).map(\.0)
         case .chapter:
             let source = try GusPlaybackChoices.source(named: version, item: current)
-            values = GusPlaybackChoices.chapters(current, source: source).map(\.0)
+            values = GusPlaybackChoices.chapters(current, source: source).map(\.title)
         case .audioTrack, .subtitleTrack:
             let source = try GusPlaybackChoices.source(named: version, item: current)
             values = GusPlaybackChoices.tracks(source, type: option == .audioTrack ? .audio : .subtitle).map(\.0)

@@ -69,6 +69,62 @@ struct AutomationActionsTests {
         #expect(GusChapterAction.previous.target(in: targets, at: 30, number: nil)?.title == "Opening")
     }
 
+    @Test("Numbered chapters on a single cut retain their position even when titles repeat")
+    func numberedChapterSource() throws {
+        let item = MediaItem(
+            chapters: [.init(name: "Scene", startPositionTicks: 0), .init(name: "Scene", startPositionTicks: 300)],
+            id: "film", mediaSources: [.init(id: "primary")], type: .movie
+        )
+        let request = try PlayGusChapterIntent.request(for: item, number: 2)
+        #expect(request.streamSelection.mediaSourceID == "primary")
+        #expect(request.requestedStartTicks == 300)
+        #expect(throws: GusError.notFound) { try PlayGusChapterIntent.request(for: item, number: 3) }
+    }
+
+    @Test("Chapter starts require a uniquely identified first cut")
+    func unidentifiedChapterSource() {
+        let sources: [[MediaSource]] = [
+            [], [.init()], [.init(id: " ")], [.init(), .init(id: "alternate")], [.init(id: "same"), .init(id: "same")],
+        ]
+        for mediaSources in sources {
+            let item = MediaItem(chapters: [.init(name: "Opening", startPositionTicks: 0)], id: "film", mediaSources: mediaSources, type: .movie)
+            #expect(throws: GusError.notFound) { try PlayGusChapterIntent.request(for: item, number: 1) }
+            #expect(throws: GusError.self) {
+                try GusPlaybackChoices.request(item: item, version: nil, audio: nil, subtitle: nil, subtitlesOff: false, chapter: "Opening", startOver: false, position: nil)
+            }
+        }
+    }
+
+    @Test("An audiobook chapter skips a downloaded alternate and retains its source during a metadata refresh")
+    func chapterWithAlternateDownload() async throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let files = OfflineDownloadFileStore(directory: directory)
+        let downloads = OfflineDownloadStore(fileStore: files, coordinator: FakeDownloadSessionCoordinator())
+        let item = MediaItem(
+            chapters: [.init(name: "Middle", startPositionTicks: 300)], id: "book",
+            mediaSources: [.init(id: "original"), .init(id: "abridged")], officialRating: "G", type: .audioBook
+        )
+        let provider = FakeMediaProviderSession(capabilities: .init())
+        let session = SessionStore.makeTestSession(mediaProvider: provider)
+        let record = files.prepareDownloadRecord(
+            item: item, serverID: session.server.id, userID: session.user.id, fileExtension: "m4a",
+            status: .complete, progress: 1, mediaSourceID: "abridged"
+        )
+        try Data([1]).write(to: URL(fileURLWithPath: record.filePath))
+        #expect(downloads.localFileURL(for: item, serverID: session.server.id, userID: session.user.id) != nil)
+        var refreshed = item
+        refreshed.mediaSources = []
+        provider.itemHandler = { _ in refreshed }
+        provider.audioHandler = { throw GusError.notFound }
+
+        let request = try PlayGusChapterIntent.request(for: item, number: 1)
+        let player = AudioPlayerStore(session: session, tracks: [item], request: request, downloads: downloads, activateAudioSession: { _ in })
+        defer { player.teardown() }
+        await player.start()
+        #expect(provider.playbackRequestedSelections.map(\.mediaSourceID) == ["original"])
+    }
+
     @Test("A saved slideshow directive never leaves the device through a playback URL")
     func slideshowSharing() {
         var request = PlaybackRequest(item: MediaItem(id: "photo", parentID: "album", type: .photo))
