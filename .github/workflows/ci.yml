@@ -95,11 +95,16 @@ jobs:
             Resources/Watch/Info.plist \
             Resources/PrivacyInfo.xcprivacy \
             Sources/TopShelf/Info.plist \
+            Sources/Widgets/Info.plist \
+            Sources/RemoteNowPlaying/Info.plist \
             Config/Gus.entitlements \
             Config/Gus-iOS.entitlements \
             Config/Gus-SharePlay.entitlements \
             Config/Gus-tvOS.entitlements \
-            Config/GusTopShelf.entitlements
+            Config/GusTopShelf.entitlements \
+            Config/GusWidgets.entitlements \
+            Config/GusWidgets-macOS.entitlements \
+            ci_scripts/gus-widget-macos-unit.entitlements
 
       - name: Validate iOS CarPlay and Siri configuration
         run: |
@@ -110,7 +115,7 @@ jobs:
           ruby <<'RUBY'
           require "yaml"
           Dir[".github/workflows/*.yml"].each { |path| YAML.load_file(path) }
-          YAML.load_file("project.yml")
+          YAML.load_file("project.yml", aliases: true)
           RUBY
 
   build:

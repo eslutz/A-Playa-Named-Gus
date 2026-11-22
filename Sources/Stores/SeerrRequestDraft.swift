@@ -14,7 +14,6 @@ final class SeerrRequestDraft {
     var is4K = false
     var message: String?
     var confirmed: SeerrRequest?
-    var fixedPayload: SeerrRequestPayload?
     var isChecking = false
     var servers: [SeerrServiceServer] = []
     var service: SeerrServiceDetails?
@@ -25,7 +24,7 @@ final class SeerrRequestDraft {
     var isLoadingOptions = false
     private var revision: UUID?
     private var serviceRevision = UUID()
-    private var baselineRequestIDs: Set<Int> = []
+    private var attempt: SeerrPendingRequest?
 
     init(title: SeerrTitle) {
         self.title = title
@@ -159,9 +158,18 @@ final class SeerrRequestDraft {
             rootFolder: rootFolder,
             languageProfileId: languageID
         )
-        fixedPayload = payload
         phase = .submitting
         message = nil
+        var ownedAttempt: SeerrPendingRequest?
+        var clearOwnedAttempt = false
+        defer {
+            if let ownedAttempt {
+                store.endTransmission(of: ownedAttempt)
+                if clearOwnedAttempt {
+                    store.completeRequestAttempt(ownedAttempt)
+                }
+            }
+        }
         let expected = store.revision
         do {
             let client = try store.requireClient()
@@ -186,20 +194,22 @@ final class SeerrRequestDraft {
             }
             let previous = try await ownRequestIDs(client: client, userID: user.id)
             guard expected == store.revision, !Task.isCancelled else { return }
-            baselineRequestIDs = previous
-            try store.beginRequestAttempt(payload: payload, baselineIDs: previous)
+            guard store.admits(current) else { throw SeerrConnectionError.notPermitted }
+            let pending = try store.beginRequestAttempt(payload: payload, baselineIDs: previous)
+            ownedAttempt = pending
+            attempt = pending
             // Seerr validates any advanced destination/profile/folder against current permissions.
             let result = try await client.createRequest(payload)
             guard expected == store.revision, !Task.isCancelled else { return }
             confirmed = result
-            store.completeRequestAttempt(payload: payload)
+            clearOwnedAttempt = true
             phase = .confirmed
         } catch {
             guard expected == store.revision else { return }
-            if case SeerrClientError.mutationOutcomeUnknown = error {
-                phase = .uncertain
+            if case SeerrClientError.mutationOutcomeUnknown = error, let pending = store.pendingRequest(for: payload) {
+                restoreAttempt(pending, store: store)
             } else {
-                store.completeRequestAttempt(payload: payload)
+                clearOwnedAttempt = true
                 phase = .review
             }
             message = error.localizedDescription
@@ -208,8 +218,7 @@ final class SeerrRequestDraft {
     }
 
     func restoreAttempt(_ attempt: SeerrPendingRequest, store: SeerrStore) {
-        fixedPayload = attempt.payload
-        baselineRequestIDs = attempt.baselineIDs
+        self.attempt = attempt
         selectedSeasons = Set(attempt.payload.seasons ?? [])
         is4K = attempt.payload.is4k
         revision = store.revision
@@ -217,10 +226,22 @@ final class SeerrRequestDraft {
     }
 
     func resetAfterVerification(store: SeerrStore) async {
-        guard phase == .uncertain, let payload = fixedPayload else { return }
-        store.completeRequestAttempt(payload: payload)
-        fixedPayload = nil
-        baselineRequestIDs = []
+        guard phase == .uncertain, !isChecking, let attempt, revision == store.revision else { return }
+        if let current = store.pendingRequest(for: attempt.payload) {
+            if current != attempt {
+                restoreAttempt(current, store: store)
+                return
+            }
+            guard !store.isTransmitting(attempt) else {
+                message = String(localized: "Wait for the pending command to finish.")
+                return
+            }
+            guard store.completeRequestAttempt(attempt) else {
+                message = String(localized: "Your changes couldn't be saved. Try again.")
+                return
+            }
+        }
+        self.attempt = nil
         await load(store: store)
     }
 
@@ -233,17 +254,24 @@ final class SeerrRequestDraft {
         while true {
             let page = try await client.userRequests(userID: userID, take: 50, skip: skip)
             try Task.checkCancellation()
-            let previousCount = ids.count
-            ids.formUnion(page.results.map(\.id))
+            let pageIDs = Set(page.results.map(\.id))
+            guard pageIDs.count == page.results.count, pageIDs.isDisjoint(with: ids) else { throw SeerrClientError.invalidResponse }
+            ids.formUnion(pageIDs)
             skip += page.results.count
-            if page.results.isEmpty || skip >= page.pageInfo.results || ids.count == previousCount {
+            if skip >= page.pageInfo.results {
                 return ids
             }
+            guard !page.results.isEmpty else { throw SeerrClientError.invalidResponse }
         }
     }
 
     func check(store: SeerrStore) async {
-        guard phase == .uncertain, !isChecking, let payload = fixedPayload, revision == store.revision else { return }
+        guard phase == .uncertain, !isChecking, let attempt, revision == store.revision else { return }
+        let payload = attempt.payload
+        if store.isTransmitting(attempt) {
+            message = String(localized: "Wait for the pending command to finish.")
+            return
+        }
         isChecking = true
         defer { isChecking = false }
         do {
@@ -254,13 +282,21 @@ final class SeerrRequestDraft {
             while true {
                 let page = try await client.userRequests(userID: user.id, take: 50, skip: skip)
                 guard revision == store.revision, !Task.isCancelled else { return }
+                if let current = store.pendingRequest(for: payload), current != attempt {
+                    restoreAttempt(current, store: store)
+                    return
+                }
                 if let match = page.results.first(where: { request in
-                    !baselineRequestIDs.contains(request.id) && request.requestedBy?.id == user.id && request.media?.tmdbId == payload.mediaId
+                    !attempt.baselineIDs.contains(request.id) && request.requestedBy?.id == user.id && request.media?.tmdbId == payload.mediaId
                         && (request.type ?? request.media?.mediaType) == payload.mediaType
                         && (request.is4k ?? false) == payload.is4k && request.status != .declined
                         && Set(payload.seasons ?? []).isSubset(of: Set((request.seasons ?? []).map(\.seasonNumber)))
                 }) {
-                    confirmed = match; phase = .confirmed; message = nil; store.completeRequestAttempt(payload: payload); return
+                    confirmed = match
+                    phase = .confirmed
+                    message = nil
+                    store.completeRequestAttempt(attempt)
+                    return
                 }
                 skip += page.results.count
                 if page.results.isEmpty || skip >= page.pageInfo.results {

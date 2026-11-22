@@ -59,7 +59,7 @@ if [ "${CI_XCODEBUILD_ACTION:-}" = archive ] && [ "${CI_WORKFLOW:-}" = "Gus Inte
   fi
   if [ "$CI_PRODUCT_PLATFORM" = iOS ] || [ "$CI_PRODUCT_PLATFORM" = watchOS ]; then
     watch_file="build/pcc-signing/Gus-Watch-PCC.entitlements"
-    /usr/bin/plutil -create xml1 "$watch_file"
+    cp Config/GusWidgets.entitlements "$watch_file"
     /usr/bin/plutil -insert com\\.apple\\.developer\\.private-cloud-compute -bool YES "$watch_file"
     printf '\nGUS_WATCH_CODE_SIGN_ENTITLEMENTS = %s\n' "$watch_file" >> Config/Local.xcconfig
     printf 'GUS_PCC_ENTITLED[sdk=watchos*] = YES\n' >> Config/Local.xcconfig
@@ -82,3 +82,4 @@ if [ ! -f Config/Local.xcconfig ]; then
   exit 66
 fi
 printf '\nCODE_SIGN_ENTITLEMENTS[sdk=macosx*] = %s\n' "$test_entitlements" >> Config/Local.xcconfig
+printf 'GUS_WIDGET_MAC_ENTITLEMENTS = %s/gus-widget-macos-unit.entitlements\n' "$script_dir" >> Config/Local.xcconfig

@@ -29,6 +29,7 @@ struct GusWatchApp: App {
             WatchRootView()
                 .environment(appModel)
                 .environment(offlineDownloads)
+                .onOpenURL { WatchShortcutNavigation.shared.open(url: $0) }
                 .onChange(of: scenePhase) { _, phase in
                     guard phase == .background else { return }
                     Task { try? await DiagnosticsHub.shared.flush() }
@@ -85,23 +86,30 @@ struct WatchRootView: View {
 
 /// Vertical pages: Remote, Resume, Browse, Downloads, Settings.
 private struct WatchSignedInView: View {
+    @Bindable private var navigation = WatchShortcutNavigation.shared
+
     var body: some View {
-        TabView {
+        TabView(selection: $navigation.page) {
             NavigationStack {
                 WatchRemoteView()
             }
+            .tag(GusWatchPage.remote)
             NavigationStack {
                 WatchResumeView()
             }
+            .tag(GusWatchPage.resume)
             NavigationStack {
                 WatchBrowseView()
             }
+            .tag(GusWatchPage.browse)
             NavigationStack {
                 WatchDownloadsView()
             }
+            .tag(GusWatchPage.downloads)
             NavigationStack {
                 WatchSettingsView()
             }
+            .tag(GusWatchPage.settings)
         }
         .tabViewStyle(.verticalPage)
     }

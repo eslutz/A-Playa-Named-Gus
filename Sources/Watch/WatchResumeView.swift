@@ -62,7 +62,9 @@ struct WatchResumeView: View {
         do {
             let loadedItems = try await session.mediaProvider.resumeItems(limit: 3)
             try Task.checkCancellation()
+            guard session.isActive else { return }
             items = ContentRatingGate.filter(loadedItems)
+            session.publishWidget(items: items)
             state = .loaded
         } catch {
             let gusError = GusError(from: error)

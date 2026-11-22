@@ -155,6 +155,13 @@ final class HomeStore {
         await loadHome(force: true)
     }
 
+    /// Read the same ordered shelf used by Home without fetching unrelated libraries or artwork.
+    func loadNextUpForSystem() async {
+        await loadHome(force: false, automaticOnly: true)
+        guard session.isActive, !Task.isCancelled else { return }
+        refreshNextUp(upNext: UpNextStore(syncStore: .shared), playlists: .shared, serverLists: .shared)
+    }
+
     func loadIfNeeded() async {
         await loadHome(force: false)
     }
@@ -562,7 +569,10 @@ final class HomeStore {
     /// platform lacks it) so library items surface in system search, and refreshes the
     /// optional tvOS Top Shelf snapshot when the app is signed with an App Group.
     private func donateToSystemSearch() {
-        let items = systemNextItems + latestSections.flatMap(\.items)
+        guard session.isActive else { return }
+        let personal = session.systemSurfacePreferences.personalHistoryEnabled ? systemNextItems : []
+        let items = personal + latestSections.flatMap(\.items)
+        refreshWidget()
         SpotlightIndexer.index(items, serverID: session.server.id, userID: session.user.id)
 
         #if os(tvOS)
@@ -570,8 +580,15 @@ final class HomeStore {
         #endif
     }
 
+    func refreshWidget() {
+        guard matchesRestriction, session.isActive else { return }
+        session.publishWidget(items: systemNextItems)
+    }
+
     #if os(tvOS)
         func refreshTopShelf() {
+            guard session.isActive, AppModel.shared.currentSession === session, matchesRestriction,
+                  session.systemSurfacePreferences.personalHistoryEnabled else { return }
             let provider = session.mediaProvider
             let showSeriesProgress = UserDefaults.standard.bool(forKey: MediaItem.seriesProgressKey)
             let shelfItems = systemNextItems.prefix(8).compactMap { item -> TopShelfSnapshot.Item? in
@@ -580,11 +597,10 @@ final class HomeStore {
                     id: id,
                     title: item.displayTitle,
                     imageURL: provider.backdropImageURL(for: item, maxWidth: 1280),
-                    playbackProgress: item.cardProgress(showSeriesProgress: showSeriesProgress),
-                    contentURL: ContentLink.item(id: id, serverID: session.server.id, provider: session.server.providerKind).url
+                    playbackProgress: item.cardProgress(showSeriesProgress: showSeriesProgress)
                 )
             }
-            TopShelfSnapshot(items: Array(shelfItems), serverID: session.server.id, userID: session.user.id).save()
+            TopShelfSnapshot(items: Array(shelfItems), serverID: session.server.id, userID: session.user.id, restrictionRevision: restriction).save()
             TVTopShelfContentProvider.topShelfContentDidChange()
         }
     #endif

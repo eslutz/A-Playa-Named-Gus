@@ -84,12 +84,8 @@ enum ContentLink: Hashable, Sendable {
         if let payload = query.first(where: { $0.name == "playback" }) {
             guard let text = payload.value, text.utf8.count <= 8192,
                   let data = Data(base64Encoded: text),
-                  let decoded = try? JSONDecoder().decode(PlaybackRequest.self, from: data),
-                  decoded.startPositionTicks.map({ $0 >= 0 }) ?? true,
-                  decoded.streamSelection.audioStreamIndex.map({ $0 >= 0 }) ?? true,
-                  decoded.streamSelection.subtitleStreamIndex.map({ $0 >= -1 }) ?? true
-            else { return nil }
-            request = decoded.sharingIntent
+                  let decoded = PlaybackRequest.decodeSharingIntent(data) else { return nil }
+            request = decoded
         }
         if url.scheme == "gus" {
             guard let host = url.host(percentEncoded: false) else { return nil }

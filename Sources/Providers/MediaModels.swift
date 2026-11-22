@@ -313,6 +313,7 @@ struct MediaItem: Codable, Hashable, Identifiable, Sendable {
     var albumID: String?
     var albumPrimaryImageTag: String?
     var artists: [String]
+    var artistCredits: [MediaNamedItem]?
     var backdropImageTags: [String]
     var canDownload: Bool?
     var chapters: [MediaChapterInfo]
@@ -360,6 +361,7 @@ struct MediaItem: Codable, Hashable, Identifiable, Sendable {
         case albumID
         case albumPrimaryImageTag
         case artists
+        case artistCredits
         case backdropImageTags
         case canDownload
         case chapters
@@ -494,6 +496,7 @@ struct MediaItem: Codable, Hashable, Identifiable, Sendable {
         albumID = try values.decodeIfPresent(String.self, forKey: .albumID)
         albumPrimaryImageTag = try values.decodeIfPresent(String.self, forKey: .albumPrimaryImageTag)
         artists = try values.decodeIfPresent([String].self, forKey: .artists) ?? []
+        artistCredits = try values.decodeIfPresent([MediaNamedItem].self, forKey: .artistCredits)
         backdropImageTags = try values.decodeIfPresent([String].self, forKey: .backdropImageTags) ?? []
         canDownload = try values.decodeIfPresent(Bool.self, forKey: .canDownload)
         chapters = try values.decodeIfPresent([MediaChapterInfo].self, forKey: .chapters) ?? []

@@ -49,9 +49,9 @@ The script targets these automatically:
 | Mac | Manual (see below) | 1280×800 or 2560×1600 | `mac` |
 
 > **Note:** The script resolves UDIDs from the simulators installed on the current
-> machine by device name, preferring the newest runtime. If Xcode is updated or
-> simulators are re-created, verify the configured device names and resolved
-> destinations rather than editing hardcoded UDIDs. Confirm with:
+> machine by device name, preferring the newest runtime. Follow the
+> [simulator reuse policy](../local-validation.md#reuse-existing-simulators) for captures.
+> After an Xcode or runtime update, verify the configured device names and resolved destinations with
 > `xcodebuild -showdestinations -project 'A Playa Named Gus.xcodeproj' -scheme 'A Playa Named Gus'`
 
 ## Required Scenes

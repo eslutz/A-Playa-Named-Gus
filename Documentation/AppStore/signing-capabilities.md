@@ -4,8 +4,7 @@ See [pipeline policy](pipeline-policy.md) for current PR, qualification, and aut
 
 ## Current State
 
-Simulator and local macOS builds use ad-hoc signing (`CODE_SIGN_IDENTITY = -`,
-`CODE_SIGNING_REQUIRED = NO`) so GitHub PR builds work without provisioning profiles.
+The project defaults to ad hoc signing for simulator work. The GitHub arm64 macOS compile check uses `CODE_SIGNING_ALLOWED=NO`. The hosted native Mac unit host and its widget use their test-specific entitlements.
 The bundle ID `dev.ericslutz.gus` and paid Apple Developer Program Team ID
 `QS3GC3CT43` are set in `Config/Shared.xcconfig`. Entitlements and capability
 declarations cover the currently wired surface. Apple granted CarPlay Audio.
@@ -36,9 +35,7 @@ on each applicable bundle.
 ## Capabilities — Declared Implementation
 
 The table records source configuration, not proof that distribution provisioning
-profiles include every entitlement. Verify the signed archives, embedded Watch/Top
-Shelf components, and App Store Connect processing before claiming distribution
-acceptance. The CarPlay section below tracks the additional device and signing checks.
+profiles include every entitlement. Verify the signed host, its embedded extensions and companion, and App Store Connect processing for each destination. The CarPlay section below tracks the additional device and signing checks.
 
 | Capability | Platform | Declared in | Status |
 |---|---|---|---|
@@ -56,7 +53,10 @@ acceptance. The CarPlay section below tracks the additional device and signing c
 | Keychain | All | Keychain Services via `SecItem*` — no capability entry required | ✓ |
 | Non-exempt encryption declaration | Main app, all primary platforms | `ITSAppUsesNonExemptEncryption = false` in `Resources/Info.plist`; confirm processed-build compliance | ✓ |
 | Offline downloads | iOS / iPadOS / macOS / visionOS / watchOS (audio) | Application Support storage — no extra capability required | ✓ |
-| Watch companion | watchOS | `GusWatch` target embedded in the iOS archive — no extra capability required | ✓ |
+| Widgets and Watch complications | iOS / iPadOS / macOS / visionOS / watchOS | `group.dev.ericslutz.gus` in the host and its widget extension | ✓ |
+| Download Live Activities | iOS / iPadOS | `NSSupportsLiveActivities` and the widget extension’s ActivityKit configuration | ✓ |
+| Remote Now Playing status | iOS / iPadOS 27 and later | ExtensionKit extension point `com.apple.nowplaying.remote-media` | ✓ |
+| Watch companion | watchOS | `GusWatch` and its widget share the App Group. The PCC archive hook preserves this entitlement when adding PCC. | ✓ |
 
 **Universal Links / Shared with You:** Gus claims `applinks:gus.ericslutz.dev` and
 supports `/item/<id>` and `/play/<id>`. The required associated-domains file is documented
@@ -123,14 +123,7 @@ and watchOS do not expose the system request.
 
 ## watchOS Companion
 
-The `GusWatch` target (bundle id `dev.ericslutz.gus.watchkitapp`) ships **inside the iOS
-app archive** — no separate App Store record — and is standalone-capable
-(`WKRunsIndependentlyOfCompanionApp`). It needs no extra entitlement today: it uses
-`URLSession`, the data-protection Keychain, and WatchConnectivity (no capability entry
-required). Long-form on-watch audio uses `AVAudioSession`'s `.longFormAudio` policy.
-Xcode Cloud signs/provisions it as part of the iOS app; confirm the watch app and its
-provisioning are included when the iOS archive is validated. Scope:
-`Documentation/watchos-brief.md`.
+The standalone-capable `GusWatch` app (`dev.ericslutz.gus.watchkitapp`) ships within the iOS archive and shares a single App Store record with Gus. Its nested WidgetKit extension (`dev.ericslutz.gus.watchkitapp.widgets`) and the Watch app both need the App Group. The Watch app uses URLSession, the data-protection Keychain, WatchConnectivity and the long-form audio policy. Verify the companion, its embedded extension and their provisioning profiles in the signed iOS export. [Watch companion scope](../watchos-brief.md)
 
 When a Watch profile is missing, verify the exact embedded bundle identifier is
 registered to the same team, and confirm the generated profile, signature and
@@ -169,10 +162,8 @@ regenerate it. See [API preparation](app-store-connect.md#api-access-and-cloud-w
 - **CarPlay audio and Siri** — verify signed provisioning and connected-iPhone behavior.
 - **Declared Age Range device verification** — verify on an OS 26 device that the system
   sheet presents and maps back to Gus's content limit.
-- Verify the Watch and Top Shelf components within the iOS and tvOS archives.
-  They do not require separate store records or distribution workflows.
-- Let Xcode Cloud manage App Store provisioning profiles for the main app, registered
-  Watch companion, and tvOS Top Shelf extension; verify the resulting signed products.
+- Verify the iOS app’s widget, remote Now Playing extension, Watch companion and nested Watch widget. Check the tvOS Top Shelf extension and the native Mac and Vision Pro widgets in their respective archives.
+- Register each embedded bundle identifier with the same team. Let Xcode Cloud manage the App Store profiles and verify each signed bundle’s capabilities before distribution.
 - Review per-platform capabilities in Xcode Signing & Capabilities and App Store Connect
   for any provisioning-profile additions (e.g. Push Notifications if added later).
 - Confirm macOS App Sandbox entitlements pass the archive-validation step (no unexpected
@@ -218,3 +209,13 @@ Native-list ownership and current validation are tracked in [the implementation 
 ## For You iCloud synchronization
 
 iPhone can share ranked For You item IDs with Apple TV through the same private container. The snapshots use an isolated record zone and reuse the existing `SavedMediaRecord` type and `payload` field. Check that this schema exists in Production and that the signed iOS and tvOS apps have access to the same container before evaluating TestFlight delivery. The Apple TV path reads picks without model access. Check foreground delivery, account isolation, withdrawal and seven-day display expiry on the signed builds before claiming production iCloud acceptance.
+
+## Siri actions and system extensions
+
+The Shortcuts candidate embeds `dev.ericslutz.gus.widgets` on iOS, macOS and visionOS. Watch uses the nested identifier listed above. Provision each host and widget for `group.dev.ericslutz.gus`. The Mac widget also requires App Sandbox. Compare the exported signatures and provisioning profiles with the target’s entitlements.
+
+Personal system suggestions and Next Up snapshots require consent for the active account on the device. Widgets read an expiring local title or progress snapshot. iOS and Watch omit titles from the snapshot until the user enables them. The system can further redact privacy-sensitive views. The Apple TV Top Shelf extension uses a separate rating-filtered snapshot under the same account preference.
+
+The iOS 27 ExtensionKit target `dev.ericslutz.gus.remote-now-playing` publishes status for an explicitly selected controllable player on the active user’s account while Gus is open. The extension receives presentation values and has no account credentials, artwork URLs or command transport. Device qualification includes the foreground-to-background transition and removal of the session from Control Center. [Apple remote session documentation](https://developer.apple.com/documentation/nowplaying/publishing-remote-media-sessions)
+
+App Shortcuts and structured audio use App Intents. Existing SiriKit audio on iPhone continues to use the Siri entitlement and music/audiobook categories. Keep the optional Siri AI developer-preview configuration limited to development-signed builds or Internal TestFlight. It requires the 27.3 SDK and an eligible device. [Apple’s preview requirements](https://developer.apple.com/documentation/appintents/siri-ai-developer-preview)

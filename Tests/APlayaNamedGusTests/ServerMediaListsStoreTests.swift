@@ -15,6 +15,32 @@ struct ServerMediaListsStoreTests {
         )
     }
 
+    @Test func unattendedPlaylistEditRechecksOwnershipAfterOfflineRestart() async throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let provider = FakeMediaProviderSession(capabilities: ProviderCapabilities())
+        let id = UUID()
+        let list = ServerMediaList(id: id, name: "Playlist", kind: .playlist, entries: [], canEdit: true, entriesLoaded: true)
+        provider.mediaListsHandler = { _ in [list] }
+        provider.mediaListHandler = { _, _ in list }
+        var sent = false
+        provider.itemHandler = { id in MediaItem(id: id, officialRating: "G", type: .movie) }
+        provider.addToMediaListHandler = { _, _, _ in sent = true }
+        let store = ServerMediaListsStore(directory: directory)
+        let session = session(provider)
+        await store.refresh(session: session)
+        provider.mediaListHandler = { _, _ in throw GusError.offline }
+        #expect(await store.add(item: MediaItem(id: "item"), to: id, kind: .playlist, session: session, requiresPrivateOwnership: true))
+        let restored = ServerMediaListsStore(directory: directory)
+        provider.mediaListHandler = { _, _ in list }
+        // An editable list without exclusive ownership proof is shared/unknown.
+        await restored.refresh(session: session)
+        let pending = try #require(restored.pendingEdits(scope: scope).first)
+        #expect(pending.requiresPrivateOwnership == true)
+        #expect(pending.status == .rejected)
+        #expect(!sent)
+    }
+
     @Test func bulkPlaylistEditQueuesAndReplaysNameRemovalAndOrderTogether() async throws {
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: directory) }

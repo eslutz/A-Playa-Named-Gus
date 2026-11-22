@@ -116,7 +116,13 @@ struct RootContainer: View {
 
     private func handleSearchCommand() {
         guard navigation.consumeSearchFocus() else { return }
-        state.focusSearch()
+        if let term = navigation.consumeLibrarySearch(for: session.lease) {
+            state.selectSection(RootNavigationState.searchID)
+            state.focusSearch()
+            state.replaySearch(.typed(term))
+        } else {
+            state.focusSearch()
+        }
     }
 
     @ViewBuilder private var presentationRoot: some View {

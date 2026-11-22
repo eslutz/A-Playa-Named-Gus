@@ -1,3 +1,4 @@
+import AppIntents
 import Foundation
 
 /// Handoff/user-activity vocabulary: viewing an item's detail and playing an item.
@@ -19,24 +20,38 @@ enum GusUserActivity {
         item: MediaItem,
         serverID: String,
         userID: String,
+        includeOnscreenContext: Bool = false,
         playbackRequest: PlaybackRequest? = nil
     ) {
-        guard ContentRatingGate.admitsStored(item) else {
+        guard let id = item.id, !id.isEmpty, !serverID.isEmpty, !userID.isEmpty, ContentRatingGate.admitsStored(item) else {
+            activity.appEntityIdentifier = nil
+            activity.title = nil
+            activity.isEligibleForHandoff = false
+            activity.userInfo = nil
+            activity.requiredUserInfoKeys = nil
             activity.resignCurrent()
             return
+        }
+        activity.appEntityIdentifier = nil
+        if includeOnscreenContext {
+            let identifier = GusIntentID.make(resource: "media", id: id, provider: item.providerKind, scope: AccountScope(serverID: serverID, userID: userID))
+            activity.appEntityIdentifier = EntityIdentifier(for: GusMediaEntity.self, identifier: identifier)
         }
         activity.title = item.displayTitle
         activity.isEligibleForHandoff = true
         activity.isEligibleForSearch = false
-        activity.requiredUserInfoKeys = [itemIDKey]
-        var userInfo: [String: Any] = [serverIDKey: serverID, userIDKey: userID]
-        if let id = item.id {
-            userInfo[itemIDKey] = id
-        }
+        var userInfo: [String: Any] = [itemIDKey: id, serverIDKey: serverID, userIDKey: userID]
         if let playbackRequest, let data = try? JSONEncoder().encode(playbackRequest.sharingIntent) {
             userInfo[playbackIntentKey] = data
         }
-        activity.addUserInfoEntries(from: userInfo)
+        activity.userInfo = userInfo
+        activity.requiredUserInfoKeys = Set(userInfo.keys)
+    }
+
+    static func account(from activity: NSUserActivity) -> SessionCredential? {
+        guard let serverID = activity.userInfo?[serverIDKey] as? String, !serverID.isEmpty,
+              let userID = activity.userInfo?[userIDKey] as? String, !userID.isEmpty else { return nil }
+        return SessionCredential(serverID: serverID, userID: userID)
     }
 
     /// Maps a continued activity back onto a content link, refusing payloads from a
@@ -47,25 +62,22 @@ enum GusUserActivity {
         currentServerID: String?,
         currentUserID: String?
     ) -> ContentLink? {
-        guard let userInfo = activity.userInfo,
-              let itemID = userInfo[itemIDKey] as? String
-        else { return nil }
-
-        if let currentServerID, let currentUserID,
-           let serverID = userInfo[serverIDKey] as? String,
-           let userID = userInfo[userIDKey] as? String,
-           serverID != currentServerID || userID != currentUserID
-        {
-            return nil
-        }
-
-        let request = (userInfo[playbackIntentKey] as? Data).flatMap { try? JSONDecoder().decode(PlaybackRequest.self, from: $0) }
-        guard request == nil || request?.item.id == itemID else { return nil }
+        guard let userInfo = activity.userInfo, let account = account(from: activity),
+              let itemID = userInfo[itemIDKey] as? String, !itemID.isEmpty,
+              currentServerID == nil || currentServerID == account.serverID,
+              currentUserID == nil || currentUserID == account.userID else { return nil }
         switch activity.activityType {
         case playback:
-            return .play(id: itemID, serverID: userInfo[serverIDKey] as? String, provider: .jellyfin, request: request?.sharingIntent)
+            var request: PlaybackRequest?
+            if let payload = userInfo[playbackIntentKey] {
+                guard let data = payload as? Data, let decoded = PlaybackRequest.decodeSharingIntent(data),
+                      decoded.item.id == itemID, decoded.item.providerKind == .jellyfin else { return nil }
+                request = decoded
+            }
+            return .play(id: itemID, serverID: account.serverID, provider: .jellyfin, request: request)
         case itemDetail:
-            return .item(id: itemID, serverID: userInfo[serverIDKey] as? String, provider: .jellyfin)
+            guard userInfo[playbackIntentKey] == nil else { return nil }
+            return .item(id: itemID, serverID: account.serverID, provider: .jellyfin)
         default:
             return nil
         }

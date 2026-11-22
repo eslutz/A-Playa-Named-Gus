@@ -54,6 +54,12 @@ enum GusLibraryMatching {
         if let year = intent.maximumYear, item.productionYear.map({ $0 <= year }) != true {
             return false
         }
+        if let earliest = intent.premieredOnOrAfter, item.premiereDate.map({ $0 >= earliest }) != true {
+            return false
+        }
+        if let end = intent.premieredBefore, item.premiereDate.map({ $0 < end }) != true {
+            return false
+        }
         let minutes = item.runTimeTicks.map { Double($0) / 600_000_000 }
         if let minimum = intent.minimumMinutes, minutes.map({ $0 >= Double(minimum) }) != true {
             return false

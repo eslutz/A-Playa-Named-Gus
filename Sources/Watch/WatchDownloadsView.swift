@@ -73,6 +73,11 @@ struct WatchDownloadsView: View {
         .task {
             downloads.load(serverID: session.server.id, userID: session.user.id)
         }
+        .task(id: WatchShortcutNavigation.shared.playRequest) {
+            if let record = WatchShortcutNavigation.shared.take(in: session, downloads: downloads) {
+                playerRecord = record
+            }
+        }
         .refreshable { downloads.load(serverID: session.server.id, userID: session.user.id) }
         .alert("Download", isPresented: .init(
             get: { downloads.errorMessage != nil },

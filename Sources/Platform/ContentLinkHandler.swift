@@ -18,6 +18,10 @@ private struct ContentLinkHandler: ViewModifier {
     @Environment(AudioPlaybackCoordinator.self) private var audio
     @Environment(SessionStore.self) private var session
 
+    #if !os(tvOS)
+        @State private var sharePlay: SharePlayPresentation?
+        @State private var sharePlayError: String?
+    #endif
     @State private var playerItem: ItemRef?
     @State private var errorMessage: String?
     @State private var resolvingLink: Int?
@@ -25,7 +29,7 @@ private struct ContentLinkHandler: ViewModifier {
     func body(content: Content) -> some View {
         content
             .task(id: navigation.contentLinkRequest) {
-                guard navigation.contentLinkRequest > 0, let link = navigation.consumeContentLink() else { return }
+                guard navigation.contentLinkRequest > 0, let link = navigation.consumeContentLink(for: session.lease) else { return }
                 let request = navigation.contentLinkRequest
                 resolvingLink = request
                 defer {
@@ -59,6 +63,26 @@ private struct ContentLinkHandler: ViewModifier {
                     .gusNowPlaying(coordinator: audio, usesTabAccessory: false)
             }
             .playerPresentation(item: $playerItem)
+        #if !os(tvOS)
+            .task(id: navigation.sharePlayRequest) {
+                guard let id = navigation.consumeSharePlay(for: session.lease) else { return }
+                do {
+                    let item = try await session.mediaProvider.item(id: id)
+                    try GusIntentRuntime.validate(session)
+                    guard item.id == id, ContentRatingGate.admitsStored(item) else { throw GusError.notFound }
+                    let request = PlaybackRequest(item: item, streamSelection: .init(audioStreamIndex: nil, subtitleStreamIndex: nil, mediaSourceID: item.mediaSources.first?.id))
+                    guard item.mediaSources.count <= 1 || request.streamSelection.mediaSourceID != nil,
+                          let activity = SharePlayCoordinator.shared.activity(for: request, session: session) else { throw GusError.notFound }
+                    sharePlay = SharePlayPresentation(activity: activity)
+                } catch {
+                    let failure = GusError(from: error)
+                    guard session.isActive, !failure.isCancellation else { return }
+                    sharePlayError = failure.localizedDescription
+                }
+            }
+            .sharePlaySharingPresentation(presentation: $sharePlay, errorMessage: $sharePlayError)
+            .defersIntelligencePrompt(while: sharePlay != nil || sharePlayError != nil)
+        #endif
             .alert(
                 "Can't Open That",
                 isPresented: Binding(
@@ -103,6 +127,13 @@ private struct ContentLinkHandler: ViewModifier {
                     rootState.presentDetail(.init(item: item))
                 #endif
             case .play:
+                if item.type == .playlist || item.type == .musicAlbum {
+                    let nextPlayer = try await GusIntentRuntime.playlistPlayer(item, in: session, audio: audio)
+                    try Task.checkCancellation()
+                    guard session.isActive else { return }
+                    playerItem = nextPlayer
+                    return
+                }
                 var request = link.playbackRequest ?? PlaybackRequest(item: item)
                 request.item = item
                 playerItem = ItemRef(item: item, serverID: session.server.id, userID: session.user.id, playbackRequest: request)
@@ -110,7 +141,13 @@ private struct ContentLinkHandler: ViewModifier {
         } catch {
             let gusError = GusError(from: error)
             guard session.isActive, !gusError.isCancellation else { return }
-            errorMessage = gusError.localizedDescription
+            if let local = GusIntentRuntime.localPlayback(for: link, in: session, after: error) {
+                playerItem = local
+            } else if GusIntentRuntime.playDownloadedAlbum(for: link, in: session, audio: audio, after: error) {
+                playerItem = nil
+            } else {
+                errorMessage = gusError.localizedDescription
+            }
         }
     }
 }

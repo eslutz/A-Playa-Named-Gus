@@ -358,6 +358,79 @@ extension PlaybackIntegrationTests {
     @MainActor
     @Suite("Local playback routing")
     struct LocalPlaybackRoutingTests {
+        @Test("Shortcuts uses the downloaded cut’s duration and honors completion for online and offline lookups")
+        func shortcutCompletionPercentage() throws {
+            let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+            defer { try? FileManager.default.removeItem(at: directory) }
+            let files = OfflineDownloadFileStore(directory: directory)
+            let progress = OfflinePlaybackProgressStore(directory: directory)
+            let downloads = OfflineDownloadStore(fileStore: files, coordinator: LocalRoutingDownloadCoordinator())
+            let session = makeSession(provider: FakeMediaProviderSession(capabilities: ProviderCapabilities()))
+            let scope = session.references.scope
+            let primary = MediaSource(id: "primary", runTimeTicks: 50)
+            let source = MediaSource(id: "downloaded", runTimeTicks: 100)
+            let untimed = MediaSource(id: "untimed")
+            func save(_ id: String, watched: Bool, sourceID: String?) throws -> OfflineDownloadRecord {
+                let item = MediaItem(
+                    id: id,
+                    mediaSources: [primary, source, untimed],
+                    officialRating: "G",
+                    runTimeTicks: primary.runTimeTicks,
+                    type: .movie,
+                    userData: MediaUserData(playedPercentage: 25, isWatched: watched)
+                )
+                let file = directory.appendingPathComponent("\(id).mov")
+                try Data([0]).write(to: file)
+                return try files.persistDownloadedFile(
+                    file,
+                    item: item,
+                    serverID: scope.serverID,
+                    userID: scope.userID,
+                    fileExtension: "mov",
+                    mediaSourceID: sourceID
+                )
+            }
+            let finished = try save("finished", watched: true, sourceID: source.id)
+            let unwatched = try save("unwatched", watched: false, sourceID: source.id)
+            let unknownDuration = try save("unknown-duration", watched: false, sourceID: untimed.id)
+            let legacy = try save("legacy", watched: false, sourceID: nil)
+            let legacyFinished = try save("legacy-finished", watched: true, sourceID: nil)
+            downloads.load(serverID: scope.serverID, userID: scope.userID)
+            func percentage(_ item: MediaItem) -> Double {
+                GetGusProgressIntent.playbackPercentage(for: item, session: session, progress: progress, downloads: downloads)
+            }
+
+            #expect(percentage(finished.playbackItem) == 100)
+            progress.checkpoint(itemID: "finished", positionTicks: 0, scope: scope, mediaSourceID: source.id)
+            #expect(percentage(finished.playbackItem) == 100)
+            progress.checkpoint(itemID: "finished", positionTicks: 40, scope: scope, mediaSourceID: source.id)
+            #expect(percentage(finished.playbackItem) == 100)
+            #expect(percentage(finished.item) == 100)
+            #expect(percentage(unwatched.playbackItem) == 0)
+            progress.checkpoint(itemID: "unwatched", positionTicks: 40, scope: scope, mediaSourceID: source.id)
+            #expect(percentage(unwatched.playbackItem) == 40)
+            // Online resolution returns the full item, whose primary duration would give 80%.
+            #expect(percentage(unwatched.item) == 40)
+            var revised = unwatched.item
+            revised.mediaSources[1].runTimeTicks = 160
+            #expect(percentage(revised) == 40)
+
+            // A duration the server later adds cannot establish the length of the file already on disk.
+            progress.checkpoint(itemID: "unknown-duration", positionTicks: 40, scope: scope, mediaSourceID: untimed.id)
+            var newlyTimed = unknownDuration.item
+            newlyTimed.mediaSources[2].runTimeTicks = 200
+            #expect(percentage(unknownDuration.playbackItem) == 25)
+            #expect(percentage(newlyTimed) == 25)
+
+            // Older downloads have no source runtime, so their saved percentage is the fallback.
+            progress.checkpoint(itemID: "legacy", positionTicks: 40, scope: scope)
+            #expect(legacy.playbackItem.runTimeTicks == nil)
+            #expect(percentage(legacy.playbackItem) == 25)
+            #expect(percentage(legacy.item) == 25)
+            #expect(percentage(legacyFinished.playbackItem) == 100)
+            #expect(percentage(legacyFinished.item) == 100)
+        }
+
         @Test("local direct, next and playlist preparation rematch opted-in episode tracks", arguments: ["direct", "next", "playlist"])
         func downloadedEpisodeTrackMemory(entry: String) async throws {
             let directory = FileManager.default.temporaryDirectory.appendingPathComponent("gus-local-tracks-\(UUID().uuidString)")

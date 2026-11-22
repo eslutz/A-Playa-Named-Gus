@@ -631,11 +631,8 @@ final class LibraryStore {
     }
 
     private func index(_ admitted: [MediaItem]) {
-        let serverID = session.server.id
-        let userID = session.user.id
-        Task.detached(priority: .background) {
-            SpotlightIndexer.index(admitted, serverID: serverID, userID: userID)
-        }
+        guard session.isActive else { return }
+        SpotlightIndexer.index(admitted, serverID: session.server.id, userID: session.user.id)
     }
 
     private func handle(_ error: Error) {

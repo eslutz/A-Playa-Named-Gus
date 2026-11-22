@@ -124,9 +124,7 @@ struct AudioPlayerView: View {
                     ForEach(store.queue.order, id: \.self) { index in
                         let queuedTrack = store.queue.tracks[index]
                         Button {
-                            if let id = queuedTrack.id {
-                                Task { await store.select(trackID: id) }
-                            }
+                            Task { await store.select(occurrence: index) }
                         } label: {
                             HStack {
                                 Text(queuedTrack.displayTitle)
@@ -375,11 +373,12 @@ struct AudioPlayerView: View {
 
     @ViewBuilder
     private var chaptersMenu: some View {
-        if let track, !track.chapters.isEmpty {
+        let chapters = store.chapterTargets
+        if !chapters.isEmpty {
             Menu {
-                ForEach(PlaybackChapter.seekTargets(for: track)) { chapter in
+                ForEach(chapters) { chapter in
                     Button(chapter.title) {
-                        Task { await store.seek(to: chapter.seconds) }
+                        Task { await store.seek(to: chapter) }
                     }
                 }
             } label: {

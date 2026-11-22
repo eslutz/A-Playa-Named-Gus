@@ -35,9 +35,17 @@ struct RootView: View {
                     audio.stop()
                 }
                 if let session = appModel.currentSession {
+                    session.systemPrivacyDidChange()
                     SpotlightIndexer.deleteIndex(serverID: session.server.id, userID: session.user.id)
                 }
             }
+        #if os(iOS)
+            .onChange(of: scenePhase) { _, phase in
+                if #available(iOS 27, *), phase == .background {
+                    GusRemoteNowPlayingPublisher.shared.stop()
+                }
+            }
+        #endif
             .onChange(of: activeLease) { _, _ in
                 #if !os(iOS)
                     audio.stop()

@@ -15,7 +15,8 @@ Apple Silicon macOS compile validation. App tests and simulator builds run local
 
 Run macOS tests natively on a local Apple Silicon Mac with
 `platform=macOS,arch=arm64`. Run iOS/iPadOS, tvOS, visionOS and watchOS
-simulator builds and tests locally, one simulator at a time.
+simulator builds and tests locally, one simulator at a time. Follow the
+[generic simulator reuse policy](../local-validation.md#reuse-existing-simulators).
 See the [local guide](../local-validation.md).
 Retain exact source, compiled-input, artifact, native test-identity and raw-log
 provenance outside Git. Existing results keep their original revision/artifact labels;

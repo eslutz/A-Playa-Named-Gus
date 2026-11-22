@@ -18,9 +18,12 @@ final class SeerrStore {
     private let defaults: UserDefaults
     private let tokens: any TokenStore
     private var restored = false
+    @ObservationIgnored private var restoreTask: Task<Void, Never>?
+    private var restoreGeneration = UUID()
     private var blockedTitles = Set<String>()
     @ObservationIgnored private var requestDrafts: [String: SeerrRequestDraft] = [:]
     private var pendingRequests: [String: SeerrPendingRequest] = [:]
+    @ObservationIgnored private var transmittingRequestIDs = Set<UUID>()
     private var pendingSupport = Set<String>()
 
     var restrictionRevision: String {
@@ -57,7 +60,22 @@ final class SeerrStore {
     }
 
     func restore() async {
+        if let restoreTask {
+            await restoreTask.value; return
+        }
         guard !restored else { return }
+        let generation = UUID()
+        restoreGeneration = generation
+        let task = Task { await restoreSavedConnection() }
+        restoreTask = task
+        await task.value
+        if restoreGeneration == generation {
+            restoreTask = nil
+        }
+    }
+
+    private func restoreSavedConnection() async {
+        guard !restored, !Task.isCancelled else { return }
         restored = true
         guard let data = try? Data(contentsOf: fileURL),
               let saved = try? JSONDecoder().decode(SavedConnection.self, from: data), saved.scope == scope
@@ -176,6 +194,7 @@ final class SeerrStore {
 
     /// Account replacement invalidates in-flight work while preserving this account's saved connection.
     func deactivate() {
+        cancelRestore()
         let previous = client
         previous?.invalidateSession()
         revision = UUID()
@@ -188,6 +207,7 @@ final class SeerrStore {
     }
 
     func disconnect() {
+        cancelRestore()
         let previous = client
         previous?.invalidateSession()
         revision = UUID()
@@ -206,6 +226,12 @@ final class SeerrStore {
         try? FileManager.default.removeItem(at: fileURL)
         // Forget this device locally; no unowned network operation may outlive its session.
         Task { await previous?.clearSession() }
+    }
+
+    private func cancelRestore() {
+        restoreGeneration = UUID()
+        restoreTask?.cancel()
+        restoreTask = nil
     }
 
     func handle(_ error: Error) {
@@ -230,6 +256,9 @@ final class SeerrStore {
     func requestDraft(for title: SeerrTitle) -> SeerrRequestDraft {
         let key = titleKey(type: title.mediaType, id: title.id)
         if let draft = requestDrafts[key] {
+            if let pending = pendingRequests[key], draft.phase != .submitting, draft.phase != .uncertain {
+                draft.restoreAttempt(pending, store: self)
+            }
             return draft
         }
         let draft = SeerrRequestDraft(title: title)
@@ -244,16 +273,43 @@ final class SeerrStore {
         requestDrafts.removeValue(forKey: titleKey(type: title.mediaType, id: title.id))
     }
 
-    func beginRequestAttempt(payload: SeerrRequestPayload, baselineIDs: Set<Int>) throws {
-        let key = titleKey(type: payload.mediaType, id: payload.mediaId)
-        guard pendingRequests[key] == nil else { throw SeerrClientError.mutationOutcomeUnknown }
-        pendingRequests[key] = SeerrPendingRequest(payload: payload, baselineIDs: baselineIDs)
-        do { try persistJournal() } catch { pendingRequests.removeValue(forKey: key); throw error }
+    func pendingRequest(for payload: SeerrRequestPayload) -> SeerrPendingRequest? {
+        pendingRequests[titleKey(type: payload.mediaType, id: payload.mediaId)]
     }
 
-    func completeRequestAttempt(payload: SeerrRequestPayload) {
-        pendingRequests.removeValue(forKey: titleKey(type: payload.mediaType, id: payload.mediaId))
-        try? persistJournal()
+    func beginRequestAttempt(payload: SeerrRequestPayload, baselineIDs: Set<Int>) throws -> SeerrPendingRequest {
+        let key = titleKey(type: payload.mediaType, id: payload.mediaId)
+        guard pendingRequests[key] == nil else { throw SeerrClientError.mutationOutcomeUnknown }
+        let id = UUID()
+        let attempt = SeerrPendingRequest(id: id, payload: payload, baselineIDs: baselineIDs)
+        pendingRequests[key] = attempt
+        do { try persistJournal() } catch { pendingRequests.removeValue(forKey: key); throw error }
+        transmittingRequestIDs.insert(id)
+        return attempt
+    }
+
+    func isTransmitting(_ attempt: SeerrPendingRequest) -> Bool {
+        attempt.id.map(transmittingRequestIDs.contains) ?? false
+    }
+
+    func endTransmission(of attempt: SeerrPendingRequest) {
+        if let id = attempt.id {
+            transmittingRequestIDs.remove(id)
+        }
+    }
+
+    @discardableResult
+    func completeRequestAttempt(_ attempt: SeerrPendingRequest) -> Bool {
+        let key = titleKey(type: attempt.payload.mediaType, id: attempt.payload.mediaId)
+        guard !isTransmitting(attempt), pendingRequests[key] == attempt else { return false }
+        pendingRequests.removeValue(forKey: key)
+        do {
+            try persistJournal()
+            return true
+        } catch {
+            pendingRequests[key] = attempt
+            return false
+        }
     }
 
     func hasPendingSupportMutation(key: String) -> Bool {

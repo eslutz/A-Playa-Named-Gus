@@ -23,6 +23,9 @@
 	<key>CFBundleVersion</key>
 	<string>$(CURRENT_PROJECT_VERSION)</string>
 
+    <key>CFBundleURLTypes</key>
+    <array><dict><key>CFBundleURLName</key><string>dev.ericslutz.gus.watch.navigation</string><key>CFBundleURLSchemes</key><array><string>gus</string></array></dict></array>
+
 	<!-- Single-target SwiftUI watch app. -->
 	<key>WKApplication</key>
 	<true/>

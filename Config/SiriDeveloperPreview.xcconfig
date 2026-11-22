@@ -1,0 +1,8 @@
+// Explicit override for local development and separately qualified internal tests.
+// Pass only to a build using an SDK with Siri AI tool support.
+SWIFT_ACTIVE_COMPILATION_CONDITIONS = $(inherited) GUS_SIRI_AI_PREVIEW GUS_SIRI_VIDEO_27_3
+GUS_EXCLUDED_SIRI_RESOURCES =
+IPHONEOS_DEPLOYMENT_TARGET = 27.3
+MACOSX_DEPLOYMENT_TARGET = 27.3
+XROS_DEPLOYMENT_TARGET = 27.3
+TVOS_DEPLOYMENT_TARGET = 27.3

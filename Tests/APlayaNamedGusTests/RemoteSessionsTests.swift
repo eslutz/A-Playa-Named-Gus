@@ -29,6 +29,60 @@ struct RemoteSessionsTests {
 
 @MainActor @Suite("Remote command and snapshot lifecycle")
 struct RemoteSessionLifecycleTests {
+    @Test("A missing IsPaused value can resume playback and requires an admitted title")
+    func remotePlayPauseAdmission() throws {
+        let policy = ContentRatingGate.Policy(manual: .general, hideUnrated: true)
+        let allowed = MediaItem(id: "allowed", officialRating: "G", type: .movie)
+        let restricted = MediaItem(id: "restricted", officialRating: "R", type: .movie)
+
+        for paused in [nil, true] as [Bool?] {
+            #expect(try Self.remote(paused: paused, item: allowed).playPauseCommand(policy: policy) == .playPause)
+            #expect(throws: GusError.notFound) { try Self.remote(paused: paused, item: restricted).playPauseCommand(policy: policy) }
+            #expect(throws: GusError.notFound) { try Self.remote(paused: paused, item: nil).playPauseCommand(policy: policy) }
+        }
+        #expect(try Self.remote(paused: false, item: allowed).playPauseCommand(policy: policy) == .pause)
+        #expect(try Self.remote(paused: false, item: restricted).playPauseCommand(policy: policy) == .pause)
+    }
+
+    @Test("Remote toggle confirmation needs reported states on the same title")
+    func remotePlayPauseReadback() async throws {
+        let (store, transport, _) = try fixture()
+        let movie = MediaItem(id: "movie", officialRating: "G", type: .movie)
+        let other = MediaItem(id: "other", officialRating: "G", type: .movie)
+        func send(from previous: Bool?, to current: Bool?, item: MediaItem) async throws -> ActionOutcome {
+            transport.values = [Self.remote(paused: previous, item: movie)]
+            await store.refresh()
+            transport.values = [Self.remote(paused: current, item: item)]
+            return try await store.togglePlayPause(sessionID: "remote")
+        }
+
+        #expect(try await send(from: nil, to: true, item: movie) == .accepted)
+        #expect(try await send(from: true, to: nil, item: movie) == .accepted)
+        #expect(try await send(from: true, to: false, item: other) == .accepted)
+        #expect(try await send(from: true, to: false, item: movie) == .confirmed)
+        #expect(try await send(from: false, to: true, item: movie) == .confirmed)
+        #expect(transport.sent == [.playPause, .playPause, .playPause, .playPause, .pause])
+    }
+
+    @Test("A failed refresh or missing now-playing item blocks a possible resume and leaves Stop available")
+    func remotePlayPauseRevalidation() async throws {
+        let (store, transport, _) = try fixture()
+        transport.values = [Self.remote(paused: true, item: MediaItem(id: "allowed", officialRating: "G", type: .movie))]
+        await store.refresh()
+        transport.fetch = { throw URLError(.notConnectedToInternet) }
+        await store.refresh()
+        #expect(store.refreshErrorMessage != nil)
+        await #expect(throws: GusError.self) { try await store.togglePlayPause(sessionID: "remote") }
+        #expect(transport.sent.isEmpty)
+        transport.fetch = nil
+        transport.values = [Self.remote(paused: nil, item: nil)]
+        await store.refresh()
+        await #expect(throws: GusError.notFound) { try await store.togglePlayPause(sessionID: "remote") }
+        #expect(transport.sent.isEmpty)
+        #expect(try await store.stopPlayback(sessionID: "remote") == .confirmed)
+        #expect(transport.sent == [.stop])
+    }
+
     @Test("a late snapshot cannot replace a newer refresh")
     func supersededRefresh() async throws {
         let (store, transport, _) = try fixture()
@@ -366,8 +420,8 @@ struct RemoteSessionLifecycleTests {
         return (RemoteSessionsStore(session: session, transport: transport), transport, session)
     }
 
-    private static func remote(name: String = "Player", paused: Bool = false, controls: Bool = true, seekable: Bool = true, commands: Set<String> = ["VolumeUp", "VolumeDown", "ToggleMute"], item: MediaItem? = MediaItem(id: "video"), positionTicks: Int? = 0, mediaSourceID: String? = nil) -> RemoteSession {
-        RemoteSession(id: "remote", deviceName: name, client: "Gus", userName: "Gus", nowPlaying: item, positionTicks: positionTicks, isPaused: paused, volumeLevel: 50, isMuted: false, supportsMediaControl: controls, canSeek: seekable, supportedCommands: commands, playableMediaTypes: ["Video", "Audio"], mediaSourceID: mediaSourceID, audioStreamIndex: nil, subtitleStreamIndex: nil)
+    private static func remote(name: String = "Player", paused: Bool? = false, controls: Bool = true, seekable: Bool = true, commands: Set<String> = ["VolumeUp", "VolumeDown", "ToggleMute"], item: MediaItem? = MediaItem(id: "video"), positionTicks: Int? = 0, mediaSourceID: String? = nil) -> RemoteSession {
+        RemoteSession(id: "remote", deviceName: name, client: "Gus", userName: "Gus", nowPlaying: item, positionTicks: positionTicks, isPaused: paused ?? false, hasReportedPauseState: paused != nil, volumeLevel: 50, isMuted: false, supportsMediaControl: controls, canSeek: seekable, supportedCommands: commands, playableMediaTypes: ["Video", "Audio"], mediaSourceID: mediaSourceID, audioStreamIndex: nil, subtitleStreamIndex: nil)
     }
 }
 

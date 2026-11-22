@@ -5,12 +5,16 @@ import Observation
 /// Another Jellyfin client on the same server that this device can remote-control.
 struct RemoteSession: Identifiable, Equatable, Sendable {
     let id: String
+    var deviceID: String? = nil
+    var userID: String? = nil
     let deviceName: String
     let client: String
     let userName: String?
     let nowPlaying: MediaItem?
     let positionTicks: Int?
     let isPaused: Bool
+    var hasReportedPauseState = true
+    var lastPlaybackCheckIn: Date? = nil
     let volumeLevel: Int?
     let isMuted: Bool
     let supportsMediaControl: Bool
@@ -29,6 +33,15 @@ struct RemoteSession: Identifiable, Equatable, Sendable {
         case .toggleMute: supportedCommands.contains("ToggleMute")
         default: supportsMediaControl
         }
+    }
+
+    func playPauseCommand(policy: ContentRatingGate.Policy) throws -> RemoteSessionCommand {
+        // An explicit Pause stays safe if the player pauses itself before the command arrives.
+        if hasReportedPauseState, !isPaused {
+            return .pause
+        }
+        guard let nowPlaying, policy.admits(nowPlaying) else { throw GusError.notFound }
+        return .playPause
     }
 
     func canPlay(_ item: MediaItem) -> Bool {
@@ -59,7 +72,7 @@ extension ActionOutcome {
 
 /// Non-idempotent commands are sent once, including after an ambiguous network failure.
 enum RemoteSessionCommand: Equatable {
-    case playPause, stop, nextTrack, previousTrack
+    case playPause, pause, stop, nextTrack, previousTrack
     case seek(Int)
     case volumeUp, volumeDown, toggleMute
     case play(PlaybackRequest)
@@ -82,12 +95,16 @@ private struct JellyfinRemoteSessionsTransport: RemoteSessionsTransport {
             guard let id = dto.id, dto.isSupportsRemoteControl == true, dto.deviceID != DeviceIdentity.deviceID else { return nil }
             return RemoteSession(
                 id: id,
+                deviceID: dto.deviceID,
+                userID: dto.userID,
                 deviceName: dto.deviceName ?? String(localized: "Unknown Device"),
                 client: dto.client ?? "Jellyfin",
                 userName: dto.userName,
                 nowPlaying: dto.nowPlayingItem.map(JellyfinMediaItemMapper.mediaItem(from:)),
                 positionTicks: dto.playState?.positionTicks,
                 isPaused: dto.playState?.isPaused ?? false,
+                hasReportedPauseState: dto.playState?.isPaused != nil,
+                lastPlaybackCheckIn: dto.lastPlaybackCheckIn,
                 volumeLevel: dto.playState?.volumeLevel,
                 isMuted: dto.playState?.isMuted ?? false,
                 supportsMediaControl: dto.isSupportsMediaControl == true,
@@ -120,6 +137,7 @@ private struct JellyfinRemoteSessionsTransport: RemoteSessionsTransport {
             var position: Int?
             switch command {
             case .playPause: playstate = .playPause
+            case .pause: playstate = .pause
             case .stop: playstate = .stop
             case .nextTrack: playstate = .nextTrack
             case .previousTrack: playstate = .previousTrack
@@ -318,6 +336,12 @@ final class RemoteSessionsStore {
         var sent = false
         do {
             var command = requested
+            if requested == .playPause {
+                command = try previous.playPauseCommand(policy: ContentRatingGate.storedPolicy())
+                if command == .playPause, let refreshErrorMessage {
+                    throw GusError.server(refreshErrorMessage)
+                }
+            }
             if resolvingItem, case var .play(request) = requested {
                 let current = try await session.references.currentItem(request.item)
                 guard current.id != nil, ContentRatingGate.admitsStored(current) else { throw GusError.notFound }
@@ -378,7 +402,9 @@ final class RemoteSessionsStore {
     private static func confirms(_ command: RemoteSessionCommand, previous: RemoteSession, current: RemoteSession?) -> Bool {
         guard let current else { return false }
         switch command {
-        case .playPause: return current.nowPlaying != nil && current.isPaused != previous.isPaused
+        case .playPause, .pause:
+            guard previous.hasReportedPauseState, current.hasReportedPauseState, let itemID = previous.nowPlaying?.id else { return false }
+            return current.nowPlaying?.id == itemID && current.isPaused != previous.isPaused
         case .stop: return current.nowPlaying == nil
         case .nextTrack, .previousTrack: return current.nowPlaying?.id != nil && current.nowPlaying?.id != previous.nowPlaying?.id
         case let .seek(ticks): return current.positionTicks.map { abs($0 - ticks) <= PlaybackTime.ticks(fromSeconds: 5) } ?? false

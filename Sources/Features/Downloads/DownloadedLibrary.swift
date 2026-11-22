@@ -32,6 +32,9 @@ extension OfflineDownloadRecord {
             result.mediaSources = []
             result.runTimeTicks = nil
         }
+        if !MediaPlaybackIdentity.ownsChapters(in: item, sourceID: mediaSourceID) {
+            result.chapters = []
+        }
         result.userData?.playbackPositionTicks = nil
         return result
     }
@@ -92,6 +95,30 @@ struct DownloadedLibrarySection: Identifiable {
 }
 
 enum DownloadedLibrary {
+    static func albums(in records: [OfflineDownloadRecord]) -> [MediaItem] {
+        let policy = ContentRatingGate.storedPolicy()
+        let albums = records.compactMap { record -> MediaItem? in
+            let track = record.item
+            guard record.status.isComplete, record.isAdmitted(by: policy.admits), track.type == .audio,
+                  let id = track.albumID, !id.isEmpty, let name = track.album, !name.isEmpty else { return nil }
+            let album = MediaItem(providerKind: track.providerKind, albumArtist: track.albumArtist, artists: track.artists, id: id, name: name, type: .musicAlbum)
+            return policy.admits(album) ? album : nil
+        }
+        return MediaPageLoader.unique(albums)
+    }
+
+    static func tracks(in records: [OfflineDownloadRecord], albumID: String) -> [OfflineDownloadRecord] {
+        let policy = ContentRatingGate.storedPolicy()
+        return records.filter {
+            $0.status.isComplete && $0.item.type == .audio && $0.item.id != nil && $0.item.albumID == albumID && $0.isAdmitted(by: policy.admits)
+        }.sorted {
+            let lhs = $0.item
+            let rhs = $1.item
+            return (lhs.parentIndexNumber ?? 0, lhs.indexNumber ?? 0, lhs.displayTitle, $0.id) <
+                (rhs.parentIndexNumber ?? 0, rhs.indexNumber ?? 0, rhs.displayTitle, $1.id)
+        }
+    }
+
     static func sections(
         records: [OfflineDownloadRecord], filter: DownloadedLibraryFilter, search: String,
         admits: (MediaItem) -> Bool = { ContentRatingGate.admitsStored($0) }

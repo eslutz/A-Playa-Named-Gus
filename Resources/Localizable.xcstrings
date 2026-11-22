@@ -1,6 +1,588 @@
 {
   "sourceLanguage": "en",
   "strings": {
+    "Actor": {
+      "comment": "Video schema display label for Siri and Shortcuts."
+    },
+    "Artwork": {
+      "comment": "Video schema display label for Siri and Shortcuts."
+    },
+    "Creator": {
+      "comment": "Video schema display label for Siri and Shortcuts."
+    },
+    "Director": {
+      "comment": "Video schema display label for Siri and Shortcuts."
+    },
+    "Executive Producer": {
+      "comment": "Video schema display label for Siri and Shortcuts."
+    },
+    "Headshot": {
+      "comment": "Video schema display label for Siri and Shortcuts."
+    },
+    "Hero Image": {
+      "comment": "Video schema display label for Siri and Shortcuts."
+    },
+    "Logo": {
+      "comment": "Video schema display label for Siri and Shortcuts."
+    },
+    "Long Form": {
+      "comment": "Video schema display label for Siri and Shortcuts."
+    },
+    "Poster": {
+      "comment": "Video schema display label for Siri and Shortcuts."
+    },
+    "Producer": {
+      "comment": "Video schema display label for Siri and Shortcuts."
+    },
+    "Short Form": {
+      "comment": "Video schema display label for Siri and Shortcuts."
+    },
+    "Wide Poster": {
+      "comment": "Video schema display label for Siri and Shortcuts."
+    },
+    "Writer": {
+      "comment": "Video schema display label for Siri and Shortcuts."
+    },
+    "A genre to match in the current library.": {
+    },
+    "Find Movies by Description": {
+    },
+    "Find movies that match the supplied genre, release years and duration in the current Jellyfin library.": {
+    },
+    "Movie Search": {
+    },
+    "Open Shortcuts": {
+    },
+    "Allow Gus to suggest recent media from this account on this device and show Next Up in widgets.": {
+    },
+    "Allow Gus to suggest recent media from this account on this device.": {
+    },
+    "Car": {
+    },
+    "Choose an earliest premiere date on or before the latest date.": {
+    },
+    "Choose the playback order in the Gus player on this device.": {
+    },
+    "Desktop Computer": {
+    },
+    "Earliest Premiere Date": {
+    },
+    "Game Console": {
+    },
+    "Laptop": {
+    },
+    "Latest Premiere Date": {
+    },
+    "Open a supported stereoscopic video in Gus on Apple Vision Pro.": {
+    },
+    "Phone": {
+    },
+    "Play Spatial Video": {
+    },
+    "Player Type": {
+    },
+    "Premiere Date": {
+    },
+    "Set-Top Box": {
+    },
+    "Speaker": {
+    },
+    "Streaming Stick": {
+    },
+    "Tablet": {
+    },
+    "Television": {
+    },
+    "This video doesn’t have a supported spatial format.": {
+    },
+    "Wearable": {
+    },
+    "Web Browser": {
+    },
+    "Choose an active player that is playing media for this Jellyfin account.": {
+    },
+    "Enable personal history in Gus Settings to publish this player.": {
+    },
+    "Open %@, %@?": {
+    },
+    "Play Last": {
+    },
+    "Play Library Video": {
+    },
+    "Play Next": {
+    },
+    "Prepared Audio": {
+    },
+    "Removes the external player from system Now Playing.": {
+    },
+    "Repeat": {
+    },
+    "Several downloads are in progress. Choose a title in Downloads.": {
+    },
+    "Show Jellyfin Player in Now Playing": {
+    },
+    "Show Library Search Results": {
+    },
+    "Show this player in system Now Playing while Gus is open?": {
+    },
+    "Shows the selected player’s status in Control Center while Gus is open.": {
+    },
+    "Start an audio queue in Gus before adding more tracks.": {
+    },
+    "Stop Showing Jellyfin Player": {
+    },
+    "You’re offline. No matching download has a saved position.": {
+    },
+    "Action": {
+    },
+    "Action Status": {
+    },
+    "Active downloads: %lld": {
+    },
+    "Add %@ to %@?": {
+    },
+    "Adds or removes a favorite for the active Jellyfin profile.": {
+    },
+    "Adds or removes an item. Shared lists and collections require confirmation.": {
+    },
+    "Album": {
+    },
+    "Allow Gus to suggest recent media from this account on this device, show Next Up in widgets, and display download progress in Live Activities. System privacy settings also apply.": {
+    },
+    "Artist": {
+    },
+    "Audio Command": {
+    },
+    "Audio Track": {
+    },
+    "Audiobook": {
+    },
+    "Audiobook Bookmark": {
+    },
+    "Book": {
+    },
+    "Bookmark": {
+    },
+    "Cancel Scheduled Recording": {
+    },
+    "Cancel the recording of %@ %@?": {
+    },
+    "Change": {
+    },
+    "Change Current Chapter": {
+    },
+    "Change List Membership": {
+    },
+    "Channel": {
+    },
+    "Chapter": {
+    },
+    "Chapter Action": {
+    },
+    "Chapter Number": {
+    },
+    "Character": {
+    },
+    "Check the range. The minimum must be no greater than the maximum.": {
+    },
+    "Choose a library, playlist, collection, album, series, season, artist, or folder.": {
+    },
+    "Choose a photo or photo album.": {
+    },
+    "Choose a playable video, song, or audiobook.": {
+    },
+    "Choose a playback speed between 0.5 and 2.": {
+    },
+    "Choose a positive starting item and a page size from 1 to 100.": {
+    },
+    "Choose a specific library item to play under this content limit.": {
+    },
+    "Choose a valid playback position.": {
+    },
+    "Choose an item with a playback or reading position.": {
+    },
+    "Choose one starting position and one subtitle option.": {
+    },
+    "Choose the playlist entry to remove in Gus.": {
+    },
+    "Command": {
+    },
+    "Confirms a command for a selected active Jellyfin player.": {
+    },
+    "Confirms before canceling an existing recording on the household DVR.": {
+    },
+    "Control Current Audio": {
+    },
+    "Control Jellyfin Player": {
+    },
+    "Controls the music or audiobook playing in Gus on this device.": {
+    },
+    "Create Private Playlist": {
+    },
+    "Creates a private Jellyfin playlist with the selected library items.": {
+    },
+    "Credited Person": {
+    },
+    "Delete Audiobook Bookmark": {
+    },
+    "Device Name": {
+    },
+    "Discover Title": {
+    },
+    "Download Action": {
+    },
+    "Download progress": {
+    },
+    "Downloaded Audio": {
+    },
+    "Downloads an item, controls a transfer, or returns its current state on this device.": {
+    },
+    "Earliest Year": {
+    },
+    "Enable For You in Gus to use this shelf.": {
+    },
+    "End Time": {
+    },
+    "Enter a library title to search for.": {
+    },
+    "Episode": {
+    },
+    "Favorites Only": {
+    },
+    "Filter Library Items": {
+    },
+    "Find Discover Titles": {
+    },
+    "Find Live TV Programs": {
+    },
+    "Find Similar Library Items": {
+    },
+    "Find in Library": {
+    },
+    "Find up to 50 matching items to use in another action.": {
+    },
+    "Find up to 60 library items that match all supplied filters. Genres and credited people use the names in your library.": {
+    },
+    "First result: %@.": {
+    },
+    "Folder": {
+    },
+    "Get Active Jellyfin Players": {
+    },
+    "Get Audiobook Bookmarks": {
+    },
+    "Get Completion Percentage": {
+    },
+    "Get Contents of Library Item": {
+    },
+    "Get Library Item Chapters": {
+    },
+    "Get Library Shelf": {
+    },
+    "Get Playback Options": {
+    },
+    "Get Scheduled Recordings": {
+    },
+    "Get Status": {
+    },
+    "Get a page of library, album, playlist, collection, series, or folder items in server order. The first item is number 1.": {
+    },
+    "Get the first ten items from your Next Up list.": {
+    },
+    "Gus Destination": {
+    },
+    "Gus couldn’t match that description to supported library filters.": {
+    },
+    "Interpret a description using the intelligence settings for this profile and return matches from its Jellyfin library.": {
+    },
+    "Jellyfin Player": {
+    },
+    "Latest Year": {
+    },
+    "Library Item": {
+    },
+    "Library Items": {
+    },
+    "Library Shelf": {
+    },
+    "Library Status": {
+    },
+    "Live TV Program": {
+    },
+    "Live TV isn’t available for this account.": {
+    },
+    "Manage Download": {
+    },
+    "Marks an item finished or unfinished for this profile. Changing completion resets its saved position.": {
+    },
+    "Maximum Items": {
+    },
+    "Maximum Minutes": {
+    },
+    "Membership Change": {
+    },
+    "Minimum Minutes": {
+    },
+    "Movie · %@": {
+    },
+    "Natural language search isn’t available for this profile. Use Filter Library Items.": {
+    },
+    "Next Chapter": {
+    },
+    "No accessible photos were found in this album.": {
+    },
+    "No audio player is ready on this device.": {
+    },
+    "No chaptered player is ready on this device.": {
+    },
+    "No download was found for this item.": {
+    },
+    "No matching library items.": {
+    },
+    "Not Confirmed": {
+    },
+    "Open Downloads": {
+    },
+    "Open Gus Destination": {
+    },
+    "Open Gus for the latest progress.": {
+    },
+    "Open Library Item": {
+    },
+    "Open Next Up and see your progress.": {
+    },
+    "Open the system SharePlay sheet for this title so you can choose participants.": {
+    },
+    "Opens a library item at the start of its numbered chapter.": {
+    },
+    "Option": {
+    },
+    "Photo": {
+    },
+    "Photo Album": {
+    },
+    "Photo or Album": {
+    },
+    "Play %@ on %@?": {
+    },
+    "Play Downloaded Audio": {
+    },
+    "Play Library Item": {
+    },
+    "Play Library Item from Chapter": {
+    },
+    "Play Next Episode": {
+    },
+    "Play Playlist": {
+    },
+    "Play a video or audio title with a specific cut, track, subtitle, chapter, or starting position. Use Get Playback Options to retrieve supported names.": {
+    },
+    "Play from Audiobook Bookmark": {
+    },
+    "Play on Jellyfin Player": {
+    },
+    "Play or Pause": {
+    },
+    "Play the audiobook first or enter a position in seconds.": {
+    },
+    "Play with Options": {
+    },
+    "Playback Option": {
+    },
+    "Player": {
+    },
+    "Playlist": {
+    },
+    "Playlist Name": {
+    },
+    "Playlist or Collection": {
+    },
+    "Plays a selected library item on a specific Jellyfin device after confirmation.": {
+    },
+    "Position in Seconds": {
+    },
+    "Prepare SharePlay": {
+    },
+    "Previous Chapter": {
+    },
+    "Program": {
+    },
+    "Program Title": {
+    },
+    "Quality": {
+    },
+    "Recently Played": {
+    },
+    "Record %@ on %@ at %@?": {
+    },
+    "Remote Command": {
+    },
+    "Remote Playback": {
+    },
+    "Remove %@ from %@?": {
+    },
+    "Request %@ in %@?": {
+    },
+    "Request %@, seasons %@, in %@?": {
+    },
+    "Request Discover Title": {
+    },
+    "Request Quality": {
+    },
+    "Resume Audiobook": {
+    },
+    "Return the active profile’s progress from 0 to 100 for a video, book, song, or audiobook.": {
+    },
+    "Return up to 50 items from a shelf in the active profile.": {
+    },
+    "Returns chapter titles in playback order for a movie, episode, or audiobook.": {
+    },
+    "Returns controllable devices on the active Jellyfin server.": {
+    },
+    "Returns titles related to a library item from the current server.": {
+    },
+    "Returns visible scheduled Live TV recordings from the active server.": {
+    },
+    "Review the pending playlist change in Gus before editing it again.": {
+    },
+    "Reviews one guide airing and schedules it on the household DVR.": {
+    },
+    "Reviews the title, quality, and TV seasons before sending a Seerr request. An empty season selection includes all eligible seasons.": {
+    },
+    "Save Audiobook Bookmark": {
+    },
+    "Save the current position on this device, or enter the position in seconds.": {
+    },
+    "Schedule Live TV Recording": {
+    },
+    "Scheduled Recording": {
+    },
+    "Search Library in Natural Language": {
+    },
+    "Search Media Type": {
+    },
+    "Searches a 24-hour guide window and returns up to 50 matching airings in time order.": {
+    },
+    "Searches movies and TV series on the connected Seerr service.": {
+    },
+    "Season Numbers": {
+    },
+    "Season numbers apply only to a TV series.": {
+    },
+    "Seeks within the audiobook or video currently owning playback on this device.": {
+    },
+    "Send %@ to %@?": {
+    },
+    "Set Audio Playback Speed": {
+    },
+    "Set Completion Status": {
+    },
+    "Set Favorite Status": {
+    },
+    "Sets the speed of the current music or audiobook player.": {
+    },
+    "Several items have the same details. Choose the intended item in Gus.": {
+    },
+    "Shelf": {
+    },
+    "Show Titles on the Lock Screen": {
+    },
+    "Show Titles on the Watch Face": {
+    },
+    "Siri and Shortcuts": {
+    },
+    "Skip Back 15 Seconds": {
+    },
+    "Skip Forward 30 Seconds": {
+    },
+    "Song": {
+    },
+    "Start Photo Slideshow": {
+    },
+    "Start Time": {
+    },
+    "Start at Second": {
+    },
+    "Starting At": {
+    },
+    "Starting Chapter": {
+    },
+    "Starting Item": {
+    },
+    "Starts Gus’s photo viewer at a selected photo or the first accessible photo in an album.": {
+    },
+    "Subtitle Track": {
+    },
+    "TV Series · %@": {
+    },
+    "That chapter is unavailable.": {
+    },
+    "That playback option is unavailable or ambiguous. Get the current playback options for this title.": {
+    },
+    "The DVR reports an existing recording for this airing. Review the schedule before trying again.": {
+    },
+    "The action could not be completed.": {
+    },
+    "The airing changed. Choose the program again.": {
+    },
+    "The downloaded file is missing.": {
+    },
+    "The playlist could not be created.": {
+    },
+    "The playlist could not be updated.": {
+    },
+    "The previous request for %@ on %@ at %@ is unconfirmed. The DVR currently lists no timer. Send another request?": {
+    },
+    "The queue has no next track.": {
+    },
+    "The server returned an incomplete program guide.": {
+    },
+    "The server returned an incomplete recording schedule.": {
+    },
+    "There’s no audiobook in progress.": {
+    },
+    "There’s no book in progress.": {
+    },
+    "There’s no next episode available.": {
+    },
+    "There’s nothing in Next Up.": {
+    },
+    "There’s nothing to continue watching.": {
+    },
+    "This playlist has no available starting item.": {
+    },
+    "This position is beyond the selected version’s runtime.": {
+    },
+    "Toggle Mute": {
+    },
+    "Track %lld": {
+    },
+    "Trailer": {
+    },
+    "Try a more specific title, or choose a library item in Shortcuts.": {
+    },
+    "Turn Off Subtitles": {
+    },
+    "Unknown Channel": {
+    },
+    "Up next: %@.": {
+    },
+    "Use Personal History for Suggestions": {
+    },
+    "Use a bookmark name between 1 and 256 characters and a valid position.": {
+    },
+    "Volume Down": {
+    },
+    "Volume Up": {
+    },
+    "Watch Live TV": {
+    },
+    "What’s Next": {
+    },
+    "Which library item did you mean?": {
+    },
+    "Year": {
+    },
     "Audio playback is unavailable.": {
     },
     "Authorize Another Device": {

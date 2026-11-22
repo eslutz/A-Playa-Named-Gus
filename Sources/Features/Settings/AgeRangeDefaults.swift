@@ -198,6 +198,7 @@
                     .disabled(access.requesting)
                 }
             }
+            .onChange(of: access.stage) { _, _ in session.systemPrivacyDidChange() }
             .task { await prepare() }
         }
 

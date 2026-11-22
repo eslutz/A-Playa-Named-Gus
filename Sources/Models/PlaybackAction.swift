@@ -23,6 +23,8 @@ struct PlaybackRequest: Codable, Hashable, Sendable {
     var startPositionTicks: Int?
     var presentation: Stereo3DViewingMode
     var maxStreamingBitrate: Int?
+    /// Device-local presentation request checked against the reloaded photo's parent.
+    var slideshowAlbumID: String? = nil
 
     init(
         item: MediaItem,
@@ -63,8 +65,18 @@ struct PlaybackRequest: Codable, Hashable, Sendable {
     /// negotiated stream URLs, user data, or credentials from a populated MediaItem.
     var sharingIntent: PlaybackRequest {
         var result = self
+        result.slideshowAlbumID = nil
         result.item = MediaItem(providerKind: item.providerKind, id: item.id, type: item.type)
         return result
+    }
+
+    static func decodeSharingIntent(_ data: Data) -> PlaybackRequest? {
+        guard data.count <= 8192,
+              let decoded = try? JSONDecoder().decode(PlaybackRequest.self, from: data),
+              decoded.startPositionTicks.map({ $0 >= 0 }) ?? true,
+              decoded.streamSelection.audioStreamIndex.map({ $0 >= 0 }) ?? true,
+              decoded.streamSelection.subtitleStreamIndex.map({ $0 >= -1 }) ?? true else { return nil }
+        return decoded.sharingIntent
     }
 
     @MainActor
@@ -188,6 +200,11 @@ enum PlaybackChoicePosition {
     }
 
     static func ticks(for request: PlaybackRequest, session: SessionStore, progress: OfflinePlaybackProgressStore, downloads: OfflineDownloadStore? = nil) -> Int? {
+        position(for: request, session: session, progress: progress, downloads: downloads).ticks
+    }
+
+    /// Keep a checkpoint and its duration on the same cut, including when the server returns a different primary version.
+    static func position(for request: PlaybackRequest, session: SessionStore, progress: OfflinePlaybackProgressStore, downloads: OfflineDownloadStore? = nil) -> (ticks: Int?, runTimeTicks: Int?) {
         let recorded = downloadedRecord(for: request, session: session, downloads: downloads)
         let sourceID = request.streamSelection.mediaSourceID ?? recorded?.mediaSourceID
         var item = recorded?.playbackItem ?? request.item
@@ -196,7 +213,8 @@ enum PlaybackChoicePosition {
         }
         let sourceScoped = recorded != nil || request.streamSelection.mediaSourceID != nil
         let checkpoint = sourceScoped ? item.id.flatMap { progress.positionTicks(forItemID: $0, scope: session.references.scope, mediaSourceID: sourceID) } : nil
-        return PlaybackActionPosition.ticks(for: item, localTicks: request.requestedStartTicks ?? checkpoint ?? (sourceScoped ? 0 : nil))
+        let ticks = PlaybackActionPosition.ticks(for: item, localTicks: request.requestedStartTicks ?? checkpoint ?? (sourceScoped ? 0 : nil))
+        return (ticks, item.runTimeTicks)
     }
 
     private static func downloadedRecord(for request: PlaybackRequest, session: SessionStore, downloads: OfflineDownloadStore?) -> OfflineDownloadRecord? {

@@ -40,6 +40,17 @@ struct WatchSettingsView: View {
                 }
             }
 
+            Section("Siri and Shortcuts") {
+                Toggle("Use Personal History for Suggestions", isOn: Binding(
+                    get: { session.systemSurfacePreferences.personalHistoryEnabled },
+                    set: { session.setPersonalHistoryEnabled($0) }
+                ))
+                Toggle("Show Titles on the Watch Face", isOn: Binding(
+                    get: { session.systemSurfacePreferences.showsLockScreenTitles },
+                    set: { session.setShowsLockScreenTitles($0) }
+                )).disabled(!session.systemSurfacePreferences.personalHistoryEnabled)
+            }
+
             Section("Appearance") {
                 Toggle("Show Series Progress", isOn: $showSeriesProgress)
             }

@@ -1,3 +1,4 @@
+import AppIntents
 import SwiftUI
 
 #if os(iOS)
@@ -14,6 +15,7 @@ struct SettingsView: View {
 
     #if os(iOS)
         @State private var siriAuthorization = INPreferences.siriAuthorizationStatus()
+        @AppStorage("dev.ericslutz.gus.showLibrarySiriTip") private var showLibrarySiriTip = true
     #endif
     @State private var rememberPlaybackTracks = false
     @State private var showingTVAccentEditor = false
@@ -102,6 +104,39 @@ struct SettingsView: View {
                 }
             } header: {
                 Text("Playback")
+            }
+
+            Section {
+                Toggle("Use Personal History for Suggestions", isOn: Binding(
+                    get: { session.systemSurfacePreferences.personalHistoryEnabled },
+                    set: { session.setPersonalHistoryEnabled($0) }
+                ))
+                #if os(iOS)
+                    Toggle("Show Titles on the Lock Screen", isOn: Binding(
+                        get: { session.systemSurfacePreferences.showsLockScreenTitles },
+                        set: { session.setShowsLockScreenTitles($0) }
+                    )).disabled(!session.systemSurfacePreferences.personalHistoryEnabled)
+                #endif
+                #if os(iOS) || os(visionOS)
+                    ShortcutsLink()
+                #elseif os(macOS)
+                    Link("Open Shortcuts", destination: URL(string: "shortcuts://")!)
+                #endif
+                #if os(iOS) && !GUS_SIRI_AI_PREVIEW
+                    if showLibrarySiriTip {
+                        SiriTipView(intent: FindLibraryItemsIntent(), isVisible: $showLibrarySiriTip)
+                    }
+                #endif
+            } header: {
+                Text("Siri and Shortcuts")
+            } footer: {
+                #if os(iOS)
+                    Text("Allow Gus to suggest recent media from this account on this device, show Next Up in widgets, and display download progress in Live Activities. System privacy settings also apply.")
+                #elseif os(macOS) || os(visionOS)
+                    Text("Allow Gus to suggest recent media from this account on this device and show Next Up in widgets.")
+                #else
+                    Text("Allow Gus to suggest recent media from this account on this device.")
+                #endif
             }
 
             IntelligenceSettingsSection()

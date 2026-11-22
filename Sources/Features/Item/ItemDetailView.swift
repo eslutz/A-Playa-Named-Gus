@@ -152,7 +152,8 @@ struct ItemDetailView: View {
                     activity,
                     item: store?.item ?? item,
                     serverID: session.server.id,
-                    userID: session.user.id
+                    userID: session.user.id,
+                    includeOnscreenContext: session.systemSurfacePreferences.personalHistoryEnabled
                 )
             }
     }

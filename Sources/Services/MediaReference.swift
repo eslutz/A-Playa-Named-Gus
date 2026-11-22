@@ -237,6 +237,28 @@ final class MediaReferenceResolver {
 
 /// Do not silently transplant a saved position when the remote identity changes.
 enum MediaPlaybackIdentity {
+    /// Jellyfin's item-wide chapter timeline belongs to the first source in its original metadata.
+    static func ownsChapters(in item: MediaItem, sourceID: String?) -> Bool {
+        guard let sourceID, !sourceID.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+              sourceID == item.mediaSources.first?.id else { return false }
+        return !item.mediaSources.dropFirst().contains { $0.id == sourceID }
+    }
+
+    static func presentationItem(for item: MediaItem, resolution: PlaybackSourceResolution, requestedSourceID: String?) -> MediaItem {
+        var result = item
+        let source = resolution.mediaSource
+        let negotiatedID = resolution.mediaSourceID ?? source?.id
+        // A requested cut alone doesn't establish which timeline the provider delivered.
+        if !ownsChapters(in: item, sourceID: negotiatedID) || (source?.id ?? negotiatedID) != negotiatedID {
+            result.chapters = []
+        }
+        result.runTimeTicks = runTimeTicks(for: item, mediaSourceID: resolution.mediaSourceID ?? requestedSourceID, resolvedSource: source)
+        if let source {
+            result.mediaSources = [source] + item.mediaSources.filter { $0.id != source.id }
+        }
+        return result
+    }
+
     /// Source duration may be omitted by a negotiated response. Fall back only to
     /// the same source snapshot, or item-wide metadata for the primary source.
     static func runTimeTicks(for item: MediaItem, mediaSourceID: String? = nil, resolvedSource: MediaSource? = nil) -> Int? {

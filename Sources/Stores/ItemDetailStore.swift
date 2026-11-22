@@ -164,7 +164,7 @@ final class ItemDetailStore {
     }
 
     func toggleWatched() async {
-        await updateUserData(watched: true)
+        await updateUserData(watched: true, to: item.userData?.isWatched != true)
     }
 
     /// Explicit menu actions do not toggle against potentially stale displayed metadata.
@@ -219,7 +219,11 @@ final class ItemDetailStore {
     }
 
     func toggleFavorite() async {
-        await updateUserData(watched: false)
+        await setFavorite(item.userData?.isFavorite != true)
+    }
+
+    func setFavorite(_ favorite: Bool) async {
+        await updateUserData(watched: false, to: favorite)
     }
 
     /// A failed refresh after a successful mutation must be reconciled before toggling again.
@@ -239,14 +243,11 @@ final class ItemDetailStore {
         }
     }
 
-    private func updateUserData(watched: Bool) async {
+    private func updateUserData(watched: Bool, to value: Bool) async {
         guard session.isActive, !isUpdatingUserData, item.id != nil else { return }
         if needsUserDataRefresh {
             await refreshUserData(); return
         }
-        // Preserve the action the displayed control offered before refreshing metadata.
-        let intendedWatched = watched ? !(item.userData?.isWatched == true) : nil
-        let intendedFavorite = watched ? nil : !(item.userData?.isFavorite == true)
         isUpdatingUserData = true
         actionError = nil
         actionOutcome = .pending
@@ -259,15 +260,15 @@ final class ItemDetailStore {
             try Task.checkCancellation()
             guard session.isActive else { return }
             item = refreshed
-            guard let id = item.id else { throw GusError.notFound }
-            expectedWatched = intendedWatched
-            expectedFavorite = intendedFavorite
+            guard let id = item.id, ContentRatingGate.admitsStored(item) else { throw GusError.notFound }
+            expectedWatched = watched ? value : nil
+            expectedFavorite = watched ? nil : value
             attemptedWrite = true
             needsUserDataRefresh = true
             if watched {
-                try await session.mediaProvider.toggleWatched(itemID: id, currentlyWatched: intendedWatched != true)
+                try await session.mediaProvider.toggleWatched(itemID: id, currentlyWatched: !value)
             } else {
-                try await session.mediaProvider.toggleFavorite(itemID: id, currentlyFavorite: intendedFavorite != true)
+                try await session.mediaProvider.toggleFavorite(itemID: id, currentlyFavorite: !value)
             }
             acceptedWrite = true
             actionOutcome = .accepted
@@ -282,8 +283,8 @@ final class ItemDetailStore {
         try Task.checkCancellation()
         guard session.isActive else { throw GusError.cancelled }
         item = refreshed
-        let matches = (expectedWatched == nil || expectedWatched == (item.userData?.isWatched == true))
-            && (expectedFavorite == nil || expectedFavorite == (item.userData?.isFavorite == true))
+        let matches = (expectedWatched == nil || expectedWatched == item.userData?.isWatched)
+            && (expectedFavorite == nil || expectedFavorite == item.userData?.isFavorite)
         guard matches else {
             needsUserDataRefresh = true
             canKeepCurrentUserData = true

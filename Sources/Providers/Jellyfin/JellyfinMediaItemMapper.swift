@@ -50,6 +50,7 @@ enum JellyfinMediaItemMapper {
             mapped.originalBookFilename = path.split(whereSeparator: { $0 == "/" || $0 == "\\" }).last.map(String.init)
         }
         mapped.externalIDs = item.providerIDs ?? [:]
+        mapped.artistCredits = (item.artistItems ?? item.albumArtists)?.map { MediaNamedItem(id: $0.id, name: $0.name) }
         return mapped
     }
 
@@ -115,7 +116,7 @@ enum JellyfinMediaItemMapper {
             return .photoAlbum
         case .tvChannel, .liveTvChannel:
             return .liveChannel
-        case .tvProgram, .liveTvProgram:
+        case .program, .tvProgram, .liveTvProgram:
             return .liveProgram
         case .recording:
             return .recording

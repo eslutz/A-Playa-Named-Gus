@@ -99,6 +99,29 @@ struct SeerrRequestDraftTests {
         #expect(!draft.canSubmit)
     }
 
+    @Test("A competing draft cannot clear an in-flight or newer request journal")
+    func collidingDraftKeepsOwner() async throws {
+        let fixture = try await RequestDraftFixture()
+        defer { fixture.cleanUp() }
+        let draft = try fixture.draft()
+        await draft.load(store: fixture.store)
+        let payload = SeerrRequestPayload(mediaType: .movie, mediaId: draft.title.id, is4k: true)
+        let first = try fixture.store.beginRequestAttempt(payload: payload, baselineIDs: [101])
+        await draft.submit(store: fixture.store)
+        #expect(draft.phase == .uncertain)
+        #expect(draft.is4K)
+        #expect(fixture.http.postCount == 0)
+        await draft.resetAfterVerification(store: fixture.store)
+        #expect(fixture.store.pendingRequest(for: payload) == first)
+        fixture.store.endTransmission(of: first)
+        #expect(fixture.store.completeRequestAttempt(first))
+        let later = try fixture.store.beginRequestAttempt(payload: payload, baselineIDs: [101])
+        defer { fixture.store.endTransmission(of: later) }
+        #expect(!fixture.store.completeRequestAttempt(first))
+        await draft.resetAfterVerification(store: fixture.store)
+        #expect(fixture.store.pendingRequest(for: payload) == later)
+    }
+
     @Test("closing and reopening a request retains the pending attempt and write lock")
     func pendingAttemptSurvivesReopeningAndStoreRestoration() async throws {
         let fixture = try await RequestDraftFixture()

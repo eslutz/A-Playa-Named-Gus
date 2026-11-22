@@ -7,7 +7,7 @@ from pathlib import PurePosixPath
 
 
 def requires_full_validation(paths):
-    runtime_roots = ("Sources/", "Tests/", "Resources/", "Config/", "Scripts/", "ci_scripts/", ".github/")
+    runtime_roots = ("Sources/", "Tests/", "Resources/", "SiriPreview/", "Config/", "Scripts/", "ci_scripts/", ".github/")
     for path in paths:
         if path.startswith(runtime_roots):
             return True

@@ -8,7 +8,7 @@ Theme and appearance are independent, device-local preferences. Gus Default, App
 
 ## Isolated validation
 
-Use a newly created TV simulator identified by UDID, never `booted` or a shared device. The fixture script supports `GUS_DEMO_CONTAINER`, `GUS_DEMO_PORT` and `GUS_DEMO_MEDIA_DIR` so a separate container and configuration/cache volumes can serve the existing sample media read-only. Defaults retain the standard developer fixture.
+Reuse an available, generically named Apple TV simulator on the required tvOS runtime. Select it by UDID and follow the [simulator reuse policy](local-validation.md#reuse-existing-simulators). Isolate test data in the fixture. Its script supports `GUS_DEMO_CONTAINER`, `GUS_DEMO_PORT` and `GUS_DEMO_MEDIA_DIR` so a separate container and configuration/cache volumes can serve the existing sample media read-only. Defaults retain the standard developer fixture.
 
 Start the synthetic Seerr API with `python3 Scripts/tvos-seerr-fixture.py --port 5059` for the TV setup/request test. It accepts only the documented fixture account, binds to loopback and keeps mutations in memory.
 
