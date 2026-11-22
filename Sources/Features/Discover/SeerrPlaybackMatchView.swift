@@ -10,8 +10,7 @@ struct SeerrPlaybackMatchView: View {
     @State private var checked = false
     @State private var message: String?
     @State private var lookup: Task<Void, Never>?
-    @AppStorage(ContentRatingGate.limitDefaultsKey) private var restriction = "off"
-    @AppStorage(ContentRatingGate.hideUnratedDefaultsKey) private var hideUnrated = false
+    @StoredContentPolicy private var contentPolicy
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -41,8 +40,7 @@ struct SeerrPlaybackMatchView: View {
         }
         .onDisappear { lookup?.cancel() }
         .onChange(of: store.revision) { _, _ in clear() }
-        .onChange(of: restriction) { _, _ in clear() }
-        .onChange(of: hideUnrated) { _, _ in clear() }
+        .onChange(of: contentPolicy) { _, _ in clear() }
     }
 
     private func clear() {

@@ -16,6 +16,7 @@ final class AppNavigationModel {
     /// Explicit routes must also be handled when they repeat the last routed value.
     private(set) var routeRequest = 0
     private(set) var searchFocusRequest = 0
+    private var handledSearchFocusRequest = 0
 
     /// Pending content deep link plus a monotonically increasing request token so the
     /// same link can fire twice in a row. The signed-in root consumes the pending link
@@ -32,6 +33,12 @@ final class AppNavigationModel {
 
         self.route = route
         routeRequest += 1
+    }
+
+    func consumeSearchFocus() -> Bool {
+        guard handledSearchFocusRequest != searchFocusRequest else { return false }
+        handledSearchFocusRequest = searchFocusRequest
+        return true
     }
 
     func open(url: URL) {

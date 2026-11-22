@@ -68,8 +68,7 @@ struct SeerrTitleDetailView: View {
     @State private var reportTitle: SeerrTitle?
     @State private var externalURL: URL?
     @Environment(\.openURL) private var openURL
-    @AppStorage(ContentRatingGate.limitDefaultsKey) private var contentLimitRawValue = ContentRatingGate.Limit.off.rawValue
-    @AppStorage(ContentRatingGate.hideUnratedDefaultsKey) private var hideUnratedContent = false
+    @StoredContentPolicy private var contentPolicy
 
     init(mediaType: SeerrMediaType, id: Int, store: SeerrStore) {
         self.store = store
@@ -77,12 +76,11 @@ struct SeerrTitleDetailView: View {
     }
 
     private var accessRevision: String {
-        "\(store.revision):\(contentLimitRawValue):\(hideUnratedContent)"
+        "\(store.revision):\(contentPolicy.revision)"
     }
 
     private var authorizedTitle: SeerrTitle? {
-        _ = contentLimitRawValue
-        _ = hideUnratedContent
+        _ = contentPolicy
         guard detail.revision == store.revision, detail.restrictions == store.restrictionRevision else { return nil }
         return detail.title.flatMap { store.admits($0) ? $0 : nil }
     }
@@ -233,7 +231,7 @@ struct SeerrTitleDetailView: View {
     }
 
     private func identity(_ title: SeerrTitle) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: ContentSpacing.caption) {
             Text(title.displayTitle).font(.largeTitle.bold()).fixedSize(horizontal: false, vertical: true)
             Text(title.seerrIdentityDescription).foregroundStyle(.secondary)
             if let certification = title.certification {
@@ -252,7 +250,7 @@ struct SeerrTitleDetailView: View {
     }
 
     private func actions(_ title: SeerrTitle) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: ContentSpacing.card) {
             if canOpenRequest(title) {
                 DetailPrimaryButton(detail.mediaType == .tv ? "Request Seasons" : "Request", systemImage: "plus.circle") {
                     requestTitle = title
@@ -278,12 +276,12 @@ struct SeerrTitleDetailView: View {
     }
 
     private func seasonList(_ title: SeerrTitle, seasons: [SeerrSeason]) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: ContentSpacing.card) {
             Text("Seasons").font(.title2.bold()).accessibilityAddTraits(.isHeader)
             ForEach(seasons.sorted { $0.seasonNumber < $1.seasonNumber }, id: \.seasonNumber) { season in
                 NavigationLink(value: store.navigationRoute(.season(seriesID: title.id, number: season.seasonNumber))) {
                     HStack(alignment: .top) {
-                        VStack(alignment: .leading, spacing: 4) {
+                        VStack(alignment: .leading, spacing: ContentSpacing.caption) {
                             Text(season.seerrName).font(.headline)
                             if let count = season.episodeCount {
                                 Text("\(count) episodes").font(.subheadline).foregroundStyle(.secondary)
@@ -315,13 +313,13 @@ struct SeerrCreditsSection: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: ContentSpacing.card) {
             Text("Cast & Crew").font(.title2.bold()).accessibilityAddTraits(.isHeader)
             ScrollView(.horizontal, showsIndicators: false) {
-                LazyHStack(alignment: .top, spacing: 16) {
+                LazyHStack(alignment: .top, spacing: ContentSpacing.card) {
                     ForEach(people) { person in
                         NavigationLink(value: store.navigationRoute(.person(id: person.id, name: person.name))) {
-                            VStack(alignment: .leading, spacing: 6) {
+                            VStack(alignment: .leading, spacing: ContentSpacing.caption) {
                                 SeerrArtworkView(path: person.profilePath, aspectRatio: 4.0 / 5.0, symbol: "person", width: "w185")
                                 Text(person.name).font(.subheadline.weight(.medium))
                                 if let role = (person.character ?? person.job)?.trimmedNilIfEmpty {
@@ -350,7 +348,7 @@ private struct SeerrRelatedTitlesSection: View {
     @State private var catalog: SeerrCatalogStore?
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: ContentSpacing.card) {
             if let catalog, catalog.isValid(for: store),
                !catalog.items.isEmpty || catalog.hasMore || catalog.errorMessage != nil
             {
@@ -369,7 +367,7 @@ private struct SeerrRelatedTitlesSection: View {
                 }
                 if !catalog.items.isEmpty {
                     ScrollView(.horizontal, showsIndicators: false) {
-                        LazyHStack(alignment: .top, spacing: 16) {
+                        LazyHStack(alignment: .top, spacing: ContentSpacing.card) {
                             ForEach(catalog.items.filter { store.admits($0) }, id: \.seerrCatalogID) { item in
                                 SeerrResultLink(title: item, store: store)
                                     .frame(width: MediaRailMetrics.itemWidth(for: .poster))

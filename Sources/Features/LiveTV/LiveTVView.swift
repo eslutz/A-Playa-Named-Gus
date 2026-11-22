@@ -324,7 +324,8 @@ final class LiveTVStore {
                 let items = try await session.mediaProvider.liveTVTimers()
                 try Task.checkCancellation()
                 guard sectionGenerations[section] == request, session.isActive else { return }
-                timers = items
+                // Jellyfin's timer DTO does not carry a certificate.
+                timers = ContentRatingGate.admitsStored(MediaItem(type: .liveProgram)) ? items : []
                 for (id, outcome) in Array(cancellationOutcomes) where outcome == .accepted || outcome == .uncertain {
                     cancellationOutcomes[id] = items.contains(where: { $0.id == id }) ? nil : .confirmed
                 }

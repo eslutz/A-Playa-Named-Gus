@@ -29,7 +29,7 @@ final class BrowseSnapshotCache {
     }
 
     static var restriction: String {
-        ContentRatingGate.storedLimit().rawValue + "-" + String(UserDefaults.standard.bool(forKey: ContentRatingGate.hideUnratedDefaultsKey))
+        ContentRatingGate.storedPolicy().revision
     }
 
     private func file(_ key: String) -> URL {

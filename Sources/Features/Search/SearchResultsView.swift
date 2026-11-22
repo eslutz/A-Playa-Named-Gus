@@ -18,9 +18,16 @@ struct RecentSearchesView: View {
                             switch entry {
                             case let .typed(text):
                                 Label(text, systemImage: "magnifyingglass")
+                            case let .natural(text):
+                                Label {
+                                    VStack(alignment: .leading, spacing: ContentSpacing.caption) {
+                                        Text(verbatim: text)
+                                        Text("Natural Language").font(.caption).foregroundStyle(.secondary)
+                                    }
+                                } icon: { Image(systemName: "text.magnifyingglass") }
                             case let .related(search):
                                 Label {
-                                    VStack(alignment: .leading, spacing: 2) {
+                                    VStack(alignment: .leading, spacing: ContentSpacing.caption) {
                                         Text(search.name)
                                         Text(search.kind.title).font(.caption).foregroundStyle(.secondary)
                                     }
@@ -51,10 +58,15 @@ struct RecentSearchesView: View {
 }
 
 struct SearchResultsView: View {
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @Environment(SessionStore.self) private var session
     let store: SearchStore
 
     let searchState: SectionSearchState
+
+    private var usesList: Bool {
+        searchState.showsList || dynamicTypeSize.isAccessibilitySize
+    }
 
     var body: some View {
         LoadingStateView(
@@ -68,10 +80,10 @@ struct SearchResultsView: View {
                 #if os(tvOS)
                     TVSearchCompletionRows()
                 #endif
-                LazyVGrid(columns: searchState.showsList ? [GridItem(.flexible())] : PosterGrid.columns, alignment: .leading, spacing: PosterGrid.spacing) {
+                LazyVGrid(columns: usesList ? [GridItem(.flexible())] : PosterGrid.columns, alignment: .leading, spacing: PosterGrid.spacing) {
                     ForEach(store.results, id: \.id) { item in
                         resultLink(item)
-                            .navigationLinkIndicatorVisibility(searchState.showsList ? .visible : .automatic)
+                            .navigationLinkIndicatorVisibility(usesList ? .visible : .automatic)
                             .id(ItemRef(item: item).id)
                             .posterNavigationStyle()
                             .gusTVFocus(id: ItemRef(item: item).id, section: RootNavigationState.searchID, ids: store.results.map { ItemRef(item: $0).id }, item: item)
@@ -82,7 +94,7 @@ struct SearchResultsView: View {
                         ProgressView().accessibilityLabel("Refreshing")
                     }
                     if let error = store.refreshError {
-                        VStack(spacing: 8) {
+                        VStack(spacing: ContentSpacing.group) {
                             Text(error).foregroundStyle(.secondary)
                             Button("Try Again") { Task { await store.search(store.query) } }
                                 .disabled(store.isRefreshing)
@@ -112,7 +124,7 @@ struct SearchResultsView: View {
     @ViewBuilder private func resultLink(_ item: MediaItem) -> some View {
         if item.type == .genre {
             MediaItemNavigationLink(item: item, searchQuery: store.query) {
-                VStack(alignment: .leading, spacing: 4) {
+                VStack(alignment: .leading, spacing: ContentSpacing.caption) {
                     Label(item.displayTitle, systemImage: "tag")
                         .font(.headline)
                     Text("Genre").font(.subheadline).foregroundStyle(.secondary)
@@ -125,7 +137,7 @@ struct SearchResultsView: View {
             .accessibilityIdentifier("Search.genre." + (item.id ?? ""))
         } else {
             MediaItemNavigationLink(item: item, searchQuery: store.query) {
-                if searchState.showsList {
+                if usesList {
                     MediaLibraryRow(item: item)
                 } else {
                     PosterCard(item: item, imageURL: session.mediaProvider.primaryImageURL(for: item, context: .posterGrid), fallbackURLs: session.mediaProvider.artworkURLs(for: item, request: .init(role: .poster, maxWidth: 360)))

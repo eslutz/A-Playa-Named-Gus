@@ -67,7 +67,12 @@ zero bytes or requested conversion. Jellyfin's current `TranscodingInfo` belongs
 device session without a per-download request identifier, so concurrent downloads cannot
 safely use that percentage. The UI states when a remaining-time estimate is unavailable.
 
-The Downloaded section browses account-scoped saved metadata and verified local files.
+The Downloads section browses account-scoped saved metadata and verified local files.
+On iPhone, a native `UISearchBar` sits in the bottom safe area in portrait and
+the top safe area in compact-height landscape. Using the bottom toolbar for
+this field placed it underneath the tab bar on iOS 27.2. The same field moves
+between these positions so its query and keyboard focus can survive rotation.
+Other supported platforms use SwiftUI’s native searchable placement.
 It does not request server libraries or remote artwork. Playback starts from local files,
 with local resume checkpoints synchronized later. Ordinary account switching retains
 downloads; explicit sign-out/removal clears the affected account.

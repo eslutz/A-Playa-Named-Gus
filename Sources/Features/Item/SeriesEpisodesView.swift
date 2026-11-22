@@ -7,7 +7,7 @@ struct SeriesEpisodesView: View {
     var preferredEpisode: MediaItem? = nil
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: ContentSpacing.card) {
             HStack {
                 #if os(tvOS)
                     SeasonPicker(store: store)
@@ -38,33 +38,7 @@ struct SeriesEpisodesView: View {
                     retryAction: { Task { await store.retryEpisodes() } },
                     preservesContent: true
                 ) {
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        LazyHStack(alignment: .top, spacing: 18) {
-                            ForEach(store.episodes, id: \.id) { episode in
-                                VStack(alignment: .leading, spacing: 4) {
-                                    NavigationLink(value: GusRoute.item(.init(item: episode))) {
-                                        EpisodeCard(episode: episode)
-                                    }
-                                    .posterNavigationStyle()
-                                    .mediaItemContextMenu(item: episode)
-                                    .gusTVFocus(id: ItemRef(item: episode).id, section: "episodes:" + (store.selectedSeasonID ?? ""), ids: store.episodes.map { ItemRef(item: $0).id }, item: episode, context: "detail:" + ItemRef(item: store.series).id)
-                                    if let overview = episode.overview?.trimmedNilIfEmpty {
-                                        DetailSynopsis(title: episode.displayTitle, overview: overview, moreIdentifier: "Episode.fullSynopsis", lines: overviewLineLimit)
-                                            .font(.subheadline)
-                                            .foregroundStyle(.secondary)
-                                            .gusTVCardCaption()
-                                    }
-                                }
-                                .frame(width: episodeCardWidth)
-                                .id(ItemRef(item: episode).id)
-                            }
-                        }
-                        .scrollTargetLayout()
-                        .gusTVRailPadding()
-                    }
-                    .scrollPosition(id: root.scrollBinding(for: "episodes:" + (store.selectedSeasonID ?? "")))
-                    .lookToScroll(.horizontal)
-                    .gusTVRailViewport()
+                    SeriesEpisodeRail(episodes: store.episodes, series: store.series, seasonID: store.selectedSeasonID)
                 }
             }
         }
@@ -78,6 +52,46 @@ struct SeriesEpisodesView: View {
                 root.scrollAnchors[key] = ItemRef(item: episode).id
             }
         }
+    }
+}
+
+struct SeriesEpisodeRail: View {
+    @Environment(RootNavigationState.self) private var root
+    let episodes: [MediaItem]
+    let series: MediaItem
+    let seasonID: String?
+
+    var body: some View {
+        let episodeIDs = episodes.map { ItemRef(item: $0).id }
+        return ScrollView(.horizontal, showsIndicators: false) {
+            // Measure the tallest caption even when it belongs to a later
+            // episode. Each card defers its artwork until it enters the viewport.
+            HStack(alignment: .top, spacing: ContentSpacing.card) {
+                ForEach(episodes, id: \.id) { episode in
+                    VStack(alignment: .leading, spacing: ContentSpacing.caption) {
+                        NavigationLink(value: GusRoute.item(.init(item: episode))) {
+                            EpisodeCard(episode: episode)
+                        }
+                        .posterNavigationStyle()
+                        .mediaItemContextMenu(item: episode)
+                        .gusTVFocus(id: ItemRef(item: episode).id, section: "episodes:" + (seasonID ?? ""), ids: episodeIDs, item: episode, context: "detail:" + ItemRef(item: series).id)
+                        if let overview = episode.overview?.trimmedNilIfEmpty {
+                            DetailSynopsis(title: episode.displayTitle, overview: overview, moreIdentifier: "Episode.fullSynopsis", lines: overviewLineLimit)
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                                .gusTVCardCaption()
+                        }
+                    }
+                    .frame(width: episodeCardWidth)
+                    .id(ItemRef(item: episode).id)
+                }
+            }
+            .scrollTargetLayout()
+            .gusTVRailPadding()
+        }
+        .scrollPosition(id: root.scrollBinding(for: "episodes:" + (seasonID ?? "")))
+        .lookToScroll(.horizontal)
+        .gusTVRailViewport()
     }
 
     private var overviewLineLimit: Int {
@@ -105,18 +119,21 @@ private struct SeasonPicker: View {
     let store: SeriesDetailStore
 
     var body: some View {
-        Menu {
+        if store.seasons.count > 1 {
             Picker("Season", selection: selectedSeason) {
                 ForEach(store.seasons, id: \.id) { season in
                     Text(season.displayTitle)
                         .tag(season.id ?? "")
                 }
             }
-        } label: {
+            .pickerStyle(.menu)
+            .menuIndicator(.visible)
+            .accessibilityIdentifier("Series.seasonPicker")
+            .accessibilityLabel("Season")
+            .accessibilityValue(Text(selectedSeasonTitle))
+        } else if !store.seasons.isEmpty {
             Text(selectedSeasonTitle)
         }
-        .menuIndicator(.visible)
-        .disabled(store.seasons.isEmpty)
     }
 
     private var selectedSeason: Binding<String> {
@@ -138,32 +155,52 @@ private struct SeasonPicker: View {
 
 // MARK: - Episode card
 
-private struct EpisodeCard: View {
+struct EpisodeCard: View {
+    @Environment(\.dynamicTypeSize) private var typeSize
     @Environment(SessionStore.self) private var session
+    @State private var loadsArtwork = false
     let episode: MediaItem
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            ArtworkTile(
-                url: session.mediaProvider.backdropImageURL(for: episode, maxWidth: artworkWidth),
-                aspectRatio: 16.0 / 9.0,
-                contentMode: .fit,
-                placeholderSymbol: "play.rectangle",
-                fallbackURLs: session.mediaProvider.artworkURLs(for: episode, request: .init(role: .episodeStill, maxWidth: artworkWidth))
-            )
+        VStack(alignment: .leading, spacing: ContentSpacing.group) {
+            Color.clear.aspectRatio(16.0 / 9.0, contentMode: .fit)
+                .overlay {
+                    if loadsArtwork {
+                        ArtworkTile(
+                            url: session.mediaProvider.backdropImageURL(for: episode, maxWidth: artworkWidth),
+                            aspectRatio: 16.0 / 9.0,
+                            contentMode: .fit,
+                            placeholderSymbol: "play.rectangle",
+                            fallbackURLs: session.mediaProvider.artworkURLs(for: episode, request: .init(role: .episodeStill, maxWidth: artworkWidth))
+                        )
+                    } else {
+                        Rectangle().fill(.thinMaterial)
+                    }
+                }
+                .onScrollVisibilityChange(threshold: 0.01) { visible in loadsArtwork = visible }
+                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                .posterHoverEffect()
+                .gusTVArtworkStatus(item: episode)
+                .overlay(alignment: .topTrailing) {
+                    if episode.userData?.isWatched == true {
+                        Image(systemName: "checkmark.circle.fill")
+                            .symbolRenderingMode(.palette).foregroundStyle(.white, .black.opacity(0.8))
+                            .padding(ContentSpacing.group)
+                            .accessibilityHidden(true)
+                    }
+                }
 
-            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-            .posterHoverEffect()
-            .gusTVArtworkStatus(item: episode)
-
-            VStack(alignment: .leading, spacing: 4) {
-                Text(episode.episodeLocator ?? episode.displayTitle)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+            VStack(alignment: .leading, spacing: ContentSpacing.caption) {
+                if let locator = episode.episodeLocator {
+                    Text(locator)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
 
                 Text(episode.displayTitle)
                     .font(.headline)
-                    .lineLimit(2, reservesSpace: true)
+                    .lineLimit(typeSize.isAccessibilitySize ? nil : 3)
+                    .fixedSize(horizontal: false, vertical: true)
                 #if os(tvOS)
                     if let runtime = episode.runtimeText {
                         Text(runtime)
@@ -171,9 +208,6 @@ private struct EpisodeCard: View {
                             .foregroundStyle(.secondary)
                     }
                 #endif
-                Text(episode.userData?.isWatched == true ? String(localized: "Watched") : " ")
-                    .font(.caption).foregroundStyle(.secondary)
-                    .accessibilityHidden(episode.userData?.isWatched != true)
             }
             .gusTVCardCaption()
         }

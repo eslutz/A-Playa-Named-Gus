@@ -149,17 +149,7 @@ extension View {
 
     /// All platforms anchor progress to the artwork, never to variable-height captions.
     func gusTVArtworkStatus(item: MediaItem?, progressID: String = "") -> some View {
-        overlay(alignment: .bottom) {
-            if let progress = item?.playbackProgress, progress > 0, progress < 1 {
-                ProgressView(value: progress)
-                    .tint(.white)
-                    .padding(8)
-                    .background(.black.opacity(0.65), in: Capsule())
-                    .padding(12)
-                    .accessibilityLabel("Playback progress")
-                    .accessibilityIdentifier(progressID)
-            }
-        }
+        modifier(ArtworkProgressModifier(item: item, progressID: progressID))
     }
 
     @ViewBuilder func gusTVBrowseViewport() -> some View {
@@ -331,5 +321,25 @@ extension View {
             let context = "detail:" + ItemRef(item: item).id
             tvFocus.requestRestoration(context: context, section: context, bookmark: TVFocusBookmark(id: openerID, index: index))
         #endif
+    }
+}
+
+private struct ArtworkProgressModifier: ViewModifier {
+    @AppStorage(MediaItem.seriesProgressKey) private var showSeriesProgress = false
+    let item: MediaItem?
+    let progressID: String
+
+    func body(content: Content) -> some View {
+        content.overlay(alignment: .bottom) {
+            if let progress = item?.cardProgress(showSeriesProgress: showSeriesProgress) {
+                ProgressView(value: progress)
+                    .tint(.white)
+                    .padding(8)
+                    .background(.black.opacity(0.65), in: Capsule())
+                    .padding(12)
+                    .accessibilityLabel("Playback progress")
+                    .accessibilityIdentifier(progressID)
+            }
+        }
     }
 }

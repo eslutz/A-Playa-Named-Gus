@@ -3,6 +3,147 @@
   "strings": {
     "Audio playback is unavailable.": {
     },
+    "Authorize Another Device": {
+      "comment": "Profile and signed-in Jellyfin device authorization."
+    },
+    "Hide Password": {
+      "comment": "Profile and signed-in Jellyfin device authorization."
+    },
+    "Show Password": {
+      "comment": "Profile and signed-in Jellyfin device authorization."
+    },
+    "Six-digit code": {
+      "comment": "Profile and signed-in Jellyfin device authorization."
+    },
+    "Authorize Device": {
+      "comment": "Profile and signed-in Jellyfin device authorization."
+    },
+    "Enter the Quick Connect code shown on the device you want to sign in to this Jellyfin account.": {
+      "comment": "Profile and signed-in Jellyfin device authorization."
+    },
+    "Device authorized.": {
+      "comment": "Profile and signed-in Jellyfin device authorization."
+    },
+    "That code is invalid or has expired. Get a new code on the other device.": {
+      "comment": "Profile and signed-in Jellyfin device authorization."
+    },
+    "Quick Connect is unavailable for this account or server.": {
+      "comment": "Profile and signed-in Jellyfin device authorization."
+    },
+    "Authorization could not be confirmed. Check the other device before trying again.": {
+      "comment": "Profile and signed-in Jellyfin device authorization."
+    },
+    "Choose Photo": {
+      "comment": "Profile and signed-in Jellyfin device authorization."
+    },
+    "Remove Photo": {
+      "comment": "Profile and signed-in Jellyfin device authorization."
+    },
+    "Opens outside Gus": {
+      "comment": "Seerr settings."
+    },
+    "Discard unsaved Seerr preferences?": {
+      "comment": "Seerr settings."
+    },
+    "Discard and Refresh": {
+      "comment": "Seerr settings."
+    },
+    "Saved preferences confirmed.": {
+      "comment": "Seerr settings."
+    },
+    "Seerr returned different saved preferences. Review the current values before making changes.": {
+      "comment": "Seerr settings."
+    },
+    "View All Events": {
+      "comment": "App event and device performance details."
+    },
+    "No performance reports yet.": {
+      "comment": "App event and device performance details."
+    },
+    "Event": {
+      "comment": "App event and device performance details."
+    },
+    "Recorded": {
+      "comment": "App event and device performance details."
+    },
+    "Attributes": {
+      "comment": "App event and device performance details."
+    },
+    "Event Details": {
+      "comment": "App event and device performance details."
+    },
+    "Metrics": {
+      "comment": "App event and device performance details."
+    },
+    "Diagnostics": {
+      "comment": "App event and device performance details."
+    },
+    "Crashes": {
+      "comment": "App event and device performance details."
+    },
+    "Hangs": {
+      "comment": "App event and device performance details."
+    },
+    "CPU Exceptions": {
+      "comment": "App event and device performance details."
+    },
+    "Disk Write Exceptions": {
+      "comment": "App event and device performance details."
+    },
+    "Average Time to First Draw (ms)": {
+      "comment": "App event and device performance details."
+    },
+    "Total Hang Time (s)": {
+      "comment": "App event and device performance details."
+    },
+    "Peak Memory (MB)": {
+      "comment": "App event and device performance details."
+    },
+    "CPU Time (s)": {
+      "comment": "App event and device performance details."
+    },
+    "Disk Writes (MB)": {
+      "comment": "App event and device performance details."
+    },
+    "Network Transfer (MB)": {
+      "comment": "App event and device performance details."
+    },
+    "Downloads Options": {
+      "comment": "Downloads destination."
+    },
+    "Search Downloads": {
+      "comment": "Downloads destination."
+    },
+    "Show Series Progress": {
+      "comment": "Appearance preference for series cards."
+    },
+    "The shared age range allows your household settings.": {
+      "comment": "Apple age range and content restrictions."
+    },
+    "Shared age range limit: %@. Unrated media is hidden.": {
+      "comment": "Apple age range and content restrictions."
+    },
+    "Age range is unavailable. Try again later.": {
+      "comment": "Apple age range and content restrictions."
+    },
+    "Age Range": {
+      "comment": "Apple age range and content restrictions."
+    },
+    "Gus couldn't check whether age sharing is required. Connect to the internet and try again.": {
+      "comment": "Apple age range and content restrictions."
+    },
+    "Apple requires sharing an age range before you can browse media.": {
+      "comment": "Apple age range and content restrictions."
+    },
+    "Use your Apple age range to limit media on this device. You can also check it later in Settings.": {
+      "comment": "Apple age range and content restrictions."
+    },
+    "Check Age Range": {
+      "comment": "Apple age range and content restrictions."
+    },
+    "Shared Age Range Limit": {
+      "comment": "Apple age range and content restrictions."
+    },
     "Couldn’t load recommendations from iCloud. Try again.": {
       "comment": "Retry message when Apple TV cannot read the current account’s shared recommendations."
     },
@@ -4957,6 +5098,7 @@
     "Open Gus on iPhone to sign in": {
       "comment": "CarPlay signed-out title"
     },
+    "Open Gus to check your age range.": {},
     "Open Seerr": {
       "extractionState": "manual",
       "localizations": {

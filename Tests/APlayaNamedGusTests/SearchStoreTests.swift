@@ -187,6 +187,33 @@ struct SearchStoreTests {
         #expect(state.store === store)
     }
 
+    @Test("completed natural queries retain their mode and a deleted search stays deleted")
+    @MainActor func naturalHistoryReplayAndDeletion() throws {
+        let suite = UUID().uuidString
+        let defaults = try #require(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let scope = AccountScope(serverID: "server", userID: "user")
+        let history = SearchHistoryStore(scope: scope, defaults: defaults)
+        let root = RootNavigationState(searchHistory: history)
+        let query = "Unwatched comedies"
+        history.record(.typed(query))
+        let revision = history.deletionRevision
+        history.record(.natural(" " + query + " "), startedAt: revision)
+        #expect(SearchHistoryStore(scope: scope, defaults: defaults).entries == [.natural(query), .typed(query)])
+        root.replaySearch(.natural(query), naturalSearchEnabled: true)
+        #expect(root.globalSearch.natural.submission != nil && !root.globalSearch.displaysKeywords)
+        history.remove(.natural(query))
+        history.record(.natural(query), startedAt: revision)
+        #expect(history.entries == [.typed(query)])
+        let secondAttempt = history.deletionRevision
+        history.clear()
+        history.record(.natural(query), startedAt: secondAttempt)
+        #expect(history.entries.isEmpty)
+        root.replaySearch(.natural(query), naturalSearchEnabled: false)
+        #expect(root.globalSearch.displaysKeywords && root.globalSearch.text == query)
+        #expect(history.entries == [.typed(query)])
+    }
+
     @Test("loading a longer saved history persists only the latest twenty completed queries")
     @MainActor func trimsPreviouslySavedHistory() throws {
         let suite = UUID().uuidString

@@ -165,6 +165,19 @@ struct DownloadedLibraryTests {
         #expect(sections.flatMap(\.records).map(\.id) == ["good"])
     }
 
+    @Test("A newer restricted server rating also hides a previously downloaded title")
+    func updatedDownloadRating() {
+        var cached = record(MediaItem(id: "movie", officialRating: "PG", type: .movie))
+        let policy = ContentRatingGate.Policy(manual: .off, hideUnrated: false, ageCeiling: .teen)
+        #expect(cached.isAdmitted(by: policy.admits))
+        cached.remoteReference = MediaReference(
+            item: MediaItem(id: "movie", officialRating: "GB-18", type: .movie),
+            scope: AccountScope(serverID: "s", userID: "u")
+        )
+        #expect(!cached.isAdmitted(by: policy.admits))
+        #expect(DownloadedLibrary.sections(records: [cached], filter: .all, search: "", admits: policy.admits).isEmpty)
+    }
+
     @Test("Episode grouping preserves series, orders seasons and sorts episode numbers numerically")
     func groupsEpisodes() {
         let records = [

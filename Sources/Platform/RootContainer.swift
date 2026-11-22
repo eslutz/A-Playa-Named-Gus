@@ -40,14 +40,15 @@ struct RootContainer: View {
         #endif
             .task {
                 preferences.load(serverID: session.server.id, userID: session.user.id)
-                if navigation.routeRequest == 0 {
-                    state.selectSection(storedSelection)
-                } else {
-                    state.adopt(navigation.route)
+                if !state.hasRestoredSelection {
+                    state.hasRestoredSelection = true
+                    if navigation.routeRequest == 0 {
+                        state.selectSection(storedSelection)
+                    } else {
+                        state.adopt(navigation.route)
+                    }
                 }
-                if navigation.searchFocusRequest > 0 {
-                    focusSearch()
-                }
+                handleSearchCommand()
                 await state.home?.loadIfNeeded()
             }
             .task {
@@ -83,11 +84,10 @@ struct RootContainer: View {
             .onChange(of: session.intelligenceAccess.usesNaturalSearch) { _, _ in
                 state.useKeywordSearchForCurrentDrafts()
             }
-            .onChange(of: navigation.searchFocusRequest) { _, request in
-                if request > 0 {
-                    focusSearch()
-                }
-            }
+        #if !os(tvOS)
+            .focusedSceneValue(state)
+        #endif
+            .onChange(of: navigation.searchFocusRequest) { handleSearchCommand() }
             .onChange(of: navigation.routeRequest) { _, _ in state.adopt(navigation.route) }
             .onChange(of: state.selectedSectionID) { _, id in storedSelection = id }
             .onChange(of: session.seerr.revision, initial: true) { _, revision in
@@ -114,15 +114,9 @@ struct RootContainer: View {
             audio.isPresented || audio.store?.isPlaybackRequested == true
     }
 
-    private func focusSearch() {
-        switch state.selectedSectionID {
-        case NavigationSectionPreference.discoverID, NavigationSectionPreference.downloadedID:
-            state.paths[state.selectedSectionID] = []
-        default:
-            state.selectSection(RootNavigationState.searchID)
-            state.paths[RootNavigationState.searchID] = []
-            state.globalSearch.typed.isPresented = true
-        }
+    private func handleSearchCommand() {
+        guard navigation.consumeSearchFocus() else { return }
+        state.focusSearch()
     }
 
     @ViewBuilder private var presentationRoot: some View {
@@ -154,12 +148,10 @@ struct RootContainer: View {
     private struct AdaptiveRootView: View {
         @Environment(\.horizontalSizeClass) private var widthClass
         var body: some View {
-            if widthClass == .compact {
-                TabRootView()
-            } else if DeviceIdentity.usesIPadPresentation {
+            if DeviceIdentity.usesIPadPresentation, widthClass == .regular {
                 IPadSplitRootView()
             } else {
-                SplitRootView()
+                TabRootView()
             }
         }
     }
@@ -218,14 +210,14 @@ private struct TabRootView: View {
                 state.selectMoreTab(overflowIDs: overflow.map(\.id))
             } else {
                 state.selectSection(id)
+                #if os(iOS)
+                    if id == RootNavigationState.searchID, state.paths[id, default: []].isEmpty,
+                       state.globalSearch.text.isEmpty, session.searchHistory.entries.isEmpty
+                    {
+                        state.globalSearch.typed.isPresented = true
+                    }
+                #endif
             }
-            #if os(iOS)
-                if id == RootNavigationState.searchID, state.paths[id]?.isEmpty != false,
-                   state.globalSearch.text.isEmpty, session.searchHistory.entries.isEmpty
-                {
-                    state.globalSearch.typed.isPresented = true
-                }
-            #endif
         })
     }
 

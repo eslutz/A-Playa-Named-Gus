@@ -5,6 +5,7 @@ import SwiftUI
 /// Uses only system styling — rounded rectangle clip, Material placeholder, Dynamic Type
 /// captions, and a platform-appropriate hover/focus effect — so it feels native on each OS.
 struct PosterCard: View {
+    @AppStorage(MediaItem.seriesProgressKey) private var showSeriesProgress = false
     let title: String
     var subtitle: String?
     var statusItem: MediaItem? = nil
@@ -14,35 +15,54 @@ struct PosterCard: View {
     #if os(iOS)
         @Environment(\.horizontalSizeClass) private var widthClass
     #endif
+    var alignsMixedArtwork = false
     var placeholderSymbol: String = "film"
     var fallbackURLs: [URL] = []
     var onExhausted: (() async -> Void)?
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            ArtworkTile(url: imageURL, aspectRatio: resolvedAspectRatio, placeholderSymbol: placeholderSymbol, fallbackURLs: fallbackURLs, onExhausted: onExhausted)
-                .frame(maxWidth: .infinity)
-                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                .posterHoverEffect()
-                .gusTVArtworkStatus(item: statusItem)
+        VStack(alignment: .leading, spacing: ContentSpacing.group) {
+            artworkSlot
 
-            VStack(alignment: .leading, spacing: 1) {
-                Text(title)
-                    .font(.subheadline.weight(.medium))
-                    .gusTVPosterTitle()
-                Text(subtitle ?? " ")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(statusItem?.isBookFormat == true ? 2 : 1)
-                    .accessibilityHidden(subtitle == nil)
-                statusCaption
-            }
-            .gusTVCardCaption()
+            captions
         }
         .contentShape(Rectangle())
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(accessibilityLabel)
-        .accessibilityValue(statusItem?.mediaAccessibility.value ?? "")
+        .accessibilityValue(statusItem?.mediaAccessibility(showSeriesProgress: showSeriesProgress).value ?? "")
+    }
+
+    @ViewBuilder private var artworkSlot: some View {
+        if alignsMixedArtwork {
+            Color.clear.aspectRatio(2.0 / 3.0, contentMode: .fit)
+                .overlay(alignment: .bottom) { artwork }
+        } else {
+            artwork
+        }
+    }
+
+    private var artwork: some View {
+        ArtworkTile(url: imageURL, aspectRatio: resolvedAspectRatio, placeholderSymbol: placeholderSymbol, fallbackURLs: fallbackURLs, onExhausted: onExhausted)
+            .frame(maxWidth: .infinity)
+            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .posterHoverEffect()
+            .gusTVArtworkStatus(item: statusItem)
+    }
+
+    private var captions: some View {
+        VStack(alignment: .leading, spacing: ContentSpacing.caption) {
+            Text(title)
+                .font(.subheadline.weight(.medium))
+                .gusTVPosterTitle()
+            if let subtitle {
+                Text(subtitle).font(.caption).foregroundStyle(.secondary)
+                    .lineLimit(statusItem?.isBookFormat == true ? 2 : 1)
+            }
+            if statusItem?.userData?.isWatched == true, let title = statusItem?.completedStatusTitle {
+                Text(title).font(.caption).foregroundStyle(.secondary)
+            }
+        }
+        .gusTVCardCaption()
     }
 
     private var usesIPhoneLayout: Bool {
@@ -54,17 +74,7 @@ struct PosterCard: View {
     }
 
     private var resolvedAspectRatio: CGFloat {
-        usesIPhoneLayout ? iPhoneAspectRatio ?? aspectRatio : aspectRatio
-    }
-
-    private var statusCaption: some View {
-        // Keep identical caption geometry when watched status changes, including
-        // localized text and Dynamic Type. Invisible status is not announced.
-        Text(statusItem?.completedStatusTitle ?? String(localized: "Watched"))
-            .font(.caption).foregroundStyle(.secondary)
-            .lineLimit(1)
-            .opacity(statusItem?.userData?.isWatched == true ? 1 : 0)
-            .accessibilityHidden(statusItem?.userData?.isWatched != true)
+        (usesIPhoneLayout || alignsMixedArtwork) ? iPhoneAspectRatio ?? aspectRatio : aspectRatio
     }
 
     private var accessibilityLabel: Text {
@@ -88,7 +98,7 @@ extension PosterCard {
     }
 
     /// Convenience initializer from a media item, choosing a sensible title/subtitle.
-    init(item: MediaItem, imageURL: URL?, aspectRatio: CGFloat? = nil, fallbackURLs: [URL] = [], onExhausted: (() async -> Void)? = nil) {
+    init(item: MediaItem, imageURL: URL?, aspectRatio: CGFloat? = nil, alignsMixedArtwork: Bool = false, fallbackURLs: [URL] = [], onExhausted: (() async -> Void)? = nil) {
         let title: String
         let subtitle: String?
 
@@ -109,6 +119,7 @@ extension PosterCard {
             imageURL: imageURL,
             aspectRatio: aspectRatio ?? 2.0 / 3.0,
             iPhoneAspectRatio: aspectRatio == nil ? Self.artworkAspectRatio(for: item) : nil,
+            alignsMixedArtwork: alignsMixedArtwork,
             placeholderSymbol: item.artworkPlaceholderSymbol,
             fallbackURLs: fallbackURLs,
             onExhausted: onExhausted

@@ -60,7 +60,7 @@ final class GusLibraryIntelligence {
     }
 
     private var restrictions: String {
-        ContentRatingGate.storedLimit().rawValue + String(UserDefaults.standard.bool(forKey: ContentRatingGate.hideUnratedDefaultsKey))
+        ContentRatingGate.storedPolicy().revision
     }
 
     private func check(_ restriction: String) throws -> SessionStore {

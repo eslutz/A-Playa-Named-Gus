@@ -3,7 +3,7 @@ import SwiftUI
 /// Discover owns its search scope while each supported feed loads and retries independently.
 struct DiscoverBrowseView: View {
     @Environment(SessionStore.self) private var session
-    @Environment(AppNavigationModel.self) private var navigation
+    @Environment(RootNavigationState.self) private var root
     @Environment(\.calendar) private var calendar
     @Environment(\.scenePhase) private var scenePhase
     @FocusState private var searchFocused: Bool
@@ -22,8 +22,7 @@ struct DiscoverBrowseView: View {
     @State private var submitsImmediately = false
     @State private var scrollID: String?
     @State private var today = Calendar.current.startOfDay(for: .now)
-    @AppStorage(ContentRatingGate.limitDefaultsKey) private var contentLimitRawValue = ContentRatingGate.Limit.off.rawValue
-    @AppStorage(ContentRatingGate.hideUnratedDefaultsKey) private var hideUnratedContent = false
+    @StoredContentPolicy private var contentPolicy
 
     init(store: SeerrStore, searchOnly: Bool = false) {
         self.searchOnly = searchOnly
@@ -42,7 +41,7 @@ struct DiscoverBrowseView: View {
     }
 
     private var accessRevision: String {
-        "\(store.revision):\(contentLimitRawValue):\(hideUnratedContent)"
+        "\(store.revision):\(contentPolicy.revision)"
     }
 
     private var hasSearchAccess: Bool {
@@ -111,8 +110,9 @@ struct DiscoverBrowseView: View {
                 naturalSubmission = nil
             }
         }
-        .onChange(of: navigation.searchFocusRequest, initial: true) { _, request in
-            guard request > 0 else { return }
+        .onChange(of: root.pendingLocalSearchFocus, initial: true) { _, section in
+            guard section == NavigationSectionPreference.discoverID else { return }
+            root.pendingLocalSearchFocus = nil
             searchPresented = true
             searchFocused = true
         }
@@ -190,7 +190,7 @@ struct DiscoverBrowseView: View {
             retryAction: { Task { await loadFeeds() } }
         ) {
             ScrollView {
-                LazyVStack(alignment: .leading, spacing: 32) {
+                LazyVStack(alignment: .leading, spacing: ContentSpacing.section) {
                     #if os(tvOS)
                         HStack(spacing: 32) {
                             NavigationLink(value: store.navigationRoute(.search)) { Label("Search Seerr", systemImage: "magnifyingglass") }
@@ -353,7 +353,7 @@ private struct SeerrDiscoveryShelf: View {
     let retry: () async -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: ContentSpacing.card) {
             HStack {
                 Text(feed.seerrTitle).font(.title2.bold()).accessibilityAddTraits(.isHeader)
                 Spacer()

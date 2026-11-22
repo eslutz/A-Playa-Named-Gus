@@ -1,12 +1,7 @@
-import Foundation
+import SwiftUI
 
-/// Maps official content ratings onto comparable ranks and filters media above the
-/// household's chosen limit.
-///
-/// The limit is an app-level preference (Settings → Content Restrictions) that parents
-/// pair with Apple Screen Time's app/settings locks; reading the device's effective
-/// movie/TV rating restrictions via ManagedSettings requires the Apple-granted Family
-/// Controls entitlement and is documented as follow-up in `Documentation/family-safety-brief.md`.
+/// Combines the household's preference and the device's Apple-derived ceiling.
+/// Only a successful system response may change the latter.
 enum ContentRatingGate {
     /// Comparable severity rank for a rating limit. Higher admits more mature content.
     enum Limit: String, CaseIterable, Identifiable, Codable {
@@ -49,6 +44,55 @@ enum ContentRatingGate {
 
     static let limitDefaultsKey = "dev.ericslutz.gus.contentRatingLimit"
     static let hideUnratedDefaultsKey = "dev.ericslutz.gus.contentRatingHideUnrated"
+
+    static let ageCeilingKey = "dev.ericslutz.gus.contentRatingAgeCeiling"
+
+    static let awaitingRangeKey = "dev.ericslutz.gus.awaitingRequiredAgeRange"
+
+    struct Policy: Equatable {
+        let limit: Limit
+        let hideUnrated: Bool
+        let ageCeiling: Limit
+        let awaitingRequiredRange: Bool
+
+        init(manual: Limit, hideUnrated: Bool, ageCeiling: Limit = .off, awaitingRequiredRange: Bool = false) {
+            self.awaitingRequiredRange = awaitingRequiredRange
+            self.ageCeiling = ageCeiling
+            let preferred = (manual.maximumRank ?? Int.max) < (ageCeiling.maximumRank ?? Int.max) ? manual : ageCeiling
+            limit = awaitingRequiredRange ? .general : preferred
+            self.hideUnrated = hideUnrated || ageCeiling != .off || awaitingRequiredRange
+        }
+
+        var revision: String {
+            "\(limit.rawValue):\(hideUnrated):\(ageCeiling.rawValue):\(awaitingRequiredRange)"
+        }
+
+        func admits(_ item: MediaItem) -> Bool {
+            !awaitingRequiredRange && ContentRatingGate.admits(item, limit: limit, hideUnrated: hideUnrated, ageCeiling: ageCeiling)
+        }
+    }
+
+    static func storedPolicy(userDefaults: UserDefaults = .standard) -> Policy {
+        Policy(
+            manual: userDefaults.string(forKey: limitDefaultsKey).flatMap(Limit.init(rawValue:)) ?? .off,
+            hideUnrated: userDefaults.bool(forKey: hideUnratedDefaultsKey),
+            ageCeiling: userDefaults.string(forKey: ageCeilingKey).flatMap(Limit.init(rawValue:)) ?? .off,
+            awaitingRequiredRange: userDefaults.bool(forKey: awaitingRangeKey)
+        )
+    }
+
+    /// Store the derived tier, including an explicitly returned adult result.
+    /// The original bounds and the source of the declaration never leave memory.
+    static func applySharedRange(lowerBound: Int?, userDefaults: UserDefaults = .standard) {
+        let ceiling: Limit
+        switch lowerBound ?? 0 {
+        case ..<13: ceiling = .general
+        case 13 ..< 16: ceiling = .teen
+        case 16 ..< 18: ceiling = .mature
+        default: ceiling = .off
+        }
+        userDefaults.set(ceiling.rawValue, forKey: ageCeilingKey)
+    }
 
     /// Rating-string → rank table covering US movie (MPA), US TV, and the common
     /// international systems Jellyfin emits (BBFC, FSK, ACB, OFLC, Canadian).
@@ -118,21 +162,44 @@ enum ContentRatingGate {
 
     /// Whether an item is admitted under the limit. Unknown/missing ratings are admitted
     /// unless `hideUnrated` is set (strict households).
-    static func admits(_ item: MediaItem, limit: Limit, hideUnrated: Bool) -> Bool {
+    static func admits(_ item: MediaItem, limit: Limit, hideUnrated: Bool, ageCeiling: Limit = .off) -> Bool {
         guard let maximumRank = limit.maximumRank else { return true }
 
         // Library containers and folders stay visible so navigation keeps working.
         switch item.type {
-        case .genre, .boxSet, .collectionFolder, .folder, .musicArtist, .musicAlbum, .playlist, .photo, nil:
+        case .genre, .boxSet, .collectionFolder, .folder, .musicArtist, .musicAlbum, .playlist:
+            return true
+        case .photo where ageCeiling == .off, nil where ageCeiling == .off:
             return true
         default:
             break
         }
 
+        if ageCeiling != .off, let minimum = explicitMinimumAge(for: item.officialRating) {
+            let guaranteedMinimum = ageCeiling == .mature ? 16 : ageCeiling == .teen ? 13 : 0
+            guard guaranteedMinimum >= minimum else { return false }
+        }
         guard let rank = rank(for: item.officialRating) else {
             return !hideUnrated
         }
         return rank <= maximumRank
+    }
+
+    /// Regional minimum-age certificates can span a Gus tier (for example, GB-15
+    /// and GB-18). US advisory categories continue to use the tier table above.
+    private static func explicitMinimumAge(for rating: String?) -> Int? {
+        guard var value = rating?.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() else { return nil }
+        if let separator = value.firstIndex(where: { "-/:".contains($0) }),
+           value[..<separator] != "tv", value[..<separator].count == 2, value[..<separator].allSatisfy(\.isLetter)
+        {
+            value = String(value[value.index(after: separator)...])
+        }
+        for prefix in ["fsk", "ma", "r", "x"] where value.hasPrefix(prefix) {
+            value.removeFirst(prefix.count)
+            break
+        }
+        value = value.trimmingCharacters(in: CharacterSet(charactersIn: " -+a"))
+        return Int(value)
     }
 
     /// Filters a list of items against the stored preference.
@@ -140,42 +207,52 @@ enum ContentRatingGate {
         _ items: [MediaItem],
         userDefaults: UserDefaults = .standard
     ) -> [MediaItem] {
-        let limit = storedLimit(userDefaults: userDefaults)
-        guard limit != .off else { return items }
-        let hideUnrated = userDefaults.bool(forKey: hideUnratedDefaultsKey)
-        return items.filter { admits($0, limit: limit, hideUnrated: hideUnrated) }
+        let policy = storedPolicy(userDefaults: userDefaults)
+        guard policy.limit != .off else { return items }
+        return items.filter(policy.admits)
     }
 
     /// Whether a single item is admitted under the stored preference. List filtering
     /// hides restricted items; this is the second layer that gates detail and playback
     /// for items reached another way (deep link, downloads, stale navigation).
     static func admitsStored(_ item: MediaItem, userDefaults: UserDefaults = .standard) -> Bool {
-        let limit = storedLimit(userDefaults: userDefaults)
-        guard limit != .off else { return true }
-        return admits(item, limit: limit, hideUnrated: userDefaults.bool(forKey: hideUnratedDefaultsKey))
+        storedPolicy(userDefaults: userDefaults).admits(item)
     }
 
     /// Server artwork can be a mosaic of current playlist members. Cached or
     /// locally edited membership can never establish which images are in it.
-    static func playlistCoverItems(playlist: MediaItem, entries: [MediaItem], limit: Limit, hideUnrated: Bool) -> [MediaItem] {
-        let members = coverMembers(entries, limit: limit, hideUnrated: hideUnrated, count: 1)
+    static func playlistCoverItems(playlist: MediaItem, entries: [MediaItem], limit: Limit, hideUnrated: Bool, ageCeiling: Limit = .off) -> [MediaItem] {
+        let members = coverMembers(entries, limit: limit, hideUnrated: hideUnrated, count: 1, ageCeiling: ageCeiling)
         return (limit == .off ? [playlist] : []) + members
     }
 
     /// Prefer titles with reported artwork in server order. A bounded list lets
     /// native image loading recover from stale tags without probing every title.
-    static func coverMembers(_ entries: [MediaItem], limit: Limit, hideUnrated: Bool, count: Int) -> [MediaItem] {
+    static func coverMembers(_ entries: [MediaItem], limit: Limit, hideUnrated: Bool, count: Int, ageCeiling: Limit = .off) -> [MediaItem] {
         let admitted = entries.lazy.filter { item in
             guard item.id != nil, item.type != nil,
                   ![.playlist, .boxSet, .collectionFolder, .folder].contains(item.type)
             else { return false }
-            return admits(item, limit: limit, hideUnrated: hideUnrated)
+            return admits(item, limit: limit, hideUnrated: hideUnrated, ageCeiling: ageCeiling)
         }
         let tagged = Array(admitted.lazy.filter(\.hasTaggedCoverArtwork).prefix(count))
         return tagged.isEmpty ? Array(admitted.prefix(count)) : tagged
     }
 
     static func storedLimit(userDefaults: UserDefaults = .standard) -> Limit {
-        userDefaults.string(forKey: limitDefaultsKey).flatMap(Limit.init(rawValue:)) ?? .off
+        storedPolicy(userDefaults: userDefaults).limit
+    }
+}
+
+/// SwiftUI observes the same inputs used by the non-UI playback and data gates.
+@propertyWrapper
+struct StoredContentPolicy: DynamicProperty {
+    @AppStorage(ContentRatingGate.limitDefaultsKey) private var manual = ContentRatingGate.Limit.off
+    @AppStorage(ContentRatingGate.hideUnratedDefaultsKey) private var hideUnrated = false
+    @AppStorage(ContentRatingGate.awaitingRangeKey) private var awaitingRequiredRange = false
+    @AppStorage(ContentRatingGate.ageCeilingKey) private var ceiling = ContentRatingGate.Limit.off
+
+    var wrappedValue: ContentRatingGate.Policy {
+        .init(manual: manual, hideUnrated: hideUnrated, ageCeiling: ceiling, awaitingRequiredRange: awaitingRequiredRange)
     }
 }

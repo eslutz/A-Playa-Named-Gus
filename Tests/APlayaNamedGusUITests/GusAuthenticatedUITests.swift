@@ -1523,7 +1523,7 @@ final class GusAuthenticatedUITests: XCTestCase {
             XCTAssertTrue(account.hasFocus || account.descendants(matching: .any).allElementsBoundByIndex.contains(where: \.hasFocus), app.debugDescription)
             capture(app, "tv-sidebar-profile")
             XCUIRemote.shared.press(.select)
-            let edit = app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", "View and Edit Profile")).firstMatch
+            let edit = app.descendants(matching: .any).matching(NSPredicate(format: "identifier == %@", "Settings.profile")).firstMatch
             XCTAssertTrue(edit.waitForExistence(timeout: 5), app.debugDescription)
             XCUIRemote.shared.press(.select)
             let username = app.textFields["Username"]

@@ -25,6 +25,10 @@ final class SessionStore {
         return home
     }
 
+    #if canImport(DeclaredAgeRange) && (os(iOS) || os(macOS))
+        @ObservationIgnored lazy var ageRangeAccess = AgeRangeAccess(scope: references.scope)
+    #endif
+
     let lease: SessionLease
     private(set) var isActive = true
     let client: JellyfinClient

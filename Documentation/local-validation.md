@@ -114,6 +114,12 @@ Testing case, add an `-only-testing:GusTests/<Suite>/<Test>` filter with actual
 suite and test names. The TV and Vision unit schemes are `Gus tvOS Unit Tests`
 and `Gus visionOS Unit Tests`.
 
+Use a clean, signed-out simulator for the full iOS unit suite. An existing UI
+fixture or personal simulator can preserve a device-wide age restriction that
+correctly blocks unrelated synthetic playback items. Create a separate simulator
+with an installed device type and runtime, then use its UDID for `DESTINATION`.
+Keep the original simulator and its settings intact.
+
 ```sh
 python3 Scripts/run-warning-free.py xcodebuild \
   -project "$PROJECT" -scheme 'Gus iOS Unit Tests' -destination "$DESTINATION" \
@@ -154,9 +160,10 @@ results using the same destination and evidence approach as the unit recipe.
 
 For navigation UI tests, run `python3 Scripts/book-details-fixture.py --genres`
 for related results and paging (port 5061). Run the same script with
-`--navigation` (port 5062) for Profile editing and load failures, sidebar library
-selection, unavailable Next Up entries, video preparation and failure, and
-season switching. Both fixtures bind to loopback.
+`--navigation` (port 5062) for Profile editing and load failures, staged photo
+removal, Quick Connect approval and rejection, Client Logs navigation, sidebar
+library selection, unavailable Next Up entries, video preparation and failure,
+and season switching. Both fixtures bind to loopback.
 
 For the Discover-to-Jellyfin handoff tests in `GusSeerrUITests`, run the Seerr
 fixture and the navigation Jellyfin fixture together. These tests enable the

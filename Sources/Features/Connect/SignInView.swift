@@ -164,7 +164,6 @@ struct SignInView: View {
             signInActionSection
         }
         .formStyle(.grouped)
-        .tint(.accentColor)
         .frame(maxWidth: 760)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .navigationTitle(server.name)
@@ -187,7 +186,7 @@ struct SignInView: View {
         }
 
         private var onboardingFields: some View {
-            VStack(alignment: .leading, spacing: 24) {
+            VStack(alignment: .leading, spacing: ContentSpacing.card) {
                 GusOnboardingField(title: "Username") {
                     TextField("Username", text: $username)
                         .autocorrectionDisabled()
@@ -231,9 +230,9 @@ struct SignInView: View {
 
         private var onboarding: some View {
             ScrollView {
-                VStack(alignment: .leading, spacing: 24) {
+                VStack(alignment: .leading, spacing: ContentSpacing.card) {
                     GusOnboardingHeader()
-                    VStack(alignment: .leading, spacing: 12) {
+                    VStack(alignment: .leading, spacing: ContentSpacing.group) {
                         Text("Sign in.").font(.largeTitle.bold())
                         Text(server.name).font(.title3).foregroundStyle(.secondary)
                         Text(server.url.host() ?? server.url.absoluteString)
@@ -254,8 +253,8 @@ struct SignInView: View {
 
         @ViewBuilder private var signInOptionsContent: some View {
             if let quickConnectStore, case let .polling(code) = quickConnectStore.state {
-                VStack(spacing: 28) {
-                    Image(systemName: "bolt.horizontal.circle").font(.largeTitle).foregroundStyle(.blue)
+                VStack(spacing: ContentSpacing.section) {
+                    Image(systemName: "bolt.horizontal.circle").font(.largeTitle).foregroundStyle(.tint)
                     Text("Quick Connect").font(.title.bold())
                     Text(code).font(.largeTitle.monospaced().bold())
                         .textSelection(.enabled)

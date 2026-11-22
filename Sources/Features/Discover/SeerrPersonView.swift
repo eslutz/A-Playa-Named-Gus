@@ -79,11 +79,10 @@ struct SeerrPersonView: View {
     let displayName: String
     let store: SeerrStore
     @State private var model = SeerrPersonStore()
-    @AppStorage(ContentRatingGate.limitDefaultsKey) private var contentLimitRawValue = ContentRatingGate.Limit.off.rawValue
-    @AppStorage(ContentRatingGate.hideUnratedDefaultsKey) private var hideUnratedContent = false
+    @StoredContentPolicy private var contentPolicy
 
     private var accessRevision: String {
-        "\(store.revision):\(contentLimitRawValue):\(hideUnratedContent)"
+        "\(store.revision):\(contentPolicy.revision)"
     }
 
     var body: some View {
@@ -145,16 +144,16 @@ private struct SeerrPersonCreditSection: View {
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: ContentSpacing.card) {
             Text(title).font(.title2.bold()).accessibilityAddTraits(.isHeader)
             if dynamicTypeSize.isAccessibilitySize {
-                LazyVStack(alignment: .leading, spacing: 20) {
+                LazyVStack(alignment: .leading, spacing: ContentSpacing.card) {
                     ForEach(titles.filter { store.admits($0) }, id: \.seerrCatalogID) { title in
                         credit(title, usesList: true)
                     }
                 }
             } else {
-                LazyVGrid(columns: PosterGrid.columns, alignment: .leading, spacing: 24) {
+                LazyVGrid(columns: PosterGrid.columns, alignment: .leading, spacing: PosterGrid.spacing) {
                     ForEach(titles.filter { store.admits($0) }, id: \.seerrCatalogID) { title in
                         credit(title, usesList: false)
                     }
@@ -164,7 +163,7 @@ private struct SeerrPersonCreditSection: View {
     }
 
     private func credit(_ title: SeerrTitle, usesList: Bool) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: ContentSpacing.caption) {
             SeerrResultLink(title: title, store: store, usesList: usesList)
             if let role = (title.character ?? title.job)?.trimmedNilIfEmpty {
                 Text(role).font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)

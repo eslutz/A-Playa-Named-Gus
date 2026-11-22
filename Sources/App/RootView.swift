@@ -10,6 +10,7 @@ struct RootView: View {
     @Environment(SavedMediaStore.self) private var videoPlaylists
     @Environment(ServerMediaListsStore.self) private var serverLists
     @Environment(OfflineDownloadStore.self) private var downloads
+    @StoredContentPolicy private var contentPolicy
     #if os(iOS)
         private var audio: AudioPlaybackCoordinator {
             appModel.audioPlayback
@@ -29,6 +30,14 @@ struct RootView: View {
                     ProgressView("Finishing Playback…").padding().background(.regularMaterial, in: .rect(cornerRadius: 12))
                 }
             }
+            .onChange(of: contentPolicy) { _, policy in
+                if let track = audio.store?.currentTrack, !policy.admits(track) {
+                    audio.stop()
+                }
+                if let session = appModel.currentSession {
+                    SpotlightIndexer.deleteIndex(serverID: session.server.id, userID: session.user.id)
+                }
+            }
             .onChange(of: activeLease) { _, _ in
                 #if !os(iOS)
                     audio.stop()
@@ -45,6 +54,12 @@ struct RootView: View {
     @ViewBuilder private var content: some View {
         if let session = appModel.currentSession {
             RootContainer(session: session)
+                // Discard routes, in-flight searches and loaded media from the old
+                // Apple ceiling, even if the manual limit happens to be identical.
+                .id(contentPolicy.ageCeiling)
+            #if canImport(DeclaredAgeRange) && (os(iOS) || os(macOS))
+                .modifier(AgeRangeAccessHost(session: session))
+            #endif
                 .task(id: videoPlaylists.revision) {
                     upNext.reconcileSyncedIntents(scope: session.references.scope)
                     NextUpActivityStore.shared.reconcile(scope: session.references.scope)

@@ -20,7 +20,7 @@ struct SeerrConnectView: View {
                     Text("Connect your Seerr server to discover movies and shows, request titles, and follow their availability.").foregroundStyle(.secondary)
                 }
                 .gusSeerrSetupHeading()
-                VStack(alignment: .leading, spacing: 8) {
+                VStack(alignment: .leading, spacing: ContentSpacing.group) {
                     Text("Seerr Server URL").font(.subheadline.weight(.medium))
                     TextField("https://seerr.example.com", text: $address)
                         .urlFieldStyle().seerrSetupFieldStyle()
@@ -108,7 +108,7 @@ private struct SeerrSignInView: View {
 
     var body: some View {
         SeerrSetupLayout {
-            VStack(alignment: .leading, spacing: 6) {
+            VStack(alignment: .leading, spacing: ContentSpacing.caption) {
                 Text(info.settings.applicationTitle ?? "Seerr").font(.title2.bold())
                 Text(client.baseURL.host() ?? "Seerr").font(.subheadline).foregroundStyle(.secondary)
                 Text("Sign in to request titles and track your requests.").foregroundStyle(.secondary)
@@ -123,7 +123,7 @@ private struct SeerrSignInView: View {
                     .disabled(isSigningIn)
                     .onChange(of: method) { _, _ in password = ""; message = nil }
                 }
-                VStack(alignment: .leading, spacing: 8) {
+                VStack(alignment: .leading, spacing: ContentSpacing.group) {
                     Text(method == "local" ? "Email" : "Username").font(.subheadline.weight(.medium))
                     TextField(method == "local" ? "Email" : "Username", text: $username)
                         .autocorrectionDisabled().gusAccountNameInput()

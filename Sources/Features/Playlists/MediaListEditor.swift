@@ -224,7 +224,8 @@ struct MediaListEditor: View {
                     PlaylistCoverArtwork(playlist: playlist.coverItem, entries: playlist.entries.map(\.item), maxWidth: 360, contentMode: .fit)
                         .frame(width: 120)
                 } else if let collectionID, let collection = collections.collection(collectionID) {
-                    let urls = collection.coverURLs(using: session.mediaProvider, limit: ContentRatingGate.storedLimit(), hideUnrated: UserDefaults.standard.bool(forKey: ContentRatingGate.hideUnratedDefaultsKey))
+                    let policy = ContentRatingGate.storedPolicy()
+                    let urls = collection.coverURLs(using: session.mediaProvider, limit: policy.limit, hideUnrated: policy.hideUnrated, ageCeiling: policy.ageCeiling)
                     ArtworkTile(url: urls.first, contentMode: .fit, fallbackURLs: Array(urls.dropFirst()))
                         .frame(width: 120)
                         .accessibilityHidden(true)

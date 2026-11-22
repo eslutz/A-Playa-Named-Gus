@@ -31,61 +31,74 @@ struct ProfileAvatar: View {
 
 struct ProfilePicturePicker: View {
     let current: Data?
-    @Binding var picture: Data?
+    let hasServerPicture: Bool
+    @Binding var picture: ProfilePictureChange
     @Binding var isLoading: Bool
+    @State private var choosing = false
     #if !os(tvOS)
-        @State private var choosing = false
         @State private var selection: PhotosPickerItem?
         @State private var errorMessage: String?
     #endif
 
     var body: some View {
-        #if os(tvOS)
-            NavigationLink {
-                TVProfilePhotos(picture: $picture)
-            } label: {
-                label
+        Menu {
+            Button("Choose Photo", systemImage: "photo") { choosing = true }
+            if picture.preview(current: current) != nil || (picture == .unchanged && hasServerPicture) {
+                Button("Remove Photo", systemImage: "trash", role: .destructive) {
+                    picture = hasServerPicture ? .remove : .unchanged
+                }
             }
+        } label: {
+            ProfileAvatar(data: picture.preview(current: current))
+                .overlay(alignment: .bottomTrailing) {
+                    Image(systemName: "pencil.circle.fill")
+                        .font(.title3)
+                        .symbolRenderingMode(.palette)
+                        .foregroundStyle(.background, .primary)
+                        .background(.background, in: Circle())
+                }
+                .frame(maxWidth: .infinity, alignment: .center)
+                .contentShape(Rectangle())
+        }
+        .accessibilityLabel("Change Profile Picture")
+        .accessibilityIdentifier("Profile.picture")
+        .disabled(isLoading)
+        #if os(tvOS)
+            .navigationDestination(isPresented: $choosing) { TVProfilePhotos(picture: $picture) }
         #else
-            Button { choosing = true } label: { label }
-                .photosPicker(isPresented: $choosing, selection: $selection, matching: .images)
-                .task(id: selection) {
-                    guard let selectedPhoto = selection else { return }
-                    isLoading = true
-                    errorMessage = nil
-                    defer {
-                        if !Task.isCancelled {
-                            isLoading = false
-                            selection = nil
-                        }
-                    }
-                    do {
-                        guard let data = try await selectedPhoto.loadTransferable(type: Data.self) else {
-                            throw GusError.server(String(localized: "This image could not be opened."))
-                        }
-                        let jpeg = try await Task.detached { try CollectionArtwork.jpeg(from: data, maxPixelSize: 1024) }.value
-                        try Task.checkCancellation()
-                        picture = jpeg
-                    } catch {
-                        if !Task.isCancelled {
-                            errorMessage = error.localizedDescription
-                        }
+            .photosPicker(isPresented: $choosing, selection: $selection, matching: .images)
+            .task(id: selection) {
+                guard let selectedPhoto = selection else { return }
+                isLoading = true
+                errorMessage = nil
+                defer {
+                    if !Task.isCancelled {
+                        isLoading = false
+                        selection = nil
                     }
                 }
+                do {
+                    guard let data = try await selectedPhoto.loadTransferable(type: Data.self) else {
+                        throw GusError.server(String(localized: "This image could not be opened."))
+                    }
+                    let jpeg = try await Task.detached { try CollectionArtwork.jpeg(from: data, maxPixelSize: 1024) }.value
+                    try Task.checkCancellation()
+                    picture = .replace(jpeg)
+                } catch {
+                    if !Task.isCancelled {
+                        errorMessage = error.localizedDescription
+                    }
+                }
+            }
+        #endif
+        #if !os(tvOS)
+            if isLoading {
+                ProgressView()
+            }
             if let errorMessage {
                 Text(errorMessage).foregroundStyle(.secondary)
             }
         #endif
-    }
-
-    private var label: some View {
-        HStack {
-            ProfileAvatar(data: picture ?? current)
-            Text("Change Profile Picture")
-            if isLoading {
-                ProgressView()
-            }
-        }
     }
 }
 
@@ -94,7 +107,7 @@ struct ProfilePicturePicker: View {
     private struct TVProfilePhotos: View {
         @Environment(SessionStore.self) private var session
         @Environment(\.dismiss) private var dismiss
-        @Binding var picture: Data?
+        @Binding var picture: ProfilePictureChange
         @State private var library: LibraryStore?
         @State private var selectedID: String?
         @State private var errorMessage: String?
@@ -150,7 +163,7 @@ struct ProfilePicturePicker: View {
                         parameters: .init(maxWidth: 1024, maxHeight: 1024, format: .jpg)
                     )).value
                     try Task.checkCancellation()
-                    picture = try CollectionArtwork.jpeg(from: jpeg, maxPixelSize: 1024)
+                    picture = try .replace(CollectionArtwork.jpeg(from: jpeg, maxPixelSize: 1024))
                     dismiss()
                 } catch {
                     if !Task.isCancelled {

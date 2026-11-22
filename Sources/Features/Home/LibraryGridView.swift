@@ -3,8 +3,7 @@ import SwiftUI
 struct LibraryGridView: View {
     @Environment(RootNavigationState.self) private var navigationState
     @Environment(SessionStore.self) private var session
-    @AppStorage(ContentRatingGate.limitDefaultsKey) private var ratingLimit = ContentRatingGate.Limit.off.rawValue
-    @AppStorage(ContentRatingGate.hideUnratedDefaultsKey) private var hideUnrated = false
+    @StoredContentPolicy private var contentPolicy
     let scope: LibraryGridScope
     private var searchResults: RelatedSearchResults?
     @State private var localStore: LibraryStore?
@@ -90,7 +89,7 @@ struct LibraryGridView: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 24) {
+            VStack(alignment: .leading, spacing: ContentSpacing.section) {
                 #if os(tvOS)
                     if searchResults == nil {
                         HStack {
@@ -175,7 +174,7 @@ struct LibraryGridView: View {
                 .gusIPhoneOrIPadOnly()
             }
         }
-        .task(id: effectiveScope.storeIdentity + ratingLimit + String(hideUnrated)) {
+        .task(id: effectiveScope.storeIdentity + contentPolicy.revision) {
             let pages = navigationState.libraryStore(for: effectiveScope, session: session, searchResults: searchResults)
             if searchResults == nil {
                 localStore = pages
@@ -232,7 +231,7 @@ struct LibraryGridView: View {
     private func musicContent(_ store: LibraryStore) -> some View {
         let albums = store.items.filter { $0.type == .musicAlbum }
         let artists = store.items.filter { $0.type == .musicArtist }
-        return VStack(alignment: .leading, spacing: 24) {
+        return VStack(alignment: .leading, spacing: ContentSpacing.section) {
             AdaptiveStack(horizontalMinimumWidth: 360 + 32 + 240, horizontalAlignment: .top, horizontalSpacing: 32, verticalSpacing: 24, prefersVertical: !usesMusicColumns || artists.isEmpty) { horizontal in
                 musicAlbums(albums, store: store)
                     .frame(minWidth: horizontal ? 360 : nil, maxWidth: .infinity, alignment: .leading)
@@ -264,7 +263,7 @@ struct LibraryGridView: View {
     }
 
     private func musicAlbums(_ albums: [MediaItem], store: LibraryStore) -> some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: ContentSpacing.card) {
             if usesMusicColumns {
                 Text("Albums").font(.title3.bold()).accessibilityAddTraits(.isHeader)
             }

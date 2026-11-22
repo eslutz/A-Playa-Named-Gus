@@ -73,6 +73,29 @@ The editable Sketch updates for [issue #78](https://github.com/eslutz/A-Playa-Na
 
 Use the user-supplied Home, search and Settings screenshots as before-state references. For fresh candidate captures, use the behaviors exercised by `testPlaybackHelpExplainsEachSettingWithoutChangingIt`, `testCloudForYouInvitationAndLibraryIntelligenceSettings`, and `testForYouAppleTVSyncConsentRequiresAnExplicitAction`. Use the blank placeholder reference for card geometry and native platform fills for each appearance.
 
+## Build 55 spacing and grouping handoff
+
+Use the same viewport, appearance, text size and fixture on each side of a
+comparison. Start with the numbered build 55 iPhone screenshots. Update the
+paired Light and Dark frames after checking their IDs in the private Sketch
+documents. The names below are from the tracked snapshots. The editable
+changes and candidate comparison captures are pending.
+
+For app-owned iPhone layouts, group captions 4 pt apart, related elements
+8 pt apart, cards and section headings 12 pt from their content, and distinct
+sections 24 pt apart. Apply this to browsing, details, editors, onboarding
+and app-owned player controls. Keep native form rows, toolbar controls and
+AVKit controls at their system sizes. Preserve 44 pt iPhone touch targets and
+let text wrap. Use the wider component metrics for TV focus and spatial input.
+
+| Reference in Sketch | What to compare in both appearances |
+| --- | --- |
+| Shared Library, **Gus / Library / Episode card / Light**, **Gus / Cast card / Light**, **Gus / Cast & Crew / Dark** | Compare one-, two- and three-line episode titles, omitted summaries and long credited names. Start each summary directly under its title. Align cast photos, names and roles. Show the closed season picker, its open checked menu and the accessible layout. |
+| iPhone, **Home / Ready** and **Search / Results** | Put square audiobook and tall poster artwork on the same bottom edge. Check spacing and caption alignment on library, Discover and collection/playlist rows. Include an optional progress overlay on the series artwork. |
+| iPhone, **Recent Searches**, **Clear Search History** and **Downloads / Browse** | Compare the native search field with the keyboard open and closed, populated and empty filters, recent-query actions and the Downloads overflow menu. Rotate each state and compare the selected destination and content position. |
+| iPhone, **Settings / Account and Playback** | Group the avatar and edit badge as a single control. Show both new password fields, the signed-in user's Quick Connect entry and the bounded App Events preview leading to event/report details. Check the theme on real controls in both appearances and Increase Contrast. |
+| iPadOS, macOS, tvOS and visionOS device documents | Compare equivalent shelves, detail sections and search at the device's normal reading distance. Check Dynamic Type, narrow windows, focus movement and wide layouts in the running app. For watchOS, verify the compact layout directly in the companion. |
+
 ## State patterns and validation
 
 Use representative states with paired appearances, not an exhaustive set of

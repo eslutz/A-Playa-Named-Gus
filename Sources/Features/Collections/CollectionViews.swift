@@ -28,7 +28,7 @@ struct CollectionsView: View {
             $0.item.displayTitle.localizedStandardCompare($1.item.displayTitle) == .orderedAscending
         }
         ScrollView {
-            VStack(alignment: .leading, spacing: 16) {
+            VStack(alignment: .leading, spacing: ContentSpacing.card) {
                 Picker("Format", selection: $format) {
                     ForEach(CollectionFormat.allCases, id: \.self) { Text($0.title).tag($0) }
                 }
@@ -78,12 +78,11 @@ struct CollectionsView: View {
 
 struct CollectionLink: View {
     @Environment(SessionStore.self) private var session
-    @AppStorage(ContentRatingGate.limitDefaultsKey) private var limit = ContentRatingGate.Limit.off
-    @AppStorage(ContentRatingGate.hideUnratedDefaultsKey) private var hideUnrated = false
+    @StoredContentPolicy private var contentPolicy
     let collection: MediaCollection
     var format = CollectionFormat.all
     var body: some View {
-        let urls = collection.coverURLs(using: session.mediaProvider, limit: limit, hideUnrated: hideUnrated)
+        let urls = collection.coverURLs(using: session.mediaProvider, limit: contentPolicy.limit, hideUnrated: contentPolicy.hideUnrated, ageCeiling: contentPolicy.ageCeiling)
         NavigationLink(value: GusRoute.collection(.init(id: collection.id, scope: session.references.scope, format: format))) {
             PosterCard(title: collection.item.displayTitle, subtitle: String(localized: "Collection"), statusItem: collection.item, imageURL: urls.first, placeholderSymbol: "rectangle.stack", fallbackURLs: Array(urls.dropFirst()))
         }.posterNavigationStyle()
@@ -152,8 +151,7 @@ struct MediaCollectionDetailView: View {
     @Environment(RootNavigationState.self) private var root
     @Environment(SessionStore.self) private var session
     @Environment(\.dismiss) private var dismiss
-    @AppStorage(ContentRatingGate.limitDefaultsKey) private var limit = ContentRatingGate.Limit.off
-    @AppStorage(ContentRatingGate.hideUnratedDefaultsKey) private var hideUnrated = false
+    @StoredContentPolicy private var contentPolicy
     let id: String
     var format = CollectionFormat.all
     @State private var sort = CollectionSort.serverDefault
@@ -173,7 +171,7 @@ struct MediaCollectionDetailView: View {
     var body: some View {
         ArtworkDetailPage(detailKey: "detail:" + id) {
             if let collection {
-                let urls = collection.coverURLs(using: session.mediaProvider, limit: limit, hideUnrated: hideUnrated)
+                let urls = collection.coverURLs(using: session.mediaProvider, limit: contentPolicy.limit, hideUnrated: contentPolicy.hideUnrated, ageCeiling: contentPolicy.ageCeiling)
                 DetailCoverHeader(maximumCoverWidth: artworkWidth) {
                     ArtworkTile(url: urls.first, contentMode: .fit, placeholderSymbol: "rectangle.stack", fallbackURLs: Array(urls.dropFirst()))
 

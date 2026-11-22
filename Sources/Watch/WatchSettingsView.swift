@@ -8,6 +8,7 @@ struct WatchSettingsView: View {
     @Environment(SessionStore.self) private var session
 
     @State private var connectionState: ConnectionState = .checking
+    @AppStorage(MediaItem.seriesProgressKey) private var showSeriesProgress = false
     @State private var rememberPlaybackTracks = false
 
     private enum ConnectionState {
@@ -37,6 +38,10 @@ struct WatchSettingsView: View {
                             .labelStyle(.titleAndIcon)
                     }
                 }
+            }
+
+            Section("Appearance") {
+                Toggle("Show Series Progress", isOn: $showSeriesProgress)
             }
 
             Section {

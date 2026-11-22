@@ -252,7 +252,7 @@ struct VideoPlaylistDetailView: View {
             PlaylistCoverArtwork(playlist: list.coverItem, entries: list.entries.map(\.item), maxWidth: 720, contentMode: .fit)
                 .clipShape(RoundedRectangle(cornerRadius: 12))
         } summary: {
-            VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: ContentSpacing.card) {
                 Text(playlist.name)
                     .font(.largeTitle.bold())
                     .lineLimit(nil)
@@ -276,7 +276,7 @@ struct VideoPlaylistDetailView: View {
     private func playbackSummary(_ playlist: VideoPlaylist) -> some View {
         let selection = playlist.playbackAction
         let isVideo = !playlist.entries.isEmpty && playlist.entries.allSatisfy { [.movie, .episode, .video].contains($0.reference.item.type) }
-        return VStack(alignment: .leading, spacing: 12) {
+        return VStack(alignment: .leading, spacing: ContentSpacing.card) {
             if selection.isUnavailable {
                 Label("Resume Entry Unavailable", systemImage: "exclamationmark.triangle")
                 Text("Choose an entry to play from, or start this playlist again.").foregroundStyle(.secondary)
@@ -337,7 +337,7 @@ struct VideoPlaylistDetailView: View {
         let admitted = ContentRatingGate.admitsStored(entry.reference.item)
         let isPlayable = [.movie, .episode, .video].contains(entry.reference.item.type) || entry.reference.item.isAudioPlayable
         let title = admitted ? entry.reference.item.displayTitle : String(localized: "Restricted Content")
-        return HStack(spacing: 16) {
+        return HStack(spacing: ContentSpacing.card) {
             Text("\(index + 1)").monospacedDigit().frame(width: max(28, CGFloat(String(max(playlist.entries.count, 1)).count) * numberDigitWidth), alignment: .trailing).foregroundStyle(.secondary)
             entryContent(entry, admitted: admitted, isPlayable: isPlayable)
                 .mediaItemContextMenu(item: admitted ? entry.reference.item : nil, groupName: playlist.name, canRemove: canEdit && !mutating, remove: { remove(entry) }) {
@@ -412,8 +412,7 @@ struct VideoPlaylistDetailView: View {
 
 struct PlaylistCoverArtwork: View {
     @Environment(SessionStore.self) private var session
-    @AppStorage(ContentRatingGate.limitDefaultsKey) private var limit = ContentRatingGate.Limit.off
-    @AppStorage(ContentRatingGate.hideUnratedDefaultsKey) private var hideUnrated = false
+    @StoredContentPolicy private var contentPolicy
     let playlist: MediaItem
     let entries: [MediaItem]
     let maxWidth: Int
@@ -421,7 +420,7 @@ struct PlaylistCoverArtwork: View {
     var contentMode: ContentMode = .fill
 
     var body: some View {
-        let items = ContentRatingGate.playlistCoverItems(playlist: playlist, entries: entries, limit: limit, hideUnrated: hideUnrated)
+        let items = ContentRatingGate.playlistCoverItems(playlist: playlist, entries: entries, limit: contentPolicy.limit, hideUnrated: contentPolicy.hideUnrated, ageCeiling: contentPolicy.ageCeiling)
         let urls = items.flatMap { session.mediaProvider.artworkURLs(for: $0, request: .init(role: .square, maxWidth: maxWidth)) }
         ArtworkTile(url: urls.first, aspectRatio: aspectRatio, contentMode: contentMode, placeholderSymbol: "list.and.film", fallbackURLs: Array(urls.dropFirst()))
             .accessibilityHidden(true)

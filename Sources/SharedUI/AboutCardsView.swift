@@ -7,7 +7,7 @@ struct AboutCardsView: View {
     let posterURL: URL?
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: ContentSpacing.card) {
             Text("About")
                 .font(.title2.bold())
                 .accessibilityAddTraits(.isHeader)

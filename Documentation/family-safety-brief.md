@@ -16,9 +16,8 @@ exact ages, and no per-child identity data.
    - UK (BBFC), Germany (FSK), Australia (ACB) / New Zealand (OFLC), Canada,
    - country-prefixed forms Jellyfin emits (`DE-16`, `GB-12A`, `US-PG-13`),
    - bare minimum-age ratings (`6`, `16`, `16+`) by age bracket.
-   Explicit "Unrated/Not Rated/NR" strings are treated as *missing* ratings and follow
-   the separate **Hide Unrated Media** toggle (strict households opt in), never as
-   adults-only.
+   The manual Hide Unrated Media preference applies when a rating limit is active.
+   Sharing a minor range always hides missing, unknown and explicitly unrated media.
 2. **Enforcement at every layer.** The limit filters Home rails (resume/next-up/latest,
    including locally pinned Up Next items), library grids, search results, similar/
    special-features rails, Live TV recordings, and CarPlay lists — and, independently,
@@ -26,15 +25,27 @@ exact ages, and no per-child identity data.
    reached by deep link, stale navigation, or a downloaded record shows a clear
    "Restricted Content" explanation instead of content. The explanation names the
    setting so a parent understands *why* the item is unavailable.
-3. **Navigation containers stay visible** (libraries, folders, music containers,
-   photos) so the app remains navigable under any limit.
-4. **Age-aware defaults via Declared Age Range (iOS 26+ / macOS 26+).** Settings →
-   Content Restrictions offers *Set from Age Range* where Apple's `DeclaredAgeRange`
-   framework exists. It requests an age **range** (gates 13/16/18) through the system
-   sheet; Gus receives at most "under 13 / 13–15 / 16–17 / 18+" and maps it to a
-   suggested limit (All Ages / Teen / Mature / no change). Declining shares nothing and
-   changes nothing. Gus persists only the resulting limit selection — the range itself
-   is discarded after mapping.
+3. **Navigation containers** such as libraries, folders, playlists and albums remain
+   visible under a rating ceiling. Unrated photos follow the shared minor ceiling.
+4. **Declared Age Range on iPhone, iPad and Mac.** After Jellyfin sign-in, Gus checks
+   Apple's regional requirement. Where sharing is optional it offers Check Age Range
+   or Not Now once per server account on this device, including after upgrading.
+   Settings → Content Restrictions → Check Age Range remains available. When Apple
+   requires the range, Gus requests it before showing media. A failed or declined
+   required request offers retry. A device with a previously resolved policy can
+   continue offline using its last known requirement and limit. CarPlay and Siri also
+   check the requirement when they restore a session before a Gus window opens.
+   When sharing is required, open Gus to complete Apple's prompt. CarPlay refreshes
+   its library when the device policy changes.
+
+Gus requests thresholds 13, 16 and 18. Apple can return regional thresholds. Gus
+uses the lower bound conservatively and stores a separate device-wide rating ceiling.
+The effective limit is the stricter of the manual preference and this ceiling.
+Only a fresh shared range can relax the ceiling. Settings permits stricter limits.
+A fresh adult range clears the ceiling and preserves the household's manual choices.
+Switching Jellyfin accounts, declining a request or losing connectivity preserves a
+previous ceiling. To change the declaration, use Apple's Age Range for Apps settings,
+then check again in Gus. [Apple's Declared Age Range guidance](https://developer.apple.com/documentation/declaredagerange/requesting-people-share-their-age-range-with-your-app)
 
 ## Jellyfin rating-field mapping
 
@@ -45,12 +56,11 @@ Server-side enforcement remains the stronger control: Jellyfin user accounts sup
 `MaxParentalRating` and library-level access; the Settings footer points parents to
 pair the in-app limit with Jellyfin user permissions and Screen Time app limits.
 
-## Behavior for unrated media
-
-Missing or explicitly-unrated items are admitted by default and hidden when **Hide
-Unrated Media** is on. Rationale: self-hosted libraries are full of personal,
-home-video, and niche content that will never carry a rating; blocking it by default
-would make the feature unusable, while the strict toggle serves households that need it.
+Gus enforces the device ceiling in browsing, Seerr, detail links and online and
+offline playback. A rating certificate with an explicit minimum such as GB-18
+requires the corresponding minimum age in addition to the broad tier. Set Jellyfin
+parental permissions for restrictions that must follow the account into other apps,
+devices or a fresh installation.
 
 ## Platform availability & entitlement/review requirements
 
@@ -61,17 +71,12 @@ would make the feature unusable, while the strict toggle serves households that 
 | ManagedSettings read of device media-rating restrictions | iOS/iPadOS | Family Controls (`com.apple.developer.family-controls`, distribution requires Apple approval) | **follow-up only** — per the roadmap, pursued only if Gus needs Screen-Time-style controls beyond media-rating filtering |
 | PermissionKit / significant-change parental consent | iOS 26.4+ | TBD | evaluated; not needed while Gus collects nothing and ships no communication features |
 
-App Review notes: the gate is a *parental convenience*, not an age-verification claim.
-Gus must never describe it as preventing access (a device passcode/Screen Time lock on
-Settings is the enforcement layer Apple provides).
+## Privacy and data retention
 
-## Privacy & data retention
-
-- No birthdates, no exact ages, no age ranges at rest. The Declared Age Range response
-  is consumed in-memory and only the chosen rating tier persists (`UserDefaults`).
-- The rating limit and hide-unrated flag are device-local preferences; nothing syncs to
-  the server or the developer.
-- Privacy manifest/labels are unaffected (no new data types collected).
+Gus processes the range in memory. On device it retains the derived ceiling, manual
+preferences, the regional requirement status and whether each account has seen the
+optional offer. Age bounds, declaration source and birthdate are never persisted.
+Gus does not send the result to Jellyfin, Seerr, iCloud or the developer.
 
 ## App Store Connect age rating impact
 
@@ -84,17 +89,17 @@ answers and the parental-controls disclosure live in
 
 | Scenario | Expected |
 |---|---|
-| Child (declared <13) uses Set from Age Range | Limit becomes All Ages; restricted items disappear from rails/search; detail/playback of a restricted item shows the Restricted Content explanation |
-| Teen (13–15) declared | Limit becomes Teen; PG-13/TV-14/12A/FSK-12 admitted; R/TV-MA/FSK-16 gated |
-| 16–17 declared | Limit becomes Mature; NC-17/X-tier still gated |
-| Adult (18+) declared | Limit unchanged |
-| Declined sharing | No change; no error; nothing stored |
-| OS/platform without DeclaredAgeRange | Button absent; manual picker only |
-| Service unavailable (missing profile support, unsupported OS, or runtime denial) | Request fails gracefully; status message; manual picker unaffected |
-| Unrated item, Hide Unrated off/on | Admitted / hidden+gated |
-| International ratings (BBFC/FSK/ACB/prefixed/bare-age) | Mapped per `ContentRatingGateTests` |
-| Deep link / downloaded record to restricted item | Detail and player both gate with explanation |
-| Containers under strictest limit | Libraries/folders/albums/photos remain navigable |
+| Under 13 | All Ages ceiling, unrated hidden |
+| 13–15 | Teen ceiling admits PG-13, TV-14 and FSK-12. R and GB-15 are hidden |
+| 16–17 | Mature ceiling admits TV-MA and FSK-16. GB-18, NC-17 and unrated are hidden |
+| Adult shared after a minor | Removes the device ceiling and restores the household's manual choices |
+| Optional Not Now or decline | Records the offer for that account. Existing ceiling still applies |
+| Required request fails or is declined | Media access remains gated. Retry and sign-out are available |
+| First eligibility lookup unavailable | Retry eligibility before browsing. Existing resolved policy remains available on subsequent offline launches |
+| Switch Jellyfin accounts | Device ceiling persists. A new account gets its own optional offer |
+| OS without Declared Age Range | Manual picker available in Settings on platforms with Settings |
+| Unrated cover member, search result, deep link or download | Hidden or blocked under a minor ceiling |
+| Try a more permissive manual limit | Picker exposes only choices at or below the device ceiling |
 
 ## Explicit non-goals
 

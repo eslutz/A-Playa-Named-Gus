@@ -2,6 +2,27 @@ import Foundation
 import JellyfinAPI
 import Observation
 
+enum ProfilePictureChange: Equatable {
+    case unchanged
+    case replace(Data)
+    case remove
+
+    func preview(current: Data?) -> Data? {
+        switch self {
+        case .unchanged: current
+        case let .replace(data): data
+        case .remove: nil
+        }
+    }
+}
+
+enum QuickConnectAuthorizationResult: Equatable {
+    case authorized
+    case rejected
+    case unavailable
+    case unconfirmed
+}
+
 /// Authenticated, session-scoped profile state. Secrets never enter image URLs.
 @MainActor @Observable
 final class UserProfileStore {
@@ -18,6 +39,8 @@ final class UserProfileStore {
     private(set) var needsSaveReadback = false
     private(set) var didSavePicture = false
     private var isActive = true
+    private(set) var quickConnectEnabled = false
+    private(set) var isAuthorizingQuickConnect = false
 
     init(client: JellyfinClient, userID: String, verificationSessionConfiguration: URLSessionConfiguration = .ephemeral) {
         self.verificationSessionConfiguration = verificationSessionConfiguration
@@ -28,6 +51,41 @@ final class UserProfileStore {
     func invalidate() {
         isActive = false
         saveOutcome = nil
+    }
+
+    func refreshQuickConnectAvailability() async {
+        guard isActive else { return }
+        let enabled: Bool
+        do {
+            let result = try await client.send(Paths.getQuickConnectEnabled)
+            enabled = try QuickConnectAvailability.isEnabled(result.value)
+        } catch {
+            enabled = false
+        }
+        guard isActive, !Task.isCancelled else { return }
+        quickConnectEnabled = enabled
+    }
+
+    static func validQuickConnectCode(_ code: String) -> Bool {
+        code.utf8.count == 6 && code.utf8.allSatisfy { (48 ... 57).contains($0) }
+    }
+
+    func authorizeQuickConnect(code: String) async -> QuickConnectAuthorizationResult? {
+        guard isActive, quickConnectEnabled, !isAuthorizingQuickConnect, Self.validQuickConnectCode(code) else { return nil }
+        isAuthorizingQuickConnect = true
+        defer { isAuthorizingQuickConnect = false }
+        do {
+            let reply = try await client.send(Paths.authorizeQuickConnect(code: code, userID: userID))
+            guard isActive, !Task.isCancelled else { return nil }
+            return try JSONDecoder().decode(Bool.self, from: reply.value) ? .authorized : .rejected
+        } catch {
+            guard isActive, !Task.isCancelled else { return nil }
+            switch GusError(from: error) {
+            case .notFound: return .rejected
+            case .unauthorized, .forbidden: return .unavailable
+            default: return .unconfirmed
+            }
+        }
     }
 
     func load() async {
@@ -77,7 +135,7 @@ final class UserProfileStore {
         subtitleLanguage: String,
         currentPassword: String,
         newPassword: String = "",
-        picture: Data? = nil
+        picture: ProfilePictureChange = .unchanged
     ) async -> ActionOutcome? {
         let name = name.trimmingCharacters(in: .whitespacesAndNewlines)
         guard isActive, !isSaving, !isLoading, !needsSaveReadback, !name.isEmpty else { return nil }
@@ -102,7 +160,7 @@ final class UserProfileStore {
             }
             let preferencesChanged = (current.configuration?.audioLanguagePreference ?? "") != audio
                 || (current.configuration?.subtitleLanguagePreference ?? "") != subtitles
-            let profileChanged = username != name || preferencesChanged || picture != nil
+            let profileChanged = username != name || preferencesChanged || picture != .unchanged
             if profileChanged || newPassword.isEmpty {
                 try await verifyPassword(currentPassword, username: username)
                 guard isActive, !Task.isCancelled else { return cancelSave(afterTransmission: false) }
@@ -123,7 +181,16 @@ final class UserProfileStore {
                     try await client.send(Paths.updateUserConfiguration(userID: userID, configuration))
                     guard isActive, !Task.isCancelled else { return cancelSave(afterTransmission: true) }
                 }
-                if let picture {
+                switch picture {
+                case .unchanged:
+                    break
+                case .remove:
+                    if current.primaryImageTag != nil {
+                        transmitted = true
+                        try await client.send(Paths.deleteUserImage(userID: userID))
+                        guard isActive, !Task.isCancelled else { return cancelSave(afterTransmission: true) }
+                    }
+                case let .replace(picture):
                     // Jellyfin's image controller decodes a base64 body with an image MIME type.
                     let body = picture.base64EncodedData()
                     let configure: @Sendable (inout URLRequest) -> Void = { request in
@@ -137,8 +204,11 @@ final class UserProfileStore {
                 saveOutcome = .accepted
                 await refresh()
                 guard isActive, !Task.isCancelled else { return cancelSave(afterTransmission: true) }
-                let pictureConfirmed = picture == nil || (profile?.primaryImageTag != nil
-                    && (profile?.primaryImageTag != current.primaryImageTag || imageData == picture))
+                let pictureConfirmed = switch picture {
+                case .unchanged: true
+                case .remove: profile?.primaryImageTag == nil
+                case let .replace(data): profile?.primaryImageTag != nil && (profile?.primaryImageTag != current.primaryImageTag || imageData == data)
+                }
                 guard errorMessage == nil, profile?.name == name,
                       (profile?.configuration?.audioLanguagePreference ?? "") == audio,
                       (profile?.configuration?.subtitleLanguagePreference ?? "") == subtitles, pictureConfirmed
@@ -149,7 +219,7 @@ final class UserProfileStore {
                     return saveOutcome
                 }
                 profileEditsConfirmed = true
-                didSavePicture = picture != nil
+                didSavePicture = picture != .unchanged
             }
             if !newPassword.isEmpty {
                 // Explicitly identify our own user so Jellyfin checks CurrentPw even for admins.

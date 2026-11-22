@@ -230,8 +230,12 @@ final class FakeMediaProviderSession: MediaProviderSession {
         nil
     }
 
+    private(set) var backdropRequestIDs = Set<String>()
     func backdropImageURL(for item: MediaItem, maxWidth: Int) -> URL? {
-        nil
+        if let id = item.id {
+            backdropRequestIDs.insert(id)
+        }
+        return nil
     }
 
     func personImageURL(for person: MediaPerson, maxWidth: Int) -> URL? {

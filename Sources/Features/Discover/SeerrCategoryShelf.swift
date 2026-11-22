@@ -54,7 +54,7 @@ struct SeerrCategoryShelf: View {
     let store: SeerrStore
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: ContentSpacing.card) {
             HStack {
                 Text(directory.kind.title).font(.title2.bold()).accessibilityAddTraits(.isHeader)
                 Spacer()
@@ -104,7 +104,7 @@ struct SeerrCategoryGrid: View {
             retryAction: { Task { await directory.load(store: store, refresh: true) } }
         ) {
             ScrollView {
-                LazyVGrid(columns: PosterGrid.columns, alignment: .leading, spacing: 24) {
+                LazyVGrid(columns: PosterGrid.columns, alignment: .leading, spacing: PosterGrid.spacing) {
                     ForEach(directory.categories) { category in
                         SeerrCategoryLink(category: category, kind: directory.kind, store: store)
                     }
@@ -125,13 +125,13 @@ private struct SeerrCategoryLink: View {
     let category: SeerrCategory
     let kind: SeerrCategoryKind
     let store: SeerrStore
-    @AppStorage(ContentRatingGate.limitDefaultsKey) private var contentLimitRawValue = ContentRatingGate.Limit.off.rawValue
+    @StoredContentPolicy private var contentPolicy
 
     var body: some View {
         NavigationLink(value: store.navigationRoute(.catalog(name: category.name, source: .category(kind, category.id)))) {
-            VStack(alignment: .leading, spacing: 6) {
+            VStack(alignment: .leading, spacing: ContentSpacing.caption) {
                 // Seerr's genre backdrops have no associated title IDs or ratings.
-                let backdrop = contentLimitRawValue == ContentRatingGate.Limit.off.rawValue ? category.backdrops?.first : nil
+                let backdrop = contentPolicy.limit == .off ? category.backdrops?.first : nil
                 ArtworkTile(
                     url: SeerrArtwork.url(path: category.logoPath, width: "w500") ?? SeerrArtwork.url(path: backdrop, width: "w780"),
                     aspectRatio: 16.0 / 9.0,

@@ -162,11 +162,10 @@ private struct SeerrRequestHistoryRow: View {
     @Environment(SeerrStore.self) private var store
     let request: SeerrRequest
     @State private var title: SeerrTitle?
-    @AppStorage(ContentRatingGate.limitDefaultsKey) private var restriction = "off"
-    @AppStorage(ContentRatingGate.hideUnratedDefaultsKey) private var hideUnrated = false
+    @StoredContentPolicy private var contentPolicy
 
     private var accessRevision: String {
-        "\(store.revision):\(restriction):\(hideUnrated)"
+        "\(store.revision):\(contentPolicy.revision)"
     }
 
     var body: some View {
@@ -197,9 +196,9 @@ private struct SeerrRequestHistoryRow: View {
     }
 
     private var rowContent: some View {
-        HStack(alignment: .center, spacing: 24) {
+        HStack(alignment: .center, spacing: ContentSpacing.card) {
             SeerrArtworkView(path: title?.posterPath).gusTVRequestArtwork()
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: ContentSpacing.caption) {
                 Text(title?.displayTitle ?? String(localized: "Request #\(request.id)")).font(.headline)
                 Text("Request: \(request.status.seerrRequestDescription)")
                 if let availability = request.seerrMediaDescription {
@@ -236,11 +235,10 @@ private struct SeerrRequestDetailView: View {
     @State private var loadID = UUID()
     @State private var mutationID = UUID()
     @State private var didMutate = false
-    @AppStorage(ContentRatingGate.limitDefaultsKey) private var restriction = "off"
-    @AppStorage(ContentRatingGate.hideUnratedDefaultsKey) private var hideUnrated = false
+    @StoredContentPolicy private var contentPolicy
 
     private var accessRevision: String {
-        "\(store.revision):\(restriction):\(hideUnrated)"
+        "\(store.revision):\(contentPolicy.revision)"
     }
 
     private var mayRead: Bool {
@@ -306,7 +304,7 @@ private struct SeerrRequestDetailView: View {
                 ProgressView(mutation.progressTitle)
             }
             if wasRemoved {
-                VStack(alignment: .leading, spacing: 16) {
+                VStack(alignment: .leading, spacing: ContentSpacing.card) {
                     Label("Request Removed", systemImage: "checkmark.circle").font(.title3.bold())
                     Text("This request is no longer in Seerr.").foregroundStyle(.secondary)
                     Button("Back to My Requests") { dismiss() }

@@ -56,15 +56,35 @@ struct ThemeAccent: Equatable {
     }
 
     /// Preserve hue while adjusting control/link tint for contrast on the native canvas.
-    func readable(onDark: Bool) -> ThemeAccent {
+    func readable(onDark: Bool, increasedContrast: Bool = false) -> ThemeAccent {
         var result = self
         for _ in 0 ..< 100 {
             let contrast = onDark ? (result.luminance + 0.05) / 0.09 : 0.95 / (result.luminance + 0.05)
-            if contrast >= 4.5 {
+            if contrast >= (increasedContrast ? 7 : 4.5) {
                 return result
             }
             let target = onDark ? 1.0 : 0.0
             result = ThemeAccent(red: result.red + (target - result.red) * 0.05, green: result.green + (target - result.green) * 0.05, blue: result.blue + (target - result.blue) * 0.05)
+        }
+        return result
+    }
+
+    /// Native iOS switches use a white thumb. Keep both the thumb and the track visible.
+    func switchTrack(onDark: Bool) -> ThemeAccent {
+        let minimumLuminance = onDark ? 3 * (0.024 + 0.05) - 0.05 : 0
+        let maximumLuminance = onDark ? 1.05 / 3 - 0.05 : (0.90 + 0.05) / 3 - 0.05
+        var result = self
+        for _ in 0 ..< 100 {
+            let value = result.luminance
+            if (minimumLuminance ... maximumLuminance).contains(value) {
+                break
+            }
+            let target = value < minimumLuminance ? 1.0 : 0.0
+            result = ThemeAccent(
+                red: result.red + (target - result.red) * 0.05,
+                green: result.green + (target - result.green) * 0.05,
+                blue: result.blue + (target - result.blue) * 0.05
+            )
         }
         return result
     }

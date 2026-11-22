@@ -218,7 +218,7 @@
             XCTAssertTrue(albums.isSelected)
 
             XCTAssertTrue(openDestination("Settings", app))
-            let profile = app.buttons["View and Edit Profile"].firstMatch
+            let profile = app.buttons["Settings.profile"].firstMatch
             XCTAssertTrue(profile.waitForExistence(timeout: 15))
             profile.tap()
             let username = app.textFields["Username"]
@@ -292,7 +292,7 @@
                     capture("next-up")
                 }
                 if route == "settings" {
-                    if let profile = button("View and Edit Profile", app) {
+                    if let profile = button("Settings.profile", app) {
                         profile.tap()
                         capture("profile")
                         dismissSheet(app)
@@ -359,6 +359,8 @@
         }
 
         func testProfileCancelAndSave() async throws {
+            // Let failures unwind this async test before XCTest starts clean-up.
+            continueAfterFailure = true
             let testName = "gus-profile-" + UUID().uuidString.prefix(8)
             let password = "profile-fixture"
             var create = try URLRequest(url: XCTUnwrap(URL(string: "http://127.0.0.1:8096/Users/New")))
@@ -370,24 +372,32 @@
             let user = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
             let id = try XCTUnwrap(user["Id"] as? String)
             let userURL = try XCTUnwrap(URL(string: "http://127.0.0.1:8096/Users/" + id))
-            let token = demoToken
-            addTeardownBlock {
-                var remove = URLRequest(url: userURL)
-                remove.httpMethod = "DELETE"
-                remove.setValue(token, forHTTPHeaderField: "X-Emby-Token")
+            var remove = URLRequest(url: userURL, timeoutInterval: 15)
+            remove.httpMethod = "DELETE"
+            remove.setValue(demoToken, forHTTPHeaderField: "X-Emby-Token")
+            addTeardownBlock { @Sendable [remove] in
                 let (_, response) = try await URLSession.shared.data(for: remove)
                 XCTAssertEqual((response as? HTTPURLResponse)?.statusCode, 204)
             }
 
-            let app = launch("settings", environment: ["GUS_DEMO_USERNAME": testName, "GUS_DEMO_PASSWORD": password])
-            let profile = app.buttons["View and Edit Profile"].firstMatch
-            XCTAssertTrue(profile.waitForExistence(timeout: 30)); profile.tap()
+            let app = launch("settings", keywordOnly: true, environment: ["GUS_DEMO_USERNAME": testName, "GUS_DEMO_PASSWORD": password])
+            let profile = app.buttons["Settings.profile"].firstMatch
+            guard profile.waitForExistence(timeout: 30), profile.isHittable else {
+                XCTFail("The account row must be available to open the profile.")
+                return
+            }
+            profile.tap()
             let save = app.buttons["Profile.save"]
             let username = app.textFields["Username"]
-            XCTAssertTrue(username.waitForExistence(timeout: 15))
+            guard username.waitForExistence(timeout: 15) else {
+                XCTFail("The profile editor must present its username field.")
+                return
+            }
             let populated = NSPredicate(format: "value == %@ AND enabled == true", testName)
             await fulfillment(of: [XCTNSPredicateExpectation(predicate: populated, object: username)], timeout: 15)
-            XCTAssertTrue(app.buttons["Change Profile Picture"].exists)
+            XCTAssertTrue(app.buttons["Profile.picture"].exists)
+            XCTAssertTrue(app.secureTextFields["New Password"].exists)
+            XCTAssertTrue(app.secureTextFields["Confirm New Password"].exists)
             XCTAssertFalse(save.exists && save.isEnabled)
             capture("profile")
             username.tap(); username.typeText(" discard")
@@ -996,9 +1006,18 @@
             XCTAssertTrue(app.buttons["Playlist.addItems"].exists)
         }
 
+        private func openDownloadManager(_ app: XCUIApplication) {
+            let options = app.buttons["Downloads.options"].firstMatch
+            XCTAssertTrue(options.waitForExistence(timeout: 10))
+            options.tap()
+            let manage = app.buttons["Manage Downloads"].firstMatch
+            XCTAssertTrue(manage.waitForExistence(timeout: 5))
+            manage.tap()
+        }
+
         func testSettingsMenusAndDownloads() {
             let app = launch("settings")
-            XCTAssertTrue(app.buttons["View and Edit Profile"].waitForExistence(timeout: 30))
+            XCTAssertTrue(app.buttons["Settings.profile"].waitForExistence(timeout: 30))
             for (prefix, name) in [("Streaming Quality", "settings-quality"), ("Appearance", "settings-appearance"), ("Limit Content Ratings", "settings-rating")] {
                 for _ in 0 ..< 6 {
                     let target = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", prefix)).firstMatch
@@ -1013,10 +1032,8 @@
             }
             let downloads = launch("downloaded")
             XCTAssertTrue(waitForRoot(downloads))
-            if let manage = button("Manage Downloads", downloads) {
-                manage.tap()
-                capture("downloads-manager")
-            }
+            openDownloadManager(downloads)
+            capture("downloads-manager")
         }
 
         func testPhotoAndBookViewer() throws {
@@ -1165,8 +1182,7 @@
             let downloaded = launch("downloaded")
             XCTAssertTrue(waitForRoot(downloaded))
             capture("downloads-populated")
-            let manage = try XCTUnwrap(button("Manage Downloads", downloaded))
-            manage.tap()
+            openDownloadManager(downloaded)
             XCTAssertTrue(downloaded.buttons["Downloads.select"].waitForExistence(timeout: 10))
             XCTAssertFalse(downloaded.staticTexts["Soft Cap"].exists)
             XCTAssertFalse(downloaded.buttons["Downloads.deleteSelected"].exists)
@@ -1232,8 +1248,7 @@
                 XCTAssertTrue(large.sidebarToggle.waitForExistence(timeout: 5))
             }
             capture("downloads-browse-large-text")
-            let manage = large.buttons["Manage Downloads"].firstMatch
-            XCTAssertTrue(manage.waitForExistence(timeout: 10)); manage.tap()
+            openDownloadManager(large)
             let row = large.staticTexts[title].firstMatch
             for _ in 0 ..< 12 where !row.isHittable {
                 large.swipeUp()
@@ -1242,7 +1257,7 @@
             capture("downloads-manage-large-text")
             let normal = launch("downloaded")
             if createdHere {
-                normal.buttons["Manage Downloads"].firstMatch.tap()
+                openDownloadManager(normal)
                 normal.buttons["Downloads.select"].tap()
                 let select = normal.staticTexts[title].firstMatch
                 for _ in 0 ..< 8 where !select.isHittable {

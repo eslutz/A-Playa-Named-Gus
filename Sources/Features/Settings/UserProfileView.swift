@@ -10,7 +10,7 @@ struct UserProfileView: View {
     @State private var currentPassword = ""
     @State private var newPassword = ""
     @State private var confirmation = ""
-    @State private var picture: Data?
+    @State private var picture: ProfilePictureChange = .unchanged
     @State private var loadingPicture = false
     @State private var ready = false
     @State private var confirmingReload = false
@@ -56,8 +56,11 @@ struct UserProfileView: View {
 
     private var profileForm: some View {
         Form {
-            Section("Profile") {
-                ProfilePicturePicker(current: session.profile.imageData, picture: $picture, isLoading: $loadingPicture)
+            Section {
+                ProfilePicturePicker(
+                    current: session.profile.imageData, hasServerPicture: session.profile.profile?.primaryImageTag != nil,
+                    picture: $picture, isLoading: $loadingPicture
+                )
                 TextField("Username", text: $name).autocorrectionDisabled().gusAccountNameInput()
                 Text("Changing your username also changes the name you use to sign in to Jellyfin.").font(.footnote)
             }
@@ -66,12 +69,10 @@ struct UserProfileView: View {
                 languagePicker("Subtitle Language", selection: $subtitleLanguage)
             }
             Section {
-                SecureField("New Password", text: $newPassword).textContentType(.newPassword)
-                if !newPassword.isEmpty || !confirmation.isEmpty {
-                    SecureField("Confirm New Password", text: $confirmation).textContentType(.newPassword)
-                    if !confirmation.isEmpty, confirmation != newPassword {
-                        Text("The new passwords do not match.").font(.footnote)
-                    }
+                NewPasswordField(title: "New Password", value: $newPassword)
+                NewPasswordField(title: "Confirm New Password", value: $confirmation)
+                if !confirmation.isEmpty, confirmation != newPassword {
+                    Text("The new passwords do not match.").font(.footnote)
                 }
             } header: {
                 Text("Change Password")
@@ -87,6 +88,12 @@ struct UserProfileView: View {
                     Text("Leave Current Password blank to save changes or set your first password.")
                 } else {
                     Text("Enter your current Jellyfin password to save profile changes.")
+                }
+            }
+            if session.profile.quickConnectEnabled {
+                Section("Quick Connect") {
+                    NavigationLink("Authorize Another Device") { ProfileQuickConnectView() }
+                        .accessibilityIdentifier("Profile.quickConnect")
                 }
             }
             if let message = session.profile.errorMessage {
@@ -115,6 +122,7 @@ struct UserProfileView: View {
             #endif
         }
         .disabled(session.profile.isSaving || session.profile.isLoading)
+        .task { await session.profile.refreshQuickConnectAvailability() }
         .toolbar {
             #if os(iOS) || os(tvOS)
                 ToolbarItem(placement: .cancellationAction) {
@@ -150,7 +158,7 @@ struct UserProfileView: View {
         return name != (profile.name ?? session.user.name)
             || audioLanguage != (profile.configuration?.audioLanguagePreference ?? "")
             || subtitleLanguage != (profile.configuration?.subtitleLanguagePreference ?? "")
-            || !newPassword.isEmpty || !confirmation.isEmpty || picture != nil
+            || !newPassword.isEmpty || !confirmation.isEmpty || picture != .unchanged
     }
 
     private var canSave: Bool {
@@ -172,7 +180,7 @@ struct UserProfileView: View {
         )
         currentPassword = ""
         if session.profile.didSavePicture {
-            picture = nil
+            picture = .unchanged
         }
         app.synchronizeProfile(from: session)
         guard outcome == .confirmed else { return }
@@ -218,7 +226,98 @@ struct UserProfileView: View {
         currentPassword = ""
         newPassword = ""
         confirmation = ""
-        picture = nil
+        picture = .unchanged
         ready = true
+    }
+}
+
+private struct NewPasswordField: View {
+    private enum Input { case secure, visible }
+
+    let title: LocalizedStringKey
+    @Binding var value: String
+    @State private var revealed = false
+    @FocusState private var focused: Input?
+
+    var body: some View {
+        HStack {
+            Group {
+                if revealed {
+                    TextField(title, text: $value)
+                        .focused($focused, equals: .visible)
+                        .privacySensitive()
+                        .autocorrectionDisabled()
+                        .gusAccountNameInput()
+                } else {
+                    SecureField(title, text: $value)
+                        .focused($focused, equals: .secure)
+                }
+            }
+            .textContentType(.newPassword)
+            Button {
+                let wasEditing = focused != nil
+                revealed.toggle()
+                if wasEditing {
+                    focused = revealed ? .visible : .secure
+                }
+            } label: {
+                Label(revealed ? "Hide Password" : "Show Password", systemImage: revealed ? "eye.slash" : "eye")
+                    .labelStyle(.iconOnly)
+                    .frame(minWidth: 44, minHeight: 44)
+            }
+            .buttonStyle(.borderless)
+            .accessibilityHint(Text(title))
+        }
+    }
+}
+
+private struct ProfileQuickConnectView: View {
+    @Environment(SessionStore.self) private var session
+    @State private var code = ""
+    @State private var result: QuickConnectAuthorizationResult?
+    @State private var submission: Task<Void, Never>?
+
+    var body: some View {
+        Form {
+            Section {
+                TextField("Six-digit code", text: $code)
+                    .textContentType(.oneTimeCode)
+                    .autocorrectionDisabled()
+                    .privacySensitive()
+                #if os(iOS) || os(visionOS)
+                    .keyboardType(.numberPad)
+                #endif
+                    .disabled(session.profile.isAuthorizingQuickConnect)
+                    .onChange(of: code) { _, value in
+                        if !value.isEmpty {
+                            result = nil
+                        }
+                    }
+                Button("Authorize Device") {
+                    let submitted = code
+                    submission = Task {
+                        let reply = await session.profile.authorizeQuickConnect(code: submitted)
+                        guard let reply, !Task.isCancelled else { return }
+                        code = ""
+                        result = reply
+                    }
+                }
+                .disabled(!UserProfileStore.validQuickConnectCode(code) || session.profile.isAuthorizingQuickConnect)
+            } footer: {
+                Text("Enter the Quick Connect code shown on the device you want to sign in to this Jellyfin account.")
+            }
+            if session.profile.isAuthorizingQuickConnect {
+                ProgressView()
+            }
+            switch result {
+            case .authorized: Text("Device authorized.")
+            case .rejected: Text("That code is invalid or has expired. Get a new code on the other device.")
+            case .unavailable: Text("Quick Connect is unavailable for this account or server.")
+            case .unconfirmed: Text("Authorization could not be confirmed. Check the other device before trying again.")
+            case nil: EmptyView()
+            }
+        }
+        .navigationTitle("Quick Connect")
+        .onDisappear { submission?.cancel() }
     }
 }

@@ -110,20 +110,16 @@ adding Private Cloud Compute.
 
 ## Declared Age Range
 
-The family-safety "Set from Age Range" action (`Sources/Features/Settings/
-AgeRangeDefaults.swift`, OS 26+ only) uses Apple's DeclaredAgeRange framework, which
-requires the `com.apple.developer.declared-age-range` entitlement at runtime. The
-entitlement is wired for iOS/iPadOS and macOS; the code still self-disables if the runtime
-or provisioning profile does not make the service available. Settings shows a graceful
-status message while the manual rating picker keeps working. Scope and privacy rules:
-`Documentation/family-safety-brief.md`.
+The post-sign-in age range check and Settings → Content Restrictions → Check Age
+Range use Apple's DeclaredAgeRange framework on iPhone, iPad and Mac with the
+`com.apple.developer.declared-age-range` entitlement. OS 26.4 and later reports
+`requiredRegulatoryFeatures`; 26.2–26.3 exposes the earlier eligibility API. On
+26.0–26.1 the system request is offered without a regional eligibility preflight.
+See [family safety](../family-safety-brief.md) for offline behavior and privacy.
 
-Remaining validation:
-
-- [ ] **Verify on an iOS 26 / macOS 26 device** that Settings → Content Restrictions →
-  "Set from Age Range" presents the system sheet and maps the result to a limit
-  (simulators may not surface the system sheet). visionOS/tvOS/watchOS do not expose the
-  framework — the button is correctly absent there.
+Device acceptance should exercise Apple's optional, required, declined and error
+paths with provisioned accounts and sandbox age configurations. tvOS, visionOS
+and watchOS do not expose the system request.
 
 ## watchOS Companion
 

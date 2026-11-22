@@ -1,6 +1,9 @@
 import Foundation
 @testable import Gus
 import Testing
+#if os(iOS) || os(tvOS)
+    import UIKit
+#endif
 
 struct ThemeAndLatestMediaTests {
     @Test func opaqueAccentStorageRejectsMalformedValues() {
@@ -20,6 +23,52 @@ struct ThemeAndLatestMediaTests {
             #expect(1.05 / (accent.readable(onDark: false).luminance + 0.05) >= 4.5)
             #expect((accent.readable(onDark: true).luminance + 0.05) / 0.05 >= 4.5)
         }
+    }
+
+    #if os(iOS) || os(tvOS)
+        @Test @MainActor func appleProminentLabelContrastTracksSystemBlue() throws {
+            for appearance in [UIUserInterfaceStyle.light, .dark] {
+                for contrast in [UIAccessibilityContrast.normal, .high] {
+                    let traits = UITraitCollection {
+                        $0.userInterfaceStyle = appearance
+                        $0.accessibilityContrast = contrast
+                    }
+                    let fill = UIColor.systemBlue.resolvedColor(with: traits)
+                    let label = ThemeAccent.appleActionForeground.resolvedColor(with: traits)
+                    var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0
+                    try #require(fill.getRed(&r, green: &g, blue: &b, alpha: nil))
+                    let luminance = ThemeAccent(red: Double(r), green: Double(g), blue: Double(b)).luminance
+                    let whiteContrast = 1.05 / (luminance + 0.05)
+                    #expect(label.isEqual(whiteContrast >= 4.5 ? UIColor.white : UIColor.black))
+                    #expect((label.isEqual(UIColor.white) ? whiteContrast : (luminance + 0.05) / 0.05) >= 4.5)
+                }
+            }
+        }
+    #endif
+
+    @Test func switchTracksContrastWithThumbAndCanvas() throws {
+        for hex in ["000000", "FFFFFF", "FFFF00", "FF0000", "4F7C82", "112244"] {
+            let accent = try #require(ThemeAccent(hex: hex))
+            for dark in [false, true] {
+                let track = accent.switchTrack(onDark: dark).luminance
+                let canvas = dark ? 0.024 : 0.90
+                #expect((max(canvas, track) + 0.05) / (min(canvas, track) + 0.05) >= 3)
+                #expect(1.05 / (track + 0.05) >= 3)
+            }
+        }
+        #expect(ThemeAccent.gus.switchTrack(onDark: true) == .gus)
+    }
+
+    @Test func seriesCardProgressUsesSeriesDataAndPreference() {
+        let progress = MediaUserData(playedPercentage: 35)
+        let series = MediaItem(name: "Series", type: .series, userData: progress)
+        let episode = MediaItem(indexNumber: 2, name: "Series", seriesID: "s", seriesName: "Series", type: .episode, userData: progress)
+        #expect(series.cardProgress(showSeriesProgress: false) == nil)
+        #expect(series.cardProgress(showSeriesProgress: true) == 0.35)
+        #expect(episode.cardProgress(showSeriesProgress: false) == 0.35)
+        #expect(episode.latestTVDisplayItem.cardProgress(showSeriesProgress: true) == nil)
+        #expect(episode.displayTitle == "Episode 2")
+        #expect(series.mediaAccessibility(showSeriesProgress: false).value != series.mediaAccessibility(showSeriesProgress: true).value)
     }
 
     @Test func televisionAccentInputPreservesStorageRules() {

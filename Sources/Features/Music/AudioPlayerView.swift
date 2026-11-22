@@ -175,7 +175,7 @@ struct AudioPlayerView: View {
     }
 
     private var controls: some View {
-        VStack(spacing: usesLeadingTitle ? 24 : 20) {
+        VStack(spacing: usesLeadingTitle ? ContentSpacing.card : ContentSpacing.section) {
             titleBlock
             progressBlock
             transportControls
@@ -232,7 +232,7 @@ struct AudioPlayerView: View {
     }
 
     private var progressBlock: some View {
-        VStack(spacing: 4) {
+        VStack(spacing: ContentSpacing.caption) {
             #if !os(tvOS)
                 Slider(value: $scrubTime, in: 0 ... max(store.duration, 1)) { editing in
                     isScrubbing = editing

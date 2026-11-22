@@ -51,7 +51,7 @@ final class GlobalSearchSession {
             showsDraftSuggestions = false
             mode = .natural
             typed.text = ""
-            natural.submit()
+            natural.submit(recordingIn: history)
         } else {
             searchByKeyword(recordingIn: history)
             applyKeywordPreference()
@@ -125,13 +125,14 @@ final class RelatedSearchResults {
     func resolve(session: SessionStore) async {
         guard !discarded, resolved == nil, !unavailable, errorMessage == nil, session.isActive, !Task.isCancelled else { return }
         let lookup = lookupID
+        let historyRevision = session.searchHistory.deletionRevision
         do {
             let match = try await session.mediaProvider.resolveRelatedSearch(target)
             try Task.checkCancellation()
             guard !discarded, session.isActive, lookupID == lookup, resolved == nil else { return }
             if let match {
                 resolved = match
-                session.searchHistory.record(.related(match))
+                session.searchHistory.record(.related(match), startedAt: historyRevision)
             } else {
                 unavailable = true
             }

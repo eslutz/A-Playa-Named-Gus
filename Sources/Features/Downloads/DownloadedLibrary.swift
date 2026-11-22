@@ -98,7 +98,7 @@ enum DownloadedLibrary {
     ) -> [DownloadedLibrarySection] {
         let query = search.trimmingCharacters(in: .whitespacesAndNewlines)
         let visible = records.filter { record in
-            record.status.isComplete && filter.includes(record.item) && admits(record.item) &&
+            record.status.isComplete && filter.includes(record.item) && record.isAdmitted(by: admits) &&
                 (query.isEmpty || searchText(record.item).localizedStandardContains(query))
         }
         var sections: [DownloadedLibrarySection] = []
@@ -149,9 +149,9 @@ enum DownloadedLibrary {
         guard item.type == .episode, let number = item.indexNumber,
               let season = item.parentIndexNumber, item.seriesID != nil || item.seriesName != nil
         else { return nil }
-        let candidates = records.filter { $0.status.isComplete }.map(\.item).filter {
-            $0.type == .episode && $0.id != item.id && seriesKey($0) == seriesKey(item) &&
-                ContentRatingGate.admitsStored($0)
+        let policy = ContentRatingGate.storedPolicy()
+        let candidates = records.filter { $0.status.isComplete && $0.isAdmitted(by: policy.admits) }.map(\.item).filter {
+            $0.type == .episode && $0.id != item.id && seriesKey($0) == seriesKey(item)
         }
         if let next = candidates.first(where: {
             $0.parentIndexNumber == season && $0.indexNumber == number + 1

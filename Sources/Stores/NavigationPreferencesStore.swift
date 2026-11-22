@@ -381,7 +381,7 @@ final class NavigationPreferencesStore {
             guard DownloadsAvailability.isSupported else { return nil }
             return ResolvedNavigationSection(
                 id: id,
-                title: String(localized: "Downloaded", comment: "Local media library navigation"),
+                title: String(localized: "Downloads", comment: "Local media library navigation"),
                 systemImage: "arrow.down.circle",
                 isVisible: true, category: nil, libraries: [], canMove: true, canHide: false
             )

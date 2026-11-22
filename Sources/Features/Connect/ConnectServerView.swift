@@ -109,7 +109,6 @@ struct ConnectServerView: View {
             #endif
         }
         .formStyle(.grouped)
-        .tint(.accentColor)
         .frame(maxWidth: 720)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .navigationTitle("Connect")
@@ -143,7 +142,7 @@ struct ConnectServerView: View {
         }
 
         private var addressEntry: some View {
-            VStack(alignment: .leading, spacing: 24) {
+            VStack(alignment: .leading, spacing: ContentSpacing.card) {
                 GusOnboardingField(title: "Server address") {
                     TextField("https://media.example.com", text: $urlText)
                         .urlFieldStyle()
@@ -155,7 +154,7 @@ struct ConnectServerView: View {
         }
 
         private var discoveryEntry: some View {
-            VStack(alignment: .leading, spacing: 24) {
+            VStack(alignment: .leading, spacing: ContentSpacing.card) {
                 VStack(alignment: .leading, spacing: 14) {
                     Button {
                         showingLocalServers = true
@@ -176,7 +175,7 @@ struct ConnectServerView: View {
         }
 
         private var connectEntry: some View {
-            VStack(alignment: .leading, spacing: 24) {
+            VStack(alignment: .leading, spacing: ContentSpacing.card) {
                 connectErrorSection
                 Button(action: connect) {
                     HStack {
@@ -201,9 +200,9 @@ struct ConnectServerView: View {
 
         private var onboarding: some View {
             ScrollView {
-                VStack(alignment: .leading, spacing: 28) {
+                VStack(alignment: .leading, spacing: ContentSpacing.section) {
                     GusOnboardingHeader()
-                    VStack(alignment: .leading, spacing: 12) {
+                    VStack(alignment: .leading, spacing: ContentSpacing.group) {
                         Text("Let’s connect.").font(.largeTitle.bold())
                         Text("Add your Jellyfin server to bring your library into Gus.")
                             .font(.title3).foregroundStyle(.secondary)
@@ -424,7 +423,7 @@ private struct LocalServerRow: View {
     var body: some View {
         HStack(spacing: 12) {
             Image(systemName: "server.rack")
-                .foregroundStyle(Color.accentColor)
+                .foregroundStyle(.tint)
                 .imageScale(.large)
                 .frame(width: 28)
                 .accessibilityHidden(true)

@@ -18,7 +18,7 @@ struct SeerrInterpretedResults: View {
     var body: some View {
         Group {
             if let catalog, case let .natural(intent) = catalog.source {
-                VStack(alignment: .leading, spacing: 6) {
+                VStack(alignment: .leading, spacing: ContentSpacing.caption) {
                     Text(verbatim: intent.filterDescription)
                         .font(.subheadline).bold()
                     Text("Matches from a limited set of Seerr results.")

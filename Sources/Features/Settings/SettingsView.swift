@@ -19,8 +19,10 @@ struct SettingsView: View {
     @State private var showingTVAccentEditor = false
     @State private var reauthenticationServer: ServerConnection?
     @State private var switchErrorMessage: String?
-    @AppStorage(ContentRatingGate.limitDefaultsKey) private var contentLimitRawValue = ContentRatingGate.Limit.off.rawValue
+    @StoredContentPolicy private var contentPolicy
+    @AppStorage(ContentRatingGate.limitDefaultsKey) private var manualLimit = ContentRatingGate.Limit.off
     @AppStorage(ContentRatingGate.hideUnratedDefaultsKey) private var hideUnratedContent = false
+    @AppStorage(MediaItem.seriesProgressKey) private var showSeriesProgress = false
     @AppStorage(AppearanceSetting.defaultsKey) private var appearanceRawValue = AppearanceSetting.system.rawValue
     @AppStorage(PlaybackQuality.defaultsKey) private var playbackQualityRawValue = PlaybackQuality.maximum.rawValue
     @AppStorage(PlaybackPreferences.autoPlayNextEpisodeKey) private var autoPlayNextEpisode = true
@@ -28,8 +30,14 @@ struct SettingsView: View {
     var body: some View {
         Form {
             Section("Account") {
-                Button("View and Edit Profile") { navigationState.isProfilePresented = true }
-                LabeledContent("User", value: session.user.name)
+                Button {
+                    navigationState.isProfilePresented = true
+                } label: {
+                    LabeledContent("User", value: session.user.name)
+                        .contentShape(Rectangle())
+                }
+                .accessibilityHint("View and Edit Profile")
+                .accessibilityIdentifier("Settings.profile")
                 LabeledContent("Server", value: session.server.name)
                 LabeledContent("Address", value: session.server.url.absoluteString)
             }
@@ -43,8 +51,6 @@ struct SettingsView: View {
                         }
                     } header: {
                         Text(server.name)
-                    } footer: {
-                        Text(server.url.host() ?? server.url.absoluteString)
                     }
                 }
             }
@@ -65,6 +71,7 @@ struct SettingsView: View {
                     qualityPicker
                 }
                 Toggle("Auto-Play Next Episode", isOn: $autoPlayNextEpisode)
+                    .gusSwitchTint()
                 #if os(iOS)
                     if siriAuthorization == .notDetermined {
                         Button("Enable Siri Playback") {
@@ -87,10 +94,11 @@ struct SettingsView: View {
                             PlaybackTrackMemory.shared.setEnabled(enabled, scope: session.references.scope)
                         }
                     ))
+                    .gusSwitchTint()
                     #if !os(tvOS)
-                    .labelsHidden()
+                        .labelsHidden()
                     #endif
-                    .accessibilityIdentifier("Settings.rememberEpisodeTracks")
+                        .accessibilityIdentifier("Settings.rememberEpisodeTracks")
                 }
             } header: {
                 Text("Playback")
@@ -122,6 +130,12 @@ struct SettingsView: View {
                 #if os(iOS)
                     ThemeSettingsControls()
                 #endif
+                Toggle("Show Series Progress", isOn: $showSeriesProgress)
+                    .gusSwitchTint()
+                    .accessibilityIdentifier("Settings.seriesProgress")
+                #if os(tvOS)
+                    .onChange(of: showSeriesProgress) { navigationState.home?.refreshTopShelf() }
+                #endif
                 NavigationLink(value: GusRoute.screen(.navigationSettings)) {
                     Label("Navigation", systemImage: "list.bullet")
                 }
@@ -136,17 +150,21 @@ struct SettingsView: View {
             #endif
 
             Section {
-                Picker("Limit Content Ratings", selection: $contentLimitRawValue) {
-                    ForEach(ContentRatingGate.Limit.allCases) { limit in
-                        Text(limit.title).tag(limit.rawValue)
+                Picker("Limit Content Ratings", selection: Binding(get: { contentPolicy.limit }, set: { manualLimit = $0 })) {
+                    ForEach(ContentRatingGate.Limit.allCases.filter { ($0.maximumRank ?? Int.max) <= (contentPolicy.ageCeiling.maximumRank ?? Int.max) }) { limit in
+                        Text(limit.title).tag(limit)
                     }
                 }
-                if contentLimitRawValue != ContentRatingGate.Limit.off.rawValue {
-                    Toggle("Hide Unrated Media", isOn: $hideUnratedContent)
+                if contentPolicy.limit != .off {
+                    Toggle("Hide Unrated Media", isOn: Binding(get: { contentPolicy.hideUnrated }, set: { hideUnratedContent = $0 }))
+                        .gusSwitchTint()
+                        .disabled(contentPolicy.ageCeiling != .off)
+                }
+                if contentPolicy.ageCeiling != .off {
+                    LabeledContent("Shared Age Range Limit", value: contentPolicy.ageCeiling.title)
                 }
                 #if canImport(DeclaredAgeRange) && (os(iOS) || os(macOS))
                     AgeRangeDefaultsButton()
-
                 #endif
             } header: {
                 Text("Content Restrictions")
@@ -288,7 +306,7 @@ struct SettingsView: View {
                         control().fixedSize()
                     }
                 }
-                VStack(alignment: .leading, spacing: 4) {
+                VStack(alignment: .leading, spacing: ContentSpacing.caption) {
                     HStack(spacing: 0) {
                         Text(title).fixedSize(horizontal: false, vertical: true).accessibilityHidden(true)
                         help
@@ -306,7 +324,7 @@ struct SettingsView: View {
 
         HStack {
             Label {
-                VStack(alignment: .leading) {
+                VStack(alignment: .leading, spacing: ContentSpacing.caption) {
                     Text(user.name)
                     Text(server.url.host() ?? server.url.absoluteString)
                         .font(.caption)

@@ -3,18 +3,19 @@ import SwiftUI
 /// One semantic row for the grid/list variants of a library, retaining the same destination.
 struct MediaLibraryRow: View {
     @Environment(SessionStore.self) private var session
+    @AppStorage(MediaItem.seriesProgressKey) private var showSeriesProgress = false
     let item: MediaItem?
     var title: String? = nil
     var subtitle: String? = nil
     var status: String? = nil
 
     var body: some View {
-        HStack(spacing: 16) {
+        HStack(spacing: ContentSpacing.card) {
             ArtworkTile(url: item.flatMap { session.mediaProvider.primaryImageURL(for: $0, context: .posterGrid) }, aspectRatio: 2.0 / 3.0, placeholderSymbol: item?.artworkPlaceholderSymbol ?? "list.bullet.rectangle", fallbackURLs: item.map { session.mediaProvider.artworkURLs(for: $0, request: .init(role: .poster, maxWidth: 360)) } ?? [])
                 .frame(width: 44, height: 66)
                 .clipShape(RoundedRectangle(cornerRadius: 6))
                 .accessibilityHidden(true)
-            VStack(alignment: .leading, spacing: 6) {
+            VStack(alignment: .leading, spacing: ContentSpacing.caption) {
                 Text(title ?? item?.displayTitle ?? "Video").font(.body.weight(.medium))
                 if let subtitle = subtitle ?? item?.bookBrowseSubtitle {
                     Text(subtitle).font(.subheadline).foregroundStyle(.secondary)
@@ -34,7 +35,7 @@ struct MediaLibraryRow: View {
         .contentShape(Rectangle())
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(rowAccessibilityLabel)
-        .accessibilityValue([item?.mediaAccessibility.value, status].compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: ", "))
+        .accessibilityValue([item?.mediaAccessibility(showSeriesProgress: showSeriesProgress).value, status].compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: ", "))
     }
 
     private var rowAccessibilityLabel: String {

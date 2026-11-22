@@ -10,11 +10,10 @@ struct SeerrSeasonView: View {
     @State private var state: LoadState = .idle
     @State private var loadedAccess: String?
     @State private var generation = UUID()
-    @AppStorage(ContentRatingGate.limitDefaultsKey) private var contentLimitRawValue = ContentRatingGate.Limit.off.rawValue
-    @AppStorage(ContentRatingGate.hideUnratedDefaultsKey) private var hideUnratedContent = false
+    @StoredContentPolicy private var contentPolicy
 
     private var accessRevision: String {
-        "\(store.revision):\(contentLimitRawValue):\(hideUnratedContent)"
+        "\(store.revision):\(contentPolicy.revision)"
     }
 
     private var authorizedSeason: (series: SeerrTitle, season: SeerrSeason)? {
@@ -61,7 +60,7 @@ struct SeerrSeasonView: View {
                 }
             }
         } sections: {
-            VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: ContentSpacing.card) {
                 Text("Episodes").font(.title2.bold()).accessibilityAddTraits(.isHeader)
                 if let episodes = season.episodes, !episodes.isEmpty {
                     ForEach(episodes.sorted { $0.episodeNumber < $1.episodeNumber }) { episode in
@@ -123,12 +122,12 @@ private struct SeerrEpisodeMetadata: View {
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     var body: some View {
-        HStack(alignment: .top, spacing: 16) {
+        HStack(alignment: .top, spacing: ContentSpacing.card) {
             if !dynamicTypeSize.isAccessibilitySize, episode.stillPath != nil {
                 SeerrArtworkView(path: episode.stillPath, aspectRatio: 16.0 / 9.0, symbol: "tv", width: "w300")
                     .frame(width: 120)
             }
-            VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: ContentSpacing.caption) {
                 Text("Episode \(episode.episodeNumber)").font(.subheadline).foregroundStyle(.secondary)
                 if let name = episode.name?.trimmedNilIfEmpty {
                     Text(name).font(.headline)
