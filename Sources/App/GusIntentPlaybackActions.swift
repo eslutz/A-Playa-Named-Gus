@@ -167,8 +167,8 @@ struct GetGusProgressIntent: AppIntent {
         if item.userData?.isWatched == true {
             return 100
         }
-        let ticks = PlaybackChoicePosition.ticks(for: PlaybackRequest(item: item), session: session, progress: progress, downloads: downloads)
-        if let ticks, let runtime = item.runTimeTicks, runtime > 0 {
+        let position = PlaybackChoicePosition.position(for: PlaybackRequest(item: item), session: session, progress: progress, downloads: downloads)
+        if let ticks = position.ticks, let runtime = position.runTimeTicks, runtime > 0 {
             return min(100, 100 * Double(ticks) / Double(runtime))
         }
         return 100 * (item.playbackProgress ?? 0)

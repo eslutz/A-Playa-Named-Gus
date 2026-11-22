@@ -200,6 +200,11 @@ enum PlaybackChoicePosition {
     }
 
     static func ticks(for request: PlaybackRequest, session: SessionStore, progress: OfflinePlaybackProgressStore, downloads: OfflineDownloadStore? = nil) -> Int? {
+        position(for: request, session: session, progress: progress, downloads: downloads).ticks
+    }
+
+    /// Keep a checkpoint and its duration on the same cut, including when the server returns a different primary version.
+    static func position(for request: PlaybackRequest, session: SessionStore, progress: OfflinePlaybackProgressStore, downloads: OfflineDownloadStore? = nil) -> (ticks: Int?, runTimeTicks: Int?) {
         let recorded = downloadedRecord(for: request, session: session, downloads: downloads)
         let sourceID = request.streamSelection.mediaSourceID ?? recorded?.mediaSourceID
         var item = recorded?.playbackItem ?? request.item
@@ -208,7 +213,8 @@ enum PlaybackChoicePosition {
         }
         let sourceScoped = recorded != nil || request.streamSelection.mediaSourceID != nil
         let checkpoint = sourceScoped ? item.id.flatMap { progress.positionTicks(forItemID: $0, scope: session.references.scope, mediaSourceID: sourceID) } : nil
-        return PlaybackActionPosition.ticks(for: item, localTicks: request.requestedStartTicks ?? checkpoint ?? (sourceScoped ? 0 : nil))
+        let ticks = PlaybackActionPosition.ticks(for: item, localTicks: request.requestedStartTicks ?? checkpoint ?? (sourceScoped ? 0 : nil))
+        return (ticks, item.runTimeTicks)
     }
 
     private static func downloadedRecord(for request: PlaybackRequest, session: SessionStore, downloads: OfflineDownloadStore?) -> OfflineDownloadRecord? {
