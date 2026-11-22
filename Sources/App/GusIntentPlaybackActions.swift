@@ -199,7 +199,7 @@ struct GetGusProgressIntent: AppIntent {
 #if os(visionOS)
     struct PlayGusSpatialVideoIntent: AppIntent {
         static let title: LocalizedStringResource = "Play Spatial Video"
-        static let description = IntentDescription("Open a supported stereoscopic video in Gus on Apple Vision Pro.", categoryName: "Playback")
+        static let description = IntentDescription("Open a supported stereoscopic video in Gus.", categoryName: "Playback")
         static let supportedModes: IntentModes = .foreground
         @Parameter(title: "Library Item") var item: GusMediaEntity
 
