@@ -79,7 +79,8 @@ The app bundle ID is `dev.ericslutz.gus`.
 - **Run app tests and runtime verification locally.** Use native Apple Silicon
   for macOS (`platform=macOS,arch=arm64`). For iOS, iPadOS, tvOS, visionOS and
   watchOS, use Apple simulators one at a time with an explicit platform and
-  simulator UDID. Record behavior that requires other physical devices or
+  simulator UDID. [Reuse existing generic simulators](Documentation/local-validation.md#reuse-existing-simulators).
+  Do not create app- or test-specific simulators. Record behavior that requires other physical devices or
   unavailable entitlements as unverified.
 - GitHub validation covers static/configuration checks and the native arm64
   macOS build. Keep app tests and simulator builds out of GitHub CI and

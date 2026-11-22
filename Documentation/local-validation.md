@@ -70,6 +70,17 @@ Use `swiftformat Sources Tests --lint` for a read-only lint check.
 are in scope. To check edited localized strings, run
 `jq empty Resources/Localizable.xcstrings`.
 
+### Reuse existing simulators
+
+Use an existing, generically named Apple device such as **iPhone 17e** for the
+required model and OS runtime. Reuse it across apps, branches, and test runs.
+Do not create or clone simulators for an app, test, ticket, or validation run.
+Select an available device by its UDID and coordinate with anyone already
+using it. Keep each required OS/device combination and any active Watch pair.
+If a required combination is missing, report it before provisioning a reusable
+generic device. Run one simulator at a time and disable parallel XCTest
+destinations with `-parallel-testing-enabled NO`.
+
 ### Build, launch, and test an explicit simulator
 
 Use one shell from the checkout root. This recipe is for iPhone; for iPad choose
@@ -114,17 +125,17 @@ Testing case, add an `-only-testing:GusTests/<Suite>/<Test>` filter with actual
 suite and test names. The TV and Vision unit schemes are `Gus tvOS Unit Tests`
 and `Gus visionOS Unit Tests`.
 
-Use a clean, signed-out simulator for the full iOS unit suite. An existing UI
-fixture or personal simulator can preserve a device-wide age restriction that
-correctly blocks unrelated synthetic playback items. Create a separate simulator
-with an installed device type and runtime, then use its UDID for `DESTINATION`.
-Keep the original simulator and its settings intact.
+Use a signed-out generic simulator for the full iOS unit suite. A saved Gus
+session with an unresolved age check can block synthetic playback fixtures.
+Select a generic device with suitable test state. If every suitable device
+holds someone’s session, defer the run until one is available. Preserve existing
+accounts, restrictions and other apps’ data.
 
 ```sh
 python3 Scripts/run-warning-free.py xcodebuild \
   -project "$PROJECT" -scheme 'Gus iOS Unit Tests' -destination "$DESTINATION" \
   -derivedDataPath "$EVIDENCE/DerivedData" \
-  -resultBundlePath "$EVIDENCE/ios-unit.xcresult" test >"$EVIDENCE/ios-unit.log" 2>&1
+  -parallel-testing-enabled NO -resultBundlePath "$EVIDENCE/ios-unit.xcresult" test >"$EVIDENCE/ios-unit.log" 2>&1
 ```
 
 ### Test native macOS on Apple Silicon
