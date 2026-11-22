@@ -744,17 +744,23 @@ struct PlaybackLifecyclePolicyTests {
         #expect(pending.applying(to: base, session: session, progress: progress).subtitleIntent == .off)
     }
 
-    @Test("audio session refusal fails before resolution and explicit retry can prepare", arguments: [false, true])
+    @Test("denied audio activation releases a prepared audio source, skips video resolution, and permits retry", arguments: [false, true])
     func audioSessionRefusal(audio: Bool) async throws {
         let provider = FakeMediaProviderSession(capabilities: ProviderCapabilities())
         let item = MediaItem(id: "session-refusal", type: audio ? .audio : .movie)
         provider.itemHandler = { _ in item }
         let fixture = try RepositoryTestFixtures.url(for: "Tests/Fixtures/OfflinePlaylist.mov")
         let resolution = PlaybackSourceResolution(url: fixture, playSessionID: "session-retry", mediaSourceID: "source", playMethod: .directPlay, stereoLayout: .none, stereoFallbackReason: nil)
-        provider.playbackHandler = { resolution }
-        provider.audioHandler = { resolution }
-        let session = makeSession(provider)
         let activationState = AudioSessionRefusalState()
+        let unstartedResource = PlaybackResource(liveStreamID: nil, playSessionID: "session-denied", isTranscoding: true)
+        provider.playbackHandler = { resolution }
+        provider.audioHandler = {
+            if activationState.denied {
+                return PlaybackSourceResolution(url: fixture, playSessionID: "session-denied", mediaSourceID: "source", playMethod: .transcode, stereoLayout: .none, stereoFallbackReason: nil, resource: unstartedResource)
+            }
+            return resolution
+        }
+        let session = makeSession(provider)
         let activate: @MainActor @Sendable (Bool) async throws -> Void = { video in
             activationState.arguments.append(video)
             let shouldDeny = activationState.denied
@@ -785,16 +791,22 @@ struct PlaybackLifecyclePolicyTests {
         await session.playbackReports.flush()
         #expect(activationState.arguments == [!audio])
         #expect(provider.playbackResolutionCallCount == 0)
-        #expect(provider.audioResolutionCallCount == 0)
+        #expect(provider.audioResolutionCallCount == (audio ? 1 : 0))
         #expect(provider.playbackReports.isEmpty)
-        #expect(provider.releasedPlaybackResources.isEmpty)
+        if audio {
+            for _ in 0 ..< 100 where provider.releasedPlaybackResources.isEmpty {
+                try await Task.sleep(for: .milliseconds(10))
+            }
+        }
+        #expect(provider.releasedPlaybackResources == (audio ? [unstartedResource] : []))
 
         activationState.denied = false
         await video?.prepare()
         await music?.start()
         #expect(activationState.arguments == [!audio, !audio])
         #expect(provider.playbackResolutionCallCount == (audio ? 0 : 1))
-        #expect(provider.audioResolutionCallCount == (audio ? 1 : 0))
+        #expect(provider.audioResolutionCallCount == (audio ? 2 : 0))
+        #expect(provider.releasedPlaybackResources == (audio ? [unstartedResource] : []))
         if let video {
             #expect(video.state == .ready); #expect(video.player != nil)
         }

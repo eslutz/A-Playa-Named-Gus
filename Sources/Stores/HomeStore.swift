@@ -283,15 +283,16 @@ final class HomeStore {
         if state == .idle {
             state = .loading
         }
-        async let views: Void = automaticOnly ? () : loadLibraries(force: force)
         if feeds.contains(where: { $0.isAutomatic && flights[$0] == nil }) {
             loadGeneration = UUID()
             isLoadingMore = false
         }
-        await withTaskGroup(of: Void.self) { group in
-            for key in feeds {
-                group.addTask { _ = await self.refreshFeed(key) }
-            }
+        // Register every stale feed before yielding the main actor. A concurrent
+        // load can then join the same requests even when a feed returns immediately.
+        let requests = feeds.map(refreshFeed)
+        async let views: Void = automaticOnly ? () : loadLibraries(force: force)
+        for request in requests {
+            _ = await request.value
         }
         await views
         guard session.isActive, partition == restriction else { return }
@@ -305,9 +306,9 @@ final class HomeStore {
         donateToSystemSearch()
     }
 
-    private func refreshFeed(_ key: Feed) async -> GusError? {
+    private func refreshFeed(_ key: Feed) -> Task<GusError?, Never> {
         if let flight = flights[key] {
-            return await flight.value
+            return flight
         }
         let partition = restriction
         if timestamps[key] == nil {
@@ -340,7 +341,7 @@ final class HomeStore {
             }
         }
         flights[key] = task
-        return await task.value
+        return task
     }
 
     private func fetch(_ key: Feed, partition: String) async throws {
@@ -389,7 +390,7 @@ final class HomeStore {
         if libraries.isEmpty, timestamps[.libraries] == nil {
             libraryState = .loading
         }
-        let failure = await refreshFeed(.libraries)
+        let failure = await refreshFeed(.libraries).value
         if failure == .cancelled {
             return
         }

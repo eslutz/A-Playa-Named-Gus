@@ -848,7 +848,6 @@ struct UILayoutMetricsTests {
                 let bounds = picker.convert(picker.bounds, to: controlWindow)
                     .union(toggle.convert(toggle.bounds, to: controlWindow)).insetBy(dx: -8, dy: -8).integral
                 let data = try #require(snapshot(of: bounds, in: controlWindow).pngData())
-                try data.write(to: FileManager.default.temporaryDirectory.appendingPathComponent("Native-dark-controls-\(hex).png"), options: .atomic)
                 Attachment.record(Array(data), named: "Native-dark-controls-\(hex).png")
                 let contrast = try switchContrast(in: toggle)
                 #expect(contrast.thumb >= 3)
