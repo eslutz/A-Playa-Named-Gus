@@ -19,10 +19,21 @@ final class WatchBrowseUITests: XCTestCase {
         app.launchArguments = ["--gus-demo-server", "--gus-disable-cloud-sync"]
         app.launchEnvironment["GUS_DEMO_URL"] = fixture.absoluteString
         app.launch()
-        defer { app.terminate() }
+        defer {
+            if app.state == .runningForeground {
+                let signOut = app.buttons["Sign Out"]
+                for _ in 0 ..< 12 where !signOut.isHittable {
+                    app.swipeUp(velocity: .fast)
+                }
+                if signOut.isHittable {
+                    signOut.tap()
+                }
+            }
+            app.terminate()
+        }
         XCTAssertTrue(app.navigationBars["Remote"].waitForExistence(timeout: 20))
         let url = try XCTUnwrap(URL(string: "gus://downloaded"))
-        app.open(url)
+        XCUIDevice.shared.system.open(url)
         XCTAssertTrue(app.navigationBars["Downloads"].waitForExistence(timeout: 15))
     }
 
