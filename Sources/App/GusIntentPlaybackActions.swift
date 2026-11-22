@@ -158,15 +158,20 @@ struct GetGusProgressIntent: AppIntent {
         {
             return .result(value: min(100, max(0, fraction * 100)))
         }
-        let request = PlaybackRequest(item: current)
-        let ticks = PlaybackChoicePosition.ticks(for: request, session: session, progress: .shared, downloads: .shared)
-        if let ticks, let runtime = current.runTimeTicks, runtime > 0 {
-            return .result(value: min(100, 100 * Double(ticks) / Double(runtime)))
+        return .result(value: Self.playbackPercentage(for: current, session: session, progress: .shared, downloads: .shared))
+    }
+
+    @MainActor
+    static func playbackPercentage(for item: MediaItem, session: SessionStore, progress: OfflinePlaybackProgressStore, downloads: OfflineDownloadStore) -> Double {
+        // A finished download may still have a resume checkpoint or default to zero.
+        if item.userData?.isWatched == true {
+            return 100
         }
-        if current.userData?.isWatched == true {
-            return .result(value: 100)
+        let ticks = PlaybackChoicePosition.ticks(for: PlaybackRequest(item: item), session: session, progress: progress, downloads: downloads)
+        if let ticks, let runtime = item.runTimeTicks, runtime > 0 {
+            return min(100, 100 * Double(ticks) / Double(runtime))
         }
-        return .result(value: 100 * (current.playbackProgress ?? 0))
+        return 100 * (item.playbackProgress ?? 0)
     }
 }
 
