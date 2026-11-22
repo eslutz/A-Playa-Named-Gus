@@ -22,6 +22,31 @@ struct ThemeAndLatestMediaTests {
         }
     }
 
+    @Test func switchTracksContrastWithThumbAndCanvas() throws {
+        for hex in ["000000", "FFFFFF", "FFFF00", "FF0000", "4F7C82", "112244"] {
+            let accent = try #require(ThemeAccent(hex: hex))
+            for dark in [false, true] {
+                let track = accent.switchTrack(onDark: dark).luminance
+                let canvas = dark ? 0.024 : 0.90
+                #expect((max(canvas, track) + 0.05) / (min(canvas, track) + 0.05) >= 3)
+                #expect(1.05 / (track + 0.05) >= 3)
+            }
+        }
+        #expect(ThemeAccent.gus.switchTrack(onDark: true) == .gus)
+    }
+
+    @Test func seriesCardProgressUsesSeriesDataAndPreference() {
+        let progress = MediaUserData(playedPercentage: 35)
+        let series = MediaItem(name: "Series", type: .series, userData: progress)
+        let episode = MediaItem(indexNumber: 2, name: "Series", seriesID: "s", seriesName: "Series", type: .episode, userData: progress)
+        #expect(series.cardProgress(showSeriesProgress: false) == nil)
+        #expect(series.cardProgress(showSeriesProgress: true) == 0.35)
+        #expect(episode.cardProgress(showSeriesProgress: false) == 0.35)
+        #expect(episode.latestTVDisplayItem.cardProgress(showSeriesProgress: true) == nil)
+        #expect(episode.displayTitle == "Episode 2")
+        #expect(series.mediaAccessibility(showSeriesProgress: false).value != series.mediaAccessibility(showSeriesProgress: true).value)
+    }
+
     @Test func televisionAccentInputPreservesStorageRules() {
         #expect(ThemeAccent.userInput("  #ff7f00\n")?.hex == "FF7F00")
         #expect(ThemeAccent.userInput("4f7c82") == .gus)

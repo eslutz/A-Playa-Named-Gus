@@ -25,7 +25,10 @@ struct SeerrIssuesView: View {
                     Button("Report an Issue") { showingReport = true }
                 }
                 if let message {
-                    Section { Text(message).foregroundStyle(.secondary); Button("Refresh") { Task { await load(reset: true) } } }
+                    Section {
+                        Text(message).foregroundStyle(.secondary)
+                        Button("Try Again") { Task { await load(reset: true) } }.disabled(loading)
+                    }
                 }
                 ForEach(loadedRevision == store.revision ? items : []) { issue in
                     NavigationLink { SeerrIssueDetailView(issueID: issue.id) } label: {
@@ -50,6 +53,11 @@ struct SeerrIssuesView: View {
             }
         }
         .navigationTitle("My Issues")
+        .toolbar {
+            if store.user?.canViewIssues == true {
+                SeerrRefreshToolbar(loading: loading) { Task { await load(reset: true) } }
+            }
+        }
         .task(id: "\(store.revision):\(filter.rawValue)") { await load(reset: true) }
         .refreshable { await load(reset: true) }
         .sheet(isPresented: $showingReport, onDismiss: { Task { await load(reset: true) } }) {
@@ -97,8 +105,7 @@ struct SeerrReportIssueView: View {
     @Environment(SeerrStore.self) private var store
     @Environment(\.dismiss) private var dismiss
     let title: SeerrTitle
-    @AppStorage(ContentRatingGate.limitDefaultsKey) private var contentLimit = "off"
-    @AppStorage(ContentRatingGate.hideUnratedDefaultsKey) private var hideUnrated = false
+    @StoredContentPolicy private var contentPolicy
     @State private var actionOutcome: ActionOutcome?
     @State private var type: SeerrIssueType = .video
     @State private var description = ""
@@ -113,11 +120,7 @@ struct SeerrReportIssueView: View {
     }
 
     private var isAdmitted: Bool {
-        store.admits(title) && ContentRatingGate.admits(
-            MediaItem(officialRating: title.certification, type: title.mediaType == .tv ? .series : .movie),
-            limit: ContentRatingGate.Limit(rawValue: contentLimit) ?? .off,
-            hideUnrated: hideUnrated
-        )
+        store.admits(title) && contentPolicy.admits(MediaItem(officialRating: title.certification, type: title.mediaType == .tv ? .series : .movie))
     }
 
     var body: some View {
@@ -152,7 +155,7 @@ struct SeerrReportIssueView: View {
             .seerrFormStyle()
             .accessibilityValue(actionOutcome?.accessibilityValue ?? "")
             .modifier(SeerrSupportOperationLifetime(operation: $operation))
-            .onChange(of: contentLimit + ":" + String(hideUnrated)) { _, _ in confirmingRetry = false }
+            .onChange(of: contentPolicy.revision) { _, _ in confirmingRetry = false }
             .navigationTitle("Report an Issue")
             .toolbar { ToolbarItem { Button("Cancel") { dismiss() }.disabled(submitting) } }
             .confirmationDialog("Allow another report for \(title.displayTitle)?", isPresented: $confirmingRetry, titleVisibility: .visible) {
@@ -200,8 +203,7 @@ struct SeerrReportIssueView: View {
 private struct SeerrIssueDetailView: View {
     @Environment(SeerrStore.self) private var store
     let issueID: Int
-    @AppStorage(ContentRatingGate.limitDefaultsKey) private var contentLimit = "off"
-    @AppStorage(ContentRatingGate.hideUnratedDefaultsKey) private var hideUnrated = false
+    @StoredContentPolicy private var contentPolicy
     @State private var actionOutcome: ActionOutcome?
     @State private var issue: SeerrIssue?
     @State private var mediaTitle: String?
@@ -216,7 +218,7 @@ private struct SeerrIssueDetailView: View {
     @State private var loadedRestrictions: String?
     @State private var confirmingCommentRetry = false
     private var restrictionID: String {
-        contentLimit + ":" + String(hideUnrated)
+        contentPolicy.revision
     }
 
     private var mutationKey: String {
@@ -261,13 +263,13 @@ private struct SeerrIssueDetailView: View {
             if loading {
                 ProgressView()
             }
-            Button("Refresh") { Task { await load() } }.disabled(loading)
         }
         .seerrFormStyle()
         .accessibilityValue(actionOutcome?.accessibilityValue ?? "")
         .modifier(SeerrSupportOperationLifetime(operation: $operation))
         .onChange(of: restrictionID) { _, _ in confirmingStatus = false; confirmingCommentRetry = false }
         .navigationTitle("Issue #\(issueID)")
+        .toolbar { SeerrRefreshToolbar(loading: loading) { Task { await load() } } }
         .task(id: "\(store.revision):\(restrictionID)") { await load() }
         .confirmationDialog("Allow another comment on issue #\(issueID)?", isPresented: $confirmingCommentRetry, titleVisibility: .visible) {
             Button("Allow Another Comment") { store.completeSupportMutation(key: mutationKey) }
@@ -365,8 +367,7 @@ private struct SeerrIssueDetailView: View {
 
 struct SeerrBlocklistView: View {
     @Environment(SeerrStore.self) private var store
-    @AppStorage(ContentRatingGate.limitDefaultsKey) private var contentLimit = "off"
-    @AppStorage(ContentRatingGate.hideUnratedDefaultsKey) private var hideUnrated = false
+    @StoredContentPolicy private var contentPolicy
     @State private var actionOutcome: ActionOutcome?
     @State private var items: [SeerrBlocklistItem] = []
     @State private var total = 0
@@ -380,7 +381,7 @@ struct SeerrBlocklistView: View {
     @State private var loadedRevision: UUID?
     @State private var loadedRestrictions: String?
     private var restrictionID: String {
-        contentLimit + ":" + String(hideUnrated)
+        contentPolicy.revision
     }
 
     var body: some View {
@@ -405,13 +406,17 @@ struct SeerrBlocklistView: View {
                 } else if items.isEmpty, message == nil {
                     Text("The blocklist is empty.").foregroundStyle(.secondary)
                 }
-                Button("Refresh") { Task { await load(reset: true) } }.disabled(loading)
             } else {
                 ContentUnavailableView("Blocklist Unavailable", systemImage: "hand.raised", description: Text("Your Seerr account does not have permission to view the blocklist."))
             }
         }
         .accessibilityValue(actionOutcome?.accessibilityValue ?? "")
         .navigationTitle("Blocklist")
+        .toolbar {
+            if store.user?.canViewBlocklist == true {
+                SeerrRefreshToolbar(loading: loading) { Task { await load(reset: true) } }
+            }
+        }
         .modifier(SeerrSupportOperationLifetime(operation: $operation))
         .onChange(of: restrictionID) { _, _ in removing = nil }
         .task(id: "\(store.revision):\(restrictionID)") { await load(reset: true) }
@@ -507,8 +512,7 @@ struct SeerrBlocklistView: View {
 struct SeerrBlocklistAction: View {
     @Environment(SeerrStore.self) private var store
     let title: SeerrTitle
-    @AppStorage(ContentRatingGate.limitDefaultsKey) private var contentLimit = "off"
-    @AppStorage(ContentRatingGate.hideUnratedDefaultsKey) private var hideUnrated = false
+    @StoredContentPolicy private var contentPolicy
     var onChanged: () -> Void = {}
     @State private var actionOutcome: ActionOutcome?
     @State private var confirming = false
@@ -520,11 +524,7 @@ struct SeerrBlocklistAction: View {
 
     var body: some View {
         if store.user?.canManageBlocklist == true,
-           ContentRatingGate.admits(
-               MediaItem(officialRating: title.certification, type: title.mediaType == .tv ? .series : .movie),
-               limit: ContentRatingGate.Limit(rawValue: contentLimit) ?? .off,
-               hideUnrated: hideUnrated
-           ), store.admits(title)
+           contentPolicy.admits(MediaItem(officialRating: title.certification, type: title.mediaType == .tv ? .series : .movie)), store.admits(title)
         {
             VStack(alignment: .leading) {
                 if completed {
@@ -535,15 +535,24 @@ struct SeerrBlocklistAction: View {
                 if let message {
                     Text(message).foregroundStyle(.secondary)
                 }
+            }
+            .toolbar {
                 if requiresRefresh {
-                    Button("Refresh") { Task { await refresh() } }.disabled(loading)
+                    SeerrRefreshToolbar(loading: loading) {
+                        operation = Task {
+                            guard !loading else { return }
+                            loading = true
+                            defer { loading = false }
+                            await refresh()
+                        }
+                    }
                 }
             }
             .confirmationDialog("Block \(title.displayTitle)?", isPresented: $confirming, titleVisibility: .visible) {
                 Button("Block \(title.displayTitle)", role: .destructive) { operation = Task { await add() } }
             } message: { Text("This prevents Seerr requests for this title for all users.") }
             .modifier(SeerrSupportOperationLifetime(operation: $operation))
-            .onChange(of: contentLimit + ":" + String(hideUnrated)) { _, _ in confirming = false }
+            .onChange(of: contentPolicy.revision) { _, _ in confirming = false }
         }
     }
 
@@ -621,6 +630,8 @@ struct SeerrPreferencesView: View {
     @State private var language = ""
     @State private var emailEnabled = false
     @State private var emailEvents = 0
+    @State private var confirmingRefresh = false
+    @State private var pendingReadback: PreferenceWrite?
     @State private var originalEmailEvents = 0
     @State private var originalPreferences = SeerrRegionalPreferences(discoverRegion: "", streamingRegion: "", originalLanguage: "")
     @State private var loaded = false
@@ -676,12 +687,24 @@ struct SeerrPreferencesView: View {
             if loading {
                 ProgressView()
             }
-            Button("Refresh") { Task { await load() } }.disabled(loading)
         }
         .seerrFormStyle()
         .accessibilityValue(actionOutcome?.accessibilityValue ?? "")
         .modifier(SeerrSupportOperationLifetime(operation: $operation))
         .navigationTitle("Seerr Preferences")
+        .toolbar {
+            SeerrRefreshToolbar(loading: loading) {
+                if loaded, loadedRevision == store.revision, !regionalChanges.isEmpty || emailEvents != originalEmailEvents {
+                    confirmingRefresh = true
+                } else {
+                    Task { await load() }
+                }
+            }
+        }
+        .confirmationDialog("Discard unsaved Seerr preferences?", isPresented: $confirmingRefresh, titleVisibility: .visible) {
+            Button("Discard and Refresh", role: .destructive) { Task { await load() } }
+            Button("Keep Editing", role: .cancel) {}
+        }
         .task(id: store.revision) { await load() }
     }
 
@@ -713,6 +736,19 @@ struct SeerrPreferencesView: View {
             let preferences = try await client.regionalPreferences()
             let notifications = try await client.emailNotificationPreferences()
             guard expected == store.revision, loadID == requestID, !Task.isCancelled else { return }
+            if let pendingReadback, loadedRevision == expected {
+                if pendingReadback.matches(preferences: preferences, emailEvents: notifications.events) {
+                    actionOutcome = .confirmed
+                    message = String(localized: "Saved preferences confirmed.")
+                } else {
+                    actionOutcome = .uncertain
+                    message = String(localized: "Seerr returned different saved preferences. Review the current values before making changes.")
+                }
+            } else {
+                actionOutcome = nil
+                message = nil
+            }
+            pendingReadback = nil
             self.regions = regions.sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
             self.languages = languages.sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
             region = preferences.discoverRegion
@@ -725,9 +761,8 @@ struct SeerrPreferencesView: View {
             loaded = true
             loadedRevision = expected
             requiresRefresh = false
-            message = nil
         } catch {
-            guard expected == store.revision, !Task.isCancelled else { return }
+            guard expected == store.revision, loadID == requestID, !Task.isCancelled else { return }
             message = error.localizedDescription
             store.handle(error)
         }
@@ -744,6 +779,7 @@ struct SeerrPreferencesView: View {
         let submittedRegionalChanges = regionalChanges
         let submittedEmailEvents = emailEvents
         let submittedEmailChanges = emailEvents ^ originalEmailEvents
+        let write: PreferenceWrite = email ? .email(submittedEmailEvents, submittedEmailChanges) : .regional(submittedPreferences, submittedRegionalChanges)
         let expected = store.revision
         actionOutcome = .pending
         loading = true
@@ -763,14 +799,35 @@ struct SeerrPreferencesView: View {
             } else {
                 originalPreferences = submittedPreferences
             }
+            pendingReadback = write
+            requiresRefresh = true
             actionOutcome = .accepted
             message = String(localized: "Preferences accepted. Refresh to confirm the saved values.")
         } catch {
             guard expected == store.revision, !Task.isCancelled else { return }
             requiresRefresh = error as? SeerrClientError == .mutationOutcomeUnknown
-            actionOutcome = error as? SeerrClientError == .mutationOutcomeUnknown ? .uncertain : .failed(GusError(from: error))
+            if requiresRefresh {
+                pendingReadback = write
+            }
+            actionOutcome = requiresRefresh ? .uncertain : .failed(GusError(from: error))
             message = error.localizedDescription
             store.handle(error)
+        }
+    }
+
+    private enum PreferenceWrite {
+        case regional(SeerrRegionalPreferences, SeerrRegionalPreferenceFields)
+        case email(Int, Int)
+
+        func matches(preferences: SeerrRegionalPreferences, emailEvents: Int) -> Bool {
+            switch self {
+            case let .regional(expected, fields):
+                (!fields.contains(.discovery) || preferences.discoverRegion == expected.discoverRegion)
+                    && (!fields.contains(.streaming) || preferences.streamingRegion == expected.streamingRegion)
+                    && (!fields.contains(.language) || preferences.originalLanguage == expected.originalLanguage)
+            case let .email(expected, mask):
+                (expected & mask) == (emailEvents & mask)
+            }
         }
     }
 
@@ -793,12 +850,24 @@ struct SeerrPreferencesView: View {
 private struct SeerrSupportOperationLifetime: ViewModifier {
     @Environment(SeerrStore.self) private var store
     @Binding var operation: Task<Void, Never>?
-    @AppStorage(ContentRatingGate.limitDefaultsKey) private var contentLimit = "off"
-    @AppStorage(ContentRatingGate.hideUnratedDefaultsKey) private var hideUnrated = false
+    @StoredContentPolicy private var contentPolicy
     func body(content: Content) -> some View {
         content
             .onDisappear { operation?.cancel() }
             .onChange(of: store.revision) { _, _ in operation?.cancel() }
-            .onChange(of: contentLimit + ":" + String(hideUnrated)) { _, _ in operation?.cancel() }
+            .onChange(of: contentPolicy.revision) { _, _ in operation?.cancel() }
+    }
+}
+
+private struct SeerrRefreshToolbar: ToolbarContent {
+    var loading: Bool
+    let action: () -> Void
+
+    var body: some ToolbarContent {
+        ToolbarItem(placement: .primaryAction) {
+            Button("Refresh", systemImage: "arrow.clockwise", action: action)
+                .labelStyle(.iconOnly)
+                .disabled(loading)
+        }
     }
 }

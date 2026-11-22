@@ -120,3 +120,97 @@ struct ContentRatingGateTests {
         #expect(filtered.first?.id == "1")
     }
 }
+
+extension ContentRatingGateTests {
+    @Test("Only a new system response relaxes the device ceiling")
+    func sharedCeilingAndManualPreferences() throws {
+        let name = "gus-age-tests-\(UUID().uuidString)"
+        let defaults = try #require(UserDefaults(suiteName: name))
+        defer { defaults.removePersistentDomain(forName: name) }
+        let rated = MediaItem(officialRating: "TV-MA", type: .series)
+        let unrated = MediaItem(officialRating: "Unknown", type: .movie)
+        let adultCertificate = MediaItem(officialRating: "GB-18", type: .movie)
+        let teenCertificate = MediaItem(officialRating: "GB-15", type: .movie)
+        let advisory = MediaItem(officialRating: "TV-14", type: .series)
+
+        for lower in [nil, 0, 12] as [Int?] {
+            ContentRatingGate.applySharedRange(lowerBound: lower, userDefaults: defaults)
+            #expect(ContentRatingGate.storedLimit(userDefaults: defaults) == .general)
+        }
+        ContentRatingGate.applySharedRange(lowerBound: 13, userDefaults: defaults)
+        defaults.set("off", forKey: ContentRatingGate.limitDefaultsKey)
+        defaults.set(false, forKey: ContentRatingGate.hideUnratedDefaultsKey)
+        #expect(ContentRatingGate.filter([rated, unrated, adultCertificate, teenCertificate, advisory], userDefaults: defaults) == [advisory])
+        let minorRevision = ContentRatingGate.storedPolicy(userDefaults: defaults).revision
+        defaults.set("general", forKey: ContentRatingGate.limitDefaultsKey)
+        #expect(!ContentRatingGate.admitsStored(advisory, userDefaults: defaults))
+
+        ContentRatingGate.applySharedRange(lowerBound: 16, userDefaults: defaults)
+        #expect(ContentRatingGate.storedLimit(userDefaults: defaults) == .general)
+        defaults.set("off", forKey: ContentRatingGate.limitDefaultsKey)
+        #expect(ContentRatingGate.storedLimit(userDefaults: defaults) == .mature)
+        #expect(ContentRatingGate.filter([rated, adultCertificate, unrated, teenCertificate], userDefaults: defaults) == [rated, teenCertificate])
+        defaults.set("teen", forKey: ContentRatingGate.limitDefaultsKey)
+        defaults.set(true, forKey: ContentRatingGate.hideUnratedDefaultsKey)
+        ContentRatingGate.applySharedRange(lowerBound: 18, userDefaults: defaults)
+        let adult = ContentRatingGate.storedPolicy(userDefaults: defaults)
+        #expect(adult.ageCeiling == .off && adult.limit == .teen && adult.hideUnrated)
+        #expect(adult.admits(teenCertificate) && !adult.admits(unrated))
+        #expect(adult.revision != minorRevision)
+    }
+
+    #if canImport(DeclaredAgeRange) && (os(iOS) || os(macOS))
+        @MainActor @Test("A declined optional offer stays dismissed for that Jellyfin account")
+        func optionalOfferAndSwitching() async throws {
+            let name = "gus-age-tests-\(UUID().uuidString)"
+            let defaults = try #require(UserDefaults(suiteName: name))
+            defer { defaults.removePersistentDomain(forName: name) }
+            let first = AccountScope(serverID: "a", userID: "one")
+            let second = AccountScope(serverID: "a", userID: "two")
+            let access = AgeRangeAccess(scope: first, defaults: defaults)
+            ContentRatingGate.applySharedRange(lowerBound: 13, userDefaults: defaults)
+            await access.prepare(isCurrent: { true }, requirement: { false }, request: { .declined })
+            #expect(access.stage == .optional)
+            await access.check(isCurrent: { true }) { .declined }
+            #expect(access.stage == .ready && ContentRatingGate.storedLimit(userDefaults: defaults) == .teen)
+            let returning = AgeRangeAccess(scope: first, defaults: defaults)
+            await returning.prepare(isCurrent: { true }, requirement: { throw CancellationError() }, request: { .declined })
+            #expect(returning.stage == .ready)
+            let switched = AgeRangeAccess(scope: second, defaults: defaults)
+            await switched.prepare(isCurrent: { true }, requirement: { false }, request: { .declined })
+            #expect(switched.stage == .optional)
+            switched.deferOptionalOffer()
+            #expect(switched.stage == .ready && ContentRatingGate.storedLimit(userDefaults: defaults) == .teen)
+
+            var active = true
+            await switched.check(isCurrent: { active }) {
+                active = false
+                return .shared(18)
+            }
+            #expect(ContentRatingGate.storedLimit(userDefaults: defaults) == .teen)
+        }
+
+        @MainActor @Test("Required sharing guards direct access until Apple supplies a range")
+        func requiredCheckAndOfflinePolicy() async throws {
+            let name = "gus-age-tests-\(UUID().uuidString)"
+            let defaults = try #require(UserDefaults(suiteName: name))
+            defer { defaults.removePersistentDomain(forName: name) }
+            let scope = AccountScope(serverID: "a", userID: "one")
+            let item = MediaItem(officialRating: "G", type: .movie)
+            let access = AgeRangeAccess(scope: scope, defaults: defaults)
+            await access.prepare(isCurrent: { true }, requirement: { true }, request: { .declined })
+            access.deferOptionalOffer()
+            #expect(access.stage == .required)
+            #expect(!ContentRatingGate.admitsStored(item, userDefaults: defaults))
+            await access.check(isCurrent: { true }) { throw CancellationError() }
+            #expect(access.stage == .required)
+            await access.check(isCurrent: { true }) { .shared(nil) }
+            #expect(access.stage == .ready)
+            #expect(ContentRatingGate.admitsStored(item, userDefaults: defaults))
+
+            let offline = AgeRangeAccess(scope: scope, defaults: defaults)
+            await offline.prepare(isCurrent: { true }, requirement: { throw CancellationError() }, request: { .declined })
+            #expect(offline.stage == .ready && ContentRatingGate.storedLimit(userDefaults: defaults) == .general)
+        }
+    #endif
+}

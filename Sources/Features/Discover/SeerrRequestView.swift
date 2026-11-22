@@ -12,8 +12,7 @@ private struct SeerrRequestForm: View {
     @Environment(SeerrStore.self) private var store
     @Environment(RootNavigationState.self) private var navigation
     @Environment(\.dismiss) private var dismiss
-    @AppStorage(ContentRatingGate.limitDefaultsKey) private var contentLimit = "off"
-    @AppStorage(ContentRatingGate.hideUnratedDefaultsKey) private var hideUnrated = false
+    @StoredContentPolicy private var contentPolicy
     @Bindable var draft: SeerrRequestDraft
     @State private var confirmingRetry = false
 
@@ -87,12 +86,7 @@ private struct SeerrRequestForm: View {
                 }
             }
             .onChange(of: store.revision) { _, _ in dismiss() }
-            .onChange(of: contentLimit) {
-                _, _ in if !store.admits(draft.title) {
-                    dismiss()
-                }
-            }
-            .onChange(of: hideUnrated) {
+            .onChange(of: contentPolicy) {
                 _, _ in if !store.admits(draft.title) {
                     dismiss()
                 }
@@ -210,16 +204,16 @@ private struct SeerrRequestConfirmation: View {
 
     var body: some View {
         SeerrSetupLayout {
-            HStack(alignment: .top, spacing: 16) {
+            HStack(alignment: .top, spacing: ContentSpacing.card) {
                 SeerrArtworkView(path: title.posterPath).frame(width: 64, height: 96)
-                VStack(alignment: .leading, spacing: 6) {
+                VStack(alignment: .leading, spacing: ContentSpacing.caption) {
                     Text(title.displayTitle).font(.title3.bold())
                     if let year = title.releaseYear {
                         Text(year).foregroundStyle(.secondary)
                     }
                 }
             }
-            VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: ContentSpacing.card) {
                 Label("Request submitted", systemImage: "checkmark.circle").font(.title2.bold())
                 Text(status).font(.headline)
                 Text("Follow approval and availability in My Requests.").foregroundStyle(.secondary)

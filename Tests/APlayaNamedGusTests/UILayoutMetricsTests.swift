@@ -13,6 +13,165 @@ import Testing
 struct UILayoutMetricsTests {
     #if os(iOS)
         @MainActor
+        private func layoutSession(_ provider: FakeMediaProviderSession? = nil) throws -> SessionStore {
+            let url = try #require(URL(string: "https://example.invalid"))
+            return SessionStore(
+                client: JellyfinClientFactory.makeClient(url: url),
+                user: .init(id: "layout-user", name: "User", serverID: "layout"),
+                server: .init(id: "layout", name: "Server", url: url),
+                mediaProvider: provider ?? FakeMediaProviderSession(capabilities: ProviderCapabilities())
+            )
+        }
+
+        @MainActor
+        @Test("Later cast credits grow the rail and accessibility sizes reflow the credits vertically")
+        func castCreditWrapping() throws {
+            let session = try layoutSession()
+            let navigation = RootNavigationState(searchHistory: session.searchHistory)
+            let brief = (0 ..< 7).map { MediaPerson(id: String($0), name: "Person", role: "Actor") }
+            let long = MediaPerson(id: "long", name: "A Performer with a Longer Name", role: "Featured performer and assistant to the director of photography")
+            func height(_ credits: [MediaPerson], _ size: DynamicTypeSize) -> CGFloat {
+                let item = MediaItem(id: "film", people: credits, type: .movie)
+                let rail = CastRail(item: item)
+                    .environment(session).environment(navigation)
+                    .environment(\.dynamicTypeSize, size)
+                    .frame(width: 360)
+                    .fixedSize(horizontal: false, vertical: true)
+                return UIHostingController(rootView: rail).sizeThatFits(in: CGSize(width: 360, height: 2000)).height
+            }
+            #expect(height(brief + [long], .large) > height(brief, .large) + 20)
+            #expect(height(Array(brief.prefix(2)), .accessibility3) > height([brief[0]], .accessibility3) + 44)
+        }
+
+        @MainActor
+        @Test("Episode cards grow from one to three lines with no empty watched row")
+        func episodeCaptionWrapping() throws {
+            let session = try layoutSession()
+            func height(_ lines: Int, _ size: DynamicTypeSize, watched: Bool = false) -> CGFloat {
+                let title = Array(repeating: "Episode", count: lines).joined(separator: "\n")
+                let item = MediaItem(id: "episode", name: title, type: .episode, userData: .init(isWatched: watched))
+                let card = EpisodeCard(episode: item).environment(session)
+                    .environment(\.dynamicTypeSize, size)
+                    .frame(width: 256)
+                    .fixedSize(horizontal: false, vertical: true)
+                return UIHostingController(rootView: card).sizeThatFits(in: CGSize(width: 256, height: 2000)).height
+            }
+            let headline = Text("Episode").font(.headline).environment(\.dynamicTypeSize, .large)
+            let line = UIHostingController(rootView: headline).sizeThatFits(in: CGSize(width: 256, height: 200)).height
+            let short = height(1, .large)
+            #expect(abs(short - (144 + ContentSpacing.group + line)) <= 2)
+            #expect(height(1, .large, watched: true) == short)
+            #expect(height(2, .large) > short + line / 2)
+            #expect(height(3, .large) > height(2, .large) + line / 2)
+            #expect(height(4, .large) == height(3, .large))
+            #expect(height(4, .accessibility3) > height(3, .accessibility3) + line / 2)
+        }
+
+        @MainActor
+        @Test("A later episode sets the rail height without loading offscreen artwork or reserving missing synopses")
+        func episodeRailHeightAndLazyArtwork() async throws {
+            let provider = FakeMediaProviderSession(capabilities: .init())
+            let session = try layoutSession(provider)
+            let series = MediaItem(id: "series", type: .series)
+            let navigation = RootNavigationState(searchHistory: session.searchHistory)
+            func host(lastTitle: String, synopsis: String?) -> UIHostingController<some View> {
+                let episodes = (0 ..< 12).map { number in
+                    MediaItem(
+                        id: "episode-\(number)",
+                        name: number == 11 ? lastTitle : "Pilot",
+                        officialRating: "G",
+                        overview: number == 11 ? synopsis : nil,
+                        type: .episode
+                    )
+                }
+                let rail = SeriesEpisodeRail(episodes: episodes, series: series, seasonID: "season")
+                    .environment(session).environment(navigation)
+                    .environment(UpNextStore()).environment(PlaybackRefreshStore())
+                    .environment(\.dynamicTypeSize, .large).frame(width: 360)
+                    .fixedSize(horizontal: false, vertical: true)
+                return UIHostingController(rootView: rail)
+            }
+
+            let proposal = CGSize(width: 360, height: 2000)
+            let empty = host(lastTitle: "Pilot", synopsis: nil).sizeThatFits(in: proposal).height
+            let one = host(lastTitle: "Pilot", synopsis: "A synopsis.").sizeThatFits(in: proposal).height
+            let final = host(lastTitle: "First\nSecond\nThird", synopsis: "A synopsis.")
+            let three = final.sizeThatFits(in: proposal).height
+            #expect(one > empty + ContentSpacing.caption)
+            #expect(three > one + 25)
+
+            let scene = try #require(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+            let window = UIWindow(windowScene: scene)
+            window.rootViewController = final
+            window.isHidden = false
+            defer { window.isHidden = true }
+            for _ in 0 ..< 100 where !provider.backdropRequestIDs.contains("episode-0") {
+                final.view.layoutIfNeeded()
+                try await Task.sleep(for: .milliseconds(20))
+            }
+            #expect(provider.backdropRequestIDs.contains("episode-0"))
+            #expect(!provider.backdropRequestIDs.contains("episode-11"))
+        }
+
+        @MainActor
+        @Test("For You preserves square artwork and aligns its lower edge with portrait artwork")
+        func mixedArtworkBaseline() throws {
+            func render(_ type: MediaItemType) throws -> (height: Int, artworkCenter: Double) {
+                var card = PosterCard(item: .init(name: "Title", type: type), imageURL: nil, alignsMixedArtwork: true)
+                card.placeholderSymbol = "square.fill"
+                card.subtitle = nil
+                let image = try #require(ImageRenderer(content: card.frame(width: 120)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .environment(\.colorScheme, .light)
+                        .environment(\.dynamicTypeSize, .large)
+                        .background(.white)).cgImage)
+                let context = try #require(CGContext(
+                    data: nil,
+                    width: image.width,
+                    height: image.height,
+                    bitsPerComponent: 8,
+                    bytesPerRow: image.width,
+                    space: CGColorSpaceCreateDeviceGray(),
+                    bitmapInfo: CGImageAlphaInfo.none.rawValue
+                ))
+                context.draw(image, in: CGRect(x: 0, y: 0, width: image.width, height: image.height))
+                let pixels = try #require(context.data?.assumingMemoryBound(to: UInt8.self))
+                // Both placeholders use the same SF Symbol. Its center is the image
+                // center, even if the system changes symbol padding or antialiasing.
+                let ink = (0 ..< min(180, image.height)).filter { pixels[$0 * image.width + image.width / 2] < 165 }
+                let first = try #require(ink.first), last = try #require(ink.last)
+                return (image.height, Double(first + last) / 2)
+            }
+            let movie = try render(.movie), audiobook = try render(.audioBook)
+            #expect(movie.height == audiobook.height)
+            #expect(abs((audiobook.artworkCenter - movie.artworkCenter) - 30) < 2)
+        }
+
+        @MainActor
+        @Test("The iPhone canvas retains its signed-in content across compact and regular widths")
+        func canvasPreservesContentDuringRotation() async throws {
+            let scene = try #require(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+            let window = UIWindow(windowScene: scene)
+            var creations = 0
+            var observed: UserInterfaceSizeClass?
+            let probe = CanvasIdentityProbe(created: { creations += 1 }, updated: { observed = $0 })
+            let host = UIHostingController(rootView: probe.gusIPhoneCanvas())
+            host.traitOverrides.horizontalSizeClass = .compact
+            window.rootViewController = host
+            window.isHidden = false
+            defer { window.isHidden = true }
+            for expected in [UserInterfaceSizeClass.compact, .regular, .compact] {
+                host.traitOverrides.horizontalSizeClass = expected == .compact ? .compact : .regular
+                for _ in 0 ..< 100 where observed != expected {
+                    host.view.layoutIfNeeded()
+                    try await Task.sleep(for: .milliseconds(20))
+                }
+                #expect(observed == expected)
+                #expect(creations == 1)
+            }
+        }
+
+        @MainActor
         @Test("Detail primary actions preserve the Play button dimensions for Gus and custom accents", arguments: [false, true])
         func primaryActionSize(customAccent: Bool) throws {
             let actions: [(LocalizedStringKey, String)] = [
@@ -528,3 +687,151 @@ struct UILayoutMetricsTests {
             .joined()
     }
 }
+
+#if os(iOS)
+    private struct CanvasIdentityProbe: UIViewRepresentable {
+        @Environment(\.horizontalSizeClass) private var sizeClass
+        let created: () -> Void
+        let updated: (UserInterfaceSizeClass?) -> Void
+
+        func makeUIView(context: Context) -> UIView {
+            created()
+            return UIView()
+        }
+
+        func updateUIView(_ view: UIView, context: Context) {
+            updated(sizeClass)
+        }
+    }
+#endif
+
+#if os(iOS)
+    @MainActor
+    private final class ThemeControlRegions {
+        weak var picker: UIView?
+        weak var toggle: UIView?
+    }
+
+    /// Resolve UIKit coordinates after a system sheet has attached to its window.
+    private struct ControlRegion: UIViewRepresentable {
+        let install: (UIView) -> Void
+        func makeUIView(context: Context) -> UIView {
+            let view = UIView()
+            view.isUserInteractionEnabled = false
+            install(view)
+            return view
+        }
+
+        func updateUIView(_ view: UIView, context: Context) {}
+    }
+
+    private struct NativeThemeControls: View {
+        let regions: ThemeControlRegions
+        var body: some View {
+            VStack {
+                Picker("Quality", selection: .constant(1)) {
+                    Text("Original").tag(1)
+                    Text("High").tag(2)
+                }
+                .pickerStyle(.menu)
+                .menuIndicator(.visible)
+                .labelsHidden()
+                .background { ControlRegion { regions.picker = $0 } }
+
+                Toggle("Enabled", isOn: .constant(true))
+                    .background { ControlRegion { regions.toggle = $0 } }
+            }
+            .padding()
+            .frame(width: 300)
+        }
+    }
+
+    private struct PresentedThemeControls: View {
+        let regions: ThemeControlRegions
+        @State private var showing = false
+
+        var body: some View {
+            Color.clear.onAppear { showing = true }
+                .sheet(isPresented: $showing) { NativeThemeControls(regions: regions) }
+        }
+    }
+
+    @MainActor
+    extension UILayoutMetricsTests {
+        @Test("Open sheets update native menu pickers and switches when the custom theme changes")
+        func nativeThemeInPresentedControls() async throws {
+            let suite = "gus-theme-render-" + UUID().uuidString
+            let defaults = try #require(UserDefaults(suiteName: suite))
+            defer { defaults.removePersistentDomain(forName: suite) }
+            defaults.set(ThemePreference.custom.rawValue, forKey: ThemePreference.defaultsKey)
+            defaults.set("004F60", forKey: ThemePreference.customAccentKey)
+            let scene = try #require(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+            let regions = ThemeControlRegions()
+            let window = UIWindow(windowScene: scene)
+            window.overrideUserInterfaceStyle = .dark
+            window.rootViewController = UIHostingController(rootView: PresentedThemeControls(regions: regions)
+                .gusTheme().defaultAppStorage(defaults))
+            window.isHidden = false
+            defer { window.isHidden = true }
+            for _ in 0 ..< 100 where regions.toggle?.window == nil {
+                try await Task.sleep(for: .milliseconds(25))
+            }
+            let toggle = try #require(regions.toggle), picker = try #require(regions.picker)
+            try await Task.sleep(for: .milliseconds(500))
+
+            func snapshot(of rect: CGRect, in window: UIWindow) -> UIImage {
+                let format = UIGraphicsImageRendererFormat()
+                format.scale = 1
+                format.opaque = true
+                return UIGraphicsImageRenderer(size: rect.size, format: format).image { _ in
+                    window.drawHierarchy(in: window.bounds.offsetBy(dx: -rect.minX, dy: -rect.minY), afterScreenUpdates: true)
+                }
+            }
+
+            func countAccentPixels(in view: UIView, accent: ThemeAccent) throws -> Int {
+                let window = try #require(view.window)
+                let rendered = snapshot(of: view.convert(view.bounds, to: window).integral, in: window)
+                let image = try #require(rendered.cgImage)
+                let space = try #require(CGColorSpace(name: CGColorSpace.sRGB))
+                let buffer = try #require(CGContext(
+                    data: nil,
+                    width: image.width,
+                    height: image.height,
+                    bitsPerComponent: 8,
+                    bytesPerRow: image.width * 4,
+                    space: space,
+                    bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+                ))
+                buffer.draw(image, in: CGRect(x: 0, y: 0, width: image.width, height: image.height))
+                let bytes = try #require(buffer.data?.assumingMemoryBound(to: UInt8.self))
+                let red = Int(accent.red * 255), green = Int(accent.green * 255), blue = Int(accent.blue * 255)
+                return stride(from: 0, to: image.width * image.height * 4, by: 4).count { i in
+                    abs(Int(bytes[i]) - red) < 24 && abs(Int(bytes[i + 1]) - green) < 24 && abs(Int(bytes[i + 2]) - blue) < 24
+                }
+            }
+
+            for hex in ["004F60", "600044"] {
+                defaults.set(hex, forKey: ThemePreference.customAccentKey)
+                let accent = try #require(ThemeAccent(hex: hex))
+                let track = accent.switchTrack(onDark: true), tint = accent.readable(onDark: true)
+                var trackCount = 0, tintCount = 0
+                for _ in 0 ..< 20 {
+                    trackCount = try countAccentPixels(in: toggle, accent: track)
+                    tintCount = try countAccentPixels(in: picker, accent: tint)
+                    if trackCount > 20, tintCount > 5 {
+                        break
+                    }
+                    try await Task.sleep(for: .milliseconds(50))
+                }
+                let controlWindow = try #require(picker.window)
+                let bounds = picker.convert(picker.bounds, to: controlWindow)
+                    .union(toggle.convert(toggle.bounds, to: controlWindow)).insetBy(dx: -8, dy: -8).integral
+                let data = try #require(snapshot(of: bounds, in: controlWindow).pngData())
+                try data.write(to: FileManager.default.temporaryDirectory.appendingPathComponent("Native-dark-controls-\(hex).png"), options: .atomic)
+                Attachment.record(Array(data), named: "Native-dark-controls-\(hex).png")
+                #expect(trackCount > 20, "Native switch uses its contrast-adjusted track for \(hex)")
+                #expect(tintCount > 5, "Native menu picker uses the readable text color for \(hex)")
+            }
+        }
+    }
+#endif

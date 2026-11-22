@@ -31,8 +31,7 @@ extension EnvironmentValues {
 struct NaturalLibraryResults: View {
     @Environment(SessionStore.self) private var session
     let search: GlobalSearchSession
-    @AppStorage(ContentRatingGate.limitDefaultsKey) private var restriction = ContentRatingGate.Limit.off.rawValue
-    @AppStorage(ContentRatingGate.hideUnratedDefaultsKey) private var hideUnrated = false
+    @StoredContentPolicy private var contentPolicy
 
     var body: some View {
         let natural = search.natural
@@ -82,8 +81,7 @@ struct NaturalLibraryResults: View {
         .task(id: natural.submission) {
             await natural.run(session: session) { search.searchByKeyword() }
         }
-        .onChange(of: restriction) { natural.resetResults() }
-        .onChange(of: hideUnrated) { natural.resetResults() }
+        .onChange(of: contentPolicy) { natural.resetResults() }
         .onChange(of: session.intelligencePreferences.cloudEnabled) { _, allowed in
             if !allowed {
                 natural.resetResults()
@@ -98,8 +96,7 @@ struct LibrarySearchFieldBehavior: ViewModifier {
     #if os(tvOS)
         @Environment(RootNavigationState.self) private var root
     #endif
-    @AppStorage(ContentRatingGate.limitDefaultsKey) private var restriction = ContentRatingGate.Limit.off.rawValue
-    @AppStorage(ContentRatingGate.hideUnratedDefaultsKey) private var hideUnrated = false
+    @StoredContentPolicy private var contentPolicy
     @State private var catalogTerms: [String] = []
     @State private var catalogKey: String?
     let search: GlobalSearchSession
@@ -109,12 +106,12 @@ struct LibrarySearchFieldBehavior: ViewModifier {
     }
 
     private var requestKey: String {
-        "\(naturalMode):\(restriction):\(hideUnrated):\(search.text)"
+        "\(naturalMode):\(contentPolicy.revision):\(search.text)"
     }
 
     private var terms: [String] {
         var candidates: [String] = []
-        if restriction == ContentRatingGate.Limit.off.rawValue {
+        if contentPolicy.limit == .off {
             candidates = session.searchHistory.entries.compactMap {
                 if case let .typed(value) = $0 {
                     value
@@ -148,7 +145,9 @@ struct LibrarySearchFieldBehavior: ViewModifier {
                 }
             }
             .environment(\.librarySearchDraftSuggestions, session.intelligenceAccess.usesNaturalSearch && search.natural.submission == nil ? terms : [])
-            .onSubmit(of: .search) { search.submit(naturalSearchEnabled: session.intelligenceAccess.usesNaturalSearch, history: session.searchHistory) }
+            .onSubmit(of: .search) {
+                search.submit(naturalSearchEnabled: session.intelligenceAccess.usesNaturalSearch, history: session.searchHistory)
+            }
         #endif
     }
 

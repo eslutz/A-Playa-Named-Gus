@@ -1,5 +1,23 @@
 import CoreGraphics
 
+/// Distances between app-owned elements. System lists, forms, and controls own their insets.
+enum ContentSpacing {
+    static let caption: CGFloat = 4
+    #if os(tvOS)
+        static let group: CGFloat = 12
+        static let card: CGFloat = 20
+        static let section: CGFloat = 40
+    #elseif os(visionOS)
+        static let group: CGFloat = 10
+        static let card: CGFloat = 16
+        static let section: CGFloat = 24
+    #else
+        static let group: CGFloat = 8
+        static let card: CGFloat = 12
+        static let section: CGFloat = 24
+    #endif
+}
+
 enum PageContentMetrics {
     static var maxWidth: CGFloat {
         #if os(tvOS)

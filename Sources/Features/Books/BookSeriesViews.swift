@@ -59,8 +59,7 @@ struct BookShelfView: View {
 
 private struct BookSeriesLabel: View {
     @Environment(SessionStore.self) private var session
-    @AppStorage(ContentRatingGate.limitDefaultsKey) private var limit = ContentRatingGate.Limit.off
-    @AppStorage(ContentRatingGate.hideUnratedDefaultsKey) private var hideUnrated = false
+    @StoredContentPolicy private var contentPolicy
     let series: BookSeries
     let showsList: Bool
     let complete: Bool
@@ -117,7 +116,7 @@ private struct BookSeriesLabel: View {
 
     private var covers: some View {
         let aspect: CGFloat = series.id.format == .audioBook ? 1 : 2.0 / 3.0
-        let books = ContentRatingGate.coverMembers(series.members, limit: limit, hideUnrated: hideUnrated, count: 3)
+        let books = ContentRatingGate.coverMembers(series.members, limit: contentPolicy.limit, hideUnrated: contentPolicy.hideUnrated, count: 3, ageCeiling: contentPolicy.ageCeiling)
         return Color.clear.aspectRatio(aspect, contentMode: .fit)
             .overlay {
                 GeometryReader { geometry in
@@ -141,8 +140,7 @@ struct BookSeriesDetailView: View {
     @Environment(SessionStore.self) private var session
     @Environment(RootNavigationState.self) private var root
     @Environment(\.dismiss) private var dismiss
-    @AppStorage(ContentRatingGate.limitDefaultsKey) private var limit = ContentRatingGate.Limit.off
-    @AppStorage(ContentRatingGate.hideUnratedDefaultsKey) private var hideUnrated = false
+    @StoredContentPolicy private var contentPolicy
     let ref: BookSeriesRef
     @State private var store: LibraryStore?
 
@@ -161,7 +159,7 @@ struct BookSeriesDetailView: View {
                 LoadingStateView(state: store.state, isEmpty: members.isEmpty, emptyTitle: "No Titles in This Series", emptySymbol: "books.vertical", retryAction: { Task { await store.load() } }) {
                     ArtworkDetailPage {
                         DetailCoverHeader(maximumCoverWidth: 220) {
-                            let cover = ContentRatingGate.coverMembers(members, limit: limit, hideUnrated: hideUnrated, count: 1).first
+                            let cover = ContentRatingGate.coverMembers(members, limit: contentPolicy.limit, hideUnrated: contentPolicy.hideUnrated, count: 1, ageCeiling: contentPolicy.ageCeiling).first
                             let urls = cover.map { session.mediaProvider.artworkURLs(for: $0, request: .init(role: $0.coverArtworkRole, maxWidth: 640)) } ?? []
                             ArtworkTile(url: urls.first, aspectRatio: cover?.type == .audioBook ? 1 : 2.0 / 3.0, contentMode: .fit, placeholderSymbol: "books.vertical", fallbackURLs: Array(urls.dropFirst()))
 

@@ -182,7 +182,7 @@ struct UserProfileStoreTests {
             subtitleLanguage: "fra",
             currentPassword: password,
             newPassword: "new",
-            picture: Data([7])
+            picture: .replace(Data([7]))
         )
         #expect(result != .confirmed)
         #expect(state.requests.allSatisfy { $0.httpMethod == "GET" })
@@ -272,7 +272,7 @@ struct UserProfileStoreTests {
             subtitleLanguage: "",
             currentPassword: "current",
             newPassword: "new",
-            picture: jpeg
+            picture: .replace(jpeg)
         ) == .failed(.forbidden))
         #expect(store.profile == updated)
         #expect(store.didSavePicture)
@@ -292,7 +292,7 @@ struct UserProfileStoreTests {
             subtitleLanguage: "",
             currentPassword: "current",
             newPassword: "new",
-            picture: jpeg
+            picture: .replace(jpeg)
         ) == .confirmed)
         #expect(store.imageData == jpeg)
         #expect(state.requests.map { $0.url?.path } == ["/Users/user", "/UserImage", "/Users/user", "/UserImage", "/Users/Password"])
@@ -300,6 +300,64 @@ struct UserProfileStoreTests {
         #expect(upload.url?.query == "userId=user")
         #expect(upload.value(forHTTPHeaderField: "Content-Type") == "image/jpeg")
         #expect(upload.httpBody == jpeg.base64EncodedData())
+    }
+
+    @Test("Removing a profile photo requires authorization and canonical readback", arguments: [true, false])
+    func removePicture(updated: Bool) async throws {
+        let old = UserDto(id: "user", name: "Eric", primaryImageTag: "old")
+        let current = updated ? UserDto(id: "user", name: "Eric") : old
+        var responses = try [JSONEncoder().encode(old), Data(), JSONEncoder().encode(current)]
+        if !updated {
+            responses.append(Data([1]))
+        }
+        let (store, state) = try fixture(responses)
+        let result = await store.save(name: "Eric", audioLanguage: "", subtitleLanguage: "", currentPassword: "current", picture: .remove)
+        #expect(result == (updated ? .confirmed : .uncertain))
+        #expect(store.didSavePicture == updated)
+        #expect(store.needsSaveReadback != updated)
+        #expect(state.verificationRequests.count == 2)
+        let deletion = try #require(state.requests.first { $0.httpMethod == "DELETE" })
+        #expect(deletion.url?.path == "/UserImage")
+        #expect(deletion.url?.query == "userId=user")
+    }
+
+    @Test("Quick Connect submits exactly six ASCII digits for the signed-in account and prevents overlapping submissions")
+    func quickConnectAuthorization() async throws {
+        let (store, state) = try fixture([Data("true".utf8), Data("true".utf8)])
+        #expect(await store.authorizeQuickConnect(code: "012345") == nil)
+        await store.refreshQuickConnectAvailability()
+        #expect(store.quickConnectEnabled)
+        for invalid in ["", "12345", "1234567", "12 345", "12٣456"] {
+            #expect(await store.authorizeQuickConnect(code: invalid) == nil)
+        }
+        state.suspendNextWrite()
+        let first = Task { await store.authorizeQuickConnect(code: "012345") }
+        while !state.hasSuspendedWrite {
+            await Task.yield()
+        }
+        #expect(await store.authorizeQuickConnect(code: "012345") == nil)
+        state.finishSuspendedWrite(accepted: true)
+        #expect(await first.value == .authorized)
+        #expect(state.requests.count == 2)
+        let authorization = try #require(state.requests.last)
+        #expect(authorization.url?.path == "/QuickConnect/Authorize")
+        #expect(authorization.httpMethod == "POST")
+        #expect(authorization.url?.query == "code=012345&userId=user")
+        #expect(authorization.value(forHTTPHeaderField: "Authorization")?.contains("Token=token") == true)
+    }
+
+    @Test("Quick Connect honors server rejections, disabled state, uncertain results and session retirement")
+    func quickConnectFailures() async throws {
+        let (store, state) = try fixture(["false", "true", "false", "unreadable"].map { Data($0.utf8) })
+        await store.refreshQuickConnectAvailability()
+        #expect(!store.quickConnectEnabled)
+        #expect(await store.authorizeQuickConnect(code: "012345") == nil)
+        await store.refreshQuickConnectAvailability()
+        #expect(await store.authorizeQuickConnect(code: "012345") == .rejected)
+        #expect(await store.authorizeQuickConnect(code: "012345") == .unconfirmed)
+        store.invalidate()
+        #expect(await store.authorizeQuickConnect(code: "012345") == nil)
+        #expect(state.requests.count == 4)
     }
 
     private func fixture(_ data: [Data], codes: [Int]? = nil, verificationUserID: String = "user", verificationPassword: String = "current") throws -> (UserProfileStore, ProfileResponseState) {

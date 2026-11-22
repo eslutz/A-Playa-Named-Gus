@@ -6,13 +6,11 @@ struct DownloadedLibraryView: View {
     @Environment(RootNavigationState.self) private var rootState
     @Environment(SessionStore.self) private var session
     @Environment(OfflineDownloadStore.self) private var downloads
-    @Environment(AppNavigationModel.self) private var navigation
 
     @FocusState private var isSearchFocused: Bool
     @State private var playerItem: ItemRef?
     @State private var missingFile = false
-    @AppStorage(ContentRatingGate.limitDefaultsKey) private var ratingLimit = "off"
-    @AppStorage(ContentRatingGate.hideUnratedDefaultsKey) private var hideUnrated = false
+    @StoredContentPolicy private var contentPolicy
 
     private var filter: DownloadedLibraryFilter {
         rootState.downloadFilter
@@ -27,25 +25,41 @@ struct DownloadedLibraryView: View {
     }
 
     private var sections: [DownloadedLibrarySection] {
-        _ = ratingLimit
-        _ = hideUnrated
+        _ = contentPolicy
         return DownloadedLibrary.sections(records: completed, filter: filter, search: search)
     }
 
     var body: some View {
-        LoadingStateView(
-            state: downloads.loadState,
-            retryAction: { reload() },
-            preservesContent: !sections.isEmpty
-        ) {
-            libraryContent
+        let visibleSections = sections
+        List {
+            if !visibleSections.isEmpty {
+                if case let .failed(message) = downloads.loadState {
+                    Text(message).foregroundStyle(.secondary)
+                    Button("Try Again", action: reload)
+                } else if downloads.loadState == .loading {
+                    ProgressView().accessibilityLabel("Refreshing")
+                }
+            }
+            downloadRows(visibleSections)
+        }
+        .overlay {
+            if visibleSections.isEmpty {
+                LoadingStateView(state: downloads.loadState, retryAction: reload) {
+                    ContentUnavailableView {
+                        Label(search.isEmpty ? "No Downloads" : "No Results", systemImage: "arrow.down.circle")
+                    } description: {
+                        Text(search.isEmpty ? "Completed downloads available on this device appear here." : "Try another title, series, or artist.")
+                    }
+                }
+            }
         }
         .task { reload() }
         .refreshable { reload() }
-        .navigationTitle("Downloaded")
-        .gusSearchable(text: Bindable(rootState).projectedValue.downloadSearch, isPresented: Bindable(rootState).projectedValue.isDownloadSearchPresented, isFocused: $isSearchFocused, prompt: Text("Search Downloaded"))
-        .onChange(of: navigation.searchFocusRequest) { _, request in
-            guard request > 0 else { return }
+        .navigationTitle("Downloads")
+        .modifier(DownloadsSearchField(text: Bindable(rootState).projectedValue.downloadSearch, isPresented: Bindable(rootState).projectedValue.isDownloadSearchPresented, isFocused: $isSearchFocused))
+        .onChange(of: rootState.pendingLocalSearchFocus, initial: true) { _, section in
+            guard section == NavigationSectionPreference.downloadedID else { return }
+            rootState.pendingLocalSearchFocus = nil
             rootState.isDownloadSearchPresented = true
             isSearchFocused = true
         }
@@ -61,9 +75,10 @@ struct DownloadedLibraryView: View {
         }
         .toolbar {
             ToolbarItem {
-                NavigationLink(value: GusRoute.screen(.downloads)) {
-                    Label("Manage Downloads", systemImage: "arrow.down.circle").frame(minWidth: 44, minHeight: 44)
+                Menu("Downloads Options", systemImage: "ellipsis") {
+                    NavigationLink("Manage Downloads", value: GusRoute.screen(.downloads))
                 }
+                .accessibilityIdentifier("Downloads.options")
             }
         }
         .playerPresentation(item: $playerItem)
@@ -75,53 +90,39 @@ struct DownloadedLibraryView: View {
         }
     }
 
-    @ViewBuilder private var libraryContent: some View {
-        if sections.isEmpty {
-            ContentUnavailableView {
-                Label(search.isEmpty ? "No Downloaded Media" : "No Results", systemImage: "arrow.down.circle")
-            } description: {
-                Text(search.isEmpty ? "Completed downloads available on this device appear here." : "Try another title, series, or artist.")
-            } actions: {
-                NavigationLink("Manage Downloads", value: GusRoute.screen(.downloads))
-                    .frame(minWidth: 44, minHeight: 44)
-                    .contentShape(Rectangle())
-            }
-        } else {
-            List {
-                ForEach(sections) { section in
-                    Section(section.title) {
-                        ForEach(section.records) { record in
-                            let item = record.playbackItem
-                            Button { play(record) } label: {
-                                HStack(spacing: 12) {
-                                    OfflineArtwork(url: downloads.localArtworkURL(
-                                        for: item, serverID: session.server.id, userID: session.user.id
-                                    ), systemImage: item.isAudioPlayable ? "music.note" : item.type == .book ? "book" : "film")
-                                        .frame(width: 48, height: 64)
-                                    VStack(alignment: .leading, spacing: 4) {
-                                        Text(item.displayTitle).font(.headline)
-                                        if let episode = DownloadedLibrary.episodeLabel(item) {
-                                            Text(episode).font(.subheadline).foregroundStyle(.secondary)
-                                        } else if let artist = record.item.albumArtist ?? record.item.artists.first {
-                                            Text(artist).font(.subheadline).foregroundStyle(.secondary)
-                                        }
-                                    }
-                                    Spacer()
-                                    Image(systemName: item.type == .book ? "book" : "play.fill")
-                                        .accessibilityHidden(true)
+    private func downloadRows(_ sections: [DownloadedLibrarySection]) -> some View {
+        ForEach(sections) { section in
+            Section(section.title) {
+                ForEach(section.records) { record in
+                    let item = record.playbackItem
+                    Button { play(record) } label: {
+                        HStack(spacing: ContentSpacing.card) {
+                            OfflineArtwork(url: downloads.localArtworkURL(
+                                for: item, serverID: session.server.id, userID: session.user.id
+                            ), systemImage: item.isAudioPlayable ? "music.note" : item.type == .book ? "book" : "film")
+                                .frame(width: 48, height: 64)
+                            VStack(alignment: .leading, spacing: ContentSpacing.caption) {
+                                Text(item.displayTitle).font(.headline)
+                                if let episode = DownloadedLibrary.episodeLabel(item) {
+                                    Text(episode).font(.subheadline).foregroundStyle(.secondary)
+                                } else if let artist = record.item.albumArtist ?? record.item.artists.first {
+                                    Text(artist).font(.subheadline).foregroundStyle(.secondary)
                                 }
-                                .contentShape(Rectangle())
                             }
-                            .buttonStyle(.plain)
-                            .accessibilityElement(children: .ignore)
-                            .accessibilityLabel(item.mediaAccessibility.label)
-                            .accessibilityValue([item.mediaAccessibility.value, String(localized: "Downloaded")].filter { !$0.isEmpty }.joined(separator: ", "))
-                            .gusDownloadSwipeDelete {
-                                downloads.delete(record, serverID: session.server.id, userID: session.user.id)
-                            }
-                            .accessibilityHint(item.type == .book ? "Opens the downloaded book" : "Plays the downloaded file")
+                            Spacer()
+                            Image(systemName: item.type == .book ? "book" : "play.fill")
+                                .accessibilityHidden(true)
                         }
+                        .contentShape(Rectangle())
                     }
+                    .buttonStyle(.plain)
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityLabel(item.mediaAccessibility.label)
+                    .accessibilityValue([item.mediaAccessibility.value, String(localized: "Downloaded")].filter { !$0.isEmpty }.joined(separator: ", "))
+                    .gusDownloadSwipeDelete {
+                        downloads.delete(record, serverID: session.server.id, userID: session.user.id)
+                    }
+                    .accessibilityHint(item.type == .book ? "Opens the downloaded book" : "Plays the downloaded file")
                 }
             }
         }

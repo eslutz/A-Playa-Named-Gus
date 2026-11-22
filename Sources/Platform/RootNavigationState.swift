@@ -23,6 +23,8 @@ final class RootNavigationState {
         self.searchHistory = searchHistory
     }
 
+    var hasRestoredSelection = false
+    var pendingLocalSearchFocus: String?
     var selectedSectionID = NavigationSectionPreference.homeID
     #if os(iOS)
         var sidebarVisibility: NavigationSplitViewVisibility?
@@ -320,6 +322,7 @@ final class RootNavigationState {
                 globalSearch.natural.resetResults()
             }
         }
+        pendingLocalSearchFocus = nil
         selectedSectionID = next
     }
 
@@ -421,11 +424,15 @@ final class RootNavigationState {
         globalSearch.edit("", naturalSearchEnabled: false)
     }
 
-    func replaySearch(_ entry: SearchHistoryEntry) {
+    func replaySearch(_ entry: SearchHistoryEntry, naturalSearchEnabled: Bool = false) {
         guard let searchHistory else { return }
         switch entry {
         case let .related(target):
             openRelatedSearch(target)
+        case let .natural(text):
+            clearSearchResults()
+            globalSearch.edit(text, naturalSearchEnabled: naturalSearchEnabled)
+            globalSearch.submit(naturalSearchEnabled: naturalSearchEnabled, history: searchHistory)
         case let .typed(text):
             clearSearchResults()
             globalSearch.edit(text, naturalSearchEnabled: false)
@@ -616,6 +623,7 @@ final class SectionSearchState {
                 requestedText = nil
             }
             lastCompletedQuery = nil
+            historyRevision = history?.deletionRevision
         }
     }
 
@@ -625,6 +633,7 @@ final class SectionSearchState {
     @ObservationIgnored private var searchTask: Task<Void, Never>?
     private var requestedText: String?
     private var lastCompletedQuery: String?
+    private var historyRevision: Int?
     private var recordsTypedHistory = true
 
     /// Automatic fallback can search a natural-language prompt literally without
@@ -649,7 +658,7 @@ final class SectionSearchState {
 
     private func completeLoadedSearch(_ text: String, in history: SearchHistoryStore) {
         let query = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard let store, store.state == .loaded, store.query == query, lastCompletedQuery != query else { return }
+        guard let store, store.state == .loaded, store.query == query, lastCompletedQuery != query, historyRevision == history.deletionRevision else { return }
         recordTyped(query, in: history)
     }
 
@@ -681,6 +690,9 @@ final class SectionSearchState {
             result = currentStore
         } else {
             result = SearchStore(session: session); requestedText = nil
+        }
+        if history == nil {
+            historyRevision = session.searchHistory.deletionRevision
         }
         history = session.searchHistory
         retain(result, owner: owner)

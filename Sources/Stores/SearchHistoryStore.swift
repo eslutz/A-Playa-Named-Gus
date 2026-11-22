@@ -1,16 +1,22 @@
 import Foundation
 import Observation
 
-/// A typed query and a metadata search with the same title are distinct ways to search.
+/// Keep the search mode so replay can reproduce the original intent.
 enum SearchHistoryEntry: Codable, Hashable, Identifiable {
     case typed(String)
+    case natural(String)
     case related(RelatedSearch)
 
     var id: String {
         switch self {
-        case let .typed(text): "typed:" + text.trimmingCharacters(in: .whitespacesAndNewlines).lowercased(with: Locale(identifier: "en_US_POSIX"))
+        case let .typed(text): "typed:" + Self.normalizedKey(text)
+        case let .natural(text): "natural:" + Self.normalizedKey(text)
         case let .related(search): "related:" + search.identityKey
         }
+    }
+
+    private static func normalizedKey(_ text: String) -> String {
+        text.trimmingCharacters(in: .whitespacesAndNewlines).lowercased(with: Locale(identifier: "en_US_POSIX"))
     }
 
     var completed: Self? {
@@ -19,6 +25,10 @@ enum SearchHistoryEntry: Codable, Hashable, Identifiable {
             let query = text.trimmingCharacters(in: .whitespacesAndNewlines)
             guard !query.isEmpty else { return nil }
             return .typed(query)
+        case let .natural(text):
+            let query = text.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !query.isEmpty else { return nil }
+            return .natural(query)
         case let .related(target):
             let value = RelatedSearch(kind: target.kind, id: target.id, name: target.name)
             guard value.id != nil, !value.name.isEmpty else { return nil }
@@ -35,6 +45,8 @@ final class SearchHistoryStore {
     private let defaults: UserDefaults
     private let key: String
     private var active = true
+    /// A delayed completion started before an explicit deletion cannot undo it.
+    private(set) var deletionRevision = 0
 
     init(scope: AccountScope, defaults: UserDefaults = .standard) {
         self.defaults = defaults
@@ -47,20 +59,22 @@ final class SearchHistoryStore {
         }
     }
 
-    func record(_ entry: SearchHistoryEntry) {
-        guard active, let value = entry.completed, entries.first != value else { return }
+    func record(_ entry: SearchHistoryEntry, startedAt revision: Int? = nil) {
+        guard revision == nil || revision == deletionRevision, active, let value = entry.completed, entries.first != value else { return }
         entries = [value] + entries.filter { $0.id != value.id }.prefix(Self.limit - 1)
         persist()
     }
 
     func remove(_ entry: SearchHistoryEntry) {
         guard active else { return }
+        deletionRevision += 1
         entries.removeAll { $0.id == entry.id }
         persist()
     }
 
     func clear() {
         guard active else { return }
+        deletionRevision += 1
         entries.removeAll()
         defaults.removeObject(forKey: key)
     }

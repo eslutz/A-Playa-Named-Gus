@@ -39,6 +39,114 @@ final class GusLaunchUITests: XCTestCase {
             XCTAssertTrue(find.isHittable)
         }
 
+        func testAgeRangeOfferCanBeDeferredAcrossLaunches() async throws {
+            continueAfterFailure = false
+            let base = try await navigationFixture()
+            let app = makeApp()
+            app.launchEnvironment["GUS_DEMO_URL"] = base.absoluteString
+            app.launchEnvironment["GUS_DEMO_USERNAME"] = UUID().uuidString.replacingOccurrences(of: "-", with: "").lowercased()
+            app.launchArguments += ["--gus-demo-server", "--gus-test-age-offer", "--gus-disable-cloud-sync", "--gus-intelligence-test-unsupported", "--gus-route", "settings"]
+            app.launch()
+            defer { app.terminate() }
+
+            let later = app.buttons["Not Now"]
+            XCTAssertTrue(later.waitForExistence(timeout: 20))
+            XCTAssertTrue(app.buttons["Check Age Range"].isHittable)
+            later.tap()
+            XCTAssertTrue(app.buttons["Settings.profile"].waitForExistence(timeout: 15))
+            app.terminate()
+            app.launch()
+            XCTAssertTrue(app.buttons["Settings.profile"].waitForExistence(timeout: 15))
+            XCTAssertFalse(later.exists)
+        }
+
+        func testProfileQuickConnectRejectsExpiredCodesAndAuthorizes() async throws {
+            continueAfterFailure = false
+            let app = try await openProfileFixture("profile-enabled")
+            defer { app.terminate() }
+            let authorizer = app.buttons["Profile.quickConnect"]
+            for _ in 0 ..< 6 where !authorizer.isHittable {
+                app.swipeUp()
+            }
+            XCTAssertTrue(authorizer.isHittable)
+            authorizer.tap()
+            let field = app.textFields["Six-digit code"]
+            XCTAssertTrue(field.waitForExistence(timeout: 10))
+            let authorize = app.buttons["Authorize Device"]
+            field.tap()
+            field.typeText("12345")
+            XCTAssertFalse(authorize.isEnabled)
+            field.typeText("6")
+            authorize.tap()
+            XCTAssertTrue(app.staticTexts["That code is invalid or has expired. Get a new code on the other device."].waitForExistence(timeout: 10))
+            field.tap()
+            field.typeText("012345")
+            authorize.tap()
+            XCTAssertTrue(app.staticTexts["Device authorized."].waitForExistence(timeout: 10))
+            XCTAssertFalse(authorize.isEnabled)
+        }
+
+        func testProfilePhotoRemovalCanBeCanceledWithQuickConnectDisabled() async throws {
+            continueAfterFailure = false
+            let app = try await openProfileFixture("profile-disabled")
+            defer { app.terminate() }
+            let photo = app.buttons["Profile.picture"]
+            XCTAssertTrue(photo.waitForExistence(timeout: 10))
+            photo.tap()
+            let remove = app.buttons["Remove Photo"].firstMatch
+            XCTAssertTrue(remove.waitForExistence(timeout: 5))
+            remove.tap()
+            XCTAssertTrue(app.buttons["Profile.save"].isEnabled)
+            for _ in 0 ..< 3 {
+                app.swipeUp()
+            }
+            XCTAssertFalse(app.buttons["Profile.quickConnect"].exists)
+            app.buttons["Cancel"].firstMatch.tap()
+            app.buttons["Settings.profile"].firstMatch.tap()
+            XCTAssertTrue(photo.waitForExistence(timeout: 10))
+            XCTAssertFalse(app.buttons["Profile.save"].isEnabled)
+            photo.tap()
+            XCTAssertTrue(remove.waitForExistence(timeout: 5))
+        }
+
+        func testClientLogsOpensRecordedEventFromFullList() async throws {
+            continueAfterFailure = false
+            let app = try await openProfileFixture("profile-disabled")
+            defer { app.terminate() }
+            app.buttons["Cancel"].firstMatch.tap()
+            let logs = app.buttons["Client Logs"].firstMatch
+            for _ in 0 ..< 12 where !logs.isHittable {
+                app.swipeUp()
+            }
+            XCTAssertTrue(logs.isHittable)
+            logs.tap()
+            let all = app.buttons["ClientLogs.allEvents"]
+            for _ in 0 ..< 6 where !all.isHittable {
+                app.swipeUp()
+            }
+            XCTAssertTrue(all.isHittable)
+            all.tap()
+            let event = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@", "ClientLogs.event.")).firstMatch
+            XCTAssertTrue(event.waitForExistence(timeout: 5))
+            event.tap()
+            XCTAssertTrue(app.navigationBars["Event Details"].waitForExistence(timeout: 5))
+            XCTAssertTrue(app.staticTexts["Recorded"].exists)
+        }
+
+        private func openProfileFixture(_ username: String) async throws -> XCUIApplication {
+            let base = try await navigationFixture()
+            let app = makeApp()
+            app.launchEnvironment["GUS_DEMO_URL"] = base.absoluteString
+            app.launchEnvironment["GUS_DEMO_USERNAME"] = username
+            app.launchArguments += ["--gus-demo-server", "--gus-disable-cloud-sync", "--gus-intelligence-test-unsupported", "--gus-route", "settings"]
+            app.launch()
+            let open = app.buttons["Settings.profile"].firstMatch
+            XCTAssertTrue(open.waitForExistence(timeout: 20))
+            open.tap()
+            XCTAssertTrue(app.textFields["Username"].waitForExistence(timeout: 10))
+            return app
+        }
+
         func testProfileCanCloseDuringLoadingAndAfterFailure() async throws {
             continueAfterFailure = false
             let base = try await navigationFixture()
@@ -50,7 +158,7 @@ final class GusLaunchUITests: XCTestCase {
             app.launch()
             defer { app.terminate() }
 
-            let open = app.buttons["View and Edit Profile"].firstMatch
+            let open = app.buttons["Settings.profile"].firstMatch
             XCTAssertTrue(open.waitForExistence(timeout: 20))
             open.tap()
             let sheet = app.navigationBars["Profile"]
@@ -163,22 +271,119 @@ final class GusLaunchUITests: XCTestCase {
             app.launch()
             defer { app.terminate() }
 
-            let first = app.buttons["First Season"].firstMatch
             XCTAssertTrue(app.staticTexts["Navigation Series"].firstMatch.waitForExistence(timeout: 20))
-            for _ in 0 ..< 8 where !first.isHittable {
-                app.swipeUp()
-            }
-            XCTAssertTrue(first.isHittable)
-            first.tap()
-            let second = app.buttons["Second Season"].firstMatch
-            XCTAssertTrue(second.waitForExistence(timeout: 5))
-            second.tap()
+            selectSeason("Second Season", replacing: "First Season", in: app)
             let episode = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "Episode of Second Season")).firstMatch
             XCTAssertTrue(episode.waitForExistence(timeout: 10))
-            XCTAssertTrue(second.isHittable)
-            second.tap()
-            first.tap()
+            selectSeason("First Season", replacing: "Second Season", in: app)
             XCTAssertTrue(app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "Episode of First Season")).firstMatch.waitForExistence(timeout: 10))
+        }
+
+        func testSearchSeasonAndEpisodeSurviveRotation() async throws {
+            guard UIDevice.current.userInterfaceIdiom == .phone else { throw XCTSkip("Uses iPhone tab navigation") }
+            continueAfterFailure = false
+            XCUIDevice.shared.orientation = .portrait
+            let app = try await launchNavigationFixture(route: "search")
+            defer { app.terminate(); XCUIDevice.shared.orientation = .portrait }
+
+            let query = "Navigation Series"
+            let field = app.searchFields.firstMatch
+            XCTAssertTrue(field.waitForExistence(timeout: 20))
+            field.tap()
+            field.typeText(query + "\n")
+            let series = app.buttons["Search.result.49000000000000000000000000000000"]
+            XCTAssertTrue(series.waitForExistence(timeout: 12))
+            series.tap()
+            selectSeason("Second Season", replacing: "First Season", in: app)
+            let episode = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "Episode of Second Season")).firstMatch
+            XCTAssertTrue(episode.waitForExistence(timeout: 10))
+            for _ in 0 ..< 3 where !episode.isHittable {
+                app.swipeUp(velocity: .slow)
+            }
+            episode.tap()
+            let overview = app.staticTexts["Detail.heroOverview"].firstMatch
+            XCTAssertTrue(overview.waitForExistence(timeout: 10))
+            for orientation in [UIDeviceOrientation.landscapeLeft, .portrait] {
+                rotate(app, to: orientation)
+                XCTAssertTrue(overview.waitForExistence(timeout: 5))
+                XCTAssertEqual(overview.label, "Navigation episode details for Second Season.")
+            }
+
+            app.navigationBars.buttons["BackButton"].firstMatch.tap()
+            XCTAssertTrue(episode.waitForExistence(timeout: 10))
+            XCTAssertEqual(app.buttons["Series.seasonPicker"].firstMatch.value as? String, "Second Season")
+            app.navigationBars.buttons["BackButton"].firstMatch.tap()
+            XCTAssertTrue(series.waitForExistence(timeout: 10))
+            XCTAssertTrue((field.exists && field.value as? String == query) || app.navigationBars[query].exists)
+            app.buttons["Search.clearResults"].tap()
+            let recent = app.buttons["Search.recent.typed:navigation series"].firstMatch
+            XCTAssertTrue(recent.waitForExistence(timeout: 5))
+        }
+
+        func testDownloadsKeepsFilterAndSearchAcrossRotation() async throws {
+            guard UIDevice.current.userInterfaceIdiom == .phone else { throw XCTSkip("Uses iPhone toolbar placement") }
+            continueAfterFailure = false
+            XCUIDevice.shared.orientation = .portrait
+            let app = try await launchNavigationFixture(route: "downloaded")
+            defer { app.terminate(); XCUIDevice.shared.orientation = .portrait }
+
+            let field = app.searchFields["Downloads.search"].firstMatch
+            let filters = app.segmentedControls
+            XCTAssertTrue(filters.buttons["All"].waitForExistence(timeout: 20))
+            for title in ["Movies", "All", "Movies"] {
+                let option = filters.buttons[title].firstMatch
+                option.tap()
+                XCTAssertTrue(option.isSelected)
+                XCTAssertTrue(field.waitForExistence(timeout: 5))
+                XCTAssertTrue(field.isHittable, "The native Downloads search field must be reachable above the tab bar")
+                XCTAssertEqual(field.placeholderValue, "Search Downloads")
+                XCTAssertGreaterThan(field.frame.midY, app.frame.midY)
+                XCTAssertLessThanOrEqual(field.frame.maxY, app.tabBars.firstMatch.frame.minY)
+            }
+            field.tap()
+            field.typeText("Recent")
+            if app.keyboards.firstMatch.exists {
+                XCTAssertLessThanOrEqual(field.frame.maxY, app.keyboards.firstMatch.frame.minY)
+            }
+            for orientation in [UIDeviceOrientation.landscapeLeft, .portrait] {
+                rotate(app, to: orientation)
+                XCTAssertTrue(filters.buttons["Movies"].firstMatch.isSelected)
+                XCTAssertTrue(field.waitForExistence(timeout: 5))
+                XCTAssertEqual(field.value as? String, "Recent")
+            }
+        }
+
+        private func launchNavigationFixture(route: String) async throws -> XCUIApplication {
+            let base = try await navigationFixture()
+            let app = makeApp()
+            app.launchEnvironment["GUS_DEMO_URL"] = base.absoluteString
+            app.launchArguments += ["--gus-demo-server", "--gus-disable-cloud-sync", "--gus-intelligence-test-unsupported", "--gus-route", route]
+            app.launch()
+            return app
+        }
+
+        private func selectSeason(_ name: String, replacing previous: String, in app: XCUIApplication) {
+            let picker = app.buttons["Series.seasonPicker"].firstMatch
+            for _ in 0 ..< 8 where !picker.isHittable {
+                app.swipeUp(velocity: .slow)
+            }
+            XCTAssertTrue(picker.isHittable)
+            XCTAssertEqual(picker.value as? String, previous)
+            picker.tap()
+            let option = app.buttons[name].firstMatch
+            XCTAssertTrue(option.waitForExistence(timeout: 5))
+            option.tap()
+            let changed = XCTNSPredicateExpectation(predicate: NSPredicate(format: "value == %@", name), object: picker)
+            XCTAssertEqual(XCTWaiter.wait(for: [changed], timeout: 5), .completed)
+        }
+
+        private func rotate(_ app: XCUIApplication, to orientation: UIDeviceOrientation) {
+            XCUIDevice.shared.orientation = orientation
+            let settled = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+                let frame = app.frame
+                return !frame.isEmpty && (orientation.isLandscape ? frame.width > frame.height : frame.height > frame.width)
+            }, object: nil)
+            XCTAssertEqual(XCTWaiter.wait(for: [settled], timeout: 10), .completed)
         }
 
         private func navigationFixture() async throws -> URL {

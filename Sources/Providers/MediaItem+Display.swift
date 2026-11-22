@@ -2,7 +2,16 @@ import Foundation
 
 extension MediaItem {
     var displayTitle: String {
-        name ?? String(localized: "Untitled", comment: "Fallback item title")
+        let title = name?.trimmingCharacters(in: .whitespacesAndNewlines)
+        if type == .episode, let indexNumber,
+           title?.isEmpty != false || title?.localizedCaseInsensitiveCompare(seriesName?.trimmingCharacters(in: .whitespacesAndNewlines) ?? "") == .orderedSame
+        {
+            return String(localized: "Episode \(indexNumber.formatted())")
+        }
+        if let title, !title.isEmpty {
+            return title
+        }
+        return String(localized: "Untitled", comment: "Fallback item title")
     }
 
     /// e.g. `S1·E3` for episodes; `nil` when no episode number exists (falling back to
@@ -134,8 +143,7 @@ extension MediaItem {
             primaryImageAspectRatio: 2.0 / 3.0,
             productionYear: productionYear,
             seriesPrimaryImageTag: seriesPrimaryImageTag,
-            type: .series,
-            userData: userData
+            type: .series
         )
     }
 
@@ -156,6 +164,20 @@ struct MediaItemAccessibility: Equatable {
 
 extension MediaItem {
     var mediaAccessibility: MediaItemAccessibility {
+        mediaAccessibility(showSeriesProgress: UserDefaults.standard.bool(forKey: Self.seriesProgressKey))
+    }
+
+    static var seriesProgressKey: String {
+        "showSeriesProgress"
+    }
+
+    func cardProgress(showSeriesProgress: Bool) -> Double? {
+        guard type != .series || showSeriesProgress,
+              let progress = playbackProgress, progress > 0, progress < 1 else { return nil }
+        return progress
+    }
+
+    func mediaAccessibility(showSeriesProgress: Bool) -> MediaItemAccessibility {
         var identity: [String] = []
         if type == .episode {
             if let seriesName {
@@ -180,8 +202,8 @@ extension MediaItem {
             let duration = Duration.seconds(Double(ticks) / 10_000_000).formatted(.units(allowed: [.hours, .minutes, .seconds], width: .wide))
             details.append(String(localized: "Duration: \(duration)"))
         }
-        let position = type == .boxSet ? 0 : max(0, userData?.playbackPositionTicks ?? 0)
-        let progress = playbackProgress ?? 0
+        let position = type == .boxSet || type == .series ? 0 : max(0, userData?.playbackPositionTicks ?? 0)
+        let progress = cardProgress(showSeriesProgress: showSeriesProgress) ?? 0
         if type == .liveChannel || type == .liveProgram {
             details.append(String(localized: "Live"))
         } else if position > 0 || (progress > 0 && progress < 1) {

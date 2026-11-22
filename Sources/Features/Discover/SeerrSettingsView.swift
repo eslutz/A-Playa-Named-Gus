@@ -26,7 +26,14 @@ struct SeerrSettingsView: View {
                     } else {
                         Button("Sign In Again") { showingSetup = true }
                     }
-                    Link("Open Seerr", destination: url)
+                    Link(destination: url) {
+                        HStack {
+                            Text("Open Seerr")
+                            Spacer()
+                            Image(systemName: "arrow.up.right").accessibilityHidden(true)
+                        }
+                    }
+                    .accessibilityHint("Opens outside Gus")
                     Button("Disconnect This Device", role: .destructive) { confirmingDisconnect = true }
                 } else {
                     Button("Connect to Seerr") { showingSetup = true }

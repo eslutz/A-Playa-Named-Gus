@@ -26,7 +26,7 @@ struct SeerrSetupLayout<Content: View>: View {
         #else
             GeometryReader { geometry in
                 ScrollView {
-                    VStack(alignment: .leading, spacing: 24) { content }
+                    VStack(alignment: .leading, spacing: ContentSpacing.section) { content }
                         .fixedSize(horizontal: false, vertical: true)
                         .padding(24)
                         .frame(maxWidth: 480)

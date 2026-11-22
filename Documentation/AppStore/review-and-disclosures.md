@@ -33,8 +33,9 @@ backend, hosts no content, and collects no data.*
   still ships family safety features: an app-level content-rating limit
   (Settings → Content Restrictions) covering US and international rating systems, gating
   of restricted items at list, detail, and playback level, and privacy-preserving
-  age-aware defaults via Apple's Declared Age Range API on OS 26+ (no birthdates are
-  collected or stored — see `Documentation/family-safety-brief.md`).
+  a device-local ceiling from Apple's Declared Age Range service on iOS, iPadOS and
+  macOS 26+. See the [family safety brief](../family-safety-brief.md) for sharing,
+  retention and enforcement details.
 - **1.4 Physical harm** — N/A (media playback only).
 - **1.5 Developer information** — The support URL (`https://gus.ericslutz.dev/support`)
   and contact information ship with the App Store Connect record

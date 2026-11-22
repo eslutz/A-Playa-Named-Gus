@@ -154,9 +154,10 @@ results using the same destination and evidence approach as the unit recipe.
 
 For navigation UI tests, run `python3 Scripts/book-details-fixture.py --genres`
 for related results and paging (port 5061). Run the same script with
-`--navigation` (port 5062) for Profile editing and load failures, sidebar library
-selection, unavailable Next Up entries, video preparation and failure, and
-season switching. Both fixtures bind to loopback.
+`--navigation` (port 5062) for Profile editing and load failures, staged photo
+removal, Quick Connect approval and rejection, Client Logs navigation, sidebar
+library selection, unavailable Next Up entries, video preparation and failure,
+and season switching. Both fixtures bind to loopback.
 
 For the Discover-to-Jellyfin handoff tests in `GusSeerrUITests`, run the Seerr
 fixture and the navigation Jellyfin fixture together. These tests enable the

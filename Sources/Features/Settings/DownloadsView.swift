@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct DownloadsView: View {
+    @StoredContentPolicy private var contentPolicy
     @Environment(SessionStore.self) private var session
     @Environment(OfflineDownloadStore.self) private var downloads
     @AppStorage(OfflineDownloadStore.deleteFinishedDefaultsKey) private var deleteFinished = false
@@ -11,7 +12,7 @@ struct DownloadsView: View {
     @State private var confirmingDeletion = false
 
     private var records: [OfflineDownloadRecord] {
-        downloads.records.filter { $0.serverID == session.server.id && $0.userID == session.user.id }
+        downloads.records.filter { $0.serverID == session.server.id && $0.userID == session.user.id && $0.isAdmitted(by: contentPolicy.admits) }
     }
 
     var body: some View {
@@ -168,9 +169,9 @@ private struct DownloadProgressRow: View {
 
     var body: some View {
         TimelineView(.periodic(from: .now, by: 1)) { context in
-            VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: ContentSpacing.group) {
                 HStack {
-                    VStack(alignment: .leading) {
+                    VStack(alignment: .leading, spacing: ContentSpacing.caption) {
                         Text(record.item.displayTitle)
                         Text(statusText(at: context.date))
                             .font(.caption)

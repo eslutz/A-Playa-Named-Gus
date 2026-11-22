@@ -1,4 +1,7 @@
 import SwiftUI
+#if os(iOS)
+    import UIKit
+#endif
 
 extension Scene {
     /// Menu-bar commands where SwiftUI exposes them; no-op on tvOS.
@@ -186,7 +189,7 @@ enum PosterGrid {
         #elseif os(visionOS)
             return 28
         #elseif os(iOS)
-            return 18
+            return ContentSpacing.card
         #else
             return 20
         #endif
@@ -217,18 +220,98 @@ enum DetailActionMetrics {
     }
 }
 
+struct DownloadsSearchField: ViewModifier {
+    @Binding var text: String
+    @Binding var isPresented: Bool
+    var isFocused: FocusState<Bool>.Binding
+    @ScaledMetric(relativeTo: .body) var fieldHeight: CGFloat = 52
+
+    func body(content: Content) -> some View {
+        #if os(iOS)
+            if !DeviceIdentity.usesIPadPresentation {
+                // A bottom toolbar search item shares the tab bar's frame on iPhone.
+                // The safe area keeps the local field above both the tabs and the keyboard.
+                content.safeAreaInset(edge: .bottom, spacing: 0) {
+                    IPhoneDownloadsSearchBar(text: $text, isPresented: $isPresented)
+                        .frame(height: fieldHeight)
+                        .padding(.horizontal, 8)
+                }
+            } else {
+                searchableContent(content)
+            }
+        #else
+            searchableContent(content)
+        #endif
+    }
+
+    private func searchableContent(_ content: Content) -> some View {
+        content.gusSearchable(text: $text, isPresented: $isPresented, isFocused: isFocused, prompt: Text("Search Downloads"))
+    }
+}
+
 #if os(iOS)
+    private struct IPhoneDownloadsSearchBar: UIViewRepresentable {
+        @Binding var text: String
+        @Binding var isPresented: Bool
+
+        func makeCoordinator() -> Coordinator {
+            Coordinator(self)
+        }
+
+        func makeUIView(context: Context) -> UISearchBar {
+            let bar = UISearchBar()
+            bar.searchBarStyle = .minimal
+            bar.placeholder = String(localized: "Search Downloads")
+            bar.delegate = context.coordinator
+            bar.searchTextField.accessibilityIdentifier = "Downloads.search"
+            bar.searchTextField.accessibilityLabel = bar.placeholder
+            return bar
+        }
+
+        func updateUIView(_ bar: UISearchBar, context: Context) {
+            context.coordinator.field = self
+            if bar.text != text {
+                bar.text = text
+            }
+            if isPresented, bar.window != nil, !bar.searchTextField.isFirstResponder {
+                bar.searchTextField.becomeFirstResponder()
+            }
+        }
+
+        final class Coordinator: NSObject, UISearchBarDelegate {
+            var field: IPhoneDownloadsSearchBar
+
+            init(_ field: IPhoneDownloadsSearchBar) {
+                self.field = field
+            }
+
+            func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
+                field.text = searchText
+            }
+
+            func searchBarTextDidBeginEditing(_ searchBar: UISearchBar) {
+                field.isPresented = true
+            }
+
+            func searchBarTextDidEndEditing(_ searchBar: UISearchBar) {
+                field.isPresented = false
+            }
+
+            func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
+                searchBar.searchTextField.resignFirstResponder()
+            }
+        }
+    }
+
     /// Keep search out of short landscape content while retaining native search behavior.
     private struct CompactHeightSearchPlacement: ViewModifier {
         @Environment(\.verticalSizeClass) private var heightClass
 
         func body(content: Content) -> some View {
-            if heightClass == .compact {
-                content.toolbar {
+            content.toolbar {
+                if heightClass == .compact {
                     DefaultToolbarItem(kind: .search, placement: .topBarTrailing)
                 }
-            } else {
-                content
             }
         }
     }

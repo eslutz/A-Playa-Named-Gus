@@ -12,6 +12,9 @@ Jellyfin account token to keep you signed in on this device.
 - Stored Jellyfin user records without passwords.
 - Session tokens in the Apple Keychain.
 - App preferences and local navigation state.
+- Up to 20 recent library searches for each Jellyfin account and server, including
+  completed natural-language queries. You can delete individual entries or clear
+  search history on this device.
 - Optional downloaded media files and metadata for the active Jellyfin server/user on
   iOS, iPadOS, macOS, and visionOS.
 
@@ -60,11 +63,12 @@ not sent to the developer or any third party. The watch can also sign in on its 
 
 ## Content Restrictions and Age Range
 
-The content-rating limit you choose is stored on the device as an app preference. On
-supported systems you may optionally use Apple's Declared Age Range to set a starting
-limit: with your consent the system shares only an age *range* with the app, which uses it
-once to suggest a limit and then discards it. A Playa Named Gus does not store your
-birthdate, your exact age, or the shared age range.
+Gus stores your content-rating preferences on device. On supported Apple systems,
+Gus offers age range sharing after sign-in and requires a response where Apple
+requires it. Gus uses Apple's response in memory to derive a local rating ceiling.
+It retains the ceiling, whether sharing is required and whether the optional offer
+was handled for the Jellyfin account. The birthdate, exact age and shared bounds
+are never stored. Gus does not send the result to Jellyfin, Seerr or the developer.
 
 ## Local Network
 

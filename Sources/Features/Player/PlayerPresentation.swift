@@ -109,6 +109,7 @@ extension View {
 #endif
 
 struct PresentedPlayer: View {
+    @StoredContentPolicy private var contentPolicy
     @Environment(\.dismiss) private var dismiss
     @Environment(SessionStore.self) private var session
     let item: MediaItem
@@ -124,7 +125,7 @@ struct PresentedPlayer: View {
     var body: some View {
         // Second-layer family-safety gate: list filtering hides restricted items, but
         // playback can be reached via downloads, deep links, or stale navigation.
-        if playlistID == nil, !ContentRatingGate.admitsStored(item) {
+        if contentPolicy.awaitingRequiredRange || (playlistID == nil && !contentPolicy.admits(item)) {
             NavigationStack {
                 RestrictedContentView()
                     .toolbar {
@@ -161,6 +162,7 @@ struct PresentedPlayer: View {
                 AudioPlayerScreen(item: item, localOnly: localOnly, playbackRequest: playbackRequest)
             } else {
                 VideoPlayerView(item: item, localOnly: localOnly, playlistID: playlistID, playlistEntryID: playlistEntryID, playlistFromBeginning: playlistFromBeginning, playlistShuffled: playlistShuffled, playbackRequest: playbackRequest)
+                    .id(playlistID == nil ? nil : contentPolicy.revision)
                     .id(PlaybackPresentationIdentity(request: playbackRequest ?? PlaybackRequest(item: item), sessionGeneration: session.lease.generation, localOnly: localOnly, playlistID: playlistID, playlistEntryID: playlistEntryID, playlistFromBeginning: playlistFromBeginning, playlistShuffled: playlistShuffled))
             }
         }

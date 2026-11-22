@@ -29,11 +29,10 @@ private struct IPhoneCanvasModifier: ViewModifier {
 
     func body(content: Content) -> some View {
         #if os(iOS)
-            if widthClass == .compact {
-                content
-                    .background(Color(uiColor: .systemBackground))
-            } else {
-                content
+            content.background {
+                if widthClass == .compact {
+                    Color(uiColor: .systemBackground)
+                }
             }
         #else
             content
@@ -90,7 +89,7 @@ private struct IPhoneCanvasModifier: ViewModifier {
         @ViewBuilder var content: () -> Content
 
         var body: some View {
-            VStack(alignment: .leading, spacing: 10) {
+            VStack(alignment: .leading, spacing: ContentSpacing.group) {
                 Text(title).font(.subheadline)
                 content()
                     .textFieldStyle(.plain)
@@ -104,8 +103,10 @@ private struct IPhoneCanvasModifier: ViewModifier {
 #endif
 
 extension View {
-    func gusIPhoneOrIPadOnly() -> some View {
-        modifier(IPhoneOrIPadOnlyModifier())
+    @ViewBuilder func gusIPhoneOrIPadOnly() -> some View {
+        #if os(iOS)
+            self
+        #endif
     }
 
     @ViewBuilder func gusIPadIconOnly() -> some View {
@@ -134,19 +135,6 @@ extension View {
 
     func gusPhoneActionTint() -> some View {
         modifier(IPhoneActionTintModifier())
-    }
-}
-
-private struct IPhoneOrIPadOnlyModifier: ViewModifier {
-    #if os(iOS)
-        @Environment(\.horizontalSizeClass) private var widthClass
-    #endif
-    func body(content: Content) -> some View {
-        #if os(iOS)
-            if widthClass == .compact || DeviceIdentity.usesIPadPresentation {
-                content
-            }
-        #endif
     }
 }
 
@@ -201,7 +189,7 @@ private struct IPhoneActionTintModifier: ViewModifier {
         #if os(iOS)
             content.tint(fill)
         #else
-            content.tint(.accentColor)
+            content
         #endif
     }
 }

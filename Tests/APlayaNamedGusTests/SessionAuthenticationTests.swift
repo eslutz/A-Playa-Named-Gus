@@ -57,6 +57,18 @@ struct SessionAuthenticationTests {
         #expect(fixture.state.requests.last?.url?.path == "/Users/user")
     }
 
+    @Test("disabling Quick Connect while entering a code preserves the signed-in session")
+    func quickConnectPolicy() async throws {
+        let user = UserDto(id: "user", name: "Gus")
+        let fixture = try AuthenticationFixture(replies: [.http(200, Data("true".utf8)), .http(401, Data()), .http(200, JSONEncoder().encode(user))])
+        await fixture.app.restoreLastSession()
+        let session = try #require(fixture.app.currentSession)
+        await session.profile.refreshQuickConnectAvailability()
+        #expect(await session.profile.authorizeQuickConnect(code: "012345") == .unavailable)
+        #expect(fixture.app.currentSession === session)
+        #expect(fixture.state.requests.map(\.httpMethod) == ["GET", "POST", "GET"])
+    }
+
     @Test("an unavailable policy probe does not infer expiry or repeat the delete")
     func unavailablePolicyProbe() async throws {
         let fixture = try AuthenticationFixture(replies: [.http(401, Data()), .failure(.notConnectedToInternet)])

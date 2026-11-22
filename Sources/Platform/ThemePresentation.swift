@@ -31,18 +31,24 @@ private struct GusThemeModifier: ViewModifier {
         @AppStorage(ThemePreference.defaultsKey) private var mode = ThemePreference.gus.rawValue
         @AppStorage(ThemePreference.customAccentKey) private var custom = ThemeAccent.gus.hex
         @Environment(\.colorScheme) private var colorScheme
+        @Environment(\.colorSchemeContrast) private var contrast
     #endif
 
     func body(content: Content) -> some View {
         #if os(iOS) || os(tvOS)
             let preference = ThemePreference(rawValue: mode) ?? .gus
-            let accent = ThemeAccent(hex: custom) ?? .gus
-            let fill: Color = preference == .gus ? Color("AccentColor") : preference == .apple ? .blue : accent.color
-            let tint: Color = preference == .custom ? accent.readable(onDark: colorScheme == .dark).color : fill
-            let foreground: Color = preference == .gus ? .gusProminentActionForeground : preference == .custom && accent.usesBlackForeground ? .black : .white
+            let accent = preference == .custom ? ThemeAccent(hex: custom) ?? .gus : .gus
+            let apple = preference == .apple
+            let dark = colorScheme == .dark
+            let fill: Color = apple ? .blue : accent.color
+            let tint: Color = apple ? .blue : accent.readable(onDark: dark, increasedContrast: contrast == .increased).color
+            let foreground: Color = apple || !accent.usesBlackForeground ? .white : .black
             #if os(tvOS)
                 // TabView owns its native row styles; only remove the inherited theme tint here.
                 let content = content.tint(nil)
+            #endif
+            #if os(iOS)
+                let content = content.toggleStyle(ThemeSwitchStyle(track: apple ? nil : accent.switchTrack(onDark: dark).color))
             #endif
             content.tint(tint)
                 .accentColor(tint)
@@ -62,6 +68,15 @@ private struct GusThemeModifier: ViewModifier {
     }
 
     #if os(iOS)
+        private struct ThemeSwitchStyle: ToggleStyle {
+            let track: Color?
+            func makeBody(configuration: Configuration) -> some View {
+                Toggle(configuration)
+                    .toggleStyle(.switch)
+                    .tint(track)
+            }
+        }
+
         struct ThemeSettingsControls: View {
             @AppStorage(ThemePreference.defaultsKey) private var mode = ThemePreference.gus.rawValue
             @AppStorage(ThemePreference.customAccentKey) private var custom = ThemeAccent.gus.hex

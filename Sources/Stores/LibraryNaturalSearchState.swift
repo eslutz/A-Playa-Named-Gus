@@ -53,15 +53,19 @@ final class LibraryNaturalSearchState {
     private(set) var items: [MediaItem] = []
     private(set) var state: LoadState = .idle
 
-    func submit() {
+    private var historyRevision: Int?
+
+    func submit(recordingIn history: SearchHistoryStore? = nil) {
         guard !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
         resetResults()
+        historyRevision = history?.deletionRevision
         submission = UUID()
         state = .loading
     }
 
     func resetResults() {
         submission = nil
+        historyRevision = nil
         state = .idle
         items = []
         filters = []
@@ -100,6 +104,10 @@ final class LibraryNaturalSearchState {
             guard isCurrent() else { return }
             items = ContentRatingGate.filter(result)
             state = .loaded
+            if let historyRevision {
+                session.searchHistory.record(.natural(text), startedAt: historyRevision)
+                self.historyRevision = nil
+            }
         } catch GusIntelligenceError.useKeyword {
             guard isCurrent(), !Task.isCancelled else { return }
             resetResults()

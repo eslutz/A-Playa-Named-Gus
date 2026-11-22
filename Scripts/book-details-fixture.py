@@ -2,6 +2,7 @@
 """Loopback Jellyfin fixture for GusBookDetailUITests. No external requests."""
 
 import argparse
+import base64
 import json
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -208,14 +209,34 @@ class NavigationHandler(Handler):
                 "Type": "Movie", "ProviderIds": {"Tmdb": "950000019"}}
     items = [series, movie, festival, {"Id": "49020000000000000000000000000001", "Type": "MusicAlbum", "Name": "Fixture Album"},
              {"Id": "49030000000000000000000000000001", "Type": "PhotoAlbum", "Name": "Fixture Photos"}]
+    profile_accounts = {
+        "profile-enabled": "49050000000000000000000000000001",
+        "profile-disabled": "49050000000000000000000000000002",
+    }
+    profile_photos = set()
     pending_profiles = {}
     queue_movies = {}
     pending_playback = {}
+
+    def episodes(self):
+        return [
+            {"Id": f"4901000000000000000000000000000{season['IndexNumber']}",
+             "Type": "Episode", "Name": "Episode of " + season["Name"],
+             "Overview": "Navigation episode details for " + season["Name"] + ".",
+             "SeriesId": self.series["Id"], "SeriesName": self.series["Name"],
+             "SeasonId": season["Id"], "ParentIndexNumber": season["IndexNumber"], "IndexNumber": 1}
+            for season in self.seasons
+        ]
 
     def do_POST(self):
         if self.path == "/Users/AuthenticateByName":
             body = json.loads(self.rfile.read(int(self.headers["Content-Length"])))
             username = body.get("Username", "")
+            if username in self.profile_accounts:
+                user_id = self.profile_accounts[username]
+                self.profile_photos.add(user_id)
+                return self.respond({"User": {**self.user, "Id": user_id, "Name": username},
+                                     "AccessToken": username, "ServerId": self.server_id})
             user_id = username.removeprefix("queue-")
             user = self.user
             if len(user_id) == 32 and all(ch in "0123456789abcdef" for ch in user_id):
@@ -225,7 +246,15 @@ class NavigationHandler(Handler):
                     self.pending_profiles[user_id] = Event()
                 user = {**user, "Id": user_id}
             return self.respond({"User": user, "AccessToken": "gus-navigation-fixture", "ServerId": self.server_id})
-        parts = urlsplit(self.path).path.strip("/").split("/")
+        url = urlsplit(self.path)
+        if url.path == "/QuickConnect/Authorize":
+            query = parse_qs(url.query)
+            if "Token=profile-enabled" not in self.headers.get("Authorization", ""):
+                return self.respond({}, 401)
+            if query.get("userId") != [self.profile_accounts["profile-enabled"]]:
+                return self.respond({}, 403)
+            return self.respond(True) if query.get("code") == ["012345"] else self.respond({}, 404)
+        parts = url.path.strip("/").split("/")
         if len(parts) == 3 and parts[0] == "fixture" and parts[1] in ("hold-playback", "fail-playback"):
             movie_id = parts[2]
             if movie_id not in self.queue_movies:
@@ -266,6 +295,16 @@ class NavigationHandler(Handler):
         url = urlsplit(self.path)
         if url.path == "/health":
             return self.respond({"fixture": "gus-navigation"})
+        if url.path == "/QuickConnect/Enabled":
+            return self.respond("Token=profile-enabled" in self.headers.get("Authorization", ""))
+        if url.path == "/UserImage" and parse_qs(url.query).get("userId", [""])[0] in self.profile_photos:
+            image = base64.b64decode("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=")
+            self.send_response(200)
+            self.send_header("Content-Type", "image/png")
+            self.send_header("Content-Length", str(len(image)))
+            self.end_headers()
+            self.wfile.write(image)
+            return
         if url.path == "/UserViews" or url.path.endswith("/Views"):
             return self.respond({"Items": [{**library, "Type": "CollectionFolder"} for library in self.libraries],
                                  "TotalRecordCount": len(self.libraries)})
@@ -279,6 +318,12 @@ class NavigationHandler(Handler):
             user_id = url.path.rsplit("/", 1)[-1].replace("-", "")
             if user_id in ("Me", self.user["Id"]):
                 return self.respond(self.user)
+            for name, identifier in self.profile_accounts.items():
+                if user_id == identifier:
+                    user = {**self.user, "Name": name, "Id": identifier, "HasPassword": False}
+                    if identifier in self.profile_photos:
+                        user["PrimaryImageTag"] = "fixture-photo"
+                    return self.respond(user)
             if user_id in self.queue_movies:
                 return self.respond({**self.user, "Id": user_id})
             pending = self.pending_profiles.get(user_id)
@@ -288,20 +333,29 @@ class NavigationHandler(Handler):
         if url.path == f"/Shows/{self.series['Id']}/Seasons":
             return self.respond({"Items": self.seasons, "TotalRecordCount": len(self.seasons)})
         if len(parts) >= 3 and parts[-2] == "Items":
-            season = next((item for item in self.seasons if item["Id"] == parts[-1]), None)
-            if season:
-                return self.respond(season)
+            item = next((item for item in self.seasons + self.episodes() if item["Id"] == parts[-1]), None)
+            if item:
+                return self.respond(item)
         query = {key.lower(): value[0] for key, value in parse_qs(url.query).items()}
+        if url.path.endswith("/Items") and query.get("searchterm"):
+            matches = [item for item in self.items if query["searchterm"].casefold() in item["Name"].casefold()]
+            return self.respond({"Items": matches, "TotalRecordCount": len(matches)})
         if url.path.endswith("/Items") and query.get("genreids", "").replace("-", "") == self.genre["Id"]:
             return self.respond({"Items": [self.movie], "TotalRecordCount": 1})
         if url.path == f"/Shows/{self.series['Id']}/Episodes":
             season_id = query.get("seasonid", "").replace("-", "")
-            episodes = [{"Id": f"4901000000000000000000000000000{season['IndexNumber']}",
-                         "Type": "Episode", "Name": "Episode of " + season["Name"],
-                         "SeriesId": self.series["Id"], "SeasonId": season["Id"], "IndexNumber": 1}
-                        for season in self.seasons if season["Id"] == season_id]
+            episodes = [episode for episode in self.episodes() if episode["SeasonId"] == season_id]
             return self.respond({"Items": episodes, "TotalRecordCount": len(episodes)})
         super().do_GET()
+
+
+    def do_DELETE(self):
+        url = urlsplit(self.path)
+        user_id = parse_qs(url.query).get("userId", [""])[0]
+        if url.path == "/UserImage" and user_id in self.profile_photos:
+            self.profile_photos.remove(user_id)
+            return self.respond(None, 204)
+        self.respond({}, 404)
 
 
 class SynopsisHandler(Handler):

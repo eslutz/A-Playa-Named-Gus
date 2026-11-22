@@ -18,7 +18,7 @@ struct GlobalSearchContent: View {
 
     @ViewBuilder private var fieldContainer: some View {
         #if os(iOS)
-            if widthClass == .compact {
+            if !DeviceIdentity.usesIPadPresentation || widthClass == .compact {
                 // The role-based iPhone tab hosts its own native search field.
                 GlobalSearchResultsContent()
             } else {
@@ -72,13 +72,13 @@ private struct GlobalSearchResultsContent: View {
     }
 
     var body: some View {
-        Group {
+        ZStack {
             if session.intelligenceAccess.usesNaturalSearch, !root.globalSearch.displaysKeywords, !root.globalSearch.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                 NaturalLibraryResults(search: root.globalSearch)
             } else if !root.globalSearch.typed.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                 OwnedSearchResults(state: root.globalSearch.typed)
             } else {
-                RecentSearchesView(onSelect: root.replaySearch)
+                RecentSearchesView { root.replaySearch($0, naturalSearchEnabled: session.intelligenceAccess.usesNaturalSearch) }
             }
         }
         .navigationTitle(navigationTitle)

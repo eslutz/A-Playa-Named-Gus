@@ -5,8 +5,7 @@ struct WatchLibrarySearchView: View {
     @State private var natural = LibraryNaturalSearchState()
     @State private var draftMode = SearchDraftMode.natural
     @State private var keywordStore: SearchStore?
-    @AppStorage(ContentRatingGate.limitDefaultsKey) private var ratingLimit = ContentRatingGate.Limit.off.rawValue
-    @AppStorage(ContentRatingGate.hideUnratedDefaultsKey) private var hideUnrated = false
+    @StoredContentPolicy private var contentPolicy
 
     private var prefersNatural: Bool {
         session.intelligenceAccess.usesNaturalSearch
@@ -23,7 +22,7 @@ struct WatchLibrarySearchView: View {
 
     private var suggestions: [String] {
         var values = [String]()
-        if ratingLimit == ContentRatingGate.Limit.off.rawValue {
+        if contentPolicy.limit == .off {
             values += session.searchHistory.entries.compactMap { entry in
                 if case let .typed(value) = entry {
                     value
@@ -95,7 +94,7 @@ struct WatchLibrarySearchView: View {
                 session.searchHistory.record(.typed(natural.text))
             }
         }
-        .task(id: "\(naturalMode):\(natural.text):\(ratingLimit):\(hideUnrated)") {
+        .task(id: "\(naturalMode):\(natural.text):\(contentPolicy.revision)") {
             guard !naturalMode else {
                 keywordStore?.cancelForegroundLoad()
                 return
@@ -119,8 +118,7 @@ struct WatchLibrarySearchView: View {
             natural.resetResults()
             draftMode = natural.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? .natural : .keywordUntilSubmit
         }
-        .onChange(of: ratingLimit) { natural.resetResults() }
-        .onChange(of: hideUnrated) { natural.resetResults() }
+        .onChange(of: contentPolicy) { natural.resetResults() }
         .onChange(of: session.intelligencePreferences.cloudEnabled) { _, enabled in
             if !enabled {
                 natural.resetResults()
@@ -154,15 +152,14 @@ struct WatchLibrarySearchView: View {
 @available(watchOS 27, *)
 struct WatchForYouView: View {
     @Environment(SessionStore.self) private var session
-    @AppStorage(ContentRatingGate.limitDefaultsKey) private var ratingLimit = ContentRatingGate.Limit.off.rawValue
-    @AppStorage(ContentRatingGate.hideUnratedDefaultsKey) private var hideUnrated = false
+    @StoredContentPolicy private var contentPolicy
     private var shelf: ForYouShelfState {
         session.forYouShelf
     }
 
     private var context: ForYouShelfState.Context {
         let prefs = session.intelligencePreferences
-        return .init(cloudEnabled: prefs.cloudEnabled, recommendationsEnabled: prefs.recommendationsEnabled, limit: ratingLimit, hideUnrated: hideUnrated, activityRevision: 0, tasteRevision: session.libraryIntelligence.tasteRevision)
+        return .init(cloudEnabled: prefs.cloudEnabled, recommendationsEnabled: prefs.recommendationsEnabled, limit: contentPolicy.limit.rawValue, hideUnrated: contentPolicy.hideUnrated, ageCeiling: contentPolicy.ageCeiling, activityRevision: 0, tasteRevision: session.libraryIntelligence.tasteRevision)
     }
 
     var body: some View {

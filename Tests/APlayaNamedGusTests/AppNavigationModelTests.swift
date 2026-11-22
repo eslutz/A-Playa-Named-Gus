@@ -23,13 +23,17 @@ struct AppNavigationModelTests {
         let model = AppNavigationModel()
 
         model.open(.settings)
+        #expect(!model.consumeSearchFocus())
         model.open(.search)
         let firstRequest = model.searchFocusRequest
+        #expect(model.consumeSearchFocus())
+        #expect(!model.consumeSearchFocus())
         model.open(.search)
 
         #expect(model.route == .settings)
         #expect(firstRequest == 1)
         #expect(model.searchFocusRequest == 2)
+        #expect(model.consumeSearchFocus())
     }
 
     @Test("opens supported URLs and ignores unsupported URLs")

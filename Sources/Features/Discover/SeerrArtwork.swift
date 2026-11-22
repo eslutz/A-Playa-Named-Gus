@@ -21,7 +21,7 @@ struct SeerrTitleCard: View {
     let title: SeerrTitle
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: ContentSpacing.caption) {
             PosterCard(
                 title: title.displayTitle,
                 subtitle: title.seerrIdentityDescription,
@@ -46,7 +46,7 @@ struct SeerrTitleRow: View {
     let title: SeerrTitle
 
     var body: some View {
-        HStack(alignment: .top, spacing: 12) {
+        HStack(alignment: .top, spacing: ContentSpacing.card) {
             SeerrArtworkView(
                 path: title.mediaType == .person ? title.profilePath : title.posterPath,
                 symbol: title.mediaType == .person ? "person" : "film",
@@ -54,7 +54,7 @@ struct SeerrTitleRow: View {
                 fallbackURL: SeerrArtwork.url(path: title.backdropPath, width: "w300")
             )
             .frame(width: 64)
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: ContentSpacing.caption) {
                 Text(title.displayTitle).font(.headline)
                 Text(title.seerrIdentityDescription).font(.subheadline).foregroundStyle(.secondary)
                 if let availability = title.seerrAvailabilityDescription {

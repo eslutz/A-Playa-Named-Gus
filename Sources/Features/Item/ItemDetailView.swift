@@ -32,9 +32,8 @@ struct ItemDetailView: View {
     @State private var sharePlayErrorMessage: String?
     @State private var store: ItemDetailStore?
     @State private var localProgress = OfflinePlaybackProgressStore.shared
-    // Read via @AppStorage so a changed household limit re-gates already-pushed screens.
-    @AppStorage(ContentRatingGate.limitDefaultsKey) private var contentLimitRawValue = ContentRatingGate.Limit.off.rawValue
-    @AppStorage(ContentRatingGate.hideUnratedDefaultsKey) private var hideUnratedContent = false
+    /// Read via @AppStorage so a changed household limit re-gates already-pushed screens.
+    @StoredContentPolicy private var contentPolicy
 
     var body: some View {
         Group {
@@ -424,11 +423,7 @@ struct ItemDetailView: View {
     }
 
     private var isRestricted: Bool {
-        guard let limit = ContentRatingGate.Limit(rawValue: contentLimitRawValue), limit != .off else {
-            return false
-        }
-        let current = store?.item ?? item
-        return !ContentRatingGate.admits(current, limit: limit, hideUnrated: hideUnratedContent)
+        !contentPolicy.admits(store?.item ?? item)
     }
 
     #if !os(tvOS)

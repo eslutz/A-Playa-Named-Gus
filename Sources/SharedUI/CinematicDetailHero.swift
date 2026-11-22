@@ -169,14 +169,12 @@ struct CinematicDetailHero<Accessory: View>: View {
 }
 
 enum DetailPageMetrics {
+    static let sectionSpacing = ContentSpacing.section
     #if os(tvOS)
-        static let sectionSpacing: CGFloat = 40
         static let horizontalInset: CGFloat = 80
     #elseif os(visionOS)
-        static let sectionSpacing: CGFloat = 24
         static let horizontalInset: CGFloat = 36
     #else
-        static let sectionSpacing: CGFloat = 24
         static let horizontalInset: CGFloat = 20
     #endif
 }

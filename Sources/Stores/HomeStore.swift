@@ -1,5 +1,8 @@
 import Foundation
 import Observation
+#if os(tvOS)
+    import TVServices
+#endif
 
 struct HomeLatestSection: Identifiable, Sendable {
     let id: String
@@ -550,27 +553,38 @@ final class HomeStore {
         donateToSystemSearch()
     }
 
+    private var systemNextItems: [MediaItem] {
+        unifiedNextUp.filter { $0.playlist == nil && $0.savedEntry?.availability != .unavailable && $0.savedEntry?.availability != .requiresSelection }.compactMap(\.item)
+    }
+
     /// Donates the rating-gated home content to Core Spotlight (no-op where the
     /// platform lacks it) so library items surface in system search, and refreshes the
     /// optional tvOS Top Shelf snapshot when the app is signed with an App Group.
     private func donateToSystemSearch() {
-        let nextItems = unifiedNextUp.filter { $0.playlist == nil && $0.savedEntry?.availability != .unavailable && $0.savedEntry?.availability != .requiresSelection }.compactMap(\.item)
-        let items = nextItems + latestSections.flatMap(\.items)
+        let items = systemNextItems + latestSections.flatMap(\.items)
         SpotlightIndexer.index(items, serverID: session.server.id, userID: session.user.id)
 
         #if os(tvOS)
+            refreshTopShelf()
+        #endif
+    }
+
+    #if os(tvOS)
+        func refreshTopShelf() {
             let provider = session.mediaProvider
-            let shelfItems = nextItems.prefix(8).compactMap { item -> TopShelfSnapshot.Item? in
+            let showSeriesProgress = UserDefaults.standard.bool(forKey: MediaItem.seriesProgressKey)
+            let shelfItems = systemNextItems.prefix(8).compactMap { item -> TopShelfSnapshot.Item? in
                 guard let id = item.id else { return nil }
                 return TopShelfSnapshot.Item(
                     id: id,
                     title: item.displayTitle,
                     imageURL: provider.backdropImageURL(for: item, maxWidth: 1280),
-                    playbackProgress: item.playbackProgress,
+                    playbackProgress: item.cardProgress(showSeriesProgress: showSeriesProgress),
                     contentURL: ContentLink.item(id: id, serverID: session.server.id, provider: session.server.providerKind).url
                 )
             }
             TopShelfSnapshot(items: Array(shelfItems), serverID: session.server.id, userID: session.user.id).save()
-        #endif
-    }
+            TVTopShelfContentProvider.topShelfContentDidChange()
+        }
+    #endif
 }

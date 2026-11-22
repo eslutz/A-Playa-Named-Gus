@@ -6,6 +6,7 @@ import SwiftUI
 struct WatchResumeView: View {
     @Environment(SessionStore.self) private var session
 
+    @AppStorage(MediaItem.seriesProgressKey) private var showSeriesProgress = false
     @State private var items: [MediaItem] = []
     @State private var state: LoadState = .idle
     @State private var targetPickerItem: MediaItem?
@@ -26,7 +27,7 @@ struct WatchResumeView: View {
                     HStack(spacing: 8) {
                         WatchPoster(item: item)
                             .overlay(alignment: .bottom) {
-                                if let progress = item.playbackProgress, progress > 0, progress < 1 {
+                                if let progress = item.cardProgress(showSeriesProgress: showSeriesProgress) {
                                     ProgressView(value: progress).tint(.white)
                                         .padding(3).background(.black.opacity(0.65))
                                         .accessibilityLabel("Playback progress")
@@ -41,7 +42,7 @@ struct WatchResumeView: View {
                     }
                     .accessibilityElement(children: .ignore)
                     .accessibilityLabel(item.mediaAccessibility.label)
-                    .accessibilityValue(item.mediaAccessibility.value)
+                    .accessibilityValue(item.mediaAccessibility(showSeriesProgress: showSeriesProgress).value)
                 }
             }
         }

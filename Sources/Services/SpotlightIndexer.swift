@@ -54,10 +54,9 @@ enum SpotlightIndexer {
     #if canImport(CoreSpotlight) && !os(tvOS)
         private static let logger = Logger(category: .home)
 
-        /// Donates items in the background; restricted items (family safety) are
-        /// filtered by the callers, which donate exactly what they display.
+        /// Recheck the current policy because callers can hold a previous browse snapshot.
         static func index(_ items: [MediaItem], serverID: String, userID: String) {
-            let searchable: [CSSearchableItem] = items.compactMap { item in
+            let searchable: [CSSearchableItem] = ContentRatingGate.filter(items).compactMap { item in
                 guard let id = item.id, let type = item.type else { return nil }
                 let attributes = CSSearchableItemAttributeSet(contentType: contentType(for: type))
                 attributes.title = item.displayTitle

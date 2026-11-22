@@ -276,8 +276,7 @@ struct SeerrCatalogGridView: View {
     @Environment(\.calendar) private var calendar
     @State private var catalog: SeerrCatalogStore
     @State private var showingFilters = false
-    @AppStorage(ContentRatingGate.limitDefaultsKey) private var contentLimitRawValue = ContentRatingGate.Limit.off.rawValue
-    @AppStorage(ContentRatingGate.hideUnratedDefaultsKey) private var hideUnratedContent = false
+    @StoredContentPolicy private var contentPolicy
 
     init(title: String, source: SeerrCatalogSource, store: SeerrStore, featuredCatalog: SeerrCatalogStore? = nil) {
         self.title = title
@@ -289,7 +288,7 @@ struct SeerrCatalogGridView: View {
     var body: some View {
         SeerrCatalogResults(catalog: catalog, store: store, toolbarTitle: title, filtersAction: catalog.supportsFilters ? { showingFilters = true } : nil)
             .navigationTitle(title)
-            .task(id: "\(store.revision):\(contentLimitRawValue):\(hideUnratedContent)") { await catalog.load(store: store) }
+            .task(id: "\(store.revision):\(contentPolicy.revision)") { await catalog.load(store: store) }
             .refreshable { await catalog.load(store: store, refresh: true) }
             .onDisappear { featuredCatalog?.includeViewedTrending(catalog, calendar: calendar, store: store) }
             .toolbar {
@@ -396,8 +395,7 @@ struct SeerrCatalogResults: View {
     var toolbarTitle: String? = nil
     var filtersAction: (() -> Void)? = nil
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
-    @AppStorage(ContentRatingGate.limitDefaultsKey) private var contentLimitRawValue = ContentRatingGate.Limit.off.rawValue
-    @AppStorage(ContentRatingGate.hideUnratedDefaultsKey) private var hideUnratedContent = false
+    @StoredContentPolicy private var contentPolicy
     @State private var usesList = false
     @State private var scrollID: String?
 
@@ -406,8 +404,7 @@ struct SeerrCatalogResults: View {
     }
 
     private var visibleItems: [SeerrTitle] {
-        _ = contentLimitRawValue
-        _ = hideUnratedContent
+        _ = contentPolicy
         guard catalog.isValid(for: store) else { return [] }
         return catalog.items.filter { store.admits($0) }
     }
@@ -449,7 +446,7 @@ struct SeerrCatalogResults: View {
             retryAction: { Task { await catalog.load(store: store, refresh: true) } }
         ) {
             ScrollView {
-                VStack(spacing: 24) {
+                VStack(spacing: ContentSpacing.section) {
                     #if os(tvOS)
                         if case .search = catalog.source {
                             TVSearchCompletionRows()
@@ -462,7 +459,7 @@ struct SeerrCatalogResults: View {
                         ProgressView("Updating results")
                     }
                     if listPresentation {
-                        LazyVStack(alignment: .leading, spacing: 20) {
+                        LazyVStack(alignment: .leading, spacing: ContentSpacing.group) {
                             ForEach(visibleItems, id: \.seerrCatalogID) { item in
                                 SeerrResultLink(title: item, store: store, usesList: true).id(item.seerrCatalogID)
                                 Divider()
@@ -470,7 +467,7 @@ struct SeerrCatalogResults: View {
                         }
                         .scrollTargetLayout()
                     } else {
-                        LazyVGrid(columns: PosterGrid.columns, alignment: .leading, spacing: 24) {
+                        LazyVGrid(columns: PosterGrid.columns, alignment: .leading, spacing: PosterGrid.spacing) {
                             ForEach(visibleItems, id: \.seerrCatalogID) { item in
                                 SeerrResultLink(title: item, store: store).id(item.seerrCatalogID)
                             }

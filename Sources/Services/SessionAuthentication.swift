@@ -23,7 +23,7 @@ final class SessionAuthentication: APIClientDelegate, @unchecked Sendable {
     func client(_ client: APIClient, shouldRetry task: URLSessionTask, error: any Error, attempts: Int) async throws -> Bool {
         guard !Task.isCancelled, GusError(from: error) == .unauthorized else { return false }
 
-        // Jellyfin's item deletion endpoint can use 401 for a policy rejection.
+        // Jellyfin also uses 401 for deletion policy and disabled Quick Connect.
         // A canonical user read distinguishes permission denial from expired auth.
         if Self.requiresAuthenticationProbe(task.originalRequest) {
             do {
@@ -41,8 +41,12 @@ final class SessionAuthentication: APIClientDelegate, @unchecked Sendable {
     }
 
     static func requiresAuthenticationProbe(_ request: URLRequest?) -> Bool {
-        guard request?.httpMethod == "DELETE", let path = request?.url?.path else { return false }
-        let components = path.split(separator: "/")
-        return components.count >= 2 && String(components[components.count - 2]).caseInsensitiveCompare("Items") == .orderedSame
+        guard let path = request?.url?.path else { return false }
+        let components = path.lowercased().split(separator: "/")
+        switch request?.httpMethod {
+        case "DELETE": return components.dropLast().last == "items"
+        case "POST": return components.suffix(2).elementsEqual(["quickconnect", "authorize"])
+        default: return false
+        }
     }
 }

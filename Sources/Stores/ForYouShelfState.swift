@@ -9,13 +9,14 @@ final class ForYouShelfState {
         let recommendationsEnabled: Bool
         let limit: String
         let hideUnrated: Bool
+        var ageCeiling: ContentRatingGate.Limit = .off
         let activityRevision: Int
         let tasteRevision: Int
         var forYouSyncEnabled = false
 
         @MainActor var currentRestrictions: Bool {
-            limit == ContentRatingGate.storedLimit().rawValue &&
-                hideUnrated == UserDefaults.standard.bool(forKey: ContentRatingGate.hideUnratedDefaultsKey)
+            let policy = ContentRatingGate.storedPolicy()
+            return !policy.awaitingRequiredRange && limit == policy.limit.rawValue && hideUnrated == policy.hideUnrated && ageCeiling == policy.ageCeiling
         }
     }
 
@@ -33,11 +34,13 @@ final class ForYouShelfState {
     init(session: SessionStore) {
         #if !os(tvOS)
             let preferences = session.intelligencePreferences
+            let policy = ContentRatingGate.storedPolicy()
             let context = Context(
                 cloudEnabled: preferences.cloudEnabled,
                 recommendationsEnabled: preferences.recommendationsEnabled,
-                limit: ContentRatingGate.storedLimit().rawValue,
-                hideUnrated: UserDefaults.standard.bool(forKey: ContentRatingGate.hideUnratedDefaultsKey),
+                limit: policy.limit.rawValue,
+                hideUnrated: policy.hideUnrated,
+                ageCeiling: policy.ageCeiling,
                 activityRevision: 0,
                 tasteRevision: session.libraryIntelligence.tasteRevision,
                 forYouSyncEnabled: preferences.forYouSyncEnabled
@@ -48,7 +51,7 @@ final class ForYouShelfState {
 
     func canDisplay(_ requested: Context, session: SessionStore) -> Bool {
         guard session.isActive, requested.recommendationsEnabled, requested.currentRestrictions, scope == session.references.scope,
-              context?.limit == requested.limit, context?.hideUnrated == requested.hideUnrated else { return false }
+              context?.limit == requested.limit, context?.hideUnrated == requested.hideUnrated, context?.ageCeiling == requested.ageCeiling else { return false }
         return savedAt.map { (0 ..< BrowseSnapshotCache.lifetime).contains(session.browseCache.now().timeIntervalSince($0)) } ?? true
     }
 

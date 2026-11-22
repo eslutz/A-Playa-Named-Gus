@@ -1,15 +1,21 @@
 import SwiftUI
 
 struct ProgressTransferView: View {
+    @StoredContentPolicy private var contentPolicy
     @Environment(SessionStore.self) private var session
     @State private var progress = OfflinePlaybackProgressStore.shared
     @State private var selected: OfflinePlaybackProgressStore.Checkpoint?
     @State private var error: String?
     @State private var replacementSelection: OfflinePlaybackProgressStore.Checkpoint?
 
+    private func isAdmitted(_ checkpoint: OfflinePlaybackProgressStore.Checkpoint) -> Bool {
+        let source = checkpoint.reference?.item ?? MediaItem(id: checkpoint.itemID)
+        return contentPolicy.admits(source) && (checkpoint.replacement.map(contentPolicy.admits) ?? true)
+    }
+
     var body: some View {
-        let transfers = progress.transfers(scope: session.references.scope)
-        let unavailable = progress.unavailableCheckpoints(scope: session.references.scope)
+        let transfers = progress.transfers(scope: session.references.scope).filter(isAdmitted)
+        let unavailable = progress.unavailableCheckpoints(scope: session.references.scope).filter(isAdmitted)
         if !transfers.isEmpty || !unavailable.isEmpty {
             VStack(alignment: .leading, spacing: 12) {
                 Text("Saved Progress Needs Review").font(.headline)

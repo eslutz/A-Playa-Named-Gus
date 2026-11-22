@@ -71,8 +71,9 @@ below. Configuration alone does not prove a warning-free build.
   or introduce a reviewed confined service before migrating the iOS target; an
   unchecked conformance alone is not proof of safety.
 - SwiftUI's `DeclaredAgeRangeAction` has an unannotated asynchronous boundary on
-  iOS/macOS. The settings flow permits one request at a time and retains a manual
-  content-limit fallback. Entitlement and device acceptance remain separate.
+  iOS/macOS. Each session serializes requests across Settings and post-sign-in
+  presentation. The effective rating gate combines manual preferences and the
+  device ceiling. Entitlement and device acceptance remain separate.
 - Preserve the documented ownership around download delegate locks, callback bridges,
   cancellation and the ordered audio-session queue when changing those systems.
 
@@ -120,7 +121,10 @@ including when a content link opened the detail in a sheet. Native Back returns
 through the same pages. Each related destination owns its paged results and
 viewport while it is on the stack. The window retains its text search, and
 Clear Results returns that search to Recent Searches. The last 20 completed
-searches belong to the signed-in account on this device.
+searches belong to the signed-in Jellyfin account on this device. Keyword, natural-language
+and related searches retain their mode. A natural-language query enters history after its
+results load, including an empty result set. History stores query text, without interpreted
+filters or inference output. Explicitly deleting a query also prevents an older pending search from restoring it.
 
 **Content deep links** (`gus://item/<id>`, `gus://play/<id>` — `Models/ContentLink.swift`)
 ride `AppNavigationModel` via a consume-once pending-link; `Platform/ContentLinkHandler.swift`

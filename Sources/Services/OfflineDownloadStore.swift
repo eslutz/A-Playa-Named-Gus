@@ -101,6 +101,11 @@ struct OfflineDownloadRecord: Codable, Equatable, Identifiable, Sendable {
     var activity: DownloadActivity?
     var estimatedByteCount: Int64? = nil
 
+    /// A newer server rating may be stricter than the snapshot saved with the file.
+    func isAdmitted(by admits: (MediaItem) -> Bool) -> Bool {
+        admits(item) && (remoteReference.map { admits($0.item) } ?? true)
+    }
+
     private enum CodingKeys: String, CodingKey {
         case id
         case item
@@ -730,7 +735,9 @@ final class OfflineDownloadStore: DownloadSessionCoordinatorEventHandler {
     }
 
     func localFileURL(for item: MediaItem, serverID: String, userID: String, mediaSourceID: String? = nil) -> URL? {
-        guard let record = record(for: item, serverID: serverID, userID: userID, mediaSourceID: mediaSourceID) else { return nil }
+        let policy = ContentRatingGate.storedPolicy()
+        guard policy.admits(item), let record = record(for: item, serverID: serverID, userID: userID, mediaSourceID: mediaSourceID),
+              record.isAdmitted(by: policy.admits) else { return nil }
         return fileStore.localFileURL(for: record)
     }
 
@@ -739,7 +746,9 @@ final class OfflineDownloadStore: DownloadSessionCoordinatorEventHandler {
     }
 
     func localArtworkURL(for item: MediaItem, serverID: String, userID: String) -> URL? {
-        guard let record = record(for: item, serverID: serverID, userID: userID) else { return nil }
+        let policy = ContentRatingGate.storedPolicy()
+        guard policy.admits(item), let record = record(for: item, serverID: serverID, userID: userID),
+              record.isAdmitted(by: policy.admits) else { return nil }
         return fileStore.localArtworkURL(for: record)
     }
 

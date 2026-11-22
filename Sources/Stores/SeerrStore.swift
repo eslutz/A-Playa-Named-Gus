@@ -24,7 +24,7 @@ final class SeerrStore {
     private var pendingSupport = Set<String>()
 
     var restrictionRevision: String {
-        (defaults.string(forKey: ContentRatingGate.limitDefaultsKey) ?? "off") + ":" + String(defaults.bool(forKey: ContentRatingGate.hideUnratedDefaultsKey))
+        ContentRatingGate.storedPolicy(userDefaults: defaults).revision
     }
 
     var isConnected: Bool {

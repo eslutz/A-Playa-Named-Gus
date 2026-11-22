@@ -15,8 +15,7 @@ struct HomeView: View {
     @Environment(SavedMediaStore.self) private var playlists
     @Environment(ServerMediaListsStore.self) private var serverLists
     @Environment(\.scenePhase) private var scenePhase
-    @AppStorage(ContentRatingGate.limitDefaultsKey) private var ratingLimit = ContentRatingGate.Limit.off.rawValue
-    @AppStorage(ContentRatingGate.hideUnratedDefaultsKey) private var hideUnrated = false
+    @StoredContentPolicy private var contentPolicy
     @State private var heldSlots: Set<String>?
     private let activity = NextUpActivityStore.shared
     let store: HomeStore?
@@ -34,7 +33,7 @@ struct HomeView: View {
                     } description: {
                         Text(message)
                     } actions: {
-                        Button("Downloaded", systemImage: "arrow.down.circle") {
+                        Button("Downloads", systemImage: "arrow.down.circle") {
                             navigation.open(.downloaded)
                         }
                         Button("Try Again") { Task { await store.load() } }
@@ -44,7 +43,7 @@ struct HomeView: View {
                 }
             } else {
                 ScrollView {
-                    VStack(alignment: .leading, spacing: 32) {
+                    VStack(alignment: .leading, spacing: ContentSpacing.section) {
                         BrowseShelfPlaceholder(backdrop: true)
                         BrowseShelfPlaceholder(backdrop: false).accessibilityHidden(true)
                     }.gusTVPagePadding()
@@ -60,7 +59,7 @@ struct HomeView: View {
         } message: { Text(upNext.errorMessage ?? "") }
         .gusVisibleContent(.home, isLoading: store?.state.isLoading ?? true)
         .navigationTitle("Home")
-        .task(id: String(store != nil) + ratingLimit + String(hideUnrated)) {
+        .task(id: String(store != nil) + contentPolicy.revision) {
             await store?.loadIfNeeded()
             await upNext.refresh(session: session)
         }
@@ -104,8 +103,9 @@ struct HomeView: View {
             return .init(
                 cloudEnabled: false,
                 recommendationsEnabled: preferences.forYouSyncEnabled,
-                limit: ratingLimit,
-                hideUnrated: hideUnrated,
+                limit: contentPolicy.limit.rawValue,
+                hideUnrated: contentPolicy.hideUnrated,
+                ageCeiling: contentPolicy.ageCeiling,
                 activityRevision: playbackRefresh.revision,
                 tasteRevision: 0
             )
@@ -113,8 +113,9 @@ struct HomeView: View {
             return .init(
                 cloudEnabled: preferences.cloudEnabled,
                 recommendationsEnabled: preferences.recommendationsEnabled,
-                limit: ratingLimit,
-                hideUnrated: hideUnrated,
+                limit: contentPolicy.limit.rawValue,
+                hideUnrated: contentPolicy.hideUnrated,
+                ageCeiling: contentPolicy.ageCeiling,
                 activityRevision: playbackRefresh.revision,
                 tasteRevision: session.libraryIntelligence.tasteRevision,
                 forYouSyncEnabled: preferences.forYouSyncEnabled
@@ -195,7 +196,7 @@ struct HomeView: View {
             retryAction: { Task { await store.load() } }
         ) {
             ScrollView {
-                VStack(alignment: .leading, spacing: 32) {
+                VStack(alignment: .leading, spacing: ContentSpacing.section) {
                     if let message = activity.errorMessage {
                         VStack(alignment: .leading, spacing: 8) {
                             Label("Recent Activity Unavailable", systemImage: "exclamationmark.triangle").font(.headline)
@@ -291,14 +292,13 @@ private struct NextUpUpdates: ViewModifier {
     @Environment(UpNextStore.self) private var upNext
     @Environment(SavedMediaStore.self) private var playlists
     @Environment(ServerMediaListsStore.self) private var serverLists
-    @AppStorage(ContentRatingGate.limitDefaultsKey) private var ratingLimit = ContentRatingGate.Limit.off.rawValue
-    @AppStorage(ContentRatingGate.hideUnratedDefaultsKey) private var hideUnrated = false
+    @StoredContentPolicy private var contentPolicy
     private let activity = NextUpActivityStore.shared
     let store: HomeStore?
 
     func body(content: Content) -> some View {
         content
-            .task(id: "\(store != nil)-\(ratingLimit)-\(hideUnrated)-\(upNext.revision)-\(playlists.revision)-\(serverLists.revision)-\(activity.revision)") {
+            .task(id: "\(store != nil)-\(contentPolicy.revision)-\(upNext.revision)-\(playlists.revision)-\(serverLists.revision)-\(activity.revision)") {
                 store?.refreshNextUp(upNext: upNext, playlists: playlists, serverLists: serverLists)
             }
     }
@@ -309,7 +309,7 @@ private struct NextUpRail: View {
     @Environment(RootNavigationState.self) private var root
     let store: HomeStore
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: ContentSpacing.card) {
             HStack {
                 Text("Next Up").gusPhoneRailHeading().accessibilityAddTraits(.isHeader)
                 Spacer()
@@ -462,14 +462,14 @@ private struct NextUpDestination: View {
         if !usesArtwork {
             MediaLibraryRow(item: entry.item, title: entry.playlist?.name ?? entry.item?.seriesName ?? entry.item?.displayTitle, subtitle: episodeSubtitle, status: reasonText)
         } else {
-            VStack(alignment: .leading, spacing: 6) {
+            VStack(alignment: .leading, spacing: ContentSpacing.group) {
                 if usesArtwork {
                     ArtworkTile(url: entry.item.flatMap { session.mediaProvider.backdropImageURL(for: $0, maxWidth: 560) }, aspectRatio: 16.0 / 9.0, contentMode: .fit, placeholderSymbol: entry.playlist == nil ? "play.rectangle" : "list.bullet.rectangle", fallbackURLs: entry.item.map { session.mediaProvider.artworkURLs(for: $0, request: .init(role: $0.type == .episode ? .episodeStill : .backdrop, maxWidth: 560)) } ?? [])
                         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                         .posterHoverEffect()
                         .gusTVArtworkStatus(item: entry.item, progressID: "NextUp.progress." + entry.id)
                 }
-                VStack(alignment: .leading, spacing: 6) {
+                VStack(alignment: .leading, spacing: ContentSpacing.group) {
                     Text(entry.playlist?.name ?? entry.item?.seriesName ?? entry.item?.displayTitle ?? "Video")
                         .font(.headline).lineLimit(1)
                     if let item = entry.item, item.type == .episode {
@@ -525,7 +525,7 @@ struct MediaRail: View {
     @Environment(RootNavigationState.self) private var root
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: ContentSpacing.card) {
             HStack {
                 Text(title)
                     .gusPhoneRailHeading()
@@ -558,6 +558,7 @@ struct MediaRail: View {
                                     PosterCard(
                                         item: item,
                                         imageURL: session.mediaProvider.primaryImageURL(for: item, context: .posterRail),
+                                        alignsMixedArtwork: !recommendations.isEmpty,
                                         fallbackURLs: session.mediaProvider.artworkURLs(for: item, request: .init(role: .poster, maxWidth: 260)),
                                         onExhausted: { _ = try? await session.references.currentItem(item) }
                                     )
@@ -601,7 +602,7 @@ struct MediaRail: View {
         @State private var showingConsent = false
 
         var body: some View {
-            VStack(alignment: .leading, spacing: 6) {
+            VStack(alignment: .leading, spacing: ContentSpacing.group) {
                 Button {
                     showingConsent = true
                 } label: {
@@ -668,27 +669,25 @@ enum MediaRailMetrics {
     }
 
     static func spacing(for kind: MediaRailKind) -> CGFloat {
-        switch kind {
-        case .poster: return 16
-        case .backdrop: return 22
-        }
+        ContentSpacing.card
     }
 }
 
 private struct BackdropCard: View {
+    @AppStorage(MediaItem.seriesProgressKey) private var showSeriesProgress = false
     let item: MediaItem
     let imageURL: URL?
     var fallbackURLs: [URL] = []
     var onExhausted: (() async -> Void)?
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: ContentSpacing.group) {
             ArtworkTile(url: imageURL, aspectRatio: MediaRailMetrics.aspectRatio(for: .backdrop), contentMode: .fit, placeholderSymbol: "play.rectangle", fallbackURLs: fallbackURLs, onExhausted: onExhausted)
                 .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                 .posterHoverEffect()
                 .gusTVArtworkStatus(item: item)
 
-            VStack(alignment: .leading, spacing: 1) {
+            VStack(alignment: .leading, spacing: ContentSpacing.caption) {
                 Text(title)
                     .font(.subheadline.weight(.medium))
                     .lineLimit(1)
@@ -705,7 +704,7 @@ private struct BackdropCard: View {
         .contentShape(Rectangle())
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(item.mediaAccessibility.label)
-        .accessibilityValue(item.mediaAccessibility.value)
+        .accessibilityValue(item.mediaAccessibility(showSeriesProgress: showSeriesProgress).value)
     }
 
     private var title: String {
@@ -724,8 +723,7 @@ private struct BackdropCard: View {
 /// Shares the root container's `HomeStore` with `HomeView`.
 struct LibrariesLandingView: View {
     @Environment(\.scenePhase) private var scenePhase
-    @AppStorage(ContentRatingGate.limitDefaultsKey) private var ratingLimit = ContentRatingGate.Limit.off.rawValue
-    @AppStorage(ContentRatingGate.hideUnratedDefaultsKey) private var hideUnrated = false
+    @StoredContentPolicy private var contentPolicy
     @Environment(SessionStore.self) private var session
     @Environment(RootNavigationState.self) private var navigationState
     private var showsGrid: Bool {
@@ -759,7 +757,7 @@ struct LibrariesLandingView: View {
                 BrowseGridPlaceholder(list: usesList, ratio: 16.0 / 9).gusPhonePagePadding()
             }
         }
-        .task(id: String(store != nil) + String(scenePhase == .active) + ratingLimit + String(hideUnrated)) {
+        .task(id: String(store != nil) + String(scenePhase == .active) + contentPolicy.revision) {
             guard scenePhase == .active else { return }
             await store?.loadLibraries(force: false)
         }
@@ -829,7 +827,7 @@ private struct LibrariesGrid: View {
     let libraries: [MediaItem]
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: ContentSpacing.card) {
             LazyVGrid(columns: PosterGrid.columns, alignment: .leading, spacing: PosterGrid.spacing) {
                 ForEach(libraries, id: \.id) { library in
                     NavigationLink(value: GusRoute.library(.init(item: library))) {
@@ -855,7 +853,7 @@ struct BrowseShelfPlaceholder: View {
     var showsSyncSetup = false
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: ContentSpacing.card) {
             Text(verbatim: "Section title")
                 .gusPhoneRailHeading()
                 .redacted(reason: .placeholder)
@@ -891,9 +889,9 @@ private struct BrowseCardPlaceholder: View {
     var nextUp = false
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: ContentSpacing.group) {
             RoundedRectangle(cornerRadius: 10).fill(.quaternary).aspectRatio(ratio, contentMode: .fit)
-            VStack(alignment: .leading, spacing: nextUp ? 6 : 1) {
+            VStack(alignment: .leading, spacing: ContentSpacing.caption) {
                 if nextUp {
                     Text(verbatim: "Media title").font(.headline).lineLimit(1)
                 } else {

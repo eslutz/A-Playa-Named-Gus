@@ -26,13 +26,13 @@ private struct MetadataPillRow: View {
 
     var body: some View {
         let context = "detail:" + ItemRef(item: item).id
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: ContentSpacing.group) {
             Text(title)
                 .font(.headline)
                 .accessibilityAddTraits(.isHeader)
                 .accessibilityIdentifier(identifier)
             ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 10) {
+                HStack(spacing: ContentSpacing.group) {
                     ForEach(values, id: \.identityKey) { target in
                         Button(target.name) {
                             navigation.openRelatedSearch(target, viewport: viewport?.location)

@@ -12,8 +12,8 @@ struct MediaCollection: Identifiable, Equatable, Sendable {
 
     /// The collection ID owns its custom poster. Without one, member artwork is
     /// selected from the same snapshot for both the browser and the detail page.
-    func coverItems(limit: ContentRatingGate.Limit, hideUnrated: Bool) -> [MediaItem] {
-        let covers = ContentRatingGate.coverMembers(members, limit: limit, hideUnrated: hideUnrated, count: 3)
+    func coverItems(limit: ContentRatingGate.Limit, hideUnrated: Bool, ageCeiling: ContentRatingGate.Limit = .off) -> [MediaItem] {
+        let covers = ContentRatingGate.coverMembers(members, limit: limit, hideUnrated: hideUnrated, count: 3, ageCeiling: ageCeiling)
         guard limit == .off else { return covers }
         if item.hasTaggedCoverArtwork {
             return [item] + covers
@@ -23,8 +23,8 @@ struct MediaCollection: Identifiable, Equatable, Sendable {
         return membersLoaded ? covers + [item] : covers
     }
 
-    @MainActor func coverURLs(using provider: any MediaProviderSession, limit: ContentRatingGate.Limit, hideUnrated: Bool) -> [URL] {
-        coverItems(limit: limit, hideUnrated: hideUnrated).flatMap { item in
+    @MainActor func coverURLs(using provider: any MediaProviderSession, limit: ContentRatingGate.Limit, hideUnrated: Bool, ageCeiling: ContentRatingGate.Limit = .off) -> [URL] {
+        coverItems(limit: limit, hideUnrated: hideUnrated, ageCeiling: ageCeiling).flatMap { item in
             provider.artworkURLs(for: item, request: .init(role: item.coverArtworkRole, maxWidth: ImageURLBuilder.ImageContext.posterGrid.maxWidth))
         }
     }
