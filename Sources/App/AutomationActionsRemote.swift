@@ -107,6 +107,9 @@ struct ControlGusPlayerIntent: AppIntent {
         let store = RemoteSessionsStore(session: session)
         let query = GusRemotePlayerQuery()
         let selected = try await query.resolve(player, in: session, using: store)
+        if command == .playPause {
+            _ = try selected.playPauseCommand(policy: ContentRatingGate.storedPolicy())
+        }
         try await requestConfirmation(dialog: "Send \(command) to \(selected.deviceName)?")
         let fresh = try await query.resolve(player, in: session, using: store)
         guard selected.id == fresh.id, selected.userName == fresh.userName else { throw GusError.notFound }
@@ -114,9 +117,6 @@ struct ControlGusPlayerIntent: AppIntent {
         // limit, use the Play action with a specific, freshly admitted item.
         if command == .next || command == .previous, ContentRatingGate.storedPolicy().limit != .off {
             throw GusError.server(String(localized: "Choose a specific library item to play under this content limit."))
-        }
-        if command == .playPause, fresh.isPaused, fresh.nowPlaying.map({ ContentRatingGate.admitsStored($0) }) != true {
-            throw GusError.notFound
         }
         let outcome = try await GusAutomationWrite.perform(key: player.id) {
             switch command {
