@@ -1,7 +1,6 @@
 import AppIntents
 import Foundation
 
-/// Preserve both the identifier and the String parameter of previously saved shortcuts.
 #if GUS_SIRI_AI_PREVIEW && (os(iOS) || os(macOS) || os(visionOS))
     @AppIntent(.tool)
 #endif

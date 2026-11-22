@@ -115,7 +115,7 @@ jobs:
           ruby <<'RUBY'
           require "yaml"
           Dir[".github/workflows/*.yml"].each { |path| YAML.load_file(path) }
-          YAML.load_file("project.yml")
+          YAML.load_file("project.yml", aliases: true)
           RUBY
 
   build:
