@@ -221,13 +221,15 @@ enum GusIntentRuntime {
         return failure == .offline || failure == .timeout
     }
 
-    static func download(id: String, in session: SessionStore) -> OfflineDownloadRecord? {
-        let store = OfflineDownloadStore.shared
+    static func download(
+        id: String, in session: SessionStore, files: OfflineDownloadFileStore = .shared,
+        policy: ContentRatingGate.Policy = ContentRatingGate.storedPolicy()
+    ) -> OfflineDownloadRecord? {
         let scope = session.references.scope
-        let placeholder = MediaItem(providerKind: session.server.providerKind, id: id)
-        guard DownloadsAvailability.isSupported, let record = store.record(for: placeholder, serverID: scope.serverID, userID: scope.userID),
-              record.item.providerKind == session.server.providerKind, record.item.id == id,
-              store.localFileURL(for: record.item, serverID: scope.serverID, userID: scope.userID) != nil else { return nil }
+        guard DownloadsAvailability.isSupported,
+              let record = files.record(forItemID: id, serverID: scope.serverID, userID: scope.userID),
+              record.item.providerKind == session.server.providerKind,
+              record.isAdmitted(by: policy.admits), files.localFileURL(for: record) != nil else { return nil }
         return record
     }
 
