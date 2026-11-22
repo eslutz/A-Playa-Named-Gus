@@ -146,7 +146,7 @@ struct PresentedPlayer: View {
         switch item.type {
         case .photo:
             NavigationStack {
-                PhotoViewerView(photo: item)
+                PhotoViewerView(photo: item, slideshowAlbumID: playbackRequest?.slideshowAlbumID)
                     .toolbar {
                         ToolbarItem(placement: .cancellationAction) {
                             GusCloseButton {

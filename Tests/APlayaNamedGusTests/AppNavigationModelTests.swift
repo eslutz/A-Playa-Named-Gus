@@ -52,6 +52,19 @@ struct AppNavigationModelTests {
         #expect(browsingWindow.selectedSectionID == RootNavigationState.searchID)
     }
 
+    @Test("cold Spotlight handoffs refuse another profile on the same server")
+    func scopedHandoff() {
+        let model = AppNavigationModel()
+        let account = SessionCredential(serverID: "server", userID: "one")
+        let other = SessionCredential(serverID: "server", userID: "two")
+        let link = ContentLink.item(id: "item", serverID: "server", provider: .jellyfin)
+        model.open(link, account: account)
+        #expect(model.consumeContentLink(for: SessionLease(credential: other)) == nil)
+        #expect(model.consumeContentLink(for: SessionLease(credential: account)) == nil)
+        model.open(link, account: account)
+        #expect(model.consumeContentLink(for: SessionLease(credential: account)) == link)
+    }
+
     @Test("opens supported URLs and ignores unsupported URLs")
     func opensSupportedURLsOnly() throws {
         let model = AppNavigationModel()

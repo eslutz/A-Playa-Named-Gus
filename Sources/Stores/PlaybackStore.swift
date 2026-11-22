@@ -692,6 +692,7 @@ final class PlaybackStore {
             if isLocalPlayback, item.runTimeTicks == nil, playerItem.duration.seconds.isFinite, playerItem.duration.seconds > 0 {
                 item.runTimeTicks = PlaybackTime.ticks(fromSeconds: playerItem.duration.seconds)
             }
+            nowPlaying.bindChapters(video: self, session: session)
             #if os(watchOS)
                 nowPlaying.start(
                     player: player,
@@ -1152,6 +1153,17 @@ final class PlaybackStore {
         guard duration.isFinite, duration > 0 else { return }
         if duration - time <= 60 || time / duration >= 0.92 {
             isNextUpPromptVisible = true
+            if !usesPlaylistOrder, let next = nextUpItem, ContentRatingGate.admitsStored(next) {
+                let generation = preparationGeneration
+                nowPlaying.setNextTrackCommand { [weak self] in
+                    Task { @MainActor in
+                        guard let self, self.session.isActive, self.preparationGeneration == generation,
+                              self.isNextUpPromptVisible, !self.usesPlaylistOrder, self.nextUpItem?.id == next.id,
+                              ContentRatingGate.admitsStored(next) else { return }
+                        await self.playNextUp()
+                    }
+                }
+            }
         }
     }
 

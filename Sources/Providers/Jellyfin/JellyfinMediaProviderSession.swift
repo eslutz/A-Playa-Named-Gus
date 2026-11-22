@@ -394,13 +394,20 @@ final class JellyfinMediaProviderSession: MediaProviderSession {
         let response = try await NetworkRetryPolicy.idempotent.run {
             try await client.send(Paths.getTimers())
         }
-        return (response.value.items ?? []).compactMap { timer in
+        guard let timers = response.value.items, response.value.totalRecordCount.map({ $0 <= timers.count }) ?? true,
+              timers.allSatisfy({ $0.id != nil })
+        else {
+            throw GusError.server(String(localized: "The server returned an incomplete recording schedule."))
+        }
+        return timers.compactMap { timer in
             guard let id = timer.id else { return nil }
             return LiveTVTimer(
                 id: id,
                 name: timer.name ?? String(localized: "Recording", comment: "Fallback scheduled recording name"),
                 channelName: timer.channelName,
-                startDate: timer.startDate
+                startDate: timer.startDate,
+                programID: timer.programID ?? timer.programInfo?.id,
+                activeRecording: timer.status.map { [.new, .inProgress, .conflictedOk].contains($0) }
             )
         }
     }
@@ -647,6 +654,24 @@ final class JellyfinMediaProviderSession: MediaProviderSession {
               try nativeListID(header.id) == id
         else { throw GusError.notFound }
         return header
+    }
+
+    func ownsPrivatePlaylist(id: UUID) async throws -> Bool {
+        let nativeID = ServerMediaListID.string(id)
+        do {
+            // Jellyfin's /Users endpoint on a playlist is owner-only. An editor's
+            // personal share can grant edits, but never establishes ownership.
+            let shares = try await client.send(Paths.getPlaylistUsers(playlistID: nativeID)).value
+            guard shares.isEmpty else { return false }
+            let list = try await client.send(Paths.getPlaylist(playlistID: nativeID)).value
+            return list.isOpenAccess == false && list.shares?.isEmpty == true
+        } catch {
+            let failure = GusError(from: error)
+            if failure == .forbidden || failure == .notFound {
+                return false
+            }
+            throw failure
+        }
     }
 
     private func canEditPlaylist(id: UUID) async -> Bool {
@@ -1148,5 +1173,77 @@ final class JellyfinMediaProviderSession: MediaProviderSession {
         case .transcode:
             return .transcode
         }
+    }
+}
+
+extension JellyfinMediaProviderSession: LiveTVGuideProviding {
+    func liveTVPrograms(from: Date, until: Date, channelID: String?, offset: Int, limit: Int) async throws -> LiveTVGuidePage {
+        let parameters = Paths.GetLiveTvProgramsParameters(
+            channelIDs: channelID.map { [$0] }, userID: userID, maxStartDate: until, minEndDate: from,
+            startIndex: offset, limit: limit, sortBy: [.startDate], sortOrder: [.ascending],
+            enableImages: false, enableUserData: false, enableTotalRecordCount: true
+        )
+        let response = try await NetworkRetryPolicy.idempotent.run {
+            try await client.browse(Paths.getLiveTvPrograms(parameters: parameters))
+        }.value
+        guard let raw = response.items else { throw GusError.server(String(localized: "The server returned an incomplete program guide.")) }
+        return LiveTVGuidePage(programs: raw.compactMap(Self.guideProgram), rawCount: raw.count, total: response.totalRecordCount)
+    }
+
+    func liveTVProgram(id: String) async throws -> LiveTVGuideProgram {
+        let dto = try await client.browse(Paths.getProgram(programID: id, userID: userID)).value
+        guard dto.id == id, let program = Self.guideProgram(dto) else { throw GusError.notFound }
+        return program
+    }
+
+    private static func guideProgram(_ dto: BaseItemDto) -> LiveTVGuideProgram? {
+        guard dto.type == .program || dto.type == .tvProgram || dto.type == .liveTvProgram, let id = dto.id, !id.isEmpty,
+              let channel = dto.channelID, !channel.isEmpty, let title = dto.name, !title.isEmpty,
+              let start = dto.startDate, let end = dto.endDate, end > start else { return nil }
+        return LiveTVGuideProgram(
+            id: id,
+            channelID: channel,
+            channelName: dto.channelName,
+            name: title,
+            rating: dto.officialRating,
+            start: start,
+            end: end,
+            timerID: dto.timerID
+        )
+    }
+
+    func canManageRecordings() async throws -> Bool {
+        let user = try await client.send(Paths.getUserByID(userID: userID)).value
+        return user.id == userID && user.policy?.enableLiveTvAccess == true && user.policy?.enableLiveTvManagement == true
+    }
+
+    func scheduleLiveTVProgram(_ program: LiveTVGuideProgram, beforeSend: @MainActor () throws -> Void) async throws {
+        guard try await canManageRecordings() else { throw GusError.forbidden }
+        let defaults = try await client.send(Paths.getDefaultTimer(programID: program.id)).value
+        guard defaults.programID == nil || defaults.programID == program.id,
+              defaults.channelID == nil || defaults.channelID == program.channelID,
+              defaults.startDate == nil || defaults.startDate == program.start,
+              defaults.endDate == nil || defaults.endDate == program.end,
+              program.end > .now, program.admitted else { throw GusError.notFound }
+        let timer = TimerInfoDto(
+            channelID: program.channelID,
+            channelName: program.channelName,
+            endDate: program.end,
+            externalChannelID: defaults.externalChannelID,
+            externalProgramID: defaults.externalProgramID,
+            isPostPaddingRequired: defaults.isPostPaddingRequired,
+            isPrePaddingRequired: defaults.isPrePaddingRequired,
+            keepUntil: defaults.keepUntil,
+            name: program.name,
+            overview: defaults.overview,
+            postPaddingSeconds: defaults.postPaddingSeconds,
+            prePaddingSeconds: defaults.prePaddingSeconds,
+            priority: defaults.priority,
+            programID: program.id,
+            serviceName: defaults.serviceName,
+            startDate: program.start
+        )
+        try beforeSend()
+        _ = try await client.send(Paths.createTimer(timer))
     }
 }

@@ -627,7 +627,8 @@ struct UILayoutMetricsTests {
         let visionEntitlements = try sourceFile(named: "Gus-SharePlay.entitlements", under: "Config")
 
         #expect(sharedConfig.contains("CODE_SIGN_ENTITLEMENTS[sdk=iphoneos*] = Config/Gus-iOS.entitlements"))
-        #expect(sharedConfig.contains("CODE_SIGN_ENTITLEMENTS[sdk=macosx*] = Config/Gus.entitlements"))
+        #expect(sharedConfig.contains("GUS_APP_MAC_ENTITLEMENTS = Config/Gus.entitlements"))
+        #expect(sharedConfig.contains("CODE_SIGN_ENTITLEMENTS[sdk=macosx*] = $(GUS_APP_MAC_ENTITLEMENTS)"))
         #expect(iOSEntitlements.contains("com.apple.developer.declared-age-range"))
         #expect(macEntitlements.contains("com.apple.developer.declared-age-range"))
         #expect(!tvOSEntitlements.contains("com.apple.developer.declared-age-range"))
@@ -650,7 +651,7 @@ struct UILayoutMetricsTests {
         #expect(!topShelfEntitlements.contains("com.apple.developer.associated-domains"))
         #expect(projectSource.contains("CODE_SIGN_ENTITLEMENTS: Config/GusTopShelf.entitlements"))
         #expect(snapshotSource.contains("containerURL(forSecurityApplicationGroupIdentifier"))
-        #expect(homeStoreSource.contains("TopShelfSnapshot(items: Array(shelfItems), serverID: session.server.id, userID: session.user.id).save()"))
+        #expect(homeStoreSource.contains("TopShelfSnapshot(items: Array(shelfItems), serverID: session.server.id, userID: session.user.id, restrictionRevision: restriction).save()"))
     }
 
     private func iconLayerPixels(_ data: Data, width: Int, height: Int) throws -> [UInt8] {

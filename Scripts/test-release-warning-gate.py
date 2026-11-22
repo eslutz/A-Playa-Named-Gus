@@ -61,7 +61,8 @@ class WarningGateTests(unittest.TestCase):
         self.assertEqual(results[0]["exitCode"], 0)
 
     def test_warning_zero_exit_fails(self):
-        for message in ("file.swift:12: warning: ambiguous closure", "ld: warning: duplicate library", "warning: asset issue", "2026-10-13 appintentsmetadataprocessor[1:2] warning: metadata issue",
+        for message in ("file.swift:12: warning: ambiguous closure", "ld: warning: duplicate library",
+                        "/path/Gus.xcodeproj: GusUITests: ld: warning: framework requires a newer deployment target", "warning: asset issue", "2026-10-13 appintentsmetadataprocessor[1:2] warning: metadata issue",
                         "2026-11-16 04:54:51.263 xcodebuild[9535:28731] [MT] DVTAssertions: Warning in DVTiPhoneSimulator.m:661",
                         "2026-11-16 05:39:37.000 Gus[123:456] No symbol named 'person.crop.circle.badge.gearshape' found in system symbol set"):
             with self.subTest(message=message):

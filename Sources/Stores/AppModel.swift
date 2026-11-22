@@ -20,6 +20,7 @@ final class AppModel {
         let audioPlayback = AudioPlaybackCoordinator()
     #endif
     private var sessionRestore: Task<Void, Never>?
+    private var clearedSurfacesAfterMissingRestore = false
 
     struct ReauthenticationRequest: Equatable {
         let server: ServerConnection
@@ -174,8 +175,29 @@ final class AppModel {
 
     // MARK: - Launch restore
 
+    /// Voice and Shortcuts may enter while a scene is restoring its session or while the user is switching profiles.
+    func restoreForIntentIfNeeded() async {
+        if let sessionRestore {
+            await sessionRestore.value
+            return
+        }
+        guard currentSession == nil, !isTransitioning else { return }
+        #if os(iOS)
+            reloadSavedAccountsForSessionRestore()
+        #endif
+        await restoreLastSession()
+    }
+
     /// Silently restores the last session from the Keychain token + persisted stores.
     func restoreLastSession() async {
+        defer {
+            if currentSession == nil, self === Self.shared, !clearedSurfacesAfterMissingRestore {
+                // The saved account or Keychain item may disappear while the host
+                // is closed. A failed cold restore must retire the old glance.
+                clearedSurfacesAfterMissingRestore = true
+                SessionStore.clearPersonalSurfaces()
+            }
+        }
         guard currentSession == nil,
               let account = lastSessionAccount,
               let user = users.first(where: { SessionCredential(user: $0).account == account })
@@ -519,6 +541,10 @@ final class AppModel {
     }
 
     private func removeAccount(server: ServerConnection, user: StoredUser) {
+        #if !os(watchOS)
+            GusAudiobookBookmarks(credential: SessionCredential(user: user), defaults: userDefaults).forget()
+        #endif
+        SystemSurfacePreferences(credential: SessionCredential(user: user), defaults: userDefaults).forget()
         clearAccountData(server: server, user: user)
         let scope = AccountScope(serverID: server.id, userID: user.id)
         GusIntelligencePreferences.delete(scope: scope, defaults: userDefaults)
@@ -576,6 +602,10 @@ final class AppModel {
     private func installSession(_ session: SessionStore) {
         session.bindRecovery(to: self)
         currentSession = session
+        clearedSurfacesAfterMissingRestore = false
+        if self === Self.shared {
+            session.systemPrivacyDidChange(restoring: true)
+        }
         reauthentication = nil
     }
 
@@ -617,6 +647,9 @@ final class AppModel {
         accountCleanup.clearSearchIndex(server.id, user.id)
         accountCleanup.clearTopShelf()
         if !preservingDownloads {
+            #if !os(watchOS)
+                try? GusRecordingJournal(scope: scope).clear()
+            #endif
             accountCleanup.clearBookState(scope)
             OfflinePlaybackProgressStore.shared.deleteCheckpoints(scope: scope)
             accountCleanup.clearDownloads(scope)

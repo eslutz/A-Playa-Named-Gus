@@ -14,6 +14,11 @@ struct PhotoViewerView: View {
     @State private var isLoadingSiblings = false
     @State private var siblingError: String?
 
+    init(photo: MediaItem, slideshowAlbumID: String? = nil) {
+        self.photo = photo
+        _isSlideshowActive = State(initialValue: slideshowAlbumID != nil && slideshowAlbumID == photo.parentID)
+    }
+
     var body: some View {
         LoadingStateView(
             state: state,
@@ -100,6 +105,7 @@ struct PhotoViewerView: View {
             state = .loaded
         }
         defer { isLoadingSiblings = false }
+        guard let parent = photo.parentID else { return }
         do {
             _ = try await MediaPageLoader.collect(pageSize: 200, didLoadPage: { loaded in
                 let selected = siblings.first { $0.id == selectedID }
@@ -111,7 +117,7 @@ struct PhotoViewerView: View {
                 state = .loaded
             }) { offset, limit in
                 guard session.isActive else { throw CancellationError() }
-                let page = try await session.mediaProvider.items(query: MediaItemQuery(parentID: photo.parentID, includeTypes: [.photo], startIndex: offset, limit: limit, sort: .name))
+                let page = try await session.mediaProvider.items(query: MediaItemQuery(parentID: parent, includeTypes: [.photo], startIndex: offset, limit: limit, sort: .name))
                 try Task.checkCancellation()
                 guard session.isActive else { throw CancellationError() }
                 return page

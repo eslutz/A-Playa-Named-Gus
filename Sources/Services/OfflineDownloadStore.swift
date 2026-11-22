@@ -830,6 +830,7 @@ final class OfflineDownloadStore: DownloadSessionCoordinatorEventHandler {
                 }
             }
             refreshDisplayedRecords()
+            updateDownloadGlance(allowStart: true)
             let source = try await session.mediaProvider.downloadSource(for: item, streamSelection: selection)
             // Deletion or account switching may happen while source resolution awaits.
             guard session.isActive, !Task.isCancelled, let pending = fileStore.record(forRecordID: record.id), pending.status == .queued,
@@ -942,6 +943,7 @@ final class OfflineDownloadStore: DownloadSessionCoordinatorEventHandler {
         activities[record.id] = record.activity
         publishRecord(record)
         refreshDisplayedRecords()
+        updateDownloadGlance(allowStart: true)
         coordinator.resumeDownload(with: resumeData, recordID: record.id)
     }
 
@@ -992,6 +994,7 @@ final class OfflineDownloadStore: DownloadSessionCoordinatorEventHandler {
             if loadedServerID == serverID, loadedUserID == userID {
                 records = []
                 activeItemIDs = []
+                updateDownloadGlance()
             }
         } catch {
             errorMessage = error.localizedDescription
@@ -1105,6 +1108,7 @@ final class OfflineDownloadStore: DownloadSessionCoordinatorEventHandler {
         }
         guard let index = records.firstIndex(where: { $0.id == record.id && $0.downloadedAt == record.downloadedAt }) else { return }
         records[index] = record
+        updateDownloadGlance()
         if let itemID = record.item.id {
             activeItemIDs.remove(itemID)
             if record.status.isActive {
@@ -1161,9 +1165,17 @@ final class OfflineDownloadStore: DownloadSessionCoordinatorEventHandler {
         }
     }
 
+    private func updateDownloadGlance(allowStart: Bool = false) {
+        #if os(iOS)
+            guard self === Self.shared else { return }
+            DownloadLiveActivityController.shared.refresh(records, session: AppModel.shared.currentSession, allowStart: allowStart)
+        #endif
+    }
+
     private func refreshDisplayedRecords() {
         guard let loadedServerID, let loadedUserID else { return }
         reloadRecords(serverID: loadedServerID, userID: loadedUserID)
+        updateDownloadGlance()
     }
 
     /// Retry missing artwork for existing downloads on foreground entry, including

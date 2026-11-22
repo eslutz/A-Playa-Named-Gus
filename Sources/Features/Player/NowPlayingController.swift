@@ -14,6 +14,26 @@ final class NowPlayingController {
     /// controller (e.g. video sitting in PiP while audio starts) has since claimed.
     private weak static var activeController: NowPlayingController?
 
+    /// System commands follow the playback owner that most recently prepared a
+    /// player. Weak links also cover tvOS video, where AVKit publishes Now Playing.
+    private weak static var chapterOwner: NowPlayingController?
+    private weak var chapterAudio: AudioPlayerStore?
+    private weak var chapterVideo: PlaybackStore?
+    private var chapterLease: SessionLease?
+    private var chapterTimes: [Double] = []
+
+    func bindChapters(audio: AudioPlayerStore? = nil, video: PlaybackStore? = nil, session: SessionStore) {
+        Self.chapterOwner = self
+        chapterAudio = audio
+        chapterVideo = video
+        chapterLease = session.lease
+    }
+
+    static func chapterPlayers(for session: SessionStore) -> (AudioPlayerStore?, PlaybackStore?) {
+        guard session.isActive, let owner = chapterOwner, owner.chapterLease == session.lease else { return (nil, nil) }
+        return (owner.chapterAudio, owner.chapterVideo)
+    }
+
     private weak var player: AVPlayer?
     private var timeObserver: Any?
     private var artworkTask: Task<Void, Never>?
@@ -36,7 +56,12 @@ final class NowPlayingController {
         self.player = player
         artworkTask?.cancel()
 
+        chapterTimes = PlaybackChapter.seekTargets(for: item).map(\.seconds)
         var info: [String: Any] = [:]
+        if !chapterTimes.isEmpty {
+            info[MPNowPlayingInfoPropertyChapterCount] = chapterTimes.count
+            info[MPNowPlayingInfoPropertyChapterNumber] = chapterTimes.lastIndex { $0 <= player.currentTime().seconds } ?? 0
+        }
         info[MPMediaItemPropertyTitle] = item.displayTitle
         if let series = item.seriesName {
             info[MPMediaItemPropertyArtist] = series
@@ -66,6 +91,10 @@ final class NowPlayingController {
     }
 
     func stop() {
+        if Self.chapterOwner === self {
+            Self.chapterOwner = nil
+        }
+        chapterTimes.removeAll()
         artworkTask?.cancel()
         artworkTask = nil
         removeTimeObserver()
@@ -100,6 +129,9 @@ final class NowPlayingController {
     private func updateElapsed(_ seconds: Double, rate: Double) {
         guard seconds.isFinite, Self.activeController === self else { return }
         var info = MPNowPlayingInfoCenter.default().nowPlayingInfo ?? [:]
+        if !chapterTimes.isEmpty {
+            info[MPNowPlayingInfoPropertyChapterNumber] = chapterTimes.lastIndex { $0 <= seconds } ?? 0
+        }
         info[MPNowPlayingInfoPropertyElapsedPlaybackTime] = seconds
         info[MPNowPlayingInfoPropertyPlaybackRate] = rate
         MPNowPlayingInfoCenter.default().nowPlayingInfo = info
@@ -196,20 +228,31 @@ final class NowPlayingController {
             return .success
         }
 
-        center.nextTrackCommand.removeTarget(nil)
-        center.nextTrackCommand.isEnabled = onNextTrack != nil
-        if let onNextTrack {
-            center.nextTrackCommand.addTarget { _ in
-                Task { @MainActor in onNextTrack() }
-                return .success
-            }
-        }
+        setNextTrackCommand(onNextTrack)
 
         center.previousTrackCommand.removeTarget(nil)
         center.previousTrackCommand.isEnabled = onPreviousTrack != nil
         if let onPreviousTrack {
             center.previousTrackCommand.addTarget { _ in
                 Task { @MainActor in onPreviousTrack() }
+                return .success
+            }
+        }
+    }
+
+    /// A late eligibility update from a video window must never replace a newer
+    /// audio queue's Next command. tvOS video lets AVKit own the transport.
+    func setNextTrackCommand(_ action: (() -> Void)?) {
+        guard Self.activeController === self else { return }
+        let command = MPRemoteCommandCenter.shared().nextTrackCommand
+        command.removeTarget(nil)
+        command.isEnabled = action != nil
+        if let action {
+            command.addTarget { [weak self] _ in
+                Task { @MainActor in
+                    guard let self, Self.activeController === self else { return }
+                    action()
+                }
                 return .success
             }
         }

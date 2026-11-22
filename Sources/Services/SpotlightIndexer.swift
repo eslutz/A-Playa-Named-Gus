@@ -4,8 +4,13 @@ import OSLog
 // CoreSpotlight imports on tvOS but CSSearchableIndex is marked unavailable
 // there, so the gate needs the explicit os check.
 #if canImport(CoreSpotlight) && !os(tvOS)
+    import AppIntents
     import CoreSpotlight
     import UniformTypeIdentifiers
+
+    #if !os(watchOS)
+        extension GusMediaEntity: IndexedEntity {}
+    #endif
 #endif
 
 /// Donates browsed media items to Core Spotlight so library content surfaces in
@@ -59,6 +64,10 @@ enum SpotlightIndexer {
             let searchable: [CSSearchableItem] = ContentRatingGate.filter(items).compactMap { item in
                 guard let id = item.id, let type = item.type else { return nil }
                 let attributes = CSSearchableItemAttributeSet(contentType: contentType(for: type))
+                #if !os(watchOS)
+                    let scopedID = GusIntentID.make(resource: "media", id: id, provider: item.providerKind, scope: AccountScope(serverID: serverID, userID: userID))
+                    attributes.associateAppEntity(GusMediaEntity(id: scopedID, item: item))
+                #endif
                 attributes.title = item.displayTitle
                 attributes.contentDescription = item.overview
                 var keywords = item.genres

@@ -71,6 +71,8 @@
 	<string>A Playa Named Gus uses your local network to connect to Jellyfin and Seerr servers and to find Jellyfin servers when you choose Find Local Servers.</string>
 
 	<!-- iOS/tvOS background audio + Picture in Picture. Ignored on macOS. -->
+	<key>NSSupportsLiveActivities</key>
+	<true/>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>audio</string>

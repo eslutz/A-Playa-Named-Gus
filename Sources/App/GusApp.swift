@@ -72,24 +72,25 @@ struct GusApp: App {
     }
 
     private func continueActivity(_ activity: NSUserActivity) {
-        guard let link = GusUserActivity.contentLink(
+        guard let account = GusUserActivity.account(from: activity), let link = GusUserActivity.contentLink(
             from: activity,
             currentServerID: appModel.currentSession?.server.id,
             currentUserID: appModel.currentSession?.user.id
         ) else { return }
-        appNavigation.open(link)
+        appNavigation.open(link, account: account)
     }
 
     private func continueSpotlightActivity(_ activity: NSUserActivity) {
         #if canImport(CoreSpotlight) && !os(tvOS)
             guard let identifier = activity.userInfo?[CSSearchableItemActivityIdentifier] as? String,
+                  let scope = SpotlightIndexer.Identifier.decode(identifier),
                   let link = SpotlightIndexer.contentLink(
                       forSearchableItemIdentifier: identifier,
                       currentServerID: appModel.currentSession?.server.id,
                       currentUserID: appModel.currentSession?.user.id
                   )
             else { return }
-            appNavigation.open(link)
+            appNavigation.open(link, account: SessionCredential(serverID: scope.serverID, userID: scope.userID))
         #endif
     }
 

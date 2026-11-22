@@ -945,6 +945,52 @@ struct PlaybackLifecyclePolicyTests {
         #expect(automatic.selection(in: source).subtitleStreamIndex == nil)
     }
 
+    #if os(iOS)
+        @Test("system audio queue edits keep the prepared player and admit complete, ordered albums")
+        func systemAudioQueueInsertion() async throws {
+            let provider = FakeMediaProviderSession(capabilities: ProviderCapabilities())
+            let current = MediaItem(id: "playing", officialRating: "G", type: .audio)
+            let album = MediaItem(id: "album", officialRating: "G", type: .musicAlbum)
+            let track = MediaItem(albumID: "album", id: "album-track", officialRating: "G", type: .audio)
+            let fixture = try RepositoryTestFixtures.url(for: "Tests/Fixtures/OfflinePlaylist.mov")
+            provider.itemHandler = { _ in current }
+            provider.audioHandler = { PlaybackSourceResolution(url: fixture, playSessionID: "audio", mediaSourceID: nil, playMethod: .directPlay, stereoLayout: .none, stereoFallbackReason: nil) }
+            var incomplete = true
+            var offsets = [Int]()
+            provider.itemsHandler = { query in
+                offsets.append(query.startIndex)
+                if query.startIndex == 0 {
+                    return MediaItemPage(items: [track], totalRecordCount: 2)
+                }
+                let last = MediaItem(albumID: "album", id: "album-last", officialRating: "G", type: .audio)
+                return MediaItemPage(items: incomplete ? [] : [last], totalRecordCount: 2)
+            }
+            let session = makeSession(provider)
+            let store = AudioPlayerStore(session: session, tracks: [current], activateAudioSession: { _ in })
+            defer { store.teardown() }
+            await store.start()
+            let player = try #require(store.nativePlayer)
+            let playerItem = try #require(player.currentItem)
+            if store.isPlaybackRequested {
+                store.playPause()
+            }
+            await #expect(throws: GusError.self) { try await store.enqueueSystemAudio(album, playNext: true, in: session) }
+            #expect(store.queue.tracks.count == 1)
+            incomplete = false
+            try await store.enqueueSystemAudio(album, playNext: true, in: session)
+            try await store.enqueueSystemAudio(current, playNext: false, in: session)
+            #expect(store.nativePlayer === player && player.currentItem === playerItem && !store.isPlaybackRequested)
+            #expect(store.queue.order.map { store.queue.tracks[$0].id } == ["playing", "album-track", "album-last", "playing"])
+            #expect(offsets == [0, 1, 0, 1])
+            #expect(provider.audioResolutionCallCount == 1)
+            let other = makeSession(provider)
+            await #expect(throws: GusError.self) { try await store.enqueueSystemAudio(current, playNext: true, in: other) }
+            store.teardown()
+            await #expect(throws: GusError.self) { try await store.enqueueSystemAudio(current, playNext: true, in: session) }
+            #expect(store.queue.tracks.count == 4)
+        }
+    #endif
+
     @Test("ordered audio pages advance raw offsets while deduplicating library identities")
     func pagedAudioQueue() async {
         let provider = FakeMediaProviderSession(capabilities: ProviderCapabilities())

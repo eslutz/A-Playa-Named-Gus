@@ -51,6 +51,8 @@ struct GusSearchIntent: Equatable, Sendable {
     var unsupported: [String] = []
     var minimumYear: Int?
     var maximumYear: Int?
+    var premieredOnOrAfter: Date?
+    var premieredBefore: Date?
     var minimumMinutes: Int?
     var maximumMinutes: Int?
     var status: MediaItemStatusFilter = .all

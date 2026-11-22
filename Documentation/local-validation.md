@@ -130,13 +130,12 @@ python3 Scripts/run-warning-free.py xcodebuild \
 ### Test native macOS on Apple Silicon
 
 Run the native unit scheme from the checkout root. The temporary signing
-configuration uses the existing unit-host entitlements for App Sandbox and
-networking. It leaves the checkout's signing settings in place for other builds.
+configuration gives the unit host App Sandbox and networking and gives the widget App Sandbox. It leaves the checkout's signing settings in place for other builds.
 
 ```sh
 EVIDENCE="$(mktemp -d /tmp/gus-macos-validation.XXXXXX)"
-printf 'CODE_SIGN_ENTITLEMENTS[sdk=macosx*] = %s\nCODE_SIGN_STYLE = Manual\nCODE_SIGN_IDENTITY = -\nPROVISIONING_PROFILE_SPECIFIER =\n' \
-  "$PWD/ci_scripts/gus-macos-unit.entitlements" >"$EVIDENCE/MacUnit.xcconfig"
+printf 'GUS_APP_MAC_ENTITLEMENTS = %s\nGUS_WIDGET_MAC_ENTITLEMENTS = %s\nCODE_SIGN_STYLE = Manual\nCODE_SIGN_IDENTITY = -\nPROVISIONING_PROFILE_SPECIFIER =\n' \
+  "$PWD/ci_scripts/gus-macos-unit.entitlements" "$PWD/ci_scripts/gus-widget-macos-unit.entitlements" >"$EVIDENCE/MacUnit.xcconfig"
 XCODE_XCCONFIG_FILE="$EVIDENCE/MacUnit.xcconfig" \
   python3 Scripts/run-warning-free.py xcodebuild \
   -project 'A Playa Named Gus.xcodeproj' -scheme 'Gus macOS Unit Tests' \
@@ -157,6 +156,12 @@ Seerr regressions use the separate `Scripts/discover-fixture-server.py` fixture
 when the scenario needs it. Choose the applicable scheme (e.g. `Gus iOS UI Tests`,
 `Gus tvOS Tests`, `Gus visionOS Tests`, or `Gus watchOS Tests`) and capture
 results using the same destination and evidence approach as the unit recipe.
+
+Run `Gus iOS App Intent Tests` on an iOS 27 or later simulator to exercise
+the installed app through Apple's App Intents Testing framework. The scheme
+also contains the Siri AI evaluation, which requires the developer-preview
+configuration, a compatible SDK, and an eligible physical device.
+The regular `Gus iOS UI Tests` scheme continues to support the iOS 26 floor.
 
 For navigation UI tests, run `python3 Scripts/book-details-fixture.py --genres`
 for related results and paging (port 5061). Run the same script with

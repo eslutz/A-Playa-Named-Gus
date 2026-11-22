@@ -24,6 +24,7 @@ def intel_build_line(line):
 def diagnostic_lines(text):
     """Match build and missing-symbol diagnostics, excluding runtime service noise."""
     pattern = (r"^(?:.+:\d+(?::\d+)?:\s*|[^:\n]+:\s*)?(?:warning|error):|"
+               r"^.+\.xcodeproj:\s+[^:\n]+:\s+(?:ld|clang|swiftc):\s*(?:warning|error):|"
                r"(?:appintentsmetadataprocessor|appintentsnltraining).*\b(?:warning|error):|"
                r"\bxcodebuild\[[^\]]+\].*\bDVTAssertions:\s*(?:warning|error)\b|"
                r"\bNo symbol named .+ found in system symbol set\b")

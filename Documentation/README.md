@@ -25,6 +25,8 @@ Design and code behavior are verified independently.
 
 ## Platforms and integrations
 
+- [Siri and Shortcuts integration and qualification](siri-and-shortcuts.md)
+
 - [iPad client and service boundaries](ipad-capabilities.md)
 - [Apple TV presentation and service boundaries](tvos-capabilities.md)
 - [Vision Pro capabilities and planned work](visionos-capabilities.md)

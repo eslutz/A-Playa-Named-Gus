@@ -14,7 +14,7 @@ project = root / project_name
 with tempfile.TemporaryDirectory(prefix="gus-cloud-project-") as directory:
     scratch = Path(directory)
     shutil.copy2(root / "project.yml", scratch / "project.yml")
-    for name in ("Sources", "Tests", "Resources", "Config"):
+    for name in ("Sources", "Tests", "Resources", "Config", "SiriPreview"):
         shutil.copytree(root / name, scratch / name,
                         ignore=shutil.ignore_patterns("Local.xcconfig", "*.p8"))
     subprocess.run(["xcodegen", "generate"], cwd=scratch, check=True,

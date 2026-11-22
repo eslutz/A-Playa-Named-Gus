@@ -97,7 +97,7 @@ class BootstrapTests(unittest.TestCase):
 
     def run_pre_build(self, platform="macOS", action="build-for-testing"):
         scripts = SOURCE.parent
-        for name in ("ci_pre_xcodebuild.sh", "gus-macos-unit.entitlements"):
+        for name in ("ci_pre_xcodebuild.sh", "gus-macos-unit.entitlements", "gus-widget-macos-unit.entitlements"):
             shutil.copy2(scripts / name, self.root / "ci_scripts" / name)
         env = {**self.env, "CI_PRODUCT_PLATFORM": platform, "CI_XCODEBUILD_ACTION": action}
         return subprocess.run(["/bin/sh", "ci_pre_xcodebuild.sh"], cwd=self.root / "ci_scripts",
@@ -120,6 +120,8 @@ class BootstrapTests(unittest.TestCase):
                 self.assertEqual(self.run_script().returncode, 0)
                 for file in generated_dir.glob("*-PCC.entitlements"):
                     file.unlink()
+                if watch:
+                    shutil.copy2(SOURCE.parent.parent / "Config/GusWidgets.entitlements", config_dir)
                 if base:
                     shutil.copy2(SOURCE.parent.parent / "Config" / f"{base}.entitlements", config_dir)
                 result = self.run_pre_build(platform=platform, action="archive")
@@ -137,7 +139,8 @@ class BootstrapTests(unittest.TestCase):
                     self.assertIn(f"CODE_SIGN_ENTITLEMENTS[sdk={sdk}*] = build/pcc-signing/{base}-PCC.entitlements", config)
                 if watch:
                     archive = plistlib.loads((generated_dir / "Gus-Watch-PCC.entitlements").read_bytes())
-                    self.assertEqual(archive, {capability: True})
+                    existing = plistlib.loads((config_dir / "GusWidgets.entitlements").read_bytes())
+                    self.assertEqual(archive, {**existing, capability: True})
                     self.assertIn("GUS_PCC_ENTITLED[sdk=watchos*] = YES", config)
                     self.assertIn("GUS_WATCH_CODE_SIGN_ENTITLEMENTS = build/pcc-signing/Gus-Watch-PCC.entitlements", config)
                 else:
@@ -229,7 +232,9 @@ class BootstrapTests(unittest.TestCase):
         self.assertEqual(self.run_pre_build().returncode, 0)
         config = (self.root / "Config/Local.xcconfig").read_text()
         self.assertIn("gus-macos-unit.entitlements", config)
-        import plistlib
+        self.assertIn("GUS_WIDGET_MAC_ENTITLEMENTS =", config)
+        widget = self.root / "ci_scripts/gus-widget-macos-unit.entitlements"
+        self.assertEqual(plistlib.loads(widget.read_bytes()), {"com.apple.security.app-sandbox": True})
         values = plistlib.loads((self.root / "ci_scripts/gus-macos-unit.entitlements").read_bytes())
         self.assertEqual(values, {"com.apple.security.app-sandbox": True,
                                  "com.apple.security.network.client": True,

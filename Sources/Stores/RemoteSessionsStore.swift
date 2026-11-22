@@ -5,12 +5,16 @@ import Observation
 /// Another Jellyfin client on the same server that this device can remote-control.
 struct RemoteSession: Identifiable, Equatable, Sendable {
     let id: String
+    var deviceID: String? = nil
+    var userID: String? = nil
     let deviceName: String
     let client: String
     let userName: String?
     let nowPlaying: MediaItem?
     let positionTicks: Int?
     let isPaused: Bool
+    var hasReportedPauseState = true
+    var lastPlaybackCheckIn: Date? = nil
     let volumeLevel: Int?
     let isMuted: Bool
     let supportsMediaControl: Bool
@@ -82,12 +86,16 @@ private struct JellyfinRemoteSessionsTransport: RemoteSessionsTransport {
             guard let id = dto.id, dto.isSupportsRemoteControl == true, dto.deviceID != DeviceIdentity.deviceID else { return nil }
             return RemoteSession(
                 id: id,
+                deviceID: dto.deviceID,
+                userID: dto.userID,
                 deviceName: dto.deviceName ?? String(localized: "Unknown Device"),
                 client: dto.client ?? "Jellyfin",
                 userName: dto.userName,
                 nowPlaying: dto.nowPlayingItem.map(JellyfinMediaItemMapper.mediaItem(from:)),
                 positionTicks: dto.playState?.positionTicks,
                 isPaused: dto.playState?.isPaused ?? false,
+                hasReportedPauseState: dto.playState?.isPaused != nil,
+                lastPlaybackCheckIn: dto.lastPlaybackCheckIn,
                 volumeLevel: dto.playState?.volumeLevel,
                 isMuted: dto.playState?.isMuted ?? false,
                 supportsMediaControl: dto.isSupportsMediaControl == true,

@@ -52,7 +52,8 @@ CODE_SIGNING_ALLOWED = YES
 // Sandbox + network access on macOS (including UDP discovery replies; these are
 // macOS-sandbox entitlements). macOS app state remains per OS login account via
 // the user-domain sandbox container, UserDefaults, Application Support, and Keychain.
-CODE_SIGN_ENTITLEMENTS[sdk=macosx*] = Config/Gus.entitlements
+GUS_APP_MAC_ENTITLEMENTS = Config/Gus.entitlements
+CODE_SIGN_ENTITLEMENTS[sdk=macosx*] = $(GUS_APP_MAC_ENTITLEMENTS)
 
 // Native SharePlay / Group Activities, Universal Links, and Declared Age Range on iOS.
 CODE_SIGN_ENTITLEMENTS[sdk=iphoneos*] = Config/Gus-iOS.entitlements
@@ -72,7 +73,9 @@ CODE_SIGN_ENTITLEMENTS[sdk=appletvsimulator*] = Config/Gus-tvOS.entitlements
 // Watch previews use the native debug dylib locally. Automated builds can use
 // the ordinary executable layout to avoid Xcode overwriting App Intents linker
 // dependency metadata while creating the separate preview dylib.
+GUS_WIDGET_MAC_ENTITLEMENTS = Config/GusWidgets-macOS.entitlements
 GUS_WATCH_DEBUG_DYLIB = YES
+GUS_WATCH_CODE_SIGN_ENTITLEMENTS = Config/GusWidgets.entitlements
 
 // MARK: - Local overrides
 // Enable only for builds signed with the approved Private Cloud Compute entitlement.
@@ -88,3 +91,7 @@ ARCHS = arm64
 EXCLUDED_ARCHS = x86_64 i386
 // Physical Watch devices use the SDK's ARM variants (including arm64_32).
 ARCHS[sdk=watchos*] = $(ARCHS_STANDARD)
+
+// Only Xcode 27.3 preview builds process the Siri skills resource.
+GUS_EXCLUDED_SIRI_RESOURCES = Skills.skillsbundle
+EXCLUDED_SOURCE_FILE_NAMES = $(inherited) $(GUS_EXCLUDED_SIRI_RESOURCES)

@@ -31,7 +31,8 @@
 
         func resolveMediaItems(for intent: INPlayMediaIntent) async -> [INPlayMediaMediaItemResolutionResult] {
             guard let request = Request(intent) else { return [.unsupported()] }
-            let items = await Self.resolve(request).compactMap(Self.siriItem)
+            let matches = await Self.resolve(request)
+            let items = matches.map { Self.siriItem($0.item, identifier: $0.identifier) }
             if items.count > 1 {
                 return [.disambiguation(with: items)]
             }
@@ -44,72 +45,89 @@
             return INPlayMediaIntentResponse(code: code, userActivity: nil)
         }
 
-        @MainActor private static func resolve(_ request: Request) async -> [MediaItem] {
-            await lookup(request)?.matches ?? []
+        @MainActor private static func resolve(_ request: Request) async -> [(item: MediaItem, identifier: String)] {
+            guard let result = await lookup(request) else { return [] }
+            return result.matches.compactMap { item in
+                guard let id = item.id else { return nil }
+                return (item, GusIntentID.make(resource: "media", id: id, provider: item.providerKind, scope: result.session.references.scope))
+            }
         }
 
         @MainActor private static func lookup(_ request: Request) async -> (session: SessionStore, matches: [MediaItem])? {
-            let app = AppModel.shared
-            await app.restoreLastSession()
-            guard let session = app.currentSession,
-                  await session.ageRangeAccess.permitsExternalMedia(isCurrent: { app.currentSession === session && session.isActive }) else { return nil }
-            let downloads = OfflineDownloadStore.shared
-            let serverID = session.server.id
-            let userID = session.user.id
-            downloads.load(serverID: serverID, userID: userID)
-            let records = downloads.completedRecords(serverID: serverID, userID: userID)
-            let albums = Self.downloadedAlbums(records)
-            let local = records.map(\.item) + albums
-            let localMatches = Self.matches(local, title: request.title, artist: request.artist, identifier: request.identifier, types: request.types)
-            if !localMatches.isEmpty {
-                return (session, localMatches)
+            guard let session = try? await GusIntentRuntime.session() else { return nil }
+            let identifier = request.identifier.flatMap {
+                GusIntentID.value($0, resource: "media", provider: session.server.providerKind, scope: session.references.scope)
             }
-            let provider = session.mediaProvider
-            do {
-                let page = try await PlaybackDeadline.run(for: .seconds(5)) {
-                    try await provider.items(query: MediaItemQuery(searchTerm: request.title, includeTypes: request.types, startIndex: 0, limit: 30, isRecursive: true))
-                }
-                guard app.currentSession === session, session.isActive, !Task.isCancelled else { return nil }
-                return (session, Self.matches(page.items, title: request.title, artist: request.artist, identifier: request.identifier, types: request.types))
-            } catch {
-                GusError(from: error).handleIfUnauthorized(session: session)
+            if request.identifier != nil, identifier == nil {
                 return nil
+            }
+            do {
+                let candidates: [MediaItem]
+                if let identifier {
+                    let item = try await PlaybackDeadline.run(for: .seconds(5)) { try await session.mediaProvider.item(id: identifier) }
+                    guard item.providerKind == session.server.providerKind else { return nil }
+                    candidates = Self.matches([item], title: request.title, artist: request.artist, identifier: identifier, types: request.types)
+                } else {
+                    let page = try await PlaybackDeadline.run(for: .seconds(5)) {
+                        try await GusIntentRuntime.search(request.title, in: session, types: request.types)
+                    }
+                    candidates = Self.matches(page.items, title: request.title, artist: request.artist, identifier: nil, types: request.types)
+                    // An incomplete page can neither prove uniqueness nor authorize a one-hit auto-play.
+                    if candidates.count == 1, (page.totalRecordCount ?? 0) > 50 {
+                        return nil
+                    }
+                }
+                try GusIntentRuntime.validate(session)
+                return (session, candidates)
+            } catch {
+                let failure = GusError(from: error)
+                failure.handleIfUnauthorized(session: session)
+                guard GusIntentRuntime.canUseDownload(after: error),
+                      let records = try? GusIntentRuntime.completedDownloads(in: session) else { return nil }
+                let policy = ContentRatingGate.storedPolicy()
+                let items = records.filter { $0.isAdmitted(by: policy.admits) }.map(\.playbackItem) + DownloadedLibrary.albums(in: records)
+                return (session, Self.matches(items, title: request.title, artist: request.artist, identifier: identifier, types: request.types))
             }
         }
 
         @MainActor private static func play(_ selection: Request) async -> INPlayMediaIntentResponseCode {
             let app = AppModel.shared
-            let audio = app.audioPlayback
             guard let lookup = await lookup(selection), lookup.matches.count == 1, let item = lookup.matches.first,
-                  app.currentSession === lookup.session, lookup.session.isActive, let id = item.id else { return .failure }
-            let session = lookup.session
+                  app.currentSession === lookup.session, lookup.session.isActive else { return .failure }
+            return await startAudio(item, session: lookup.session) ? .success : .failure
+        }
+
+        @MainActor static func startAudio(_ item: MediaItem, session: SessionStore, shuffle: Bool = false, repeating: Bool = false) async -> Bool {
+            let app = AppModel.shared
+            let audio = app.audioPlayback
+            guard let id = item.id, app.currentSession === session, session.isActive else { return false }
             let downloads = OfflineDownloadStore.shared
+            downloads.load(serverID: session.server.id, userID: session.user.id)
             var tracks = [item]
             var request = PlaybackRequest(item: item)
             var continuation: AudioQueueContinuation?
             var localOnly = false
-            let downloadedTracks = Self.downloadedAlbumTracks(
-                downloads.completedRecords(serverID: session.server.id, userID: session.user.id), albumID: id
-            )
-            if item.type == .musicAlbum, let first = downloadedTracks.first {
-                request = first.playbackRequest
-                tracks = downloadedTracks.map(\.playbackItem)
-                localOnly = true
-            } else if item.type == .musicAlbum {
+            if item.type == .musicAlbum {
                 let query = MediaItemQuery(parentID: id, includeTypes: [.audio], startIndex: 0, limit: 100, sort: .trackOrder)
                 let provider = session.mediaProvider
                 do {
                     let page = try await PlaybackDeadline.run(for: .seconds(5)) { try await provider.items(query: query) }
                     let total = try MediaPageLoader.validatedTotal(for: page, startIndex: 0)
                     tracks = ContentRatingGate.filter(MediaPageLoader.unique(page.items)).filter { $0.type == .audio && $0.id != nil }
-                    guard let first = tracks.first else { return .failure }
+                    guard let first = tracks.first else { return false }
                     request = PlaybackRequest(item: first)
                     continuation = CarPlayPaging.nextIndex(start: 0, rawCount: page.items.count, total: total, pageSize: query.limit).map {
                         AudioQueueContinuation(query: query, nextStartIndex: $0, totalRecordCount: total)
                     }
                 } catch {
-                    GusError(from: error).handleIfUnauthorized(session: session)
-                    return .failure
+                    let failure = GusError(from: error)
+                    failure.handleIfUnauthorized(session: session)
+                    guard GusIntentRuntime.canUseDownload(after: error), let records = try? GusIntentRuntime.completedDownloads(in: session) else { return false }
+                    let downloadedTracks = DownloadedLibrary.tracks(in: records, albumID: id)
+                    guard let first = downloadedTracks.first else { return false }
+                    request = first.playbackRequest
+                    tracks = downloadedTracks.map(\.playbackItem)
+                    localOnly = true
                 }
             } else if let record = downloads.record(for: item, serverID: session.server.id, userID: session.user.id),
                       downloads.localFileURL(for: item, serverID: session.server.id, userID: session.user.id, mediaSourceID: record.mediaSourceID) != nil
@@ -118,32 +136,14 @@
                 tracks = [request.item]
                 localOnly = true
             }
-            guard app.currentSession === session, session.isActive, !Task.isCancelled, ContentRatingGate.admitsStored(request.item) else { return .failure }
-            let player = audio.play(tracks: tracks, localOnly: localOnly, request: request, continuation: continuation, session: session, downloads: downloads, presentOnPhone: false)
-            await audio.waitForPreparation(of: player)
-            guard session.isActive, audio.store === player, player.hasPreparedContent, player.state == .loaded else { return .failure }
-            return .success
-        }
-
-        private static func downloadedAlbums(_ records: [OfflineDownloadRecord]) -> [MediaItem] {
-            let tracks = records.compactMap { record -> MediaItem? in
-                let item = record.item
-                return item.type == .audio && ContentRatingGate.admitsStored(item) ? item : nil
+            guard app.currentSession === session, session.isActive, !Task.isCancelled, ContentRatingGate.admitsStored(request.item) else { return false }
+            let player = audio.play(tracks: tracks, shuffled: shuffle, localOnly: localOnly, request: request, continuation: continuation, session: session, downloads: downloads, presentOnPhone: false)
+            if repeating {
+                player.cycleRepeatMode()
             }
-            return MediaPageLoader.unique(tracks.compactMap { track in
-                guard let id = track.albumID, let name = track.album else { return nil }
-                return MediaItem(albumArtist: track.albumArtist, artists: track.artists, id: id, name: name, type: .musicAlbum)
-            })
-        }
-
-        private static func downloadedAlbumTracks(_ records: [OfflineDownloadRecord], albumID: String) -> [OfflineDownloadRecord] {
-            records.filter { $0.item.type == .audio && $0.item.albumID == albumID && ContentRatingGate.admitsStored($0.item) }
-                .sorted {
-                    let lhs = $0.item
-                    let rhs = $1.item
-                    return (lhs.parentIndexNumber ?? 0, lhs.indexNumber ?? 0, lhs.displayTitle) <
-                        (rhs.parentIndexNumber ?? 0, rhs.indexNumber ?? 0, rhs.displayTitle)
-                }
+            await audio.waitForPreparation(of: player)
+            guard session.isActive, audio.store === player, player.hasPreparedContent, player.state == .loaded else { return false }
+            return true
         }
 
         static func matches(_ items: [MediaItem], title: String, artist: String?, identifier: String?, types: [MediaItemType]) -> [MediaItem] {
@@ -151,8 +151,8 @@
                 guard let type = item.type, types.contains(type), item.id != nil else { return false }
                 return ContentRatingGate.admitsStored(item)
             }
-            if let identifier, let exact = eligible.first(where: { $0.id == identifier }) {
-                return [exact]
+            if let identifier {
+                return eligible.filter { $0.id == identifier }
             }
             return Array(eligible.filter { item in
                 guard item.displayTitle.compare(title, options: [.caseInsensitive, .diacriticInsensitive]) == .orderedSame else { return false }
@@ -162,15 +162,14 @@
             }.prefix(5))
         }
 
-        private static func siriItem(_ item: MediaItem) -> INMediaItem? {
-            guard let id = item.id else { return nil }
+        private static func siriItem(_ item: MediaItem, identifier: String) -> INMediaItem {
             let type: INMediaItemType = switch item.type {
             case .audio: .song
             case .audioBook: .audioBook
             case .musicAlbum: .album
             default: .unknown
             }
-            return INMediaItem(identifier: id, title: item.displayTitle, type: type, artwork: nil, artist: item.albumArtist ?? item.artists.first ?? item.bookAuthorNames.first)
+            return INMediaItem(identifier: identifier, title: item.displayTitle, type: type, artwork: nil, artist: item.albumArtist ?? item.artists.first ?? item.bookAuthorNames.first)
         }
     }
 #endif

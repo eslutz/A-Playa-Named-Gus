@@ -221,6 +221,23 @@ extension PlaybackIntegrationTests {
             #expect(store.episodesState == .loaded && store.selectedSeasonID == "B")
         }
 
+        @Test("Clearing a favorite with missing user data uses the removal endpoint and requires explicit readback")
+        func unknownFavoriteStatus() async {
+            let p = provider()
+            var current = MediaItem(id: "item", officialRating: "G", type: .movie)
+            p.itemHandler = { _ in current }
+            let store = ItemDetailStore(item: current, session: session(p))
+            await store.setFavorite(false)
+            #expect(p.favoriteRequests.map(\.currentlyFavorite) == [true])
+            #expect(store.actionOutcome == .accepted)
+            #expect(store.needsUserDataRefresh)
+            current.userData = MediaUserData(isFavorite: false)
+            await store.refreshUserData()
+            #expect(store.actionOutcome == .confirmed)
+            #expect(!store.needsUserDataRefresh)
+            #expect(p.favoriteRequests.count == 1)
+        }
+
         @Test("successful mutation with failed refresh cannot toggle twice")
         func reconcileMutation() async {
             let p = provider()

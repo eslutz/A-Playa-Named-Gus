@@ -40,6 +40,7 @@ final class SessionStore {
     let profile: UserProfileStore
     let server: ServerConnection
     let seerr: SeerrStore
+    let systemSurfacePreferences: SystemSurfacePreferences
     let intelligencePreferences: GusIntelligencePreferences
     @ObservationIgnored lazy var forYouShelf = ForYouShelfState(session: self)
     @ObservationIgnored lazy var libraryIntelligence = GusLibraryIntelligence(session: self)
@@ -210,6 +211,9 @@ final class SessionStore {
     func invalidate() {
         guard isActive else { return }
         isActive = false
+        if AppModel.shared.currentSession === self {
+            Self.clearPersonalSurfaces()
+        }
         #if os(iOS)
             forYouSyncTask?.cancel()
         #endif
@@ -261,6 +265,7 @@ final class SessionStore {
         self.user = user
         self.server = server
         self.seerr = SeerrStore(scope: scope)
+        self.systemSurfacePreferences = SystemSurfacePreferences(credential: lease.credential, defaults: historyDefaults)
         self.intelligencePreferences = GusIntelligencePreferences(scope: scope, defaults: historyDefaults)
         self.searchHistory = SearchHistoryStore(scope: scope, defaults: historyDefaults)
         let provider = mediaProvider ?? JellyfinMediaProviderSession(client: client, userID: user.id)

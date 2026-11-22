@@ -25,6 +25,8 @@ final class ServerMediaListsStore {
         var before: UUID? = nil
         var replacementID: UUID? = nil
         var message: String? = nil
+        // Legacy and explicitly reviewed household edits carry no privacy precondition.
+        var requiresPrivateOwnership: Bool? = nil
         var outcome: ActionOutcome {
             switch status {
             case .queued: .queued
@@ -288,7 +290,7 @@ final class ServerMediaListsStore {
     }
 
     @discardableResult
-    func create(name: String, kind: ServerMediaListKind, session: SessionStore, itemIDs: [String] = [], items: [MediaItem] = []) async -> UUID? {
+    func create(name: String, kind: ServerMediaListKind, session: SessionStore, itemIDs: [String] = [], items: [MediaItem] = [], requiresPrivateOwnership: Bool? = nil) async -> UUID? {
         guard prepare(scope: session.references.scope) else { return nil }
         let name = name.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !name.isEmpty, items.allSatisfy({ $0.id != nil }) else { return nil }
@@ -309,7 +311,8 @@ final class ServerMediaListsStore {
             kind: kind,
             action: .create,
             name: name,
-            items: snapshots
+            items: snapshots,
+            requiresPrivateOwnership: requiresPrivateOwnership
         )
         guard await enqueue(edit, session: session) else { return nil }
         // The server-assigned identity is saved with the original local edit ID.
@@ -329,18 +332,18 @@ final class ServerMediaListsStore {
     }
 
     @discardableResult
-    func add(item: MediaItem, to id: UUID, kind: ServerMediaListKind, session: SessionStore) async -> Bool {
+    func add(item: MediaItem, to id: UUID, kind: ServerMediaListKind, session: SessionStore, requiresPrivateOwnership: Bool? = nil) async -> Bool {
         guard let itemID = item.id, prepare(scope: session.references.scope) else { return false }
         if list(id: id, kind: kind, scope: session.references.scope)?.entries.contains(where: { $0.item.id.map(Self.mediaIdentity) == Self.mediaIdentity(itemID) }) == true {
             errorMessage = String(localized: "This item is already in this Jellyfin playlist. Repeated items are not supported.")
             return false
         }
-        return await enqueue(PendingEdit(id: UUID(), listID: id, kind: kind, action: .add, items: [item]), session: session)
+        return await enqueue(PendingEdit(id: UUID(), listID: id, kind: kind, action: .add, items: [item], requiresPrivateOwnership: requiresPrivateOwnership), session: session)
     }
 
     @discardableResult
-    func remove(entryID: UUID, from id: UUID, kind: ServerMediaListKind, session: SessionStore) async -> Bool {
-        await enqueue(PendingEdit(id: UUID(), listID: id, kind: kind, action: .remove, entryID: entryID), session: session)
+    func remove(entryID: UUID, from id: UUID, kind: ServerMediaListKind, session: SessionStore, requiresPrivateOwnership: Bool? = nil) async -> Bool {
+        await enqueue(PendingEdit(id: UUID(), listID: id, kind: kind, action: .remove, entryID: entryID, requiresPrivateOwnership: requiresPrivateOwnership), session: session)
     }
 
     @discardableResult
@@ -514,12 +517,28 @@ final class ServerMediaListsStore {
             // Probe before any transmission. Failure here is definitely unsent,
             // including a create while offline, and remains safe to replay.
             do {
+                if edit.requiresPrivateOwnership != nil {
+                    for item in edit.items {
+                        guard let id = item.id else { throw GusError.notFound }
+                        let fresh = try await session.mediaProvider.item(id: id)
+                        guard session.isActive, current(scope, token) else { return }
+                        guard fresh.id == id, fresh.providerKind == item.providerKind, ContentRatingGate.admitsStored(fresh) else { throw GusError.forbidden }
+                    }
+                }
                 if edit.action == .create {
                     _ = try await session.mediaProvider.mediaLists(kind: edit.kind)
                 } else {
                     try await fetch(id: edit.listID, kind: edit.kind, session: session, token: token)
                     guard let fresh = caches[scope]?.lists.first(where: { $0.id == edit.listID && $0.kind == edit.kind }), fresh.canEdit else {
                         throw GusError.server(String(localized: "You do not have permission to edit this server list."))
+                    }
+                    if edit.requiresPrivateOwnership != nil, let entryID = edit.entryID,
+                       let member = fresh.entries.first(where: { $0.id == entryID }), !ContentRatingGate.admitsStored(member.item)
+                    {
+                        throw GusError.forbidden
+                    }
+                    if edit.requiresPrivateOwnership == true {
+                        guard try await session.mediaProvider.ownsPrivatePlaylist(id: edit.listID) else { throw GusError.forbidden }
                     }
                 }
             } catch {
@@ -532,7 +551,7 @@ final class ServerMediaListsStore {
                     finish(edit: edit, scope: scope)
                 } else {
                     let failure = GusError(from: error)
-                    if failure == .unauthorized || failure == .notFound || failure == .server(String(localized: "You do not have permission to edit this server list.")) {
+                    if failure == .forbidden || failure == .unauthorized || failure == .notFound || failure == .server(String(localized: "You do not have permission to edit this server list.")) {
                         edit.status = .rejected
                         edit.message = failure.localizedDescription
                         _ = update(edit, scope: scope)
@@ -542,7 +561,7 @@ final class ServerMediaListsStore {
                 }
                 continue
             }
-            guard current(scope, token) else { return }
+            guard current(scope, token), session.isActive, !Task.isCancelled else { return }
             // Earlier edits and this preflight fetch may have published native
             // occurrence IDs. Resolve both endpoints immediately before applying
             // the dependent intent, then persist that normalized operation.
@@ -595,7 +614,7 @@ final class ServerMediaListsStore {
             } catch {
                 edit.status = edit.canDuplicate ? .uncertain : .queued
                 let failure = GusError(from: error)
-                if failure == .unauthorized || failure == .notFound || failure == .server(String(localized: "You do not have permission to edit this server list.")) {
+                if failure == .forbidden || failure == .unauthorized || failure == .notFound || failure == .server(String(localized: "You do not have permission to edit this server list.")) {
                     edit.status = .rejected
                 }
                 edit.message = failure.localizedDescription

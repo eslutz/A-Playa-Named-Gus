@@ -113,6 +113,41 @@ struct LiveTVTimer: Identifiable, Equatable {
     let name: String
     let channelName: String?
     let startDate: Date?
+    var programID: String? = nil
+    var activeRecording: Bool? = nil
+}
+
+struct LiveTVGuideProgram: Equatable, Sendable {
+    let id: String
+    let channelID: String
+    let channelName: String?
+    let name: String
+    let rating: String?
+    let start: Date
+    let end: Date
+    let timerID: String?
+
+    var admitted: Bool {
+        ContentRatingGate.admitsStored(MediaItem(officialRating: rating, type: .liveProgram))
+    }
+
+    func isSameAiring(as other: Self) -> Bool {
+        id == other.id && channelID == other.channelID && name == other.name && start == other.start && end == other.end
+    }
+}
+
+struct LiveTVGuidePage: Sendable {
+    let programs: [LiveTVGuideProgram]
+    let rawCount: Int
+    let total: Int?
+}
+
+@MainActor
+protocol LiveTVGuideProviding: AnyObject {
+    func liveTVPrograms(from: Date, until: Date, channelID: String?, offset: Int, limit: Int) async throws -> LiveTVGuidePage
+    func liveTVProgram(id: String) async throws -> LiveTVGuideProgram
+    func canManageRecordings() async throws -> Bool
+    func scheduleLiveTVProgram(_ program: LiveTVGuideProgram, beforeSend: @MainActor () throws -> Void) async throws
 }
 
 @MainActor
@@ -191,6 +226,7 @@ protocol MediaProviderSession: AnyObject, Sendable {
     func addToMediaList(id: UUID, kind: ServerMediaListKind, itemIDs: [String]) async throws
     func removeFromMediaList(id: UUID, kind: ServerMediaListKind, entryIDs: [UUID]) async throws
     func moveMediaListEntry(id: UUID, entryID: UUID, to index: Int) async throws
+    func ownsPrivatePlaylist(id: UUID) async throws -> Bool
     func canEditMediaListMetadata(_ list: EditableMediaList) async throws -> Bool
     func canEditMediaListCover(_ list: EditableMediaList) async throws -> Bool
     func editMediaListMetadata(_ list: EditableMediaList, name: String?, expectedName: String, overview: String?, expectedOverview: String) async throws
@@ -223,6 +259,10 @@ protocol MediaProviderSession: AnyObject, Sendable {
 }
 
 extension MediaProviderSession {
+    func ownsPrivatePlaylist(id: UUID) async throws -> Bool {
+        false
+    }
+
     func resolveRelatedSearch(_ target: RelatedSearch) async throws -> RelatedSearch? {
         target.id == nil ? nil : target
     }

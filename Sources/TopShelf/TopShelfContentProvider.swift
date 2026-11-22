@@ -8,7 +8,7 @@ import TVServices
 /// image endpoints and every action is a deep link handled by the app.
 final class TopShelfContentProvider: TVTopShelfContentProvider {
     override func loadTopShelfContent(completionHandler: @escaping (TVTopShelfContent?) -> Void) {
-        if let snapshot = TopShelfSnapshot.load(), !snapshot.items.isEmpty {
+        if let snapshot = TopShelfSnapshot.load(), snapshot.publicationID != nil, snapshot.serverID != nil, snapshot.userID != nil, !snapshot.items.isEmpty {
             completionHandler(TVTopShelfSectionedContent(sections: [makeContinueSection(snapshot)]))
         } else {
             completionHandler(TVTopShelfSectionedContent(sections: [makeStaticSection()]))
@@ -26,11 +26,8 @@ final class TopShelfContentProvider: TVTopShelfContentProvider {
             if let progress = entry.playbackProgress {
                 item.playbackProgress = progress
             }
-            let displayURL = entry.contentURL ?? URL(string: "gus://item/\(entry.id)")
-            var playURL = displayURL.flatMap { URLComponents(url: $0, resolvingAgainstBaseURL: false) }
-            playURL?.host = "play"
-            item.playAction = playURL?.url.map(TVTopShelfAction.init(url:))
-            item.displayAction = displayURL.map(TVTopShelfAction.init(url:))
+            item.playAction = snapshot.actionURL(for: entry.id, play: true).map(TVTopShelfAction.init(url:))
+            item.displayAction = snapshot.actionURL(for: entry.id, play: false).map(TVTopShelfAction.init(url:))
             return item
         }
 

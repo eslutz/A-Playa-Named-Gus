@@ -21,6 +21,7 @@ final class OfflinePlaybackProgressStore {
         var reference: MediaReference? = nil
         var replacement: MediaItem? = nil
         var blockedReason: String? = nil
+        var recordedAt: Date? = nil
     }
 
     private(set) var revision = 0
@@ -45,6 +46,10 @@ final class OfflinePlaybackProgressStore {
 
     func positionTicks(forItemID itemID: String, scope: AccountScope, mediaSourceID: String? = nil) -> Int? {
         checkpoints[key(itemID: itemID, scope: scope, mediaSourceID: mediaSourceID)]?.positionTicks
+    }
+
+    func recordedAt(forItemID itemID: String, scope: AccountScope, mediaSourceID: String?) -> Date? {
+        checkpoints[key(itemID: itemID, scope: scope, mediaSourceID: mediaSourceID)]?.recordedAt
     }
 
     func playbackGeneration(forItemID itemID: String, scope: AccountScope, mediaSourceID: String?) -> UUID? {
@@ -74,7 +79,7 @@ final class OfflinePlaybackProgressStore {
         checkpoints[key(itemID: itemID, scope: scope, mediaSourceID: mediaSourceID)] = Checkpoint(
             serverID: scope.serverID, userID: scope.userID, itemID: itemID,
             positionTicks: max(0, positionTicks), mediaSourceID: mediaSourceID, version: UUID(), needsSync: true,
-            reference: item.map { MediaReference(item: $0, scope: scope) }
+            reference: item.map { MediaReference(item: $0, scope: scope) }, recordedAt: Date()
         )
         playbackGenerations[key(itemID: itemID, scope: scope, mediaSourceID: mediaSourceID)] = UUID()
         persist()

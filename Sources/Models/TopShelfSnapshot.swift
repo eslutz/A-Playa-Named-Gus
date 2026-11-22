@@ -25,6 +25,29 @@ struct TopShelfSnapshot: Codable, Equatable {
     var items: [Item]
     var serverID: String? = nil
     var userID: String? = nil
+    /// Snapshots from before account consent have no publication ID.
+    var publicationID: UUID? = UUID()
+    var restrictionRevision: String? = nil
+
+    func actionURL(for itemID: String, play: Bool) -> URL? {
+        guard let publicationID, serverID != nil, userID != nil else { return nil }
+        var parts = URLComponents()
+        parts.scheme = "gus"
+        parts.host = "top-shelf"
+        parts.path = "/" + publicationID.uuidString + (play ? "/play" : "/item")
+        parts.queryItems = [URLQueryItem(name: "item", value: itemID)]
+        return parts.url
+    }
+
+    func selection(for url: URL) -> (id: String, play: Bool, serverID: String, userID: String)? {
+        let path = url.pathComponents.filter { $0 != "/" }
+        guard url.scheme == "gus", url.host == "top-shelf", path.count == 2,
+              let publicationID, path[0] == publicationID.uuidString, ["play", "item"].contains(path[1]),
+              let query = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems,
+              query.count == 1, query[0].name == "item", let id = query[0].value,
+              items.contains(where: { $0.id == id }), let serverID, let userID else { return nil }
+        return (id, path[1] == "play", serverID, userID)
+    }
 
     // MARK: - App Group persistence
 
@@ -40,7 +63,12 @@ struct TopShelfSnapshot: Codable, Equatable {
     }
 
     func save(to fileURL: URL? = containerFileURL()) {
-        guard let fileURL, let data = try? JSONEncoder().encode(self) else { return }
+        guard let fileURL else { return }
+        var snapshot = self
+        if let prior = Self.load(from: fileURL), prior.serverID == serverID, prior.userID == userID, let token = prior.publicationID {
+            snapshot.publicationID = token
+        }
+        guard let data = try? JSONEncoder().encode(snapshot) else { return }
         try? data.write(to: fileURL, options: .atomic)
     }
 

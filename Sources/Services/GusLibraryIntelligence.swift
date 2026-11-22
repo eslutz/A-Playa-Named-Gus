@@ -192,8 +192,8 @@ final class GusLibraryIntelligence {
 
     private func matches(for intent: GusSearchIntent, restriction: String) async throws -> [MediaItem] {
         let terms = intent.keywords + intent.credits.map(\.name) + intent.people
-        if intent.favoritesOnly || intent.status != .all {
-            // The server owns mutable user data. A new favorite or a just-completed
+        if intent.favoritesOnly || intent.status != .all || intent.premieredOnOrAfter != nil || intent.premieredBefore != nil {
+            // Exact premiere dates are absent from the compact catalog. The server owns mutable user data. A new favorite or a just-completed
             // book can change membership hours before the metadata snapshot expires.
             var progress = GusCatalogPaging(), matches: [MediaItem] = []
             repeat {

@@ -102,13 +102,55 @@ struct AudioPlaybackTests {
         #expect(queue.goBack()?.id == "track-0")
     }
 
-    @Test("jump selects a track by id")
+    @Test("jump selects a track occurrence")
     func jumpSelectsTrack() {
         var queue = AudioQueue(tracks: Self.tracks(4))
 
-        #expect(queue.jump(toTrackID: "track-2")?.id == "track-2")
+        #expect(queue.jump(toOccurrence: 2)?.id == "track-2")
         #expect(queue.advance(automatic: true)?.id == "track-3")
-        #expect(queue.jump(toTrackID: "missing") == nil)
+        #expect(queue.jump(toOccurrence: 99) == nil)
+    }
+
+    @Test("Play Next and Play Last preserve occurrences across a partially loaded album")
+    func enqueueAroundContinuation() {
+        let songs = Self.tracks(6)
+        var queue = AudioQueue(tracks: Array(songs.prefix(2)))
+        queue.enqueue([songs[2], songs[0]], playNext: true)
+        queue.enqueue([songs[4], songs[1]], playNext: false)
+        queue.enqueue([songs[5]], playNext: false)
+        let current = queue.currentOccurrence
+        #expect(queue.hasUpcomingOccurrence(of: "track-0"))
+        #expect(queue.advance(automatic: true)?.id == "track-2")
+        #expect(queue.advance(automatic: true)?.id == "track-0")
+        #expect(queue.currentOccurrence != current)
+        #expect(queue.advance(automatic: true)?.id == "track-1")
+        #expect(queue.libraryPageIsWithin(1))
+        queue.appendLibraryTracks([songs[1], songs[2], songs[3]])
+        #expect(!queue.libraryPageIsWithin(1))
+        #expect(queue.order.map { queue.tracks[$0].id } == ["track-0", "track-2", "track-0", "track-1", "track-2", "track-3", "track-4", "track-1", "track-5"])
+        let tail = queue.order[7]
+        #expect(queue.jump(toOccurrence: tail)?.id == "track-1")
+        queue.appendLibraryTracks([songs[4]])
+        #expect(queue.currentOccurrence == tail)
+        #expect(!queue.libraryPageIsWithin(3))
+        #expect(queue.advance(automatic: true)?.id == "track-5")
+    }
+
+    @Test("explicit insertions keep their order when a shuffled queue returns to album order")
+    func enqueueWhileShuffled() {
+        let songs = Self.tracks(5)
+        var queue = AudioQueue(tracks: Array(songs.prefix(3)), startIndex: 1)
+        var generator = SeededGenerator(state: 9)
+        queue.shuffle(using: &generator)
+        queue.enqueue([songs[3], songs[1]], playNext: true)
+        queue.enqueue([songs[4]], playNext: false)
+        #expect(queue.currentTrack?.id == "track-1")
+        #expect(queue.order.prefix(3).map { queue.tracks[$0].id } == ["track-1", "track-3", "track-1"])
+        #expect(queue.order.last.map { queue.tracks[$0].id } == "track-4")
+        _ = queue.advance(automatic: false)
+        queue.unshuffle()
+        #expect(queue.currentTrack?.id == "track-3")
+        #expect(queue.order.map { queue.tracks[$0].id } == ["track-0", "track-1", "track-3", "track-1", "track-2", "track-4"])
     }
 
     @Test("shuffle keeps the current track first and unshuffle restores order")
@@ -359,6 +401,41 @@ extension PlaybackIntegrationTests {
             #expect(!store.isPlaying)
             #expect(provider.audioResolutionCallCount == 0)
         }
+
+        #if os(iOS)
+            @Test("system queue edits in a downloaded player use only scoped, available files")
+            func enqueueIntoDownloadedQueue() async throws {
+                let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+                defer { try? FileManager.default.removeItem(at: directory) }
+                let files = OfflineDownloadFileStore(directory: directory.appendingPathComponent("downloads"))
+                func song(_ id: String, _ number: Int) -> MediaItem {
+                    MediaItem(album: "Album", albumID: "album", id: id, indexNumber: number, officialRating: "G", type: .audio)
+                }
+                let current = song("current", 1)
+                let second = song("second", 2)
+                for (item, user) in [(second, "u"), (song("foreign", 3), "other"), (current, "u")] {
+                    _ = try files.persistDownloadedFile(silentAudio(in: directory), item: item, serverID: "s", userID: user, fileExtension: "wav")
+                }
+                let downloads = OfflineDownloadStore(fileStore: files, coordinator: AudioReplayDownloadCoordinator())
+                downloads.load(serverID: "s", userID: "u")
+                let provider = FakeMediaProviderSession(capabilities: ProviderCapabilities())
+                provider.itemsHandler = { _ in
+                    Issue.record("A downloaded queue must not fetch album pages")
+                    throw GusError.offline
+                }
+                let owner = try session(provider: provider)
+                let store = AudioPlayerStore(session: owner, tracks: [current], downloads: downloads, localOnly: true, activateAudioSession: { _ in })
+                defer { store.teardown() }
+                await store.start()
+                if store.isPlaybackRequested {
+                    store.playPause()
+                }
+                try await store.enqueueSystemAudio(MediaItem(id: "album", officialRating: "G", type: .musicAlbum), playNext: true, in: owner)
+                await #expect(throws: GusError.self) { try await store.enqueueSystemAudio(song("missing", 4), playNext: false, in: owner) }
+                #expect(store.queue.order.map { store.queue.tracks[$0].id } == ["current", "current", "second"])
+                #expect(provider.audioResolutionCallCount == 0)
+            }
+        #endif
 
         private var track: MediaItem {
             MediaItem(id: "replay", name: "Replay", runTimeTicks: PlaybackTime.ticksPerSecond, type: .audio)

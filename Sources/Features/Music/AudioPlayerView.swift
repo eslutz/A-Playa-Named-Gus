@@ -124,9 +124,7 @@ struct AudioPlayerView: View {
                     ForEach(store.queue.order, id: \.self) { index in
                         let queuedTrack = store.queue.tracks[index]
                         Button {
-                            if let id = queuedTrack.id {
-                                Task { await store.select(trackID: id) }
-                            }
+                            Task { await store.select(occurrence: index) }
                         } label: {
                             HStack {
                                 Text(queuedTrack.displayTitle)

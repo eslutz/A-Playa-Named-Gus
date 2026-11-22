@@ -99,7 +99,7 @@ struct PlaybackChapter: Identifiable, Equatable {
     static func seekTargets(for item: MediaItem) -> [PlaybackChapter] {
         item.chapters
             .compactMap { chapter -> (MediaChapterInfo, Int)? in
-                guard let ticks = chapter.startPositionTicks else { return nil }
+                guard let ticks = chapter.startPositionTicks, ticks >= 0, item.runTimeTicks.map({ $0 <= 0 || ticks < $0 }) ?? true else { return nil }
                 return (chapter, ticks)
             }
             .sorted { $0.1 < $1.1 }

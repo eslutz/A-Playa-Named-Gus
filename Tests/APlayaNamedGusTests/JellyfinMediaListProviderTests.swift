@@ -11,6 +11,20 @@ struct JellyfinMediaListProviderTests {
     let itemID = "c0000000000000000000000000000001"
     let entryID = UUID(uuidString: "B0000000-0000-0000-0000-000000000001")!
 
+    @Test("Only a verified owner with no shares and no open access can automate a private list")
+    func privateListOwnerProof() async throws {
+        let privateFixture = try NativeListFixture(jsonResponses: [("[]", 200), (#"{"Shares":[],"OpenAccess":false}"#, 200)])
+        defer { privateFixture.finish() }
+        #expect(try await privateFixture.provider.ownsPrivatePlaylist(id: listID))
+        #expect(privateFixture.state.requests.map { $0.url?.lastPathComponent } == ["Users", ServerMediaListID.string(listID)])
+        let publicFixture = try NativeListFixture(jsonResponses: [("[]", 200), (#"{"Shares":[],"OpenAccess":true}"#, 200)])
+        defer { publicFixture.finish() }
+        #expect(try await !publicFixture.provider.ownsPrivatePlaylist(id: listID))
+        let editorFixture = try NativeListFixture(statusCode: 403)
+        defer { editorFixture.finish() }
+        #expect(try await !editorFixture.provider.ownsPrivatePlaylist(id: listID))
+    }
+
     @Test("Virtual library types outside the OpenAPI enum keep every visible library")
     func extendedLibraryTypes() async throws {
         let fixture = try NativeListFixture(jsonResponses: [(#"""
@@ -473,6 +487,52 @@ struct JellyfinLiveTVProviderTests {
 
     private let allowedUser = #"{"Id":"user","Policy":{"AuthenticationProviderId":"fixture-provider","PasswordResetProviderId":"fixture-reset","EnableLiveTvAccess":true,"EnableLiveTvManagement":false}}"#
     private let enabledInfo = #"{"IsEnabled":true,"EnabledUsers":["user"],"Services":[{"Name":"Emby"}]}"#
+
+    @Test("Scheduling uses the DVR defaults and transmits a single timer only after local authorization")
+    func singleAiringWrite() async throws {
+        let user = allowedUser.replacingOccurrences(of: "Management\":false", with: "Management\":true")
+        let fixture = try NativeListFixture(jsonResponses: [(user, 200), (#"{"ProgramId":"program","ChannelId":"channel","PrePaddingSeconds":120,"PostPaddingSeconds":60}"#, 200), ("", 204)])
+        defer { fixture.finish() }
+        let start = Date().addingTimeInterval(600)
+        let program = LiveTVGuideProgram(id: "program", channelID: "channel", channelName: "Channel", name: "Program", rating: "TV-G", start: start, end: start.addingTimeInterval(900), timerID: nil)
+        var willSend = false
+        try await fixture.provider.scheduleLiveTVProgram(program) { willSend = true }
+        #expect(willSend)
+        #expect(fixture.state.requests.map { $0.httpMethod } == ["GET", "GET", "POST"])
+        let request = try #require(fixture.state.requests.last)
+        #expect(request.url?.path == "/LiveTv/Timers")
+        let data = try #require(request.httpBody)
+        let body = try #require(JSONSerialization.jsonObject(with: data) as? [String: Any])
+        #expect(body["ProgramId"] as? String == "program")
+        #expect(body["ChannelId"] as? String == "channel")
+        #expect(body["PrePaddingSeconds"] as? Int == 120)
+        #expect(body["PostPaddingSeconds"] as? Int == 60)
+        #expect(body["SeriesTimerId"] == nil)
+    }
+
+    @Test("A view-only profile cannot transmit a new recording")
+    func noManagementPermission() async throws {
+        let fixture = try NativeListFixture(jsonResponses: [(allowedUser, 200)])
+        defer { fixture.finish() }
+        let start = Date().addingTimeInterval(600)
+        let program = LiveTVGuideProgram(id: "program", channelID: "channel", channelName: nil, name: "Program", rating: "TV-G", start: start, end: start.addingTimeInterval(900), timerID: nil)
+        await #expect(throws: GusError.forbidden) {
+            try await fixture.provider.scheduleLiveTVProgram(program) { Issue.record("Unpermitted DVR write") }
+        }
+        #expect(fixture.state.requests.map { $0.httpMethod } == ["GET"])
+    }
+
+    @Test("The EPG preserves ratings, start/end times and missing-page metadata")
+    func guidePrograms() async throws {
+        let body = #"{"Items":[{"Id":"program","Type":"Program","ChannelId":"channel","Name":"Sports","StartDate":"2099-01-01T00:00:00Z","EndDate":"2099-01-01T00:30:00Z","OfficialRating":"TV-G"}],"TotalRecordCount":3}"#
+        let fixture = try NativeListFixture(jsonResponses: [(body, 200)])
+        defer { fixture.finish() }
+        let page = try await fixture.provider.liveTVPrograms(from: .now, until: Date().addingTimeInterval(900), channelID: "channel", offset: 0, limit: 20)
+        #expect(page.rawCount == 1)
+        #expect(page.total == 3)
+        #expect(page.programs.first?.rating == "TV-G")
+        #expect(page.programs.first?.id == "program")
+    }
 
     @Test("Live TV capability uses actual permission and enabled-user JSON", arguments: Capability.allCases)
     func availabilityJSON(_ scenario: Capability) async throws {

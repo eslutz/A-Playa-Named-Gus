@@ -54,6 +54,8 @@ targets:
       - path: Sources
         excludes:
           - "TopShelf/**"
+          - "Widgets/**"
+          - "RemoteNowPlaying/**"
           - "Watch/**"
       - path: Resources
         # Info.plist is referenced via INFOPLIST_FILE, not copied as a resource;
@@ -62,6 +64,9 @@ targets:
           - "Info.plist"
           - "Watch/**"
           - "AppIcon.icon/**"
+      - path: SiriPreview/Skills.skillsbundle
+        type: file
+        buildPhase: resources
       - path: Resources/AppIcon.icon
         type: file
         buildPhase: resources
@@ -87,6 +92,16 @@ targets:
       - package: Readium
         product: ReadiumNavigator
         destinationFilters: [iOS]
+      - target: GusRemoteNowPlaying
+        destinationFilters: [iOS]
+        embed: true
+        link: false
+      - target: GusWidgets
+        destinationFilters: [iOS, macOS, visionOS]
+        embed: true
+        link: false
+        copy:
+          destination: plugins
       - target: GusTopShelf
         destinationFilters: [tvOS]
         embed: true
@@ -142,6 +157,11 @@ targets:
       # DiskSpace via downloads), so it carries the same privacy manifest as the app.
       - path: Resources/PrivacyInfo.xcprivacy
     dependencies:
+      - target: GusWatchWidgets
+        embed: true
+        link: false
+        copy:
+          destination: plugins
       - sdk: AppIntents.framework
       - package: JellyfinSDK
         product: JellyfinAPI
@@ -159,6 +179,72 @@ targets:
       configs:
         Debug:
           ENABLE_DEBUG_DYLIB: "$(GUS_WATCH_DEBUG_DYLIB)"
+
+  GusRemoteNowPlaying:
+    type: extensionkit-extension
+    platform: iOS
+    deploymentTarget: "27.0"
+    sources:
+      - path: Sources/RemoteNowPlaying
+        excludes: ["Info.plist"]
+      - path: Sources/Models/GusRemotePlaybackAttributes.swift
+      - path: Resources/Localizable.xcstrings
+    dependencies:
+      - sdk: NowPlaying.framework
+      - sdk: AppIntents.framework
+      - sdk: ExtensionFoundation.framework
+    settings:
+      base:
+        INFOPLIST_FILE: Sources/RemoteNowPlaying/Info.plist
+        PRODUCT_NAME: GusRemoteNowPlaying
+        PRODUCT_MODULE_NAME: GusRemoteNowPlaying
+        PRODUCT_BUNDLE_IDENTIFIER: dev.ericslutz.gus.remote-now-playing
+        CODE_SIGN_ENTITLEMENTS: ""
+        ASSETCATALOG_COMPILER_APPICON_NAME: ""
+        APPLICATION_EXTENSION_API_ONLY: YES
+        SKIP_INSTALL: YES
+        SWIFT_VERSION: "6.0"
+        TARGETED_DEVICE_FAMILY: "1,2"
+
+  GusWidgets:
+    type: app-extension
+    supportedDestinations: [iOS, macOS, visionOS]
+    sources: &widgetSources
+      - path: Sources/Widgets
+        excludes: ["Info.plist"]
+      - path: Sources/Models/GusWidgetSnapshot.swift
+      - path: Sources/Models/GusWidgetNavigationIntent.swift
+      - path: Sources/Models/GusDownloadActivityAttributes.swift
+      - path: Resources/Localizable.xcstrings
+    dependencies: &widgetFrameworks
+      - sdk: WidgetKit.framework
+      - sdk: AppIntents.framework
+    settings:
+      base: &widgetSettings
+        INFOPLIST_FILE: Sources/Widgets/Info.plist
+        PRODUCT_NAME: GusWidgets
+        PRODUCT_MODULE_NAME: GusWidgets
+        PRODUCT_BUNDLE_IDENTIFIER: dev.ericslutz.gus.widgets
+        SKIP_INSTALL: YES
+        APPLICATION_EXTENSION_API_ONLY: YES
+        SWIFT_VERSION: "6.0"
+        SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) GUS_WIDGET_EXTENSION"
+        ASSETCATALOG_COMPILER_APPICON_NAME: ""
+        CODE_SIGN_ENTITLEMENTS: Config/GusWidgets.entitlements
+        CODE_SIGN_ENTITLEMENTS[sdk=macosx*]: "$(GUS_WIDGET_MAC_ENTITLEMENTS)"
+
+  GusWatchWidgets:
+    type: app-extension
+    platform: watchOS
+    sources: *widgetSources
+    dependencies: *widgetFrameworks
+    settings:
+      base:
+        <<: *widgetSettings
+        TARGETED_DEVICE_FAMILY: 4
+        PRODUCT_NAME: GusWatchWidgets
+        PRODUCT_MODULE_NAME: GusWatchWidgets
+        PRODUCT_BUNDLE_IDENTIFIER: dev.ericslutz.gus.watchkitapp.widgets
 
   GusTopShelf:
     type: tv-app-extension
@@ -291,6 +377,25 @@ targets:
         CODE_SIGN_ENTITLEMENTS: ""
         CODE_SIGN_ENTITLEMENTS[sdk=macosx*]: ""
 
+  GusIntentUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    supportedDestinations: [iOS]
+    deploymentTarget: "27.0"
+    sources:
+      - path: Tests/GusIntentUITests
+    dependencies:
+      - sdk: AppIntents.framework
+      - target: Gus
+    settings:
+      base:
+        PRODUCT_NAME: GusIntentUITests
+        PRODUCT_MODULE_NAME: GusIntentUITests
+        PRODUCT_BUNDLE_IDENTIFIER: dev.ericslutz.gus.intent-uitests
+        GENERATE_INFOPLIST_FILE: YES
+        ASSETCATALOG_COMPILER_APPICON_NAME: ""
+        CODE_SIGN_ENTITLEMENTS: ""
+
   GusTVOSUITests:
     type: bundle.ui-testing
     platform: tvOS
@@ -399,6 +504,14 @@ schemes:
     test:
       targets:
         - GusUITests
+
+  Gus iOS App Intent Tests:
+    build:
+      targets:
+        Gus: all
+    test:
+      targets:
+        - GusIntentUITests
 
   Gus tvOS Tests:
     build:

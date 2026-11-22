@@ -122,9 +122,7 @@ import SwiftUI
                 ForEach(store.queue.order, id: \.self) { index in
                     let track = store.queue.tracks[index]
                     Button(track.displayTitle) {
-                        if let id = track.id {
-                            Task { await store.select(trackID: id) }
-                        }
+                        Task { await store.select(occurrence: index) }
                     }
                 }
             }

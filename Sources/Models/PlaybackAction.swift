@@ -23,6 +23,8 @@ struct PlaybackRequest: Codable, Hashable, Sendable {
     var startPositionTicks: Int?
     var presentation: Stereo3DViewingMode
     var maxStreamingBitrate: Int?
+    /// Device-local presentation request checked against the reloaded photo's parent.
+    var slideshowAlbumID: String? = nil
 
     init(
         item: MediaItem,
@@ -63,8 +65,18 @@ struct PlaybackRequest: Codable, Hashable, Sendable {
     /// negotiated stream URLs, user data, or credentials from a populated MediaItem.
     var sharingIntent: PlaybackRequest {
         var result = self
+        result.slideshowAlbumID = nil
         result.item = MediaItem(providerKind: item.providerKind, id: item.id, type: item.type)
         return result
+    }
+
+    static func decodeSharingIntent(_ data: Data) -> PlaybackRequest? {
+        guard data.count <= 8192,
+              let decoded = try? JSONDecoder().decode(PlaybackRequest.self, from: data),
+              decoded.startPositionTicks.map({ $0 >= 0 }) ?? true,
+              decoded.streamSelection.audioStreamIndex.map({ $0 >= 0 }) ?? true,
+              decoded.streamSelection.subtitleStreamIndex.map({ $0 >= -1 }) ?? true else { return nil }
+        return decoded.sharingIntent
     }
 
     @MainActor

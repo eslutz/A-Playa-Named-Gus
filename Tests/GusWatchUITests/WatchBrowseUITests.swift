@@ -3,6 +3,29 @@ import XCTest
 /// Run on a 40 mm Watch with the rights-cleared local Jellyfin demo running.
 @MainActor
 final class WatchBrowseUITests: XCTestCase {
+    func testDownloadsShortcutOpensWatchDownloads() async throws {
+        continueAfterFailure = false
+        let fixture = try XCTUnwrap(URL(string: "http://127.0.0.1:5062"))
+        let health: Data
+        do {
+            (health, _) = try await URLSession.shared.data(from: fixture.appending(path: "health"))
+        } catch let error as URLError where error.code == .cannotConnectToHost {
+            throw XCTSkip("Run Scripts/book-details-fixture.py --navigation for the Watch routing fixture.")
+        }
+        let response = try JSONDecoder().decode([String: String].self, from: health)
+        XCTAssertEqual(response["fixture"], "gus-navigation")
+
+        let app = XCUIApplication(bundleIdentifier: "dev.ericslutz.gus.watchkitapp")
+        app.launchArguments = ["--gus-demo-server", "--gus-disable-cloud-sync"]
+        app.launchEnvironment["GUS_DEMO_URL"] = fixture.absoluteString
+        app.launch()
+        defer { app.terminate() }
+        XCTAssertTrue(app.navigationBars["Remote"].waitForExistence(timeout: 20))
+        let url = try XCTUnwrap(URL(string: "gus://downloaded"))
+        app.open(url)
+        XCTAssertTrue(app.navigationBars["Downloads"].waitForExistence(timeout: 15))
+    }
+
     func testAlbumOpensTracksAndAudioPauses() {
         continueAfterFailure = false
         executionTimeAllowance = 180

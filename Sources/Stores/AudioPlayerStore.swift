@@ -17,18 +17,31 @@ struct AudioQueue {
     private(set) var order: [Int]
     /// Current position within `order`.
     private(set) var position: Int
+    // An occurrence index remains stable when a library page or an explicit duplicate arrives.
+    private var naturalOrder: [Int]
+    private var libraryIDs: Set<String>
+    private var firstTailOccurrence: Int?
     private(set) var isShuffled = false
     var repeatMode: RepeatMode = .off
 
     init(tracks: [MediaItem], startIndex: Int = 0) {
         self.tracks = tracks
-        order = Array(tracks.indices)
+        naturalOrder = Array(tracks.indices)
+        order = naturalOrder
+        libraryIDs = Set(tracks.compactMap(\.id))
         position = tracks.isEmpty ? 0 : min(max(0, startIndex), tracks.count - 1)
     }
 
+    var currentOccurrence: Int? {
+        order.indices.contains(position) ? order[position] : nil
+    }
+
     var currentTrack: MediaItem? {
-        guard order.indices.contains(position) else { return nil }
-        return tracks[order[position]]
+        currentOccurrence.map { tracks[$0] }
+    }
+
+    func hasUpcomingOccurrence(of itemID: String) -> Bool {
+        order.dropFirst(position + 1).contains { tracks[$0].id == itemID }
     }
 
     var hasPrevious: Bool {
@@ -65,13 +78,37 @@ struct AudioQueue {
         return currentTrack
     }
 
-    /// Jumps directly to a track by its identifier.
-    mutating func jump(toTrackID id: String) -> MediaItem? {
-        guard let trackIndex = tracks.firstIndex(where: { $0.id == id }),
-              let orderPosition = order.firstIndex(of: trackIndex)
-        else { return nil }
-        position = orderPosition
+    /// Queue rows identify occurrences, so selecting the second copy goes to that copy.
+    mutating func jump(toOccurrence occurrence: Int) -> MediaItem? {
+        guard let target = order.firstIndex(of: occurrence) else { return nil }
+        position = target
         return currentTrack
+    }
+
+    /// Applies explicit insertion to both the active and unshuffled order.
+    mutating func enqueue(_ additions: [MediaItem], playNext: Bool) {
+        guard !additions.isEmpty, order.indices.contains(position) else { return }
+        let current = order[position]
+        let first = tracks.count
+        tracks.append(contentsOf: additions)
+        let indices = first ..< tracks.count
+        if playNext, let natural = naturalOrder.firstIndex(of: current) {
+            naturalOrder.insert(contentsOf: indices, at: natural + 1)
+            order.insert(contentsOf: indices, at: position + 1)
+        } else {
+            naturalOrder.append(contentsOf: indices)
+            order.append(contentsOf: indices)
+            if firstTailOccurrence == nil {
+                firstTailOccurrence = first
+            }
+        }
+    }
+
+    /// The unmaterialized library remainder precedes the first explicit Play Last batch.
+    /// A user who jumps directly to a tail occurrence has deliberately skipped that remainder.
+    func libraryPageIsWithin(_ distance: Int) -> Bool {
+        let boundary = firstTailOccurrence.flatMap { order.firstIndex(of: $0) } ?? order.endIndex
+        return position < boundary && boundary - position <= distance
     }
 
     /// Shuffles the remaining order, keeping the current track first.
@@ -88,20 +125,25 @@ struct AudioQueue {
     /// occurrence queues are materialized separately and never pass through this deduper.
     mutating func appendLibraryTracks(_ incoming: [MediaItem]) {
         guard !isShuffled else { return }
-        var identities = Set(tracks.compactMap(\.id))
         let additions = incoming.filter { item in
             guard let id = item.id, item.isAudioPlayable else { return false }
-            return identities.insert(id).inserted
+            return libraryIDs.insert(id).inserted
         }
+        guard !additions.isEmpty else { return }
         let first = tracks.count
         tracks.append(contentsOf: additions)
-        order.append(contentsOf: first ..< tracks.count)
+        let boundary = firstTailOccurrence.flatMap { order.firstIndex(of: $0) } ?? order.endIndex
+        if !order.isEmpty, boundary <= position {
+            position += additions.count
+        }
+        order.insert(contentsOf: first ..< tracks.count, at: boundary)
+        naturalOrder = order
     }
 
     /// Restores natural track order, keeping the current track current.
     mutating func unshuffle() {
         let current = order.indices.contains(position) ? order[position] : nil
-        order = Array(tracks.indices)
+        order = naturalOrder
         position = current.flatMap { order.firstIndex(of: $0) } ?? 0
         isShuffled = false
     }
@@ -234,6 +276,15 @@ final class AudioPlayerStore {
         return queue.currentTrack
     }
 
+    /// A bookmark captures the actual negotiated cut and player position, including a paused player.
+    func bookmarkPosition(for itemID: String, session owner: SessionStore) -> (ticks: Int, source: String?)? {
+        guard session === owner, owner.isActive, state == .loaded, hasPreparedContent, currentTrack?.id == itemID,
+              let player, let context = reportContext, context.itemID == itemID else { return nil }
+        let time = player.currentTime().seconds
+        guard time.isFinite, time >= 0, time < Double(Int.max / PlaybackTime.ticksPerSecond) else { return nil }
+        return (PlaybackTime.ticks(fromSeconds: time), context.mediaSourceID ?? audioSelection.mediaSourceID)
+    }
+
     var repeatMode: AudioQueue.RepeatMode {
         queue.repeatMode
     }
@@ -247,6 +298,54 @@ final class AudioPlayerStore {
     }
 
     #if os(iOS)
+        /// Inserts into the running iOS audio queue without preparing another player or reporting playback.
+        func enqueueSystemAudio(_ item: MediaItem, playNext: Bool, in owner: SessionStore) async throws {
+            let generation = preparationGeneration
+            func validateQueue() throws {
+                try Task.checkCancellation()
+                guard session === owner, owner.isActive, generation == preparationGeneration,
+                      state == .loaded, player?.currentItem != nil, !isCollectingShuffle,
+                      let currentTrack, ContentRatingGate.admitsStored(currentTrack)
+                else {
+                    throw GusError.server(String(localized: "No audio player is ready on this device."))
+                }
+                guard ContentRatingGate.admitsStored(item), item.providerKind == owner.server.providerKind else { throw GusError.notFound }
+            }
+            try validateQueue()
+            guard let id = item.id, !id.isEmpty else { throw GusError.notFound }
+            let candidates: [MediaItem]
+            switch item.type {
+            case .audio, .audioBook:
+                candidates = [item]
+            case .musicAlbum:
+                if localOnly {
+                    let records = downloads?.completedRecords(serverID: owner.server.id, userID: owner.user.id) ?? []
+                    candidates = DownloadedLibrary.tracks(in: records, albumID: id).map(\.playbackItem)
+                } else {
+                    let query = MediaItemQuery(parentID: id, includeTypes: [.audio], startIndex: 0, limit: 100, sort: .trackOrder)
+                    let provider = owner.mediaProvider
+                    candidates = try await PlaybackDeadline.run(for: .seconds(20)) {
+                        try await MediaPageLoader.collect(pageSize: query.limit) { offset, size in
+                            try validateQueue()
+                            var page = query
+                            page.startIndex = offset
+                            page.limit = size
+                            return try await provider.items(query: page)
+                        }
+                    }.filter { $0.type == .audio && ($0.albumID == nil || $0.albumID == id) && ($0.parentID == nil || $0.parentID == id || $0.albumID == id) }
+                }
+            default: throw GusError.notFound
+            }
+            try validateQueue()
+            let policy = ContentRatingGate.storedPolicy()
+            let additions = candidates.filter { candidate in
+                guard let id = candidate.id, !id.isEmpty, candidate.providerKind == owner.server.providerKind, policy.admits(candidate) else { return false }
+                return !localOnly || downloads?.localFileURL(for: candidate, serverID: owner.server.id, userID: owner.user.id) != nil
+            }
+            guard !additions.isEmpty else { throw GusError.notFound }
+            queue.enqueue(additions, playNext: playNext)
+        }
+
         func pauseForRouteLoss() {
             if state == .loading {
                 teardown()
@@ -279,15 +378,17 @@ final class AudioPlayerStore {
     }
 
     func next() async {
-        if queue.position + 1 >= queue.order.count, queueContinuation != nil {
+        if queue.libraryPageIsWithin(1), queueContinuation != nil {
             await loadMoreQueue()
-            guard queue.position + 1 < queue.order.count || queueContinuation == nil else { return }
+            guard !queue.libraryPageIsWithin(1) || queueContinuation == nil else { return }
         }
         reportStopped()
+        let previousOccurrence = queue.currentOccurrence
         guard queue.advance(automatic: false) != nil else {
             finishQueue()
             return
         }
+        resetSelectionIfMoved(from: previousOccurrence)
         await playCurrentTrack(resume: false)
     }
 
@@ -298,14 +399,27 @@ final class AudioPlayerStore {
             return
         }
         reportStopped()
+        let previousOccurrence = queue.currentOccurrence
         _ = queue.goBack()
+        resetSelectionIfMoved(from: previousOccurrence)
         await playCurrentTrack(resume: false)
     }
 
-    func select(trackID: String) async {
+    func select(occurrence: Int) async {
+        guard queue.tracks.indices.contains(occurrence) else { return }
         reportStopped()
-        guard queue.jump(toTrackID: trackID) != nil else { return }
+        let previousOccurrence = queue.currentOccurrence
+        _ = queue.jump(toOccurrence: occurrence)
+        resetSelectionIfMoved(from: previousOccurrence)
         await playCurrentTrack(resume: false)
+    }
+
+    private func resetSelectionIfMoved(from occurrence: Int?) {
+        guard queue.currentOccurrence != occurrence else { return }
+        // Explicit seek/source choices and failed-preparation checkpoints belong to one occurrence.
+        playbackIntent = nil
+        retryPositionTicks = nil
+        retryItemID = nil
     }
 
     func seek(to seconds: Double) async {
@@ -324,7 +438,7 @@ final class AudioPlayerStore {
     }
 
     var hasNext: Bool {
-        queue.hasNext || queueContinuation != nil
+        queue.hasNext || (queueContinuation != nil && queue.libraryPageIsWithin(1))
     }
 
     func loadMoreQueue() async {
@@ -687,6 +801,7 @@ final class AudioPlayerStore {
             lastProgressReportTime = initialSeconds
 
             duration = track.runTimeTicks.map(PlaybackTime.seconds(fromTicks:)) ?? 0
+            nowPlaying.bindChapters(audio: self, session: session)
             nowPlaying.start(
                 player: player,
                 item: track,
@@ -720,7 +835,7 @@ final class AudioPlayerStore {
             isPlaybackRequested = startsPlaying
             player.defaultRate = Float(playbackRate)
             player.rate = startsPlaying ? player.defaultRate : 0
-            if queue.order.count - queue.position <= 3, queueContinuation != nil {
+            if queue.libraryPageIsWithin(3), queueContinuation != nil {
                 Task { [weak self] in await self?.loadMoreQueue() }
             }
         } catch {
@@ -739,23 +854,27 @@ final class AudioPlayerStore {
         let generation = preparationGeneration
         reportStopped()
         if let playingDownload {
-            if queue.repeatMode == .off {
+            let neededAgain = playingDownload.item.id.map(queue.hasUpcomingOccurrence(of:)) ?? false
+            if queue.repeatMode == .off, !neededAgain, queueContinuation == nil {
                 downloads?.deleteAfterCompletion(playingDownload)
+                completedRepeats.removeValue(forKey: playingDownload.id)
             } else {
                 completedRepeats[playingDownload.id] = playingDownload
             }
         }
         playingDownload = nil
         releaseNativePlayer()
-        if queue.position + 1 >= queue.order.count, queueContinuation != nil {
+        if queue.libraryPageIsWithin(1), queueContinuation != nil {
             await loadMoreQueue()
             guard session.isActive, generation == preparationGeneration else { return }
             // Completion has already been finalized; retry/Next may resume pagination.
-            if queue.position + 1 >= queue.order.count, queueContinuation != nil {
+            if queue.libraryPageIsWithin(1), queueContinuation != nil {
                 return
             }
         }
+        let previousOccurrence = queue.currentOccurrence
         guard queue.advance(automatic: true) != nil else { finishQueue(); return }
+        resetSelectionIfMoved(from: previousOccurrence)
         await playCurrentTrack(resume: false)
     }
 
