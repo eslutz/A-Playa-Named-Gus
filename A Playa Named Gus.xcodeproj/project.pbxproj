@@ -382,6 +382,7 @@
 		685AD5C9DA375715D8C12863 /* WatchSessionRelay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5881AA486EE125FFBE3D5FDD /* WatchSessionRelay.swift */; };
 		68D9FAD78A1BC2D1A66841AF /* GusLibraryIntelligenceMatching.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B7F3A4496ADEA293BF14334 /* GusLibraryIntelligenceMatching.swift */; };
 		69C49B39179DF54FE12C5784 /* UIRemediationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72EBD224FA02DF9B30663178 /* UIRemediationTests.swift */; };
+		69CDF1BFDB86A21AE1DEDF66 /* GusRemoteNowPlaying.appex in Embed Dependencies */ = {isa = PBXBuildFile; fileRef = AF0009EF04C9C6081CE95F91 /* GusRemoteNowPlaying.appex */; platformFilters = (ios, ); settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		6A8F23C6F5A9057B907D3BF6 /* UserProfileStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D390996219381C9400AE984 /* UserProfileStoreTests.swift */; };
 		6ABD8CD47DE6FE7F25DD76BA /* ContentRatingGate.swift in Sources */ = {isa = PBXBuildFile; fileRef = C16816CFC80F6FF884B6674C /* ContentRatingGate.swift */; };
 		6AEE34EE369B06B9CBAD69ED /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 3FED6DCC30F90DD039276ECF /* Assets.xcassets */; };
@@ -458,7 +459,6 @@
 		83FF6E59008406ABD027A4B5 /* DeviceIdentity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9843B80AB6ABFBC3E61A35DD /* DeviceIdentity.swift */; };
 		843F117C959BF4A46AE5664A /* SeerrMutationJournal.swift in Sources */ = {isa = PBXBuildFile; fileRef = 77F4CB6352D2969D7AB54A97 /* SeerrMutationJournal.swift */; };
 		844C57B57D6D98512A101417 /* RepositoryTestFixtures.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C13687937754F2E115A7426 /* RepositoryTestFixtures.swift */; };
-		848B44DC93734065DF9AEB60 /* GusRemoteNowPlaying.appex in Embed ExtensionKit Extensions */ = {isa = PBXBuildFile; fileRef = AF0009EF04C9C6081CE95F91 /* GusRemoteNowPlaying.appex */; platformFilters = (ios, ); settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		85219E1186F15D8859372A59 /* TopShelfSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47993D483BC650FAFA81EB6B /* TopShelfSnapshot.swift */; };
 		85322B2A5C367A1537C40ACE /* ProviderArchitectureTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 106B65B3D739D99308357F51 /* ProviderArchitectureTests.swift */; };
 		8565295136CFD09418F473BE /* BrowseSnapshotCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2F4C9F441275684CE43A7F2 /* BrowseSnapshotCache.swift */; };
@@ -973,6 +973,18 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
+		41D2D5CCBCFBAA604FB8014A /* Embed Dependencies */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				2F214D7FAC5CB4C66FB4F760 /* GusWidgets.appex in Embed Dependencies */,
+				98E0AED8CDE4A6117B98DEA7 /* GusTopShelf.appex in Embed Dependencies */,
+			);
+			name = "Embed Dependencies";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		4F268CC15CB674CB130A144B /* Embed Watch Content */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
@@ -995,25 +1007,13 @@
 			name = "Embed Dependencies";
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		786DD306CF4DA1BFC65A1779 /* Embed ExtensionKit Extensions */ = {
-			isa = PBXCopyFilesBuildPhase;
-			buildActionMask = 2147483647;
-			dstPath = "$(EXTENSIONS_FOLDER_PATH)";
-			dstSubfolderSpec = 16;
-			files = (
-				848B44DC93734065DF9AEB60 /* GusRemoteNowPlaying.appex in Embed ExtensionKit Extensions */,
-			);
-			name = "Embed ExtensionKit Extensions";
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 		E63A7C1141D3404C7CCA761F /* Embed Dependencies */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
-			dstPath = "";
-			dstSubfolderSpec = 13;
+			dstPath = Extensions;
+			dstSubfolderSpec = 1;
 			files = (
-				2F214D7FAC5CB4C66FB4F760 /* GusWidgets.appex in Embed Dependencies */,
-				98E0AED8CDE4A6117B98DEA7 /* GusTopShelf.appex in Embed Dependencies */,
+				69CDF1BFDB86A21AE1DEDF66 /* GusRemoteNowPlaying.appex in Embed Dependencies */,
 			);
 			name = "Embed Dependencies";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -2558,8 +2558,8 @@
 				97BCDFD4CBAFC2CA53B9548A /* Sources */,
 				50A5D6E563DCD8B4BBC9F24B /* Resources */,
 				726F6F3B6304F9E167016D5F /* Frameworks */,
-				786DD306CF4DA1BFC65A1779 /* Embed ExtensionKit Extensions */,
 				E63A7C1141D3404C7CCA761F /* Embed Dependencies */,
+				41D2D5CCBCFBAA604FB8014A /* Embed Dependencies */,
 				4F268CC15CB674CB130A144B /* Embed Watch Content */,
 			);
 			buildRules = (

@@ -96,6 +96,9 @@ targets:
         destinationFilters: [iOS]
         embed: true
         link: false
+        copy:
+          destination: wrapper
+          subpath: Extensions
       - target: GusWidgets
         destinationFilters: [iOS, macOS, visionOS]
         embed: true
