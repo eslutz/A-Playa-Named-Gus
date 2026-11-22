@@ -286,6 +286,7 @@
 		5089B515C1F69C553B2B695C /* TVDetailPlaybackTargetTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 362AE30C9EA27E305370B75B /* TVDetailPlaybackTargetTests.swift */; };
 		50AC29D34352011AC8D3FAF0 /* DownloadedLibraryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 207889BAF04E56E5F772BB9F /* DownloadedLibraryTests.swift */; };
 		50BC6B5D143E8F7C8AAF507F /* AppNavigationModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5348EF3CE2909C6FFB80AAFF /* AppNavigationModelTests.swift */; };
+		50DD48F8F9A09583CB788472 /* WatchControlIntentTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E4743D3151C40CD99F9DDE5 /* WatchControlIntentTests.swift */; };
 		51247C7C21D9A18620896FF2 /* ContentRatingGateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 17C0830305F453D331B65E23 /* ContentRatingGateTests.swift */; };
 		5164557A750880F033F2AEF7 /* AutomationActionsDVR.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF4FF5B9CEDAA58DC2BA99E6 /* AutomationActionsDVR.swift */; };
 		5176B1632A2B829AE0EF5317 /* ContentLinkHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 57278EF3696501CE8A0193FC /* ContentLinkHandler.swift */; };
@@ -490,6 +491,7 @@
 		8DB24E4D28C25D599751A0C3 /* AppIntents.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 67ED777C5EAE577D6988874F /* AppIntents.framework */; };
 		8DEE4C75D2968D921B132AFD /* PlaybackDeadline.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22332A69422CE66FA6E4FDE4 /* PlaybackDeadline.swift */; };
 		8DFFAEA65BD2D84278870B98 /* SeerrSeasonView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A21C6056A2706097B6843806 /* SeerrSeasonView.swift */; };
+		8E2C19D88105E7573FCC4063 /* AppIntents.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 67ED777C5EAE577D6988874F /* AppIntents.framework */; };
 		8E9009A75FC655233E0D5C35 /* UIRemediationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72EBD224FA02DF9B30663178 /* UIRemediationTests.swift */; };
 		8F0B1FFF090DFA260BBA4FFE /* SearchStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD1EF6596BB837F09E73915C /* SearchStoreTests.swift */; };
 		8F17D35A645BA9BD414704A3 /* AppStorageLocation.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD06090DF9E2A25BF5531E56 /* AppStorageLocation.swift */; };
@@ -961,6 +963,13 @@
 			remoteGlobalIDString = 8BBF992ACBB286FC1DD93526;
 			remoteInfo = Gus;
 		};
+		FC411987F8DF3459D99836DB /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 940D73315AC889308265361B /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = E231022E862B3BC2FF5C8A2E;
+			remoteInfo = GusWatch;
+		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -1043,6 +1052,7 @@
 		0C09E8F0F08E3F9C8FF590E1 /* CollectionViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollectionViews.swift; sourceTree = "<group>"; };
 		0C13687937754F2E115A7426 /* RepositoryTestFixtures.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RepositoryTestFixtures.swift; sourceTree = "<group>"; };
 		0C36ACF7162EF1585FE167FF /* ForYouSnapshotSync.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ForYouSnapshotSync.swift; sourceTree = "<group>"; };
+		0E4743D3151C40CD99F9DDE5 /* WatchControlIntentTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchControlIntentTests.swift; sourceTree = "<group>"; };
 		0EC8C9988CDC393B968F84DD /* SeerrNaturalSearch.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SeerrNaturalSearch.swift; sourceTree = "<group>"; };
 		0EF8B18FDE5B2BEE5B43FCBC /* SeerrStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SeerrStore.swift; sourceTree = "<group>"; };
 		0F4CA0C7AE68B9B53B796222 /* GusWatchUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = GusWatchUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -1367,6 +1377,7 @@
 		D91A36F3797F35E8D53B7993 /* LoadState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoadState.swift; sourceTree = "<group>"; };
 		D933F58419787A118E16E12F /* HomeStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeStore.swift; sourceTree = "<group>"; };
 		D9C80E7FE36C37BEB6C19FF9 /* MediaProviderSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaProviderSession.swift; sourceTree = "<group>"; };
+		DB0F77F1AC1EB983494226EE /* GusWatchIntentUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = GusWatchIntentUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		DB351A7269909D2963FD9842 /* Media3DDetectorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Media3DDetectorTests.swift; sourceTree = "<group>"; };
 		DC39D44F33D3F3D0C5EF1082 /* NativeArtworkTransport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeArtworkTransport.swift; sourceTree = "<group>"; };
 		DCDCBCFA2A91041EA7F754D2 /* GusWidgetNavigationIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GusWidgetNavigationIntent.swift; sourceTree = "<group>"; };
@@ -1442,6 +1453,14 @@
 			buildActionMask = 2147483647;
 			files = (
 				8DB24E4D28C25D599751A0C3 /* AppIntents.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		29710E6F2019535C39E02770 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				8E2C19D88105E7573FCC4063 /* AppIntents.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1703,6 +1722,7 @@
 				7E6B527816360B7736C28C7F /* APlayaNamedGusTests */,
 				F66AE19B42CF689D232B42F0 /* APlayaNamedGusUITests */,
 				D5302D1FA0C642A6D08E773E /* GusIntentUITests */,
+				50127F61733DEA0A1AD8EDF8 /* GusWatchIntentUITests */,
 				0D31FDC5B3B6C2B045214449 /* GusWatchUITests */,
 			);
 			path = Tests;
@@ -1844,6 +1864,14 @@
 				F4F30EC0F2355B4B79406CC9 /* GusRemoteMediaExtension.swift */,
 			);
 			path = RemoteNowPlaying;
+			sourceTree = "<group>";
+		};
+		50127F61733DEA0A1AD8EDF8 /* GusWatchIntentUITests */ = {
+			isa = PBXGroup;
+			children = (
+				0E4743D3151C40CD99F9DDE5 /* WatchControlIntentTests.swift */,
+			);
+			path = GusWatchIntentUITests;
 			sourceTree = "<group>";
 		};
 		627B1639DFDD6677CF78CBD0 /* Providers */ = {
@@ -1993,6 +2021,7 @@
 				528244DD1ECD70D99F0E5CFE /* GusVisionOSTests.xctest */,
 				38BFAF215ECAEF2D1A0ABA7D /* GusVisionOSUITests.xctest */,
 				935C7E587972A68DC833527F /* GusWatch.app */,
+				DB0F77F1AC1EB983494226EE /* GusWatchIntentUITests.xctest */,
 				0F4CA0C7AE68B9B53B796222 /* GusWatchUITests.xctest */,
 				8CB0B2E7AC355638D2178A48 /* GusWatchWidgets.appex */,
 				F2C9D0A4C92E3D842587F64C /* GusWidgets.appex */,
@@ -2503,6 +2532,25 @@
 			productReference = E1493EC5143BA628F12FD453 /* GusIntentUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
+		5DDC946C3D60F7248AFE3527 /* GusWatchIntentUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = D6CF3FD7D5F1CD571210727F /* Build configuration list for PBXNativeTarget "GusWatchIntentUITests" */;
+			buildPhases = (
+				571BD17EB7CD4C49F97B284D /* Sources */,
+				29710E6F2019535C39E02770 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				1ECB7F5B7CB334C0920185CD /* PBXTargetDependency */,
+			);
+			name = GusWatchIntentUITests;
+			packageProductDependencies = (
+			);
+			productName = GusWatchIntentUITests;
+			productReference = DB0F77F1AC1EB983494226EE /* GusWatchIntentUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
 		8BBF992ACBB286FC1DD93526 /* Gus */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = C1626C34519E48DA529322CD /* Build configuration list for PBXNativeTarget "Gus" */;
@@ -2719,6 +2767,11 @@
 						ProvisioningStyle = Manual;
 						TestTargetID = 8BBF992ACBB286FC1DD93526;
 					};
+					5DDC946C3D60F7248AFE3527 = {
+						DevelopmentTeam = QS3GC3CT43;
+						ProvisioningStyle = Manual;
+						TestTargetID = E231022E862B3BC2FF5C8A2E;
+					};
 					8BBF992ACBB286FC1DD93526 = {
 						DevelopmentTeam = QS3GC3CT43;
 						ProvisioningStyle = Manual;
@@ -2788,6 +2841,7 @@
 				2D8245F7B805E7C443E4F0A3 /* GusVisionOSUITests */,
 				1B2BA09F7B62BF67C42FC3CA /* GusMacOSUITests */,
 				3F14C2BE1F2C1EB7C3139C9B /* GusWatchUITests */,
+				5DDC946C3D60F7248AFE3527 /* GusWatchIntentUITests */,
 			);
 		};
 /* End PBXProject section */
@@ -3314,6 +3368,14 @@
 			buildActionMask = 2147483647;
 			files = (
 				F7307DE9EC41283CE8C98029 /* WatchBrowseUITests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		571BD17EB7CD4C49F97B284D /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				50DD48F8F9A09583CB788472 /* WatchControlIntentTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -3878,6 +3940,11 @@
 			target = 8BBF992ACBB286FC1DD93526 /* Gus */;
 			targetProxy = 7B6EF26B2CD121A028E3E60E /* PBXContainerItemProxy */;
 		};
+		1ECB7F5B7CB334C0920185CD /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = E231022E862B3BC2FF5C8A2E /* GusWatch */;
+			targetProxy = FC411987F8DF3459D99836DB /* PBXContainerItemProxy */;
+		};
 		33A4B7881C663CB1E637500F /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			platformFilters = (
@@ -4293,6 +4360,29 @@
 			};
 			name = Release;
 		};
+		61427F2661ED67F5ED840AED /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = "";
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_ENTITLEMENTS = "";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "dev.ericslutz.gus.watch-intent-uitests";
+				PRODUCT_MODULE_NAME = GusWatchIntentUITests;
+				PRODUCT_NAME = GusWatchIntentUITests;
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				TARGETED_DEVICE_FAMILY = 4;
+				TEST_TARGET_NAME = GusWatch;
+				WATCHOS_DEPLOYMENT_TARGET = 27.2;
+			};
+			name = Release;
+		};
 		6568EF6062CA462837C12EF5 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -4491,6 +4581,29 @@
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = YES;
 				TEST_TARGET_NAME = Gus;
+			};
+			name = Debug;
+		};
+		A4B9E3101DAC876E0804469E /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = "";
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_ENTITLEMENTS = "";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "dev.ericslutz.gus.watch-intent-uitests";
+				PRODUCT_MODULE_NAME = GusWatchIntentUITests;
+				PRODUCT_NAME = GusWatchIntentUITests;
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				TARGETED_DEVICE_FAMILY = 4;
+				TEST_TARGET_NAME = GusWatch;
+				WATCHOS_DEPLOYMENT_TARGET = 27.2;
 			};
 			name = Debug;
 		};
@@ -4871,6 +4984,15 @@
 			buildConfigurations = (
 				B3FE36BACAD9B4D3FD4EA924 /* Debug */,
 				B8453AF5FC9D25DA324BBFD9 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		D6CF3FD7D5F1CD571210727F /* Build configuration list for PBXNativeTarget "GusWatchIntentUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A4B9E3101DAC876E0804469E /* Debug */,
+				61427F2661ED67F5ED840AED /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;

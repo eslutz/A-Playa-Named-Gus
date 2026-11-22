@@ -174,6 +174,11 @@ also contains the Siri AI evaluation, which requires the developer-preview
 configuration, a compatible SDK, and an eligible physical device.
 The regular `Gus iOS UI Tests` scheme continues to support the iOS 26 floor.
 
+Use `Gus watchOS App Intent Tests` on watchOS 27.2 or later to run the
+Downloads control through the Watch app’s installed intent definitions. Start
+the loopback sign-in fixture with `python3 Scripts/book-details-fixture.py --navigation`.
+The ordinary Watch browsing tests continue to support watchOS 26.
+
 For navigation UI tests, run `python3 Scripts/book-details-fixture.py --genres`
 for related results and paging (port 5061). Run the same script with
 `--navigation` (port 5062) for Profile editing and load failures, staged photo

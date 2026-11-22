@@ -465,6 +465,25 @@ targets:
         ASSETCATALOG_COMPILER_APPICON_NAME: ""
         CODE_SIGN_ENTITLEMENTS: ""
 
+  GusWatchIntentUITests:
+    type: bundle.ui-testing
+    platform: watchOS
+    deploymentTarget: "27.2"
+    sources:
+      - path: Tests/GusWatchIntentUITests
+    dependencies:
+      - sdk: AppIntents.framework
+      - target: GusWatch
+    settings:
+      base:
+        TARGETED_DEVICE_FAMILY: 4
+        PRODUCT_NAME: GusWatchIntentUITests
+        PRODUCT_MODULE_NAME: GusWatchIntentUITests
+        PRODUCT_BUNDLE_IDENTIFIER: dev.ericslutz.gus.watch-intent-uitests
+        GENERATE_INFOPLIST_FILE: YES
+        ASSETCATALOG_COMPILER_APPICON_NAME: ""
+        CODE_SIGN_ENTITLEMENTS: ""
+
 schemes:
   A Playa Named Gus:
     build:
@@ -586,3 +605,11 @@ schemes:
     test:
       targets:
         - GusWatchUITests
+
+  Gus watchOS App Intent Tests:
+    build:
+      targets:
+        GusWatch: all
+    test:
+      targets:
+        - GusWatchIntentUITests
