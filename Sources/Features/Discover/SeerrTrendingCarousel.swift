@@ -185,9 +185,7 @@ struct SeerrTrendingCarousel: View {
     }
 
     private func cardLink(_ title: SeerrTitle) -> some View {
-        NavigationLink {
-            SeerrTitleDetailView(title: title, store: store)
-        } label: {
+        NavigationLink(value: store.navigationRoute(.title(title.mediaType ?? .unknown, title.id))) {
             SeerrFeaturedCard(title: title).contentShape(Rectangle())
         }
         .posterNavigationStyle()

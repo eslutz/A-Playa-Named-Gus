@@ -7,6 +7,128 @@
     /// All credentials, titles and mutations belong to synthetic loopback fixtures.
     @MainActor
     final class GusSeerrUITests: XCTestCase {
+        func testJellyfinSeasonBackRestoresDiscoverBrowsingStack() async throws {
+            let app = try await connectedDiscover(demoURL: "http://127.0.0.1:5062")
+            defer { app.terminate() }
+
+            let catalog = app.buttons["Seerr.feed.popularTV.showAll"].firstMatch
+            reveal(catalog, in: app)
+            catalog.tap()
+            let show = app.buttons["Seerr.title.tv.950000002"].firstMatch
+            XCTAssertTrue(show.waitForExistence(timeout: 12))
+            show.tap()
+            XCTAssertTrue(app.navigationBars["Gus Fixture Show"].waitForExistence(timeout: 12))
+            let season = app.buttons["Seerr.season.2"].firstMatch
+            reveal(season, in: app)
+            season.tap()
+            XCTAssertTrue(app.navigationBars["Season 2"].waitForExistence(timeout: 12))
+            openJellyfinMatch(in: app)
+            let jellyfinSeason = app.staticTexts["Second Season"].firstMatch
+            XCTAssertTrue(jellyfinSeason.waitForExistence(timeout: 12), app.debugDescription)
+            capture("issue-83-open-in-gus")
+            if UIDevice.current.userInterfaceIdiom == .phone {
+                let leading = app.coordinate(withNormalizedOffset: CGVector(dx: 0.005, dy: 0.55))
+                let trailing = app.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.55))
+                leading.press(forDuration: 0.05, thenDragTo: trailing, withVelocity: .fast, thenHoldForDuration: 0)
+            } else {
+                app.navigationBars.buttons["BackButton"].firstMatch.tap()
+            }
+            let returned = app.navigationBars["Season 2"]
+            let restored = returned.waitForExistence(timeout: 8)
+            capture("issue-83-back")
+            XCTAssertTrue(restored, "Back showed \(app.navigationBars.allElementsBoundByIndex.map(\.identifier))")
+            XCTAssertTrue(app.buttons["Open in Gus"].firstMatch.exists)
+            goBack(to: "Gus Fixture Show", in: app)
+            goBack(to: "Popular TV Series", in: app)
+            goBack(to: "Discover", in: app)
+            if UIDevice.current.userInterfaceIdiom == .phone, app.tabBars.buttons["More"].isSelected {
+                goBack(to: "More", in: app)
+            }
+            finishConnectedSession(app)
+        }
+
+        func testJellyfinGenreBackRestoresSeerrCredits() async throws {
+            let app = try await connectedDiscover(demoURL: "http://127.0.0.1:5062")
+            defer { app.terminate() }
+            let catalog = app.buttons["Seerr.feed.popularTV.showAll"].firstMatch
+            reveal(catalog, in: app)
+            catalog.tap()
+            let show = app.buttons["Seerr.title.tv.950000002"].firstMatch
+            reveal(show, in: app)
+            show.tap()
+            let credit = app.buttons["Seerr.credit.950000004"].firstMatch
+            reveal(credit, in: app)
+            credit.tap()
+            let movie = app.buttons["Seerr.title.movie.950000001"].firstMatch
+            reveal(movie, in: app)
+            movie.tap()
+            openJellyfinMatch(in: app)
+            XCTAssertTrue(app.buttons["Detail.play"].waitForExistence(timeout: 12), app.debugDescription)
+            let genre = app.buttons["Detail.related.genre:id:49040000000000000000000000000001"].firstMatch
+            reveal(genre, in: app)
+            genre.tap()
+            let related = app.navigationBars["Adventure"]
+            XCTAssertTrue(related.waitForExistence(timeout: 10))
+            let result = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "Local Fixture Movie")).firstMatch
+            XCTAssertTrue(result.waitForExistence(timeout: 10))
+            related.buttons["BackButton"].tap()
+            XCTAssertTrue(genre.waitForExistence(timeout: 10))
+            goBack(to: "Gus Fixture Movie", in: app)
+            XCTAssertTrue(app.buttons["Open in Gus"].firstMatch.exists)
+            goBack(to: "Gus Fixture Actor", in: app)
+            XCTAssertTrue(movie.waitForExistence(timeout: 8))
+            goBack(to: "Gus Fixture Show", in: app)
+            goBack(to: "Popular TV Series", in: app)
+            goBack(to: "Discover", in: app)
+            finishConnectedSession(app)
+        }
+
+        func testJellyfinMovieBackRetainsPaginatedDiscoverPosition() async throws {
+            let app = try await connectedDiscover(demoURL: "http://127.0.0.1:5062")
+            defer { app.terminate() }
+            let catalog = app.buttons["Seerr.feed.trending.showAll"].firstMatch
+            reveal(catalog, in: app)
+            catalog.tap()
+            let filters = app.buttons["Filters"].firstMatch
+            XCTAssertTrue(filters.waitForExistence(timeout: 10))
+            filters.tap()
+            let mediaType = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Media Type,")).firstMatch
+            XCTAssertTrue(mediaType.waitForExistence(timeout: 10))
+            mediaType.tap()
+            app.buttons["Movies"].firstMatch.tap()
+            XCTAssertEqual(mediaType.label, "Media Type, Movies")
+            app.buttons["Apply"].tap()
+            let nextPage = app.buttons["Load More"].firstMatch
+            reveal(nextPage, in: app)
+            nextPage.tap()
+            let movie = app.buttons["Seerr.title.movie.950000019"].firstMatch
+            reveal(movie, in: app)
+            let position = movie.frame.midY
+            movie.tap()
+            openJellyfinMatch(in: app)
+            XCTAssertTrue(app.buttons["Detail.play"].waitForExistence(timeout: 12), app.debugDescription)
+            goBack(to: "Fixture Festival 9", in: app)
+            goBack(to: "Trending", in: app)
+            XCTAssertTrue(movie.waitForExistence(timeout: 8))
+            XCTAssertTrue(movie.isHittable)
+            XCTAssertEqual(movie.frame.midY, position, accuracy: 40)
+            filters.tap()
+            XCTAssertTrue(mediaType.waitForExistence(timeout: 10))
+            XCTAssertEqual(mediaType.label, "Media Type, Movies")
+            app.buttons["Cancel"].tap()
+            goBack(to: "Discover", in: app)
+            finishConnectedSession(app)
+        }
+
+        private func openJellyfinMatch(in app: XCUIApplication) {
+            let find = app.buttons["Find in Gus"].firstMatch
+            reveal(find, in: app)
+            find.tap()
+            let open = app.buttons["Open in Gus"].firstMatch
+            XCTAssertTrue(open.waitForExistence(timeout: 12))
+            open.tap()
+        }
+
         func testDefaultNaturalSearchDeclineUsesSameSeerrQuery() async throws {
             let app = try await prepare(exerciseCloudConsent: true)
             defer { app.terminate() }
@@ -199,8 +321,8 @@
             finishConnectedSession(app)
         }
 
-        private func connectedDiscover(appearance: String? = nil, customAccent: String? = nil) async throws -> XCUIApplication {
-            let app = try await prepare(appearance: appearance, customAccent: customAccent)
+        private func connectedDiscover(appearance: String? = nil, customAccent: String? = nil, demoURL: String? = nil) async throws -> XCUIApplication {
+            let app = try await prepare(appearance: appearance, customAccent: customAccent, demoURL: demoURL)
             executionTimeAllowance = 540
             if !app.staticTexts["Connected"].exists || !app.staticTexts["Gus Fixture Manager"].exists {
                 connect(app)
@@ -360,7 +482,7 @@
             capture("seerr-pending-manager-history-refreshed-empty")
         }
 
-        private func prepare(uncertainNext: Bool = false, appearance: String? = nil, customAccent: String? = nil, exerciseCloudConsent: Bool = false) async throws -> XCUIApplication {
+        private func prepare(uncertainNext: Bool = false, appearance: String? = nil, customAccent: String? = nil, exerciseCloudConsent: Bool = false, demoURL: String? = nil) async throws -> XCUIApplication {
             continueAfterFailure = false
             executionTimeAllowance = 240
             let app = XCUIApplication()
@@ -368,7 +490,7 @@
             XCUIDevice.shared.orientation = .portrait
             let health = try JSONDecoder().decode(FixtureHealth.self, from: await fixtureData("/__fixture/health"))
             XCTAssertEqual(health.fixture, "gus-discover")
-            let reset = try JSONEncoder().encode(FixtureReset(uncertainNext: uncertainNext))
+            let reset = try JSONEncoder().encode(FixtureReset(uncertainNext: uncertainNext, playableMatches: demoURL != nil))
             _ = try await fixtureData("/__fixture/reset", method: "POST", body: reset)
             app.launchArguments = [
                 "--gus-skip-session-restore", "--gus-demo-server", "--gus-disable-cloud-sync", "--gus-route", "settings",
@@ -383,6 +505,10 @@
             }
             if exerciseCloudConsent {
                 app.launchArguments += ["--gus-intelligence-test-cloud", "--gus-intelligence-test-suite", "gus.ui." + UUID().uuidString]
+            }
+            if let demoURL {
+                app.launchEnvironment["GUS_DEMO_URL"] = demoURL
+                app.launchArguments += ["--gus-intelligence-test-unsupported"]
             }
             app.launch()
             let decline = app.buttons["Intelligence.prompt.decline"]
@@ -464,8 +590,11 @@
             }
             password.typeText("gus-fixture-only")
             let signIn = app.buttons["Seerr.signIn"].firstMatch
-            reveal(signIn, in: app)
-            signIn.tap()
+            if signIn.isHittable {
+                signIn.tap()
+            } else {
+                password.typeText("\n")
+            }
             XCTAssertTrue(app.staticTexts["Connected"].waitForExistence(timeout: 20))
         }
 
@@ -647,7 +776,11 @@
     }
 
     private struct FixtureHealth: Decodable { let fixture: String }
-    private struct FixtureReset: Encodable { let uncertainNext: Bool }
+    private struct FixtureReset: Encodable {
+        let uncertainNext: Bool
+        let playableMatches: Bool
+    }
+
     private struct FixtureState: Decodable {
         let requests: [FixtureRequest]
         let events: [FixtureEvent]

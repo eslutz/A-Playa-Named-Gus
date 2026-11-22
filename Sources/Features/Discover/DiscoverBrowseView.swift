@@ -193,7 +193,7 @@ struct DiscoverBrowseView: View {
                 LazyVStack(alignment: .leading, spacing: 32) {
                     #if os(tvOS)
                         HStack(spacing: 32) {
-                            NavigationLink { DiscoverBrowseView(store: store, searchOnly: true) } label: { Label("Search Seerr", systemImage: "magnifyingglass") }
+                            NavigationLink(value: store.navigationRoute(.search)) { Label("Search Seerr", systemImage: "magnifyingglass") }
                             SeerrRequestHistoryLink()
                             NavigationLink { SeerrSettingsView() } label: { Label("Seerr Settings", systemImage: "gearshape") }
                             if store.user?.canManageRequests == true {
@@ -357,9 +357,9 @@ private struct SeerrDiscoveryShelf: View {
             HStack {
                 Text(feed.seerrTitle).font(.title2.bold()).accessibilityAddTraits(.isHeader)
                 Spacer()
-                NavigationLink("See All") {
-                    SeerrCatalogGridView(title: feed.seerrTitle, source: .feed(feed), store: store, featuredCatalog: feed == .trending ? catalog : nil)
-                }
+                NavigationLink("See All", value: store.navigationRoute(.catalog(
+                    name: feed.seerrTitle, source: .feed(feed), featured: feed == .trending ? .init(store: catalog) : nil
+                )))
                 .accessibilityIdentifier("Seerr.feed.\(feed.rawValue).showAll")
             }
             .tvFocusSection()

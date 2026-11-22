@@ -45,6 +45,7 @@ final class RootNavigationState {
 
     private var lastOverflowSection: String?
     private var displayedOverflowIDs: [String] = []
+    private var seerrRevision: UUID?
 
     var scrollAnchors: [String: String] = [:]
     private(set) var returningDetailViewport: DetailViewportReturn?
@@ -506,7 +507,26 @@ final class RootNavigationState {
         }
     }
 
-    private func accept(_ path: [GusRoute], for section: String) {
+    func updateSeerrRevision(_ revision: UUID) {
+        seerrRevision = revision
+        let updated = paths.mapValues(pathForCurrentSeerrRevision)
+        if updated != paths {
+            paths = updated
+        }
+    }
+
+    private func pathForCurrentSeerrRevision(_ path: [GusRoute]) -> [GusRoute] {
+        guard let seerrRevision, let firstStale = path.firstIndex(where: {
+            if case let .seerr(route) = $0 {
+                return route.revision != seerrRevision
+            }
+            return false
+        }) else { return path }
+        return Array(path.prefix(upTo: firstStale))
+    }
+
+    private func accept(_ proposedPath: [GusRoute], for section: String) {
+        let path = pathForCurrentSeerrRevision(proposedPath)
         let previous = paths[section] ?? []
         guard path != previous else { return }
         paths[section] = path

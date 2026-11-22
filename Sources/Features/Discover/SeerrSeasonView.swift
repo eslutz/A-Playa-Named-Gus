@@ -3,13 +3,12 @@ import SwiftUI
 
 /// A season's episode rows are metadata; playback is resolved through the Gus library.
 struct SeerrSeasonView: View {
-    let series: SeerrTitle
-    let season: SeerrSeason
+    let seriesID: Int
+    let seasonNumber: Int
     let store: SeerrStore
-    @State private var loadedSeason: SeerrSeason?
+    @State private var loaded: (series: SeerrTitle, season: SeerrSeason)?
     @State private var state: LoadState = .idle
-    @State private var revision: UUID?
-    @State private var loadedRestrictions: String?
+    @State private var loadedAccess: String?
     @State private var generation = UUID()
     @AppStorage(ContentRatingGate.limitDefaultsKey) private var contentLimitRawValue = ContentRatingGate.Limit.off.rawValue
     @AppStorage(ContentRatingGate.hideUnratedDefaultsKey) private var hideUnratedContent = false
@@ -18,30 +17,29 @@ struct SeerrSeasonView: View {
         "\(store.revision):\(contentLimitRawValue):\(hideUnratedContent)"
     }
 
-    private var isAuthorized: Bool {
-        _ = contentLimitRawValue
-        _ = hideUnratedContent
-        return store.admits(series) && (revision == nil || revision == store.revision)
+    private var authorizedSeason: (series: SeerrTitle, season: SeerrSeason)? {
+        guard loadedAccess == accessRevision, let loaded, store.admits(loaded.series) else { return nil }
+        return loaded
     }
 
     var body: some View {
         Group {
-            if !isAuthorized {
+            if state == .loaded, authorizedSeason == nil {
                 RestrictedContentView()
             } else {
-                LoadingStateView(state: state, retryAction: { Task { await load() } }, preservesContent: loadedSeason != nil) {
-                    if let loadedSeason {
-                        content(loadedSeason)
+                LoadingStateView(state: state, retryAction: { Task { await load(refresh: true) } }, preservesContent: authorizedSeason != nil) {
+                    if let authorizedSeason {
+                        content(authorizedSeason.season, series: authorizedSeason.series)
                     }
                 }
             }
         }
-        .navigationTitle(isAuthorized ? season.seerrName : String(localized: "Season"))
+        .navigationTitle(authorizedSeason?.season.seerrName ?? String(localized: "Season"))
         .toolbarTitleDisplayMode(.inline)
         .task(id: accessRevision) { await load() }
     }
 
-    private func content(_ season: SeerrSeason) -> some View {
+    private func content(_ season: SeerrSeason, series: SeerrTitle) -> some View {
         ArtworkDetailPage {
             DetailCoverHeader(maximumCoverWidth: 220) {
                 SeerrArtworkView(path: season.posterPath ?? series.posterPath, contentMode: .fit, width: "w780")
@@ -77,35 +75,42 @@ struct SeerrSeasonView: View {
                     .font(.footnote).foregroundStyle(.secondary)
             }
         }
-        .refreshable { await load() }
+        .refreshable { await load(refresh: true) }
     }
 
-    @MainActor private func load() async {
+    @MainActor private func load(refresh: Bool = false) async {
+        let access = accessRevision
+        if loadedAccess != access {
+            loaded = nil
+        } else if !refresh, state == .loaded {
+            return
+        }
+        loadedAccess = access
         generation = UUID()
         let operation = generation
         let connectionRevision = store.revision
-        let restrictions = String(describing: store.restrictionRevision)
-        if revision != connectionRevision || loadedRestrictions != restrictions {
-            loadedSeason = nil
-        }
-        revision = connectionRevision
-        loadedRestrictions = restrictions
         state = .loading
         defer {
             if generation == operation, Task.isCancelled {
-                state = loadedSeason == nil ? .idle : .loaded
+                state = loaded == nil ? .idle : .loaded
             }
         }
-        guard store.admits(series) else { state = .loaded; return }
         do {
-            let result = try await store.requireClient().season(tvID: series.id, number: season.seasonNumber)
-            guard !Task.isCancelled, generation == operation, store.revision == connectionRevision,
-                  String(describing: store.restrictionRevision) == restrictions, store.admits(series) else { return }
-            loadedSeason = result
+            let client = try store.requireClient()
+            let series = try await client.details(mediaType: .tv, id: seriesID)
+            guard !Task.isCancelled, generation == operation, accessRevision == access else { return }
+            guard store.admits(series) else {
+                loaded = nil
+                state = .loaded
+                return
+            }
+            let season = try await client.season(tvID: seriesID, number: seasonNumber)
+            guard !Task.isCancelled, generation == operation, accessRevision == access else { return }
+            guard season.seasonNumber == seasonNumber else { throw SeerrClientError.invalidPayload }
+            loaded = store.admits(series) ? (series, season) : nil
             state = .loaded
         } catch {
-            guard !Task.isCancelled, generation == operation, store.revision == connectionRevision,
-                  String(describing: store.restrictionRevision) == restrictions else { return }
+            guard !Task.isCancelled, generation == operation, accessRevision == access else { return }
             store.handle(error)
             guard store.revision == connectionRevision else { return }
             state = .failed(error.localizedDescription)

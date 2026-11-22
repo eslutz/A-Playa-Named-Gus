@@ -76,13 +76,7 @@ struct SeerrResultLink: View {
     var usesList = false
 
     var body: some View {
-        NavigationLink {
-            if title.mediaType == .person {
-                SeerrPersonView(personID: title.id, displayName: title.displayTitle, store: store)
-            } else {
-                SeerrTitleDetailView(title: title, store: store)
-            }
-        } label: {
+        NavigationLink(value: store.navigationRoute(destination)) {
             if usesList {
                 SeerrTitleRow(title: title)
             } else {
@@ -91,6 +85,13 @@ struct SeerrResultLink: View {
         }
         .posterNavigationStyle()
         .accessibilityIdentifier("Seerr.title." + (title.mediaType?.rawValue ?? "unknown") + "." + String(title.id))
+    }
+
+    private var destination: SeerrRoute.Destination {
+        if title.mediaType == .person {
+            return .person(id: title.id, name: title.displayTitle)
+        }
+        return .title(title.mediaType ?? .unknown, title.id)
     }
 }
 

@@ -197,10 +197,16 @@ class NavigationHandler(Handler):
         {"Id": "49020000000000000000000000000000", "Name": "Music", "CollectionType": "music"},
         {"Id": "49030000000000000000000000000000", "Name": "Photos", "CollectionType": "photos"},
     ]
-    series = {"Id": "49000000000000000000000000000000", "Name": "Navigation Series", "Type": "Series"}
-    seasons = [{"Id": "49000000000000000000000000000001", "Name": "First Season", "Type": "Season", "IndexNumber": 1},
-               {"Id": "49000000000000000000000000000002", "Name": "Second Season", "Type": "Season", "IndexNumber": 2}]
-    items = [series, {"Id": "49020000000000000000000000000001", "Type": "MusicAlbum", "Name": "Fixture Album"},
+    series = {"Id": "49000000000000000000000000000000", "Name": "Navigation Series", "Type": "Series",
+              "ProviderIds": {"Tmdb": "950000002", "Tvdb": "950000003"}}
+    seasons = [{"Id": "49000000000000000000000000000001", "Name": "First Season", "Type": "Season", "IndexNumber": 1, "SeriesId": series["Id"]},
+               {"Id": "49000000000000000000000000000002", "Name": "Second Season", "Type": "Season", "IndexNumber": 2, "SeriesId": series["Id"]}]
+    genre = {"Id": "49040000000000000000000000000001", "Name": "Adventure", "Type": "Genre"}
+    movie = {"Id": "49040000000000000000000000000002", "Name": "Local Fixture Movie", "Type": "Movie",
+             "ProviderIds": {"Tmdb": "950000001"}, "Genres": ["Adventure"], "GenreItems": [genre]}
+    festival = {"Id": "49040000000000000000000000000003", "Name": "Local Festival Movie",
+                "Type": "Movie", "ProviderIds": {"Tmdb": "950000019"}}
+    items = [series, movie, festival, {"Id": "49020000000000000000000000000001", "Type": "MusicAlbum", "Name": "Fixture Album"},
              {"Id": "49030000000000000000000000000001", "Type": "PhotoAlbum", "Name": "Fixture Photos"}]
     pending_profiles = {}
     queue_movies = {}
@@ -281,8 +287,14 @@ class NavigationHandler(Handler):
             return self.respond({}, 500)
         if url.path == f"/Shows/{self.series['Id']}/Seasons":
             return self.respond({"Items": self.seasons, "TotalRecordCount": len(self.seasons)})
+        if len(parts) >= 3 and parts[-2] == "Items":
+            season = next((item for item in self.seasons if item["Id"] == parts[-1]), None)
+            if season:
+                return self.respond(season)
+        query = {key.lower(): value[0] for key, value in parse_qs(url.query).items()}
+        if url.path.endswith("/Items") and query.get("genreids", "").replace("-", "") == self.genre["Id"]:
+            return self.respond({"Items": [self.movie], "TotalRecordCount": 1})
         if url.path == f"/Shows/{self.series['Id']}/Episodes":
-            query = {key.lower(): value[0] for key, value in parse_qs(url.query).items()}
             season_id = query.get("seasonid", "").replace("-", "")
             episodes = [{"Id": f"4901000000000000000000000000000{season['IndexNumber']}",
                          "Type": "Episode", "Name": "Episode of " + season["Name"],

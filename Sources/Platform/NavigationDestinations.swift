@@ -14,6 +14,40 @@ enum GusRoute: Hashable {
     case screen(AppScreen)
     case nextUp
     case libraryGrid(LibraryGridScope)
+    case seerr(SeerrRoute)
+}
+
+struct SeerrRoute: Hashable {
+    enum Destination: Hashable {
+        case title(SeerrMediaType, Int)
+        case person(id: Int, name: String)
+        case season(seriesID: Int, number: Int)
+        case catalog(name: String, source: SeerrCatalogSource, featured: SeerrStoreReference<SeerrCatalogStore>? = nil)
+        case categories(SeerrStoreReference<SeerrCategoryDirectory>)
+        case search
+    }
+
+    let revision: UUID
+    let destination: Destination
+}
+
+/// Retain the existing shelf store for shared directory loading and Trending backfill.
+struct SeerrStoreReference<Store: AnyObject>: Hashable {
+    let store: Store
+
+    static func == (lhs: Self, rhs: Self) -> Bool {
+        lhs.store === rhs.store
+    }
+
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(ObjectIdentifier(store))
+    }
+}
+
+extension SeerrStore {
+    func navigationRoute(_ destination: SeerrRoute.Destination) -> GusRoute {
+        .seerr(SeerrRoute(revision: revision, destination: destination))
+    }
 }
 
 /// Photos use the stable session cover on iPad; other items retain typed push navigation.
@@ -145,6 +179,32 @@ private struct GusRouteDestination: View {
             }
         case let .libraryGrid(scope):
             LibraryGridView(scope: scope)
+        case let .seerr(route):
+            SeerrRouteDestination(route: route)
+        }
+    }
+}
+
+private struct SeerrRouteDestination: View {
+    @Environment(SeerrStore.self) private var store
+    let route: SeerrRoute
+
+    var body: some View {
+        if route.revision == store.revision, store.isConnected {
+            switch route.destination {
+            case let .title(type, id):
+                SeerrTitleDetailView(mediaType: type, id: id, store: store)
+            case let .person(id, name):
+                SeerrPersonView(personID: id, displayName: name, store: store)
+            case let .season(seriesID, number):
+                SeerrSeasonView(seriesID: seriesID, seasonNumber: number, store: store)
+            case let .catalog(name, source, featured):
+                SeerrCatalogGridView(title: name, source: source, store: store, featuredCatalog: featured?.store)
+            case let .categories(directory):
+                SeerrCategoryGrid(directory: directory.store, store: store)
+            case .search:
+                DiscoverBrowseView(store: store, searchOnly: true)
+            }
         }
     }
 }

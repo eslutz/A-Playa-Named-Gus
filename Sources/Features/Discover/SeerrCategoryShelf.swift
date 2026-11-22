@@ -59,10 +59,8 @@ struct SeerrCategoryShelf: View {
                 Text(directory.kind.title).font(.title2.bold()).accessibilityAddTraits(.isHeader)
                 Spacer()
                 if directory.kind.isGenre {
-                    NavigationLink("See All") {
-                        SeerrCategoryGrid(directory: directory, store: store)
-                    }
-                    .accessibilityIdentifier("Seerr.feed.\(directory.kind.rawValue).showAll")
+                    NavigationLink("See All", value: store.navigationRoute(.categories(.init(store: directory))))
+                        .accessibilityIdentifier("Seerr.feed.\(directory.kind.rawValue).showAll")
                 }
             }
             .tvFocusSection()
@@ -93,7 +91,7 @@ struct SeerrCategoryShelf: View {
     }
 }
 
-private struct SeerrCategoryGrid: View {
+struct SeerrCategoryGrid: View {
     let directory: SeerrCategoryDirectory
     let store: SeerrStore
 
@@ -130,9 +128,7 @@ private struct SeerrCategoryLink: View {
     @AppStorage(ContentRatingGate.limitDefaultsKey) private var contentLimitRawValue = ContentRatingGate.Limit.off.rawValue
 
     var body: some View {
-        NavigationLink {
-            SeerrCatalogGridView(title: category.name, source: .category(kind, category.id), store: store)
-        } label: {
+        NavigationLink(value: store.navigationRoute(.catalog(name: category.name, source: .category(kind, category.id)))) {
             VStack(alignment: .leading, spacing: 6) {
                 // Seerr's genre backdrops have no associated title IDs or ratings.
                 let backdrop = contentLimitRawValue == ContentRatingGate.Limit.off.rawValue ? category.backdrops?.first : nil

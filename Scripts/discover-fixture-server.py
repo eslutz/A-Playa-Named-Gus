@@ -19,21 +19,24 @@ from urllib.parse import parse_qs, urlsplit
 MOVIE_ID = 950000001
 SHOW_ID = 950000002
 FESTIVAL_IDS = range(950000011, 950000021)
+PAGINATED_MOVIE_ID = 950000019
 USER = {"id": 12, "displayName": "Gus Fixture Manager", "permissions": 48}
 SESSION = "gus-fixture-session"
 LOCK = threading.RLock()
-STATE = {"requests": [], "events": [], "uncertainNext": False}
+STATE = {"requests": [], "events": [], "uncertainNext": False, "playableMatches": False}
 
 
 def media(media_id, media_type):
     related = [record for record in STATE["requests"] if record["media"]["tmdbId"] == media_id]
     active = [record for record in related if record["status"] != 3]
     status = 3 if any(record["status"] == 2 for record in active) else 2 if active else 1
+    if STATE["playableMatches"] and media_id in (MOVIE_ID, PAGINATED_MOVIE_ID):
+        status = 5
     result = {"id": 100 if media_type == "movie" else 101, "tmdbId": media_id, "mediaType": media_type, "status": status}
     if media_type == "tv":
         result["tvdbId"] = 950000003
         result["seasons"] = [
-            {"seasonNumber": number, "status": status if any(
+            {"seasonNumber": number, "status": 5 if STATE["playableMatches"] and media_id == SHOW_ID else status if any(
                 any(season["seasonNumber"] == number for season in record.get("seasons", []))
                 for record in active
             ) else 1}
@@ -52,11 +55,14 @@ def catalog_item(media_id):
     if media_id in FESTIVAL_IDS:
         index = media_id - FESTIVAL_IDS.start
         is_movie = index % 2 == 0
-        return {
+        item = {
             "id": media_id, "mediaType": "movie" if is_movie else "tv",
             "title" if is_movie else "name": f"Fixture Festival {index + 1}",
             "backdropPath": "/gus-festival-backdrop.png", "overview": "Festival catalog fixture.",
         }
+        if STATE["playableMatches"] and media_id == PAGINATED_MOVIE_ID:
+            item["mediaInfo"] = media(media_id, "movie")
+        return item
     is_movie = media_id == MOVIE_ID
     media_type = "movie" if is_movie else "tv"
     info = media(media_id, media_type)
@@ -144,6 +150,8 @@ class Handler(BaseHTTPRequestHandler):
             return self.respond({"id": 950000010, "name": "Gus Fixture Collection", "parts": [catalog_item(MOVIE_ID), catalog_item(FESTIVAL_IDS[0])]})
         if path == "/api/v1/auth/me":
             return self.respond(USER)
+        if path == "/api/v1/languages":
+            return self.respond([{"iso_639_1": "en", "english_name": "English", "name": "English"}])
         movie_catalog = path in ["/api/v1/discover/movies", "/api/v1/discover/movies/studio/2"]
         tv_catalog = path in ["/api/v1/discover/tv", "/api/v1/discover/tv/network/213"]
         if movie_catalog or tv_catalog or path in ["/api/v1/discover/trending", "/api/v1/search"]:
@@ -151,6 +159,10 @@ class Handler(BaseHTTPRequestHandler):
             if path == "/api/v1/discover/trending":
                 page = int(query.get("page", ["1"])[0])
                 page_ids = ids[:6] if page == 1 else ids[6:] if page == 2 else []
+                media_type = query.get("mediaType", ["all"])[0]
+                if media_type in ("tv", "movie"):
+                    page_ids = [i for i in page_ids if catalog_item(i)["mediaType"] == media_type]
+                    ids = [i for i in ids if catalog_item(i)["mediaType"] == media_type]
                 return self.respond({"page": page, "totalPages": 2, "totalResults": len(ids), "results": [catalog_item(i) for i in page_ids]})
             if movie_catalog or tv_catalog:
                 # Seerr applies this query as a TMDB original-language filter.
@@ -165,6 +177,8 @@ class Handler(BaseHTTPRequestHandler):
             return self.respond(catalog_item(MOVIE_ID))
         if path == f"/api/v1/tv/{SHOW_ID}":
             return self.respond(catalog_item(SHOW_ID))
+        if STATE["playableMatches"] and path == f"/api/v1/movie/{PAGINATED_MOVIE_ID}":
+            return self.respond(catalog_item(PAGINATED_MOVIE_ID))
         if path.startswith(("/api/v1/movie/", "/api/v1/tv/")) and path.rsplit("/", 1)[-1].isdigit():
             item_id = int(path.rsplit("/", 1)[1])
             if item_id in FESTIVAL_IDS:
@@ -199,6 +213,7 @@ class Handler(BaseHTTPRequestHandler):
             STATE["requests"].clear()
             STATE["events"].clear()
             STATE["uncertainNext"] = bool(body.get("uncertainNext", False))
+            STATE["playableMatches"] = bool(body.get("playableMatches", False))
             return self.respond({"reset": True})
         STATE["events"].append({"method": "POST", "path": path})
         if path in ["/api/v1/auth/local", "/api/v1/auth/jellyfin"]:
