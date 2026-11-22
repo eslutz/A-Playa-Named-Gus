@@ -152,6 +152,7 @@ rather than treating retained or missing records as a current inventory.
 
 | Accepted enhancement | Implementation and coverage |
 |---|---|
+| CarPlay audio | Cold scene launch, active-account albums and audiobooks, completed audio downloads with the server unreachable, shared iPhone playback, and Siri title resolution. Record physical route and lock-screen acceptance separately. |
 | Source/version selection | PlaybackRequest across local/remote/Watch/CarPlay/deep-link/Handoff/SharePlay/Mac entry points; PlaybackActionTests, ContentLinkTests, RemoteSessionsTests |
 | Semantic track continuation | Account opt-in, semantic-only persisted preferences and conservative same-series matching; Automatic/Off/Explicit intent; PlaybackLifecyclePolicyTests.semanticPreferencePersistence and customTrackRoleIdentity |
 | Different-cut progress | Native choice before reusing time; exact-source checkpoints and download selection; DownloadedLibraryTests.sourceSpecificCheckpoints, DownloadStoreIntegrationTests.sourceQualifiedProgressTransfer, OfflineDownloadTests.selectedAudioTranscodeDownload |

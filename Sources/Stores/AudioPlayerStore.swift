@@ -142,6 +142,7 @@ final class AudioPlayerStore {
     /// Playback speed; surfaced for audiobooks.
     var playbackRate: Double = 1.0 {
         didSet {
+            player?.defaultRate = Float(playbackRate)
             if isPlaybackRequested {
                 player?.rate = Float(playbackRate)
             }
@@ -244,6 +245,16 @@ final class AudioPlayerStore {
     func start() async {
         await playCurrentTrack(resume: playbackIntent?.start != .fromBeginning)
     }
+
+    #if os(iOS)
+        func pauseForRouteLoss() {
+            if state == .loading {
+                teardown()
+            } else if isPlaybackRequested {
+                playPause()
+            }
+        }
+    #endif
 
     func playPause() {
         if state == .loaded, player == nil {
@@ -546,9 +557,7 @@ final class AudioPlayerStore {
         defer { diagnostics.endInterval("PlaybackPreparation", startupInterval) }
 
         do {
-            try await activateAudioSession(false)
             try Task.checkCancellation()
-            guard session.isActive, generation == preparationGeneration else { return }
             let requestedSourceID = playbackIntent?.item.id == track.id ? playbackIntent?.streamSelection.mediaSourceID : nil
             playingDownload = downloads?.record(for: track, serverID: session.server.id, userID: session.user.id, mediaSourceID: requestedSourceID)
             let localURL = downloads?.localFileURL(for: track, serverID: session.server.id, userID: session.user.id, mediaSourceID: requestedSourceID)
@@ -667,6 +676,9 @@ final class AudioPlayerStore {
             )
             try Task.checkCancellation()
             guard session.isActive, generation == preparationGeneration else { return }
+            try await activateAudioSession(false)
+            try Task.checkCancellation()
+            guard session.isActive, generation == preparationGeneration else { return }
             if isLocalPlayback, track.runTimeTicks == nil, playerItem.duration.seconds.isFinite, playerItem.duration.seconds > 0 {
                 track.runTimeTicks = PlaybackTime.ticks(fromSeconds: playerItem.duration.seconds)
             }
@@ -706,7 +718,8 @@ final class AudioPlayerStore {
             retryPositionTicks = nil
             retryItemID = nil
             isPlaybackRequested = startsPlaying
-            player.rate = startsPlaying ? Float(playbackRate) : 0
+            player.defaultRate = Float(playbackRate)
+            player.rate = startsPlaying ? player.defaultRate : 0
             if queue.order.count - queue.position <= 3, queueContinuation != nil {
                 Task { [weak self] in await self?.loadMoreQueue() }
             }
@@ -774,6 +787,7 @@ final class AudioPlayerStore {
         releaseNativePlayer()
         currentTime = 0
         cleanUpCompletedRepeats()
+        deactivateAudioSession()
     }
 
     // MARK: - Observers

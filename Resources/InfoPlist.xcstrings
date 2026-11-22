@@ -34,6 +34,17 @@
           }
         }
       }
+    },
+    "NSSiriUsageDescription" : {
+      "comment" : "System permission prompt for Siri audio playback.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gus uses Siri to find and play music and audiobooks from your library."
+          }
+        }
+      }
     }
   },
   "version" : "1.0"

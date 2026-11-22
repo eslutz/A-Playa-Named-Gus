@@ -8,9 +8,8 @@ Simulator and local macOS builds use ad-hoc signing (`CODE_SIGN_IDENTITY = -`,
 `CODE_SIGNING_REQUIRED = NO`) so GitHub PR builds work without provisioning profiles.
 The bundle ID `dev.ericslutz.gus` and paid Apple Developer Program Team ID
 `QS3GC3CT43` are set in `Config/Shared.xcconfig`. Entitlements and capability
-declarations cover the currently wired release surface; CarPlay audio remains pending a
-manual Apple grant and is intentionally not advertised in App Store metadata until it is
-granted and wired.
+declarations cover the currently wired surface. Apple granted CarPlay Audio.
+The CarPlay candidate needs signed provisioning and device acceptance before public release.
 
 Use the toolchain and deployment targets in project configuration; review the
 currently selected Cloud toolchain before an authorized archive. Local simulator
@@ -39,7 +38,7 @@ on each applicable bundle.
 The table records source configuration, not proof that distribution provisioning
 profiles include every entitlement. Verify the signed archives, embedded Watch/Top
 Shelf components, and App Store Connect processing before claiming distribution
-acceptance. CarPlay remains unwired and is outside the requested internal beta.
+acceptance. The CarPlay section below tracks the additional device and signing checks.
 
 | Capability | Platform | Declared in | Status |
 |---|---|---|---|
@@ -58,10 +57,6 @@ acceptance. CarPlay remains unwired and is outside the requested internal beta.
 | Non-exempt encryption declaration | Main app, all primary platforms | `ITSAppUsesNonExemptEncryption = false` in `Resources/Info.plist`; confirm processed-build compliance | ✓ |
 | Offline downloads | iOS / iPadOS / macOS / visionOS / watchOS (audio) | Application Support storage — no extra capability required | ✓ |
 | Watch companion | watchOS | `GusWatch` target embedded in the iOS archive — no extra capability required | ✓ |
-
-Do not move CarPlay into this table, release metadata, or wired
-entitlements until Apple grants it and an archive has been validated with the granted
-capability.
 
 **Universal Links / Shared with You:** Gus claims `applinks:gus.ericslutz.dev` and
 supports `/item/<id>` and `/play/<id>`. The required associated-domains file is documented
@@ -94,36 +89,24 @@ Application Support, `UserDefaults`, and the login user's Keychain. Separate mac
 accounts therefore get separate app server lists, session restore state, and Jellyfin
 tokens without an extra capability.
 
-## CarPlay (Pending Apple Grant)
+## CarPlay audio and Siri
 
-**Current state:** `CPTemplateApplicationSceneSessionRoleApplication` is declared in
-`Info.plist` and `Sources/CarPlay/CarPlaySceneDelegate.swift` is compiled into the iOS
-target, but `com.apple.developer.carplay-audio` has **not** been granted by Apple and is
-**not** wired into signing. The scene declaration is inert without the entitlement — iOS
-will not activate it at runtime. Earlier local archives were unsigned; signed
-archive/upload acceptance remains unverified.
+Gus declares the granted `com.apple.developer.carplay-audio` entitlement and the
+standard `com.apple.developer.siri` entitlement in the iOS signing file.
+The iOS TestFlight export check verifies both keys in the app signature and
+embedded profile. The archive hook copies the canonical iOS entitlements before
+adding Private Cloud Compute.
 
-The CarPlay audio companion (`Sources/CarPlay/`) is implemented and its template scene
-is declared in `Info.plist`, but `com.apple.developer.carplay-audio` requires an Apple
-entitlement grant. Until granted, `Config/Gus-CarPlay.entitlements` stays **unwired**;
-the CarPlay scene never activates without the entitlement. The internal TestFlight
-request does not enable CarPlay.
-
-Steps to enable (none are code work — the implementation is complete):
-
-- [ ] **Request the entitlement from Apple** via the
-  [CarPlay developer request page](https://developer.apple.com/contact/carplay/),
-  describing the audio (music/audiobook) use case. This is a manual Apple review/grant
-  and is the long pole — it can take weeks.
-- [ ] Once granted, **add `com.apple.developer.carplay-audio` to the App ID /
-  provisioning profile** in the Developer portal.
-- [ ] **Merge the granted CarPlay entitlement** into the iOS signing entitlements,
-  preserving Associated Domains, Declared Age Range, and Group Activities. Do not
-  replace `Config/Gus-iOS.entitlements` with the standalone CarPlay draft and silently
-  drop those existing capabilities. Regenerate/validate the shared project if its
-  signing-file references change.
-- [ ] **Verify** in the CarPlay simulator (Simulator app → I/O → External Displays →
-  CarPlay) and on real CarPlay hardware.
+- Verify **CarPlay Audio** and **Siri** are enabled for the explicit
+  `dev.ericslutz.gus` App ID. Confirm the grant covers development and App Store
+  distribution. Use a refreshed development profile for a separately authorized
+  connected-iPhone check. [Apple CarPlay provisioning](https://developer.apple.com/documentation/carplay/preparing-your-ios-app-for-carplay-development)
+- On iOS 26, use the local Simulator CarPlay external display where available.
+  On iOS 27, Apple specifies a connected iPhone and **Device Hub → Device →
+  CarPlay Simulator**. Verify locked launch, live Siri, offline playback,
+  interruptions, reconnect, and route loss on an authorized iPhone and head unit
+  before advertising availability. [Apple CarPlay Simulator](https://developer.apple.com/documentation/carplay/testing-your-app-in-carplay-simulator)
+- Track signing, simulator, and physical acceptance in [issue #70](https://github.com/eslutz/A-Playa-Named-Gus/issues/70).
 
 ## Declared Age Range
 
@@ -187,9 +170,7 @@ regenerate it. See [API preparation](app-store-connect.md#api-access-and-cloud-w
 
 ## Remaining Distribution and Submission Steps
 
-- **Optional future CarPlay audio entitlement** — request, grant-wait, wire, and verify
-  (see the CarPlay section above); it is not a prerequisite for the current unwired
-  internal beta.
+- **CarPlay audio and Siri** — verify signed provisioning and connected-iPhone behavior.
 - **Declared Age Range device verification** — verify on an OS 26 device that the system
   sheet presents and maps back to Gus's content limit.
 - Verify the Watch and Top Shelf components within the iOS and tvOS archives.

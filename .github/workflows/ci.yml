@@ -96,19 +96,14 @@ jobs:
             Resources/PrivacyInfo.xcprivacy \
             Sources/TopShelf/Info.plist \
             Config/Gus.entitlements \
+            Config/Gus-iOS.entitlements \
+            Config/Gus-SharePlay.entitlements \
             Config/Gus-tvOS.entitlements \
-            Config/GusTopShelf.entitlements \
-            Config/Gus-CarPlay.entitlements
+            Config/GusTopShelf.entitlements
 
-      - name: Validate pending entitlement policy
+      - name: Validate iOS CarPlay and Siri configuration
         run: |
-          ruby <<'RUBY'
-          config = File.read("Config/Shared.xcconfig")
-          project = File.read("project.yml")
-          if config.include?("Gus-CarPlay.entitlements") || project.include?("Gus-CarPlay.entitlements")
-            abort("CarPlay entitlements are pending Apple's grant and must stay unwired")
-          end
-          RUBY
+          python3 Scripts/check-carplay-config.py
 
       - name: Validate workflow YAML
         run: |

@@ -37,7 +37,7 @@ Platform/   substantial #if os(...) divergence lives here (RootContainer, modifi
             ContentLinkHandler, UserActivities, DownloadsAvailability)
 Immersive/  visionOS-only RealityKit "Gus Cinema"
 TopShelf/   tvOS Top Shelf extension entry point
-CarPlay/    iOS-only CarPlay audio templates (inert until carplay-audio entitlement granted)
+CarPlay/    iOS-only CarPlay audio templates and Siri media intent handling
 Watch/      watchOS companion app UI (GusWatch target)
 ```
 

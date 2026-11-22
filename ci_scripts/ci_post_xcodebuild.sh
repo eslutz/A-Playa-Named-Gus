@@ -65,6 +65,15 @@ case "$CI_PRODUCT_PLATFORM" in
   iOS|xrOS) verify_pcc "$app" "$app/Info.plist" "$app/embedded.mobileprovision" dev.ericslutz.gus ;;
 esac
 if [ "$CI_PRODUCT_PLATFORM" = iOS ]; then
+  /usr/bin/codesign -d --xml --entitlements - "$app" > "$evidence/app-entitlements.plist" 2>/dev/null
+  for key in 'com\.apple\.developer\.carplay-audio' 'com\.apple\.developer\.siri'; do
+    if [ "$(/usr/bin/plutil -extract "$key" raw "$evidence/app-entitlements.plist")" != true ] ||
+       [ "$(/usr/bin/plutil -extract "Entitlements.$key" raw "$evidence/profile.plist")" != true ]; then
+      echo "The iOS TestFlight export is missing a required CarPlay or Siri entitlement." >&2
+      exit 65
+    fi
+  done
+  echo "Verified signed CarPlay and Siri entitlements and provisioning profile for the iOS app."
   watch="$app/Watch/GusWatch.app"
   verify_pcc "$watch" "$watch/Info.plist" "$watch/embedded.mobileprovision" dev.ericslutz.gus.watchkitapp
 fi

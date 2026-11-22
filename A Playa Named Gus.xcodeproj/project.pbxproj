@@ -135,6 +135,7 @@
 		26311C5776CEE58E3547CDAD /* RootContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5E061C9980E05ECD86D4C20 /* RootContainer.swift */; };
 		26EA7B395A47DFD323FEBDCD /* SeerrPlaybackResolverTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D8255593C0C27515396F32E /* SeerrPlaybackResolverTests.swift */; };
 		2770510BC4DB6CC618614B69 /* SeerrSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F44CDB79391F66F866EB2C78 /* SeerrSettingsView.swift */; };
+		27D40BE5C801997FF1021954 /* SiriMediaHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8E356F1FC9A2FF669449B4C4 /* SiriMediaHandler.swift */; };
 		280FC81015BA9698937DF533 /* NextUpActivityStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0E9BDAD4E1783DDC8FA60E3 /* NextUpActivityStore.swift */; };
 		28220C86E610897B337DB699 /* ServerDiscoveryStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E9F79892024DFA823AB1A61 /* ServerDiscoveryStore.swift */; };
 		28699F074CA14DB5290B69D0 /* NaturalLibraryResults.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD330CCD3E78BF5E6A6DB895 /* NaturalLibraryResults.swift */; };
@@ -1112,6 +1113,7 @@
 		8C25624A6A270E6EBADEE7E0 /* TVDetailHero.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TVDetailHero.swift; sourceTree = "<group>"; };
 		8D3335646F1755D3AFF7F491 /* UpNextStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpNextStore.swift; sourceTree = "<group>"; };
 		8DD6EC8D93C96C4E81BC5F07 /* GusMacOSUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = GusMacOSUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		8E356F1FC9A2FF669449B4C4 /* SiriMediaHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SiriMediaHandler.swift; sourceTree = "<group>"; };
 		8E6BE6FC65C46A9319391702 /* CinematicDetailHero.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CinematicDetailHero.swift; sourceTree = "<group>"; };
 		8E9AD7345A28B074EAC840AF /* SeerrCategoryShelf.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SeerrCategoryShelf.swift; sourceTree = "<group>"; };
 		8EEC93F51B528B5404E897F2 /* LibraryStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryStore.swift; sourceTree = "<group>"; };
@@ -1480,6 +1482,7 @@
 			isa = PBXGroup;
 			children = (
 				9DC5783FDE8CE2EE87E8FDF0 /* CarPlaySceneDelegate.swift */,
+				8E356F1FC9A2FF669449B4C4 /* SiriMediaHandler.swift */,
 			);
 			path = CarPlay;
 			sourceTree = "<group>";
@@ -3210,6 +3213,7 @@
 				D73629AA90F307EB30D171A2 /* SharedWithYouSupport.swift in Sources */,
 				1A3904C467A002338C9CD0CF /* SignInStore.swift in Sources */,
 				AA9C81777AD34BABE511C676 /* SignInView.swift in Sources */,
+				27D40BE5C801997FF1021954 /* SiriMediaHandler.swift in Sources */,
 				6170D9A16972F8E7314FF86F /* SpotlightIndexer.swift in Sources */,
 				E31DB7E145EF4C40B8065B1E /* Stereo3DScreen.swift in Sources */,
 				A1F14E7380F9DD23BC40F097 /* Stereo3DScreenMetrics.swift in Sources */,

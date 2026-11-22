@@ -1,11 +1,29 @@
 {
   "sourceLanguage": "en",
   "strings": {
+    "Audio playback is unavailable.": {
+    },
     "Couldn’t load recommendations from iCloud. Try again.": {
       "comment": "Retry message when Apple TV cannot read the current account’s shared recommendations."
     },
+    "Downloads are unavailable.": {
+    },
+    "Enable Siri Playback": {
+    },
+    "Jellyfin is unavailable.": {
+    },
     "Loading": {
       "comment": "VoiceOver status for unresolved browse shelves and grids."
+    },
+    "Loading Gus…": {
+    },
+    "No Albums": {
+    },
+    "No Audiobooks": {
+    },
+    "No Downloaded Audio": {
+    },
+    "No Tracks": {
     },
     "Scary tone": {
       "comment": "A required mood in a natural library search."
@@ -39,6 +57,8 @@
     },
     "Remember Tracks": {
       "comment": "Compact playback setting label for remembering episode tracks."
+    },
+    "Sign-in required": {
     },
     "Turn on Show For You in Library Intelligence to share recommendations.": {
       "comment": "Explains the prerequisite for Apple TV recommendation sync."
