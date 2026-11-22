@@ -52,6 +52,7 @@ struct SeerrSettingsView: View {
                         root.selectedSectionID = NavigationSectionPreference.homeID
                     }
                 }))
+                .gusSwitchTint()
             } footer: { Text("Hiding Discover preserves your connection. You can also restore or reorder it in Navigation settings.") }
             if store.isConnected {
                 Section("Seerr Preferences") {

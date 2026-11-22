@@ -28,6 +28,7 @@ struct DownloadsView: View {
                 }
                 Section {
                     Toggle("Delete After Finishing", isOn: $deleteFinished)
+                        .gusSwitchTint()
                         .accessibilityIdentifier("Downloads.deleteFinished")
                 } footer: {
                     Text("Automatically remove finished downloads from this device without asking. Video and audio are removed after playback ends; books are removed when you close the reader at the end. Repeated audio is kept until playback stops. Books opened in other apps are not removed automatically.")

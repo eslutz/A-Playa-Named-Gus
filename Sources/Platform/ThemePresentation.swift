@@ -8,7 +8,20 @@ private struct GusThemeForegroundKey: EnvironmentKey {
     static let defaultValue = Color.gusProminentActionForeground
 }
 
+#if os(iOS)
+    private struct GusSwitchTrackKey: EnvironmentKey {
+        static let defaultValue: Color? = nil
+    }
+#endif
+
 extension EnvironmentValues {
+    #if os(iOS)
+        fileprivate var gusSwitchTrack: Color? {
+            get { self[GusSwitchTrackKey.self] }
+            set { self[GusSwitchTrackKey.self] = newValue }
+        }
+    #endif
+
     var gusThemeFill: Color {
         get { self[GusThemeFillKey.self] }
         set { self[GusThemeFillKey.self] = newValue }
@@ -21,6 +34,14 @@ extension EnvironmentValues {
 }
 
 extension View {
+    @ViewBuilder func gusSwitchTint() -> some View {
+        #if os(iOS)
+            modifier(GusSwitchTint())
+        #else
+            self
+        #endif
+    }
+
     func gusTheme() -> some View {
         modifier(GusThemeModifier())
     }
@@ -40,15 +61,15 @@ private struct GusThemeModifier: ViewModifier {
             let accent = preference == .custom ? ThemeAccent(hex: custom) ?? .gus : .gus
             let apple = preference == .apple
             let dark = colorScheme == .dark
-            let fill: Color = apple ? .blue : accent.color
+            let fill: Color = apple ? Color(uiColor: .systemBlue) : accent.color
             let tint: Color = apple ? .blue : accent.readable(onDark: dark, increasedContrast: contrast == .increased).color
-            let foreground: Color = apple || !accent.usesBlackForeground ? .white : .black
+            let foreground: Color = apple ? Color(uiColor: ThemeAccent.appleActionForeground) : (accent.usesBlackForeground ? .black : .white)
             #if os(tvOS)
                 // TabView owns its native row styles; only remove the inherited theme tint here.
                 let content = content.tint(nil)
             #endif
             #if os(iOS)
-                let content = content.toggleStyle(ThemeSwitchStyle(track: apple ? nil : accent.switchTrack(onDark: dark).color))
+                let content = content.environment(\.gusSwitchTrack, apple ? Color(uiColor: .systemGreen) : accent.switchTrack(onDark: dark).color)
             #endif
             content.tint(tint)
                 .accentColor(tint)
@@ -62,18 +83,28 @@ private struct GusThemeModifier: ViewModifier {
 
 #if os(iOS) || os(tvOS)
     extension ThemeAccent {
+        /// Keep the standard white label wherever Apple's resolved blue supports it.
+        static let appleActionForeground = UIColor { traits in
+            let fill = UIColor.systemBlue.resolvedColor(with: traits)
+            var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0
+            guard fill.getRed(&r, green: &g, blue: &b, alpha: nil) else { return .label }
+            let luminance = ThemeAccent(red: Double(r), green: Double(g), blue: Double(b)).luminance
+            return 1.05 / (luminance + 0.05) >= 4.5 ? .white : .black
+        }
+
         var color: Color {
             Color(.sRGB, red: red, green: green, blue: blue, opacity: 1)
         }
     }
 
     #if os(iOS)
-        private struct ThemeSwitchStyle: ToggleStyle {
-            let track: Color?
-            func makeBody(configuration: Configuration) -> some View {
-                Toggle(configuration)
-                    .toggleStyle(.switch)
-                    .tint(track)
+        private struct GusSwitchTint: ViewModifier {
+            @Environment(\.gusSwitchTrack) private var track
+
+            func body(content: Content) -> some View {
+                // Native sheets preserve environment values. Apply both SwiftUI's
+                // tint and the presentation's accent at the individual switch.
+                content.tint(track).accentColor(track)
             }
         }
 

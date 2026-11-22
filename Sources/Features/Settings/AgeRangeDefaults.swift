@@ -69,6 +69,34 @@
             }
         }
 
+        /// CarPlay and voice requests may restore an account before a phone window
+        /// exists. Only the foreground window can present Apple's sharing sheet.
+        func permitsExternalMedia(
+            isCurrent: () -> Bool,
+            requirement: () async throws -> Bool = AgeRangeAccess.systemRequirement
+        ) async -> Bool {
+            guard isCurrent(), !Task.isCancelled else { return false }
+            if stage != .checking {
+                return (stage == .ready || stage == .optional) && !defaults.bool(forKey: ContentRatingGate.awaitingRangeKey)
+            }
+            guard !checking else { return false }
+            do {
+                let required = try await requirement()
+                guard isCurrent(), !Task.isCancelled else { return false }
+                if stage == .checking, !checking {
+                    defaults.set(required, forKey: Self.lastRequirementKey)
+                    defaults.set(required, forKey: ContentRatingGate.awaitingRangeKey)
+                    return !required
+                }
+                return (stage == .ready || stage == .optional) && !defaults.bool(forKey: ContentRatingGate.awaitingRangeKey)
+            } catch {
+                guard isCurrent(), !Task.isCancelled, !checking, stage == .checking,
+                      let previous = defaults.object(forKey: Self.lastRequirementKey) as? Bool,
+                      !defaults.bool(forKey: ContentRatingGate.awaitingRangeKey) else { return false }
+                return !previous || defaults.object(forKey: ContentRatingGate.ageCeilingKey) != nil
+            }
+        }
+
         func deferOptionalOffer() {
             guard stage == .optional, !requesting else { return }
             defaults.set(true, forKey: offerKey)

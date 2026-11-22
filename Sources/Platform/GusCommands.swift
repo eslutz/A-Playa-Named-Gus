@@ -6,6 +6,7 @@
     struct GusCommands: Commands {
         let appModel: AppModel
         let navigation: AppNavigationModel
+        @FocusedValue(RootNavigationState.self) private var searchNavigation
 
         var body: some Commands {
             CommandGroup(replacing: .newItem) {}
@@ -19,12 +20,12 @@
                 .gusKeyboardShortcut("1", modifiers: .command)
 
                 Button {
-                    navigation.open(.search)
+                    searchNavigation?.focusSearch()
                 } label: {
                     Label("Search", systemImage: "magnifyingglass")
                 }
                 .gusKeyboardShortcut("f", modifiers: .command)
-                .disabled(appModel.currentSession == nil)
+                .disabled(searchNavigation == nil)
 
                 Button {
                     navigation.open(.settings)

@@ -32,6 +32,12 @@ struct PlayMediaIntent: AppIntent {
             )))
         }
 
+        #if canImport(DeclaredAgeRange) && (os(iOS) || os(macOS))
+            guard await session.ageRangeAccess.permitsExternalMedia(isCurrent: { session.isActive && AppModel.shared.currentSession === session }) else {
+                return .result(dialog: "Open Gus to check your age range.")
+            }
+        #endif
+
         let page = try await session.mediaProvider.items(query: MediaItemQuery(
             searchTerm: title,
             startIndex: 0,

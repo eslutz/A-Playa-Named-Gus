@@ -84,6 +84,9 @@ struct RootContainer: View {
             .onChange(of: session.intelligenceAccess.usesNaturalSearch) { _, _ in
                 state.useKeywordSearchForCurrentDrafts()
             }
+        #if !os(tvOS)
+            .focusedSceneValue(state)
+        #endif
             .onChange(of: navigation.searchFocusRequest) { handleSearchCommand() }
             .onChange(of: navigation.routeRequest) { _, _ in state.adopt(navigation.route) }
             .onChange(of: state.selectedSectionID) { _, id in storedSelection = id }
@@ -113,15 +116,7 @@ struct RootContainer: View {
 
     private func handleSearchCommand() {
         guard navigation.consumeSearchFocus() else { return }
-        switch state.selectedSectionID {
-        case NavigationSectionPreference.discoverID, NavigationSectionPreference.downloadedID:
-            state.paths[state.selectedSectionID] = []
-            state.pendingLocalSearchFocus = state.selectedSectionID
-        default:
-            state.selectSection(RootNavigationState.searchID)
-            state.paths[RootNavigationState.searchID] = []
-            state.globalSearch.typed.isPresented = true
-        }
+        state.focusSearch()
     }
 
     @ViewBuilder private var presentationRoot: some View {

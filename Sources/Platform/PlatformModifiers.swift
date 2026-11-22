@@ -221,6 +221,9 @@ enum DetailActionMetrics {
 }
 
 struct DownloadsSearchField: ViewModifier {
+    #if os(iOS)
+        @Environment(\.verticalSizeClass) private var heightClass
+    #endif
     @Binding var text: String
     @Binding var isPresented: Bool
     var isFocused: FocusState<Bool>.Binding
@@ -230,8 +233,8 @@ struct DownloadsSearchField: ViewModifier {
         #if os(iOS)
             if !DeviceIdentity.usesIPadPresentation {
                 // A bottom toolbar search item shares the tab bar's frame on iPhone.
-                // The safe area keeps the local field above both the tabs and the keyboard.
-                content.safeAreaInset(edge: .bottom, spacing: 0) {
+                // Keep the same search bar and first responder as the available height changes.
+                content.safeAreaInset(edge: heightClass == .compact ? .top : .bottom, spacing: 0) {
                     IPhoneDownloadsSearchBar(text: $text, isPresented: $isPresented)
                         .frame(height: fieldHeight)
                         .padding(.horizontal, 8)
@@ -258,8 +261,8 @@ struct DownloadsSearchField: ViewModifier {
             Coordinator(self)
         }
 
-        func makeUIView(context: Context) -> UISearchBar {
-            let bar = UISearchBar()
+        func makeUIView(context: Context) -> SearchBar {
+            let bar = SearchBar()
             bar.searchBarStyle = .minimal
             bar.placeholder = String(localized: "Search Downloads")
             bar.delegate = context.coordinator
@@ -268,13 +271,28 @@ struct DownloadsSearchField: ViewModifier {
             return bar
         }
 
-        func updateUIView(_ bar: UISearchBar, context: Context) {
+        func updateUIView(_ bar: SearchBar, context: Context) {
             context.coordinator.field = self
             if bar.text != text {
                 bar.text = text
             }
-            if isPresented, bar.window != nil, !bar.searchTextField.isFirstResponder {
-                bar.searchTextField.becomeFirstResponder()
+            bar.hasPendingFocus = isPresented && !bar.searchTextField.isFirstResponder
+            bar.focusIfRequested()
+        }
+
+        final class SearchBar: UISearchBar {
+            var hasPendingFocus = false
+
+            override func didMoveToWindow() {
+                super.didMoveToWindow()
+                focusIfRequested()
+            }
+
+            func focusIfRequested() {
+                guard hasPendingFocus, window != nil else { return }
+                if searchTextField.isFirstResponder || searchTextField.becomeFirstResponder() {
+                    hasPendingFocus = false
+                }
             }
         }
 
@@ -290,11 +308,15 @@ struct DownloadsSearchField: ViewModifier {
             }
 
             func searchBarTextDidBeginEditing(_ searchBar: UISearchBar) {
-                field.isPresented = true
+                if !field.isPresented {
+                    field.isPresented = true
+                }
             }
 
             func searchBarTextDidEndEditing(_ searchBar: UISearchBar) {
-                field.isPresented = false
+                if field.isPresented {
+                    field.isPresented = false
+                }
             }
 
             func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {

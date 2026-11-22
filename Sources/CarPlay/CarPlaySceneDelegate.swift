@@ -48,6 +48,9 @@
         private let downloads = OfflineDownloadStore.shared
         private var restoreTask: Task<Void, Never>?
         private var libraryTask: Task<Void, Never>?
+        private var policyTask: Task<Void, Never>?
+        private var renderedPolicy: ContentRatingGate.Policy?
+        private var renderedAgeStage: AgeRangeAccess.Stage?
         private var rowTasks: [UUID: Task<Void, Never>] = [:]
         private var renderedLease: SessionLease?
         private var renderedSession = false
@@ -113,6 +116,12 @@
                 }
             }
             observeSession()
+            policyTask = Task {
+                for await _ in NotificationCenter.default.notifications(named: UserDefaults.didChangeNotification) {
+                    guard !Task.isCancelled else { return }
+                    renderSession()
+                }
+            }
             restoreSession()
         }
 
@@ -120,6 +129,8 @@
             observationGeneration += 1
             restoreTask?.cancel()
             restoreTask = nil
+            policyTask?.cancel()
+            policyTask = nil
             resetLibrary()
             interfaceController = nil
         }
@@ -160,6 +171,7 @@
             withObservationTracking {
                 _ = appModel.currentSession?.lease
                 _ = appModel.currentSession?.isActive
+                _ = appModel.currentSession?.ageRangeAccess.stage
             } onChange: { [weak self] in
                 Task { @MainActor in
                     guard let self, self.observationGeneration == generation, self.interfaceController != nil else { return }
@@ -171,13 +183,31 @@
 
         private func renderSession() {
             let session = appModel.currentSession.flatMap { $0.isActive ? $0 : nil }
-            guard !renderedSession || renderedLease != session?.lease else { return }
+            let policy = ContentRatingGate.storedPolicy()
+            if let track = playback.store?.currentTrack, !policy.admits(track) {
+                playback.stop()
+            }
+            let stage = session?.ageRangeAccess.stage
+            guard !renderedSession || renderedLease != session?.lease || renderedPolicy != policy || renderedAgeStage != stage else { return }
+            renderedPolicy = policy
+            renderedAgeStage = stage
             renderedSession = true
             renderedLease = session?.lease
             resetLibrary()
             libraryTask = Task {
                 if let session {
-                    await setLibraryRoot(session: session)
+                    let allowed = await session.ageRangeAccess.permitsExternalMedia(isCurrent: {
+                        self.appModel.currentSession === session && session.isActive
+                    })
+                    guard !Task.isCancelled, appModel.currentSession === session, session.isActive else { return }
+                    if allowed {
+                        await setLibraryRoot(session: session)
+                    } else {
+                        let status = statusTemplate("Open Gus to check your age range.")
+                        await performTemplateOperation("set age range status") { controller in
+                            try await controller.setRootTemplate(status, animated: false)
+                        }
+                    }
                 } else {
                     let status = statusTemplate("Sign-in required")
                     await performTemplateOperation("set signed-out root") { controller in
@@ -200,7 +230,7 @@
             albums.tabImage = UIImage(systemName: "music.note.list")
             let books = CPListTemplate(title: String(localized: "Audiobooks"), sections: [])
             books.tabImage = UIImage(systemName: "book")
-            let downloaded = CPListTemplate(title: String(localized: "Downloaded"), sections: [])
+            let downloaded = CPListTemplate(title: String(localized: "Downloads"), sections: [])
             downloaded.tabImage = UIImage(systemName: "arrow.down.circle")
             for template in [albums, books, downloaded] {
                 template.emptyViewTitleVariants = [String(localized: "Loading Gus…")]
@@ -212,7 +242,7 @@
                 let rows = [
                     categoryItem("Albums", template: albums, session: session),
                     categoryItem("Audiobooks", template: books, session: session),
-                    categoryItem("Downloaded", template: downloaded, session: session),
+                    categoryItem("Downloads", template: downloaded, session: session),
                 ]
                 root = CPListTemplate(title: String(localized: "Gus"), sections: [CPListSection(items: rows)])
             }
@@ -598,6 +628,7 @@
 
         private func isCurrent(session: SessionStore, lease: SessionLease) -> Bool {
             !Task.isCancelled && interfaceController != nil && session.isActive && appModel.currentSession === session && session.lease == lease
+                && renderedPolicy == ContentRatingGate.storedPolicy() && renderedAgeStage == session.ageRangeAccess.stage
         }
 
         private func presentPlayback(_ player: AudioPlayerStore, origin: CPListTemplate, session: SessionStore, restoringSections sections: [CPListSection]) async {

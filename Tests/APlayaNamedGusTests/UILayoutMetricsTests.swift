@@ -739,6 +739,7 @@ struct UILayoutMetricsTests {
                 .background { ControlRegion { regions.picker = $0 } }
 
                 Toggle("Enabled", isOn: .constant(true))
+                    .gusSwitchTint()
                     .background { ControlRegion { regions.toggle = $0 } }
             }
             .padding()
@@ -788,26 +789,46 @@ struct UILayoutMetricsTests {
                 }
             }
 
-            func countAccentPixels(in view: UIView, accent: ThemeAccent) throws -> Int {
+            func controlPixels(in view: UIView) throws -> (bytes: [UInt8], width: Int, height: Int) {
                 let window = try #require(view.window)
-                let rendered = snapshot(of: view.convert(view.bounds, to: window).integral, in: window)
-                let image = try #require(rendered.cgImage)
+                let image = try #require(snapshot(of: view.convert(view.bounds, to: window).integral, in: window).cgImage)
                 let space = try #require(CGColorSpace(name: CGColorSpace.sRGB))
                 let buffer = try #require(CGContext(
-                    data: nil,
-                    width: image.width,
-                    height: image.height,
-                    bitsPerComponent: 8,
-                    bytesPerRow: image.width * 4,
-                    space: space,
-                    bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+                    data: nil, width: image.width, height: image.height, bitsPerComponent: 8,
+                    bytesPerRow: image.width * 4, space: space, bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
                 ))
                 buffer.draw(image, in: CGRect(x: 0, y: 0, width: image.width, height: image.height))
                 let bytes = try #require(buffer.data?.assumingMemoryBound(to: UInt8.self))
+                return (Array(UnsafeBufferPointer(start: bytes, count: image.width * image.height * 4)), image.width, image.height)
+            }
+
+            func countAccentPixels(in view: UIView, accent: ThemeAccent) throws -> Int {
+                let (bytes, _, _) = try controlPixels(in: view)
                 let red = Int(accent.red * 255), green = Int(accent.green * 255), blue = Int(accent.blue * 255)
-                return stride(from: 0, to: image.width * image.height * 4, by: 4).count { i in
+                return stride(from: 0, to: bytes.count, by: 4).count { i in
                     abs(Int(bytes[i]) - red) < 24 && abs(Int(bytes[i + 1]) - green) < 24 && abs(Int(bytes[i + 2]) - blue) < 24
                 }
+            }
+
+            func switchContrast(in view: UIView) throws -> (thumb: Double, surface: Double) {
+                let (bytes, width, height) = try controlPixels(in: view)
+                var histogram: [Int: Int] = [:]
+                // The native switch occupies the trailing edge of the labeled row.
+                // Its middle band includes the opaque thumb, active track and canvas.
+                for y in height / 3 ..< 2 * height / 3 {
+                    for x in max(0, width - 90) ..< width {
+                        let i = (y * width + x) * 4
+                        let rgb = Int(bytes[i]) << 16 | Int(bytes[i + 1]) << 8 | Int(bytes[i + 2])
+                        histogram[rgb, default: 0] += 1
+                    }
+                }
+                let colors = histogram.sorted { $0.value > $1.value }.map { entry in
+                    ThemeAccent(red: Double(entry.key >> 16) / 255, green: Double(entry.key >> 8 & 255) / 255, blue: Double(entry.key & 255) / 255)
+                }
+                let track = try #require(colors.first { max($0.red, $0.green, $0.blue) - min($0.red, $0.green, $0.blue) > 0.09 })
+                let thumb = try #require(colors.first { $0.luminance > 0.8 })
+                let surface = try #require(colors.first { $0.luminance < 0.05 })
+                return ((thumb.luminance + 0.05) / (track.luminance + 0.05), (track.luminance + 0.05) / (surface.luminance + 0.05))
             }
 
             for hex in ["004F60", "600044"] {
@@ -829,6 +850,9 @@ struct UILayoutMetricsTests {
                 let data = try #require(snapshot(of: bounds, in: controlWindow).pngData())
                 try data.write(to: FileManager.default.temporaryDirectory.appendingPathComponent("Native-dark-controls-\(hex).png"), options: .atomic)
                 Attachment.record(Array(data), named: "Native-dark-controls-\(hex).png")
+                let contrast = try switchContrast(in: toggle)
+                #expect(contrast.thumb >= 3)
+                #expect(contrast.surface >= 3)
                 #expect(trackCount > 20, "Native switch uses its contrast-adjusted track for \(hex)")
                 #expect(tintCount > 5, "Native menu picker uses the readable text color for \(hex)")
             }

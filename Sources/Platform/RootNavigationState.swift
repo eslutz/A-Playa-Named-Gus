@@ -309,6 +309,18 @@ final class RootNavigationState {
         }
     }
 
+    func focusSearch() {
+        switch selectedSectionID {
+        case NavigationSectionPreference.discoverID, NavigationSectionPreference.downloadedID:
+            paths[selectedSectionID] = []
+            pendingLocalSearchFocus = selectedSectionID
+        default:
+            selectSection(Self.searchID)
+            paths[Self.searchID] = []
+            globalSearch.typed.isPresented = true
+        }
+    }
+
     func selectSection(_ id: String) {
         let next = id == "gus.tv.search" ? Self.searchID : id
         guard next != selectedSectionID else { return }

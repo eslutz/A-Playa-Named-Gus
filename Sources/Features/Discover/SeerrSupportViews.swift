@@ -715,7 +715,8 @@ struct SeerrPreferencesView: View {
             } else {
                 emailEvents &= ~bit
             }
-        })).disabled(loading || requiresRefresh)
+        }))
+        .gusSwitchTint().disabled(loading || requiresRefresh)
     }
 
     private func load() async {

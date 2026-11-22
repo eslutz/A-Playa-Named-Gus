@@ -37,6 +37,9 @@ struct IntelligenceSettingsSection: View {
                             get: { preferences.naturalSearchEnabled },
                             set: { access.setNaturalSearchEnabled($0) }
                         ))
+                        #if os(iOS)
+                        .gusSwitchTint()
+                        #endif
                         .accessibilityIdentifier("Intelligence.naturalSearch")
                     } footer: {
                         Text("Search in your own words with help from Apple’s models.")
@@ -48,6 +51,9 @@ struct IntelligenceSettingsSection: View {
                             get: { preferences.cloudEnabled },
                             set: { access.setCloudEnabled($0) }
                         ))
+                        #if os(iOS)
+                        .gusSwitchTint()
+                        #endif
                         .accessibilityIdentifier("Intelligence.privateCloud")
                     } footer: {
                         if needsCloudConsent {
@@ -63,6 +69,9 @@ struct IntelligenceSettingsSection: View {
                             get: { preferences.recommendationsEnabled },
                             set: { access.setForYouEnabled($0) }
                         ))
+                        #if os(iOS)
+                        .gusSwitchTint()
+                        #endif
                         .disabled((!access.canOfferForYou || needsCloudConsent) && !preferences.recommendationsEnabled)
                         .accessibilityIdentifier("Intelligence.forYou")
                     } footer: {
@@ -144,11 +153,17 @@ struct IntelligenceSettingsSection: View {
                         details.foregroundStyle(.secondary).lineLimit(nil)
                     }
                 }
+                #if os(iOS)
+                .gusSwitchTint()
+                #endif
                 .disabled(isDisabled)
                 .accessibilityIdentifier(identifier)
             #else
                 VStack(alignment: .leading) {
                     Toggle(title, isOn: $isOn)
+                    #if os(iOS)
+                        .gusSwitchTint()
+                    #endif
                         .disabled(isDisabled)
                         .accessibilityIdentifier(identifier)
                     details.foregroundStyle(.secondary).lineLimit(nil)

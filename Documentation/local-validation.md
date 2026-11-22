@@ -114,6 +114,12 @@ Testing case, add an `-only-testing:GusTests/<Suite>/<Test>` filter with actual
 suite and test names. The TV and Vision unit schemes are `Gus tvOS Unit Tests`
 and `Gus visionOS Unit Tests`.
 
+Use a clean, signed-out simulator for the full iOS unit suite. An existing UI
+fixture or personal simulator can preserve a device-wide age restriction that
+correctly blocks unrelated synthetic playback items. Create a separate simulator
+with an installed device type and runtime, then use its UDID for `DESTINATION`.
+Keep the original simulator and its settings intact.
+
 ```sh
 python3 Scripts/run-warning-free.py xcodebuild \
   -project "$PROJECT" -scheme 'Gus iOS Unit Tests' -destination "$DESTINATION" \

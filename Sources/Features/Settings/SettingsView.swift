@@ -71,6 +71,7 @@ struct SettingsView: View {
                     qualityPicker
                 }
                 Toggle("Auto-Play Next Episode", isOn: $autoPlayNextEpisode)
+                    .gusSwitchTint()
                 #if os(iOS)
                     if siriAuthorization == .notDetermined {
                         Button("Enable Siri Playback") {
@@ -93,10 +94,11 @@ struct SettingsView: View {
                             PlaybackTrackMemory.shared.setEnabled(enabled, scope: session.references.scope)
                         }
                     ))
+                    .gusSwitchTint()
                     #if !os(tvOS)
-                    .labelsHidden()
+                        .labelsHidden()
                     #endif
-                    .accessibilityIdentifier("Settings.rememberEpisodeTracks")
+                        .accessibilityIdentifier("Settings.rememberEpisodeTracks")
                 }
             } header: {
                 Text("Playback")
@@ -129,6 +131,7 @@ struct SettingsView: View {
                     ThemeSettingsControls()
                 #endif
                 Toggle("Show Series Progress", isOn: $showSeriesProgress)
+                    .gusSwitchTint()
                     .accessibilityIdentifier("Settings.seriesProgress")
                 #if os(tvOS)
                     .onChange(of: showSeriesProgress) { navigationState.home?.refreshTopShelf() }
@@ -154,6 +157,7 @@ struct SettingsView: View {
                 }
                 if contentPolicy.limit != .off {
                     Toggle("Hide Unrated Media", isOn: Binding(get: { contentPolicy.hideUnrated }, set: { hideUnratedContent = $0 }))
+                        .gusSwitchTint()
                         .disabled(contentPolicy.ageCeiling != .off)
                 }
                 if contentPolicy.ageCeiling != .off {

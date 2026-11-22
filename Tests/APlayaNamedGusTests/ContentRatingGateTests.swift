@@ -160,6 +160,28 @@ extension ContentRatingGateTests {
     }
 
     #if canImport(DeclaredAgeRange) && (os(iOS) || os(macOS))
+        @MainActor @Test("CarPlay and Siri require an established age decision before a foreground window opens")
+        func externalMediaAgePolicy() async throws {
+            let name = "gus-external-age-\(UUID().uuidString)"
+            let defaults = try #require(UserDefaults(suiteName: name))
+            defer { defaults.removePersistentDomain(forName: name) }
+            let scope = AccountScope(serverID: "example", userID: "user")
+            let access = AgeRangeAccess(scope: scope, defaults: defaults)
+            #expect(await !access.permitsExternalMedia(isCurrent: { true }, requirement: { throw URLError(.notConnectedToInternet) }))
+            #expect(await access.permitsExternalMedia(isCurrent: { true }, requirement: { false }))
+            #expect(access.stage == .checking)
+            // Becoming subject to a sharing requirement supersedes an earlier opt-in region.
+            #expect(await !access.permitsExternalMedia(isCurrent: { true }, requirement: { true }))
+            #expect(ContentRatingGate.storedPolicy(userDefaults: defaults).awaitingRequiredRange)
+            #expect(await !access.permitsExternalMedia(isCurrent: { true }, requirement: { throw URLError(.notConnectedToInternet) }))
+            await access.prepare(isCurrent: { true }, requirement: { true }, request: { .shared(13) })
+            #expect(await access.permitsExternalMedia(isCurrent: { true }, requirement: { true }))
+            #expect(ContentRatingGate.storedPolicy(userDefaults: defaults).limit == .teen)
+            let restored = AgeRangeAccess(scope: scope, defaults: defaults)
+            #expect(await restored.permitsExternalMedia(isCurrent: { true }, requirement: { throw URLError(.notConnectedToInternet) }))
+            #expect(await !restored.permitsExternalMedia(isCurrent: { false }, requirement: { false }))
+        }
+
         @MainActor @Test("A declined optional offer stays dismissed for that Jellyfin account")
         func optionalOfferAndSwitching() async throws {
             let name = "gus-age-tests-\(UUID().uuidString)"

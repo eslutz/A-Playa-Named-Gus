@@ -51,7 +51,8 @@
         @MainActor private static func lookup(_ request: Request) async -> (session: SessionStore, matches: [MediaItem])? {
             let app = AppModel.shared
             await app.restoreLastSession()
-            guard let session = app.currentSession, session.isActive else { return nil }
+            guard let session = app.currentSession,
+                  await session.ageRangeAccess.permitsExternalMedia(isCurrent: { app.currentSession === session && session.isActive }) else { return nil }
             let downloads = OfflineDownloadStore.shared
             let serverID = session.server.id
             let userID = session.user.id

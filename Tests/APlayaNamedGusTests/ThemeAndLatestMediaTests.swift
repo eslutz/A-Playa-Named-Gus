@@ -1,6 +1,9 @@
 import Foundation
 @testable import Gus
 import Testing
+#if os(iOS) || os(tvOS)
+    import UIKit
+#endif
 
 struct ThemeAndLatestMediaTests {
     @Test func opaqueAccentStorageRejectsMalformedValues() {
@@ -21,6 +24,27 @@ struct ThemeAndLatestMediaTests {
             #expect((accent.readable(onDark: true).luminance + 0.05) / 0.05 >= 4.5)
         }
     }
+
+    #if os(iOS) || os(tvOS)
+        @Test @MainActor func appleProminentLabelContrastTracksSystemBlue() throws {
+            for appearance in [UIUserInterfaceStyle.light, .dark] {
+                for contrast in [UIAccessibilityContrast.normal, .high] {
+                    let traits = UITraitCollection {
+                        $0.userInterfaceStyle = appearance
+                        $0.accessibilityContrast = contrast
+                    }
+                    let fill = UIColor.systemBlue.resolvedColor(with: traits)
+                    let label = ThemeAccent.appleActionForeground.resolvedColor(with: traits)
+                    var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0
+                    try #require(fill.getRed(&r, green: &g, blue: &b, alpha: nil))
+                    let luminance = ThemeAccent(red: Double(r), green: Double(g), blue: Double(b)).luminance
+                    let whiteContrast = 1.05 / (luminance + 0.05)
+                    #expect(label.isEqual(whiteContrast >= 4.5 ? UIColor.white : UIColor.black))
+                    #expect((label.isEqual(UIColor.white) ? whiteContrast : (luminance + 0.05) / 0.05) >= 4.5)
+                }
+            }
+        }
+    #endif
 
     @Test func switchTracksContrastWithThumbAndCanvas() throws {
         for hex in ["000000", "FFFFFF", "FFFF00", "FF0000", "4F7C82", "112244"] {

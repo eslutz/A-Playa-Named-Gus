@@ -36,6 +36,22 @@ struct AppNavigationModelTests {
         #expect(model.consumeSearchFocus())
     }
 
+    @Test("a focused scene's Find command preserves the other window's search and navigation")
+    func searchFocusIsLocalToTheCommandWindow() {
+        let downloadsWindow = RootNavigationState()
+        let browsingWindow = RootNavigationState()
+        downloadsWindow.selectSection(NavigationSectionPreference.downloadedID)
+        downloadsWindow.paths[NavigationSectionPreference.downloadedID] = [.screen(.downloads)]
+        browsingWindow.focusSearch()
+        #expect(browsingWindow.globalSearch.typed.isPresented)
+        #expect(downloadsWindow.paths[NavigationSectionPreference.downloadedID] == [.screen(.downloads)])
+        #expect(downloadsWindow.pendingLocalSearchFocus == nil)
+        downloadsWindow.focusSearch()
+        #expect(downloadsWindow.paths[NavigationSectionPreference.downloadedID]?.isEmpty == true)
+        #expect(downloadsWindow.pendingLocalSearchFocus == NavigationSectionPreference.downloadedID)
+        #expect(browsingWindow.selectedSectionID == RootNavigationState.searchID)
+    }
+
     @Test("opens supported URLs and ignores unsupported URLs")
     func opensSupportedURLsOnly() throws {
         let model = AppNavigationModel()

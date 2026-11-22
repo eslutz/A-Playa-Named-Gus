@@ -33,7 +33,10 @@ exact ages, and no per-child identity data.
    Settings → Content Restrictions → Check Age Range remains available. When Apple
    requires the range, Gus requests it before showing media. A failed or declined
    required request offers retry. A device with a previously resolved policy can
-   continue offline using its last known requirement and limit.
+   continue offline using its last known requirement and limit. CarPlay and Siri also
+   check the requirement when they restore a session before a Gus window opens.
+   When sharing is required, open Gus to complete Apple's prompt. CarPlay refreshes
+   its library when the device policy changes.
 
 Gus requests thresholds 13, 16 and 18. Apple can return regional thresholds. Gus
 uses the lower bound conservatively and stores a separate device-wide rating ceiling.

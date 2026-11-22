@@ -57,6 +57,8 @@ struct ProfilePicturePicker: View {
                         .foregroundStyle(.background, .primary)
                         .background(.background, in: Circle())
                 }
+                .frame(maxWidth: .infinity, alignment: .center)
+                .contentShape(Rectangle())
         }
         .accessibilityLabel("Change Profile Picture")
         .accessibilityIdentifier("Profile.picture")

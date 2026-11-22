@@ -65,7 +65,10 @@ final class GusLaunchUITests: XCTestCase {
             let app = try await openProfileFixture("profile-enabled")
             defer { app.terminate() }
             let authorizer = app.buttons["Profile.quickConnect"]
-            for _ in 0 ..< 6 where !authorizer.isHittable {
+            for _ in 0 ..< 6 {
+                if authorizer.isHittable, authorizer.frame.maxY < app.frame.maxY - 50 {
+                    break
+                }
                 app.swipeUp()
             }
             XCTAssertTrue(authorizer.isHittable)
@@ -345,12 +348,41 @@ final class GusLaunchUITests: XCTestCase {
             if app.keyboards.firstMatch.exists {
                 XCTAssertLessThanOrEqual(field.frame.maxY, app.keyboards.firstMatch.frame.minY)
             }
+            var query = "Recent"
             for orientation in [UIDeviceOrientation.landscapeLeft, .portrait] {
                 rotate(app, to: orientation)
                 XCTAssertTrue(filters.buttons["Movies"].firstMatch.isSelected)
                 XCTAssertTrue(field.waitForExistence(timeout: 5))
-                XCTAssertEqual(field.value as? String, "Recent")
+                XCTAssertTrue(field.isHittable)
+                XCTAssertEqual(field.value as? String, query)
+                if orientation.isLandscape {
+                    XCTAssertLessThan(field.frame.midY, app.frame.midY)
+                }
+                // Continue typing without tapping again to verify keyboard focus survived.
+                let suffix = orientation.isLandscape ? "ly" : " Added"
+                field.typeText(suffix)
+                query += suffix
+                XCTAssertEqual(field.value as? String, query)
             }
+        }
+
+        func testDownloadsKeyboardSearchReturnsFromManagement() async throws {
+            guard UIDevice.current.userInterfaceIdiom == .phone else { throw XCTSkip("Uses iPhone local search") }
+            continueAfterFailure = false
+            let app = try await launchNavigationFixture(route: "downloaded")
+            defer { app.terminate() }
+
+            let field = app.searchFields["Downloads.search"].firstMatch
+            let options = app.buttons["Downloads.options"].firstMatch
+            XCTAssertTrue(options.waitForExistence(timeout: 20))
+            options.tap()
+            app.buttons["Manage Downloads"].tap()
+            XCTAssertTrue(field.waitForNonExistence(timeout: 5))
+            app.typeKey("f", modifierFlags: .command)
+            XCTAssertTrue(field.waitForExistence(timeout: 8))
+            field.typeText("Local")
+            XCTAssertEqual(field.value as? String, "Local")
+            XCTAssertTrue(app.segmentedControls.buttons["All"].exists)
         }
 
         private func launchNavigationFixture(route: String) async throws -> XCUIApplication {

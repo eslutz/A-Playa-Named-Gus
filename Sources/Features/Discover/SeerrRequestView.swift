@@ -123,6 +123,7 @@ private struct SeerrRequestForm: View {
                             }
                         }
                     }
+                    .gusSwitchTint()
                     .disabled(!eligible || draft.settings?.partialRequestsEnabled != true || draft.phase == .submitting)
                 }
             } header: { Text("Seasons") } footer: {
