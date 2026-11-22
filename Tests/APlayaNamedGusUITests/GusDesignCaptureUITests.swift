@@ -27,8 +27,8 @@
 
     /// Repeatable visual walkthrough of the real demo server, shared by baseline and redesign.
     /// Attachments stay in the external result bundle; no captured pixels belong in source.
-    /// Run in a dedicated simulator: optional-category captures change demo navigation
-    /// preferences, which the comparison workflow backs up and restores.
+    /// Reuse an available generic simulator with the demo account. Optional-category captures
+    /// change navigation preferences, which the comparison workflow backs up and restores.
     @MainActor
     final class GusDesignCaptureUITests: XCTestCase {
         private var media: [[String: String]] = []
