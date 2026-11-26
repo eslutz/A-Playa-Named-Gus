@@ -46,8 +46,10 @@ final class VideoPlaylistPlaybackCoordinator {
     private var requestedTicks: Int?
     private var active = true
     private let startsFromBeginning: Bool
+    private let requestedEntryID: UUID?
+    private let entryRequest: PlaybackRequest?
 
-    init(playlistID: UUID, entryID: UUID?, fromBeginning: Bool, shuffled: Bool = false, playlists: SavedMediaStore, session: SessionStore, downloads: OfflineDownloadStore, serverLists: ServerMediaListsStore = .shared) {
+    init(playlistID: UUID, entryID: UUID?, fromBeginning: Bool, shuffled: Bool = false, entryRequest: PlaybackRequest? = nil, playlists: SavedMediaStore, session: SessionStore, downloads: OfflineDownloadStore, serverLists: ServerMediaListsStore = .shared) {
         self.playlistID = playlistID
         self.playlists = playlists
         self.serverLists = serverLists
@@ -61,6 +63,8 @@ final class VideoPlaylistPlaybackCoordinator {
         let startID = entryID ?? (fromBeginning ? nil : playlist?.playbackAction.entryID)
         sequence = PlaylistPlaybackSequence(entryIDs: entries.map(\.id), startID: startID, shuffled: shuffled)
         startsFromBeginning = fromBeginning
+        requestedEntryID = entryID
+        self.entryRequest = entryRequest
     }
 
     private var stateID: UUID {
@@ -153,7 +157,9 @@ final class VideoPlaylistPlaybackCoordinator {
                 return
             }
             guard ContentRatingGate.admitsStored(item) else { throw GusError.server(String(localized: "This item is restricted.")) }
-            await player.playPlaylistItem(item, startTimeTicks: ticks)
+            let requested = requestedEntryID.map { serverLists.resolvedEntryID($0, inList: playlistID, scope: scope) }
+            let request = requested == resolvedCurrent && entryRequest?.item.id == item.id ? entryRequest : nil
+            await player.playPlaylistItem(item, startTimeTicks: ticks, request: request)
             try Task.checkCancellation()
             guard active, player.hasStartedPlayback else { return }
             guard playlists.setCursor(id: stateID, entryID: resolvedCurrent, positionTicks: ticks, finished: false, scope: scope) else {

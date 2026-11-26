@@ -67,6 +67,15 @@ struct LibraryGridView: View {
         }
     }
 
+    private var emptyCover: LibraryCover? {
+        switch scope {
+        case .category(.music), .musicLibrary: .music
+        case .category(.photos), .photoLibrary: .photos
+        case let .library(library): LibraryCover(library: library)
+        default: nil
+        }
+    }
+
     private var usesMusicLayout: Bool {
         #if os(iOS)
             isMusic && (widthClass == .compact || DeviceIdentity.usesIPadPresentation)
@@ -125,7 +134,11 @@ struct LibraryGridView: View {
                     if store.items.isEmpty, store.state == .idle || store.state == .loading {
                         BrowseGridPlaceholder(list: showsList)
                     } else {
-                        LoadingStateView(state: store.state, isEmpty: store.items.isEmpty && !store.canLoadMore, emptyTitle: "Empty Library", emptySymbol: "rectangle.on.rectangle", retryAction: { Task { await store.load() } }) {
+                        LoadingStateView(
+                            state: store.state, isEmpty: store.items.isEmpty && !store.canLoadMore,
+                            emptyTitle: "Empty Library", emptySymbol: "rectangle.on.rectangle",
+                            emptyArtwork: emptyCover?.image, retryAction: { Task { await store.load() } }
+                        ) {
                             grid(store)
                         }
                     }

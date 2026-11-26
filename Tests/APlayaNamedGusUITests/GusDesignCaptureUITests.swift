@@ -1166,7 +1166,7 @@
             let item = try XCTUnwrap(media.first { $0["type"] == "Movie" && ($0["name"] ?? "").contains("May Irwin") })
             let id = try XCTUnwrap(item["id"])
             let title = try XCTUnwrap(item["name"])
-            let app = launch("item/" + id)
+            let app = launch("item/" + id, keywordOnly: true)
             XCTAssertTrue(waitForMovieDetail(app))
             let download = app.buttons["Download"].firstMatch
             let createdHere = download.waitForExistence(timeout: 5)
@@ -1179,9 +1179,28 @@
             if !app.buttons["Downloaded"].firstMatch.waitForExistence(timeout: 30) {
                 capture("download-in-progress", waitsForLoading: false)
             }
-            let downloaded = launch("downloaded")
+            let downloaded = launch("downloaded", keywordOnly: true)
             XCTAssertTrue(waitForRoot(downloaded))
             capture("downloads-populated")
+            let videoRows = downloaded.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", title))
+            let visibleRow = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+                videoRows.allElementsBoundByAccessibilityElement.contains(where: \.isHittable)
+            }, object: nil)
+            XCTAssertEqual(XCTWaiter.wait(for: [visibleRow], timeout: 45), .completed, downloaded.debugDescription)
+            let videoRow = try XCTUnwrap(videoRows.allElementsBoundByAccessibilityElement.first(where: \.isHittable))
+            videoRow.tap()
+            let video = downloaded.descendants(matching: .any).matching(NSPredicate(format: "label == %@", "Video")).firstMatch
+            let nativeClose = downloaded.buttons.matching(NSPredicate(format: "label IN %@", ["Close", "Done"])).firstMatch
+            XCTAssertTrue(video.waitForExistence(timeout: 25), downloaded.debugDescription)
+            if !nativeClose.isHittable {
+                downloaded.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.4)).tap()
+            }
+            XCTAssertTrue(nativeClose.isHittable, downloaded.debugDescription)
+            XCTAssertFalse(downloaded.buttons["VideoPlayer.close"].exists)
+            capture("downloaded-video-fullscreen")
+            nativeClose.tap()
+            XCTAssertTrue(video.waitForNonExistence(timeout: 8), downloaded.debugDescription)
+            XCTAssertTrue(videoRow.isHittable)
             openDownloadManager(downloaded)
             XCTAssertTrue(downloaded.buttons["Downloads.select"].waitForExistence(timeout: 10))
             XCTAssertFalse(downloaded.staticTexts["Soft Cap"].exists)

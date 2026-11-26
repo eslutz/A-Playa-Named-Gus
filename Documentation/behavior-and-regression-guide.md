@@ -117,10 +117,10 @@ page deduplication. Gus retains AVPlayer/AVKit and current OS 26 fallbacks.
 | F01 | Identity-bound activation and recoverable expiry | AppModel, SessionLease, SessionAuthentication | SessionAuthenticationTests, AppModelSessionTests; physical account acceptance pending |
 | F02 | Distinct forbidden/unauthorized outcomes | Typed Get status adapter; canonical auth probe for ambiguous delete policy | SessionAuthenticationTests, GusErrorTests |
 | F03 | Ordered shared playback reports | Session-owned PlaybackReportQueue and immutable snapshots | PlaybackLifecyclePolicyTests; response-loss limits below |
-| F04 | Truthful playback lifecycle and finalization | Shared native preparation; audio/video/Watch finalization, actual-playing observations and persistent iOS/iPadOS video dismissal | PlaybackLifecyclePolicyTests, TVPlaybackLifecycleTests, GusAuthenticatedUITests.testReadyVideoCloseReturnsToDetail; physical output pending |
+| F04 | Truthful playback lifecycle and finalization | Shared native preparation; audio/video/Watch finalization, actual-playing observations and AVKit-owned iOS/iPadOS fullscreen dismissal and app-owned preparation and failure dismissal | PlaybackLifecyclePolicyTests, TVPlaybackLifecycleTests, GusAuthenticatedUITests.testReadyVideoCloseReturnsToDetail; physical output pending |
 | F05 | One resolution deadline/retry owner | PlaybackDeadline and StreamURLBuilder | PlaybackLifecyclePolicyTests, StreamURLBuilderTests |
 | F06 | Watch credential and endpoint rotation | Central AppModel installation and lease invalidation | AppModelSessionTests; paired Watch acceptance pending |
-| F07 | Truthful independent Live TV loading | Current-account permission plus explicit server membership; independent channel/recording/timer phases | BrowseRefinementTests, JellyfinLiveTVProviderTests (real HTTP JSON, cancellation and combined read budget); qualify M3U and hardware-tuner compatibility separately |
+| F07 | Live TV guide, scheduling and independent loading | Current-account access, local-calendar guide dates, airing-specific content checks, independent channel/guide/recording/timer phases, and timer confirmation by readback | BrowseRefinementTests, JellyfinLiveTVProviderTests, and GusLaunchUITests Live TV flows. Qualify M3U, physical tuners and real DVR writes separately. |
 | F08 | Live resource ownership and seekability | Origin-owned allocation; Stop owns started-live release | PlaybackLifecyclePolicyTests; verify started-live Stop and lost replies independently; hardware and unknown-ID limits below |
 | F09 | Remote action feedback | Shared ActionOutcome and capability/duplicate/explicit-position guards | RemoteSessionsTests, including explicitPositionConfirmation; physical target acceptance pending |
 | F10 | Bounded invalidations and stale-response rejection | One remote refresh plus one follow-up, lease/generation/visibility checks | RemoteSessionsTests |
@@ -160,7 +160,15 @@ rather than treating retained or missing records as a current inventory.
 | Page deduplication | Scoped media identity with raw server offsets; playlist occurrences preserve ordering and duplicates; BrowseRefinementTests |
 | Saved-media persistence | Account-scoped records, offline draft reconciliation and CloudKit ownership; VideoPlaylistTests, MediaReferencePersistenceTests, ServerMediaListsStoreTests |
 
+On iPhone and iPad, close fullscreen video to return to the playlist and use **Playback Options** beside Play or Resume to choose server-side tracks for that entry. The playlist resumes from its saved position and continues in order. Entry menus also offer Playback Options when starting elsewhere in the playlist.
+
 ## Home and library continuity
+
+On signed-in Home with Show For You enabled, the heading stays visible while
+the cards load, when there are no picks, and when a fetch fails. Cold-launch
+directly onto Home with the preference already enabled and verify the cards
+load. Retry a failed request and verify that an account or restriction change
+during a fetch discards obsolete picks.
 
 With the same Jellyfin account, revisit Home and a paged library after scrolling horizontally and vertically. Relaunch with slow responses and verify that cached shelves appear before the first response. Check the one-minute Next Up, five-minute browse and six-hour For You refresh windows, playback and favorite changes, and pull-to-refresh. A failed refresh should leave usable cards visible. Test a cache miss, a mix of usable and expired sections, and a launch with all snapshots at least 24 hours old. Loading placeholders should occupy the corresponding card and caption slots, avoid TV focus, and expose a single loading status to VoiceOver. Verify confirmed empty, failed and retried responses, page offsets, account switches and stricter content restrictions while requests are in flight.
 

@@ -1187,7 +1187,7 @@ extension JellyfinMediaProviderSession: LiveTVGuideProviding {
             try await client.browse(Paths.getLiveTvPrograms(parameters: parameters))
         }.value
         guard let raw = response.items else { throw GusError.server(String(localized: "The server returned an incomplete program guide.")) }
-        return LiveTVGuidePage(programs: raw.compactMap(Self.guideProgram), rawCount: raw.count, total: response.totalRecordCount)
+        return LiveTVGuidePage(programs: raw.compactMap(Self.guideProgram), rawCount: raw.count, total: response.totalRecordCount, rawIDs: raw.map(\.id))
     }
 
     func liveTVProgram(id: String) async throws -> LiveTVGuideProgram {

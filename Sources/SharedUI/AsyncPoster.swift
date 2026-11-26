@@ -10,13 +10,17 @@ struct AsyncPoster: View {
     var contentMode: ContentMode = .fill
     var placeholderSymbol: String = "photo"
     var fallbackURLs: [URL] = []
+    var fallbackArtwork: Image?
     var onExhausted: (() async -> Void)?
     var body: some View {
         let sequence = ArtworkRequestSequence([url].compactMap { $0 } + fallbackURLs)
-        PosterRequest(sequence: sequence, contentMode: contentMode, placeholderSymbol: placeholderSymbol, onExhausted: onExhausted)
-            // A header-only collection can gain its member cover asynchronously.
-            // Give the replacement sequence a fresh attempt, including its first URL.
-            .id(sequence.urls)
+        PosterRequest(
+            sequence: sequence, contentMode: contentMode, placeholderSymbol: placeholderSymbol,
+            fallbackArtwork: fallbackArtwork, onExhausted: onExhausted
+        )
+        // A header-only collection can gain its member cover asynchronously.
+        // Give the replacement sequence a fresh attempt, including its first URL.
+        .id(sequence.urls)
     }
 }
 
@@ -26,6 +30,7 @@ private struct PosterRequest: View {
     @State var sequence: ArtworkRequestSequence
     let contentMode: ContentMode
     let placeholderSymbol: String
+    let fallbackArtwork: Image?
     let onExhausted: (() async -> Void)?
 
     var body: some View {
@@ -47,7 +52,7 @@ private struct PosterRequest: View {
                 }
             case .empty:
                 placeholder.overlay {
-                    if requestedURL != nil {
+                    if requestedURL != nil, fallbackArtwork == nil {
                         ProgressView()
                     }
                 }
@@ -64,7 +69,15 @@ private struct PosterRequest: View {
         reduceMotion ? nil : .easeInOut(duration: 0.25)
     }
 
-    private var placeholder: some View {
+    @ViewBuilder private var placeholder: some View {
+        if let fallbackArtwork {
+            fallbackArtwork.resizable().aspectRatio(contentMode: contentMode)
+        } else {
+            symbolPlaceholder
+        }
+    }
+
+    private var symbolPlaceholder: some View {
         Rectangle()
             // When Reduce Transparency is on, Materials are semi-transparent and violate the
             // preference. Fall back to an opaque tonal fill so the placeholder is clearly

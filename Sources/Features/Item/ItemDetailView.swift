@@ -220,6 +220,14 @@ struct ItemDetailView: View {
             ) {
                 if let target {
                     versionMenu(for: target, focusItem: store.item)
+                    #if os(iOS)
+                        VideoPlaybackSetupButton(item: target, sourceID: selectedRequest(for: target).streamSelection.mediaSourceID) { choices in
+                            guard session.isActive, ContentRatingGate.admitsStored(target) else { return }
+                            let request = choices.applying(to: selectedRequest(for: target))
+                            playerItem = ItemRef(item: target, serverID: session.server.id, userID: session.user.id, playbackRequest: request)
+                        }
+                        .gusDetailActionControlStyle()
+                    #endif
                 }
                 ItemUserActionButton(
                     title: store.item.userData?.isFavorite == true

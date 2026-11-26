@@ -222,6 +222,74 @@ struct BrowseRefinementTests {
         #expect(store.channels.count == 201)
     }
 
+    @Test("guide pages advance by raw count and retain only airings that overlap the selected window")
+    func guideContinuation() async throws {
+        let calendar = Calendar(identifier: .gregorian)
+        let date = Date(timeIntervalSince1970: 1_800_000_000)
+        let window = LiveTVGuideWindow(day: date, now: date, calendar: calendar)
+        let first = LiveTVGuideProgram(
+            id: "current",
+            channelID: "channel",
+            channelName: nil,
+            name: "Current",
+            rating: "TV-G",
+            start: window.start.addingTimeInterval(-900),
+            end: window.start.addingTimeInterval(900),
+            timerID: nil
+        )
+        let next = LiveTVGuideProgram(
+            id: "later",
+            channelID: "channel",
+            channelName: nil,
+            name: "Later",
+            rating: "TV-G",
+            start: first.end,
+            end: first.end.addingTimeInterval(900),
+            timerID: nil
+        )
+        let outside = LiveTVGuideProgram(
+            id: "tomorrow",
+            channelID: "channel",
+            channelName: nil,
+            name: "Tomorrow",
+            rating: nil,
+            start: window.end,
+            end: window.end.addingTimeInterval(900),
+            timerID: nil
+        )
+        var offsets: [Int] = []
+        let programs = try await LiveTVGuideStore.collect(window) { offset, _ in
+            offsets.append(offset)
+            if offset == 0 {
+                return .init(programs: [first], rawCount: 2, total: 5, rawIDs: [first.id, nil])
+            }
+            return .init(programs: [first, next, outside], rawCount: 3, total: nil)
+        }
+        #expect(offsets == [0, 2])
+        #expect(programs.map(\.id) == [first.id, next.id])
+    }
+
+    @Test("guide rejects a repeated raw page even when no programs map to valid airings")
+    func repeatedGuidePage() async {
+        let date = Date(timeIntervalSince1970: 1_800_000_000)
+        let window = LiveTVGuideWindow(day: date, now: date, calendar: .init(identifier: .gregorian))
+        await #expect(throws: GusError.self) {
+            _ = try await LiveTVGuideStore.collect(window) { _, _ in
+                .init(programs: [], rawCount: 2, total: 8, rawIDs: ["invalid", "also-invalid"])
+            }
+        }
+    }
+
+    @Test("guide day boundaries follow local daylight saving transitions", arguments: [3, 11])
+    func guideDaylightSaving(month: Int) throws {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = try #require(TimeZone(identifier: "America/New_York"))
+        let day = try #require(calendar.date(from: DateComponents(year: 2026, month: month, day: month == 3 ? 8 : 1)))
+        let window = LiveTVGuideWindow(day: day, now: day.addingTimeInterval(-3600), calendar: calendar)
+        #expect(window.end.timeIntervalSince(window.start) == Double(month == 3 ? 23 : 25) * 3600)
+        #expect(LiveTVGuideWindow.days(from: day, calendar: calendar).dropFirst().first == window.end)
+    }
+
     @Test("explicit saved season survives resume alignment and refresh")
     func explicitSeasonRetention() async throws {
         let provider = FakeMediaProviderSession(capabilities: .init())

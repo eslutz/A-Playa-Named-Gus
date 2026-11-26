@@ -14,6 +14,24 @@ final class ForYouShelfState {
         let tasteRevision: Int
         var forYouSyncEnabled = false
 
+        @MainActor static func current(session: SessionStore, policy: ContentRatingGate.Policy, activityRevision: Int) -> Self {
+            let preferences = session.intelligencePreferences
+            #if os(tvOS)
+                return .init(
+                    cloudEnabled: false, recommendationsEnabled: preferences.forYouSyncEnabled,
+                    limit: policy.limit.rawValue, hideUnrated: policy.hideUnrated, ageCeiling: policy.ageCeiling,
+                    activityRevision: activityRevision, tasteRevision: 0
+                )
+            #else
+                return .init(
+                    cloudEnabled: preferences.cloudEnabled, recommendationsEnabled: preferences.recommendationsEnabled,
+                    limit: policy.limit.rawValue, hideUnrated: policy.hideUnrated, ageCeiling: policy.ageCeiling,
+                    activityRevision: activityRevision, tasteRevision: session.libraryIntelligence.tasteRevision,
+                    forYouSyncEnabled: preferences.forYouSyncEnabled
+                )
+            #endif
+        }
+
         @MainActor var currentRestrictions: Bool {
             let policy = ContentRatingGate.storedPolicy()
             return !policy.awaitingRequiredRange && limit == policy.limit.rawValue && hideUnrated == policy.hideUnrated && ageCeiling == policy.ageCeiling
@@ -33,19 +51,7 @@ final class ForYouShelfState {
 
     init(session: SessionStore) {
         #if !os(tvOS)
-            let preferences = session.intelligencePreferences
-            let policy = ContentRatingGate.storedPolicy()
-            let context = Context(
-                cloudEnabled: preferences.cloudEnabled,
-                recommendationsEnabled: preferences.recommendationsEnabled,
-                limit: policy.limit.rawValue,
-                hideUnrated: policy.hideUnrated,
-                ageCeiling: policy.ageCeiling,
-                activityRevision: 0,
-                tasteRevision: session.libraryIntelligence.tasteRevision,
-                forYouSyncEnabled: preferences.forYouSyncEnabled
-            )
-            restore(context, session: session)
+            restore(.current(session: session, policy: ContentRatingGate.storedPolicy(), activityRevision: 0), session: session)
         #endif
     }
 

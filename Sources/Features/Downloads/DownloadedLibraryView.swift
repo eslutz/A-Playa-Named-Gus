@@ -123,6 +123,13 @@ struct DownloadedLibraryView: View {
                         downloads.delete(record, serverID: session.server.id, userID: session.user.id)
                     }
                     .accessibilityHint(item.type == .book ? "Opens the downloaded book" : "Plays the downloaded file")
+                    #if os(iOS)
+                        .contextMenu {
+                            VideoPlaybackSetupButton(item: item, sourceID: record.mediaSourceID) { choices in
+                                play(record, request: choices.applying(to: record.playbackRequest))
+                            }
+                        }
+                    #endif
                 }
             }
         }
@@ -138,8 +145,8 @@ struct DownloadedLibraryView: View {
         }
     }
 
-    private func play(_ record: OfflineDownloadRecord) {
-        let request = record.playbackRequest
+    private func play(_ record: OfflineDownloadRecord, request: PlaybackRequest? = nil) {
+        let request = request ?? record.playbackRequest
         let item = request.item
         guard ContentRatingGate.admitsStored(item) else { return }
         guard downloads.localFileURL(for: item, serverID: session.server.id, userID: session.user.id, mediaSourceID: record.mediaSourceID) != nil else {

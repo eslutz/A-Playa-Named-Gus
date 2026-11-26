@@ -13,6 +13,10 @@ struct RootContainer: View {
     @Environment(NavigationPreferencesStore.self) private var preferences
     @State private var state: RootNavigationState
     @Environment(AudioPlaybackCoordinator.self) private var audio
+    #if !os(tvOS)
+        @Environment(PlaybackRefreshStore.self) private var playbackRefresh
+        @StoredContentPolicy private var contentPolicy
+    #endif
     #if os(visionOS)
         @Environment(CinemaModel.self) private var cinema
     #endif
@@ -98,7 +102,21 @@ struct RootContainer: View {
             .environment(audio)
             .environment(session.seerr)
             .task { await session.seerr.restore() }
+        #if !os(tvOS)
+            .task(id: activeForYouContext) {
+                guard let activeForYouContext else { return }
+                await session.forYouShelf.load(activeForYouContext, session: session)
+            }
+        #endif
     }
+
+    #if !os(tvOS)
+        private var activeForYouContext: ForYouShelfState.Context? {
+            guard scenePhase == .active, session.isActive, session.intelligencePreferences.recommendationsEnabled,
+                  !contentPolicy.awaitingRequiredRange else { return nil }
+            return .current(session: session, policy: contentPolicy, activityRevision: playbackRefresh.revision)
+        }
+    #endif
 
     private var defersIntelligencePrompt: Bool {
         #if os(visionOS)

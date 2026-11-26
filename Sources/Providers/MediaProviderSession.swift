@@ -117,7 +117,7 @@ struct LiveTVTimer: Identifiable, Equatable {
     var activeRecording: Bool? = nil
 }
 
-struct LiveTVGuideProgram: Equatable, Sendable {
+struct LiveTVGuideProgram: Identifiable, Equatable, Sendable {
     let id: String
     let channelID: String
     let channelName: String?
@@ -140,6 +140,7 @@ struct LiveTVGuidePage: Sendable {
     let programs: [LiveTVGuideProgram]
     let rawCount: Int
     let total: Int?
+    var rawIDs: [String?]? = nil
 }
 
 @MainActor

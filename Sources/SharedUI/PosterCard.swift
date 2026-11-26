@@ -18,6 +18,7 @@ struct PosterCard: View {
     var alignsMixedArtwork = false
     var placeholderSymbol: String = "film"
     var fallbackURLs: [URL] = []
+    var fallbackArtwork: Image?
     var onExhausted: (() async -> Void)?
 
     var body: some View {
@@ -42,11 +43,14 @@ struct PosterCard: View {
     }
 
     private var artwork: some View {
-        ArtworkTile(url: imageURL, aspectRatio: resolvedAspectRatio, placeholderSymbol: placeholderSymbol, fallbackURLs: fallbackURLs, onExhausted: onExhausted)
-            .frame(maxWidth: .infinity)
-            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-            .posterHoverEffect()
-            .gusTVArtworkStatus(item: statusItem)
+        ArtworkTile(
+            url: imageURL, aspectRatio: resolvedAspectRatio, placeholderSymbol: placeholderSymbol,
+            fallbackURLs: fallbackURLs, fallbackArtwork: fallbackArtwork, onExhausted: onExhausted
+        )
+        .frame(maxWidth: .infinity)
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .posterHoverEffect()
+        .gusTVArtworkStatus(item: statusItem)
     }
 
     private var captions: some View {

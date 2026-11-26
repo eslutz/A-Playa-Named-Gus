@@ -4,9 +4,10 @@
 import argparse
 import base64
 import json
+from datetime import datetime, timedelta, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from threading import Event
+from threading import Event, Lock
 from urllib.parse import parse_qs, urlsplit
 from uuid import uuid4
 
@@ -427,12 +428,133 @@ class GenreHandler(Handler):
         self.respond({"Items": matches[offset:offset + limit], "TotalRecordCount": len(matches), "StartIndex": offset})
 
 
+class LiveTVHandler(Handler):
+    """Disposable Guide, DVR and HLS fixture for in-app playback tests."""
+    user = {**USER, "Policy": {"AuthenticationProviderId": "fixture", "PasswordResetProviderId": "fixture",
+                               "EnableLiveTvAccess": True, "EnableLiveTvManagement": True}}
+    server_id = "46464646464646464646464646464646"
+    viewer_id = "46464646464646464646464646464647"
+    library = {"Id": "46010000000000000000000000000000", "Name": "Live TV",
+               "CollectionType": "livetv", "Type": "CollectionFolder"}
+    channels = [
+        {"Id": "46010000000000000000000000000001", "Type": "TvChannel", "Name": "Fixture One"},
+        {"Id": "46010000000000000000000000000002", "Type": "TvChannel", "Name": "Fixture Two"},
+    ]
+    movie = {"Id": "46010000000000000000000000000003", "Type": "Movie", "Name": "Fixture Movie",
+             "OfficialRating": "TV-G", "Overview": "Synthetic video for fullscreen playback.", "RunTimeTicks": 950000000}
+    recording = {"Id": "46010000000000000000000000000004", "Type": "Recording", "Name": "Fixture Recording",
+                 "OfficialRating": "TV-G", "RunTimeTicks": 950000000}
+    items = [library, *channels, movie, recording]
+    clock = datetime.now(timezone.utc).replace(second=0, microsecond=0)
+    timers = {}
+    lock = Lock()
+    media = None
+
+    def programs(self):
+        return [
+            {"Id": f"4602000000000000000000000000000{index + 1}", "Type": "Program", "Name": name,
+             "ChannelId": self.channels[channel]["Id"], "ChannelName": self.channels[channel]["Name"],
+             "OfficialRating": "TV-G", "StartDate": (self.clock + timedelta(minutes=start)).isoformat(),
+             "EndDate": (self.clock + timedelta(minutes=end)).isoformat()}
+            for index, (name, channel, start, end) in enumerate([
+                ("Fixture Live", 0, -60, 60), ("Fixture Later", 1, 10, 70), ("Fixture Unconfirmed", 0, 70, 130)
+            ])
+        ]
+
+    def do_GET(self):
+        url = urlsplit(self.path)
+        path = url.path
+        query = {key.lower(): values[0] for key, values in parse_qs(url.query).items()}
+        if path == "/health":
+            return self.respond({"fixture": "gus-live-tv"})
+        if path == "/Users/" + self.viewer_id:
+            return self.respond({**self.user, "Id": self.viewer_id,
+                                 "Policy": {**self.user["Policy"], "EnableLiveTvManagement": False}})
+        if path == "/LiveTv/Info":
+            return self.respond({"IsEnabled": True, "EnabledUsers": [self.user["Id"], self.viewer_id]})
+        if path == "/UserViews" or path.endswith("/Views"):
+            return self.respond({"Items": [self.library], "TotalRecordCount": 1})
+        if path == "/LiveTv/Channels":
+            channels = [{**self.channels[0], "CurrentProgram": self.programs()[0]}, self.channels[1]]
+            return self.respond({"Items": channels, "TotalRecordCount": len(channels)})
+        if path == "/LiveTv/Recordings":
+            return self.respond({"Items": [self.recording], "TotalRecordCount": 1})
+        if path == "/LiveTv/Programs":
+            programs = self.programs()
+            if "maxstartdate" in query and "minenddate" in query:
+                start = datetime.fromisoformat(query["minenddate"])
+                end = datetime.fromisoformat(query["maxstartdate"])
+                programs = [p for p in programs if datetime.fromisoformat(p["EndDate"]) > start
+                            and datetime.fromisoformat(p["StartDate"]) < end]
+            offset = int(query.get("startindex", 0))
+            return self.respond({"Items": programs[offset:offset + 1], "TotalRecordCount": len(programs)})
+        if path.startswith("/LiveTv/Programs/"):
+            return self.respond(next((p for p in self.programs() if p["Id"] == path.rsplit("/", 1)[1]), {}))
+        if path == "/LiveTv/Timers/Defaults":
+            program = next((p for p in self.programs() if p["Id"] == query.get("programid")), None)
+            return self.respond({"ProgramId": program["Id"], "ChannelId": program["ChannelId"]} if program else {},
+                                200 if program else 404)
+        if path == "/LiveTv/Timers":
+            with self.lock:
+                timers = list(self.timers.values())
+            return self.respond({"Items": timers, "TotalRecordCount": len(timers)})
+        if path.startswith("/fixture-media/") and self.media:
+            file = self.media / Path(path).name
+            if file.is_file() and file.suffix in (".m3u8", ".ts"):
+                data = file.read_bytes()
+                self.send_response(200)
+                self.send_header("Content-Type", "application/vnd.apple.mpegurl" if file.suffix == ".m3u8" else "video/mp2t")
+                self.send_header("Content-Length", str(len(data)))
+                self.end_headers()
+                self.wfile.write(data)
+                return
+        super().do_GET()
+
+    def do_POST(self):
+        path = urlsplit(self.path).path
+        if path == "/Users/AuthenticateByName":
+            body = json.loads(self.rfile.read(int(self.headers["Content-Length"])))
+            viewer = body.get("Username") == "live-viewer"
+            user = {**self.user, "Id": self.viewer_id} if viewer else self.user
+            if not viewer:
+                with self.lock:
+                    self.timers.clear()
+            return self.respond({"User": user, "AccessToken": "gus-live-viewer" if viewer else "gus-live-dvr",
+                                 "ServerId": self.server_id})
+        if path.endswith("/PlaybackInfo") and self.media:
+            self.rfile.read(int(self.headers.get("Content-Length", 0)))
+            source = {"Id": "fixture-source", "Container": "ts", "SupportsTranscoding": True,
+                      "TranscodingUrl": "/fixture-media/live.m3u8"}
+            item_id = path.split("/")[-2]
+            if any(item_id == channel["Id"] for channel in self.channels):
+                source["LiveStreamId"] = "fixture-live-stream"
+            return self.respond({"PlaySessionId": uuid4().hex, "MediaSources": [source]})
+        if path == "/LiveTv/Timers":
+            if "gus-live-dvr" not in self.headers.get("Authorization", "") and self.headers.get("X-Emby-Token") != "gus-live-dvr":
+                return self.respond({}, 403)
+            timer = json.loads(self.rfile.read(int(self.headers["Content-Length"])))
+            program_id = timer.get("ProgramId", "")
+            if program_id.endswith("3"):
+                return self.respond(None, 204)  # Acknowledged but absent from readback.
+            with self.lock:
+                if program_id in self.timers:
+                    return self.respond({}, 409)
+                self.timers[program_id] = {**timer, "Id": uuid4().hex, "Status": "New"}
+            return self.respond(None, 204)
+        if path.startswith("/Sessions/Playing") or path == "/LiveStreams/Close":
+            self.rfile.read(int(self.headers.get("Content-Length", 0)))
+            return self.respond(None, 204)
+        super().do_POST()
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--series-editor", action="store_true", help="Serve the editable 12.4 fixture on port 5059")
     parser.add_argument("--synopses", action="store_true", help="Serve the responsive synopsis fixture on port 5060")
     parser.add_argument("--genres", action="store_true", help="Serve Jellyfin genre search on port 5061")
     parser.add_argument("--navigation", action="store_true", help="Serve profile and season navigation cases on port 5062")
+    parser.add_argument("--live-tv", action="store_true", help="Serve Live TV guide and DVR cases on port 5064")
+    parser.add_argument("--live-media", type=Path, help="Directory with a synthetic live.m3u8 and MPEG-TS segments")
     args = parser.parse_args()
     port, handler = (5059, AdminHandler) if args.series_editor else (5058, Handler)
     if args.synopses:
@@ -441,4 +563,7 @@ if __name__ == "__main__":
         port, handler = 5061, GenreHandler
     if args.navigation:
         port, handler = 5062, NavigationHandler
+    if args.live_tv:
+        port, handler = 5064, LiveTVHandler
+        handler.media = args.live_media
     ThreadingHTTPServer(("127.0.0.1", port), handler).serve_forever()

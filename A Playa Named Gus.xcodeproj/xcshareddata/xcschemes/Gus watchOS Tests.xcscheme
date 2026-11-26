@@ -1,11 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Scheme
    LastUpgradeVersion = "2700"
-   version = "1.7">
+   version = "1.3">
    <BuildAction
       parallelizeBuildables = "YES"
-      buildImplicitDependencies = "YES"
-      runPostActionsOnFailure = "NO">
+      buildImplicitDependencies = "YES">
       <BuildActionEntries>
          <BuildActionEntry
             buildForTesting = "YES"
@@ -27,8 +26,7 @@
       buildConfiguration = "Debug"
       selectedDebuggerIdentifier = "Xcode.DebuggerFoundation.Debugger.LLDB"
       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
-      shouldUseLaunchSchemeArgsEnv = "YES"
-      onlyGenerateCoverageForSpecifiedTargets = "NO">
+      shouldUseLaunchSchemeArgsEnv = "YES">
       <MacroExpansion>
          <BuildableReference
             BuildableIdentifier = "primary"
@@ -40,8 +38,7 @@
       </MacroExpansion>
       <Testables>
          <TestableReference
-            skipped = "NO"
-            parallelizable = "NO">
+            skipped = "NO">
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "3F14C2BE1F2C1EB7C3139C9B"
@@ -51,8 +48,6 @@
             </BuildableReference>
          </TestableReference>
       </Testables>
-      <CommandLineArguments>
-      </CommandLineArguments>
    </TestAction>
    <LaunchAction
       buildConfiguration = "Debug"
@@ -70,7 +65,6 @@
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "E231022E862B3BC2FF5C8A2E"
             BuildableName = "GusWatch.app"
-            BlueprintName = "GusWatch"
             ReferencedContainer = "container:A Playa Named Gus.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
@@ -87,7 +81,6 @@
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "E231022E862B3BC2FF5C8A2E"
             BuildableName = "GusWatch.app"
-            BlueprintName = "GusWatch"
             ReferencedContainer = "container:A Playa Named Gus.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>

@@ -26,6 +26,40 @@ struct DailyTrendingSelection: Codable, Equatable {
     }
 }
 
+/// The indicator and automatic advance share the same monotonic deadline.
+struct SeerrCarouselTiming {
+    static let interval: Duration = .seconds(7)
+
+    private(set) var pageID: String?
+    private var elapsed: Duration = .zero
+    private var began: ContinuousClock.Instant?
+
+    var deadline: ContinuousClock.Instant? {
+        began?.advanced(by: Self.interval - elapsed)
+    }
+
+    mutating func update(pageID: String, rotating: Bool, at now: ContinuousClock.Instant) {
+        if self.pageID != pageID {
+            self.pageID = pageID
+            elapsed = .zero
+            began = nil
+        }
+        if rotating {
+            if began == nil {
+                began = now
+            }
+        } else if let began {
+            elapsed += began.duration(to: now)
+            self.began = nil
+        }
+    }
+
+    func progress(at now: ContinuousClock.Instant) -> Double {
+        let running = began.map { $0.duration(to: now) } ?? .zero
+        return min(1, max(0, (elapsed + running) / Self.interval))
+    }
+}
+
 struct SeerrTrendingCarousel: View {
     let titles: [SeerrTitle]
     /// The local day of the successful Trending response, including while a refresh is pending.
@@ -39,10 +73,25 @@ struct SeerrTrendingCarousel: View {
     @State private var selectedID: String?
     @State private var scrollPosition = ScrollPosition(idType: String.self)
     @State private var paused = false
+    @State private var timing = SeerrCarouselTiming()
+    @State private var pageTransition: UUID?
     @State private var scrolling = false
     @GestureState private var dragging = false
     @State private var visible = false
+    @State private var appeared = false
     @FocusState private var focusedControl: String?
+
+    private struct Rotation: Equatable {
+        let pageID: String
+        let rotating: Bool
+    }
+
+    private struct Advance: Equatable {
+        let pageID: String
+        let nextID: String
+        let deadline: ContinuousClock.Instant
+    }
+
     #if os(tvOS)
         private let indicatorSpacing: CGFloat = 12
     #else
@@ -65,8 +114,11 @@ struct SeerrTrendingCarousel: View {
         let pages = selection.ids.compactMap { byID[$0] }
         let index = selectedID.flatMap { selection.ids.firstIndex(of: $0) } ?? 0
         let allowsRotation = pages.count > 1 && !reduceMotion && !voiceOver
-        let rotating = allowsRotation && visible && scenePhase == .active && !paused && !scrolling && !dragging && focusedControl == nil
-        let nextID = rotating ? selection.ids[(index + 1) % pages.count] : nil
+        let rotating = allowsRotation && appeared && visible && scenePhase == .active &&
+            !paused && !scrolling && !dragging && pageTransition == nil && focusedControl == nil
+        let advance = rotating && timing.pageID == pages[index].seerrCatalogID ? timing.deadline.map {
+            Advance(pageID: pages[index].seerrCatalogID, nextID: selection.ids[(index + 1) % pages.count], deadline: $0)
+        } : nil
 
         Group {
             if !pages.isEmpty {
@@ -80,8 +132,8 @@ struct SeerrTrendingCarousel: View {
                                 Button {
                                     showPage(title.seerrCatalogID)
                                 } label: {
-                                    Image(systemName: index == offset ? "circle.fill" : "circle")
-                                        .font(.caption2)
+                                    pageDot(id: title.seerrCatalogID, selected: index == offset, showsProgress: allowsRotation, rotating: rotating)
+                                        .accessibilityHidden(true)
                                         .frame(minWidth: 26, minHeight: 44)
                                         .contentShape(Rectangle())
                                 }
@@ -114,11 +166,17 @@ struct SeerrTrendingCarousel: View {
                     let bounds = CGRect(origin: .zero, size: proxy.size)
                     return bounds.intersection(viewport).height > min(bounds.height, viewport.height) / 2
                 } action: { visible = $0 }
-                .task(id: nextID) {
-                    guard let nextID else { return }
-                    do { try await Task.sleep(for: .seconds(7)) }
+                .onAppear { appeared = true }
+                .onDisappear { appeared = false }
+                .onChange(of: Rotation(pageID: pages[index].seerrCatalogID, rotating: rotating), initial: true) { _, rotation in
+                    timing.update(pageID: rotation.pageID, rotating: rotation.rotating, at: ContinuousClock.now)
+                }
+                .task(id: advance) {
+                    guard let advance else { return }
+                    do { try await ContinuousClock().sleep(until: advance.deadline) }
                     catch { return }
-                    showPage(nextID)
+                    guard !Task.isCancelled, timing.deadline == advance.deadline, selectedID == advance.pageID else { return }
+                    showPage(advance.nextID)
                 }
             }
         }
@@ -136,6 +194,27 @@ struct SeerrTrendingCarousel: View {
                     }
                 #endif
             }
+        }
+    }
+
+    @ViewBuilder private func pageDot(id: String, selected: Bool, showsProgress: Bool, rotating: Bool) -> some View {
+        if selected, showsProgress {
+            TimelineView(.animation(paused: !rotating)) { _ in
+                let progress = timing.pageID == id ? timing.progress(at: ContinuousClock.now) : 0
+                Circle().strokeBorder(.tint, lineWidth: 1.5)
+                    .overlay(alignment: .leading) {
+                        Rectangle()
+                            .fill(.tint)
+                            .frame(width: 10 * CGFloat(progress))
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .environment(\.layoutDirection, .leftToRight)
+                            .clipShape(Circle())
+                    }
+            }
+            .frame(width: 10, height: 10)
+        } else {
+            Image(systemName: selected ? "circle.fill" : "circle")
+                .font(.caption2)
         }
     }
 
@@ -196,13 +275,26 @@ struct SeerrTrendingCarousel: View {
     }
 
     private func showPage(_ id: String) {
-        withAnimation(reduceMotion ? nil : .snappy) {
-            #if !os(macOS)
-                selectedID = id
-            #else
+        guard selectedID != id else { return }
+        #if os(macOS)
+            withAnimation(reduceMotion ? nil : .snappy) {
                 scrollPosition.scrollTo(id: id, anchor: .center)
-            #endif
-        }
+            }
+        #else
+            if reduceMotion {
+                selectedID = id
+            } else {
+                let transition = UUID()
+                pageTransition = transition
+                withAnimation(.snappy, completionCriteria: .removed) {
+                    selectedID = id
+                } completion: {
+                    if pageTransition == transition {
+                        pageTransition = nil
+                    }
+                }
+            }
+        #endif
     }
 }
 

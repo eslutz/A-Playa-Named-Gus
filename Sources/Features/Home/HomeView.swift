@@ -45,6 +45,9 @@ struct HomeView: View {
                 ScrollView {
                     VStack(alignment: .leading, spacing: ContentSpacing.section) {
                         BrowseShelfPlaceholder(backdrop: true)
+                        if isForYouEnabled {
+                            forYouShelf(nil)
+                        }
                         BrowseShelfPlaceholder(backdrop: false).accessibilityHidden(true)
                     }.gusTVPagePadding()
                 }
@@ -81,11 +84,6 @@ struct HomeView: View {
                 }
             }
         }
-        #else
-        .task(id: activeShelfContext) {
-            guard let activeShelfContext else { return }
-            await store?.forYou.load(activeShelfContext, session: session)
-        }
         #endif
         .task(id: sharedWithYou.revision) {
             guard let store else { return }
@@ -98,36 +96,8 @@ struct HomeView: View {
     }
 
     private var shelfContext: ForYouShelfState.Context {
-        let preferences = session.intelligencePreferences
-        #if os(tvOS)
-            return .init(
-                cloudEnabled: false,
-                recommendationsEnabled: preferences.forYouSyncEnabled,
-                limit: contentPolicy.limit.rawValue,
-                hideUnrated: contentPolicy.hideUnrated,
-                ageCeiling: contentPolicy.ageCeiling,
-                activityRevision: playbackRefresh.revision,
-                tasteRevision: 0
-            )
-        #else
-            return .init(
-                cloudEnabled: preferences.cloudEnabled,
-                recommendationsEnabled: preferences.recommendationsEnabled,
-                limit: contentPolicy.limit.rawValue,
-                hideUnrated: contentPolicy.hideUnrated,
-                ageCeiling: contentPolicy.ageCeiling,
-                activityRevision: playbackRefresh.revision,
-                tasteRevision: session.libraryIntelligence.tasteRevision,
-                forYouSyncEnabled: preferences.forYouSyncEnabled
-            )
-        #endif
+        .current(session: session, policy: contentPolicy, activityRevision: playbackRefresh.revision)
     }
-
-    #if !os(tvOS)
-        private var activeShelfContext: ForYouShelfState.Context? {
-            store != nil && scenePhase == .active ? shelfContext : nil
-        }
-    #endif
 
     #if os(tvOS)
         private struct SyncedShelfRefresh: Equatable {
@@ -147,13 +117,21 @@ struct HomeView: View {
         }
     #endif
 
-    private func shouldShowShelf(_ store: HomeStore) -> Bool {
-        guard session.isActive, shelfContext.recommendationsEnabled else { return false }
-        return store.forYou.needsPlaceholder(shelfContext, session: session) || !store.forYou.picks.isEmpty || store.forYou.error != nil
+    private var isForYouEnabled: Bool {
+        session.isActive && shelfContext.recommendationsEnabled
+    }
+
+    private func showsForYou(_ store: HomeStore) -> Bool {
+        guard isForYouEnabled else { return false }
+        #if os(tvOS)
+            return store.forYou.needsPlaceholder(shelfContext, session: session) || !store.forYou.picks.isEmpty || store.forYou.error != nil
+        #else
+            return true
+        #endif
     }
 
     private func hasContent(_ store: HomeStore) -> Bool {
-        !visibleSlots(store).isEmpty || heldSlots?.isEmpty == false
+        showsForYou(store) || !visibleSlots(store).isEmpty || heldSlots?.isEmpty == false
     }
 
     private func visibleSlots(_ store: HomeStore) -> Set<String> {
@@ -163,9 +141,6 @@ struct HomeView: View {
         }
         if store.nextUpPending || !store.unifiedNextUp.isEmpty {
             slots.insert("next")
-        }
-        if shouldShowShelf(store) {
-            slots.insert("forYou")
         }
         if !store.sharedWithYouItems.isEmpty {
             slots.insert("shared")
@@ -177,12 +152,46 @@ struct HomeView: View {
         if slots.contains("next"), store.unifiedNextUp.isEmpty, store.nextUpPending {
             return "next"
         }
-        if slots.contains("forYou"), shouldShowShelf(store), store.forYou.needsPlaceholder(shelfContext, session: session) {
+        if showsForYou(store), store.forYou.needsPlaceholder(shelfContext, session: session) {
             return "forYou"
         }
         return LatestMediaKind.allCases.first { kind in
             slots.contains("latest:" + kind.rawValue) && store.isPending(kind)
         }.map { "latest:" + $0.rawValue }
+    }
+
+    private func forYouShelf(_ shelf: ForYouShelfState?, announcesLoading: Bool = true) -> some View {
+        VStack(alignment: .leading, spacing: ContentSpacing.card) {
+            Text("For You")
+                .gusPhoneRailHeading()
+                .accessibilityAddTraits(.isHeader)
+                .accessibilityIdentifier("ForYou.heading")
+
+            if let shelf, !shelf.needsPlaceholder(shelfContext, session: session) {
+                if !shelf.picks.isEmpty {
+                    MediaRail(
+                        title: String(localized: "For You"),
+                        items: shelf.picks.map(\.item),
+                        recommendations: shelf.picks,
+                        focusKey: "home.forYou",
+                        showsHeading: false
+                    )
+                } else if let error = shelf.error {
+                    VStack(alignment: .leading, spacing: ContentSpacing.caption) {
+                        Text(error).foregroundStyle(.secondary)
+                        Button("Retry") { Task { await shelf.load(shelfContext, session: session, refresh: true) } }
+                    }
+                } else {
+                    Text("No recommendations yet.")
+                        .foregroundStyle(.secondary)
+                }
+            } else {
+                BrowseShelfPlaceholder(backdrop: false, forYou: true)
+                    .accessibilityIdentifier("ForYou.loading")
+                    .accessibilityHidden(!announcesLoading)
+            }
+        }
+        .id("forYou")
     }
 
     private func content(_ store: HomeStore) -> some View {
@@ -220,26 +229,8 @@ struct HomeView: View {
                             }
                         }.id("next")
                     }
-                    if slots.contains("forYou"), shelfContext.recommendationsEnabled {
-                        if store.forYou.needsPlaceholder(shelfContext, session: session) {
-                            BrowseShelfPlaceholder(backdrop: false, forYou: true, showsSyncSetup: !shelfContext.forYouSyncEnabled)
-                                .accessibilityHidden(loadingSlot != "forYou").id("forYou")
-                        } else if store.forYou.canDisplay(shelfContext, session: session), !store.forYou.picks.isEmpty {
-                            MediaRail(
-                                title: String(localized: "For You"),
-                                items: store.forYou.picks.map(\.item),
-                                recommendations: store.forYou.picks,
-                                focusKey: "home.forYou"
-                            ).id("forYou")
-                        } else if let error = store.forYou.error {
-                            VStack(alignment: .leading) {
-                                Text("For You Unavailable").font(.headline)
-                                Text(error).foregroundStyle(.secondary)
-                                Button("Retry") { Task { await store.forYou.load(shelfContext, session: session, refresh: true) } }
-                            }
-                        } else if heldSlots != nil {
-                            BrowseShelfPlaceholder(backdrop: false, forYou: true, showsSyncSetup: !shelfContext.forYouSyncEnabled).hidden()
-                        }
+                    if showsForYou(store) {
+                        forYouShelf(store.forYou, announcesLoading: loadingSlot == "forYou")
                     }
                     if slots.contains("shared") {
                         if store.sharedWithYouItems.isEmpty {
@@ -522,24 +513,27 @@ struct MediaRail: View {
     var focusKey: String? = nil
     var focusContext: String? = nil
     var requestsInitialFocus = false
+    var showsHeading = true
     @Environment(RootNavigationState.self) private var root
 
     var body: some View {
         VStack(alignment: .leading, spacing: ContentSpacing.card) {
-            HStack {
-                Text(title)
-                    .gusPhoneRailHeading()
-                    .accessibilityAddTraits(.isHeader)
-                Spacer()
-                if let latestKind {
-                    NavigationLink("Show All", value: GusRoute.libraryGrid(.latest(latestKind)))
-                        .gusTVFocus(id: "all", section: (focusKey ?? "latest:" + latestKind.rawValue) + ":control", ids: ["all"], context: focusContext ?? root.selectedSectionID)
-                } else if let library {
-                    NavigationLink("Show All", value: GusRoute.libraryGrid(.library(library)))
-                        .gusTVFocus(id: "all", section: (focusKey ?? "library:" + (library.id ?? title)) + ":control", ids: ["all"], context: focusContext ?? root.selectedSectionID)
+            if showsHeading {
+                HStack {
+                    Text(title)
+                        .gusPhoneRailHeading()
+                        .accessibilityAddTraits(.isHeader)
+                    Spacer()
+                    if let latestKind {
+                        NavigationLink("Show All", value: GusRoute.libraryGrid(.latest(latestKind)))
+                            .gusTVFocus(id: "all", section: (focusKey ?? "latest:" + latestKind.rawValue) + ":control", ids: ["all"], context: focusContext ?? root.selectedSectionID)
+                    } else if let library {
+                        NavigationLink("Show All", value: GusRoute.libraryGrid(.library(library)))
+                            .gusTVFocus(id: "all", section: (focusKey ?? "library:" + (library.id ?? title)) + ":control", ids: ["all"], context: focusContext ?? root.selectedSectionID)
+                    }
                 }
+                .tvFocusSection()
             }
-            .tvFocusSection()
 
             #if os(iOS)
                 if !recommendations.isEmpty, !session.intelligencePreferences.forYouSyncEnabled {
@@ -794,7 +788,8 @@ struct LibrariesLandingView: View {
                                 HStack(spacing: 16) {
                                     ArtworkTile(
                                         url: urls.first, aspectRatio: 16.0 / 9.0, contentMode: .fit,
-                                        placeholderSymbol: library.librarySymbol, fallbackURLs: Array(urls.dropFirst())
+                                        placeholderSymbol: library.librarySymbol, fallbackURLs: Array(urls.dropFirst()),
+                                        fallbackArtwork: LibraryCover(library: library)?.image
                                     )
                                     .frame(width: 96)
                                     .clipShape(RoundedRectangle(cornerRadius: 8))
@@ -830,12 +825,22 @@ private struct LibrariesGrid: View {
         VStack(alignment: .leading, spacing: ContentSpacing.card) {
             LazyVGrid(columns: PosterGrid.columns, alignment: .leading, spacing: PosterGrid.spacing) {
                 ForEach(libraries, id: \.id) { library in
+                    let cover = LibraryCover(library: library)
+                    let primary = session.mediaProvider.primaryImageURL(for: library, context: .posterGrid)
+                    let alternatives = cover.map { _ in
+                        session.mediaProvider.artworkURLs(
+                            for: library,
+                            request: .init(role: .libraryThumbnail, maxWidth: ImageURLBuilder.ImageContext.posterGrid.rawValue)
+                        ).filter { $0 != primary }
+                    } ?? []
                     NavigationLink(value: GusRoute.library(.init(item: library))) {
                         PosterCard(
                             title: library.name ?? "Library",
-                            imageURL: session.mediaProvider.primaryImageURL(for: library, context: .posterGrid),
+                            imageURL: primary,
                             aspectRatio: 16.0 / 9.0,
-                            placeholderSymbol: library.librarySymbol
+                            placeholderSymbol: library.librarySymbol,
+                            fallbackURLs: alternatives,
+                            fallbackArtwork: cover?.image
                         )
                     }
                     .posterNavigationStyle()
@@ -850,19 +855,14 @@ private struct LibrariesGrid: View {
 struct BrowseShelfPlaceholder: View {
     let backdrop: Bool
     var forYou = false
-    var showsSyncSetup = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: ContentSpacing.card) {
-            Text(verbatim: "Section title")
-                .gusPhoneRailHeading()
-                .redacted(reason: .placeholder)
-            #if os(iOS)
-                if forYou, showsSyncSetup {
-                    ForYouSyncSetupButton().hidden()
-                        .overlay { Capsule().fill(.quaternary) }
-                }
-            #endif
+            if !forYou {
+                Text(verbatim: "Section title")
+                    .gusPhoneRailHeading()
+                    .redacted(reason: .placeholder)
+            }
             ScrollView(.horizontal) {
                 HStack(alignment: .top, spacing: MediaRailMetrics.spacing(for: backdrop ? .backdrop : .poster)) {
                     ForEach(0 ..< 8, id: \.self) { _ in

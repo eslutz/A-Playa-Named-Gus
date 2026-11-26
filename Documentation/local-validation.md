@@ -186,6 +186,19 @@ removal, Quick Connect approval and rejection, Client Logs navigation, sidebar
 library selection, unavailable Next Up entries, video preparation and failure,
 and season switching. Both fixtures bind to loopback.
 
+For the Live TV Guide and fullscreen video UI tests, generate a synthetic HLS
+stream and serve the disposable Guide/DVR fixture. The first airing spans the
+current time at fixture startup. Restart the fixture for a fresh test window.
+
+```sh
+GUS_LIVE_MEDIA="$(mktemp -d /tmp/gus-live-media.XXXXXX)"
+ffmpeg -hide_banner -loglevel error -f lavfi -i 'testsrc2=size=640x360:rate=30' \
+  -f lavfi -i 'anullsrc=channel_layout=stereo:sample_rate=48000' \
+  -t 95 -c:v libx264 -preset ultrafast -g 60 -c:a aac -f hls -hls_time 4 \
+  -hls_playlist_type vod "$GUS_LIVE_MEDIA/live.m3u8"
+python3 Scripts/book-details-fixture.py --live-tv --live-media "$GUS_LIVE_MEDIA"
+```
+
 For the Discover-to-Jellyfin handoff tests in `GusSeerrUITests`, run the Seerr
 fixture and the navigation Jellyfin fixture together. These tests enable the
 matching movie and season through Seerr's fixture reset endpoint. They verify
