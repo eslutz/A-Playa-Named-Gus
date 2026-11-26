@@ -137,6 +137,10 @@ struct VideoPlaylistDetailView: View {
     @State private var editing = false
     @State private var deletingPlaylist = false
     @State private var mutating = false
+    #if os(iOS)
+        @State private var playbackSetupEntry: VideoPlaylistEntry?
+        @State private var playbackAfterSetup: ItemRef?
+    #endif
     @ScaledMetric(relativeTo: .body) private var numberDigitWidth: CGFloat = 10.5
     @Environment(\.dismiss) private var dismiss
     private var scope: AccountScope {
@@ -236,15 +240,31 @@ struct VideoPlaylistDetailView: View {
         }
         .serverListErrorAlert(lists)
         .safeAreaInset(edge: .top) { SavedPlaylistErrorBanner() }
-        .playerPresentation(item: $player)
-        .task {
-            loadingEntries = true
-            supplemental.load(scope: scope); lists.load(scope: scope)
-            supplemental.registerServerPlaylist(id: lists.resolvedID(id, scope: scope), scope: scope)
-            await lists.refresh(id: id, kind: .playlist, session: session)
-            loadingEntries = false
-        }
-        .refreshable { await lists.refresh(id: id, kind: .playlist, session: session) }
+        #if os(iOS)
+            .sheet(item: $playbackSetupEntry, onDismiss: {
+                if let playbackAfterSetup {
+                    self.playbackAfterSetup = nil
+                    player = playbackAfterSetup
+                }
+            }) { entry in
+                PlaylistPlaybackSetup(entry: entry, session: session) { choices in
+                    guard session.isActive, let playlist, playlist.entries.contains(where: { $0.id == entry.id && $0.reference.item.id == entry.reference.item.id }),
+                          ContentRatingGate.admitsStored(entry.reference.item) else { return }
+                    let resume = playlist.cursor?.entryID == entry.id && playlist.playbackAction.hasProgress
+                    playbackAfterSetup = playlistPlaybackReference(entry, fromBeginning: !resume, request: choices.applying(to: PlaybackRequest(item: entry.reference.item)))
+                    playbackSetupEntry = nil
+                }
+            }
+        #endif
+            .playerPresentation(item: $player)
+            .task {
+                loadingEntries = true
+                supplemental.load(scope: scope); lists.load(scope: scope)
+                supplemental.registerServerPlaylist(id: lists.resolvedID(id, scope: scope), scope: scope)
+                await lists.refresh(id: id, kind: .playlist, session: session)
+                loadingEntries = false
+            }
+            .refreshable { await lists.refresh(id: id, kind: .playlist, session: session) }
     }
 
     private func playlistHeader(_ playlist: VideoPlaylist, list: ServerMediaList) -> some View {
@@ -292,6 +312,11 @@ struct VideoPlaylistDetailView: View {
             .disabled(!isVideo || selection.isUnavailable || editing || mutating)
             .accessibilityIdentifier("Playlist.play")
             DetailActionRow {
+                #if os(iOS)
+                    if isVideo, let entry = playlist.entries.first(where: { $0.id == selection.entryID }) {
+                        playbackSetupButton(entry)
+                    }
+                #endif
                 nextUpButton(playlist)
                 ItemUserActionButton(title: "Start from Beginning", compactTitle: "Restart", systemImage: "arrow.counterclockwise") {
                     play(playlist.entries.first, fromBeginning: true)
@@ -342,6 +367,13 @@ struct VideoPlaylistDetailView: View {
             entryContent(entry, admitted: admitted, isPlayable: isPlayable)
                 .mediaItemContextMenu(item: admitted ? entry.reference.item : nil, groupName: playlist.name, canRemove: canEdit && !mutating, remove: { remove(entry) }) {
                     Button("Play from Here") { play(entry, fromBeginning: true) }.disabled(!admitted || !isPlayable || editing || mutating)
+                    #if os(iOS)
+                        if admitted, [.movie, .episode, .video].contains(entry.reference.item.type),
+                           playlist.entries.allSatisfy({ [.movie, .episode, .video].contains($0.reference.item.type) })
+                        {
+                            playbackSetupButton(entry)
+                        }
+                    #endif
                     Button("Move Up") { move(index, by: -1, in: playlist) }.disabled(!canEdit || index == 0)
                     Button("Move Down") { move(index, by: 1, in: playlist) }.disabled(!canEdit || index == playlist.entries.count - 1)
                     Button("Choose Replacement") { replacing = entry }.disabled(!admitted || !canEdit)
@@ -398,8 +430,20 @@ struct VideoPlaylistDetailView: View {
             player = ItemRef(item: entry.reference.item, serverID: scope.serverID, userID: scope.userID, playbackRequest: PlaybackRequest(item: entry.reference.item, start: fromBeginning ? .fromBeginning : .automatic))
             return
         }
-        player = ItemRef(item: entry.reference.item, serverID: scope.serverID, userID: scope.userID, playlistID: lists.resolvedID(id, scope: scope), playlistEntryID: entry.id, playlistFromBeginning: fromBeginning, playlistShuffled: shuffled)
+        player = playlistPlaybackReference(entry, fromBeginning: fromBeginning, shuffled: shuffled)
     }
+
+    private func playlistPlaybackReference(_ entry: VideoPlaylistEntry, fromBeginning: Bool, shuffled: Bool = false, request: PlaybackRequest? = nil) -> ItemRef {
+        ItemRef(item: entry.reference.item, serverID: scope.serverID, userID: scope.userID, playlistID: lists.resolvedID(id, scope: scope), playlistEntryID: entry.id, playlistFromBeginning: fromBeginning, playlistShuffled: shuffled, playbackRequest: request)
+    }
+
+    #if os(iOS)
+        private func playbackSetupButton(_ entry: VideoPlaylistEntry) -> some View {
+            Button("Playback Options", systemImage: "slider.horizontal.3") { playbackSetupEntry = entry }
+                .accessibilityIdentifier("Playlist.playbackOptions")
+                .disabled(editing || mutating || !ContentRatingGate.admitsStored(entry.reference.item))
+        }
+    #endif
 
     private func move(_ index: Int, by offset: Int, in playlist: VideoPlaylist) {
         guard offset != 0, playlist.entries.indices.contains(index) else { return }
@@ -602,3 +646,51 @@ private struct ServerListNameEditor: View {
             .serverListErrorAlert(lists)
     }
 }
+
+#if os(iOS)
+    private struct PlaylistPlaybackSetup: View {
+        @Environment(\.dismiss) private var dismiss
+        let entry: VideoPlaylistEntry
+        let session: SessionStore
+        let play: (VideoPlaybackChoices) -> Void
+
+        @State private var item: MediaItem?
+        @State private var state: LoadState = .idle
+
+        var body: some View {
+            NavigationStack {
+                LoadingStateView(state: state, retryAction: { Task { await load() } }) {
+                    if let item {
+                        List {
+                            Text(item.displayTitle).font(.headline)
+                            VideoPlaybackSetupButton(item: item, showsDefaultPlay: true, play: play)
+                        }
+                    }
+                }
+                .navigationTitle("Playback Options")
+                .toolbar {
+                    ToolbarItem(placement: .cancellationAction) {
+                        GusCloseButton { dismiss() }
+                    }
+                }
+            }
+            .task { await load() }
+        }
+
+        private func load() async {
+            state = .loading
+            do {
+                let current = try await session.references.currentItem(entry.reference.item)
+                try Task.checkCancellation()
+                guard session.isActive, ContentRatingGate.admitsStored(current) else { throw GusError.notFound }
+                item = current
+                state = .loaded
+            } catch {
+                let error = GusError(from: error)
+                guard !error.isCancellation, session.isActive else { return }
+                error.handleIfUnauthorized(session: session)
+                state = .failed(error.localizedDescription)
+            }
+        }
+    }
+#endif

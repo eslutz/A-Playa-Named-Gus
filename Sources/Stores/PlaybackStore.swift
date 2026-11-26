@@ -464,11 +464,13 @@ final class PlaybackStore {
     }
 
     /// Explicit playlist order bypasses the server's normal next-episode choice.
-    func playPlaylistItem(_ next: MediaItem, startTimeTicks: Int?) async {
+    func playPlaylistItem(_ next: MediaItem, startTimeTicks: Int?, request: PlaybackRequest? = nil) async {
         teardown(reportStopped: true)
         item = next
-        playbackIntent = PlaybackRequest(item: next, startPositionTicks: startTimeTicks)
-        streamSelection = .none
+        playbackIntent = request ?? PlaybackRequest(item: next)
+        playbackIntent.item = next
+        playbackIntent.startPositionTicks = startTimeTicks
+        streamSelection = playbackIntent.streamSelection
         usesPlaylistOrder = true
         await prepare(startTimeTicks: startTimeTicks)
     }

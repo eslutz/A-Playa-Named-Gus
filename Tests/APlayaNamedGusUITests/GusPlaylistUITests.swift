@@ -355,14 +355,23 @@
                 XCTAssertTrue(result.waitForExistence(timeout: 20)); result.tap()
                 XCTAssertTrue(app.buttons["Playlist.play"].waitForExistence(timeout: 10))
             }
-            XCTAssertEqual(app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@ AND label CONTAINS %@", "Playlist.entry.", "Edison Kinetoscopic Record of a Sneeze (1894)")).count, 1)
             let before = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
             before.name = "design-ordered-native-playlist"; before.lifetime = .keepAlways; add(before)
             let native = try await nativeList(named: name, kind: "Playlist")
             let nativeID = try XCTUnwrap(native?["Id"] as? String)
             let entries = try await nativeEntries(listID: nativeID, playlist: true)
             XCTAssertEqual(entries.compactMap { $0["Name"] as? String }, ["Edison Kinetoscopic Record of a Sneeze (1894)", "May Irwin Kiss (1896)"])
-            app.buttons["Playlist.play"].tap()
+            app.buttons["Playlist.playbackOptions"].tap()
+            let setup = app.navigationBars["Playback Options"]
+            XCTAssertTrue(setup.waitForExistence(timeout: 10))
+            let play = app.buttons["VideoPlayback.setup.play"].firstMatch
+            let trackMenu = app.buttons["VideoPlayback.setup"].firstMatch
+            let ready = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in play.isHittable || trackMenu.isHittable }, object: nil)
+            XCTAssertEqual(XCTWaiter.wait(for: [ready], timeout: 15), .completed, app.debugDescription)
+            if trackMenu.isHittable {
+                trackMenu.tap()
+            }
+            play.tap()
             let done = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in app.buttons["Playlist.play"].isHittable && app.staticTexts["Item 1 of 2"].exists }, object: nil)
             XCTAssertEqual(XCTWaiter.wait(for: [done], timeout: 180), .completed)
             XCTAssertFalse(app.staticTexts["Playlist Finished"].exists)

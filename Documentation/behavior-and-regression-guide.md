@@ -160,6 +160,8 @@ rather than treating retained or missing records as a current inventory.
 | Page deduplication | Scoped media identity with raw server offsets; playlist occurrences preserve ordering and duplicates; BrowseRefinementTests |
 | Saved-media persistence | Account-scoped records, offline draft reconciliation and CloudKit ownership; VideoPlaylistTests, MediaReferencePersistenceTests, ServerMediaListsStoreTests |
 
+On iPhone and iPad, close fullscreen video to return to the playlist and use **Playback Options** beside Play or Resume to choose server-side tracks for that entry. The playlist resumes from its saved position and continues in order. Entry menus also offer Playback Options when starting elsewhere in the playlist.
+
 ## Home and library continuity
 
 On signed-in Home with Show For You enabled, the heading stays visible while

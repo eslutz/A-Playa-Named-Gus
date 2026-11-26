@@ -194,7 +194,7 @@ struct VideoPlayerView: View {
                 store.gusSetTVPresentationActive(scenePhase == .active)
                 self.store = store
                 if let playlistID {
-                    playlist = VideoPlaylistPlaybackCoordinator(playlistID: playlistID, entryID: playlistEntryID, fromBeginning: playlistFromBeginning, shuffled: playlistShuffled, playlists: playlists, session: session, downloads: downloads, serverLists: serverLists)
+                    playlist = VideoPlaylistPlaybackCoordinator(playlistID: playlistID, entryID: playlistEntryID, fromBeginning: playlistFromBeginning, shuffled: playlistShuffled, entryRequest: playbackRequest, playlists: playlists, session: session, downloads: downloads, serverLists: serverLists)
                 }
                 let task = Task {
                     if let playlist {

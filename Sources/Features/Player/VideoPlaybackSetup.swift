@@ -22,6 +22,7 @@
     struct VideoPlaybackSetupButton: View {
         let item: MediaItem
         var sourceID: String? = nil
+        var showsDefaultPlay = false
         let play: (VideoPlaybackChoices) -> Void
 
         @State private var audio: MediaStreamInfo?
@@ -62,14 +63,24 @@
                             .menuActionDismissBehavior(.disabled)
                         }
                         Button("Play", systemImage: "play.fill") { play(choices) }
+                            .accessibilityIdentifier("VideoPlayback.setup.play")
                     }
                     .accessibilityIdentifier("VideoPlayback.setup")
                     .onChange(of: source) { _, _ in
                         audio = nil
                         subtitle = .automatic
                     }
+                } else if showsDefaultPlay {
+                    defaultPlay
                 }
+            } else if showsDefaultPlay {
+                defaultPlay
             }
+        }
+
+        private var defaultPlay: some View {
+            Button("Play", systemImage: "play.fill") { play(.init()) }
+                .accessibilityIdentifier("VideoPlayback.setup.play")
         }
 
         private var choices: VideoPlaybackChoices {
