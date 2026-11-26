@@ -177,40 +177,219 @@ import SwiftUI
     }
 
 #elseif os(iOS)
-    /// iOS/iPadOS `AVPlayerViewController` surface with Picture in Picture enabled,
-    /// including automatic PiP on backgrounding (requires the `audio` background mode,
-    /// declared in Info.plist).
-    struct PiPCapablePlayerSurface: UIViewControllerRepresentable {
-        let player: AVPlayer
-        let store: PlaybackStore
-        let controlsEnabled: Bool
+    /// Present the AVKit controller itself so the system owns fullscreen chrome and dismissal.
+    struct IOSFullscreenPlayer: UIViewControllerRepresentable {
+        let store: PlaybackStore?
+        let player: AVPlayer?
+        let isReady: Bool
+        let needsRecovery: Bool
+        let didFinish: Bool
+        let notice: String?
+        let dismissNotice: () -> Void
+        let close: () -> Void
+        let teardown: () -> Void
 
-        func makeCoordinator() -> NativeRenderObserver {
-            NativeRenderObserver()
+        func makeCoordinator() -> Coordinator {
+            Coordinator()
         }
 
-        func makeUIViewController(context: Context) -> AVPlayerViewController {
-            let controller = AVPlayerViewController()
-            controller.player = player
-            controller.showsPlaybackControls = controlsEnabled
-            controller.view.isUserInteractionEnabled = controlsEnabled
-            controller.allowsPictureInPicturePlayback = true
-            controller.canStartPictureInPictureAutomaticallyFromInline = true
-            // NowPlayingController owns the lock-screen transport; leaving AVKit's
-            // automatic publishing on would race two writers on the process-global
-            // MPNowPlayingInfoCenter (flickering metadata/artwork).
-            controller.updatesNowPlayingInfoCenter = false
-            context.coordinator.bind(controller: controller, player: player, store: store)
-            return controller
+        func makeUIViewController(context: Context) -> PresentationAnchor {
+            let anchor = PresentationAnchor()
+            anchor.appearance = { [weak coordinator = context.coordinator] in coordinator?.scheduleUpdate() }
+            context.coordinator.anchor = anchor
+            return anchor
         }
 
-        func updateUIViewController(_ controller: AVPlayerViewController, context: Context) {
-            controller.showsPlaybackControls = controlsEnabled
-            controller.view.isUserInteractionEnabled = controlsEnabled
-            if controller.player !== player {
-                controller.player = player
+        func updateUIViewController(_ anchor: PresentationAnchor, context: Context) {
+            context.coordinator.surface = self
+            context.coordinator.scheduleUpdate()
+        }
+
+        static func dismantleUIViewController(_ anchor: PresentationAnchor, coordinator: Coordinator) {
+            coordinator.detach()
+        }
+
+        final class PresentationAnchor: UIViewController {
+            var appearance: (() -> Void)?
+
+            override func viewDidAppear(_ animated: Bool) {
+                super.viewDidAppear(animated)
+                appearance?()
             }
-            context.coordinator.bind(controller: controller, player: player, store: store)
+        }
+
+        final class Coordinator: NSObject, @MainActor AVPlayerViewControllerDelegate, UIAdaptivePresentationControllerDelegate {
+            weak var anchor: PresentationAnchor?
+            var surface: IOSFullscreenPlayer?
+
+            private let renderObserver = NativeRenderObserver()
+            private var controller: AVPlayerViewController?
+            private var isPresenting = false
+            private var isRecovering = false
+            private var isInPictureInPicture = false
+            private var displayedNotice: String?
+            private var finished = false
+            private var updateScheduled = false
+
+            func scheduleUpdate() {
+                guard !finished, !updateScheduled else { return }
+                updateScheduled = true
+                Task { @MainActor [weak self] in
+                    guard let self else { return }
+                    updateScheduled = false
+                    updatePresentation()
+                }
+            }
+
+            private func updatePresentation() {
+                guard !finished, let anchor, let surface, !isPresenting, !isRecovering else { return }
+                if surface.didFinish {
+                    finished = true
+                    if let controller, controller.presentingViewController != nil {
+                        controller.dismiss(animated: false, completion: surface.close)
+                    } else {
+                        surface.close()
+                    }
+                    return
+                }
+                if let controller {
+                    if surface.needsRecovery, !isInPictureInPicture, controller.presentingViewController != nil {
+                        isRecovering = true
+                        controller.dismiss(animated: false) { [weak self] in
+                            self?.finishRecovery()
+                        }
+                    } else if controller.presentingViewController == nil {
+                        if !isInPictureInPicture {
+                            finishFromNativeDismissal()
+                        }
+                    } else if let store = surface.store, let player = surface.player {
+                        if controller.player !== player {
+                            controller.player = player
+                        }
+                        renderObserver.bind(controller: controller, player: player, store: store)
+                        presentNoticeIfNeeded(on: controller)
+                    }
+                    return
+                }
+
+                guard !surface.needsRecovery, surface.isReady, let store = surface.store,
+                      let player = surface.player, anchor.viewIfLoaded?.window != nil,
+                      let presenter = anchor.parent, presenter.presentedViewController == nil else { return }
+                let playerController = AVPlayerViewController()
+                // Keep the SwiftUI owner mounted while AVKit covers the screen.
+                // It drives queued-item preparation and playback recovery.
+                playerController.modalPresentationStyle = .overFullScreen
+                playerController.modalPresentationCapturesStatusBarAppearance = true
+                playerController.player = player
+                playerController.allowsPictureInPicturePlayback = true
+                playerController.canStartPictureInPictureAutomaticallyFromInline = true
+                // NowPlayingController owns publishing across all Gus video entry points.
+                playerController.updatesNowPlayingInfoCenter = false
+                playerController.delegate = self
+                controller = playerController
+                renderObserver.bind(controller: playerController, player: player, store: store)
+                present(playerController, from: presenter)
+            }
+
+            private func present(_ controller: AVPlayerViewController, from presenter: UIViewController, completion: (() -> Void)? = nil) {
+                isPresenting = true
+                controller.presentationController?.delegate = self
+                presenter.present(controller, animated: false) { [weak self] in
+                    self?.isPresenting = false
+                    completion?()
+                    self?.scheduleUpdate()
+                }
+            }
+
+            private func finishRecovery() {
+                controller?.delegate = nil
+                controller?.player = nil
+                controller = nil
+                displayedNotice = nil
+                renderObserver.cancel()
+                isRecovering = false
+                scheduleUpdate()
+            }
+
+            private func finishFromNativeDismissal() {
+                guard !finished, !isRecovering, !isInPictureInPicture else { return }
+                finished = true
+                surface?.close()
+            }
+
+            private func presentNoticeIfNeeded(on controller: AVPlayerViewController) {
+                guard let surface, let notice = surface.notice, notice != displayedNotice,
+                      controller.viewIfLoaded?.window != nil, controller.presentedViewController == nil else { return }
+                displayedNotice = notice
+                let alert = UIAlertController(title: String(localized: "Playback Notice"), message: notice, preferredStyle: .alert)
+                alert.addAction(UIAlertAction(title: String(localized: "OK"), style: .default) { [weak self] _ in
+                    self?.displayedNotice = nil
+                    surface.dismissNotice()
+                })
+                controller.present(alert, animated: true)
+            }
+
+            func detach() {
+                finished = true
+                let teardown = surface?.teardown
+                surface = nil
+                renderObserver.cancel()
+                if let controller {
+                    controller.delegate = nil
+                    controller.player = nil
+                    self.controller = nil
+                    if controller.presentingViewController != nil, !controller.isBeingDismissed {
+                        controller.dismiss(animated: false)
+                    }
+                }
+                Task { @MainActor in teardown?() }
+            }
+
+            func presentationControllerDidDismiss(_ presentationController: UIPresentationController) {
+                scheduleUpdate()
+            }
+
+            func playerViewController(_ playerViewController: AVPlayerViewController, willEndFullScreenPresentationWithAnimationCoordinator coordinator: any UIViewControllerTransitionCoordinator) {
+                coordinator.animate(alongsideTransition: nil) { [weak self] context in
+                    if !context.isCancelled {
+                        self?.scheduleUpdate()
+                    }
+                }
+            }
+
+            func playerViewControllerShouldAutomaticallyDismissAtPictureInPictureStart(_ playerViewController: AVPlayerViewController) -> Bool {
+                false
+            }
+
+            func playerViewControllerWillStartPictureInPicture(_ playerViewController: AVPlayerViewController) {
+                isInPictureInPicture = true
+            }
+
+            func playerViewController(_ playerViewController: AVPlayerViewController, failedToStartPictureInPictureWithError error: any Error) {
+                isInPictureInPicture = false
+                scheduleUpdate()
+            }
+
+            func playerViewControllerDidStopPictureInPicture(_ playerViewController: AVPlayerViewController) {
+                isInPictureInPicture = false
+                scheduleUpdate()
+            }
+
+            func playerViewController(_ playerViewController: AVPlayerViewController, restoreUserInterfaceForPictureInPictureStopWithCompletionHandler completionHandler: @escaping (Bool) -> Void) {
+                guard !finished, surface?.needsRecovery == false else {
+                    completionHandler(false)
+                    return
+                }
+                if playerViewController.presentingViewController != nil {
+                    completionHandler(true)
+                } else if let anchor, anchor.viewIfLoaded?.window != nil,
+                          let presenter = anchor.parent, presenter.presentedViewController == nil
+                {
+                    present(playerViewController, from: presenter) { completionHandler(true) }
+                } else {
+                    completionHandler(false)
+                }
+            }
         }
     }
 

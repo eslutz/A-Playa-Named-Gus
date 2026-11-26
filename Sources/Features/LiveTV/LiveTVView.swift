@@ -8,6 +8,8 @@ struct LiveTVView: View {
     @State private var store: LiveTVStore?
     @State private var playerItem: ItemRef?
     @State private var section: LiveTVSection = .channels
+    @State private var guideDay: Date?
+    @State private var guideReset = 0
 
     var body: some View {
         Group {
@@ -81,7 +83,13 @@ struct LiveTVView: View {
                     .pickerStyle(.segmented)
                     .padding()
 
-                    sectionContent(store)
+                    if section == .guide {
+                        LiveTVGuideView(store: store, day: $guideDay, reset: $guideReset) { reference in
+                            playerItem = reference
+                        }
+                    } else {
+                        sectionContent(store)
+                    }
                 }
                 .frame(maxWidth: PageContentMetrics.maxWidth)
                 .frame(maxWidth: .infinity)
@@ -93,6 +101,7 @@ struct LiveTVView: View {
         LoadingStateView(state: store.sectionState(section), isEmpty: store.isEmpty(section), emptyTitle: section.emptyTitle, emptySymbol: "antenna.radiowaves.left.and.right", retryAction: { Task { await store.reload(section) } }, preservesContent: true) {
             switch section {
             case .channels: channelList(store)
+            case .guide: EmptyView()
             case .recordings: recordingList(store)
             case .scheduled: timerList(store)
             }
@@ -136,6 +145,15 @@ struct LiveTVView: View {
             .accessibilityElement(children: .ignore)
             .accessibilityLabel(channel.mediaAccessibility.label)
             .accessibilityValue(channel.mediaAccessibility.value)
+            #if os(iOS)
+                .contextMenu {
+                    VideoPlaybackSetupButton(item: channel) { choices in
+                        guard session.isActive, ContentRatingGate.admitsStored(channel) else { return }
+                        let request = choices.applying(to: PlaybackRequest(item: channel))
+                        playerItem = ItemRef(item: channel, serverID: session.server.id, userID: session.user.id, playbackRequest: request)
+                    }
+                }
+            #endif
         }
         .listStyle(.plain)
     }
@@ -211,6 +229,7 @@ struct LiveTVView: View {
 
 enum LiveTVSection: String, CaseIterable, Identifiable {
     case channels
+    case guide
     case recordings
     case scheduled
 
@@ -221,6 +240,7 @@ enum LiveTVSection: String, CaseIterable, Identifiable {
     var emptyTitle: String {
         switch self {
         case .channels: String(localized: "No Channels")
+        case .guide: String(localized: "No Guide Listings")
         case .recordings: String(localized: "No Recordings")
         case .scheduled: String(localized: "No Scheduled Recordings")
         }
@@ -230,6 +250,8 @@ enum LiveTVSection: String, CaseIterable, Identifiable {
         switch self {
         case .channels:
             return String(localized: "Channels", comment: "Live TV section")
+        case .guide:
+            return String(localized: "Guide", comment: "Live TV section")
         case .recordings:
             return String(localized: "Recordings", comment: "Live TV section")
         case .scheduled:
@@ -253,7 +275,9 @@ final class LiveTVStore {
     private(set) var actionStatusMessage: String?
     private(set) var cancellationOutcomes: [String: ActionOutcome] = [:]
 
-    private let session: SessionStore
+    let session: SessionStore
+    let guide = LiveTVGuideStore()
+    private(set) var guideTimers: [LiveTVTimer] = []
     private var generation = 0
     private var sectionGenerations: [LiveTVSection: Int] = [:]
     private var sectionStates: [LiveTVSection: LoadState] = [:]
@@ -263,6 +287,11 @@ final class LiveTVStore {
         self.session = session
     }
 
+    func hasScheduled(_ program: LiveTVGuideProgram) -> Bool {
+        guide.recordingOutcomes[program.id] == .confirmed ||
+            LiveTVRecordingScheduler.hasMatchingTimer(for: program, in: guideTimers)
+    }
+
     func sectionState(_ section: LiveTVSection) -> LoadState {
         sectionStates[section] ?? .idle
     }
@@ -270,6 +299,7 @@ final class LiveTVStore {
     func isEmpty(_ section: LiveTVSection) -> Bool {
         switch section {
         case .channels: channels.isEmpty
+        case .guide: guide.programs.isEmpty
         case .recordings: recordings.isEmpty
         case .scheduled: timers.isEmpty
         }
@@ -300,7 +330,7 @@ final class LiveTVStore {
     }
 
     func reload(_ section: LiveTVSection, superseding: Bool = false) async {
-        guard session.isActive, superseding || sectionState(section) != .loading else { return }
+        guard section != .guide, session.isActive, superseding || sectionState(section) != .loading else { return }
         let request = (sectionGenerations[section] ?? 0) + 1
         sectionGenerations[section] = request
         sectionStates[section] = .loading
@@ -313,6 +343,8 @@ final class LiveTVStore {
                 try Task.checkCancellation()
                 guard sectionGenerations[section] == request, session.isActive else { return }
                 channels = ContentRatingGate.filter(items)
+            case .guide:
+                return
             case .recordings:
                 let items = try await MediaPageLoader.collect { offset, size in
                     try await self.session.mediaProvider.liveTVRecordingsPage(startIndex: offset, limit: size)
@@ -324,6 +356,8 @@ final class LiveTVStore {
                 let items = try await session.mediaProvider.liveTVTimers()
                 try Task.checkCancellation()
                 guard sectionGenerations[section] == request, session.isActive else { return }
+                guideTimers = items
+                guide.reconcile(timers: items)
                 // Jellyfin's timer DTO does not carry a certificate.
                 timers = ContentRatingGate.admitsStored(MediaItem(type: .liveProgram)) ? items : []
                 for (id, outcome) in Array(cancellationOutcomes) where outcome == .accepted || outcome == .uncertain {

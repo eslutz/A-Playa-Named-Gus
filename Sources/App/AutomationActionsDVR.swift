@@ -252,75 +252,18 @@ struct ScheduleGusRecordingIntent: AppIntent {
         guard try await guide.canManageRecordings() else { throw GusError.forbidden }
         try GusIntentRuntime.validate(session)
         guard selected.admitted else { throw GusError.forbidden }
-        let journal = GusRecordingJournal(scope: session.references.scope)
-        let status: GusActionStatus = try await GusAutomationWrite.perform(key: program.id) {
-            if try await isScheduled(selected, in: session) {
-                if try journal.contains(selected.id) {
-                    try journal.set(selected.id, expires: nil)
-                }
-                return .confirmed
-            }
+        let scheduler = LiveTVRecordingScheduler(session: session, guide: guide) {
+            try GusIntentRuntime.validate(session)
+        }
+        let outcome = try await scheduler.schedule(selected) { retry in
             let channel = selected.channelName ?? String(localized: "Unknown Channel")
             let time = selected.start.formatted(date: .abbreviated, time: .shortened)
-            if try journal.contains(selected.id) {
+            if retry {
                 try await requestConfirmation(dialog: "The previous request for \(selected.name) on \(channel) at \(time) is unconfirmed. The DVR currently lists no timer. Send another request?")
             } else {
                 try await requestConfirmation(dialog: "Record \(selected.name) on \(channel) at \(time)?")
             }
-            let current = try await query.resolve(program.id, in: session, guide: guide)
-            guard selected.isSameAiring(as: current) else { throw GusError.server(String(localized: "The airing changed. Choose the program again.")) }
-            if try await isScheduled(current, in: session) {
-                if try journal.contains(current.id) {
-                    try journal.set(current.id, expires: nil)
-                }
-                return .confirmed
-            }
-            var transmitted = false
-            var acknowledged = false
-            do {
-                try await guide.scheduleLiveTVProgram(current) {
-                    try GusIntentRuntime.validate(session)
-                    guard current.admitted else { throw GusError.forbidden }
-                    try journal.set(current.id, expires: current.end)
-                    transmitted = true
-                }
-                acknowledged = true
-            } catch {
-                let failure = GusError(from: error)
-                guard transmitted else { throw failure }
-                if [.forbidden, .unauthorized, .notFound].contains(failure) {
-                    try journal.set(current.id, expires: nil)
-                    throw failure
-                }
-            }
-            try GusIntentRuntime.validate(session)
-            if (try? await isScheduled(current, in: session)) == true {
-                try journal.set(current.id, expires: nil)
-                return .confirmed
-            }
-            try GusIntentRuntime.validate(session)
-            return acknowledged ? .accepted : .uncertain
         }
-        return .result(value: status)
-    }
-
-    @MainActor private func isScheduled(_ program: LiveTVGuideProgram, in session: SessionStore) async throws -> Bool {
-        let timers = try await session.mediaProvider.liveTVTimers()
-        try GusIntentRuntime.validate(session)
-        guard program.admitted else { throw GusError.forbidden }
-        let matches = timers.filter { timer in
-            timer.id == program.timerID || timer.programID.map { Self.sameID($0, program.id) } == true
-        }
-        if matches.contains(where: { $0.activeRecording == true }) {
-            return true
-        }
-        guard program.timerID == nil, matches.allSatisfy({ $0.activeRecording == false }) else {
-            throw GusError.server(String(localized: "The DVR reports an existing recording for this airing. Review the schedule before trying again."))
-        }
-        return false
-    }
-
-    private static func sameID(_ lhs: String, _ rhs: String) -> Bool {
-        lhs == rhs || ServerMediaListID.uuid(lhs).map { $0 == ServerMediaListID.uuid(rhs) } == true
+        return try .result(value: GusActionStatus(outcome))
     }
 }

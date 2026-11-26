@@ -230,6 +230,157 @@ final class GusLaunchUITests: XCTestCase {
             XCTAssertEqual((response as? HTTPURLResponse)?.statusCode, 204)
         }
 
+        func testLiveTVGuideRecordsAndTunes() async throws {
+            continueAfterFailure = false
+            let app = try await launchLiveTVGuide()
+            defer {
+                app.terminate()
+                XCUIDevice.shared.orientation = .portrait
+            }
+            if UIDevice.current.userInterfaceIdiom == .pad {
+                rotate(app, to: .landscapeLeft)
+                let grid = app.descendants(matching: .any).matching(identifier: "LiveTV.guide.grid").firstMatch
+                XCTAssertTrue(grid.waitForExistence(timeout: 10), app.debugDescription)
+            }
+
+            let later = app.buttons["LiveTV.guide.airing.46020000000000000000000000000002"]
+            XCTAssertTrue(later.waitForExistence(timeout: 12), app.debugDescription)
+            later.tap()
+            XCTAssertFalse(app.buttons["LiveTV.guide.watch"].exists)
+            let record = app.buttons["LiveTV.guide.record"]
+            XCTAssertTrue(record.waitForExistence(timeout: 8))
+            record.tap()
+            let confirm = app.alerts["Record Program?"]
+            XCTAssertTrue(confirm.waitForExistence(timeout: 8), app.debugDescription)
+            confirm.buttons["Record"].tap()
+            XCTAssertTrue(app.staticTexts["Scheduled"].waitForExistence(timeout: 8), app.debugDescription)
+            app.navigationBars.buttons["Close"].firstMatch.tap()
+
+            let live = app.buttons["LiveTV.guide.airing.46020000000000000000000000000001"]
+            XCTAssertTrue(live.waitForExistence(timeout: 8))
+            live.tap()
+            let watch = app.buttons["LiveTV.guide.watch"]
+            XCTAssertTrue(watch.waitForExistence(timeout: 8))
+            watch.tap()
+            assertNativeVideoDismissal(in: app, captureName: "live-tv")
+            XCTAssertTrue(live.waitForExistence(timeout: 8), app.debugDescription)
+            XCTAssertTrue(live.isHittable, app.debugDescription)
+            let guide = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+            guide.name = "live-tv-guide"
+            guide.lifetime = .keepAlways
+            add(guide)
+        }
+
+        func testLiveTVGuideViewOnlyAndUnconfirmedRecording() async throws {
+            continueAfterFailure = false
+            let viewer = try await launchLiveTVGuide(username: "live-viewer")
+            defer { viewer.terminate() }
+            let later = viewer.buttons["LiveTV.guide.airing.46020000000000000000000000000002"]
+            XCTAssertTrue(later.waitForExistence(timeout: 12))
+            later.tap()
+            XCTAssertTrue(viewer.navigationBars["Fixture Later"].waitForExistence(timeout: 5))
+            XCTAssertFalse(viewer.buttons["LiveTV.guide.record"].exists)
+            viewer.terminate()
+
+            let app = try await launchLiveTVGuide()
+            defer { app.terminate() }
+            let uncertain = app.buttons["LiveTV.guide.airing.46020000000000000000000000000003"]
+            XCTAssertTrue(uncertain.waitForExistence(timeout: 12))
+            uncertain.tap()
+            let record = app.buttons["LiveTV.guide.record"]
+            XCTAssertTrue(record.waitForExistence(timeout: 8))
+            record.tap()
+            let confirm = app.alerts["Record Program?"]
+            let retry = app.alerts["Retry Recording Request?"]
+            if confirm.waitForExistence(timeout: 5) {
+                confirm.buttons["Record"].tap()
+            } else {
+                XCTAssertTrue(retry.waitForExistence(timeout: 5))
+                retry.buttons["Send Again"].tap()
+            }
+            XCTAssertTrue(app.staticTexts["Recording request accepted. Check the schedule to confirm."].waitForExistence(timeout: 8))
+            record.tap()
+            XCTAssertTrue(retry.waitForExistence(timeout: 8))
+            retry.buttons["Cancel"].tap()
+            XCTAssertTrue(record.isHittable)
+        }
+
+        func testMovieAndRecordingUseFullscreenVideoControls() async throws {
+            continueAfterFailure = false
+            for (id, title) in [
+                ("46010000000000000000000000000003", "movie"),
+                ("46010000000000000000000000000004", "recording"),
+            ] {
+                let app = try await launchLiveTVFixture(route: "item/" + id)
+                defer { app.terminate() }
+                let play = app.buttons["Detail.play"].firstMatch
+                XCTAssertTrue(play.waitForExistence(timeout: 15), app.debugDescription)
+                play.tap()
+                assertNativeVideoDismissal(in: app, captureName: title)
+                XCTAssertTrue(play.waitForExistence(timeout: 8))
+                XCTAssertTrue(play.isHittable)
+            }
+        }
+
+        private func assertNativeVideoDismissal(in app: XCUIApplication, captureName: String) {
+            let close = app.buttons.matching(NSPredicate(format: "label IN %@", ["Close", "Done"])).firstMatch
+            let video = app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", "Video")).firstMatch
+            XCTAssertTrue(video.waitForExistence(timeout: 30), app.debugDescription)
+            let videoBackground = app.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.4))
+            if !close.isHittable {
+                videoBackground.tap()
+            }
+            XCTAssertTrue(close.waitForExistence(timeout: 5), app.debugDescription)
+            XCTAssertTrue(close.isHittable, app.debugDescription)
+            XCTAssertFalse(app.buttons["VideoPlayer.close"].exists)
+            videoScreenshot(captureName + "-controls-visible")
+            videoBackground.tap()
+            let hidden = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in !close.isHittable }, object: nil)
+            XCTAssertEqual(XCTWaiter.wait(for: [hidden], timeout: 7), .completed, app.debugDescription)
+            videoScreenshot(captureName + "-controls-hidden")
+            videoBackground.tap()
+            XCTAssertTrue(close.waitForExistence(timeout: 5), app.debugDescription)
+            XCTAssertTrue(close.isHittable)
+            close.tap()
+            XCTAssertTrue(video.waitForNonExistence(timeout: 8), app.debugDescription)
+        }
+
+        private func videoScreenshot(_ name: String) {
+            let screenshot = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+            screenshot.name = name
+            screenshot.lifetime = .keepAlways
+            add(screenshot)
+        }
+
+        private func launchLiveTVGuide(username: String = "live-dvr") async throws -> XCUIApplication {
+            let app = try await launchLiveTVFixture(username: username, route: "libraries")
+            let library = app.buttons["Live TV"].firstMatch
+            XCTAssertTrue(library.waitForExistence(timeout: 20), app.debugDescription)
+            library.tap()
+            let guide = app.buttons["Guide"].firstMatch
+            XCTAssertTrue(guide.waitForExistence(timeout: 10), app.debugDescription)
+            guide.tap()
+            return app
+        }
+
+        private func launchLiveTVFixture(username: String = "live-dvr", route: String) async throws -> XCUIApplication {
+            let url = URL(string: "http://127.0.0.1:5064")!
+            do {
+                let (data, _) = try await URLSession.shared.data(from: url.appending(path: "health"))
+                guard String(decoding: data, as: UTF8.self).contains("gus-live-tv") else {
+                    throw XCTSkip("Start Scripts/book-details-fixture.py --live-tv with a synthetic HLS stream.")
+                }
+            } catch {
+                throw XCTSkip("Start Scripts/book-details-fixture.py --live-tv with a synthetic HLS stream.")
+            }
+            let app = makeApp()
+            app.launchEnvironment["GUS_DEMO_URL"] = url.absoluteString
+            app.launchEnvironment["GUS_DEMO_USERNAME"] = username
+            app.launchArguments += ["--gus-demo-server", "--gus-disable-cloud-sync", "--gus-intelligence-test-unsupported", "--gus-route", route]
+            app.launch()
+            return app
+        }
+
         func testVideoCanCloseDuringPreparationAndAfterFailure() async throws {
             continueAfterFailure = false
             let base = try await navigationFixture()

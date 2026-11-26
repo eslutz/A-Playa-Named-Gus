@@ -33,6 +33,7 @@ enum MediaCollectionType: String, Codable, Hashable, Sendable {
     case books
     case photos
     case livetv
+    case homevideos
     case unknown
 }
 

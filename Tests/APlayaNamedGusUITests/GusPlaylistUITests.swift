@@ -335,7 +335,7 @@
             continueAfterFailure = false
             executionTimeAllowance = 300
             let app = XCUIApplication()
-            app.launchArguments = ["--gus-skip-session-restore", "--gus-demo-server", "--gus-disable-cloud-sync"]
+            app.launchArguments = ["--gus-skip-session-restore", "--gus-demo-server", "--gus-disable-cloud-sync", "--gus-intelligence-test-unsupported"]
             app.launch()
             openPlaylists(app)
             let name = "Ordered Acceptance " + UUID().uuidString.prefix(8)

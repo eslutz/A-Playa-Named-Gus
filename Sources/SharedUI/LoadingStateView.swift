@@ -7,6 +7,7 @@ struct LoadingStateView<Content: View>: View {
     var isEmpty: Bool = false
     var emptyTitle: String = "Nothing Here Yet"
     var emptySymbol: String = "tray"
+    var emptyArtwork: Image?
     var retryAction: (() -> Void)?
     var preservesContent = false
     @ViewBuilder var content: () -> Content
@@ -55,7 +56,19 @@ struct LoadingStateView<Content: View>: View {
         case .loaded:
             if isEmpty {
                 ContentUnavailableView {
-                    Label(emptyTitle, systemImage: emptySymbol)
+                    if let emptyArtwork {
+                        VStack(spacing: 8) {
+                            emptyArtwork
+                                .resizable()
+                                .aspectRatio(contentMode: .fit)
+                                .frame(maxWidth: 240)
+                                .clipShape(RoundedRectangle(cornerRadius: 12))
+                                .accessibilityHidden(true)
+                            Text(emptyTitle)
+                        }
+                    } else {
+                        Label(emptyTitle, systemImage: emptySymbol)
+                    }
                 }
             } else {
                 content()

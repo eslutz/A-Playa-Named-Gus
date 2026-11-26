@@ -42,6 +42,28 @@ struct SeerrCatalogStoreTests {
         #expect(DailyTrendingSelection(day: today, candidates: [], previous: restored).ids.isEmpty)
     }
 
+    @Test("carousel fill and deadline resume from the same elapsed time and reset on page change")
+    func carouselTiming() {
+        let start = ContinuousClock.now
+        var timing = SeerrCarouselTiming()
+        timing.update(pageID: "first", rotating: true, at: start)
+        #expect(timing.deadline == start.advanced(by: .seconds(7)))
+        #expect(timing.progress(at: start.advanced(by: .milliseconds(3500))) == 0.5)
+
+        timing.update(pageID: "first", rotating: false, at: start.advanced(by: .seconds(3)))
+        let resume = start.advanced(by: .seconds(12))
+        #expect(timing.deadline == nil)
+        #expect(timing.progress(at: resume) == 3.0 / 7.0)
+        timing.update(pageID: "first", rotating: true, at: resume)
+        #expect(timing.deadline == resume.advanced(by: .seconds(4)))
+        #expect(timing.progress(at: resume.advanced(by: .seconds(4))) == 1)
+
+        timing.update(pageID: "next", rotating: false, at: resume.advanced(by: .seconds(4)))
+        #expect(timing.progress(at: resume.advanced(by: .seconds(5))) == 0)
+        timing.update(pageID: "next", rotating: true, at: resume.advanced(by: .seconds(5)))
+        #expect(timing.deadline == resume.advanced(by: .seconds(12)))
+    }
+
     @Test("failed next page retains prior titles, retries that page and deduplicates identities")
     func failedPageRetainsContent() async throws {
         let fixture = try await CatalogStoreFixture(replies: [

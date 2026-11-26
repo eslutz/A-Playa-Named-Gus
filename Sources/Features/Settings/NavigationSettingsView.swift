@@ -74,6 +74,7 @@ struct NavigationSettingsView: View {
 
         ForEach(sections) { section in
             sectionRow(section, in: sections)
+                .accessibilityIdentifier("Navigation.section." + section.id)
         }
         .onMove(perform: moveSections)
         .onDelete(perform: hideSections)
@@ -114,6 +115,17 @@ struct NavigationSettingsView: View {
                     .listRowInsets(EdgeInsets(top: 0, leading: 20, bottom: 0, trailing: 12))
                 } else {
                     navigationRow(section)
+                        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                            Button("Show in Navigation", systemImage: "plus.circle") {
+                                setVisibility(true, for: section)
+                            }
+                            .tint(.green)
+                            .accessibilityIdentifier("Navigation.swipeShow." + section.id)
+                        }
+                        .accessibilityAction(named: Text("Show in Navigation")) {
+                            setVisibility(true, for: section)
+                        }
+                        .accessibilityIdentifier("Navigation.hidden." + section.id)
                 }
             #endif
         }

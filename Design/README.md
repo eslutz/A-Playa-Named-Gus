@@ -105,7 +105,8 @@ picker values. Check the relevant scenarios when designing or revising a flow:
 | --- | --- |
 | Version choice | Eligible multiversion choices; Start Over, Resume at Timestamp, Cancel; single-source default. |
 | Playback choices | Native menu without AVKit overlap; Automatic, Off, explicit/unavailable tracks, Watch and eligible CarPlay choices. |
-| Video dismissal | Native Close above AVKit in preparation, failure and ready states; portrait and landscape safe areas. |
+| Video dismissal | Fullscreen AVKit with system close visible alongside transport and hidden with it. App-owned close remains reachable during preparation and failure. Check portrait, landscape and Picture in Picture return. |
+| Live TV Guide | Channels remains the default. Compare the narrow schedule list and wide timeline with pinned channel and time labels, a current airing, a gap, an upcoming airing and a confirmed recording. |
 | Foreground recovery | Initial failure, retained-content refresh failure, page retry and accepted/uncertain/confirmed cancellation. |
 | Unconfirmed edits | Collection server-state review; partial or canceled transmitted profile save; reload with preserved draft. |
 | Download recovery | Unreadable metadata retry, pause/resume storage failure, recorded version identity and converted-file track limits. |
@@ -123,6 +124,12 @@ distinct. Keep captures and recovery artifacts outside Git. See the
 [behavior and regression guide](../Documentation/behavior-and-regression-guide.md) for current
 behavior and [review comparisons](../Documentation/Reviews/README.md) for the
 local comparison workflow.
+
+## Live TV and fullscreen video handoff
+
+- Start with iPhone **Review / GUS-070 / Live TV** and the iPad **Live TV / Empty** studies. Add paired Light and Dark Guide states for the schedule list, wide timeline, airing details, and recording confirmation. Show a view-only account and an acknowledged request awaiting confirmation.
+- Start with iPhone **Video / Native player / Controls visible**. Compare current channel and on-demand playback with controls shown and hidden, plus preparation and failure with a reachable exit. Use candidate AVKit captures for system chrome and retain the origin screen in dismissal captures.
+- Check canonical file and frame IDs before editing the live Sketch documents. The tracked reference snapshots remain the starting points for this handoff.
 
 ## tvOS design validation
 

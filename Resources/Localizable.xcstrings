@@ -900,6 +900,12 @@
     "For You": {
       "comment": "Search or recommendation label for the current Gus library."
     },
+    "No recommendations yet.": {
+      "comment": "Empty For You shelf after a successful recommendation request"
+    },
+    "Show in Navigation": {
+      "comment": "Swipe action that restores a hidden navigation destination"
+    },
     "For You Unavailable": {
       "comment": "Search or recommendation label for the current Gus library."
     },
@@ -10632,6 +10638,60 @@
           }
         }
       }
+    },
+    "%@, %@, On Now": {
+      "comment": "Accessibility value for channel and time range of a current airing"
+    },
+    "%@, %@, Scheduled": {
+      "comment": "Accessibility value for channel, time range, and recording status"
+    },
+    "Check Recording": {
+      "comment": "Read back a recording request before offering a retry"
+    },
+    "Guide": {
+      "comment": "Live TV section"
+    },
+    "Guide Date": {
+      "comment": "Accessibility label for the Live TV Guide date chooser"
+    },
+    "No Guide Listings": {
+      "comment": "Live TV Guide empty state"
+    },
+    "Now": {
+      "comment": "Jump to the current time in the Live TV Guide"
+    },
+    "On Now": {
+      "comment": "A Live TV Guide airing is currently on"
+    },
+    "Playback Notice": {
+      "comment": "Title of an alert during full-screen video playback"
+    },
+    "Record": {
+      "comment": "Schedule the selected DVR airing"
+    },
+    "Record Program?": {
+      "comment": "DVR recording confirmation title"
+    },
+    "Recording request accepted. Check the schedule to confirm.": {
+      "comment": "DVR accepted a create request and readback has not confirmed it"
+    },
+    "Recording request unconfirmed. Check the schedule before trying again.": {
+      "comment": "The outcome of a transmitted DVR request is unknown"
+    },
+    "Retry Recording Request?": {
+      "comment": "Confirmation title for repeating an uncertain DVR recording request"
+    },
+    "Send Again": {
+      "comment": "Button to repeat an uncertain DVR recording request"
+    },
+    "The DVR currently lists no timer for %@ on %@ at %@. The previous request is still unconfirmed.": {
+      "comment": "Confirmation of an explicit DVR retry after readback"
+    },
+    "The previous recording request is unconfirmed. Review it before trying again.": {
+      "comment": "A previously transmitted recording request still needs review"
+    },
+    "Watch Live": {
+      "comment": "Tune to a live channel from its current airing"
     }
   },
   "version": "1.1"

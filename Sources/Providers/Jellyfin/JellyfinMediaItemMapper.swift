@@ -142,6 +142,8 @@ enum JellyfinMediaItemMapper {
             return .boxsets
         case .livetv:
             return .livetv
+        case .homevideos:
+            return .homevideos
         default:
             return .unknown
         }

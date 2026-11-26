@@ -163,6 +163,78 @@ final class GusAuthenticatedUITests: XCTestCase {
             tapIntelligenceSwitch(restored, expecting: "1")
         }
 
+        func testEnabledForYouLoadsDirectlyOnHomeAfterRelaunch() throws {
+            try prepare()
+            defer { finish() }
+            let args = ["--gus-intelligence-test-local", "--gus-intelligence-test-picks", "--gus-intelligence-test-suite", UUID().uuidString]
+            let settings = launch("settings", arguments: args)
+            let allow = settings.buttons["Intelligence.prompt.allow"]
+            XCTAssertTrue(allow.waitForExistence(timeout: 20))
+            allow.tap()
+            settings.terminate()
+
+            let home = launch("home", arguments: args)
+            let heading = home.staticTexts["ForYou.heading"]
+            XCTAssertTrue(heading.waitForExistence(timeout: 12))
+            XCTAssertEqual(heading.label, "For You")
+            XCTAssertTrue(home.buttons["ForYou.setupAppleTVSync"].waitForExistence(timeout: 20))
+            XCTAssertTrue(heading.exists)
+        }
+
+        func testHiddenPhotoCategorySwipeRestoresAndPersistsNavigation() throws {
+            try prepare()
+            defer { finish() }
+
+            func scrollTo(_ element: XCUIElement, in app: XCUIApplication) {
+                for _ in 0 ..< 8 where !element.isHittable {
+                    app.swipeUp()
+                }
+                for _ in 0 ..< 8 where !element.isHittable {
+                    app.swipeDown()
+                }
+                XCTAssertTrue(element.isHittable)
+            }
+
+            func openNavigation() -> XCUIApplication {
+                let app = launch("settings", arguments: ["--gus-intelligence-test-unsupported"])
+                let link = app.buttons["Navigation"].firstMatch
+                scrollTo(link, in: app)
+                link.tap()
+                XCTAssertTrue(app.buttons["Edit"].waitForExistence(timeout: 10))
+                return app
+            }
+
+            func row(_ id: String, in app: XCUIApplication) -> XCUIElement {
+                app.descendants(matching: .any).matching(identifier: id + ".category.photos").firstMatch
+            }
+
+            let app = openNavigation()
+            let hidden = row("Navigation.hidden", in: app)
+            let visible = row("Navigation.section", in: app)
+            scrollTo(hidden, in: app)
+            hidden.swipeLeft()
+            if hidden.exists, !visible.exists {
+                let action = app.buttons["Navigation.swipeShow.category.photos"]
+                XCTAssertTrue(action.waitForExistence(timeout: 5))
+                action.tap()
+            }
+            XCTAssertTrue(hidden.waitForNonExistence(timeout: 10))
+            scrollTo(visible, in: app)
+
+            app.terminate()
+            let relaunched = openNavigation()
+            let saved = row("Navigation.section", in: relaunched)
+            scrollTo(saved, in: relaunched)
+            saved.swipeLeft()
+            let hiddenAgain = row("Navigation.hidden", in: relaunched)
+            if saved.exists, !hiddenAgain.exists {
+                let hideAction = relaunched.buttons["Delete"].firstMatch
+                XCTAssertTrue(hideAction.waitForExistence(timeout: 5))
+                hideAction.tap()
+            }
+            scrollTo(hiddenAgain, in: relaunched)
+        }
+
         func testSwipingAwayForYouCountsAsNotNow() throws {
             try prepare()
             defer { finish() }
@@ -355,40 +427,56 @@ final class GusAuthenticatedUITests: XCTestCase {
             XCTAssertEqual(field.value as? String, title)
         }
 
-        func testReadyVideoCloseReturnsToDetail() throws {
-            try prepare()
+        func testReadyVideoCloseReturnsToDetail() async throws {
+            continueAfterFailure = false
+            let fixtureURL = try XCTUnwrap(URL(string: "http://127.0.0.1:5064"))
+            guard let (data, _) = try? await URLSession.shared.data(from: fixtureURL.appending(path: "health")),
+                  String(decoding: data, as: UTF8.self).contains("gus-live-tv")
+            else {
+                throw XCTSkip("Start the local synthetic video fixture before checking fullscreen rotation.")
+            }
             defer { finish() }
-            let app = try launch("item/" + required("SynopsisMovie"), arguments: ["--gus-intelligence-test-unsupported"])
-            let restart = app.buttons["Detail.restart"]
-            XCTAssertTrue(restart.waitForExistence(timeout: 30))
-            reveal(restart, in: app)
-            restart.tap()
+            let app = application()
+            app.launchEnvironment["GUS_DEMO_URL"] = fixtureURL.absoluteString
+            app.launchEnvironment["GUS_DEMO_USERNAME"] = "live-viewer"
+            app.launchArguments += ["--gus-skip-session-restore", "--gus-demo-server", "--gus-disable-cloud-sync", "--gus-intelligence-test-unsupported", "--gus-route", "item/46010000000000000000000000000003"]
+            app.launch()
+            let play = app.buttons["Detail.play"]
+            XCTAssertTrue(play.waitForExistence(timeout: 20), app.debugDescription)
+            reveal(play, in: app)
+            play.tap()
 
             let video = app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", "Video")).firstMatch
             XCTAssertTrue(video.waitForExistence(timeout: 45), app.debugDescription)
+            let videoBackground = app.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.4))
             let transport = app.buttons["Play/Pause"]
-            if !transport.waitForExistence(timeout: 2) {
-                video.tap()
+            let close = app.buttons.matching(NSPredicate(
+                format: "label IN %@ AND identifier != %@", ["Close", "Done"], "ContentLink.detailDone"
+            )).firstMatch
+            if !close.isHittable {
+                videoBackground.tap()
             }
-            XCTAssertTrue(transport.waitForExistence(timeout: 5), app.debugDescription)
-            if transport.label == "Pause" {
-                // Keep the short rights-cleared fixture on its actual ready
-                // surface while checking Close and rotating the viewport.
-                transport.tap()
-            }
-
-            let close = app.buttons["VideoPlayer.close"]
-            XCTAssertTrue(close.waitForExistence(timeout: 5))
-            XCTAssertTrue(close.isHittable)
-            XCTAssertEqual(app.buttons.matching(identifier: "VideoPlayer.close").count, 1)
-            XCTAssertGreaterThanOrEqual(close.frame.width, 44)
-            XCTAssertGreaterThanOrEqual(close.frame.height, 44)
+            let visible = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in close.isHittable }, object: nil)
+            XCTAssertEqual(XCTWaiter.wait(for: [visible], timeout: 5), .completed, app.debugDescription)
+            XCTAssertFalse(app.buttons["VideoPlayer.close"].exists)
             capture(app, "ready-video-close")
+
+            videoBackground.tap()
+            let hidden = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+                !close.isHittable && !transport.isHittable
+            }, object: nil)
+            XCTAssertEqual(XCTWaiter.wait(for: [hidden], timeout: 6), .completed, app.debugDescription)
+            capture(app, "ready-video-controls-hidden")
 
             rotateToLandscape(app)
             XCTAssertTrue(video.waitForExistence(timeout: 10))
+            if !close.isHittable {
+                videoBackground.tap()
+            }
+            XCTAssertTrue(close.waitForExistence(timeout: 5), app.debugDescription)
             XCTAssertTrue(close.isHittable)
-            XCTAssertGreaterThanOrEqual(video.frame.minY, close.frame.maxY - 1)
+            XCTAssertFalse(app.buttons["VideoPlayer.close"].exists)
+            XCTAssertEqual(video.frame.midY, app.frame.midY, accuracy: 10)
             capture(app, "ready-video-close-landscape")
             close.tap()
             let returned = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
@@ -570,6 +658,43 @@ final class GusAuthenticatedUITests: XCTestCase {
 
     #endif
 
+    #if os(macOS) || os(visionOS)
+        func testLiveTVGuideOpensCurrentAiring() throws {
+            continueAfterFailure = false
+            let app = XCUIApplication()
+            app.launchEnvironment["GUS_DEMO_URL"] = "http://127.0.0.1:5064"
+            app.launchEnvironment["GUS_DEMO_USERNAME"] = "live-viewer"
+            app.launchArguments = ["-ApplePersistenceIgnoreState", "YES", "--gus-skip-session-restore", "--gus-demo-server", "--gus-disable-cloud-sync", "--gus-intelligence-test-unsupported", "--gus-route", "libraries"]
+            app.launch()
+
+            let libraries = app.buttons.matching(NSPredicate(format: "label == %@", "Live TV"))
+            let libraryReady = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+                libraries.allElementsBoundByAccessibilityElement.contains(where: \.isHittable)
+            }, object: nil)
+            XCTAssertEqual(XCTWaiter.wait(for: [libraryReady], timeout: 25), .completed, app.debugDescription)
+            let library = try XCTUnwrap(libraries.allElementsBoundByAccessibilityElement.first(where: \.isHittable))
+            let guide = app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", "Guide")).firstMatch
+            #if os(macOS)
+                library.click()
+                XCTAssertTrue(guide.waitForExistence(timeout: 10), app.debugDescription)
+                guide.click()
+            #else
+                library.tap()
+                XCTAssertTrue(guide.waitForExistence(timeout: 10), app.debugDescription)
+                guide.tap()
+            #endif
+            let currentAiring = app.buttons["LiveTV.guide.airing.46020000000000000000000000000001"].firstMatch
+            XCTAssertTrue(currentAiring.waitForExistence(timeout: 15), app.debugDescription)
+            #if os(macOS)
+                currentAiring.click()
+            #else
+                currentAiring.tap()
+            #endif
+            XCTAssertTrue(app.buttons["LiveTV.guide.watch"].waitForExistence(timeout: 8), app.debugDescription)
+            XCTAssertFalse(app.buttons["LiveTV.guide.record"].exists)
+        }
+    #endif
+
     func testLoadedDetailLayouts() throws {
         try prepare()
         defer { finish() }
@@ -657,6 +782,28 @@ final class GusAuthenticatedUITests: XCTestCase {
     #endif
 
     #if os(tvOS)
+        func testTVLiveGuideAiringFocus() throws {
+            continueAfterFailure = false
+            let app = XCUIApplication()
+            app.launchEnvironment["GUS_DEMO_URL"] = "http://127.0.0.1:5064"
+            app.launchEnvironment["GUS_DEMO_USERNAME"] = "live-viewer"
+            app.launchArguments += ["--gus-skip-session-restore", "--gus-demo-server", "--gus-disable-cloud-sync", "--gus-route", "libraries"]
+            app.launch()
+            defer { app.terminate() }
+
+            try focusTV(app, label: "Live TV")
+            XCUIRemote.shared.press(.select)
+            try focusTV(app, label: "Guide")
+            XCUIRemote.shared.press(.select)
+            let currentAiring = "LiveTV.guide.airing.46020000000000000000000000000001"
+            try focusTV(app, identifier: currentAiring)
+            XCUIRemote.shared.press(.select)
+            XCTAssertTrue(app.buttons["LiveTV.guide.watch"].waitForExistence(timeout: 10), app.debugDescription)
+            XCTAssertFalse(app.buttons["LiveTV.guide.record"].exists)
+            XCUIRemote.shared.press(.menu)
+            try focusTV(app, identifier: "LiveTV.guide.airing.46020000000000000000000000000002")
+        }
+
         func testTVSyncSettingsFromRemote() throws {
             try prepare()
             defer { finish() }
