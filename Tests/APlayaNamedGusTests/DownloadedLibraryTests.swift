@@ -256,6 +256,47 @@ struct OfflinePlaybackProgressTests {
         #expect(store.positionTicks(forItemID: "movie", scope: scope) == 200)
     }
 
+    @Test("A book status update waits for an in-flight upload and prevents stale writes")
+    func statusUpdateOrdersCheckpointUploads() async {
+        let directory = makeDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let store = OfflinePlaybackProgressStore(directory: directory)
+        store.checkpoint(itemID: "book", positionTicks: 20, scope: scope)
+        let (uploads, uploadStarted) = AsyncStream<Void>.makeStream()
+        let (signals, releaseUpload) = AsyncStream<Void>.makeStream()
+        var order: [String] = []
+        let sync = Task {
+            await store.sync(scope: scope, isCurrentScope: { true }) { _ in
+                uploadStarted.yield(())
+                var iterator = signals.makeAsyncIterator()
+                _ = await iterator.next()
+                order.append("upload")
+            }
+        }
+        var started = uploads.makeAsyncIterator()
+        _ = await started.next()
+
+        let status = Task {
+            let acquired = await store.beginStatusUpdate(itemID: "book", scope: scope)
+            #expect(acquired)
+            order.append("reset")
+            store.resetCheckpoint(itemID: "book", scope: scope)
+            store.endStatusUpdate(itemID: "book", scope: scope)
+        }
+        while store.acceptsCheckpoint(itemID: "book", scope: scope), !Task.isCancelled {
+            await Task.yield()
+        }
+        #expect(order.isEmpty)
+        store.checkpoint(itemID: "book", positionTicks: 25, scope: scope)
+        #expect(store.positionTicks(forItemID: "book", scope: scope) == 20)
+        releaseUpload.yield(())
+        await sync.value
+        await status.value
+        #expect(order == ["upload", "reset"])
+        #expect(store.pendingCheckpoints(scope: scope).isEmpty)
+        #expect(store.hasResetCheckpoint(itemID: "book", scope: scope))
+    }
+
     @Test("Different cuts retain separate positions and only the latest cut uploads item progress")
     func sourceSpecificCheckpoints() async {
         let directory = makeDirectory()

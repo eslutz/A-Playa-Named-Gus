@@ -4,6 +4,10 @@
     "Actor": {
       "comment": "Video schema display label for Siri and Shortcuts."
     },
+    "Animate Page Turns": {
+      "comment": "In-app book reader controls and settings",
+      "extractionState": "manual"
+    },
     "Artwork": {
       "comment": "Video schema display label for Siri and Shortcuts."
     },
@@ -16,11 +20,31 @@
     "Executive Producer": {
       "comment": "Video schema display label for Siri and Shortcuts."
     },
+    "Fit Page": {
+      "comment": "In-app book reader controls and settings",
+      "extractionState": "manual"
+    },
+    "Fit Width": {
+      "comment": "In-app book reader controls and settings",
+      "extractionState": "manual"
+    },
+    "Font": {
+      "comment": "In-app book reader controls and settings",
+      "extractionState": "manual"
+    },
     "Headshot": {
       "comment": "Video schema display label for Siri and Shortcuts."
     },
     "Hero Image": {
       "comment": "Video schema display label for Siri and Shortcuts."
+    },
+    "Hide Reading Controls": {
+      "comment": "In-app book reader controls and settings",
+      "extractionState": "manual"
+    },
+    "Line Spacing": {
+      "comment": "In-app book reader controls and settings",
+      "extractionState": "manual"
     },
     "Logo": {
       "comment": "Video schema display label for Siri and Shortcuts."
@@ -28,14 +52,98 @@
     "Long Form": {
       "comment": "Video schema display label for Siri and Shortcuts."
     },
+    "Page %lld of %lld": {
+      "comment": "In-app book reader controls and settings",
+      "extractionState": "manual"
+    },
+    "Page Appearance": {
+      "comment": "In-app book reader controls and settings",
+      "extractionState": "manual"
+    },
+    "Page Fit": {
+      "comment": "In-app book reader controls and settings",
+      "extractionState": "manual"
+    },
+    "Page Margins": {
+      "comment": "In-app book reader controls and settings",
+      "extractionState": "manual"
+    },
+    "Page Spread": {
+      "comment": "In-app book reader controls and settings",
+      "extractionState": "manual"
+    },
+    "Page Turns": {
+      "comment": "In-app book reader controls and settings",
+      "extractionState": "manual"
+    },
+    "Position %lld of %lld": {
+      "comment": "In-app book reader controls and settings",
+      "extractionState": "manual"
+    },
     "Poster": {
       "comment": "Video schema display label for Siri and Shortcuts."
     },
     "Producer": {
       "comment": "Video schema display label for Siri and Shortcuts."
     },
+    "Publisher Default": {
+      "comment": "In-app book reader controls and settings",
+      "extractionState": "manual"
+    },
+    "Reading Mode": {
+      "comment": "In-app book reader controls and settings",
+      "extractionState": "manual"
+    },
+    "Reading Settings": {
+      "comment": "In-app book reader controls and settings",
+      "extractionState": "manual"
+    },
+    "Reset to Defaults": {
+      "comment": "In-app book reader controls and settings",
+      "extractionState": "manual"
+    },
+    "Sans Serif": {
+      "comment": "In-app book reader controls and settings",
+      "extractionState": "manual"
+    },
+    "Sepia": {
+      "comment": "In-app book reader controls and settings",
+      "extractionState": "manual"
+    },
+    "Serif": {
+      "comment": "In-app book reader controls and settings",
+      "extractionState": "manual"
+    },
     "Short Form": {
       "comment": "Video schema display label for Siri and Shortcuts."
+    },
+    "Show Reading Controls": {
+      "comment": "In-app book reader controls and settings",
+      "extractionState": "manual"
+    },
+    "Single Page": {
+      "comment": "In-app book reader controls and settings",
+      "extractionState": "manual"
+    },
+    "Text Size": {
+      "comment": "In-app book reader controls and settings",
+      "extractionState": "manual"
+    },
+    "Turn off publisher styling to adjust line spacing.": {
+      "comment": "In-app book reader controls and settings",
+      "extractionState": "manual"
+    },
+    "Two Pages": {
+      "comment": "In-app book reader controls and settings",
+      "extractionState": "manual"
+    },
+    "Use Publisher Styling": {
+      "comment": "In-app book reader controls and settings",
+      "extractionState": "manual"
+    },
+    "Vertical Scrolling": {
+      "comment": "In-app book reader controls and settings",
+      "extractionState": "manual"
     },
     "Wide Poster": {
       "comment": "Video schema display label for Siri and Shortcuts."

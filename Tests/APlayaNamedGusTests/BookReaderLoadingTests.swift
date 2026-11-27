@@ -9,6 +9,28 @@
     @MainActor
     @Suite("EPUB loading and resume")
     struct BookReaderLoadingTests {
+        @Test("appearance is account-scoped and reset restores animated turns")
+        func readingPreferences() throws {
+            let suite = "GusReaderPreferences-\(UUID().uuidString)"
+            let defaults = try #require(UserDefaults(suiteName: suite))
+            defer { defaults.removePersistentDomain(forName: suite) }
+            let scope = AccountScope(serverID: "server", userID: "reader")
+            let other = AccountScope(serverID: "server", userID: "other")
+            var edited = EPUBReaderPreferences.load(scope: scope, defaults: defaults)
+            #expect(edited.animatePageTurns)
+            edited.animatePageTurns = false
+            edited.appearance.fontSize = 1.4
+            edited.appearance.lineHeight = 1.5
+            #expect(edited.effectivePreferences.lineHeight == nil)
+            edited.appearance.publisherStyles = false
+            #expect(edited.effectivePreferences.lineHeight == 1.5)
+            edited.save(scope: scope, defaults: defaults)
+            #expect(EPUBReaderPreferences.load(scope: scope, defaults: defaults) == edited)
+            #expect(EPUBReaderPreferences.load(scope: other, defaults: defaults) == EPUBReaderPreferences())
+            EPUBReaderPreferences().save(scope: scope, defaults: defaults)
+            #expect(EPUBReaderPreferences.load(scope: scope, defaults: defaults).animatePageTurns)
+        }
+
         @Test("concurrent readers own separate publications and load chapters")
         func independentPublications() async throws {
             let url = try fixtureURL()

@@ -27,6 +27,9 @@ final class OfflinePlaybackProgressStore {
     private(set) var revision = 0
     private var checkpoints: [String: Checkpoint] = [:]
     private var syncingScopes: Set<AccountScope> = []
+    private var activeUploads: Set<String> = []
+    private var statusUpdates: Set<String> = []
+    private var uploadWaiters: [String: CheckedContinuation<Void, Never>] = [:]
     private var writerTokens: [AccountScope: UUID] = [:]
     // Ephemeral receipts distinguish actual player checkpoints from sync/reference edits.
     // They share the writer-token purge lifetime and never enter the persisted format.
@@ -68,6 +71,7 @@ final class OfflinePlaybackProgressStore {
     }
 
     func checkpoint(itemID: String, positionTicks: Int, scope: AccountScope, writerToken token: UUID? = nil, item: MediaItem? = nil, mediaSourceID: String? = nil) {
+        guard acceptsCheckpoint(itemID: itemID, scope: scope) else { return }
         if let token, token != writerToken(for: scope) {
             return
         }
@@ -84,6 +88,30 @@ final class OfflinePlaybackProgressStore {
         playbackGenerations[key(itemID: itemID, scope: scope, mediaSourceID: mediaSourceID)] = UUID()
         persist()
         revision += 1
+    }
+
+    func acceptsCheckpoint(itemID: String, scope: AccountScope) -> Bool {
+        !statusUpdates.contains(key(itemID: itemID, scope: scope))
+    }
+
+    func hasResetCheckpoint(itemID: String, scope: AccountScope, mediaSourceID: String? = nil) -> Bool {
+        let checkpoint = checkpoints[key(itemID: itemID, scope: scope, mediaSourceID: mediaSourceID)]
+        return checkpoint?.positionTicks == 0 && checkpoint?.recordedAt == nil
+    }
+
+    /// Prevent a queued upload from following a status write. If a request has
+    /// already started, let it finish before sending the new position.
+    func beginStatusUpdate(itemID: String, scope: AccountScope) async -> Bool {
+        let itemKey = key(itemID: itemID, scope: scope)
+        guard statusUpdates.insert(itemKey).inserted else { return false }
+        if activeUploads.contains(itemKey) {
+            await withCheckedContinuation { uploadWaiters[itemKey] = $0 }
+        }
+        return true
+    }
+
+    func endStatusUpdate(itemID: String, scope: AccountScope) {
+        statusUpdates.remove(key(itemID: itemID, scope: scope))
     }
 
     func pendingCheckpoints(scope: AccountScope) -> [Checkpoint] {
@@ -125,6 +153,13 @@ final class OfflinePlaybackProgressStore {
             let checkpointKey = key(itemID: snapshot.itemID, scope: scope, mediaSourceID: snapshot.mediaSourceID)
             // A checkpoint may have changed while another item was being uploaded.
             guard let entry = checkpoints[checkpointKey], entry.needsSync, entry.blockedReason == nil else { continue }
+            let itemKey = key(itemID: entry.itemID, scope: scope)
+            guard !statusUpdates.contains(itemKey) else { continue }
+            activeUploads.insert(itemKey)
+            defer {
+                activeUploads.remove(itemKey)
+                uploadWaiters.removeValue(forKey: itemKey)?.resume()
+            }
             do {
                 try await upload(entry)
                 guard !Task.isCancelled, isCurrentScope() else { return }

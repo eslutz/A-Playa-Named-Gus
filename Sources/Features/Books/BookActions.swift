@@ -230,3 +230,58 @@ struct BookDetailProgressBar: View {
         .accessibilityIdentifier("Detail.bookProgress")
     }
 }
+
+/// Values are supplied by the actual reading surface, independently of resume sync.
+struct ReaderProgress: Equatable {
+    var fraction: Double?
+    var current: Int?
+    var total: Int?
+    var usesPositions = false
+    var atEnd = false
+
+    var displayedFraction: Double? {
+        if atEnd {
+            return 1
+        }
+        guard let fraction, fraction.isFinite else { return nil }
+        return min(0.99, max(0, fraction))
+    }
+
+    var locationLabel: LocalizedStringKey? {
+        guard let current, let total, current > 0, current <= total else { return nil }
+        return usesPositions ? "Position \(current) of \(total)" : "Page \(current) of \(total)"
+    }
+}
+
+struct ReaderProgressFooter: View {
+    let progress: ReaderProgress
+
+    var body: some View {
+        if progress.displayedFraction != nil || progress.locationLabel != nil {
+            VStack(spacing: 5) {
+                HStack {
+                    if let locationLabel = progress.locationLabel {
+                        Text(locationLabel)
+                    }
+                    Spacer()
+                    if let fraction = progress.displayedFraction {
+                        Text(fraction.formatted(.percent.precision(.fractionLength(0))))
+                    }
+                }
+                .font(.caption.monospacedDigit())
+                if let fraction = progress.displayedFraction {
+                    ProgressView(value: fraction)
+                        .accessibilityHidden(true)
+                }
+            }
+            .accessibilityElement(children: .combine)
+            .accessibilityIdentifier("BookReader.progress")
+            .padding(.horizontal)
+            .padding(.vertical, 8)
+            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
+            .padding(.horizontal)
+            .padding(.bottom, 6)
+            .allowsHitTesting(false)
+        }
+    }
+}

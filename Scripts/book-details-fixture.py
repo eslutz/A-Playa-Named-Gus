@@ -55,6 +55,20 @@ class Handler(BaseHTTPRequestHandler):
     server_id = SERVER
     version = "10.11.11"
     items = ITEMS
+    book_status_lock = Lock()
+
+    def update_book_status(self, item_id, *, position=None, played=None):
+        with self.book_status_lock:
+            item = next((item for item in self.items if item["Id"] == item_id), None)
+            if item is None:
+                return self.respond({}, 404)
+            data = item.setdefault("UserData", {})
+            if position is not None:
+                data["PlaybackPositionTicks"] = position
+                data["PlayedPercentage"] = 100 * position / item["RunTimeTicks"]
+            if played is not None:
+                data["Played"] = played
+            return self.respond(dict(data))
 
     def respond(self, response, status=200):
         data = b"" if status == 204 else json.dumps(response).encode()
@@ -69,7 +83,19 @@ class Handler(BaseHTTPRequestHandler):
             self.rfile.read(int(self.headers.get("Content-Length", 0)))
             self.respond({"User": self.user, "AccessToken": "gus-book-fixture", "ServerId": self.server_id})
         else:
+            parts = urlsplit(self.path).path.strip("/").split("/")
+            if len(parts) == 3 and parts[0] == "UserItems" and parts[2] == "UserData":
+                body = json.loads(self.rfile.read(int(self.headers.get("Content-Length", 0))) or "{}")
+                return self.update_book_status(parts[1], position=body.get("PlaybackPositionTicks"))
+            if len(parts) == 2 and parts[0] == "UserPlayedItems":
+                return self.update_book_status(parts[1], played=True)
             self.respond({}, 404)
+
+    def do_DELETE(self):
+        parts = urlsplit(self.path).path.strip("/").split("/")
+        if len(parts) == 2 and parts[0] == "UserPlayedItems":
+            return self.update_book_status(parts[1], played=False)
+        self.respond({}, 404)
 
     def do_GET(self):
         url = urlsplit(self.path)

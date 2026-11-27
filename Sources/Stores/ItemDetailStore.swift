@@ -187,6 +187,19 @@ final class ItemDetailStore {
             guard session.isActive else { return }
             item = refreshed
             guard let id = item.id, ContentRatingGate.admitsStored(item) else { throw GusError.notFound }
+            let scope = session.references.scope
+            let serializesProgress = item.isBookFormat
+            if serializesProgress, !(await localProgress.beginStatusUpdate(itemID: id, scope: scope)) {
+                actionOutcome = nil
+                return
+            }
+            defer {
+                if serializesProgress {
+                    localProgress.endStatusUpdate(itemID: id, scope: scope)
+                }
+            }
+            try Task.checkCancellation()
+            guard session.isActive else { return }
             expectedWatched = watched
             expectedFavorite = nil
             needsUserDataRefresh = true
@@ -283,7 +296,9 @@ final class ItemDetailStore {
         try Task.checkCancellation()
         guard session.isActive else { throw GusError.cancelled }
         item = refreshed
-        let matches = (expectedWatched == nil || expectedWatched == item.userData?.isWatched)
+        let bookPositionConfirmed = !item.isBookFormat || expectedWatched == nil || (item.userData?.playbackPositionTicks ?? 0) == 0
+        let matches = bookPositionConfirmed
+            && (expectedWatched == nil || expectedWatched == item.userData?.isWatched)
             && (expectedFavorite == nil || expectedFavorite == item.userData?.isFavorite)
         guard matches else {
             needsUserDataRefresh = true

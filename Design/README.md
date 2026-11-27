@@ -117,6 +117,7 @@ picker values. Check the relevant scenarios when designing or revising a flow:
 | Audio collection | Ordered continuation, complete Shuffle progress/cancel/retry, disabled unavailable transport. |
 | Browsing context | Resume-aligned seasons/episodes, latest-feed expansion, Back/resize/focus restoration. |
 | Artwork and semantics | Role-specific missing/stale artwork, stable bounds, full episode identity and status, larger text and RTL. |
+| Reader controls | Start from iPhone **Books / Reader / Light** and **Dark**, and iPad **Books / Reader / Light / Landscape** and **Dark / Landscape**. Show the book with Close, Chapters, and Aa above it, plus location and whole-book progress at the bottom. Pair each appearance with the controls hidden. Use the native reading settings sheet for typography, page appearance, and navigation. |
 | Reader recovery | Navigator construction failure, resource retry or continue reading, last valid locator retained. |
 | Native previews | Compatible HLS scrubber preview, tvOS chapters with deferred/missing art, unsupported JPEG trickplay. |
 

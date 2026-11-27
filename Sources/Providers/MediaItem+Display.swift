@@ -366,7 +366,11 @@ extension MediaItem {
     }
 
     var completionActionTitle: String {
-        let finished = userData?.isWatched == true
+        completionActionTitle(markingComplete: userData?.isWatched != true)
+    }
+
+    func completionActionTitle(markingComplete: Bool) -> String {
+        let finished = !markingComplete
         switch type {
         case .book: return finished ? String(localized: "Mark as Unread") : String(localized: "Mark as Read")
         case .audioBook: return finished ? String(localized: "Mark as Unfinished") : String(localized: "Mark as Finished")
