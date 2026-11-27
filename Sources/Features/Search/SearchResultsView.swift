@@ -12,7 +12,7 @@ struct RecentSearchesView: View {
             ContentUnavailableView("Search Library", systemImage: "magnifyingglass")
         } else {
             List {
-                Section("Recent Searches") {
+                Section {
                     ForEach(entries) { entry in
                         Button { onSelect(entry) } label: {
                             switch entry {
@@ -45,10 +45,26 @@ struct RecentSearchesView: View {
                             history.remove(entries[index])
                         }
                     }
+                } header: {
+                    Text("Recent Searches")
+                } footer: {
+                    #if os(visionOS)
+                        Button("Clear Search History") { confirmsClear = true }
+                            .buttonStyle(.bordered)
+                            .accessibilityIdentifier("Search.clearRecent")
+                            .padding(.top, ContentSpacing.group)
+                    #endif
                 }
-                Button("Clear Search History", role: .destructive) { confirmsClear = true }
-                    .accessibilityIdentifier("Search.clearRecent")
+                #if !os(visionOS)
+                    Button("Clear Search History", role: .destructive) { confirmsClear = true }
+                        .accessibilityIdentifier("Search.clearRecent")
+                #endif
             }
+            #if os(visionOS)
+            .frame(maxWidth: 560)
+            .padding(.horizontal, ContentSpacing.section)
+            .frame(maxWidth: .infinity)
+            #endif
             .alert("Clear Search History?", isPresented: $confirmsClear) {
                 Button("Cancel", role: .cancel) {}
                 Button("Clear Search History", role: .destructive) { history.clear() }

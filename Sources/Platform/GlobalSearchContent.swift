@@ -19,7 +19,7 @@ struct GlobalSearchContent: View {
     @ViewBuilder private var fieldContainer: some View {
         #if os(iOS)
             if !DeviceIdentity.usesIPadPresentation || widthClass == .compact {
-                // The role-based iPhone tab hosts its own native search field.
+                // The compact tab view provides the native search field.
                 GlobalSearchResultsContent()
             } else {
                 searchableResults

@@ -4,7 +4,7 @@ iPad uses the shared media-provider sessions, Seerr client, navigation state, an
 
 ## Presentation and state ownership
 
-- The regular-width split view provides the system sidebar toggle and a dedicated Search destination. Each section retains its value-based navigation path across layout changes. The signed-in session owns the query, per-library layout, photo-album selection and scroll state. Compact windows use tab navigation. Accessibility text defaults to the detail pane.
+- The regular-width split view provides the system sidebar toggle and a dedicated Search destination. Each section retains its value-based navigation path across layout changes. The signed-in session owns the query, per-library layout, photo-album selection and scroll state. Compact windows use tab navigation with a separate Search button. Accessibility text defaults to the detail pane.
 - Ordinary media details push into the selected section, including external item links. Photos, Reader and Now Playing use the stable session cover above adaptive layout changes and provide a system Close action. Closing prepared audio returns to the persistent accessory without stopping playback.
 - Music separates album browsing and artists when width and text size permit. Albums show the full cover, details and playback controls above the track list. Video backdrops fade into the title. Every detail synopsis exposes Show More when its preview is clipped. Narrow windows and accessibility text stack covers above their details.
 - Request creation, profile editing, chapter selection and queue selection remain focused sheets. From a confirmed iPad request, View My Requests leaves the task sheet and pushes history in the main content stack.

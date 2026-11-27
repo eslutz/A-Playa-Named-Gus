@@ -234,13 +234,6 @@ private struct TabRootView: View {
                 state.selectMoreTab(overflowIDs: overflow.map(\.id))
             } else {
                 state.selectSection(id)
-                #if os(iOS)
-                    if id == RootNavigationState.searchID, state.paths[id, default: []].isEmpty,
-                       state.globalSearch.text.isEmpty, session.searchHistory.entries.isEmpty
-                    {
-                        state.globalSearch.typed.isPresented = true
-                    }
-                #endif
             }
         })
     }
@@ -264,22 +257,22 @@ private struct TabRootView: View {
                     Label("More", systemImage: "ellipsis")
                 }
             }
-            #if os(iOS)
+            #if os(iOS) || os(visionOS)
                 Tab(value: RootNavigationState.searchID, role: .search) {
-                    SectionStack(sectionID: RootNavigationState.searchID)
-                        .searchable(
-                            text: Binding(get: { state.globalSearch.text }, set: { state.editSearchText($0, naturalSearchEnabled: session.intelligenceAccess.usesNaturalSearch) }),
-                            isPresented: Bindable(state.globalSearch.typed).isPresented,
-                            prompt: "Search Library"
-                        )
-                        .modifier(LibrarySearchFieldBehavior(search: state.globalSearch))
-                }
-            #elseif os(visionOS)
-                Tab("Search", systemImage: "magnifyingglass", value: RootNavigationState.searchID) {
                     SectionStack(sectionID: RootNavigationState.searchID)
                 }
             #endif
         }
+        #if os(iOS)
+        // Attach search to the tab view so the system can present the Search tab as a separate button.
+        .searchable(
+            text: Binding(get: { state.globalSearch.text }, set: { state.editSearchText($0, naturalSearchEnabled: session.intelligenceAccess.usesNaturalSearch) }),
+            isPresented: Bindable(state.globalSearch.typed).isPresented,
+            prompt: "Search Library"
+        )
+        .tabViewSearchActivation(.searchTabSelection)
+        .modifier(LibrarySearchFieldBehavior(search: state.globalSearch))
+        #endif
         .onChange(of: configuration, initial: true) { _, config in
             state.reconcileTabSelection(sectionIDs: config.sectionIDs, overflowIDs: config.overflowIDs, librariesLoaded: config.librariesLoaded)
         }
