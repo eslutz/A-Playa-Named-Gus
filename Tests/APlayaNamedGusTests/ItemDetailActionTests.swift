@@ -206,6 +206,62 @@ struct ItemDetailActionTests {
         #expect(BookDetailProgress.reading(locator: nil, localTicks: progress.positionTicks(forItemID: "book", scope: scope), data: remote.userData) == nil)
     }
 
+    @Test(
+        "book status actions reset all sources from any starting state",
+        arguments: [MediaItemType.book, .audioBook],
+        [0, 1, 2]
+    )
+    @MainActor
+    func bookStatusActions(type: MediaItemType, startingState: Int) async throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let progress = OfflinePlaybackProgressStore(directory: directory)
+        let bookProgress = BookProgressStore(directory: directory)
+        let scope = AccountScope(serverID: "s", userID: "u")
+        let otherScope = AccountScope(serverID: "s", userID: "other")
+        let url = try #require(URL(string: "https://example.invalid"))
+        let provider = FakeMediaProviderSession(capabilities: ProviderCapabilities())
+        let session = SessionStore(
+            client: JellyfinClientFactory.makeClient(url: url),
+            user: StoredUser(id: scope.userID, name: "User", serverID: scope.serverID),
+            server: ServerConnection(id: scope.serverID, name: "Server", url: url),
+            mediaProvider: provider
+        )
+        let initialTicks = startingState == 1 ? 40 : 0
+        var remote = MediaItem(id: "title", type: type, userData: MediaUserData(playbackPositionTicks: initialTicks, isWatched: startingState == 2))
+        provider.itemHandler = { _ in remote }
+        provider.progressHandler = { _, ticks in remote.userData?.playbackPositionTicks = ticks }
+        provider.watchedHandler = {
+            remote.userData?.isWatched = provider.watchedRequests.last?.currentlyWatched == false
+        }
+
+        for complete in [false, true] {
+            remote.userData?.isWatched = startingState == 2
+            remote.userData?.playbackPositionTicks = initialTicks
+            let locator = #"{"locations":{"totalProgression":0.4}}"#
+            if initialTicks > 0 {
+                progress.checkpoint(itemID: "title", positionTicks: initialTicks, scope: scope, mediaSourceID: "alternate")
+                if type == .book {
+                    bookProgress.save(locatorJSON: locator, forItemID: "title", scope: scope)
+                }
+            }
+            progress.checkpoint(itemID: "title", positionTicks: 60, scope: otherScope)
+
+            let store = ItemDetailStore(item: remote, session: session)
+            await store.setWatched(complete, localProgress: progress, bookProgress: bookProgress)
+            #expect(store.actionOutcome == .confirmed)
+            #expect(remote.userData?.isWatched == complete)
+            #expect(remote.userData?.playbackPositionTicks == 0)
+            #expect(bookProgress.locatorJSON(forItemID: "title", scope: scope) == nil)
+            #expect(progress.pendingCheckpoints(scope: scope).isEmpty)
+            #expect(progress.hasResetCheckpoint(itemID: "title", scope: scope))
+            if initialTicks > 0 {
+                #expect(progress.hasResetCheckpoint(itemID: "title", scope: scope, mediaSourceID: "alternate"))
+            }
+            #expect(progress.positionTicks(forItemID: "title", scope: otherScope) == 60)
+        }
+    }
+
     @Test("a rejected watched write after a saved progress reset requires readback before another action")
     @MainActor
     func partiallyAcceptedWatchedAction() async throws {

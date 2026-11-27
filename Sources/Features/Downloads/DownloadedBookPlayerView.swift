@@ -13,7 +13,7 @@ struct DownloadedBookPlayerView: View {
         if let url = downloads.localFileURL(for: item, serverID: session.server.id, userID: session.user.id) {
             switch DownloadedBookFormat(fileExtension: url.pathExtension) {
             case .pdf:
-                OfflinePDFBookView(item: item, fileURL: url)
+                OfflinePDFBookView(item: item, fileURL: url, close: close)
             case .epub:
                 epubSurface(fileURL: url)
             case .externalReader:

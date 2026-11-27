@@ -32,6 +32,13 @@ private struct MediaItemContextMenu<Actions: View>: ViewModifier {
                     if CollectionPlatform.canManage && (root.collectionStore(session: session).capabilities.addMembers || root.collectionStore(session: session).capabilities.create) {
                         Button("Add to Collection", systemImage: "rectangle.stack.badge.plus") { addingToCollection = true }
                     }
+                    if item.isBookFormat {
+                        Divider()
+                        Button(item.completionActionTitle(markingComplete: true), systemImage: "checkmark.circle") { mark(item, watched: true) }
+                            .disabled(updating)
+                        Button(item.completionActionTitle(markingComplete: false), systemImage: "arrow.counterclockwise") { mark(item, watched: false) }
+                            .disabled(updating)
+                    }
                     if [.movie, .episode].contains(item.type) {
                         Divider()
                         Button("Mark Watched", systemImage: "checkmark.circle") { mark(item, watched: true) }

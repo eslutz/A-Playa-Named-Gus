@@ -60,6 +60,9 @@ struct OfflinePDFBookView: View {
     @Environment(OfflineDownloadStore.self) private var downloads
     let item: MediaItem
     let fileURL: URL
+    var close: (() -> Void)?
+    @State private var controlsVisible = true
+    @State private var progress = ReaderProgress()
 
     var body: some View {
         NavigationStack {
@@ -70,27 +73,54 @@ struct OfflinePDFBookView: View {
                         itemID: item.id,
                         mediaItem: item,
                         scope: AccountScope(serverID: session.server.id, userID: session.user.id),
+                        onProgress: { progress = $0 },
+                        toggleControls: { controlsVisible.toggle() },
                         onCompletion: { [record = downloads.record(for: item, serverID: session.server.id, userID: session.user.id)] in
                             downloads.deleteAfterCompletion(record)
                         }
                     )
+                    .overlay(alignment: .bottom) {
+                        if controlsVisible {
+                            ReaderProgressFooter(progress: progress)
+                        }
+                    }
+                    .accessibilityAction(named: controlsVisible ? Text("Hide Reading Controls") : Text("Show Reading Controls")) {
+                        controlsVisible.toggle()
+                    }
                     .navigationTitle(item.displayTitle)
                     .toolbar {
-                        ToolbarItem(placement: .cancellationAction) { GusCloseButton { dismiss() } }
+                        ToolbarItem(placement: .cancellationAction) { GusCloseButton { closeReader() } }
                         ToolbarItem { ShareLink(item: fileURL) { Label("Share", systemImage: "square.and.arrow.up") } }
                     }
+                    #if os(macOS)
+                    .toolbarVisibility(controlsVisible ? .visible : .hidden, for: .windowToolbar)
+                    #else
+                    .toolbarVisibility(controlsVisible ? .visible : .hidden, for: .navigationBar)
+                    .ignoresSafeArea(.container, edges: controlsVisible ? [] : [.top, .bottom])
+                    #endif
+                    #if os(iOS)
+                    .statusBarHidden(!controlsVisible)
+                    #endif
                 } else {
                     ContentUnavailableView(
                         "Can't Open This Book",
                         systemImage: "book.closed",
                         description: Text("The downloaded PDF could not be opened.")
                     )
-                    .toolbar { ToolbarItem(placement: .cancellationAction) { GusCloseButton { dismiss() } } }
+                    .toolbar { ToolbarItem(placement: .cancellationAction) { GusCloseButton { closeReader() } } }
                 }
             #else
                 ContentUnavailableView("Reading Isn't Available Here", systemImage: "book")
-                    .toolbar { ToolbarItem(placement: .cancellationAction) { GusCloseButton { dismiss() } } }
+                    .toolbar { ToolbarItem(placement: .cancellationAction) { GusCloseButton { closeReader() } } }
             #endif
+        }
+    }
+
+    private func closeReader() {
+        if let close {
+            close()
+        } else {
+            dismiss()
         }
     }
 }
@@ -103,9 +133,17 @@ struct OfflinePDFBookView: View {
         private let scope: AccountScope
         private let writerToken: UUID
         private var pageObserver: NSObjectProtocol?
+        private let onProgress: (ReaderProgress) -> Void
+        private let toggleControls: () -> Void
         private let onCompletion: () -> Void
 
-        init(itemID: String?, scope: AccountScope, onCompletion: @escaping () -> Void, item: MediaItem? = nil) {
+        init(
+            itemID: String?, scope: AccountScope, item: MediaItem,
+            onProgress: @escaping (ReaderProgress) -> Void, toggleControls: @escaping () -> Void,
+            onCompletion: @escaping () -> Void
+        ) {
+            self.onProgress = onProgress
+            self.toggleControls = toggleControls
             self.onCompletion = onCompletion
             self.itemID = itemID
             self.mediaItem = item
@@ -120,17 +158,71 @@ struct OfflinePDFBookView: View {
             {
                 view.go(to: page)
             }
+            #if os(macOS)
+                let click = NSClickGestureRecognizer(target: self, action: #selector(toggleFromInput(_:)))
+                click.delegate = self
+                view.addGestureRecognizer(click)
+            #else
+                let tap = UITapGestureRecognizer(target: self, action: #selector(toggleFromInput(_:)))
+                tap.cancelsTouchesInView = false
+                tap.delegate = self
+                view.addGestureRecognizer(tap)
+            #endif
+            (view as? ReaderPDFView)?.toggleControls = toggleControls
+            Task { @MainActor [weak self, weak view] in
+                if let view {
+                    self?.publishProgress(view)
+                }
+            }
             pageObserver = NotificationCenter.default.addObserver(forName: .PDFViewPageChanged, object: view, queue: .main) { [weak self, weak view] _ in
                 MainActor.assumeIsolated {
                     guard let self, let view else { return }
+                    self.publishProgress(view)
                     self.save(view)
                 }
             }
         }
 
+        private func publishProgress(_ view: PDFView) {
+            guard let document = view.document, let page = view.currentPage, document.pageCount > 0 else { return }
+            let index = document.index(for: page)
+            guard index != NSNotFound else { return }
+            let current = index + 1
+            onProgress(ReaderProgress(
+                fraction: Double(current) / Double(document.pageCount),
+                current: current,
+                total: document.pageCount,
+                atEnd: current == document.pageCount
+            ))
+        }
+
+        #if os(macOS)
+            @objc private func toggleFromInput(_ input: NSClickGestureRecognizer) {
+                guard input.state == .ended, let view = input.view as? PDFView else { return }
+                toggle(at: input.location(in: view), in: view)
+            }
+        #else
+            @objc private func toggleFromInput(_ input: UITapGestureRecognizer) {
+                guard input.state == .ended, let view = input.view as? PDFView else { return }
+                toggle(at: input.location(in: view), in: view)
+            }
+        #endif
+
+        private func toggle(at point: CGPoint, in view: PDFView) {
+            guard view.bounds.insetBy(dx: view.bounds.width * 0.2, dy: 0).contains(point),
+                  view.currentSelection?.string?.isEmpty != false else { return }
+            if let page = view.page(for: point, nearest: false),
+               page.annotation(at: view.convert(point, to: page)) != nil
+            {
+                return
+            }
+            toggleControls()
+        }
+
         func save(_ view: PDFView) {
             guard OfflinePlaybackProgressStore.shared.writerToken(for: scope) == writerToken,
-                  let itemID, let document = view.document, let currentPage = view.currentPage,
+                  let itemID, OfflinePlaybackProgressStore.shared.acceptsCheckpoint(itemID: itemID, scope: scope),
+                  let document = view.document, let currentPage = view.currentPage,
                   document.pageCount > 0 else { return }
             let index = document.index(for: currentPage)
             guard index != NSNotFound else { return }
@@ -161,6 +253,49 @@ struct OfflinePDFBookView: View {
             pageObserver = nil
         }
     }
+
+    #if os(macOS)
+        extension PDFReadingCoordinator: NSGestureRecognizerDelegate {
+            func gestureRecognizer(_: NSGestureRecognizer, shouldRecognizeSimultaneouslyWith _: NSGestureRecognizer) -> Bool {
+                true
+            }
+        }
+
+        private final class ReaderPDFView: PDFView {
+            var toggleControls: (() -> Void)?
+
+            override func cancelOperation(_ sender: Any?) {
+                if let toggleControls {
+                    toggleControls()
+                } else {
+                    super.cancelOperation(sender)
+                }
+            }
+        }
+    #else
+        extension PDFReadingCoordinator: UIGestureRecognizerDelegate {
+            func gestureRecognizer(_: UIGestureRecognizer, shouldRecognizeSimultaneouslyWith _: UIGestureRecognizer) -> Bool {
+                true
+            }
+
+            func gestureRecognizer(_: UIGestureRecognizer, shouldRequireFailureOf other: UIGestureRecognizer) -> Bool {
+                (other as? UITapGestureRecognizer)?.numberOfTapsRequired == 2
+            }
+        }
+
+        private final class ReaderPDFView: PDFView {
+            var toggleControls: (() -> Void)?
+
+            override var keyCommands: [UIKeyCommand]? {
+                (super.keyCommands ?? []) + [UIKeyCommand(input: UIKeyCommand.inputEscape, modifierFlags: [], action: #selector(toggleReaderControls))]
+            }
+
+            @objc private func toggleReaderControls() {
+                toggleControls?()
+            }
+        }
+    #endif
+
 #endif
 
 #if canImport(PDFKit) && os(macOS)
@@ -169,13 +304,15 @@ struct OfflinePDFBookView: View {
         let itemID: String?
         let mediaItem: MediaItem
         let scope: AccountScope
+        let onProgress: (ReaderProgress) -> Void
+        let toggleControls: () -> Void
         let onCompletion: () -> Void
         func makeCoordinator() -> PDFReadingCoordinator {
-            PDFReadingCoordinator(itemID: itemID, scope: scope, onCompletion: onCompletion, item: mediaItem)
+            PDFReadingCoordinator(itemID: itemID, scope: scope, item: mediaItem, onProgress: onProgress, toggleControls: toggleControls, onCompletion: onCompletion)
         }
 
         func makeNSView(context: Context) -> PDFView {
-            let view = PDFView()
+            let view = ReaderPDFView()
             view.autoScales = true
             view.document = PDFDocument(url: fileURL)
             context.coordinator.install(on: view)
@@ -193,13 +330,15 @@ struct OfflinePDFBookView: View {
         let itemID: String?
         let mediaItem: MediaItem
         let scope: AccountScope
+        let onProgress: (ReaderProgress) -> Void
+        let toggleControls: () -> Void
         let onCompletion: () -> Void
         func makeCoordinator() -> PDFReadingCoordinator {
-            PDFReadingCoordinator(itemID: itemID, scope: scope, onCompletion: onCompletion, item: mediaItem)
+            PDFReadingCoordinator(itemID: itemID, scope: scope, item: mediaItem, onProgress: onProgress, toggleControls: toggleControls, onCompletion: onCompletion)
         }
 
         func makeUIView(context: Context) -> PDFView {
-            let view = PDFView()
+            let view = ReaderPDFView()
             view.autoScales = true
             view.document = PDFDocument(url: fileURL)
             context.coordinator.install(on: view)

@@ -1470,6 +1470,116 @@
             add(attachment)
         }
 
+        func testBookStatusActionsRemainAvailableAfterEachChange() {
+            continueAfterFailure = false
+            let app = XCUIApplication()
+            defer { app.terminate() }
+            for index in 1 ... 2 {
+                app.terminate()
+                launchBookDetail(index, in: app)
+                let menu = app.buttons["Detail.actions"].firstMatch
+                XCTAssertTrue(menu.waitForExistence(timeout: 25))
+                let complete = app.buttons["Detail.bookComplete"].firstMatch
+                let resetAction = app.buttons["Detail.bookReset"].firstMatch
+                menu.tap()
+                XCTAssertEqual(complete.label, index == 1 ? "Mark as Read" : "Mark as Finished")
+                XCTAssertEqual(resetAction.label, index == 1 ? "Mark as Unread" : "Mark as Unfinished")
+                complete.tap()
+
+                menu.tap()
+                XCTAssertTrue(complete.exists)
+                let enabled = XCTNSPredicateExpectation(predicate: NSPredicate(format: "exists == true AND enabled == true"), object: resetAction)
+                XCTAssertEqual(XCTWaiter.wait(for: [enabled], timeout: 10), .completed)
+                resetAction.tap()
+                let progress = app.descendants(matching: .any)["Detail.bookProgress"].firstMatch
+                XCTAssertTrue(progress.waitForNonExistence(timeout: 10))
+                XCTAssertTrue(app.buttons[index == 1 ? "Read" : "Play"].firstMatch.exists)
+            }
+        }
+
+        func testReaderControlsAndAnimationPreference() {
+            continueAfterFailure = false
+            let app = XCUIApplication()
+            let isPad = UIDevice.current.userInterfaceIdiom == .pad
+            launchBookDetail(1, in: app, destination: isPad ? "play" : "item")
+            defer { app.terminate() }
+
+            let read = app.buttons.matching(NSPredicate(format: "label IN %@", ["Read", "Continue Reading"])).firstMatch
+            func tapRead() {
+                XCTAssertTrue(read.waitForExistence(timeout: 25))
+                for _ in 0 ..< 8 where !read.isHittable {
+                    app.swipeUp()
+                }
+                XCTAssertTrue(read.isHittable)
+                read.tap()
+            }
+            if !isPad {
+                tapRead()
+            }
+            let close = app.buttons["BookReader.done"].firstMatch
+            let settings = app.buttons["BookReader.settings"].firstMatch
+            let progress = app.descendants(matching: .any)["BookReader.progress"].firstMatch
+            XCTAssertTrue(settings.waitForExistence(timeout: 25))
+            XCTAssertTrue(progress.waitForExistence(timeout: 10))
+            let location = progress.label
+            let pageCenter = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.6))
+            pageCenter.tap()
+            XCTAssertTrue(close.waitForNonExistence(timeout: 5))
+            XCTAssertFalse(progress.exists)
+            pageCenter.tap()
+            XCTAssertTrue(close.waitForExistence(timeout: 5))
+            XCTAssertEqual(progress.label, location)
+
+            settings.tap()
+            XCTAssertTrue(app.navigationBars["Reading Settings"].waitForExistence(timeout: 5))
+            let animation = app.switches["Animate Page Turns"].firstMatch
+            let reset = app.buttons["Reset to Defaults"].firstMatch
+            for _ in 0 ..< 5 where !reset.isHittable {
+                app.swipeUp()
+            }
+            reset.tap()
+            for _ in 0 ..< 5 where !animation.isHittable {
+                app.swipeDown()
+            }
+            XCTAssertEqual(animation.value as? String, "1")
+            // The accessible switch spans the row. Hit the actual trailing
+            // control, which can have a smaller touch target than its label.
+            animation.coordinate(withNormalizedOffset: CGVector(dx: 0.94, dy: 0.5)).tap()
+            let switchedOff = XCTNSPredicateExpectation(predicate: NSPredicate(format: "value == %@", "0"), object: animation)
+            XCTAssertEqual(XCTWaiter.wait(for: [switchedOff], timeout: 5), .completed)
+            app.buttons["Done"].tap()
+            XCTAssertTrue(close.waitForExistence(timeout: 5))
+            close.tap()
+
+            if isPad {
+                app.terminate()
+                launchBookDetail(1, in: app, destination: "play")
+            } else {
+                tapRead()
+            }
+            XCTAssertTrue(settings.waitForExistence(timeout: 25))
+            settings.tap()
+            for _ in 0 ..< 5 where !animation.isHittable {
+                app.swipeUp()
+            }
+            XCTAssertEqual(animation.value as? String, "0")
+            for _ in 0 ..< 5 where !reset.isHittable {
+                app.swipeUp()
+            }
+            reset.tap()
+            app.buttons["Done"].tap()
+        }
+
+        private func launchBookDetail(_ index: Int, in app: XCUIApplication, destination: String = "item") {
+            app.launchEnvironment["GUS_DEMO_URL"] = "http://127.0.0.1:5058"
+            app.launchArguments = [
+                "--gus-skip-session-restore", "--gus-disable-cloud-sync", "--gus-demo-server",
+                "--gus-route", "\(destination)/4200000000000000000000000000000\(index)",
+                "-dev.ericslutz.gus.contentRatingLimit", "off",
+            ]
+            app.launch()
+        }
+
         func testAudiobookSynopsisAtLargestTextSize() throws {
             continueAfterFailure = false
             let app = XCUIApplication()
@@ -1535,7 +1645,8 @@
 
                 let menu = app.buttons["Detail.actions"].firstMatch
                 menu.tap()
-                XCTAssertTrue(app.buttons[index == 1 ? "Mark as Read" : "Mark as Finished"].firstMatch.exists)
+                XCTAssertEqual(app.buttons["Detail.bookComplete"].firstMatch.label, index == 1 ? "Mark as Read" : "Mark as Finished")
+                XCTAssertEqual(app.buttons["Detail.bookReset"].firstMatch.label, index == 1 ? "Mark as Unread" : "Mark as Unfinished")
                 XCTAssertEqual(app.buttons["Book.share"].exists, index == 1)
                 app.coordinate(withNormalizedOffset: CGVector(dx: 0.1, dy: 0.8)).tap()
 

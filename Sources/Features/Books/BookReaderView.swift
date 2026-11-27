@@ -21,6 +21,14 @@
 
         @State private var model: BookReaderModel?
         @State private var showingChapters = false
+        @State private var showingSettings = false
+        @State private var controlsVisible = true
+        @State private var settingsDraft = EPUBReaderPreferences()
+        @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+        private var showControls: Bool {
+            controlsVisible || model?.navigatorReady != true || model?.resourceNotice != nil
+        }
 
         var body: some View {
             NavigationStack {
@@ -49,12 +57,27 @@
                             }
                             .accessibilityIdentifier("BookReader.done")
                         }
-                        ToolbarItem {
-                            if let model, !model.tableOfContents.isEmpty {
-                                chaptersButton(model)
+                        ToolbarItemGroup(placement: .primaryAction) {
+                            if let model {
+                                if !model.tableOfContents.isEmpty {
+                                    chaptersButton(model)
+                                }
+                                if model.navigatorReady {
+                                    settingsButton(model)
+                                }
                             }
                         }
                     }
+                    .toolbarVisibility(showControls ? .visible : .hidden, for: .navigationBar)
+            }
+            .statusBarHidden(!showControls)
+            .sheet(isPresented: $showingSettings, onDismiss: {
+                model?.applyPreferences(settingsDraft)
+                model?.navigator?.becomeFirstResponder()
+            }) {
+                if let model, let navigator = model.navigator {
+                    EPUBReaderSettingsView(preferences: $settingsDraft, navigator: navigator)
+                }
             }
             .sheet(isPresented: $showingChapters, onDismiss: {
                 guard let navigator = model?.navigator, navigator.viewIfLoaded?.window != nil else { return }
@@ -101,7 +124,7 @@
             .onDisappear {
                 model?.flushProgress()
                 // Presenting the chapter browser does not close the reader.
-                if !showingChapters {
+                if !showingChapters, !showingSettings {
                     if model?.isAtEnd == true {
                         downloads.deleteAfterCompletion(openedDownload)
                     }
@@ -126,10 +149,35 @@
                         .disabled(!model.canRetryOpening)
                 }
             case .loaded:
-                EPUBNavigatorRepresentable(model: model, generation: model.navigatorIdentity)
-                    .id(model.navigatorIdentity)
-                    .ignoresSafeArea(edges: .bottom)
+                EPUBNavigatorRepresentable(
+                    model: model,
+                    generation: model.navigatorIdentity,
+                    animatePageTurns: model.preferences.animatePageTurns && !reduceMotion,
+                    toggleControls: { controlsVisible.toggle() }
+                )
+                .id(model.navigatorIdentity)
+                .ignoresSafeArea(.container, edges: controlsVisible ? .bottom : [.top, .bottom])
+                .overlay(alignment: .bottom) {
+                    if showControls {
+                        ReaderProgressFooter(progress: model.readerProgress)
+                    }
+                }
+                .accessibilityAction(named: controlsVisible ? Text("Hide Reading Controls") : Text("Show Reading Controls")) {
+                    controlsVisible.toggle()
+                }
             }
+        }
+
+        private func settingsButton(_ model: BookReaderModel) -> some View {
+            Button {
+                model.navigator?.view.window?.endEditing(true)
+                settingsDraft = model.preferences
+                showingSettings = true
+            } label: {
+                Text(verbatim: "Aa").font(.system(.body, design: .serif))
+            }
+            .accessibilityLabel("Reading Settings")
+            .accessibilityIdentifier("BookReader.settings")
         }
 
         private func chaptersButton(_ model: BookReaderModel) -> some View {
@@ -204,6 +252,10 @@
         private(set) var actionOutcome: ActionOutcome?
         private(set) var resourceNotice: String?
         private(set) var navigatorIdentity = UUID()
+        private(set) var navigatorReady = false
+        private(set) var preferences: EPUBReaderPreferences
+        private var positionCount: Int?
+        private var usesPositions = true
         private var reportedResourceHrefs = Set<String>()
         private var isClosed = false
         private var navigationTask: Task<Void, Never>?
@@ -242,6 +294,7 @@
             self.fileURL = fileURL
             self.provider = provider
             self.accountScope = accountScope
+            preferences = EPUBReaderPreferences.load(scope: accountScope)
             progressWriterToken = OfflinePlaybackProgressStore.shared.writerToken(for: accountScope)
         }
 
@@ -251,6 +304,42 @@
             OfflinePlaybackProgressStore.shared.writerToken(for: accountScope) == progressWriterToken && finalPageVisible
         }
 
+        var readerProgress: ReaderProgress {
+            ReaderProgress(
+                fraction: initialLocation?.locations.totalProgression,
+                current: initialLocation?.locations.position,
+                total: positionCount,
+                usesPositions: usesPositions,
+                atEnd: finalPageVisible
+            )
+        }
+
+        func applyPreferences(_ updated: EPUBReaderPreferences) {
+            guard updated != preferences, owns(generation: navigatorIdentity) else { return }
+            let old = preferences
+            preferences = updated
+            updated.save(scope: accountScope)
+            if updated.layout == old.layout {
+                if updated.theme != old.theme {
+                    navigator?.submitPreferences(updated.effectivePreferences)
+                }
+                return
+            }
+            // Readium resolves its initial locator in the new layout. Replacing
+            // this navigator also invalidates callbacks from the old layout.
+            initialLocation = navigator?.currentLocation ?? initialLocation
+            cancelNavigation()
+            navigatorReady = false
+            navigator = nil
+            navigatorIdentity = UUID()
+        }
+
+        func updateViewport(_ navigator: EPUBNavigatorViewController) {
+            guard let last = publication?.readingOrder.last?.url(),
+                  let visible = navigator.viewport?.resources.last else { return }
+            finalPageVisible = visible.href.isEquivalentTo(last) && visible.progression.upperBound >= 1
+        }
+
         private var syncEnabled: Bool {
             provider?.capabilities.supportsBookProgressSync == true
         }
@@ -258,6 +347,7 @@
         func navigatorConstructionFailed() {
             logger.error("EPUB navigator construction failed")
             navigator = nil
+            navigatorReady = false
             let message = String(localized: "The book reader could not be created. Try again.")
             state = .failed(message)
             actionOutcome = .failed(.server(message))
@@ -370,6 +460,7 @@
         func open() async {
             guard state == .idle, !isClosed, !Task.isCancelled else { return }
             navigatorIdentity = UUID()
+            navigatorReady = false
             let generation = navigatorIdentity
             reportedResourceHrefs.removeAll()
             state = .loading
@@ -396,12 +487,13 @@
                     }
                 }
             ) {
-            case let .loaded(publication, tableOfContents, initialLocation):
+            case let .loaded(publication, tableOfContents, initialLocation, positionCount):
                 guard owns(generation: generation) else { return }
                 guard !Task.isCancelled else { state = .idle; actionOutcome = nil; return }
                 self.publication = publication
                 self.tableOfContents = tableOfContents
                 self.initialLocation = initialLocation
+                self.positionCount = positionCount
                 state = .loaded
                 actionOutcome = .confirmed
             case let .failed(message):
@@ -451,7 +543,9 @@
                     } else {
                         nil
                     }
-                    return .loaded(publication, tableOfContents, initialLocation)
+                    let positions = try? await publication.positionsByReadingOrder().get()
+                    let count = positions?.reduce(0) { $0 + $1.count }
+                    return .loaded(publication, tableOfContents, initialLocation, count)
                 case let .failure(error):
                     return .failed(error.localizedDescription)
                 }
@@ -462,6 +556,10 @@
 
         func saveLocation(_ locator: Locator) {
             initialLocation = locator
+            if !navigatorReady, let navigator {
+                usesPositions = navigator.editor(of: preferences.effectivePreferences).layout != .fixed
+            }
+            navigatorReady = true
             if let request = chapterRequest {
                 if BookReportingContainer.canonical(locator.href.anyURL).isEquivalentTo(request.href) {
                     cancelNavigation()
@@ -470,15 +568,12 @@
             } else if actionOutcome == .pending || actionOutcome == .accepted {
                 actionOutcome = .confirmed
             }
-            if let last = publication?.readingOrder.last?.url(),
-               let visible = navigator?.viewport?.resources.last
-            {
-                finalPageVisible = visible.href.isEquivalentTo(last) && visible.progression.upperBound >= 1
-            } else {
-                finalPageVisible = false
+            if let navigator {
+                updateViewport(navigator)
             }
             guard OfflinePlaybackProgressStore.shared.writerToken(for: accountScope) == progressWriterToken,
-                  let itemID = item.id else { return }
+                  let itemID = item.id,
+                  OfflinePlaybackProgressStore.shared.acceptsCheckpoint(itemID: itemID, scope: accountScope) else { return }
             if let json = try? locator.jsonString() {
                 progressStore.save(locatorJSON: json, forItemID: itemID, scope: accountScope)
             }
@@ -576,13 +671,15 @@
     }
 
     private enum BookPublicationOpenResult {
-        case loaded(Publication, [ReadiumShared.Link], Locator?)
+        case loaded(Publication, [ReadiumShared.Link], Locator?, Int?)
         case failed(String)
     }
 
     private struct EPUBNavigatorRepresentable: UIViewControllerRepresentable {
         let model: BookReaderModel
         let generation: UUID
+        let animatePageTurns: Bool
+        let toggleControls: () -> Void
 
         func makeUIViewController(context: Context) -> UIViewController {
             guard model.owns(generation: generation) else { return UIViewController() }
@@ -590,7 +687,10 @@
                   let navigator = try? EPUBNavigatorViewController(
                       publication: publication,
                       initialLocation: model.initialLocation,
-                      config: EPUBNavigatorViewController.Configuration()
+                      config: EPUBNavigatorViewController.Configuration(
+                          preferences: model.preferences.effectivePreferences,
+                          disablePageTurnsWhileScrolling: true
+                      )
                   )
             else {
                 Task { @MainActor in
@@ -600,33 +700,85 @@
                 return UIHostingController(rootView: ContentUnavailableView("Can't Open This Book", systemImage: "book.closed", description: Text("The book reader could not be created. Try again.")))
             }
             navigator.delegate = context.coordinator
+            context.coordinator.animatePageTurns = animatePageTurns
             context.coordinator.bindInput(to: navigator)
             model.navigator = navigator
             return navigator
         }
 
-        func updateUIViewController(_: UIViewController, context _: Context) {}
+        func updateUIViewController(_: UIViewController, context: Context) {
+            context.coordinator.animatePageTurns = animatePageTurns
+            context.coordinator.toggleControls = toggleControls
+        }
 
-        static func dismantleUIViewController(_ controller: UIViewController, coordinator _: Coordinator) {
-            (controller as? EPUBNavigatorViewController)?.delegate = nil
+        static func dismantleUIViewController(_ controller: UIViewController, coordinator: Coordinator) {
+            guard let navigator = controller as? EPUBNavigatorViewController else { return }
+            navigator.delegate = nil
+            coordinator.unbindInput(from: navigator)
         }
 
         func makeCoordinator() -> Coordinator {
-            Coordinator(model: model, generation: generation)
+            Coordinator(model: model, generation: generation, toggleControls: toggleControls)
         }
 
         @MainActor final class Coordinator: NSObject, EPUBNavigatorDelegate {
             private weak var model: BookReaderModel?
             private let generation: UUID
             private let directionalNavigation = DirectionalNavigationAdapter()
+            private var inputTokens: [InputObservableToken] = []
+            var toggleControls: () -> Void
+            var animatePageTurns: Bool {
+                get { directionalNavigation.animatedTransition }
+                set { directionalNavigation.animatedTransition = newValue }
+            }
 
-            init(model: BookReaderModel, generation: UUID) {
+            init(model: BookReaderModel, generation: UUID, toggleControls: @escaping () -> Void) {
                 self.model = model
                 self.generation = generation
+                self.toggleControls = toggleControls
             }
 
             func bindInput(to navigator: EPUBNavigatorViewController) {
                 directionalNavigation.bind(to: navigator)
+                inputTokens = [
+                    navigator.addObserver(.tap { [weak self, weak navigator] event in
+                        guard let navigator else { return false }
+                        return self?.toggle(at: event.location, in: navigator) ?? false
+                    }),
+                    navigator.addObserver(.click { [weak self, weak navigator] event in
+                        guard let navigator else { return false }
+                        return self?.toggle(at: event.location, in: navigator) ?? false
+                    }),
+                    navigator.addObserver(.key(.escape) { [weak self, weak navigator] in
+                        guard let self, let navigator,
+                              self.model?.accepts(navigator, generation: self.generation) == true else { return false }
+                        self.toggleControls()
+                        return true
+                    }),
+                ]
+            }
+
+            func unbindInput(from navigator: EPUBNavigatorViewController) {
+                directionalNavigation.unbind()
+                for token in inputTokens {
+                    navigator.removeObserver(token)
+                }
+                inputTokens.removeAll()
+            }
+
+            private func toggle(at point: CGPoint, in navigator: EPUBNavigatorViewController) -> Bool {
+                guard let model, model.accepts(navigator, generation: generation), model.navigatorReady else { return false }
+                let width = navigator.view.bounds.width
+                let edge = navigator.presentation.scroll ? 0 : max(80, width * 0.3)
+                guard point.x > edge, point.x < width - edge else { return false }
+                toggleControls()
+                return true
+            }
+
+            func navigator(_ navigator: any ViewportObservingNavigator, viewportDidChange _: NavigatorViewport?) {
+                guard let epub = navigator as? EPUBNavigatorViewController,
+                      let model, model.accepts(epub, generation: generation) else { return }
+                model.updateViewport(epub)
             }
 
             func navigator(_ navigator: Navigator, locationDidChange locator: Locator) {
@@ -648,6 +800,148 @@
                     guard let model, model.accepts(navigator, generation: generation) else { return }
                     model.resourceFailed(error, href: href.string)
                 }
+            }
+        }
+    }
+
+    struct EPUBReaderPreferences: Codable, Equatable {
+        var appearance: EPUBPreferences = .empty
+        var animatePageTurns = true
+
+        var theme: Theme? {
+            appearance.theme
+        }
+
+        var layout: EPUBPreferences {
+            var layout = appearance
+            layout.theme = nil
+            return layout
+        }
+
+        var effectivePreferences: EPUBPreferences {
+            var effective = appearance
+            if effective.publisherStyles != false {
+                effective.lineHeight = nil
+            }
+            return effective
+        }
+
+        private static func key(for scope: AccountScope) -> String {
+            "epub-reader.\(scope.serverID.utf8.count):\(scope.serverID)\(scope.userID)"
+        }
+
+        static func load(scope: AccountScope, defaults: UserDefaults = .standard) -> Self {
+            guard let data = defaults.data(forKey: key(for: scope)),
+                  let value = try? JSONDecoder().decode(Self.self, from: data) else { return Self() }
+            return value
+        }
+
+        func save(scope: AccountScope, defaults: UserDefaults = .standard) {
+            guard let data = try? JSONEncoder().encode(self) else { return }
+            defaults.set(data, forKey: Self.key(for: scope))
+        }
+    }
+
+    private struct EPUBReaderSettingsView: View {
+        @Environment(\.dismiss) private var dismiss
+        @Binding var preferences: EPUBReaderPreferences
+        let navigator: EPUBNavigatorViewController
+
+        var body: some View {
+            let editor = navigator.editor(of: preferences.appearance)
+            NavigationStack {
+                Form {
+                    if editor.layout == .fixed {
+                        Picker("Page Fit", selection: setting(\.fit, default: editor.fit.effectiveValue)) {
+                            Text("Automatic").tag(Fit.auto)
+                            Text("Fit Page").tag(Fit.page)
+                            Text("Fit Width").tag(Fit.width)
+                        }
+                        Picker("Page Spread", selection: setting(\.spread, default: editor.spread.effectiveValue)) {
+                            Text("Automatic").tag(Spread.auto)
+                            Text("Single Page").tag(Spread.never)
+                            Text("Two Pages").tag(Spread.always)
+                        }
+                        animationToggle
+                    } else {
+                        Section {
+                            rangeStepper("Text Size", \.fontSize, editor.fontSize)
+                            Picker("Font", selection: $preferences.appearance.fontFamily) {
+                                Text("Publisher Default").tag(nil as FontFamily?)
+                                Text("Serif").tag(FontFamily.serif as FontFamily?)
+                                Text("Sans Serif").tag(FontFamily.sansSerif as FontFamily?)
+                            }
+                            Picker("Page Appearance", selection: setting(\.theme, default: editor.theme.effectiveValue)) {
+                                Text("Light").tag(Theme.light)
+                                Text("Dark").tag(Theme.dark)
+                                Text("Sepia").tag(Theme.sepia)
+                            }
+                            rangeStepper("Page Margins", \.pageMargins, editor.pageMargins)
+                        }
+
+                        Section {
+                            if editor.scroll.isEffective {
+                                Picker("Reading Mode", selection: setting(\.scroll, default: editor.scroll.effectiveValue)) {
+                                    Text("Page Turns").tag(false)
+                                    Text("Vertical Scrolling").tag(true)
+                                }
+                            }
+                            if !editor.scroll.effectiveValue {
+                                animationToggle
+                            }
+                        }
+
+                        Section {
+                            Toggle("Use Publisher Styling", isOn: setting(\.publisherStyles, default: editor.publisherStyles.effectiveValue))
+                            if !editor.publisherStyles.effectiveValue {
+                                rangeStepper("Line Spacing", \.lineHeight, editor.lineHeight)
+                            }
+                        } footer: {
+                            Text("Turn off publisher styling to adjust line spacing.")
+                        }
+                    }
+
+                    Button("Reset to Defaults") { preferences = EPUBReaderPreferences() }
+                }
+                .navigationTitle("Reading Settings")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button("Done") { dismiss() }
+                    }
+                }
+            }
+        }
+
+        private var animationToggle: some View {
+            Toggle("Animate Page Turns", isOn: $preferences.animatePageTurns)
+        }
+
+        private func setting<Value>(_ key: WritableKeyPath<EPUBPreferences, Value?>, default fallback: Value) -> Binding<Value> {
+            Binding {
+                preferences.appearance[keyPath: key] ?? fallback
+            } set: { value in
+                preferences.appearance[keyPath: key] = value
+            }
+        }
+
+        private func rangeStepper(
+            _ title: LocalizedStringKey,
+            _ key: WritableKeyPath<EPUBPreferences, Double?>,
+            _ range: AnyRangePreference<Double>
+        ) -> some View {
+            Stepper {
+                LabeledContent {
+                    Text(range.format(value: range.value ?? range.effectiveValue))
+                } label: {
+                    Text(title)
+                }
+            } onIncrement: {
+                range.increment()
+                preferences.appearance[keyPath: key] = range.value
+            } onDecrement: {
+                range.decrement()
+                preferences.appearance[keyPath: key] = range.value
             }
         }
     }

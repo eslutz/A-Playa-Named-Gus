@@ -47,8 +47,12 @@ IDs or assume the tracked snapshot matches the live document.
   into the summary. In book and album details, keep the whole cover visible.
   Align primary and secondary actions on a shared leading edge; use consistent
   gaps. Keep Genres, Studios, and Cast & Crew above About and Recommendations.
-- Match search to each platform: compact iPhone/iPad use a Search tab; wide iPad
-  and Mac use a sidebar; Apple TV and Vision Pro follow native tab layouts.
+- Use the separate native Search button in the iPhone and compact iPad tab bar.
+  Regular-width iPad and Mac use sidebar Search. Vision Pro uses a dedicated
+  Search tab in the native vertical tab bar. Apple TV uses the system Search tab.
+  On Vision Pro, center Recent Searches in a narrow list that adapts to the
+  window width. Place the compact **Clear Search History** button below the
+  list rows and retain the confirmation alert.
   Show history row actions and a confirmation for clearing history. A genre, studio
   or credit opens titled results in the current stack. Use native Back at each
   level and **Clear Results** on the text search. More uses native disclosure and
@@ -113,6 +117,7 @@ picker values. Check the relevant scenarios when designing or revising a flow:
 | Audio collection | Ordered continuation, complete Shuffle progress/cancel/retry, disabled unavailable transport. |
 | Browsing context | Resume-aligned seasons/episodes, latest-feed expansion, Back/resize/focus restoration. |
 | Artwork and semantics | Role-specific missing/stale artwork, stable bounds, full episode identity and status, larger text and RTL. |
+| Reader controls | Start from iPhone **Books / Reader / Light** and **Dark**, and iPad **Books / Reader / Light / Landscape** and **Dark / Landscape**. Show the book with Close, Chapters, and Aa above it, plus location and whole-book progress at the bottom. Pair each appearance with the controls hidden. Use the native reading settings sheet for typography, page appearance, and navigation. |
 | Reader recovery | Navigator construction failure, resource retry or continue reading, last valid locator retained. |
 | Native previews | Compatible HLS scrubber preview, tvOS chapters with deferred/missing art, unsupported JPEG trickplay. |
 

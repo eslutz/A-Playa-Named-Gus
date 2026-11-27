@@ -111,7 +111,6 @@ struct ItemDetailView: View {
                     if !isRestricted, let store, store.item.id != nil {
                         ToolbarItem(placement: .primaryAction) {
                             Menu {
-                                let markWatched = store.item.userData?.isWatched != true
                                 if store.item.type == .movie || store.item.type == .episode {
                                     Button("Add to Playlist", systemImage: MediaActionSymbols.addToPlaylist) { addingToPlaylist = true }
                                 }
@@ -125,10 +124,7 @@ struct ItemDetailView: View {
                                     .accessibilityIdentifier("Book.share")
                                 }
                                 Divider()
-                                Button(store.item.completionActionTitle, systemImage: markWatched ? "checkmark.circle" : "arrow.counterclockwise") {
-                                    Task { await store.setWatched(markWatched, nextUp: upNext) }
-                                }
-                                .disabled(store.isUpdatingUserData || store.needsUserDataRefresh)
+                                completionActions(store)
                             } label: { Label("More", systemImage: "ellipsis") }
                                 .gusIPadIconOnly()
                                 .accessibilityIdentifier("Detail.actions")
@@ -247,11 +243,7 @@ struct ItemDetailView: View {
                 #if os(tvOS)
                     if store.item.id != nil {
                         Menu {
-                            Button(store.item.completionActionTitle, systemImage: "checkmark.circle") {
-                                Task { await store.setWatched(store.item.userData?.isWatched != true, nextUp: upNext) }
-                            }
-                            .disabled(store.isUpdatingUserData || store.needsUserDataRefresh)
-                            .accessibilityIdentifier("Detail.watched")
+                            completionActions(store)
                             if let target, ContentRatingGate.admitsStored(target) {
                                 Button("Start from Beginning", systemImage: "arrow.counterclockwise") {
                                     playerItem = playbackReference(for: target, fromBeginning: true)
@@ -363,6 +355,32 @@ struct ItemDetailView: View {
         }
     }
 
+    @ViewBuilder
+    private func completionActions(_ store: ItemDetailStore) -> some View {
+        if store.item.isBookFormat {
+            completionAction(store, complete: true)
+            completionAction(store, complete: false)
+        } else {
+            completionAction(store, complete: store.item.userData?.isWatched != true)
+        }
+    }
+
+    private func completionAction(_ store: ItemDetailStore, complete: Bool) -> some View {
+        Button(
+            store.item.completionActionTitle(markingComplete: complete),
+            systemImage: complete ? "checkmark.circle" : "arrow.counterclockwise"
+        ) {
+            Task {
+                await store.setWatched(complete, nextUp: upNext)
+                if store.item.isBookFormat {
+                    playbackRefresh.markPlaybackProgressChanged()
+                }
+            }
+        }
+        .disabled(store.isUpdatingUserData || store.needsUserDataRefresh)
+        .accessibilityIdentifier(store.item.isBookFormat ? (complete ? "Detail.bookComplete" : "Detail.bookReset") : "Detail.watched")
+    }
+
     private func bookDetailProgress(for item: MediaItem) -> BookDetailProgress? {
         guard item.isBookFormat, let id = item.id else { return nil }
         let scope = session.references.scope
@@ -375,6 +393,11 @@ struct ItemDetailView: View {
         let sourceID = PlaybackChoicePosition.sourceID(for: request, session: session, downloads: downloads)
         let checkpoint = localProgress.positionTicks(forItemID: id, scope: scope, mediaSourceID: sourceID)
         let downloaded = downloads.record(for: item, serverID: scope.serverID, userID: scope.userID, mediaSourceID: sourceID)
+        // A reset checkpoint has zero ticks and no playback timestamp. Ignore
+        // historical server or downloaded metadata until new playback occurs.
+        if localProgress.hasResetCheckpoint(itemID: id, scope: scope, mediaSourceID: checkpoint == nil ? nil : sourceID) {
+            return item.userData?.isWatched == true ? .fraction(1) : nil
+        }
         return BookDetailProgress.listening(
             ticks: checkpoint ?? resumeTicks(for: item) ?? item.userData?.playbackPositionTicks,
             duration: MediaPlaybackIdentity.runTimeTicks(for: downloaded?.playbackItem ?? item, mediaSourceID: sourceID),
